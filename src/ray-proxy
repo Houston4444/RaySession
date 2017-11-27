@@ -1,0 +1,626 @@
+#!/usr/bin/python3
+
+import os, sys, string, random, time, subprocess, signal, unicodedata, shlex
+from liblo import ServerThread, Address, make_method, Message
+from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings, QLocale, QTranslator, QFile
+from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QMainWindow
+
+from shared import *
+
+import ui_proxy_gui, ui_proxy_copy
+
+ERR_OK                =  0
+ERR_NO_PROXY_FILE     = -1
+ERR_NOT_ENOUGHT_LINES = -2
+ERR_NO_EXECUTABLE     = -3
+ERR_WRONG_ARGUMENTS   = -4
+ERR_WRONG_SAVE_SIGNAL = -5
+ERR_WRONG_STOP_SIGNAL = -6
+
+#cleanage
+#copy: proposer de renommer selon session_name
+#logs du process dans GUI (ou alors rien ne sort du proxy lui même)
+#message d'erreur dans GUI selon ce qui se passe avec le process
+#message can_save
+
+
+
+save_signals = {'None'   : None, 
+                'SIGUSR1': signal.SIGUSR1, 
+                'SIGUSR2': signal.SIGUSR2,
+                'SIGINT' : signal.SIGINT }
+
+stop_signals = {'SIGTERM': signal.SIGTERM,
+                'SIGINT' : signal.SIGINT,
+                'SIGHUP' : signal.SIGHUP}
+
+def signalHandler(sig, frame):
+    if sig in (signal.SIGINT, signal.SIGTERM):
+        proxy.stopProcess()
+        sys.exit()
+        
+def remove_accents(input_str):
+    nfkd_form = unicodedata.normalize('NFKD', input_str)
+    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()    
+
+def ifDebug(string):
+    if debug:
+        #qDebug(remove_accents(string))
+        print(string, file=sys.stderr)
+
+def shellLineToArgs(string):
+    try:
+        args = shlex.split(string)
+    except:
+        return None
+    
+    return args
+
+class ProxyCopyDialog(QDialog):
+    def __init__(self):
+        QDialog.__init__(self)
+        self.ui = ui_proxy_copy.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self.rename_file = False
+        self.ui.pushButtonCopyRename.clicked.connect(self.setRenameFile)
+        
+    def setRenameFile(self):
+        self.rename_file = True
+        self.accept()
+    
+    def setFile(self, path):
+        self.ui.labelFileNotInFolder.setText(_translate('Dialog', '%s is not in proxy directory') % ('<strong>' + os.path.basename(path) + '</strong>'))
+
+class ProxyDialog(QMainWindow):
+    def __init__(self):
+        QMainWindow.__init__(self)
+        self.ui = ui_proxy_gui.Ui_MainWindow()
+        self.ui.setupUi(self)
+        
+        self.config_file = ''
+        self.label_edited = False
+        self.icon_edited  = False
+        self.args_edited  = False
+        self.fields_allow_start = False
+        self.process_is_running = False
+        
+        self.ui.comboSaveSig.addItems(['None', 'SIGUSR1', 'SIGUSR2', 'SIGINT'])
+        self.ui.comboStopSig.addItems(['SIGTERM', 'SIGINT', 'SIGHUP'])
+        self.ui.toolButtonBrowse.clicked.connect(self.browseFile)
+        
+        self.ui.lineEditExecutable.textEdited.connect(self.lineEditExecutableEdited)
+        self.ui.lineEditArguments.textChanged.connect(self.lineEditArgumentsChanged)
+        self.ui.lineEditLabel.textEdited.connect(self.lineEditLabelEdited)
+        self.ui.lineEditIcon.textEdited.connect(self.lineEditIconEdited)
+        self.ui.lineEditConfigFile.textChanged.connect(self.lineEditConfigFileChanged)
+        
+        self.ui.toolButtonRefresh.clicked.connect(self.updateLabelAndIcon)
+        
+        self.ui.comboSaveSig.currentTextChanged.connect(self.allowSaveTest)
+        self.ui.toolButtonTestSave.clicked.connect(self.testSave)
+        self.ui.toolButtonTestSave.setEnabled(False)
+        
+        self.ui.pushButtonStart.clicked.connect(self.startProcess)
+        self.ui.pushButtonStop.clicked.connect(self.stopProcess)
+        self.ui.pushButtonStop.setEnabled(False)
+        
+        self.ui.labelError.setText('')
+        
+        proxy.process.started.connect(self.proxyStarted)
+        proxy.process.finished.connect(self.proxyFinished)
+        proxy.process.errorOccurred.connect(self.proxyErrorInProcess)
+    
+    def checkAllowStart(self):
+        self.fields_allow_start = True
+        if not self.ui.lineEditExecutable.text():
+            self.fields_allow_start = False
+        
+        if shellLineToArgs(self.ui.lineEditArguments.text()) == None:
+            self.fields_allow_start = False
+
+        self.ui.pushButtonStart.setEnabled(bool(not self.process_is_running and self.fields_allow_start))
+        
+    def updateValuesFromProxyFile(self):
+        proxy_file = proxy.proxy_file
+        
+        self.ui.lineEditExecutable.setText(proxy_file.executable)
+        self.ui.lineEditConfigFile.setText(proxy_file.config_file)
+        self.ui.lineEditArguments.setText(proxy_file.arguments_line)
+        self.ui.lineEditLabel.setText(proxy_file.label)
+        self.ui.lineEditIcon.setText(proxy_file.icon)
+        
+        for sig_str in save_signals:
+            if save_signals[sig_str] == proxy_file.save_signal:
+                self.ui.comboSaveSig.setCurrentText(sig_str)
+                break
+        
+        for sig_str in stop_signals:
+            if stop_signals[sig_str] == proxy_file.stop_signal:
+                self.ui.comboStopSig.setCurrentText(sig_str)
+                break
+        
+        self.checkAllowStart()
+        
+    def firstLaunch(self, executable, config_file, arguments_line, save_signal, stop_signal):
+        self.ui.lineEditExecutable.setText(executable)
+        self.ui.lineEditConfigFile.setText(config_file)
+        self.ui.lineEditArguments.setText(arguments_line)
+        self.yet_connected = True
+        self.show()
+    
+    def browseFile(self):
+        config_file, ok = QFileDialog.getOpenFileName(self, _translate('Dialog', 'Select File to use as CONFIG_FILE'))
+        if not ok:
+            return
+        
+        if not config_file.startswith(os.getcwd() + '/'):
+            qfile = QFile(config_file)
+            if qfile.size() < 20971520:   #if file < 20Mb
+                copy_dialog = ProxyCopyDialog()
+                copy_dialog.setFile(config_file)
+                copy_dialog.exec()
+                
+                if copy_dialog.result():
+                    if copy_dialog.rename_file:
+                        base, pt, extension = os.path.basename(config_file).rpartition('.')
+                        
+                        config_file = "%s.%s" % (proxy.session_name, extension)
+                        if not base:
+                            config_file = proxy.session_name
+                    else:
+                        config_file = os.path.basename(config_file)
+                        
+                    qfile.copy(config_file)
+            
+        self.config_file = os.path.relpath(config_file)
+        self.ui.lineEditConfigFile.setText(self.config_file)
+    
+    def lineEditExecutableEdited(self, text):
+        self.checkAllowStart()
+        
+        if not self.label_edited:
+            label = os.path.basename(text).replace('-', ' ').replace('_', ' ').capitalize()
+            self.ui.lineEditLabel.setText(label)
+            
+        if not self.icon_edited:
+            icon_name = label.lower().replace('_', '-')
+            self.ui.lineEditIcon.setText(icon_name)
+            
+    def updateLabelAndIcon(self):
+        label = self.ui.lineEditLabel.text()
+        icon  = self.ui.lineEditIcon.text()
+        server.sendToDeamon('/nsm/client/label', label) 
+        server.sendToDeamon('/ray/client/icon', icon)
+    
+    def lineEditLabelEdited(self, text):
+        self.label_edited = True
+    
+    def lineEditIconEdited(self, text):
+        self.icon_edited = True
+    
+    def lineEditArgumentsChanged(self, text):
+        self.checkAllowStart()
+        if shellLineToArgs(text) != None:
+            self.ui.lineEditArguments.setStyleSheet('')
+        else:
+            self.ui.lineEditArguments.setStyleSheet('QLineEdit{background: red}')
+            self.ui.pushButtonStart.setEnabled(False)
+    
+    def lineEditConfigFileChanged(self, text):
+        if text and not self.ui.lineEditArguments.text():
+            self.ui.lineEditArguments.setText('"$CONFIG_FILE"')
+        elif not text and self.ui.lineEditArguments.text() == '"$CONFIG_FILE"':
+            self.ui.lineEditArguments.setText('')
+    
+    def allowSaveTest(self, text=None):
+        if text == None:
+            text = self.ui.comboSaveSig.currentText()
+            
+        self.ui.toolButtonTestSave.setEnabled(bool(self.process_is_running and text != 'None'))
+    
+    def testSave(self):
+        save_signal = save_signals[self.ui.comboSaveSig.currentText()]
+        proxy.saveProcess(save_signal)
+    
+    def saveProxyFile(self):
+        executable     = self.ui.lineEditExecutable.text()
+        config_file    = self.ui.lineEditConfigFile.text()
+        arguments_line = self.ui.lineEditArguments.text()
+        label          = self.ui.lineEditLabel.text()
+        icon           = self.ui.lineEditIcon.text()
+        save_signal    = save_signals[self.ui.comboSaveSig.currentText()]
+        stop_signal    = stop_signals[self.ui.comboStopSig.currentText()]
+        
+        proxy.proxy_file.saveFile(executable, config_file, arguments_line, label, icon, save_signal, stop_signal)
+    
+    def startProcess(self):
+        self.saveProxyFile()
+        
+        if proxy.proxy_file.is_launchable:
+            proxy.startProcess()
+        
+    def stopProcess(self):
+        proxy.stopProcess(stop_signals[self.ui.comboStopSig.currentText()])
+        
+    def proxyStarted(self):
+        self.process_is_running = True
+        self.ui.pushButtonStart.setEnabled(False)
+        self.ui.pushButtonStop.setEnabled(True)
+        self.allowSaveTest()
+        self.ui.labelError.setText('')
+        
+    def processTerminateShortly(self, duration):
+        print(duration)
+        print('yamubal')
+        self.ui.labelError.setText('Process terminate in %f ms')
+        
+    def proxyFinished(self):
+        self.process_is_running = False
+        self.ui.pushButtonStart.setEnabled(self.fields_allow_start)
+        self.ui.pushButtonStop.setEnabled(False)
+        self.allowSaveTest()
+        self.ui.labelError.setText('')
+    
+    def proxyErrorInProcess(self):
+        self.ui.labelError.setText(_translate('Dialog', 'Executable failed to launch ! It\'s maybe not present on system.'))
+        if not self.isVisible():
+            self.show()
+    
+    def closeEvent(self, event):
+        server.sendToDeamon('/nsm/client/gui_is_hidden')
+        settings.setValue('ProxyGui%s/geometry' % proxy.full_client_id, self.saveGeometry())
+        settings.setValue('ProxyGui%s/WindowState'% proxy.full_client_id, self.saveState())
+        settings.sync()
+        
+        if self.fields_allow_start:
+            self.saveProxyFile()
+        
+        QMainWindow.closeEvent(self, event)
+        
+        #Quit if process is not running yet
+        if not proxy.process.state() == QProcess.Running:
+            sys.exit(0)
+        
+    def showEvent(self, event):
+        server.sendToDeamon('/nsm/client/gui_is_shown')
+        
+        if settings.value('ProxyGui%s/geometry' % proxy.full_client_id):
+            self.restoreGeometry(settings.value('ProxyGui%s/geometry' % proxy.full_client_id))
+        if settings.value('ProxyGui%s/WindowState' % proxy.full_client_id):
+            self.restoreState(settings.value('ProxyGui%s/WindowState' % proxy.full_client_id))
+        
+        self.updateValuesFromProxyFile()
+        
+        QMainWindow.showEvent(self, event)
+##########################
+
+class Proxy(QObject):
+    def __init__(self):
+        QObject.__init__(self)
+        self.process = QProcess()
+        self.process.setProcessChannelMode(QProcess.ForwardedChannels)
+        self.process.finished.connect(self.processFinished)
+        
+        self.proxy_file     = None
+        self.project_path   = None
+        self.session_name   = None
+        self.full_client_id = None
+        
+        self.executable     = ''
+        self.arguments      = []
+        self.arguments_line = ''
+        self.config_file    = None
+        self.save_signal    = None
+        self.stop_signal    = signal.SIGTERM
+        self.label          = None
+        
+        self.timer_open = QTimer()
+        self.timer_open.setSingleShot(True)
+        self.timer_open.setInterval(500)
+        self.timer_open.timeout.connect(self.timerOpenFinished)
+        
+        #self.start_timer = QTimer()
+        
+        self.is_finishable = False
+        self.timer_close = QTimer()
+        self.timer_close.setSingleShot(True)
+        self.timer_close.setInterval(2500)
+        self.timer_close.timeout.connect(self.timerCloseFinished)
+        self.timer_close.start()
+        self.process_start_time = time.time()
+        
+        signaler.server_sends_open.connect(self.initialize)
+        signaler.server_sends_save.connect(self.saveProcess)
+        signaler.show_optional_gui.connect(self.showOptionalGui)
+        signaler.hide_optional_gui.connect(self.hideOptionalGui)
+    
+    def isRunning(self):
+        return bool(self.process.state() == QProcess.Running)
+    
+    #def processStarted(self):
+        #pass
+    
+    def processFinished(self, exit_code):
+        print('yo finished')
+        
+        if self.is_finishable:
+            if not proxy_dialog.isVisible():
+                sys.exit(0)
+        else:
+            duration = time.time() - self.process_start_time
+            proxy_dialog.processTerminateShortly(duration)
+            #proxy_dialog.show()
+            
+    def initialize(self, project_path, session_name, full_client_id):
+        self.project_path   = project_path
+        self.session_name   = session_name
+        self.full_client_id = full_client_id
+        
+        server.sendToDeamon('/nsm/client/gui_is_hidden')
+        
+        if not os.path.exists(project_path):
+            os.mkdir(project_path)
+        
+        os.chdir(project_path)
+        
+        proxy_dialog.setWindowTitle(self.full_client_id)
+        
+        self.proxy_file = ProxyFile(project_path)
+        self.proxy_file.readFile()
+        
+        proxy_dialog.updateValuesFromProxyFile()
+        
+        if not self.proxy_file.is_launchable:
+            server.sendToDeamon('/reply', '/nsm/client/open', 'Ready')
+            proxy_dialog.show()
+            return
+        
+        self.startProcess()
+        
+    def startProcess(self):
+        os.environ['NSM_CLIENT_ID']    = self.full_client_id
+        os.environ['NSM_SESSION_NAME'] = self.session_name
+        
+        #enable environment vars in config_file
+        config_file = os.path.expandvars(self.proxy_file.config_file)
+        os.environ['CONFIG_FILE'] = config_file
+        
+        #Useful for launching with specifics arguments clients NSM compatible
+        os.unsetenv('NSM_URL')
+        
+        arguments_line = os.path.expandvars(self.proxy_file.arguments_line)
+        arguments = shellLineToArgs(arguments_line)
+        
+        if self.proxy_file.label:
+            server.sendToDeamon('/nsm/client/label', self.proxy_file.label)
+        
+        if self.proxy_file.icon:
+            server.sendToDeamon('/ray/client/icon', self.proxy_file.icon)
+        
+        self.process.start(self.proxy_file.executable, arguments)
+        self.timer_open.start()
+    
+    def saveProcess(self, save_signal=None):
+        if not save_signal:
+            save_signal = self.proxy_file.save_signal
+        
+        if self.isRunning() and save_signal:
+            os.kill(self.process.processId(), save_signal)
+            
+        server.sendToDeamon('/reply', '/nsm/client/save', 'Saved.')
+    
+    def stopProcess(self, signal=signal.SIGTERM):
+        if not self.isRunning():
+            return
+        
+        os.kill(self.process.processId(), signal)
+    
+    def timerOpenFinished(self):
+        server.sendToDeamon('/reply', '/nsm/client/open', 'Ready.')
+        if self.isRunning() and proxy_dialog.isVisible():
+            proxy_dialog.close()
+    
+    def timerCloseFinished(self):
+        self.is_finishable = True    
+    
+    def stop(self):
+        if self.process.state:
+            self.process.terminate()
+    
+    def showOptionalGui(self):
+        qDebug('oh tui shoow')
+        proxy_dialog.show()
+    
+    def hideOptionalGui(self):
+        proxy_dialog.close()
+
+class ProxyFile(object):
+    def __init__(self, project_path):
+        self.file = None
+        self.path = "%s/nsm-proxy.config" % project_path
+        
+        self.executable  = ''
+        self.arguments_line = ''
+        self.config_file = ''
+        self.args_line   = ''
+        self.label       = ''
+        self.icon        = ''
+        self.save_signal = None
+        self.stop_signal = signal.SIGTERM
+        
+        self.is_launchable = False
+        
+    def readFile(self):
+        self.is_launchable = False
+        try:
+            file = open(self.path, 'r')
+        except:
+            return
+        
+        file_contents = file.read()
+        elements = file_contents.split('\n')
+        file.close()
+        
+        if len(elements) < 12:
+            return
+        
+        self.executable     = elements[1].rpartition('\t')[2]
+        self.arguments_line = elements[3].rpartition('\t')[2]
+        self.config_file    = elements[5].rpartition('\t')[2]
+        save_signal         = elements[7].rpartition('\t')[2]
+        stop_signal         = elements[9].rpartition('\t')[2]
+        self.label          = elements[11].rpartition('\t')[2]
+        
+        if len(elements) >= 14:
+            self.icon = elements[13].rpartition('\t')[2]
+        
+        if save_signal.isdigit() and int(save_signal) in save_signals.values():
+            self.save_signal = int(save_signal)
+        
+        if stop_signal.isdigit() and int(stop_signal) in stop_signals.values():
+            self.stop_signal = int(stop_signal)
+            
+        if not self.executable:
+            return
+        
+        arguments = shellLineToArgs(self.arguments_line)
+        if arguments == None:
+            return
+        
+        self.is_launchable = True
+    
+    def saveFile(self, executable, config_file, arguments_line, label, icon, save_signal, stop_signal):
+        try:
+            file = open(self.path, 'w')
+        except:
+            return
+        
+        if not save_signal:
+            save_signal = 0
+        
+        contents  = "executable\n\t"
+        contents += executable
+        contents += "\narguments\n\t"
+        contents += arguments_line
+        contents += "\nconfig file\n\t"
+        contents += config_file
+        contents += "\nsave signal\n\t"
+        contents += str(int(save_signal))
+        contents += "\nstop signal\n\t"
+        contents += str(int(stop_signal))
+        contents += "\nlabel\n\t"
+        contents += label
+        contents += "\nicon\n\t"
+        contents += icon
+        
+        file.write(contents)
+        file.close()
+        
+        self.readFile()
+            
+
+class Signaler(QObject):
+    server_sends_open = pyqtSignal(str, str, str)
+    server_sends_save = pyqtSignal()
+    show_optional_gui = pyqtSignal()
+    hide_optional_gui = pyqtSignal()
+
+class OscServerThread(ServerThread):
+    def __init__(self):
+        ServerThread.__init__(self)
+
+    @make_method('/nsm/client/show_optional_gui', None)
+    def nsmGuiClientShow_optional_gui(self, path, args):
+        #ifDebug('serverOSC::ray-proxy_receives %s, %s' % (path, str(args)))
+        signaler.show_optional_gui.emit()
+
+    @make_method('/nsm/client/hide_optional_gui', None)
+    def nsmGuiClientHide_optional_gui(self, path, args):
+        #ifDebug('serverOSC::ray-proxy_receives %s, %s' % (path, str(args)))
+        signaler.hide_optional_gui.emit()
+    
+    @make_method('/nsm/client/open', None)
+    def nsmClientOpen(self, path, args):
+        signaler.server_sends_open.emit(*args)
+    
+    @make_method('/nsm/client/save', None)
+    def nsmClientSave(self, path, args):
+        signaler.server_sends_save.emit()
+    
+    def sendToDeamon(self, *args):
+        self.send(deamon_address, *args)
+        
+    def announce(self):
+        client_name     = 'Ray Proxy'
+        capabilities    = ':optional-gui:'
+        executable_path = 'ray-proxy'
+        major = 1
+        minor = 0
+        pid   = os.getpid()
+        
+        self.sendToDeamon('/nsm/server/announce', client_name, capabilities, executable_path, major, minor, pid)
+    
+    def sayReady(self):
+        self.sendToDeamon('/reply', 'nsm/client/open', 'ready')
+        
+if __name__ == '__main__':
+    NSM_URL = os.getenv('NSM_URL')
+    if not NSM_URL:
+        print('Could not register as NSM client.', file=sys.stderr)
+        sys.exit()
+    
+    deamon_address = getLibloAddress(NSM_URL)
+    
+    #parser = argparse.ArgumentParser()
+    #parser.add_argument('--session-root', '-r', help='set root folder for sessions', default=session_root)
+    #parser.add_argument('--osc-port', type=int, default=16187, help='select OSC port for the deamon')
+    #parser.add_argument('--gui-url', type=getLibloAddress, help=argparse.SUPPRESS)
+    #parser.add_argument('--debug','-d',  action='store_true', help='see all OSC messages')
+    #parser.add_argument('-v', '--version', action='version', version=VERSION)
+    #parsed_args = parser.parse_args()
+    
+    #debug        = parsed_args.debug
+    
+    signal.signal(signal.SIGINT,  signalHandler)
+    signal.signal(signal.SIGTERM, signalHandler)
+    
+    app = QApplication(sys.argv)
+    app.setApplicationName("RaySession")
+    #app.setApplicationVersion(VERSION)
+    app.setOrganizationName("RaySession")
+    app.setQuitOnLastWindowClosed(False)
+    settings = QSettings()
+    
+    ## Translation process
+    locale = QLocale.system().name()
+    appTranslator = QTranslator()
+    if appTranslator.load("%s/locale/raysession_%s" % (os.path.dirname(os.path.dirname(sys.argv[0])), locale)):
+        app.installTranslator(appTranslator)
+    _translate = app.translate
+    
+    timer = QTimer()
+    timer.setInterval(200)
+    timer.timeout.connect(lambda: None)
+    timer.start()
+    
+    
+    signaler = Signaler()
+    #process  = Process()
+    proxy = Proxy()
+    proxy_dialog = ProxyDialog()
+    
+    server = OscServerThread()
+    server.start()
+    server.announce()
+    
+    
+    app.exec()
+    
+    settings.sync()
+    server.stop()
+    
+    del server
+    del proxy
+    del app
+    

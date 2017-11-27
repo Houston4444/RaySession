@@ -1,0 +1,1959 @@
+#!/usr/bin/python3
+
+import os, sys, string, random, time, subprocess, signal, unicodedata
+from liblo import ServerThread, Address, make_method, Message
+from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings, QLocale, QTranslator
+from PyQt5.QtXml import QDomDocument
+
+from shared import *
+
+#ray-deamon doesn't really cares if jack is running or not
+#but if jack is running, it just ask all jack ports between many clients launchs or stops
+#It 'maybe' prevent some jack bugs
+try:
+    import dbus
+    bus = dbus.SessionBus()
+    jack_bus = bus.get_object('org.jackaudio.service', '/org/jackaudio/Controller')
+except:
+    jack_bus = None
+
+NSM_API_VERSION_MAJOR = 1
+NSM_API_VERSION_MINOR = 0
+
+ERR_OK                =  0
+ERR_GENERAL_ERROR     = -1
+ERR_INCOMPATIBLE_API  = -2
+ERR_BLACKLISTED       = -3
+ERR_LAUNCH_FAILED     = -4
+ERR_NO_SUCH_FILE      = -5
+ERR_NO_SESSION_OPEN   = -6
+ERR_UNSAVED_CHANGES   = -7
+ERR_NOT_NOW           = -8
+ERR_BAD_PROJECT       = -9
+ERR_CREATE_FAILED     = -10
+ERR_SESSION_LOCKED    = -11
+ERR_OPERATION_PENDING = -12
+
+
+
+COMMAND_NONE      = 0
+COMMAND_QUIT      = 1
+COMMAND_KILL      = 2
+COMMAND_SAVE      = 3
+COMMAND_OPEN      = 4
+COMMAND_START     = 5
+COMMAND_CLOSE     = 6
+COMMAND_DUPLICATE = 7
+COMMAND_NEW       = 8
+
+WAIT_FOR_NONE     = 0
+WAIT_FOR_STOP     = 1
+WAIT_FOR_ANNOUNCE = 2
+WAIT_FOR_REPLY    = 3
+
+debug             = False
+pending_operation = COMMAND_NONE
+last_client_message = None
+known_as_non_active = []
+
+def signalHandler(sig, frame):
+    if sig in (signal.SIGINT, signal.SIGTERM):
+        session.terminate()
+        
+def remove_accents(input_str):
+    nfkd_form = unicodedata.normalize('NFKD', input_str)
+    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()    
+
+def ifDebug(string):
+    if debug:
+        #qDebug(remove_accents(string))
+        print(string, file=sys.stderr)
+
+def MESSAGE(string):
+    global last_client_message
+    last_client_message = 'deamon'
+    print('[' + '\033[90m' + 'ray-deamon' + '\033[0m' + '] ' + '\033[92m' + string + '\033[0m', file=sys.stderr)
+
+def CLIENT_MESSAGE(string, client_name, client_id):
+    global last_client_message
+    client_str = client_name + '.' + client_id
+    if last_client_message == client_str:
+        print(string, file=sys.stderr)
+    else:
+        print('[' + '\033[90m' + client_name + '-' + client_id + '\033[0m' + ']\n' + string, file=sys.stderr)
+    last_client_message = client_str
+
+def WARNING(string):
+    print('[' + '\033[90m' + 'ray-deamon' + '\033[0m' + '] ' + '\033[93m' + string + '\033[0m', file=sys.stderr)
+    
+def GUIMSG(message):
+    server.sendGui('/nsm/gui/server/message', message)
+
+def setPendingOperation(pending_command):
+    global pending_operation
+    pending_operation = pending_command
+
+def waitForJack():
+    if jack_bus and jack_bus.IsStarted():
+        all_ports = jack_bus.GetAllPorts()
+        del all_ports
+        
+def quitRay(sig, frame):
+    for client in session.clients:
+        if client.isRunning():
+            MESSAGE(_translate('GUIMSG', 'Good Bye ! Clients are still running.'))
+            break
+    else:
+        MESSAGE(_translate('GUIMSG', 'Good Bye !'))
+    app.quit()
+
+class Client(QObject):
+    #can be directly changed by OSC thread
+    
+    gui_visible     = True
+    _reply_errcode  = 0
+    _reply_message  = None
+    progress        = 0
+    
+    #have to be modified by main thread for security
+    addr            = None
+    pid             = 0
+    pending_command = None
+    active          = False
+    client_id       = None
+    capabilities    = None
+    
+    name            = ''
+    executable_path = ''
+    label           = ''
+    icon            = ''
+    pre_existing    = False
+    project_path    = ""
+    prefix_mode     = PREFIX_MODE_SESSION_NAME
+    auto_start      = True
+    sent_to_gui     = False
+    
+    def __init__(self):
+        QObject.__init__(self)
+        #signaler.server_announce.connect(self.serverAnnounce)
+        
+        self.process = QProcess()
+        self.process.started.connect(self.processStarted)
+        self.process.errorOccurred.connect(self.errorInProcess)
+        self.process.finished.connect(self.processFinished)
+        self.process.readyReadStandardError.connect(self.standardError)
+        self.process.readyReadStandardOutput.connect(self.standardOutput)
+        
+        #if client is'n't stopped 1sec after stop, another stop becames a kill!
+        self.stopped_since_long = False
+        self.stopped_timer = QTimer()
+        self.stopped_timer.setSingleShot(True)
+        self.stopped_timer.setInterval(1000) #1sec
+        self.stopped_timer.timeout.connect(self.stoppedSinceLong)
+    
+    
+    def setReply(self, errcode, message):
+        self._reply_message = message
+        self._reply_errcode = errcode
+    
+    def setLabel(self, label):
+        self.label = label
+        self.sendGui('/nsm/gui/client/label', self.client_id, self.label)
+        
+    def setIcon(self, icon_name):
+        self.icon = icon_name
+        self.sendGui('/ray/gui/client/icon', self.client_id, self.icon)
+        
+    def hasError(self):
+        if self._reply_errcode:
+            return self._reply_errcode
+        
+    def errorCode(self):
+        return self._reply_errcode
+    
+    def getMessage(self):
+        return self._reply_message
+    
+    def isReplyPending(self):
+        if self.pending_command:
+            return self.pending_command
+        
+    def isDumbClient(self):
+        return bool(self.capabilities == None)
+    
+    def isCapableOf(self, capability):
+        if self.capabilities == None:
+            return False
+        return bool(capability in self.capabilities)
+    
+    def getJackClientName(self):
+        jack_client_name = self.name
+        
+        numid = ''
+        if '_' in self.client_id:
+            numid = self.client_id.rpartition('_')[2]
+        if numid.isdigit():
+            jack_client_name += '_'
+            jack_client_name += numid
+        
+        return jack_client_name
+    
+    def getProjectPath(self):
+        if self.prefix_mode == PREFIX_MODE_SESSION_NAME:
+            return "%s/%s.%s" % (session.path, session.name, self.client_id)
+        elif self.prefix_mode == PREFIX_MODE_CLIENT_NAME:
+            return "%s/%s.%s" % (session.path, self.name, self.client_id)
+        else:
+            return "%s/%s" % (session.path, self.project_path)
+    
+    def start(self):
+        GUIMSG(_translate("GUIMSG", "Launching %s") % self.executable_path)
+        os.environ['NSM_URL'] = server.url
+        
+        self.pending_command = COMMAND_START
+        self.process.start(self.executable_path)
+        #server.sendGui("/nsm/gui/client/new", self.client_id, self.name)
+     
+    def terminate(self):
+        if self.isRunning():
+            self.process.terminate()
+        
+    def kill(self):
+        if self.isRunning():
+            self.process.kill()
+            
+    def isRunning(self):
+        return bool(self.process.state() == 2)
+    
+    def standardError(self):
+        #print('tu devrais parler')
+        standard_error = self.process.readAllStandardError().data().decode('utf-8')
+        CLIENT_MESSAGE(standard_error, self.name, self.client_id)
+        
+    def standardOutput(self):
+        #print('tu devrais parler dedans')
+        standard_output = self.process.readAllStandardOutput().data().decode('utf-8')
+        CLIENT_MESSAGE(standard_output, self.name, self.client_id)
+    
+    def processStarted(self):
+        self.stopped_since_long = False
+        self.pid    = self.process.pid()
+        self.status = "launch"
+        #self.pending_command = COMMAND_NONE
+        
+        #MESSAGE("Process has pid: %i" % self.pid)
+        server.sendClientStatusToGui(self)
+        
+        if session.osc_src_addr:
+            server.send(session.osc_src_addr, "/reply", session.osc_path, ERR_OK, "Launched." )
+        
+    
+    def processFinished(self, exit_code, exit_status):
+        if self.pending_command in (COMMAND_KILL, COMMAND_QUIT):
+            GUIMSG(_translate('GUIMSG', "Client %s terminated because we told it to.") % self.name)
+        else:
+            GUIMSG(_translate('GUIMSG', "Client %s died unexpectedly.") % self.name)
+        
+        print('heeeieeiennn', self.client_id)
+        
+        if session.wait_for:
+            session.endTimerIfLastExpected(self)
+        
+        if self.pending_command == COMMAND_QUIT:
+            server.sendGui("/nsm/gui/client/status", self.client_id, "removed")
+            session.removeClient(self)
+            return
+        else:
+            self.status = "stopped"
+            server.sendClientStatusToGui(self)
+                
+        self.pending_command = COMMAND_NONE
+        self.active          = False
+        self.pid             = 0
+        
+    def errorInProcess(self, error):
+        if error == QProcess.FailedToStart:
+            GUIMSG(_translate('GUIMSG', "Failed to start %s") % self.name)
+            self.active     = False
+            self.pid        = 0
+            self.status     = "stopped"
+            server.sendClientStatusToGui(self)
+            self.pending_command = COMMAND_NONE
+            
+            #if session.osc_src_addr:
+                ##Finally, not sure that it's a good idea to display error dialog in this case.
+                #server.send(session.osc_src_addr, "/error", session.osc_path, ERR_LAUNCH_FAILED, "Failed to launch process!")
+            
+            if session.wait_for:
+                session.endTimerIfLastExpected(self)
+    
+    def stoppedSinceLong(self):
+        self.stopped_since_long = True
+    
+    def tellClientSessionIsLoaded(self):
+        if self.active and not self.isDumbClient():
+            MESSAGE("Telling client %s that session is loaded." % self.name)
+            server.send(self.addr, "/nsm/client/session_is_loaded")
+    
+    def save(self):
+        if self.active:
+            MESSAGE("Telling %s to save" % self.name)
+            server.send(self.addr, "/nsm/client/save")
+            
+            self.pending_command = COMMAND_SAVE
+            self.status          = "save"
+            server.sendClientStatusToGui(self)
+        
+        elif self.isDumbClient() and self.isRunning():
+            self.status = "noop"
+            server.sendClientStatusToGui(self)
+            
+    def stop(self):
+        GUIMSG(_translate('GUIMSG', "Stopping client %s") % self.name)
+        if self.isRunning():
+            self.pending_command = COMMAND_KILL
+            self.status = 'quit'
+            server.sendClientStatusToGui(self)
+            self.process.terminate()
+            
+            if not self.stopped_timer.isActive():
+                self.stopped_timer.start()
+    
+    def quit(self):
+        MESSAGE("Commanding %s to quit" % self.name)
+        if self.active:
+            self.status = "quit"
+            self.pending_command = COMMAND_QUIT
+            self.terminate()
+            server.sendClientStatusToGui(self)
+        
+        elif self.isDumbClient():
+            if self.isRunning():
+                self.status = "quit"
+                self.pending_command = COMMAND_QUIT
+                self.terminate()
+                server.sendClientStatusToGui(self)
+            else:
+                server.sendGui("/nsm/gui/client/status", self.client_id, "removed")
+    
+    def switch(self, new_client):
+        old_client_id     = self.client_id
+        self.client_id    = new_client.client_id
+        self.name         = new_client.name
+        self.prefix_mode  = new_client.prefix_mode
+        self.project_path = new_client.project_path
+        self.label        = new_client.label
+        self.icon         = new_client.icon
+        
+        jack_client_name      = self.getJackClientName()
+        client_project_path = self.getProjectPath()
+        
+        MESSAGE("Commanding %s to switch \"%s\"" % (self.name, client_project_path))
+        
+        server.send(self.addr, "/nsm/client/open", client_project_path,  session.name, jack_client_name)
+        
+        self.status          = "switch"
+        self.pending_command = COMMAND_OPEN
+        
+        server.sendClientStatusToGui(self)
+            
+        server.sendGui("/nsm/gui/client/switch", old_client_id, self.client_id)
+    
+    def sendGuiClientProperties(self):
+        ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
+        print(ad)
+            
+        server.sendGui(ad,
+                        self.client_id, 
+                        self.executable_path, 
+                        self.name, 
+                        self.prefix_mode, 
+                        self.project_path,
+                        self.label,
+                        self.icon,
+                        self.capabilities)
+        
+        self.sent_to_gui = True
+    
+    def serverAnnounce(self, path, args, src_addr, is_new):
+        client_name, capabilities, executable_path, major, minor, pid = args
+        
+        if self.pending_command in (COMMAND_QUIT, COMMAND_KILL):
+            return
+        
+        if major > NSM_API_VERSION_MAJOR:
+            MESSAGE("Client is using incompatible and more recent API version %i.%i" % (major, minor))
+            server.send(src_addr, "/error", path, ERR_INCOMPATIBLE_API, "Server is using an incompatible API version." )
+            return
+        
+        self.pid          = pid
+        self.capabilities = capabilities
+        self.addr         = src_addr
+        self.name         = client_name
+        self.active       = True
+        
+        if self.executable_path in known_as_non_active:
+            known_as_non_active.remove(self.executable_path)
+        
+        MESSAGE("Process has pid: %i" % pid )
+        MESSAGE("The client \"%s\" at \"%s\" informs us it's ready to receive commands." % (self.name, self.addr.url) )
+        server.send(src_addr, "/reply", path, "Well hello, stranger. Welcome to the party." if is_new else "Howdy, what took you so long?", APP_TITLE, ":server-control:broadcast:optional-gui:" )
+        
+        self.status = "open"
+        
+        #server.sendGui("/nsm/gui/client/new", self.client_id, self.name)
+        self.sendGuiClientProperties()
+        server.sendGui("/nsm/gui/client/status", self.client_id, self.status)
+        
+        if self.isCapableOf(":optional-gui:"):
+            server.sendGui("/nsm/gui/client/has_optional_gui", self.client_id)
+                
+        jack_client_name      = self.getJackClientName()
+        client_project_path = self.getProjectPath()
+        server.send(src_addr, "/nsm/client/open", client_project_path,  session.name, jack_client_name)
+        self.pending_command = COMMAND_OPEN
+       
+class Session(QObject):
+    def __init__(self):
+        QObject.__init__(self)
+        self.clients = []
+        self.new_clients = []
+        self.removed_clients = []
+        self.name    = ""
+        self.path    = ""
+        self.root    = ""
+        
+        self.forbidden_ids_list = []
+    
+    #############
+    
+    def setRoot(self, session_root):
+        if self.name:
+            return
+        self.root = session_root
+    
+    def setName(self, session_name):
+        self.name = session_name
+        self.path = self.root + '/' + self.name
+        if not self.name:
+            self.path = ""
+    
+    def setPath(self, session_path):
+        self.path = session_path
+        self.name = session_path.rpartition('/')[2]
+        if not self.path:
+            self.name = ""
+        
+    def newClient(self, executable, client_id=None):
+        client = Client()
+        client.executable_path = executable
+        client.name = os.path.basename(executable)
+        client.client_id = client_id if client_id else self.generateClientId(executable)
+        self.clients.append(client)
+        return client
+    
+    def removeClient(self, client):
+        if not client in self.clients:
+            return
+        
+        self.removed_clients.append(client)
+        self.clients.remove(client)
+        
+    def tellAllClientsSessionIsLoaded(self):
+        MESSAGE("Telling all clients that session is loaded...")
+        for client in self.clients:
+            client.tellClientSessionIsLoaded()
+    
+    def purgeInactiveClients(self):
+        remove_item_list = []
+        for i in range(len(self.clients)):
+            if not self.clients[i].active:
+                server.sendGui("/nsm/gui/client/status", session.clients[i].client_id, "removed")
+                remove_item_list.append(i)
+        
+        remove_item_list.reverse()
+        
+        for i in remove_item_list:
+            self.clients.__delitem__(i)
+            
+        del remove_item_list
+            
+    def clientsHaveErrors(self):
+        for client in self.clients:
+            if client.active and client.hasError():
+                return True
+        return False
+    
+    def updateForbiddenIdsList(self):
+        if not self.path:
+            return
+        
+        for file in os.listdir(self.path):
+            if os.path.isdir(file) and file.contains('.'):
+                client_id = file.rpartition('.')[2]
+                if not client_id in self.forbidden_ids_list:
+                    self.forbidden_ids_list.append(client_id)
+            elif os.path.isfile(file) and '.' in file:
+                for string in file.split('.')[1:]:
+                    if not string in self.forbidden_ids_list:
+                        self.forbidden_ids_list.append(string)
+                        
+        for client in self.clients:
+            if not client.client_id in self.forbidden_ids_list:
+                self.forbidden_ids_list.append(client.client_id)
+    
+    def generateClientIdAsNsm(self):
+        client_id = 'n'
+        for l in range(4):
+            client_id += random.choice(string.ascii_uppercase)
+            
+        return client_id
+    
+    def generateClientId(self, wanted_id=None):
+        self.updateForbiddenIdsList()
+        
+        if wanted_id:
+            for to_rm in ('ray-', 'non-', 'carla-'):
+                if wanted_id.startswith(to_rm):
+                    wanted_id = wanted_id.replace(to_rm, '', 1)
+                    break
+            
+            wanted_id = wanted_id.replace('jack', '')
+            
+            #reduce string if contains '-'
+            if '-' in wanted_id:
+                new_wanted_id = ''
+                seplist = wanted_id.split('-')
+                for sep in seplist[:-1]:
+                    if len(sep) > 0:
+                        new_wanted_id += (sep[0] + '_')
+                new_wanted_id += seplist[-1]
+                wanted_id = new_wanted_id
+            
+            
+            #prevent non alpha numeric characters
+            new_wanted_id = ''
+            last_is_ = False
+            for char in wanted_id:
+                if char.isalnum():
+                    new_wanted_id += char
+                else:
+                    if not last_is_:
+                        new_wanted_id += '_'
+                        last_is_ = True
+            
+            wanted_id = new_wanted_id
+            
+            while wanted_id and wanted_id.startswith('_'):
+                wanted_id = wanted_id[1:]
+            
+            while wanted_id and wanted_id.endswith('_'):
+                wanted_id = wanted_id[:-1]
+            
+            if not wanted_id:
+                wanted_id = self.generateClientIdAsNsm()
+                while wanted_id in self.forbidden_ids_list:
+                    wanted_id = self.generateClientIdAsNsm()
+            
+            #limit string to 10 characters
+            if len(wanted_id) >= 10:
+                wanted_id = wanted_id[:9]
+            
+            if not wanted_id in self.forbidden_ids_list:
+                self.forbidden_ids_list.append(wanted_id)
+                return wanted_id
+            
+            n=2
+            while "%s_%i" % (wanted_id, n) in self.forbidden_ids_list:
+                n+=1
+            
+            self.forbidden_ids_list.append(wanted_id)
+            return "%s_%i" % (wanted_id, n)
+                
+                
+        client_id = 'n'
+        for l in range(4):
+            client_id += random.choice(string.ascii_uppercase)
+        
+        while client_id in self.forbidden_ids_list:
+            client_id = 'n'
+            for l in range(4):
+                client_id += random.choice(string.ascii_uppercase)
+        
+        self.forbidden_ids_list.append(client_id)
+        return client_id
+
+    
+    def getListOfExistingClientIds(self):
+        if not self.path:
+            return []
+        
+        client_ids_list = []
+        
+        for file in os.listdir(self.path):
+            if os.path.isdir(file) and file.contains('.'):
+                client_ids_list.append(file.rpartition('.')[2])
+            elif os.path.isfile(file) and file.contains('.'):
+                file_without_extension = file.rpartition('.')[0]
+                
+    
+    def addClient(self, client):
+        self.clients.append(client)
+        client.sendGuiClientProperties()
+        
+    def reOrderClients(self, client_ids_list):
+        client_newlist  = []
+        
+        for client_id in client_ids_list:
+            for client in self.clients:
+                if client.client_id == client_id:
+                    client_newlist.append(client)
+                    break
+        
+        if len(client_ids_list) != len(self.clients):
+            return
+        
+        self.clients.clear()
+        for client in client_newlist:
+            self.clients.append(client)
+
+class OperatingSession(Session):
+    #Session is separated in 3 parts only for faster search and modifications.
+    def __init__(self):
+        Session.__init__(self)
+        self.wait_for = WAIT_FOR_NONE
+        
+        self.timer = QTimer()
+        self.expected_clients = []
+        
+        self.timer_launch = QTimer()
+        self.timer_launch.setInterval(100)
+        self.timer_launch.timeout.connect(self.timerLaunchTimeOut)
+        self.clients_to_launch = []
+        
+        self.timer_stop = QTimer()
+        self.timer_stop.setInterval(100)
+        self.timer_stop.timeout.connect(self.timerStopTimeOut)
+        self.clients_to_stop = []
+        
+        self.err_loading = ERR_OK
+        self.err_saving  = ERR_OK
+        
+        self.osc_path     = None
+        self.osc_args     = None
+        self.osc_src_addr = None
+        
+        self.process_order = []
+        
+        self.terminated_yet = False
+    
+    def rememberOscArgs(self, path, args, src_addr):
+        self.osc_path     = path
+        self.osc_args     = args
+        self.osc_src_addr = src_addr
+    
+    def waitAndGoTo(self, duration, follow, wait_for, single_shot=True):
+        self.timer.stop()
+        
+        #we need to delete timer to change the timeout connect
+        del self.timer
+        self.timer = QTimer()
+        
+        if self.expected_clients:
+            if wait_for == WAIT_FOR_ANNOUNCE:
+                GUIMSG(_translate('GUIMSG', 'waiting for clients announces...'))
+            elif wait_for == WAIT_FOR_STOP:
+                GUIMSG(_translate('GUIMSG', 'waiting for clients to die...'))
+            
+            self.wait_for = wait_for
+            self.timer.setSingleShot(True)
+            self.timer.timeout.connect(follow)
+            self.timer.start(duration)
+        else:
+            follow()
+    
+    def endTimerIfLastExpected(self, client):
+        if client in self.expected_clients:
+            self.expected_clients.remove(client)
+        if not self.expected_clients:
+            self.timer.setSingleShot(True)
+            self.timer.stop()
+            self.timer.start(0)
+    
+    def cleanExpected(self):
+        if self.expected_clients:
+            client_names = ""
+            for client in self.expected_clients:
+                client_names += client.name + ', ' 
+            
+            if self.wait_for == WAIT_FOR_ANNOUNCE:
+                GUIMSG(_translate('GUIMSG', "%sdidn't announce") % client_names)
+            elif self.wait_for == WAIT_FOR_STOP:
+                GUIMSG(_translate('GUIMSG', "%sstill alive !") % client_names)
+                
+            self.expected_clients.clear()
+        else:
+            if self.wait_for == WAIT_FOR_ANNOUNCE:
+                GUIMSG(_translate('GUIMSG', 'All expected clients are announced'))
+            elif self.wait_for == WAIT_FOR_STOP:
+                GUIMSG(_translate('GUIMSG', 'All expected clients are died'))
+        self.wait_for = WAIT_FOR_NONE
+    
+    def nextFunction(self):
+        if len(self.process_order) > 0:
+            next_function = self.process_order[0]
+            self.process_order.__delitem__(0)
+            next_function()
+    
+    def timerLaunchTimeOut(self):
+        if self.clients_to_launch:
+            waitForJack()
+            self.clients_to_launch[0].start()
+            self.clients_to_launch.__delitem__(0)
+            
+        if not self.clients_to_launch:
+            self.timer_launch.stop()
+            
+    def timerStopTimeOut(self):
+        if self.clients_to_stop:
+            waitForJack()
+            self.clients_to_stop[0].stop()
+            self.clients_to_stop.__delitem__(0)
+            
+        if not self.clients_to_stop:
+            self.timer_stop.stop()
+            
+    ############################## COMPLEX OPERATIONS ###################
+    #all functions are splitted when we need to wait clients for something (announce, reply, quit)
+    #for example, at the end of save(), timer is launched, 
+    #then, when timer is timeout or when all client replied, save_step1 is launch
+        
+    def save(self):
+        if not self.path:
+            self.nextFunction()
+            return
+        
+        server.setServerStatus('save')
+        
+        for client in self.clients:
+            if client.active:
+                self.expected_clients.append(client)
+                client.save()
+                
+        self.waitAndGoTo(10000, self.save_step1, WAIT_FOR_REPLY)
+            
+    def save_step1(self):
+        self.cleanExpected()
+        
+        if not self.path:
+            self.nextFunction()
+            return
+        
+        session_file = self.path + '/raysession.xml'
+        if os.path.isfile(session_file) and not os.access(session_file, os.W_OK):
+            self.err_saving = ERR_CREATE_FAILED
+            MESSAGE("Can't save session, session file is unwriteable !")
+            GUIMSG(_translate('GUIMSG', "Can't save session, session file is unwriteable !"))
+            self.nextFunction()
+            return
+        
+        self.err_saving = ERR_OK
+        
+        contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"
+                   "<!DOCTYPE RAYSESSION>\n"
+                   "<RAYSESSION VERSION='%s'>\n" % VERSION)
+        
+        contents += "  <Clients>\n"
+        for client in self.clients:
+            contents += "    <client id=\"%s\" executable=\"%s\" name=\"%s\" prefix_mode=\"%i\" launched=\"%i\" " % (client.client_id, client.executable_path, client.name, client.prefix_mode, int(bool(client.isRunning())) )
+            if client.project_path:
+                contents += "project_path=\"%s\" " % client.project_path
+            if client.icon:
+                contents += "icon=\"%s\" "  % client.icon
+            if client.label:
+                contents += "label=\"%s\" " % client.label
+            
+            #remove last space
+            contents = contents[:-1]
+            contents += "/>\n"
+            
+        contents += "  </Clients>\n"
+        contents += "  <RemovedClients>\n"
+        for ex_client in self.removed_clients:
+            contents +="     <client id=\"%s\" executable=\"%s\" name=\"%s\" prefix_mode=\"%i\" " % (ex_client.client_id, ex_client.executable_path, ex_client.name, ex_client.prefix_mode )
+            if ex_client.project_path:
+                contents += "project_path=\"%s\" " % ex_client.project_path
+            if ex_client.icon:
+                contents += "icon=\"%s\" "  % ex_client.icon
+            if ex_client.label:
+                contents += "label=\"%s\" " % ex_client.label
+                
+            #remove last space
+            contents = contents[:-1]
+            contents += "/>\n"
+            
+        contents += "  </RemovedClients>\n"
+        contents += "</RAYSESSION>"
+        
+        file = open(session_file, 'w')
+        file.write(contents)
+        file.close()
+        
+        GUIMSG(_translate('GUIMSG', "Session saved."))
+        MESSAGE("Session saved.")
+        self.nextFunction()
+    
+    def saveDone(self):
+        if not self.err_loading:
+            MESSAGE("Done.")
+            server.send(self.osc_src_addr, "/reply", self.osc_path, "Saved." )
+        setPendingOperation(COMMAND_NONE)
+        server.setServerStatus('ready')
+    
+    def close(self):
+        GUIMSG(_translate('GUIMSG', "Commanding attached clients to quit."))
+        
+        self.expected_clients.clear()
+        self.removed_clients.clear()
+        
+        if not  self.path:
+            self.nextFunction()
+            return
+        
+        server.setServerStatus('close')
+        
+        for client in self.clients:
+            if client.isRunning():
+                self.expected_clients.append(client)
+                client.quit()
+        
+        self.waitAndGoTo(10000, self.close_step1, WAIT_FOR_STOP)
+    
+    def close_step1(self):
+        for client in self.expected_clients:
+            client.kill()
+            
+        self.waitAndGoTo(1000, self.close_step2, WAIT_FOR_STOP)
+    
+    def close_step2(self):
+        self.cleanExpected()
+        
+        self.purgeInactiveClients()
+        self.clients.clear()
+        
+        if self.path:
+            lock_file =  self.path + '/.lock'
+            if os.path.isfile(lock_file):
+                os.remove(lock_file)
+                
+            self.setName('')
+            
+        server.sendGui("/nsm/gui/session/name", "", "" )
+        self.nextFunction()
+    
+    def closeDone(self):
+        server.send(self.osc_src_addr, "/reply", self.osc_path, "Closed.")
+        MESSAGE("Done")
+        setPendingOperation(COMMAND_NONE)
+        server.setServerStatus('off')
+    
+    def abortDone(self):
+        server.send(self.osc_src_addr, "/reply", self.osc_path, "Aborted.")
+        MESSAGE("Done")
+        setPendingOperation(COMMAND_NONE)
+        server.setServerStatus('off')
+        
+    def new(self):
+        GUIMSG(_translate('GUIMSG', "Creating new session \"%s\"") % self.osc_args[0])
+        spath = self.root + '/' + self.osc_args[0]
+        
+        try:
+            os.makedirs(spath)
+        except:
+            server.send(self.osc_src_addr, "/error", self.osc_path, ERR_CREATE_FAILED, "Could not create the session directory" )
+            setPendingOperation(COMMAND_NONE)
+            return
+        
+        server.setServerStatus('new')
+        self.setPath(spath)
+        server.send(self.osc_src_addr, "/reply", self.osc_path, "Created." )
+        server.sendGui("/nsm/gui/session/session", self.osc_args[0])
+        server.sendGui("/nsm/gui/session/name", self.osc_args[0], self.osc_args[0])
+        
+        setPendingOperation(COMMAND_NONE)
+        server.send(self.osc_src_addr, "/reply", self.osc_path, "Session created")
+        self.nextFunction()
+    
+    def newDone(self):
+        GUIMSG(_translate('GUIMSG', 'Session is ready'))
+        setPendingOperation(COMMAND_NONE)
+        server.setServerStatus('ready')
+    
+    def duplicate(self):
+        if self.clientsHaveErrors():
+            server.send(src_addr, "/error", path, ERR_GENERAL_ERROR, "Some clients could not save" )
+            setPendingOperation(COMMAND_NONE)
+            return
+        
+        server.setServerStatus('duplicate')
+        new_session_name = self.osc_args[0]
+        spath = self.root + '/' + new_session_name
+        subprocess.run(['cp', '-R',  self.path, spath])
+        
+        for client in self.clients + self.removed_clients:
+            if client.prefix_mode != PREFIX_MODE_SESSION_NAME:
+                continue
+            
+            project_path = "%s/%s.%s" % (spath, self.name, client.client_id)
+            if os.path.exists(project_path):
+                if os.path.isdir(project_path):
+                    #only for ardour
+                    ardour_file  = "%s/%s.ardour"     % (project_path, self.name)
+                    ardour_bak   = "%s/%s.ardour.bak" % (project_path, self.name)
+                    ardour_audio = "%s/interchange/%s.%s" % (project_path, self.name, client.client_id)
+                    
+                    if os.path.isfile(ardour_file):
+                        os.rename(ardour_file, "%s/%s.ardour" % (project_path, new_session_name))
+                    if os.path.isfile(ardour_bak):
+                        os.rename(ardour_bak, "%s/%s.ardour.bak" % (project_path, new_session_name))
+                    if os.path.isdir(ardour_audio):
+                        os.rename(ardour_audio, "%s/interchange/%s.%s" % (project_path, new_session_name, client.client_id))
+                        
+                os.rename(project_path, "%s/%s.%s" % (spath, new_session_name, client.client_id))
+            else:
+                for file in os.listdir(spath):
+                    if file.startswith("%s.%s." %(self.name, client.client_id)):
+                        endfile = file.replace("%s.%s." %(self.name, client.client_id), '', 1)
+                        os.rename('%s/%s' %(spath, file), "%s/%s.%s.%s" % (spath, new_session_name, client.client_id, endfile))
+                
+        
+        self.nextFunction() #here "load"
+        
+    def load(self):
+        #terminate or switch clients
+        spath = self.root + '/' + self.osc_args[0]
+            
+        MESSAGE("Attempting to open %s" % spath)
+        
+        session_ray_file = spath + '/raysession.xml'
+        session_nsm_file = spath + '/session.nsm'
+        session_lock = spath + '/.lock'
+        
+        self.err_loading = ERR_OK
+        
+        if os.path.isfile(session_lock):
+            WARNING("Session is locked by another process")
+            self.err_loading = ERR_SESSION_LOCKED
+            self.loadError()
+            return
+        
+        is_ray_file = True
+        
+        try:
+            ray_file = open(session_ray_file, 'r')
+        except:
+            is_ray_file = False
+            
+        if not is_ray_file:
+            try:
+                file = open(session_nsm_file, 'r')
+                server.sendGui('/ray/opening_nsm_session')
+            except:
+                self.err_loading = ERR_CREATE_FAILED
+                self.loadError()
+                return
+        
+        GUIMSG(_translate('GUIMSG', "Opening session %s") % self.osc_args[0])
+        
+        self.removed_clients.clear()
+        
+        self.new_clients = []
+        new_client_executables = []
+        
+        session.setPath(spath)
+        
+        if is_ray_file:
+            xml = QDomDocument()
+            xml.setContent(ray_file.read())
+
+            content = xml.documentElement()
+            if content.tagName() != "RAYSESSION":
+                return
+            
+            node = content.firstChild()
+            while not node.isNull():
+                tag_name = node.toElement().tagName()
+                if tag_name in ('Clients', 'RemovedClients'):
+                    client_xml = node.toElement().firstChild()
+                    while not client_xml.isNull():
+                        client = Client()
+                        cx = client_xml.toElement()
+                        
+                        client.client_id       = str(cx.attribute('id'))
+                        client.name            = str(cx.attribute('name'))
+                        client.executable_path = str(cx.attribute('executable'))
+                        client.label           = str(cx.attribute('label'))
+                        client.icon            = str(cx.attribute('icon'))
+                        client.project_path    = str(cx.attribute('project_path'))
+                        client.auto_start      = bool(cx.attribute('launched') != '0')
+                        
+                        prefix_mode = str(cx.attribute('prefix_mode'))
+                        if prefix_mode.isdigit() and 0 <= int(prefix_mode) <= 2:
+                            client.prefix_mode = int(prefix_mode)
+                        
+                        if tag_name == 'Clients':
+                            if client.auto_start:
+                                new_client_executables.append(client.executable_path)
+                            
+                            self.new_clients.append(client)
+                        
+                        client_xml = client_xml.nextSibling()
+                        
+                node = node.nextSibling()
+            
+            ray_file.close()
+        else:
+            for line in file.read().split('\n'):
+                elements = line.split(':')
+                if len(elements) >= 3:
+                    client = Client()
+                    client.name            = elements[0]
+                    client.executable_path = elements[1]
+                    client.client_id       = elements[2]
+                    client.prefix_mode     = PREFIX_MODE_CLIENT_NAME
+                    self.new_clients.append(client)
+                    new_client_executables.append(client.executable_path)
+                    
+            file.close()
+        
+        MESSAGE("Commanding unneeded and dumb clients to quit")
+        
+        for client in session.clients:
+            if client.active and client.isCapableOf(':switch:') and client.executable_path in new_client_executables:
+                new_client_executables.remove(client.executable_path)
+            else:
+                #client is not capable of switch, or is not wanted in the new session
+                if client.isRunning():
+                    self.expected_clients.append(client)
+                client.quit()
+        
+        if self.expected_clients:
+            server.setServerStatus('clear')
+        
+        self.waitAndGoTo(20000, self.load_step1, WAIT_FOR_STOP)
+    
+    def load_step1(self):
+        self.cleanExpected()
+        self.purgeInactiveClients()
+        
+        for client in session.clients:
+            client.pre_existing = True
+            
+        MESSAGE("Commanding smart clients to switch")
+        
+        has_switch = False
+        
+        new_client_id_list = []
+        
+        for new_client in self.new_clients:
+            #/* in a duplicated session, clients will have the same
+            #* IDs, so be sure to pick the right one to avoid race
+            #* conditions in JACK name registration. */
+            client = getClientByExecutableAndId(new_client.executable_path, new_client.client_id)
+            if not client:
+                client = getClientByExecutable(new_client.executable_path)
+            
+            if client and client.active and client.pre_existing and not client.isReplyPending():
+                #since we already shutdown clients not capable of 'switch', we can assume that these are.
+                client.switch(new_client)
+                has_switch = True
+            else:
+                #* sleep a little bit because liblo derives its sequence
+                #* of port numbers from the system time (second
+                #* resolution) and if too many clients start at once they
+                #* won't be able to find a free port. */
+                self.addClient(new_client)
+                if new_client.auto_start:
+                    self.clients_to_launch.append(new_client)
+                    if not new_client.executable_path in known_as_non_active:
+                        self.expected_clients.append(new_client)
+            
+            new_client_id_list.append(new_client.client_id)
+            
+        server.sendGui("/nsm/gui/session/name",  session.name, session.name)
+        
+        if has_switch:
+            server.setServerStatus('switch')
+        else:
+            server.setServerStatus('launch') 
+        
+        
+        #* this part is a little tricky... the clients need some time to
+        #* send their 'announce' messages before we can send them 'open'
+        #* and know that a reply is pending and we should continue waiting
+        #* until they finish.
+
+        #* dumb clients will never send an 'announce message', so we need
+        #* to give up waiting on them fairly soon. */
+        
+        self.timer_launch.start()
+        #wait_time_announce = 5000 + (len(self.expected_clients)*100)
+        
+        self.reOrderClients(new_client_id_list)
+        server.sendGui('/ray/gui/clients_reordered', *new_client_id_list)
+        
+        self.waitAndGoTo(5000, self.load_step2, WAIT_FOR_ANNOUNCE)
+    
+    def load_step2(self):
+        for client in self.expected_clients:
+            known_as_non_active.append(client.executable_path)
+        settings.setValue('deamon/non_active_list', known_as_non_active)
+        settings.sync()
+        
+        self.cleanExpected()
+        
+        server.setServerStatus('open')
+        
+        for client in self.clients:
+            if client.active and client.isReplyPending():
+                self.expected_clients.append(client)
+        self.waitAndGoTo(10000, self.load_step3, WAIT_FOR_REPLY)
+        
+    def load_step3(self):
+        self.cleanExpected()
+        self.tellAllClientsSessionIsLoaded()
+        MESSAGE('Loaded')
+        
+        server.sendGui("/nsm/gui/session/name",  session.name, session.name)
+        server.send(self.osc_src_addr, "/reply", self.osc_path, "Loaded.")
+        
+        self.nextFunction()
+    
+    def loadDone(self):
+        MESSAGE("Done")
+        setPendingOperation(COMMAND_NONE)
+        server.setServerStatus('ready')
+    
+    def loadError(self):
+        MESSAGE("Failed")
+        m = "Unknown error"
+        if self.err_loading == ERR_CREATE_FAILED:
+            m = "Could not create session file!"
+        elif self.err_loading == ERR_SESSION_LOCKED:
+            m = "Session is locked by another process!"
+        elif self.err_loading == ERR_NO_SUCH_FILE:
+            m = "The named session does not exist."
+        
+        server.send(self.osc_src_addr, "/error", self.osc_path, self.err_loading, m)
+        setPendingOperation(COMMAND_NONE)
+        if self.name:
+            server.setServerStatus('ready')
+        else:
+            server.setServerStatus('off')
+            
+        self.process_order.clear()
+    
+    def duplicateDone(self):
+        MESSAGE("Done")
+        server.send(self.osc_src_addr, "/reply", self.osc_path, "Duplicated.")
+        setPendingOperation(COMMAND_NONE)
+        server.setServerStatus('ready')
+        
+    def exitNow(self):
+        MESSAGE("Bye Bye...")
+        setPendingOperation(COMMAND_NONE)
+        server.setServerStatus('off')
+        app.quit()
+        
+class SignaledSession(OperatingSession):
+    def __init__(self):
+        OperatingSession.__init__(self)
+        signaler.server_new.connect(self.serverNewSession)
+        signaler.server_open.connect(self.serverOpenSession)
+        signaler.server_save.connect(self.serverSaveSession)
+        signaler.server_duplicate.connect(self.serverDuplicateSession)
+        signaler.server_close.connect(self.serverCloseSession)
+        signaler.server_abort.connect(self.serverAbortSession)
+        signaler.server_list_sessions.connect(self.serverListSessions)
+        
+        signaler.server_startallclients.connect(self.serverStartAllClients)
+        signaler.server_stopallclients.connect(self.serverStopAllClients)
+        
+        signaler.server_reorder_clients.connect(self.serverReorderClients)
+        
+        signaler.server_add.connect(self.serverAdd)
+        
+        signaler.server_announce.connect(self.serverAnnounce)
+        signaler.server_reply.connect(self.serverReply)
+        
+        signaler.gui_client_stop.connect(self.guiClientStop)
+        signaler.gui_client_remove.connect(self.guiClientRemove)
+        signaler.gui_client_resume.connect(self.guiClientResume)
+        signaler.gui_client_save.connect(self.guiClientSave)
+        signaler.gui_client_label.connect(self.guiClientLabel)
+        signaler.gui_client_icon.connect(self.guiClientIcon)
+        
+    ############################# FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###############################
+    
+    def serverNewSession(self, path, args, src_addr):
+        if self.process_order:
+            return
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [self.save, self.close, self.new, self.save, self.newDone]
+        self.nextFunction()
+    
+    def serverOpenSession(self, path, args, src_addr):
+        if self.process_order:
+            return
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [self.save, self.load, self.loadDone]
+        self.nextFunction()
+    
+    def serverSaveSession(self, path, args, src_addr):
+        if self.process_order:
+            return
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [self.save, self.saveDone]
+        self.nextFunction()
+        
+    def serverCloseSession(self, path, args, src_addr):
+        if self.process_order:
+            return
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [self.save, self.close, self.closeDone]
+        self.nextFunction()
+    
+    def serverDuplicateSession(self, path, args, src_addr):
+        if self.process_order:
+            return
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [self.save, self.duplicate, self.load, self.duplicateDone]
+        self.nextFunction()
+    
+    def serverAbortSession(self, path, args, src_addr):
+        self.wait_for = WAIT_FOR_NONE
+        self.timer.stop()
+        
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [self.close, self.abortDone]
+        self.nextFunction()
+    
+    def serverListSessions(self, path, args, src_addr):
+        if not self.root:
+            return
+        
+        for fds in os.walk(self.root):
+            folder, folders, files = fds
+            if folder == session.root:
+                continue
+            
+            already_send = False
+            
+            for file in files:
+                if file in ('raysession.xml', 'session.nsm'):
+                    if not already_send:
+                        basefolder = folder.replace(session.root + '/', '')
+                        server.send(src_addr, "/reply", "/nsm/server/list", basefolder)
+                        already_send = True
+                    
+        server.send(src_addr, path, ERR_OK, "Done.")
+    
+    def serverStartAllClients(self):
+        MESSAGE('Starting All Clients')
+        for client in self.clients:
+            if not client.isRunning():
+                self.clients_to_launch.append(client)
+                
+        self.timer_launch.start()
+        
+    def serverStopAllClients(self):
+        MESSAGE('Stopping All Clients')
+        for client in session.clients:
+            client.stop()
+        
+    def serverReorderClients(self, path, args):
+        client_ids_list = args
+        
+        self.reOrderClients(client_ids_list)
+        
+    
+    def serverAdd(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
+        executable = args[0]
+        
+        client = Client()
+        client.executable_path = executable
+        client.name            = os.path.basename(executable)
+        client.client_id       = self.generateClientId(executable)
+        
+        self.addClient(client)
+        client.start()
+        
+    def serverAnnounce(self, path, args, src_addr):
+        client_name, capabilities, executable_path, major, minor, pid = args
+        
+        if self.wait_for == WAIT_FOR_STOP:
+            return
+        
+        for client in self.clients:
+            if (client.executable_path == executable_path
+                and not client.active
+                and client.pending_command == COMMAND_START):
+                    client.serverAnnounce(path, args, src_addr, False)
+                    break
+        else:
+            pass
+            #Ray Session won't add clients that aren't launched by Ray Session itself. 
+            #client = self.newClient(executable_path)
+            #client.serverAnnounce(path, args, src_addr, True)
+        
+        if self.wait_for == WAIT_FOR_ANNOUNCE:
+            self.endTimerIfLastExpected(client)
+    
+    def serverReply(self, path, args, src_addr):
+        if self.wait_for == WAIT_FOR_STOP:
+            return
+        
+        message = args[1]
+        client = getClientByAddress(src_addr)
+        if client:
+            client.setReply(ERR_OK, message)
+            #MESSAGE( "Client \"%s\" replied with: %s in %fms" % ( client.name, message, client.milliseconds_since_last_command() ))
+            client.pending_command = COMMAND_NONE
+            client.status = "ready"
+            server.sendClientStatusToGui(client)
+            
+            if self.wait_for == WAIT_FOR_REPLY:
+                self.endTimerIfLastExpected(client)
+        else:
+            MESSAGE("Reply from unknown client")
+            
+    def guiClientStop(self, path, args):
+        for client in self.clients:
+            if client.client_id == args[0]:
+                if client.stopped_since_long:
+                    client.kill()
+                else:
+                    client.stop()
+                server.sendGui("/reply", "Client stopped." )
+                break
+        else:
+            server.sendGui("/error", -10, "No such client." )
+    
+    def guiClientRemove(self, path, args):
+        for client in self.clients:
+            if client.client_id == args[0]:
+                if not client.isRunning():
+                    server.sendGui("/nsm/gui/client/status", client.client_id, "removed")
+                    self.removeClient(client)
+                    server.sendGui("/reply", "Client removed.")
+                break
+        else:
+            server.sendGui("/error", -10, "No such client.")
+    
+    def guiClientResume(self, path, args):
+        for client in self.clients:
+            if client.client_id  == args[0] and not client.isRunning():
+                client.start()
+                break
+    
+    def guiClientSave(self, path, args):
+        for client in self.clients:
+            if client.client_id == args[0] and client.active:
+                client.save()
+                break
+    
+    def guiClientLabel(self, path, args):
+        if len(args) < 2:
+            return
+        
+        for client in self.clients:
+            if client.client_id == args[0]:
+                client.setLabel(args[1])
+                break
+            
+    def guiClientIcon(self, path, args):
+        if len(args) < 2:
+            return
+        
+        for client in self.clients:
+            if client.client_id == args[0]:
+                client.setIcon(args[1])
+                break
+    
+    def terminate(self):
+        if self.terminated_yet:
+            return
+        
+        self.terminated_yet = True
+        self.process_order = [self.close, self.exitNow]
+        self.nextFunction()
+        
+def getClientById(client_id):
+    for client in session.clients:
+        if client.client_id == client_id:
+            return client
+
+def getClientByExecutableAndId(executable, client_id):
+    for client in session.clients:
+        if client.client_id == client_id and client.executable_path == executable:
+            return client
+        
+def getClientByExecutable(executable):
+    for client in session.clients:
+        if client.executable_path == executable:
+            return client
+        
+def getClientByNameAndId(name, client_id):
+    for client in session.clients:
+        if client.client_id == client_id and client.name == name:
+            return client
+        
+def getClientByName(client_name):
+    for client in session.clients:
+        if client.name == client_name:
+            return client
+
+def getClientByAddress(addr):
+    if not addr:
+        return None
+    
+    for client in session.clients:
+        if client.addr and client.addr.url == addr.url:
+            return client
+
+def getClientByPid(pid):
+    for client in session.clients:
+        if client.pid == pid:
+            return client
+    
+def pathIsValid(path):
+    return not bool('../' in path)
+    
+def generateClientId():
+    client_id = 'n'
+    for l in range(4):
+        client_id += random.choice(string.ascii_uppercase)
+    
+    return client_id
+
+##########################
+
+class Signaler(QObject):
+    server_announce  = pyqtSignal(str, list, object)
+    server_reply     = pyqtSignal(str, list, object)
+    server_duplicate = pyqtSignal(str, list, object)
+    server_abort     = pyqtSignal(str, list, object)
+    server_close     = pyqtSignal(str, list, object)
+    server_new       = pyqtSignal(str, list, object)
+    server_open      = pyqtSignal(str, list, object)
+    server_save      = pyqtSignal(str, list, object)
+    server_list_sessions   = pyqtSignal(str, list, object)
+    server_add = pyqtSignal(str, list, object)
+    server_startallclients = pyqtSignal()
+    server_stopallclients  = pyqtSignal()
+    server_reorder_clients = pyqtSignal(str, list)
+    gui_client_stop   = pyqtSignal(str, list)
+    gui_client_remove = pyqtSignal(str, list)
+    gui_client_resume = pyqtSignal(str, list)
+    gui_client_save   = pyqtSignal(str, list)
+    gui_client_label  = pyqtSignal(str, str)
+    gui_client_icon   = pyqtSignal(str, str)
+    
+
+class OscServerThread(ServerThread):
+    def __init__(self, osc_num=0):
+        ServerThread.__init__(self, osc_num)
+        self.gui_list = []
+        self.server_status = 'off'
+
+    @make_method('/nsm/server/announce', None)
+    def nsmServerAnnounce(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        if len(args) != 6:
+            return
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Sorry, but there's no session open for this application to join." )
+            return
+        
+        signaler.server_announce.emit(path, args, src_addr)
+        
+    @make_method('/reply', None)
+    def reply(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        signaler.server_reply.emit(path, args, src_addr)
+            
+    @make_method('/error', None)
+    def error(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        client = getClientByAddress(src_addr)
+        if not client:
+            WARNING("Error from unknown client")
+            return
+        
+        err_code = args[1]
+        message  = args[2]
+        client.setReply(err_code, message)
+        
+        MESSAGE( "Client \"%s\" replied with error: %s (%i)" % ( client.name, message, err_code ))
+        client.pending_command = COMMAND_NONE
+        client.status          = "error"
+        
+        self.sendClientStatusToGui(client) 
+
+    @make_method('/nsm/client/progress', None)
+    def nsmClientProgress(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        client = getClientByAddress(src_addr)
+        if client:
+            client.progress = args[0]
+            
+            self.sendGui("/nsm/gui/client/progress", client.client_id, client.progress)
+    
+    @make_method('/nsm/client/is_dirty', None)
+    def nsmClientIs_dirty(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        MESSAGE("Client sends dirty")
+        
+        client = getClientByAddress(src_addr)
+        if not client:
+            return
+        
+        client.dirty = 1
+        
+        self.sendGui("/nsm/gui/client/dirty", client.client_id, client.dirty)
+
+    @make_method('/nsm/client/is_clean', None)
+    def nsmClientIs_clean(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        MESSAGE("Client sends clean")
+        
+        client = getClientByAddress(src_addr)
+        if not client:
+            return
+        
+        client.dirty = 0
+        
+        self.sendGui("/nsm/gui/client/dirty", client.client_id, client.dirty)
+    
+    @make_method('/nsm/client/message', None)
+    def nsmClientMessage(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        client = getClientByAddress(src_addr)
+        if not client:
+            return
+        
+        self.sendGui("/nsm/gui/client/message", client.client_id, args[0], args[1])
+
+    @make_method('/nsm/client/gui_is_hidden', None)
+    def nsmClientGui_is_hidden(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        MESSAGE("Client sends gui hidden")
+        
+        client = getClientByAddress(src_addr)
+        if not client:
+            return
+        
+        client.gui_visible = False
+        
+        self.sendGui("/nsm/gui/client/gui_visible", client.client_id, client.gui_visible)
+
+    @make_method('/nsm/client/gui_is_shown', None)
+    def nsmClientGui_is_shown(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        MESSAGE("Client sends gui shown")
+        
+        client = getClientByAddress(src_addr)
+        if not client:
+            return
+        
+        client.gui_visible = True
+        
+        self.sendGui("/nsm/gui/client/gui_visible", client.client_id, client.gui_visible)
+
+    @make_method('/nsm/client/label', None)
+    def nsmClientLabel(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        client = getClientByAddress(src_addr)
+        if not client:
+            return
+        
+        if not type(args[0]) is str:
+            return
+        
+        label = args[0]
+        signaler.gui_client_label.emit(client.client_id, label)
+        
+    @make_method('/ray/client/icon', None)
+    def rayClientIcon(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        client = getClientByAddress(src_addr)
+        if not client:
+            return
+        
+        if not type(args[0]) is str:
+            return
+        
+        icon = args[0]
+        
+        signaler.gui_client_icon.emit(client.client_id, icon)
+            
+    @make_method('/nsm/gui/gui_announce', None)
+    def nsmGuiGui_announce(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        self.announceGui(src_addr.url, True)
+
+    @make_method('/nsm/gui/client/stop', None)
+    def nsmGuiClientStop(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_stop.emit(path, args)
+                
+    @make_method('/nsm/gui/client/remove', None)
+    def nsmGuiClientRemove(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_remove.emit(path, args)
+        
+    @make_method('/nsm/gui/client/resume', None)
+    def nsmGuiClientResume(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_resume.emit(path, args)
+                
+    @make_method('/nsm/gui/client/save', None)
+    def nsmGuiClientSave(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_save.emit(path, args)
+
+    @make_method('/nsm/gui/client/show_optional_gui', None)
+    def nsmGuiClientShow_optional_gui(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        client = getClientById(args[0])
+        
+        if client and client.active:
+            print('oookkkad')
+            self.send(client.addr, "/nsm/client/show_optional_gui")
+
+    @make_method('/nsm/gui/client/hide_optional_gui', None)
+    def nsmGuiClientHide_optional_gui(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        client = getClientById(args[0])
+        
+        if client and client.active:
+            self.send(client.addr, "/nsm/client/hide_optional_gui")
+
+    @make_method('/osc/ping', None)
+    def oscPing(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        self.send(src_addr, "/reply", path)
+
+    @make_method('/nsm/server/broadcast', None)
+    def nsmServerBroadcast(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        #don't allow clients to broadcast NSM commands
+        if args[0].startswith('/nsm/'):
+            return
+        
+        for client in session.clients:
+            if not client.addr:
+                continue
+            
+            if client.addr.url != src_addr.url:
+                self.send(client.addr, Message(*args))
+                
+            for gui_addr in self.gui_list:
+                #also relay to attached GUI so that the broadcast can be
+                #propagated to another NSMD instance
+                if gui_addr.url != src_addr.url:
+                    self.send(gui_addr, Message(*args))
+        
+        
+    @make_method('/nsm/server/duplicate', None)
+    def nsmServerDuplicate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if pending_operation != COMMAND_NONE:
+            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
+            return
+        
+        setPendingOperation(COMMAND_DUPLICATE)
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to duplicate.")
+            setPendingOperation(COMMAND_NONE)
+            return
+        
+        if not pathIsValid(args[0]):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            setPendingOperation(COMMAND_NONE)
+            return
+        
+        signaler.server_duplicate.emit(path, args, src_addr)
+        
+    @make_method('/nsm/server/abort', None)
+    def nsmServerAbort(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        setPendingOperation(COMMAND_CLOSE)
+        
+        if not  session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to abort." )
+            setPendingOperation(COMMAND_NONE)
+            return
+        
+        signaler.server_abort.emit(path, args, src_addr)
+
+    @make_method('/nsm/server/list', None)
+    def nsmServerList(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        signaler.server_list_sessions.emit(path, args, src_addr)
+        
+    @make_method('/nsm/server/add', None)
+    def nsmServerAdd(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
+            return
+        
+        if '/' in args[0]:
+            self.send(src_addr, "/error", path, ERR_LAUNCH_FAILED, "Absolute paths are not permitted. Clients must be in $PATH" )
+        
+        signaler.server_add.emit(path, args, src_addr)
+
+    @make_method('/nsm/server/new', None)
+    def nsmServerNew(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if pending_operation != COMMAND_NONE:
+            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
+            return
+        
+        setPendingOperation(COMMAND_NEW)
+        
+        if not pathIsValid(args[0]):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            setPendingOperation(COMMAND_NONE)
+            return
+        
+        signaler.server_new.emit(path, args, src_addr)
+    
+    @make_method('/nsm/server/save', None)
+    def nsmServerSave(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if pending_operation != COMMAND_NONE:
+            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
+            return 0
+        
+        setPendingOperation(COMMAND_SAVE)
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to save.")
+            setPendingOperation(COMMAND_NONE)
+            return 0
+        
+        signaler.server_save.emit(path, args, src_addr)
+
+    @make_method('/nsm/server/open', None)
+    def nsmServerOpen(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if pending_operation != COMMAND_NONE:
+            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
+            return 0
+        
+        setPendingOperation(COMMAND_OPEN)
+        
+        signaler.server_open.emit(path, args, src_addr)
+                
+    @make_method('/nsm/server/close', None)
+    def nsmServerClose(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if pending_operation != COMMAND_NONE:
+            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
+            return 0
+        
+        setPendingOperation(COMMAND_CLOSE)
+        
+        if not  session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to close.")
+            setPendingOperation(COMMAND_NONE)
+            return 0
+        
+        signaler.server_close.emit(path, args, src_addr)
+        
+    @make_method('/nsm/server/quit', None)
+    def nsmServerQuit(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        sys.exit(0)
+    
+    ###Additional Ray features###
+    
+    @make_method('/ray/server/openfolder', None)
+    def rayServerOpenFolder(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        if  session.path:
+            subprocess.Popen(['xdg-open',  session.path])
+    
+    @make_method('/ray/server/startallclients', None)
+    def rayServerStartAllClients(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        signaler.server_startallclients.emit()
+    
+    @make_method('/ray/server/stopallclients', None)
+    def rayServerStopAllClients(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        signaler.server_stopallclients.emit()
+        
+    @make_method('/ray/server/reorder_clients', None)
+    def rayServerReorderClients(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        signaler.server_reorder_clients.emit(path, args)
+        
+    @make_method('/ray/server/change_root', None)
+    def rayServerChangeRoot(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if session.path:
+            self.send(src_addr, '/reply', "Can't change session_root while a session is running")
+            return
+        
+        session.setRoot(args[0])
+    
+    @make_method('/ray/server/list_path', None)
+    def rayServerListPath(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        exec_list = []
+        tmp_exec_list = []
+        n=0
+        
+        pathlist = os.getenv('PATH').split(':')
+        for path in pathlist:
+            if os.path.isdir(path):
+                listexe = os.listdir(path)
+                for exe in listexe:
+                    fullexe = path + '/' + exe
+                    if os.path.isfile(fullexe) and os.access(fullexe, os.X_OK) and not exe in exec_list:
+                        exec_list.append(exe)
+                        tmp_exec_list.append(exe)
+                        if len(tmp_exec_list) == 100:
+                            self.send(src_addr, '/reply_path', *tmp_exec_list)
+                            tmp_exec_list.clear()
+        
+        if tmp_exec_list:
+            self.send(src_addr, '/reply_path', *tmp_exec_list)
+        
+    def sendGui(self, *args):
+        for gui_addr in self.gui_list:
+            self.send(gui_addr, *args)
+    
+    def sendClientStatusToGui(self, client):
+        self.sendGui("/nsm/gui/client/status", client.client_id, client.status)
+            
+    def setServerStatus(self, server_status):
+        self.server_status = server_status
+        self.sendGui("/ray/server_status", server_status)
+    
+    def announceGui(self, url, is_reply):
+        gui_addr = Address(url)
+        
+        if is_reply:
+            self.send(gui_addr, "/nsm/gui/gui_announce", "hi" )
+        else:
+            self.send(gui_addr, "/nsm/gui/server_announce", "hi" )
+        
+        self.send(gui_addr, "/ray/server_status", self.server_status)
+        self.send(gui_addr, "/nsm/gui/session/name",  session.name,  session.path)
+        
+        for client in session.clients:
+            self.send(gui_addr, "/nsm/gui/client/new", client.client_id, client.executable_path)
+            client.sendGuiClientProperties()
+            #self.send(gui_addr, "/nsm/gui/client/new", client.client_id, client.executable_path, client.name, client.prefix_mode, client.project_path, client.label, client.icon)
+            self.send(gui_addr, "/nsm/gui/client/status", client.client_id,  client.status)
+        
+        
+        
+        self.gui_list.append(gui_addr)
+        MESSAGE("Registered with GUI")
+    
+if __name__ == '__main__':
+    session_root = "%s/NSM Sessions" % os.getenv('HOME')
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--session-root', '-r', help='set root folder for sessions', default=session_root)
+    parser.add_argument('--osc-port', type=int, default=16187, help='select OSC port for the deamon')
+    parser.add_argument('--gui-url', type=getLibloAddress, help=argparse.SUPPRESS)
+    parser.add_argument('--debug','-d',  action='store_true', help='see all OSC messages')
+    parser.add_argument('-v', '--version', action='version', version=VERSION)
+    parsed_args = parser.parse_args()
+    
+    debug        = parsed_args.debug
+    session_root = parsed_args.session_root
+    osc_num      = parsed_args.osc_port
+    gui_address  = parsed_args.gui_url
+    
+    signal.signal(signal.SIGINT,  signalHandler)
+    signal.signal(signal.SIGTERM, signalHandler)
+    
+    app = QCoreApplication(sys.argv)
+    app.setApplicationName("RaySession")
+    #app.setApplicationVersion(VERSION)
+    app.setOrganizationName("RaySession")
+    settings = QSettings()
+    known_as_non_active = settings.value('deamon/non_active_list', [])
+    
+    ## Translation process
+    locale = QLocale.system().name()
+    appTranslator = QTranslator()
+    if appTranslator.load("%s/locale/raysession_%s" % (os.path.dirname(os.path.dirname(sys.argv[0])), locale)):
+        app.installTranslator(appTranslator)
+    _translate = app.translate
+    
+    timer = QTimer()
+    timer.setInterval(200)
+    timer.timeout.connect(lambda: None)
+    timer.start()
+    
+    signaler = Signaler()
+    session  = SignaledSession()
+    session.setRoot(session_root)
+    
+    #if osc_num:
+        #server = OscServerThread(osc_num)
+    #else:
+    server = OscServerThread(getFreeOscPort(osc_num))
+    server.start()
+    
+    if gui_address:
+        server.announceGui(gui_address.url, False)
+        
+    MESSAGE(server.url)
+    
+    app.exec()
+    
+    settings.setValue('deamon/non_active_list', known_as_non_active)
+    settings.sync()
+    
+    server.stop()
+    del server
+    del session
+    del app
+    

@@ -1,0 +1,13 @@
+FORMS        += ../resources/ui/abort_session.ui
+FORMS        += ../resources/ui/about_raysession.ui
+FORMS        += ../resources/ui/client_slot.ui
+FORMS        += ../resources/ui/error_dialog.ui
+FORMS        += ../resources/ui/new_executable.ui
+FORMS        += ../resources/ui/new_session.ui
+FORMS        += ../resources/ui/open_session.ui
+FORMS        += ../resources/ui/quit_app.ui
+FORMS        += ../resources/ui/raysession.ui
+SOURCES      += ../src/raysession
+SOURCES      += ../src/ray-deamon
+TRANSLATIONS += raysession_en_EN.ts
+TRANSLATIONS += raysession_fr_FR.ts

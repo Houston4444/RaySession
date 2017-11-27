@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Ray Session
+GenericName=Ray Session
+Comment=NSM Interface
+Exec=raysession
+Icon=raysession
+Terminal=false
+Type=Application
+Categories=AudioVideo;AudioEditing;Qt;
