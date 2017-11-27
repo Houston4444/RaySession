@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView
 from PyQt5.QtGui     import QIcon , QCursor, QPalette, QPixmap
 from PyQt5.QtCore    import QTimer, QProcess, pyqtSignal, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
 import sys
@@ -167,13 +167,15 @@ class NsmSession(object):
             #MainUI.ui.listWidget.takeItem(MainUI.ui.listWidget.count() -1)
             #print('atomu')
             
-        MainUI.ui.listWidget.clear()
+        #MainUI.ui.listWidget.clear()
+        MainUI.reCreateListWidget()
         #del MainUI.ui.listWidget
         #MainUI.ui.listWidget = ListWidgetClients(MainUI.ui.frameCurrentSession)
         
         self.client_list = new_client_list
         for client in self.client_list:
             client.reCreateWidget()
+            client.widget.updateStatus(client.status)
         
 class NsmClient(object):
     def __init__(self, client_data):
@@ -690,6 +692,23 @@ class SessionerMainUI(QMainWindow):
     
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
+    
+    def reCreateListWidget(self):
+        #this function shouldn't exist, it is here only because of a bug with python-qt 
+        #(when reorder widgets sometimes one widget is totally hidden until user resize the window)
+        self.ui.listWidget.clear()
+        self.ui.verticalLayout.removeWidget(self.ui.listWidget)
+        del self.ui.listWidget
+        self.ui.listWidget = ListWidgetClients(self.ui.frameCurrentSession)
+        self.ui.listWidget.setAcceptDrops(True)
+        self.ui.listWidget.setStyleSheet("QFrame{border:none}")
+        self.ui.listWidget.setDragEnabled(True)
+        self.ui.listWidget.setDragDropMode(QAbstractItemView.InternalMove)
+        self.ui.listWidget.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.ui.listWidget.setUniformItemSizes(True)
+        self.ui.listWidget.setBatchSize(80)
+        self.ui.listWidget.setObjectName("listWidget")
+        self.ui.verticalLayout.addWidget(self.ui.listWidget)
     
     def openFileManager(self):
         serverOSC.toDeamon('/ray/server/openfolder')

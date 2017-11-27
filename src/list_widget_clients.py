@@ -26,6 +26,8 @@ class ClientSlot(QFrame):
         self.is_dirty_able   = False
         self.gui_visible     = True
         
+        #self.status = "tafu"
+        
         #set label and tooltip on label
         #self.ui.ClientName.setText(self.executable_path)
         self.updateClientLabel()
@@ -126,7 +128,6 @@ class ClientSlot(QFrame):
     def updateClientData(self):
         self.updateClientLabel()
         self.updateClientIcon(self.client.icon)
-    
     #def updateClientData(self, client_data):
         #self.client_id       = client_data.client_id
         #self.client_name     = client_data.name
@@ -141,7 +142,7 @@ class ClientSlot(QFrame):
     def updateStatus(self, status):
         self.ui.lineEditClientStatus.setText(status)
         
-        if status in ('launch', 'open'):
+        if status in ('launch', 'open', 'switch'):
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.saveButton.setEnabled(False)
@@ -171,6 +172,8 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
+				
+        
             
     def flashIfOpen(self, boolflash):
         if boolflash:
@@ -306,8 +309,8 @@ class ListWidgetClients(QListWidget):
         
         for i in range(self.count()):
             item = self.item(i)
-            widget = self.itemWidget(item)
-            client_id = widget.getClientId()
+            #widget = self.itemWidget(item)
+            client_id = item.getClientId()
             client_ids_list.append(client_id)
         
         self.orderChanged.emit(client_ids_list)
