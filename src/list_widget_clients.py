@@ -15,31 +15,16 @@ class ClientSlot(QFrame):
         self.list_widget     = list_widget
         self.client          = client
         
-        
-        #self.client_id       = client.client_id
-        #self.client_name     = client.name
-        #self.executable_path = client.executable_path
-        #self.label           = client.label
-        #self.icon_name       = client.icon
-        
-        
         self.is_dirty_able   = False
         self.gui_visible     = True
-        
-        #self.status = "tafu"
-        
-        #set label and tooltip on label
-        #self.ui.ClientName.setText(self.executable_path)
-        self.updateClientLabel()
-        self.updateToolTip()
+        self.ui.toolButtonGUI.setVisible(False)
         
         #set icon
-        self.icon = QIcon.fromTheme(self.client.icon)
+        self.icon = QIcon.fromTheme(self.client.icon_name)
         self.ui.iconButton.setIcon(self.icon)
-        self.updateClientLabel()
-        #self.updateIcon(self.executable_path)
         
-        self.ui.toolButtonGUI.setVisible(False)
+        self.updateToolTip()
+        self.updateClientLabel()
         
         #connect buttons to functions
         self.ui.toolButtonGUI.clicked.connect(self.toggleGui)
@@ -48,6 +33,7 @@ class ClientSlot(QFrame):
         self.ui.saveButton.clicked.connect(self.saveClient)
         self.ui.closeButton.clicked.connect(self.removeClient)
         
+        #choose button colors
         if self.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
             startIcon = QIcon()
             startIcon.addPixmap(QPixmap(':scalable/breeze-dark/media-playback-start'), QIcon.Normal, QIcon.Off)
@@ -86,58 +72,30 @@ class ClientSlot(QFrame):
         self.list_widget.clientRemoveRequest.emit(self.clientId())
     
     def switch(self, new_client_id):
-        #self.client_id = new_client_id
         self.updateToolTip()
-    
-    def updateIcon(self, client_name):
-        if not self.icon.isNull():
-            return
-        
-        icon_name = client_name.lower().replace('_', '-')
-        
-        if icon_name == 'hydrogen':
-            icon_name = 'h2-icon'
-        elif icon_name == 'guitarix':
-            icon_name = 'gx_head'
-        elif icon_name == 'jackpatch':
-            icon_name = 'curve-connector'
-        
-        self.icon = QIcon.fromTheme(icon_name)
-        self.ui.iconButton.setIcon(self.icon)
     
     def updateClientIcon(self, icon_name):
         self.icon = QIcon.fromTheme(icon_name)
         self.ui.iconButton.setIcon(self.icon)
     
     def updateClientLabel(self):
-        label = self.client.label
-        if not label:
-            label = self.client.name
-        print(label, self.client.label, self.client.name)
+        label = self.client.label if self.client.label else self.client.name
         self.ui.ClientName.setText(label)
-        
-    def updateClientName(self, client_name):
-        if self.client.label:
-            return
-        self.ui.ClientName.setText(client_name)
-        self.updateIcon(client_name)
     
     def updateToolTip(self):
         self.ui.ClientName.setToolTip('Executable : ' + self.client.executable_path + '\n' + 'NSM id : ' + self.clientId())
     
     def updateClientData(self):
-        self.updateClientLabel()
-        self.updateClientIcon(self.client.icon)
-    #def updateClientData(self, client_data):
-        #self.client_id       = client_data.client_id
-        #self.client_name     = client_data.name
-        #self.executable_path = client_data.executable_path
-        #self.label           = client_data.label
-        #self.icon_name       = client_data.icon
+        #set main label
+        label = self.client.label if self.client.label else self.client.name
+        self.ui.ClientName.setText(label)
         
-        ##self.updateClientName(self.client_name)
-        #self.updateClientLabel()
-        #self.updateClientIcon(self.icon_name)
+        #set tool tip
+        self.ui.ClientName.setToolTip('Executable : ' + self.client.executable_path + '\n' + 'NSM id : ' + self.clientId())
+        
+        #set icon
+        self.icon = QIcon.fromTheme(self.client.icon_name)
+        self.ui.iconButton.setIcon(self.icon)
         
     def updateStatus(self, status):
         self.ui.lineEditClientStatus.setText(status)

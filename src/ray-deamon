@@ -158,11 +158,11 @@ class Client(QObject):
     
     def setLabel(self, label):
         self.label = label
-        self.sendGui('/nsm/gui/client/label', self.client_id, self.label)
+        self.sendGuiClientProperties()
         
     def setIcon(self, icon_name):
         self.icon = icon_name
-        self.sendGui('/ray/gui/client/icon', self.client_id, self.icon)
+        self.sendGuiClientProperties()
         
     def hasError(self):
         if self._reply_errcode:
@@ -253,8 +253,6 @@ class Client(QObject):
             GUIMSG(_translate('GUIMSG', "Client %s terminated because we told it to.") % self.name)
         else:
             GUIMSG(_translate('GUIMSG', "Client %s died unexpectedly.") % self.name)
-        
-        print('heeeieeiennn', self.client_id)
         
         if session.wait_for:
             session.endTimerIfLastExpected(self)
@@ -1363,22 +1361,16 @@ class SignaledSession(OperatingSession):
                 client.save()
                 break
     
-    def guiClientLabel(self, path, args):
-        if len(args) < 2:
-            return
-        
+    def guiClientLabel(self, client_id, label):
         for client in self.clients:
-            if client.client_id == args[0]:
-                client.setLabel(args[1])
+            if client.client_id == client_id:
+                client.setLabel(label)
                 break
             
-    def guiClientIcon(self, path, args):
-        if len(args) < 2:
-            return
-        
+    def guiClientIcon(self, client_id, icon):
         for client in self.clients:
-            if client.client_id == args[0]:
-                client.setIcon(args[1])
+            if client.client_id == client_id:
+                client.setIcon(icon)
                 break
     
     def terminate(self):

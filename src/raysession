@@ -100,16 +100,6 @@ class NsmSession(object):
     def addClient(self, client_data):
         nsm_client = NsmClient(client_data)
         self.client_list.append(nsm_client)
-        
-    def renameClient(self, client_id, client_name):
-        nsm_client = self.getClient(client_id)
-        if nsm_client:
-            nsm_client.setClientName(client_name)
-    
-    def changeIconClient(self, client_id, client_icon):
-        nsm_client = self.getClient(client_id)
-        if nsm_client:
-            nsm_client.setClientIcon(client_icon)
     
     def removeClient(self, client_id):
         nsm_client = self.getClient(client_id)
@@ -117,9 +107,7 @@ class NsmSession(object):
             self.client_list.remove(nsm_client)
     
     def updateClientProperties(self, client_data):
-        client_id = client_data.client_id
-        
-        nsm_client = self.getClient(client_id)
+        nsm_client = self.getClient(client_data.client_id)
         if nsm_client:
             nsm_client.updateClientProperties(client_data)
     
@@ -162,15 +150,7 @@ class NsmSession(object):
             new_client_list.append(client)
         
         self.client_list.clear()
-        
-        #while MainUI.ui.listWidget.count() > 0:
-            #MainUI.ui.listWidget.takeItem(MainUI.ui.listWidget.count() -1)
-            #print('atomu')
-            
-        #MainUI.ui.listWidget.clear()
         MainUI.reCreateListWidget()
-        #del MainUI.ui.listWidget
-        #MainUI.ui.listWidget = ListWidgetClients(MainUI.ui.frameCurrentSession)
         
         self.client_list = new_client_list
         for client in self.client_list:
@@ -179,14 +159,13 @@ class NsmSession(object):
         
 class NsmClient(object):
     def __init__(self, client_data):
-        self.data            = client_data
         self.client_id       = client_data.client_id
         self.executable_path = client_data.executable_path
         self.name            = client_data.name
         self.prefix_mode     = client_data.prefix_mode
         self.project_path    = client_data.project_path
         self.label           = client_data.label
-        self.icon            = client_data.icon
+        self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         
         self.widget        = MainUI.createClientWidget(self)
@@ -195,22 +174,6 @@ class NsmClient(object):
         self.gui_visible   = False
         self.hasDirty      = False
         self.dirty_state   = True
-        
-        print('mayaya', self.label)
-        
-    def setClientName(self, client_name):
-        if client_name != self.client_name:
-            self.client_name = client_name
-            self.widget.updateClientName(client_name)
-    
-    def setClientIcon(self, client_icon):
-        if client_icon != self.icon:
-            self.icon = client_icon
-            self.widget.updateClientIcon(client_icon)
-    
-    def setClientLabel(self, client_label):
-        if client_label != self.label:
-            self.widget.updateClientLabel(client_label)
     
     def setStatus(self, status):
         self.status = status
@@ -239,7 +202,7 @@ class NsmClient(object):
         self.prefix_mode     = client_data.prefix_mode
         self.project_path    = client_data.project_path
         self.label           = client_data.label
-        self.icon            = client_data.icon
+        self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         self.widget.updateClientData()
         
@@ -265,15 +228,12 @@ class OscSignaler(QObject):
     new_client_added       = pyqtSignal(ClientData)
     new_client_stopped     = pyqtSignal(str, str)
     client_removed         = pyqtSignal(str)
-    client_renamed         = pyqtSignal(str, str)
     client_status_changed  = pyqtSignal(str, str)
     client_switched        = pyqtSignal(str, str)
     client_progress_sig    = pyqtSignal()
     client_dirty_sig       = pyqtSignal(str, bool)
     client_has_gui         = pyqtSignal(str)
     client_gui_visible_sig = pyqtSignal(str, int)
-    client_label_changed   = pyqtSignal(str, str)
-    client_icon_changed    = pyqtSignal(str, str)
     client_updated         = pyqtSignal(ClientData)
     add_session_to_list    = pyqtSignal(str)
     new_executable         = pyqtSignal(list)
@@ -357,24 +317,9 @@ class OSCServerT(ServerThread):
             self.client_id_list.clear()
         self.qsig.session_name_sig.emit(name1, name2)
     
-    #@make_method('/nsm/gui/client/new', None)
-    #def newClient(self, path, args):
-        #ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
-            
-        #client_id, client_exec = args
-        
-        #if client_id in self.client_id_list:
-            #client_name = client_exec
-            #self.qsig.client_renamed.emit(client_id, client_name)
-        #else:
-            #self.client_id_list.append(client_id)
-            #self.qsig.new_client_added.emit(client_id, client_exec)
-    
     @make_method('/ray/gui/client/new', None)
     def newClientFromServer(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
-        
-        print('yoyololo', len(args))
         
         if len(args) < 2:
             return
@@ -450,20 +395,6 @@ class OSCServerT(ServerThread):
         client_id, state = args
         self.qsig.client_gui_visible_sig.emit(client_id, state)
         
-    @make_method('/nsm/gui/client/label', None)
-    def guiClientLabel(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
-            
-        client_id, client_name = args
-        self.qsig.client_label_changed.emit(client_id, client_name)
-        
-    @make_method('/ray/gui/client/icon', None)
-    def guiClientIcon(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
-            
-        client_id, client_icon = args
-        self.qsig.client_icon_changed.emit(client_id, client_icon)
-        
     @make_method('/ray/server_status', None)
     def rayServerStatus(self, path, args):
         server_status = args[0]
@@ -504,15 +435,15 @@ class OSCServerT(ServerThread):
         ifDebug('serverOSC::raysession_sends save session')
         self.toDeamon('/nsm/server/save')
         
-    def closeCurrentSession(self):
+    def closeSession(self):
         ifDebug('serverOSC::raysession_sends close session')
         self.toDeamon('/nsm/server/close')
         
-    def abortCurrentSession(self):
+    def abortSession(self):
         ifDebug('serverOSC::raysession_sends abort session')
         self.toDeamon('/nsm/server/abort')
         
-    def duplicateCurrentSession(self, session_name):
+    def duplicateSession(self, session_name):
         ifDebug('serverOSC::raysession_sends duplication session')
         self.toDeamon('/nsm/server/duplicate', session_name)
         
@@ -561,7 +492,7 @@ class RayIcon(QIcon):
         self.addPixmap(QPixmap(':scalable/%s/%s' % (breeze, icon_name)), QIcon.Normal, QIcon.Off)
         self.addPixmap(QPixmap(':scalable/%s/disabled/%s' % (breeze, icon_name)), QIcon.Disabled, QIcon.Off)
 
-class SessionerMainUI(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.ui = ui_raysession.Ui_MainWindow()
@@ -609,9 +540,9 @@ class SessionerMainUI(QMainWindow):
         self.ui.actionOpenSession.triggered.connect(self.openSession)
         self.ui.actionQuit.triggered.connect(self.quitApp)
         self.ui.actionSaveSession.triggered.connect(self.saveSession)
-        self.ui.actionCloseSession.triggered.connect(self.closeCurrentSession)
-        self.ui.actionAbortSession.triggered.connect(self.abortCurrentSession)
-        self.ui.actionDuplicateSession.triggered.connect(self.duplicateCurrentSession)
+        self.ui.actionCloseSession.triggered.connect(self.closeSession)
+        self.ui.actionAbortSession.triggered.connect(self.abortSession)
+        self.ui.actionDuplicateSession.triggered.connect(self.duplicateSession)
         self.ui.actionOpenSessionFolder.triggered.connect(self.openFileManager)
         self.ui.actionAddClient.triggered.connect(self.addClient)
         self.ui.actionAddProxy.triggered.connect(self.addProxy)
@@ -639,10 +570,7 @@ class SessionerMainUI(QMainWindow):
         #connect OSC signals from nsm
         serverOSC.qsig.new_client_added.connect(self.nsmAddsClient)
         serverOSC.qsig.client_removed.connect(self.nsmRemovesClient)
-        serverOSC.qsig.client_renamed.connect(self.nsmRenamesClient)
         serverOSC.qsig.client_status_changed.connect(self.nsmUpdatesClientStatus)
-        serverOSC.qsig.client_label_changed.connect(self.nsmRenamesClient)
-        serverOSC.qsig.client_icon_changed.connect(self.nsmChangesClientIcon)
         serverOSC.qsig.client_has_gui.connect(self.nsmSetsClientHasGui)
         serverOSC.qsig.client_gui_visible_sig.connect(self.nsmSetsClientGuiState)
         serverOSC.qsig.client_dirty_sig.connect(self.nsmSetsClientDirtyState)
@@ -650,20 +578,12 @@ class SessionerMainUI(QMainWindow):
         serverOSC.qsig.client_updated.connect(self.serverUpdatesClientProperties)
         serverOSC.qsig.new_message_sig.connect(self.nsmPrintsMessage)
         serverOSC.qsig.session_name_sig.connect(self.nsmRenamesSession)
-        #serverOSC.qsig.session_seems_closed.connect(self.removeLastClients)
         serverOSC.qsig.server_status_changed.connect(self.rayChangeServerStatus)
         serverOSC.qsig.error_message.connect(self.nsmSendsError)
         serverOSC.qsig.opening_nsm_session.connect(self.serverOpensNsmSession)
         serverOSC.qsig.clients_reordered.connect(self.serverReorderClients)
         
-        #connect the listWidget signals to OSC server
-        self.ui.listWidget.orderChanged.connect(serverOSC.changeClientOrder)
-        self.ui.listWidget.clientStartRequest.connect(serverOSC.startClient)
-        self.ui.listWidget.clientStopRequest.connect(serverOSC.stopClient)
-        self.ui.listWidget.clientSaveRequest.connect(serverOSC.saveClient)
-        self.ui.listWidget.clientRemoveRequest.connect(serverOSC.removeClient)
-        self.ui.listWidget.clientHideGuiRequest.connect(serverOSC.hideClientOptionalGui)
-        self.ui.listWidget.clientShowGuiRequest.connect(serverOSC.showClientOptionalGui)
+        self.connectListWidgetRequests()
         
         basecolor = app.palette().base().color().name()
         
@@ -690,12 +610,23 @@ class SessionerMainUI(QMainWindow):
             self.ui.actionKeepFocus.setChecked(False)
             self.ui.actionKeepFocus.setEnabled(False)
     
+    def connectListWidgetRequests(self):
+        #connect the listWidget signals to OSC server
+        self.ui.listWidget.orderChanged.connect(serverOSC.changeClientOrder)
+        self.ui.listWidget.clientStartRequest.connect(serverOSC.startClient)
+        self.ui.listWidget.clientStopRequest.connect(serverOSC.stopClient)
+        self.ui.listWidget.clientSaveRequest.connect(serverOSC.saveClient)
+        self.ui.listWidget.clientRemoveRequest.connect(serverOSC.removeClient)
+        self.ui.listWidget.clientHideGuiRequest.connect(serverOSC.hideClientOptionalGui)
+        self.ui.listWidget.clientShowGuiRequest.connect(serverOSC.showClientOptionalGui)
+    
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
     
     def reCreateListWidget(self):
-        #this function shouldn't exist, it is here only because of a bug with python-qt 
+        #this function shouldn't exist, it is a workaround for a bug with python-qt 
         #(when reorder widgets sometimes one widget is totally hidden until user resize the window)
+        #It has to be modified when ui_raysession is modified
         self.ui.listWidget.clear()
         self.ui.verticalLayout.removeWidget(self.ui.listWidget)
         del self.ui.listWidget
@@ -709,6 +640,8 @@ class SessionerMainUI(QMainWindow):
         self.ui.listWidget.setBatchSize(80)
         self.ui.listWidget.setObjectName("listWidget")
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
+        
+        self.connectListWidgetRequests()
     
     def openFileManager(self):
         serverOSC.toDeamon('/ray/server/openfolder')
@@ -759,25 +692,25 @@ class SessionerMainUI(QMainWindow):
         session_name = openDialog.getSelectedSession()
         serverOSC.openSession(session_name)
     
-    def closeCurrentSession(self):
+    def closeSession(self):
         settings.setValue('last_session', nsm_session.name)
-        serverOSC.closeCurrentSession()
+        serverOSC.closeSession()
         
-    def abortCurrentSession(self):
+    def abortSession(self):
         abort_dialog = AbortSessionDialog(self)
         abort_dialog.exec()
         
         if abort_dialog.result():
-            serverOSC.abortCurrentSession()
+            serverOSC.abortSession()
     
-    def duplicateCurrentSession(self):
+    def duplicateSession(self):
         newDialog = NewSessionDialog(self)
         newDialog.exec()
         if not newDialog.result():
             return
         
         session_name = newDialog.getSessionName()
-        serverOSC.duplicateCurrentSession(session_name)
+        serverOSC.duplicateSession(session_name)
             
     def aboutRaySession(self):
         about_dialog = AboutRaySessionDialog(self)
@@ -803,23 +736,12 @@ class SessionerMainUI(QMainWindow):
             serverOSC.addClient(command)
     
     def addProxy(self):
-        serverOSC.addClient('nsm-proxy')
-    
-    #def removeLastClients(self):
-        #nsm_session.removeAllClients()
-        #self.ui.listWidget.clear()
+        serverOSC.addClient('ray-proxy')
     
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
     
     def nsmAddsClient(self, client_data):
-        #widget = self.ui.listWidget.createClientWidget(client_data)
         nsm_session.addClient(client_data)
-        
-    def nsmRenamesClient(self, client_id, client_name):
-        nsm_session.renameClient(client_id, client_name)
-        
-    def nsmChangesClientIcon(self, client_id, client_icon):
-        nsm_session.changeIconClient(client_id, client_icon)
     
     def nsmRemovesClient(self, client_id):
         nsm_client = nsm_session.getClient(client_id)
@@ -910,7 +832,6 @@ class SessionerMainUI(QMainWindow):
         info_dialog.exec()
     
     def serverReorderClients(self, client_id_list):
-        #self.ui.listWidget.reOrderClients(client_id_list)
         nsm_session.reOrderClients(client_id_list)
     
     def rayChangeServerStatus(self, server_status):
@@ -925,6 +846,7 @@ class SessionerMainUI(QMainWindow):
             self.ui.actionDuplicateSession.setEnabled(False)
             self.ui.actionAddClient.setEnabled(False)
             self.ui.actionAddProxy.setEnabled(False)
+            self.ui.actionOpenSessionFolder.setEnabled(False)
             
             self.ui.listWidget.clear()
             
@@ -939,6 +861,7 @@ class SessionerMainUI(QMainWindow):
             self.ui.actionDuplicateSession.setEnabled(False)
             self.ui.actionAddClient.setEnabled(True)
             self.ui.actionAddProxy.setEnabled(True)
+            self.ui.actionOpenSessionFolder.setEnabled(True)
             
         
         elif server_status == 'ready':
@@ -949,6 +872,7 @@ class SessionerMainUI(QMainWindow):
             self.ui.actionDuplicateSession.setEnabled(True)
             self.ui.actionAddClient.setEnabled(True)
             self.ui.actionAddProxy.setEnabled(True)
+            self.ui.actionOpenSessionFolder.setEnabled(True)
         
         elif server_status == 'close':
             self.ui.actionSaveSession.setEnabled(False)
@@ -957,6 +881,7 @@ class SessionerMainUI(QMainWindow):
             self.ui.actionDuplicateSession.setEnabled(False)
             self.ui.actionAddClient.setEnabled(False)
             self.ui.actionAddProxy.setEnabled(False)
+            self.ui.actionOpenSessionFolder.setEnabled(True)
         
         else:
             self.ui.toolButtonSaveSession.setEnabled(False)
@@ -966,6 +891,7 @@ class SessionerMainUI(QMainWindow):
             self.ui.actionDuplicateSession.setEnabled(False)
             self.ui.actionAddClient.setEnabled(True)
             self.ui.actionAddProxy.setEnabled(False)
+            self.ui.actionOpenSessionFolder.setEnabled(True)
             
     
     
@@ -1338,10 +1264,13 @@ class RayDeamon(object):
         if not self.process:
             return
         
+        print('waiting for deamon to die', file=sys.stderr)
+        
         for i in range(100):
             if self.process.poll() != None:
                 return
             time.sleep(0.050)
+            sys.stderr.write('.')
             
         print('ray-deamon is still running, sorry !', file=sys.stderr)
     
@@ -1407,7 +1336,7 @@ if __name__ == '__main__':
     
     nsm_session = NsmSession()
     
-    MainUI = SessionerMainUI()
+    MainUI = MainWindow()
     MainUI.show()
     
     if ray_deamon.launched_before:
