@@ -150,19 +150,7 @@ class NsmSession(object):
             new_client_list.append(client)
         
         self.client_list.clear()
-<<<<<<< HEAD
         MainUI.reCreateListWidget()
-=======
-        
-        #while MainUI.ui.listWidget.count() > 0:
-            #MainUI.ui.listWidget.takeItem(MainUI.ui.listWidget.count() -1)
-            #print('atomu')
-            
-        #MainUI.ui.listWidget.clear()
-        MainUI.reCreateListWidget()
-        #del MainUI.ui.listWidget
-        #MainUI.ui.listWidget = ListWidgetClients(MainUI.ui.frameCurrentSession)
->>>>>>> 5089daf5874e0d1857bee4fecd3c9439c722cd21
         
         self.client_list = new_client_list
         for client in self.client_list:
@@ -206,7 +194,7 @@ class NsmClient(object):
         
     def switch(self, new_client_id):
         self.client_id = new_client_id
-        self.widget.switch(self.client_id)
+        self.widget.updateClientData()
         
     def updateClientProperties(self, client_data):
         self.executable_path = client_data.executable_path

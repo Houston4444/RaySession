@@ -12,6 +12,9 @@ class StatusBar(QLineEdit):
         self.timer.setInterval(350)
         self.timer.timeout.connect(self.showNextText)
         
+        self.reverseColors()
+        
+    def reverseColors(self):
         palette = self.palette()
         base = palette.base()
         text = palette.text()
@@ -19,7 +22,6 @@ class StatusBar(QLineEdit):
         palette.setBrush(QPalette.WindowText, base)
         palette.setBrush(QPalette.Text, base)
         
-        win_bg_color = self.palette().window().color()        
         self.setPalette(palette)
         
     def showNextText(self):
