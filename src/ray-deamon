@@ -123,6 +123,7 @@ class Client(QObject):
     client_id       = None
     capabilities    = None
     
+    status          = 'stopped'
     name            = ''
     executable_path = ''
     label           = ''
@@ -1876,12 +1877,18 @@ class OscServerThread(ServerThread):
         self.send(gui_addr, "/nsm/gui/session/name",  session.name,  session.path)
         
         for client in session.clients:
-            self.send(gui_addr, "/nsm/gui/client/new", client.client_id, client.executable_path)
-            client.sendGuiClientProperties()
-            #self.send(gui_addr, "/nsm/gui/client/new", client.client_id, client.executable_path, client.name, client.prefix_mode, client.project_path, client.label, client.icon)
+            self.send(  gui_addr, 
+                        '/ray/gui/client/new',
+                        client.client_id, 
+                        client.executable_path, 
+                        client.name, 
+                        client.prefix_mode, 
+                        client.project_path,
+                        client.label,
+                        client.icon,
+                        client.capabilities)
+            
             self.send(gui_addr, "/nsm/gui/client/status", client.client_id,  client.status)
-        
-        
         
         self.gui_list.append(gui_addr)
         MESSAGE("Registered with GUI")
