@@ -5,12 +5,22 @@ import sys, os
 
 VERSION = "0.2.0"
 
-#APP_TITLE = "Non Session Manager"
 APP_TITLE = 'Ray Session'
 
 PREFIX_MODE_UNDEF        = 0
 PREFIX_MODE_CLIENT_NAME  = 1
 PREFIX_MODE_SESSION_NAME = 2
+
+#NOT IMPLEMENTED YET
+CLIENT_STATUS_STOPPED = 0
+CLIENT_STATUS_LAUNCH  = 1
+CLIENT_STATUS_OPEN    = 2
+CLIENT_STATUS_READY   = 3
+CLIENT_STATUS_SWITCH  = 4
+CLIENT_STATUS_CLOSE   = 5
+CLIENT_STATUS_NOOP    = 6
+CLIENT_STATUS_ERROR   = 7
+
 
 def ifDebug(string):
     if debug:
@@ -82,12 +92,10 @@ class ClientData(object):
         self.executable_path = str(executable)
         self.prefix_mode     = int(prefix_mode)
         self.label           = str(label)
-        self.capabilities    = capabilities
+        self.capabilities    = str(capabilities)
         
-        self.name = str(name) if name else os.path.basename(self.executable_path)
-        self.icon = str(icon) if icon else self.name.lower().replace('_', '-')
-        
-        print('ouhyé', self.name, self.label)
+        self.name  = str(name)  if name  else os.path.basename(self.executable_path)
+        self.icon  = str(icon)  if icon  else self.name.lower().replace('_', '-')
         
         if self.prefix_mode == 0:
             self.project_path = str(project_path)
