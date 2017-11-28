@@ -123,7 +123,7 @@ class Client(QObject):
     client_id       = None
     capabilities    = None
     
-    status          = 'stopped'
+    status          = CLIENT_STATUS_STOPPED
     name            = ''
     executable_path = ''
     label           = ''
@@ -239,7 +239,7 @@ class Client(QObject):
     def processStarted(self):
         self.stopped_since_long = False
         self.pid    = self.process.pid()
-        self.status = "launch"
+        self.status = CLIENT_STATUS_LAUNCH
         #self.pending_command = COMMAND_NONE
         
         #MESSAGE("Process has pid: %i" % self.pid)
@@ -259,11 +259,11 @@ class Client(QObject):
             session.endTimerIfLastExpected(self)
         
         if self.pending_command == COMMAND_QUIT:
-            server.sendGui("/nsm/gui/client/status", self.client_id, "removed")
+            server.sendGui("/nsm/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
             session.removeClient(self)
             return
         else:
-            self.status = "stopped"
+            self.status = CLIENT_STATUS_STOPPED
             server.sendClientStatusToGui(self)
                 
         self.pending_command = COMMAND_NONE
@@ -275,7 +275,7 @@ class Client(QObject):
             GUIMSG(_translate('GUIMSG', "Failed to start %s") % self.name)
             self.active     = False
             self.pid        = 0
-            self.status     = "stopped"
+            self.status     = CLIENT_STATUS_STOPPED
             server.sendClientStatusToGui(self)
             self.pending_command = COMMAND_NONE
             
@@ -300,18 +300,18 @@ class Client(QObject):
             server.send(self.addr, "/nsm/client/save")
             
             self.pending_command = COMMAND_SAVE
-            self.status          = "save"
+            self.status          = CLIENT_STATUS_SAVE
             server.sendClientStatusToGui(self)
         
         elif self.isDumbClient() and self.isRunning():
-            self.status = "noop"
+            self.status = CLIENT_STATUS_NOOP
             server.sendClientStatusToGui(self)
             
     def stop(self):
         GUIMSG(_translate('GUIMSG', "Stopping client %s") % self.name)
         if self.isRunning():
             self.pending_command = COMMAND_KILL
-            self.status = 'quit'
+            self.status = CLIENT_STATUS_QUIT
             server.sendClientStatusToGui(self)
             self.process.terminate()
             
@@ -321,19 +321,19 @@ class Client(QObject):
     def quit(self):
         MESSAGE("Commanding %s to quit" % self.name)
         if self.active:
-            self.status = "quit"
+            self.status = CLIENT_STATUS_QUIT
             self.pending_command = COMMAND_QUIT
             self.terminate()
             server.sendClientStatusToGui(self)
         
         elif self.isDumbClient():
             if self.isRunning():
-                self.status = "quit"
+                self.status = CLIENT_STATUS_QUIT
                 self.pending_command = COMMAND_QUIT
                 self.terminate()
                 server.sendClientStatusToGui(self)
             else:
-                server.sendGui("/nsm/gui/client/status", self.client_id, "removed")
+                server.sendGui("/nsm/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
     
     def switch(self, new_client):
         old_client_id     = self.client_id
@@ -351,7 +351,7 @@ class Client(QObject):
         
         server.send(self.addr, "/nsm/client/open", client_project_path,  session.name, jack_client_name)
         
-        self.status          = "switch"
+        self.status          = CLIENT_STATUS_SWITCH
         self.pending_command = COMMAND_OPEN
         
         server.sendClientStatusToGui(self)
@@ -360,7 +360,6 @@ class Client(QObject):
     
     def sendGuiClientProperties(self):
         ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
-        print(ad)
             
         server.sendGui(ad,
                         self.client_id, 
@@ -398,9 +397,8 @@ class Client(QObject):
         MESSAGE("The client \"%s\" at \"%s\" informs us it's ready to receive commands." % (self.name, self.addr.url) )
         server.send(src_addr, "/reply", path, "Well hello, stranger. Welcome to the party." if is_new else "Howdy, what took you so long?", APP_TITLE, ":server-control:broadcast:optional-gui:" )
         
-        self.status = "open"
+        self.status = CLIENT_STATUS_OPEN
         
-        #server.sendGui("/nsm/gui/client/new", self.client_id, self.name)
         self.sendGuiClientProperties()
         server.sendGui("/nsm/gui/client/status", self.client_id, self.status)
         
@@ -1319,7 +1317,7 @@ class SignaledSession(OperatingSession):
             client.setReply(ERR_OK, message)
             #MESSAGE( "Client \"%s\" replied with: %s in %fms" % ( client.name, message, client.milliseconds_since_last_command() ))
             client.pending_command = COMMAND_NONE
-            client.status = "ready"
+            client.status = CLIENT_STATUS_READY
             server.sendClientStatusToGui(client)
             
             if self.wait_for == WAIT_FOR_REPLY:
@@ -1492,7 +1490,7 @@ class OscServerThread(ServerThread):
         
         MESSAGE( "Client \"%s\" replied with error: %s (%i)" % ( client.name, message, err_code ))
         client.pending_command = COMMAND_NONE
-        client.status          = "error"
+        client.status          = CLIENT_STATUS_ERROR
         
         self.sendClientStatusToGui(client) 
 

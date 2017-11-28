@@ -1,9 +1,32 @@
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame
 from PyQt5.QtGui     import QIcon, QPalette, QPixmap
-from PyQt5.QtCore    import Qt, pyqtSignal, QSize
+from PyQt5.QtCore    import Qt, pyqtSignal, QSize, QCoreApplication
  
 import ui_client_slot
 
+from shared import *
+
+#CLIENT_STATUS_STOPPED = 0
+#CLIENT_STATUS_LAUNCH  = 1
+#CLIENT_STATUS_OPEN    = 2
+#CLIENT_STATUS_READY   = 3
+#CLIENT_STATUS_SAVE    = 4
+#CLIENT_STATUS_SWITCH  = 5
+#CLIENT_STATUS_QUIT    = 6
+#CLIENT_STATUS_NOOP    = 7
+#CLIENT_STATUS_ERROR   = 8
+#CLIENT_STATUS_REMOVED = 9
+_translate = QCoreApplication.translate
+#change it if you change add/Remove any status
+client_status_translate_list = (_translate("client status", "stopped"),
+                                _translate("client status", "launch"),
+                                _translate("client status", "open"),
+                                _translate("client status", "ready"),
+                                _translate("client status", "save"),
+                                _translate("client status", "switch"),
+                                _translate("client status", "quit"),
+                                _translate("client status", "noop"),
+                                _translate("client status", "error"))
 
 class ClientSlot(QFrame):
     def __init__(self, list_widget, client):
@@ -50,6 +73,9 @@ class ClientSlot(QFrame):
             closeIcon.addPixmap(QPixmap(':scalable/breeze-dark/disabled/window-close'), QIcon.Disabled, QIcon.Off)
             self.ui.closeButton.setIcon(closeIcon)
             
+        
+        
+            
     
     def clientId(self):
         return self.client.client_id
@@ -79,9 +105,13 @@ class ClientSlot(QFrame):
         self.ui.iconButton.setIcon(self.icon)
         
     def updateStatus(self, status):
-        self.ui.lineEditClientStatus.setText(status)
+        if not ( 0 <= status < len(client_status_translate_list) ):
+            print("wrong status: " + str(status), file=sys.stderr)
+            return
         
-        if status in ('launch', 'open', 'switch'):
+        self.ui.lineEditClientStatus.setText(client_status_translate_list[status])
+        
+        if status in (CLIENT_STATUS_LAUNCH, CLIENT_STATUS_OPEN, CLIENT_STATUS_SWITCH):
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.saveButton.setEnabled(False)
@@ -91,7 +121,7 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
                 
-        elif status == 'ready':
+        elif status == CLIENT_STATUS_READY:
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.closeButton.setEnabled(False)
@@ -102,7 +132,7 @@ class ClientSlot(QFrame):
             if not self.is_dirty_able:
                 self.ui.saveButton.setEnabled(True)
             
-        elif status == 'stopped':
+        elif status == CLIENT_STATUS_STOPPED:
             self.ui.startButton.setEnabled(True)
             self.ui.stopButton.setEnabled(False)
             self.ui.saveButton.setEnabled(False)
@@ -116,7 +146,7 @@ class ClientSlot(QFrame):
             
     def flashIfOpen(self, boolflash):
         if boolflash:
-            self.ui.lineEditClientStatus.setText('open')
+            self.ui.lineEditClientStatus.setText(client_status_translate_list[2])
         else:
             self.ui.lineEditClientStatus.setText('')
     

@@ -169,7 +169,7 @@ class NsmClient(object):
         self.capabilities    = client_data.capabilities
         
         self.widget        = MainUI.createClientWidget(self)
-        self.status        = None
+        self.status        = CLIENT_STATUS_STOPPED
         self.hasGui        = False
         self.gui_visible   = False
         self.hasDirty      = False
@@ -228,7 +228,7 @@ class OscSignaler(QObject):
     new_client_added       = pyqtSignal(ClientData)
     new_client_stopped     = pyqtSignal(str, str)
     client_removed         = pyqtSignal(str)
-    client_status_changed  = pyqtSignal(str, str)
+    client_status_changed  = pyqtSignal(str, int)
     client_switched        = pyqtSignal(str, str)
     client_progress_sig    = pyqtSignal()
     client_dirty_sig       = pyqtSignal(str, bool)
@@ -345,7 +345,7 @@ class OSCServerT(ServerThread):
             
         client_id, status = args
             
-        if status == 'removed':
+        if status == CLIENT_STATUS_REMOVED:
             if client_id in self.client_id_list:
                 self.client_id_list.remove(client_id)
             self.qsig.client_removed.emit(client_id)
@@ -659,7 +659,7 @@ class MainWindow(QMainWindow):
     
     def flashOpen(self):
         for nsm_client in nsm_session.client_list:
-            if nsm_client.status == 'open':
+            if nsm_client.status == CLIENT_STATUS_OPEN:
                 nsm_client.widget.flashIfOpen(self.flash_open_bool)
                 
         self.flash_open_bool = not self.flash_open_bool
@@ -760,7 +760,7 @@ class MainWindow(QMainWindow):
         
         #update launch all button
         for nsm_client in nsm_session.client_list:
-            if nsm_client.status == 'stopped':
+            if nsm_client.status == CLIENT_STATUS_STOPPED:
                 self.ui.toolButtonLaunchAll.setEnabled(True)
                 break
         else:
@@ -768,7 +768,7 @@ class MainWindow(QMainWindow):
             
         #update stop all button
         for nsm_client in nsm_session.client_list:
-            if nsm_client.status != 'stopped':
+            if nsm_client.status != CLIENT_STATUS_STOPPED:
                 self.ui.toolButtonStopAll.setEnabled(True)
                 break
         else:
@@ -776,7 +776,7 @@ class MainWindow(QMainWindow):
         
         #launch/stop flashing status if 'open'
         for nsm_client in nsm_session.client_list:
-            if nsm_client.status == 'open':
+            if nsm_client.status == CLIENT_STATUS_OPEN:
                 if not self.timer_flicker_open.isActive():
                     self.timer_flicker_open.start()
                 break
@@ -786,13 +786,13 @@ class MainWindow(QMainWindow):
         #launch/stop timer_raisewin if keep focus
         if self.keep_focus:
             for nsm_client in nsm_session.client_list:
-                if nsm_client.status == 'open':
+                if nsm_client.status == CLIENT_STATUS_OPEN:
                     if not self.timer_raisewin.isActive():
                         self.timer_raisewin.start()
                     break
             else:
                 self.timer_raisewin.stop()
-                if status == 'ready':
+                if status == CLIENT_STATUS_READY:
                     self.raiseWindow()
             
     def nsmSetsClientHasGui(self, client_id):
