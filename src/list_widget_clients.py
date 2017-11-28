@@ -19,6 +19,9 @@ class ClientSlot(QFrame):
         self.gui_visible     = True
         self.ui.toolButtonGUI.setVisible(False)
         
+        self.updateClientLabel()
+        self.updateToolTip()
+        
         #set icon
         self.icon = QIcon.fromTheme(self.client.icon_name)
         self.ui.iconButton.setIcon(self.icon)
