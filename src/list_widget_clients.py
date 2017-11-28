@@ -19,22 +19,14 @@ class ClientSlot(QFrame):
         self.gui_visible     = True
         self.ui.toolButtonGUI.setVisible(False)
         
-        self.updateClientLabel()
-        self.updateToolTip()
-        
-        #set icon
-        self.icon = QIcon.fromTheme(self.client.icon_name)
-        self.ui.iconButton.setIcon(self.icon)
-        
-        self.updateToolTip()
-        self.updateClientLabel()
-        
         #connect buttons to functions
         self.ui.toolButtonGUI.clicked.connect(self.toggleGui)
         self.ui.startButton.clicked.connect(self.startClient)
         self.ui.stopButton.clicked.connect(self.stopClient)
         self.ui.saveButton.clicked.connect(self.saveClient)
         self.ui.closeButton.clicked.connect(self.removeClient)
+        
+        self.updateClientData()
         
         #choose button colors
         if self.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
@@ -73,20 +65,6 @@ class ClientSlot(QFrame):
     
     def removeClient(self):
         self.list_widget.clientRemoveRequest.emit(self.clientId())
-    
-    def switch(self, new_client_id):
-        self.updateToolTip()
-    
-    def updateClientIcon(self, icon_name):
-        self.icon = QIcon.fromTheme(icon_name)
-        self.ui.iconButton.setIcon(self.icon)
-    
-    def updateClientLabel(self):
-        label = self.client.label if self.client.label else self.client.name
-        self.ui.ClientName.setText(label)
-    
-    def updateToolTip(self):
-        self.ui.ClientName.setToolTip('Executable : ' + self.client.executable_path + '\n' + 'NSM id : ' + self.clientId())
     
     def updateClientData(self):
         #set main label
