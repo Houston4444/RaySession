@@ -79,7 +79,7 @@ class ClientSlot(QFrame):
         self.ui.iconButton.setIcon(self.icon)
         
     def updateStatus(self, status):
-        self.ui.lineEditClientStatus.setText(statusString(status))
+        self.ui.lineEditClientStatus.setText(clientStatusString(status))
         
         if status in (CLIENT_STATUS_LAUNCH, CLIENT_STATUS_OPEN, CLIENT_STATUS_SWITCH):
             self.ui.startButton.setEnabled(False)

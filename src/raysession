@@ -76,13 +76,13 @@ class NsmSession(object):
         self.client_list   = []
         self.name          = None
         self.is_running    = False
-        self.server_status = 'off'
+        self.server_status = SERVER_STATUS_OFF
     
     def setRunning(self, bool):
         self.is_running = bool
         
     def isRunning(self):
-        return bool(self.server_status != 'off')
+        return bool(self.server_status != SERVER_STATUS_OFF)
     
     def updateServerStatus(self, server_status):
         self.server_status = server_status
@@ -237,7 +237,7 @@ class OscSignaler(QObject):
     client_updated         = pyqtSignal(ClientData)
     add_session_to_list    = pyqtSignal(str)
     new_executable         = pyqtSignal(list)
-    server_status_changed  = pyqtSignal(str)
+    server_status_changed  = pyqtSignal(int)
     clients_reordered      = pyqtSignal(list)
     opening_nsm_session    = pyqtSignal()
     
@@ -398,6 +398,10 @@ class OSCServerT(ServerThread):
     @make_method('/ray/server_status', None)
     def rayServerStatus(self, path, args):
         server_status = args[0]
+        
+        if type(server_status) != int:
+            return
+        
         self.qsig.server_status_changed.emit(server_status)
     
     @make_method('/ray/opening_nsm_session', None)
@@ -726,7 +730,7 @@ class MainWindow(QMainWindow):
         serverOSC.saveSession()
     
     def addClient(self):
-        if nsm_session.server_status in ('close', 'off'):
+        if nsm_session.server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF):
             return
         
         execDialog = newExecutableDialog(self)
@@ -836,10 +840,10 @@ class MainWindow(QMainWindow):
     
     def rayChangeServerStatus(self, server_status):
         nsm_session.updateServerStatus(server_status)
-        self.ui.lineEditServerStatus.setText(server_status)
-        self.ui.frameCurrentSession.setEnabled(bool(server_status != 'off'))
+        self.ui.lineEditServerStatus.setText(serverStatusString(server_status))
+        self.ui.frameCurrentSession.setEnabled(bool(server_status != SERVER_STATUS_OFF))
         
-        if server_status == 'off':
+        if server_status == SERVER_STATUS_OFF:
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(False)
@@ -853,7 +857,7 @@ class MainWindow(QMainWindow):
             if self.terminate_request:
                 app.quit()
             
-        elif server_status == 'open':
+        elif server_status == SERVER_STATUS_OPEN:
             self.ui.toolButtonSaveSession.setEnabled(False)
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
@@ -864,7 +868,7 @@ class MainWindow(QMainWindow):
             self.ui.actionOpenSessionFolder.setEnabled(True)
             
         
-        elif server_status == 'ready':
+        elif server_status == SERVER_STATUS_READY:
             self.ui.toolButtonSaveSession.setEnabled(True)
             self.ui.actionSaveSession.setEnabled(True)
             self.ui.actionCloseSession.setEnabled(True)
@@ -874,7 +878,7 @@ class MainWindow(QMainWindow):
             self.ui.actionAddProxy.setEnabled(True)
             self.ui.actionOpenSessionFolder.setEnabled(True)
         
-        elif server_status == 'close':
+        elif server_status == SERVER_STATUS_CLOSE:
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(False)
@@ -963,9 +967,9 @@ class OpenSessionDialog(ChildDialog):
         self.serverStatusChanged(nsm_session.server_status)
     
     def serverStatusChanged(self, server_status):
-        self.ui.toolButtonFolder.setEnabled(bool(server_status == 'off'))
+        self.ui.toolButtonFolder.setEnabled(bool(server_status == SERVER_STATUS_OFF))
         
-        self.server_will_accept = bool(server_status in ('off', 'ready'))
+        self.server_will_accept = bool(server_status in (SERVER_STATUS_OFF, SERVER_STATUS_READY))
         self.preventOk()
         
     def addSession(self, session_name):
@@ -1079,9 +1083,9 @@ class NewSessionDialog(ChildDialog):
         self.serverStatusChanged(nsm_session.server_status)
     
     def serverStatusChanged(self, server_status):
-        self.ui.toolButtonFolder.setEnabled(bool(server_status == 'off'))
+        self.ui.toolButtonFolder.setEnabled(bool(server_status == SERVER_STATUS_OFF))
         
-        self.server_will_accept = bool(server_status in ('off', 'ready'))
+        self.server_will_accept = bool(server_status in (SERVER_STATUS_OFF, SERVER_STATUS_READY))
     
     def addSessionToList(self, session_name):
         self.session_list.append(session_name)
@@ -1115,8 +1119,8 @@ class AbortSessionDialog(ChildDialog):
         self.serverStatusChanged(nsm_session.server_status)
         
     def serverStatusChanged(self, server_status):
-        self.ui.pushButtonAbort.setEnabled(not bool(server_status in ('close', 'off')))
-        if server_status == 'off':
+        self.ui.pushButtonAbort.setEnabled(not bool(server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF)))
+        if server_status == SERVER_STATUS_OFF:
             self.reject()
         
 class OpenNsmSessionInfoDialog(ChildDialog):
@@ -1146,12 +1150,12 @@ class quitAppDialog(ChildDialog):
         self.serverStatusChanged(nsm_session.server_status)
     
     def serverStatusChanged(self, server_status):
-        if server_status == 'off':
+        if server_status == SERVER_STATUS_OFF:
             self.accept()
             return
         
-        self.ui.pushButtonSaveQuit.setEnabled(bool(server_status == 'ready'))
-        self.ui.pushButtonQuitNoSave.setEnabled(bool(server_status != 'close'))
+        self.ui.pushButtonSaveQuit.setEnabled(bool(server_status == SERVER_STATUS_READY))
+        self.ui.pushButtonQuitNoSave.setEnabled(bool(server_status != SERVER_STATUS_CLOSE))
  
 class AboutRaySessionDialog(ChildDialog):
     def __init__(self, parent):
@@ -1210,7 +1214,7 @@ class newExecutableDialog(ChildDialog):
            self.accept()
            
     def serverStatusChanged(self, server_status):
-        if server_status in ('close', 'off'):
+        if server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF):
             self.reject()
 
 class ErrorDialog(ChildDialog):

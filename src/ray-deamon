@@ -722,7 +722,7 @@ class OperatingSession(Session):
             self.nextFunction()
             return
         
-        server.setServerStatus('save')
+        server.setServerStatus(SERVER_STATUS_SAVE)
         
         for client in self.clients:
             if client.active:
@@ -794,7 +794,7 @@ class OperatingSession(Session):
         if not self.err_loading:
             MESSAGE("Done.")
             server.send(self.osc_src_addr, "/reply", self.osc_path, "Saved." )
-        server.setServerStatus('ready')
+        server.setServerStatus(SERVER_STATUS_READY)
     
     def saveError(self):
         MESSAGE("Failed")
@@ -807,7 +807,7 @@ class OperatingSession(Session):
         server.send(self.osc_src_addr, "/error", self.osc_path, ERR_CREATE_FAILED, m)
         
         self.process_order.clear()
-        server.setServerStatus('ready')
+        server.setServerStatus(SERVER_STATUS_READY)
         
     def close(self):
         GUIMSG(_translate('GUIMSG', "Commanding attached clients to quit."))
@@ -819,7 +819,7 @@ class OperatingSession(Session):
             self.nextFunction()
             return
         
-        server.setServerStatus('close')
+        server.setServerStatus(SERVER_STATUS_CLOSE)
         
         for client in self.clients:
             if client.isRunning():
@@ -853,12 +853,12 @@ class OperatingSession(Session):
     def closeDone(self):
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Closed.")
         MESSAGE("Done")
-        server.setServerStatus('off')
+        server.setServerStatus(SERVER_STATUS_OFF)
     
     def abortDone(self):
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Aborted.")
         MESSAGE("Done")
-        server.setServerStatus('off')
+        server.setServerStatus(SERVER_STATUS_OFF)
         
     def new(self):
         GUIMSG(_translate('GUIMSG', "Creating new session \"%s\"") % self.osc_args[0])
@@ -870,7 +870,7 @@ class OperatingSession(Session):
             server.send(self.osc_src_addr, "/error", self.osc_path, ERR_CREATE_FAILED, "Could not create the session directory" )
             return
         
-        server.setServerStatus('new')
+        server.setServerStatus(SERVER_STATUS_NEW)
         self.setPath(spath)
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Created." )
         server.sendGui("/nsm/gui/session/session", self.osc_args[0])
@@ -881,7 +881,7 @@ class OperatingSession(Session):
     
     def newDone(self):
         GUIMSG(_translate('GUIMSG', 'Session is ready'))
-        server.setServerStatus('ready')
+        server.setServerStatus(SERVER_STATUS_READY)
     
     def duplicate(self):
         if self.clientsHaveErrors():
@@ -889,7 +889,7 @@ class OperatingSession(Session):
             self.process_order.clear()
             return
         
-        server.setServerStatus('duplicate')
+        server.setServerStatus(SERVER_STATUS_DUPLICATE)
         new_session_name = self.osc_args[0]
         spath = self.root + '/' + new_session_name
         subprocess.run(['cp', '-R',  self.path, spath])
@@ -1036,7 +1036,7 @@ class OperatingSession(Session):
                 client.quit()
         
         if self.expected_clients:
-            server.setServerStatus('clear')
+            server.setServerStatus(SERVER_STATUS_CLEAR)
         
         self.waitAndGoTo(20000, self.load_step1, WAIT_FOR_STOP)
     
@@ -1081,9 +1081,9 @@ class OperatingSession(Session):
         server.sendGui("/nsm/gui/session/name",  session.name, session.name)
         
         if has_switch:
-            server.setServerStatus('switch')
+            server.setServerStatus(SERVER_STATUS_SWITCH)
         else:
-            server.setServerStatus('launch') 
+            server.setServerStatus(SERVER_STATUS_LAUNCH) 
         
         
         #* this part is a little tricky... the clients need some time to
@@ -1110,7 +1110,7 @@ class OperatingSession(Session):
         
         self.cleanExpected()
         
-        server.setServerStatus('open')
+        server.setServerStatus(SERVER_STATUS_OPEN)
         
         for client in self.clients:
             if client.active and client.isReplyPending():
@@ -1129,7 +1129,7 @@ class OperatingSession(Session):
     
     def loadDone(self):
         MESSAGE("Done")
-        server.setServerStatus('ready')
+        server.setServerStatus(SERVER_STATUS_READY)
     
     def loadError(self):
         MESSAGE("Failed")
@@ -1146,20 +1146,20 @@ class OperatingSession(Session):
         server.send(self.osc_src_addr, "/error", self.osc_path, self.err_loading, m)
         
         if self.name:
-            server.setServerStatus('ready')
+            server.setServerStatus(SERVER_STATUS_READY)
         else:
-            server.setServerStatus('off')
+            server.setServerStatus(SERVER_STATUS_OFF)
             
         self.process_order.clear()
     
     def duplicateDone(self):
         MESSAGE("Done")
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Duplicated.")
-        server.setServerStatus('ready')
+        server.setServerStatus(SERVER_STATUS_READY)
         
     def exitNow(self):
         MESSAGE("Bye Bye...")
-        server.setServerStatus('off')
+        server.setServerStatus(SERVER_STATUS_OFF)
         app.quit()
         
 class SignaledSession(OperatingSession):
@@ -1456,7 +1456,7 @@ class OscServerThread(ServerThread):
     def __init__(self, osc_num=0):
         ServerThread.__init__(self, osc_num)
         self.gui_list = []
-        self.server_status = 'off'
+        self.server_status = SERVER_STATUS_OFF
 
     @make_method('/nsm/server/announce', None)
     def nsmServerAnnounce(self, path, args, types, src_addr):

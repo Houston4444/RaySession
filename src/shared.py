@@ -115,23 +115,41 @@ class ClientData(object):
             else:
                 self.prefix_mode = 2
 
-def statusString(status):
-    if not 0 <= status < len(all_status_strings):
+def clientStatusString(status):
+    if not 0 <= status < len(client_status_strings):
         return _translate('client status', "invalid")
         
-    return all_status_strings[status]
+    return client_status_strings[status]
+
+def serverStatusString(server_status):
+    if not 0 <= server_status < len(server_status_strings):
+        return _translate('server status', "invalid")
+    
+    return server_status_strings[server_status]
 
 def init_translation(_translate):    
-    global all_status_strings
-    all_status_strings = {CLIENT_STATUS_STOPPED: _translate('client status', "stopped"),
-                          CLIENT_STATUS_LAUNCH : _translate('client status', "launch"),
-                          CLIENT_STATUS_OPEN   : _translate('client status', "open"),
-                          CLIENT_STATUS_READY  : _translate('client status', "ready"),
-                          CLIENT_STATUS_SAVE   : _translate('client status', "save"),
-                          CLIENT_STATUS_SWITCH : _translate('client status', "switch"),
-                          CLIENT_STATUS_QUIT   : _translate('client status', "quit"),
-                          CLIENT_STATUS_NOOP   : _translate('client status', "noop"),
-                          CLIENT_STATUS_ERROR  : _translate('client status', "error"),
-                          CLIENT_STATUS_REMOVED: _translate('client status', "removed") }
+    global client_status_strings
+    client_status_strings = {CLIENT_STATUS_STOPPED: _translate('client status', "stopped"),
+                             CLIENT_STATUS_LAUNCH : _translate('client status', "launch"),
+                             CLIENT_STATUS_OPEN   : _translate('client status', "open"),
+                             CLIENT_STATUS_READY  : _translate('client status', "ready"),
+                             CLIENT_STATUS_SAVE   : _translate('client status', "save"),
+                             CLIENT_STATUS_SWITCH : _translate('client status', "switch"),
+                             CLIENT_STATUS_QUIT   : _translate('client status', "quit"),
+                             CLIENT_STATUS_NOOP   : _translate('client status', "noop"),
+                             CLIENT_STATUS_ERROR  : _translate('client status', "error"),
+                             CLIENT_STATUS_REMOVED: _translate('client status', "removed") }
+    
+    global server_status_strings
+    server_status_strings = {SERVER_STATUS_OFF      : _translate('server status', "off"),
+                             SERVER_STATUS_NEW      : _translate('server status', "new"),
+                             SERVER_STATUS_OPEN     : _translate('server status', "open"),
+                             SERVER_STATUS_CLEAR    : _translate('server status', "clear"),
+                             SERVER_STATUS_SWITCH   : _translate('server status', "switch"),
+                             SERVER_STATUS_LAUNCH   : _translate('server status', "launch"),
+                             SERVER_STATUS_DUPLICATE: _translate('server status', "duplicate"),
+                             SERVER_STATUS_READY    : _translate('server status', "ready"),
+                             SERVER_STATUS_SAVE     : _translate('server status', "save"),
+                             SERVER_STATUS_CLOSE    : _translate('server status', "close") }
 
         
