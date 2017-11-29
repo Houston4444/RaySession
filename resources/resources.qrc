@@ -24,5 +24,7 @@
         <file>scalable/breeze-dark/disabled/document-save.svg</file>
         <file>scalable/breeze-dark/disabled/window-close.svg</file>
         <file>scalable/breeze-dark/disabled/list-remove.svg</file>
+        <file>fonts/Ubuntu-C.ttf</file>
+        <file>fonts/Ubuntu-R.ttf</file>
     </qresource>
 </RCC>

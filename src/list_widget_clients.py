@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame
-from PyQt5.QtGui     import QIcon, QPalette, QPixmap
+from PyQt5.QtGui     import QIcon, QPalette, QPixmap, QFontMetrics, QFont, QFontDatabase
 from PyQt5.QtCore    import Qt, pyqtSignal, QSize
  
 import ui_client_slot
@@ -50,6 +50,11 @@ class ClientSlot(QFrame):
             closeIcon.addPixmap(QPixmap(':scalable/breeze-dark/window-close'), QIcon.Normal, QIcon.Off)
             closeIcon.addPixmap(QPixmap(':scalable/breeze-dark/disabled/window-close'), QIcon.Disabled, QIcon.Off)
             self.ui.closeButton.setIcon(closeIcon)
+            
+        self.ubuntu_font      = QFont(QFontDatabase.applicationFontFamilies(0)[0], 8)
+        self.ubuntu_font_cond = QFont(QFontDatabase.applicationFontFamilies(1)[0], 8)
+        self.ubuntu_font.setBold(True)
+        self.ubuntu_font_cond.setBold(True)
     
     def clientId(self):
         return self.client.client_id
@@ -79,7 +84,15 @@ class ClientSlot(QFrame):
         self.ui.iconButton.setIcon(self.icon)
         
     def updateStatus(self, status):
-        self.ui.lineEditClientStatus.setText(clientStatusString(status))
+        status_string = clientStatusString(status)
+        width = QFontMetrics(self.ubuntu_font).width(status_string)
+        
+        if width > (self.ui.lineEditClientStatus.width() - 10):
+            self.ui.lineEditClientStatus.setFont(self.ubuntu_font_cond)
+        else:
+            self.ui.lineEditClientStatus.setFont(self.ubuntu_font)
+        
+        self.ui.lineEditClientStatus.setText(status_string)
         
         if status in (CLIENT_STATUS_LAUNCH, CLIENT_STATUS_OPEN, CLIENT_STATUS_SWITCH):
             self.ui.startButton.setEnabled(False)

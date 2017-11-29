@@ -2,7 +2,7 @@
 
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView
-from PyQt5.QtGui     import QIcon , QCursor, QPalette, QPixmap
+from PyQt5.QtGui     import QIcon , QCursor, QPalette, QPixmap, QFontDatabase
 from PyQt5.QtCore    import QTimer, QProcess, pyqtSignal, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
 import sys
 from liblo import *
@@ -819,7 +819,7 @@ class MainWindow(QMainWindow):
             self.ui.LabelSessionName.setText(session_name)
         else:
             self.setWindowTitle(APP_TITLE)
-            self.ui.LabelSessionName.setText('No Session Loaded')
+            self.ui.LabelSessionName.setText(_translate('main view', 'No Session Loaded'))
             
     def nsmSendsError(self, args):
         if not len(args) >= 3:
@@ -1304,6 +1304,9 @@ if __name__ == '__main__':
     init_translation(_translate)
     #_translate = init_translation(app)
     
+    
+    QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
+    QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
     
     #get arguments
     parser = argparse.ArgumentParser(description=_translate('help', 'A session manager based on the Non-Session-Manager API for sound applications.'))

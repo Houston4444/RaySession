@@ -275,11 +275,16 @@
          <height>28</height>
         </size>
        </property>
+       <property name="font">
+        <font>
+         <family>Serif</family>
+         <pointsize>8</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
        <property name="toolTip">
         <string>Status</string>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">QLineEdit {font-size : 10px; font-weight : bold }</string>
        </property>
        <property name="text">
         <string>stopped</string>

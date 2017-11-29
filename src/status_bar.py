@@ -1,7 +1,7 @@
  # -*- coding: utf-8 -*-
 
 from PyQt5.QtWidgets import QLineEdit
-from PyQt5.QtGui     import QPalette, QColor
+from PyQt5.QtGui     import QPalette, QColor, QFont, QFontDatabase, QFontMetrics
 from PyQt5.QtCore    import QTimer
 
 class StatusBar(QLineEdit):
@@ -11,6 +11,11 @@ class StatusBar(QLineEdit):
         self.timer = QTimer()
         self.timer.setInterval(350)
         self.timer.timeout.connect(self.showNextText)
+        
+        self.ubuntu_font      = QFont(QFontDatabase.applicationFontFamilies(0)[0], 8)
+        self.ubuntu_font_cond = QFont(QFontDatabase.applicationFontFamilies(1)[0], 8)
+        self.ubuntu_font.setBold(True)
+        self.ubuntu_font_cond.setBold(True)
         
         self.reverseColors()
         
@@ -38,10 +43,18 @@ class StatusBar(QLineEdit):
                 self.next_texts.append(text)
                 return
             self.timer.start()
-        if len(text) > 6:
-            self.setStyleSheet('QLineEdit{font-size: 8px; font-weight: bold}')
+            
+        width = QFontMetrics(self.ubuntu_font).width(text)
+        
+        if width > (self.width() - 10):
+            self.setFont(self.ubuntu_font_cond)
         else:
-            self.setStyleSheet('QLineEdit{font-size: 10px; font-weight: bold}')
+            self.setFont(self.ubuntu_font)
+            
+        #if len(text) > 6:
+            #self.setStyleSheet('QLineEdit{font-size: 8px; font-weight: bold}')
+        #else:
+            #self.setStyleSheet('QLineEdit{font-size: 10px; font-weight: bold}')
         QLineEdit.setText(self, text)
         
     def paintEvent(self, event):
