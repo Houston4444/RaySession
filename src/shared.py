@@ -4,7 +4,7 @@ import liblo
 import sys, os
 from PyQt5.QtCore import QLocale, QTranslator
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 APP_TITLE = 'Ray Session'
 

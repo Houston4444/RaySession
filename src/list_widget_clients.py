@@ -116,7 +116,7 @@ class ClientSlot(QFrame):
             
     def flashIfOpen(self, boolflash):
         if boolflash:
-            self.ui.lineEditClientStatus.setText(statusString(CLIENT_STATUS_OPEN))
+            self.ui.lineEditClientStatus.setText(clientStatusString(CLIENT_STATUS_OPEN))
         else:
             self.ui.lineEditClientStatus.setText('')
     
