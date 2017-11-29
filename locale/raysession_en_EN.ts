@@ -217,97 +217,97 @@
 <context>
     <name>GUIMSG</name>
     <message>
-        <location filename="../src/ray-deamon" line="175"/>
-        <source>Launching %s</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ray-deamon" line="101"/>
+        <location filename="../src/ray-deamon" line="104"/>
         <source>Good Bye ! Clients are still running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="104"/>
+        <location filename="../src/ray-deamon" line="107"/>
         <source>Good Bye !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="216"/>
+        <location filename="../src/ray-deamon" line="217"/>
+        <source>Launching %s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ray-deamon" line="260"/>
         <source>Client %s terminated because we told it to.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="218"/>
+        <location filename="../src/ray-deamon" line="262"/>
         <source>Client %s died unexpectedly.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="237"/>
+        <location filename="../src/ray-deamon" line="281"/>
         <source>Failed to start %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="273"/>
+        <location filename="../src/ray-deamon" line="317"/>
         <source>Stopping client %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="494"/>
+        <location filename="../src/ray-deamon" line="674"/>
         <source>waiting for clients announces...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="496"/>
+        <location filename="../src/ray-deamon" line="676"/>
         <source>waiting for clients to die...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="521"/>
+        <location filename="../src/ray-deamon" line="701"/>
         <source>%sdidn&apos;t announce</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="523"/>
+        <location filename="../src/ray-deamon" line="703"/>
         <source>%sstill alive !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="528"/>
+        <location filename="../src/ray-deamon" line="708"/>
         <source>All expected clients are announced</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="530"/>
+        <location filename="../src/ray-deamon" line="710"/>
         <source>All expected clients are died</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="588"/>
+        <location filename="../src/ray-deamon" line="767"/>
         <source>Can&apos;t save session, session file is unwriteable !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="604"/>
+        <location filename="../src/ray-deamon" line="813"/>
         <source>Session saved.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="616"/>
+        <location filename="../src/ray-deamon" line="825"/>
         <source>Commanding attached clients to quit.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="668"/>
+        <location filename="../src/ray-deamon" line="878"/>
         <source>Creating new session &quot;%s&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="689"/>
+        <location filename="../src/ray-deamon" line="899"/>
         <source>Session is ready</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="728"/>
+        <location filename="../src/ray-deamon" line="977"/>
         <source>Opening session %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -586,9 +586,57 @@
     </message>
 </context>
 <context>
+    <name>client status</name>
+    <message>
+        <location filename="../src/raysession" line="1305"/>
+        <source>stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="1306"/>
+        <source>launch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="1307"/>
+        <source>open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="1308"/>
+        <source>ready</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="1309"/>
+        <source>save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="1310"/>
+        <source>switch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="1311"/>
+        <source>quit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="1312"/>
+        <source>noop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="1313"/>
+        <source>error</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>help</name>
     <message>
-        <location filename="../src/raysession" line="1177"/>
+        <location filename="../src/raysession" line="1319"/>
         <source>A session manager based on the Non-Session-Manager API for sound applications.</source>
         <translation type="unfinished"></translation>
     </message>

@@ -9,5 +9,6 @@ FORMS        += ../resources/ui/quit_app.ui
 FORMS        += ../resources/ui/raysession.ui
 SOURCES      += ../src/raysession
 SOURCES      += ../src/ray-deamon
+SOURCES      += ../src/list_widget_clients.py
 TRANSLATIONS += raysession_en_EN.ts
 TRANSLATIONS += raysession_fr_FR.ts

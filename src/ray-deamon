@@ -2,7 +2,7 @@
 
 import os, sys, string, random, time, subprocess, signal, unicodedata
 from liblo import ServerThread, Address, make_method, Message
-from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings, QLocale, QTranslator
+from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings
 from PyQt5.QtXml import QDomDocument
 
 from shared import *
@@ -34,8 +34,6 @@ ERR_CREATE_FAILED     = -10
 ERR_SESSION_LOCKED    = -11
 ERR_OPERATION_PENDING = -12
 
-
-
 COMMAND_NONE      = 0
 COMMAND_QUIT      = 1
 COMMAND_KILL      = 2
@@ -51,8 +49,7 @@ WAIT_FOR_STOP     = 1
 WAIT_FOR_ANNOUNCE = 2
 WAIT_FOR_REPLY    = 3
 
-debug             = False
-pending_operation = COMMAND_NONE
+debug = False
 last_client_message = None
 known_as_non_active = []
 
@@ -89,10 +86,6 @@ def WARNING(string):
 def GUIMSG(message):
     server.sendGui('/nsm/gui/server/message', message)
 
-def setPendingOperation(pending_command):
-    global pending_operation
-    pending_operation = pending_command
-
 def waitForJack():
     if jack_bus and jack_bus.IsStarted():
         all_ports = jack_bus.GetAllPorts()
@@ -109,7 +102,6 @@ def quitRay(sig, frame):
 
 class Client(QObject):
     #can be directly changed by OSC thread
-    
     gui_visible     = True
     _reply_errcode  = 0
     _reply_message  = None
@@ -118,10 +110,10 @@ class Client(QObject):
     #have to be modified by main thread for security
     addr            = None
     pid             = 0
-    pending_command = None
+    pending_command = COMMAND_NONE
     active          = False
-    client_id       = None
-    capabilities    = None
+    client_id       = ''
+    capabilities    = ''
     
     status          = CLIENT_STATUS_STOPPED
     name            = ''
@@ -465,7 +457,7 @@ class Session(QObject):
         remove_item_list = []
         for i in range(len(self.clients)):
             if not self.clients[i].active:
-                server.sendGui("/nsm/gui/client/status", session.clients[i].client_id, "removed")
+                server.sendGui("/nsm/gui/client/status", session.clients[i].client_id, CLIENT_STATUS_REMOVED)
                 remove_item_list.append(i)
         
         remove_item_list.reverse()
@@ -749,9 +741,7 @@ class OperatingSession(Session):
         session_file = self.path + '/raysession.xml'
         if os.path.isfile(session_file) and not os.access(session_file, os.W_OK):
             self.err_saving = ERR_CREATE_FAILED
-            MESSAGE("Can't save session, session file is unwriteable !")
-            GUIMSG(_translate('GUIMSG', "Can't save session, session file is unwriteable !"))
-            self.nextFunction()
+            self.saveError()
             return
         
         self.err_saving = ERR_OK
@@ -804,9 +794,21 @@ class OperatingSession(Session):
         if not self.err_loading:
             MESSAGE("Done.")
             server.send(self.osc_src_addr, "/reply", self.osc_path, "Saved." )
-        setPendingOperation(COMMAND_NONE)
         server.setServerStatus('ready')
     
+    def saveError(self):
+        MESSAGE("Failed")
+        m = _translate('Load Error', "Unknown error")
+        if self.err_saving == ERR_CREATE_FAILED:
+            m = _translate('GUIMSG', "Can't save session, session file is unwriteable !")
+        
+        MESSAGE(m)
+        GUIMSG(m)
+        server.send(self.osc_src_addr, "/error", self.osc_path, ERR_CREATE_FAILED, m)
+        
+        self.process_order.clear()
+        server.setServerStatus('ready')
+        
     def close(self):
         GUIMSG(_translate('GUIMSG', "Commanding attached clients to quit."))
         
@@ -851,13 +853,11 @@ class OperatingSession(Session):
     def closeDone(self):
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Closed.")
         MESSAGE("Done")
-        setPendingOperation(COMMAND_NONE)
         server.setServerStatus('off')
     
     def abortDone(self):
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Aborted.")
         MESSAGE("Done")
-        setPendingOperation(COMMAND_NONE)
         server.setServerStatus('off')
         
     def new(self):
@@ -868,7 +868,6 @@ class OperatingSession(Session):
             os.makedirs(spath)
         except:
             server.send(self.osc_src_addr, "/error", self.osc_path, ERR_CREATE_FAILED, "Could not create the session directory" )
-            setPendingOperation(COMMAND_NONE)
             return
         
         server.setServerStatus('new')
@@ -877,19 +876,17 @@ class OperatingSession(Session):
         server.sendGui("/nsm/gui/session/session", self.osc_args[0])
         server.sendGui("/nsm/gui/session/name", self.osc_args[0], self.osc_args[0])
         
-        setPendingOperation(COMMAND_NONE)
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Session created")
         self.nextFunction()
     
     def newDone(self):
         GUIMSG(_translate('GUIMSG', 'Session is ready'))
-        setPendingOperation(COMMAND_NONE)
         server.setServerStatus('ready')
     
     def duplicate(self):
         if self.clientsHaveErrors():
             server.send(src_addr, "/error", path, ERR_GENERAL_ERROR, "Some clients could not save" )
-            setPendingOperation(COMMAND_NONE)
+            self.process_order.clear()
             return
         
         server.setServerStatus('duplicate')
@@ -974,9 +971,13 @@ class OperatingSession(Session):
             xml.setContent(ray_file.read())
 
             content = xml.documentElement()
-            if content.tagName() != "RAYSESSION":
-                return
             
+            if content.tagName() != "RAYSESSION":
+                ray_file.close()
+                self.err_loading = ERR_BAD_PROJECT
+                self.loadError()
+                return
+                
             node = content.firstChild()
             while not node.isNull():
                 tag_name = node.toElement().tagName()
@@ -1128,21 +1129,22 @@ class OperatingSession(Session):
     
     def loadDone(self):
         MESSAGE("Done")
-        setPendingOperation(COMMAND_NONE)
         server.setServerStatus('ready')
     
     def loadError(self):
         MESSAGE("Failed")
-        m = "Unknown error"
+        m = _translate('Load Error', "Unknown error")
         if self.err_loading == ERR_CREATE_FAILED:
-            m = "Could not create session file!"
+            m = _translate('Load Error', "Could not create session file!")
         elif self.err_loading == ERR_SESSION_LOCKED:
-            m = "Session is locked by another process!"
+            m = _translate('Load Error', "Session is locked by another process!")
         elif self.err_loading == ERR_NO_SUCH_FILE:
-            m = "The named session does not exist."
+            m = _translate('Load Error', "The named session does not exist.")
+        elif self.err_loading == ERR_BAD_PROJECT:
+            m = _translate('Load Error', "Could not load session file.")
         
         server.send(self.osc_src_addr, "/error", self.osc_path, self.err_loading, m)
-        setPendingOperation(COMMAND_NONE)
+        
         if self.name:
             server.setServerStatus('ready')
         else:
@@ -1153,12 +1155,10 @@ class OperatingSession(Session):
     def duplicateDone(self):
         MESSAGE("Done")
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Duplicated.")
-        setPendingOperation(COMMAND_NONE)
         server.setServerStatus('ready')
         
     def exitNow(self):
         MESSAGE("Bye Bye...")
-        setPendingOperation(COMMAND_NONE)
         server.setServerStatus('off')
         app.quit()
         
@@ -1341,7 +1341,7 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == args[0]:
                 if not client.isRunning():
-                    server.sendGui("/nsm/gui/client/status", client.client_id, "removed")
+                    server.sendGui("/nsm/gui/client/status", client.client_id, CLIENT_STATUS_REMOVED)
                     self.removeClient(client)
                     server.sendGui("/reply", "Client removed.")
                 break
@@ -1630,7 +1630,6 @@ class OscServerThread(ServerThread):
         client = getClientById(args[0])
         
         if client and client.active:
-            print('oookkkad')
             self.send(client.addr, "/nsm/client/show_optional_gui")
 
     @make_method('/nsm/gui/client/hide_optional_gui', None)
@@ -1674,20 +1673,15 @@ class OscServerThread(ServerThread):
     def nsmServerDuplicate(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
-        if pending_operation != COMMAND_NONE:
-            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
+        if self.isOperationPending(src_addr, path):
             return
-        
-        setPendingOperation(COMMAND_DUPLICATE)
         
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to duplicate.")
-            setPendingOperation(COMMAND_NONE)
             return
         
         if not pathIsValid(args[0]):
             self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
-            setPendingOperation(COMMAND_NONE)
             return
         
         signaler.server_duplicate.emit(path, args, src_addr)
@@ -1696,11 +1690,8 @@ class OscServerThread(ServerThread):
     def nsmServerAbort(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
-        setPendingOperation(COMMAND_CLOSE)
-        
-        if not  session.path:
+        if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to abort." )
-            setPendingOperation(COMMAND_NONE)
             return
         
         signaler.server_abort.emit(path, args, src_addr)
@@ -1728,15 +1719,11 @@ class OscServerThread(ServerThread):
     def nsmServerNew(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
-        if pending_operation != COMMAND_NONE:
-            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
+        if self.isOperationPending(src_addr, path):
             return
-        
-        setPendingOperation(COMMAND_NEW)
         
         if not pathIsValid(args[0]):
             self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
-            setPendingOperation(COMMAND_NONE)
             return
         
         signaler.server_new.emit(path, args, src_addr)
@@ -1745,15 +1732,11 @@ class OscServerThread(ServerThread):
     def nsmServerSave(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
-        if pending_operation != COMMAND_NONE:
-            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
-            return 0
-        
-        setPendingOperation(COMMAND_SAVE)
+        if self.isOperationPending(src_addr, path):
+            return
         
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to save.")
-            setPendingOperation(COMMAND_NONE)
             return 0
         
         signaler.server_save.emit(path, args, src_addr)
@@ -1762,11 +1745,8 @@ class OscServerThread(ServerThread):
     def nsmServerOpen(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
-        if pending_operation != COMMAND_NONE:
-            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
-            return 0
-        
-        setPendingOperation(COMMAND_OPEN)
+        if self.isOperationPending(src_addr, path):
+            return
         
         signaler.server_open.emit(path, args, src_addr)
                 
@@ -1774,15 +1754,11 @@ class OscServerThread(ServerThread):
     def nsmServerClose(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
-        if pending_operation != COMMAND_NONE:
-            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
-            return 0
-        
-        setPendingOperation(COMMAND_CLOSE)
+        if self.isOperationPending(src_addr, path):
+            return
         
         if not  session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to close.")
-            setPendingOperation(COMMAND_NONE)
             return 0
         
         signaler.server_close.emit(path, args, src_addr)
@@ -1852,6 +1828,13 @@ class OscServerThread(ServerThread):
         if tmp_exec_list:
             self.send(src_addr, '/reply_path', *tmp_exec_list)
         
+    def isOperationPending(self, src_addr, path):
+        if session.process_order:
+            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
+            return True
+        
+        return False
+        
     def sendGui(self, *args):
         for gui_addr in self.gui_list:
             self.send(gui_addr, *args)
@@ -1917,12 +1900,13 @@ if __name__ == '__main__':
     settings = QSettings()
     known_as_non_active = settings.value('deamon/non_active_list', [])
     
-    ## Translation process
+    ### Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
     if appTranslator.load("%s/locale/raysession_%s" % (os.path.dirname(os.path.dirname(sys.argv[0])), locale)):
         app.installTranslator(appTranslator)
     _translate = app.translate
+    init_translation(_translate)
     
     timer = QTimer()
     timer.setInterval(200)
@@ -1933,9 +1917,6 @@ if __name__ == '__main__':
     session  = SignaledSession()
     session.setRoot(session_root)
     
-    #if osc_num:
-        #server = OscServerThread(osc_num)
-    #else:
     server = OscServerThread(getFreeOscPort(osc_num))
     server.start()
     

@@ -2,6 +2,7 @@ from liblo import Server
 import argparse
 import liblo
 import sys, os
+from PyQt5.QtCore import QLocale, QTranslator
 
 VERSION = "0.2.0"
 
@@ -11,7 +12,6 @@ PREFIX_MODE_UNDEF        = 0
 PREFIX_MODE_CLIENT_NAME  = 1
 PREFIX_MODE_SESSION_NAME = 2
 
-#NOT IMPLEMENTED YET
 CLIENT_STATUS_STOPPED = 0
 CLIENT_STATUS_LAUNCH  = 1
 CLIENT_STATUS_OPEN    = 2
@@ -23,10 +23,20 @@ CLIENT_STATUS_NOOP    = 7
 CLIENT_STATUS_ERROR   = 8
 CLIENT_STATUS_REMOVED = 9
 
+SERVER_STATUS_OFF       = 0
+SERVER_STATUS_NEW       = 1
+SERVER_STATUS_OPEN      = 2
+SERVER_STATUS_CLEAR     = 3
+SERVER_STATUS_SWITCH    = 4
+SERVER_STATUS_LAUNCH    = 5
+SERVER_STATUS_DUPLICATE = 6
+SERVER_STATUS_READY     = 7
+SERVER_STATUS_SAVE      = 8
+SERVER_STATUS_CLOSE     = 9
+
 
 def ifDebug(string):
     if debug:
-        #qDebug(remove_accents(string))
         print(string, file=sys.stderr)
 
 def setDebug(bool):
@@ -96,9 +106,32 @@ class ClientData(object):
         self.label           = str(label)
         self.capabilities    = str(capabilities)
         
-        self.name  = str(name)  if name  else os.path.basename(self.executable_path)
-        self.icon  = str(icon)  if icon  else self.name.lower().replace('_', '-')
+        self.name  = str(name) if name else os.path.basename(self.executable_path)
+        self.icon  = str(icon) if icon else self.name.lower().replace('_', '-')
         
         if self.prefix_mode == 0:
-            self.project_path = str(project_path)
+            if self.project_path:
+                self.project_path = str(project_path)
+            else:
+                self.prefix_mode = 2
+
+def statusString(status):
+    if not 0 <= status < len(all_status_strings):
+        return _translate('client status', "invalid")
+        
+    return all_status_strings[status]
+
+def init_translation(_translate):    
+    global all_status_strings
+    all_status_strings = {CLIENT_STATUS_STOPPED: _translate('client status', "stopped"),
+                          CLIENT_STATUS_LAUNCH : _translate('client status', "launch"),
+                          CLIENT_STATUS_OPEN   : _translate('client status', "open"),
+                          CLIENT_STATUS_READY  : _translate('client status', "ready"),
+                          CLIENT_STATUS_SAVE   : _translate('client status', "save"),
+                          CLIENT_STATUS_SWITCH : _translate('client status', "switch"),
+                          CLIENT_STATUS_QUIT   : _translate('client status', "quit"),
+                          CLIENT_STATUS_NOOP   : _translate('client status', "noop"),
+                          CLIENT_STATUS_ERROR  : _translate('client status', "error"),
+                          CLIENT_STATUS_REMOVED: _translate('client status', "removed") }
+
         

@@ -174,7 +174,7 @@ class NsmClient(object):
         self.gui_visible   = False
         self.hasDirty      = False
         self.dirty_state   = True
-    
+        
     def setStatus(self, status):
         self.status = status
         self.widget.updateStatus(status)
@@ -1291,12 +1291,15 @@ if __name__ == '__main__':
     app.setOrganizationName("RaySession")
     app.setWindowIcon(QIcon(':/scalable/raysession.svg'))
     
-    ## Translation process
+    ### Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
     if appTranslator.load("%s/locale/raysession_%s" % (os.path.dirname(os.path.dirname(sys.argv[0])), locale)):
         app.installTranslator(appTranslator)
     _translate = app.translate
+    init_translation(_translate)
+    #_translate = init_translation(app)
+    
     
     #get arguments
     parser = argparse.ArgumentParser(description=_translate('help', 'A session manager based on the Non-Session-Manager API for sound applications.'))
