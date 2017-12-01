@@ -237,7 +237,7 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>Kill</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Politely ask the client to stop.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="styleSheet">
         <string notr="true">QToolButton {border: none}</string>
@@ -259,7 +259,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="lineEditClientStatus">
+      <widget class="StatusBar" name="lineEditClientStatus">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -399,6 +399,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>StatusBar</class>
+   <extends>QLineEdit</extends>
+   <header>status_bar</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
  </resources>

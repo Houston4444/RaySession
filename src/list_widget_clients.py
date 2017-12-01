@@ -55,6 +55,9 @@ class ClientSlot(QFrame):
         self.ubuntu_font_cond = QFont(QFontDatabase.applicationFontFamilies(1)[0], 8)
         self.ubuntu_font.setBold(True)
         self.ubuntu_font_cond.setBold(True)
+        
+        self.normal_stop_icon = self.ui.stopButton.icon()
+        self.stop_is_kill = False
     
     def clientId(self):
         return self.client.client_id
@@ -63,7 +66,10 @@ class ClientSlot(QFrame):
         self.list_widget.clientStartRequest.emit(self.clientId())
         
     def stopClient(self):
-        self.list_widget.clientStopRequest.emit(self.clientId())
+        if self.stop_is_kill:
+            self.list_widget.clientKillRequest.emit(self.clientId())
+        else:
+            self.list_widget.clientStopRequest.emit(self.clientId())
         
     def saveClient(self):
         self.list_widget.clientSaveRequest.emit(self.clientId())
@@ -84,15 +90,7 @@ class ClientSlot(QFrame):
         self.ui.iconButton.setIcon(self.icon)
         
     def updateStatus(self, status):
-        status_string = clientStatusString(status)
-        width = QFontMetrics(self.ubuntu_font).width(status_string)
-        
-        if width > (self.ui.lineEditClientStatus.width() - 10):
-            self.ui.lineEditClientStatus.setFont(self.ubuntu_font_cond)
-        else:
-            self.ui.lineEditClientStatus.setFont(self.ubuntu_font)
-        
-        self.ui.lineEditClientStatus.setText(status_string)
+        self.ui.lineEditClientStatus.setText(clientStatusString(status))
         
         if status in (CLIENT_STATUS_LAUNCH, CLIENT_STATUS_OPEN, CLIENT_STATUS_SWITCH):
             self.ui.startButton.setEnabled(False)
@@ -124,8 +122,13 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
+            
+            self.ui.stopButton.setIcon(self.normal_stop_icon)
+            self.stop_is_kill = False
 				
-        
+    def allowKill(self):
+        self.ui.stopButton.setIcon(QIcon(":/scalable/breeze/media-playback-stop-red.svg"))
+        self.stop_is_kill = True
             
     def flashIfOpen(self, boolflash):
         if boolflash:
@@ -203,6 +206,7 @@ class ListWidgetClients(QListWidget):
     orderChanged = pyqtSignal(list)
     clientStartRequest   = pyqtSignal(str)
     clientStopRequest    = pyqtSignal(str)
+    clientKillRequest    = pyqtSignal(str)
     clientSaveRequest    = pyqtSignal(str)
     clientRemoveRequest  = pyqtSignal(str)
     clientHideGuiRequest = pyqtSignal(str)

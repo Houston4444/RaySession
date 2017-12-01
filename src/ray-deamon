@@ -141,7 +141,7 @@ class Client(QObject):
         self.stopped_since_long = False
         self.stopped_timer = QTimer()
         self.stopped_timer.setSingleShot(True)
-        self.stopped_timer.setInterval(1000) #1sec
+        self.stopped_timer.setInterval(2000) #2sec
         self.stopped_timer.timeout.connect(self.stoppedSinceLong)
     
     
@@ -205,7 +205,6 @@ class Client(QObject):
         
         self.pending_command = COMMAND_START
         self.process.start(self.executable_path)
-        #server.sendGui("/nsm/gui/client/new", self.client_id, self.name)
      
     def terminate(self):
         if self.isRunning():
@@ -219,12 +218,10 @@ class Client(QObject):
         return bool(self.process.state() == 2)
     
     def standardError(self):
-        #print('tu devrais parler')
         standard_error = self.process.readAllStandardError().data().decode('utf-8')
         CLIENT_MESSAGE(standard_error, self.name, self.client_id)
         
     def standardOutput(self):
-        #print('tu devrais parler dedans')
         standard_output = self.process.readAllStandardOutput().data().decode('utf-8')
         CLIENT_MESSAGE(standard_output, self.name, self.client_id)
     
@@ -242,6 +239,8 @@ class Client(QObject):
         
     
     def processFinished(self, exit_code, exit_status):
+        self.stopped_timer.stop()
+        
         if self.pending_command in (COMMAND_KILL, COMMAND_QUIT):
             GUIMSG(_translate('GUIMSG', "Client %s terminated because we told it to.") % self.name)
         else:
@@ -280,6 +279,7 @@ class Client(QObject):
     
     def stoppedSinceLong(self):
         self.stopped_since_long = True
+        server.sendGui('/ray/gui/client/still_running', self.client_id)
     
     def tellClientSessionIsLoaded(self):
         if self.active and not self.isDumbClient():
@@ -1184,6 +1184,7 @@ class SignaledSession(OperatingSession):
         signaler.server_reply.connect(self.serverReply)
         
         signaler.gui_client_stop.connect(self.guiClientStop)
+        signaler.gui_client_kill.connect(self.guiClientKill)
         signaler.gui_client_remove.connect(self.guiClientRemove)
         signaler.gui_client_resume.connect(self.guiClientResume)
         signaler.gui_client_save.connect(self.guiClientSave)
@@ -1328,11 +1329,17 @@ class SignaledSession(OperatingSession):
     def guiClientStop(self, path, args):
         for client in self.clients:
             if client.client_id == args[0]:
-                if client.stopped_since_long:
-                    client.kill()
-                else:
-                    client.stop()
+                client.stop()
                 server.sendGui("/reply", "Client stopped." )
+                break
+        else:
+            server.sendGui("/error", -10, "No such client." )
+    
+    def guiClientKill(self, path, args):
+        for client in self.clients:
+            if client.client_id == args[0]:
+                client.kill()
+                server.sendGui("/reply", "Client killed." )
                 break
         else:
             server.sendGui("/error", -10, "No such client." )
@@ -1445,6 +1452,7 @@ class Signaler(QObject):
     server_stopallclients  = pyqtSignal()
     server_reorder_clients = pyqtSignal(str, list)
     gui_client_stop   = pyqtSignal(str, list)
+    gui_client_kill   = pyqtSignal(str, list)
     gui_client_remove = pyqtSignal(str, list)
     gui_client_resume = pyqtSignal(str, list)
     gui_client_save   = pyqtSignal(str, list)
@@ -1607,7 +1615,12 @@ class OscServerThread(ServerThread):
     def nsmGuiClientStop(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_stop.emit(path, args)
-                
+    
+    @make_method('/nsm/gui/client/kill', None)
+    def nsmGuiClientKill(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_kill.emit(path, args)            
+    
     @make_method('/nsm/gui/client/remove', None)
     def nsmGuiClientRemove(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))

@@ -136,6 +136,11 @@ class NsmSession(object):
         if nsm_client:
             nsm_client.switch(new_client_id)
     
+    def clientIsStillRunning(self, client_id):
+        nsm_client = self.getClient(client_id)
+        if nsm_client:
+            nsm_client.allowKill()
+    
     def removeAllClients(self):
         self.client_list.clear()
         
@@ -196,6 +201,9 @@ class NsmClient(object):
         self.client_id = new_client_id
         self.widget.updateClientData()
         
+    def allowKill(self):
+        self.widget.allowKill()
+        
     def updateClientProperties(self, client_data):
         self.executable_path = client_data.executable_path
         self.name            = client_data.name
@@ -234,6 +242,7 @@ class OscSignaler(QObject):
     client_dirty_sig       = pyqtSignal(str, bool)
     client_has_gui         = pyqtSignal(str)
     client_gui_visible_sig = pyqtSignal(str, int)
+    client_still_running   = pyqtSignal(str)
     client_updated         = pyqtSignal(ClientData)
     add_session_to_list    = pyqtSignal(str)
     new_executable         = pyqtSignal(list)
@@ -394,7 +403,15 @@ class OSCServerT(ServerThread):
             
         client_id, state = args
         self.qsig.client_gui_visible_sig.emit(client_id, state)
+      
+    @make_method('/ray/gui/client/still_running', None)
+    def guiClientGuiVisible(self, path, args):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+            
+        client_id = args[0]
+        self.qsig.client_still_running.emit(client_id)
         
+      
     @make_method('/ray/server_status', None)
     def rayServerStatus(self, path, args):
         server_status = args[0]
@@ -458,6 +475,10 @@ class OSCServerT(ServerThread):
     def stopClient(self, client_id):
         ifDebug('serverOSC::raysession_sends stop client %s' % client_id)
         self.toDeamon('/nsm/gui/client/stop', client_id)
+        
+    def killClient(self, client_id):
+        ifDebug('serverOSC::raysession_sends stop client %s' % client_id)
+        self.toDeamon('/nsm/gui/client/kill', client_id)
         
     def saveClient(self, client_id):
         ifDebug('serverOSC::raysession_sends save client %s' % client_id)
@@ -579,6 +600,7 @@ class MainWindow(QMainWindow):
         serverOSC.qsig.client_gui_visible_sig.connect(self.nsmSetsClientGuiState)
         serverOSC.qsig.client_dirty_sig.connect(self.nsmSetsClientDirtyState)
         serverOSC.qsig.client_switched.connect(self.nsmSwitchesClient)
+        serverOSC.qsig.client_still_running.connect(self.serverStillRunningClient)
         serverOSC.qsig.client_updated.connect(self.serverUpdatesClientProperties)
         serverOSC.qsig.new_message_sig.connect(self.nsmPrintsMessage)
         serverOSC.qsig.session_name_sig.connect(self.nsmRenamesSession)
@@ -613,12 +635,16 @@ class MainWindow(QMainWindow):
         if not ray_deamon.is_local:
             self.ui.actionKeepFocus.setChecked(False)
             self.ui.actionKeepFocus.setEnabled(False)
+            
+        self.ui.toolButtonLaunchAll.setVisible(False)
+        self.ui.toolButtonStopAll.setVisible(False)
     
     def connectListWidgetRequests(self):
         #connect the listWidget signals to OSC server
         self.ui.listWidget.orderChanged.connect(serverOSC.changeClientOrder)
         self.ui.listWidget.clientStartRequest.connect(serverOSC.startClient)
         self.ui.listWidget.clientStopRequest.connect(serverOSC.stopClient)
+        self.ui.listWidget.clientKillRequest.connect(serverOSC.killClient)
         self.ui.listWidget.clientSaveRequest.connect(serverOSC.saveClient)
         self.ui.listWidget.clientRemoveRequest.connect(serverOSC.removeClient)
         self.ui.listWidget.clientHideGuiRequest.connect(serverOSC.hideClientOptionalGui)
@@ -807,6 +833,9 @@ class MainWindow(QMainWindow):
         
     def nsmSetsClientDirtyState(self, client_id, bool_dirty):
         nsm_session.setClientDirtyState(client_id, bool_dirty)
+    
+    def serverStillRunningClient(self, client_id):
+        nsm_session.clientIsStillRunning(client_id)
     
     def nsmPrintsMessage(self, message):
         self.ui.textEditMessages.appendPlainText(time.strftime("%H:%M:%S") + '  ' + message)
@@ -1141,8 +1170,8 @@ class quitAppDialog(ChildDialog):
         self.ui = ui_quit_app.Ui_DialogQuitApp()
         self.ui.setupUi(self)
         self.ui.pushButtonCancel.setFocus(Qt.OtherFocusReason)
-        self.ui.pushButtonSaveQuit.clicked.connect(serverOSC.closeCurrentSession)
-        self.ui.pushButtonQuitNoSave.clicked.connect(serverOSC.abortCurrentSession)
+        self.ui.pushButtonSaveQuit.clicked.connect(serverOSC.closeSession)
+        self.ui.pushButtonQuitNoSave.clicked.connect(serverOSC.abortSession)
         
         original_text = self.ui.labelExecutable.text()
         self.ui.labelExecutable.setText(original_text % ('<strong>%s</strong>' % nsm_session.name))
