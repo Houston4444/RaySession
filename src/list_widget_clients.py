@@ -24,6 +24,7 @@ class ClientSlot(QFrame):
         self.ui.toolButtonGUI.clicked.connect(self.toggleGui)
         self.ui.startButton.clicked.connect(self.startClient)
         self.ui.stopButton.clicked.connect(self.stopClient)
+        self.ui.killButton.clicked.connect(self.killClient)
         self.ui.saveButton.clicked.connect(self.saveClient)
         self.ui.closeButton.clicked.connect(self.removeClient)
         
@@ -56,8 +57,11 @@ class ClientSlot(QFrame):
         self.ubuntu_font.setBold(True)
         self.ubuntu_font_cond.setBold(True)
         
-        self.normal_stop_icon = self.ui.stopButton.icon()
+        self.normal_stop_icon    = self.ui.stopButton.icon()
+        self.normal_stop_tooltip = self.ui.stopButton.toolTip()
         self.stop_is_kill = False
+        
+        self.ui.killButton.setVisible(False)
     
     def clientId(self):
         return self.client.client_id
@@ -66,11 +70,14 @@ class ClientSlot(QFrame):
         self.list_widget.clientStartRequest.emit(self.clientId())
         
     def stopClient(self):
-        if self.stop_is_kill:
-            self.list_widget.clientKillRequest.emit(self.clientId())
-        else:
+        #if self.stop_is_kill:
+            #self.list_widget.clientKillRequest.emit(self.clientId())
+        #else:
             self.list_widget.clientStopRequest.emit(self.clientId())
-        
+    
+    def killClient(self):
+        self.list_widget.clientKillRequest.emit(self.clientId())
+    
     def saveClient(self):
         self.list_widget.clientSaveRequest.emit(self.clientId())
     
@@ -123,11 +130,17 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
             
-            self.ui.stopButton.setIcon(self.normal_stop_icon)
+            #self.ui.stopButton.setIcon(self.normal_stop_icon)
+            #self.ui.stopButton.setToolTip(self.normal_stop_tooltip)
+            self.ui.stopButton.setVisible(True)
+            self.ui.killButton.setVisible(False)
             self.stop_is_kill = False
 				
     def allowKill(self):
-        self.ui.stopButton.setIcon(QIcon(":/scalable/breeze/media-playback-stop-red.svg"))
+        #self.ui.stopButton.setIcon(QIcon(":/scalable/breeze/media-playback-stop-red.svg"))
+        #self.ui.stopButton.setToolTip(_translate('tooltip', 'Kill !'))
+        self.ui.stopButton.setVisible(False)
+        self.ui.killButton.setVisible(True)
         self.stop_is_kill = True
             
     def flashIfOpen(self, boolflash):
@@ -215,10 +228,6 @@ class ListWidgetClients(QListWidget):
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
         self.last_n = 0
-        #self.client_status_translate_list = []
-    
-    def setTranslatedClientStatus(list):
-        self.client_status_translate_list = list
     
     def createClientWidget(self, client_data):
         item = ClientItem(self, client_data)
