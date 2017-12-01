@@ -31,7 +31,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="370"/>
+        <location filename="../resources/ui/client_slot.ui" line="407"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -56,28 +56,33 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="240"/>
-        <source>Kill</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/ui/client_slot.ui" line="279"/>
+        <location filename="../resources/ui/client_slot.ui" line="319"/>
         <source>Status</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="285"/>
+        <location filename="../resources/ui/client_slot.ui" line="322"/>
         <source>stopped</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="310"/>
+        <location filename="../resources/ui/client_slot.ui" line="347"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="364"/>
+        <location filename="../resources/ui/client_slot.ui" line="401"/>
         <source>Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/client_slot.ui" line="240"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Politely ask the client to stop.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/client_slot.ui" line="273"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Kill !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -91,6 +96,41 @@
     <message>
         <location filename="../resources/ui/error_dialog.ui" line="20"/>
         <source>Error Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_copy.ui" line="14"/>
+        <source>Copy File ?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_copy.ui" line="20"/>
+        <source>file is not in proxy directory.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_copy.ui" line="27"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Do you want to copy this file to proxy directory or to use directly this file ?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_copy.ui" line="49"/>
+        <source>Copy file and rename it with session name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_copy.ui" line="52"/>
+        <source>Copy And Rename File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_copy.ui" line="62"/>
+        <source>Copy File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_copy.ui" line="73"/>
+        <source>Use This File</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -113,7 +153,7 @@
     </message>
     <message>
         <location filename="../resources/ui/about_raysession.ui" line="44"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ray Session is a Qt interface for the &lt;a href=&quot;http://non.tuxfamily.org/wiki/Non%20Session%20Manager&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;NSM&lt;/span&gt;&lt;/a&gt; deamon.&lt;/p&gt;&lt;p&gt;Copyryght (C) 2016 houston4444&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ray Session is a Qt interface for the ray-deamon.&lt;/p&gt;&lt;p&gt;Its goal is to manage together audio programs as Ardour, Carla, Qtractor, Non-Timeline in an unique session.&lt;/p&gt;&lt;p&gt;Programs just have to be compatible with the &lt;a href=&quot;http://non.tuxfamily.org/wiki/Non%20Session%20Manager&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;NSM&lt;/span&gt;&lt;/a&gt; API to work with Ray Session.&lt;br/&gt;&lt;/p&gt;&lt;p align=&quot;right&quot;&gt;Copyryght (C) 2016-2017 houston4444&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -138,22 +178,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/new_session.ui" line="28"/>
+        <location filename="../resources/ui/new_session.ui" line="37"/>
         <source>NSM Folder :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/new_session.ui" line="41"/>
+        <location filename="../resources/ui/new_session.ui" line="56"/>
         <source>/home/user/NSM Sessions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/new_session.ui" line="48"/>
+        <location filename="../resources/ui/new_session.ui" line="63"/>
         <source>Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/new_session.ui" line="78"/>
+        <location filename="../resources/ui/new_session.ui" line="98"/>
         <source>New Session Name :</source>
         <translation type="unfinished"></translation>
     </message>
@@ -232,17 +272,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="254"/>
+        <location filename="../src/ray-deamon" line="253"/>
         <source>Client %s terminated because we told it to.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="256"/>
+        <location filename="../src/ray-deamon" line="255"/>
         <source>Client %s died unexpectedly.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="275"/>
+        <location filename="../src/ray-deamon" line="274"/>
         <source>Failed to start %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -348,7 +388,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="269"/>
+        <location filename="../resources/ui/raysession.ui" line="271"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -363,253 +403,358 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="847"/>
+        <location filename="../resources/ui/raysession.ui" line="849"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;Save &amp;amp; Close Session&lt;br/&gt;Abort with Long Click&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="263"/>
+        <location filename="../resources/ui/raysession.ui" line="265"/>
         <source>Open Session Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="314"/>
+        <location filename="../resources/ui/raysession.ui" line="316"/>
         <source>Run Command</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="320"/>
+        <location filename="../resources/ui/raysession.ui" line="322"/>
         <source>Add Client</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="352"/>
+        <location filename="../resources/ui/raysession.ui" line="354"/>
         <source>Run Proxy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="358"/>
+        <location filename="../resources/ui/raysession.ui" line="360"/>
         <source>Proxy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="437"/>
+        <location filename="../resources/ui/raysession.ui" line="439"/>
         <source>Launch all clients</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="443"/>
+        <location filename="../resources/ui/raysession.ui" line="445"/>
         <source>Launch All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="467"/>
+        <location filename="../resources/ui/raysession.ui" line="469"/>
         <source>Stop All Clients (Long Click)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="473"/>
+        <location filename="../resources/ui/raysession.ui" line="475"/>
         <source>Stop All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="512"/>
+        <location filename="../resources/ui/raysession.ui" line="514"/>
         <source>off</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="537"/>
+        <location filename="../resources/ui/raysession.ui" line="539"/>
         <source>Save Session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="612"/>
+        <location filename="../resources/ui/raysession.ui" line="614"/>
         <source>&amp;Messages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="652"/>
+        <location filename="../resources/ui/raysession.ui" line="654"/>
         <source>Fi&amp;le</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="661"/>
+        <location filename="../resources/ui/raysession.ui" line="663"/>
         <source>&amp;Session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="675"/>
+        <location filename="../resources/ui/raysession.ui" line="677"/>
         <source>&amp;view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="684"/>
+        <location filename="../resources/ui/raysession.ui" line="686"/>
         <source>&amp;Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="705"/>
+        <location filename="../resources/ui/raysession.ui" line="707"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="735"/>
+        <location filename="../resources/ui/raysession.ui" line="737"/>
         <source>&amp;Show Messages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="738"/>
+        <location filename="../resources/ui/raysession.ui" line="740"/>
         <source>Ctrl+L</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="750"/>
+        <location filename="../resources/ui/raysession.ui" line="752"/>
         <source>&amp;Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="753"/>
+        <location filename="../resources/ui/raysession.ui" line="755"/>
         <source>Ctrl+S</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="765"/>
+        <location filename="../resources/ui/raysession.ui" line="767"/>
         <source>&amp;Open Session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="768"/>
+        <location filename="../resources/ui/raysession.ui" line="770"/>
         <source>Ctrl+O</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="777"/>
+        <location filename="../resources/ui/raysession.ui" line="779"/>
         <source>&amp;New Session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="780"/>
+        <location filename="../resources/ui/raysession.ui" line="782"/>
         <source>Ctrl+N</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="789"/>
+        <location filename="../resources/ui/raysession.ui" line="791"/>
         <source>&amp;Quit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="792"/>
+        <location filename="../resources/ui/raysession.ui" line="794"/>
         <source>Ctrl+Q</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="801"/>
+        <location filename="../resources/ui/raysession.ui" line="803"/>
         <source>&amp;About Ray Session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="816"/>
+        <location filename="../resources/ui/raysession.ui" line="818"/>
         <source>Show &amp;Menu Bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="819"/>
+        <location filename="../resources/ui/raysession.ui" line="821"/>
         <source>Ctrl+M</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="831"/>
+        <location filename="../resources/ui/raysession.ui" line="833"/>
         <source>Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="844"/>
+        <location filename="../resources/ui/raysession.ui" line="846"/>
         <source>&amp;Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="850"/>
+        <location filename="../resources/ui/raysession.ui" line="852"/>
         <source>Ctrl+W</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="864"/>
+        <location filename="../resources/ui/raysession.ui" line="866"/>
         <source>&amp;Abort</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="867"/>
+        <location filename="../resources/ui/raysession.ui" line="869"/>
         <source>Abort Current Session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="870"/>
+        <location filename="../resources/ui/raysession.ui" line="872"/>
         <source>Ctrl+Shift+W</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="882"/>
+        <location filename="../resources/ui/raysession.ui" line="884"/>
         <source>&amp;Open Session Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="885"/>
+        <location filename="../resources/ui/raysession.ui" line="887"/>
         <source>Open session folder with file manager</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="900"/>
+        <location filename="../resources/ui/raysession.ui" line="902"/>
         <source>&amp;Keep focus while opening clients</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="903"/>
+        <location filename="../resources/ui/raysession.ui" line="905"/>
         <source>Ctrl+F</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="908"/>
+        <location filename="../resources/ui/raysession.ui" line="910"/>
         <source>About &amp;Qt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="920"/>
+        <location filename="../resources/ui/raysession.ui" line="922"/>
         <source>&amp;Duplicate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="923"/>
+        <location filename="../resources/ui/raysession.ui" line="925"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Duplicate the current session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="926"/>
+        <location filename="../resources/ui/raysession.ui" line="928"/>
         <source>Ctrl+D</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="935"/>
+        <location filename="../resources/ui/raysession.ui" line="937"/>
         <source>Add C&amp;lient</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="938"/>
+        <location filename="../resources/ui/raysession.ui" line="940"/>
         <source>Ctrl+A</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="950"/>
+        <location filename="../resources/ui/raysession.ui" line="952"/>
         <source>&amp;Proxy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="953"/>
+        <location filename="../resources/ui/raysession.ui" line="955"/>
         <source>Add Proxy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="956"/>
+        <location filename="../resources/ui/raysession.ui" line="958"/>
         <source>Ctrl+P</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/raysession.ui" line="186"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save &amp;amp; Close Session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="14"/>
+        <source>Ray Proxy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="21"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command-line options are incompatible with robust session management for a variety of reasons, so the NSM server does not support them directly.&lt;/p&gt;&lt;p&gt;This proxy exists to allow programs which require command-line options to be included in an NSM session. &lt;/p&gt;&lt;p&gt;Be warned that referring to files outside of the session directory will impair your ability to reliably archive and transport sessions. &lt;/p&gt;&lt;p&gt;Patching the program to use NSM natively will result in a better experience. &lt;/p&gt;&lt;p&gt;The program will be started with its current directory being a uniquely named directory under the current session directory. &lt;/p&gt;&lt;p&gt;It is recommended that you only refer to files in the current directory.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="70"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The program will be started with its current directory being a uniquely named directory under the current session directory. &lt;/p&gt;&lt;p&gt;It is recommended that you only refer to files in the current directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="40"/>
+        <source>Config File :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="63"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command-line options are incompatible with robust session management for a variety of reasons, so the NSM server does not support them directly.&lt;br/&gt;This proxy exists to allow programs which require command-line options to be included in an NSM session. &lt;br/&gt;Be warned that referring to files outside of the session directory will impair your ability to reliably archive and transport sessions. &lt;br/&gt;Patching the program to use NSM natively will result in a better experience. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="53"/>
+        <source>Executable :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="73"/>
+        <source>Browse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="100"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The environment variables $NSM_CLIENT_ID and $NSM_SESSION_NAME will contain the unique client ID (suitable for use as e.g. a JACK client name) and the display name for the session, respectively.&lt;br/&gt;The variable $CONFIG_FILE will contain the name of the config file selected above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="90"/>
+        <source>Arguments :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="116"/>
+        <source>Label :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="132"/>
+        <source>Icon :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="142"/>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="179"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state.&lt;/p&gt;&lt;p&gt;If &apos;Save Signal&apos; is set to something other than &apos;None&apos;, then NSM Proxy will deliver the specified signal to the proxied process upon an NSM &apos;Save&apos; event.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="192"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Most programs will shutdown gracefully when sent a SIGTERM or SIGINT signal.&lt;br/&gt;It&apos;s impossible to know which signal a specific program will respond to.&lt;br/&gt;A unhandled signal will simply kill the process, and may cause problems with the audio subsystem (e.g. JACK).&lt;br/&gt;Check the program&apos;s documentation or source code to determine which signal to use to stop it gracefully.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="182"/>
+        <source>Save Signal :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="195"/>
+        <source>Stop Signal :</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="205"/>
+        <source>Test</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="238"/>
+        <source>executable failed to launch !</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="263"/>
+        <source>Launch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="274"/>
+        <source>Stop</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -674,8 +819,16 @@
 <context>
     <name>help</name>
     <message>
-        <location filename="../src/raysession" line="1309"/>
+        <location filename="../src/raysession" line="1341"/>
         <source>A session manager based on the Non-Session-Manager API for sound applications.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>main view</name>
+    <message>
+        <location filename="../src/raysession" line="851"/>
+        <source>No Session Loaded</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
