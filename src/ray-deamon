@@ -84,7 +84,7 @@ def WARNING(string):
     print('[' + '\033[90m' + 'ray-deamon' + '\033[0m' + '] ' + '\033[93m' + string + '\033[0m', file=sys.stderr)
     
 def GUIMSG(message):
-    server.sendGui('/nsm/gui/server/message', message)
+    server.sendGui('/ray/gui/server/message', message)
 
 def waitForJack():
     if jack_bus and jack_bus.IsStarted():
@@ -250,7 +250,7 @@ class Client(QObject):
             session.endTimerIfLastExpected(self)
         
         if self.pending_command == COMMAND_QUIT:
-            server.sendGui("/nsm/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
+            server.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
             session.removeClient(self)
             return
         else:
@@ -325,7 +325,7 @@ class Client(QObject):
                 self.terminate()
                 server.sendClientStatusToGui(self)
             else:
-                server.sendGui("/nsm/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
+                server.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
     
     def switch(self, new_client):
         old_client_id     = self.client_id
@@ -348,7 +348,7 @@ class Client(QObject):
         
         server.sendClientStatusToGui(self)
             
-        server.sendGui("/nsm/gui/client/switch", old_client_id, self.client_id)
+        server.sendGui("/ray/gui/client/switch", old_client_id, self.client_id)
     
     def sendGuiClientProperties(self):
         ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
@@ -392,10 +392,10 @@ class Client(QObject):
         self.status = CLIENT_STATUS_OPEN
         
         self.sendGuiClientProperties()
-        server.sendGui("/nsm/gui/client/status", self.client_id, self.status)
+        server.sendGui("/ray/gui/client/status", self.client_id, self.status)
         
         if self.isCapableOf(":optional-gui:"):
-            server.sendGui("/nsm/gui/client/has_optional_gui", self.client_id)
+            server.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
                 
         jack_client_name      = self.getJackClientName()
         client_project_path = self.getProjectPath()
@@ -457,7 +457,7 @@ class Session(QObject):
         remove_item_list = []
         for i in range(len(self.clients)):
             if not self.clients[i].active:
-                server.sendGui("/nsm/gui/client/status", session.clients[i].client_id, CLIENT_STATUS_REMOVED)
+                server.sendGui("/ray/gui/client/status", session.clients[i].client_id, CLIENT_STATUS_REMOVED)
                 remove_item_list.append(i)
         
         remove_item_list.reverse()
@@ -847,7 +847,7 @@ class OperatingSession(Session):
                 
             self.setName('')
             
-        server.sendGui("/nsm/gui/session/name", "", "" )
+        server.sendGui("/ray/gui/session/name", "", "" )
         self.nextFunction()
     
     def closeDone(self):
@@ -873,8 +873,8 @@ class OperatingSession(Session):
         server.setServerStatus(SERVER_STATUS_NEW)
         self.setPath(spath)
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Created." )
-        server.sendGui("/nsm/gui/session/session", self.osc_args[0])
-        server.sendGui("/nsm/gui/session/name", self.osc_args[0], self.osc_args[0])
+        server.sendGui("/ray/gui/session/session", self.osc_args[0])
+        server.sendGui("/ray/gui/session/name", self.osc_args[0], self.osc_args[0])
         
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Session created")
         self.nextFunction()
@@ -1078,7 +1078,7 @@ class OperatingSession(Session):
             
             new_client_id_list.append(new_client.client_id)
             
-        server.sendGui("/nsm/gui/session/name",  session.name, session.name)
+        server.sendGui("/ray/gui/session/name",  session.name, session.name)
         
         if has_switch:
             server.setServerStatus(SERVER_STATUS_SWITCH)
@@ -1122,7 +1122,7 @@ class OperatingSession(Session):
         self.tellAllClientsSessionIsLoaded()
         MESSAGE('Loaded')
         
-        server.sendGui("/nsm/gui/session/name",  session.name, session.name)
+        server.sendGui("/ray/gui/session/name",  session.name, session.name)
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Loaded.")
         
         self.nextFunction()
@@ -1348,7 +1348,7 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == args[0]:
                 if not client.isRunning():
-                    server.sendGui("/nsm/gui/client/status", client.client_id, CLIENT_STATUS_REMOVED)
+                    server.sendGui("/ray/gui/client/status", client.client_id, CLIENT_STATUS_REMOVED)
                     self.removeClient(client)
                     server.sendGui("/reply", "Client removed.")
                 break
@@ -1509,7 +1509,7 @@ class OscServerThread(ServerThread):
         if client:
             client.progress = args[0]
             
-            self.sendGui("/nsm/gui/client/progress", client.client_id, client.progress)
+            self.sendGui("/ray/gui/client/progress", client.client_id, client.progress)
     
     @make_method('/nsm/client/is_dirty', None)
     def nsmClientIs_dirty(self, path, args, types, src_addr):
@@ -1523,7 +1523,7 @@ class OscServerThread(ServerThread):
         
         client.dirty = 1
         
-        self.sendGui("/nsm/gui/client/dirty", client.client_id, client.dirty)
+        self.sendGui("/ray/gui/client/dirty", client.client_id, client.dirty)
 
     @make_method('/nsm/client/is_clean', None)
     def nsmClientIs_clean(self, path, args, types, src_addr):
@@ -1537,7 +1537,7 @@ class OscServerThread(ServerThread):
         
         client.dirty = 0
         
-        self.sendGui("/nsm/gui/client/dirty", client.client_id, client.dirty)
+        self.sendGui("/ray/gui/client/dirty", client.client_id, client.dirty)
     
     @make_method('/nsm/client/message', None)
     def nsmClientMessage(self, path, args, types, src_addr):
@@ -1547,7 +1547,7 @@ class OscServerThread(ServerThread):
         if not client:
             return
         
-        self.sendGui("/nsm/gui/client/message", client.client_id, args[0], args[1])
+        self.sendGui("/ray/gui/client/message", client.client_id, args[0], args[1])
 
     @make_method('/nsm/client/gui_is_hidden', None)
     def nsmClientGui_is_hidden(self, path, args, types, src_addr):
@@ -1561,7 +1561,7 @@ class OscServerThread(ServerThread):
         
         client.gui_visible = False
         
-        self.sendGui("/nsm/gui/client/gui_visible", client.client_id, client.gui_visible)
+        self.sendGui("/ray/gui/client/gui_visible", client.client_id, client.gui_visible)
 
     @make_method('/nsm/client/gui_is_shown', None)
     def nsmClientGui_is_shown(self, path, args, types, src_addr):
@@ -1575,7 +1575,7 @@ class OscServerThread(ServerThread):
         
         client.gui_visible = True
         
-        self.sendGui("/nsm/gui/client/gui_visible", client.client_id, client.gui_visible)
+        self.sendGui("/ray/gui/client/gui_visible", client.client_id, client.gui_visible)
 
     @make_method('/nsm/client/label', None)
     def nsmClientLabel(self, path, args, types, src_addr):
@@ -1606,37 +1606,37 @@ class OscServerThread(ServerThread):
         
         signaler.gui_client_icon.emit(client.client_id, icon)
             
-    @make_method('/nsm/gui/gui_announce', None)
+    @make_method('/ray/gui/gui_announce', None)
     def nsmGuiGui_announce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         self.announceGui(src_addr.url, True)
 
-    @make_method('/nsm/gui/client/stop', None)
+    @make_method('/ray/gui/client/stop', None)
     def nsmGuiClientStop(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_stop.emit(path, args)
     
-    @make_method('/nsm/gui/client/kill', None)
+    @make_method('/ray/gui/client/kill', None)
     def nsmGuiClientKill(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_kill.emit(path, args)            
     
-    @make_method('/nsm/gui/client/remove', None)
+    @make_method('/ray/gui/client/remove', None)
     def nsmGuiClientRemove(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_remove.emit(path, args)
         
-    @make_method('/nsm/gui/client/resume', None)
+    @make_method('/ray/gui/client/resume', None)
     def nsmGuiClientResume(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_resume.emit(path, args)
                 
-    @make_method('/nsm/gui/client/save', None)
+    @make_method('/ray/gui/client/save', None)
     def nsmGuiClientSave(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_save.emit(path, args)
 
-    @make_method('/nsm/gui/client/show_optional_gui', None)
+    @make_method('/ray/gui/client/show_optional_gui', None)
     def nsmGuiClientShow_optional_gui(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
@@ -1645,7 +1645,7 @@ class OscServerThread(ServerThread):
         if client and client.active:
             self.send(client.addr, "/nsm/client/show_optional_gui")
 
-    @make_method('/nsm/gui/client/hide_optional_gui', None)
+    @make_method('/ray/gui/client/hide_optional_gui', None)
     def nsmGuiClientHide_optional_gui(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
@@ -1853,7 +1853,7 @@ class OscServerThread(ServerThread):
             self.send(gui_addr, *args)
     
     def sendClientStatusToGui(self, client):
-        self.sendGui("/nsm/gui/client/status", client.client_id, client.status)
+        self.sendGui("/ray/gui/client/status", client.client_id, client.status)
             
     def setServerStatus(self, server_status):
         self.server_status = server_status
@@ -1863,12 +1863,12 @@ class OscServerThread(ServerThread):
         gui_addr = Address(url)
         
         if is_reply:
-            self.send(gui_addr, "/nsm/gui/gui_announce", "hi" )
+            self.send(gui_addr, "/ray/gui/gui_announce", "hi" )
         else:
-            self.send(gui_addr, "/nsm/gui/server_announce", "hi" )
+            self.send(gui_addr, "/ray/gui/server_announce", "hi" )
         
         self.send(gui_addr, "/ray/server_status", self.server_status)
-        self.send(gui_addr, "/nsm/gui/session/name",  session.name,  session.path)
+        self.send(gui_addr, "/ray/gui/session/name",  session.name,  session.path)
         
         for client in session.clients:
             self.send(  gui_addr, 
@@ -1882,7 +1882,7 @@ class OscServerThread(ServerThread):
                         client.icon,
                         client.capabilities)
             
-            self.send(gui_addr, "/nsm/gui/client/status", client.client_id,  client.status)
+            self.send(gui_addr, "/ray/gui/client/status", client.client_id,  client.status)
         
         self.gui_list.append(gui_addr)
         MESSAGE("Registered with GUI")

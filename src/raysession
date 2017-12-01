@@ -294,11 +294,11 @@ class OSCServerT(ServerThread):
     def replyPath(self, path, args):
         self.qsig.new_executable.emit(args)
     
-    @make_method('/nsm/gui/server_announce', None)
+    @make_method('/ray/gui/server_announce', None)
     def serverAnnounce(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
     
-    @make_method('/nsm/gui/server/message', None)
+    @make_method('/ray/gui/server/message', None)
     def serverMessage(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
             
@@ -306,17 +306,17 @@ class OSCServerT(ServerThread):
         self.qsig.new_message_sig.emit(message)
         
             
-    @make_method('/nsm/gui/gui_announce', None)
+    @make_method('/ray/gui/gui_announce', None)
     def guiAnnounce(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
             
         self.qsig.gui_announce_sig.emit()
     
-    @make_method('/nsm/gui/session/session', None)
+    @make_method('/ray/gui/session/session', None)
     def guiSession(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
     
-    @make_method('/nsm/gui/session/name', None)
+    @make_method('/ray/gui/session/name', None)
     def guiSessionName(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
             
@@ -348,7 +348,7 @@ class OSCServerT(ServerThread):
         
     
     
-    @make_method('/nsm/gui/client/status', None)
+    @make_method('/ray/gui/client/status', None)
     def guiClientStatus(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
             
@@ -362,7 +362,7 @@ class OSCServerT(ServerThread):
         
         self.qsig.client_status_changed.emit(client_id, status)
         
-    @make_method('/nsm/gui/client/switch', None)
+    @make_method('/ray/gui/client/switch', None)
     def guiClientSwitch(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         
@@ -377,11 +377,11 @@ class OSCServerT(ServerThread):
         
         self.qsig.client_switched.emit(old_client_id, new_client_id)
         
-    @make_method('/nsm/gui/client/progress', None)
+    @make_method('/ray/gui/client/progress', None)
     def guiClientProgress(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         
-    @make_method('/nsm/gui/client/dirty', None)
+    @make_method('/ray/gui/client/dirty', None)
     def guiClientDirty(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
             
@@ -390,14 +390,14 @@ class OSCServerT(ServerThread):
         
         self.qsig.client_dirty_sig.emit(client_id, bool_dirty)
         
-    @make_method('/nsm/gui/client/has_optional_gui', None)
+    @make_method('/ray/gui/client/has_optional_gui', None)
     def guiClientHasOptionalGui(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
             
         client_id = args[0]
         self.qsig.client_has_gui.emit(client_id)
         
-    @make_method('/nsm/gui/client/gui_visible', None)
+    @make_method('/ray/gui/client/gui_visible', None)
     def guiClientGuiVisible(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
             
@@ -438,7 +438,7 @@ class OSCServerT(ServerThread):
     
     def announce(self):
         ifDebug('serverOSC::raysession_sends annouce')
-        self.send(ray_deamon.address, '/nsm/gui/gui_announce')
+        self.send(ray_deamon.address, '/ray/gui/gui_announce')
     
     def startListSession(self):
         ifDebug('serverOSC::raysession_sends list sessions')
@@ -470,19 +470,19 @@ class OSCServerT(ServerThread):
         
     def startClient(self, client_id):
         ifDebug('serverOSC::raysession_sends start client %s' % client_id)
-        self.toDeamon('/nsm/gui/client/resume', client_id)
+        self.toDeamon('/ray/gui/client/resume', client_id)
         
     def stopClient(self, client_id):
         ifDebug('serverOSC::raysession_sends stop client %s' % client_id)
-        self.toDeamon('/nsm/gui/client/stop', client_id)
+        self.toDeamon('/ray/gui/client/stop', client_id)
         
     def killClient(self, client_id):
         ifDebug('serverOSC::raysession_sends stop client %s' % client_id)
-        self.toDeamon('/nsm/gui/client/kill', client_id)
+        self.toDeamon('/ray/gui/client/kill', client_id)
         
     def saveClient(self, client_id):
         ifDebug('serverOSC::raysession_sends save client %s' % client_id)
-        self.toDeamon('/nsm/gui/client/save', client_id)
+        self.toDeamon('/ray/gui/client/save', client_id)
         
     def removeClient(self, client_id):
         ifDebug('serverOSC::raysession_sends remove client %s' % client_id)
@@ -490,15 +490,15 @@ class OSCServerT(ServerThread):
         if client_id in self.client_id_list:
             self.client_id_list.remove(client_id)
         
-        self.toDeamon('/nsm/gui/client/remove', client_id)
+        self.toDeamon('/ray/gui/client/remove', client_id)
     
     def showClientOptionalGui(self, client_id):
         ifDebug('serverOSC::raysession_sends show optional GUI %s' % client_id)
-        self.toDeamon('/nsm/gui/client/show_optional_gui', client_id)
+        self.toDeamon('/ray/gui/client/show_optional_gui', client_id)
         
     def hideClientOptionalGui(self, client_id):
         ifDebug('serverOSC::raysession_sends hide optional GUI %s' % client_id)
-        self.toDeamon('/nsm/gui/client/hide_optional_gui', client_id)
+        self.toDeamon('/ray/gui/client/hide_optional_gui', client_id)
         
     def addClient(self, program_name):
         ifDebug('serverOSC::raysession_sends add Client %s' % program_name)
