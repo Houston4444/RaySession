@@ -405,7 +405,7 @@ class OSCServerT(ServerThread):
         self.qsig.client_gui_visible_sig.emit(client_id, state)
       
     @make_method('/ray/gui/client/still_running', None)
-    def guiClientGuiVisible(self, path, args):
+    def guiClientStillRunning(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
             
         client_id = args[0]

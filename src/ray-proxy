@@ -84,7 +84,7 @@ class ProxyDialog(QMainWindow):
         self.fields_allow_start = False
         self.process_is_running = False
         
-        self.ui.comboSaveSig.addItems([_translate('proxy', 'None'), 'SIGUSR1', 'SIGUSR2', 'SIGINT'])
+        self.ui.comboSaveSig.addItems(['None', 'SIGUSR1', 'SIGUSR2', 'SIGINT'])
         self.ui.comboStopSig.addItems(['SIGTERM', 'SIGINT', 'SIGHUP'])
         self.ui.toolButtonBrowse.clicked.connect(self.browseFile)
         
@@ -424,7 +424,6 @@ class Proxy(QObject):
             self.process.terminate()
     
     def showOptionalGui(self):
-        qDebug('oh tui shoow')
         proxy_dialog.show()
     
     def hideOptionalGui(self):
@@ -560,6 +559,7 @@ class OscServerThread(ServerThread):
         self.sendToDeamon('/reply', 'nsm/client/open', 'ready')
         
 if __name__ == '__main__':
+    print('heyy', file=sys.stderr)
     NSM_URL = os.getenv('NSM_URL')
     if not NSM_URL:
         print('Could not register as NSM client.', file=sys.stderr)
@@ -581,7 +581,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, signalHandler)
     
     app = QApplication(sys.argv)
-    app.setApplicationName("RaySession")
+    app.setApplicationName("Ray Proxy")
     #app.setApplicationVersion(VERSION)
     app.setOrganizationName("RaySession")
     app.setQuitOnLastWindowClosed(False)

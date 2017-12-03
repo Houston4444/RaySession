@@ -1557,6 +1557,7 @@ class OscServerThread(ServerThread):
         
         client = getClientByAddress(src_addr)
         if not client:
+            print('no client at addr')
             return
         
         client.gui_visible = False
@@ -1566,7 +1567,6 @@ class OscServerThread(ServerThread):
     @make_method('/nsm/client/gui_is_shown', None)
     def nsmClientGui_is_shown(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
-        
         MESSAGE("Client sends gui shown")
         
         client = getClientByAddress(src_addr)
