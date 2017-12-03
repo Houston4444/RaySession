@@ -8,6 +8,8 @@
 #resources qt build
 /src/resources_rc.py
 
+/src/.*
+
 #translations
 /locale/*.qm
 
