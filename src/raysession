@@ -1303,7 +1303,6 @@ class RayDeamon(object):
             if self.process.poll() != None:
                 return
             time.sleep(0.050)
-            sys.stderr.write('.')
             
         print('ray-deamon is still running, sorry !', file=sys.stderr)
     
