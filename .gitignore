@@ -1,4 +1,5 @@
-.directory
+/.directory
 /src/ui_*.py
 /locale/*.qm
+/src/__pycache__
 
