@@ -25,4 +25,3 @@ On Debian and Ubuntu, use these commands to install all build dependencies: <br/
 To run it, you'll additionally need:
 
  - python3-liblo
- - non-session-manager (source at : http://non.tuxfamily.org/wiki/Non%20Session%20Manager , present in kxstudio repositories)
