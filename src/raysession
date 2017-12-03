@@ -1387,7 +1387,9 @@ if __name__ == '__main__':
     
     serverOSC.stop()
     ray_deamon.stop()
+    print('will wait end')
+    MainUI.hide()
     ray_deamon.waitEnd()
-    
+    print('w wait end')
     del MainUI
     del app
