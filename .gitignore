@@ -1,0 +1,4 @@
+.directory
+/src/ui_*.py
+/locale/*.qm
+
