@@ -1,6 +1,16 @@
+#ignore hidden files except git
 /.*
 !/.git
+
+#UI builds
 /src/ui_*.py
+
+#resources qt build
+/src/resources_rc.py
+
+#translations
 /locale/*.qm
+
+#python cache
 /src/__pycache__
 
