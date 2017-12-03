@@ -45,7 +45,6 @@ def remove_accents(input_str):
 
 def ifDebug(string):
     if debug:
-        #qDebug(remove_accents(string))
         print(string, file=sys.stderr)
 
 def shellLineToArgs(string):
@@ -251,8 +250,6 @@ class ProxyDialog(QMainWindow):
         self.ui.labelError.setText('')
         
     def processTerminateShortly(self, duration):
-        print(duration)
-        print('yamubal')
         self.ui.labelError.setText('Process terminate in %f ms')
         
     def proxyFinished(self):
@@ -342,8 +339,6 @@ class Proxy(QObject):
         #pass
     
     def processFinished(self, exit_code):
-        print('yo finished')
-        
         if self.is_finishable:
             if not proxy_dialog.isVisible():
                 sys.exit(0)
