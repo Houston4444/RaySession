@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="2.0" language="fr_FR" sourcelanguage="">
+<!DOCTYPE TS>
+<TS version="2.1" language="fr_FR">
 <context>
     <name>@default</name>
     <message>
@@ -783,7 +784,7 @@
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="179"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state.&lt;/p&gt;&lt;p&gt;If &apos;Save Signal&apos; is set to something other than &apos;None&apos;, then Ray Proxy will deliver the specified signal to the proxied process upon an NSM &apos;Save&apos; event.&lt;/p&gt;&lt;p&gt;If program is compatible with LASH/LADISH, save signal is SIGUSR1.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Quelques programmes (vraiment très peu) peuvent répondre à un signal spécifiquement Unix pour sauvegarder leur état.&lt;/p&gt;&lt;p&gt;Si le signal de sauvegarde est réglé sur autre chose que &apos;Aucun&apos;, alors Ray-Proxy délivrera le signal choisi au processus lors de la sauvegarde du proxy.&lt;/p&gt;&lt;p&gt;Si le programme est compatible LASH/LADISH, le signal de sauvegarde est SIGUSR1&lt;/p&gt;&lt;p&gt;La plupart des programmes vont traiter ce signal comme un SIGTERM et s&apos;éteindre.&lt;/p&gt;&lt;p&gt;Vous êtes prévenus !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Quelques programmes (vraiment très peu) peuvent répondre à un signal spécifiquement Unix pour sauvegarder leur état.&lt;/p&gt;&lt;p&gt;Si le signal de sauvegarde est réglé sur autre chose que &apos;None&apos;, alors Ray-Proxy délivrera le signal choisi au processus lors de la sauvegarde du proxy.&lt;/p&gt;&lt;p&gt;Si le programme est compatible LASH/LADISH, le signal de sauvegarde est SIGUSR1&lt;/p&gt;&lt;p&gt;La plupart des programmes vont traiter ce signal comme un SIGTERM et s&apos;éteindre.&lt;/p&gt;&lt;p&gt;Vous êtes prévenus !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
 </context>
 <context>
