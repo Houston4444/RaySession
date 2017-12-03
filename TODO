@@ -1,28 +1,18 @@
 # Ray Session TODO
 
-0.2.0:
-    Clean Appareance
-    remove kill server action
-    button when window is behind
-    clignote close session
-    
-0.3.0:
-    ray-proxy
-    
+0.3.1:
+    Session Template
+
 0.4.0:
-    jackpatch
-    french translation
+    Client Template (it will allow a template manager which will makes Ray Session very more User Friendly).
     
-0.5.0:
-    application launcher
-
+And also, but not so soon :
 -------------------
-# Make it working with an external deamon (deamon on an other computer)
-# Make it non-dependant to non-session-manager
-
-__Local Use Only__:
-    # "Add program" function which contains allmost audio programs nsm compatible
-    # Session templates
-    # Client templates
-
+    SooperLooper NSM starter
+    ray-deamon as NSM client
+    Jack Patchbay
+    drop file directly on session
+    terminal per client
+    session snapshot
+    ...
   
