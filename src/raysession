@@ -1331,7 +1331,6 @@ if __name__ == '__main__':
         app.installTranslator(appTranslator)
     _translate = app.translate
     init_translation(_translate)
-    #_translate = init_translation(app)
     
     
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
@@ -1367,12 +1366,6 @@ if __name__ == '__main__':
     serverOSC = OSCServerT()
     serverOSC.start()
     
-    ##translate buttons
-    #locale = QLocale.system().name()
-    #translator = QTranslator()
-    #translator.load("qt_" + locale, QLibraryInfo.location(QLibraryInfo.TranslationsPath))
-    #app.installTranslator(translator)
-    
     nsm_session = NsmSession()
     
     MainUI = MainWindow()
@@ -1387,9 +1380,8 @@ if __name__ == '__main__':
     
     serverOSC.stop()
     ray_deamon.stop()
-    print('will wait end')
     MainUI.hide()
     ray_deamon.waitEnd()
-    print('w wait end')
+    
     del MainUI
     del app
