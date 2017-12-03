@@ -133,6 +133,21 @@
         <source>Use This File</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../src/ray-proxy" line="72"/>
+        <source>%s is not in proxy directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ray-proxy" line="153"/>
+        <source>Select File to use as CONFIG_FILE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ray-proxy" line="264"/>
+        <source>Executable failed to launch ! It&apos;s maybe not present on system.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DialogAboutRaysession</name>
@@ -663,11 +678,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="21"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command-line options are incompatible with robust session management for a variety of reasons, so the NSM server does not support them directly.&lt;/p&gt;&lt;p&gt;This proxy exists to allow programs which require command-line options to be included in an NSM session. &lt;/p&gt;&lt;p&gt;Be warned that referring to files outside of the session directory will impair your ability to reliably archive and transport sessions. &lt;/p&gt;&lt;p&gt;Patching the program to use NSM natively will result in a better experience. &lt;/p&gt;&lt;p&gt;The program will be started with its current directory being a uniquely named directory under the current session directory. &lt;/p&gt;&lt;p&gt;It is recommended that you only refer to files in the current directory.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../resources/ui/proxy_gui.ui" line="70"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The program will be started with its current directory being a uniquely named directory under the current session directory. &lt;/p&gt;&lt;p&gt;It is recommended that you only refer to files in the current directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
@@ -679,7 +689,7 @@
     </message>
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="63"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command-line options are incompatible with robust session management for a variety of reasons, so the NSM server does not support them directly.&lt;br/&gt;This proxy exists to allow programs which require command-line options to be included in an NSM session. &lt;br/&gt;Be warned that referring to files outside of the session directory will impair your ability to reliably archive and transport sessions. &lt;br/&gt;Patching the program to use NSM natively will result in a better experience. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command-line options are incompatible with robust session management for a variety of reasons, so the NSM server does not support them directly.&lt;/p&gt;&lt;p&gt;Some audio programs doesn&apos;t have NSM implementation yet, but they can have a LASH/LADISH implementation, and we can use it for the save signal.&lt;/p&gt;&lt;p&gt;Be warned that referring to files outside of the session directory will impair your ability to reliably archive and transport sessions. &lt;br/&gt;&lt;br/&gt;Patching the program to use NSM natively will result in a better experience. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -718,11 +728,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="179"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state.&lt;/p&gt;&lt;p&gt;If &apos;Save Signal&apos; is set to something other than &apos;None&apos;, then NSM Proxy will deliver the specified signal to the proxied process upon an NSM &apos;Save&apos; event.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../resources/ui/proxy_gui.ui" line="192"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Most programs will shutdown gracefully when sent a SIGTERM or SIGINT signal.&lt;br/&gt;It&apos;s impossible to know which signal a specific program will respond to.&lt;br/&gt;A unhandled signal will simply kill the process, and may cause problems with the audio subsystem (e.g. JACK).&lt;br/&gt;Check the program&apos;s documentation or source code to determine which signal to use to stop it gracefully.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
@@ -755,6 +760,11 @@
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="274"/>
         <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="179"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state.&lt;/p&gt;&lt;p&gt;If &apos;Save Signal&apos; is set to something other than &apos;None&apos;, then Ray Proxy will deliver the specified signal to the proxied process upon an NSM &apos;Save&apos; event.&lt;/p&gt;&lt;p&gt;If program is compatible with LASH/LADISH, save signal is SIGUSR1.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -819,7 +829,7 @@
 <context>
     <name>help</name>
     <message>
-        <location filename="../src/raysession" line="1341"/>
+        <location filename="../src/raysession" line="1339"/>
         <source>A session manager based on the Non-Session-Manager API for sound applications.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -829,6 +839,14 @@
     <message>
         <location filename="../src/raysession" line="851"/>
         <source>No Session Loaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>proxy</name>
+    <message>
+        <location filename="../src/ray-proxy" line="88"/>
+        <source>None</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

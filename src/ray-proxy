@@ -84,7 +84,7 @@ class ProxyDialog(QMainWindow):
         self.fields_allow_start = False
         self.process_is_running = False
         
-        self.ui.comboSaveSig.addItems(['None', 'SIGUSR1', 'SIGUSR2', 'SIGINT'])
+        self.ui.comboSaveSig.addItems([_translate('proxy', 'None'), 'SIGUSR1', 'SIGUSR2', 'SIGINT'])
         self.ui.comboStopSig.addItems(['SIGTERM', 'SIGINT', 'SIGHUP'])
         self.ui.toolButtonBrowse.clicked.connect(self.browseFile)
         

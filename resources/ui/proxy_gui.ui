@@ -18,7 +18,7 @@
     <item>
      <widget class="QGroupBox" name="groupBox">
       <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command-line options are incompatible with robust session management for a variety of reasons, so the NSM server does not support them directly.&lt;/p&gt;&lt;p&gt;This proxy exists to allow programs which require command-line options to be included in an NSM session. &lt;/p&gt;&lt;p&gt;Be warned that referring to files outside of the session directory will impair your ability to reliably archive and transport sessions. &lt;/p&gt;&lt;p&gt;Patching the program to use NSM natively will result in a better experience. &lt;/p&gt;&lt;p&gt;The program will be started with its current directory being a uniquely named directory under the current session directory. &lt;/p&gt;&lt;p&gt;It is recommended that you only refer to files in the current directory.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command-line options are incompatible with robust session management for a variety of reasons, so the NSM server does not support them directly.&lt;/p&gt;&lt;p&gt;Some audio programs doesn't have NSM implementation yet, but they can have a LASH/LADISH implementation, and we can use it for the save signal.&lt;/p&gt;&lt;p&gt;Be warned that referring to files outside of the session directory will impair your ability to reliably archive and transport sessions. &lt;br/&gt;&lt;br/&gt;Patching the program to use NSM natively will result in a better experience. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="title">
        <string/>
@@ -60,7 +60,7 @@
        <item row="0" column="1" colspan="2">
         <widget class="QLineEdit" name="lineEditExecutable">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command-line options are incompatible with robust session management for a variety of reasons, so the NSM server does not support them directly.&lt;br/&gt;This proxy exists to allow programs which require command-line options to be included in an NSM session. &lt;br/&gt;Be warned that referring to files outside of the session directory will impair your ability to reliably archive and transport sessions. &lt;br/&gt;Patching the program to use NSM natively will result in a better experience. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command-line options are incompatible with robust session management for a variety of reasons, so the NSM server does not support them directly.&lt;/p&gt;&lt;p&gt;Some audio programs doesn't have NSM implementation yet, but they can have a LASH/LADISH implementation, and we can use it for the save signal.&lt;/p&gt;&lt;p&gt;Be warned that referring to files outside of the session directory will impair your ability to reliably archive and transport sessions. &lt;br/&gt;&lt;br/&gt;Patching the program to use NSM natively will result in a better experience. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -162,7 +162,7 @@
        <item row="0" column="1">
         <widget class="QComboBox" name="comboSaveSig">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state.&lt;/p&gt;&lt;p&gt;If 'Save Signal' is set to something other than 'None', then NSM Proxy will deliver the specified signal to the proxied process upon an NSM 'Save' event.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state.&lt;/p&gt;&lt;p&gt;If 'Save Signal' is set to something other than 'None', then Ray Proxy will deliver the specified signal to the proxied process upon an NSM 'Save' event.&lt;/p&gt;&lt;p&gt;If program is compatible with LASH/LADISH, save signal is SIGUSR1.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -176,7 +176,7 @@
        <item row="0" column="0">
         <widget class="QLabel" name="label_8">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state. If program is compatible with LASH/LADISH, save signal is SIGUSR1.&lt;/p&gt;&lt;p&gt;If 'Save Signal' is set to something other than 'None', then NSM Proxy will deliver the specified signal to the proxied process upon an NSM 'Save' event.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state.&lt;/p&gt;&lt;p&gt;If 'Save Signal' is set to something other than 'None', then Ray Proxy will deliver the specified signal to the proxied process upon an NSM 'Save' event.&lt;/p&gt;&lt;p&gt;If program is compatible with LASH/LADISH, save signal is SIGUSR1.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="text">
           <string>Save Signal :</string>
