@@ -1335,6 +1335,9 @@ if __name__ == '__main__':
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
     
+    #Add RaySession/src to $PATH to can use raysession after make, whitout install
+    os.environ['PATH']="%s:%s" % (os.path.dirname(sys.argv[0]), os.environ['PATH'])
+    
     #get arguments
     parser = argparse.ArgumentParser(description=_translate('help', 'A session manager based on the Non-Session-Manager API for sound applications.'))
     parser.add_argument('--deamon-url', '-u', type=getLibloAddress, help='connect to this deamon url')
