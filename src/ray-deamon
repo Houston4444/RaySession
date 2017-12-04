@@ -922,7 +922,13 @@ class OperatingSession(Session):
                 
         
         self.nextFunction() #here "load"
-        
+    
+    def saveSessionTemplate(self):
+        if self.clientsHaveErrors():
+            server.send(src_addr, "/error", path, ERR_GENERAL_ERROR, "Some clients could not save" )
+            self.process_order.clear()
+            return
+    
     def load(self):
         #terminate or switch clients
         spath = self.root + '/' + self.osc_args[0]
@@ -1169,6 +1175,7 @@ class SignaledSession(OperatingSession):
         signaler.server_open.connect(self.serverOpenSession)
         signaler.server_save.connect(self.serverSaveSession)
         signaler.server_duplicate.connect(self.serverDuplicateSession)
+        signaler.server_save_session_template.connect(self.serverSaveSessionTemplate)
         signaler.server_close.connect(self.serverCloseSession)
         signaler.server_abort.connect(self.serverAbortSession)
         signaler.server_list_sessions.connect(self.serverListSessions)
@@ -1227,7 +1234,14 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.duplicate, self.load, self.duplicateDone]
         self.nextFunction()
-    
+        
+    def serverSaveSessionTemplate(self, path, args, src_addr):
+        if self.process_order:
+            return
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [self.save, self.duplicate, self.load, self.duplicateDone]
+        self.nextFunction()
+        
     def serverAbortSession(self, path, args, src_addr):
         self.wait_for = WAIT_FOR_NONE
         self.timer.stop()
@@ -1441,6 +1455,7 @@ class Signaler(QObject):
     server_announce  = pyqtSignal(str, list, object)
     server_reply     = pyqtSignal(str, list, object)
     server_duplicate = pyqtSignal(str, list, object)
+    server_save_session_template = pyqtSignal(str, list, object)
     server_abort     = pyqtSignal(str, list, object)
     server_close     = pyqtSignal(str, list, object)
     server_new       = pyqtSignal(str, list, object)
@@ -1698,6 +1713,23 @@ class OscServerThread(ServerThread):
             return
         
         signaler.server_duplicate.emit(path, args, src_addr)
+        
+    @make_method('/ray/server/save_session_template', None)
+    def nsmServerSaveSessionTemplate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to save as template.")
+            return
+        
+        if not pathIsValid(args[0]):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
+        signaler.server_save_session_template.emit(path, args, src_addr)
         
     @make_method('/nsm/server/abort', None)
     def nsmServerAbort(self, path, args, types, src_addr):
