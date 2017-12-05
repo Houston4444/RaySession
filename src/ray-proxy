@@ -4,6 +4,7 @@ import os, sys, string, random, time, subprocess, signal, unicodedata, shlex
 from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings, QLocale, QTranslator, QFile
 from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QMainWindow
+from PyQt5.QtXml import QDomDocument
 
 from shared import *
 
@@ -452,22 +453,42 @@ class ProxyFile(object):
         except:
             return
         
-        file_contents = file.read()
-        elements = file_contents.split('\n')
-        file.close()
+        #file_contents = file.read()
+        #elements = file_contents.split('\n')
         
-        if len(elements) < 12:
+        
+        xml = QDomDocument()
+        xml.setContent(file.read())
+
+        content = xml.documentElement()
+        
+        if content.tagName() != "RAY-PROXY":
+            file.close()
             return
         
-        self.executable     = elements[1].rpartition('\t')[2]
-        self.arguments_line = elements[3].rpartition('\t')[2]
-        self.config_file    = elements[5].rpartition('\t')[2]
-        save_signal         = elements[7].rpartition('\t')[2]
-        stop_signal         = elements[9].rpartition('\t')[2]
-        self.label          = elements[11].rpartition('\t')[2]
+        cte = content.toElement()
+        self.executable     = cte.attribute('executable')
+        self.config_file    = cte.attribute('config_file')
+        self.arguments_line = cte.attribute('arguments')
+        save_signal         = cte.attribute('save_signal')
+        stop_signal         = cte.attribute('stop_signal')
+        self.label          = cte.attribute('label')
+        self.icon           = cte.attribute('icon')
         
-        if len(elements) >= 14:
-            self.icon = elements[13].rpartition('\t')[2]
+        
+        file.close()
+        #if len(elements) < 12:
+            #return
+        
+        #self.executable     = elements[1].rpartition('\t')[2]
+        #self.arguments_line = elements[3].rpartition('\t')[2]
+        #self.config_file    = elements[5].rpartition('\t')[2]
+        #save_signal         = elements[7].rpartition('\t')[2]
+        #stop_signal         = elements[9].rpartition('\t')[2]
+        #self.label          = elements[11].rpartition('\t')[2]
+        
+        #if len(elements) >= 14:
+            #self.icon = elements[13].rpartition('\t')[2]
         
         if save_signal.isdigit() and int(save_signal) in save_signals.values():
             self.save_signal = int(save_signal)
@@ -493,27 +514,22 @@ class ProxyFile(object):
         if not save_signal:
             save_signal = 0
             
-        contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"
-                   "<!DOCTYPE RAYPROXY>\n"
-                   "<RAYPROXY VERSION='%s' executable='%s' arguments='%s' config_file='%s' save_signal='%s' stop_signal='%s'>\n" % 
-                   (VERSION, executable, arguments_line, config_file, str(int(save_signal)), str(int(stop_signal)) ) )
-        contents+= "</RAYPROXY>"
+        xml = QDomDocument()
+        p = xml.createElement('RAY-PROXY')
+        p.setAttribute('VERSION', VERSION)
+        p.setAttribute('executable', executable)
+        p.setAttribute('arguments', arguments_line)
+        p.setAttribute('config_file', config_file)
+        p.setAttribute('save_signal', str(int(save_signal)))
+        p.setAttribute('stop_signal', str(int(save_signal)))
+        p.setAttribute('label', label)
+        p.setAttribute('icon', icon)
         
+        xml.appendChild(p)
         
-        #contents  = "executable\n\t"
-        #contents += executable
-        #contents += "\narguments\n\t"
-        #contents += arguments_line
-        #contents += "\nconfig file\n\t"
-        #contents += config_file
-        #contents += "\nsave signal\n\t"
-        #contents += str(int(save_signal))
-        #contents += "\nstop signal\n\t"
-        #contents += str(int(stop_signal))
-        #contents += "\nlabel\n\t"
-        #contents += label
-        #contents += "\nicon\n\t"
-        #contents += icon
+        contents = "<?xml version='1.0' encoding='UTF-8'?>\n"
+        contents+= "<!DOCTYPE RAY-PROXY>\n"
+        contents+= xml.toString()
         
         file.write(contents)
         file.close()
