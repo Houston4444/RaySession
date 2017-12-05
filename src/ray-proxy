@@ -432,7 +432,7 @@ class Proxy(QObject):
 class ProxyFile(object):
     def __init__(self, project_path):
         self.file = None
-        self.path = "%s/nsm-proxy.config" % project_path
+        self.path = "%s/ray-proxy.xml" % project_path
         
         self.executable  = ''
         self.arguments_line = ''
@@ -492,21 +492,28 @@ class ProxyFile(object):
         
         if not save_signal:
             save_signal = 0
+            
+        contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"
+                   "<!DOCTYPE RAYPROXY>\n"
+                   "<RAYPROXY VERSION='%s' executable='%s' arguments='%s' config_file='%s' save_signal='%s' stop_signal='%s'>\n" % 
+                   (VERSION, executable, arguments_line, config_file, str(int(save_signal)), str(int(stop_signal)) ) )
+        contents+= "</RAYPROXY>"
         
-        contents  = "executable\n\t"
-        contents += executable
-        contents += "\narguments\n\t"
-        contents += arguments_line
-        contents += "\nconfig file\n\t"
-        contents += config_file
-        contents += "\nsave signal\n\t"
-        contents += str(int(save_signal))
-        contents += "\nstop signal\n\t"
-        contents += str(int(stop_signal))
-        contents += "\nlabel\n\t"
-        contents += label
-        contents += "\nicon\n\t"
-        contents += icon
+        
+        #contents  = "executable\n\t"
+        #contents += executable
+        #contents += "\narguments\n\t"
+        #contents += arguments_line
+        #contents += "\nconfig file\n\t"
+        #contents += config_file
+        #contents += "\nsave signal\n\t"
+        #contents += str(int(save_signal))
+        #contents += "\nstop signal\n\t"
+        #contents += str(int(stop_signal))
+        #contents += "\nlabel\n\t"
+        #contents += label
+        #contents += "\nicon\n\t"
+        #contents += icon
         
         file.write(contents)
         file.close()
