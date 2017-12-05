@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, sys, string, random, time, subprocess, signal, unicodedata, shlex
+import os, sys, string, random, time, subprocess, signal, unicodedata
 from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings, QLocale, QTranslator, QFile
 from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QMainWindow
@@ -48,13 +48,7 @@ def ifDebug(string):
     if debug:
         print(string, file=sys.stderr)
 
-def shellLineToArgs(string):
-    try:
-        args = shlex.split(string)
-    except:
-        return None
-    
-    return args
+
 
 class ProxyCopyDialog(QDialog):
     def __init__(self):
