@@ -908,7 +908,30 @@ class OperatingSession(Session):
                     if os.path.isdir(ardour_audio):
                         os.rename(ardour_audio, "%s/interchange/%s.%s" % (project_path, new_session_name, client.client_id))
                     
-                    #TODO change last_used snapshot
+                    #change last_used snapshot of ardour
+                    instant_file = "%s/instant.xml" % project_path
+                    if os.path.isfile(instant_file) and os.access(instant_file, os.W_OK):
+                        try :
+                            file = open(instant_file, 'r')
+                            xml = QDomDocument()
+                            xml.setContent(file.read())
+                            content = xml.documentElement()
+                            
+                            if content.tagName() == 'instant':
+                                node = content.firstChild()
+                                while not node.isNull():
+                                    tag = node.toElement()
+                                    if tag.tagName() == 'LastUsedSnapshot':
+                                        if tag.attribute('name') == self.name:
+                                            tag.setAttribute('name', new_session_name)
+                                            file = open(instant_file, 'w')
+                                            file.write(xml.toString())
+                                            break
+                                        
+                                    node = node.nextSibling()
+                            file.close()
+                        except:
+                            False
                     
                     #for ray-proxy, change config_file name
                     proxy_file = "%s/ray-proxy.xml" % project_path
