@@ -926,7 +926,7 @@ class OperatingSession(Session):
                                             tag.setAttribute('name', new_session_name)
                                             file = open(instant_file, 'w')
                                             file.write(xml.toString())
-                                            break
+                                        break
                                         
                                     node = node.nextSibling()
                             file.close()
