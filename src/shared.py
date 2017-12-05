@@ -1,7 +1,7 @@
 from liblo import Server
 import argparse
 import liblo
-import sys, os
+import sys, os, shlex
 from PyQt5.QtCore import QLocale, QTranslator
 
 VERSION = "0.3.0"
@@ -81,6 +81,14 @@ def getLibloAddress(url):
         except:
             msg = "%r is an unknown osc url" % url
             raise argparse.ArgumentTypeError(msg)
+
+def shellLineToArgs(string):
+    try:
+        args = shlex.split(string)
+    except:
+        return None
+    
+    return args
         
 class ClientData(object):
     client_id       = ''

@@ -423,15 +423,10 @@ class Session(QObject):
     
     def setName(self, session_name):
         self.name = session_name
-        self.path = self.root + '/' + self.name
-        if not self.name:
-            self.path = ""
     
     def setPath(self, session_path):
         self.path = session_path
-        self.name = session_path.rpartition('/')[2]
-        if not self.path:
-            self.name = ""
+        self.setName(session_path.rpartition('/')[2])
         
     def newClient(self, executable, client_id=None):
         client = Client()
@@ -487,7 +482,7 @@ class Session(QObject):
                     if not string in self.forbidden_ids_list:
                         self.forbidden_ids_list.append(string)
                         
-        for client in self.clients:
+        for client in self.clients + self.removed_clients:
             if not client.client_id in self.forbidden_ids_list:
                 self.forbidden_ids_list.append(client.client_id)
     
@@ -845,7 +840,7 @@ class OperatingSession(Session):
             if os.path.isfile(lock_file):
                 os.remove(lock_file)
                 
-            self.setName('')
+            self.setPath('')
             
         server.sendGui("/ray/gui/session/name", "", "" )
         self.nextFunction()
@@ -912,6 +907,59 @@ class OperatingSession(Session):
                         os.rename(ardour_bak, "%s/%s.ardour.bak" % (project_path, new_session_name))
                     if os.path.isdir(ardour_audio):
                         os.rename(ardour_audio, "%s/interchange/%s.%s" % (project_path, new_session_name, client.client_id))
+                    
+                    #change last_used snapshot of ardour
+                    instant_file = "%s/instant.xml" % project_path
+                    if os.path.isfile(instant_file) and os.access(instant_file, os.W_OK):
+                        try :
+                            file = open(instant_file, 'r')
+                            xml = QDomDocument()
+                            xml.setContent(file.read())
+                            content = xml.documentElement()
+                            
+                            if content.tagName() == 'instant':
+                                node = content.firstChild()
+                                while not node.isNull():
+                                    tag = node.toElement()
+                                    if tag.tagName() == 'LastUsedSnapshot':
+                                        if tag.attribute('name') == self.name:
+                                            tag.setAttribute('name', new_session_name)
+                                            file = open(instant_file, 'w')
+                                            file.write(xml.toString())
+                                        break
+                                        
+                                    node = node.nextSibling()
+                            file.close()
+                        except:
+                            False
+                    
+                    #for ray-proxy, change config_file name
+                    proxy_file = "%s/ray-proxy.xml" % project_path
+                    if os.path.isfile(proxy_file):
+                        try:
+                            file = open(proxy_file, 'r')
+                            xml = QDomDocument()
+                            xml.setContent(file.read())
+                            content = xml.documentElement()
+                            
+                            if content.tagName() == "RAY-PROXY":
+                                cte = content.toElement()
+                                config_file = cte.attribute('config_file')
+                                
+                                if ('$NSM_SESSION_NAME' or '${NSM_SESSION_NAME}') in config_file:
+                                    for env in ('"$NSM_SESSION_NAME"', '"${NSM_SESSION_NAME}"', "$NSM_SESSION_NAME", "${NSM_SESSION_NAME}"):
+                                        config_file = config_file.replace(env, self.name)
+                                    
+                                    if config_file and config_file.split('.')[0] == self.name:
+                                        config_file_path = "%s/%s" % (project_path, config_file)
+                                        
+                                        if os.path.exists(config_file_path) and os.access(config_file_path, os.W_OK):
+                                            os.rename(config_file_path, "%s/%s" % (project_path, config_file.replace(self.name, new_session_name)))
+                                                      
+                            file.close()
+                                    
+                        except:
+                            False
                         
                 os.rename(project_path, "%s/%s.%s" % (spath, new_session_name, client.client_id))
             else:
