@@ -581,7 +581,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, signalHandler)
     
     app = QApplication(sys.argv)
-    app.setApplicationName("Ray Proxy")
+    app.setApplicationName("RaySession")
     #app.setApplicationVersion(VERSION)
     app.setOrganizationName("RaySession")
     app.setQuitOnLastWindowClosed(False)
