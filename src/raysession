@@ -20,6 +20,7 @@ import ui_raysession
 import ui_client_slot
 import ui_open_session
 import ui_new_session
+import ui_save_template_session
 import ui_nsm_open_info
 import ui_abort_session
 import ui_about_raysession
@@ -749,7 +750,12 @@ class MainWindow(QMainWindow):
         serverOSC.duplicateSession(session_name)
             
     def saveTemplateSession(self):
-        session_template_name = 'rolouf'
+        save_template_dialog = SaveTemplateSessionDialog(self)
+        save_template_dialog.exec()
+        if not save_template_dialog.result():
+            return
+        
+        session_template_name = save_template_dialog.getTemplateName()
         serverOSC.saveTemplateSession(session_template_name)
     
     def aboutRaySession(self):
@@ -903,7 +909,7 @@ class MainWindow(QMainWindow):
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(True)
             self.ui.actionDuplicateSession.setEnabled(False)
-            self.ui.actionSaveTemplateSession.setEnabled(False)
+            self.ui.actionSaveTemplateSession.setEnabled(True)
             self.ui.actionAddClient.setEnabled(True)
             self.ui.actionAddProxy.setEnabled(True)
             self.ui.actionOpenSessionFolder.setEnabled(True)
@@ -937,7 +943,7 @@ class MainWindow(QMainWindow):
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(True)
             self.ui.actionDuplicateSession.setEnabled(False)
-            self.ui.actionSaveTemplateSession.setEnabled(False)
+            self.ui.actionSaveTemplateSession.setEnabled(True)
             self.ui.actionAddClient.setEnabled(True)
             self.ui.actionAddProxy.setEnabled(False)
             self.ui.actionOpenSessionFolder.setEnabled(True)
@@ -1154,8 +1160,18 @@ class NewSessionDialog(ChildDialog):
 class SaveTemplateSessionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_new_session.Ui_DialogNewSession()
+        self.ui = ui_save_template_session.Ui_DialogSaveTemplateSession()
         self.ui.setupUi(self)
+        self.serverStatusChanged(nsm_session.server_status)
+        
+    def serverStatusChanged(self, server_status):
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(server_status == SERVER_STATUS_READY))
+        
+        if server_status == SERVER_STATUS_OFF:
+            self.reject()
+        
+    def getTemplateName(self):
+        return self.ui.lineEdit.text()
 
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):
