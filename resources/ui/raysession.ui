@@ -62,16 +62,7 @@
          <string notr="true">SessionFrame{border-top: 2px solid; border-right:2px solid; border-left:2px solid; border-top-left-radius:10px;border-top-right-radius:10px}</string>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>0</number>
          </property>
          <item>
@@ -94,7 +85,8 @@
                </property>
                <property name="icon">
                 <iconset theme="edit-duplicate">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff/>
+                </iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -105,20 +97,28 @@
               </widget>
              </item>
              <item>
-              <spacer name="horizontalSpacer_4">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+              <widget class="QToolButton" name="toolButtonSaveTemplateSession">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save Session as Template&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
+               <property name="styleSheet">
+                <string notr="true">QToolButton{border: none}</string>
                </property>
-               <property name="sizeHint" stdset="0">
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset theme="document-save-as-template">
+                 <normaloff/>
+                </iconset>
+               </property>
+               <property name="iconSize">
                 <size>
                  <width>22</width>
                  <height>22</height>
                 </size>
                </property>
-              </spacer>
+              </widget>
              </item>
              <item>
               <widget class="QLabel" name="LabelSessionName">
@@ -152,7 +152,8 @@
                </property>
                <property name="icon">
                 <iconset theme="list-remove">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff/>
+                </iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -194,7 +195,8 @@ QToolButton {border: none}</string>
                </property>
                <property name="icon">
                 <iconset theme="window-close">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff/>
+                </iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -272,7 +274,8 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="system-file-manager">
-                     <normaloff>.</normaloff>.</iconset>
+                     <normaloff/>
+                    </iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -323,7 +326,8 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="run-install">
-                     <normaloff>.</normaloff>.</iconset>
+                     <normaloff/>
+                    </iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -361,7 +365,8 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="edit-link">
-                     <normaloff>.</normaloff>.</iconset>
+                     <normaloff/>
+                    </iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -415,16 +420,7 @@ QToolButton {border: none}</string>
                 <property name="sizeConstraint">
                  <enum>QLayout::SetDefaultConstraint</enum>
                 </property>
-                <property name="leftMargin">
-                 <number>3</number>
-                </property>
-                <property name="topMargin">
-                 <number>3</number>
-                </property>
-                <property name="rightMargin">
-                 <number>3</number>
-                </property>
-                <property name="bottomMargin">
+                <property name="margin">
                  <number>3</number>
                 </property>
                 <item>
@@ -670,6 +666,8 @@ QToolButton {border: none}</string>
     <addaction name="actionAddClient"/>
     <addaction name="actionAddProxy"/>
     <addaction name="separator"/>
+    <addaction name="actionSaveTemplateSession"/>
+    <addaction name="separator"/>
     <addaction name="actionOpenSessionFolder"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -731,7 +729,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="dialog-messages">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Show Messages</string>
@@ -746,7 +745,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="document-save">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Save</string>
@@ -761,7 +761,8 @@ QToolButton {border: none}</string>
   <action name="actionOpenSession">
    <property name="icon">
     <iconset theme="document-open">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Open Session</string>
@@ -773,7 +774,8 @@ QToolButton {border: none}</string>
   <action name="actionNewSession">
    <property name="icon">
     <iconset theme="folder-new">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;New Session</string>
@@ -785,7 +787,8 @@ QToolButton {border: none}</string>
   <action name="actionQuit">
    <property name="icon">
     <iconset theme="application-exit">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Quit</string>
@@ -812,7 +815,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="show-menu">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>Show &amp;Menu Bar</string>
@@ -824,7 +828,8 @@ QToolButton {border: none}</string>
   <action name="actionControlMenu">
    <property name="icon">
     <iconset theme="configure">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>Control</string>
@@ -878,7 +883,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="system-file-manager">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Open Session Folder</string>
@@ -896,7 +902,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="window-duplicate">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Keep focus while opening clients</string>
@@ -916,7 +923,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="edit-duplicate">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Duplicate</string>
@@ -931,7 +939,8 @@ QToolButton {border: none}</string>
   <action name="actionAddClient">
    <property name="icon">
     <iconset theme="run-install">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>Add C&amp;lient</string>
@@ -946,7 +955,8 @@ QToolButton {border: none}</string>
   <action name="actionAddProxy">
    <property name="icon">
     <iconset theme="edit-link">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Proxy</string>
@@ -956,6 +966,17 @@ QToolButton {border: none}</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionSaveTemplateSession">
+   <property name="icon">
+    <iconset theme="document-save-as-template"/>
+   </property>
+   <property name="text">
+    <string>Save As Template</string>
+   </property>
+   <property name="toolTip">
+    <string>Save current session as template</string>
    </property>
   </action>
  </widget>

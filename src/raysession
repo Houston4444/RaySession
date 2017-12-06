@@ -467,7 +467,11 @@ class OSCServerT(ServerThread):
     def duplicateSession(self, session_name):
         ifDebug('serverOSC::raysession_sends duplication session')
         self.toDeamon('/nsm/server/duplicate', session_name)
-        
+    
+    def saveTemplateSession(self, session_template_name):
+        ifDebug('serverOSC::raysession_sends save template session')
+        self.toDeamon('/ray/server/save_session_template', session_template_name)    
+    
     def startClient(self, client_id):
         ifDebug('serverOSC::raysession_sends start client %s' % client_id)
         self.toDeamon('/ray/gui/client/resume', client_id)
@@ -556,6 +560,7 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSaveSession.clicked.connect(self.saveSession)
         self.ui.toolButtonAbortSession.setDefaultAction(self.ui.actionAbortSession)
         self.ui.toolButtonDuplicateSession.setDefaultAction(self.ui.actionDuplicateSession)
+        self.ui.toolButtonSaveTemplateSession.setDefaultAction(self.ui.actionSaveTemplateSession)
         self.ui.toolButtonFileManager.setDefaultAction(self.ui.actionOpenSessionFolder)
         self.ui.toolButtonAddClient.setDefaultAction(self.ui.actionAddClient)
         self.ui.toolButtonAddProxy.setDefaultAction(self.ui.actionAddProxy)
@@ -568,6 +573,7 @@ class MainWindow(QMainWindow):
         self.ui.actionCloseSession.triggered.connect(self.closeSession)
         self.ui.actionAbortSession.triggered.connect(self.abortSession)
         self.ui.actionDuplicateSession.triggered.connect(self.duplicateSession)
+        self.ui.actionSaveTemplateSession.triggered.connect(self.saveTemplateSession)
         self.ui.actionOpenSessionFolder.triggered.connect(self.openFileManager)
         self.ui.actionAddClient.triggered.connect(self.addClient)
         self.ui.actionAddProxy.triggered.connect(self.addProxy)
@@ -742,6 +748,10 @@ class MainWindow(QMainWindow):
         session_name = newDialog.getSessionName()
         serverOSC.duplicateSession(session_name)
             
+    def saveTemplateSession(self):
+        session_template_name = 'rolouf'
+        serverOSC.saveTemplateSession(session_template_name)
+    
     def aboutRaySession(self):
         about_dialog = AboutRaySessionDialog(self)
         about_dialog.exec()
@@ -877,6 +887,7 @@ class MainWindow(QMainWindow):
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(False)
             self.ui.actionDuplicateSession.setEnabled(False)
+            self.ui.actionSaveTemplateSession.setEnabled(False)
             self.ui.actionAddClient.setEnabled(False)
             self.ui.actionAddProxy.setEnabled(False)
             self.ui.actionOpenSessionFolder.setEnabled(False)
@@ -892,6 +903,7 @@ class MainWindow(QMainWindow):
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(True)
             self.ui.actionDuplicateSession.setEnabled(False)
+            self.ui.actionSaveTemplateSession.setEnabled(False)
             self.ui.actionAddClient.setEnabled(True)
             self.ui.actionAddProxy.setEnabled(True)
             self.ui.actionOpenSessionFolder.setEnabled(True)
@@ -903,15 +915,18 @@ class MainWindow(QMainWindow):
             self.ui.actionCloseSession.setEnabled(True)
             self.ui.actionAbortSession.setEnabled(True)
             self.ui.actionDuplicateSession.setEnabled(True)
+            self.ui.actionSaveTemplateSession.setEnabled(True)
             self.ui.actionAddClient.setEnabled(True)
             self.ui.actionAddProxy.setEnabled(True)
             self.ui.actionOpenSessionFolder.setEnabled(True)
         
         elif server_status == SERVER_STATUS_CLOSE:
+            self.ui.toolButtonSaveSession.setEnabled(True)
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(False)
             self.ui.actionDuplicateSession.setEnabled(False)
+            self.ui.actionSaveTemplateSession.setEnabled(False)
             self.ui.actionAddClient.setEnabled(False)
             self.ui.actionAddProxy.setEnabled(False)
             self.ui.actionOpenSessionFolder.setEnabled(True)
@@ -922,6 +937,7 @@ class MainWindow(QMainWindow):
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(True)
             self.ui.actionDuplicateSession.setEnabled(False)
+            self.ui.actionSaveTemplateSession.setEnabled(False)
             self.ui.actionAddClient.setEnabled(True)
             self.ui.actionAddProxy.setEnabled(False)
             self.ui.actionOpenSessionFolder.setEnabled(True)
@@ -1134,6 +1150,12 @@ class NewSessionDialog(ChildDialog):
         
     def preventOk(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(self.server_will_accept and self.text_is_valid))
+
+class SaveTemplateSessionDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_new_session.Ui_DialogNewSession()
+        self.ui.setupUi(self)
 
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):
