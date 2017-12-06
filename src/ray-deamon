@@ -2,10 +2,12 @@
 
 import os, sys, string, random, time, subprocess, signal, unicodedata
 from liblo import ServerThread, Address, make_method, Message
-from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings
+from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings, QStandardPaths
 from PyQt5.QtXml import QDomDocument
 
 from shared import *
+
+
 
 #ray-deamon doesn't really cares if jack is running or not
 #but if jack is running, it just ask all jack ports between many clients launchs or stops
@@ -1287,7 +1289,7 @@ class SignaledSession(OperatingSession):
         if self.process_order:
             return
         self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [self.save, self.duplicate, self.load, self.duplicateDone]
+        self.process_order = [self.save, self.duplicate]
         self.nextFunction()
         
     def serverAbortSession(self, path, args, src_addr):
@@ -1995,6 +1997,8 @@ if __name__ == '__main__':
     app.setOrganizationName("RaySession")
     settings = QSettings()
     known_as_non_active = settings.value('deamon/non_active_list', [])
+    
+    #print (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation))
     
     ### Translation process
     locale = QLocale.system().name()
