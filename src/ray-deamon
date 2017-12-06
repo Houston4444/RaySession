@@ -367,6 +367,94 @@ class Client(QObject):
         
         self.sent_to_gui = True
     
+    def adjustFilesAfterCopy(self, new_session_name):
+        if self.prefix_mode != PREFIX_MODE_SESSION_NAME:
+            return
+            
+        spath = "%s/%s" % (session.root, new_session_name)
+        project_path = "%s/%s.%s" % (spath, session.name, self.client_id)
+        
+        if not os.path.exists(project_path):
+            for file in os.listdir(spath):
+                if file.startswith("%s.%s." %(session.name, self.client_id)):
+                    if not os.access("%s/%s" % (spath, file), os.W_OK):
+                        continue
+                    
+                    endfile = file.replace("%s.%s." %(session.name, self.client_id), '', 1)
+                    os.rename('%s/%s' %(spath, file), "%s/%s.%s.%s" % (spath, new_session_name, self.client_id, endfile))
+            return
+        
+        if not os.path.isdir(project_path):
+            os.rename(project_path, "%s/%s.%s" % (spath, new_session_name, self.client_id))
+            return
+        
+        #only for ardour
+        ardour_file  = "%s/%s.ardour"     % (project_path, session.name)
+        ardour_bak   = "%s/%s.ardour.bak" % (project_path, session.name)
+        ardour_audio = "%s/interchange/%s.%s" % (project_path, session.name, self.client_id)
+        
+        if os.path.isfile(ardour_file):
+            os.rename(ardour_file, "%s/%s.ardour" % (project_path, new_session_name))
+        if os.path.isfile(ardour_bak):
+            os.rename(ardour_bak, "%s/%s.ardour.bak" % (project_path, new_session_name))
+        if os.path.isdir(ardour_audio):
+            os.rename(ardour_audio, "%s/interchange/%s.%s" % (project_path, new_session_name, self.client_id))
+        
+        #change last_used snapshot of ardour
+        instant_file = "%s/instant.xml" % project_path
+        if os.path.isfile(instant_file) and os.access(instant_file, os.W_OK):
+            try :
+                file = open(instant_file, 'r')
+                xml = QDomDocument()
+                xml.setContent(file.read())
+                content = xml.documentElement()
+                
+                if content.tagName() == 'instant':
+                    node = content.firstChild()
+                    while not node.isNull():
+                        tag = node.toElement()
+                        if tag.tagName() == 'LastUsedSnapshot':
+                            if tag.attribute('name') == session.name:
+                                tag.setAttribute('name', new_session_name)
+                                file = open(instant_file, 'w')
+                                file.write(xml.toString())
+                            break
+                            
+                        node = node.nextSibling()
+                file.close()
+            except:
+                False
+        
+        #for ray-proxy, change config_file name
+        proxy_file = "%s/ray-proxy.xml" % project_path
+        if os.path.isfile(proxy_file):
+            try:
+                file = open(proxy_file, 'r')
+                xml = QDomDocument()
+                xml.setContent(file.read())
+                content = xml.documentElement()
+                
+                if content.tagName() == "RAY-PROXY":
+                    cte = content.toElement()
+                    config_file = cte.attribute('config_file')
+                    
+                    if ('$NSM_SESSION_NAME' or '${NSM_SESSION_NAME}') in config_file:
+                        for env in ('"$NSM_SESSION_NAME"', '"${NSM_SESSION_NAME}"', "$NSM_SESSION_NAME", "${NSM_SESSION_NAME}"):
+                            config_file = config_file.replace(env, session.name)
+                        
+                        if config_file and config_file.split('.')[0] == session.name:
+                            config_file_path = "%s/%s" % (project_path, config_file)
+                            
+                            if os.path.exists(config_file_path) and os.access(config_file_path, os.W_OK):
+                                os.rename(config_file_path, "%s/%s" % (project_path, config_file.replace(session.name, new_session_name)))
+                                            
+                file.close()
+                        
+            except:
+                False
+            
+        os.rename(project_path, "%s/%s.%s" % (spath, new_session_name, self.client_id))
+    
     def serverAnnounce(self, path, args, src_addr, is_new):
         client_name, capabilities, executable_path, major, minor, pid = args
         
@@ -892,85 +980,8 @@ class OperatingSession(Session):
         subprocess.run(['cp', '-R',  self.path, spath])
         
         for client in self.clients + self.removed_clients:
-            if client.prefix_mode != PREFIX_MODE_SESSION_NAME:
-                continue
+            client.adjustFilesAfterCopy(new_session_name)
             
-            project_path = "%s/%s.%s" % (spath, self.name, client.client_id)
-            if os.path.exists(project_path):
-                if os.path.isdir(project_path):
-                    #only for ardour
-                    ardour_file  = "%s/%s.ardour"     % (project_path, self.name)
-                    ardour_bak   = "%s/%s.ardour.bak" % (project_path, self.name)
-                    ardour_audio = "%s/interchange/%s.%s" % (project_path, self.name, client.client_id)
-                    
-                    if os.path.isfile(ardour_file):
-                        os.rename(ardour_file, "%s/%s.ardour" % (project_path, new_session_name))
-                    if os.path.isfile(ardour_bak):
-                        os.rename(ardour_bak, "%s/%s.ardour.bak" % (project_path, new_session_name))
-                    if os.path.isdir(ardour_audio):
-                        os.rename(ardour_audio, "%s/interchange/%s.%s" % (project_path, new_session_name, client.client_id))
-                    
-                    #change last_used snapshot of ardour
-                    instant_file = "%s/instant.xml" % project_path
-                    if os.path.isfile(instant_file) and os.access(instant_file, os.W_OK):
-                        try :
-                            file = open(instant_file, 'r')
-                            xml = QDomDocument()
-                            xml.setContent(file.read())
-                            content = xml.documentElement()
-                            
-                            if content.tagName() == 'instant':
-                                node = content.firstChild()
-                                while not node.isNull():
-                                    tag = node.toElement()
-                                    if tag.tagName() == 'LastUsedSnapshot':
-                                        if tag.attribute('name') == self.name:
-                                            tag.setAttribute('name', new_session_name)
-                                            file = open(instant_file, 'w')
-                                            file.write(xml.toString())
-                                        break
-                                        
-                                    node = node.nextSibling()
-                            file.close()
-                        except:
-                            False
-                    
-                    #for ray-proxy, change config_file name
-                    proxy_file = "%s/ray-proxy.xml" % project_path
-                    if os.path.isfile(proxy_file):
-                        try:
-                            file = open(proxy_file, 'r')
-                            xml = QDomDocument()
-                            xml.setContent(file.read())
-                            content = xml.documentElement()
-                            
-                            if content.tagName() == "RAY-PROXY":
-                                cte = content.toElement()
-                                config_file = cte.attribute('config_file')
-                                
-                                if ('$NSM_SESSION_NAME' or '${NSM_SESSION_NAME}') in config_file:
-                                    for env in ('"$NSM_SESSION_NAME"', '"${NSM_SESSION_NAME}"', "$NSM_SESSION_NAME", "${NSM_SESSION_NAME}"):
-                                        config_file = config_file.replace(env, self.name)
-                                    
-                                    if config_file and config_file.split('.')[0] == self.name:
-                                        config_file_path = "%s/%s" % (project_path, config_file)
-                                        
-                                        if os.path.exists(config_file_path) and os.access(config_file_path, os.W_OK):
-                                            os.rename(config_file_path, "%s/%s" % (project_path, config_file.replace(self.name, new_session_name)))
-                                                      
-                            file.close()
-                                    
-                        except:
-                            False
-                        
-                os.rename(project_path, "%s/%s.%s" % (spath, new_session_name, client.client_id))
-            else:
-                for file in os.listdir(spath):
-                    if file.startswith("%s.%s." %(self.name, client.client_id)):
-                        endfile = file.replace("%s.%s." %(self.name, client.client_id), '', 1)
-                        os.rename('%s/%s' %(spath, file), "%s/%s.%s.%s" % (spath, new_session_name, client.client_id, endfile))
-                
-        
         self.nextFunction() #here "load"
     
     def saveSessionTemplate(self):
@@ -978,6 +989,18 @@ class OperatingSession(Session):
             server.send(src_addr, "/error", path, ERR_GENERAL_ERROR, "Some clients could not save" )
             self.process_order.clear()
             return
+        
+        server.setServerStatus(SERVER_STATUS_DUPLICATE)
+        session_template_name = self.osc_args[0]
+        spath = "%s/%s" % (session_template_root, session_template_name)
+        subprocess.run(['cp', '-R', self.path, spath])
+        
+        for client in self.clients + self.removed_clients:
+            client.adjustFilesAfterCopy(new_session_name)
+        
+        MESSAGE("Done")
+        server.send(self.osc_src_addr, "/reply", self.osc_path, "Saved as template.")
+        server.setServerStatus(SERVER_STATUS_READY)
     
     def load(self):
         #terminate or switch clients
@@ -1998,7 +2021,7 @@ if __name__ == '__main__':
     settings = QSettings()
     known_as_non_active = settings.value('deamon/non_active_list', [])
     
-    #print (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation))
+    session_template_root = "%s/%s/%s" (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName(), session_templates)
     
     ### Translation process
     locale = QLocale.system().name()
