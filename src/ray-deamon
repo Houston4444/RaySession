@@ -2043,7 +2043,6 @@ class OscServerThread(ServerThread):
         
         exec_list = []
         tmp_exec_list = []
-        n=0
         
         pathlist = os.getenv('PATH').split(':')
         for path in pathlist:
@@ -2060,6 +2059,28 @@ class OscServerThread(ServerThread):
         
         if tmp_exec_list:
             self.send(src_addr, '/reply_path', *tmp_exec_list)
+            
+    @make_method('/ray/server/list_session_templates', None)
+    def rayServerListSessionTemplates(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        template_list = []
+        
+        all_files = os.listdir(session_template_root)
+        for file in all_files:
+            print('rie')
+            if os.path.isdir("%s/%s" % (session_template_root, file)):
+                print('riedir')
+                template_list.append(file)
+                
+                if len(template_list) == 100:
+                    self.send(src_addr, '/reply_session_templates', *template_list)
+                    template_list.clear()
+                    
+        if template_list:
+            print('ben je te sonne')
+            self.send(src_addr, '/reply_session_templates', *template_list) 
+        
         
     def isOperationPending(self, src_addr, path):
         if session.process_order:
