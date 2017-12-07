@@ -1168,19 +1168,29 @@ class SaveTemplateSessionDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_save_template_session.Ui_DialogSaveTemplateSession()
         self.ui.setupUi(self)
+        
+        self.ui.lineEdit.textChanged.connect(self.textChanged)
         self.serverStatusChanged(nsm_session.server_status)
         
         self.template_list = []
+        self.ui.pushButtonAccept.setEnabled(False)
         self.ui.pushButtonAccept.clicked.connect(self.verifyAndAccept)
         
         serverOSC.qsig.session_template_found.connect(self.addTemplatesToList)
         serverOSC.toDeamon('/ray/server/list_session_templates')
         
+        self.server_will_accept = False
+    
+    def textChanged(self, text):
+        self.allowOkButton()
+    
     def serverStatusChanged(self, server_status):
-        self.ui.pushButtonAccept.setEnabled(bool(server_status == SERVER_STATUS_READY))
+        self.server_will_accept = bool(server_status == SERVER_STATUS_READY)
         
         if server_status == SERVER_STATUS_OFF:
             self.reject()
+        
+        self.allowOkButton()
     
     def addTemplatesToList(self, template_list):
         self.template_list += template_list
@@ -1188,17 +1198,19 @@ class SaveTemplateSessionDialog(ChildDialog):
     def getTemplateName(self):
         return self.ui.lineEdit.text()
     
+    def allowOkButton(self, text=''):
+        self.ui.pushButtonAccept.setEnabled(bool(self.server_will_accept and self.ui.lineEdit.text()))
+    
     def verifyAndAccept(self):
         template_name = self.getTemplateName()
         if template_name in self.template_list:
             ret = QMessageBox.question(self, 
-                                       _translate('session template', 'Overwrite Template'),
+                                       _translate('session template', 'Overwrite Template ?'),
                                        _translate('session_template', 'Template <strong>%s</strong> already exists.\nOverwrite it ?') % template_name)
             if ret == QMessageBox.No:
                 return
         self.accept()
                                 
-
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)

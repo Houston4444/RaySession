@@ -119,7 +119,7 @@ class Client(QObject):
     pending_command = COMMAND_NONE
     active          = False
     client_id       = ''
-    capabilities    = ''
+    capabilities    = None
     
     status          = CLIENT_STATUS_STOPPED
     name            = ''
@@ -143,7 +143,7 @@ class Client(QObject):
         self.process.readyReadStandardError.connect(self.standardError)
         self.process.readyReadStandardOutput.connect(self.standardOutput)
         
-        #if client is'n't stopped 1sec after stop, another stop becames a kill!
+        #if client is'n't stopped 2secs after stop, another stop becames a kill!
         self.stopped_since_long = False
         self.stopped_timer = QTimer()
         self.stopped_timer.setSingleShot(True)
@@ -1130,6 +1130,73 @@ class OperatingSession(Session):
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Saved as template.")
         server.setServerStatus(SERVER_STATUS_READY)
     
+    def prepareTemplate(self):
+        if len(self.osc_args) != 2:
+            return
+        
+        template_name = self.osc_args[1]
+        template_path = "%s/%s" % (session_template_root, template_name)
+        
+        if not os.path.isdir(template_path):
+            server.send(self.osc_src_addr, "/error", self.osc_path, _translate("error", "No template named %s") % template_name)
+            return
+        
+        new_session_name = self.osc_args[0]
+        spath = "%s/%s" % (self.root, new_session_name)
+        
+        server.setServerStatus(SERVER_STATUS_DUPLICATE)                   
+        
+        shutil.copytree(template_path, spath)
+        
+        #create temp clients from raysession.xml to adjust Files after copy
+        session_file = "%s/%s" % (spath, "raysession.xml")
+        
+        try:
+            ray_file = open(session_file, 'r')
+        except:
+            self.nextFunction()
+            return
+        
+        tmp_clients = []
+        
+        xml = QDomDocument()
+        xml.setContent(ray_file.read())
+
+        content = xml.documentElement()
+        
+        if content.tagName() != "RAYSESSION":
+            ray_file.close()
+            self.err_loading = ERR_BAD_PROJECT
+            self.loadError()
+            return
+            
+        node = content.firstChild()
+        while not node.isNull():
+            tag_name = node.toElement().tagName()
+            if tag_name in ('Clients', 'RemovedClients'):
+                client_xml = node.toElement().firstChild()
+                while not client_xml.isNull():
+                    client = Client()
+                    cx = client_xml.toElement()
+                    
+                    client.client_id  = str(cx.attribute('id'))
+                    prefix_mode = str(cx.attribute('prefix_mode'))
+                    if prefix_mode.isdigit() and 0 <= int(prefix_mode) <= 2:
+                        client.prefix_mode = int(prefix_mode)
+                    
+                    tmp_clients.append(client)
+                    
+                    client_xml = client_xml.nextSibling()
+                    
+            node = node.nextSibling()
+        
+        ray_file.close()
+        
+        for client in tmp_clients:
+            client.adjustFilesAfterCopy(new_session_name, SESSION_TEMPLATE_LOAD)
+        
+        self.nextFunction()
+    
     def load(self):
         #terminate or switch clients
         spath = self.root + '/' + self.osc_args[0]
@@ -1373,6 +1440,7 @@ class SignaledSession(OperatingSession):
     def __init__(self):
         OperatingSession.__init__(self)
         signaler.server_new.connect(self.serverNewSession)
+        signaler.server_new_from_tp.connect(self.serverNewSessionFromTemplate)
         signaler.server_open.connect(self.serverOpenSession)
         signaler.server_save.connect(self.serverSaveSession)
         signaler.server_duplicate.connect(self.serverDuplicateSession)
@@ -1407,7 +1475,14 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.close, self.new, self.save, self.newDone]
         self.nextFunction()
-    
+        
+    def serverNewSessionFromTemplate(self, path, args, src_addr):
+        if self.process_order:
+            return
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [self.save, self.prepareTemplate, self.load, self.loadDone]
+        self.nextFunction()
+        
     def serverOpenSession(self, path, args, src_addr):
         if self.process_order:
             return
@@ -1657,11 +1732,12 @@ class Signaler(QObject):
     server_reply     = pyqtSignal(str, list, object)
     server_duplicate = pyqtSignal(str, list, object)
     server_save_session_template = pyqtSignal(str, list, object)
-    server_abort     = pyqtSignal(str, list, object)
-    server_close     = pyqtSignal(str, list, object)
-    server_new       = pyqtSignal(str, list, object)
-    server_open      = pyqtSignal(str, list, object)
-    server_save      = pyqtSignal(str, list, object)
+    server_abort       = pyqtSignal(str, list, object)
+    server_close       = pyqtSignal(str, list, object)
+    server_new         = pyqtSignal(str, list, object)
+    server_new_from_tp = pyqtSignal(str, list, object)
+    server_open        = pyqtSignal(str, list, object)
+    server_save        = pyqtSignal(str, list, object)
     server_list_sessions   = pyqtSignal(str, list, object)
     server_add = pyqtSignal(str, list, object)
     server_startallclients = pyqtSignal()
@@ -1932,6 +2008,7 @@ class OscServerThread(ServerThread):
         
         signaler.server_save_session_template.emit(path, args, src_addr)
         
+    
     @make_method('/nsm/server/abort', None)
     def nsmServerAbort(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
@@ -1974,6 +2051,15 @@ class OscServerThread(ServerThread):
         
         signaler.server_new.emit(path, args, src_addr)
     
+    @make_method('/ray/server/new_from_template', None)
+    def rayServerNewFromTemplate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        signaler.server_new_from_tp.emit(path, args, src_addr)
+    
     @make_method('/nsm/server/save', None)
     def nsmServerSave(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
@@ -1995,7 +2081,7 @@ class OscServerThread(ServerThread):
             return
         
         signaler.server_open.emit(path, args, src_addr)
-                
+            
     @make_method('/nsm/server/close', None)
     def nsmServerClose(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
