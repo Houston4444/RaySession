@@ -454,7 +454,10 @@ class OSCServerT(ServerThread):
     def newSession(self, session_name):
         ifDebug('serverOSC::raysession_sends new session %s' % remove_accents(session_name))
         self.toDeamon('/nsm/server/new', session_name)
-        
+    
+    def newSessionFromTemplate(self, session_name, template_name):
+        self.toDeamon('/ray/server/new_from_template', session_name, template_name)
+    
     def openSession(self, session_name):
         ifDebug('serverOSC::raysession_sends open session %s' % remove_accents(session_name))
         self.toDeamon('/nsm/server/open', session_name)
@@ -723,8 +726,15 @@ class MainWindow(QMainWindow):
         if not newDialog.result():
             return
         
-        session_name = newDialog.getSessionName()
-        serverOSC.newSession(session_name)
+        session_name  = newDialog.getSessionName()
+        template_name = newDialog.getTemplateName()
+        
+        settings.setValue('last_used_template', template_name)
+        
+        if template_name:
+            serverOSC.newSessionFromTemplate(session_name, template_name)
+        else:
+            serverOSC.newSession(session_name)
       
     def openSession(self, action):
         openDialog = OpenSessionDialog(self)
@@ -1122,17 +1132,23 @@ class NewSessionDialog(ChildDialog):
         self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
         self.ui.lineEdit.textChanged.connect(self.textChanged)
         
-        self.session_list = []
+        self.session_list  = []
+        self.template_list = []
         
         serverOSC.qsig.server_status_changed.connect(self.serverStatusChanged)
         
         serverOSC.qsig.add_session_to_list.connect(self.addSessionToList)
         serverOSC.startListSession()
         
+        serverOSC.qsig.session_template_found.connect(self.addTemplatesToList)
+        serverOSC.toDeamon('/ray/server/list_session_templates')
+        
         if ray_deamon.launched_before:
             self.ui.toolButtonFolder.setVisible(False)
             self.ui.currentNsmFolder.setVisible(False)
             self.ui.labelNsmFolder.setVisible(False)
+        
+        self.ui.templateGroupBox.setVisible(False)
         
         self.server_will_accept = False
         self.text_is_valid      = False
@@ -1147,9 +1163,35 @@ class NewSessionDialog(ChildDialog):
     def addSessionToList(self, session_name):
         self.session_list.append(session_name)
     
+    def addTemplatesToList(self, template_list):
+        for template in template_list:
+            if not template in self.template_list:
+                self.template_list.append(template)
+                
+        if not self.template_list:
+            return
+        
+        self.template_list.sort()
+        self.ui.comboBoxTemplate.clear()
+        
+        for template_name in self.template_list:
+            self.ui.comboBoxTemplate.addItem(template_name)
+        
+        self.ui.templateGroupBox.setVisible(True)
+        
+        last_used_template = settings.value('last_used_template')
+        if last_used_template in self.template_list:
+            self.ui.comboBoxTemplate.setCurrentText(last_used_template)
+    
     def getSessionName(self):
         return self.ui.lineEdit.text()
 
+    def getTemplateName(self):
+        if self.ui.templateGroupBox.isChecked():
+            return self.ui.comboBoxTemplate.currentText()
+        
+        return ""
+        
     def textChanged(self, text):
         self.text_is_valid = bool(text and not text in self.session_list)
         self.preventOk()
@@ -1169,17 +1211,19 @@ class SaveTemplateSessionDialog(ChildDialog):
         self.ui = ui_save_template_session.Ui_DialogSaveTemplateSession()
         self.ui.setupUi(self)
         
+        self.server_will_accept = False
+        
         self.ui.lineEdit.textChanged.connect(self.textChanged)
-        self.serverStatusChanged(nsm_session.server_status)
+        self.ui.pushButtonAccept.clicked.connect(self.verifyAndAccept)
         
         self.template_list = []
         self.ui.pushButtonAccept.setEnabled(False)
-        self.ui.pushButtonAccept.clicked.connect(self.verifyAndAccept)
+        
         
         serverOSC.qsig.session_template_found.connect(self.addTemplatesToList)
         serverOSC.toDeamon('/ray/server/list_session_templates')
         
-        self.server_will_accept = False
+        self.serverStatusChanged(nsm_session.server_status)
     
     def textChanged(self, text):
         self.allowOkButton()
