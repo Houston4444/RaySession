@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, sys, string, random, time, subprocess, signal, unicodedata
+import os, sys, shutil, string, random, time, subprocess, signal, unicodedata
 from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings, QStandardPaths
 from PyQt5.QtXml import QDomDocument
@@ -1081,7 +1081,7 @@ class OperatingSession(Session):
     
     def duplicate(self):
         if self.clientsHaveErrors():
-            server.send(src_addr, "/error", path, ERR_GENERAL_ERROR, "Some clients could not save" )
+            server.send(self.osc_src_addr, "/error", self.osc_path, ERR_GENERAL_ERROR, "Some clients could not save" )
             self.process_order.clear()
             return
         
@@ -1097,7 +1097,7 @@ class OperatingSession(Session):
     
     def saveSessionTemplate(self):
         if self.clientsHaveErrors():
-            server.send(src_addr, "/error", path, ERR_GENERAL_ERROR, "Some clients could not save" )
+            server.send(self.osc_src_addr, "/error", self.osc_path, ERR_GENERAL_ERROR, "Some clients could not save" )
             self.process_order.clear()
             return
         
@@ -1105,10 +1105,23 @@ class OperatingSession(Session):
         session_template_name = self.osc_args[0]
         spath = "%s/%s" % (session_template_root, session_template_name)
         
+        #overwrite existing template
+        if os.path.isdir(spath):
+            if not os.access(spath, os.W_OK):
+                server.send(self.osc_src_addr, 
+                            "/error", 
+                            self.osc_path, 
+                            ERR_GENERAL_ERROR, 
+                            _translate("error", "Impossible to save template, unwriteable file !" ))
+                server.setServerStatus(SERVER_STATUS_READY)
+                return
+            shutil.rmtree(spath)
+        
         if not os.path.exists(session_template_root):
             os.makedirs(session_template_root)
             
-        subprocess.run(['cp', '-R', self.path, spath])
+        shutil.copytree(self.path, spath)
+        #subprocess.run(['cp', '-R', self.path, spath])
         
         for client in self.clients + self.removed_clients:
             client.adjustFilesAfterCopy(session_template_name, True)
