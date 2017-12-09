@@ -54,6 +54,7 @@ WAIT_FOR_REPLY    = 3
 SESSION_TEMPLATE_NONE = 0
 SESSION_TEMPLATE_SAVE = 1
 SESSION_TEMPLATE_LOAD = 2
+TEMPLATE_CLIENT_SAVE  = 3
 
 debug = False
 last_client_message = None
@@ -371,22 +372,111 @@ class Client(QObject):
         
         self.sent_to_gui = True
     
+    def saveAsTemplate(self, template_name):
+        #copy files
+        if self.prefix_mode == PREFIX_MODE_UNDEF:
+            client_files = []
+            
+            prefix = session.name
+            if self.prefix_mode == PREFIX_MODE_CLIENT_NAME:
+                prefix = self.name
+                
+            for filename in os.listdir(session.path):
+                if ( (filename == "%s.%s" % (prefix, self.client_id)) or 
+                     (filename.startswith("%s.%s." % (prefix, self.client_id))) ):
+                    client_files.append(filename)
+                        
+            template_dir = "%s/%s" % (client_template_local_root, template_name)
+            if os.path.exists(template_dir):
+                if os.access(template_dir, os.W_OK):
+                    shutil.rmtree(template_dir)
+                else:
+                    #TODO send error
+                    return
+                
+            os.makedirs(template_dir)
+            
+            for filename in client_files:
+                if not os.access(filename, os.W_OK):
+                    return
+                
+                subprocess.run(['cp', '-R', filename, template_dir])
+                
+            self.adjustFilesAfterCopy(template_name, TEMPLATE_CLIENT_SAVE)
+            
+        xml_file = "%s/%s" % (client_template_local_root, 'client_templates.xml')
+        
+        #security check
+        if os.path.exists(xml_file):
+            if not os.access(xml_file, os.W_OK):
+                return
+            
+            if os.path.isdir(xml_file):
+                #should not be a dir, remove it !
+                subprocess.run('rm', '-R', xml_file)
+        
+        
+        #create client_templates.xml if not exists
+        if not os.path.isfile(xml_file):
+            file = open(xml_file, 'w')
+            
+            xml = QDomDocument()
+            rct = xml.createElement('RAY-CLIENT-TEMPLATES')
+            xml.appendChild(rct)
+            file.write(xml.toString())
+            file.close()
+            del xml
+            
+        file = open(xml_file, 'r')
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        file.close()
+        content = xml.documentElement()
+                
+        if content.tagName() == 'RAY-CLIENT-TEMPLATES':
+            rct = xml.createElement('Client-Template')
+            rct.setAttribute('template-name', template_name)
+            rct.setAttribute('executable', self.executable_path)
+            rct.setAttribute('client_id', self.client_id)
+            rct.setAttribute('name', self.name)
+            
+            if self.prefix_mode !=  PREFIX_MODE_SESSION_NAME:
+                rct.setAttribute('prefix_mode', self.prefix_mode)
+                if self.prefix_mode == PREFIX_MODE_UNDEF:
+                    rct.setAttribute('project_path', self.project_path)
+                    
+            rct.setAttribute('icon', self.icon)
+            rct.setAttribute('label', self.label)
+            
+            
+            content.appendChild(rct)
+            
+            file = open(xml_file, 'w')
+            file.write(xml.toString())
+            file.close()
+
+    
     def adjustFilesAfterCopy(self, new_session_name, template_save=SESSION_TEMPLATE_NONE):
         if self.prefix_mode != PREFIX_MODE_SESSION_NAME:
             return
             
         old_session_name = session.name
+        xsessionx = "XXX_SESSION_NAME_XXX"
         
         if template_save == SESSION_TEMPLATE_NONE:
             spath = "%s/%s" % (session.root, new_session_name)
             
         elif template_save == SESSION_TEMPLATE_SAVE:
             spath = "%s/%s" % (session_template_root, new_session_name)
-            new_session_name = "XXX_SESSION_NAME_XXX"
+            new_session_name = xsessionx
             
         elif template_save == SESSION_TEMPLATE_LOAD:
             spath = "%s/%s" % (session.root, new_session_name)
-            old_session_name = "XXX_SESSION_NAME_XXX"
+            old_session_name = xsessionx
+            
+        elif template_save == TEMPLATE_CLIENT_SAVE:
+            spath = "%s/%s" % (client_template_local_root, new_session_name)
+            old_session_name = xsessionx
             
         project_path = "%s/%s.%s" % (spath, old_session_name, self.client_id)
         
@@ -1374,6 +1464,7 @@ class SignaledSession(OperatingSession):
         signaler.gui_client_remove.connect(self.guiClientRemove)
         signaler.gui_client_resume.connect(self.guiClientResume)
         signaler.gui_client_save.connect(self.guiClientSave)
+        signaler.gui_client_save_template.connect(self.guiClientSaveTemplate)
         signaler.gui_client_label.connect(self.guiClientLabel)
         signaler.gui_client_icon.connect(self.guiClientIcon)
         
@@ -1567,6 +1658,12 @@ class SignaledSession(OperatingSession):
                 client.save()
                 break
     
+    def guiClientSaveTemplate(self, path, args):
+        for client in self.clients:
+            if client.client_id == args[0]:
+                client.saveAsTemplate(args[1])
+                break
+    
     def guiClientLabel(self, client_id, label):
         for client in self.clients:
             if client.client_id == client_id:
@@ -1658,6 +1755,7 @@ class Signaler(QObject):
     gui_client_remove = pyqtSignal(str, list)
     gui_client_resume = pyqtSignal(str, list)
     gui_client_save   = pyqtSignal(str, list)
+    gui_client_save_template = pyqtSignal(str, list)
     gui_client_label  = pyqtSignal(str, str)
     gui_client_icon   = pyqtSignal(str, str)
     
@@ -1838,6 +1936,11 @@ class OscServerThread(ServerThread):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_save.emit(path, args)
 
+    @make_method('/ray/gui/client/save_as_template', None)
+    def rayGuiClientSaveAsTemplate(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_save_template.emit(path, args)
+    
     @make_method('/ray/gui/client/show_optional_gui', None)
     def nsmGuiClientShow_optional_gui(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
@@ -2166,8 +2269,9 @@ if __name__ == '__main__':
     settings = QSettings()
     known_as_non_active = settings.value('deamon/non_active_list', [])
     
-    session_template_root = "%s/%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName(), 'session_templates')
-    print(session_template_root)
+    app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
+    session_template_root = "%s/%s" % (app_config_path, 'session_templates')
+    client_template_local_root = "%s/%s" % (app_config_path, 'client_templates')
     
     ### Translation process
     locale = QLocale.system().name()
