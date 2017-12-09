@@ -757,7 +757,7 @@ class MainWindow(QMainWindow):
             serverOSC.abortSession()
     
     def duplicateSession(self):
-        newDialog = NewSessionDialog(self)
+        newDialog = NewSessionDialog(self, True)
         newDialog.exec()
         if not newDialog.result():
             return
@@ -1122,10 +1122,11 @@ class OpenSessionDialog(ChildDialog):
             return self.ui.sessionList.currentItem().text()
 
 class NewSessionDialog(ChildDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, duplicate_window = False):
         ChildDialog.__init__(self, parent)
         self.ui = ui_new_session.Ui_DialogNewSession()
         self.ui.setupUi(self)
+        
         self.ui.currentNsmFolder.setText(default_folder)
         self.ui.toolButtonFolder.clicked.connect(self.changeNsmFolder)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -1141,7 +1142,8 @@ class NewSessionDialog(ChildDialog):
         serverOSC.startListSession()
         
         serverOSC.qsig.session_template_found.connect(self.addTemplatesToList)
-        serverOSC.toDeamon('/ray/server/list_session_templates')
+        if not duplicate_window:
+            serverOSC.toDeamon('/ray/server/list_session_templates')
         
         if ray_deamon.launched_before:
             self.ui.toolButtonFolder.setVisible(False)
@@ -1213,7 +1215,7 @@ class SaveTemplateSessionDialog(ChildDialog):
         
         self.server_will_accept = False
         
-        self.ui.lineEdit.textChanged.connect(self.textChanged)
+        self.ui.lineEdit.textEdited.connect(self.textEdited)
         self.ui.pushButtonAccept.clicked.connect(self.verifyAndAccept)
         
         self.template_list = []
@@ -1225,7 +1227,9 @@ class SaveTemplateSessionDialog(ChildDialog):
         
         self.serverStatusChanged(nsm_session.server_status)
     
-    def textChanged(self, text):
+    def textEdited(self, text):
+        if '/' in text:
+            self.ui.lineEdit.setText(text.replace('/', '⁄'))
         self.allowOkButton()
     
     def serverStatusChanged(self, server_status):
