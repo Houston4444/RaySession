@@ -514,6 +514,9 @@ class OSCServerT(ServerThread):
         ifDebug('serverOSC::raysession_sends hide optional GUI %s' % client_id)
         self.toDeamon('/ray/gui/client/hide_optional_gui', client_id)
         
+    def saveClientTemplate(self, client_id, template_name):
+        self.toDeamon('/ray/gui/client/save_as_template', client_id, template_name)
+        
     def addClient(self, program_name):
         ifDebug('serverOSC::raysession_sends add Client %s' % program_name)
         self.toDeamon('/nsm/server/add', program_name)
@@ -591,6 +594,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(app.aboutQt)
         
+        
         #set control menu
         self.controlMenu = QMenu()
         self.controlMenu.addAction(self.ui.actionShowMenuBar)
@@ -665,6 +669,7 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.clientRemoveRequest.connect(serverOSC.removeClient)
         self.ui.listWidget.clientHideGuiRequest.connect(serverOSC.hideClientOptionalGui)
         self.ui.listWidget.clientShowGuiRequest.connect(serverOSC.showClientOptionalGui)
+        self.ui.listWidget.clientSaveTemplateRequest.connect(self.newClientTemplate)
     
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
@@ -719,6 +724,16 @@ class MainWindow(QMainWindow):
             
         else:
             QApplication.quit()
+    
+    def newClientTemplate(self, client_id):
+        dialog = SaveTemplateSessionDialog(self)
+        dialog.exec()
+        if not dialog.result():
+            return
+        
+        template_name = dialog.getTemplateName()
+        
+        serverOSC.saveClientTemplate(client_id, template_name)
     
     def createNewSession(self):
         newDialog = NewSessionDialog(self)

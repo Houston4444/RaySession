@@ -374,7 +374,7 @@ class Client(QObject):
     
     def saveAsTemplate(self, template_name):
         #copy files
-        if self.prefix_mode == PREFIX_MODE_UNDEF:
+        if self.prefix_mode != PREFIX_MODE_UNDEF:
             client_files = []
             
             prefix = session.name
@@ -397,10 +397,7 @@ class Client(QObject):
             os.makedirs(template_dir)
             
             for filename in client_files:
-                if not os.access(filename, os.W_OK):
-                    return
-                
-                subprocess.run(['cp', '-R', filename, template_dir])
+                subprocess.run(['cp', '-R', "%s/%s" % (session.path, filename), template_dir])
                 
             self.adjustFilesAfterCopy(template_name, TEMPLATE_CLIENT_SAVE)
             
@@ -416,8 +413,13 @@ class Client(QObject):
                 subprocess.run('rm', '-R', xml_file)
         
         
+        if not os.path.isdir(client_template_local_root):
+            os.makedirs(client_template_local_root)
+        
+        print(xml_file)
         #create client_templates.xml if not exists
         if not os.path.isfile(xml_file):
+            print('no xml client template file')
             file = open(xml_file, 'w')
             
             xml = QDomDocument()
@@ -447,6 +449,7 @@ class Client(QObject):
                     
             rct.setAttribute('icon', self.icon)
             rct.setAttribute('label', self.label)
+            rct.setAttribute('launched', self.isRunning())
             
             
             content.appendChild(rct)
@@ -476,7 +479,7 @@ class Client(QObject):
             
         elif template_save == TEMPLATE_CLIENT_SAVE:
             spath = "%s/%s" % (client_template_local_root, new_session_name)
-            old_session_name = xsessionx
+            new_session_name = xsessionx
             
         project_path = "%s/%s.%s" % (spath, old_session_name, self.client_id)
         
