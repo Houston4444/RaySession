@@ -24,6 +24,7 @@ import ui_save_template_session
 import ui_nsm_open_info
 import ui_abort_session
 import ui_about_raysession
+import ui_add_application
 import ui_new_executable
 import ui_error_dialog
 import ui_quit_app
@@ -581,6 +582,7 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonDuplicateSession.setDefaultAction(self.ui.actionDuplicateSession)
         self.ui.toolButtonSaveTemplateSession.setDefaultAction(self.ui.actionSaveTemplateSession)
         self.ui.toolButtonFileManager.setDefaultAction(self.ui.actionOpenSessionFolder)
+        self.ui.toolButtonAddApplication.setDefaultAction(self.ui.actionAddApplication)
         self.ui.toolButtonAddClient.setDefaultAction(self.ui.actionAddClient)
         self.ui.toolButtonAddProxy.setDefaultAction(self.ui.actionAddProxy)
         
@@ -594,6 +596,7 @@ class MainWindow(QMainWindow):
         self.ui.actionDuplicateSession.triggered.connect(self.duplicateSession)
         self.ui.actionSaveTemplateSession.triggered.connect(self.saveTemplateSession)
         self.ui.actionOpenSessionFolder.triggered.connect(self.openFileManager)
+        self.ui.actionAddApplication.triggered.connect(self.addApplication)
         self.ui.actionAddClient.triggered.connect(self.addClient)
         self.ui.actionAddProxy.triggered.connect(self.addProxy)
         self.ui.actionKeepFocus.toggled.connect(self.toggleKeepFocus)
@@ -817,6 +820,17 @@ class MainWindow(QMainWindow):
         if execDialog.result():
             command = execDialog.getExecutableSelected()
             serverOSC.addClient(command)
+    
+    def addApplication(self):
+        if nsm_session.server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF):
+            return
+        
+        dialog = AddApplicationDialog(self)
+        dialog.exec()
+        if dialog.result():
+            template_name = dialog.getSelectedTemplate()
+            serverOSC.toDeamon('/ray/server/add_user_client_template', template_name)
+            #serverOSC.addClient(command)
     
     def addProxy(self):
         serverOSC.addClient('ray-proxy')
@@ -1228,10 +1242,7 @@ class NewSessionDialog(ChildDialog):
     def preventOk(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(self.server_will_accept and self.text_is_valid))
 
-class AbstractSaveTemplateDiaog(ChildDialog):
-    True
-
-class SaveTemplateSessionDialog(ChildDialog):
+class AbstractSaveTemplateDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
         self.ui = ui_save_template_session.Ui_DialogSaveTemplateSession()
@@ -1241,31 +1252,12 @@ class SaveTemplateSessionDialog(ChildDialog):
         
         self.ui.lineEdit.textEdited.connect(self.textEdited)
         self.ui.pushButtonAccept.clicked.connect(self.verifyAndAccept)
-        
-        self.template_list = []
         self.ui.pushButtonAccept.setEnabled(False)
         
-        
-        serverOSC.qsig.session_template_found.connect(self.addTemplatesToList)
-        serverOSC.toDeamon('/ray/server/list_session_templates')
-        
-        self.serverStatusChanged(nsm_session.server_status)
-    
     def textEdited(self, text):
         if '/' in text:
             self.ui.lineEdit.setText(text.replace('/', '⁄'))
-        self.allowOkButton()
-    
-    def serverStatusChanged(self, server_status):
-        self.server_will_accept = bool(server_status == SERVER_STATUS_READY)
-        
-        if server_status == SERVER_STATUS_OFF:
-            self.reject()
-        
-        self.allowOkButton()
-    
-    def addTemplatesToList(self, template_list):
-        self.template_list += template_list
+        self.allowOkButton()    
     
     def getTemplateName(self):
         return self.ui.lineEdit.text()
@@ -1282,31 +1274,40 @@ class SaveTemplateSessionDialog(ChildDialog):
             if ret == QMessageBox.No:
                 return
         self.accept()
-
-class SaveTemplateClientDialog(ChildDialog):
+    
+class SaveTemplateSessionDialog(AbstractSaveTemplateDialog):
     def __init__(self, parent):
-        ChildDialog.__init__(self, parent)
-        self.ui = ui_save_template_session.Ui_DialogSaveTemplateSession()
-        self.ui.setupUi(self)
+        AbstractSaveTemplateDialog.__init__(self, parent)
         
-        self.server_will_accept = False
+        self.template_list = []
         
-        self.ui.lineEdit.textEdited.connect(self.textEdited)
-        self.ui.pushButtonAccept.clicked.connect(self.verifyAndAccept)
+        serverOSC.qsig.session_template_found.connect(self.addTemplatesToList)
+        serverOSC.toDeamon('/ray/server/list_session_templates')
+        
+        self.serverStatusChanged(nsm_session.server_status)
+    
+    def serverStatusChanged(self, server_status):
+        self.server_will_accept = bool(server_status == SERVER_STATUS_READY)
+        
+        if server_status == SERVER_STATUS_OFF:
+            self.reject()
+        
+        self.allowOkButton()
+    
+    def addTemplatesToList(self, template_list):
+        self.template_list += template_list
+
+class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
+    def __init__(self, parent):
+        AbstractSaveTemplateDialog.__init__(self, parent)
         
         self.template_list = []
         self.ui.pushButtonAccept.setEnabled(False)
-        
         
         serverOSC.qsig.user_client_template_found.connect(self.addTemplatesToList)
         serverOSC.toDeamon('/ray/server/list_user_client_templates')
         
         self.serverStatusChanged(nsm_session.server_status)
-    
-    def textEdited(self, text):
-        if '/' in text:
-            self.ui.lineEdit.setText(text.replace('/', '⁄'))
-        self.allowOkButton()
     
     def serverStatusChanged(self, server_status):
         self.server_will_accept = bool(not server_status in (SERVER_STATUS_OFF, SERVER_STATUS_CLOSE))
@@ -1319,22 +1320,6 @@ class SaveTemplateClientDialog(ChildDialog):
     def addTemplatesToList(self, template_list):
         for template in template_list:
             self.template_list.append(template.split('/')[0])
-    
-    def getTemplateName(self):
-        return self.ui.lineEdit.text()
-    
-    def allowOkButton(self, text=''):
-        self.ui.pushButtonAccept.setEnabled(bool(self.server_will_accept and self.ui.lineEdit.text()))
-    
-    def verifyAndAccept(self):
-        template_name = self.getTemplateName()
-        if template_name in self.template_list:
-            ret = QMessageBox.question(self, 
-                                       _translate('session template', 'Overwrite Template ?'),
-                                       _translate('session_template', 'Template <strong>%s</strong> already exists.\nOverwrite it ?') % template_name)
-            if ret == QMessageBox.No:
-                return
-        self.accept()
                                 
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):
@@ -1395,6 +1380,117 @@ class AboutRaySessionDialog(ChildDialog):
         all_text = self.ui.labelRayAndVersion.text()
         self.ui.labelRayAndVersion.setText(all_text % VERSION)
         
+class AddApplicationDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_add_application.Ui_DialogAddApplication()
+        self.ui.setupUi(self)
+        
+        self.ui.templateList.currentItemChanged.connect(self.currentItemChanged)
+        self.ui.templateList.setFocus(Qt.OtherFocusReason)
+        self.ui.filterBar.textEdited.connect(self.updateFilteredList)
+        self.ui.filterBar.updownpressed.connect(self.updownPressed)
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        
+        serverOSC.qsig.user_client_template_found.connect(self.addTemplates)
+        serverOSC.toDeamon('/ray/server/list_user_client_templates')
+        #serverOSC.startListSession()
+        
+            
+        self.server_will_accept = False
+        self.has_selection      = False
+        
+        self.serverStatusChanged(nsm_session.server_status)
+    
+    def serverStatusChanged(self, server_status):
+        self.server_will_accept = bool(not server_status in (SERVER_STATUS_OFF, SERVER_STATUS_CLOSE))
+        self.preventOk()
+        
+    def addTemplates(self, template_list):
+        for template in template_list:
+            template_name = template.split('/')[0]
+            icon_name = template.split('/')[1]
+            #if session_name == settings.value('last_session'):
+                #self.f_last_session_item = QListWidgetItem(session_name)
+                #self.ui.templateList.addItem(self.f_last_session_item)
+                #self.ui.templateList.setCurrentItem(self.f_last_session_item)
+            #else:
+            self.ui.templateList.addItem(QListWidgetItem(QIcon.fromTheme(icon_name), template_name, self.ui.templateList))
+            
+            self.ui.templateList.sortItems()
+            
+            #if self.f_last_session_item:
+                #current_index = self.ui.templateList.currentIndex()
+                #self.ui.templateList.scrollTo(current_index)
+            #else:
+                #self.ui.templateList.setCurrentRow(0)
+        
+    def updateFilteredList(self, filt):
+        filter_text = self.ui.filterBar.displayText()
+        
+        #show all items
+        for i in range(self.ui.templateList.count()):
+            self.ui.templateList.item(i).setHidden(False)
+            
+        liist = self.ui.templateList.findItems(filter_text, Qt.MatchContains)
+        
+        #hide all non matching items
+        for i in range(self.ui.templateList.count()):
+            if self.ui.templateList.item(i) not in liist:
+               self.ui.templateList.item(i).setHidden(True)
+        
+        #if selected item not in list, then select the first visible
+        if not self.ui.templateList.currentItem() or self.ui.templateList.currentItem().isHidden():
+            for i in range(self.ui.templateList.count()):
+                if not self.ui.templateList.item(i).isHidden():
+                    self.ui.templateList.setCurrentRow(i)
+                    break
+              
+              
+        if not self.ui.templateList.currentItem() or self.ui.templateList.currentItem().isHidden():
+            self.ui.filterBar.setStyleSheet("QLineEdit { background-color: red}")
+            self.ui.templateList.setCurrentItem(None)
+        else:
+            self.ui.filterBar.setStyleSheet("")
+            self.ui.templateList.scrollTo(self.ui.templateList.currentIndex())
+    
+    def updownPressed(self, key):
+        row = self.ui.templateList.currentRow()
+        if key == Qt.Key_Up:
+            if row == 0:
+                return
+            row-=1
+            while self.ui.templateList.item(row).isHidden():
+                if row == 0:
+                    return
+                row-=1
+        elif key == Qt.Key_Down:
+            if row == self.ui.templateList.count() -1:
+                return
+            row+=1
+            while self.ui.templateList.item(row).isHidden():
+                if row == self.ui.templateList.count() -1:
+                    return
+                row+=1
+        self.ui.templateList.setCurrentRow(row)
+    
+    def currentItemChanged(self, item, previous_item):
+        self.has_selection = bool(item)
+        self.preventOk()
+    
+    def preventOk(self):
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(self.server_will_accept and self.has_selection))
+    
+    def changeNsmFolder(self):
+        changeNsmFolder(self)
+        self.ui.currentNsmFolder.setText(default_folder)
+        self.ui.templateList.clear()
+        serverOSC.startListSession()
+            
+    def getSelectedTemplate(self):
+        if self.ui.templateList.currentItem():
+            return self.ui.templateList.currentItem().text()
+
 class newExecutableDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)

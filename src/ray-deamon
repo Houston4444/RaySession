@@ -51,10 +51,11 @@ WAIT_FOR_STOP     = 1
 WAIT_FOR_ANNOUNCE = 2
 WAIT_FOR_REPLY    = 3
 
-SESSION_TEMPLATE_NONE = 0
-SESSION_TEMPLATE_SAVE = 1
-SESSION_TEMPLATE_LOAD = 2
+TEMPLATE_NONE = 0
+TEMPLATE_SESSION_SAVE = 1
+TEMPLATE_SESSION_LOAD = 2
 TEMPLATE_CLIENT_SAVE  = 3
+TEMPLATE_CLIENT_LOAD  = 4
 
 debug = False
 last_client_message = None
@@ -372,6 +373,38 @@ class Client(QObject):
         
         self.sent_to_gui = True
     
+    def prettyClientId(self):
+        wanted = self.client_id
+        
+        if self.executable_path == 'ray-proxy':
+            proxy_file = "%s/ray-proxy.xml" % self.getProjectPath()
+            
+            if os.path.exists(proxy_file):
+                file = open(proxy_file, 'r')
+                xml = QDomDocument()
+                xml.setContent(file.read())
+                file.close()
+                
+                content = xml.documentElement()
+                if content.tagName() == 'RAY-PROXY':
+                    executable = content.attribute('executable')
+                    if executable:
+                        wanted = executable
+            
+            
+        if '_' in wanted:
+            begin, udsc, end = wanted.rpartition('_')
+            
+            if not end:
+                return wanted
+            
+            if not end.isdigit():
+                return wanted
+            
+            return begin
+        
+        return wanted
+    
     def saveAsTemplate(self, template_name):
         #copy files
         if self.prefix_mode != PREFIX_MODE_UNDEF:
@@ -449,16 +482,13 @@ class Client(QObject):
                 content.removeChild(node)
             
             node = node.nextSibling()
-            print(node.toElement().tagName())
-            print(node.toElement().attribute('template-name'))
         
-        
-        
+        #create template
         rct = xml.createElement('Client-Template')
         
         rct.setAttribute('template-name', template_name)
         rct.setAttribute('executable', self.executable_path)
-        rct.setAttribute('client_id', self.client_id)
+        rct.setAttribute('client_id', self.prettyClientId())
         
         if self.name:
             rct.setAttribute('name', self.name)
@@ -485,58 +515,70 @@ class Client(QObject):
         file.close()
 
     
-    def adjustFilesAfterCopy(self, new_session_name, template_save=SESSION_TEMPLATE_NONE):
+    def adjustFilesAfterCopy(self, new_session_name, template_save=TEMPLATE_NONE):
         if self.prefix_mode != PREFIX_MODE_SESSION_NAME:
             return
             
         old_session_name = session.name
-        xsessionx = "XXX_SESSION_NAME_XXX"
+        new_client_id    = self.client_id
+        old_client_id    = self.client_id
+        xsessionx   = "XXX_SESSION_NAME_XXX"
+        xclient_idx = "XXX_CLIENT_ID_XXX"
         
-        if template_save == SESSION_TEMPLATE_NONE:
+        if template_save == TEMPLATE_NONE:
             spath = "%s/%s" % (session.root, new_session_name)
             
-        elif template_save == SESSION_TEMPLATE_SAVE:
+        elif template_save == TEMPLATE_SESSION_SAVE:
             spath = "%s/%s" % (session_template_root, new_session_name)
             new_session_name = xsessionx
             
-        elif template_save == SESSION_TEMPLATE_LOAD:
+        elif template_save == TEMPLATE_SESSION_LOAD:
             spath = "%s/%s" % (session.root, new_session_name)
             old_session_name = xsessionx
             
         elif template_save == TEMPLATE_CLIENT_SAVE:
             spath = "%s/%s" % (client_template_local_root, new_session_name)
             new_session_name = xsessionx
-            
-        project_path = "%s/%s.%s" % (spath, old_session_name, self.client_id)
+            new_client_id    = xclient_idx
+           
+        elif template_save == TEMPLATE_CLIENT_LOAD:
+            spath = session.path
+            old_session_name = xsessionx
+            old_client_id    = xclient_idx
+           
+        project_path = "%s/%s.%s" % (spath, old_session_name, old_client_id)
         
         if not os.path.exists(project_path):
             for file in os.listdir(spath):
-                if file.startswith("%s.%s." %(old_session_name, self.client_id)):
+                if ( file.startswith("%s.%s." %(old_session_name, old_client_id)) or
+                     file == "%s.%s" %(old_session_name, old_client_id) ):
+                    
                     if not os.access("%s/%s" % (spath, file), os.W_OK):
                         continue
                     
-                    endfile = file.replace("%s.%s." %(old_session_name, self.client_id), '', 1)
-                    os.rename('%s/%s' %(spath, file), "%s/%s.%s.%s" % (spath, new_session_name, self.client_id, endfile))
+                    endfile = file.replace("%s.%s." %(old_session_name, old_client_id), '', 1)
+                    
+                    os.rename('%s/%s' %(spath, file), "%s/%s.%s.%s" % (spath, new_session_name, new_client_id, endfile))
             return
         
         if not os.path.isdir(project_path):
             if not os.access(project_path, os.W_OK):
                 return
             
-            os.rename(project_path, "%s/%s.%s" % (spath, new_session_name, self.client_id))
+            os.rename(project_path, "%s/%s.%s" % (spath, new_session_name, new_client_id))
             return
         
         #only for ardour
         ardour_file  = "%s/%s.ardour"     % (project_path, old_session_name)
         ardour_bak   = "%s/%s.ardour.bak" % (project_path, old_session_name)
-        ardour_audio = "%s/interchange/%s.%s" % (project_path, old_session_name, self.client_id)
+        ardour_audio = "%s/interchange/%s.%s" % (project_path, old_session_name, old_client_id)
         
         if os.path.isfile(ardour_file) and os.access(ardour_file, os.W_OK):
             os.rename(ardour_file, "%s/%s.ardour" % (project_path, new_session_name))
         if os.path.isfile(ardour_bak) and os.access(ardour_bak, os.W_OK):
             os.rename(ardour_bak, "%s/%s.ardour.bak" % (project_path, new_session_name))
         if os.path.isdir(ardour_audio and os.access(ardour_audio, os.W_OK)):
-            os.rename(ardour_audio, "%s/interchange/%s.%s" % (project_path, new_session_name, self.client_id))
+            os.rename(ardour_audio, "%s/interchange/%s.%s" % (project_path, new_session_name, new_client_id))
         
         #change last_used snapshot of ardour
         instant_file = "%s/instant.xml" % project_path
@@ -592,7 +634,7 @@ class Client(QObject):
                 False
         
         if os.access(project_path, os.W_OK):
-            os.rename(project_path, "%s/%s.%s" % (spath, new_session_name, self.client_id))
+            os.rename(project_path, "%s/%s.%s" % (spath, new_session_name, new_client_id))
     
     def serverAnnounce(self, path, args, src_addr, is_new):
         client_name, capabilities, executable_path, major, minor, pid = args
@@ -701,6 +743,8 @@ class Session(QObject):
         if not self.path:
             return
         
+        self.forbidden_ids_list.clear()
+        
         for file in os.listdir(self.path):
             if os.path.isdir(file) and file.contains('.'):
                 client_id = file.rpartition('.')[2]
@@ -795,7 +839,6 @@ class Session(QObject):
         
         self.forbidden_ids_list.append(client_id)
         return client_id
-
     
     def getListOfExistingClientIds(self):
         if not self.path:
@@ -1222,7 +1265,7 @@ class OperatingSession(Session):
         ray_file.close()
         
         for client in tmp_clients:
-            client.adjustFilesAfterCopy(new_session_name, SESSION_TEMPLATE_LOAD)
+            client.adjustFilesAfterCopy(new_session_name, TEMPLATE_SESSION_LOAD)
         
         self.nextFunction()
     
@@ -1484,6 +1527,7 @@ class SignaledSession(OperatingSession):
         signaler.server_reorder_clients.connect(self.serverReorderClients)
         
         signaler.server_add.connect(self.serverAdd)
+        signaler.server_add_user_client_template.connect(self.serverAddUserClientTemplate)
         
         signaler.server_announce.connect(self.serverAnnounce)
         signaler.server_reply.connect(self.serverReply)
@@ -1606,7 +1650,124 @@ class SignaledSession(OperatingSession):
         
         self.addClient(client)
         client.start()
+    
+    def addClientTemplate(self, template_name, factory=False):
+        if factory:
+            templates_root = client_template_factory_root
+        else:
+            templates_root = client_template_local_root
         
+        xml_file = "%s/%s" % (templates_root, 'client_templates.xml')
+        file = open(xml_file, 'r')
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        file.close()
+        
+        if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
+            return
+        
+        node = xml.documentElement().firstChild()
+        while not node.isNull():
+            ct = node.toElement()
+            if ct.tagName() != 'Client-Template':
+                continue
+            
+            if ct.attribute('template-name') == template_name:
+                client = Client()
+                client.executable_path = ct.attribute('executable')
+                client.client_id       = self.generateClientId(ct.attribute('client_id'))
+                client.name            = ct.attribute('name')
+                client.label           = ct.attribute('label')
+                client.icon            = ct.attribute('icon')
+                
+                prefix_mode = ct.attribute('prefix-mode')
+                if prefix_mode:
+                    client.prefix_mode = int(prefix_mode)
+                    if prefix_mode == '0':
+                        client.project_path = ct.attribute('project-path')
+                
+                start = True
+                launched = ct.attribute('launched')
+                if launched.isdigit():
+                    start = bool(int(launched))
+                
+                template_path = "%s/%s" % (templates_root, template_name)
+                
+                if os.path.isdir(template_path):
+                    for file in os.listdir(template_path):
+                        print('copy', file, self.path)
+                        subprocess.run(['cp', '-R', "%s/%s" % (template_path, file), self.path])
+                    
+                client.adjustFilesAfterCopy(self.name, TEMPLATE_CLIENT_LOAD)
+                self.addClient(client)
+                if start:
+                    client.start()
+                
+                break
+            
+            node = node.nextSibling()
+    
+    def serverAddUserClientTemplate(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
+        template_name = args[0]
+        
+        self.addClientTemplate(template_name, False)
+        
+        #xml_file = "%s/%s" % (client_template_local_root, 'client_templates.xml')
+        #file = open(xml_file, 'r')
+        #xml = QDomDocument()
+        #xml.setContent(file.read())
+        #file.close()
+        
+        #if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
+            #return
+        
+        #node = xml.documentElement().firstChild()
+        #while not node.isNull():
+            #ct = node.toElement()
+            #if ct.tagName() != 'Client-Template':
+                #continue
+            
+            #if ct.attribute('template-name') == template_name:
+                #client = Client()
+                #client.executable_path = ct.attribute('executable')
+                #client.client_id       = ct.attribute('client_id')
+                #client.name            = ct.attribute('name')
+                #client.label           = ct.attribute('label')
+                #client.icon            = ct.attribute('icon')
+                
+                #prefix_mode = ct.attribute('prefix-mode')
+                #if prefix_mode:
+                    #client.prefix_mode = int(prefix_mode)
+                    #if prefix_mode = '0':
+                        #client.project_path = ct.attribute('project-path')
+                
+                #start = True
+                #launched = ct.attribute('launched')
+                #if launched.isdigit():
+                    #start = bool(int(launched))
+                
+                #template_path = "%s/%s" % (client_template_local_root, template_name)
+                
+                #if os.path.isdir(template_path):
+                    ##if not os.access(template_path, os.W_OK):
+                        ##return
+                    #subprocess.run(['cp', '-R', template_path, self.path])
+                    
+                #client.adjustFilesAfterCopy()
+                #self.addClient(client)
+                #if start:
+                    #client.start()
+                
+                #break
+            
+            #node = node.nextSibling()
+            
+        
+            
+                
+                
+     
     def serverAnnounce(self, path, args, src_addr):
         client_name, capabilities, executable_path, major, minor, pid = args
         
@@ -1776,6 +1937,7 @@ class Signaler(QObject):
     server_save        = pyqtSignal(str, list, object)
     server_list_sessions   = pyqtSignal(str, list, object)
     server_add = pyqtSignal(str, list, object)
+    server_add_user_client_template = pyqtSignal(str, list, object)
     server_startallclients = pyqtSignal()
     server_stopallclients  = pyqtSignal()
     server_reorder_clients = pyqtSignal(str, list)
@@ -2080,6 +2242,17 @@ class OscServerThread(ServerThread):
         
         signaler.server_add.emit(path, args, src_addr)
 
+    @make_method('/ray/server/add_user_client_template', None)
+    def rayServerAddUserClientTemplate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
+            return
+        print('ti')
+        signaler.server_add_user_client_template.emit(path, args, src_addr)
+
+    
     @make_method('/nsm/server/new', None)
     def nsmServerNew(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
@@ -2337,6 +2510,7 @@ if __name__ == '__main__':
     app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
     session_template_root = "%s/%s" % (app_config_path, 'session_templates')
     client_template_local_root = "%s/%s" % (app_config_path, 'client_templates')
+    client_template_factory_root = "%s/client_templates" % os.path.dirname(os.path.dirname(sys.argv[0]))
     
     ### Translation process
     locale = QLocale.system().name()
