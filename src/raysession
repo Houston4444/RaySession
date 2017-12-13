@@ -248,6 +248,7 @@ class OscSignaler(QObject):
     add_session_to_list    = pyqtSignal(str)
     new_executable         = pyqtSignal(list)
     session_template_found = pyqtSignal(list)
+    user_client_template_found = pyqtSignal(list)
     server_status_changed  = pyqtSignal(int)
     clients_reordered      = pyqtSignal(list)
     opening_nsm_session    = pyqtSignal()
@@ -300,6 +301,11 @@ class OSCServerT(ServerThread):
     def replySessionTemplates(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         self.qsig.session_template_found.emit(args)
+    
+    @make_method('/reply_user_client_templates', None)
+    def replyUserClientTemplates(self, path, args):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.qsig.user_client_template_found.emit(args)
     
     @make_method('/ray/gui/server_announce', None)
     def serverAnnounce(self, path, args):
@@ -726,7 +732,7 @@ class MainWindow(QMainWindow):
             QApplication.quit()
     
     def newClientTemplate(self, client_id):
-        dialog = SaveTemplateSessionDialog(self)
+        dialog = SaveTemplateClientDialog(self)
         dialog.exec()
         if not dialog.result():
             return
@@ -1222,6 +1228,9 @@ class NewSessionDialog(ChildDialog):
     def preventOk(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(self.server_will_accept and self.text_is_valid))
 
+class AbstractSaveTemplateDiaog(ChildDialog):
+    True
+
 class SaveTemplateSessionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
@@ -1257,6 +1266,59 @@ class SaveTemplateSessionDialog(ChildDialog):
     
     def addTemplatesToList(self, template_list):
         self.template_list += template_list
+    
+    def getTemplateName(self):
+        return self.ui.lineEdit.text()
+    
+    def allowOkButton(self, text=''):
+        self.ui.pushButtonAccept.setEnabled(bool(self.server_will_accept and self.ui.lineEdit.text()))
+    
+    def verifyAndAccept(self):
+        template_name = self.getTemplateName()
+        if template_name in self.template_list:
+            ret = QMessageBox.question(self, 
+                                       _translate('session template', 'Overwrite Template ?'),
+                                       _translate('session_template', 'Template <strong>%s</strong> already exists.\nOverwrite it ?') % template_name)
+            if ret == QMessageBox.No:
+                return
+        self.accept()
+
+class SaveTemplateClientDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_save_template_session.Ui_DialogSaveTemplateSession()
+        self.ui.setupUi(self)
+        
+        self.server_will_accept = False
+        
+        self.ui.lineEdit.textEdited.connect(self.textEdited)
+        self.ui.pushButtonAccept.clicked.connect(self.verifyAndAccept)
+        
+        self.template_list = []
+        self.ui.pushButtonAccept.setEnabled(False)
+        
+        
+        serverOSC.qsig.user_client_template_found.connect(self.addTemplatesToList)
+        serverOSC.toDeamon('/ray/server/list_user_client_templates')
+        
+        self.serverStatusChanged(nsm_session.server_status)
+    
+    def textEdited(self, text):
+        if '/' in text:
+            self.ui.lineEdit.setText(text.replace('/', '⁄'))
+        self.allowOkButton()
+    
+    def serverStatusChanged(self, server_status):
+        self.server_will_accept = bool(not server_status in (SERVER_STATUS_OFF, SERVER_STATUS_CLOSE))
+        
+        if server_status == SERVER_STATUS_OFF:
+            self.reject()
+        
+        self.allowOkButton()
+    
+    def addTemplatesToList(self, template_list):
+        for template in template_list:
+            self.template_list.append(template.split('/')[0])
     
     def getTemplateName(self):
         return self.ui.lineEdit.text()

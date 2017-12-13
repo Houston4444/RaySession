@@ -419,7 +419,6 @@ class Client(QObject):
         print(xml_file)
         #create client_templates.xml if not exists
         if not os.path.isfile(xml_file):
-            print('no xml client template file')
             file = open(xml_file, 'w')
             
             xml = QDomDocument()
@@ -435,28 +434,55 @@ class Client(QObject):
         file.close()
         content = xml.documentElement()
                 
-        if content.tagName() == 'RAY-CLIENT-TEMPLATES':
-            rct = xml.createElement('Client-Template')
-            rct.setAttribute('template-name', template_name)
-            rct.setAttribute('executable', self.executable_path)
-            rct.setAttribute('client_id', self.client_id)
+        if not content.tagName() == 'RAY-CLIENT-TEMPLATES':
+            return
+        
+        
+        #remove existing template if it has the same name as the new one
+        node = content.firstChild()
+        while not node.isNull():
+            if node.toElement().tagName() != 'Client-Template':
+                continue
+            
+            print(node.toElement().attribute('template-name'))
+            if node.toElement().attribute('template-name') == template_name:
+                content.removeChild(node)
+            
+            node = node.nextSibling()
+            print(node.toElement().tagName())
+            print(node.toElement().attribute('template-name'))
+        
+        
+        
+        rct = xml.createElement('Client-Template')
+        
+        rct.setAttribute('template-name', template_name)
+        rct.setAttribute('executable', self.executable_path)
+        rct.setAttribute('client_id', self.client_id)
+        
+        if self.name:
             rct.setAttribute('name', self.name)
-            
-            if self.prefix_mode !=  PREFIX_MODE_SESSION_NAME:
-                rct.setAttribute('prefix_mode', self.prefix_mode)
-                if self.prefix_mode == PREFIX_MODE_UNDEF:
-                    rct.setAttribute('project_path', self.project_path)
-                    
+        
+        if self.prefix_mode !=  PREFIX_MODE_SESSION_NAME:
+            rct.setAttribute('prefix_mode', self.prefix_mode)
+            if self.prefix_mode == PREFIX_MODE_UNDEF:
+                rct.setAttribute('project_path', self.project_path)
+        
+        if self.icon:
             rct.setAttribute('icon', self.icon)
+        
+        if self.label:
             rct.setAttribute('label', self.label)
-            rct.setAttribute('launched', self.isRunning())
             
-            
-            content.appendChild(rct)
-            
-            file = open(xml_file, 'w')
-            file.write(xml.toString())
-            file.close()
+        if not self.isRunning():
+            rct.setAttribute('launched', False)
+        
+        
+        content.appendChild(rct)
+        
+        file = open(xml_file, 'w')
+        file.write(xml.toString())
+        file.close()
 
     
     def adjustFilesAfterCopy(self, new_session_name, template_save=SESSION_TEMPLATE_NONE):
@@ -2183,9 +2209,7 @@ class OscServerThread(ServerThread):
         
         all_files = os.listdir(session_template_root)
         for file in all_files:
-            print('rie')
             if os.path.isdir("%s/%s" % (session_template_root, file)):
-                print('riedir')
                 template_list.append(file)
                 
                 if len(template_list) == 100:
@@ -2193,10 +2217,48 @@ class OscServerThread(ServerThread):
                     template_list.clear()
                     
         if template_list:
-            print('ben je te sonne')
             self.send(src_addr, '/reply_session_templates', *template_list) 
         
+    @make_method('/ray/server/list_user_client_templates', None)
+    def rayServerListUserClientTemplates(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
+        template_list = []
+        
+        templates_file = "%s/%s" % (client_template_local_root, 'client_templates.xml')
+        file = open(templates_file)
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        
+        content = xml.documentElement()
+        
+        if content.tagName() != "RAY-CLIENT-TEMPLATES":
+            file.close()
+            return
+            
+        node = content.firstChild()
+        while not node.isNull():
+            ct = node.toElement()
+            tag_name = ct.tagName()
+            if tag_name != 'Client-Template':
+                continue
+            
+            if not ct.attribute('template-name'):
+                continue
+            
+            template_list.append("%s/%s" % (ct.attribute('template-name'), ct.attribute('icon') ))
+            
+            if len(template_list) == 100:
+                self.send(src_addr, '/reply_user_client_templates', *template_list)
+                template_list.clear()
+        
+            node = node.nextSibling()
+        
+        file.close()
+        
+        if template_list:
+            self.send(src_addr, '/reply_user_client_templates', *template_list)
+    
     def isOperationPending(self, src_addr, path):
         if session.process_order:
             self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
