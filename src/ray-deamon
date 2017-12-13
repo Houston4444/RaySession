@@ -1647,6 +1647,7 @@ class SignaledSession(OperatingSession):
         client.executable_path = executable
         client.name            = os.path.basename(executable)
         client.client_id       = self.generateClientId(executable)
+        client.icon            = client.name.lower().replace('_', '-')
         
         self.addClient(client)
         client.start()

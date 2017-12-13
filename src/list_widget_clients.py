@@ -98,8 +98,7 @@ class ClientSlot(QFrame):
         self.ui.ClientName.setToolTip('Executable : ' + self.client.executable_path + '\n' + 'NSM id : ' + self.clientId())
         
         #set icon
-        self.icon = QIcon.fromTheme(self.client.icon_name)
-        self.ui.iconButton.setIcon(self.icon)
+        self.ui.iconButton.setIcon(QIcon.fromTheme(self.client.icon_name))
         
     def updateStatus(self, status):
         self.ui.lineEditClientStatus.setText(clientStatusString(status))
