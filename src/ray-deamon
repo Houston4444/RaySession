@@ -1528,6 +1528,7 @@ class SignaledSession(OperatingSession):
         
         signaler.server_add.connect(self.serverAdd)
         signaler.server_add_user_client_template.connect(self.serverAddUserClientTemplate)
+        signaler.server_add_factory_client_template.connect(self.serverAddFactoryClientTemplate)
         
         signaler.server_announce.connect(self.serverAnnounce)
         signaler.server_reply.connect(self.serverReply)
@@ -1714,60 +1715,11 @@ class SignaledSession(OperatingSession):
         
         self.addClientTemplate(template_name, False)
         
-        #xml_file = "%s/%s" % (client_template_local_root, 'client_templates.xml')
-        #file = open(xml_file, 'r')
-        #xml = QDomDocument()
-        #xml.setContent(file.read())
-        #file.close()
+    def serverAddFactoryClientTemplate(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
+        template_name = args[0]
         
-        #if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
-            #return
-        
-        #node = xml.documentElement().firstChild()
-        #while not node.isNull():
-            #ct = node.toElement()
-            #if ct.tagName() != 'Client-Template':
-                #continue
-            
-            #if ct.attribute('template-name') == template_name:
-                #client = Client()
-                #client.executable_path = ct.attribute('executable')
-                #client.client_id       = ct.attribute('client_id')
-                #client.name            = ct.attribute('name')
-                #client.label           = ct.attribute('label')
-                #client.icon            = ct.attribute('icon')
-                
-                #prefix_mode = ct.attribute('prefix-mode')
-                #if prefix_mode:
-                    #client.prefix_mode = int(prefix_mode)
-                    #if prefix_mode = '0':
-                        #client.project_path = ct.attribute('project-path')
-                
-                #start = True
-                #launched = ct.attribute('launched')
-                #if launched.isdigit():
-                    #start = bool(int(launched))
-                
-                #template_path = "%s/%s" % (client_template_local_root, template_name)
-                
-                #if os.path.isdir(template_path):
-                    ##if not os.access(template_path, os.W_OK):
-                        ##return
-                    #subprocess.run(['cp', '-R', template_path, self.path])
-                    
-                #client.adjustFilesAfterCopy()
-                #self.addClient(client)
-                #if start:
-                    #client.start()
-                
-                #break
-            
-            #node = node.nextSibling()
-            
-        
-            
-                
-                
+        self.addClientTemplate(template_name, True)
      
     def serverAnnounce(self, path, args, src_addr):
         client_name, capabilities, executable_path, major, minor, pid = args
@@ -1938,7 +1890,8 @@ class Signaler(QObject):
     server_save        = pyqtSignal(str, list, object)
     server_list_sessions   = pyqtSignal(str, list, object)
     server_add = pyqtSignal(str, list, object)
-    server_add_user_client_template = pyqtSignal(str, list, object)
+    server_add_user_client_template    = pyqtSignal(str, list, object)
+    server_add_factory_client_template = pyqtSignal(str, list, object)
     server_startallclients = pyqtSignal()
     server_stopallclients  = pyqtSignal()
     server_reorder_clients = pyqtSignal(str, list)
@@ -2250,8 +2203,18 @@ class OscServerThread(ServerThread):
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
             return
-        print('ti')
+        
         signaler.server_add_user_client_template.emit(path, args, src_addr)
+
+    @make_method('/ray/server/add_factory_client_template', None)
+    def rayServerAddFactoryClientTemplate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
+            return
+        
+        signaler.server_add_factory_client_template.emit(path, args, src_addr)
 
     
     @make_method('/nsm/server/new', None)
@@ -2392,46 +2355,19 @@ class OscServerThread(ServerThread):
                     
         if template_list:
             self.send(src_addr, '/reply_session_templates', *template_list) 
-        
+    
+    
     @make_method('/ray/server/list_user_client_templates', None)
     def rayServerListUserClientTemplates(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
-        template_list = []
+        self.listClientTemplates(src_addr, False)
+    
+    @make_method('/ray/server/list_factory_client_templates', None)
+    def rayServerListFactoryClientTemplates(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
-        templates_file = "%s/%s" % (client_template_local_root, 'client_templates.xml')
-        file = open(templates_file)
-        xml = QDomDocument()
-        xml.setContent(file.read())
-        
-        content = xml.documentElement()
-        
-        if content.tagName() != "RAY-CLIENT-TEMPLATES":
-            file.close()
-            return
-            
-        node = content.firstChild()
-        while not node.isNull():
-            ct = node.toElement()
-            tag_name = ct.tagName()
-            if tag_name != 'Client-Template':
-                continue
-            
-            if not ct.attribute('template-name'):
-                continue
-            
-            template_list.append("%s/%s" % (ct.attribute('template-name'), ct.attribute('icon') ))
-            
-            if len(template_list) == 100:
-                self.send(src_addr, '/reply_user_client_templates', *template_list)
-                template_list.clear()
-        
-            node = node.nextSibling()
-        
-        file.close()
-        
-        if template_list:
-            self.send(src_addr, '/reply_user_client_templates', *template_list)
+        self.listClientTemplates(src_addr, True)
     
     def isOperationPending(self, src_addr, path):
         if session.process_order:
@@ -2450,6 +2386,57 @@ class OscServerThread(ServerThread):
     def setServerStatus(self, server_status):
         self.server_status = server_status
         self.sendGui("/ray/server_status", server_status)
+    
+    def listClientTemplates(self, src_addr, factory=False):
+        template_list = []
+        
+        templates_root    = client_template_local_root
+        response_osc_path = '/reply_user_client_templates'
+        
+        if factory:
+            templates_root    = client_template_factory_root
+            response_osc_path = '/reply_factory_client_templates'
+        
+        
+        templates_file = "%s/%s" % (templates_root, 'client_templates.xml')
+        
+        if not os.path.isfile(templates_file):
+            return
+        
+        if not os.access(templates_file, os.R_OK):
+            return
+        
+        file = open(templates_file)
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        file.close()
+        
+        content = xml.documentElement()
+        
+        if content.tagName() != "RAY-CLIENT-TEMPLATES":
+            
+            return
+            
+        node = content.firstChild()
+        while not node.isNull():
+            ct = node.toElement()
+            tag_name = ct.tagName()
+            if tag_name != 'Client-Template':
+                continue
+            
+            if not ct.attribute('template-name'):
+                continue
+            
+            template_list.append("%s/%s" % (ct.attribute('template-name'), ct.attribute('icon') ))
+            
+            if len(template_list) == 100:
+                self.send(src_addr, response_osc_path, *template_list)
+                template_list.clear()
+        
+            node = node.nextSibling()
+        
+        if template_list:
+            self.send(src_addr, response_osc_path, *template_list)
     
     def announceGui(self, url, is_reply):
         gui_addr = Address(url)

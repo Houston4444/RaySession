@@ -249,7 +249,8 @@ class OscSignaler(QObject):
     add_session_to_list    = pyqtSignal(str)
     new_executable         = pyqtSignal(list)
     session_template_found = pyqtSignal(list)
-    user_client_template_found = pyqtSignal(list)
+    user_client_template_found    = pyqtSignal(list)
+    factory_client_template_found = pyqtSignal(list)
     server_status_changed  = pyqtSignal(int)
     clients_reordered      = pyqtSignal(list)
     opening_nsm_session    = pyqtSignal()
@@ -307,6 +308,11 @@ class OSCServerT(ServerThread):
     def replyUserClientTemplates(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         self.qsig.user_client_template_found.emit(args)
+    
+    @make_method('/reply_factory_client_templates', None)
+    def replyFactoryClientTemplates(self, path, args):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.qsig.factory_client_template_found.emit(args)
     
     @make_method('/ray/gui/server_announce', None)
     def serverAnnounce(self, path, args):
@@ -1386,46 +1392,73 @@ class AddApplicationDialog(ChildDialog):
         self.ui = ui_add_application.Ui_DialogAddApplication()
         self.ui.setupUi(self)
         
+        self.ui.checkBoxFactory.stateChanged.connect(self.factoryBoxChanged)
+        self.ui.checkBoxUser.stateChanged.connect(self.userBoxChanged)
+        
+        
         self.ui.templateList.currentItemChanged.connect(self.currentItemChanged)
         self.ui.templateList.setFocus(Qt.OtherFocusReason)
         self.ui.filterBar.textEdited.connect(self.updateFilteredList)
         self.ui.filterBar.updownpressed.connect(self.updownPressed)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         
-        serverOSC.qsig.user_client_template_found.connect(self.addTemplates)
+        serverOSC.qsig.user_client_template_found.connect(self.addUserTemplates)
+        serverOSC.qsig.factory_client_template_found.connect(self.addFactoryTemplates)
         serverOSC.toDeamon('/ray/server/list_user_client_templates')
+        serverOSC.toDeamon('/ray/server/list_factory_client_templates')
         #serverOSC.startListSession()
         
+        self.user_template_list    = []
+        self.factory_template_list = []
             
         self.server_will_accept = False
         self.has_selection      = False
         
         self.serverStatusChanged(nsm_session.server_status)
     
+    def factoryBoxChanged(self, state):
+        if not state:
+            self.ui.checkBoxUser.setChecked(True)
+            
+        self.updateFilteredList()
+        
+    def userBoxChanged(self, state):
+        if not state:
+            self.ui.checkBoxFactory.setChecked(True)
+            
+        self.updateFilteredList()   
+    
     def serverStatusChanged(self, server_status):
         self.server_will_accept = bool(not server_status in (SERVER_STATUS_OFF, SERVER_STATUS_CLOSE))
         self.preventOk()
         
-    def addTemplates(self, template_list):
+    def addUserTemplates(self, template_list):
         for template in template_list:
             template_name = template.split('/')[0]
             icon_name = template.split('/')[1]
-            #if session_name == settings.value('last_session'):
-                #self.f_last_session_item = QListWidgetItem(session_name)
-                #self.ui.templateList.addItem(self.f_last_session_item)
-                #self.ui.templateList.setCurrentItem(self.f_last_session_item)
-            #else:
+            
+            self.user_template_list.append(template_name)
+            
             self.ui.templateList.addItem(QListWidgetItem(QIcon.fromTheme(icon_name), template_name, self.ui.templateList))
             
             self.ui.templateList.sortItems()
             
-            #if self.f_last_session_item:
-                #current_index = self.ui.templateList.currentIndex()
-                #self.ui.templateList.scrollTo(current_index)
-            #else:
-                #self.ui.templateList.setCurrentRow(0)
+        self.updateFilteredList()
+            
+    def addFactoryTemplates(self, template_list):
+        for template in template_list:
+            template_name = template.split('/')[0]
+            icon_name = template.split('/')[1]
+            
+            self.factory_template_list.append(template_name)
+            
+            self.ui.templateList.addItem(QListWidgetItem(QIcon.fromTheme(icon_name), template_name, self.ui.templateList))
+            
+            self.ui.templateList.sortItems()
+            
+        self.updateFilteredList()
         
-    def updateFilteredList(self, filt):
+    def updateFilteredList(self, filt=''):
         filter_text = self.ui.filterBar.displayText()
         
         #show all items
@@ -1434,10 +1467,45 @@ class AddApplicationDialog(ChildDialog):
             
         liist = self.ui.templateList.findItems(filter_text, Qt.MatchContains)
         
+        #all_template_list = self.factory_template_list.copy()
+        #for template_name in self.user_template_list:
+            #if not template_name in all_template_list:
+                #all_template_list.append(template_name)
+        
+        seen_template_list = []
+        
         #hide all non matching items
         for i in range(self.ui.templateList.count()):
+            template_name = self.ui.templateList.item(i).text()
+            
             if self.ui.templateList.item(i) not in liist:
                self.ui.templateList.item(i).setHidden(True)
+               continue
+            
+            if self.ui.checkBoxFactory.isChecked() and self.ui.checkBoxUser.isChecked():
+                if template_name in seen_template_list:
+                    self.ui.templateList.item(i).setHidden(True)
+                else:
+                    seen_template_list.append(template_name)
+            
+            elif self.ui.checkBoxFactory.isChecked():
+                if not template_name in self.factory_template_list:
+                    self.ui.templateList.item(i).setHidden(True)
+                    continue
+                
+                if template_name in seen_template_list:
+                    self.ui.templateList.item(i).setHidden(True)
+                else:
+                    seen_template_list.append(template_name)
+                
+            elif self.ui.checkBoxUser.isChecked():
+                if not template_name in self.user_template_list:
+                    self.ui.templateList.item(i).setHidden(True)
+                    
+                if template_name in seen_template_list:
+                    self.ui.templateList.item(i).setHidden(True)
+                else:
+                    seen_template_list.append(template_name)
         
         #if selected item not in list, then select the first visible
         if not self.ui.templateList.currentItem() or self.ui.templateList.currentItem().isHidden():
