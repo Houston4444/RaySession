@@ -1,2 +1,0 @@
-Tempo_Point 0x1 create :start 0 :tempo 120.000000
-Time_Point 0x2 create :start 0 :beats_per_bar 4 :beat_type 4
