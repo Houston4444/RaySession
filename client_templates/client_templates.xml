@@ -9,7 +9,5 @@
  <Client-Template executable="qtractor" template-name="Qtractor" name="Qtractor" icon="qtractor" client_id="qtractor"/>
  <Client-Template executable="ray-proxy" label="Guitarix" template-name="Guitarix" name="Ray Proxy" icon="gx_head" client_id="guitarix"/>
  <Client-Template executable="non-timeline" template-name="Non-Timeline" name="Non-Timeline" icon="non-timeline" client_id="timeline"/>
- <Client-Template executable="catia" template-name="catia" name="catia" icon="catia" client_id="catia"/>
  <Client-Template executable="ray-proxy" label="Qsampler" template-name="Qsampler" name="Ray Proxy" icon="qsampler" client_id="qsampler"/>
- <Client-Template executable="ray-proxy" template-name="Hydrogen houstondrum" label="Hydrogen" name="Ray Proxy" client_id="hydrogen" icon="h2-icon"/>
 </RAY-CLIENT-TEMPLATES>

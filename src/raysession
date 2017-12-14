@@ -833,10 +833,16 @@ class MainWindow(QMainWindow):
         
         dialog = AddApplicationDialog(self)
         dialog.exec()
+        dialog.saveCheckBoxes()
+        
         if dialog.result():
             template_name = dialog.getSelectedTemplate()
-            serverOSC.toDeamon('/ray/server/add_user_client_template', template_name)
-            #serverOSC.addClient(command)
+            factory = dialog.isTemplateFactory(template_name)
+            
+            if factory:
+                serverOSC.toDeamon('/ray/server/add_factory_client_template', template_name)
+            else:
+                serverOSC.toDeamon('/ray/server/add_user_client_template', template_name)
     
     def addProxy(self):
         serverOSC.addClient('ray-proxy')
@@ -1392,6 +1398,12 @@ class AddApplicationDialog(ChildDialog):
         self.ui = ui_add_application.Ui_DialogAddApplication()
         self.ui.setupUi(self)
         
+        
+        print(type(settings.value('AddApplication/factory_box', True)))
+        print(settings.value('AddApplication/user_box', True))
+        self.ui.checkBoxFactory.setChecked(settings.value('AddApplication/factory_box', True, type=bool))
+        self.ui.checkBoxUser.setChecked(settings.value('AddApplication/user_box', True, type=bool))
+        
         self.ui.checkBoxFactory.stateChanged.connect(self.factoryBoxChanged)
         self.ui.checkBoxUser.stateChanged.connect(self.userBoxChanged)
         
@@ -1434,8 +1446,12 @@ class AddApplicationDialog(ChildDialog):
         
     def addUserTemplates(self, template_list):
         for template in template_list:
-            template_name = template.split('/')[0]
-            icon_name = template.split('/')[1]
+            template_name = template
+            icon_name = ''
+            
+            if '/' in template:
+                template_name = template.split('/')[0]
+                icon_name = template.split('/')[1]
             
             self.user_template_list.append(template_name)
             
@@ -1447,8 +1463,12 @@ class AddApplicationDialog(ChildDialog):
             
     def addFactoryTemplates(self, template_list):
         for template in template_list:
-            template_name = template.split('/')[0]
-            icon_name = template.split('/')[1]
+            template_name = template
+            icon_name = ''
+            
+            if '/' in template:
+                template_name = template.split('/')[0]
+                icon_name = template.split('/')[1]
             
             self.factory_template_list.append(template_name)
             
@@ -1466,11 +1486,6 @@ class AddApplicationDialog(ChildDialog):
             self.ui.templateList.item(i).setHidden(False)
             
         liist = self.ui.templateList.findItems(filter_text, Qt.MatchContains)
-        
-        #all_template_list = self.factory_template_list.copy()
-        #for template_name in self.user_template_list:
-            #if not template_name in all_template_list:
-                #all_template_list.append(template_name)
         
         seen_template_list = []
         
@@ -1548,16 +1563,27 @@ class AddApplicationDialog(ChildDialog):
     
     def preventOk(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(self.server_will_accept and self.has_selection))
-    
-    def changeNsmFolder(self):
-        changeNsmFolder(self)
-        self.ui.currentNsmFolder.setText(default_folder)
-        self.ui.templateList.clear()
-        serverOSC.startListSession()
             
     def getSelectedTemplate(self):
         if self.ui.templateList.currentItem():
             return self.ui.templateList.currentItem().text()
+        
+    def isTemplateFactory(self, template_name):
+        if not self.ui.checkBoxUser.isChecked():
+            return True 
+        
+        #If both factory and user boxes are checked, priority to user template
+        if template_name in self.user_template_list:
+            return False
+        
+        return True
+        
+    def saveCheckBoxes(self):
+        settings.setValue('AddApplication/factory_box', self.ui.checkBoxFactory.isChecked())
+        settings.setValue('AddApplication/user_box'   , self.ui.checkBoxUser.isChecked())
+        settings.sync()
+        
+        print('checkBoxes Saved')
 
 class newExecutableDialog(ChildDialog):
     def __init__(self, parent):
