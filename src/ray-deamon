@@ -475,6 +475,7 @@ class Client(QObject):
         node = content.firstChild()
         while not node.isNull():
             if node.toElement().tagName() != 'Client-Template':
+                node = node.nextSibling()
                 continue
             
             print(node.toElement().attribute('template-name'))
@@ -1672,6 +1673,7 @@ class SignaledSession(OperatingSession):
         while not node.isNull():
             ct = node.toElement()
             if ct.tagName() != 'Client-Template':
+                node = node.nextSibling()
                 continue
             
             if ct.attribute('template-name') == template_name:
@@ -2422,11 +2424,41 @@ class OscServerThread(ServerThread):
             ct = node.toElement()
             tag_name = ct.tagName()
             if tag_name != 'Client-Template':
+                node = node.nextSibling()
                 continue
             
             if not ct.attribute('template-name'):
+                node = node.nextSibling()
                 continue
             
+            executable = ct.attribute('executable') 
+            
+            if not executable:
+                node = node.nextSibling()
+                continue
+            
+            try_exec_line = ct.attribute('try-exec')
+            
+            try_exec_list = []
+            if try_exec_line:
+                try_exec_list = ct.attribute('try-exec').split(';')
+                
+            try_exec_list.append(executable)
+            try_exec_ok = True
+            
+            print('maquina')
+            print(try_exec_list)
+            for try_exec in try_exec_list:
+                print(try_exec)
+                path = shutil.which(try_exec)
+                if not path:
+                    try_exec_ok = False
+                    break
+            
+            if not try_exec_ok:
+                node = node.nextSibling()
+                continue
+                    
             template_list.append("%s/%s" % (ct.attribute('template-name'), ct.attribute('icon') ))
             
             if len(template_list) == 100:

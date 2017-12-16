@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>607</width>
+    <width>584</width>
     <height>617</height>
    </rect>
   </property>
@@ -326,7 +326,7 @@ QToolButton {border: none}</string>
                     <string notr="true">QToolButton{margin:0px}</string>
                    </property>
                    <property name="text">
-                    <string>Add Application</string>
+                    <string>Application</string>
                    </property>
                    <property name="icon">
                     <iconset theme="list-add">
@@ -364,7 +364,7 @@ QToolButton {border: none}</string>
                     <string notr="true">QToolButton{margin:0px}</string>
                    </property>
                    <property name="text">
-                    <string>Add Client</string>
+                    <string>Executable</string>
                    </property>
                    <property name="icon">
                     <iconset theme="run-install">
@@ -690,7 +690,7 @@ QToolButton {border: none}</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>607</width>
+     <width>584</width>
      <height>26</height>
     </rect>
    </property>
@@ -1020,10 +1020,11 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionAddApplication">
    <property name="icon">
-    <iconset theme="list-add"/>
+    <iconset theme="list-add">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Add Application</string>
+    <string>Add Appl&amp;ication</string>
    </property>
   </action>
  </widget>

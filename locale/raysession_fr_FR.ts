@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.1" language="fr_FR">
+<!DOCTYPE TS><TS version="2.0" language="fr_FR" sourcelanguage="">
 <context>
     <name>@default</name>
     <message>
@@ -40,7 +39,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="407"/>
+        <location filename="../resources/ui/client_slot.ui" line="408"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -60,7 +59,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="207"/>
+        <location filename="../resources/ui/client_slot.ui" line="208"/>
         <source>Launch</source>
         <translation type="unfinished">Lancer</translation>
     </message>
@@ -70,33 +69,43 @@
         <translation type="obsolete">Tuer</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="319"/>
+        <location filename="../resources/ui/client_slot.ui" line="320"/>
         <source>Status</source>
         <translation type="unfinished">Status</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="322"/>
+        <location filename="../resources/ui/client_slot.ui" line="323"/>
         <source>stopped</source>
         <translation type="unfinished">arrêté</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="347"/>
+        <location filename="../resources/ui/client_slot.ui" line="348"/>
         <source>Save</source>
         <translation type="unfinished">Sauvegarder</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="401"/>
+        <location filename="../resources/ui/client_slot.ui" line="402"/>
         <source>Remove</source>
         <translation type="unfinished">Supprimer</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="240"/>
+        <location filename="../resources/ui/client_slot.ui" line="241"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Politely ask the client to stop.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="273"/>
+        <location filename="../resources/ui/client_slot.ui" line="274"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Kill !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/client_slot.ui" line="439"/>
+        <source>Save As Application Template</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/client_slot.ui" line="447"/>
+        <source>Properties</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -148,17 +157,17 @@
         <translation type="unfinished">Utiliser ce Fichier</translation>
     </message>
     <message>
-        <location filename="../src/ray-proxy" line="72"/>
+        <location filename="../src/ray-proxy" line="67"/>
         <source>%s is not in proxy directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-proxy" line="153"/>
+        <location filename="../src/ray-proxy" line="148"/>
         <source>Select File to use as CONFIG_FILE</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-proxy" line="264"/>
+        <location filename="../src/ray-proxy" line="259"/>
         <source>Executable failed to launch ! It&apos;s maybe not present on system.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -222,9 +231,19 @@
         <translation type="unfinished">Dossier</translation>
     </message>
     <message>
-        <location filename="../resources/ui/new_session.ui" line="98"/>
+        <location filename="../resources/ui/new_session.ui" line="163"/>
         <source>New Session Name :</source>
         <translation type="unfinished">Nom de la nouvelle session :</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/new_session.ui" line="106"/>
+        <source>Use Template</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/new_session.ui" line="121"/>
+        <source>Template :</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -286,97 +305,97 @@
 <context>
     <name>GUIMSG</name>
     <message>
-        <location filename="../src/ray-deamon" line="211"/>
+        <location filename="../src/ray-deamon" line="218"/>
         <source>Launching %s</source>
         <translation type="unfinished">Lancement de %s</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="97"/>
+        <location filename="../src/ray-deamon" line="105"/>
         <source>Good Bye ! Clients are still running.</source>
         <translation type="unfinished">Au Revoir ! Les clients tournent encore.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="100"/>
+        <location filename="../src/ray-deamon" line="108"/>
         <source>Good Bye !</source>
         <translation type="unfinished">Au Revoir !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="253"/>
+        <location filename="../src/ray-deamon" line="260"/>
         <source>Client %s terminated because we told it to.</source>
         <translation type="unfinished">%s s&apos;est arrêté car nous lui avons demandé.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="255"/>
+        <location filename="../src/ray-deamon" line="262"/>
         <source>Client %s died unexpectedly.</source>
         <translation type="unfinished">%s s&apos;est arrêté de manière inexpliquée.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="274"/>
+        <location filename="../src/ray-deamon" line="281"/>
         <source>Failed to start %s</source>
         <translation type="unfinished">Échec du lancement de %s</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="311"/>
+        <location filename="../src/ray-deamon" line="318"/>
         <source>Stopping client %s</source>
         <translation type="unfinished">Arrêt du client %s</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="668"/>
+        <location filename="../src/ray-deamon" line="933"/>
         <source>waiting for clients announces...</source>
         <translation type="unfinished">Attente des annonces des clients...</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="670"/>
+        <location filename="../src/ray-deamon" line="935"/>
         <source>waiting for clients to die...</source>
         <translation type="unfinished">Attente de l&apos;arrêt des clients...</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="695"/>
+        <location filename="../src/ray-deamon" line="960"/>
         <source>%sdidn&apos;t announce</source>
         <translation type="unfinished">%s ne s&apos;est pas annoncé</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="697"/>
+        <location filename="../src/ray-deamon" line="962"/>
         <source>%sstill alive !</source>
         <translation type="unfinished">%s est toujours en vie !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="702"/>
+        <location filename="../src/ray-deamon" line="967"/>
         <source>All expected clients are announced</source>
         <translation type="unfinished">Tous les clients attendus sont annoncés</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="704"/>
+        <location filename="../src/ray-deamon" line="969"/>
         <source>All expected clients are died</source>
         <translation type="unfinished">Tous les clients attendus sont arrêtés</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="819"/>
+        <location filename="../src/ray-deamon" line="1089"/>
         <source>Can&apos;t save session, session file is unwriteable !</source>
         <translation type="unfinished">Impossible de sauver la session, le fichier de session n&apos;est pas inscriptible !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="805"/>
+        <location filename="../src/ray-deamon" line="1075"/>
         <source>Session saved.</source>
         <translation type="unfinished">Session sauvée.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="829"/>
+        <location filename="../src/ray-deamon" line="1099"/>
         <source>Commanding attached clients to quit.</source>
         <translation type="unfinished">Arrêt des clients.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="880"/>
+        <location filename="../src/ray-deamon" line="1150"/>
         <source>Creating new session &quot;%s&quot;</source>
         <translation type="unfinished">Création de la session &quot;%s&quot;</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="899"/>
+        <location filename="../src/ray-deamon" line="1169"/>
         <source>Session is ready</source>
         <translation type="unfinished">La session est prête</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="976"/>
+        <location filename="../src/ray-deamon" line="1320"/>
         <source>Opening session %s</source>
         <translation type="unfinished">Ouverture de la session &quot;%s&quot;</translation>
     </message>
@@ -384,27 +403,27 @@
 <context>
     <name>Load Error</name>
     <message>
-        <location filename="../src/ray-deamon" line="1152"/>
+        <location filename="../src/ray-deamon" line="1496"/>
         <source>Unknown error</source>
         <translation type="unfinished">Erreur inconnue</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1154"/>
+        <location filename="../src/ray-deamon" line="1498"/>
         <source>Could not create session file!</source>
         <translation type="unfinished">Impossible de créer le fichier de session !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1156"/>
+        <location filename="../src/ray-deamon" line="1500"/>
         <source>Session is locked by another process!</source>
         <translation type="unfinished">La session est verrouillé par un autre processus !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1158"/>
+        <location filename="../src/ray-deamon" line="1502"/>
         <source>The named session does not exist.</source>
         <translation type="unfinished">La session sus-nommée n&apos;existe pas.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1160"/>
+        <location filename="../src/ray-deamon" line="1504"/>
         <source>Could not load session file.</source>
         <translation type="unfinished">Impossible de charger le fichier de session.</translation>
     </message>
@@ -417,272 +436,272 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="271"/>
+        <location filename="../resources/ui/raysession.ui" line="278"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="132"/>
+        <location filename="../resources/ui/raysession.ui" line="139"/>
         <source>Session Name</source>
         <translation type="unfinished">Nom de la Session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="138"/>
+        <location filename="../resources/ui/raysession.ui" line="145"/>
         <source>No Session Loaded</source>
         <translation type="unfinished">Aucune Session Chargée</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="849"/>
+        <location filename="../resources/ui/raysession.ui" line="897"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;Save &amp;amp; Close Session&lt;br/&gt;Abort with Long Click&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;Save &amp;amp; Close Session&lt;br/&gt;Abort with Long Click&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="265"/>
+        <location filename="../resources/ui/raysession.ui" line="272"/>
         <source>Open Session Folder</source>
         <translation type="unfinished">Ouvrir le dossier de la session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="316"/>
+        <location filename="../resources/ui/raysession.ui" line="361"/>
         <source>Run Command</source>
         <translation type="unfinished">Lancer une commande</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="322"/>
         <source>Add Client</source>
-        <translation type="unfinished">Nouveau Client</translation>
+        <translation type="obsolete">Nouveau Client</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="354"/>
+        <location filename="../resources/ui/raysession.ui" line="399"/>
         <source>Run Proxy</source>
         <translation type="unfinished">Nouveau Proxy</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="360"/>
+        <location filename="../resources/ui/raysession.ui" line="405"/>
         <source>Proxy</source>
         <translation type="unfinished">Proxy</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="439"/>
+        <location filename="../resources/ui/raysession.ui" line="484"/>
         <source>Launch all clients</source>
         <translation type="unfinished">Lancer tous les clients</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="445"/>
+        <location filename="../resources/ui/raysession.ui" line="490"/>
         <source>Launch All</source>
         <translation type="unfinished">Lancer Tout</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="469"/>
+        <location filename="../resources/ui/raysession.ui" line="514"/>
         <source>Stop All Clients (Long Click)</source>
         <translation type="unfinished">Stopper tous les clients</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="475"/>
+        <location filename="../resources/ui/raysession.ui" line="520"/>
         <source>Stop All</source>
         <translation type="unfinished">Stopper tout</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="514"/>
+        <location filename="../resources/ui/raysession.ui" line="559"/>
         <source>off</source>
         <translation type="unfinished">éteint</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="539"/>
+        <location filename="../resources/ui/raysession.ui" line="584"/>
         <source>Save Session</source>
         <translation type="unfinished">Sauvegarder la Session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="614"/>
+        <location filename="../resources/ui/raysession.ui" line="659"/>
         <source>&amp;Messages</source>
         <translation type="unfinished">&amp;Messages</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="654"/>
+        <location filename="../resources/ui/raysession.ui" line="699"/>
         <source>Fi&amp;le</source>
         <translation type="unfinished">Fichier</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="663"/>
+        <location filename="../resources/ui/raysession.ui" line="708"/>
         <source>&amp;Session</source>
         <translation type="unfinished">&amp;Session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="677"/>
+        <location filename="../resources/ui/raysession.ui" line="725"/>
         <source>&amp;view</source>
         <translation type="unfinished">&amp;Affichage</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="686"/>
+        <location filename="../resources/ui/raysession.ui" line="734"/>
         <source>&amp;Help</source>
         <translation type="unfinished">&amp;Aide</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="707"/>
+        <location filename="../resources/ui/raysession.ui" line="755"/>
         <source>toolBar</source>
         <translation type="unfinished">Barre d&apos;Outils</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="737"/>
+        <location filename="../resources/ui/raysession.ui" line="785"/>
         <source>&amp;Show Messages</source>
         <translation type="unfinished">&amp;Afficher les messages</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="740"/>
+        <location filename="../resources/ui/raysession.ui" line="788"/>
         <source>Ctrl+L</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="752"/>
+        <location filename="../resources/ui/raysession.ui" line="800"/>
         <source>&amp;Save</source>
         <translation type="unfinished">&amp;Sauvegarder</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="755"/>
+        <location filename="../resources/ui/raysession.ui" line="803"/>
         <source>Ctrl+S</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="767"/>
+        <location filename="../resources/ui/raysession.ui" line="815"/>
         <source>&amp;Open Session</source>
         <translation type="unfinished">&amp;Ouvrir une session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="770"/>
+        <location filename="../resources/ui/raysession.ui" line="818"/>
         <source>Ctrl+O</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="779"/>
+        <location filename="../resources/ui/raysession.ui" line="827"/>
         <source>&amp;New Session</source>
         <translation type="unfinished">&amp;Nouvelle Session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="782"/>
+        <location filename="../resources/ui/raysession.ui" line="830"/>
         <source>Ctrl+N</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="791"/>
+        <location filename="../resources/ui/raysession.ui" line="839"/>
         <source>&amp;Quit</source>
         <translation type="unfinished">&amp;Quitter</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="794"/>
+        <location filename="../resources/ui/raysession.ui" line="842"/>
         <source>Ctrl+Q</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="803"/>
+        <location filename="../resources/ui/raysession.ui" line="851"/>
         <source>&amp;About Ray Session</source>
         <translation type="unfinished">&amp;À propos de Ray Session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="818"/>
+        <location filename="../resources/ui/raysession.ui" line="866"/>
         <source>Show &amp;Menu Bar</source>
         <translation type="unfinished">Afficher la barre de menus</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="821"/>
+        <location filename="../resources/ui/raysession.ui" line="869"/>
         <source>Ctrl+M</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="833"/>
+        <location filename="../resources/ui/raysession.ui" line="881"/>
         <source>Control</source>
         <translation type="unfinished">Contrôle</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="846"/>
+        <location filename="../resources/ui/raysession.ui" line="894"/>
         <source>&amp;Close</source>
         <translation type="unfinished">&amp;Fermer</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="852"/>
+        <location filename="../resources/ui/raysession.ui" line="900"/>
         <source>Ctrl+W</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="866"/>
+        <location filename="../resources/ui/raysession.ui" line="914"/>
         <source>&amp;Abort</source>
         <translation type="unfinished">&amp;Abandonner</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="869"/>
+        <location filename="../resources/ui/raysession.ui" line="917"/>
         <source>Abort Current Session</source>
         <translation type="unfinished">Abandonner la session en cours</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="872"/>
+        <location filename="../resources/ui/raysession.ui" line="920"/>
         <source>Ctrl+Shift+W</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="884"/>
+        <location filename="../resources/ui/raysession.ui" line="932"/>
         <source>&amp;Open Session Folder</source>
         <translation type="unfinished">&amp;Ouvrir le dossier de la session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="887"/>
+        <location filename="../resources/ui/raysession.ui" line="935"/>
         <source>Open session folder with file manager</source>
         <translation type="unfinished">Ouvrir le dossier de la session avec le gestionnaire de fichiers</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="902"/>
+        <location filename="../resources/ui/raysession.ui" line="950"/>
         <source>&amp;Keep focus while opening clients</source>
         <translation type="unfinished">&amp;Garder le focus lors de l&apos;ouverture des clients</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="905"/>
+        <location filename="../resources/ui/raysession.ui" line="953"/>
         <source>Ctrl+F</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="910"/>
+        <location filename="../resources/ui/raysession.ui" line="958"/>
         <source>About &amp;Qt</source>
         <translation type="unfinished">À propos de &amp;Qt</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="922"/>
+        <location filename="../resources/ui/raysession.ui" line="970"/>
         <source>&amp;Duplicate</source>
         <translation type="unfinished">&amp;Dupliquer</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="925"/>
+        <location filename="../resources/ui/raysession.ui" line="973"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Duplicate the current session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Dupliquer la session en cours&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="928"/>
+        <location filename="../resources/ui/raysession.ui" line="976"/>
         <source>Ctrl+D</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="937"/>
+        <location filename="../resources/ui/raysession.ui" line="985"/>
         <source>Add C&amp;lient</source>
         <translation type="unfinished">Ajouter un Client</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="940"/>
+        <location filename="../resources/ui/raysession.ui" line="988"/>
         <source>Ctrl+A</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="952"/>
+        <location filename="../resources/ui/raysession.ui" line="1000"/>
         <source>&amp;Proxy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="955"/>
+        <location filename="../resources/ui/raysession.ui" line="1003"/>
         <source>Add Proxy</source>
         <translation type="unfinished">Ajouter un Proxy</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="958"/>
+        <location filename="../resources/ui/raysession.ui" line="1006"/>
         <source>Ctrl+P</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="186"/>
+        <location filename="../resources/ui/raysession.ui" line="193"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save &amp;amp; Close Session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sauvegarder &amp;amp; et Fermer la Session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
@@ -786,69 +805,117 @@
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state.&lt;/p&gt;&lt;p&gt;If &apos;Save Signal&apos; is set to something other than &apos;None&apos;, then Ray Proxy will deliver the specified signal to the proxied process upon an NSM &apos;Save&apos; event.&lt;/p&gt;&lt;p&gt;If program is compatible with LASH/LADISH, save signal is SIGUSR1.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Quelques programmes (vraiment très peu) peuvent répondre à un signal spécifiquement Unix pour sauvegarder leur état.&lt;/p&gt;&lt;p&gt;Si le signal de sauvegarde est réglé sur autre chose que &apos;None&apos;, alors Ray-Proxy délivrera le signal choisi au processus lors de la sauvegarde du proxy.&lt;/p&gt;&lt;p&gt;Si le programme est compatible LASH/LADISH, le signal de sauvegarde est SIGUSR1&lt;/p&gt;&lt;p&gt;La plupart des programmes vont traiter ce signal comme un SIGTERM et s&apos;éteindre.&lt;/p&gt;&lt;p&gt;Vous êtes prévenus !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
+    <message>
+        <location filename="../resources/ui/raysession.ui" line="110"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save Session as Template&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/raysession.ui" line="329"/>
+        <source>Application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/raysession.ui" line="367"/>
+        <source>Executable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/raysession.ui" line="1015"/>
+        <source>Sa&amp;ve As Template</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/raysession.ui" line="1018"/>
+        <source>Save current session as template</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/raysession.ui" line="1027"/>
+        <source>Add Appl&amp;ication</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>client status</name>
     <message>
-        <location filename="../src/shared.py" line="139"/>
+        <location filename="../src/shared.py" line="147"/>
         <source>stopped</source>
         <translation type="unfinished">arrêté</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="140"/>
+        <location filename="../src/shared.py" line="148"/>
         <source>launch</source>
         <translation type="unfinished">lancement</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="141"/>
+        <location filename="../src/shared.py" line="149"/>
         <source>open</source>
         <translation type="unfinished">ouverture</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="142"/>
+        <location filename="../src/shared.py" line="150"/>
         <source>ready</source>
         <translation type="unfinished">prêt</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="143"/>
+        <location filename="../src/shared.py" line="151"/>
         <source>save</source>
         <translation type="unfinished">sauvegarde</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="144"/>
+        <location filename="../src/shared.py" line="152"/>
         <source>switch</source>
         <translation type="unfinished">changement</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="145"/>
+        <location filename="../src/shared.py" line="153"/>
         <source>quit</source>
         <translation type="unfinished">arrêt</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="147"/>
+        <location filename="../src/shared.py" line="155"/>
         <source>error</source>
         <translation type="unfinished">erreur</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="127"/>
+        <location filename="../src/shared.py" line="135"/>
         <source>invalid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="146"/>
+        <location filename="../src/shared.py" line="154"/>
         <source>noop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="148"/>
+        <location filename="../src/shared.py" line="156"/>
         <source>removed</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>error</name>
+    <message>
+        <location filename="../src/ray-deamon" line="1190"/>
+        <source>Some clients could not save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ray-deamon" line="1201"/>
+        <source>Impossible to save template, unwriteable file !</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ray-deamon" line="1227"/>
+        <source>No template named %s</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>help</name>
     <message>
-        <location filename="../src/raysession" line="1339"/>
+        <location filename="../src/raysession" line="1736"/>
         <source>A session manager based on the Non-Session-Manager API for sound applications.</source>
         <translation type="unfinished">Un organisateur de session basé sur l&apos; API de Non-Session-Manager pour piloter les applications audio.</translation>
     </message>
@@ -856,7 +923,7 @@
 <context>
     <name>main view</name>
     <message>
-        <location filename="../src/raysession" line="851"/>
+        <location filename="../src/raysession" line="930"/>
         <source>No Session Loaded</source>
         <translation type="unfinished"></translation>
     </message>
@@ -866,65 +933,82 @@
     <message>
         <location filename="../src/ray-proxy" line="88"/>
         <source>None</source>
-        <translation type="unfinished">Aucun</translation>
+        <translation type="obsolete">Aucun</translation>
     </message>
 </context>
 <context>
     <name>server status</name>
     <message>
-        <location filename="../src/shared.py" line="133"/>
+        <location filename="../src/shared.py" line="141"/>
         <source>invalid</source>
         <translation type="unfinished">non valide</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="151"/>
+        <location filename="../src/shared.py" line="159"/>
         <source>off</source>
         <translation type="unfinished">éteint</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="152"/>
+        <location filename="../src/shared.py" line="160"/>
         <source>new</source>
         <translation type="unfinished">création</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="153"/>
+        <location filename="../src/shared.py" line="161"/>
         <source>open</source>
         <translation type="unfinished">ouverture</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="154"/>
+        <location filename="../src/shared.py" line="162"/>
         <source>clear</source>
         <translation type="unfinished">nettoyage</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="155"/>
+        <location filename="../src/shared.py" line="163"/>
         <source>switch</source>
         <translation type="unfinished">changement</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="156"/>
+        <location filename="../src/shared.py" line="164"/>
         <source>launch</source>
         <translation type="unfinished">lancement</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="157"/>
+        <location filename="../src/shared.py" line="165"/>
         <source>duplicate</source>
         <translation type="unfinished">copie</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="158"/>
+        <location filename="../src/shared.py" line="166"/>
         <source>ready</source>
         <translation type="unfinished">prêt</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="159"/>
+        <location filename="../src/shared.py" line="167"/>
         <source>save</source>
         <translation type="unfinished">sauvegarde</translation>
     </message>
     <message>
-        <location filename="../src/shared.py" line="160"/>
+        <location filename="../src/shared.py" line="168"/>
         <source>close</source>
         <translation type="unfinished">fermeture</translation>
+    </message>
+</context>
+<context>
+    <name>session template</name>
+    <message>
+        <location filename="../src/raysession" line="1284"/>
+        <source>Overwrite Template ?</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>session_template</name>
+    <message>
+        <location filename="../src/raysession" line="1284"/>
+        <source>Template &lt;strong&gt;%s&lt;/strong&gt; already exists.
+Overwrite it ?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

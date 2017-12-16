@@ -592,6 +592,9 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonAddClient.setDefaultAction(self.ui.actionAddClient)
         self.ui.toolButtonAddProxy.setDefaultAction(self.ui.actionAddProxy)
         
+        self.ui.toolButtonAddApplication.setText(_translate('button', 'Application'))
+        self.ui.toolButtonAddClient.setText(_translate('button', 'Executable'))
+        
         #connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
         self.ui.actionOpenSession.triggered.connect(self.openSession)
