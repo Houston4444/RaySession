@@ -2261,7 +2261,7 @@ class OscServerThread(ServerThread):
         
         signaler.server_add.emit(path, args, src_addr)
 
-    @make_method('/nsm/server/add_proxy', None)
+    @make_method('/ray/server/add_proxy', None)
     def rayServerAddProxy(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         

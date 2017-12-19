@@ -826,8 +826,15 @@ class MainWindow(QMainWindow):
         
         execDialog = newExecutableDialog(self)
         execDialog.exec()
-        if execDialog.result():
-            command = execDialog.getExecutableSelected()
+        if not execDialog.result():
+            return
+        
+        command = execDialog.getExecutableSelected()
+        proxy   = execDialog.runViaProxy()
+        
+        if proxy:
+            serverOSC.toDeamon('/ray/server/add_proxy', command)
+        else:
             serverOSC.addClient(command)
     
     def addApplication(self):
@@ -1597,6 +1604,8 @@ class newExecutableDialog(ChildDialog):
         self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
         self.ui.lineEdit.textChanged.connect(self.textChanged)
         
+        
+        self.ui.checkBoxProxy.stateChanged.connect(self.proxyStateChanged)
         serverOSC.qsig.new_executable.connect(self.addExecutableToCompleter)
         serverOSC.toDeamon('/ray/server/list_path')
         
@@ -1608,6 +1617,8 @@ class newExecutableDialog(ChildDialog):
         self.ui.lineEdit.returnPressed.connect(self.closeNow)
         
         self.serverStatusChanged(nsm_session.server_status)
+        
+        self.text_will_accept = False
     
     def addExecutableToCompleter(self, executable_list):
         self.exec_list += executable_list
@@ -1620,20 +1631,18 @@ class newExecutableDialog(ChildDialog):
     def getExecutableSelected(self):
         return self.ui.lineEdit.text()
         
+    def runViaProxy(self):
+        return bool(self.ui.checkBoxProxy.isChecked())
+    
+    def proxyStateChanged(self, state):
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(state or self.text_will_accept)
+    
     def textChanged(self, text):
-        if text:
-            if text[-1] in ('/', ' '):
-                self.ui.lineEdit.setText(text[:-1])
-            else:
-                if text in self.exec_list or not ray_deamon.is_local:
-                    self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
-                else:
-                    self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
-        else:
-            self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.text_will_accept = bool(text and text in self.exec_list)
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(self.ui.checkBoxProxy.isChecked() or self.text_will_accept)
    
     def closeNow(self):
-       if self.ui.lineEdit.text() in self.exec_list:
+       if self.ui.lineEdit.text() in self.exec_list or self.ui.checkBoxProxy.isChecked():
            self.accept()
            
     def serverStatusChanged(self, server_status):

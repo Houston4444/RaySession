@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>221</width>
-    <height>108</height>
+    <height>124</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,6 +29,16 @@
    </item>
    <item>
     <widget class="QLineEdit" name="lineEdit"/>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="checkBoxProxy">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If program is not compatible with the NSM API, &lt;/p&gt;&lt;p&gt;you should launch it in proxy to define a config file !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Run via Proxy</string>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
