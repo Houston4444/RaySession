@@ -590,7 +590,6 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonFileManager.setDefaultAction(self.ui.actionOpenSessionFolder)
         self.ui.toolButtonAddApplication.setDefaultAction(self.ui.actionAddApplication)
         self.ui.toolButtonAddClient.setDefaultAction(self.ui.actionAddClient)
-        self.ui.toolButtonAddProxy.setDefaultAction(self.ui.actionAddProxy)
         
         self.ui.toolButtonAddApplication.setText(_translate('button', 'Application'))
         self.ui.toolButtonAddClient.setText(_translate('button', 'Executable'))
@@ -607,7 +606,6 @@ class MainWindow(QMainWindow):
         self.ui.actionOpenSessionFolder.triggered.connect(self.openFileManager)
         self.ui.actionAddApplication.triggered.connect(self.addApplication)
         self.ui.actionAddClient.triggered.connect(self.addClient)
-        self.ui.actionAddProxy.triggered.connect(self.addProxy)
         self.ui.actionKeepFocus.toggled.connect(self.toggleKeepFocus)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(app.aboutQt)
@@ -853,9 +851,6 @@ class MainWindow(QMainWindow):
                 serverOSC.toDeamon('/ray/server/add_factory_client_template', template_name)
             else:
                 serverOSC.toDeamon('/ray/server/add_user_client_template', template_name)
-    
-    def addProxy(self):
-        serverOSC.addClient('ray-proxy')
     
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
     

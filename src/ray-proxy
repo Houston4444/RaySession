@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 
 import os, sys, string, random, time, subprocess, signal, unicodedata
 from liblo import ServerThread, Address, make_method, Message
@@ -67,10 +67,11 @@ class ProxyCopyDialog(QDialog):
         self.ui.labelFileNotInFolder.setText(_translate('Dialog', '%s is not in proxy directory') % ('<strong>' + os.path.basename(path) + '</strong>'))
 
 class ProxyDialog(QMainWindow):
-    def __init__(self):
+    def __init__(self, executable=''):
         QMainWindow.__init__(self)
         self.ui = ui_proxy_gui.Ui_MainWindow()
         self.ui.setupUi(self)
+        
         
         self.config_file = ''
         self.label_edited = False
@@ -98,6 +99,9 @@ class ProxyDialog(QMainWindow):
         self.ui.pushButtonStart.clicked.connect(self.startProcess)
         self.ui.pushButtonStop.clicked.connect(self.stopProcess)
         self.ui.pushButtonStop.setEnabled(False)
+        
+        self.ui.lineEditExecutable.setText(executable)
+        self.lineEditExecutableEdited(executable)
         
         self.ui.labelError.setText('')
         
@@ -283,12 +287,13 @@ class ProxyDialog(QMainWindow):
             self.restoreState(settings.value('ProxyGui%s/WindowState' % proxy.full_client_id))
         
         self.updateValuesFromProxyFile()
+        qDebug('oaihrg')
         
         QMainWindow.showEvent(self, event)
 ##########################
 
 class Proxy(QObject):
-    def __init__(self):
+    def __init__(self, executable=''):
         QObject.__init__(self)
         self.process = QProcess()
         self.process.setProcessChannelMode(QProcess.ForwardedChannels)
@@ -299,7 +304,7 @@ class Proxy(QObject):
         self.session_name   = None
         self.full_client_id = None
         
-        self.executable     = ''
+        self.executable     = executable
         self.arguments      = []
         self.arguments_line = ''
         self.config_file    = None
@@ -311,8 +316,6 @@ class Proxy(QObject):
         self.timer_open.setSingleShot(True)
         self.timer_open.setInterval(500)
         self.timer_open.timeout.connect(self.timerOpenFinished)
-        
-        #self.start_timer = QTimer()
         
         self.is_finishable = False
         self.timer_close = QTimer()
@@ -356,7 +359,7 @@ class Proxy(QObject):
         
         proxy_dialog.setWindowTitle(self.full_client_id)
         
-        self.proxy_file = ProxyFile(project_path)
+        self.proxy_file = ProxyFile(project_path, self.executable)
         self.proxy_file.readFile()
         
         proxy_dialog.updateValuesFromProxyFile()
@@ -425,11 +428,11 @@ class Proxy(QObject):
         proxy_dialog.close()
 
 class ProxyFile(object):
-    def __init__(self, project_path):
+    def __init__(self, project_path, executable=''):
         self.file = None
         self.path = "%s/ray-proxy.xml" % project_path
         
-        self.executable  = ''
+        self.executable  = executable
         self.arguments_line = ''
         self.config_file = ''
         self.args_line   = ''
@@ -446,10 +449,6 @@ class ProxyFile(object):
             file = open(self.path, 'r')
         except:
             return
-        
-        #file_contents = file.read()
-        #elements = file_contents.split('\n')
-        
         
         xml = QDomDocument()
         xml.setContent(file.read())
@@ -576,13 +575,14 @@ class OscServerThread(ServerThread):
         self.sendToDeamon('/reply', 'nsm/client/open', 'ready')
         
 if __name__ == '__main__':
-    print('heyy', file=sys.stderr)
     NSM_URL = os.getenv('NSM_URL')
     if not NSM_URL:
         print('Could not register as NSM client.', file=sys.stderr)
         sys.exit()
     
     deamon_address = getLibloAddress(NSM_URL)
+    
+    qDebug('depart')
     
     #parser = argparse.ArgumentParser()
     #parser.add_argument('--session-root', '-r', help='set root folder for sessions', default=session_root)
@@ -618,8 +618,12 @@ if __name__ == '__main__':
     
     
     signaler = Signaler()
-    #process  = Process()
-    proxy = Proxy()
+    
+    executable = ''
+    if len(sys.argv) > 1:
+        executable = sys.argv[1]
+        
+    proxy = Proxy(executable)    
     proxy_dialog = ProxyDialog()
     
     server = OscServerThread()

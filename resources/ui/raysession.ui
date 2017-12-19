@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>584</width>
+    <width>503</width>
     <height>617</height>
    </rect>
   </property>
@@ -382,44 +382,6 @@ QToolButton {border: none}</string>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QToolButton" name="toolButtonAddProxy">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>3200</width>
-                     <height>32</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>Run Proxy</string>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">QToolButton{margin:0px}</string>
-                   </property>
-                   <property name="text">
-                    <string>Proxy</string>
-                   </property>
-                   <property name="icon">
-                    <iconset theme="edit-link">
-                     <normaloff>.</normaloff>.</iconset>
-                   </property>
-                   <property name="iconSize">
-                    <size>
-                     <width>22</width>
-                     <height>22</height>
-                    </size>
-                   </property>
-                   <property name="toolButtonStyle">
-                    <enum>Qt::ToolButtonTextBesideIcon</enum>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
                   <spacer name="horizontalSpacer_3">
                    <property name="orientation">
                     <enum>Qt::Horizontal</enum>
@@ -690,7 +652,7 @@ QToolButton {border: none}</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>584</width>
+     <width>503</width>
      <height>26</height>
     </rect>
    </property>
