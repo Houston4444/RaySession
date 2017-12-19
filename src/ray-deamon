@@ -214,14 +214,11 @@ class Client(QObject):
         
         self.pending_command = COMMAND_START
         
-        all_exec_args = [self.executable_path]
-        all_exec_args+= shlex.split(self.arguments_line)
-        
-        #if self.arguments_line:
-            ##self.process.start()
-            #True
-        #else:
-        self.process.start(all_exec_args)
+        if self.arguments_line:
+            arguments = shlex.split(self.arguments_line)
+            self.process.start(self.executable_path, arguments)
+        else:
+            self.process.start(self.executable_path)
      
     def terminate(self):
         if self.isRunning():
