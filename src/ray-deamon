@@ -126,6 +126,7 @@ class Client(QObject):
     status          = CLIENT_STATUS_STOPPED
     name            = ''
     executable_path = ''
+    arguments_line  = ''
     label           = ''
     icon            = ''
     pre_existing    = False
@@ -212,7 +213,15 @@ class Client(QObject):
         os.environ['NSM_URL'] = server.url
         
         self.pending_command = COMMAND_START
-        self.process.start(self.executable_path)
+        
+        all_exec_args = [self.executable_path]
+        all_exec_args+= shlex.split(self.arguments_line)
+        
+        #if self.arguments_line:
+            ##self.process.start()
+            #True
+        #else:
+        self.process.start(all_exec_args)
      
     def terminate(self):
         if self.isRunning():
@@ -635,7 +644,7 @@ class Client(QObject):
                 False
         
         if os.access(project_path, os.W_OK):
-            os.rename(project_path, "%s/%s.%s" % (spath, new_session_name, new_client_id))
+            subprocess.run(['mv', project_path, "%s/%s.%s" % (spath, new_session_name, new_client_id)])
     
     def serverAnnounce(self, path, args, src_addr, is_new):
         client_name, capabilities, executable_path, major, minor, pid = args
@@ -1528,6 +1537,7 @@ class SignaledSession(OperatingSession):
         signaler.server_reorder_clients.connect(self.serverReorderClients)
         
         signaler.server_add.connect(self.serverAdd)
+        signaler.server_add_proxy.connect(self.serverAddProxy)
         signaler.server_add_user_client_template.connect(self.serverAddUserClientTemplate)
         signaler.server_add_factory_client_template.connect(self.serverAddFactoryClientTemplate)
         
@@ -1654,6 +1664,20 @@ class SignaledSession(OperatingSession):
         self.addClient(client)
         client.start()
     
+    def serverAddProxy(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
+        executable = args[0]
+        
+        client = Client()
+        client.executable_path = 'ray-proxy'
+        client.arguments_line  = executable
+        client.name            = os.path.basename(executable)
+        client.client_id       = self.generateClientId(client.name)
+        client.icon            = client.name.lower().replace('_', '-')
+        
+        self.addClient(client)
+        client.start()
+    
     def addClientTemplate(self, template_name, factory=False):
         if factory:
             templates_root = client_template_factory_root
@@ -1695,14 +1719,55 @@ class SignaledSession(OperatingSession):
                 if launched.isdigit():
                     start = bool(int(launched))
                 
-                template_path = "%s/%s" % (templates_root, template_name)
+                needed_version = ct.attribute('needed-version')
                 
-                if os.path.isdir(template_path):
-                    for file in os.listdir(template_path):
-                        print('copy', file, self.path)
-                        subprocess.run(['cp', '-R', "%s/%s" % (template_path, file), self.path])
+                if needed_version.startswith('.') or needed_version.endswith('.') or not needed_version.replace('.', '').isdigit():
+                    #needed-version not writed correctly, ignores it
+                    needed_version = ''
+                
+                if factory and needed_version:
+                    full_program_version = subprocess.check_output([client.executable_path, '--version']).decode()
+                    previous_is_digit = False
+                    program_version = ''
+                    for character in full_program_version:
+                        if character.isdigit():
+                            program_version+=character
+                            previous_is_digit = True
+                        elif character == '.':
+                            if previous_is_digit:
+                                program_version+=character
+                            previous_is_digit = False
+                        else:
+                            if program_version:
+                                break
+                            
+                    if not program_version:
+                        node = node.nextSibling()
+                        continue
                     
-                client.adjustFilesAfterCopy(self.name, TEMPLATE_CLIENT_LOAD)
+                    
+                    neededs = []
+                    progvss = []
+                    
+                    for n in needed_version.split('.'):
+                        neededs.append(int(n))
+                        
+                    for n in program_version.split('.'):
+                        progvss.append(int(n))
+                    
+                    if neededs > progvss:
+                        node = node.nextSibling()
+                        continue
+                
+                if not needed_version:
+                    template_path = "%s/%s" % (templates_root, template_name)
+                    
+                    if os.path.isdir(template_path):
+                        for file in os.listdir(template_path):
+                            subprocess.run(['cp', '-R', "%s/%s" % (template_path, file), self.path])
+                        
+                    client.adjustFilesAfterCopy(self.name, TEMPLATE_CLIENT_LOAD)
+                    
                 self.addClient(client)
                 if start:
                     client.start()
@@ -1892,6 +1957,7 @@ class Signaler(QObject):
     server_save        = pyqtSignal(str, list, object)
     server_list_sessions   = pyqtSignal(str, list, object)
     server_add = pyqtSignal(str, list, object)
+    server_add_proxy = pyqtSignal(str, list, object)
     server_add_user_client_template    = pyqtSignal(str, list, object)
     server_add_factory_client_template = pyqtSignal(str, list, object)
     server_startallclients = pyqtSignal()
@@ -2198,6 +2264,18 @@ class OscServerThread(ServerThread):
         
         signaler.server_add.emit(path, args, src_addr)
 
+    @make_method('/nsm/server/add_proxy', None)
+    def rayServerAddProxy(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
+            return
+        
+        signaler.server_add_proxy.emit(path, args, src_addr)
+
+    
+
     @make_method('/ray/server/add_user_client_template', None)
     def rayServerAddUserClientTemplate(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
@@ -2391,6 +2469,7 @@ class OscServerThread(ServerThread):
     
     def listClientTemplates(self, src_addr, factory=False):
         template_list = []
+        tmp_template_list = []
         
         templates_root    = client_template_local_root
         response_osc_path = '/reply_user_client_templates'
@@ -2416,9 +2495,8 @@ class OscServerThread(ServerThread):
         content = xml.documentElement()
         
         if content.tagName() != "RAY-CLIENT-TEMPLATES":
-            
             return
-            
+        
         node = content.firstChild()
         while not node.isNull():
             ct = node.toElement()
@@ -2427,7 +2505,9 @@ class OscServerThread(ServerThread):
                 node = node.nextSibling()
                 continue
             
-            if not ct.attribute('template-name'):
+            template_name = ct.attribute('template-name')
+            
+            if not template_name or template_name in template_list:
                 node = node.nextSibling()
                 continue
             
@@ -2446,10 +2526,7 @@ class OscServerThread(ServerThread):
             try_exec_list.append(executable)
             try_exec_ok = True
             
-            print('maquina')
-            print(try_exec_list)
             for try_exec in try_exec_list:
-                print(try_exec)
                 path = shutil.which(try_exec)
                 if not path:
                     try_exec_ok = False
@@ -2458,17 +2535,18 @@ class OscServerThread(ServerThread):
             if not try_exec_ok:
                 node = node.nextSibling()
                 continue
-                    
-            template_list.append("%s/%s" % (ct.attribute('template-name'), ct.attribute('icon') ))
             
-            if len(template_list) == 100:
-                self.send(src_addr, response_osc_path, *template_list)
+            template_list.append("%s/%s" % (template_name, ct.attribute('icon') ))
+            tmp_template_list.append("%s/%s" % (template_name, ct.attribute('icon') ))
+            
+            if len(tmp_template_list) == 100:
+                self.send(src_addr, response_osc_path, *tmp_template_list)
                 template_list.clear()
         
             node = node.nextSibling()
         
-        if template_list:
-            self.send(src_addr, response_osc_path, *template_list)
+        if tmp_template_list:
+            self.send(src_addr, response_osc_path, *tmp_template_list)
     
     def announceGui(self, url, is_reply):
         gui_addr = Address(url)
@@ -2497,6 +2575,7 @@ class OscServerThread(ServerThread):
         
         self.gui_list.append(gui_addr)
         MESSAGE("Registered with GUI")
+        
     
 if __name__ == '__main__':
     session_root = "%s/NSM Sessions" % os.getenv('HOME')
