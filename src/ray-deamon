@@ -2197,7 +2197,7 @@ class OscServerThread(ServerThread):
         if len(args) != 8:
             return
         
-        client_data = ClientData(args)
+        client_data = ClientData(*args)
         signaler.gui_update_client_properties.emit(client_data)
         #signaler.gui_client_stop.emit(path, args)
 
