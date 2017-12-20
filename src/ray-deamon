@@ -379,6 +379,19 @@ class Client(QObject):
         
         self.sent_to_gui = True
     
+    def updateClientProperties(self, client_data):
+        self.client_id       = client_data.client_id
+        self.executable_path = client_data.executable_path
+        self.prefix_mode     = client_data.prefix_mode
+        self.project_path    = client_data.project_path
+        self.label           = client_data.label
+        self.icon            = client_data.icon
+        self.capabilities    = client_data.capabilities
+        
+        print('rafistolatre')
+        
+        self.sendGuiClientProperties()
+    
     def prettyClientId(self):
         wanted = self.client_id
         
@@ -1549,6 +1562,7 @@ class SignaledSession(OperatingSession):
         signaler.gui_client_save_template.connect(self.guiClientSaveTemplate)
         signaler.gui_client_label.connect(self.guiClientLabel)
         signaler.gui_client_icon.connect(self.guiClientIcon)
+        signaler.gui_update_client_properties.connect(self.updateClientProperties)
         
     ############################# FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###############################
     
@@ -1883,6 +1897,12 @@ class SignaledSession(OperatingSession):
                 client.setIcon(icon)
                 break
     
+    def updateClientProperties(self, client_data):
+        for client in self.clients:
+            if client.client_id == client_data.client_id:
+                client.updateClientProperties(client_data)
+                break
+    
     def terminate(self):
         if self.terminated_yet:
             return
@@ -1968,6 +1988,7 @@ class Signaler(QObject):
     gui_client_save_template = pyqtSignal(str, list)
     gui_client_label  = pyqtSignal(str, str)
     gui_client_icon   = pyqtSignal(str, str)
+    gui_update_client_properties = pyqtSignal(object)
     
 
 class OscServerThread(ServerThread):
@@ -2168,6 +2189,17 @@ class OscServerThread(ServerThread):
         
         if client and client.active:
             self.send(client.addr, "/nsm/client/hide_optional_gui")
+
+    @make_method('/ray/gui/client/update_properties', None)
+    def rayGuiClientUpdateProperties(self, path, args):
+        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        
+        if len(args) != 8:
+            return
+        
+        client_data = ClientData(args)
+        signaler.gui_update_client_properties.emit(client_data)
+        #signaler.gui_client_stop.emit(path, args)
 
     @make_method('/osc/ping', None)
     def oscPing(self, path, args, types, src_addr):

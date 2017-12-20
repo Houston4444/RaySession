@@ -219,6 +219,18 @@ class NsmClient(object):
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         self.widget.updateClientData()
+     
+    def sendPropertiesToDeamon(self):
+        serverOSC.toDeamon('/ray/gui/client/update_properties', 
+                           self.client_id,
+                           self.executable_path, 
+                           self.name, 
+                           self.prefix_mode, 
+                           self.project_path, 
+                           self.label, 
+                           self.icon_name, 
+                           self.capabilities)
+        
         
     def reCreateWidget(self):
         del self.widget
@@ -1360,6 +1372,8 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui = ui_client_properties.Ui_Dialog()
         self.ui.setupUi(self)
         
+        self.client_id = client_id
+        
         self.ui.lineEditIcon.textEdited.connect(self.changeIconwithText)
         
         client = nsm_session.getClient(client_id)
@@ -1372,10 +1386,20 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.lineEditIcon.setText(client.icon_name)
         self.ui.lineEditLabel.setText(client.label)
         self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(client.icon_name))
-  
+        self.ui.pushButtonSaveChanges.clicked.connect(self.saveChanges)
+        
+        
     def changeIconwithText(self, text):
         self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(text))
         
+    def saveChanges(self):
+        client = nsm_session.getClient(self.client_id)
+        if not client:
+            return
+        
+        client.label     = self.ui.lineEditLabel.text()
+        client.icon_name = self.ui.lineEditIcon.text()
+        client.sendPropertiesToDeamon()
         
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):

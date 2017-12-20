@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>243</width>
+    <width>294</width>
     <height>194</height>
    </rect>
   </property>
@@ -17,7 +17,7 @@
    <item row="1" column="0">
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Client id :</string>
+      <string>Client id</string>
      </property>
     </widget>
    </item>
@@ -30,64 +30,32 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>Executable :</string>
+      <string>Executable</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="1" colspan="2">
+   <item row="1" column="2" colspan="2">
     <widget class="QLabel" name="labelId">
      <property name="text">
       <string>nsmid</string>
      </property>
     </widget>
    </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="label_5">
-     <property name="text">
-      <string>Icon :</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="3" rowspan="3">
-    <widget class="QToolButton" name="toolButtonIcon">
-     <property name="styleSheet">
-      <string notr="true">QToolButton{border:none}</string>
-     </property>
-     <property name="text">
-      <string>...</string>
-     </property>
-     <property name="icon">
-      <iconset theme="application-pdf"/>
-     </property>
-     <property name="iconSize">
-      <size>
-       <width>48</width>
-       <height>48</height>
-      </size>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1" colspan="3">
-    <widget class="QLineEdit" name="lineEditLabel"/>
-   </item>
-   <item row="4" column="1" colspan="3">
-    <widget class="QLineEdit" name="lineEditIcon"/>
-   </item>
    <item row="3" column="0">
     <widget class="QLabel" name="label_6">
      <property name="text">
-      <string>Label :</string>
+      <string>Label</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="1" colspan="2">
+   <item row="0" column="2" colspan="2">
     <widget class="QLabel" name="labelExecutable">
      <property name="text">
       <string>executable</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="1" colspan="2">
+   <item row="2" column="2" colspan="2">
     <widget class="QLabel" name="labelClientName">
      <property name="text">
       <string>client_name</string>
@@ -97,17 +65,118 @@
    <item row="2" column="0">
     <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>Name :</string>
+      <string>Name</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="1" colspan="3">
-    <widget class="QPushButton" name="pushButton">
+   <item row="5" column="2" colspan="3">
+    <widget class="QPushButton" name="pushButtonSaveChanges">
      <property name="text">
       <string>Save Changes</string>
      </property>
      <property name="icon">
-      <iconset theme="document-save"/>
+      <iconset theme="document-save">
+       <normaloff/>
+      </iconset>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>Icon</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="2" colspan="3">
+    <widget class="QLineEdit" name="lineEditLabel"/>
+   </item>
+   <item row="0" column="4" rowspan="3">
+    <widget class="QToolButton" name="toolButtonIcon">
+     <property name="styleSheet">
+      <string notr="true">QToolButton{border:none}</string>
+     </property>
+     <property name="text">
+      <string>...</string>
+     </property>
+     <property name="icon">
+      <iconset theme="application-pdf">
+       <normaloff/>
+      </iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>48</width>
+       <height>48</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="2" colspan="3">
+    <widget class="QLineEdit" name="lineEditIcon"/>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLabel" name="label_4">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QLabel" name="label_7">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLabel" name="label_8">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QLabel" name="label_9">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QLabel" name="label_10">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>:</string>
      </property>
     </widget>
    </item>
