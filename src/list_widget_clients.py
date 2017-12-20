@@ -38,6 +38,8 @@ class ClientSlot(QFrame):
         self.menu.addAction(self.ui.actionSaveAsApplicationTemplate)
         self.menu.addAction(self.ui.actionProperties)
         
+        self.ui.iconButton.setMenu(self.menu)
+        
         #choose button colors
         if self.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
             startIcon = QIcon()

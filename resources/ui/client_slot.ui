@@ -74,7 +74,8 @@
         </size>
        </property>
        <property name="styleSheet">
-        <string notr="true">QToolButton {border: none}</string>
+        <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+QToolButton {border: none}</string>
        </property>
        <property name="text">
         <string>...</string>
@@ -84,6 +85,9 @@
          <width>32</width>
          <height>32</height>
         </size>
+       </property>
+       <property name="popupMode">
+        <enum>QToolButton::InstantPopup</enum>
        </property>
       </widget>
      </item>
@@ -163,8 +167,7 @@
        </property>
        <property name="icon">
         <iconset theme="interface">
-         <normaloff/>
-        </iconset>
+         <normaloff>../../../../.designer/backup</normaloff>../../../../.designer/backup</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -433,7 +436,8 @@
   </layout>
   <action name="actionSaveAsApplicationTemplate">
    <property name="icon">
-    <iconset theme="document-save-as-template"/>
+    <iconset theme="document-save-as-template">
+     <normaloff>../../../../.designer/backup</normaloff>../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Save As Application Template</string>
@@ -441,7 +445,8 @@
   </action>
   <action name="actionProperties">
    <property name="icon">
-    <iconset theme="document-properties"/>
+    <iconset theme="document-properties">
+     <normaloff>../../../../.designer/backup</normaloff>../../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Properties</string>
