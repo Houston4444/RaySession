@@ -28,6 +28,7 @@ import ui_add_application
 import ui_new_executable
 import ui_error_dialog
 import ui_quit_app
+import ui_client_properties
 
 import resources_rc
 
@@ -686,6 +687,7 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.clientHideGuiRequest.connect(serverOSC.hideClientOptionalGui)
         self.ui.listWidget.clientShowGuiRequest.connect(serverOSC.showClientOptionalGui)
         self.ui.listWidget.clientSaveTemplateRequest.connect(self.newClientTemplate)
+        self.ui.listWidget.clientPropertiesRequest.connect(self.openClientProperties)
     
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
@@ -750,6 +752,10 @@ class MainWindow(QMainWindow):
         template_name = dialog.getTemplateName()
         
         serverOSC.saveClientTemplate(client_id, template_name)
+    
+    def openClientProperties(self, client_id):
+        dialog = ClientPropertiesDialog(self)
+        dialog.show()
     
     def createNewSession(self):
         newDialog = NewSessionDialog(self)
@@ -1337,7 +1343,13 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
     def addTemplatesToList(self, template_list):
         for template in template_list:
             self.template_list.append(template.split('/')[0])
-                                
+  
+class ClientPropertiesDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_client_properties.Ui_Dialog()
+        self.ui.setupUi(self)
+  
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)

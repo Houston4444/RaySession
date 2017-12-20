@@ -31,13 +31,12 @@ class ClientSlot(QFrame):
         self.updateClientData()
         
         self.ui.actionSaveAsApplicationTemplate.triggered.connect(self.saveAsApplicationTemplate)
+        self.ui.actionProperties.triggered.connect(self.openPropertiesDialog)
         
         self.menu = QMenu(self)
         
         self.menu.addAction(self.ui.actionSaveAsApplicationTemplate)
         self.menu.addAction(self.ui.actionProperties)
-        #self.act_save_template = self.menu.addAction(QIcon.fromTheme('document-save-as-template'), 'Save as Application Template')
-        #self.act_properties    = self.menu.addAction(QIcon.fromTheme('document-properties'), 'Properties')
         
         #choose button colors
         if self.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
@@ -88,6 +87,9 @@ class ClientSlot(QFrame):
     
     def saveAsApplicationTemplate(self):
         self.list_widget.clientSaveTemplateRequest.emit(self.clientId())
+    
+    def openPropertiesDialog(self):
+        self.list_widget.clientPropertiesRequest.emit(self.clientId())
     
     def updateClientData(self):
         #set main label
@@ -193,16 +195,9 @@ class ClientSlot(QFrame):
         self.ui.saveButton.setEnabled(bool_dirty)
         
     def contextMenuEvent(self, event):
-        #self.list_widget.clientSaveTemplateRequest.emit(self.clientId(), "zoerjgfoj")
-        #QFrame.contextMenuEvent(self, event)
-        #menu = QMenu()
-        ##discMenu = QMenu("Disconnect", menu)
-        ##act_save_template = menu.addAction(_translate('client_slot', 'Save as Application Template'))
-        #act_save_template = menu.addAction('Save as Application Template')
-        #print(event.pos().x(), event.pos().y())
         act_selected = self.menu.exec(self.mapToGlobal(event.pos()))
-        if act_selected == self.ui.actionSaveAsApplicationTemplate:
-            print('cpar la le modèle')
+        #if act_selected == self.ui.actionSaveAsApplicationTemplate:
+            #print('cpar la le modèle')
 
         event.accept()
         
@@ -237,6 +232,7 @@ class ListWidgetClients(QListWidget):
     clientHideGuiRequest = pyqtSignal(str)
     clientShowGuiRequest = pyqtSignal(str)
     clientSaveTemplateRequest = pyqtSignal(str)
+    clientPropertiesRequest   = pyqtSignal(str)
     
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
