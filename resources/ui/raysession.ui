@@ -676,7 +676,6 @@ QToolButton {border: none}</string>
     <addaction name="separator"/>
     <addaction name="actionAddApplication"/>
     <addaction name="actionAddClient"/>
-    <addaction name="actionAddProxy"/>
     <addaction name="separator"/>
     <addaction name="actionSaveTemplateSession"/>
     <addaction name="separator"/>
@@ -951,21 +950,6 @@ QToolButton {border: none}</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::WindowShortcut</enum>
-   </property>
-  </action>
-  <action name="actionAddProxy">
-   <property name="icon">
-    <iconset theme="edit-link">
-     <normaloff>.</normaloff>.</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Proxy</string>
-   </property>
-   <property name="toolTip">
-    <string>Add Proxy</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+P</string>
    </property>
   </action>
   <action name="actionSaveTemplateSession">
