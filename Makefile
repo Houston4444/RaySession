@@ -67,7 +67,9 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/share/raysession/
 	install -d $(DESTDIR)$(PREFIX)/share/raysession/src/
 	install -d $(DESTDIR)$(PREFIX)/share/raysession/locale/
-	install -d $(DESTDIR)$(PREFIX)/share/raysession/client_templates/
+	
+	# Copy Client Templates Factory
+	cp -r client_templates  $(DESTDIR)$(PREFIX)/share/raysession/
 
 # 	# Install script files and binaries
 	install -m 755 data/raysession                    $(DESTDIR)$(PREFIX)/bin/ 
