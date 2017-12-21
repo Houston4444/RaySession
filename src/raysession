@@ -184,7 +184,7 @@ class NsmClient(object):
         self.gui_visible = False
         self.hasDirty    = False
         self.dirty_state = True
-        self.properties_dialog = None
+        self.properties_dialog = ClientPropertiesDialog(MainUI, self)
         
     def setStatus(self, status):
         self.status = status
@@ -231,7 +231,11 @@ class NsmClient(object):
                            self.icon_name, 
                            self.capabilities)
         
-        
+    def showPropertiesDialog(self):
+        self.properties_dialog.updateContents()
+        self.properties_dialog.show()
+        self.properties_dialog.activateWindow()
+    
     def reCreateWidget(self):
         del self.widget
         self.widget = MainUI.createClientWidget(self)
@@ -773,11 +777,7 @@ class MainWindow(QMainWindow):
         if not client:
             return
         
-        if not client.properties_dialog:
-            client.properties_dialog = ClientPropertiesDialog(self, client_id)
-            
-        client.properties_dialog.show()
-        client.properties_dialog.activateWindow()
+        client.showPropertiesDialog()
     
     def createNewSession(self):
         newDialog = NewSessionDialog(self)
@@ -1367,39 +1367,31 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
             self.template_list.append(template.split('/')[0])
   
 class ClientPropertiesDialog(ChildDialog):
-    def __init__(self, parent, client_id):
+    def __init__(self, parent, client):
         ChildDialog.__init__(self, parent)
         self.ui = ui_client_properties.Ui_Dialog()
         self.ui.setupUi(self)
         
-        self.client_id = client_id
+        self.client = client
         
         self.ui.lineEditIcon.textEdited.connect(self.changeIconwithText)
-        
-        client = nsm_session.getClient(client_id)
-        if not client:
-            return
-        
-        self.ui.labelExecutable.setText(client.executable_path)
-        self.ui.labelId.setText(client.client_id)
-        self.ui.labelClientName.setText(client.name)
-        self.ui.lineEditIcon.setText(client.icon_name)
-        self.ui.lineEditLabel.setText(client.label)
-        self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(client.icon_name))
         self.ui.pushButtonSaveChanges.clicked.connect(self.saveChanges)
         
+    def updateContents(self):
+        self.ui.labelExecutable.setText(self.client.executable_path)
+        self.ui.labelId.setText(self.client.client_id)
+        self.ui.labelClientName.setText(self.client.name)
+        self.ui.lineEditIcon.setText(self.client.icon_name)
+        self.ui.lineEditLabel.setText(self.client.label)
+        self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(self.client.icon_name))
         
     def changeIconwithText(self, text):
         self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(text))
         
     def saveChanges(self):
-        client = nsm_session.getClient(self.client_id)
-        if not client:
-            return
-        
-        client.label     = self.ui.lineEditLabel.text()
-        client.icon_name = self.ui.lineEditIcon.text()
-        client.sendPropertiesToDeamon()
+        self.client.label     = self.ui.lineEditLabel.text()
+        self.client.icon_name = self.ui.lineEditIcon.text()
+        self.client.sendPropertiesToDeamon()
         
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):
