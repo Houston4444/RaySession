@@ -596,10 +596,6 @@ class MainWindow(QMainWindow):
             self.restoreState(settings.value('MainWindow/WindowState'))
         self.ui.actionShowMenuBar.activate(str2bool(settings.value('MainWindow/ShowMenuBar', 'false')))
         
-        #connect tool buttons
-        self.ui.toolButtonLaunchAll.clicked.connect(self.launchAllClients)
-        self.ui.toolButtonStopAll.longclicked.connect(self.stopAllClients)
-        
         #set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
         self.ui.toolButtonSaveSession.clicked.connect(self.saveSession)
@@ -673,17 +669,12 @@ class MainWindow(QMainWindow):
         if app.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
             self.ui.actionCloseSession.setIcon(RayIcon('window-close', dark=True))
             self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark=True))
-            self.ui.toolButtonLaunchAll.setIcon(RayIcon('media-playback-start'))
-            self.ui.toolButtonStopAll.setIcon(RayIcon('media-playback-stop'))
             self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save'))
         
         #disable "keep focus" if deamon is not on this machine (it takes no sense in this case)
         if not ray_deamon.is_local:
             self.ui.actionKeepFocus.setChecked(False)
             self.ui.actionKeepFocus.setEnabled(False)
-            
-        self.ui.toolButtonLaunchAll.setVisible(False)
-        self.ui.toolButtonStopAll.setVisible(False)
     
     def connectListWidgetRequests(self):
         #connect the listWidget signals to OSC server
@@ -827,12 +818,6 @@ class MainWindow(QMainWindow):
         about_dialog = AboutRaySessionDialog(self)
         about_dialog.exec()
     
-    def launchAllClients(self):
-        serverOSC.toDeamon('/ray/server/startallclients')
-    
-    def stopAllClients(self):
-        serverOSC.toDeamon('/ray/server/stopallclients')
-    
     def saveSession(self):
         serverOSC.saveSession()
     
@@ -889,22 +874,6 @@ class MainWindow(QMainWindow):
     
     def nsmUpdatesClientStatus(self, client_id, status):
         session.updateClientStatus(client_id, status)
-        
-        #update launch all button
-        for client in session.client_list:
-            if client.status == CLIENT_STATUS_STOPPED:
-                self.ui.toolButtonLaunchAll.setEnabled(True)
-                break
-        else:
-            self.ui.toolButtonLaunchAll.setEnabled(False)
-            
-        #update stop all button
-        for client in session.client_list:
-            if client.status != CLIENT_STATUS_STOPPED:
-                self.ui.toolButtonStopAll.setEnabled(True)
-                break
-        else:
-            self.ui.toolButtonStopAll.setEnabled(False)
         
         #launch/stop flashing status if 'open'
         for client in session.client_list:
