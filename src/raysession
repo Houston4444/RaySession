@@ -608,10 +608,7 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSaveTemplateSession.setDefaultAction(self.ui.actionSaveTemplateSession)
         self.ui.toolButtonFileManager.setDefaultAction(self.ui.actionOpenSessionFolder)
         self.ui.toolButtonAddApplication.setDefaultAction(self.ui.actionAddApplication)
-        self.ui.toolButtonAddClient.setDefaultAction(self.ui.actionAddClient)
-        
-        self.ui.toolButtonAddApplication.setText(_translate('button', 'Application'))
-        self.ui.toolButtonAddClient.setText(_translate('button', 'Executable'))
+        self.ui.toolButtonAddExecutable.setDefaultAction(self.ui.actionAddExecutable)
         
         #connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
@@ -624,7 +621,7 @@ class MainWindow(QMainWindow):
         self.ui.actionSaveTemplateSession.triggered.connect(self.saveTemplateSession)
         self.ui.actionOpenSessionFolder.triggered.connect(self.openFileManager)
         self.ui.actionAddApplication.triggered.connect(self.addApplication)
-        self.ui.actionAddClient.triggered.connect(self.addClient)
+        self.ui.actionAddExecutable.triggered.connect(self.addExecutable)
         self.ui.actionKeepFocus.toggled.connect(self.toggleKeepFocus)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(app.aboutQt)
@@ -839,23 +836,6 @@ class MainWindow(QMainWindow):
     def saveSession(self):
         serverOSC.saveSession()
     
-    def addClient(self):
-        if session.server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF):
-            return
-        
-        execDialog = newExecutableDialog(self)
-        execDialog.exec()
-        if not execDialog.result():
-            return
-        
-        command = execDialog.getExecutableSelected()
-        proxy   = execDialog.runViaProxy()
-        
-        if proxy:
-            serverOSC.toDeamon('/ray/server/add_proxy', command)
-        else:
-            serverOSC.addClient(command)
-    
     def addApplication(self):
         if session.server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF):
             return
@@ -872,6 +852,23 @@ class MainWindow(QMainWindow):
                 serverOSC.toDeamon('/ray/server/add_factory_client_template', template_name)
             else:
                 serverOSC.toDeamon('/ray/server/add_user_client_template', template_name)
+    
+    def addExecutable(self):
+        if session.server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF):
+            return
+        
+        execDialog = newExecutableDialog(self)
+        execDialog.exec()
+        if not execDialog.result():
+            return
+        
+        command = execDialog.getExecutableSelected()
+        proxy   = execDialog.runViaProxy()
+        
+        if proxy:
+            serverOSC.toDeamon('/ray/server/add_proxy', command)
+        else:
+            serverOSC.addClient(command)
     
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
     
@@ -988,7 +985,7 @@ class MainWindow(QMainWindow):
         self.ui.actionDuplicateSession.setEnabled(not close_or_off)
         self.ui.actionSaveTemplateSession.setEnabled(not close_or_off)
         self.ui.actionAddApplication.setEnabled(not close_or_off)
-        self.ui.actionAddClient.setEnabled(not close_or_off)
+        self.ui.actionAddExecutable.setEnabled(not close_or_off)
         self.ui.actionOpenSessionFolder.setEnabled(bool(server_status != SERVER_STATUS_OFF))
         
         

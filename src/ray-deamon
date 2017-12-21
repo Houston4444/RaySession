@@ -1541,9 +1541,6 @@ class SignaledSession(OperatingSession):
         signaler.server_abort.connect(self.serverAbortSession)
         signaler.server_list_sessions.connect(self.serverListSessions)
         
-        signaler.server_startallclients.connect(self.serverStartAllClients)
-        signaler.server_stopallclients.connect(self.serverStopAllClients)
-        
         signaler.server_reorder_clients.connect(self.serverReorderClients)
         
         signaler.server_add.connect(self.serverAdd)
@@ -1642,19 +1639,6 @@ class SignaledSession(OperatingSession):
                         already_send = True
                     
         server.send(src_addr, path, ERR_OK, "Done.")
-    
-    def serverStartAllClients(self):
-        MESSAGE('Starting All Clients')
-        for client in self.clients:
-            if not client.isRunning():
-                self.clients_to_launch.append(client)
-                
-        self.timer_launch.start()
-        
-    def serverStopAllClients(self):
-        MESSAGE('Stopping All Clients')
-        for client in session.clients:
-            client.stop()
         
     def serverReorderClients(self, path, args):
         client_ids_list = args
@@ -1977,8 +1961,6 @@ class Signaler(QObject):
     server_add_proxy = pyqtSignal(str, list, object)
     server_add_user_client_template    = pyqtSignal(str, list, object)
     server_add_factory_client_template = pyqtSignal(str, list, object)
-    server_startallclients = pyqtSignal()
-    server_stopallclients  = pyqtSignal()
     server_reorder_clients = pyqtSignal(str, list)
     gui_client_stop   = pyqtSignal(str, list)
     gui_client_kill   = pyqtSignal(str, list)
@@ -2395,18 +2377,6 @@ class OscServerThread(ServerThread):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         if  session.path:
             subprocess.Popen(['xdg-open',  session.path])
-    
-    @make_method('/ray/server/startallclients', None)
-    def rayServerStartAllClients(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
-        
-        signaler.server_startallclients.emit()
-    
-    @make_method('/ray/server/stopallclients', None)
-    def rayServerStopAllClients(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
-        
-        signaler.server_stopallclients.emit()
         
     @make_method('/ray/server/reorder_clients', None)
     def rayServerReorderClients(self, path, args):

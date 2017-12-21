@@ -62,16 +62,7 @@
          <string notr="true">SessionFrame{border-top: 2px solid; border-right:2px solid; border-left:2px solid; border-top-left-radius:10px;border-top-right-radius:10px}</string>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>0</number>
          </property>
          <item>
@@ -94,7 +85,8 @@
                </property>
                <property name="icon">
                 <iconset theme="edit-duplicate">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff/>
+                </iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -117,7 +109,8 @@
                </property>
                <property name="icon">
                 <iconset theme="document-save-as-template">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff/>
+                </iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -159,7 +152,8 @@
                </property>
                <property name="icon">
                 <iconset theme="list-remove">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff/>
+                </iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -201,7 +195,8 @@ QToolButton {border: none}</string>
                </property>
                <property name="icon">
                 <iconset theme="window-close">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff/>
+                </iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -279,7 +274,8 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="system-file-manager">
-                     <normaloff>.</normaloff>.</iconset>
+                     <normaloff/>
+                    </iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -330,7 +326,8 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="list-add">
-                     <normaloff>.</normaloff>.</iconset>
+                     <normaloff/>
+                    </iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -344,7 +341,7 @@ QToolButton {border: none}</string>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QToolButton" name="toolButtonAddClient">
+                  <widget class="QToolButton" name="toolButtonAddExecutable">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                      <horstretch>0</horstretch>
@@ -368,7 +365,8 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="run-install">
-                     <normaloff>.</normaloff>.</iconset>
+                     <normaloff/>
+                    </iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -422,16 +420,7 @@ QToolButton {border: none}</string>
                 <property name="sizeConstraint">
                  <enum>QLayout::SetDefaultConstraint</enum>
                 </property>
-                <property name="leftMargin">
-                 <number>3</number>
-                </property>
-                <property name="topMargin">
-                 <number>3</number>
-                </property>
-                <property name="rightMargin">
-                 <number>3</number>
-                </property>
-                <property name="bottomMargin">
+                <property name="margin">
                  <number>3</number>
                 </property>
                 <item>
@@ -676,10 +665,6 @@ QToolButton {border: none}</string>
     <addaction name="actionCloseSession"/>
     <addaction name="actionAbortSession"/>
     <addaction name="actionDuplicateSession"/>
-    <addaction name="separator"/>
-    <addaction name="actionAddApplication"/>
-    <addaction name="actionAddClient"/>
-    <addaction name="separator"/>
     <addaction name="actionSaveTemplateSession"/>
     <addaction name="separator"/>
     <addaction name="actionOpenSessionFolder"/>
@@ -700,8 +685,16 @@ QToolButton {border: none}</string>
     <addaction name="actionAboutRaySession"/>
     <addaction name="actionAboutQt"/>
    </widget>
+   <widget class="QMenu" name="menuAdd">
+    <property name="title">
+     <string>Add</string>
+    </property>
+    <addaction name="actionAddApplication"/>
+    <addaction name="actionAddExecutable"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSession"/>
+   <addaction name="menuAdd"/>
    <addaction name="menuView"/>
    <addaction name="menuAbout"/>
   </widget>
@@ -743,7 +736,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="dialog-messages">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Show Messages</string>
@@ -758,7 +752,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="document-save">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Save</string>
@@ -773,7 +768,8 @@ QToolButton {border: none}</string>
   <action name="actionOpenSession">
    <property name="icon">
     <iconset theme="document-open">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Open Session</string>
@@ -785,7 +781,8 @@ QToolButton {border: none}</string>
   <action name="actionNewSession">
    <property name="icon">
     <iconset theme="folder-new">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;New Session</string>
@@ -797,7 +794,8 @@ QToolButton {border: none}</string>
   <action name="actionQuit">
    <property name="icon">
     <iconset theme="application-exit">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Quit</string>
@@ -824,7 +822,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="show-menu">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>Show &amp;Menu Bar</string>
@@ -836,7 +835,8 @@ QToolButton {border: none}</string>
   <action name="actionControlMenu">
    <property name="icon">
     <iconset theme="configure">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>Control</string>
@@ -887,7 +887,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="system-file-manager">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Open Session Folder</string>
@@ -905,7 +906,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="window-duplicate">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Keep focus while opening clients</string>
@@ -925,7 +927,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="edit-duplicate">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>&amp;Duplicate</string>
@@ -937,13 +940,14 @@ QToolButton {border: none}</string>
     <string>Ctrl+D</string>
    </property>
   </action>
-  <action name="actionAddClient">
+  <action name="actionAddExecutable">
    <property name="icon">
     <iconset theme="run-install">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
-    <string>Add C&amp;lient</string>
+    <string>Executable</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+A</string>
@@ -955,7 +959,8 @@ QToolButton {border: none}</string>
   <action name="actionSaveTemplateSession">
    <property name="icon">
     <iconset theme="document-save-as-template">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
     <string>Sa&amp;ve As Template</string>
@@ -967,10 +972,11 @@ QToolButton {border: none}</string>
   <action name="actionAddApplication">
    <property name="icon">
     <iconset theme="list-add">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff/>
+    </iconset>
    </property>
    <property name="text">
-    <string>Add Appl&amp;ication</string>
+    <string>Application</string>
    </property>
   </action>
  </widget>
