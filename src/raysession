@@ -640,12 +640,6 @@ class MainWindow(QMainWindow):
         self.controlToolButton = self.ui.toolBar.widgetForAction(self.ui.actionControlMenu)
         self.controlToolButton.setPopupMode(QToolButton.InstantPopup)
         self.controlToolButton.setMenu(self.controlMenu)
-
-        #set close/abort menu
-        self.abortMenu = QMenu()
-        self.abortMenu.addAction(self.ui.actionCloseSession)
-        self.abortMenu.addAction(self.ui.actionAbortSession)
-        self.ui.closeButton.setMenu(self.abortMenu)
         
         #connect OSC signals from nsm
         serverOSC.qsig.new_client_added.connect(self.nsmAddsClient)
