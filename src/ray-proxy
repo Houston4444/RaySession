@@ -18,12 +18,6 @@ ERR_WRONG_ARGUMENTS   = -4
 ERR_WRONG_SAVE_SIGNAL = -5
 ERR_WRONG_STOP_SIGNAL = -6
 
-#cleanage
-#copy: proposer de renommer selon session_name
-#logs du process dans GUI (ou alors rien ne sort du proxy lui même)
-#message d'erreur dans GUI selon ce qui se passe avec le process
-#message can_save
-
 
 
 save_signals = {'None'   : None, 
@@ -74,8 +68,8 @@ class ProxyDialog(QMainWindow):
         
         
         self.config_file = ''
-        self.label_edited = False
-        self.icon_edited  = False
+        #self.label_edited = False
+        #self.icon_edited  = False
         self.args_edited  = False
         self.fields_allow_start = False
         self.process_is_running = False
@@ -86,11 +80,7 @@ class ProxyDialog(QMainWindow):
         
         self.ui.lineEditExecutable.textEdited.connect(self.lineEditExecutableEdited)
         self.ui.lineEditArguments.textChanged.connect(self.lineEditArgumentsChanged)
-        self.ui.lineEditLabel.textEdited.connect(self.lineEditLabelEdited)
-        self.ui.lineEditIcon.textEdited.connect(self.lineEditIconEdited)
         self.ui.lineEditConfigFile.textChanged.connect(self.lineEditConfigFileChanged)
-        
-        self.ui.toolButtonRefresh.clicked.connect(self.updateLabelAndIcon)
         
         self.ui.comboSaveSig.currentTextChanged.connect(self.allowSaveTest)
         self.ui.toolButtonTestSave.clicked.connect(self.testSave)
@@ -125,8 +115,6 @@ class ProxyDialog(QMainWindow):
         self.ui.lineEditExecutable.setText(proxy_file.executable)
         self.ui.lineEditConfigFile.setText(proxy_file.config_file)
         self.ui.lineEditArguments.setText(proxy_file.arguments_line)
-        self.ui.lineEditLabel.setText(proxy_file.label)
-        self.ui.lineEditIcon.setText(proxy_file.icon)
         
         for sig_str in save_signals:
             if save_signals[sig_str] == proxy_file.save_signal:
@@ -176,26 +164,6 @@ class ProxyDialog(QMainWindow):
     
     def lineEditExecutableEdited(self, text):
         self.checkAllowStart()
-        
-        if not self.label_edited:
-            label = os.path.basename(text).replace('-', ' ').replace('_', ' ').capitalize()
-            self.ui.lineEditLabel.setText(label)
-            
-        if not self.icon_edited:
-            icon_name = label.lower().replace('_', '-')
-            self.ui.lineEditIcon.setText(icon_name)
-            
-    def updateLabelAndIcon(self):
-        label = self.ui.lineEditLabel.text()
-        icon  = self.ui.lineEditIcon.text()
-        server.sendToDeamon('/nsm/client/label', label) 
-        server.sendToDeamon('/ray/client/icon', icon)
-    
-    def lineEditLabelEdited(self, text):
-        self.label_edited = True
-    
-    def lineEditIconEdited(self, text):
-        self.icon_edited = True
     
     def lineEditArgumentsChanged(self, text):
         self.checkAllowStart()
@@ -225,12 +193,10 @@ class ProxyDialog(QMainWindow):
         executable     = self.ui.lineEditExecutable.text()
         config_file    = self.ui.lineEditConfigFile.text()
         arguments_line = self.ui.lineEditArguments.text()
-        label          = self.ui.lineEditLabel.text()
-        icon           = self.ui.lineEditIcon.text()
         save_signal    = save_signals[self.ui.comboSaveSig.currentText()]
         stop_signal    = stop_signals[self.ui.comboStopSig.currentText()]
         
-        proxy.proxy_file.saveFile(executable, config_file, arguments_line, label, icon, save_signal, stop_signal)
+        proxy.proxy_file.saveFile(executable, config_file, arguments_line, save_signal, stop_signal)
     
     def startProcess(self):
         self.saveProxyFile()
@@ -287,7 +253,6 @@ class ProxyDialog(QMainWindow):
             self.restoreState(settings.value('ProxyGui%s/WindowState' % proxy.full_client_id))
         
         self.updateValuesFromProxyFile()
-        qDebug('oaihrg')
         
         QMainWindow.showEvent(self, event)
 ##########################
@@ -332,9 +297,6 @@ class Proxy(QObject):
     
     def isRunning(self):
         return bool(self.process.state() == QProcess.Running)
-    
-    #def processStarted(self):
-        #pass
     
     def processFinished(self, exit_code):
         if self.is_finishable:
@@ -385,12 +347,6 @@ class Proxy(QObject):
         arguments_line = os.path.expandvars(self.proxy_file.arguments_line)
         arguments = shellLineToArgs(arguments_line)
         
-        if self.proxy_file.label:
-            server.sendToDeamon('/nsm/client/label', self.proxy_file.label)
-        
-        if self.proxy_file.icon:
-            server.sendToDeamon('/ray/client/icon', self.proxy_file.icon)
-        
         self.process.start(self.proxy_file.executable, arguments)
         self.timer_open.start()
     
@@ -436,8 +392,6 @@ class ProxyFile(object):
         self.arguments_line = ''
         self.config_file = ''
         self.args_line   = ''
-        self.label       = ''
-        self.icon        = ''
         self.save_signal = None
         self.stop_signal = signal.SIGTERM
         
@@ -465,23 +419,9 @@ class ProxyFile(object):
         self.arguments_line = cte.attribute('arguments')
         save_signal         = cte.attribute('save_signal')
         stop_signal         = cte.attribute('stop_signal')
-        self.label          = cte.attribute('label')
-        self.icon           = cte.attribute('icon')
         
         
         file.close()
-        #if len(elements) < 12:
-            #return
-        
-        #self.executable     = elements[1].rpartition('\t')[2]
-        #self.arguments_line = elements[3].rpartition('\t')[2]
-        #self.config_file    = elements[5].rpartition('\t')[2]
-        #save_signal         = elements[7].rpartition('\t')[2]
-        #stop_signal         = elements[9].rpartition('\t')[2]
-        #self.label          = elements[11].rpartition('\t')[2]
-        
-        #if len(elements) >= 14:
-            #self.icon = elements[13].rpartition('\t')[2]
         
         if save_signal.isdigit() and int(save_signal) in save_signals.values():
             self.save_signal = int(save_signal)
@@ -498,7 +438,7 @@ class ProxyFile(object):
         
         self.is_launchable = True
     
-    def saveFile(self, executable, config_file, arguments_line, label, icon, save_signal, stop_signal):
+    def saveFile(self, executable, config_file, arguments_line, save_signal, stop_signal):
         try:
             file = open(self.path, 'w')
         except:
@@ -515,8 +455,6 @@ class ProxyFile(object):
         p.setAttribute('config_file', config_file)
         p.setAttribute('save_signal', str(int(save_signal)))
         p.setAttribute('stop_signal', str(int(save_signal)))
-        p.setAttribute('label', label)
-        p.setAttribute('icon', icon)
         
         xml.appendChild(p)
         
@@ -581,8 +519,6 @@ if __name__ == '__main__':
         sys.exit()
     
     deamon_address = getLibloAddress(NSM_URL)
-    
-    qDebug('depart')
     
     #parser = argparse.ArgumentParser()
     #parser.add_argument('--session-root', '-r', help='set root folder for sessions', default=session_root)

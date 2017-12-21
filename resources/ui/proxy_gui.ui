@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>407</width>
-    <height>372</height>
+    <width>463</width>
+    <height>282</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -98,55 +98,6 @@
         <widget class="QLineEdit" name="lineEditArguments">
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The environment variables $NSM_CLIENT_ID and $NSM_SESSION_NAME will contain the unique client ID (suitable for use as e.g. a JACK client name) and the display name for the session, respectively.&lt;br/&gt;The variable $CONFIG_FILE will contain the name of the config file selected above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
-     <widget class="QGroupBox" name="groupBox_2">
-      <property name="title">
-       <string/>
-      </property>
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_6">
-         <property name="text">
-          <string>Label :</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="lineEditIcon"/>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="lineEditLabel"/>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Icon :</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2" rowspan="2">
-        <widget class="QToolButton" name="toolButtonRefresh">
-         <property name="text">
-          <string>Update</string>
-         </property>
-         <property name="icon">
-          <iconset theme="view-refresh">
-           <normaloff>.</normaloff>.</iconset>
-         </property>
-         <property name="toolButtonStyle">
-          <enum>Qt::ToolButtonTextBesideIcon</enum>
          </property>
         </widget>
        </item>
