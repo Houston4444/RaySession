@@ -121,7 +121,8 @@ class Client(QObject):
     pending_command = COMMAND_NONE
     active          = False
     client_id       = ''
-    capabilities    = None
+    capabilities    = ''
+    did_announce    = False
     
     status          = CLIENT_STATUS_STOPPED
     name            = ''
@@ -181,11 +182,9 @@ class Client(QObject):
             return self.pending_command
         
     def isDumbClient(self):
-        return bool(self.capabilities == None)
+        return bool(not self.did_announce)
     
     def isCapableOf(self, capability):
-        if self.capabilities == None:
-            return False
         return bool(capability in self.capabilities)
     
     def getJackClientName(self):
@@ -387,8 +386,6 @@ class Client(QObject):
         self.label           = client_data.label
         self.icon            = client_data.icon
         self.capabilities    = client_data.capabilities
-        
-        print('rafistolatre')
         
         self.sendGuiClientProperties()
     
@@ -672,6 +669,7 @@ class Client(QObject):
         self.addr         = src_addr
         self.name         = client_name
         self.active       = True
+        self.did_announce = True
         
         if self.executable_path in known_as_non_active:
             known_as_non_active.remove(self.executable_path)
