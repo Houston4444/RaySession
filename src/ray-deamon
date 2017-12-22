@@ -2342,7 +2342,7 @@ class OscServerThread(ServerThread):
         
         signaler.server_close.emit(path, args, src_addr)
         
-    @make_method('/nsm/server/quit', None)
+    @make_method('/nsm/server/quit', '')
     def nsmServerQuit(self, path, args):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         sys.exit(0)
