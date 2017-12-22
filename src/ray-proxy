@@ -42,8 +42,6 @@ def ifDebug(string):
     if debug:
         print(string, file=sys.stderr)
 
-
-
 class ProxyCopyDialog(QDialog):
     def __init__(self):
         QDialog.__init__(self)
@@ -68,8 +66,6 @@ class ProxyDialog(QMainWindow):
         
         
         self.config_file = ''
-        #self.label_edited = False
-        #self.icon_edited  = False
         self.args_edited  = False
         self.fields_allow_start = False
         self.process_is_running = False
