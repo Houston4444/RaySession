@@ -1663,7 +1663,11 @@ class SignaledSession(OperatingSession):
         
         client = Client()
         client.executable_path = 'ray-proxy'
-        client.arguments_line  = executable
+        
+        client.arguments_line  = "--executable %s" % executable
+        if debug:
+            client.arguments_line += " --debug"
+            
         client.name            = os.path.basename(executable)
         client.client_id       = self.generateClientId(client.name)
         client.icon            = client.name.lower().replace('_', '-')
