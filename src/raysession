@@ -278,7 +278,6 @@ class OSCServerT(ServerThread):
     def __init__(self):
         ServerThread.__init__(self)
         self.qsig = OscSignaler()
-        self.client_id_list = []
     
     @make_method('/error', None)
     def errorFromServer(self, errorpath, args):
@@ -298,21 +297,37 @@ class OSCServerT(ServerThread):
     @make_method('/reply_path', None)
     def replyPath(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        if not areTheyAllString(args):
+            return
+        
         self.qsig.new_executable.emit(args)
     
     @make_method('/reply_session_templates', None)
     def replySessionTemplates(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        if not areTheyAllString(args):
+            return
+        
         self.qsig.session_template_found.emit(args)
     
     @make_method('/reply_user_client_templates', None)
     def replyUserClientTemplates(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        if not areTheyAllString(args):
+            return
+        
         self.qsig.user_client_template_found.emit(args)
     
     @make_method('/reply_factory_client_templates', None)
     def replyFactoryClientTemplates(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        if not areTheyAllString(args):
+            return
+        
         self.qsig.factory_client_template_found.emit(args)
     
     @make_method('/ray/gui/server_announce', None)
@@ -331,8 +346,6 @@ class OSCServerT(ServerThread):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
             
         name1, name2 = args
-        if not name1 and not name2:
-            self.client_id_list.clear()
         self.qsig.session_name_sig.emit(name1, name2)
     
     @make_method('/ray/gui/client/new', 'sssissss')
@@ -356,8 +369,6 @@ class OSCServerT(ServerThread):
         client_id, status = args
             
         if status == CLIENT_STATUS_REMOVED:
-            if client_id in self.client_id_list:
-                self.client_id_list.remove(client_id)
             self.qsig.client_removed.emit(client_id)
             return
         
@@ -391,12 +402,12 @@ class OSCServerT(ServerThread):
         client_id = args[0]
         self.qsig.client_has_gui.emit(client_id)
         
-    @make_method('/ray/gui/client/gui_visible', None)
+    @make_method('/ray/gui/client/gui_visible', 'si')
     def guiClientGuiVisible(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
             
         client_id, state = args
-        self.qsig.client_gui_visible_sig.emit(client_id, state)
+        self.qsig.client_gui_visible_sig.emit(client_id, bool(state))
       
     @make_method('/ray/gui/client/still_running', 's')
     def guiClientStillRunning(self, path, args):
@@ -483,10 +494,6 @@ class OSCServerT(ServerThread):
         
     def removeClient(self, client_id):
         ifDebug('serverOSC::raysession_sends remove client %s' % client_id)
-            
-        if client_id in self.client_id_list:
-            self.client_id_list.remove(client_id)
-        
         self.toDeamon('/ray/gui/client/remove', client_id)
     
     def showClientOptionalGui(self, client_id):
@@ -503,9 +510,6 @@ class OSCServerT(ServerThread):
     def addClient(self, program_name):
         ifDebug('serverOSC::raysession_sends add Client %s' % program_name)
         self.toDeamon('/nsm/server/add', program_name)
-        
-    def removeAllClients(self):
-        self.client_id_list.clear()
         
     def changeClientOrder(self, client_ids_list):
         self.toDeamon('/ray/server/reorder_clients', *client_ids_list)

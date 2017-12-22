@@ -89,7 +89,13 @@ def shellLineToArgs(string):
         return None
     
     return args
-        
+
+def areTheyAllString(args):
+    for arg in args:
+        if type(arg) != str:
+            return False
+    return True
+
 class ClientData(object):
     client_id       = ''
     executable_path = ''
