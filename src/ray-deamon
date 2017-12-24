@@ -1791,18 +1791,25 @@ class SignaledSession(OperatingSession):
         if self.wait_for == WAIT_FOR_STOP:
             return
         
+        #we can't be absolutely sure that the announcer is the good one
+        #but if client announce a known PID, we can be sure of which client is announcing
         for client in self.clients:
-            if (client.executable_path == executable_path
-                and not client.active
-                and client.pending_command == COMMAND_START):
-                    client.serverAnnounce(path, args, src_addr, False)
-                    break
+            if client.pid == pid and not client.active and client.isRunning():
+                client.serverAnnounce(path, args, src_addr, False)
+                break
         else:
-            pass
-            #Ray Session won't add clients that aren't launched by Ray Session itself. 
-            #client = self.newClient(executable_path)
-            #client.serverAnnounce(path, args, src_addr, True)
-        
+            for client in self.clients:
+                if (client.executable_path == executable_path
+                    and not client.active
+                    and client.pending_command == COMMAND_START):
+                        client.serverAnnounce(path, args, src_addr, False)
+                        break
+            else:
+                pass
+                #Ray Session won't add clients that aren't launched by Ray Session itself. 
+                #client = self.newClient(executable_path)
+                #client.serverAnnounce(path, args, src_addr, True)
+            
         if self.wait_for == WAIT_FOR_ANNOUNCE:
             self.endTimerIfLastExpected(client)
     
