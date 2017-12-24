@@ -11,4 +11,15 @@
  <Client-Template template-name="Guitarix" executable="ray-proxy" try-exec="guitarix" label="Guitarix" name="Ray Proxy" icon="gx_head" client_id="guitarix"/>
  <Client-Template template-name="Non-Timeline" executable="non-timeline" name="Non-Timeline" icon="non-timeline" client_id="timeline"/>
  <Client-Template template-name="Qsampler" executable="ray-proxy" try-exec="qsampler" label="Qsampler" name="Ray Proxy" icon="qsampler" client_id="qsampler"/>
+ <Client-Template template-name="Luppp" executable="luppp" name="Luppp" icon="luppp" client_id="luppp"/>
+ <Client-Template template-name="JackPatch" executable="jackpatch" name="JACKPatch" icon="curve-connector" client_id="patch"/>
+ <Client-Template template-name="GxTuner" executable="ray-proxy" name="Ray Proxy" client_id="tuner" icon="carla" label="GxTuner"/>
+ <Client-Template template-name="Calf JACK Host" executable="ray-proxy" name="Ray Proxy" client_id="calf" icon="calf" label="Calf JACK Host" />
+ <Client-Template template-name="ZynAddSubFX" name="ZynAddSubFX" client_id="zynaddsub" icon="zynaddsubfx" executable="zynaddsubfx"/>
+ <Client-Template template-name="synthv1" name="synthv1" client_id="synthv1" icon="synthv1-jack" executable="synthv1_jack"/>
+ <Client-Template template-name="samplv1" name="samplv1" client_id="samplv1" icon="samplv1-jack" executable="samplv1_jack"/>
+ <Client-Template template-name="drumkv1" name="drumkv1" client_id="drumkv1" icon="drumkv1-jack" executable="drumkv1_jack"/>
+ <Client-Template template-name="padthv1" name="padthv1" client_id="padthv1" icon="padthv1-jack" executable="padthv1_jack"/>
+ <Client-Template template-name="ams" name="ams" client_id="ams" icon="ams_32" executable="ams"/>
+ <Client-Template template-name="Seq24" executable="ray-proxy" label="Seq24" client_id="seq24" name="Ray Proxy" icon="seq24"/>
 </RAY-CLIENT-TEMPLATES>
