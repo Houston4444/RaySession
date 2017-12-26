@@ -516,6 +516,8 @@ if __name__ == '__main__':
         print('Could not register as NSM client.', file=sys.stderr)
         sys.exit()
     
+    print(os.getenv('PATH'))
+    
     deamon_address = getLibloAddress(NSM_URL)
     
     parser = argparse.ArgumentParser()
