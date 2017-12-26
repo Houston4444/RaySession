@@ -622,6 +622,14 @@ class Client(QObject):
             except:
                 False
         
+        #for Vee One Suite
+        for extfile in ('samplv1', 'synthv1', 'padthv1', 'drumkv1'):
+            old_veeone_file = "%s/%s.%s" % (project_path, old_session_name, extfile)
+            new_veeone_file = "%s/%s.%s" % (project_path, new_session_name, extfile)
+            if os.path.isfile(old_veeone_file) and os.access(veeone_file, os.W_OK) and not os.path.exists(new_veeone_file):
+                os.rename(old_veeone_file, new_veeone_file)
+        
+        
         #for ray-proxy, change config_file name
         proxy_file = "%s/ray-proxy.xml" % project_path
         if os.path.isfile(proxy_file):
@@ -664,7 +672,7 @@ class Client(QObject):
             server.send(src_addr, "/error", path, ERR_INCOMPATIBLE_API, "Server is using an incompatible API version." )
             return
         
-        self.pid          = pid
+        #self.pid          = pid
         self.capabilities = capabilities
         self.addr         = src_addr
         self.name         = client_name
@@ -686,7 +694,7 @@ class Client(QObject):
         if self.isCapableOf(":optional-gui:"):
             server.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
                 
-        jack_client_name      = self.getJackClientName()
+        jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
         server.send(src_addr, "/nsm/client/open", client_project_path,  session.name, jack_client_name)
         self.pending_command = COMMAND_OPEN
@@ -1038,7 +1046,7 @@ class OperatingSession(Session):
         
         contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"
                    "<!DOCTYPE RAYSESSION>\n"
-                   "<RAYSESSION VERSION='%s'>\n" % VERSION)
+                   "<RAYSESSION VERSION='%s' name='%s'>\n" % (VERSION, self.name))
         
         contents += "  <Clients>\n"
         for client in self.clients:
@@ -2571,9 +2579,7 @@ if __name__ == '__main__':
     session_root = "%s/NSM Sessions" % os.getenv('HOME')
     
     #Add RaySession/src to $PATH to can use ray-proxy and maybe future executables after make, whitout install
-    print(os.getenv('PATH'))
     os.environ['PATH']="%s:%s" % (os.path.realpath(os.path.dirname(sys.argv[0])), os.environ['PATH'])
-    print(os.getenv('PATH'))
     
     
     parser = argparse.ArgumentParser()

@@ -1,0 +1,3 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE RAY-PROXY>
+<RAY-PROXY arguments="-c &quot;$CONFIG_FILE&quot;" save_signal="10" stop_signal="10" executable="jack_mixer" config_file="$NSM_SESSION_NAME.xml" VERSION="0.3.0"/>
