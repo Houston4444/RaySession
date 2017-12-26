@@ -22,4 +22,6 @@
  <Client-Template template-name="padthv1" name="padthv1" client_id="padthv1" icon="padthv1-jack" executable="padthv1_jack"/>
  <Client-Template template-name="ams" name="ams" client_id="ams" icon="ams_32" executable="ams"/>
  <Client-Template template-name="Seq24" executable="ray-proxy" label="Seq24" client_id="seq24" name="Ray Proxy" icon="seq24" try-exec="seq24"/>
+ <Client-Template icon="sooperlooper" client_id="sooperlooper" executable="ray-proxy" label="SooperLooper" template-name="SooperLooper" name="Ray Proxy" try-exec="sooperlooper_lash;sooperlooper;slgui"/>
+ <Client-Template icon="jack_mixer" client_id="jack_mixer" executable="ray-proxy" label="Jack Mixer" template-name="Jack Mixer" name="Ray Proxy"/>
 </RAY-CLIENT-TEMPLATES>
