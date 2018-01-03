@@ -1,0 +1,240 @@
+#!/usr/bin/python3 -u
+
+from PyQt5.QtCore import QCoreApplication, QObject, QTimer, pyqtSignal
+from PyQt5.QtXml import QDomDocument
+import sys, signal, os
+
+from shared import *
+import jacklib
+import nsm_client
+
+connection_list = []
+port_list = []
+
+PORT_MODE_OUTPUT = 0
+PORT_MODE_INPUT  = 1
+PORT_MODE_NULL   = 2
+
+PORT_TYPE_AUDIO = 0
+PORT_TYPE_MIDI  = 1
+PORT_TYPE_NULL  = 2
+
+connection_list = []
+
+def signalHandler(sig, frame):
+    if sig in (signal.SIGINT, signal.SIGTERM):
+        app.quit()
+
+class JackPort(object):
+    slots = ['name', 'mode', 'type']
+
+class Signaler(nsm_client.NSMSignaler):
+    new_port_added = pyqtSignal()
+
+def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
+    #print(portId, registerYesNo, arg)
+    portPtr = jacklib.port_by_id(client, portId)
+    portFlags = jacklib.port_flags(portPtr)
+    portName = str(jacklib.port_name(portPtr), encoding="utf-8")
+    
+    
+    jack_port = JackPort()
+    jack_port.name = portName
+    
+    if portFlags & jacklib.JackPortIsInput:
+        jack_port.mode = PORT_MODE_INPUT
+    elif portFlags & jacklib.JackPortIsOutput:
+        jack_port.mode = PORT_MODE_OUTPUT
+    else:
+        jack_port.mode = PORT_MODE_NULL
+        
+    portTypeStr = str(jacklib.port_type(portPtr), encoding="utf-8")
+    if portTypeStr == jacklib.JACK_DEFAULT_AUDIO_TYPE:
+        jack_port.type = PORT_TYPE_AUDIO
+    elif portTypeStr == jacklib.JACK_DEFAULT_MIDI_TYPE:
+        jack_port.type = PORT_TYPE_MIDI
+    else:
+        jack_port.type = PORT_TYPE_NULL
+            
+    if registerYesNo:
+        port_list.append(jack_port)
+        signaler.new_port_added.emit()
+    else:
+        i=0
+        for port in port_list:
+            if port.name == jack_port.name and port.mode == jack_port.mode and port.type == jack_port.type:
+                break
+            i+=1
+        
+        if i >= len(port_list):
+            return
+        
+        port_list.__delitem__(i)
+        
+    #for jack_port in port_list:
+        #print(jack_port.name, jack_port.mode, jack_port.type)
+        
+    #print('')
+
+def JackPortConnectCallback(portA, portB, connectYesNo, arg=None):
+    print(portA, portB, connectYesNo, arg)
+    #if connectYesNo:
+
+def makeMayConnections():
+    output_ports = []
+    input_ports  = []
+    for jack_port in port_list:
+        if jack_port.mode == PORT_MODE_OUTPUT:
+            output_ports.append(jack_port.name)
+        elif jack_port.mode == PORT_MODE_INPUT:
+            input_ports.append(jack_port.name)
+    
+    for connection in connection_list:
+        print(connection[PORT_MODE_OUTPUT], connection[PORT_MODE_INPUT])
+        if connection[PORT_MODE_OUTPUT] in output_ports and connection[PORT_MODE_INPUT] in input_ports:
+            jacklib.connect(client, connection[PORT_MODE_OUTPUT], connection[PORT_MODE_INPUT])
+
+def c_char_p_p_to_list(c_char_p_p):
+    i = 0
+    retList = []
+
+    if not c_char_p_p:
+        return retList
+
+    while True:
+        new_char_p = c_char_p_p[i]
+        if new_char_p:
+            retList.append(str(new_char_p, encoding="utf-8"))
+            i += 1
+        else:
+            break
+
+    jacklib.free(c_char_p_p)
+    return retList
+
+
+#jacklib.connect(client, "system:capture_1", "system:playback_5")
+
+def openFile(project_path, session_name, full_client_id):
+    connection_list.clear()
+    
+    file_path = "%s.xml" % project_path
+    
+    if not os.path.isfile(file_path):
+        port_list.clear()
+        
+    else:
+        file = open(file_path, 'r')
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        
+        content = xml.documentElement()
+        
+        if content.tagName() != "RAY-PATCHER":
+            file.close()
+            NSMServer.sendToDeamon('/reply', '/nsm/client/open', 'Ready')
+            return
+        
+        cte = content.toElement()
+        node = cte.firstChild()
+        
+        while not node.isNull():
+            el = node.toElement()
+            if el.tagName() != "connection":
+                continue
+            
+            port_from = el.attribute('from')
+            port_to   = el.attribute('to')
+            
+            connection_list.append((port_from, port_to))
+            
+            node = node.nextSibling()
+        
+        makeMayConnections()
+        
+    NSMServer.sendToDeamon('/reply', '/nsm/client/open', 'Ready')
+
+def saveFile():
+    True
+
+if __name__ == '__main__':
+    print('erfger')
+    client = jacklib.client_open("ray-patcher", jacklib.JackNoStartServer | jacklib.JackSessionID, None)
+    jacklib.set_port_registration_callback(client, JackPortRegistrationCallback, None)
+    jacklib.set_port_connect_callback(client, JackPortConnectCallback, None)
+    jacklib.activate(client)
+    
+    NSM_URL = os.getenv('NSM_URL')
+    if not NSM_URL:
+        print('Could not register as NSM client.', file=sys.stderr)
+        sys.exit()
+    
+    deamon_address = getLibloAddress(NSM_URL)
+    
+    signaler = Signaler()
+    signaler.new_port_added.connect(makeMayConnections)
+    signaler.server_sends_open.connect(openFile)
+    signaler.server_sends_save.connect(saveFile)
+    
+    NSMServer = nsm_client.NSMThread('ray-patcher', signaler, deamon_address, False)
+    NSMServer.start()
+    NSMServer.announce('Ray Patcher', '', 'ray-patcher')
+    
+    #connect signals
+    signal.signal(signal.SIGINT , signalHandler)
+    signal.signal(signal.SIGTERM, signalHandler)
+    
+    
+    
+    portNameList = c_char_p_p_to_list(jacklib.get_ports(client, "", "", 0))
+    
+    for portName in portNameList:
+        jack_port = JackPort()
+        jack_port.name = portName
+        
+        portPtr = jacklib.port_by_name(client, portName)
+        portFlags = jacklib.port_flags(portPtr)
+        
+        if portFlags & jacklib.JackPortIsInput:
+            jack_port.mode = PORT_MODE_INPUT
+        elif portFlags & jacklib.JackPortIsOutput:
+            jack_port.mode = PORT_MODE_OUTPUT
+        else:
+            jack_port.mode = PORT_MODE_NULL
+        
+        portTypeStr = str(jacklib.port_type(portPtr), encoding="utf-8")
+        if portTypeStr == jacklib.JACK_DEFAULT_AUDIO_TYPE:
+            jack_port.type = PORT_TYPE_AUDIO
+        elif portTypeStr == jacklib.JACK_DEFAULT_MIDI_TYPE:
+            jack_port.type = PORT_TYPE_MIDI
+        else:
+            jack_port.type = PORT_TYPE_NULL
+        
+        port_list.append(jack_port)
+        
+        
+        # Only make connections from an output port
+        if jacklib.port_flags(portPtr) & jacklib.JackPortIsInput:
+            continue
+
+        portConnectionNames = c_char_p_p_to_list(jacklib.port_get_all_connections(client, portPtr))
+
+        for portConName in portConnectionNames:
+            print(portName, portConName)
+            #self.canvas_connectPortsByName(portName, portConName)
+    
+    for jack_port in port_list:
+        print(jack_port.name, jack_port.mode, jack_port.type)
+    
+    app = QCoreApplication(sys.argv)
+    
+    #needed for signals SIGINT, SIGTERM
+    timer = QTimer()
+    timer.start(200)
+    timer.timeout.connect(lambda: None)
+    
+    makeMayConnections()
+    app.exec()
+    
+    jacklib.deactivate(client)
+    jacklib.client_close(client)

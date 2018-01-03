@@ -2,6 +2,7 @@
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from liblo import ServerThread, make_method
+import os
         
 class NSMSignaler(QObject):
     server_sends_open = pyqtSignal(str, str, str)
@@ -10,11 +11,12 @@ class NSMSignaler(QObject):
     hide_optional_gui = pyqtSignal()
 
 class NSMThread(ServerThread):
-    def __init__(self, name, signaler, debug):
+    def __init__(self, name, signaler, deamon_address, debug):
         ServerThread.__init__(self)
-        self.name     = name
-        self.signaler = signaler
-        self.debug    = debug
+        self.name           = name
+        self.signaler       = signaler
+        self.deamon_address = deamon_address
+        self.debug          = debug
 
     @make_method('/nsm/client/open', 'sss')
     def nsmClientOpen(self, path, args):
@@ -38,4 +40,14 @@ class NSMThread(ServerThread):
         
     def ifDebug(self, string):
         if self.debug:
-           print(string, file=sys.stderr) 
+           print(string, file=sys.stderr)
+           
+    def sendToDeamon(self, *args):
+        self.send(self.deamon_address, *args)
+        
+    def announce(self, client_name, capabilities, executable_path):
+        major = 1
+        minor = 0
+        pid   = os.getpid()
+        
+        self.sendToDeamon('/nsm/server/announce', client_name, capabilities, executable_path, major, minor, pid)
