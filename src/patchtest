@@ -9,6 +9,7 @@ import jacklib
 import nsm_client
 
 connection_list = []
+saved_connections = []
 port_list = []
 
 PORT_MODE_OUTPUT = 0
@@ -19,7 +20,8 @@ PORT_TYPE_AUDIO = 0
 PORT_TYPE_MIDI  = 1
 PORT_TYPE_NULL  = 2
 
-connection_list = []
+
+file_path = ""
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -28,15 +30,20 @@ def signalHandler(sig, frame):
 class JackPort(object):
     slots = ['name', 'mode', 'type']
 
+def portExists(name, mode, port_type):
+    for port in port_list:
+        if port.name == name and port.mode == mode and port.type == port_type:
+            return True
+    return False
+
 class Signaler(nsm_client.NSMSignaler):
     new_port_added = pyqtSignal()
 
 def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
     #print(portId, registerYesNo, arg)
-    portPtr = jacklib.port_by_id(client, portId)
+    portPtr = jacklib.port_by_id(jack_client, portId)
     portFlags = jacklib.port_flags(portPtr)
     portName = str(jacklib.port_name(portPtr), encoding="utf-8")
-    
     
     jack_port = JackPort()
     jack_port.name = portName
@@ -70,15 +77,22 @@ def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
             return
         
         port_list.__delitem__(i)
-        
-    #for jack_port in port_list:
-        #print(jack_port.name, jack_port.mode, jack_port.type)
-        
-    #print('')
 
-def JackPortConnectCallback(portA, portB, connectYesNo, arg=None):
-    print(portA, portB, connectYesNo, arg)
-    #if connectYesNo:
+def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
+    port_ptr_A = jacklib.port_by_id(jack_client, port_id_A)
+    port_ptr_B = jacklib.port_by_id(jack_client, port_id_B)
+     
+    port_str_A = str(jacklib.port_name(port_ptr_A), encoding="utf-8")
+    port_str_B = str(jacklib.port_name(port_ptr_B), encoding="utf-8")
+    
+    if connect_yesno:
+        connection_list.append((port_str_A, port_str_B))
+    else:
+        print('disco')
+        for i in range(len(connection_list)):
+            if connection_list[i][0] == port_str_A and connection_list[i][1] == port_str_B:
+                connection_list.__delitem__(i)
+                break
 
 def makeMayConnections():
     output_ports = []
@@ -89,10 +103,11 @@ def makeMayConnections():
         elif jack_port.mode == PORT_MODE_INPUT:
             input_ports.append(jack_port.name)
     
-    for connection in connection_list:
-        print(connection[PORT_MODE_OUTPUT], connection[PORT_MODE_INPUT])
-        if connection[PORT_MODE_OUTPUT] in output_ports and connection[PORT_MODE_INPUT] in input_ports:
-            jacklib.connect(client, connection[PORT_MODE_OUTPUT], connection[PORT_MODE_INPUT])
+    for connection in saved_connections:
+        print('how_savved')
+        if connection[0] in output_ports and connection[1] in input_ports:
+            print('making connection')
+            jacklib.connect(jack_client, connection[0], connection[1])
 
 def c_char_p_p_to_list(c_char_p_p):
     i = 0
@@ -113,11 +128,12 @@ def c_char_p_p_to_list(c_char_p_p):
     return retList
 
 
-#jacklib.connect(client, "system:capture_1", "system:playback_5")
+#jacklib.connect(jack_client, "system:capture_1", "system:playback_5")
 
 def openFile(project_path, session_name, full_client_id):
-    connection_list.clear()
+    #connection_list.clear()
     
+    global file_path
     file_path = "%s.xml" % project_path
     
     if not os.path.isfile(file_path):
@@ -146,7 +162,7 @@ def openFile(project_path, session_name, full_client_id):
             port_from = el.attribute('from')
             port_to   = el.attribute('to')
             
-            connection_list.append((port_from, port_to))
+            saved_connections.append((port_from, port_to))
             
             node = node.nextSibling()
         
@@ -155,14 +171,62 @@ def openFile(project_path, session_name, full_client_id):
     NSMServer.sendToDeamon('/reply', '/nsm/client/open', 'Ready')
 
 def saveFile():
-    True
+    if not file_path:
+        return
+    
+    #tmp_saved_conn = []
+    
+    for connection in connection_list:
+        if not connection in saved_connections:
+            saved_connections.append(connection)
+    
+    delete_list = []
+    
+    for i in range(len(saved_connections)):
+        if portExists(saved_connections[i][0], PORT_MODE_OUTPUT, PORT_TYPE_AUDIO) and portExists(saved_connections[i][1], PORT_MODE_INPUT, PORT_TYPE_AUDIO):
+            if not saved_connections[i] in connection_list:
+                delete_list.append(i)
+                
+    delete_list.reverse()
+    for i in delete_list:
+        saved_connections.__delitem__(i)
+    
+    
+    
+    #for connection in saved_connections:
+        #if connection in tmp_saved_conn:
+            #continue
+        
+        #if connection in connection_list or not (portExists(connection[0], PORT_MODE_OUTPUT, PORT_TYPE_AUDIO) and portExists(connection[1], PORT_MODE_INPUT, PORT_TYPE_AUDIO)):
+            #tmp_saved_conn.append(connection)
+    
+    #saved_connections.clear()
+    #for connection in tmp_saved_conn:
+        #saved_connections.append(connection)
+    
+    file = open(file_path, 'w')
+    xml = QDomDocument()
+    p = xml.createElement('RAY-PATCHER')
+    
+    for con in saved_connections:
+        ct = xml.createElement('connection')
+        ct.setAttribute('from', con[0])
+        ct.setAttribute('to'  , con[1])
+        p.appendChild(ct)
+        
+    xml.appendChild(p)
+    
+    file.write(xml.toString())
+    file.close()
+    
+    NSMServer.sendToDeamon('/reply', '/nsm/client/save', 'Saved')
+    
 
 if __name__ == '__main__':
-    print('erfger')
-    client = jacklib.client_open("ray-patcher", jacklib.JackNoStartServer | jacklib.JackSessionID, None)
-    jacklib.set_port_registration_callback(client, JackPortRegistrationCallback, None)
-    jacklib.set_port_connect_callback(client, JackPortConnectCallback, None)
-    jacklib.activate(client)
+    jack_client = jacklib.client_open("ray-patcher", jacklib.JackNoStartServer | jacklib.JackSessionID, None)
+    jacklib.set_port_registration_callback(jack_client, JackPortRegistrationCallback, None)
+    jacklib.set_port_connect_callback(jack_client, JackPortConnectCallback, None)
+    jacklib.activate(jack_client)
     
     NSM_URL = os.getenv('NSM_URL')
     if not NSM_URL:
@@ -186,13 +250,13 @@ if __name__ == '__main__':
     
     
     
-    portNameList = c_char_p_p_to_list(jacklib.get_ports(client, "", "", 0))
+    portNameList = c_char_p_p_to_list(jacklib.get_ports(jack_client, "", "", 0))
     
     for portName in portNameList:
         jack_port = JackPort()
         jack_port.name = portName
         
-        portPtr = jacklib.port_by_name(client, portName)
+        portPtr = jacklib.port_by_name(jack_client, portName)
         portFlags = jacklib.port_flags(portPtr)
         
         if portFlags & jacklib.JackPortIsInput:
@@ -217,15 +281,15 @@ if __name__ == '__main__':
         if jacklib.port_flags(portPtr) & jacklib.JackPortIsInput:
             continue
 
-        portConnectionNames = c_char_p_p_to_list(jacklib.port_get_all_connections(client, portPtr))
+        portConnectionNames = c_char_p_p_to_list(jacklib.port_get_all_connections(jack_client, portPtr))
 
         for portConName in portConnectionNames:
-            print(portName, portConName)
+            connection_list.append((portName, portConName))
             #self.canvas_connectPortsByName(portName, portConName)
     
-    for jack_port in port_list:
-        print(jack_port.name, jack_port.mode, jack_port.type)
-    
+    #for jack_port in port_list:
+        #print(jack_port.name, jack_port.mode, jack_port.type)
+    print(connection_list)
     app = QCoreApplication(sys.argv)
     
     #needed for signals SIGINT, SIGTERM
@@ -236,5 +300,5 @@ if __name__ == '__main__':
     makeMayConnections()
     app.exec()
     
-    jacklib.deactivate(client)
-    jacklib.client_close(client)
+    jacklib.deactivate(jack_client)
+    jacklib.client_close(jack_client)
