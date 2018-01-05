@@ -87,12 +87,16 @@ def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
     
     if connect_yesno:
         connection_list.append((port_str_A, port_str_B))
+        
+        if not (port_str_A, port_str_B) in saved_connections:
+            NSMServer.sendToDeamon('/nsm/client/is_dirty')
     else:
-        print('disco')
         for i in range(len(connection_list)):
             if connection_list[i][0] == port_str_A and connection_list[i][1] == port_str_B:
                 connection_list.__delitem__(i)
                 break
+            
+        NSMServer.sendToDeamon('/nsm/client/is_dirty')
 
 def makeMayConnections():
     output_ports = []
@@ -104,9 +108,7 @@ def makeMayConnections():
             input_ports.append(jack_port.name)
     
     for connection in saved_connections:
-        print('how_savved')
         if connection[0] in output_ports and connection[1] in input_ports:
-            print('making connection')
             jacklib.connect(jack_client, connection[0], connection[1])
 
 def c_char_p_p_to_list(c_char_p_p):
@@ -128,10 +130,8 @@ def c_char_p_p_to_list(c_char_p_p):
     return retList
 
 
-#jacklib.connect(jack_client, "system:capture_1", "system:playback_5")
-
 def openFile(project_path, session_name, full_client_id):
-    #connection_list.clear()
+    saved_connections.clear()
     
     global file_path
     file_path = "%s.xml" % project_path
@@ -174,8 +174,6 @@ def saveFile():
     if not file_path:
         return
     
-    #tmp_saved_conn = []
-    
     for connection in connection_list:
         if not connection in saved_connections:
             saved_connections.append(connection)
@@ -191,18 +189,6 @@ def saveFile():
     for i in delete_list:
         saved_connections.__delitem__(i)
     
-    
-    
-    #for connection in saved_connections:
-        #if connection in tmp_saved_conn:
-            #continue
-        
-        #if connection in connection_list or not (portExists(connection[0], PORT_MODE_OUTPUT, PORT_TYPE_AUDIO) and portExists(connection[1], PORT_MODE_INPUT, PORT_TYPE_AUDIO)):
-            #tmp_saved_conn.append(connection)
-    
-    #saved_connections.clear()
-    #for connection in tmp_saved_conn:
-        #saved_connections.append(connection)
     
     file = open(file_path, 'w')
     xml = QDomDocument()
@@ -220,20 +206,22 @@ def saveFile():
     file.close()
     
     NSMServer.sendToDeamon('/reply', '/nsm/client/save', 'Saved')
-    
+    NSMServer.sendToDeamon('/nsm/client/is_clean')
 
 if __name__ == '__main__':
-    jack_client = jacklib.client_open("ray-patcher", jacklib.JackNoStartServer | jacklib.JackSessionID, None)
-    jacklib.set_port_registration_callback(jack_client, JackPortRegistrationCallback, None)
-    jacklib.set_port_connect_callback(jack_client, JackPortConnectCallback, None)
-    jacklib.activate(jack_client)
-    
     NSM_URL = os.getenv('NSM_URL')
     if not NSM_URL:
         print('Could not register as NSM client.', file=sys.stderr)
         sys.exit()
     
     deamon_address = getLibloAddress(NSM_URL)
+    
+    jack_client = jacklib.client_open("ray-patcher", jacklib.JackNoStartServer | jacklib.JackSessionID, None)
+    if not jack_client:
+        sys.exit()
+    jacklib.set_port_registration_callback(jack_client, JackPortRegistrationCallback, None)
+    jacklib.set_port_connect_callback(jack_client, JackPortConnectCallback, None)
+    jacklib.activate(jack_client)
     
     signaler = Signaler()
     signaler.new_port_added.connect(makeMayConnections)
@@ -242,7 +230,7 @@ if __name__ == '__main__':
     
     NSMServer = nsm_client.NSMThread('ray-patcher', signaler, deamon_address, False)
     NSMServer.start()
-    NSMServer.announce('Ray Patcher', '', 'ray-patcher')
+    NSMServer.announce('Ray Patcher', ':dirty:switch:', 'ray-patcher')
     
     #connect signals
     signal.signal(signal.SIGINT , signalHandler)
@@ -289,7 +277,7 @@ if __name__ == '__main__':
     
     #for jack_port in port_list:
         #print(jack_port.name, jack_port.mode, jack_port.type)
-    print(connection_list)
+    #print(connection_list)
     app = QCoreApplication(sys.argv)
     
     #needed for signals SIGINT, SIGTERM
