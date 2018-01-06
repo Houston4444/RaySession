@@ -138,11 +138,13 @@ def openFile(project_path, session_name, full_client_id):
     global file_path
     file_path = "%s.xml" % project_path
     
-    if not os.path.isfile(file_path):
-        port_list.clear()
-        
-    else:
-        file = open(file_path, 'r')
+    if os.path.isfile(file_path):
+        try:
+            file = open(file_path, 'r')
+        except:
+            print('unable to read file %s' % file_path, file=sys.stderr)
+            app.quit()
+            
         xml = QDomDocument()
         xml.setContent(file.read())
         
@@ -191,8 +193,12 @@ def saveFile():
     for i in delete_list:
         saved_connections.__delitem__(i)
     
-    
-    file = open(file_path, 'w')
+    try:
+        file = open(file_path, 'w')
+    except:
+        print('unable to write file %s' % file_path, file=sys.stderr)
+        app.quit()
+        
     xml = QDomDocument()
     p = xml.createElement('RAY-PATCHER')
     
