@@ -1,5 +1,4 @@
-#!/usr/bin/python3
-
+#!/usr/bin/python3 -u
 
 import sys
 import subprocess
@@ -33,7 +32,6 @@ class OSCServer(liblo.Server):
         self.m_last_called_looplen = arg_list[2]
         
     def audioSaveError(self, path, arg_list):
-        print('yamakiya', arg_list)
         if len(arg_list) > 1:
             if arg_list[1] == 'Loop Save Failed':
                 self.m_save_last_called_loop = False
@@ -48,7 +46,7 @@ class OSCServer(liblo.Server):
         basefile = filename.rsplit('.slsess', 1)[0]
         for i in range(self.m_number_of_loops):
             #send signal to know if loop contains audio
-            self.send(self.sl_url, '/sl/' + str(i) + '/get', ('s', 'loop_len'), ('s', self.url), ('s', '/loop_lenght'))
+            self.send(self.sl_url, '/sl/%i/get' % i, ('s', 'loop_len'), ('s', self.url), ('s', '/loop_lenght'))
             
             self.recv(1)
             
