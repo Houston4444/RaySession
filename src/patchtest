@@ -2,7 +2,7 @@
 
 from PyQt5.QtCore import QCoreApplication, QObject, QTimer, pyqtSignal
 from PyQt5.QtXml import QDomDocument
-import sys, signal, os
+import sys, signal, os, time
 
 from shared import *
 import jacklib
@@ -39,8 +39,10 @@ def portExists(name, mode, port_type):
 class Signaler(nsm_client.NSMSignaler):
     new_port_added = pyqtSignal()
 
+def JackShutdownCallback(arg=None):
+    app.quit()
+
 def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
-    #print(portId, registerYesNo, arg)
     portPtr = jacklib.port_by_id(jack_client, portId)
     portFlags = jacklib.port_flags(portPtr)
     portName = str(jacklib.port_name(portPtr), encoding="utf-8")
@@ -221,6 +223,7 @@ if __name__ == '__main__':
         sys.exit()
     jacklib.set_port_registration_callback(jack_client, JackPortRegistrationCallback, None)
     jacklib.set_port_connect_callback(jack_client, JackPortConnectCallback, None)
+    jacklib.on_shutdown(jack_client, JackShutdownCallback, None)
     jacklib.activate(jack_client)
     
     signaler = Signaler()
@@ -235,8 +238,6 @@ if __name__ == '__main__':
     #connect signals
     signal.signal(signal.SIGINT , signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
-    
-    
     
     portNameList = c_char_p_p_to_list(jacklib.get_ports(jack_client, "", "", 0))
     
@@ -265,7 +266,6 @@ if __name__ == '__main__':
         port_list.append(jack_port)
         
         
-        # Only make connections from an output port
         if jacklib.port_flags(portPtr) & jacklib.JackPortIsInput:
             continue
 
@@ -273,11 +273,7 @@ if __name__ == '__main__':
 
         for portConName in portConnectionNames:
             connection_list.append((portName, portConName))
-            #self.canvas_connectPortsByName(portName, portConName)
-    
-    #for jack_port in port_list:
-        #print(jack_port.name, jack_port.mode, jack_port.type)
-    #print(connection_list)
+            
     app = QCoreApplication(sys.argv)
     
     #needed for signals SIGINT, SIGTERM
