@@ -12,7 +12,6 @@
  <Client-Template template-name="Non-Timeline" executable="non-timeline" name="Non-Timeline" icon="non-timeline" client_id="timeline"/>
  <Client-Template template-name="Qsampler" executable="ray-proxy" try-exec="qsampler" label="Qsampler" name="Ray Proxy" icon="qsampler" client_id="qsampler"/>
  <Client-Template template-name="Luppp" executable="luppp" name="Luppp" icon="luppp" client_id="luppp"/>
- <Client-Template template-name="JackPatch" executable="jackpatch" name="JACKPatch" icon="curve-connector" client_id="patch"/>
  <Client-Template template-name="GxTuner" executable="ray-proxy" name="Ray Proxy" client_id="tuner" icon="carla" label="GxTuner" try-exec="carla-single;guitarix"/>
  <Client-Template template-name="Calf JACK Host" executable="ray-proxy" name="Ray Proxy" client_id="calf" icon="calf" label="Calf JACK Host" try-exec="calfjackhost" />
  <Client-Template template-name="ZynAddSubFX" name="ZynAddSubFX" client_id="zynaddsub" icon="zynaddsubfx" executable="zynaddsubfx"/>
@@ -23,5 +22,6 @@
  <Client-Template template-name="ams" name="ams" client_id="ams" icon="ams_32" executable="ams"/>
  <Client-Template template-name="Seq24" executable="ray-proxy" label="Seq24" client_id="seq24" name="Ray Proxy" icon="seq24" try-exec="seq24"/>
  <Client-Template icon="sooperlooper" client_id="sooperlooper" executable="ray-proxy" label="SooperLooper" template-name="SooperLooper" name="Ray Proxy" try-exec="sooperlooper_lash;sooperlooper;slgui"/>
- <Client-Template icon="jack_mixer" client_id="jack_mixer" executable="ray-proxy" label="Jack Mixer" template-name="Jack Mixer" name="Ray Proxy"/>
+ <Client-Template template-name="Jack Mixer" icon="jack_mixer" client_id="jack_mixer" executable="ray-proxy" label="Jack Mixer" name="Ray Proxy"/>
+ <Client-Template template-name="JACK Patch Memory" icon="curve-connector" client_id="patch" executable="ray-jackpatch" name="Patch Memory"/>
 </RAY-CLIENT-TEMPLATES>
