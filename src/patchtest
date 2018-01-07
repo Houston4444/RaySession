@@ -198,6 +198,7 @@ def saveFile():
     except:
         print('unable to write file %s' % file_path, file=sys.stderr)
         app.quit()
+        return
         
     xml = QDomDocument()
     p = xml.createElement('RAY-PATCHER')
