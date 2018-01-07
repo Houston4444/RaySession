@@ -227,7 +227,9 @@ if __name__ == '__main__':
     
     jack_client = jacklib.client_open("ray-patcher", jacklib.JackNoStartServer | jacklib.JackSessionID, None)
     if not jack_client:
+        print('Unable to make a jack client !', file=sys.stderr)
         sys.exit()
+        
     jacklib.set_port_registration_callback(jack_client, JackPortRegistrationCallback, None)
     jacklib.set_port_connect_callback(jack_client, JackPortConnectCallback, None)
     jacklib.on_shutdown(jack_client, JackShutdownCallback, None)
@@ -238,9 +240,9 @@ if __name__ == '__main__':
     signaler.server_sends_open.connect(openFile)
     signaler.server_sends_save.connect(saveFile)
     
-    NSMServer = nsm_client.NSMThread('ray-patcher', signaler, deamon_address, False)
+    NSMServer = nsm_client.NSMThread('ray-jackpatch', signaler, deamon_address, False)
     NSMServer.start()
-    NSMServer.announce('Ray Patcher', ':dirty:switch:', 'ray-patcher')
+    NSMServer.announce('JACK Patch Memory', ':dirty:switch:', 'ray-jackpatch')
     
     #connect signals
     signal.signal(signal.SIGINT , signalHandler)
