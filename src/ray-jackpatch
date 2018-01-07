@@ -28,7 +28,7 @@ def signalHandler(sig, frame):
         app.quit()
 
 class JackPort(object):
-    slots = ['name', 'mode', 'type']
+    slots = ['id', 'name', 'mode', 'type']
 
 def portExists(name, mode, port_type):
     for port in port_list:
@@ -79,6 +79,14 @@ def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
             return
         
         port_list.__delitem__(i)
+
+def JackPortRenameCallback(portId, oldName, newName, arg=None):
+    for port in port_list:
+        if port.name == str(oldName, encoding='utf-8'):
+            port.name = str(newName, encoding='utf-8')
+            break
+    signaler.new_port_added.emit()
+    
 
 def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
     port_ptr_A = jacklib.port_by_id(jack_client, port_id_A)
@@ -232,6 +240,7 @@ if __name__ == '__main__':
         
     jacklib.set_port_registration_callback(jack_client, JackPortRegistrationCallback, None)
     jacklib.set_port_connect_callback(jack_client, JackPortConnectCallback, None)
+    jacklib.set_port_rename_callback(jack_client, JackPortRenameCallback, None)
     jacklib.on_shutdown(jack_client, JackShutdownCallback, None)
     jacklib.activate(jack_client)
     
