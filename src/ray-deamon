@@ -205,7 +205,12 @@ class Client(QObject):
         elif self.prefix_mode == PREFIX_MODE_CLIENT_NAME:
             return "%s/%s.%s" % (session.path, self.name, self.client_id)
         else:
-            return "%s/%s" % (session.path, self.project_path)
+            current_dir = os.getcwd()
+            os.chdir(session.path)
+            project_path = os.path.realpath(self.project_path)
+            os.chdir(current_dir)
+            
+            return project_path
     
     def start(self):
         GUIMSG(_translate("GUIMSG", "Launching %s") % self.executable_path)
