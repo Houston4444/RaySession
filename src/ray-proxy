@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QMa
 from PyQt5.QtXml import QDomDocument
 
 from shared import *
-
+import nsm_client
 import ui_proxy_gui, ui_proxy_copy
 
 ERR_OK                =  0
@@ -27,7 +27,7 @@ save_signals = {'None'   : None,
 
 stop_signals = {'SIGTERM': signal.SIGTERM,
                 'SIGINT' : signal.SIGINT,
-                'SIGHUP' : signal.SIGHUP}
+                'SIGHUP' : signal.SIGHUP }
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -356,6 +356,9 @@ class Proxy(QObject):
         server.sendToDeamon('/reply', '/nsm/client/save', 'Saved.')
     
     def stopProcess(self, signal=signal.SIGTERM):
+        if signal == None:
+            return
+        
         if not self.isRunning():
             return
         
@@ -419,12 +422,37 @@ class ProxyFile(object):
         
         file.close()
         
-        if save_signal.isdigit() and int(save_signal) in save_signals.values():
-            self.save_signal = int(save_signal)
+        if save_signal.isdigit():
+            for sg in save_signals.values():
+                if not sg:
+                    continue
+                
+                if int(save_signal) == int(sg):
+                    self.save_signal = int(save_signal)
+                    break
         
-        if stop_signal.isdigit() and int(stop_signal) in stop_signals.values():
-            self.stop_signal = int(stop_signal)
+        elif save_signal in save_signals.keys():
+            if save_signal == 'None':
+                self.save_signal = None
+            else:
+                self.save_signal = int(save_signals[save_signal])
             
+        if stop_signal.isdigit():
+            for sg in stop_signals.values():
+                if not sg:
+                    continue
+                
+                if int(stop_signal) == int(sg):
+                    self.stop_signal = int(stop_signal)
+                    break
+            
+        elif stop_signal in stop_signals.keys():
+            if stop_signal == 'None':
+                self.stop_signal = None
+            else:
+                self.stop_signal = int(stop_signals[stop_signal])
+        
+        
         if not self.executable:
             return
         
@@ -462,53 +490,6 @@ class ProxyFile(object):
         file.close()
         
         self.readFile()
-            
-
-class Signaler(QObject):
-    server_sends_open = pyqtSignal(str, str, str)
-    server_sends_save = pyqtSignal()
-    show_optional_gui = pyqtSignal()
-    hide_optional_gui = pyqtSignal()
-
-class OscServerThread(ServerThread):
-    def __init__(self):
-        ServerThread.__init__(self)
-
-    @make_method('/nsm/client/show_optional_gui', '')
-    def nsmGuiClientShow_optional_gui(self, path, args):
-        ifDebug('serverOSC::ray-proxy_receives %s, %s' % (path, str(args)))
-        signaler.show_optional_gui.emit()
-
-    @make_method('/nsm/client/hide_optional_gui', '')
-    def nsmGuiClientHide_optional_gui(self, path, args):
-        ifDebug('serverOSC::ray-proxy_receives %s, %s' % (path, str(args)))
-        signaler.hide_optional_gui.emit()
-    
-    @make_method('/nsm/client/open', 'sss')
-    def nsmClientOpen(self, path, args):
-        ifDebug('serverOSC::ray-proxy_receives %s, %s' % (path, str(args)))
-        signaler.server_sends_open.emit(*args)
-    
-    @make_method('/nsm/client/save', '')
-    def nsmClientSave(self, path, args):
-        ifDebug('serverOSC::ray-proxy_receives %s, %s' % (path, str(args)))
-        signaler.server_sends_save.emit()
-    
-    def sendToDeamon(self, *args):
-        self.send(deamon_address, *args)
-        
-    def announce(self):
-        client_name     = 'Ray Proxy'
-        capabilities    = ':optional-gui:'
-        executable_path = 'ray-proxy'
-        major = 1
-        minor = 0
-        pid   = os.getpid()
-        
-        self.sendToDeamon('/nsm/server/announce', client_name, capabilities, executable_path, major, minor, pid)
-    
-    def sayReady(self):
-        self.sendToDeamon('/reply', 'nsm/client/open', 'ready')
         
 if __name__ == '__main__':
     NSM_URL = os.getenv('NSM_URL')
@@ -550,14 +531,14 @@ if __name__ == '__main__':
     timer.start()
     
     
-    signaler = Signaler()
+    signaler = nsm_client.NSMSignaler()
         
     proxy = Proxy(executable)    
     proxy_dialog = ProxyDialog()
     
-    server = OscServerThread()
+    server = nsm_client.NSMThread('ray-proxy', signaler, deamon_address, debug)
     server.start()
-    server.announce()
+    server.announce('Ray Proxy', ':optional-gui:', 'ray-proxy')
     
     
     app.exec()
