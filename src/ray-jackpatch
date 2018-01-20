@@ -24,6 +24,13 @@ client_just_registered = False
 
 file_path = ""
 
+#class AbstractJack(object):
+    #def JackPortRenameCallback(self, portId, oldName, newName, arg=None):
+        #print('roieu')
+        ##print(portId, oldName, newName)
+        #print('etctout')
+        #return 0
+
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         app.quit()
@@ -45,11 +52,16 @@ class Signaler(nsm_client.NSMSignaler):
     connection_removed = pyqtSignal(str, str)
     client_registered = pyqtSignal()
 
+def startConnections():
+    connector_timer.start()
+
 def JackShutdownCallback(arg=None):
     app.quit()
     
-def JackClientRegistrationCallback(clientName, clientId, arg=None):
-    print('new_client', clientName)
+    return 0
+    
+#def JackClientRegistrationCallback(clientName, clientId, arg=None):
+    #print('new_client', clientName)
     
     
     
@@ -77,8 +89,12 @@ def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
         signaler.port_added.emit(port_name, port_mode, port_type)
     else:
         signaler.port_removed.emit(port_name, port_mode, port_type)
+        
+    return 0
 
 def JackPortRenameCallback(portId, oldName, newName, arg=None):
+    print(portId, oldName, newName)
+    
     portPtr = jacklib.port_by_id(jack_client, portId)
     portFlags = jacklib.port_flags(portPtr)
     
@@ -99,6 +115,8 @@ def JackPortRenameCallback(portId, oldName, newName, arg=None):
         
     signaler.port_renamed.emit(str(oldName, encoding='utf-8'), str(newName, encoding='utf-8'), port_mode, port_type)
     
+    return 0
+    
 
 def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
     port_ptr_A = jacklib.port_by_id(jack_client, port_id_A)
@@ -111,6 +129,8 @@ def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
         signaler.connection_added.emit(port_str_A, port_str_B)
     else:
         signaler.connection_removed.emit(port_str_A, port_str_B)
+        
+    return 0
 
 def clientRegistered():
     global client_just_registered
@@ -131,7 +151,8 @@ def portAdded(port_name, port_mode, port_type):
     
     port_list.append(port)
     
-    makeAllSavedConnections(port)
+    jack_event_timer.start()
+    #makeAllSavedConnections(port)
     
 def portRemoved(port_name, port_mode, port_type):
     for i in range(len(port_list)):
@@ -147,9 +168,11 @@ def portRenamed(old_name, new_name, port_mode, port_type):
     for port in port_list:
         if port.name == old_name and port.mode == port_mode and port.type == port_type:
             port.name = new_name
-            makeAllSavedConnections(port)
+            #makeAllSavedConnections(port)
             break
-        
+     
+    jack_event_timer.start()
+   
 def connectionAdded(port_str_A, port_str_B):
     connection_list.append((port_str_A, port_str_B))
     
@@ -218,12 +241,14 @@ def makeMayConnections():
             input_ports.append(port.name)
     
     for connection in saved_connections:
-        if connection in connection_list:
-            continue
-        
-        if connection[0] in output_ports and connection[1] in input_ports:
+        if ((not connection in connection_list) and 
+            (connection[0] in output_ports) and 
+            (connection[1] in input_ports)):
             jacklib.connect(jack_client, connection[0], connection[1])
-
+            break
+    else:
+        connector_timer.stop()
+        
 def c_char_p_p_to_list(c_char_p_p):
     i = 0
     retList = []
@@ -282,7 +307,8 @@ def openFile(project_path, session_name, full_client_id):
             
             node = node.nextSibling()
         
-        makeMayConnections()
+        #makeMayConnections()
+        jack_event_timer.start()
         
     NSMServer.sendToDeamon('/reply', '/nsm/client/open', 'Ready')
 
@@ -342,7 +368,9 @@ if __name__ == '__main__':
         print('Unable to make a jack client !', file=sys.stderr)
         sys.exit()
         
-    jacklib.set_client_registration_callback(jack_client, JackClientRegistrationCallback, None)
+    #abstract_jack = AbstractJack()
+        
+    #jacklib.set_client_registration_callback(jack_client, JackClientRegistrationCallback, None)
     jacklib.set_port_registration_callback(jack_client, JackPortRegistrationCallback, None)
     jacklib.set_port_connect_callback(jack_client, JackPortConnectCallback, None)
     jacklib.set_port_rename_callback(jack_client, JackPortRenameCallback, None)
@@ -362,6 +390,15 @@ if __name__ == '__main__':
     client_register_timer.setSingleShot(True)
     client_register_timer.setInterval(200)
     client_register_timer.timeout.connect(clientRegisteredAgo)
+    
+    jack_event_timer = QTimer()
+    jack_event_timer.setSingleShot(True)
+    jack_event_timer.setInterval(3840)
+    jack_event_timer.timeout.connect(startConnections)
+    
+    connector_timer = QTimer()
+    connector_timer.setInterval(84)
+    connector_timer.timeout.connect(makeMayConnections)
     
     NSMServer = nsm_client.NSMThread('ray-jackpatch', signaler, deamon_address, False)
     NSMServer.start()

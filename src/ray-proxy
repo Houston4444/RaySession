@@ -27,7 +27,7 @@ save_signals = {'None'   : None,
 
 stop_signals = {'SIGTERM': signal.SIGTERM,
                 'SIGINT' : signal.SIGINT,
-                'SIGHUP' : signal.SIGHUP}
+                'SIGHUP' : signal.SIGHUP }
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -356,6 +356,9 @@ class Proxy(QObject):
         server.sendToDeamon('/reply', '/nsm/client/save', 'Saved.')
     
     def stopProcess(self, signal=signal.SIGTERM):
+        if signal == None:
+            return
+        
         if not self.isRunning():
             return
         
@@ -419,12 +422,37 @@ class ProxyFile(object):
         
         file.close()
         
-        if save_signal.isdigit() and int(save_signal) in save_signals.values():
-            self.save_signal = int(save_signal)
+        if save_signal.isdigit():
+            for sg in save_signals.values():
+                if not sg:
+                    continue
+                
+                if int(save_signal) == int(sg):
+                    self.save_signal = int(save_signal)
+                    break
         
-        if stop_signal.isdigit() and int(stop_signal) in stop_signals.values():
-            self.stop_signal = int(stop_signal)
+        elif save_signal in save_signals.keys():
+            if save_signal == 'None':
+                self.save_signal = None
+            else:
+                self.save_signal = int(save_signals[save_signal])
             
+        if stop_signal.isdigit():
+            for sg in stop_signals.values():
+                if not sg:
+                    continue
+                
+                if int(stop_signal) == int(sg):
+                    self.stop_signal = int(stop_signal)
+                    break
+            
+        elif stop_signal in stop_signals.keys():
+            if stop_signal == 'None':
+                self.stop_signal = None
+            else:
+                self.stop_signal = int(stop_signals[stop_signal])
+        
+        
         if not self.executable:
             return
         
