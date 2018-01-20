@@ -1616,7 +1616,8 @@ class RayDeamon(object):
         except:
             print('%s is missing, please re-install RaySession.' % self.executable, file=sys.stderr)
             sys.exit(1)
-            
+        
+        #start process
         arguments = ['ray-deamon'    ,
                      '--gui-url'     , str(serverOSC.url), 
                      '--osc-port'    , str(self.port), 
