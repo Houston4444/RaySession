@@ -43,6 +43,7 @@ def sendDirtyState(state):
         return
     
     is_dirty = state
+    
     if is_dirty:
         NSMServer.sendToDeamon('/nsm/client/is_dirty')
     else:
