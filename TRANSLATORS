@@ -1,0 +1,30 @@
+If you want to translate Ray Session, you're welcome !
+
+    go to ./locale : 
+        cd locale
+        
+    copy file raysession_en_EN.ts to raysession_xx_XX.ts
+    replace xx and XX with the letters of your language.
+        cp raysession_en_EN.ts raysession_xx_XX.ts
+        
+    open your ts file with QLinguist, make your translations and publish.
+
+    
+in order to try it:
+    go to parent dir:
+        cd ..
+        
+    open Makefile in a text editor
+    add raysession_xx_XX.qm to the Makefile (line 42)
+    save Makefile
+    
+    then make:
+        make
+
+
+    
+    
+
+
+
+
