@@ -37,17 +37,54 @@ def portExists(name, mode, port_type):
             return True
     return False
 
-def sendDirtyState(state):
+def setDirtyClean():
     global is_dirty
-    if is_dirty and state:
-        return
-    
-    is_dirty = state
+    is_dirty = False
+    NSMServer.sendToDeamon('/nsm/client/is_clean')
+
+def timerDirtyFinish():
+    global is_dirty
     
     if is_dirty:
+        return
+    
+    if isDirtyNow():
+        is_dirty = True
         NSMServer.sendToDeamon('/nsm/client/is_dirty')
-    else:
-        NSMServer.sendToDeamon('/nsm/client/is_clean')
+
+def isDirtyNow():
+    for connection in connection_list:
+        if not connection in saved_connections:
+            return True
+        
+    output_ports = []
+    input_ports  = []
+    
+    for port in port_list:
+        if port.mode == PORT_MODE_OUTPUT:
+            output_ports.append(port.name)
+        elif port.mode == PORT_MODE_INPUT:
+            input_ports.append(port.name)
+            
+    for connection in saved_connections:
+        if connection in connection_list:
+            continue
+        
+        if connection[0] in output_ports and connection[1] in input_ports:
+            return True
+        
+    return False
+
+class DirtyChecker(QObject):
+    timer = QTimer()
+    
+    def __init__(self):
+        self.timer.setInterval(500)
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(timerDirtyFinish)
+            
+    def start(self):
+        self.timer.start()
 
 class Signaler(nsm_client.NSMSignaler):
     port_added   = pyqtSignal(str, int, int)
@@ -93,8 +130,6 @@ def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
     return 0
 
 def JackPortRenameCallback(portId, oldName, newName, arg=None):
-    print(portId, oldName, newName)
-    
     portPtr = jacklib.port_by_id(jack_client, portId)
     portFlags = jacklib.port_flags(portPtr)
     
@@ -127,7 +162,7 @@ def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
     
     if connect_yesno:
         signaler.connection_added.emit(port_str_A, port_str_B)
-    else:
+    else:   
         signaler.connection_removed.emit(port_str_A, port_str_B)
         
     return 0
@@ -162,9 +197,7 @@ def connectionAdded(port_str_A, port_str_B):
     connection_list.append((port_str_A, port_str_B))
     
     if not (port_str_A, port_str_B) in saved_connections:
-        #NSMServer.sendToDeamon('/nsm/client/is_dirty')
-        sendDirtyState(True)
-    
+        dirty_checker.start()
     
 def connectionRemoved(port_str_A, port_str_B):
     for i in range(len(connection_list)):
@@ -172,8 +205,7 @@ def connectionRemoved(port_str_A, port_str_B):
             connection_list.__delitem__(i)
             break
     
-    sendDirtyState(True)
-    #NSMServer.sendToDeamon('/nsm/client/is_dirty')
+    dirty_checker.start()
 
 def makeAllSavedConnections(port):
     if port.mode == PORT_MODE_OUTPUT:
@@ -291,6 +323,9 @@ def openFile(project_path, session_name, full_client_id):
         makeMayConnections()
         
     NSMServer.sendToDeamon('/reply', '/nsm/client/open', 'Ready')
+    setDirtyClean()
+    dirty_checker.start()
+    
 
 def saveFile():
     if not file_path:
@@ -333,8 +368,8 @@ def saveFile():
     file.close()
     
     NSMServer.sendToDeamon('/reply', '/nsm/client/save', 'Saved')
-    #NSMServer.sendToDeamon('/nsm/client/is_clean')
-    sendDirtyState(False)
+    
+    setDirtyClean()
 
 if __name__ == '__main__':
     NSM_URL = os.getenv('NSM_URL')
@@ -365,7 +400,7 @@ if __name__ == '__main__':
     signaler.server_sends_open.connect(openFile)
     signaler.server_sends_save.connect(saveFile)
     
-    makeMayConnections()
+    #makeMayConnections()
     
     NSMServer = nsm_client.NSMThread('ray-jackpatch', signaler, deamon_address, False)
     NSMServer.start()
@@ -375,6 +410,8 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT , signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
     
+    
+    #get all currents Jack ports and connections
     portNameList = c_char_p_p_to_list(jacklib.get_ports(jack_client, "", "", 0))
     
     for portName in portNameList:
@@ -401,7 +438,6 @@ if __name__ == '__main__':
         
         port_list.append(jack_port)
         
-        
         if jacklib.port_flags(portPtr) & jacklib.JackPortIsInput:
             continue
 
@@ -412,10 +448,14 @@ if __name__ == '__main__':
             
     app = QCoreApplication(sys.argv)
     
+    
+    
     #needed for signals SIGINT, SIGTERM
     timer = QTimer()
     timer.start(200)
     timer.timeout.connect(lambda: None)
+    
+    dirty_checker = DirtyChecker()
     
     app.exec()
     
