@@ -1,14 +1,7 @@
 # Ray Session TODO
 
-0.3.1:
-    Session Template
-
-0.4.0:
-    Client Template (it will allow a template manager which will makes Ray Session very more User Friendly).
-    Rename Client
-    
-And also, but not so soon :
--------------------
+    prevent stop client if not saved (when possible)
+    clean from client means save session (option)
     SooperLooper NSM starter
     ray-deamon as NSM client
     Jack Patchbay
