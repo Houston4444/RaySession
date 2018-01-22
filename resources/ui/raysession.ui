@@ -451,6 +451,9 @@ QToolButton {border: none}</string>
                   <property name="contextMenuPolicy">
                    <enum>Qt::NoContextMenu</enum>
                   </property>
+                  <property name="toolTip">
+                   <string>Server Status</string>
+                  </property>
                   <property name="styleSheet">
                    <string notr="true">QLineEdit {font-size : 10px; font-weight : bold }</string>
                   </property>
@@ -795,6 +798,9 @@ QToolButton {border: none}</string>
    <property name="text">
     <string>&amp;Close</string>
    </property>
+   <property name="toolTip">
+    <string>Save and Close Session</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+W</string>
    </property>
@@ -883,8 +889,11 @@ QToolButton {border: none}</string>
    <property name="text">
     <string>&amp;Executable</string>
    </property>
+   <property name="toolTip">
+    <string>Add executable to current session</string>
+   </property>
    <property name="shortcut">
-    <string>Ctrl+A</string>
+    <string>Ctrl+E</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::WindowShortcut</enum>
@@ -909,6 +918,12 @@ QToolButton {border: none}</string>
    </property>
    <property name="text">
     <string>&amp;Application</string>
+   </property>
+   <property name="toolTip">
+    <string>Add application to current session</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
    </property>
   </action>
  </widget>

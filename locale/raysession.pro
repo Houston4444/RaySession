@@ -2,6 +2,7 @@ FORMS        += ../resources/ui/abort_session.ui
 FORMS        += ../resources/ui/about_raysession.ui
 FORMS        += ../resources/ui/client_slot.ui
 FORMS        += ../resources/ui/error_dialog.ui
+FORMS        += ../resources/ui/add_application.ui
 FORMS        += ../resources/ui/new_executable.ui
 FORMS        += ../resources/ui/new_session.ui
 FORMS        += ../resources/ui/open_session.ui
