@@ -256,7 +256,7 @@
     </message>
     <message>
         <location filename="../resources/ui/new_session.ui" line="56"/>
-        <source>/home/user/NSM Sessions</source>
+        <source>/home/user/Ray Sessions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -265,17 +265,17 @@
         <translation>Dossier</translation>
     </message>
     <message>
-        <location filename="../resources/ui/new_session.ui" line="163"/>
+        <location filename="../resources/ui/new_session.ui" line="111"/>
         <source>New Session Name :</source>
         <translation>Nom de la nouvelle session :</translation>
     </message>
     <message>
         <location filename="../resources/ui/new_session.ui" line="106"/>
         <source>Use Template</source>
-        <translation>Utiliser un modèle</translation>
+        <translation type="obsolete">Utiliser un modèle</translation>
     </message>
     <message>
-        <location filename="../resources/ui/new_session.ui" line="121"/>
+        <location filename="../resources/ui/new_session.ui" line="129"/>
         <source>Template :</source>
         <translation>Modèle :</translation>
     </message>
@@ -429,7 +429,7 @@
         <translation type="unfinished">La session est prête</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1358"/>
+        <location filename="../src/ray-deamon" line="1363"/>
         <source>Opening session %s</source>
         <translation type="unfinished">Ouverture de la session &quot;%s&quot;</translation>
     </message>
@@ -437,27 +437,27 @@
 <context>
     <name>Load Error</name>
     <message>
-        <location filename="../src/ray-deamon" line="1534"/>
+        <location filename="../src/ray-deamon" line="1539"/>
         <source>Unknown error</source>
         <translation type="unfinished">Erreur inconnue</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1536"/>
+        <location filename="../src/ray-deamon" line="1541"/>
         <source>Could not create session file!</source>
         <translation type="unfinished">Impossible de créer le fichier de session !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1538"/>
+        <location filename="../src/ray-deamon" line="1543"/>
         <source>Session is locked by another process!</source>
         <translation type="unfinished">La session est verrouillé par un autre processus !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1540"/>
+        <location filename="../src/ray-deamon" line="1545"/>
         <source>The named session does not exist.</source>
         <translation type="unfinished">La session sus-nommée n&apos;existe pas.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1542"/>
+        <location filename="../src/ray-deamon" line="1547"/>
         <source>Could not load session file.</source>
         <translation type="unfinished">Impossible de charger le fichier de session.</translation>
     </message>
@@ -966,7 +966,7 @@
         <translation type="unfinished">Impossible de sauver le modèle, fichier non inscriptible !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1265"/>
+        <location filename="../src/ray-deamon" line="1270"/>
         <source>No template named %s</source>
         <translation type="unfinished">Pas de modèle nommé %s</translation>
     </message>
@@ -974,7 +974,7 @@
 <context>
     <name>help</name>
     <message>
-        <location filename="../src/raysession" line="1685"/>
+        <location filename="../src/raysession" line="1709"/>
         <source>A session manager based on the Non-Session-Manager API for sound applications.</source>
         <translation>Un organisateur de session basé sur l&apos; API de Non-Session-Manager pour piloter les applications audio.</translation>
     </message>
@@ -982,7 +982,7 @@
 <context>
     <name>main view</name>
     <message>
-        <location filename="../src/raysession" line="882"/>
+        <location filename="../src/raysession" line="884"/>
         <source>No Session Loaded</source>
         <translation type="unfinished">Pas de session en cours</translation>
     </message>
@@ -1056,7 +1056,7 @@
 <context>
     <name>session template</name>
     <message>
-        <location filename="../src/raysession" line="1203"/>
+        <location filename="../src/raysession" line="1227"/>
         <source>Overwrite Template ?</source>
         <translation>Écraser le modèle ?</translation>
     </message>
@@ -1064,11 +1064,21 @@
 <context>
     <name>session_template</name>
     <message>
-        <location filename="../src/raysession" line="1203"/>
+        <location filename="../src/raysession" line="1227"/>
         <source>Template &lt;strong&gt;%s&lt;/strong&gt; already exists.
 Overwrite it ?</source>
         <translation>Le modèle &lt;strong&gt;%s&lt;/strong&gt; existe déjà.
 Voulez-vous l&apos;écraser ?</translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="1138"/>
+        <source>empty</source>
+        <translation>vide</translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="1139"/>
+        <source>with JACK patch memory</source>
+        <translation type="unfinished">avec mémoire du patch de JACK</translation>
     </message>
 </context>
 </TS>
