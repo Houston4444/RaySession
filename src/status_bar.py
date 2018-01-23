@@ -42,14 +42,17 @@ class StatusBar(QLineEdit):
             
         QLineEdit.setText(self, text)
         
+    def mousePressEvent(self, event):
+        event.ignore()
+        
 class StatusBarNegativ(StatusBar):
     def __init__(self, parent):
         StatusBar.__init__(self, parent)
-        palette = self.palette()
-        base = palette.base()
-        text = palette.text()
-        palette.setBrush(QPalette.Base, text)
-        palette.setBrush(QPalette.WindowText, base)
-        palette.setBrush(QPalette.Text, base)
+        #palette = self.palette()
+        #base = palette.base()
+        #text = palette.text()
+        #palette.setBrush(QPalette.Base, text)
+        #palette.setBrush(QPalette.WindowText, base)
+        #palette.setBrush(QPalette.Text, base)
         
-        self.setPalette(palette)
+        #self.setPalette(palette)

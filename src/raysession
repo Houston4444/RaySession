@@ -2,7 +2,7 @@
 
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView
-from PyQt5.QtGui     import QIcon , QCursor, QPalette, QPixmap, QFontDatabase
+from PyQt5.QtGui     import QIcon , QCursor, QPalette, QPixmap, QFontDatabase, QColor, QBrush, QPixmap
 from PyQt5.QtCore    import QTimer, QProcess, pyqtSignal, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
 import sys
 from liblo import *
@@ -610,23 +610,119 @@ class MainWindow(QMainWindow):
         
         self.connectListWidgetRequests()
         
+        fPalBlack = QPalette()
+        
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Window, QColor(14, 14, 14))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Window, QColor(17, 17, 17))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Window, QColor(17, 17, 17))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.WindowText, QColor(83, 83, 83))
+        fPalBlack.setColor(QPalette.Active,   QPalette.WindowText, QColor(240, 240, 240))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.WindowText, QColor(240, 240, 240))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Base, QColor(6, 6, 6))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Base, QColor(7, 7, 7))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Base, QColor(7, 7, 7))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.AlternateBase, QColor(12, 12, 12))
+        fPalBlack.setColor(QPalette.Active,   QPalette.AlternateBase, QColor(14, 14, 14))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.AlternateBase, QColor(14, 14, 14))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.ToolTipBase, QColor(4, 4, 4))
+        fPalBlack.setColor(QPalette.Active,   QPalette.ToolTipBase, QColor(4, 4, 4))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.ToolTipBase, QColor(4, 4, 4))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.ToolTipText, QColor(230, 230, 230))
+        fPalBlack.setColor(QPalette.Active,   QPalette.ToolTipText, QColor(230, 230, 230))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.ToolTipText, QColor(230, 230, 230))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Text, QColor(74, 74, 74))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Text, QColor(230, 230, 230))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Text, QColor(230, 230, 230))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Button, QColor(24, 24, 24))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Button, QColor(28, 28, 28))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Button, QColor(28, 28, 28))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(90, 90, 90))
+        fPalBlack.setColor(QPalette.Active,   QPalette.ButtonText, QColor(240, 240, 240))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.ButtonText, QColor(240, 240, 240))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.BrightText, QColor(255, 255, 255))
+        fPalBlack.setColor(QPalette.Active,   QPalette.BrightText, QColor(255, 255, 255))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.BrightText, QColor(255, 255, 255))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Light, QColor(191, 191, 191))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Light, QColor(191, 191, 191))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Light, QColor(191, 191, 191))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Midlight, QColor(155, 155, 155))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Midlight, QColor(155, 155, 155))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Midlight, QColor(155, 155, 155))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Dark, QColor(129, 129, 129))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Dark, QColor(129, 129, 129))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Dark, QColor(129, 129, 129))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Mid, QColor(94, 94, 94))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Mid, QColor(94, 94, 94))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Mid, QColor(94, 94, 94))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Shadow, QColor(155, 155, 155))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Shadow, QColor(155, 155, 155))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Shadow, QColor(155, 155, 155))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Highlight, QColor(14, 14, 14))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Highlight, QColor(60, 60, 60))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Highlight, QColor(34, 34, 34))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.HighlightedText, QColor(83, 83, 83))
+        fPalBlack.setColor(QPalette.Active,   QPalette.HighlightedText, QColor(255, 255, 255))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.HighlightedText, QColor(240, 240, 240))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Link, QColor(34, 34, 74))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Link, QColor(100, 100, 230))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Link, QColor(100, 100, 230))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.LinkVisited, QColor(74, 34, 74))
+        fPalBlack.setColor(QPalette.Active,   QPalette.LinkVisited, QColor(230, 100, 230))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(230, 100, 230))
+        
+        fPalBlack.setColor(QPalette.Disabled, QPalette.Button, QColor(24, 24, 24))
+        fPalBlack.setColor(QPalette.Active,   QPalette.Button, QColor(28, 28, 28))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.Button, QColor(28, 28, 28))
+        fPalBlack.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(90, 90, 90))
+        fPalBlack.setColor(QPalette.Active,   QPalette.ButtonText, QColor(240, 240, 240))
+        fPalBlack.setColor(QPalette.Inactive, QPalette.ButtonText, QColor(240, 240, 240))
+        
+        
+        fPalBlack2 = QPalette()
+        
+        fPalBlack2.setColor(QPalette.Disabled, QPalette.Window, QColor(12, 12, 12))
+        fPalBlack2.setColor(QPalette.Active,   QPalette.Window, QColor(140, 140, 140))
+        fPalBlack2.setColor(QPalette.Inactive, QPalette.Window, QColor(120, 120, 120))
+        
+        app.setPalette(fPalBlack)
+        #self.ui.toolButtonAddApplication.setPalette(fPalBlack)
+        
         basecolor = app.palette().base().color().name()
         
         border_color = app.palette().base().color()
         if border_color.lightness() >= app.palette().window().color().lightness():
             border_color = app.palette().text().color()
+            
+        print('bg', self.ui.frameCurrentSession.backgroundRole())
         
-        self.ui.frameCurrentSession.setStyleSheet('SessionFrame{border-top: 2px solid %(bd)s; border-right:2px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 %(c1)s , stop:1 %(c2)s ); border-left:2px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 %(c1)s , stop:1 %(c2)s ); border-top-left-radius:8px;border-top-right-radius:8px}' % {'bd': border_color.name(), 'c1':border_color.name(), 'c2':app.palette().base().color().name()} )
+        #colk = border_color - QColor(50, 50, 50)
+        #self.ui.frameCurrentSession.setStyleSheet('SessionFrame{border-top-left-radius:8px;border-top-right-radius:8px}')
         
-        text_color     = app.palette().text().color().name()
-        text_color_dis = app.palette().brush(1, QPalette.WindowText).color().name()
+        pal = QPalette()
+        #pal.setColor(self.ui.frameCurrentSession.backgroundRole(), border_color.lighter(200))
         
-        self.ui.frameSessionControls.setStyleSheet('QFrame{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1.5, stop:0 %(c1)s , stop:1 %(c2)s );border-radius:5px;border:2px solid %(bg)s}' % {'bg': border_color.name(), 'c1': text_color, 'c2': text_color_dis})
+        background_image = 'background_calf_wood_nb_neg.png'
         
         if app.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
+            background_image = 'background_calf_wood_nb.png'
             self.ui.actionCloseSession.setIcon(RayIcon('window-close', dark=True))
             self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark=True))
-            self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save'))
+            self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save', dark=True))
+        #pal.setBrush(QPalette.Background, QBrush(QPixmap(':/bitmaps/background_calf_blue.png')))
+        #self.ui.frameCurrentSession.setAutoFillBackground(True)
+        self.ui.frameCurrentSession.setStyleSheet("SessionFrame{background-image: url(':/bitmaps/%s');border-radius:3px}" % background_image)
+        
+        #self.ui.frameCurrentSession.setPalette(pal)
+        #self.ui.frameCurrentSession.setStyleSheet('SessionFrame{border-top-left-radius:8px;border-top-right-radius:8px}')
+        
+        #self.ui.frameCurrentSession.setStyleSheet('SessionFrame{border-top: 2px solid %(bd)s; border-right:2px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 %(c1)s , stop:1 %(c2)s ); border-left:2px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 %(c1)s , stop:1 %(c2)s ); border-top-left-radius:8px;border-top-right-radius:8px}' % {'bd': border_color.name(), 'c1':border_color.name(), 'c2':app.palette().base().color().name()} )
+        
+        #text_color     = app.palette().text().color().name()
+        #text_color_dis = app.palette().brush(1, QPalette.WindowText).color().name()
+        
+        #self.ui.frameSessionControls.setStyleSheet('QFrame{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1.5, stop:0 %(c1)s , stop:1 %(c2)s );border-radius:5px;border:2px solid %(bg)s}' % {'bg': border_color.name(), 'c1': text_color, 'c2': text_color_dis})
+        
+        
         
         #disable "keep focus" if deamon is not on this machine (it takes no sense in this case)
         if not ray_deamon.is_local:

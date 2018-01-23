@@ -27,5 +27,9 @@
         <file>scalable/breeze-dark/disabled/list-remove.svg</file>
         <file>fonts/Ubuntu-C.ttf</file>
         <file>fonts/Ubuntu-R.ttf</file>
+        <file>bitmaps/background_calf_blue.png</file>
+        <file>bitmaps/background_calf_wood.png</file>
+        <file>bitmaps/background_calf_wood_nb.png</file>
+        <file>bitmaps/background_calf_wood_nb_neg.png</file>
     </qresource>
 </RCC>
