@@ -1093,6 +1093,8 @@ class NewSessionDialog(ChildDialog):
         self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
         self.ui.lineEdit.textChanged.connect(self.textChanged)
         
+        self.initComboBox()
+        
         self.session_list  = []
         self.template_list = []
         
@@ -1127,6 +1129,10 @@ class NewSessionDialog(ChildDialog):
             
         self.preventOk()
         
+    def initComboBox(self):
+        self.ui.comboBoxTemplate.clear()
+        self.ui.comboBoxTemplate.addItem(_translate('session_template', "empty"))
+        self.ui.comboBoxTemplate.addItem(_translate('session_template', "with JACK patch memory"))
     
     def addSessionToList(self, session_name):
         self.session_list.append(session_name)
@@ -1140,7 +1146,8 @@ class NewSessionDialog(ChildDialog):
             return
         
         self.template_list.sort()
-        self.ui.comboBoxTemplate.clear()
+        
+        self.initComboBox()
         
         for template_name in self.template_list:
             self.ui.comboBoxTemplate.addItem(template_name)
@@ -1148,17 +1155,29 @@ class NewSessionDialog(ChildDialog):
         self.ui.templateGroupBox.setVisible(True)
         
         last_used_template = settings.value('last_used_template')
+        
         if last_used_template in self.template_list:
             self.ui.comboBoxTemplate.setCurrentText(last_used_template)
+            
+        if not last_used_template:
+            self.ui.comboBoxTemplate.setCurrentRow(1)
     
     def getSessionName(self):
         return self.ui.lineEdit.text()
 
     def getTemplateName(self):
-        if self.ui.templateGroupBox.isChecked():
-            return self.ui.comboBoxTemplate.currentText()
+        if self.ui.comboBoxTemplate.currentRow() == 0:
+            return ""
         
-        return ""
+        if self.ui.comboBoxTemplate.currentRow() == 1:
+            return '///WithJACKPATCH'
+        
+        return self.ui.comboBoxTemplate.currentText()
+        
+        #if self.ui.templateGroupBox.isChecked():
+            #return self.ui.comboBoxTemplate.currentText()
+        
+        #return ""
         
     def textChanged(self, text):
         self.text_is_valid = bool(text and not text in self.session_list)
