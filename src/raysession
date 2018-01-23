@@ -1095,8 +1095,6 @@ class NewSessionDialog(ChildDialog):
         self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
         self.ui.lineEdit.textChanged.connect(self.textChanged)
         
-        self.initComboBox()
-        
         self.session_list  = []
         self.template_list = []
         
@@ -1107,7 +1105,10 @@ class NewSessionDialog(ChildDialog):
         
         serverOSC.qsig.session_template_found.connect(self.addTemplatesToList)
         
-        if not self.is_duplicate:
+        if self.is_duplicate:
+            self.ui.labelTemplate.setVisible(False)
+            self.ui.comboBoxTemplate.setVisible(False)
+        else:
             serverOSC.toDeamon('/ray/server/list_session_templates')
         
         if ray_deamon.launched_before:
@@ -1115,7 +1116,8 @@ class NewSessionDialog(ChildDialog):
             self.ui.currentNsmFolder.setVisible(False)
             self.ui.labelNsmFolder.setVisible(False)
         
-        self.ui.templateGroupBox.setVisible(False)
+        self.initComboBox()
+        self.setLastTemplateSelected()
         
         self.server_will_accept = False
         self.text_is_valid      = False
@@ -1137,6 +1139,19 @@ class NewSessionDialog(ChildDialog):
         self.ui.comboBoxTemplate.addItem(_translate('session_template', "with JACK patch memory"))
         self.ui.comboBoxTemplate.insertSeparator(2)
     
+    def setLastTemplateSelected(self):
+        last_used_template = settings.value('last_used_template', type=str)
+        
+        if last_used_template.startswith('///'):
+            if last_used_template == '///withJACKPATCH':
+                self.ui.comboBoxTemplate.setCurrentIndex(1)
+        else:
+            if last_used_template in self.template_list:
+                self.ui.comboBoxTemplate.setCurrentText(last_used_template)
+            
+        if not last_used_template:
+            self.ui.comboBoxTemplate.setCurrentIndex(1)
+    
     def addSessionToList(self, session_name):
         self.session_list.append(session_name)
     
@@ -1155,19 +1170,7 @@ class NewSessionDialog(ChildDialog):
         for template_name in self.template_list:
             self.ui.comboBoxTemplate.addItem(template_name)
         
-        self.ui.templateGroupBox.setVisible(True)
-        
-        last_used_template = settings.value('last_used_template')
-        
-        if last_used_template.startswith('///'):
-            if last_used_template == '///withJACKPATCH':
-                self.ui.comboBoxTemplate.setCurrentIndex(1)
-        else:
-            if last_used_template in self.template_list:
-                self.ui.comboBoxTemplate.setCurrentText(last_used_template)
-            
-        if not last_used_template:
-            self.ui.comboBoxTemplate.setCurrentIndex(1)
+        self.setLastTemplateSelected()
     
     def getSessionName(self):
         return self.ui.lineEdit.text()
