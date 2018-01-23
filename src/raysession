@@ -513,6 +513,8 @@ class OSCServerT(ServerThread):
         
     def changeClientOrder(self, client_ids_list):
         self.toDeamon('/ray/server/reorder_clients', *client_ids_list)
+        
+    #def 
 
 class RayIcon(QIcon):
     def __init__(self, icon_name, dark=False):
@@ -1133,6 +1135,7 @@ class NewSessionDialog(ChildDialog):
         self.ui.comboBoxTemplate.clear()
         self.ui.comboBoxTemplate.addItem(_translate('session_template', "empty"))
         self.ui.comboBoxTemplate.addItem(_translate('session_template', "with JACK patch memory"))
+        self.ui.comboBoxTemplate.insertSeparator(2)
     
     def addSessionToList(self, session_name):
         self.session_list.append(session_name)
@@ -1156,28 +1159,27 @@ class NewSessionDialog(ChildDialog):
         
         last_used_template = settings.value('last_used_template')
         
-        if last_used_template in self.template_list:
-            self.ui.comboBoxTemplate.setCurrentText(last_used_template)
+        if last_used_template.startswith('///'):
+            if last_used_template == '///withJACKPATCH':
+                self.ui.comboBoxTemplate.setCurrentIndex(1)
+        else:
+            if last_used_template in self.template_list:
+                self.ui.comboBoxTemplate.setCurrentText(last_used_template)
             
         if not last_used_template:
-            self.ui.comboBoxTemplate.setCurrentRow(1)
+            self.ui.comboBoxTemplate.setCurrentIndex(1)
     
     def getSessionName(self):
         return self.ui.lineEdit.text()
 
     def getTemplateName(self):
-        if self.ui.comboBoxTemplate.currentRow() == 0:
+        if self.ui.comboBoxTemplate.currentIndex() == 0:
             return ""
         
-        if self.ui.comboBoxTemplate.currentRow() == 1:
-            return '///WithJACKPATCH'
+        if self.ui.comboBoxTemplate.currentIndex() == 1:
+            return '///withJACKPATCH'
         
         return self.ui.comboBoxTemplate.currentText()
-        
-        #if self.ui.templateGroupBox.isChecked():
-            #return self.ui.comboBoxTemplate.currentText()
-        
-        #return ""
         
     def textChanged(self, text):
         self.text_is_valid = bool(text and not text in self.session_list)

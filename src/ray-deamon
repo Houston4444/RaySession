@@ -1246,8 +1246,13 @@ class OperatingSession(Session):
         template_name = self.osc_args[1]
         template_path = "%s/%s" % (session_template_root, template_name)
         
+        if template_name.startswith('///'):
+            template_name = template_name.replace('///', '')
+            template_path = "%s/%s" % (session_template_factory_root, template_name)
+            print(template_path)
+            
         if not os.path.isdir(template_path):
-            server.sendError(ERR_GENERAL_ERROR, _translate("error", "No template named %s") % template_name)
+            self.sendError(ERR_GENERAL_ERROR, _translate("error", "No template named %s") % template_name)
             return
         
         new_session_name = self.osc_args[0]
@@ -2436,6 +2441,9 @@ class OscServerThread(ServerThread):
     def rayServerListSessionTemplates(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
         
+        if not os.path.isdir(session_template_root):
+            return
+        
         template_list = []
         
         all_files = os.listdir(session_template_root)
@@ -2623,6 +2631,7 @@ if __name__ == '__main__':
     
     app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
     session_template_root = "%s/%s" % (app_config_path, 'session_templates')
+    session_template_factory_root = "%s/session_templates" % os.path.dirname(os.path.dirname(sys.argv[0]))
     client_template_local_root = "%s/%s" % (app_config_path, 'client_templates')
     client_template_factory_root = "%s/client_templates" % os.path.dirname(os.path.dirname(sys.argv[0]))
     
