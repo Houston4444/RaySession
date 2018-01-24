@@ -31,5 +31,6 @@
         <file>bitmaps/background_calf_wood.png</file>
         <file>bitmaps/background_calf_wood_nb.png</file>
         <file>bitmaps/background_calf_wood_nb_neg.png</file>
+        <file>bitmaps/calfbis.png</file>
     </qresource>
 </RCC>
