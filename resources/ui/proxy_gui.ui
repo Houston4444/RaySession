@@ -74,7 +74,8 @@
          </property>
          <property name="icon">
           <iconset theme="folder-open">
-           <normaloff>.</normaloff>.</iconset>
+           <normaloff/>
+          </iconset>
          </property>
          <property name="toolButtonStyle">
           <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -84,7 +85,7 @@
        <item row="2" column="0">
         <widget class="QLabel" name="label_5">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The environment variables $NSM_CLIENT_ID and $NSM_SESSION_NAME will contain the unique client ID (suitable for use as e.g. a JACK client name) and the display name for the session, respectively.&lt;br/&gt;The variable $CONFIG_FILE will contain the name of the config file selected above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The environment variables $NSM_CLIENT_ID and $RAY_SESSION_NAME will contain the unique client ID (suitable for use as e.g. a JACK client name) and the display name for the session, respectively.&lt;br/&gt;The variable $CONFIG_FILE will contain the name of the config file selected above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="text">
           <string>Arguments :</string>
@@ -97,7 +98,7 @@
        <item row="2" column="1" colspan="2">
         <widget class="QLineEdit" name="lineEditArguments">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The environment variables $NSM_CLIENT_ID and $NSM_SESSION_NAME will contain the unique client ID (suitable for use as e.g. a JACK client name) and the display name for the session, respectively.&lt;br/&gt;The variable $CONFIG_FILE will contain the name of the config file selected above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The environment variables $NSM_CLIENT_ID and $RAY_SESSION_NAME will contain the unique client ID (suitable for use as e.g. a JACK client name) and the display name for the session, respectively.&lt;br/&gt;The variable $CONFIG_FILE will contain the name of the config file selected above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -157,7 +158,8 @@
          </property>
          <property name="icon">
           <iconset theme="send-to-symbolic">
-           <normaloff>.</normaloff>.</iconset>
+           <normaloff/>
+          </iconset>
          </property>
          <property name="toolButtonStyle">
           <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -215,7 +217,8 @@
         </property>
         <property name="icon">
          <iconset theme="media-playback-start">
-          <normaloff>.</normaloff>.</iconset>
+          <normaloff/>
+         </iconset>
         </property>
        </widget>
       </item>
@@ -226,7 +229,8 @@
         </property>
         <property name="icon">
          <iconset theme="media-playback-stop">
-          <normaloff>.</normaloff>.</iconset>
+          <normaloff/>
+         </iconset>
         </property>
        </widget>
       </item>

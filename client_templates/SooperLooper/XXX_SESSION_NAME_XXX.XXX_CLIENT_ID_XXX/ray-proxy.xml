@@ -1,3 +1,3 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE RAY-PROXY>
-<RAY-PROXY VERSION="0.3.0" config_file="$NSM_SESSION_NAME.slsess" arguments="&quot;$CONFIG_FILE&quot;" executable="sooperlooper_lash" save_signal="10" stop_signal="10"/>
+<RAY-PROXY VERSION="0.3.0" config_file="$RAY_SESSION_NAME.slsess" arguments="&quot;$CONFIG_FILE&quot;" executable="sooperlooper_lash" save_signal="10" stop_signal="10"/>

@@ -654,8 +654,8 @@ class Client(QObject):
                     cte = content.toElement()
                     config_file = cte.attribute('config_file')
                     
-                    if ('$NSM_SESSION_NAME' or '${NSM_SESSION_NAME}') in config_file:
-                        for env in ('"$NSM_SESSION_NAME"', '"${NSM_SESSION_NAME}"', "$NSM_SESSION_NAME", "${NSM_SESSION_NAME}"):
+                    if ('$RAY_SESSION_NAME' or '${RAY_SESSION_NAME}') in config_file:
+                        for env in ('"$RAY_SESSION_NAME"', '"${RAY_SESSION_NAME}"', "$RAY_SESSION_NAME", "${RAY_SESSION_NAME}"):
                             config_file = config_file.replace(env, old_session_name)
                         
                         if config_file and config_file.split('.')[0] == old_session_name:
