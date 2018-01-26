@@ -561,7 +561,7 @@ class MainWindow(QMainWindow):
         
         #set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
-        self.ui.toolButtonSaveSession.clicked.connect(self.saveSession)
+        self.ui.toolButtonSaveSession.setDefaultAction(self.ui.actionSaveSession)
         self.ui.toolButtonAbortSession.setDefaultAction(self.ui.actionAbortSession)
         self.ui.toolButtonDuplicateSession.setDefaultAction(self.ui.actionDuplicateSession)
         self.ui.toolButtonSaveTemplateSession.setDefaultAction(self.ui.actionSaveTemplateSession)
@@ -584,6 +584,7 @@ class MainWindow(QMainWindow):
         self.ui.actionKeepFocus.toggled.connect(self.toggleKeepFocus)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(app.aboutQt)
+        
         
         
         #set control menu
@@ -625,7 +626,7 @@ class MainWindow(QMainWindow):
         if not ray_deamon.is_local:
             self.ui.actionKeepFocus.setChecked(False)
             self.ui.actionKeepFocus.setEnabled(False)
-    
+            
     def connectListWidgetRequests(self):
         #connect the listWidget signals to OSC server
         self.ui.listWidget.orderChanged.connect(serverOSC.changeClientOrder)

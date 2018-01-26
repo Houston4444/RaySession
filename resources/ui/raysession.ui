@@ -1008,8 +1008,8 @@ QToolButton {border: none}</string>
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>219</x>
-     <y>14</y>
+     <x>251</x>
+     <y>12</y>
     </hint>
    </hints>
   </connection>
