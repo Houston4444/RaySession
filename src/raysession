@@ -1252,6 +1252,8 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
         self.template_list = []
         self.ui.pushButtonAccept.setEnabled(False)
         
+        self.ui.labelNewTemplateName.setText(_translate('new client template', "New application template name :"))
+        
         serverOSC.qsig.user_client_template_found.connect(self.addTemplatesToList)
         serverOSC.toDeamon('/ray/server/list_user_client_templates')
         
