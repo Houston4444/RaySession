@@ -903,7 +903,6 @@ class MainWindow(QMainWindow):
         close_or_off = bool(server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF))
         ready        = bool(server_status == SERVER_STATUS_READY)
         
-        self.ui.toolButtonSaveSession.setEnabled(ready)
         self.ui.actionSaveSession.setEnabled(ready)
         self.ui.actionCloseSession.setEnabled(ready)
         self.ui.actionAbortSession.setEnabled(not close_or_off)
