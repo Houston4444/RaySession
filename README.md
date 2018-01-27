@@ -1,8 +1,8 @@
 # ---  README for Ray Session  ---
 
-Ray Session is a GNU/Linux session manager for audio programs as Ardour, Carla, QTractor, Non-Timeline, etc...
-It uses the same API as Non Session Manager, so programs compatible with NSM are also compatible with Ray Session.
-As Non Session Manager, the principle is to load together audio programs, then be able to save or close all documents together.
+Ray Session is a GNU/Linux session manager for audio programs as Ardour, Carla, QTractor, Non-Timeline, etc...<br>
+It uses the same API as Non Session Manager, so programs compatible with NSM are also compatible with Ray Session.<br>
+As Non Session Manager, the principle is to load together audio programs, then be able to save or close all documents together.<br>
 
 Ray Session offers a little more:
 
