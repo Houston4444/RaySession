@@ -1,3 +1,5 @@
+# ![Carla Logo](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/48x48/raysession.png) RaySession
+
 # ---  README for Ray Session  ---
 
 Ray Session is a GNU/Linux session manager for audio programs as Ardour, Carla, QTractor, Non-Timeline, etc...<br>
