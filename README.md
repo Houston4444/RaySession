@@ -9,13 +9,13 @@ As Non Session Manager, the principle is to load together audio programs, then b
 Ray Session offers a little more:
 
 * Factory templates for NSM and LASH compatible applications
-* Possibily to save any client as template
+* Possibility to save any client as template
 * Save session as template
 * Name files with a prettier way
 * remember if client was started or not
-* Abort session almost anytime
+* Abort session allmost anytime
 * Change Main Folder of sessions on GUI
-* Possibily to KILL client if clean exit is too long
+* Possibility to KILL client if clean exit is too long
 * Open Session Folder button (open default file manager)
 
 You can see documentation on NSM at: http://non.tuxfamily.org/wiki/Non%20Session%20Manager
