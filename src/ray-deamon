@@ -1017,8 +1017,12 @@ class OperatingSession(Session):
             self.timer_stop.stop()
     
     def sendError(self, err, error_message):
+        #clear process order to allow other new operations
+        self.process_order.clear()
+        
         if not (self.osc_src_addr or self.osc_path):
             return
+        
         server.send(self.osc_src_addr, "/error", self.osc_path, err, error_message)
     
     ############################## COMPLEX OPERATIONS ###################
