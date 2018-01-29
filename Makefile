@@ -75,7 +75,7 @@ install:
 # 	# Install script files and binaries
 	install -m 755 data/raysession                    $(DESTDIR)$(PREFIX)/bin/ 
 	install -m 755 data/ray-deamon                    $(DESTDIR)$(PREFIX)/bin/ 
-	install -m 755 data/ray-proxy                     $(DESTDIR)$(PREFIX)/bin/
+# 	install -m 755 data/ray-proxy                     $(DESTDIR)$(PREFIX)/bin/
 	
 	install -m 644 data/*.desktop                     $(DESTDIR)$(PREFIX)/share/applications/
 
@@ -95,18 +95,20 @@ install:
 	install -m 644 resources/scalable/raysession.svg  $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 
 	# Install main code
-	install -m 755 src/raysession $(DESTDIR)$(PREFIX)/share/raysession/src/
-	install -m 755 src/ray-deamon $(DESTDIR)$(PREFIX)/share/raysession/src/
-	install -m 755 src/ray-proxy  $(DESTDIR)$(PREFIX)/share/raysession/src/
-	install -m 755 src/*.py $(DESTDIR)$(PREFIX)/share/raysession/src/
+	install -m 755 src/raysession        $(DESTDIR)$(PREFIX)/share/raysession/src/
+	install -m 755 src/ray-deamon        $(DESTDIR)$(PREFIX)/share/raysession/src/
+	install -m 755 src/ray-proxy         $(DESTDIR)$(PREFIX)/share/raysession/src/
+	install -m 755 src/ray-jackpatch     $(DESTDIR)$(PREFIX)/share/raysession/src/
+	install -m 755 src/sooperlooper_lash $(DESTDIR)$(PREFIX)/share/raysession/src/
+	install -m 644 src/*.py $(DESTDIR)$(PREFIX)/share/raysession/src/
 	
 	# Install Translations
-	install -m 755 locale/*.qm $(DESTDIR)$(PREFIX)/share/raysession/locale/
+	install -m 644 locale/*.qm $(DESTDIR)$(PREFIX)/share/raysession/locale/
 	
 	# Adjust PREFIX value in script file
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/raysession
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/ray-deamon
-	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/ray-proxy
+# 	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/ray-proxy
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 uninstall:
