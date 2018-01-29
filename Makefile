@@ -70,6 +70,7 @@ install:
 	
 	# Copy Client Templates Factory
 	cp -r client_templates  $(DESTDIR)$(PREFIX)/share/raysession/
+	cp -r session_templates $(DESTDIR)$(PREFIX)/share/raysession/
 
 # 	# Install script files and binaries
 	install -m 755 data/raysession                    $(DESTDIR)$(PREFIX)/bin/ 
