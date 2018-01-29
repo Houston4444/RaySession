@@ -1,4 +1,4 @@
-# ![Carla Logo](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/48x48/raysession.png) RaySession
+# ![Carla Logo](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/128x128/raysession.png) RaySession
 
 # ---  README for Ray Session  ---
 
