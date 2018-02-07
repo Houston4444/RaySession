@@ -1059,41 +1059,59 @@ class OperatingSession(Session):
         
         self.err_saving = ERR_OK
         
-        contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"
-                   "<!DOCTYPE RAYSESSION>\n"
-                   "<RAYSESSION VERSION='%s' name='%s'>\n" % (VERSION, self.name))
+        xml = QDomDocument()
+        p = xml.createElement('RAYSESSION')
+        p.setAttribute('VERSION', VERSION)
+        p.setAttribute('name', self.name)
         
-        contents += "  <Clients>\n"
+        xml_cls = xml.createElement('Clients')
+        xml_rmcls = xml.createElement('RemovedClients')
+        
         for client in self.clients:
-            contents += "    <client id=\"%s\" executable=\"%s\" name=\"%s\" prefix_mode=\"%i\" launched=\"%i\" " % (client.client_id, client.executable_path, client.name, client.prefix_mode, int(bool(client.isRunning())) )
+            cl = xml.createElement('client')
+            cl.setAttribute('id', client.client_id)
+            cl.setAttribute('executable', client.executable_path)
+            cl.setAttribute('name', client.name)
+            cl.setAttribute('prefix_mode', client.prefix_mode)
+            cl.setAttribute('launched', int(bool(client.isRunning())) )
+            
             if client.project_path:
-                contents += "project_path=\"%s\" " % client.project_path
+                cl.setAttribute('project_path', client.project_path)
+            
             if client.icon:
-                contents += "icon=\"%s\" "  % client.icon
-            if client.label:
-                contents += "label=\"%s\" " % client.label
-            
-            #remove last space
-            contents = contents[:-1]
-            contents += "/>\n"
-            
-        contents += "  </Clients>\n"
-        contents += "  <RemovedClients>\n"
-        for ex_client in self.removed_clients:
-            contents +="     <client id=\"%s\" executable=\"%s\" name=\"%s\" prefix_mode=\"%i\" " % (ex_client.client_id, ex_client.executable_path, ex_client.name, ex_client.prefix_mode )
-            if ex_client.project_path:
-                contents += "project_path=\"%s\" " % ex_client.project_path
-            if ex_client.icon:
-                contents += "icon=\"%s\" "  % ex_client.icon
-            if ex_client.label:
-                contents += "label=\"%s\" " % ex_client.label
+                cl.setAttribute('icon', client.icon)
                 
-            #remove last space
-            contents = contents[:-1]
-            contents += "/>\n"
+            if client.label:
+                cl.setAttribute('label', client.label)
             
-        contents += "  </RemovedClients>\n"
-        contents += "</RAYSESSION>"
+            xml_cls.appendChild(cl)
+            
+        for client in self.removed_clients:
+            cl = xml.createElement('client')
+            cl.setAttribute('id', client.client_id)
+            cl.setAttribute('executable', client.executable_path)
+            cl.setAttribute('name', client.name)
+            cl.setAttribute('prefix_mode', client.prefix_mode)
+            
+            if client.project_path:
+                cl.setAttribute('project_path', client.project_path)
+            
+            if client.icon:
+                cl.setAttribute('icon', client.icon)
+                
+            if client.label:
+                cl.setAttribute('label', client.label)
+            
+            xml_rmcls.appendChild(cl)
+            
+        p.appendChild(xml_cls)
+        p.appendChild(xml_rmcls)
+        xml.appendChild(p)
+        
+        contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"
+                    "<!DOCTYPE RAYSESSION>\n")
+        
+        contents += xml.toString()
         
         file = open(session_file, 'w')
         file.write(contents)
@@ -1365,6 +1383,7 @@ class OperatingSession(Session):
             content = xml.documentElement()
             
             if content.tagName() != "RAYSESSION":
+                print(content.tagName())
                 ray_file.close()
                 self.err_loading = ERR_BAD_PROJECT
                 self.loadError()
