@@ -1057,6 +1057,13 @@ class OperatingSession(Session):
             self.saveError()
             return
         
+        try:
+            file = open(session_file, 'w')
+        except:
+            self.err_saving = ERR_CREATE_FAILED
+            self.saveError()
+            return
+        
         self.err_saving = ERR_OK
         
         xml = QDomDocument()
@@ -1113,7 +1120,7 @@ class OperatingSession(Session):
         
         contents += xml.toString()
         
-        file = open(session_file, 'w')
+        
         file.write(contents)
         file.close()
         
