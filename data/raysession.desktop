@@ -2,6 +2,7 @@
 Name=Ray Session
 GenericName=Ray Session
 Comment=NSM Interface
+Comment[fr]=Interface pour NSM
 Exec=raysession
 Icon=raysession
 Terminal=false
