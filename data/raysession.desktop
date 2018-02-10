@@ -1,7 +1,8 @@
 [Desktop Entry]
 Name=Ray Session
 GenericName=Ray Session
-Comment=NSM Interface
+Comment=Audio Session Manager
+Comment[fr]=Gestionnaire de sessions audios
 Exec=raysession
 Icon=raysession
 Terminal=false
