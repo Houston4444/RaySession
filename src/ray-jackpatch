@@ -29,7 +29,7 @@ def signalHandler(sig, frame):
         app.quit()
 
 class JackPort(object):
-    slots = ['id', 'name', 'mode', 'type', 'alias1', 'alias2']
+    slots = ['id', 'name', 'mode', 'type']
 
 def portExists(name, mode, port_type):
     for port in port_list:
@@ -414,15 +414,11 @@ if __name__ == '__main__':
     #get all currents Jack ports and connections
     portNameList = c_char_p_p_to_list(jacklib.get_ports(jack_client, "", "", 0))
     
-    pa_id = jacklib.get_client_pid("Pulse Audio JACK Sink")
-    
-    
     for portName in portNameList:
         jack_port = JackPort()
         jack_port.name = portName
         
         portPtr = jacklib.port_by_name(jack_client, portName)
-        portAliases = jacklib.port_get_aliases(portPtr)
         portFlags = jacklib.port_flags(portPtr)
         
         if portFlags & jacklib.JackPortIsInput:
@@ -439,15 +435,6 @@ if __name__ == '__main__':
             jack_port.type = PORT_TYPE_MIDI
         else:
             jack_port.type = PORT_TYPE_NULL
-        
-        jack_port.alias1 = portAliases[1]
-        jack_port.alias2 = portAliases[2]
-        
-        if portName == "system:midi_capture_1":
-            print("wahliu")
-            jacklib.port_rename(jack_client, portPtr, "Midi Through")
-        
-        print(jack_port.name, jack_port.alias1, jack_port.alias2)
         
         port_list.append(jack_port)
         
