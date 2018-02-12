@@ -791,6 +791,9 @@ def port_untie(port):
 def port_set_name(port, port_name):
     return jacklib.jack_port_set_name(port, port_name.encode("utf-8"))
 
+def port_rename(client, port, port_name):
+    return jacklib.jack_port_rename(client, port, port_name.encode("utf-8"))
+
 def port_set_alias(port, alias):
     return jacklib.jack_port_set_alias(port, alias.encode("utf-8"))
 
