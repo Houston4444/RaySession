@@ -273,6 +273,11 @@ class Proxy(QObject):
         self.stop_signal    = signal.SIGTERM
         self.label          = None
         
+        self.timer_save = QTimer()
+        self.timer_save.setSingleShot(True)
+        self.timer_save.setInterval(300)
+        self.timer_save.timeout.connect(self.timerSaveFinished)
+        
         self.timer_open = QTimer()
         self.timer_open.setSingleShot(True)
         self.timer_open.setInterval(500)
@@ -353,7 +358,7 @@ class Proxy(QObject):
         if self.isRunning() and save_signal:
             os.kill(self.process.processId(), save_signal)
             
-        server.sendToDeamon('/reply', '/nsm/client/save', 'Saved.')
+        self.timer_save.start()
     
     def stopProcess(self, signal=signal.SIGTERM):
         if signal == None:
@@ -363,6 +368,9 @@ class Proxy(QObject):
             return
         
         os.kill(self.process.processId(), signal)
+    
+    def timerSaveFinished(self):
+        server.sendToDeamon('/reply', '/nsm/client/save', 'Saved.')
     
     def timerOpenFinished(self):
         server.sendToDeamon('/reply', '/nsm/client/open', 'Ready.')
