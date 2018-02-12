@@ -31,6 +31,18 @@ def signalHandler(sig, frame):
 class JackPort(object):
     slots = ['id', 'name', 'mode', 'type']
 
+class ConnectTimer(QObject):
+    def __init__(self):
+        self.timer = QTimer()
+        self.timer.setInterval(200)
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(makeMayConnections)
+    
+    def start(self):
+        self.timer.start()
+    #def readyToConnect(self):
+        #True
+        
 def portExists(name, mode, port_type):
     for port in port_list:
         if port.name == name and port.mode == mode and port.type == port_type:
@@ -85,6 +97,9 @@ class DirtyChecker(QObject):
             
     def start(self):
         self.timer.start()
+
+def readyToConnect():
+    pass
 
 class Signaler(nsm_client.NSMSignaler):
     port_added   = pyqtSignal(str, int, int)
@@ -174,7 +189,8 @@ def portAdded(port_name, port_mode, port_type):
     port.type = port_type
     
     port_list.append(port)
-    makeAllSavedConnections(port)
+    #makeAllSavedConnections(port)
+    connect_timer.start()
     
 def portRemoved(port_name, port_mode, port_type):
     for i in range(len(port_list)):
@@ -190,7 +206,8 @@ def portRenamed(old_name, new_name, port_mode, port_type):
     for port in port_list:
         if port.name == old_name and port.mode == port_mode and port.type == port_type:
             port.name = new_name
-            makeAllSavedConnections(port)
+            connect_timer.start()
+            #makeAllSavedConnections(port)
             break
    
 def connectionAdded(port_str_A, port_str_B):
@@ -455,6 +472,7 @@ if __name__ == '__main__':
     timer.start(200)
     timer.timeout.connect(lambda: None)
     
+    connect_timer = ConnectTimer()
     dirty_checker = DirtyChecker()
     
     app.exec()
