@@ -156,6 +156,29 @@ class ClientSlot(QFrame):
         textcolor   = self.palette().buttonText().color().name()
         textdbcolor = self.palette().brush(QPalette.Disabled, QPalette.WindowText).color().name()
         
+        ##style = ("QToolButton{border-radius: 2px ;"
+                 ##"border-left:  1px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,"
+                    ##"stop:0 %s, stop:0.35 %s, stop:0.75 %s, stop:1 %s);" % (textcolor, basecolor, basecolor, textcolor)
+                 ##"border-right: 1px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,"
+                    ##"stop:0 %s, stop:0.25 %s, stop:0.75 %s, stop:1 %s);" % (textcolor, basecolor, basecolor, textcolor)
+                 ##"border-top: 1px solid %s;" % textcolor
+                 ##"border-bottom : 1px solid %s;" % textcolor
+                 ##"background-color: %s;" % basecolor 
+                 ##"font-size: 11px}"
+                 ##"QToolButton::checked{"
+                 ##"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1," 
+                    ##"stop:0 %s, stop:0.25 %s, stop:0.85 %s, stop:1 %s);" % (textcolor, basecolor, basecolor, textcolor)
+                 ##"margin-top:  0px;" 
+                 ##"margin-left: 0px }"
+                 ##"QToolButton::disabled{"
+                 ##"border-left: 1px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1," 
+                    ##"stop:0 %s, stop:0.25 %s, stop:0.75 %s, stop:1 %s);" % (textdbcolor, basecolor, basecolor, textdbcolor)
+                 ##"border-right: 1px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1," 
+                    ##"stop:0 %s, stop:0.25 %s, stop:0.75 %s, stop:1 %s);" % (textdbcolor, basecolor, basecolor, textdbcolor)
+                 ##"border-top: 1px solid %s;" % textdbcolor 
+                 ##"border-bottom : 1px solid;" % textdbcolor
+                 ##"background-color: %s}" % basecolor
+        
         style = "QToolButton{border-radius: 2px ;border-left: 1px solid " + \
                 "qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 " + textcolor + \
                 ", stop:0.35 " + basecolor + ", stop:0.75 " + basecolor + ", stop:1 " + textcolor + ")" + \
@@ -179,8 +202,8 @@ class ClientSlot(QFrame):
         self.ui.toolButtonGUI.setStyleSheet(style)
         self.ui.toolButtonGUI.setVisible(True)
         if self.client.executable_path in ('nsm-proxy', 'ray-proxy'):
-            self.ui.toolButtonGUI.setText('proxy')
-            self.ui.toolButtonGUI.setToolTip('show proxy window')
+            self.ui.toolButtonGUI.setText(_translate('client_slot', 'proxy'))
+            self.ui.toolButtonGUI.setToolTip(_translate('client_slot', 'show proxy window'))
      
     def setGuiState(self, state):
         self.gui_visible = state
@@ -198,9 +221,6 @@ class ClientSlot(QFrame):
         
     def contextMenuEvent(self, event):
         act_selected = self.menu.exec(self.mapToGlobal(event.pos()))
-        #if act_selected == self.ui.actionSaveAsApplicationTemplate:
-            #print('cpar la le modèle')
-
         event.accept()
         
 class ClientItem(QListWidgetItem):
