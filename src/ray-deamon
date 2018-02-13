@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 
 import os, sys, shutil, string, random, time, subprocess, signal, unicodedata
 from liblo import ServerThread, Address, make_method, Message

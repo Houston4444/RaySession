@@ -919,6 +919,11 @@ class MainWindow(QMainWindow):
             if self.terminate_request:
                 app.quit()
     
+    
+    def deamonCrash(self):
+        QMessageBox.critical(self, _translate('errors', "deamon crash!"), _translate('errors', "ray-deamon crashed, sorry !"))
+        app.quit()
+    
     #Reimplemented Functions
     
     def closeEvent(self, event):
@@ -1611,22 +1616,37 @@ class ErrorDialog(ChildDialog):
         self.ui.setupUi(self)
         
         self.ui.label.setText(osc_args[2])
+        
 
 class RayDeamon(object):
     def __init__(self):
         self.executable      = 'ray-deamon'
-        self.process         = None
+        self.process         = QProcess()
+        self.process.finished.connect(self.processFinished)
+        self.process.errorOccurred.connect(self.errorInProcess)
+        self.process.setProcessChannelMode(QProcess.ForwardedChannels)
         self.stopped_yet     = False
         self.is_local        = True
         self.launched_before = False
         self.address         = None
         self.port            = None
     
+    def processFinished(self, exit_code, exit_status):
+        if not MainUI.isHidden():
+            MainUI.deamonCrash()
+            
+    
+    def errorInProcess(self, error):
+        MainUI.deamonCrash()
+    
     def setOscAddress(self, address):
         self.address = address
         self.launched_before = True
         if self.address.hostname != socket.gethostname():
             self.is_local = False
+            
+    def processIsRunning(self):
+        return bool(self.process.state() == 2)
     
     def start(self):
         ##check if ray-deamon is installed
@@ -1637,29 +1657,28 @@ class RayDeamon(object):
             #sys.exit(1)
         
         #start process
-        arguments = ['ray-deamon'    ,
-                     '--gui-url'     , str(serverOSC.url), 
+        arguments = ['--gui-url'     , str(serverOSC.url), 
                      '--osc-port'    , str(self.port), 
                      '--session-root', default_folder ]
         if debug:
             arguments.append('--debug')
         
-        self.process = subprocess.Popen(arguments)
+        self.process.start('ray-deamon', arguments)
         
     def stop(self):
-        if self.process and self.process.poll() == None:
+        if self.processIsRunning():
             if not self.stopped_yet:
-                self.process.send_signal(signal.SIGTERM)
+                self.process.terminate()
                 self.stopped_yet = True
             
     def waitEnd(self):
-        if not self.process:
+        if not self.processIsRunning():
             return
         
         print('waiting for deamon to die', file=sys.stderr)
         
         for i in range(100):
-            if self.process.poll() != None:
+            if self.processIsRunning():
                 return
             time.sleep(0.050)
             
