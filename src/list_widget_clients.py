@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QApplication
 from PyQt5.QtGui     import QIcon, QPalette, QPixmap, QFontMetrics, QFont, QFontDatabase
 from PyQt5.QtCore    import Qt, pyqtSignal, QSize
  
@@ -6,6 +6,14 @@ import ui_client_slot
 
 from shared import *
 
+
+
+#def translateProxy():
+    #return _translate('client_slot', 'proxy')
+
+#def translateProxyTooltip():
+    #return _translate('client_slot', 'Show proxy window') 
+    
 class ClientSlot(QFrame):
     def __init__(self, list_widget, client):
         QFrame.__init__(self)
@@ -202,8 +210,9 @@ class ClientSlot(QFrame):
         self.ui.toolButtonGUI.setStyleSheet(style)
         self.ui.toolButtonGUI.setVisible(True)
         if self.client.executable_path in ('nsm-proxy', 'ray-proxy'):
+            _translate = QApplication.translate
             self.ui.toolButtonGUI.setText(_translate('client_slot', 'proxy'))
-            self.ui.toolButtonGUI.setToolTip(_translate('client_slot', 'show proxy window'))
+            self.ui.toolButtonGUI.setToolTip(_translate('client_slot', 'Display proxy window'))
      
     def setGuiState(self, state):
         self.gui_visible = state
@@ -321,6 +330,7 @@ class ListWidgetClients(QListWidget):
             return
         
         QListWidget.mousePressEvent(self, event)
+
         
 #if __name__ == '__main__':
     #_translate = app.translate

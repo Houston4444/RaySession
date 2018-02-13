@@ -17,5 +17,6 @@ SOURCES      += ../src/raysession
 SOURCES      += ../src/ray-deamon
 SOURCES      += ../src/ray-proxy
 SOURCES      += ../src/shared.py
+SOURCES      += ../src/list_widget_clients.py
 TRANSLATIONS += raysession_en_EN.ts
 TRANSLATIONS += raysession_fr_FR.ts

@@ -6,7 +6,7 @@
     <message>
         <location filename="." line="767"/>
         <source>A session manager  based on the Non-Session-Manager API for sound applications.</source>
-        <translation>Un gestionnaire de session basé sur l&apos; API de Non-Session-Manager pour piloter les applications audio.</translation>
+        <translation type="obsolete">Un gestionnaire de session basé sur l&apos; API de Non-Session-Manager pour piloter les applications audio.</translation>
     </message>
 </context>
 <context>
@@ -67,7 +67,7 @@
     <message>
         <location filename="../resources/ui/client_slot.ui" line="240"/>
         <source>Kill</source>
-        <translation>Tuer</translation>
+        <translation type="obsolete">Tuer</translation>
     </message>
     <message>
         <location filename="../resources/ui/client_slot.ui" line="323"/>
@@ -347,7 +347,7 @@
     <message>
         <location filename="../resources/ui/new_session.ui" line="106"/>
         <source>Use Template</source>
-        <translation>Utiliser un modèle</translation>
+        <translation type="obsolete">Utiliser un modèle</translation>
     </message>
     <message>
         <location filename="../resources/ui/new_session.ui" line="129"/>
@@ -502,32 +502,32 @@
         <translation>Tous les clients attendus sont arrêtés</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1127"/>
+        <location filename="../src/ray-deamon" line="1156"/>
         <source>Can&apos;t save session, session file is unwriteable !</source>
         <translation>Impossible de sauvegarder la session, le fichier de session n&apos;est pas inscriptible !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1113"/>
+        <location filename="../src/ray-deamon" line="1142"/>
         <source>Session saved.</source>
         <translation>Session sauvegardée.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1137"/>
+        <location filename="../src/ray-deamon" line="1166"/>
         <source>Commanding attached clients to quit.</source>
         <translation>Ordonne aux clients attachés de s&apos;arrêter.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1188"/>
+        <location filename="../src/ray-deamon" line="1217"/>
         <source>Creating new session &quot;%s&quot;</source>
-        <translation>Création d'une nouvelle session &quot;%s&quot;</translation>
+        <translation>Création d&apos;une nouvelle session &quot;%s&quot;</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1207"/>
+        <location filename="../src/ray-deamon" line="1236"/>
         <source>Session is ready</source>
         <translation>La session est prête</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1363"/>
+        <location filename="../src/ray-deamon" line="1392"/>
         <source>Opening session %s</source>
         <translation>Ouverture de la session &quot;%s&quot;</translation>
     </message>
@@ -535,27 +535,27 @@
 <context>
     <name>Load Error</name>
     <message>
-        <location filename="../src/ray-deamon" line="1539"/>
+        <location filename="../src/ray-deamon" line="1569"/>
         <source>Unknown error</source>
         <translation>Erreur inconnue</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1541"/>
+        <location filename="../src/ray-deamon" line="1571"/>
         <source>Could not create session file!</source>
         <translation>Impossible de créer le fichier de session !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1543"/>
+        <location filename="../src/ray-deamon" line="1573"/>
         <source>Session is locked by another process!</source>
         <translation>La session est verrouillée par un autre processus !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1545"/>
+        <location filename="../src/ray-deamon" line="1575"/>
         <source>The named session does not exist.</source>
         <translation>La session sus-nommée n&apos;existe pas.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1547"/>
+        <location filename="../src/ray-deamon" line="1577"/>
         <source>Could not load session file.</source>
         <translation>Impossible de charger le fichier de session.</translation>
     </message>
@@ -600,37 +600,37 @@
     <message>
         <location filename="../resources/ui/raysession.ui" line="322"/>
         <source>Add Client</source>
-        <translation>Ajouter un client</translation>
+        <translation type="obsolete">Ajouter un client</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="399"/>
         <source>Run Proxy</source>
-        <translation>Lancer le proxy</translation>
+        <translation type="obsolete">Lancer le proxy</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="405"/>
         <source>Proxy</source>
-        <translation>Proxy</translation>
+        <translation type="obsolete">Proxy</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="484"/>
         <source>Launch all clients</source>
-        <translation>Lancer tous les clients</translation>
+        <translation type="obsolete">Lancer tous les clients</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="490"/>
         <source>Launch All</source>
-        <translation>Lancer tout</translation>
+        <translation type="obsolete">Lancer tout</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="514"/>
         <source>Stop All Clients (Long Click)</source>
-        <translation>Stopper tous les clients (clic long)</translation>
+        <translation type="obsolete">Stopper tous les clients (clic long)</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="520"/>
         <source>Stop All</source>
-        <translation>Arrêter tout</translation>
+        <translation type="obsolete">Arrêter tout</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="464"/>
@@ -810,7 +810,7 @@
     <message>
         <location filename="../resources/ui/raysession.ui" line="985"/>
         <source>Add C&amp;lient</source>
-        <translation>Ajouter un c&amp;lient</translation>
+        <translation type="obsolete">Ajouter un c&amp;lient</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="942"/>
@@ -820,7 +820,7 @@
     <message>
         <location filename="../resources/ui/raysession.ui" line="1003"/>
         <source>Add Proxy</source>
-        <translation>Ajouter un proxy</translation>
+        <translation type="obsolete">Ajouter un proxy</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="187"/>
@@ -860,27 +860,27 @@
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="100"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The environment variables $NSM_CLIENT_ID and $NSM_SESSION_NAME will contain the unique client ID (suitable for use as e.g. a JACK client name) and the display name for the session, respectively.&lt;br/&gt;The variable $CONFIG_FILE will contain the name of the config file selected above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Les variables d&apos;environnement $NSM_CLIENT_ID et $NSM_SESSION_NAME contiennent respectivement l&apos;identifiant du client (pour l&apos;utilisation du nom du client JACK par exemple) et le nom de la session. &lt;br/&gt;La variable $CONFIG_FILE contient le nom du fichier de configuration selectionné ci-dessus.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation type="obsolete">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Les variables d&apos;environnement $NSM_CLIENT_ID et $NSM_SESSION_NAME contiennent respectivement l&apos;identifiant du client (pour l&apos;utilisation du nom du client JACK par exemple) et le nom de la session. &lt;br/&gt;La variable $CONFIG_FILE contient le nom du fichier de configuration selectionné ci-dessus.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="90"/>
+        <location filename="../resources/ui/proxy_gui.ui" line="91"/>
         <source>Arguments :</source>
         <translation>Arguments : </translation>
     </message>
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="116"/>
         <source>Label :</source>
-        <translation>Étiquette : </translation>
+        <translation type="obsolete">Étiquette : </translation>
     </message>
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="132"/>
         <source>Icon :</source>
-        <translation>Icône : </translation>
+        <translation type="obsolete">Icône : </translation>
     </message>
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="142"/>
         <source>Update</source>
-        <translation>Mettre à jour</translation>
+        <translation type="obsolete">Mettre à jour</translation>
     </message>
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="165"/>
@@ -888,42 +888,42 @@
         <translation type="obsolete">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Quelques programmes (vraiment très peu) peuvent répondre à un signal spécifiquement Unix pour sauvegarder leur état.&lt;/p&gt;&lt;p&gt;Si le signal de sauvegarde est réglé sur autre chose que &apos;Aucun&apos;, alors Ray-Proxy délivrera le signal choisi au processus lors de la sauvegarde du proxy.&lt;/p&gt;&lt;p&gt;Si le programme est compatible LASH/LADISH, le signal de sauvegarde est SIGUSR1&lt;/p&gt;&lt;p&gt;La plupart des programmes vont traiter ce signal comme un SIGTERM et s&apos;éteindre.&lt;/p&gt;&lt;p&gt;Vous êtes prévenus !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="143"/>
+        <location filename="../resources/ui/proxy_gui.ui" line="144"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Most programs will shutdown gracefully when sent a SIGTERM or SIGINT signal.&lt;br/&gt;It&apos;s impossible to know which signal a specific program will respond to.&lt;br/&gt;A unhandled signal will simply kill the process, and may cause problems with the audio subsystem (e.g. JACK).&lt;br/&gt;Check the program&apos;s documentation or source code to determine which signal to use to stop it gracefully.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;La plupart des programmes vont s&apos;éteindre tranquillement avec l&apos;envoi d&apos;un signal SIGTERM ou SIGINT. &lt;br/&gt;Il est impossible de savoir à quel signal un programme spécifique va répondre.&lt;br/&gt;Un signal non géré peut simplement tuer le processus et causer des problèmes avec le pilote audio (JACK par exemple).&lt;br/&gt;Consultez la documentation ou le code source du programme pour déterminer quel signal utiliser pour une extinction sereine.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="133"/>
+        <location filename="../resources/ui/proxy_gui.ui" line="134"/>
         <source>Save Signal :</source>
         <translation>Signal de sauvegarde : </translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="146"/>
+        <location filename="../resources/ui/proxy_gui.ui" line="147"/>
         <source>Stop Signal :</source>
         <translation>Signal d&apos;extinction : </translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="156"/>
+        <location filename="../resources/ui/proxy_gui.ui" line="157"/>
         <source>Test</source>
         <translation>Tester</translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="189"/>
+        <location filename="../resources/ui/proxy_gui.ui" line="191"/>
         <source>executable failed to launch !</source>
         <translation>L&apos;exécutable n&apos;a pas réussi à se lancer !</translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="214"/>
+        <location filename="../resources/ui/proxy_gui.ui" line="216"/>
         <source>Launch</source>
         <translation>Lancer</translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="225"/>
+        <location filename="../resources/ui/proxy_gui.ui" line="228"/>
         <source>Stop</source>
         <translation>Arrêter</translation>
     </message>
     <message>
-        <location filename="../resources/ui/proxy_gui.ui" line="130"/>
+        <location filename="../resources/ui/proxy_gui.ui" line="131"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state.&lt;/p&gt;&lt;p&gt;If &apos;Save Signal&apos; is set to something other than &apos;None&apos;, then Ray Proxy will deliver the specified signal to the proxied process upon an NSM &apos;Save&apos; event.&lt;/p&gt;&lt;p&gt;If program is compatible with LASH/LADISH, save signal is SIGUSR1.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Quelques programmes (vraiment très peu) peuvent répondre à un signal spécifiquement Unix pour sauvegarder leur état.&lt;/p&gt;&lt;p&gt;Si le signal de sauvegarde est réglé sur autre chose que &apos;None&apos;, alors Ray-Proxy délivrera le signal choisi au processus lors de la sauvegarde du proxy.&lt;/p&gt;&lt;p&gt;Si le programme est compatible LASH/LADISH, le signal de sauvegarde est SIGUSR1&lt;/p&gt;&lt;p&gt;La plupart des programmes vont traiter ce signal comme un SIGTERM et s&apos;éteindre.&lt;/p&gt;&lt;p&gt;Vous êtes prévenus !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
@@ -992,6 +992,11 @@
         <source>Add application to current session</source>
         <translation>Ajouter une application à la session en cours</translation>
     </message>
+    <message>
+        <location filename="../resources/ui/proxy_gui.ui" line="101"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The environment variables $NSM_CLIENT_ID and $RAY_SESSION_NAME will contain the unique client ID (suitable for use as e.g. a JACK client name) and the display name for the session, respectively.&lt;br/&gt;The variable $CONFIG_FILE will contain the name of the config file selected above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>client status</name>
@@ -1052,27 +1057,58 @@
     </message>
 </context>
 <context>
+    <name>client_slot</name>
+    <message>
+        <location filename="../src/list_widget_clients.py" line="214"/>
+        <source>proxy</source>
+        <translation>proxy</translation>
+    </message>
+    <message>
+        <location filename="../src/list_widget_clients.py" line="206"/>
+        <source>show proxy window</source>
+        <translation type="obsolete">Afficher la fenêtre du proxy</translation>
+    </message>
+    <message>
+        <location filename="../src/list_widget_clients.py" line="215"/>
+        <source>Display proxy window</source>
+        <translation>Afficher la fenêtre de proxy</translation>
+    </message>
+</context>
+<context>
     <name>error</name>
     <message>
-        <location filename="../src/ray-deamon" line="1228"/>
+        <location filename="../src/ray-deamon" line="1257"/>
         <source>Some clients could not save</source>
         <translation>Certains clients ne peuvent pas être sauvegardés</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1239"/>
+        <location filename="../src/ray-deamon" line="1268"/>
         <source>Impossible to save template, unwriteable file !</source>
         <translation>Impossible de sauvegarder le modèle, fichier non inscriptible !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1270"/>
+        <location filename="../src/ray-deamon" line="1299"/>
         <source>No template named %s</source>
         <translation>Pas de modèle nommé %s</translation>
     </message>
 </context>
 <context>
+    <name>errors</name>
+    <message>
+        <location filename="../src/raysession" line="924"/>
+        <source>deamon crash!</source>
+        <translation>Plantage du démon !</translation>
+    </message>
+    <message>
+        <location filename="../src/raysession" line="924"/>
+        <source>ray-deamon crashed, sorry !</source>
+        <translation>ray-deamon a planté, désolé !</translation>
+    </message>
+</context>
+<context>
     <name>help</name>
     <message>
-        <location filename="../src/raysession" line="1704"/>
+        <location filename="../src/raysession" line="1723"/>
         <source>A session manager based on the Non-Session-Manager API for sound applications.</source>
         <translation>Un organisateur de session basé sur l&apos; API de Non-Session-Manager pour piloter les applications audio.</translation>
     </message>
@@ -1088,7 +1124,7 @@
 <context>
     <name>new client template</name>
     <message>
-        <location filename="../src/raysession" line="1256"/>
+        <location filename="../src/raysession" line="1261"/>
         <source>New application template name :</source>
         <translation>Nom du nouveau modèle d&apos;application :</translation>
     </message>
@@ -1098,7 +1134,7 @@
     <message>
         <location filename="../src/ray-proxy" line="88"/>
         <source>None</source>
-        <translation>Aucun</translation>
+        <translation type="obsolete">Aucun</translation>
     </message>
 </context>
 <context>
@@ -1162,7 +1198,7 @@
 <context>
     <name>session template</name>
     <message>
-        <location filename="../src/raysession" line="1220"/>
+        <location filename="../src/raysession" line="1225"/>
         <source>Overwrite Template ?</source>
         <translation>Écraser le modèle ?</translation>
     </message>
@@ -1170,19 +1206,19 @@
 <context>
     <name>session_template</name>
     <message>
-        <location filename="../src/raysession" line="1220"/>
+        <location filename="../src/raysession" line="1225"/>
         <source>Template &lt;strong&gt;%s&lt;/strong&gt; already exists.
 Overwrite it ?</source>
         <translation>Le modèle &lt;strong&gt;%s&lt;/strong&gt; existe déjà.
 Voulez-vous l&apos;écraser ?</translation>
     </message>
     <message>
-        <location filename="../src/raysession" line="1131"/>
+        <location filename="../src/raysession" line="1136"/>
         <source>empty</source>
         <translation>vide</translation>
     </message>
     <message>
-        <location filename="../src/raysession" line="1132"/>
+        <location filename="../src/raysession" line="1137"/>
         <source>with JACK patch memory</source>
         <translation>avec mémoire du patch de JACK</translation>
     </message>
