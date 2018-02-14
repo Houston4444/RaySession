@@ -54,7 +54,7 @@ def portExists(name, mode, port_type):
 def setDirtyClean():
     global is_dirty
     is_dirty = False
-    NSMServer.sendToDeamon('/nsm/client/is_clean')
+    NSMServer.sendToDaemon('/nsm/client/is_clean')
 
 def timerDirtyFinish():
     global is_dirty
@@ -64,7 +64,7 @@ def timerDirtyFinish():
     
     if isDirtyNow():
         is_dirty = True
-        NSMServer.sendToDeamon('/nsm/client/is_dirty')
+        NSMServer.sendToDaemon('/nsm/client/is_dirty')
 
 def isDirtyNow():
     for connection in connection_list:
@@ -332,7 +332,7 @@ def openFile(project_path, session_name, full_client_id):
         
         if content.tagName() != "RAY-JACKPATCH":
             file.close()
-            NSMServer.sendToDeamon('/reply', '/nsm/client/open', 'Ready')
+            NSMServer.sendToDaemon('/reply', '/nsm/client/open', 'Ready')
             return
         
         cte = content.toElement()
@@ -352,7 +352,7 @@ def openFile(project_path, session_name, full_client_id):
         
         makeMayConnections()
         
-    NSMServer.sendToDeamon('/reply', '/nsm/client/open', 'Ready')
+    NSMServer.sendToDaemon('/reply', '/nsm/client/open', 'Ready')
     setDirtyClean()
     dirty_checker.start()
     
@@ -397,7 +397,7 @@ def saveFile():
     file.write(xml.toString())
     file.close()
     
-    NSMServer.sendToDeamon('/reply', '/nsm/client/save', 'Saved')
+    NSMServer.sendToDaemon('/reply', '/nsm/client/save', 'Saved')
     
     setDirtyClean()
 
@@ -407,7 +407,7 @@ if __name__ == '__main__':
         print('Could not register as NSM client.', file=sys.stderr)
         sys.exit()
     
-    deamon_address = getLibloAddress(NSM_URL)
+    daemon_address = getLibloAddress(NSM_URL)
     
     jack_client = jacklib.client_open("ray-patcher", jacklib.JackNoStartServer | jacklib.JackSessionID, None)
     if not jack_client:
@@ -432,7 +432,7 @@ if __name__ == '__main__':
     
     #makeMayConnections()
     
-    NSMServer = nsm_client.NSMThread('ray-jackpatch', signaler, deamon_address, False)
+    NSMServer = nsm_client.NSMThread('ray-jackpatch', signaler, daemon_address, False)
     NSMServer.start()
     NSMServer.announce('JACK Patch Memory', ':dirty:switch:', 'ray-jackpatch')
     
