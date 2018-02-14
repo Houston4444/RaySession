@@ -226,7 +226,7 @@ class ProxyDialog(QMainWindow):
             self.show()
     
     def closeEvent(self, event):
-        server.sendToDeamon('/nsm/client/gui_is_hidden')
+        server.sendToDaemon('/nsm/client/gui_is_hidden')
         settings.setValue('ProxyGui%s/geometry' % proxy.full_client_id, self.saveGeometry())
         settings.setValue('ProxyGui%s/WindowState'% proxy.full_client_id, self.saveState())
         settings.sync()
@@ -241,7 +241,7 @@ class ProxyDialog(QMainWindow):
             sys.exit(0)
         
     def showEvent(self, event):
-        server.sendToDeamon('/nsm/client/gui_is_shown')
+        server.sendToDaemon('/nsm/client/gui_is_shown')
         
         if settings.value('ProxyGui%s/geometry' % proxy.full_client_id):
             self.restoreGeometry(settings.value('ProxyGui%s/geometry' % proxy.full_client_id))
@@ -313,7 +313,7 @@ class Proxy(QObject):
         self.session_name   = session_name
         self.full_client_id = full_client_id
         
-        server.sendToDeamon('/nsm/client/gui_is_hidden')
+        server.sendToDaemon('/nsm/client/gui_is_hidden')
         
         if not os.path.exists(project_path):
             os.mkdir(project_path)
@@ -328,7 +328,7 @@ class Proxy(QObject):
         proxy_dialog.updateValuesFromProxyFile()
         
         if not self.proxy_file.is_launchable:
-            server.sendToDeamon('/reply', '/nsm/client/open', 'Ready')
+            server.sendToDaemon('/reply', '/nsm/client/open', 'Ready')
             proxy_dialog.show()
             return
         
@@ -370,10 +370,10 @@ class Proxy(QObject):
         os.kill(self.process.processId(), signal)
     
     def timerSaveFinished(self):
-        server.sendToDeamon('/reply', '/nsm/client/save', 'Saved.')
+        server.sendToDaemon('/reply', '/nsm/client/save', 'Saved.')
     
     def timerOpenFinished(self):
-        server.sendToDeamon('/reply', '/nsm/client/open', 'Ready.')
+        server.sendToDaemon('/reply', '/nsm/client/open', 'Ready.')
         if self.isRunning() and proxy_dialog.isVisible():
             proxy_dialog.close()
     
@@ -505,7 +505,7 @@ if __name__ == '__main__':
         print('Could not register as NSM client.', file=sys.stderr)
         sys.exit()
     
-    deamon_address = getLibloAddress(NSM_URL)
+    daemon_address = getLibloAddress(NSM_URL)
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--executable', default='')
@@ -544,7 +544,7 @@ if __name__ == '__main__':
     proxy = Proxy(executable)    
     proxy_dialog = ProxyDialog()
     
-    server = nsm_client.NSMThread('ray-proxy', signaler, deamon_address, debug)
+    server = nsm_client.NSMThread('ray-proxy', signaler, daemon_address, debug)
     server.start()
     server.announce('Ray Proxy', ':optional-gui:', 'ray-proxy')
     
