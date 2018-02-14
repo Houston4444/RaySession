@@ -538,8 +538,9 @@ class Client(QObject):
         file.close()
 
     
-    def adjustFilesAfterCopy(self, new_session_name, template_save=TEMPLATE_NONE):            
+    def adjustFilesAfterCopy(self, new_session_full_name, template_save=TEMPLATE_NONE):            
         old_session_name = session.name
+        new_session_name = os.path.basename(new_session_full_name)
         new_client_id    = self.client_id
         old_client_id    = self.client_id
         xsessionx   = "XXX_SESSION_NAME_XXX"
@@ -549,18 +550,18 @@ class Client(QObject):
             if self.prefix_mode != PREFIX_MODE_SESSION_NAME:
                 return
             
-            spath = "%s/%s" % (session.root, new_session_name)
+            spath = "%s/%s" % (session.root, new_session_full_name)
             
         elif template_save == TEMPLATE_SESSION_SAVE:
-            spath = "%s/%s" % (session_template_root, new_session_name)
+            spath = "%s/%s" % (session_template_root, new_session_full_name)
             new_session_name = xsessionx
             
         elif template_save == TEMPLATE_SESSION_LOAD:
-            spath = "%s/%s" % (session.root, new_session_name)
+            spath = "%s/%s" % (session.root, new_session_full_name)
             old_session_name = xsessionx
             
         elif template_save == TEMPLATE_CLIENT_SAVE:
-            spath = "%s/%s" % (client_template_local_root, new_session_name)
+            spath = "%s/%s" % (client_template_local_root, new_session_full_name)
             new_session_name = xsessionx
             new_client_id    = xclient_idx
            
@@ -579,15 +580,15 @@ class Client(QObject):
         
         if not os.path.exists(project_path):
             for file in os.listdir(spath):
-                    if ( file.startswith("%s.%s." % (old_prefix, old_client_id)) or
-                        file == "%s.%s" %(old_prefix, old_client_id) ):
-                        
-                        if not os.access("%s/%s" % (spath, file), os.W_OK):
-                            continue
-                        
-                        endfile = file.replace("%s.%s." % (old_prefix, old_client_id), '', 1)
-                        
-                        os.rename('%s/%s' %(spath, file), "%s/%s.%s.%s" % (spath, new_prefix, new_client_id, endfile))
+                if ( file.startswith("%s.%s." % (old_prefix, old_client_id)) or
+                    file == "%s.%s" %(old_prefix, old_client_id) ):
+                    
+                    if not os.access("%s/%s" % (spath, file), os.W_OK):
+                        continue
+                    
+                    endfile = file.replace("%s.%s." % (old_prefix, old_client_id), '', 1)
+                    
+                    os.rename('%s/%s' %(spath, file), "%s/%s.%s.%s" % (spath, new_prefix, new_client_id, endfile))
             return
         
         if not os.path.isdir(project_path):
@@ -1165,7 +1166,7 @@ class OperatingSession(Session):
                 self.expected_clients.append(client)
                 client.quit()
         
-        self.waitAndGoTo(10000, self.close_step1, WAIT_FOR_STOP)
+        self.waitAndGoTo(30000, self.close_step1, WAIT_FOR_STOP)
     
     def close_step1(self):
         for client in self.expected_clients:
@@ -1279,14 +1280,14 @@ class OperatingSession(Session):
         if template_name.startswith('///'):
             template_name = template_name.replace('///', '')
             template_path = "%s/%s" % (session_template_factory_root, template_name)
-            print(template_path)
             
         if not os.path.isdir(template_path):
             self.sendError(ERR_GENERAL_ERROR, _translate("error", "No template named %s") % template_name)
             return
         
-        new_session_name = self.osc_args[0]
-        spath = "%s/%s" % (self.root, new_session_name)
+        new_session_full_name = self.osc_args[0]
+        new_session_name = os.path.basename(new_session_full_name)
+        spath = "%s/%s" % (self.root, new_session_full_name)
         
         server.setServerStatus(SERVER_STATUS_DUPLICATE)                   
         
@@ -1313,7 +1314,9 @@ class OperatingSession(Session):
             self.err_loading = ERR_BAD_PROJECT
             self.loadError()
             return
-            
+        
+        content.setAttribute('name', new_session_name)
+        
         node = content.firstChild()
         while not node.isNull():
             tag_name = node.toElement().tagName()
@@ -1336,8 +1339,13 @@ class OperatingSession(Session):
         
         ray_file.close()
         
+        ray_file_w = open(session_file, 'w')
+        ray_file_w.write(xml.toString())
+        ray_file_w.close()
+        
+        
         for client in tmp_clients:
-            client.adjustFilesAfterCopy(new_session_name, TEMPLATE_SESSION_LOAD)
+            client.adjustFilesAfterCopy(new_session_full_name, TEMPLATE_SESSION_LOAD)
         
         self.nextFunction()
     
