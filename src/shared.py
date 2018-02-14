@@ -44,25 +44,25 @@ def setDebug(bool):
     debug = bool
 
 def getFreeOscPort(default=16187):
-    #get a free OSC port for deamon, start from default
+    #get a free OSC port for daemon, start from default
     
     if default == 65536:
         default=16187
     
-    deamon_port = default
+    daemon_port = default
     UsedPort    = True
     testport    = None
 
     while UsedPort:
         try:
-            testport = Server(deamon_port)
+            testport = Server(daemon_port)
             UsedPort = False
         except:
-            deamon_port += 1
+            daemon_port += 1
             UsedPort = True
 
     del testport
-    return deamon_port
+    return daemon_port
 
 def getLibloAddress(url):
     valid_url = False
