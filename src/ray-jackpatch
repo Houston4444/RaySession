@@ -24,6 +24,8 @@ file_path = ""
 
 is_dirty = False
 
+pending_connection = False
+
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         app.quit()
@@ -210,6 +212,9 @@ def portRenamed(old_name, new_name, port_mode, port_type):
 def connectionAdded(port_str_A, port_str_B):
     connection_list.append((port_str_A, port_str_B))
     
+    if pending_connection:
+        makeMayConnections()
+    
     if not (port_str_A, port_str_B) in saved_connections:
         dirty_checker.start()
     
@@ -270,12 +275,22 @@ def makeMayConnections():
         elif port.mode == PORT_MODE_INPUT:
             input_ports.append(port.name)
     
+    global pending_connection
+    one_connected = False
+    
     for connection in saved_connections:
         if ((not connection in connection_list) and 
             (connection[0] in output_ports) and 
             (connection[1] in input_ports)):
             
+            if one_connected:
+                pending_connection = True
+                break
+            
             jacklib.connect(jack_client, connection[0], connection[1])
+            one_connected = True
+    else:
+        pending_connection = False
         
 def c_char_p_p_to_list(c_char_p_p):
     i = 0
