@@ -1,4 +1,4 @@
 #!/bin/bash
 
 INSTALL_PREFIX="X-PREFIX-X"
-exec "$INSTALL_PREFIX/share/raysession/src/ray-deamon" "$@"
+exec "$INSTALL_PREFIX/share/raysession/src/ray-daemon" "$@"

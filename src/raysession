@@ -52,12 +52,12 @@ def remove_accents(input_str):
 
 def signalHandler(sig, frame):
     if sig in (SIGINT, SIGTERM):
-        if ray_deamon.launched_before:
+        if ray_daemon.launched_before:
             app.quit()
             return
         
         MainUI.terminate_request = True
-        ray_deamon.stop()
+        ray_daemon.stop()
 
 def changeNsmFolder(parent_window):
     global default_folder
@@ -72,7 +72,7 @@ def changeNsmFolder(parent_window):
         default_folder = nsm_folder
         settings.setValue('default_folder', default_folder)
         
-        serverOSC.toDeamon('/ray/server/change_root', nsm_folder)
+        serverOSC.toDaemon('/ray/server/change_root', nsm_folder)
 
 def negate(color):
     red   = 255 - color.red()
@@ -225,8 +225,8 @@ class Client(object):
         self.capabilities    = client_data.capabilities
         self.widget.updateClientData()
      
-    def sendPropertiesToDeamon(self):
-        serverOSC.toDeamon('/ray/gui/client/update_properties', 
+    def sendPropertiesToDaemon(self):
+        serverOSC.toDaemon('/ray/gui/client/update_properties', 
                            self.client_id,
                            self.executable_path, 
                            self.name, 
@@ -440,85 +440,85 @@ class OSCServerT(ServerThread):
         
         self.qsig.clients_reordered.emit(args)
     
-    def toDeamon(self, *args):
-        self.send(ray_deamon.address, *args)
+    def toDaemon(self, *args):
+        self.send(ray_daemon.address, *args)
     
     def announce(self):
         ifDebug('serverOSC::raysession_sends annouce')
-        self.send(ray_deamon.address, '/ray/gui/gui_announce')
+        self.send(ray_daemon.address, '/ray/gui/gui_announce')
     
     def startListSession(self):
         ifDebug('serverOSC::raysession_sends list sessions')
-        self.toDeamon('/nsm/server/list')
+        self.toDaemon('/nsm/server/list')
     
     def newSession(self, session_name):
         ifDebug('serverOSC::raysession_sends new session %s' % remove_accents(session_name))
-        self.toDeamon('/nsm/server/new', session_name)
+        self.toDaemon('/nsm/server/new', session_name)
     
     def newSessionFromTemplate(self, session_name, template_name):
-        self.toDeamon('/ray/server/new_from_template', session_name, template_name)
+        self.toDaemon('/ray/server/new_from_template', session_name, template_name)
     
     def openSession(self, session_name):
         ifDebug('serverOSC::raysession_sends open session %s' % remove_accents(session_name))
-        self.toDeamon('/nsm/server/open', session_name)
+        self.toDaemon('/nsm/server/open', session_name)
         
     def saveSession(self):
         ifDebug('serverOSC::raysession_sends save session')
-        self.toDeamon('/nsm/server/save')
+        self.toDaemon('/nsm/server/save')
         
     def closeSession(self):
         ifDebug('serverOSC::raysession_sends close session')
-        self.toDeamon('/nsm/server/close')
+        self.toDaemon('/nsm/server/close')
         
     def abortSession(self):
         ifDebug('serverOSC::raysession_sends abort session')
-        self.toDeamon('/nsm/server/abort')
+        self.toDaemon('/nsm/server/abort')
         
     def duplicateSession(self, session_name):
         ifDebug('serverOSC::raysession_sends duplication session')
-        self.toDeamon('/nsm/server/duplicate', session_name)
+        self.toDaemon('/nsm/server/duplicate', session_name)
     
     def saveTemplateSession(self, session_template_name):
         ifDebug('serverOSC::raysession_sends save template session')
-        self.toDeamon('/ray/server/save_session_template', session_template_name)    
+        self.toDaemon('/ray/server/save_session_template', session_template_name)    
     
     def startClient(self, client_id):
         ifDebug('serverOSC::raysession_sends start client %s' % client_id)
-        self.toDeamon('/ray/gui/client/resume', client_id)
+        self.toDaemon('/ray/gui/client/resume', client_id)
         
     def stopClient(self, client_id):
         ifDebug('serverOSC::raysession_sends stop client %s' % client_id)
-        self.toDeamon('/ray/gui/client/stop', client_id)
+        self.toDaemon('/ray/gui/client/stop', client_id)
         
     def killClient(self, client_id):
         ifDebug('serverOSC::raysession_sends stop client %s' % client_id)
-        self.toDeamon('/ray/gui/client/kill', client_id)
+        self.toDaemon('/ray/gui/client/kill', client_id)
         
     def saveClient(self, client_id):
         ifDebug('serverOSC::raysession_sends save client %s' % client_id)
-        self.toDeamon('/ray/gui/client/save', client_id)
+        self.toDaemon('/ray/gui/client/save', client_id)
         
     def removeClient(self, client_id):
         ifDebug('serverOSC::raysession_sends remove client %s' % client_id)
-        self.toDeamon('/ray/gui/client/remove', client_id)
+        self.toDaemon('/ray/gui/client/remove', client_id)
     
     def showClientOptionalGui(self, client_id):
         ifDebug('serverOSC::raysession_sends show optional GUI %s' % client_id)
-        self.toDeamon('/ray/gui/client/show_optional_gui', client_id)
+        self.toDaemon('/ray/gui/client/show_optional_gui', client_id)
         
     def hideClientOptionalGui(self, client_id):
         ifDebug('serverOSC::raysession_sends hide optional GUI %s' % client_id)
-        self.toDeamon('/ray/gui/client/hide_optional_gui', client_id)
+        self.toDaemon('/ray/gui/client/hide_optional_gui', client_id)
         
     def saveClientTemplate(self, client_id, template_name):
-        self.toDeamon('/ray/gui/client/save_as_template', client_id, template_name)
+        self.toDaemon('/ray/gui/client/save_as_template', client_id, template_name)
         
     def addClient(self, program_name):
         ifDebug('serverOSC::raysession_sends add Client %s' % program_name)
-        self.toDeamon('/nsm/server/add', program_name)
+        self.toDaemon('/nsm/server/add', program_name)
         
     def changeClientOrder(self, client_ids_list):
-        self.toDeamon('/ray/server/reorder_clients', *client_ids_list)
+        self.toDaemon('/ray/server/reorder_clients', *client_ids_list)
         
     #def 
 
@@ -622,8 +622,8 @@ class MainWindow(QMainWindow):
             self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark=True))
             self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save', dark=True))
         
-        #disable "keep focus" if deamon is not on this machine (it takes no sense in this case)
-        if not ray_deamon.is_local:
+        #disable "keep focus" if daemon is not on this machine (it takes no sense in this case)
+        if not ray_daemon.is_local:
             self.ui.actionKeepFocus.setChecked(False)
             self.ui.actionKeepFocus.setEnabled(False)
             
@@ -664,7 +664,7 @@ class MainWindow(QMainWindow):
         self.connectListWidgetRequests()
     
     def openFileManager(self):
-        serverOSC.toDeamon('/ray/server/openfolder')
+        serverOSC.toDaemon('/ray/server/openfolder')
     
     def raiseWindow(self):
         if self.mouse_is_inside:
@@ -672,7 +672,7 @@ class MainWindow(QMainWindow):
     
     def toggleKeepFocus(self, bool):
         self.keep_focus = bool
-        if ray_deamon.is_local:
+        if ray_daemon.is_local:
             settings.setValue('keepfocus', self.keep_focus)
         if not bool:
             self.timer_raisewin.stop()
@@ -685,7 +685,7 @@ class MainWindow(QMainWindow):
         self.flash_open_bool = not self.flash_open_bool
     
     def quitApp(self):
-        if not ray_deamon.launched_before and session.isRunning():
+        if not ray_daemon.launched_before and session.isRunning():
             dialog = quitAppDialog(self)
             dialog.exec()
             if dialog.result():
@@ -790,9 +790,9 @@ class MainWindow(QMainWindow):
             factory = dialog.isTemplateFactory(template_name)
             
             if factory:
-                serverOSC.toDeamon('/ray/server/add_factory_client_template', template_name)
+                serverOSC.toDaemon('/ray/server/add_factory_client_template', template_name)
             else:
-                serverOSC.toDeamon('/ray/server/add_user_client_template', template_name)
+                serverOSC.toDaemon('/ray/server/add_user_client_template', template_name)
     
     def addExecutable(self):
         if session.server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF):
@@ -807,7 +807,7 @@ class MainWindow(QMainWindow):
         proxy   = dialog.runViaProxy()
         
         if proxy:
-            serverOSC.toDeamon('/ray/server/add_proxy', command)
+            serverOSC.toDaemon('/ray/server/add_proxy', command)
         else:
             serverOSC.addClient(command)
     
@@ -920,8 +920,8 @@ class MainWindow(QMainWindow):
                 app.quit()
     
     
-    def deamonCrash(self):
-        QMessageBox.critical(self, _translate('errors', "deamon crash!"), _translate('errors', "ray-deamon crashed, sorry !"))
+    def daemonCrash(self):
+        QMessageBox.critical(self, _translate('errors', "daemon crash!"), _translate('errors', "ray-daemon crashed, sorry !"))
         app.quit()
     
     #Reimplemented Functions
@@ -981,7 +981,7 @@ class OpenSessionDialog(ChildDialog):
         serverOSC.qsig.add_session_to_list.connect(self.addSession)
         serverOSC.startListSession()
         
-        if ray_deamon.launched_before:
+        if ray_daemon.launched_before:
             self.ui.toolButtonFolder.setVisible(False)
             self.ui.currentNsmFolder.setVisible(False)
             self.ui.labelNsmFolder.setVisible(False)
@@ -1107,9 +1107,9 @@ class NewSessionDialog(ChildDialog):
             self.ui.labelTemplate.setVisible(False)
             self.ui.comboBoxTemplate.setVisible(False)
         else:
-            serverOSC.toDeamon('/ray/server/list_session_templates')
+            serverOSC.toDaemon('/ray/server/list_session_templates')
         
-        if ray_deamon.launched_before:
+        if ray_daemon.launched_before:
             self.ui.toolButtonFolder.setVisible(False)
             self.ui.currentNsmFolder.setVisible(False)
             self.ui.labelNsmFolder.setVisible(False)
@@ -1235,7 +1235,7 @@ class SaveTemplateSessionDialog(AbstractSaveTemplateDialog):
         self.template_list = []
         
         serverOSC.qsig.session_template_found.connect(self.addTemplatesToList)
-        serverOSC.toDeamon('/ray/server/list_session_templates')
+        serverOSC.toDaemon('/ray/server/list_session_templates')
         
         self.serverStatusChanged(session.server_status)
     
@@ -1260,7 +1260,7 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
         self.ui.labelNewTemplateName.setText(_translate('new client template', "New application template name :"))
         
         serverOSC.qsig.user_client_template_found.connect(self.addTemplatesToList)
-        serverOSC.toDeamon('/ray/server/list_user_client_templates')
+        serverOSC.toDaemon('/ray/server/list_user_client_templates')
         
         self.serverStatusChanged(session.server_status)
     
@@ -1301,7 +1301,7 @@ class ClientPropertiesDialog(ChildDialog):
     def saveChanges(self):
         self.client.label     = self.ui.lineEditLabel.text()
         self.client.icon_name = self.ui.lineEditIcon.text()
-        self.client.sendPropertiesToDeamon()
+        self.client.sendPropertiesToDaemon()
         
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):
@@ -1386,8 +1386,8 @@ class AddApplicationDialog(ChildDialog):
         
         serverOSC.qsig.user_client_template_found.connect(self.addUserTemplates)
         serverOSC.qsig.factory_client_template_found.connect(self.addFactoryTemplates)
-        serverOSC.toDeamon('/ray/server/list_user_client_templates')
-        serverOSC.toDeamon('/ray/server/list_factory_client_templates')
+        serverOSC.toDaemon('/ray/server/list_user_client_templates')
+        serverOSC.toDaemon('/ray/server/list_factory_client_templates')
         #serverOSC.startListSession()
         
         self.user_template_list    = []
@@ -1567,7 +1567,7 @@ class newExecutableDialog(ChildDialog):
         
         self.ui.checkBoxProxy.stateChanged.connect(self.proxyStateChanged)
         serverOSC.qsig.new_executable.connect(self.addExecutableToCompleter)
-        serverOSC.toDeamon('/ray/server/list_path')
+        serverOSC.toDaemon('/ray/server/list_path')
         
         self.exec_list = []
         
@@ -1618,9 +1618,9 @@ class ErrorDialog(ChildDialog):
         self.ui.label.setText(osc_args[2])
         
 
-class RayDeamon(object):
+class RayDaemon(object):
     def __init__(self):
-        self.executable      = 'ray-deamon'
+        self.executable      = 'ray-daemon'
         self.process         = QProcess()
         self.process.finished.connect(self.processFinished)
         self.process.errorOccurred.connect(self.errorInProcess)
@@ -1633,11 +1633,11 @@ class RayDeamon(object):
     
     def processFinished(self, exit_code, exit_status):
         if not MainUI.isHidden():
-            MainUI.deamonCrash()
+            MainUI.daemonCrash()
             
     
     def errorInProcess(self, error):
-        MainUI.deamonCrash()
+        MainUI.daemonCrash()
     
     def setOscAddress(self, address):
         self.address = address
@@ -1649,7 +1649,7 @@ class RayDeamon(object):
         return bool(self.process.state() == 2)
     
     def start(self):
-        ##check if ray-deamon is installed
+        ##check if ray-daemon is installed
         #try:
             #subprocess.check_output(['which', self.executable])
         #except:
@@ -1663,7 +1663,7 @@ class RayDeamon(object):
         if debug:
             arguments.append('--debug')
         
-        self.process.start('ray-deamon', arguments)
+        self.process.start('ray-daemon', arguments)
         
     def stop(self):
         if self.processIsRunning():
@@ -1675,14 +1675,14 @@ class RayDeamon(object):
         if not self.processIsRunning():
             return
         
-        print('waiting for deamon to die', file=sys.stderr)
+        print('waiting for daemon to die', file=sys.stderr)
         
         for i in range(100):
             if self.processIsRunning():
                 return
             time.sleep(0.050)
             
-        print('ray-deamon is still running, sorry !', file=sys.stderr)
+        print('ray-daemon is still running, sorry !', file=sys.stderr)
     
     def setNewOscAddress(self):
         if not (self.address or self.port):
@@ -1718,15 +1718,15 @@ if __name__ == '__main__':
     
     #get arguments
     parser = argparse.ArgumentParser(description=_translate('help', 'A session manager based on the Non-Session-Manager API for sound applications.'))
-    parser.add_argument('--deamon-url', '-u', type=getLibloAddress, help='connect to this deamon url')
+    parser.add_argument('--daemon-url', '-u', type=getLibloAddress, help='connect to this daemon url')
     parser.add_argument('--debug','-d',  action='store_true', help='display OSC messages')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parsed_args = parser.parse_args()
     
-    ray_deamon = RayDeamon()
+    ray_daemon = RayDaemon()
     
-    if parsed_args.deamon_url:
-        ray_deamon.setOscAddress(parsed_args.deamon_url)
+    if parsed_args.daemon_url:
+        ray_daemon.setOscAddress(parsed_args.daemon_url)
         
     debug = parsed_args.debug
     setDebug(debug)
@@ -1741,7 +1741,7 @@ if __name__ == '__main__':
     #get default folder
     default_folder = settings.value('default_folder', "%s/NSM Sessions" % os.getenv('HOME') )
     
-    ray_deamon.setNewOscAddress()
+    ray_daemon.setNewOscAddress()
     
     serverOSC = OSCServerT()
     serverOSC.start()
@@ -1751,17 +1751,17 @@ if __name__ == '__main__':
     MainUI = MainWindow()
     MainUI.show()
     
-    if ray_deamon.launched_before:
+    if ray_daemon.launched_before:
         serverOSC.announce()
     else:
-        ray_deamon.start()
+        ray_daemon.start()
     
     app.exec()
     
     serverOSC.stop()
-    ray_deamon.stop()
+    ray_daemon.stop()
     MainUI.hide()
-    ray_deamon.waitEnd()
+    ray_daemon.waitEnd()
     
     del MainUI
     del app

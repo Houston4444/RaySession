@@ -3,7 +3,7 @@
     prevent stop client if not saved (when possible)
     clean from client means save session (option)
     SooperLooper NSM starter
-    ray-deamon as NSM client
+    ray-daemon as NSM client
     Jack Patchbay
     drop file directly on session
     terminal per client

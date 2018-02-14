@@ -9,7 +9,7 @@ from shared import *
 
 
 
-#ray-deamon doesn't really cares if jack is running or not
+#ray-daemon doesn't really cares if jack is running or not
 #but if jack is running, it just ask all jack ports between many clients launchs or stops
 #It 'maybe' prevent some jack bugs
 try:
@@ -76,8 +76,8 @@ def ifDebug(string):
 
 def MESSAGE(string):
     global last_client_message
-    last_client_message = 'deamon'
-    print('[' + '\033[90m' + 'ray-deamon' + '\033[0m' + '] ' + '\033[92m' + string + '\033[0m', file=sys.stderr)
+    last_client_message = 'daemon'
+    print('[' + '\033[90m' + 'ray-daemon' + '\033[0m' + '] ' + '\033[92m' + string + '\033[0m', file=sys.stderr)
 
 def CLIENT_MESSAGE(string, client_name, client_id):
     global last_client_message
@@ -89,7 +89,7 @@ def CLIENT_MESSAGE(string, client_name, client_id):
     last_client_message = client_str
 
 def WARNING(string):
-    print('[' + '\033[90m' + 'ray-deamon' + '\033[0m' + '] ' + '\033[93m' + string + '\033[0m', file=sys.stderr)
+    print('[' + '\033[90m' + 'ray-daemon' + '\033[0m' + '] ' + '\033[93m' + string + '\033[0m', file=sys.stderr)
     
 def GUIMSG(message):
     server.sendGui('/ray/gui/server/message', message)
@@ -1540,7 +1540,7 @@ class OperatingSession(Session):
     def load_step2(self):
         for client in self.expected_clients:
             known_as_non_active.append(client.executable_path)
-        settings.setValue('deamon/non_active_list', known_as_non_active)
+        settings.setValue('daemon/non_active_list', known_as_non_active)
         settings.sync()
         
         self.cleanExpected()
@@ -2066,7 +2066,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/nsm/server/announce', 'sssiii')
     def nsmServerAnnounce(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Sorry, but there's no session open for this application to join." )
@@ -2076,12 +2076,12 @@ class OscServerThread(ServerThread):
         
     @make_method('/reply', 'ss')
     def reply(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.server_reply.emit(path, args, src_addr)
             
     @make_method('/error', 'sis')
     def error(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         client = getClientByAddress(src_addr)
         if not client:
@@ -2100,7 +2100,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/nsm/client/progress', 'f')
     def nsmClientProgress(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         client = getClientByAddress(src_addr)
         if not client:
             return
@@ -2110,7 +2110,7 @@ class OscServerThread(ServerThread):
     
     @make_method('/nsm/client/is_dirty', '')
     def nsmClientIs_dirty(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         MESSAGE("Client sends dirty")
         
@@ -2124,7 +2124,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/nsm/client/is_clean', '')
     def nsmClientIs_clean(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         MESSAGE("Client sends clean")
         
@@ -2138,7 +2138,7 @@ class OscServerThread(ServerThread):
     
     @make_method('/nsm/client/message', 'is')
     def nsmClientMessage(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         client = getClientByAddress(src_addr)
         if not client:
@@ -2148,7 +2148,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/nsm/client/gui_is_hidden', '')
     def nsmClientGui_is_hidden(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         MESSAGE("Client sends gui hidden")
         
@@ -2162,7 +2162,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/nsm/client/gui_is_shown', '')
     def nsmClientGui_is_shown(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         MESSAGE("Client sends gui shown")
         
         client = getClientByAddress(src_addr)
@@ -2175,7 +2175,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/nsm/client/label', 's')
     def nsmClientLabel(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         client = getClientByAddress(src_addr)
         if not client:
@@ -2186,42 +2186,42 @@ class OscServerThread(ServerThread):
             
     @make_method('/ray/gui/gui_announce', '')
     def nsmGuiGui_announce(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         self.announceGui(src_addr.url, True)
 
     @make_method('/ray/gui/client/stop', 's')
     def nsmGuiClientStop(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_stop.emit(path, args)
     
     @make_method('/ray/gui/client/kill', 's')
     def nsmGuiClientKill(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_kill.emit(path, args)            
     
     @make_method('/ray/gui/client/remove', 's')
     def nsmGuiClientRemove(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_remove.emit(path, args)
         
     @make_method('/ray/gui/client/resume', 's')
     def nsmGuiClientResume(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_resume.emit(path, args)
                 
     @make_method('/ray/gui/client/save', 's')
     def nsmGuiClientSave(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_save.emit(path, args)
 
     @make_method('/ray/gui/client/save_as_template', 'ss')
     def rayGuiClientSaveAsTemplate(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_save_template.emit(path, args)
     
     @make_method('/ray/gui/client/show_optional_gui', 's')
     def nsmGuiClientShow_optional_gui(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         client = getClientById(args[0])
         
@@ -2230,7 +2230,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/ray/gui/client/hide_optional_gui', 's')
     def nsmGuiClientHide_optional_gui(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         client = getClientById(args[0])
         
@@ -2239,20 +2239,20 @@ class OscServerThread(ServerThread):
 
     @make_method('/ray/gui/client/update_properties', 'sssissss')
     def rayGuiClientUpdateProperties(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         client_data = ClientData(*args)
         signaler.gui_update_client_properties.emit(client_data)
 
     @make_method('/osc/ping', '')
     def oscPing(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         self.send(src_addr, "/reply", path)
 
     @make_method('/nsm/server/broadcast', None)
     def nsmServerBroadcast(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not args:
             return
@@ -2277,7 +2277,7 @@ class OscServerThread(ServerThread):
         
     @make_method('/nsm/server/duplicate', 's')
     def nsmServerDuplicate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if self.isOperationPending(src_addr, path):
             return
@@ -2294,7 +2294,7 @@ class OscServerThread(ServerThread):
         
     @make_method('/ray/server/save_session_template', 's')
     def nsmServerSaveSessionTemplate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if self.isOperationPending(src_addr, path):
             return
@@ -2312,7 +2312,7 @@ class OscServerThread(ServerThread):
     
     @make_method('/nsm/server/abort', '')
     def nsmServerAbort(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to abort." )
@@ -2322,13 +2322,13 @@ class OscServerThread(ServerThread):
 
     @make_method('/nsm/server/list', '')
     def nsmServerList(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         signaler.server_list_sessions.emit(path, args, src_addr)
         
     @make_method('/nsm/server/add', 's')
     def nsmServerAdd(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
@@ -2341,7 +2341,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/ray/server/add_proxy', 's')
     def rayServerAddProxy(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
@@ -2353,7 +2353,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/ray/server/add_user_client_template', 's')
     def rayServerAddUserClientTemplate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
@@ -2363,7 +2363,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/ray/server/add_factory_client_template', 's')
     def rayServerAddFactoryClientTemplate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
@@ -2374,7 +2374,7 @@ class OscServerThread(ServerThread):
     
     @make_method('/nsm/server/new', 's')
     def nsmServerNew(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if self.isOperationPending(src_addr, path):
             return
@@ -2387,7 +2387,7 @@ class OscServerThread(ServerThread):
     
     @make_method('/ray/server/new_from_template', 'ss')
     def rayServerNewFromTemplate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if self.isOperationPending(src_addr, path):
             return
@@ -2396,7 +2396,7 @@ class OscServerThread(ServerThread):
     
     @make_method('/nsm/server/save', '')
     def nsmServerSave(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if self.isOperationPending(src_addr, path):
             return
@@ -2409,7 +2409,7 @@ class OscServerThread(ServerThread):
 
     @make_method('/nsm/server/open', 's')
     def nsmServerOpen(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if self.isOperationPending(src_addr, path):
             return
@@ -2418,7 +2418,7 @@ class OscServerThread(ServerThread):
             
     @make_method('/nsm/server/close', '')
     def nsmServerClose(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if self.isOperationPending(src_addr, path):
             return
@@ -2431,20 +2431,20 @@ class OscServerThread(ServerThread):
         
     @make_method('/nsm/server/quit', '')
     def nsmServerQuit(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         sys.exit(0)
     
     ###Additional Ray features###
     
     @make_method('/ray/server/openfolder', '')
     def rayServerOpenFolder(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         if  session.path:
             subprocess.Popen(['xdg-open',  session.path])
         
     @make_method('/ray/server/reorder_clients', None)
     def rayServerReorderClients(self, path, args):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not areTheyAllString(args):
             return
@@ -2453,7 +2453,7 @@ class OscServerThread(ServerThread):
         
     @make_method('/ray/server/change_root', 's')
     def rayServerChangeRoot(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if session.path:
             self.send(src_addr, '/reply', "Can't change session_root while a session is running")
@@ -2463,7 +2463,7 @@ class OscServerThread(ServerThread):
     
     @make_method('/ray/server/list_path', '')
     def rayServerListPath(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         exec_list = []
         tmp_exec_list = []
@@ -2486,7 +2486,7 @@ class OscServerThread(ServerThread):
             
     @make_method('/ray/server/list_session_templates', '')
     def rayServerListSessionTemplates(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not os.path.isdir(session_template_root):
             return
@@ -2508,13 +2508,13 @@ class OscServerThread(ServerThread):
     
     @make_method('/ray/server/list_user_client_templates', '')
     def rayServerListUserClientTemplates(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         self.listClientTemplates(src_addr, False)
     
     @make_method('/ray/server/list_factory_client_templates', '')
     def rayServerListFactoryClientTemplates(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-deamon_receives %s, %s' % (path, str(args)))
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         self.listClientTemplates(src_addr, True)
     
@@ -2655,7 +2655,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--session-root', '-r', help='set root folder for sessions', default=session_root)
-    parser.add_argument('--osc-port', type=int, default=16187, help='select OSC port for the deamon')
+    parser.add_argument('--osc-port', type=int, default=16187, help='select OSC port for the daemon')
     parser.add_argument('--gui-url', type=getLibloAddress, help=argparse.SUPPRESS)
     parser.add_argument('--debug','-d',  action='store_true', help='see all OSC messages')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
@@ -2674,7 +2674,7 @@ if __name__ == '__main__':
     #app.setApplicationVersion(VERSION)
     app.setOrganizationName("RaySession")
     settings = QSettings()
-    known_as_non_active = settings.value('deamon/non_active_list', [])
+    known_as_non_active = settings.value('daemon/non_active_list', [])
     
     app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
     session_template_root = "%s/%s" % (app_config_path, 'session_templates')
@@ -2709,7 +2709,7 @@ if __name__ == '__main__':
     
     app.exec()
     
-    settings.setValue('deamon/non_active_list', known_as_non_active)
+    settings.setValue('daemon/non_active_list', known_as_non_active)
     settings.sync()
     
     server.stop()

@@ -11,11 +11,11 @@ class NSMSignaler(QObject):
     hide_optional_gui = pyqtSignal()
 
 class NSMThread(ServerThread):
-    def __init__(self, name, signaler, deamon_address, debug):
+    def __init__(self, name, signaler, daemon_address, debug):
         ServerThread.__init__(self)
         self.name           = name
         self.signaler       = signaler
-        self.deamon_address = deamon_address
+        self.daemon_address = daemon_address
         self.debug          = debug
 
     @make_method('/nsm/client/open', 'sss')
@@ -42,12 +42,12 @@ class NSMThread(ServerThread):
         if self.debug:
            print(string, file=sys.stderr)
            
-    def sendToDeamon(self, *args):
-        self.send(self.deamon_address, *args)
+    def sendToDaemon(self, *args):
+        self.send(self.daemon_address, *args)
         
     def announce(self, client_name, capabilities, executable_path):
         major = 1
         minor = 0
         pid   = os.getpid()
         
-        self.sendToDeamon('/nsm/server/announce', client_name, capabilities, executable_path, major, minor, pid)
+        self.sendToDaemon('/nsm/server/announce', client_name, capabilities, executable_path, major, minor, pid)

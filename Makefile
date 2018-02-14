@@ -74,7 +74,7 @@ install:
 
 # 	# Install script files and binaries
 	install -m 755 data/raysession                    $(DESTDIR)$(PREFIX)/bin/ 
-	install -m 755 data/ray-deamon                    $(DESTDIR)$(PREFIX)/bin/ 
+	install -m 755 data/ray-daemon                    $(DESTDIR)$(PREFIX)/bin/ 
 # 	install -m 755 data/ray-proxy                     $(DESTDIR)$(PREFIX)/bin/
 	
 	install -m 644 data/*.desktop                     $(DESTDIR)$(PREFIX)/share/applications/
@@ -96,7 +96,7 @@ install:
 
 	# Install main code
 	install -m 755 src/raysession        $(DESTDIR)$(PREFIX)/share/raysession/src/
-	install -m 755 src/ray-deamon        $(DESTDIR)$(PREFIX)/share/raysession/src/
+	install -m 755 src/ray-daemon        $(DESTDIR)$(PREFIX)/share/raysession/src/
 	install -m 755 src/ray-proxy         $(DESTDIR)$(PREFIX)/share/raysession/src/
 	install -m 755 src/ray-jackpatch     $(DESTDIR)$(PREFIX)/share/raysession/src/
 	install -m 755 src/sooperlooper_lash $(DESTDIR)$(PREFIX)/share/raysession/src/
@@ -107,13 +107,13 @@ install:
 	
 	# Adjust PREFIX value in script file
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/raysession
-	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/ray-deamon
+	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/ray-daemon
 # 	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/ray-proxy
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/raysession
-	rm -f $(DESTDIR)$(PREFIX)/bin/ray-deamon
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray-daemon
 	rm -f $(DESTDIR)$(PREFIX)/bin/ray-proxy
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/raysession.desktop
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/raysession.png
