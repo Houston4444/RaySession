@@ -926,10 +926,10 @@ class OperatingSession(Session):
         self.timer_launch.timeout.connect(self.timerLaunchTimeOut)
         self.clients_to_launch = []
         
-        self.timer_stop = QTimer()
-        self.timer_stop.setInterval(100)
-        self.timer_stop.timeout.connect(self.timerStopTimeOut)
-        self.clients_to_stop = []
+        self.timer_quit = QTimer()
+        self.timer_quit.setInterval(100)
+        self.timer_quit.timeout.connect(self.timerQuitTimeOut)
+        self.clients_to_quit = []
         
         self.err_loading = ERR_OK
         self.err_saving  = ERR_OK
@@ -1009,14 +1009,14 @@ class OperatingSession(Session):
         if not self.clients_to_launch:
             self.timer_launch.stop()
             
-    def timerStopTimeOut(self):
-        if self.clients_to_stop:
+    def timerQuitTimeOut(self):
+        if self.clients_to_quit:
             waitForJack()
-            self.clients_to_stop[0].stop()
-            self.clients_to_stop.__delitem__(0)
+            self.clients_to_quit[0].quit()
+            self.clients_to_quit.__delitem__(0)
             
-        if not self.clients_to_stop:
-            self.timer_stop.stop()
+        if not self.clients_to_quit:
+            self.timer_quit.stop()
     
     def sendError(self, err, error_message):
         #clear process order to allow other new operations
@@ -1155,16 +1155,18 @@ class OperatingSession(Session):
         self.expected_clients.clear()
         self.removed_clients.clear()
         
-        if not  self.path:
+        if not self.path:
             self.nextFunction()
             return
         
         server.setServerStatus(SERVER_STATUS_CLOSE)
         
-        for client in self.clients:
+        for client in self.clients.__reversed__():
             if client.isRunning():
                 self.expected_clients.append(client)
-                client.quit()
+                #client.quit()
+                self.clients_to_quit.append(client)
+                self.timer_quit.start()
         
         self.waitAndGoTo(30000, self.close_step1, WAIT_FOR_STOP)
     
@@ -1529,7 +1531,6 @@ class OperatingSession(Session):
         #* to give up waiting on them fairly soon. */
         
         self.timer_launch.start()
-        #wait_time_announce = 5000 + (len(self.expected_clients)*100)
         
         self.reOrderClients(new_client_id_list)
         server.sendGui('/ray/gui/clients_reordered', *new_client_id_list)
