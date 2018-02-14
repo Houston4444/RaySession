@@ -267,7 +267,7 @@
     </message>
     <message>
         <location filename="../resources/ui/about_raysession.ui" line="44"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ray Session is a Qt interface for the ray-deamon.&lt;/p&gt;&lt;p&gt;Its goal is to manage together audio programs as Ardour, Carla, Qtractor, Non-Timeline in an unique session.&lt;/p&gt;&lt;p&gt;Programs just have to be compatible with the &lt;a href=&quot;http://non.tuxfamily.org/wiki/Non%20Session%20Manager&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;NSM&lt;/span&gt;&lt;/a&gt; API to work with Ray Session.&lt;br/&gt;&lt;/p&gt;&lt;p align=&quot;right&quot;&gt;Copyright (C) 2016-2017 houston4444&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ray Session is a Qt interface for the ray-daemon.&lt;/p&gt;&lt;p&gt;Its goal is to manage together audio programs as Ardour, Carla, Qtractor, Non-Timeline in an unique session.&lt;/p&gt;&lt;p&gt;Programs just have to be compatible with the &lt;a href=&quot;http://non.tuxfamily.org/wiki/Non%20Session%20Manager&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;NSM&lt;/span&gt;&lt;/a&gt; API to work with Ray Session.&lt;br/&gt;&lt;/p&gt;&lt;p align=&quot;right&quot;&gt;Copyright (C) 2016-2017 houston4444&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -437,97 +437,97 @@
 <context>
     <name>GUIMSG</name>
     <message>
-        <location filename="../src/ray-deamon" line="225"/>
+        <location filename="../src/ray-daemon" line="225"/>
         <source>Launching %s</source>
         <translation>Lancement de %s</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="105"/>
+        <location filename="../src/ray-daemon" line="105"/>
         <source>Good Bye ! Clients are still running.</source>
         <translation>Au Revoir ! Les clients tournent encore.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="108"/>
+        <location filename="../src/ray-daemon" line="108"/>
         <source>Good Bye !</source>
         <translation>Au Revoir !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="272"/>
+        <location filename="../src/ray-daemon" line="272"/>
         <source>Client %s terminated because we told it to.</source>
         <translation>Le client %s s&apos;est arrêté car nous lui avons demandé.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="274"/>
+        <location filename="../src/ray-daemon" line="274"/>
         <source>Client %s died unexpectedly.</source>
         <translation>Le client %s s&apos;est arrêté de manière inexpliquée.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="293"/>
+        <location filename="../src/ray-daemon" line="293"/>
         <source>Failed to start %s</source>
         <translation>Échec du lancement de %s</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="330"/>
+        <location filename="../src/ray-daemon" line="330"/>
         <source>Stopping client %s</source>
         <translation>Arrêt du client %s</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="971"/>
+        <location filename="../src/ray-daemon" line="971"/>
         <source>waiting for clients announces...</source>
         <translation>en attente des annonces des clients...</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="973"/>
+        <location filename="../src/ray-daemon" line="973"/>
         <source>waiting for clients to die...</source>
         <translation>en attente de l&apos;arrêt des clients...</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="998"/>
+        <location filename="../src/ray-daemon" line="998"/>
         <source>%sdidn&apos;t announce</source>
         <translation>%s ne s&apos;est pas annoncé</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1000"/>
+        <location filename="../src/ray-daemon" line="1000"/>
         <source>%sstill alive !</source>
         <translation>%s est toujours en vie !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1005"/>
+        <location filename="../src/ray-daemon" line="1005"/>
         <source>All expected clients are announced</source>
         <translation>Tous les clients attendus sont annoncés</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1007"/>
+        <location filename="../src/ray-daemon" line="1007"/>
         <source>All expected clients are died</source>
         <translation>Tous les clients attendus sont arrêtés</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1156"/>
+        <location filename="../src/ray-daemon" line="1156"/>
         <source>Can&apos;t save session, session file is unwriteable !</source>
         <translation>Impossible de sauvegarder la session, le fichier de session n&apos;est pas inscriptible !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1142"/>
+        <location filename="../src/ray-daemon" line="1142"/>
         <source>Session saved.</source>
         <translation>Session sauvegardée.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1166"/>
+        <location filename="../src/ray-daemon" line="1166"/>
         <source>Commanding attached clients to quit.</source>
         <translation>Ordonne aux clients attachés de s&apos;arrêter.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1217"/>
+        <location filename="../src/ray-daemon" line="1217"/>
         <source>Creating new session &quot;%s&quot;</source>
         <translation>Création d&apos;une nouvelle session &quot;%s&quot;</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1236"/>
+        <location filename="../src/ray-daemon" line="1236"/>
         <source>Session is ready</source>
         <translation>La session est prête</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1392"/>
+        <location filename="../src/ray-daemon" line="1392"/>
         <source>Opening session %s</source>
         <translation>Ouverture de la session &quot;%s&quot;</translation>
     </message>
@@ -535,27 +535,27 @@
 <context>
     <name>Load Error</name>
     <message>
-        <location filename="../src/ray-deamon" line="1569"/>
+        <location filename="../src/ray-daemon" line="1569"/>
         <source>Unknown error</source>
         <translation>Erreur inconnue</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1571"/>
+        <location filename="../src/ray-daemon" line="1571"/>
         <source>Could not create session file!</source>
         <translation>Impossible de créer le fichier de session !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1573"/>
+        <location filename="../src/ray-daemon" line="1573"/>
         <source>Session is locked by another process!</source>
         <translation>La session est verrouillée par un autre processus !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1575"/>
+        <location filename="../src/ray-daemon" line="1575"/>
         <source>The named session does not exist.</source>
         <translation>La session sus-nommée n&apos;existe pas.</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1577"/>
+        <location filename="../src/ray-daemon" line="1577"/>
         <source>Could not load session file.</source>
         <translation>Impossible de charger le fichier de session.</translation>
     </message>
@@ -1077,17 +1077,17 @@
 <context>
     <name>error</name>
     <message>
-        <location filename="../src/ray-deamon" line="1257"/>
+        <location filename="../src/ray-daemon" line="1257"/>
         <source>Some clients could not save</source>
         <translation>Certains clients ne peuvent pas être sauvegardés</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1268"/>
+        <location filename="../src/ray-daemon" line="1268"/>
         <source>Impossible to save template, unwriteable file !</source>
         <translation>Impossible de sauvegarder le modèle, fichier non inscriptible !</translation>
     </message>
     <message>
-        <location filename="../src/ray-deamon" line="1299"/>
+        <location filename="../src/ray-daemon" line="1299"/>
         <source>No template named %s</source>
         <translation>Pas de modèle nommé %s</translation>
     </message>
@@ -1096,13 +1096,13 @@
     <name>errors</name>
     <message>
         <location filename="../src/raysession" line="924"/>
-        <source>deamon crash!</source>
+        <source>daemon crash!</source>
         <translation>Plantage du démon !</translation>
     </message>
     <message>
         <location filename="../src/raysession" line="924"/>
-        <source>ray-deamon crashed, sorry !</source>
-        <translation>ray-deamon a planté, désolé !</translation>
+        <source>ray-daemon crashed, sorry !</source>
+        <translation>ray-daemon a planté, désolé !</translation>
     </message>
 </context>
 <context>

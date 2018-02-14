@@ -285,7 +285,7 @@ class ListWidgetClients(QListWidget):
                 break
     
     def reOrderClients(self, client_id_list):
-        #when re_order comes from ray-deamon (loading session)
+        #when re_order comes from ray-daemon (loading session)
         if len(client_id_list) != self.count():
             return
         
