@@ -1382,7 +1382,7 @@ class OperatingSession(Session):
         self.new_clients = []
         new_client_executables = []
         
-        session.setPath(spath)
+        self.setPath(spath)
         
         if is_ray_file:
             xml = QDomDocument()
@@ -1391,12 +1391,15 @@ class OperatingSession(Session):
             content = xml.documentElement()
             
             if content.tagName() != "RAYSESSION":
-                print(content.tagName())
                 ray_file.close()
                 self.err_loading = ERR_BAD_PROJECT
                 self.loadError()
                 return
-                
+            
+            sess_name = content.attribute('name')
+            if sess_name:
+                self.name = sess_name
+            
             node = content.firstChild()
             while not node.isNull():
                 tag_name = node.toElement().tagName()
