@@ -270,18 +270,12 @@ def makeMayConnections():
         elif port.mode == PORT_MODE_INPUT:
             input_ports.append(port.name)
     
-    #one_connected = False
-    
     for connection in saved_connections:
         if ((not connection in connection_list) and 
             (connection[0] in output_ports) and 
             (connection[1] in input_ports)):
             
-            #if one_connected:
-                #break
-            
             jacklib.connect(jack_client, connection[0], connection[1])
-            #one_connected = True
         
 def c_char_p_p_to_list(c_char_p_p):
     i = 0
