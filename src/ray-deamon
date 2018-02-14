@@ -1289,6 +1289,10 @@ class OperatingSession(Session):
         new_session_name = os.path.basename(new_session_full_name)
         spath = "%s/%s" % (self.root, new_session_full_name)
         
+        if os.path.exists(spath):
+            self.sendError(ERR_CREATE_FAILED, _translate("error", "Folder \n%s \nalready exists") % spath)
+            return
+        
         server.setServerStatus(SERVER_STATUS_DUPLICATE)                   
         
         shutil.copytree(template_path, spath)
