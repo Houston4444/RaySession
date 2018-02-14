@@ -95,9 +95,10 @@ def GUIMSG(message):
     server.sendGui('/ray/gui/server/message', message)
 
 def waitForJack():
-    if jack_bus and jack_bus.IsStarted():
-        all_ports = jack_bus.GetAllPorts()
-        del all_ports
+    pass
+    #if jack_bus and jack_bus.IsStarted():
+        #all_ports = jack_bus.GetAllPorts()
+        #del all_ports
         
 def quitRay(sig, frame):
     for client in session.clients:
