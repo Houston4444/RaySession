@@ -2,7 +2,7 @@
 
 import os, sys, shutil, string, random, time, subprocess, signal, unicodedata
 from liblo import ServerThread, Address, make_method, Message
-from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings, QStandardPaths
+from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject, QTimer, QProcess, QSettings, QStandardPaths
 from PyQt5.QtXml import QDomDocument
 
 from shared import *
@@ -71,7 +71,6 @@ def remove_accents(input_str):
 
 def ifDebug(string):
     if debug:
-        #qDebug(remove_accents(string))
         print(string, file=sys.stderr)
 
 def MESSAGE(string):
@@ -471,7 +470,6 @@ class Client(QObject):
         if not os.path.isdir(client_template_local_root):
             os.makedirs(client_template_local_root)
         
-        print(xml_file)
         #create client_templates.xml if not exists
         if not os.path.isfile(xml_file):
             file = open(xml_file, 'w')
@@ -500,7 +498,6 @@ class Client(QObject):
                 node = node.nextSibling()
                 continue
             
-            print(node.toElement().attribute('template-name'))
             if node.toElement().attribute('template-name') == template_name:
                 content.removeChild(node)
             
@@ -1777,13 +1774,12 @@ class SignaledSession(OperatingSession):
                 client.icon            = ct.attribute('icon')
                 
                 prefix_mode = ct.attribute('prefix_mode')
-                print(prefix_mode)
+                
                 if prefix_mode:
                     client.prefix_mode = int(prefix_mode)
                     if prefix_mode == '0':
                         client.project_path = ct.attribute('project-path')
                 
-                print(client.client_id, client.prefix_mode)
                 
                 start = True
                 launched = ct.attribute('launched')

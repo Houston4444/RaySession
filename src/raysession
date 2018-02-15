@@ -1368,9 +1368,6 @@ class AddApplicationDialog(ChildDialog):
         self.ui = ui_add_application.Ui_DialogAddApplication()
         self.ui.setupUi(self)
         
-        
-        print(type(settings.value('AddApplication/factory_box', True)))
-        print(settings.value('AddApplication/user_box', True))
         self.ui.checkBoxFactory.setChecked(settings.value('AddApplication/factory_box', True, type=bool))
         self.ui.checkBoxUser.setChecked(settings.value('AddApplication/user_box', True, type=bool))
         
@@ -1552,8 +1549,6 @@ class AddApplicationDialog(ChildDialog):
         settings.setValue('AddApplication/factory_box', self.ui.checkBoxFactory.isChecked())
         settings.setValue('AddApplication/user_box'   , self.ui.checkBoxUser.isChecked())
         settings.sync()
-        
-        print('checkBoxes Saved')
 
 class newExecutableDialog(ChildDialog):
     def __init__(self, parent):
@@ -1649,13 +1644,6 @@ class RayDaemon(object):
         return bool(self.process.state() == 2)
     
     def start(self):
-        ##check if ray-daemon is installed
-        #try:
-            #subprocess.check_output(['which', self.executable])
-        #except:
-            #print('%s is missing, please re-install RaySession.' % self.executable, file=sys.stderr)
-            #sys.exit(1)
-        
         #start process
         arguments = ['--gui-url'     , str(serverOSC.url), 
                      '--osc-port'    , str(self.port), 
