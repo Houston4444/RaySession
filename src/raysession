@@ -551,13 +551,13 @@ class MainWindow(QMainWindow):
         self.flash_open_bool = False
         
         #set options with config file, restore geometry
-        self.keep_focus = str2bool(settings.value('keepfocus', 'true'))
+        self.keep_focus = settings.value('keepfocus', True, type=bool))
         self.ui.actionKeepFocus.setChecked(self.keep_focus)
         if settings.value('MainWindow/geometry'):
             self.restoreGeometry(settings.value('MainWindow/geometry'))
         if settings.value('MainWindow/WindowState'):
             self.restoreState(settings.value('MainWindow/WindowState'))
-        self.ui.actionShowMenuBar.activate(str2bool(settings.value('MainWindow/ShowMenuBar', 'false')))
+        self.ui.actionShowMenuBar.activate(settings.value('MainWindow/ShowMenuBar', False, type=bool)))
         
         #set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
@@ -885,7 +885,7 @@ class MainWindow(QMainWindow):
         error_dialog.exec()
     
     def serverOpensNsmSession(self):
-        if settings.value('OpenNsmSessionInfo') == 'false':
+        if not settings.value('OpenNsmSessionInfo', True, type=bool):
             return
         
         dialog = OpenNsmSessionInfoDialog(self)
@@ -998,7 +998,7 @@ class OpenSessionDialog(ChildDialog):
         self.preventOk()
         
     def addSession(self, session_name):
-        if session_name == settings.value('last_session'):
+        if session_name == settings.value('last_session', type=str):
             self.f_last_session_item = QListWidgetItem(session_name)
             self.ui.sessionList.addItem(self.f_last_session_item)
             self.ui.sessionList.setCurrentItem(self.f_last_session_item)
@@ -1727,7 +1727,7 @@ if __name__ == '__main__':
     settings = QSettings()
     
     #get default folder
-    default_folder = settings.value('default_folder', "%s/Ray Sessions" % os.getenv('HOME') )
+    default_folder = settings.value('default_folder', "%s/Ray Sessions" % os.getenv('HOME'), type=str )
     
     ray_daemon.setNewOscAddress()
     

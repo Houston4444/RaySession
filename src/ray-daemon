@@ -2670,7 +2670,7 @@ if __name__ == '__main__':
     #app.setApplicationVersion(VERSION)
     app.setOrganizationName("RaySession")
     settings = QSettings()
-    known_as_non_active = settings.value('daemon/non_active_list', [])
+    known_as_non_active = settings.value('daemon/non_active_list', type=list, [])
     
     app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
     session_template_root = "%s/%s" % (app_config_path, 'session_templates')
