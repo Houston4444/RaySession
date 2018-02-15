@@ -2643,7 +2643,7 @@ class OscServerThread(ServerThread):
         
     
 if __name__ == '__main__':
-    session_root = "%s/NSM Sessions" % os.getenv('HOME')
+    session_root = "%s/Ray Sessions" % os.getenv('HOME')
     
     #Add RaySession/src to $PATH to can use ray-proxy and maybe future executables after make, whitout install
     os.environ['PATH']="%s:%s" % (os.path.realpath(os.path.dirname(sys.argv[0])), os.environ['PATH'])

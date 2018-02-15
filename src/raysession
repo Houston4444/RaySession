@@ -1727,7 +1727,7 @@ if __name__ == '__main__':
     settings = QSettings()
     
     #get default folder
-    default_folder = settings.value('default_folder', "%s/NSM Sessions" % os.getenv('HOME') )
+    default_folder = settings.value('default_folder', "%s/Ray Sessions" % os.getenv('HOME') )
     
     ray_daemon.setNewOscAddress()
     
