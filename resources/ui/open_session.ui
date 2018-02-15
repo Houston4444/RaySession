@@ -25,7 +25,7 @@
      <item>
       <widget class="QLabel" name="labelNsmFolder">
        <property name="text">
-        <string>NSM Folder :</string>
+        <string>Sessions Folder :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

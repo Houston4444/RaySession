@@ -345,7 +345,7 @@
     </message>
     <message>
         <location filename="../resources/ui/open_session.ui" line="28"/>
-        <source>NSM Folder :</source>
+        <source>Sessions Folder :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -453,62 +453,62 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="971"/>
+        <location filename="../src/ray-daemon" line="970"/>
         <source>waiting for clients announces...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="973"/>
+        <location filename="../src/ray-daemon" line="972"/>
         <source>waiting for clients to die...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="998"/>
+        <location filename="../src/ray-daemon" line="997"/>
         <source>%sdidn&apos;t announce</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1000"/>
+        <location filename="../src/ray-daemon" line="999"/>
         <source>%sstill alive !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1005"/>
+        <location filename="../src/ray-daemon" line="1004"/>
         <source>All expected clients are announced</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1007"/>
+        <location filename="../src/ray-daemon" line="1006"/>
         <source>All expected clients are died</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1156"/>
+        <location filename="../src/ray-daemon" line="1155"/>
         <source>Can&apos;t save session, session file is unwriteable !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1142"/>
+        <location filename="../src/ray-daemon" line="1141"/>
         <source>Session saved.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1166"/>
+        <location filename="../src/ray-daemon" line="1165"/>
         <source>Commanding attached clients to quit.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1217"/>
+        <location filename="../src/ray-daemon" line="1218"/>
         <source>Creating new session &quot;%s&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1236"/>
+        <location filename="../src/ray-daemon" line="1237"/>
         <source>Session is ready</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1392"/>
+        <location filename="../src/ray-daemon" line="1404"/>
         <source>Opening session %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -516,27 +516,27 @@
 <context>
     <name>Load Error</name>
     <message>
-        <location filename="../src/ray-daemon" line="1569"/>
+        <location filename="../src/ray-daemon" line="1583"/>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1571"/>
+        <location filename="../src/ray-daemon" line="1585"/>
         <source>Could not create session file!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1573"/>
+        <location filename="../src/ray-daemon" line="1587"/>
         <source>Session is locked by another process!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1575"/>
+        <location filename="../src/ray-daemon" line="1589"/>
         <source>The named session does not exist.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1577"/>
+        <location filename="../src/ray-daemon" line="1591"/>
         <source>Could not load session file.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -978,18 +978,25 @@
 <context>
     <name>error</name>
     <message>
-        <location filename="../src/ray-daemon" line="1257"/>
+        <location filename="../src/ray-daemon" line="1258"/>
         <source>Some clients could not save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ray-daemon" line="1268"/>
+        <location filename="../src/ray-daemon" line="1269"/>
         <source>Impossible to save template, unwriteable file !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/ray-daemon" line="1299"/>
         <source>No template named %s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ray-daemon" line="1307"/>
+        <source>Folder 
+%s 
+already exists</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1009,7 +1016,7 @@
 <context>
     <name>help</name>
     <message>
-        <location filename="../src/raysession" line="1723"/>
+        <location filename="../src/raysession" line="1711"/>
         <source>A session manager based on the Non-Session-Manager API for sound applications.</source>
         <translation type="unfinished"></translation>
     </message>
