@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>503</width>
-    <height>731</height>
+    <width>412</width>
+    <height>522</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -595,8 +595,8 @@ QToolButton {border: none}</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>503</width>
-     <height>26</height>
+     <width>412</width>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
