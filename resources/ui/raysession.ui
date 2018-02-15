@@ -62,7 +62,16 @@
          <string notr="true">SessionFrame{background-color: rgba(127, 127, 127, 35);border-radius:4px}</string>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <property name="margin">
+         <property name="leftMargin">
+          <number>3</number>
+         </property>
+         <property name="topMargin">
+          <number>3</number>
+         </property>
+         <property name="rightMargin">
+          <number>3</number>
+         </property>
+         <property name="bottomMargin">
           <number>3</number>
          </property>
          <item>
@@ -85,8 +94,7 @@
                </property>
                <property name="icon">
                 <iconset theme="edit-duplicate">
-                 <normaloff/>
-                </iconset>
+                 <normaloff>.</normaloff>.</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -109,8 +117,7 @@
                </property>
                <property name="icon">
                 <iconset theme="document-save-as-template">
-                 <normaloff/>
-                </iconset>
+                 <normaloff>.</normaloff>.</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -152,8 +159,7 @@
                </property>
                <property name="icon">
                 <iconset theme="list-remove">
-                 <normaloff/>
-                </iconset>
+                 <normaloff>.</normaloff>.</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -195,8 +201,7 @@ QToolButton {border: none}</string>
                </property>
                <property name="icon">
                 <iconset theme="window-close">
-                 <normaloff/>
-                </iconset>
+                 <normaloff>.</normaloff>.</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -277,8 +282,7 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="system-file-manager">
-                     <normaloff/>
-                    </iconset>
+                     <normaloff>.</normaloff>.</iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -342,8 +346,7 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="list-add">
-                     <normaloff/>
-                    </iconset>
+                     <normaloff>.</normaloff>.</iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -394,8 +397,7 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="run-install">
-                     <normaloff/>
-                    </iconset>
+                     <normaloff>.</normaloff>.</iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -556,9 +558,12 @@ QToolButton {border: none}</string>
     </item>
    </layout>
   </widget>
-  <widget class="QDockWidget" name="dockWidget_3">
+  <widget class="QDockWidget" name="dockWidgetMessages">
    <property name="contextMenuPolicy">
     <enum>Qt::NoContextMenu</enum>
+   </property>
+   <property name="floating">
+    <bool>false</bool>
    </property>
    <property name="windowTitle">
     <string>&amp;Messages</string>
@@ -687,8 +692,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="dialog-messages">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Show Messages</string>
@@ -703,8 +707,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="document-save">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Save</string>
@@ -719,8 +722,7 @@ QToolButton {border: none}</string>
   <action name="actionOpenSession">
    <property name="icon">
     <iconset theme="document-open">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Open Session</string>
@@ -732,8 +734,7 @@ QToolButton {border: none}</string>
   <action name="actionNewSession">
    <property name="icon">
     <iconset theme="folder-new">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;New Session</string>
@@ -745,8 +746,7 @@ QToolButton {border: none}</string>
   <action name="actionQuit">
    <property name="icon">
     <iconset theme="application-exit">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Quit</string>
@@ -773,8 +773,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="show-menu">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Show &amp;Menu Bar</string>
@@ -786,8 +785,7 @@ QToolButton {border: none}</string>
   <action name="actionControlMenu">
    <property name="icon">
     <iconset theme="configure">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Control</string>
@@ -841,8 +839,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="system-file-manager">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Open Session Folder</string>
@@ -860,8 +857,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="window-duplicate">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Keep focus while opening clients</string>
@@ -881,8 +877,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="edit-duplicate">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Duplicate</string>
@@ -897,8 +892,7 @@ QToolButton {border: none}</string>
   <action name="actionAddExecutable">
    <property name="icon">
     <iconset theme="run-install">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Executable</string>
@@ -916,8 +910,7 @@ QToolButton {border: none}</string>
   <action name="actionSaveTemplateSession">
    <property name="icon">
     <iconset theme="document-save-as-template">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Sa&amp;ve As Template</string>
@@ -929,8 +922,7 @@ QToolButton {border: none}</string>
   <action name="actionAddApplication">
    <property name="icon">
     <iconset theme="list-add">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Application</string>
@@ -968,7 +960,7 @@ QToolButton {border: none}</string>
   <connection>
    <sender>actionToggleShowMessages</sender>
    <signal>toggled(bool)</signal>
-   <receiver>dockWidget_3</receiver>
+   <receiver>dockWidgetMessages</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -982,7 +974,7 @@ QToolButton {border: none}</string>
    </hints>
   </connection>
   <connection>
-   <sender>dockWidget_3</sender>
+   <sender>dockWidgetMessages</sender>
    <signal>visibilityChanged(bool)</signal>
    <receiver>actionToggleShowMessages</receiver>
    <slot>setChecked(bool)</slot>

@@ -550,14 +550,16 @@ class MainWindow(QMainWindow):
         self.flash_open_list = []
         self.flash_open_bool = False
         
+        
+        
         #set options with config file, restore geometry
-        self.keep_focus = settings.value('keepfocus', True, type=bool))
+        self.keep_focus = settings.value('keepfocus', True, type=bool)
         self.ui.actionKeepFocus.setChecked(self.keep_focus)
         if settings.value('MainWindow/geometry'):
             self.restoreGeometry(settings.value('MainWindow/geometry'))
         if settings.value('MainWindow/WindowState'):
             self.restoreState(settings.value('MainWindow/WindowState'))
-        self.ui.actionShowMenuBar.activate(settings.value('MainWindow/ShowMenuBar', False, type=bool)))
+        self.ui.actionShowMenuBar.activate(settings.value('MainWindow/ShowMenuBar', False, type=bool))
         
         #set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
@@ -712,6 +714,7 @@ class MainWindow(QMainWindow):
         client.showPropertiesDialog()
     
     def createNewSession(self):
+        self.ui.dockWidgetMessages.setVisible(False)
         dialog = NewSessionDialog(self)
         dialog.exec()
         if not dialog.result():
@@ -930,6 +933,7 @@ class MainWindow(QMainWindow):
         settings.setValue('MainWindow/geometry', self.saveGeometry())
         settings.setValue('MainWindow/WindowState', self.saveState())
         settings.setValue('MainWindow/ShowMenuBar', self.ui.menuBar.isVisible())
+        settings.setValue('MainWindow/ShowMessages', self.ui.dockWidgetMessages.isVisible())
         settings.sync()
         
         self.quitApp()
