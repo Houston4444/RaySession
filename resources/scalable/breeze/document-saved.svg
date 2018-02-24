@@ -37,9 +37,9 @@
      inkscape:window-height="1021"
      id="namedview7"
      showgrid="false"
-     inkscape:zoom="20.85965"
-     inkscape:cx="6.942778"
-     inkscape:cy="14.313998"
+     inkscape:zoom="14.75"
+     inkscape:cx="12.94113"
+     inkscape:cy="21.812925"
      inkscape:window-x="44"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -55,16 +55,14 @@
       </style>
   </defs>
   <path
-     style="color:#4d4d4d;fill:currentColor;fill-opacity:1;stroke:none"
-     d="m 4,4 0,24 5,0 14,0 5,0 L 28,10 27,9 23,5 22,4 21,4 10,4 Z m 1,1 5,0 0,8 11,0 0,-8 0.585938,0 L 27,10.414062 27,27 c -22,0 0,0 -22,0 z m 6,0 6,0 0,7 -6,0 z"
+     style="fill:currentColor;fill-opacity:1;stroke:none"
+     d="M 4 4 L 4 28 L 9 28 L 23 28 L 28 28 L 28 10 L 27 9 L 23 5 L 22 4 L 21 4 L 10 4 L 4 4 z M 5 5 L 10 5 L 10 13 L 21 13 L 21 5 L 21.585938 5 L 27 10.414062 L 27 27 L 23 27 L 23 19 L 9 19 L 9 27 L 5 27 L 5 5 z M 11 5 L 17 5 L 17 12 L 11 12 L 11 5 z M 10 20 L 22 20 L 22 27 L 10 27 L 10 20 z "
      id="path60"
-     class="ColorScheme-Text"
-     inkscape:connector-curvature="0"
-     sodipodi:nodetypes="ccccccccccccccccccccccccccc" />
+     class="ColorScheme-Text" />
   <path
-     style="fill:none;fill-rule:evenodd;stroke:#009900;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-     d="m 12.954255,20.48248 3.983051,3.983051 7.881356,-7.881356"
-     id="path4156"
+     style="fill:none;fill-rule:evenodd;stroke:#009900;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:0.80307695"
+     d="M 13.747434,25.441802 18.594892,30.28926 30.323706,18.560446"
+     id="path4139"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="ccc" />
 </svg>

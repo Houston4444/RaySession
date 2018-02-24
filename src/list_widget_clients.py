@@ -50,10 +50,6 @@ class ClientSlot(QFrame):
         
         self.ui.iconButton.setMenu(self.menu)
         
-        #choose button colors
-        if self.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
-            self.has_light_text = True
-        
         self.saveIcon = QIcon()
         self.saveIcon.addPixmap(QPixmap(':scalable/breeze/document-save'), QIcon.Normal, QIcon.Off)
         self.saveIcon.addPixmap(QPixmap(':scalable/breeze/disabled/document-save'), QIcon.Disabled, QIcon.Off)
@@ -62,7 +58,8 @@ class ClientSlot(QFrame):
         self.savedIcon = QIcon()
         self.savedIcon.addPixmap(QPixmap(':scalable/breeze/document-saved'), QIcon.Normal, QIcon.Off)
         
-        if self.has_light_text:
+        #choose button colors
+        if self.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
             startIcon = QIcon()
             startIcon.addPixmap(QPixmap(':scalable/breeze-dark/media-playback-start'), QIcon.Normal, QIcon.Off)
             startIcon.addPixmap(QPixmap(':scalable/breeze-dark/disabled/media-playback-start'), QIcon.Disabled, QIcon.Off)
@@ -149,7 +146,6 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
             self.ui.ClientName.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
-            #if not self.is_dirty_able:
             self.ui.saveButton.setEnabled(True)
             
         elif status == CLIENT_STATUS_STOPPED:
@@ -244,17 +240,7 @@ class ClientSlot(QFrame):
     
     def setDirtyState(self, bool_dirty):
         self.is_dirty_able = True
-        #self.ui.saveButton.setEnabled(bool_dirty)
-        #if bool_dirty:
-            #if self.has_light_text:
-                #self.ui.saveButton.setIcon(QIcon.fromTheme(':/scalable/breeze-dark/document-save.svg'))
-            #else:
-                #self.ui.saveButton.setIcon(QIcon.fromTheme(':/scalable/breeze/document-save.svg'))
-        #else:
-            #if self.has_light_text:
-                #self.ui.saveButton.setIcon(QIcon.fromTheme(':/scalable/breeze-dark/document-saved.svg'))
-            #else:
-                #self.ui.saveButton.setIcon(QIcon.fromTheme(':/scalable/breeze/document-saved.svg'))
+        
         if bool_dirty:
             self.ui.saveButton.setIcon(self.saveIcon)
         else:
