@@ -1096,7 +1096,9 @@
         <source>Folder 
 %s 
 already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>Le dossier 
+%s 
+existe déjà</translation>
     </message>
 </context>
 <context>
