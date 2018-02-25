@@ -29,6 +29,7 @@ import ui_new_executable
 import ui_error_dialog
 import ui_quit_app
 import ui_client_properties
+import ui_stop_client
 
 import resources_rc
 
@@ -187,7 +188,7 @@ class Client(object):
         self.status      = CLIENT_STATUS_STOPPED
         self.hasGui      = False
         self.gui_visible = False
-        self.hasDirty    = False
+        self.has_dirty    = False
         self.dirty_state = True
         self.properties_dialog = ClientPropertiesDialog(MainUI, self)
         
@@ -204,7 +205,7 @@ class Client(object):
         self.widget.setGuiState(state)
     
     def setDirtyState(self, bool_dirty):
-        self.hasDirty = True
+        self.has_dirty = True
         self.dirty_state = bool_dirty
         self.widget.setDirtyState(bool_dirty)
         
@@ -224,7 +225,16 @@ class Client(object):
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         self.widget.updateClientData()
-     
+   
+    def prettierName(self):
+        if self.label:
+            return self.label
+        
+        if self.name:
+            return self.name
+        
+        return self.executable_path
+   
     def sendPropertiesToDaemon(self):
         serverOSC.toDaemon('/ray/gui/client/update_properties', 
                            self.client_id,
@@ -633,7 +643,7 @@ class MainWindow(QMainWindow):
         #connect the listWidget signals to OSC server
         self.ui.listWidget.orderChanged.connect(serverOSC.changeClientOrder)
         self.ui.listWidget.clientStartRequest.connect(serverOSC.startClient)
-        self.ui.listWidget.clientStopRequest.connect(serverOSC.stopClient)
+        self.ui.listWidget.clientStopRequest.connect(self.clientStopRequest)
         self.ui.listWidget.clientKillRequest.connect(serverOSC.killClient)
         self.ui.listWidget.clientSaveRequest.connect(serverOSC.saveClient)
         self.ui.listWidget.clientRemoveRequest.connect(serverOSC.removeClient)
@@ -813,6 +823,18 @@ class MainWindow(QMainWindow):
             serverOSC.toDaemon('/ray/server/add_proxy', command)
         else:
             serverOSC.addClient(command)
+    
+    def clientStopRequest(self, client_id):
+        client = session.getClient(client_id)
+        if client:
+            if client.has_dirty and client.dirty_state:
+                dialog = StopClientDialog(self, client_id)
+                dialog.exec()
+                if not dialog.result():
+                    return
+                
+        serverOSC.stopClient(client_id)
+            
     
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
     
@@ -1608,6 +1630,43 @@ class newExecutableDialog(ChildDialog):
         if server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF):
             self.reject()
 
+class StopClientDialog(ChildDialog):
+    def __init__(self, parent, client_id):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_stop_client.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self.client_id = client_id
+        self.wait_for_save = False
+        
+        client = session.getClient(client_id)
+        
+        self.ui.label.setText(self.ui.label.text() % client.prettierName())
+        
+        self.ui.pushButtonSaveStop.clicked.connect(self.saveAndStop)
+        
+        serverOSC.qsig.client_status_changed.connect(self.serverUpdatesClientStatus)
+    
+    def saveAndStop(self):
+        self.wait_for_save = True
+        serverOSC.saveClient(self.client_id)
+        
+    def serverUpdatesClientStatus(self, client_id, status):
+        if client_id != self.client_id:
+            return
+        
+        if status in (CLIENT_STATUS_STOPPED, CLIENT_STATUS_REMOVED):
+            self.reject()
+            return
+        
+        if status == CLIENT_STATUS_READY and self.wait_for_save:
+            self.wait_for_save = False
+            self.accept()
+            
+        
+        
+        
+    
 class ErrorDialog(ChildDialog):
     def __init__(self, parent, osc_args):
         ChildDialog.__init__(self, parent)
