@@ -183,6 +183,7 @@ class Client(object):
         self.label           = client_data.label
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
+        self.check_last_save = client_data.check_last_save
         
         self.widget      = MainUI.createClientWidget(self)
         self.status      = CLIENT_STATUS_STOPPED
@@ -233,6 +234,7 @@ class Client(object):
         self.label           = client_data.label
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
+        self.check_last_save = client_data.check_last_save
         self.widget.updateClientData()
    
     def prettierName(self):
@@ -380,14 +382,14 @@ class OSCServerT(ServerThread):
         name1, name2 = args
         self.qsig.session_name_sig.emit(name1, name2)
     
-    @make_method('/ray/gui/client/new', 'sssissss')
+    @make_method('/ray/gui/client/new', 'sssissssi')
     def newClientFromServer(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         
         client_data = ClientData(*args)
         self.qsig.new_client_added.emit(client_data)
     
-    @make_method('/ray/gui/client/update', 'sssissss')
+    @make_method('/ray/gui/client/update', 'sssissssi')
     def updateClientProperties(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         

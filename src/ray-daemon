@@ -134,6 +134,7 @@ class Client(QObject):
     project_path    = ""
     prefix_mode     = PREFIX_MODE_SESSION_NAME
     auto_start      = True
+    check_last_save = 1
     sent_to_gui     = False
     
     def __init__(self):
@@ -379,7 +380,8 @@ class Client(QObject):
                         self.project_path,
                         self.label,
                         self.icon,
-                        self.capabilities)
+                        self.capabilities,
+                        self.check_last_save)
         
         self.sent_to_gui = True
     
@@ -391,6 +393,7 @@ class Client(QObject):
         self.label           = client_data.label
         self.icon            = client_data.icon
         self.capabilities    = client_data.capabilities
+        self.check_last_save = client_data.check_last_save
         
         self.sendGuiClientProperties()
     
@@ -2233,7 +2236,7 @@ class OscServerThread(ServerThread):
         if client and client.active:
             self.send(client.addr, "/nsm/client/hide_optional_gui")
 
-    @make_method('/ray/gui/client/update_properties', 'sssissss')
+    @make_method('/ray/gui/client/update_properties', 'sssissssi')
     def rayGuiClientUpdateProperties(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         

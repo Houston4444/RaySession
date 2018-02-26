@@ -105,6 +105,7 @@ class ClientData(object):
     label           = ''
     icon            = ''
     capabilities    = ''
+    check_last_save = 1
     
     def __init__(self, client_id, 
                  executable, 
@@ -113,12 +114,14 @@ class ClientData(object):
                  project_path='', 
                  label='', 
                  icon='', 
-                 capabilities=''):
+                 capabilities='',
+                 check_last_save=1):
         self.client_id       = str(client_id)
         self.executable_path = str(executable)
         self.prefix_mode     = int(prefix_mode)
         self.label           = str(label)
         self.capabilities    = str(capabilities)
+        self.check_last_save = check_last_save
         
         self.name  = str(name) if name else os.path.basename(self.executable_path)
         self.icon  = str(icon) if icon else self.name.lower().replace('_', '-')
