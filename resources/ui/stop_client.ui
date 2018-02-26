@@ -30,7 +30,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;%s contains unsaved changes. &lt;/p&gt;&lt;p&gt;Do you really want to stop it ?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;%s&lt;/span&gt; contains unsaved changes. &lt;/p&gt;&lt;p&gt;Do you really want to stop it ?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -71,7 +71,8 @@
         <string>Save &amp;&amp; Stop</string>
        </property>
        <property name="icon">
-        <iconset theme="media-playback-stop"/>
+        <iconset theme="media-playback-stop">
+         <normaloff>.</normaloff>.</iconset>
        </property>
       </widget>
      </item>
@@ -81,7 +82,8 @@
         <string>Just Stop</string>
        </property>
        <property name="icon">
-        <iconset theme="media-playback-stop"/>
+        <iconset theme="media-playback-stop">
+         <normaloff>.</normaloff>.</iconset>
        </property>
       </widget>
      </item>

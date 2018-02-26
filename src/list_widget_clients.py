@@ -58,6 +58,9 @@ class ClientSlot(QFrame):
         self.savedIcon = QIcon()
         self.savedIcon.addPixmap(QPixmap(':scalable/breeze/document-saved'), QIcon.Normal, QIcon.Off)
         
+        self.unsavedIcon = QIcon()
+        self.unsavedIcon.addPixmap(QPixmap(':scalable/breeze/document-unsaved'), QIcon.Normal, QIcon.Off)
+        
         #choose button colors
         if self.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
             startIcon = QIcon()
@@ -77,6 +80,9 @@ class ClientSlot(QFrame):
             
             self.savedIcon = QIcon()
             self.savedIcon.addPixmap(QPixmap(':scalable/breeze-dark/document-saved'), QIcon.Normal, QIcon.Off)
+            
+            self.unsavedIcon = QIcon()
+            self.unsavedIcon.addPixmap(QPixmap(':scalable/breeze-dark/document-unsaved'), QIcon.Normal, QIcon.Off)
             
             closeIcon = QIcon()
             closeIcon.addPixmap(QPixmap(':scalable/breeze-dark/window-close'), QIcon.Normal, QIcon.Off)
@@ -242,7 +248,7 @@ class ClientSlot(QFrame):
         self.is_dirty_able = True
         
         if bool_dirty:
-            self.ui.saveButton.setIcon(self.saveIcon)
+            self.ui.saveButton.setIcon(self.unsavedIcon)
         else:
             self.ui.saveButton.setIcon(self.savedIcon)
         
