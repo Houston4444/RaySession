@@ -847,18 +847,19 @@ class MainWindow(QMainWindow):
         if not client:
             return
         
-        if client.has_dirty:
-            if client.dirty_state:
+        if client.status == CLIENT_STATUS_READY:
+            if client.has_dirty:
+                if client.dirty_state:
+                    dialog = StopClientDialog(self, client_id)
+                    dialog.exec()
+                    if not dialog.result():
+                        return
+                    
+            elif client.check_last_save and (time.time() - client.last_save) >= 10:
                 dialog = StopClientDialog(self, client_id)
                 dialog.exec()
                 if not dialog.result():
                     return
-                
-        elif client.status == CLIENT_STATUS_READY and (time.time() - client.last_save) >= 60:
-            dialog = StopClientDialog(self, client_id)
-            dialog.exec()
-            if not dialog.result():
-                return
                 
         serverOSC.stopClient(client_id)
             

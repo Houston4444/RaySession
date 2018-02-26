@@ -18,7 +18,7 @@
  <Client-Template template-name="Non-Timeline" executable="non-timeline" name="Non-Timeline" icon="non-timeline" client_id="timeline"/>
  <Client-Template template-name="Qsampler" executable="ray-proxy" try-exec="qsampler" label="Qsampler" name="Ray Proxy" icon="qsampler" client_id="qsampler"/>
  <Client-Template template-name="Luppp" executable="luppp" name="Luppp" icon="luppp" client_id="luppp"/>
- <Client-Template template-name="GxTuner" executable="ray-proxy" name="Ray Proxy" client_id="tuner" icon="carla" label="GxTuner" try-exec="carla-single;guitarix"/>
+ <Client-Template template-name="GxTuner" executable="ray-proxy" name="Ray Proxy" client_id="tuner" icon="carla" label="GxTuner" try-exec="carla-single;guitarix" check_last_save="0"/>
  <Client-Template template-name="Calf JACK Host" executable="ray-proxy" name="Ray Proxy" client_id="calf" icon="calf" label="Calf JACK Host" try-exec="calfjackhost" />
  <Client-Template template-name="ZynAddSubFX" name="ZynAddSubFX" client_id="zynaddsub" icon="zynaddsubfx" executable="zynaddsubfx"/>
  <Client-Template template-name="synthv1" name="synthv1" client_id="synthv1" icon="synthv1-jack" executable="synthv1_jack"/>

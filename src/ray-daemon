@@ -155,7 +155,31 @@ class Client(QObject):
         self.stopped_timer.setInterval(2000) #2sec
         self.stopped_timer.timeout.connect(self.stoppedSinceLong)
     
-    
+    def takeXmlProperties(self, ctx):
+        #ctx is an xml sibling for client
+        self.executable_path = ctx.attribute('executable')
+        #self.client_id       = session.generateClientId(ctx.attribute('client_id'))
+        self.name            = ctx.attribute('name')
+        self.label           = ctx.attribute('label')
+        self.icon            = ctx.attribute('icon')
+        self.auto_start      = bool(ctx.attribute('launched') != '0')
+        self.check_last_save = int(bool(ctx.attribute('check_last_save') != "0"))
+        
+        prefix_mode = ctx.attribute('prefix_mode')
+        
+        if prefix_mode and prefix_mode.isdigit():
+            if 0 <= int(prefix_mode) <= 2:
+                self.prefix_mode = int(prefix_mode)
+                if self.prefix_mode == 0:
+                    self.project_path = ctx.attribute('project-path')
+                    
+        if ctx.attribute('client_id'):
+            #template use "client_id" for wanted client_id
+            self.client_id       = session.generateClientId(ctx.attribute('client_id'))
+        elif ctx.attribute('id'):
+            #session use "id" for absolutely needed client_id
+            self.client_id = ctx.attribute('id')
+        
     def setReply(self, errcode, message):
         self._reply_message = message
         self._reply_errcode = errcode
@@ -529,6 +553,9 @@ class Client(QObject):
             
         if not self.isRunning():
             rct.setAttribute('launched', False)
+            
+        if not self.check_last_save:
+            rct.setAttribute('check_last_save', False)
         
         
         content.appendChild(rct)
@@ -1422,18 +1449,7 @@ class OperatingSession(Session):
                     while not client_xml.isNull():
                         client = Client()
                         cx = client_xml.toElement()
-                        
-                        client.client_id       = str(cx.attribute('id'))
-                        client.name            = str(cx.attribute('name'))
-                        client.executable_path = str(cx.attribute('executable'))
-                        client.label           = str(cx.attribute('label'))
-                        client.icon            = str(cx.attribute('icon'))
-                        client.project_path    = str(cx.attribute('project_path'))
-                        client.auto_start      = bool(cx.attribute('launched') != '0')
-                        
-                        prefix_mode = str(cx.attribute('prefix_mode'))
-                        if prefix_mode.isdigit() and 0 <= int(prefix_mode) <= 2:
-                            client.prefix_mode = int(prefix_mode)
+                        client.takeXmlProperties(cx)
                         
                         if tag_name == 'Clients':
                             if client.auto_start:
@@ -1446,6 +1462,7 @@ class OperatingSession(Session):
                 node = node.nextSibling()
             
             ray_file.close()
+            
         else:
             for line in file.read().split('\n'):
                 elements = line.split(':')
@@ -1770,24 +1787,7 @@ class SignaledSession(OperatingSession):
             
             if ct.attribute('template-name') == template_name:
                 client = Client()
-                client.executable_path = ct.attribute('executable')
-                client.client_id       = self.generateClientId(ct.attribute('client_id'))
-                client.name            = ct.attribute('name')
-                client.label           = ct.attribute('label')
-                client.icon            = ct.attribute('icon')
-                
-                prefix_mode = ct.attribute('prefix_mode')
-                
-                if prefix_mode:
-                    client.prefix_mode = int(prefix_mode)
-                    if prefix_mode == '0':
-                        client.project_path = ct.attribute('project-path')
-                
-                
-                start = True
-                launched = ct.attribute('launched')
-                if launched.isdigit():
-                    start = bool(int(launched))
+                client.takeXmlProperties(ct)
                 
                 needed_version = ct.attribute('needed-version')
                 
@@ -1841,7 +1841,7 @@ class SignaledSession(OperatingSession):
                     client.adjustFilesAfterCopy(self.name, TEMPLATE_CLIENT_LOAD)
                     
                 self.addClient(client)
-                if start:
+                if client.auto_start:
                     client.start()
                 
                 break
