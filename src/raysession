@@ -186,14 +186,23 @@ class Client(object):
         
         self.widget      = MainUI.createClientWidget(self)
         self.status      = CLIENT_STATUS_STOPPED
+        self.previous_status = CLIENT_STATUS_STOPPED
         self.hasGui      = False
         self.gui_visible = False
-        self.has_dirty    = False
+        self.has_dirty   = False
         self.dirty_state = True
+        self.last_save   = time.time()
+        
         self.properties_dialog = ClientPropertiesDialog(MainUI, self)
         
     def setStatus(self, status):
+        self.previous_status = self.status
         self.status = status
+        
+        if not self.has_dirty:
+            if self.status == CLIENT_STATUS_READY and self.previous_status in (CLIENT_STATUS_OPEN, CLIENT_STATUS_SAVE):
+                self.last_save = time.time()
+        
         self.widget.updateStatus(status)
         
     def setGuiEnabled(self):
@@ -255,6 +264,13 @@ class Client(object):
         del self.widget
         self.widget = MainUI.createClientWidget(self)
         self.widget.updateClientData()
+        
+    def hasBeenRecentlySaved(self):
+        if (time.time() - self.last_save) >= 60: #last save more than 60 seconds ago
+            return False
+        
+        return True
+            
     
 class OscSignaler(QObject):
     error_appears    = pyqtSignal()
@@ -826,12 +842,21 @@ class MainWindow(QMainWindow):
     
     def clientStopRequest(self, client_id):
         client = session.getClient(client_id)
-        if client:
-            if client.has_dirty and client.dirty_state:
+        if not client:
+            return
+        
+        if client.has_dirty:
+            if client.dirty_state:
                 dialog = StopClientDialog(self, client_id)
                 dialog.exec()
                 if not dialog.result():
                     return
+                
+        elif client.status == CLIENT_STATUS_READY and (time.time() - client.last_save) >= 60:
+            dialog = StopClientDialog(self, client_id)
+            dialog.exec()
+            if not dialog.result():
+                return
                 
         serverOSC.stopClient(client_id)
             
@@ -1641,7 +1666,13 @@ class StopClientDialog(ChildDialog):
         
         client = session.getClient(client_id)
         
-        self.ui.label.setText(self.ui.label.text() % client.prettierName())
+        text = self.ui.label.text() % client.prettierName()
+        
+        if not client.has_dirty:
+            minutes = int((time.time() - client.last_save) / 60)
+            text = _translate('client_stop', "<strong>%s</strong> seems to has not been saved for %i minute(s).<br />Do you really want to stop it ?") % (client.prettierName(), minutes)
+        
+        self.ui.label.setText(text)
         
         self.ui.pushButtonSaveStop.clicked.connect(self.saveAndStop)
         
