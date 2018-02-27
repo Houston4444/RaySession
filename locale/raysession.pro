@@ -13,6 +13,7 @@ FORMS        += ../resources/ui/proxy_gui.ui
 FORMS        += ../resources/ui/quit_app.ui
 FORMS        += ../resources/ui/raysession.ui
 FORMS        += ../resources/ui/save_template_session.ui
+FORMS        += ../resources/ui/stop_client.ui
 SOURCES      += ../src/raysession
 SOURCES      += ../src/ray-daemon
 SOURCES      += ../src/ray-proxy
