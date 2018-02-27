@@ -134,7 +134,7 @@ class Client(QObject):
     project_path    = ""
     prefix_mode     = PREFIX_MODE_SESSION_NAME
     auto_start      = True
-    check_last_save = 1
+    check_last_save = True
     sent_to_gui     = False
     
     def __init__(self):
@@ -158,12 +158,12 @@ class Client(QObject):
     def takeXmlProperties(self, ctx):
         #ctx is an xml sibling for client
         self.executable_path = ctx.attribute('executable')
-        #self.client_id       = session.generateClientId(ctx.attribute('client_id'))
         self.name            = ctx.attribute('name')
         self.label           = ctx.attribute('label')
         self.icon            = ctx.attribute('icon')
         self.auto_start      = bool(ctx.attribute('launched') != '0')
-        self.check_last_save = int(bool(ctx.attribute('check_last_save') != "0"))
+        self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
+        
         
         prefix_mode = ctx.attribute('prefix_mode')
         
@@ -173,12 +173,14 @@ class Client(QObject):
                 if self.prefix_mode == 0:
                     self.project_path = ctx.attribute('project-path')
                     
-        if ctx.attribute('client_id'):
-            #template use "client_id" for wanted client_id
-            self.client_id       = session.generateClientId(ctx.attribute('client_id'))
-        elif ctx.attribute('id'):
+                    
+        if ctx.attribute('id'):
             #session use "id" for absolutely needed client_id
             self.client_id = ctx.attribute('id')
+            
+        elif ctx.attribute('client_id'):
+            #template use "client_id" for wanted client_id
+            self.client_id       = session.generateClientId(ctx.attribute('client_id'))
         
     def setReply(self, errcode, message):
         self._reply_message = message
@@ -405,7 +407,7 @@ class Client(QObject):
                         self.label,
                         self.icon,
                         self.capabilities,
-                        self.check_last_save)
+                        int(self.check_last_save))
         
         self.sent_to_gui = True
     
@@ -2637,7 +2639,8 @@ class OscServerThread(ServerThread):
                         client.project_path,
                         client.label,
                         client.icon,
-                        client.capabilities)
+                        client.capabilities,
+                        int(client.check_last_save))
             
             self.send(gui_addr, "/ray/gui/client/status", client.client_id,  client.status)
         

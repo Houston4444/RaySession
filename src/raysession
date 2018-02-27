@@ -255,7 +255,8 @@ class Client(object):
                            self.project_path, 
                            self.label, 
                            self.icon_name, 
-                           self.capabilities)
+                           self.capabilities,
+                           int(self.check_last_save))
         
     def showPropertiesDialog(self):
         self.properties_dialog.updateContents()
