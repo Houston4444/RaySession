@@ -848,7 +848,7 @@ class MainWindow(QMainWindow):
         if not client:
             return
         
-        if client.status == CLIENT_STATUS_READY:
+        if client.status == CLIENT_STATUS_READY and client.check_last_save:
             if client.has_dirty:
                 if client.dirty_state:
                     dialog = StopClientDialog(self, client_id)
@@ -856,7 +856,7 @@ class MainWindow(QMainWindow):
                     if not dialog.result():
                         return
                     
-            elif client.check_last_save and (time.time() - client.last_save) >= 10:
+            elif (time.time() - client.last_save) >= 10:
                 dialog = StopClientDialog(self, client_id)
                 dialog.exec()
                 if not dialog.result():
@@ -1348,14 +1348,16 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.labelClientName.setText(self.client.name)
         self.ui.lineEditIcon.setText(self.client.icon_name)
         self.ui.lineEditLabel.setText(self.client.label)
+        self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
         self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(self.client.icon_name))
         
     def changeIconwithText(self, text):
         self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(text))
         
     def saveChanges(self):
-        self.client.label     = self.ui.lineEditLabel.text()
-        self.client.icon_name = self.ui.lineEditIcon.text()
+        self.client.label           = self.ui.lineEditLabel.text()
+        self.client.icon_name       = self.ui.lineEditIcon.text()
+        self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
         self.client.sendPropertiesToDaemon()
         
 class AbortSessionDialog(ChildDialog):
@@ -1668,23 +1670,29 @@ class StopClientDialog(ChildDialog):
         self.client_id = client_id
         self.wait_for_save = False
         
-        client = session.getClient(client_id)
+        self.client = session.getClient(client_id)
         
-        text = self.ui.label.text() % client.prettierName()
+        if self.client:
+            text = self.ui.label.text() % self.client.prettierName()
         
-        if not client.has_dirty:
-            minutes = int((time.time() - client.last_save) / 60)
-            text = _translate('client_stop', "<strong>%s</strong> seems to has not been saved for %i minute(s).<br />Do you really want to stop it ?") % (client.prettierName(), minutes)
+            if not self.client.has_dirty:
+                minutes = int((time.time() - self.client.last_save) / 60)
+                text = _translate('client_stop', "<strong>%s</strong> seems to has not been saved for %i minute(s).<br />Do you really want to stop it ?") % (self.client.prettierName(), minutes)
         
-        self.ui.label.setText(text)
+            self.ui.label.setText(text)
         
         self.ui.pushButtonSaveStop.clicked.connect(self.saveAndStop)
+        self.ui.checkBox.stateChanged.connect(self.checkBoxClicked)
         
         serverOSC.qsig.client_status_changed.connect(self.serverUpdatesClientStatus)
     
     def saveAndStop(self):
         self.wait_for_save = True
         serverOSC.saveClient(self.client_id)
+        
+    def checkBoxClicked(self, state):
+        self.client.check_last_save = not bool(state)
+        self.client.sendPropertiesToDaemon()
         
     def serverUpdatesClientStatus(self, client_id, status):
         if client_id != self.client_id:
