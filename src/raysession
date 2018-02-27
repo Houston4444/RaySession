@@ -856,7 +856,7 @@ class MainWindow(QMainWindow):
                     if not dialog.result():
                         return
                     
-            elif (time.time() - client.last_save) >= 10:
+            elif (time.time() - client.last_save) >= 60: #last save (or start) more than 60 seconds ago
                 dialog = StopClientDialog(self, client_id)
                 dialog.exec()
                 if not dialog.result():
