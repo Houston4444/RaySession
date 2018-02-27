@@ -60,7 +60,11 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
+	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/24x24/apps/
+	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/32x32/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
+	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/64x64/apps/
+	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/96x96/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
@@ -79,16 +83,15 @@ install:
 	
 	install -m 644 data/*.desktop                     $(DESTDIR)$(PREFIX)/share/applications/
 
-	# Install icons, 16x16
+	# Install icons
 	install -m 644 resources/16x16/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
-
-	# Install icons, 48x48
+	install -m 644 resources/24x24/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/24x24/apps/
+	install -m 644 resources/32x32/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/32x32/apps/
 	install -m 644 resources/48x48/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-
-	# Install icons, 128x128
+	install -m 644 resources/48x48/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
+	install -m 644 resources/64x64/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/64x64/apps/
+	install -m 644 resources/96x96/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/96x96/apps/
 	install -m 644 resources/128x128/raysession.png   $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-
-	# Install icons, 256x256
 	install -m 644 resources/256x256/raysession.png   $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 
 	# Install icons, scalable
