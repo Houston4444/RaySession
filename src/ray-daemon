@@ -114,14 +114,10 @@ def getFolderSize(path):
     if not du_full:
         return 0
     
-    print(du_full)
     du_str = du_full.split('\t')[0]
     if not du_str.isdigit():
         return 0
     
-    print('assssis')
-    print(du_str)
-    print(int(du_str))
     return int(du_str)
 
 class Client(QObject):
@@ -171,7 +167,7 @@ class Client(QObject):
         self.stopped_timer.setInterval(2000) #2sec
         self.stopped_timer.timeout.connect(self.stoppedSinceLong)
     
-    def takeXmlProperties(self, ctx):
+    def readXmlProperties(self, ctx):
         #ctx is an xml sibling for client
         self.executable_path = ctx.attribute('executable')
         self.name            = ctx.attribute('name')
@@ -198,6 +194,22 @@ class Client(QObject):
             #template use "client_id" for wanted client_id
             self.client_id       = session.generateClientId(ctx.attribute('client_id'))
         
+    def writeXmlProperties(self, ctx):
+        ctx.setAttribute('executable', self.executable_path)
+        ctx.setAttribute('name', self.name)
+        if self.label:
+            ctx.setAttribute('label', self.label)
+        if self.icon:
+            ctx.setAttribute('icon', self.icon)
+        if not self.check_last_save:
+            ctx.setAttribute('check_last_save', "0")
+            
+        if self.prefix_mode != PREFIX_MODE_SESSION_NAME:
+            ctx.setAttribute('prefix_mode', self.prefix_mode)
+            
+            if self.prefix_mode == PREFIX_MODE_UNDEF:
+                ctx.setAttribute('project_path', self.project_path)
+                
     def setReply(self, errcode, message):
         self._reply_message = message
         self._reply_errcode = errcode
@@ -985,6 +997,17 @@ class OperatingSession(Session):
         
         self.process_order = []
         
+        self.copy_process = QProcess()
+        self.copy_process.finished.connect(self.copyFinished)
+        self.copy_process.errorOccurred.connect(self.copyAborted)
+        self.copy_checker = QTimer()
+        self.copy_checker.setInterval(250)
+        self.copy_checker.timeout.connect(self.checkCopyProgress)
+        self.copy_src  = ''
+        self.copy_dest = ''
+        self.copy_size = 0
+        
+        
         self.terminated_yet = False
     
     def rememberOscArgs(self, path, args, src_addr):
@@ -1072,6 +1095,83 @@ class OperatingSession(Session):
         
         server.send(self.osc_src_addr, "/error", self.osc_path, err, error_message)
     
+    def copyFinished(self):
+        self.copy_checker.stop()
+        self.nextFunction()
+    
+    def copyAborted(self):
+        self.copy_checker.stop()
+    
+    def checkCopyProgress(self):
+        current_size = getFolderSize(self.copy_dest)
+        
+        if current_size < self.copy_size:
+            progress = float(current_size / self.copy_size)
+            server.sendGui('/ray/gui/server_progress', progress)
+            
+    def startCopy(self, src_path, dest_path):
+        self.copy_src  = src_path
+        self.copy_dest = dest_path
+        self.copy_size = getFolderSize(self.copy_src)
+        self.copy_checker.start()
+        self.copy_process.start('cp', ['-R', self.copy_src, self.copy_dest])
+        
+    def adjustFilesAfterCopy(self, template_mode):
+        new_session_full_name = self.osc_args[0]
+        new_session_name = os.path.basename(new_session_full_name)
+        spath = "%s/%s" % (self.root, new_session_full_name)
+        
+        #create temp clients from raysession.xml to adjust Files after copy
+        session_file = "%s/%s" % (spath, "raysession.xml")
+        
+        try:
+            ray_file = open(session_file, 'r')
+        except:
+            self.sendError(ERR_BAD_PROJECT, _translate("error", "impossible to read %s") % ray_file)
+            return
+        
+        tmp_clients = []
+        
+        xml = QDomDocument()
+        xml.setContent(ray_file.read())
+
+        content = xml.documentElement()
+        
+        if content.tagName() != "RAYSESSION":
+            ray_file.close()
+            self.err_loading = ERR_BAD_PROJECT
+            self.loadError()
+            return
+        
+        content.setAttribute('name', new_session_name)
+        
+        node = content.firstChild()
+        while not node.isNull():
+            tag_name = node.toElement().tagName()
+            if tag_name in ('Clients', 'RemovedClients'):
+                client_xml = node.toElement().firstChild()
+                while not client_xml.isNull():
+                    client = Client()
+                    cx = client_xml.toElement()
+                    client.readXmlProperties(cx)
+                    
+                    tmp_clients.append(client)
+                    
+                    client_xml = client_xml.nextSibling()
+                    
+            node = node.nextSibling()
+        
+        ray_file.close()
+        
+        ray_file_w = open(session_file, 'w')
+        ray_file_w.write(xml.toString())
+        ray_file_w.close()
+        
+        
+        for client in tmp_clients:
+            client.adjustFilesAfterCopy(new_session_full_name, template_mode)
+    
+    
     ############################## COMPLEX OPERATIONS ###################
     #all functions are splitted when we need to wait clients for something (announce, reply, quit)
     #for example, at the end of save(), timer is launched, 
@@ -1124,37 +1224,17 @@ class OperatingSession(Session):
         for client in self.clients:
             cl = xml.createElement('client')
             cl.setAttribute('id', client.client_id)
-            cl.setAttribute('executable', client.executable_path)
-            cl.setAttribute('name', client.name)
-            cl.setAttribute('prefix_mode', client.prefix_mode)
             cl.setAttribute('launched', int(bool(client.isRunning())) )
             
-            if client.project_path:
-                cl.setAttribute('project_path', client.project_path)
-            
-            if client.icon:
-                cl.setAttribute('icon', client.icon)
-                
-            if client.label:
-                cl.setAttribute('label', client.label)
+            client.writeXmlProperties(cl)
             
             xml_cls.appendChild(cl)
             
         for client in self.removed_clients:
             cl = xml.createElement('client')
             cl.setAttribute('id', client.client_id)
-            cl.setAttribute('executable', client.executable_path)
-            cl.setAttribute('name', client.name)
-            cl.setAttribute('prefix_mode', client.prefix_mode)
             
-            if client.project_path:
-                cl.setAttribute('project_path', client.project_path)
-            
-            if client.icon:
-                cl.setAttribute('icon', client.icon)
-                
-            if client.label:
-                cl.setAttribute('label', client.label)
+            client.writeXmlProperties(cl)
             
             xml_rmcls.appendChild(cl)
             
@@ -1277,21 +1357,14 @@ class OperatingSession(Session):
             return
         
         server.setServerStatus(SERVER_STATUS_DUPLICATE)
-        new_session_name = self.osc_args[0]
-        spath = self.root + '/' + new_session_name
+        new_session_full_name = self.osc_args[0]
+        spath = "%s/%s" % (self.root, new_session_full_name)
         
-        size = getFolderSize(self.path)
-        copy_check_thread = ProgressCopyChecker(spath, size)
-        copy_check_thread.start()
-        
-        subprocess.run(['cp', '-R',  self.path, spath])
-        
-        copy_check_thread.pleaseStop()
-        
-        for client in self.clients + self.removed_clients:
-            client.adjustFilesAfterCopy(new_session_name)
-            
-        self.nextFunction() #here "load"
+        self.startCopy(self.path, spath)
+    
+    def duplicate_step1(self):
+        self.adjustFilesAfterCopy(TEMPLATE_NONE)           
+        self.nextFunction()
     
     def saveSessionTemplate(self):
         if self.clientsHaveErrors():
@@ -1349,62 +1422,10 @@ class OperatingSession(Session):
         
         server.setServerStatus(SERVER_STATUS_DUPLICATE)                   
         
-        shutil.copytree(template_path, spath)
+        self.startCopy(template_path, spath)
         
-        #create temp clients from raysession.xml to adjust Files after copy
-        session_file = "%s/%s" % (spath, "raysession.xml")
-        
-        try:
-            ray_file = open(session_file, 'r')
-        except:
-            self.nextFunction()
-            return
-        
-        tmp_clients = []
-        
-        xml = QDomDocument()
-        xml.setContent(ray_file.read())
-
-        content = xml.documentElement()
-        
-        if content.tagName() != "RAYSESSION":
-            ray_file.close()
-            self.err_loading = ERR_BAD_PROJECT
-            self.loadError()
-            return
-        
-        content.setAttribute('name', new_session_name)
-        
-        node = content.firstChild()
-        while not node.isNull():
-            tag_name = node.toElement().tagName()
-            if tag_name in ('Clients', 'RemovedClients'):
-                client_xml = node.toElement().firstChild()
-                while not client_xml.isNull():
-                    client = Client()
-                    cx = client_xml.toElement()
-                    
-                    client.client_id  = str(cx.attribute('id'))
-                    prefix_mode = str(cx.attribute('prefix_mode'))
-                    if prefix_mode.isdigit() and 0 <= int(prefix_mode) <= 2:
-                        client.prefix_mode = int(prefix_mode)
-                    
-                    tmp_clients.append(client)
-                    
-                    client_xml = client_xml.nextSibling()
-                    
-            node = node.nextSibling()
-        
-        ray_file.close()
-        
-        ray_file_w = open(session_file, 'w')
-        ray_file_w.write(xml.toString())
-        ray_file_w.close()
-        
-        
-        for client in tmp_clients:
-            client.adjustFilesAfterCopy(new_session_full_name, TEMPLATE_SESSION_LOAD)
-        
+    def prepareTemplate_step1(self):
+        self.adjustFilesAfterCopy(TEMPLATE_SESSION_LOAD)
         self.nextFunction()
     
     def load(self):
@@ -1474,7 +1495,7 @@ class OperatingSession(Session):
                     while not client_xml.isNull():
                         client = Client()
                         cx = client_xml.toElement()
-                        client.takeXmlProperties(cx)
+                        client.readXmlProperties(cx)
                         
                         if tag_name == 'Clients':
                             if client.auto_start:
@@ -1685,7 +1706,7 @@ class SignaledSession(OperatingSession):
         if self.process_order:
             return
         self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [self.save, self.prepareTemplate, self.load, self.loadDone]
+        self.process_order = [self.save, self.prepareTemplate, self.prepareTemplate_step1, self.load, self.loadDone]
         self.nextFunction()
         
     def serverOpenSession(self, path, args, src_addr):
@@ -1713,7 +1734,7 @@ class SignaledSession(OperatingSession):
         if self.process_order:
             return
         self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [self.save, self.duplicate, self.load, self.duplicateDone]
+        self.process_order = [self.save, self.duplicate, self.duplicate_step1, self.load, self.duplicateDone]
         self.nextFunction()
         
     def serverSaveSessionTemplate(self, path, args, src_addr):
@@ -1812,7 +1833,7 @@ class SignaledSession(OperatingSession):
             
             if ct.attribute('template-name') == template_name:
                 client = Client()
-                client.takeXmlProperties(ct)
+                client.readXmlProperties(ct)
                 
                 needed_version = ct.attribute('needed-version')
                 
@@ -2072,7 +2093,6 @@ class ProgressCopyChecker(Thread):
             
             progress = float(current_size / self.size)
             
-            print('send progress', progress)
             server.sendGui('/ray/gui/server_progress', progress)
 
     def pleaseStop(self):
