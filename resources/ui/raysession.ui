@@ -460,7 +460,7 @@ QToolButton {border: none}</string>
                     <string>Server Status</string>
                    </property>
                    <property name="styleSheet">
-                    <string notr="true">QLineEdit {font-size : 10px; font-weight : bold }</string>
+                    <string notr="true"/>
                    </property>
                    <property name="text">
                     <string>off</string>

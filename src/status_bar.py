@@ -16,6 +16,8 @@ class StatusBar(QLineEdit):
         self.ubuntu_font_cond = QFont(QFontDatabase.applicationFontFamilies(1)[0], 8)
         self.ubuntu_font.setBold(True)
         self.ubuntu_font_cond.setBold(True)
+        #self.setProgress(0.4)
+        
         
     def showNextText(self):
         if self.next_texts:
@@ -41,6 +43,20 @@ class StatusBar(QLineEdit):
             self.setFont(self.ubuntu_font)
             
         QLineEdit.setText(self, text)
+        
+    def setProgress(self, progress):
+        if not 0.0 <= progress <= 1.0:
+            return
+        
+        pre_progress = progress - 0.03
+        if pre_progress < 0:
+            pre_progress = 0
+            
+        basecolor = self.palette().base().color().name()
+        bluecolor = self.palette().highlight().color().name()
+        style = "QLineEdit{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0,stop:0 %s, stop:%f %s, stop:%f %s, stop:1 %s)}" % (bluecolor, pre_progress, bluecolor, progress, basecolor, basecolor)
+        
+        self.setStyleSheet(style)
         
     def mousePressEvent(self, event):
         event.ignore()

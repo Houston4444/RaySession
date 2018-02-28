@@ -4,6 +4,7 @@ import os, sys, shutil, string, random, time, subprocess, signal, unicodedata
 from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject, QTimer, QProcess, QSettings, QStandardPaths
 from PyQt5.QtXml import QDomDocument
+from threading import Thread
 
 from shared import *
 
@@ -107,6 +108,21 @@ def quitRay(sig, frame):
     else:
         MESSAGE(_translate('GUIMSG', 'Good Bye !'))
     app.quit()
+
+def getFolderSize(path):
+    du_full = subprocess.check_output(['du', '-sb', path]).decode()
+    if not du_full:
+        return 0
+    
+    print(du_full)
+    du_str = du_full.split('\t')[0]
+    if not du_str.isdigit():
+        return 0
+    
+    print('assssis')
+    print(du_str)
+    print(int(du_str))
+    return int(du_str)
 
 class Client(QObject):
     #can be directly changed by OSC thread
@@ -1263,7 +1279,14 @@ class OperatingSession(Session):
         server.setServerStatus(SERVER_STATUS_DUPLICATE)
         new_session_name = self.osc_args[0]
         spath = self.root + '/' + new_session_name
+        
+        size = getFolderSize(self.path)
+        copy_check_thread = ProgressCopyChecker(spath, size)
+        copy_check_thread.start()
+        
         subprocess.run(['cp', '-R',  self.path, spath])
+        
+        copy_check_thread.pleaseStop()
         
         for client in self.clients + self.removed_clients:
             client.adjustFilesAfterCopy(new_session_name)
@@ -2030,6 +2053,30 @@ def generateClientId():
     return client_id
 
 ##########################
+class ProgressCopyChecker(Thread):
+    def __init__(self, outpath, size):
+        Thread.__init__(self)
+        self.outpath = outpath
+        self.size    = size
+        self.please_stop = False
+
+    def run(self):
+        current_size = 0
+        while current_size < self.size:
+            time.sleep(0.250)
+            
+            if self.please_stop:
+                break
+            
+            current_size = getFolderSize(self.outpath)
+            
+            progress = float(current_size / self.size)
+            
+            print('send progress', progress)
+            server.sendGui('/ray/gui/server_progress', progress)
+
+    def pleaseStop(self):
+        self.please_stop = True
 
 class Signaler(QObject):
     server_announce  = pyqtSignal(str, list, object)
@@ -2648,7 +2695,7 @@ class OscServerThread(ServerThread):
         MESSAGE("Registered with GUI")
         
     
-if __name__ == '__main__':
+if __name__ == '__main__':    
     session_root = "%s/Ray Sessions" % os.getenv('HOME')
     
     #Add RaySession/src to $PATH to can use ray-proxy and maybe future executables after make, whitout install

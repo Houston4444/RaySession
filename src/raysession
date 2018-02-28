@@ -302,6 +302,7 @@ class OscSignaler(QObject):
     session_template_found = pyqtSignal(list)
     user_client_template_found    = pyqtSignal(list)
     factory_client_template_found = pyqtSignal(list)
+    server_progress        = pyqtSignal(float)
     server_status_changed  = pyqtSignal(int)
     clients_reordered      = pyqtSignal(list)
     opening_session    = pyqtSignal()
@@ -451,7 +452,13 @@ class OSCServerT(ServerThread):
         client_id = args[0]
         self.qsig.client_still_running.emit(client_id)
         
-      
+    @make_method('/ray/gui/server_progress', 'f')
+    def guiServerProgress(self, path, args):
+        print('yourrrj', args)
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        progress = args[0]
+        self.qsig.server_progress.emit(progress)
+    
     @make_method('/ray/server_status', 'i')
     def rayServerStatus(self, path, args):
         server_status = args[0]
@@ -641,6 +648,7 @@ class MainWindow(QMainWindow):
         serverOSC.qsig.client_updated.connect(self.serverUpdatesClientProperties)
         serverOSC.qsig.new_message_sig.connect(self.serverPrintsMessage)
         serverOSC.qsig.session_name_sig.connect(self.serverRenamesSession)
+        serverOSC.qsig.server_progress.connect(self.serverProgress)
         serverOSC.qsig.server_status_changed.connect(self.serverChangeServerStatus)
         serverOSC.qsig.error_message.connect(self.serverSendsError)
         serverOSC.qsig.opening_session.connect(self.serverOpensNsmSession)
@@ -947,6 +955,9 @@ class MainWindow(QMainWindow):
     
     def serverReorderClients(self, client_id_list):
         session.reOrderClients(client_id_list)
+    
+    def serverProgress(self, progress):
+        self.ui.lineEditServerStatus.setProgress(progress)
     
     def serverChangeServerStatus(self, server_status):
         session.updateServerStatus(server_status)
