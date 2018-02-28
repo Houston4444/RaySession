@@ -42,6 +42,8 @@ class StatusBar(QLineEdit):
         else:
             self.setFont(self.ubuntu_font)
             
+        self.setStyleSheet('')
+        
         QLineEdit.setText(self, text)
         
     def setProgress(self, progress):
@@ -54,7 +56,8 @@ class StatusBar(QLineEdit):
             
         basecolor = self.palette().base().color().name()
         bluecolor = self.palette().highlight().color().name()
-        style = "QLineEdit{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0,stop:0 %s, stop:%f %s, stop:%f %s, stop:1 %s)}" % (bluecolor, pre_progress, bluecolor, progress, basecolor, basecolor)
+        
+        style = "QLineEdit{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0,stop:0 #000077, stop:%f #0000CC, stop:%f #444444, stop:1 #000000); color: white}" % (pre_progress, progress)
         
         self.setStyleSheet(style)
         

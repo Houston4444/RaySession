@@ -498,6 +498,7 @@ class Client(QObject):
                     client_files.append(filename)
                         
             template_dir = "%s/%s" % (client_template_local_root, template_name)
+            
             if os.path.exists(template_dir):
                 if os.access(template_dir, os.W_OK):
                     shutil.rmtree(template_dir)
@@ -563,31 +564,13 @@ class Client(QObject):
         #create template
         rct = xml.createElement('Client-Template')
         
+        self.writeXmlProperties(rct)
         rct.setAttribute('template-name', template_name)
-        rct.setAttribute('executable', self.executable_path)
         rct.setAttribute('client_id', self.prettyClientId())
         
-        if self.name:
-            rct.setAttribute('name', self.name)
-        
-        if self.prefix_mode !=  PREFIX_MODE_SESSION_NAME:
-            rct.setAttribute('prefix_mode', self.prefix_mode)
-            if self.prefix_mode == PREFIX_MODE_UNDEF:
-                rct.setAttribute('project_path', self.project_path)
-        
-        if self.icon:
-            rct.setAttribute('icon', self.icon)
-        
-        if self.label:
-            rct.setAttribute('label', self.label)
-            
         if not self.isRunning():
             rct.setAttribute('launched', False)
             
-        if not self.check_last_save:
-            rct.setAttribute('check_last_save', False)
-        
-        
         content.appendChild(rct)
         
         file = open(xml_file, 'w')
@@ -1387,11 +1370,13 @@ class OperatingSession(Session):
         if not os.path.exists(session_template_root):
             os.makedirs(session_template_root)
             
-        shutil.copytree(self.path, spath)
-        #subprocess.run(['cp', '-R', self.path, spath])
+        self.startCopy(self.path, spath)
+        
+    def saveSessionTemplate_step_1(self):
+        session_template_name = self.osc_args[0]
         
         for client in self.clients + self.removed_clients:
-            client.adjustFilesAfterCopy(session_template_name, True)
+            client.adjustFilesAfterCopy(session_template_name, TEMPLATE_SESSION_SAVE)
         
         MESSAGE("Done")
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Saved as template.")
@@ -1741,7 +1726,7 @@ class SignaledSession(OperatingSession):
         if self.process_order:
             return
         self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [self.save, self.saveSessionTemplate]
+        self.process_order = [self.save, self.saveSessionTemplate, self.saveSessionTemplate_step_1]
         self.nextFunction()
         
     def serverAbortSession(self, path, args, src_addr):
