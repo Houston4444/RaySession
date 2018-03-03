@@ -59,7 +59,7 @@ TEMPLATE_CLIENT_SAVE  = 3
 TEMPLATE_CLIENT_LOAD  = 4
 
 debug = False
-last_client_message = None
+last_client_message = ''
 known_as_non_active = []
 
 def signalHandler(sig, frame):
@@ -77,21 +77,21 @@ def ifDebug(string):
 
 def MESSAGE(string):
     global last_client_message
+    
+    if last_client_message and last_client_message != 'daemon':
+        sys.stderr.write('\n')
+    #print('[\033[90mray-daemon\033[0m]\033[92m%s\033[0m' % string, file=sys.stderr)
+    sys.stderr.write('[\033[90mray-daemon\033[0m]\033[92m%s\033[0m\n' % string)
+    
     last_client_message = 'daemon'
-    print('[' + '\033[90m' + 'ray-daemon' + '\033[0m' + '] ' + '\033[92m' + string + '\033[0m', file=sys.stderr)
 
 def CLIENT_MESSAGE(byte_string, client_name, client_id):
     global last_client_message
     
     client_str = "%s.%s" % (client_name, client_id)
     
-    if last_client_message == client_str:
-        #print(string, file=sys.stderr)
-        sys.stderr.buffer.write(byte_string)
-    else:
-        #print('[' + '\033[90m' + client_name + '-' + client_id + '\033[0m' + ']\n' + string, file=sys.stderr)
-        #print('[\033[90m%s-%s\033[0m]\n%s' % (client_name, client_id, string), file=sys.stderr)
-        sys.stderr.write('[\033[90m%s-%s\033[0m]\n' % (client_name, client_id))
+    if last_client_message != client_str:
+        sys.stderr.write('\n[\033[90m%s-%s\033[0m]\n' % (client_name, client_id))
         sys.stderr.buffer.write(byte_string)
     
     last_client_message = client_str
@@ -126,12 +126,14 @@ class CopyFile(object):
 class FileCopier(QObject):
     def __init__(self):
         QObject.__init__(self)
-        self.next_function = None
-        self.next_args     = []
-        self.copy_files    = []
-        self.copy_size     = 0
+        self.next_function  = None
+        self.abort_function = None
+        self.next_args      = []
+        self.copy_files     = []
+        self.copy_size      = 0
+        self.client         = None
         
-        self.abort_status = SERVER_STATUS_OFF
+        self.aborted = False
         
         self.process = QProcess()
         self.process.finished.connect(self.processFinished)
@@ -168,7 +170,10 @@ class FileCopier(QObject):
         if current_size and self.copy_size:
             progress = float(current_size/self.copy_size)
             
-            server.sendGui('/ray/gui/server_progress', progress)
+            if self.client:
+                server.sendGui('/ray/gui/client/progress', self.client.client_id, progress)
+            else:
+                server.sendGui('/ray/gui/server_progress', progress)
     
     def processFinished(self, exit_code, exit_status):
         self.timer.stop()
@@ -178,19 +183,23 @@ class FileCopier(QObject):
                 copy_file.state = 2
                 break
         
+        if self.aborted:
+            ##remove all created files
+            #for copy_file in self.copy_files:
+                #if copy_file.state > 0:
+                    #if os.path.exists(copy_file.dest_path):
+                        #subprocess.run(['rm', '-R', copy_file.dest_path])
+                        
+            self.abort_function()
+            return
+        
+        #run next_function if copy is terminated
         for copy_file in self.copy_files:
             if copy_file.state != 2:
                 break
         else:
-            #server.setServerStatus(SERVER_STATUS_READY)
-            #self.copy_running = False
-            
-            server.setServerStatus(self.previous_server_status)
-            
             if self.next_function:
                 self.next_function(*self.next_args)
-            else:
-                server.setServerStatus(self.abort_status)
                 
             return
         
@@ -209,15 +218,21 @@ class FileCopier(QObject):
             
         self.timer.start()
     
-    def start(self, dest_dir, from_list, abort_status, next_function, next_args=[]):
-        self.abort_status  = abort_status
-        self.next_function = next_function
-        self.next_args     = next_args
+    def start(self, dest_dir, from_list, client, next_function, abort_function, next_args=[]):
+        self.abort_function = abort_function
+        self.next_function  = next_function
+        self.next_args      = next_args
+        self.client         = client
         
+        self.aborted   = False
         self.copy_size = 0
         self.copy_files.clear()
         
-        server.setServerStatus(SERVER_STATUS_DUPLICATE)
+        if self.client == None:
+            server.setServerStatus(SERVER_STATUS_DUPLICATE)
+        else:
+            client.status = CLIENT_STATUS_COPY
+            server.sendClientStatusToGui(client)
         
         for orig_path in from_list:
             copy_file = CopyFile()
@@ -239,7 +254,7 @@ class FileCopier(QObject):
     def abort(self):
         self.timer.stop()
         if self.process.state() == QProcess.Running:
-            self.next_function = None
+            self.aborted = True
             self.process.terminate()
             
             
@@ -639,7 +654,7 @@ class Client(QObject):
             for filename in client_files:
                 full_file_names.append("%s/%s" % (session.path, filename))
             
-            session.file_copier.start(template_dir, full_file_names, SERVER_STATUS_READY, self.saveAsTemplate_step1, [template_name])
+            session.file_copier.start(template_dir, full_file_names, self, self.saveAsTemplate_step1, self.saveAsTemplateAborted, [template_name])
 
     def saveAsTemplate_step1(self, template_name):
         if self.prefix_mode != PREFIX_MODE_UNDEF:
@@ -708,6 +723,12 @@ class Client(QObject):
         file = open(xml_file, 'w')
         file.write(xml.toString())
         file.close()
+    
+    def saveAsTemplateAborted(self):
+        if self.process_order:
+            return
+        
+        server.setServerStatus(SERVER_STATUS_READY)
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_save=TEMPLATE_NONE):            
         old_session_name = session.name
@@ -1446,11 +1467,15 @@ class OperatingSession(Session):
         new_session_full_name = self.osc_args[0]
         spath = "%s/%s" % (self.root, new_session_full_name)
         
-        self.file_copier.start(spath, [self.path], SERVER_STATUS_READY, self.nextFunction)
+        self.file_copier.start(spath, [self.path], None, self.nextFunction, self.duplicateAborted)
     
     def duplicate_step1(self):
         self.adjustFilesAfterCopy(TEMPLATE_NONE)           
         self.nextFunction()
+    
+    def duplicateAborted(self):
+        self.process_order.clear()
+        server.setServerStatus(SERVER_STATUS_READY)
     
     def saveSessionTemplate(self):
         if self.clientsHaveErrors():
@@ -1473,7 +1498,7 @@ class OperatingSession(Session):
         if not os.path.exists(session_template_root):
             os.makedirs(session_template_root)
             
-        self.file_copier.start(spath, [self.path], SERVER_STATUS_READY, self.nextFunction)
+        self.file_copier.start(spath, [self.path], None, self.nextFunction, self.saveSessionTemplateAborted)
         
     def saveSessionTemplate_step_1(self):
         session_template_name = self.osc_args[0]
@@ -1483,6 +1508,10 @@ class OperatingSession(Session):
         
         MESSAGE("Done")
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Saved as template.")
+        server.setServerStatus(SERVER_STATUS_READY)
+    
+    def saveSessionTemplateAborted(self):
+        self.process_order.clear()
         server.setServerStatus(SERVER_STATUS_READY)
     
     def prepareTemplate(self):
@@ -1508,13 +1537,19 @@ class OperatingSession(Session):
             self.sendError(ERR_CREATE_FAILED, _translate("error", "Folder \n%s \nalready exists") % spath)
             return
         
-        #server.setServerStatus(SERVER_STATUS_DUPLICATE)                   
-        
-        self.file_copier.start(spath, [template_path], server.server_status, self.nextFunction)
+        self.file_copier.start(spath, [template_path], None, self.nextFunction, self.prepareTemplateAborted)
         
     def prepareTemplate_step1(self):
         self.adjustFilesAfterCopy(TEMPLATE_SESSION_LOAD)
         self.nextFunction()
+    
+    def prepareTemplateAborted(self):
+        self.process_order.clear()
+        if self.name:
+            server.setServerStatus(SERVER_STATUS_READY)
+        else:
+            server.setServerStatus(SERVER_STATUS_OFF)
+        
     
     def load(self):
         #terminate or switch clients
@@ -1964,27 +1999,39 @@ class SignaledSession(OperatingSession):
                         node = node.nextSibling()
                         continue
                 
+                full_name_files = []
+                
                 if not needed_version: 
                     #if there is a needed version, 
                     #then files are ignored because factory templates with version must be NSM compatible and dont need files (factory)
                     template_path = "%s/%s" % (templates_root, template_name)
                     
-                    full_name_files = []
-                    
                     if os.path.isdir(template_path):
                         for file in os.listdir(template_path):
                             full_name_files.append("%s/%s" % (template_path, file))
+                            
+                
+                self.addClient(client)
+                
+                if full_name_files:
+                    session.file_copier.start(self.path, full_name_files, client, self.addClientTemplate_step_1, self.addClientTemplateAborted, [client])
+                else:
+                    self.addClientTemplate_step_1(client)
                     
-                    session.file_copier.start(self.path, full_name_files, server.server_status, self.addClientTemplate_step_1, [client])
                 break
             
             node = node.nextSibling()
     
     def addClientTemplate_step_1(self, client):
         client.adjustFilesAfterCopy(self.name, TEMPLATE_CLIENT_LOAD)
-        self.addClient(client)
+        #self.addClient(client)
         if client.auto_start:
             client.start()
+    
+    def addClientTemplateAborted(self):
+        if self.process_order:
+            return
+        server.setServerStatus(SERVER_STATUS_READY)
     
     def serverAddUserClientTemplate(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
@@ -2111,7 +2158,7 @@ class SignaledSession(OperatingSession):
     
     def abortCopy(self):
         self.file_copier.abort()
-        self.process_order.clear()
+        #self.process_order.clear()
     
     def terminate(self):
         if self.terminated_yet:
@@ -2587,8 +2634,6 @@ class OscServerThread(ServerThread):
     @make_method('/ray/server/abort_copy', '')
     def rayServerAbortCopy(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        print('abooreei')
         
         if self.server_status != SERVER_STATUS_DUPLICATE:
             return

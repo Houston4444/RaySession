@@ -219,6 +219,9 @@ class Client(object):
         self.dirty_state = bool_dirty
         self.widget.setDirtyState(bool_dirty)
         
+    def setProgress(self, progress):
+        self.widget.setProgress(progress)
+    
     def switch(self, new_client_id):
         self.client_id = new_client_id
         self.widget.updateClientData()
@@ -291,7 +294,7 @@ class OscSignaler(QObject):
     client_removed         = pyqtSignal(str)
     client_status_changed  = pyqtSignal(str, int)
     client_switched        = pyqtSignal(str, str)
-    client_progress_sig    = pyqtSignal()
+    client_progress        = pyqtSignal(str, float)
     client_dirty_sig       = pyqtSignal(str, bool)
     client_has_gui         = pyqtSignal(str)
     client_gui_visible_sig = pyqtSignal(str, int)
@@ -418,9 +421,13 @@ class OSCServerT(ServerThread):
         
         self.qsig.client_switched.emit(old_client_id, new_client_id)
         
-    @make_method('/ray/gui/client/progress', None)
+    @make_method('/ray/gui/client/progress', 'sf')
     def guiClientProgress(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        client_id, progress = args
+        
+        self.qsig.client_progress.emit(client_id, progress)
         
     @make_method('/ray/gui/client/dirty', 'si')
     def guiClientDirty(self, path, args):
@@ -648,6 +655,7 @@ class MainWindow(QMainWindow):
         serverOSC.qsig.client_gui_visible_sig.connect(self.serverSetsClientGuiState)
         serverOSC.qsig.client_dirty_sig.connect(self.serverSetsClientDirtyState)
         serverOSC.qsig.client_switched.connect(self.serverSwitchesClient)
+        serverOSC.qsig.client_progress.connect(self.serverClientProgress)
         serverOSC.qsig.client_still_running.connect(self.serverStillRunningClient)
         serverOSC.qsig.client_updated.connect(self.serverUpdatesClientProperties)
         serverOSC.qsig.new_message_sig.connect(self.serverPrintsMessage)
@@ -890,6 +898,11 @@ class MainWindow(QMainWindow):
     
     def serverSwitchesClient(self, old_client_id, new_client_id):
         session.switchClient(old_client_id, new_client_id)
+    
+    def serverClientProgress(self, client_id, progress):
+        client = session.getClient(client_id)
+        if client:
+            client.setProgress(progress)
     
     def serverUpdatesClientProperties(self, client_data):
         session.updateClientProperties(client_data)

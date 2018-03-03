@@ -159,6 +159,21 @@ class ClientSlot(QFrame):
             self.ui.killButton.setVisible(False)
             
             self.ui.saveButton.setIcon(self.saveIcon)
+            
+        elif status == CLIENT_STATUS_COPY:
+            self.ui.startButton.setEnabled(False)
+            self.ui.stopButton.setEnabled(False)
+            self.ui.saveButton.setEnabled(False)
+            self.ui.closeButton.setEnabled(False)
+            self.ui.iconButton.setEnabled(False)
+            self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
+            self.ui.ClientName.setEnabled(False)
+            self.ui.toolButtonGUI.setEnabled(False)
+            
+            self.ui.stopButton.setVisible(True)
+            self.ui.killButton.setVisible(False)
+            
+            #self.ui.saveButton.setIcon(self.saveIcon)
 				
     def allowKill(self):
         self.ui.stopButton.setVisible(False)
@@ -242,7 +257,10 @@ class ClientSlot(QFrame):
             self.ui.saveButton.setIcon(self.unsavedIcon)
         else:
             self.ui.saveButton.setIcon(self.savedIcon)
-        
+    
+    def setProgress(self, progress):
+        self.ui.lineEditClientStatus.setProgress(progress)
+    
     def contextMenuEvent(self, event):
         act_selected = self.menu.exec(self.mapToGlobal(event.pos()))
         event.accept()
@@ -324,6 +342,7 @@ class ListWidgetClients(QListWidget):
             n+=1
                 
         self.sortItems()
+        
     
     def dropEvent(self, event):
         QListWidget.dropEvent(self, event)

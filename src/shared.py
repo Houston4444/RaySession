@@ -12,16 +12,17 @@ PREFIX_MODE_UNDEF        = 0
 PREFIX_MODE_CLIENT_NAME  = 1
 PREFIX_MODE_SESSION_NAME = 2
 
-CLIENT_STATUS_STOPPED = 0
-CLIENT_STATUS_LAUNCH  = 1
-CLIENT_STATUS_OPEN    = 2
-CLIENT_STATUS_READY   = 3
-CLIENT_STATUS_SAVE    = 4
-CLIENT_STATUS_SWITCH  = 5
-CLIENT_STATUS_QUIT    = 6
-CLIENT_STATUS_NOOP    = 7
-CLIENT_STATUS_ERROR   = 8
-CLIENT_STATUS_REMOVED = 9
+CLIENT_STATUS_STOPPED =  0
+CLIENT_STATUS_LAUNCH  =  1
+CLIENT_STATUS_OPEN    =  2
+CLIENT_STATUS_READY   =  3
+CLIENT_STATUS_COPY    =  4
+CLIENT_STATUS_SAVE    =  5
+CLIENT_STATUS_SWITCH  =  6
+CLIENT_STATUS_QUIT    =  7
+CLIENT_STATUS_NOOP    =  8
+CLIENT_STATUS_ERROR   =  9
+CLIENT_STATUS_REMOVED = 10
 
 SERVER_STATUS_OFF       = 0
 SERVER_STATUS_NEW       = 1
@@ -150,6 +151,7 @@ def init_translation(_translate):
                              CLIENT_STATUS_LAUNCH : _translate('client status', "launch"),
                              CLIENT_STATUS_OPEN   : _translate('client status', "open"),
                              CLIENT_STATUS_READY  : _translate('client status', "ready"),
+                             CLIENT_STATUS_COPY   : _translate('client status', "copy"),
                              CLIENT_STATUS_SAVE   : _translate('client status', "save"),
                              CLIENT_STATUS_SWITCH : _translate('client status', "switch"),
                              CLIENT_STATUS_QUIT   : _translate('client status', "quit"),

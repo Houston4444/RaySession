@@ -69,7 +69,6 @@ class StatusBarNegativ(StatusBar):
         StatusBar.__init__(self, parent)
         
     def mousePressEvent(self, event):
-        print('alorsmonfi')
         self.copyAborted.emit()
         
     
