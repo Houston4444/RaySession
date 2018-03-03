@@ -2,9 +2,11 @@
 
 from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtGui     import QPalette, QColor, QFont, QFontDatabase, QFontMetrics
-from PyQt5.QtCore    import QTimer
+from PyQt5.QtCore    import QTimer, pyqtSignal
 
 class StatusBar(QLineEdit):
+    copyAborted = pyqtSignal()
+    
     def __init__(self, parent):
         QLineEdit.__init__(self)
         self.next_texts = []
@@ -16,8 +18,9 @@ class StatusBar(QLineEdit):
         self.ubuntu_font_cond = QFont(QFontDatabase.applicationFontFamilies(1)[0], 8)
         self.ubuntu_font.setBold(True)
         self.ubuntu_font_cond.setBold(True)
-        #self.setProgress(0.4)
         
+        self.basecolor = self.palette().base().color().name()
+        self.bluecolor = self.palette().highlight().color().name()
         
     def showNextText(self):
         if self.next_texts:
@@ -53,11 +56,8 @@ class StatusBar(QLineEdit):
         pre_progress = progress - 0.03
         if pre_progress < 0:
             pre_progress = 0
-            
-        basecolor = self.palette().base().color().name()
-        bluecolor = self.palette().highlight().color().name()
         
-        style = "QLineEdit{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0,stop:0 #000077, stop:%f #0000CC, stop:%f #444444, stop:1 #000000); color: white}" % (pre_progress, progress)
+        style = "QLineEdit{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0,stop:0 %s, stop:%f %s, stop:%f %s, stop:1 %s)}" % (self.bluecolor, pre_progress, self.bluecolor, progress, self.basecolor, self.basecolor)
         
         self.setStyleSheet(style)
         
@@ -67,11 +67,9 @@ class StatusBar(QLineEdit):
 class StatusBarNegativ(StatusBar):
     def __init__(self, parent):
         StatusBar.__init__(self, parent)
-        #palette = self.palette()
-        #base = palette.base()
-        #text = palette.text()
-        #palette.setBrush(QPalette.Base, text)
-        #palette.setBrush(QPalette.WindowText, base)
-        #palette.setBrush(QPalette.Text, base)
         
-        #self.setPalette(palette)
+    def mousePressEvent(self, event):
+        print('alorsmonfi')
+        self.copyAborted.emit()
+        
+    

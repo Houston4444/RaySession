@@ -556,6 +556,9 @@ class OSCServerT(ServerThread):
     def changeClientOrder(self, client_ids_list):
         self.toDaemon('/ray/server/reorder_clients', *client_ids_list)
         
+    def abortCopy(self):
+        print('allllooort copy')
+        self.toDaemon('/ray/server/abort_copy')
     #def 
 
 class RayIcon(QIcon):
@@ -623,6 +626,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(app.aboutQt)
         
+        self.ui.lineEditServerStatus.copyAborted.connect(serverOSC.abortCopy)
         
         
         #set control menu

@@ -6,13 +6,6 @@ import ui_client_slot
 
 from shared import *
 
-
-
-#def translateProxy():
-    #return _translate('client_slot', 'proxy')
-
-#def translateProxyTooltip():
-    #return _translate('client_slot', 'Show proxy window') 
     
 class ClientSlot(QFrame):
     def __init__(self, list_widget, client):
@@ -23,8 +16,6 @@ class ClientSlot(QFrame):
         #needed variables
         self.list_widget     = list_widget
         self.client          = client
-        
-        self.has_light_text = False
         
         self.is_dirty_able   = False
         self.gui_visible     = True
@@ -322,7 +313,6 @@ class ListWidgetClients(QListWidget):
             
         next_item_list = []
         
-        #return
         
         n=0
         
@@ -354,8 +344,4 @@ class ListWidgetClients(QListWidget):
             return
         
         QListWidget.mousePressEvent(self, event)
-
-        
-#if __name__ == '__main__':
-    #_translate = app.translate
         
