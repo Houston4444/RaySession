@@ -28,6 +28,7 @@ class ClientSlot(QFrame):
         self.ui.killButton.clicked.connect(self.killClient)
         self.ui.saveButton.clicked.connect(self.saveClient)
         self.ui.closeButton.clicked.connect(self.removeClient)
+        self.ui.lineEditClientStatus.copyAborted.connect(self.abortCopy)
         
         self.updateClientData()
         
@@ -105,6 +106,9 @@ class ClientSlot(QFrame):
     def removeClient(self):
         self.list_widget.clientRemoveRequest.emit(self.clientId())
     
+    def abortCopy(self):
+        self.list_widget.clientAbortCopyRequest.emit(self.clientId())
+    
     def saveAsApplicationTemplate(self):
         self.list_widget.clientSaveTemplateRequest.emit(self.clientId())
     
@@ -160,11 +164,11 @@ class ClientSlot(QFrame):
             
             self.ui.saveButton.setIcon(self.saveIcon)
             
-        elif status == CLIENT_STATUS_COPY:
+        elif status == CLIENT_STATUS_PRECOPY:
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(False)
             self.ui.saveButton.setEnabled(False)
-            self.ui.closeButton.setEnabled(False)
+            self.ui.closeButton.setEnabled(True)
             self.ui.iconButton.setEnabled(False)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
@@ -173,7 +177,10 @@ class ClientSlot(QFrame):
             self.ui.stopButton.setVisible(True)
             self.ui.killButton.setVisible(False)
             
-            #self.ui.saveButton.setIcon(self.saveIcon)
+            self.ui.saveButton.setIcon(self.saveIcon)
+            
+        elif status == CLIENT_STATUS_COPY:
+            self.ui.saveButton.setEnabled(False)
 				
     def allowKill(self):
         self.ui.stopButton.setVisible(False)
@@ -288,13 +295,14 @@ class ClientItem(QListWidgetItem):
 
 class ListWidgetClients(QListWidget):
     orderChanged = pyqtSignal(list)
-    clientStartRequest   = pyqtSignal(str)
-    clientStopRequest    = pyqtSignal(str)
-    clientKillRequest    = pyqtSignal(str)
-    clientSaveRequest    = pyqtSignal(str)
-    clientRemoveRequest  = pyqtSignal(str)
-    clientHideGuiRequest = pyqtSignal(str)
-    clientShowGuiRequest = pyqtSignal(str)
+    clientStartRequest     = pyqtSignal(str)
+    clientStopRequest      = pyqtSignal(str)
+    clientKillRequest      = pyqtSignal(str)
+    clientSaveRequest      = pyqtSignal(str)
+    clientRemoveRequest    = pyqtSignal(str)
+    clientAbortCopyRequest = pyqtSignal(str)
+    clientHideGuiRequest   = pyqtSignal(str)
+    clientShowGuiRequest   = pyqtSignal(str)
     clientSaveTemplateRequest = pyqtSignal(str)
     clientPropertiesRequest   = pyqtSignal(str)
     

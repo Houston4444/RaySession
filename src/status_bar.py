@@ -62,13 +62,12 @@ class StatusBar(QLineEdit):
         self.setStyleSheet(style)
         
     def mousePressEvent(self, event):
-        event.ignore()
+        self.copyAborted.emit()
         
 class StatusBarNegativ(StatusBar):
     def __init__(self, parent):
         StatusBar.__init__(self, parent)
         
-    def mousePressEvent(self, event):
-        self.copyAborted.emit()
+    
         
     
