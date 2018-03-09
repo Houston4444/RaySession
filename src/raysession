@@ -30,6 +30,7 @@ import ui_error_dialog
 import ui_quit_app
 import ui_client_properties
 import ui_stop_client
+import ui_abort_copy
 
 import resources_rc
 
@@ -568,7 +569,6 @@ class OSCServerT(ServerThread):
         self.toDaemon('/ray/server/reorder_clients', *client_ids_list)
         
     def abortCopy(self):
-        print('allllooort copy')
         self.toDaemon('/ray/server/abort_copy')
     #def 
 
@@ -637,7 +637,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(app.aboutQt)
         
-        self.ui.lineEditServerStatus.copyAborted.connect(serverOSC.abortCopy)
+        self.ui.lineEditServerStatus.copyAborted.connect(self.abortCopy)
         
         
         #set control menu
@@ -888,7 +888,15 @@ class MainWindow(QMainWindow):
                     return
                 
         serverOSC.stopClient(client_id)
-            
+    
+    def abortCopy(self):
+        dialog = AbortCopyDialog(self)
+        dialog.exec()
+        
+        if not dialog.result():
+            return
+        
+        serverOSC.abortCopy()
     
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
     
@@ -990,6 +998,7 @@ class MainWindow(QMainWindow):
         if server_status == SERVER_STATUS_COPY:
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
+            self.ui.actionAbortSession.setEnabled(False)
             return
         
         if server_status == SERVER_STATUS_PRECOPY:
@@ -1425,6 +1434,23 @@ class AbortSessionDialog(ChildDialog):
         self.ui.pushButtonAbort.setEnabled(not bool(server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF)))
         if server_status == SERVER_STATUS_OFF:
             self.reject()
+       
+class AbortCopyDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_abort_copy.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        serverOSC.qsig.server_progress.connect(self.setProgress)
+        
+        self.serverStatusChanged(session.server_status)
+        
+    def serverStatusChanged(self, server_status):
+        if not server_status in (SERVER_STATUS_PRECOPY, SERVER_STATUS_COPY):
+            self.reject()
+            
+    def setProgress(self, progress):
+        self.ui.progressBar.setValue(progress*100)
         
 class OpenNsmSessionInfoDialog(ChildDialog):
     def __init__(self, parent):
