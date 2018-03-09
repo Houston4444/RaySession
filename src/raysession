@@ -987,6 +987,22 @@ class MainWindow(QMainWindow):
         self.ui.lineEditServerStatus.setText(serverStatusString(server_status))
         self.ui.frameCurrentSession.setEnabled(bool(server_status != SERVER_STATUS_OFF))
         
+        if server_status == SERVER_STATUS_COPY:
+            self.ui.actionSaveSession.setEnabled(False)
+            self.ui.actionCloseSession.setEnabled(False)
+            return
+        
+        if server_status == SERVER_STATUS_PRECOPY:
+            self.ui.actionSaveSession.setEnabled(False)
+            self.ui.actionCloseSession.setEnabled(False)
+            self.ui.actionAbortSession.setEnabled(True)
+            self.ui.actionDuplicateSession.setEnabled(False)
+            self.ui.actionSaveTemplateSession.setEnabled(False)
+            self.ui.actionAddApplication.setEnabled(False)
+            self.ui.actionAddExecutable.setEnabled(False)
+            self.ui.actionOpenSessionFolder.setEnabled(True)
+            return
+            
         close_or_off = bool(server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF))
         ready        = bool(server_status == SERVER_STATUS_READY)
         

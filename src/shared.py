@@ -25,16 +25,17 @@ CLIENT_STATUS_NOOP    =  9
 CLIENT_STATUS_ERROR   = 10
 CLIENT_STATUS_REMOVED = 11
 
-SERVER_STATUS_OFF       = 0
-SERVER_STATUS_NEW       = 1
-SERVER_STATUS_OPEN      = 2
-SERVER_STATUS_CLEAR     = 3
-SERVER_STATUS_SWITCH    = 4
-SERVER_STATUS_LAUNCH    = 5
-SERVER_STATUS_DUPLICATE = 6
-SERVER_STATUS_READY     = 7
-SERVER_STATUS_SAVE      = 8
-SERVER_STATUS_CLOSE     = 9
+SERVER_STATUS_OFF       =  0
+SERVER_STATUS_NEW       =  1
+SERVER_STATUS_OPEN      =  2
+SERVER_STATUS_CLEAR     =  3
+SERVER_STATUS_SWITCH    =  4
+SERVER_STATUS_LAUNCH    =  5
+SERVER_STATUS_PRECOPY   =  6
+SERVER_STATUS_COPY      =  7
+SERVER_STATUS_READY     =  8
+SERVER_STATUS_SAVE      =  9
+SERVER_STATUS_CLOSE     = 10
 
 
 def ifDebug(string):
@@ -168,7 +169,8 @@ def init_translation(_translate):
                              SERVER_STATUS_CLEAR    : _translate('server status', "clear"),
                              SERVER_STATUS_SWITCH   : _translate('server status', "switch"),
                              SERVER_STATUS_LAUNCH   : _translate('server status', "launch"),
-                             SERVER_STATUS_DUPLICATE: _translate('server status', "duplicate"),
+                             SERVER_STATUS_PRECOPY  : _translate('server status', "copy"),
+                             SERVER_STATUS_COPY     : _translate('server status', "copy"),
                              SERVER_STATUS_READY    : _translate('server status', "ready"),
                              SERVER_STATUS_SAVE     : _translate('server status', "save"),
                              SERVER_STATUS_CLOSE    : _translate('server status', "close") }

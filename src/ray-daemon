@@ -247,9 +247,6 @@ class FileCopier(QObject):
         self.copy_size = 0
         self.copy_files.clear()
         
-        if not self.client:
-            server.setServerStatus(SERVER_STATUS_DUPLICATE)
-        
         dest_path_exists = bool(os.path.exists(dest_dir))
         if dest_path_exists:
             if not os.path.isdir(dest_dir):
@@ -1551,10 +1548,10 @@ class OperatingSession(Session):
             self.process_order.clear()
             return
         
-        #server.setServerStatus(SERVER_STATUS_DUPLICATE)
         new_session_full_name = self.osc_args[0]
         spath = "%s/%s" % (self.root, new_session_full_name)
         
+        server.setServerStatus(SERVER_STATUS_COPY)
         self.file_copier.start(spath, [self.path], self.nextFunction, self.duplicateAborted)
     
     def duplicate_step1(self):
@@ -1571,7 +1568,6 @@ class OperatingSession(Session):
             self.process_order.clear()
             return
         
-        #server.setServerStatus(SERVER_STATUS_DUPLICATE)
         session_template_name = self.osc_args[0]
         spath = "%s/%s" % (session_template_root, session_template_name)
         
@@ -1585,7 +1581,8 @@ class OperatingSession(Session):
         
         if not os.path.exists(session_template_root):
             os.makedirs(session_template_root)
-            
+        
+        server.setServerStatus(SERVER_STATUS_COPY)
         self.file_copier.start(spath, [self.path], self.nextFunction, self.saveSessionTemplateAborted)
         
     def saveSessionTemplate_step_1(self):
@@ -1625,6 +1622,12 @@ class OperatingSession(Session):
             self.sendError(ERR_CREATE_FAILED, _translate("error", "Folder \n%s \nalready exists") % spath)
             return
         
+        if self.path:
+            server.setServerStatus(SERVER_STATUS_COPY)
+        else:
+            server.setServerStatus(SERVER_STATUS_PRECOPY)
+            server.sendGui("/ray/gui/session/name",  new_session_name, new_session_name)
+            
         self.file_copier.start(spath, [template_path], self.nextFunction, self.prepareTemplateAborted)
         
     def prepareTemplate_step1(self):
@@ -1641,8 +1644,14 @@ class OperatingSession(Session):
     
     def load(self):
         #terminate or switch clients
-        spath = self.root + '/' + self.osc_args[0]
-            
+        session_full_name = self.osc_args[0]
+        
+        spath = self.root + '/' + session_full_name
+        #will be used to set raysession as nsm client in the future
+        if session_full_name.startswith('/'):
+            spath = session_full_name
+        
+        
         MESSAGE("Attempting to open %s" % spath)
         
         session_ray_file = spath + '/raysession.xml'
@@ -2514,9 +2523,6 @@ class OscServerThread(ServerThread):
     def rayGuiClientSaveAsTemplate(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        if self.server_status == SERVER_STATUS_DUPLICATE:
-            return
-        
         signaler.gui_client_save_template.emit(path, args)
     
     @make_method('/ray/gui/client/abort_copy', 's')
@@ -2677,10 +2683,6 @@ class OscServerThread(ServerThread):
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
             return
         
-        if self.server_status == SERVER_STATUS_DUPLICATE:
-            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, _translate("error", "Cannot copy files while a copy is pending"))
-            return
-        
         signaler.server_add_factory_client_template.emit(path, args, src_addr)
 
     
@@ -2749,9 +2751,6 @@ class OscServerThread(ServerThread):
     @make_method('/ray/server/abort_copy', '')
     def rayServerAbortCopy(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if self.server_status != SERVER_STATUS_DUPLICATE:
-            return
         
         signaler.copy_aborted.emit()
         
@@ -2840,7 +2839,7 @@ class OscServerThread(ServerThread):
         self.listClientTemplates(src_addr, True)
     
     def isOperationPending(self, src_addr, path):
-        if session.process_order or self.server_status == SERVER_STATUS_DUPLICATE:
+        if session.process_order:
             self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
             return True
         
@@ -2853,9 +2852,19 @@ class OscServerThread(ServerThread):
     def sendClientStatusToGui(self, client):
         self.sendGui("/ray/gui/client/status", client.client_id, client.status)
             
-    def setServerStatus(self, server_status):
-        self.server_status = server_status
-        self.sendGui("/ray/server_status", server_status)
+    def setServerStatus(self, server_status=-1):
+        #SERVER_STATUS_COPY is not a status as the other ones.
+        #self.server_status doesn't remember SERVER_STATUS_COPY, although it is sent to GUI
+        
+        if server_status == -1:
+            server_status = self.server_status
+        
+        if server_status != SERVER_STATUS_COPY:
+            self.server_status = server_status
+            self.sendGui('/ray/server_status', server_status) 
+        
+        if server_status == SERVER_STATUS_COPY or session.file_copier.isActive():
+            self.sendGui("/ray/server_status", SERVER_STATUS_COPY)
     
     def listClientTemplates(self, src_addr, factory=False):
         template_list = []
