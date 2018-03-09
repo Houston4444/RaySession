@@ -690,7 +690,7 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.clientKillRequest.connect(serverOSC.killClient)
         self.ui.listWidget.clientSaveRequest.connect(serverOSC.saveClient)
         self.ui.listWidget.clientRemoveRequest.connect(serverOSC.removeClient)
-        self.ui.listWidget.clientAbortCopyRequest.connect(serverOSC.abortCopyClient)
+        self.ui.listWidget.clientAbortCopyRequest.connect(self.abortCopyClient)
         self.ui.listWidget.clientHideGuiRequest.connect(serverOSC.hideClientOptionalGui)
         self.ui.listWidget.clientShowGuiRequest.connect(serverOSC.showClientOptionalGui)
         self.ui.listWidget.clientSaveTemplateRequest.connect(self.newClientTemplate)
@@ -890,13 +890,22 @@ class MainWindow(QMainWindow):
         serverOSC.stopClient(client_id)
     
     def abortCopy(self):
-        dialog = AbortCopyDialog(self)
+        dialog = AbortServerCopyDialog(self)
         dialog.exec()
         
         if not dialog.result():
             return
         
         serverOSC.abortCopy()
+    
+    def abortCopyClient(self, client_id):
+        dialog = AbortClientCopyDialog(self, client_id)
+        dialog.exec()
+        
+        if not dialog.result():
+            return
+        
+        serverOSC.abortCopyClient(client_id)
     
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
     
@@ -1435,7 +1444,7 @@ class AbortSessionDialog(ChildDialog):
         if server_status == SERVER_STATUS_OFF:
             self.reject()
        
-class AbortCopyDialog(ChildDialog):
+class AbortServerCopyDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
         self.ui = ui_abort_copy.Ui_Dialog()
@@ -1450,6 +1459,22 @@ class AbortCopyDialog(ChildDialog):
             self.reject()
             
     def setProgress(self, progress):
+        self.ui.progressBar.setValue(progress*100)
+        
+class AbortClientCopyDialog(ChildDialog):
+    def __init__(self, parent, client_id):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_abort_copy.Ui_Dialog()
+        self.ui.setupUi(self)
+            
+        self.client_id = client_id
+        
+        serverOSC.qsig.client_progress.connect(self.setProgress)
+        
+    def setProgress(self, client_id, progress):
+        if client_id != self.client_id:
+            return
+        
         self.ui.progressBar.setValue(progress*100)
         
 class OpenNsmSessionInfoDialog(ChildDialog):
