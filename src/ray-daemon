@@ -133,7 +133,6 @@ class FileCopier(QObject):
         self.copy_files     = []
         self.copy_size      = 0
         
-        self.dest_path_exists = False
         self.aborted          = False
         self.is_active        = False
         
@@ -143,6 +142,7 @@ class FileCopier(QObject):
         
         self.timer = QTimer()
         self.timer.setInterval(250)
+        self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.checkProgressSize)
         
         
@@ -151,7 +151,7 @@ class FileCopier(QObject):
             return 0
         
         try:
-            du_full = subprocess.check_output(['du', '-sb', filepath]).decode()
+            du_full = subprocess.check_output(['nice', '-n', '15', 'du', '-sb', filepath]).decode()
         except:
             du_full = ""
             
@@ -166,6 +166,7 @@ class FileCopier(QObject):
         
     def checkProgressSize(self):
         current_size = 0
+        self.timer.stop()
         
         for copy_file in self.copy_files:
             if copy_file.state == 2:
@@ -181,6 +182,8 @@ class FileCopier(QObject):
                 server.sendGui('/ray/gui/client/progress', self.client.client_id, progress)
             else:
                 server.sendGui('/ray/gui/server_progress', progress)
+        
+        self.timer.start()
     
     def processFinished(self, exit_code, exit_status):
         self.timer.stop()
@@ -195,11 +198,12 @@ class FileCopier(QObject):
             for copy_file in self.copy_files:
                 if copy_file.state > 0:
                     file_to_remove = copy_file.dest_path
-                    if self.dest_path_exists:
-                        file_to_remove = "%s/%s" % (copy_file.dest_path, os.path.basename(copy_file.orig_path))
                     
                     if os.path.exists(file_to_remove):
-                        subprocess.run(['rm', '-R', file_to_remove]) 
+                        try:
+                            subprocess.run(['rm', '-R', file_to_remove]) 
+                        except:
+                            pass
                         
             self.is_active = False
             self.abort_function(*self.next_args)
@@ -243,12 +247,15 @@ class FileCopier(QObject):
         self.copy_size = 0
         self.copy_files.clear()
         
-        if self.client:
-            #self.client.status = CLIENT_STATUS_COPY
-            #server.sendClientStatusToGui(self.client)
-            self.client.setStatus(CLIENT_STATUS_COPY)
-        else:
+        if not self.client:
             server.setServerStatus(SERVER_STATUS_DUPLICATE)
+        
+        dest_path_exists = bool(os.path.exists(dest_dir))
+        if dest_path_exists:
+            if not os.path.isdir(dest_dir):
+                #TODO send error, but it should not append
+                self.abort_function(*self.next_args)
+                return
         
         for orig_path in from_list:
             copy_file = CopyFile()
@@ -258,19 +265,15 @@ class FileCopier(QObject):
             
             self.copy_size+=copy_file.size
             
-            if os.path.exists(dest_dir):
+            if dest_path_exists:
                 copy_file.dest_path = "%s/%s" % (dest_dir, os.path.basename(orig_path))
             else:
+                #WARNING work only with one file !!!
                 copy_file.dest_path = dest_dir
             
             self.copy_files.append(copy_file)
         
-        self.dest_path_exists = bool(os.path.exists(dest_dir))
-        if self.dest_path_exists:
-            if not os.path.isdir(dest_dir):
-                #TODO send error, but it should not append
-                self.abort_function(*self.next_args)
-                return
+        
         
         
         if self.copy_files:
@@ -2100,6 +2103,7 @@ class SignaledSession(OperatingSession):
                 self.addClient(client)
                 
                 if full_name_files:
+                    client.setStatus(CLIENT_STATUS_PRECOPY)
                     client.file_copier.start(self.path, full_name_files, self.addClientTemplate_step_1, self.addClientTemplateAborted, [client])
                 else:
                     self.addClientTemplate_step_1(client)
@@ -2201,13 +2205,14 @@ class SignaledSession(OperatingSession):
                 if client.isRunning():
                     return
                 
-                if client.status == CLIENT_STATUS_COPY:
+                if client.file_copier.isActive():
                     client.file_copier.abort()
                     return
                 
                 self.removeClient(client)
+                
                 server.sendGui("/reply", "Client removed.")
-            break
+                break
         else:
             server.sendGui("/error", -10, "No such client.")
     
