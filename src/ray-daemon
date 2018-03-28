@@ -80,14 +80,12 @@ def MESSAGE(string):
     
     if last_client_message and last_client_message != 'daemon':
         sys.stderr.write('\n')
-    #print('[\033[90mray-daemon\033[0m]\033[92m%s\033[0m' % string, file=sys.stderr)
+        
     sys.stderr.write('[\033[90mray-daemon\033[0m]\033[92m%s\033[0m\n' % string)
     
     last_client_message = 'daemon'
 
 def CLIENT_MESSAGE(byte_string, client_name, client_id):
-    return
-    
     global last_client_message
     
     client_str = "%s.%s" % (client_name, client_id)
@@ -1080,7 +1078,7 @@ class Session(QObject):
     
     def generateClientId(self, wanted_id=""):
         self.updateForbiddenIdsList()
-        print('generateClientId', self.forbidden_ids_list)
+        
         if wanted_id:
             for to_rm in ('ray-', 'non-', 'carla-'):
                 if wanted_id.startswith(to_rm):
@@ -2194,8 +2192,6 @@ class SignaledSession(OperatingSession):
             MESSAGE("Reply from unknown client")
             
     def guiClientStop(self, path, args):
-        print('liijij', args)
-        
         for client in self.clients:
             if client.client_id == args[0]:
                 client.stop()
@@ -2205,7 +2201,6 @@ class SignaledSession(OperatingSession):
             server.sendGui("/error", -10, "No such client." )
     
     def guiClientKill(self, path, args):
-        print('guiClientKill', args)
         for client in self.clients:
             if client.client_id == args[0]:
                 client.kill()
@@ -2633,9 +2628,8 @@ class OscServerThread(ServerThread):
     @make_method('/nsm/server/abort', '')
     def nsmServerAbort(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        print('srrratus', self.server_status)
+        
         if self.server_status == SERVER_STATUS_PRECOPY:
-            print('ezorpg')
             signaler.copy_aborted.emit()
             return
         

@@ -462,7 +462,6 @@ class OSCServerT(ServerThread):
         
     @make_method('/ray/gui/server_progress', 'f')
     def guiServerProgress(self, path, args):
-        print('yourrrj', args)
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         progress = args[0]
         self.qsig.server_progress.emit(progress)
