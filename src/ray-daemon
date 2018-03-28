@@ -3016,7 +3016,17 @@ if __name__ == '__main__':
     #app.setApplicationVersion(VERSION)
     app.setOrganizationName("RaySession")
     settings = QSettings()
-    known_as_non_active = settings.value('daemon/non_active_list', [], type=list)
+    
+    #this method works differently with pyqt or qt versions (probably) , so we need to ensure ray-daemon won't crash because of that.
+    known_as_non_active = []
+    
+    try:
+        known_as_non_active = settings.value('daemon/non_active_list', [], type=list)
+    except:
+        try:
+            known_as_non_active = settings.value('daemon/non_active_list', [])
+        except:
+            known_as_non_active = []
     
     app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
     session_template_root = "%s/%s" % (app_config_path, 'session_templates')
