@@ -86,6 +86,8 @@ def MESSAGE(string):
     last_client_message = 'daemon'
 
 def CLIENT_MESSAGE(byte_string, client_name, client_id):
+    return
+    
     global last_client_message
     
     client_str = "%s.%s" % (client_name, client_id)
@@ -233,7 +235,7 @@ class FileCopier(QObject):
         for copy_file in self.copy_files:
             if copy_file.state == 0:
                 copy_file.state = 1
-                self.process.start('cp', ['-R', copy_file.orig_path, copy_file.dest_path])
+                self.process.start('nice' , ['-n', '+15', 'cp', '-R', copy_file.orig_path, copy_file.dest_path])
                 break
             
         self.timer.start()
@@ -553,8 +555,6 @@ class Client(QObject):
             
             self.pending_command = COMMAND_SAVE
             self.setStatus(CLIENT_STATUS_SAVE)
-            #self.status          = CLIENT_STATUS_SAVE
-            #server.sendClientStatusToGui(self)
         
         elif self.isDumbClient() and self.isRunning():
             self.status = CLIENT_STATUS_NOOP
@@ -565,8 +565,6 @@ class Client(QObject):
         if self.isRunning():
             self.pending_command = COMMAND_KILL
             self.setStatus(CLIENT_STATUS_QUIT)
-            #self.status = CLIENT_STATUS_QUIT
-            #server.sendClientStatusToGui(self)
             self.process.terminate()
             
             if not self.stopped_timer.isActive():
@@ -578,8 +576,6 @@ class Client(QObject):
             
             self.pending_command = COMMAND_QUIT
             self.terminate()
-            #self.status = CLIENT_STATUS_QUIT
-            #server.sendClientStatusToGui(self)
             self.setStatus(CLIENT_STATUS_QUIT)
         
         elif self.isDumbClient():
@@ -2198,6 +2194,8 @@ class SignaledSession(OperatingSession):
             MESSAGE("Reply from unknown client")
             
     def guiClientStop(self, path, args):
+        print('liijij', args)
+        
         for client in self.clients:
             if client.client_id == args[0]:
                 client.stop()
@@ -2207,6 +2205,7 @@ class SignaledSession(OperatingSession):
             server.sendGui("/error", -10, "No such client." )
     
     def guiClientKill(self, path, args):
+        print('guiClientKill', args)
         for client in self.clients:
             if client.client_id == args[0]:
                 client.kill()
