@@ -204,7 +204,8 @@ def portRemoved(port_name, port_mode, port_type):
 def portRenamed(old_name, new_name, port_mode, port_type):
     for port in port_list:
         if port.name == old_name and port.mode == port_mode and port.type == port_type:
-            port.name = new_name
+            port.name   = new_name
+            port.is_new = True
             connect_timer.start()
             break
    
