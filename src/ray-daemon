@@ -485,22 +485,17 @@ class Client(QObject):
         return bool(self.process.state() == 2)
     
     def standardError(self):
-        #standard_error = self.process.readAllStandardError().data().decode('utf-8')
         standard_error = self.process.readAllStandardError().data()
         CLIENT_MESSAGE(standard_error, self.name, self.client_id)
         
     def standardOutput(self):
-        #standard_output = self.process.readAllStandardOutput().data().decode('utf-8')
         standard_output = self.process.readAllStandardOutput().data()
         CLIENT_MESSAGE(standard_output, self.name, self.client_id)
     
     def processStarted(self):
         self.stopped_since_long = False
         self.pid    = self.process.pid()
-        #self.status = CLIENT_STATUS_LAUNCH
-        #server.sendClientStatusToGui(self)
         self.setStatus(CLIENT_STATUS_LAUNCH)
-        #self.pending_command = COMMAND_NONE
         
         #MESSAGE("Process has pid: %i" % self.pid)
         
@@ -521,13 +516,10 @@ class Client(QObject):
             session.endTimerIfLastExpected(self)
         
         if self.pending_command == COMMAND_QUIT:
-            #server.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
             session.removeClient(self)
             return
         else:
             self.setStatus(CLIENT_STATUS_STOPPED)
-            #self.status = CLIENT_STATUS_STOPPED
-            #server.sendClientStatusToGui(self)
                 
         self.pending_command = COMMAND_NONE
         self.active          = False
@@ -539,8 +531,6 @@ class Client(QObject):
             self.active     = False
             self.pid        = 0
             self.setStatus(CLIENT_STATUS_STOPPED)
-            #self.status     = CLIENT_STATUS_STOPPED
-            #server.sendClientStatusToGui(self)
             self.pending_command = COMMAND_NONE
             
             #if session.osc_src_addr:
@@ -593,8 +583,6 @@ class Client(QObject):
             if self.isRunning():
                 self.pending_command = COMMAND_QUIT
                 self.terminate()
-                #self.status = CLIENT_STATUS_QUIT
-                #server.sendClientStatusToGui(self)
                 self.setStatus(CLIENT_STATUS_QUIT)
             else:
                 server.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
@@ -617,9 +605,6 @@ class Client(QObject):
         
         
         self.pending_command = COMMAND_OPEN
-        
-        #self.status          = CLIENT_STATUS_SWITCH
-        #server.sendClientStatusToGui(self)
         self.setStatus(CLIENT_STATUS_SWITCH)
             
         server.sendGui("/ray/gui/client/switch", old_client_id, self.client_id)
@@ -710,15 +695,6 @@ class Client(QObject):
         #copy files
         if self.prefix_mode != PREFIX_MODE_UNDEF:
             client_files = self.getProjectFiles()
-            
-            #prefix = session.name
-            #if self.prefix_mode == PREFIX_MODE_CLIENT_NAME:
-                #prefix = self.name
-                
-            #for filename in os.listdir(session.path):
-                #if ( (filename == "%s.%s" % (prefix, self.client_id)) or 
-                     #(filename.startswith("%s.%s." % (prefix, self.client_id))) ):
-                    #client_files.append(filename)
                         
             template_dir = "%s/%s" % (client_template_local_root, template_name)
             
@@ -731,10 +707,6 @@ class Client(QObject):
                 
             os.makedirs(template_dir)
             
-            #full_file_names = []
-            
-            #for filename in client_files:
-                #full_file_names.append("%s/%s" % (session.path, filename))
             if client_files:
                 self.setStatus(CLIENT_STATUS_COPY)
                 file_copier.startClientCopy(self.client_id, client_files, template_dir, self.saveAsTemplate_step1, self.saveAsTemplateAborted, [template_name])
@@ -813,8 +785,6 @@ class Client(QObject):
     
     def saveAsTemplateAborted(self, template_name):
         self.setStatus(self.status)
-        #self.status = status
-        #server.sendClientStatusToGui(self)
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_save=TEMPLATE_NONE):            
         old_session_name = session.name
@@ -978,8 +948,6 @@ class Client(QObject):
         server.send(src_addr, "/reply", path, "Well hello, stranger. Welcome to the party." if is_new else "Howdy, what took you so long?", APP_TITLE, ":server-control:broadcast:optional-gui:" )
         
         self.sendGuiClientProperties()
-        #self.status = CLIENT_STATUS_OPEN
-        #server.sendGui("/ray/gui/client/status", self.client_id, self.status)
         self.setStatus(CLIENT_STATUS_OPEN)
         
         if self.isCapableOf(":optional-gui:"):
@@ -1036,8 +1004,6 @@ class Session(QObject):
             return
         
         client.setStatus(CLIENT_STATUS_REMOVED)
-        #client.status = CLIENT_STATUS_REMOVED
-        #server.sendClientStatusToGui(client)
         
         if client.getProjectFiles():
             self.removed_clients.append(client)
@@ -1495,7 +1461,6 @@ class OperatingSession(Session):
         for client in self.clients.__reversed__():
             if client.isRunning():
                 self.expected_clients.append(client)
-                #client.quit()
                 self.clients_to_quit.append(client)
                 self.timer_quit.start()
         
@@ -1926,7 +1891,6 @@ class SignaledSession(OperatingSession):
         signaler.gui_client_resume.connect(self.guiClientResume)
         signaler.gui_client_save.connect(self.guiClientSave)
         signaler.gui_client_save_template.connect(self.guiClientSaveTemplate)
-        #signaler.gui_client_abort_copy.connect(self.guiClientAbortCopy)
         signaler.gui_client_label.connect(self.guiClientLabel)
         signaler.gui_client_icon.connect(self.guiClientIcon)
         signaler.gui_update_client_properties.connect(self.updateClientProperties)
@@ -2388,7 +2352,6 @@ class Signaler(QObject):
     gui_client_resume = pyqtSignal(str, list)
     gui_client_save   = pyqtSignal(str, list)
     gui_client_save_template = pyqtSignal(str, list)
-    gui_client_abort_copy    = pyqtSignal(str)
     gui_client_label = pyqtSignal(str, str)
     gui_client_icon  = pyqtSignal(str, str)
     gui_update_client_properties = pyqtSignal(object)
@@ -2557,14 +2520,6 @@ class OscServerThread(ServerThread):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         signaler.gui_client_save_template.emit(path, args)
-    
-    #@make_method('/ray/gui/client/abort_copy', 's')
-    #def rayGuiClientAbortCopy(self, path, args):
-        #ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        #client_id = args[0]
-        
-        #signaler.gui_client_abort_copy.emit(client_id)
     
     @make_method('/ray/gui/client/show_optional_gui', 's')
     def nsmGuiClientShow_optional_gui(self, path, args):
@@ -2895,18 +2850,8 @@ class OscServerThread(ServerThread):
         self.sendGui("/ray/gui/client/status", client.client_id, client.status)
             
     def setServerStatus(self, server_status):
-        ##SERVER_STATUS_COPY is not a status as the other ones.
-        ##self.server_status doesn't remember SERVER_STATUS_COPY, although it is sent to GUI
-        
-        #if server_status == -1:
-            #server_status = self.server_status
-        
-        #if server_status != SERVER_STATUS_COPY:
-            self.server_status = server_status
-            self.sendGui('/ray/server_status', server_status) 
-        
-        #if server_status == SERVER_STATUS_COPY or session.file_copier.isActive():
-            #self.sendGui("/ray/server_status", SERVER_STATUS_COPY)
+        self.server_status = server_status
+        self.sendGui('/ray/server_status', server_status) 
     
     def informCopytoGui(self, copy_state):
         self.sendGui('/ray/gui/server/copying', int(copy_state))

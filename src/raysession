@@ -1049,9 +1049,7 @@ class MainWindow(QMainWindow):
         if self.server_copying:
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
-            #self.ui.actionAbortSession.setEnabled(False)
             
-        
         if server_status == SERVER_STATUS_OFF:            
             self.ui.listWidget.clear()
             
@@ -1567,7 +1565,6 @@ class AddApplicationDialog(ChildDialog):
         serverOSC.qsig.factory_client_template_found.connect(self.addFactoryTemplates)
         serverOSC.toDaemon('/ray/server/list_user_client_templates')
         serverOSC.toDaemon('/ray/server/list_factory_client_templates')
-        #serverOSC.startListSession()
         
         self.user_template_list    = []
         self.factory_template_list = []
