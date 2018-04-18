@@ -288,7 +288,11 @@ class FileCopier(QObject):
         self.client_id = ''
         self.start([src_dir], dest_dir, next_function, abort_function)
         
-    def abort(self):
+    def abort(self, abort_function=None, next_args=[]):
+        if abort_function:
+            self.abort_function = abort_function
+            self.next_args = next_args
+        
         self.timer.stop()
         if self.process.state() == QProcess.Running:
             self.aborted = True
@@ -346,8 +350,6 @@ class Client(QObject):
         self.stopped_timer.setSingleShot(True)
         self.stopped_timer.setInterval(2000) #2sec
         self.stopped_timer.timeout.connect(self.stoppedSinceLong)
-        
-        #self.file_copier = FileCopier(self)
     
     def readXmlProperties(self, ctx):
         #ctx is an xml sibling for client
@@ -1197,8 +1199,6 @@ class OperatingSession(Session):
         
         self.process_order = []
         
-        #self.file_copier = FileCopier()
-        
         self.terminated_yet = False
         
         
@@ -1448,7 +1448,6 @@ class OperatingSession(Session):
         
     def close(self):
         GUIMSG(_translate('GUIMSG', "Commanding attached clients to quit."))
-        
         self.expected_clients.clear()
         self.removed_clients.clear()
         
@@ -1949,16 +1948,19 @@ class SignaledSession(OperatingSession):
         self.nextFunction()
         
     def serverAbortSession(self, path, args, src_addr):
-        if file_copier.isActive():
-            server.send(src_addr, "/error", path, ERR_OPERATION_PENDING, _translate('error', "Impossible to Abort Session, Abort Copy first !"))
-            return
+        #if file_copier.isActive():
+            #file_copier.abort()
         
         self.wait_for = WAIT_FOR_NONE
         self.timer.stop()
         
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.close, self.abortDone]
-        self.nextFunction()
+        
+        if file_copier.isActive():
+            file_copier.abort(self.nextFunction, [])
+        else:
+            self.nextFunction()
     
     def serverListSessions(self, path, args, src_addr):
         if not self.root:

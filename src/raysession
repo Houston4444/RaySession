@@ -1051,7 +1051,7 @@ class MainWindow(QMainWindow):
             self.ui.actionCloseSession.setEnabled(False)
             
         if server_status == SERVER_STATUS_OFF:            
-            self.ui.listWidget.clear()
+            #self.ui.listWidget.clear()
             
             if self.terminate_request:
                 app.quit()
@@ -1499,6 +1499,10 @@ class AbortClientCopyDialog(ChildDialog):
             return
         
         self.ui.progressBar.setValue(progress*100)
+        
+    def serverStatusChanged(self, server_status):
+        if not self.server_copying:
+            self.reject()
         
 class OpenNsmSessionInfoDialog(ChildDialog):
     def __init__(self, parent):
