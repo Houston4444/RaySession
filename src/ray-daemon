@@ -359,7 +359,7 @@ class Client(QObject):
         self.icon            = ctx.attribute('icon')
         self.auto_start      = bool(ctx.attribute('launched') != '0')
         self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
-        
+        self.gui_visible     = bool(ctx.attribute('gui_visible') != '0')
         
         prefix_mode = ctx.attribute('prefix_mode')
         
@@ -393,6 +393,10 @@ class Client(QObject):
             
             if self.prefix_mode == PREFIX_MODE_UNDEF:
                 ctx.setAttribute('project_path', self.project_path)
+                
+        if self.isCapableOf(':optional-gui:'):
+            ctx.setAttribute('gui_visible', self.gui_visible)
+            
                 
     def setReply(self, errcode, message):
         self._reply_message = message
@@ -954,6 +958,9 @@ class Client(QObject):
         
         if self.isCapableOf(":optional-gui:"):
             server.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
+            
+            if not self.gui_visible:
+                server.send(src_addr, "/nsm/client/hide_optional_gui")
                 
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
