@@ -545,10 +545,6 @@ class OSCServerT(ServerThread):
         ifDebug('serverOSC::raysession_sends remove client %s' % client_id)
         self.toDaemon('/ray/gui/client/remove', client_id)
     
-    def abortCopyClient(self, client_id):
-        ifDebug('serverOSC::raysession_sends abort copy client %s' % client_id)
-        self.toDaemon('/ray/gui/client/abort_copy', client_id)
-    
     def showClientOptionalGui(self, client_id):
         ifDebug('serverOSC::raysession_sends show optional GUI %s' % client_id)
         self.toDaemon('/ray/gui/client/show_optional_gui', client_id)
@@ -904,7 +900,7 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
         
-        serverOSC.abortCopyClient(client_id)
+        serverOSC.abortCopy()
     
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
     
@@ -1853,7 +1849,10 @@ class RayDaemon(object):
         arguments = ['--gui-url'     , str(serverOSC.url), 
                      '--osc-port'    , str(self.port), 
                      '--session-root', default_folder ]
-        if debug:
+        
+        if debug_only:
+            arguments.append('--debug-only')
+        elif debug:
             arguments.append('--debug')
         
         self.process.start('ray-daemon', arguments)
@@ -1913,6 +1912,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=_translate('help', 'A session manager based on the Non-Session-Manager API for sound applications.'))
     parser.add_argument('--daemon-url', '-u', type=getLibloAddress, help='connect to this daemon url')
     parser.add_argument('--debug','-d',  action='store_true', help='display OSC messages')
+    parser.add_argument('--debug-only','-do',  action='store_true', help='debug without client messages')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parsed_args = parser.parse_args()
     
@@ -1921,7 +1921,10 @@ if __name__ == '__main__':
     if parsed_args.daemon_url:
         ray_daemon.setOscAddress(parsed_args.daemon_url)
         
-    debug = parsed_args.debug
+    debug      = parsed_args.debug
+    debug_only = parsed_args.debug_only
+    if debug_only:
+        debug = True
     setDebug(debug)
     
     #needed for signals SIGINT, SIGTERM

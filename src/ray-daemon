@@ -36,6 +36,7 @@ ERR_BAD_PROJECT       = -9
 ERR_CREATE_FAILED     = -10
 ERR_SESSION_LOCKED    = -11
 ERR_OPERATION_PENDING = -12
+ERR_COPY_RUNNING      = -13
 
 COMMAND_NONE      = 0
 COMMAND_QUIT      = 1
@@ -91,8 +92,9 @@ def CLIENT_MESSAGE(byte_string, client_name, client_id):
     client_str = "%s.%s" % (client_name, client_id)
     
     if last_client_message != client_str:
-        sys.stderr.write('\n[\033[90m%s-%s\033[0m]\n' % (client_name, client_id))
-        sys.stderr.buffer.write(byte_string)
+        if not debug_only:
+            sys.stderr.write('\n[\033[90m%s-%s\033[0m]\n' % (client_name, client_id))
+            sys.stderr.buffer.write(byte_string)
     
     last_client_message = client_str
 
@@ -124,17 +126,16 @@ class CopyFile(object):
              'size']
 
 class FileCopier(QObject):
-    def __init__(self, client=None):
+    def __init__(self):
         QObject.__init__(self)
-        self.client         = client
+        self.client_id      = ''
         self.next_function  = None
         self.abort_function = None
         self.next_args      = []
         self.copy_files     = []
         self.copy_size      = 0
-        
-        self.aborted          = False
-        self.is_active        = False
+        self.aborted        = False
+        self.is_active      = False
         
         self.process = QProcess()
         self.process.finished.connect(self.processFinished)
@@ -178,8 +179,8 @@ class FileCopier(QObject):
         if current_size and self.copy_size:
             progress = float(current_size/self.copy_size)
             
-            if self.client:
-                server.sendGui('/ray/gui/client/progress', self.client.client_id, progress)
+            if self.client_id:
+                server.sendGui('/ray/gui/client/progress', self.client_id, progress)
             else:
                 server.sendGui('/ray/gui/server_progress', progress)
         
@@ -238,12 +239,12 @@ class FileCopier(QObject):
             
         self.timer.start()
     
-    def start(self, dest_dir, from_list, next_function, abort_function, next_args=[]):
+    def start(self, src_list, dest_dir, next_function, abort_function, next_args=[]):
         self.abort_function = abort_function
         self.next_function  = next_function
         self.next_args      = next_args
         
-        self.aborted   = False
+        self.aborted = False
         self.copy_size = 0
         self.copy_files.clear()
         
@@ -254,7 +255,7 @@ class FileCopier(QObject):
                 self.abort_function(*self.next_args)
                 return
         
-        for orig_path in from_list:
+        for orig_path in src_list:
             copy_file = CopyFile()
             copy_file.state     = 0
             copy_file.orig_path = orig_path
@@ -265,12 +266,10 @@ class FileCopier(QObject):
             if dest_path_exists:
                 copy_file.dest_path = "%s/%s" % (dest_dir, os.path.basename(orig_path))
             else:
-                #WARNING work only with one file !!!
+                #WARNING works only with one file !!!
                 copy_file.dest_path = dest_dir
             
             self.copy_files.append(copy_file)
-        
-        
         
         
         if self.copy_files:
@@ -278,14 +277,27 @@ class FileCopier(QObject):
         else:
             self.next_function(*self.next_args)
         
+    def startClientCopy(self, client_id, src_list, dest_dir, next_function, abort_function, next_args=[]):
+        self.client_id = client_id
+        self.start(src_list, dest_dir, next_function, abort_function, next_args)
+        
+    def startSessionCopy(self, src_dir, dest_dir, next_function, abort_function):
+        self.client_id = ''
+        self.start([src_dir], dest_dir, next_function, abort_function)
+        
     def abort(self):
         self.timer.stop()
         if self.process.state() == QProcess.Running:
             self.aborted = True
             self.process.terminate()
             
-    def isActive(self):
+    def isActive(self, client_id=''):
+        if client_id and client_id != self.client_id:
+            return False
+        
         return self.is_active
+        
+            
 
 class Client(QObject):
     #can be directly changed by OSC thread
@@ -318,8 +330,6 @@ class Client(QObject):
     
     def __init__(self):
         QObject.__init__(self)
-        #signaler.server_announce.connect(self.serverAnnounce)
-        
         self.process = QProcess()
         self.process.started.connect(self.processStarted)
         self.process.errorOccurred.connect(self.errorInProcess)
@@ -334,7 +344,7 @@ class Client(QObject):
         self.stopped_timer.setInterval(2000) #2sec
         self.stopped_timer.timeout.connect(self.stoppedSinceLong)
         
-        self.file_copier = FileCopier(self)
+        #self.file_copier = FileCopier(self)
     
     def readXmlProperties(self, ctx):
         #ctx is an xml sibling for client
@@ -413,14 +423,14 @@ class Client(QObject):
     
     def setStatus(self, status):
         #CLIENT_STATUS_COPY is not a status as the other ones.
-        #GUI need to know if client is started/open/stopped while files are copied
+        #GUI needs to know if client is started/open/stopped while files are copied
         #so self.status doesn't remember CLIENT_STATUS_COPY, although it is sent to GUI
         
         if status != CLIENT_STATUS_COPY:
             self.status = status
             server.sendClientStatusToGui(self)
         
-        if status == CLIENT_STATUS_COPY or self.file_copier.isActive():
+        if status == CLIENT_STATUS_COPY or file_copier.isActive(self.client_id):
             server.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_COPY)
     
     def getJackClientName(self):
@@ -724,7 +734,7 @@ class Client(QObject):
                 #full_file_names.append("%s/%s" % (session.path, filename))
             if client_files:
                 self.setStatus(CLIENT_STATUS_COPY)
-                self.file_copier.start(template_dir, client_files, self.saveAsTemplate_step1, self.saveAsTemplateAborted, [template_name])
+                file_copier.startClientCopy(self.client_id, client_files, template_dir, self.saveAsTemplate_step1, self.saveAsTemplateAborted, [template_name])
             else:
                 self.saveAsTemplate_step1(template_name)
 
@@ -1002,7 +1012,14 @@ class Session(QObject):
     def setPath(self, session_path):
         self.path = session_path
         self.setName(session_path.rpartition('/')[2])
-        
+    
+    def getClient(self, client_id):
+        for client in self.clients:
+            if client.client_id == client_id:
+                return client
+        else:
+            ifDebug("client_id %s is not in ray-daemon session")
+    
     def newClient(self, executable, client_id=None):
         client = Client()
         client.executable_path = executable
@@ -1211,7 +1228,7 @@ class OperatingSession(Session):
         
         self.process_order = []
         
-        self.file_copier = FileCopier()
+        #self.file_copier = FileCopier()
         
         self.terminated_yet = False
         
@@ -1546,7 +1563,7 @@ class OperatingSession(Session):
         spath = "%s/%s" % (self.root, new_session_full_name)
         
         server.setServerStatus(SERVER_STATUS_COPY)
-        self.file_copier.start(spath, [self.path], self.duplicate_step1, self.duplicateAborted)
+        file_copier.startSessionCopy(self.path, spath, self.duplicate_step1, self.duplicateAborted)
     
     def duplicate_step1(self):
         self.adjustFilesAfterCopy(TEMPLATE_NONE)           
@@ -1577,7 +1594,7 @@ class OperatingSession(Session):
             os.makedirs(session_template_root)
         
         server.setServerStatus(SERVER_STATUS_COPY)
-        self.file_copier.start(spath, [self.path], self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted)
+        file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted)
         
     def saveSessionTemplate_step_1(self):
         session_template_name = self.osc_args[0]
@@ -1622,7 +1639,7 @@ class OperatingSession(Session):
             server.setServerStatus(SERVER_STATUS_PRECOPY)
             server.sendGui("/ray/gui/session/name",  new_session_name, new_session_name)
             
-        self.file_copier.start(spath, [template_path], self.prepareTemplate_step1, self.prepareTemplateAborted)
+        file_copier.startSessionCopy(template_path, spath, self.prepareTemplate_step1, self.prepareTemplateAborted)
         
     def prepareTemplate_step1(self):
         self.adjustFilesAfterCopy(TEMPLATE_SESSION_LOAD)
@@ -1906,7 +1923,7 @@ class SignaledSession(OperatingSession):
         signaler.gui_client_resume.connect(self.guiClientResume)
         signaler.gui_client_save.connect(self.guiClientSave)
         signaler.gui_client_save_template.connect(self.guiClientSaveTemplate)
-        signaler.gui_client_abort_copy.connect(self.guiClientAbortCopy)
+        #signaler.gui_client_abort_copy.connect(self.guiClientAbortCopy)
         signaler.gui_client_label.connect(self.guiClientLabel)
         signaler.gui_client_icon.connect(self.guiClientIcon)
         signaler.gui_update_client_properties.connect(self.updateClientProperties)
@@ -1965,8 +1982,8 @@ class SignaledSession(OperatingSession):
         self.nextFunction()
         
     def serverAbortSession(self, path, args, src_addr):
-        if self.file_copier.isActive():
-            server.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "Impossible to Abort Session, Abort Copy first !")
+        if file_copier.isActive():
+            server.send(src_addr, "/error", path, ERR_OPERATION_PENDING, _translate('error', "Impossible to Abort Session, Abort Copy first !"))
             return
         
         self.wait_for = WAIT_FOR_NONE
@@ -2114,7 +2131,7 @@ class SignaledSession(OperatingSession):
                 
                 if full_name_files:
                     client.setStatus(CLIENT_STATUS_PRECOPY)
-                    client.file_copier.start(self.path, full_name_files, self.addClientTemplate_step_1, self.addClientTemplateAborted, [client])
+                    file_copier.startClientCopy(client.client_id, full_name_files, self.path, self.addClientTemplate_step_1, self.addClientTemplateAborted, [client])
                 else:
                     self.addClientTemplate_step_1(client)
                     
@@ -2210,13 +2227,15 @@ class SignaledSession(OperatingSession):
             server.sendGui("/error", -10, "No such client." )
     
     def guiClientRemove(self, path, args):
+        client_id = args[0]
+        
         for client in self.clients:
-            if client.client_id == args[0]:
+            if client.client_id == client_id:
                 if client.isRunning():
                     return
                 
-                if client.file_copier.isActive():
-                    client.file_copier.abort()
+                if file_copier.isActive(client_id):
+                    file_copier.abort()
                     return
                 
                 self.removeClient(client)
@@ -2228,30 +2247,41 @@ class SignaledSession(OperatingSession):
     
     def guiClientResume(self, path, args):
         for client in self.clients:
-            if client.client_id  == args[0] and not client.isRunning():
+            if client.client_id == args[0] and not client.isRunning():
+                if file_copier.isActive(client.client_id):
+                    server.sendGui("/error", -13, "Impossible, copy running")
+                    return
+                
                 client.start()
                 break
     
     def guiClientSave(self, path, args):
         for client in self.clients:
             if client.client_id == args[0] and client.active:
+                if file_copier.isActive(client.client_id):
+                    server.sendGui("/error", -13, "Impossible, copy running")
+                    return
                 client.save()
                 break
     
     def guiClientSaveTemplate(self, path, args):
+        if file_copier.isActive():
+            server.sendGui("/error", -13, "Impossible, copy running")
+            return
+        
         for client in self.clients:
             if client.client_id == args[0]:
                 client.saveAsTemplate(args[1])
                 break
     
-    def guiClientAbortCopy(self, client_id):
-        for client in self.clients:
-            if client.client_id == client_id:
-                if not client.status in (CLIENT_STATUS_PRECOPY, CLIENT_STATUS_COPY):
-                    return
+    #def guiClientAbortCopy(self, client_id):
+        #for client in self.clients:
+            #if client.client_id == client_id:
+                #if not client.status in (CLIENT_STATUS_PRECOPY, CLIENT_STATUS_COPY):
+                    #return
                 
-                client.file_copier.abort()
-                break
+                #file_copier.abort()
+                #break
     
     def guiClientLabel(self, client_id, label):
         for client in self.clients:
@@ -2272,8 +2302,7 @@ class SignaledSession(OperatingSession):
                 break
     
     def abortCopy(self):
-        self.file_copier.abort()
-        #self.process_order.clear()
+        file_copier.abort()
     
     def terminate(self):
         if self.terminated_yet:
@@ -2334,9 +2363,9 @@ def generateClientId():
 ##########################
 
 class Signaler(QObject):
-    server_announce  = pyqtSignal(str, list, object)
-    server_reply     = pyqtSignal(str, list, object)
-    server_duplicate = pyqtSignal(str, list, object)
+    server_announce    = pyqtSignal(str, list, object)
+    server_reply       = pyqtSignal(str, list, object)
+    server_duplicate   = pyqtSignal(str, list, object)
     server_save_session_template = pyqtSignal(str, list, object)
     server_abort       = pyqtSignal(str, list, object)
     server_close       = pyqtSignal(str, list, object)
@@ -2344,8 +2373,8 @@ class Signaler(QObject):
     server_new_from_tp = pyqtSignal(str, list, object)
     server_open        = pyqtSignal(str, list, object)
     server_save        = pyqtSignal(str, list, object)
-    server_list_sessions   = pyqtSignal(str, list, object)
-    server_add = pyqtSignal(str, list, object)
+    server_list_sessions = pyqtSignal(str, list, object)
+    server_add       = pyqtSignal(str, list, object)
     server_add_proxy = pyqtSignal(str, list, object)
     server_add_user_client_template    = pyqtSignal(str, list, object)
     server_add_factory_client_template = pyqtSignal(str, list, object)
@@ -2356,9 +2385,9 @@ class Signaler(QObject):
     gui_client_resume = pyqtSignal(str, list)
     gui_client_save   = pyqtSignal(str, list)
     gui_client_save_template = pyqtSignal(str, list)
-    gui_client_abort_copy = pyqtSignal(str)
-    gui_client_label  = pyqtSignal(str, str)
-    gui_client_icon   = pyqtSignal(str, str)
+    gui_client_abort_copy    = pyqtSignal(str)
+    gui_client_label = pyqtSignal(str, str)
+    gui_client_icon  = pyqtSignal(str, str)
     gui_update_client_properties = pyqtSignal(object)
     copy_aborted = pyqtSignal()
     
@@ -2491,32 +2520,32 @@ class OscServerThread(ServerThread):
         signaler.gui_client_label.emit(client.client_id, label)
             
     @make_method('/ray/gui/gui_announce', '')
-    def nsmGuiGui_announce(self, path, args, types, src_addr):
+    def rayGuiGui_announce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         self.announceGui(src_addr.url, True)
 
     @make_method('/ray/gui/client/stop', 's')
-    def nsmGuiClientStop(self, path, args):
+    def rayGuiClientStop(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_stop.emit(path, args)
     
     @make_method('/ray/gui/client/kill', 's')
-    def nsmGuiClientKill(self, path, args):
+    def rayGuiClientKill(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_kill.emit(path, args)            
     
     @make_method('/ray/gui/client/remove', 's')
-    def nsmGuiClientRemove(self, path, args):
+    def rayGuiClientRemove(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_remove.emit(path, args)
         
     @make_method('/ray/gui/client/resume', 's')
-    def nsmGuiClientResume(self, path, args):
+    def rayGuiClientResume(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_resume.emit(path, args)
                 
     @make_method('/ray/gui/client/save', 's')
-    def nsmGuiClientSave(self, path, args):
+    def rayGuiClientSave(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_save.emit(path, args)
 
@@ -2526,13 +2555,13 @@ class OscServerThread(ServerThread):
         
         signaler.gui_client_save_template.emit(path, args)
     
-    @make_method('/ray/gui/client/abort_copy', 's')
-    def rayGuiClientAbortCopy(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+    #@make_method('/ray/gui/client/abort_copy', 's')
+    #def rayGuiClientAbortCopy(self, path, args):
+        #ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        client_id = args[0]
+        #client_id = args[0]
         
-        signaler.gui_client_abort_copy.emit(client_id)
+        #signaler.gui_client_abort_copy.emit(client_id)
     
     @make_method('/ray/gui/client/show_optional_gui', 's')
     def nsmGuiClientShow_optional_gui(self, path, args):
@@ -2844,6 +2873,11 @@ class OscServerThread(ServerThread):
         self.listClientTemplates(src_addr, True)
     
     def isOperationPending(self, src_addr, path):
+        if file_copier.isActive():
+            print('file copier is active, should send error')
+            self.send(src_addr, "/error", path, ERR_COPY_RUNNING, "ray-daemon is copying files. Wait copy finish or abort copy, and restart operation !")
+            return True
+        
         if session.process_order:
             self.send(src_addr, "/error", path, ERR_OPERATION_PENDING, "An operation pending.")
             return True
@@ -2994,10 +3028,15 @@ if __name__ == '__main__':
     parser.add_argument('--osc-port', type=int, default=16187, help='select OSC port for the daemon')
     parser.add_argument('--gui-url', type=getLibloAddress, help=argparse.SUPPRESS)
     parser.add_argument('--debug','-d',  action='store_true', help='see all OSC messages')
+    parser.add_argument('--debug-only', '-do', action='store_true', help='debug without client messages')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parsed_args = parser.parse_args()
     
     debug        = parsed_args.debug
+    debug_only   = parsed_args.debug_only
+    if debug_only:
+        debug = True
+    
     session_root = parsed_args.session_root
     osc_num      = parsed_args.osc_port
     gui_address  = parsed_args.gui_url
@@ -3041,8 +3080,9 @@ if __name__ == '__main__':
     timer.timeout.connect(lambda: None)
     timer.start()
     
-    signaler = Signaler()
-    session  = SignaledSession()
+    signaler    = Signaler()
+    file_copier = FileCopier()
+    session     = SignaledSession()
     session.setRoot(session_root)
     
     server = OscServerThread(getFreeOscPort(osc_num))
