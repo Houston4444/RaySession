@@ -896,6 +896,9 @@ class MainWindow(QMainWindow):
         if not self.server_copying:
             return
         
+        if not session.server_status in (SERVER_STATUS_PRECOPY, SERVER_STATUS_COPY):
+            return
+        
         dialog = AbortServerCopyDialog(self)
         dialog.exec()
         
@@ -906,6 +909,10 @@ class MainWindow(QMainWindow):
     
     def abortCopyClient(self, client_id):
         if not self.server_copying:
+            return
+        
+        client = session.getClient(client_id)
+        if not client or not client.status in (CLIENT_STATUS_COPY, CLIENT_STATUS_PRECOPY):
             return
         
         dialog = AbortClientCopyDialog(self, client_id)

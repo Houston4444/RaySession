@@ -1948,9 +1948,6 @@ class SignaledSession(OperatingSession):
         self.nextFunction()
         
     def serverAbortSession(self, path, args, src_addr):
-        #if file_copier.isActive():
-            #file_copier.abort()
-        
         self.wait_for = WAIT_FOR_NONE
         self.timer.stop()
         
