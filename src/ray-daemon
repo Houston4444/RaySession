@@ -207,6 +207,7 @@ class FileCopier(QObject):
                             pass
                         
             self.is_active = False
+            server.informCopytoGui(False)
             self.abort_function(*self.next_args)
             return
         
@@ -216,6 +217,7 @@ class FileCopier(QObject):
                 break
         else:
             self.is_active = False
+            server.informCopytoGui(False)
             
             if self.next_function:
                 self.next_function(*self.next_args)
@@ -273,6 +275,7 @@ class FileCopier(QObject):
         
         
         if self.copy_files:
+            server.informCopytoGui(True)
             self.nextProcess()
         else:
             self.next_function(*self.next_args)
@@ -2904,6 +2907,9 @@ class OscServerThread(ServerThread):
         
         #if server_status == SERVER_STATUS_COPY or session.file_copier.isActive():
             #self.sendGui("/ray/server_status", SERVER_STATUS_COPY)
+    
+    def informCopytoGui(self, copy_state):
+        self.sendGui('/ray/gui/server/copying', int(copy_state))
     
     def listClientTemplates(self, src_addr, factory=False):
         template_list = []
