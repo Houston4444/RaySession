@@ -292,6 +292,7 @@ class OscSignaler(QObject):
     error_message       = pyqtSignal(list)
     
     new_client_added       = pyqtSignal(ClientData)
+    client_trashed         = pyqtSignal(ClientData)
     new_client_stopped     = pyqtSignal(str, str)
     client_removed         = pyqtSignal(str)
     client_status_changed  = pyqtSignal(str, int)
@@ -408,6 +409,13 @@ class OSCServerT(ServerThread):
         
         client_data = ClientData(*args)
         self.qsig.client_updated.emit(client_data)
+        
+    @make_method('/ray/gui/client/new_trashed', 'sssissssi')
+    def newClientInTrashFromServer(self, path, args):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        client_data = ClientData(*args)
+        self.qsig.client_trashed.emit(client_data)
         
     @make_method('/ray/gui/client/status', 'si')
     def guiClientStatus(self, path, args):
@@ -656,6 +664,7 @@ class MainWindow(QMainWindow):
         #connect OSC signals from nsm
         serverOSC.qsig.new_client_added.connect(self.serverAddsClient)
         serverOSC.qsig.client_removed.connect(self.serverRemovesClient)
+        serverOSC.qsig.client_trashed.connect(self.serverTrashsClient)
         serverOSC.qsig.client_status_changed.connect(self.serverUpdatesClientStatus)
         serverOSC.qsig.client_has_gui.connect(self.serverSetsClientHasGui)
         serverOSC.qsig.client_gui_visible_sig.connect(self.serverSetsClientGuiState)
@@ -933,6 +942,9 @@ class MainWindow(QMainWindow):
         if client:
             self.ui.listWidget.removeClientWidget(client_id)
             session.removeClient(client_id)
+    
+    def serverTrashsClient(self, client_data):
+        pass
     
     def serverSwitchesClient(self, old_client_id, new_client_id):
         session.switchClient(old_client_id, new_client_id)

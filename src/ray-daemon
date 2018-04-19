@@ -1017,7 +1017,14 @@ class Session(QObject):
         if client.getProjectFiles():
             self.removed_clients.append(client)
         self.clients.remove(client)
+    
+    def restoreClient(self, client):
+        self.addClient(client)
+        self.removed_clients.remove(client)
         
+        if client.auto_start:
+            client.start()
+    
     def tellAllClientsSessionIsLoaded(self):
         MESSAGE("Telling all clients that session is loaded...")
         for client in self.clients:
@@ -1894,6 +1901,7 @@ class SignaledSession(OperatingSession):
         signaler.gui_client_stop.connect(self.guiClientStop)
         signaler.gui_client_kill.connect(self.guiClientKill)
         signaler.gui_client_remove.connect(self.guiClientRemove)
+        signaler.gui_client_restore.connect(self.guiClientRestore)
         signaler.gui_client_resume.connect(self.guiClientResume)
         signaler.gui_client_save.connect(self.guiClientSave)
         signaler.gui_client_save_template.connect(self.guiClientSaveTemplate)
@@ -2218,6 +2226,14 @@ class SignaledSession(OperatingSession):
         else:
             server.sendGui("/error", -10, "No such client.")
     
+    def guiClientRestore(self, client_id):
+        for client in self.removed_clients:
+            if client.client_id == client_id:
+                self.restoreClient(client)
+                break
+        else:
+            server.sendGui("/error", -10, "No such client.")
+            
     def guiClientResume(self, path, args):
         for client in self.clients:
             if client.client_id == args[0] and not client.isRunning():
@@ -2352,11 +2368,12 @@ class Signaler(QObject):
     server_add_user_client_template    = pyqtSignal(str, list, object)
     server_add_factory_client_template = pyqtSignal(str, list, object)
     server_reorder_clients = pyqtSignal(str, list)
-    gui_client_stop   = pyqtSignal(str, list)
-    gui_client_kill   = pyqtSignal(str, list)
-    gui_client_remove = pyqtSignal(str, list)
-    gui_client_resume = pyqtSignal(str, list)
-    gui_client_save   = pyqtSignal(str, list)
+    gui_client_stop    = pyqtSignal(str, list)
+    gui_client_kill    = pyqtSignal(str, list)
+    gui_client_remove  = pyqtSignal(str, list)
+    gui_client_restore = pyqtSignal(str)
+    gui_client_resume  = pyqtSignal(str, list)
+    gui_client_save    = pyqtSignal(str, list)
     gui_client_save_template = pyqtSignal(str, list)
     gui_client_label = pyqtSignal(str, str)
     gui_client_icon  = pyqtSignal(str, str)
@@ -2510,7 +2527,19 @@ class OscServerThread(ServerThread):
     def rayGuiClientRemove(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_remove.emit(path, args)
+    
+    @make_method('/ray/gui/client/restore', 's')
+    def rayGuiClientRestore(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
+            return
+        
+        client_id = args[0]
+        
+        signaler.gui_client_restore.emit(client_id)
+    
     @make_method('/ray/gui/client/resume', 's')
     def rayGuiClientResume(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -2650,7 +2679,7 @@ class OscServerThread(ServerThread):
             self.send(src_addr, "/error", path, ERR_LAUNCH_FAILED, "Absolute paths are not permitted. Clients must be in $PATH" )
         
         signaler.server_add.emit(path, args, src_addr)
-
+    
     @make_method('/ray/server/add_proxy', 's')
     def rayServerAddProxy(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
