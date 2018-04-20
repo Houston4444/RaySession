@@ -3,7 +3,7 @@
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView
 from PyQt5.QtGui     import QIcon , QCursor, QPalette, QPixmap, QFontDatabase
-from PyQt5.QtCore    import QTimer, QProcess, pyqtSignal, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
+from PyQt5.QtCore    import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
 import sys
 from liblo import *
 import subprocess
@@ -315,6 +315,16 @@ class OscSignaler(QObject):
     
     def __init__(self):
         QObject.__init__(self)
+        
+    @pyqtSlot()
+    def restoreClient(self):
+        try:
+            client_id = str(self.sender().data())
+        except:
+            return
+        
+        serverOSC.toDaemon('/ray/gui/client/restore', client_id) 
+        
 
 class OSCServerT(ServerThread):
     def __init__(self):
@@ -410,8 +420,8 @@ class OSCServerT(ServerThread):
         client_data = ClientData(*args)
         self.qsig.client_updated.emit(client_data)
         
-    @make_method('/ray/gui/client/new_trashed', 'sssissssi')
-    def newClientInTrashFromServer(self, path, args):
+    @make_method('/ray/gui/client/trashed', 'sssissssi')
+    def trashClientFromServer(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         
         client_data = ClientData(*args)
@@ -660,6 +670,11 @@ class MainWindow(QMainWindow):
         self.controlToolButton = self.ui.toolBar.widgetForAction(self.ui.actionControlMenu)
         self.controlToolButton.setPopupMode(QToolButton.InstantPopup)
         self.controlToolButton.setMenu(self.controlMenu)
+        
+        #set trash menu
+        self.trashMenu = QMenu()
+        self.ui.trashButton.setPopupMode(QToolButton.InstantPopup)
+        self.ui.trashButton.setMenu(self.trashMenu)
         
         #connect OSC signals from nsm
         serverOSC.qsig.new_client_added.connect(self.serverAddsClient)
@@ -944,7 +959,11 @@ class MainWindow(QMainWindow):
             session.removeClient(client_id)
     
     def serverTrashsClient(self, client_data):
-        pass
+        prettier_name = client_data.label if client_data.label else client_data.name
+        
+        act_x_trashed = self.trashMenu.addAction(prettier_name)
+        act_x_trashed.setData(client_data.client_id)
+        act_x_trashed.triggered.connect(serverOSC.qsig.restoreClient)
     
     def serverSwitchesClient(self, old_client_id, new_client_id):
         session.switchClient(old_client_id, new_client_id)

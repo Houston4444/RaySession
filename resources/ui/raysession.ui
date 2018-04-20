@@ -94,7 +94,7 @@
                </property>
                <property name="icon">
                 <iconset theme="edit-duplicate">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -117,7 +117,7 @@
                </property>
                <property name="icon">
                 <iconset theme="document-save-as-template">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -159,7 +159,7 @@
                </property>
                <property name="icon">
                 <iconset theme="list-remove">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -201,7 +201,7 @@ QToolButton {border: none}</string>
                </property>
                <property name="icon">
                 <iconset theme="window-close">
-                 <normaloff>.</normaloff>.</iconset>
+                 <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -282,7 +282,7 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="system-file-manager">
-                     <normaloff>.</normaloff>.</iconset>
+                     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -346,7 +346,7 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="list-add">
-                     <normaloff>.</normaloff>.</iconset>
+                     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -397,7 +397,7 @@ QToolButton {border: none}</string>
                    </property>
                    <property name="icon">
                     <iconset theme="run-install">
-                     <normaloff>.</normaloff>.</iconset>
+                     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
                    </property>
                    <property name="iconSize">
                     <size>
@@ -519,15 +519,17 @@ QToolButton {border: none}</string>
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QToolButton" name="toolButton">
+                  <widget class="QToolButton" name="trashButton">
                    <property name="styleSheet">
-                    <string notr="true">QToolButton { border: none}</string>
+                    <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+QToolButton {border: none}</string>
                    </property>
                    <property name="text">
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset theme="trash-empty"/>
+                    <iconset theme="trash-empty">
+                     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
                    </property>
                   </widget>
                  </item>
@@ -705,7 +707,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="dialog-messages">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Show Messages</string>
@@ -720,7 +722,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="document-save">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Save</string>
@@ -735,7 +737,7 @@ QToolButton {border: none}</string>
   <action name="actionOpenSession">
    <property name="icon">
     <iconset theme="document-open">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Open Session</string>
@@ -747,7 +749,7 @@ QToolButton {border: none}</string>
   <action name="actionNewSession">
    <property name="icon">
     <iconset theme="folder-new">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;New Session</string>
@@ -759,7 +761,7 @@ QToolButton {border: none}</string>
   <action name="actionQuit">
    <property name="icon">
     <iconset theme="application-exit">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Quit</string>
@@ -786,7 +788,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="show-menu">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Show &amp;Menu Bar</string>
@@ -798,7 +800,7 @@ QToolButton {border: none}</string>
   <action name="actionControlMenu">
    <property name="icon">
     <iconset theme="configure">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Control</string>
@@ -852,7 +854,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="system-file-manager">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Open Session Folder</string>
@@ -870,7 +872,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="window-duplicate">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Keep focus while opening clients</string>
@@ -890,7 +892,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset theme="edit-duplicate">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Duplicate</string>
@@ -905,7 +907,7 @@ QToolButton {border: none}</string>
   <action name="actionAddExecutable">
    <property name="icon">
     <iconset theme="run-install">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Executable</string>
@@ -923,7 +925,7 @@ QToolButton {border: none}</string>
   <action name="actionSaveTemplateSession">
    <property name="icon">
     <iconset theme="document-save-as-template">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>Sa&amp;ve As Template</string>
@@ -935,7 +937,7 @@ QToolButton {border: none}</string>
   <action name="actionAddApplication">
    <property name="icon">
     <iconset theme="list-add">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Application</string>
