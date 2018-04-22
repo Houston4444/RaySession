@@ -395,7 +395,8 @@ class Client(QObject):
                 ctx.setAttribute('project_path', self.project_path)
                 
         if self.isCapableOf(':optional-gui:'):
-            ctx.setAttribute('gui_visible', self.gui_visible)
+            if self.executable_path != 'ray-proxy':
+                ctx.setAttribute('gui_visible', self.gui_visible)
             
                 
     def setReply(self, errcode, message):
