@@ -84,10 +84,11 @@ def negate(color):
 
 class Session(object):
     def __init__(self):
-        self.client_list   = []
-        self.name          = None
-        self.is_running    = False
-        self.server_status = SERVER_STATUS_OFF
+        self.client_list     = []  #contains Client List
+        self.trashed_clients = []  #contains ClientData List
+        self.name            = None
+        self.is_running      = False
+        self.server_status   = SERVER_STATUS_OFF
     
     def setRunning(self, bool):
         self.is_running = bool
@@ -117,6 +118,9 @@ class Session(object):
         if client:
             client.properties_dialog.close()
             self.client_list.remove(client)
+    
+    def addTrashedClient(self, client_data):
+        self.trashed_clients.append(client_data)
     
     def updateClientProperties(self, client_data):
         client = self.getClient(client_data.client_id)
@@ -175,7 +179,7 @@ class Session(object):
             client.widget.updateStatus(client.status)
         
 class Client(object):
-    def __init__(self, client_data):
+    def __init__(self, client_data, trashed=False):
         self.client_id       = client_data.client_id
         self.executable_path = client_data.executable_path
         self.name            = client_data.name
@@ -186,7 +190,7 @@ class Client(object):
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         
-        self.widget      = MainUI.createClientWidget(self)
+        
         self.status      = CLIENT_STATUS_STOPPED
         self.previous_status = CLIENT_STATUS_STOPPED
         self.hasGui      = False
@@ -195,6 +199,7 @@ class Client(object):
         self.dirty_state = True
         self.last_save   = time.time()
         
+        self.widget      = MainUI.createClientWidget(self)
         self.properties_dialog = ClientPropertiesDialog(MainUI, self)
         
     def setStatus(self, status):
@@ -959,11 +964,14 @@ class MainWindow(QMainWindow):
             session.removeClient(client_id)
     
     def serverTrashsClient(self, client_data):
-        prettier_name = client_data.label if client_data.label else client_data.name
+        session.addTrashedClient(client_data)
         
-        act_x_trashed = self.trashMenu.addAction(prettier_name)
-        act_x_trashed.setData(client_data.client_id)
-        act_x_trashed.triggered.connect(serverOSC.qsig.restoreClient)
+        
+        #prettier_name = client_data.label if client_data.label else client_data.name
+        
+        #act_x_trashed = self.trashMenu.addAction(prettier_name)
+        #act_x_trashed.setData(client_data.client_id)
+        #act_x_trashed.triggered.connect(serverOSC.qsig.restoreClient)
     
     def serverSwitchesClient(self, old_client_id, new_client_id):
         session.switchClient(old_client_id, new_client_id)
