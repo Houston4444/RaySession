@@ -11,6 +11,9 @@ You can run Ray Session without install, by using instead: <br/>
 Packagers can make use of the 'PREFIX' and 'DESTDIR' variable during install, like this: <br/>
 `$ make install PREFIX=/usr DESTDIR=./test-dir`
 
+
+To uninstall Ray Session, run: <br/>
+`$ [sudo] make uninstall`
 <br/>
 
 ===== BUILD DEPENDENCIES =====
