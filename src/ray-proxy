@@ -388,7 +388,8 @@ class Proxy(QObject):
         proxy_dialog.show()
     
     def hideOptionalGui(self):
-        proxy_dialog.close()
+        if not proxy_dialog.isHidden():
+            proxy_dialog.close()
 
 class ProxyFile(object):
     def __init__(self, project_path, executable=''):
