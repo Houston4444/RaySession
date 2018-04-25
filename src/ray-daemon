@@ -620,7 +620,7 @@ class Client(QObject):
         ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
             
         if removed:
-            ad = '/ray/gui/client/trashed'
+            ad = '/ray/gui/trash/add'
             
         server.sendGui(ad,
                         self.client_id, 
@@ -1024,7 +1024,11 @@ class Session(QObject):
         self.clients.remove(client)
     
     def restoreClient(self, client):
+        client.sent_to_gui = False
+        
         self.addClient(client)
+        
+        server.sendGui('/ray/gui/trash/remove', client.client_id)
         self.removed_clients.remove(client)
         
         if client.auto_start:
@@ -1475,6 +1479,8 @@ class OperatingSession(Session):
             return
         
         server.setServerStatus(SERVER_STATUS_CLOSE)
+        server.sendGui('/ray/gui/trash/clear')
+        
         
         for client in self.clients.__reversed__():
             if client.isRunning():
@@ -1547,6 +1553,8 @@ class OperatingSession(Session):
         
         new_session_full_name = self.osc_args[0]
         spath = "%s/%s" % (self.root, new_session_full_name)
+        
+        server.sendGui('/ray/gui/trash/clear')
         
         server.setServerStatus(SERVER_STATUS_COPY)
         file_copier.startSessionCopy(self.path, spath, self.duplicate_step1, self.duplicateAborted)
@@ -1685,6 +1693,8 @@ class OperatingSession(Session):
         GUIMSG(_translate('GUIMSG', "Opening session %s") % self.osc_args[0])
         
         self.removed_clients.clear()
+        server.sendGui('/ray/gui/trash/clear')
+        
         
         self.new_clients = []
         new_client_executables = []
@@ -1722,6 +1732,10 @@ class OperatingSession(Session):
                                 new_client_executables.append(client.executable_path)
                             
                             self.new_clients.append(client)
+                            
+                        elif tag_name == 'RemovedClients':
+                            self.removed_clients.append(client)
+                            client.sendGuiClientProperties(removed=True)
                         
                         client_xml = client_xml.nextSibling()
                         
@@ -1906,13 +1920,15 @@ class SignaledSession(OperatingSession):
         signaler.gui_client_stop.connect(self.guiClientStop)
         signaler.gui_client_kill.connect(self.guiClientKill)
         signaler.gui_client_remove.connect(self.guiClientRemove)
-        signaler.gui_client_restore.connect(self.guiClientRestore)
         signaler.gui_client_resume.connect(self.guiClientResume)
         signaler.gui_client_save.connect(self.guiClientSave)
         signaler.gui_client_save_template.connect(self.guiClientSaveTemplate)
         signaler.gui_client_label.connect(self.guiClientLabel)
         signaler.gui_client_icon.connect(self.guiClientIcon)
         signaler.gui_update_client_properties.connect(self.updateClientProperties)
+        
+        signaler.gui_trash_restore.connect(self.guiTrashRestore)
+        signaler.gui_trash_remove_definitely.connect(self.guiTrashRemoveDefinitely)
         
         signaler.copy_aborted.connect(self.abortCopy)
         
@@ -2230,14 +2246,6 @@ class SignaledSession(OperatingSession):
                 break
         else:
             server.sendGui("/error", -10, "No such client.")
-    
-    def guiClientRestore(self, client_id):
-        for client in self.removed_clients:
-            if client.client_id == client_id:
-                self.restoreClient(client)
-                break
-        else:
-            server.sendGui("/error", -10, "No such client.")
             
     def guiClientResume(self, path, args):
         for client in self.clients:
@@ -2294,6 +2302,31 @@ class SignaledSession(OperatingSession):
             if client.client_id == client_data.client_id:
                 client.updateClientProperties(client_data)
                 break
+    
+    def guiTrashRestore(self, client_id):
+        for client in self.removed_clients:
+            if client.client_id == client_id:
+                self.restoreClient(client)
+                break
+        else:
+            server.sendGui("/error", -10, "No such client.")
+            
+    def guiTrashRemoveDefinitely(self, client_id):
+        for client in self.removed_clients:
+            if client.client_id == client_id:
+                break
+        else:
+            return
+        
+        server.sendGui('/ray/gui/trash/remove', client_id)
+        
+        for file in client.getProjectFiles():
+            try:
+                subprocess.run(['rm', '-R', file])
+            except:
+                continue
+            
+        self.removed_clients.remove(client)
     
     def abortCopy(self):
         file_copier.abort()
@@ -2376,7 +2409,6 @@ class Signaler(QObject):
     gui_client_stop    = pyqtSignal(str, list)
     gui_client_kill    = pyqtSignal(str, list)
     gui_client_remove  = pyqtSignal(str, list)
-    gui_client_restore = pyqtSignal(str)
     gui_client_resume  = pyqtSignal(str, list)
     gui_client_save    = pyqtSignal(str, list)
     gui_client_save_template = pyqtSignal(str, list)
@@ -2384,6 +2416,8 @@ class Signaler(QObject):
     gui_client_icon  = pyqtSignal(str, str)
     gui_update_client_properties = pyqtSignal(object)
     copy_aborted = pyqtSignal()
+    gui_trash_restore           = pyqtSignal(str)
+    gui_trash_remove_definitely = pyqtSignal(str)
     
 
 class OscServerThread(ServerThread):
@@ -2532,18 +2566,6 @@ class OscServerThread(ServerThread):
     def rayGuiClientRemove(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_remove.emit(path, args)
-    
-    @make_method('/ray/gui/client/restore', 's')
-    def rayGuiClientRestore(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if not session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
-            return
-        
-        client_id = args[0]
-        
-        signaler.gui_client_restore.emit(client_id)
     
     @make_method('/ray/gui/client/resume', 's')
     def rayGuiClientResume(self, path, args):
@@ -2869,6 +2891,26 @@ class OscServerThread(ServerThread):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         self.listClientTemplates(src_addr, True)
+    
+    @make_method('/ray/gui/trash/restore', 's')
+    def rayGuiTrashRestore(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
+            return
+        
+        client_id = args[0]
+        
+        signaler.gui_trash_restore.emit(client_id)
+        
+    @make_method('/ray/gui/trash/remove_definitely', 's')
+    def rayGuiTrashRemoveDefinitely(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        client_id = args[0]
+        
+        signaler.gui_trash_remove_definitely.emit(client_id)
     
     def isOperationPending(self, src_addr, path):
         if file_copier.isActive():

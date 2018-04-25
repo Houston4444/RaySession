@@ -31,6 +31,7 @@ import ui_quit_app
 import ui_client_properties
 import ui_stop_client
 import ui_abort_copy
+import ui_client_trash
 
 import resources_rc
 
@@ -38,12 +39,6 @@ from shared import *
 
 from list_widget_clients import *
 
-
-ACTION_NONE  = 0
-ACTION_OPEN  = 1
-ACTION_SAVE  = 2
-ACTION_CLOSE = 3
-ACTION_ABORT = 4
 
 def str2bool(v):
     return bool(v.lower() == 'true')
@@ -84,8 +79,8 @@ def negate(color):
 
 class Session(object):
     def __init__(self):
-        self.client_list     = []  #contains Client List
-        self.trashed_clients = []  #contains ClientData List
+        self.client_list     = []
+        self.trashed_clients = []
         self.name            = None
         self.is_running      = False
         self.server_status   = SERVER_STATUS_OFF
@@ -118,9 +113,6 @@ class Session(object):
         if client:
             client.properties_dialog.close()
             self.client_list.remove(client)
-    
-    def addTrashedClient(self, client_data):
-        self.trashed_clients.append(client_data)
     
     def updateClientProperties(self, client_data):
         client = self.getClient(client_data.client_id)
@@ -282,7 +274,11 @@ class Client(object):
             return False
         
         return True
-            
+
+class TrashedClient(object):
+    def __init__(self, client_data, menu_action):
+        self.data        = client_data
+        self.menu_action = menu_action
     
 class OscSignaler(QObject):
     error_appears    = pyqtSignal()
@@ -297,7 +293,6 @@ class OscSignaler(QObject):
     error_message       = pyqtSignal(list)
     
     new_client_added       = pyqtSignal(ClientData)
-    client_trashed         = pyqtSignal(ClientData)
     new_client_stopped     = pyqtSignal(str, str)
     client_removed         = pyqtSignal(str)
     client_status_changed  = pyqtSignal(str, int)
@@ -318,6 +313,11 @@ class OscSignaler(QObject):
     clients_reordered      = pyqtSignal(list)
     opening_session    = pyqtSignal()
     
+    trash_add    = pyqtSignal(ClientData)
+    trash_remove = pyqtSignal(str)
+    trash_clear  = pyqtSignal()
+    trash_dialog = pyqtSignal(str)
+    
     def __init__(self):
         QObject.__init__(self)
         
@@ -328,7 +328,7 @@ class OscSignaler(QObject):
         except:
             return
         
-        serverOSC.toDaemon('/ray/gui/client/restore', client_id) 
+        self.trash_dialog.emit(client_id)
         
 
 class OSCServerT(ServerThread):
@@ -425,12 +425,6 @@ class OSCServerT(ServerThread):
         client_data = ClientData(*args)
         self.qsig.client_updated.emit(client_data)
         
-    @make_method('/ray/gui/client/trashed', 'sssissssi')
-    def trashClientFromServer(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
-        
-        client_data = ClientData(*args)
-        self.qsig.client_trashed.emit(client_data)
         
     @make_method('/ray/gui/client/status', 'si')
     def guiClientStatus(self, path, args):
@@ -512,6 +506,26 @@ class OSCServerT(ServerThread):
                 return
         
         self.qsig.clients_reordered.emit(args)
+    
+    @make_method('/ray/gui/trash/add', 'sssissssi')
+    def rayGuiTrashAdd(self, path, args):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        client_data = ClientData(*args)
+        self.qsig.trash_add.emit(client_data)
+        
+    @make_method('/ray/gui/trash/remove', 's')
+    def rayGuiTrashRemove(self, path, args):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        client_id = args[0]
+        self.qsig.trash_remove.emit(client_id)
+        
+    @make_method('/ray/gui/trash/clear', '')
+    def rayGuiTrashClear(self, path, args):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        self.qsig.trash_clear.emit()
     
     def toDaemon(self, *args):
         self.send(ray_daemon.address, *args)
@@ -684,7 +698,6 @@ class MainWindow(QMainWindow):
         #connect OSC signals from nsm
         serverOSC.qsig.new_client_added.connect(self.serverAddsClient)
         serverOSC.qsig.client_removed.connect(self.serverRemovesClient)
-        serverOSC.qsig.client_trashed.connect(self.serverTrashsClient)
         serverOSC.qsig.client_status_changed.connect(self.serverUpdatesClientStatus)
         serverOSC.qsig.client_has_gui.connect(self.serverSetsClientHasGui)
         serverOSC.qsig.client_gui_visible_sig.connect(self.serverSetsClientGuiState)
@@ -701,6 +714,10 @@ class MainWindow(QMainWindow):
         serverOSC.qsig.error_message.connect(self.serverSendsError)
         serverOSC.qsig.opening_session.connect(self.serverOpensNsmSession)
         serverOSC.qsig.clients_reordered.connect(self.serverReorderClients)
+        serverOSC.qsig.trash_add.connect(self.serverTrashAdd)
+        serverOSC.qsig.trash_remove.connect(self.serverTrashRemove)
+        serverOSC.qsig.trash_clear.connect(self.serverTrashClear)
+        serverOSC.qsig.trash_dialog.connect(self.showClientTrashDialog)
         
         self.connectListWidgetRequests()
         
@@ -951,6 +968,20 @@ class MainWindow(QMainWindow):
             return
         
         serverOSC.abortCopy()
+        
+    def showClientTrashDialog(self, client_id):
+        for trashed_client in session.trashed_clients:
+            if trashed_client.data.client_id == client_id:
+                break
+        else:
+            return
+        
+        dialog = ClientTrashDialog(self, trashed_client.data)
+        dialog.exec()
+        if not dialog.result():
+            return
+        
+        serverOSC.toDaemon('/ray/gui/trash/restore', client_id)
     
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
     
@@ -962,16 +993,6 @@ class MainWindow(QMainWindow):
         if client:
             self.ui.listWidget.removeClientWidget(client_id)
             session.removeClient(client_id)
-    
-    def serverTrashsClient(self, client_data):
-        session.addTrashedClient(client_data)
-        
-        
-        #prettier_name = client_data.label if client_data.label else client_data.name
-        
-        #act_x_trashed = self.trashMenu.addAction(prettier_name)
-        #act_x_trashed.setData(client_data.client_id)
-        #act_x_trashed.triggered.connect(serverOSC.qsig.restoreClient)
     
     def serverSwitchesClient(self, old_client_id, new_client_id):
         session.switchClient(old_client_id, new_client_id)
@@ -1103,6 +1124,37 @@ class MainWindow(QMainWindow):
                 app.quit()
     
     
+    def serverTrashAdd(self, client_data):
+        prettier_name = client_data.label if client_data.label else client_data.name
+        
+        act_x_trashed = self.trashMenu.addAction(QIcon.fromTheme(client_data.icon), prettier_name)
+        act_x_trashed.setData(client_data.client_id)
+        act_x_trashed.triggered.connect(serverOSC.qsig.restoreClient)
+        
+        trashed_client = TrashedClient(client_data, act_x_trashed)
+        
+        session.trashed_clients.append(trashed_client)
+        self.ui.trashButton.setEnabled(True)
+        
+    def serverTrashRemove(self, client_id):
+        for trashed_client in session.trashed_clients:
+            if trashed_client.data.client_id == client_id:
+                break
+        else:
+            return
+        
+        self.trashMenu.removeAction(trashed_client.menu_action)
+        session.trashed_clients.remove(trashed_client)
+        
+        if not session.trashed_clients:
+            self.ui.trashButton.setEnabled(False)
+        
+    def serverTrashClear(self):
+        session.trashed_clients.clear()
+        self.trashMenu.clear()
+        self.ui.trashButton.setEnabled(False)
+    
+    
     def daemonCrash(self):
         QMessageBox.critical(self, _translate('errors', "daemon crash!"), _translate('errors', "ray-daemon crashed, sorry !"))
         app.quit()
@@ -1118,7 +1170,7 @@ class MainWindow(QMainWindow):
         
         self.quitApp()
         event.ignore()
-        
+    
     def leaveEvent(self, event):
         if self.isActiveWindow():
             self.mouse_is_inside = False
@@ -1495,6 +1547,32 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.icon_name       = self.ui.lineEditIcon.text()
         self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
         self.client.sendPropertiesToDaemon()
+
+class ClientTrashDialog(ChildDialog):
+    def __init__(self, parent, client_data):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_client_trash.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self.client_data = client_data
+        
+        self.ui.labelExecutable.setText(self.client_data.executable_path)
+        self.ui.labelId.setText(self.client_data.client_id)
+        self.ui.labelClientName.setText(self.client_data.name)
+        self.ui.labelClientIcon.setText(self.client_data.icon)
+        self.ui.labelClientLabel.setText(self.client_data.label)
+        self.ui.checkBoxSaveStop.setChecked(self.client_data.check_last_save)
+        self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(self.client_data.icon))
+        
+        self.ui.pushButtonRemove.clicked.connect(self.removeClient)
+        
+    def serverStatusChanged(self, server_status):
+        if server_status in (SERVER_STATUS_CLOSE, SERVER_STATUS_OFF):
+            self.reject()
+            
+    def removeClient(self):
+        serverOSC.toDaemon('/ray/gui/trash/remove_definitely', self.client_data.client_id)
+        self.reject()
         
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):
