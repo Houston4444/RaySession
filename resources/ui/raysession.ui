@@ -520,6 +520,9 @@ QToolButton {border: none}</string>
                  </item>
                  <item>
                   <widget class="QToolButton" name="trashButton">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trash&lt;/p&gt;&lt;p&gt;You will find here removed clients.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
                    <property name="styleSheet">
                     <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
 QToolButton {border: none}</string>
