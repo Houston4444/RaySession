@@ -1,15 +1,12 @@
 # Ray Session TODO
 
-    prevent stop client if not saved (when possible)
-    copy progress 
-    save client with simulate ctrl+s on window
     client for windows positions
     clean from client means save session (option)
     SooperLooper NSM starter
-    ray-daemon as NSM client
+    raysession as NSM client
+    session network
     Jack Patchbay
     drop file directly on session
-    terminal per client
     session snapshot
     ...
   

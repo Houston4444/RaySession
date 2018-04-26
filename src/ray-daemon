@@ -2143,7 +2143,7 @@ class SignaledSession(OperatingSession):
     
     def addClientTemplate_step_1(self, client):
         client.adjustFilesAfterCopy(self.name, TEMPLATE_CLIENT_LOAD)
-        #self.addClient(client)
+        
         if client.auto_start:
             client.start()
     
@@ -2202,8 +2202,6 @@ class SignaledSession(OperatingSession):
             client.pending_command = COMMAND_NONE
             
             client.setStatus(CLIENT_STATUS_READY)
-            #client.status = CLIENT_STATUS_READY
-            #server.sendClientStatusToGui(client)
             
             if self.wait_for == WAIT_FOR_REPLY:
                 self.endTimerIfLastExpected(client)
@@ -2275,15 +2273,6 @@ class SignaledSession(OperatingSession):
             if client.client_id == args[0]:
                 client.saveAsTemplate(args[1])
                 break
-    
-    #def guiClientAbortCopy(self, client_id):
-        #for client in self.clients:
-            #if client.client_id == client_id:
-                #if not client.status in (CLIENT_STATUS_PRECOPY, CLIENT_STATUS_COPY):
-                    #return
-                
-                #file_copier.abort()
-                #break
     
     def guiClientLabel(self, client_id, label):
         for client in self.clients:

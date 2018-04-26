@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -u
 
-import os, sys, string, random, time, subprocess, signal, unicodedata
+import os, sys, time, signal
 from liblo import ServerThread, Address, make_method, Message
-from PyQt5.QtCore import QCoreApplication, pyqtSignal, qDebug, QObject, QTimer, QProcess, QSettings, QLocale, QTranslator, QFile
+from PyQt5.QtCore import pyqtSignal, QObject, QTimer, QProcess, QSettings, QLocale, QTranslator, QFile
 from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QMainWindow
 from PyQt5.QtXml import QDomDocument
 
@@ -33,10 +33,6 @@ def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         proxy.stopProcess()
         sys.exit()
-        
-def remove_accents(input_str):
-    nfkd_form = unicodedata.normalize('NFKD', input_str)
-    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()    
 
 def ifDebug(string):
     if debug:
