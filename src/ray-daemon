@@ -2578,6 +2578,8 @@ class OscServerThread(ServerThread):
         
         client = getClientById(args[0])
         
+        print('show_optional_gui daemon')
+        
         if client and client.active:
             self.send(client.addr, "/nsm/client/show_optional_gui")
 

@@ -14,7 +14,7 @@ def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         #sys.exit()
         general_object.leave()
-        app.quit()
+        #app.quit()
 
 class SlThread(nsm_client.NSMThread):
     def __init__(self, name, signaler, daemon_address, debug):
@@ -25,7 +25,7 @@ class SlThread(nsm_client.NSMThread):
         print('mamamlaoad')
         print(args)
         
-    @make_method('/re-save', None)
+    @make_method('/resave', None)
     def resave(self, path, args):
         print('mamamsave')
         print(args)
@@ -49,8 +49,16 @@ class GeneralObject(QObject):
         self.gui_process.finished.connect(self.guiProcessFinished)
         
         self.project_path   = ''
+        self.session_path   = ''
         self.session_name   = ''
         self.full_client_id = ''
+        
+        self.file_timer = QTimer()
+        self.file_timer.setInterval(50)
+        self.file_timer.timeout.connect(self.checkFile)
+        self.n_file_timer  = 0
+        self.file_exists   = False
+        self.file_contents = None
         
         signaler.server_sends_open.connect(self.initialize)
         signaler.server_sends_save.connect(self.saveSlSession)
@@ -58,6 +66,8 @@ class GeneralObject(QObject):
         signaler.hide_optional_gui.connect(self.hideOptionalGui)
         
         self.leaving = False
+        
+        self.showOptionalGui()
     
     def leave(self):
         self.leaving = True
@@ -66,9 +76,13 @@ class GeneralObject(QObject):
             self.gui_process.terminate()
         else:
             if self.sl_process.state():
-                self.sl_process.terminate()
+                server.send(self.sl_url, '/quit')
+                #self.sl_process.terminate()
             else:
                 app.quit()
+    
+    def isGuiShown(self):
+        return bool(self.sl_process.state() == QProcess.Running)
     
     def slProcessFinished(self, exit_code):
         app.quit()
@@ -79,35 +93,116 @@ class GeneralObject(QObject):
     def guiProcessFinished(self, exit_code):
         if self.leaving:
             if self.sl_process.state():
-                self.sl_process.terminate()
+                server.send(self.sl_url, '/quit')
+                #self.sl_process.terminate()
             else:
                 app.quit()
                 
         server.sendToDaemon('/nsm/client/gui_is_hidden')
     
+    def startFileChecker(self):
+        self.file_exists  = bool(os.path.exists(self.session_file))
+        print(self.file_exists, 'yal')
+        self.n_file_timer = 0
+        if self.file_exists:
+            try:
+                file = open(self.session_file)
+                self.file_contents = file.read()
+            except:
+                pass
+        
+        
+        self.file_timer.start()
+    
+    def stopFileChecker(self):
+        self.file_exists  = bool(os.path.exists(self.session_file))
+        self.n_file_timer = 0
+        self.file_timer.stop()
+        server.sendToDaemon('/reply', '/nsm/client/save', 'Saved')
+        
+    def checkFile(self):
+        print(self.n_file_timer)
+        
+        if self.n_file_timer > 20: #more than 3 seconds
+            self.stopFileChecker()
+            return
+        
+        
+        if not self.file_exists:
+            if os.path.exists(self.session_file):
+                self.stopFileChecker()
+                return
+                
+        else:
+            try:
+                file = open(self.session_file)
+                file_contents = file.read()
+                if file_contents != self.file_contents:
+                    print('diiidiff')
+                    print(file_contents)
+                    
+                    print('')
+                    
+                    print(self.file_contents)
+                    
+                    self.stopFileChecker()
+                    return
+                
+                self.file_contents = file_contents
+                
+            except:
+                pass
+                
+        
+        self.n_file_timer+=1
+                
+    
     def initialize(self, project_path, session_name, full_client_id):
         self.project_path   = project_path
         self.session_name   = session_name
         self.full_client_id = full_client_id
-        
+        self.session_file = "%s/session.slsess" % self.project_path
         print('eieiiei')
+        print(os.getcwd())
+        print(self.project_path)
         
-        server.send(self.sl_url, '/load_session', "%s.slsess" % self.project_path, server.url, '/re-load')
+        if not os.path.exists(self.project_path):
+            os.makedirs(self.project_path)
+        
+        print('ookoko')
+        
+        os.chdir(self.project_path)
+        print('ookokfo')
+        print(os.getcwd())
+        
+        time.sleep(0.5)
+        
+        server.send(self.sl_url, '/load_session', self.session_file, server.url, '/re-load')
         
         server.sendToDaemon('/reply', '/nsm/client/open', 'Ready')
         
+        if self.isGuiShown():
+            server.sendToDaemon('/nsm/client/gui_is_shown')
+        else:
+            server.sendToDaemon('/nsm/client/gui_is_hidden')
+        
+        
     def saveSlSession(self):
-         server.send(self.sl_url, '/save_session', "%s.slsess" % self.project_path, server.url, '/re-save')
-         
-         server.sendToDaemon('/reply', '/nsm/client/save', 'Saved')
+         server.send(self.sl_url, '/save_session', self.session_file, server.url, '/resave', 1)
+         print('sssahhheve')
+         print('okokkd')
+         self.startFileChecker()
+         #server.sendToDaemon('/reply', '/nsm/client/save', 'Saved')
          #todo save audio
          
     def showOptionalGui(self):
+        print('yalloo')
         if not self.gui_process.state():
             self.gui_process.start('slgui', ['-P', str(self.sl_port)])
         
         
     def hideOptionalGui(self):
+        print('yafzlloo')
         if self.gui_process.state():
             self.gui_process.terminate()
         

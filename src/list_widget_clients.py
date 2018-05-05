@@ -256,6 +256,8 @@ class ClientSlot(QFrame):
             self.list_widget.clientShowGuiRequest.emit(self.clientId())
         else:
             self.list_widget.clientHideGuiRequest.emit(self.clientId())
+            
+        self.gui_visible = not self.gui_visible
     
     def setDirtyState(self, bool_dirty):
         self.is_dirty_able = True
