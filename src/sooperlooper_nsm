@@ -227,7 +227,6 @@ class GeneralObject(QObject):
         self.wait_for_load = False
         server.send(self.sl_url, '/load_session', self.session_file, server.url, '/re-load')
         server.openReply()
-        server.sendGuiState(self.isGuiShown())
         
     def saveSlSession(self):
         self.startFileChecker()
