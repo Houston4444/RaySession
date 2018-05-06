@@ -12,30 +12,28 @@ import nsm_client
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
-        #sys.exit()
         general_object.leave()
-        #app.quit()
-
-class SlThread(nsm_client.NSMThread):
+        
+class SlOSCThread(nsm_client.NSMThread):
     def __init__(self, name, signaler, daemon_address, debug):
         nsm_client.NSMThread.__init__(self, name, signaler, daemon_address, debug)
+        self.sl_is_ready = False
         
-    @make_method('/re-load', None)
-    def reLoad(self, path, args):
-        print('mamamlaoad')
-        print(args)
+    @make_method('/pongSL', 'ssi')
+    def pong(self, path, args):
+        self.sl_is_ready = True
         
-    @make_method('/resave', None)
-    def resave(self, path, args):
-        print('mamamsave')
-        print(args)
+        if general_object.wait_for_load:
+            general_object.sl_ready.emit()
         
-    
-
 class GeneralObject(QObject):
+    sl_ready = pyqtSignal()
+    
     def __init__(self):
         QObject.__init__(self)
+        
         self.sl_process  = QProcess()
+        self.sl_process.setProcessChannelMode(QProcess.ForwardedChannels)
         self.sl_process.finished.connect(self.slProcessFinished)
         
         self.sl_port = getFreeOscPort(9951)
@@ -45,6 +43,7 @@ class GeneralObject(QObject):
         self.sl_process.start('sooperlooper', ['-p', str(self.sl_port)])
         
         self.gui_process = QProcess()
+        self.gui_process.setProcessChannelMode(QProcess.ForwardedChannels)
         self.gui_process.started.connect(self.guiProcessStarted)
         self.gui_process.finished.connect(self.guiProcessFinished)
         
@@ -65,9 +64,23 @@ class GeneralObject(QObject):
         signaler.show_optional_gui.connect(self.showOptionalGui)
         signaler.hide_optional_gui.connect(self.hideOptionalGui)
         
+        self.sl_ready.connect(self.loadSession)
+        
         self.leaving = False
+        self.wait_for_load = False
         
         self.showOptionalGui()
+        
+        self.ping_timer = QTimer()
+        self.ping_timer.setInterval(100)
+        self.ping_timer.timeout.connect(self.pingSL)
+        self.ping_timer.start()
+    
+    def pingSL(self):
+        if server.sl_is_ready:
+            self.ping_timer.stop()
+        else:
+            server.send(self.sl_url, '/ping', server.url, '/pongSL')
     
     def leave(self):
         self.leaving = True
@@ -77,7 +90,6 @@ class GeneralObject(QObject):
         else:
             if self.sl_process.state():
                 server.send(self.sl_url, '/quit')
-                #self.sl_process.terminate()
             else:
                 app.quit()
     
@@ -88,22 +100,21 @@ class GeneralObject(QObject):
         app.quit()
     
     def guiProcessStarted(self):
-        server.sendToDaemon('/nsm/client/gui_is_shown')
+        server.sendGuiState(True)
     
     def guiProcessFinished(self, exit_code):
         if self.leaving:
             if self.sl_process.state():
                 server.send(self.sl_url, '/quit')
-                #self.sl_process.terminate()
             else:
                 app.quit()
                 
-        server.sendToDaemon('/nsm/client/gui_is_hidden')
+        server.sendGuiState(False)
     
     def startFileChecker(self):
         self.file_exists  = bool(os.path.exists(self.session_file))
-        print(self.file_exists, 'yal')
         self.n_file_timer = 0
+        
         if self.file_exists:
             try:
                 file = open(self.session_file)
@@ -111,22 +122,21 @@ class GeneralObject(QObject):
             except:
                 pass
         
-        
         self.file_timer.start()
     
     def stopFileChecker(self):
         self.file_exists  = bool(os.path.exists(self.session_file))
         self.n_file_timer = 0
         self.file_timer.stop()
-        server.sendToDaemon('/reply', '/nsm/client/save', 'Saved')
+        
+        self.xmlCorrection()
+        
+        server.saveReply()
         
     def checkFile(self):
-        print(self.n_file_timer)
-        
-        if self.n_file_timer > 20: #more than 3 seconds
+        if self.n_file_timer > 20: #more than 1 second
             self.stopFileChecker()
             return
-        
         
         if not self.file_exists:
             if os.path.exists(self.session_file):
@@ -138,13 +148,6 @@ class GeneralObject(QObject):
                 file = open(self.session_file)
                 file_contents = file.read()
                 if file_contents != self.file_contents:
-                    print('diiidiff')
-                    print(file_contents)
-                    
-                    print('')
-                    
-                    print(self.file_contents)
-                    
                     self.stopFileChecker()
                     return
                 
@@ -155,54 +158,86 @@ class GeneralObject(QObject):
                 
         
         self.n_file_timer+=1
+     
+    def xmlCorrection(self):
+        try:
+            sl_file = open(self.session_file)
+        except:
+            return
+        
+        xml = QDomDocument()
+        xml.setContent(sl_file.read())
+        
+        sl_file.close()
+        
+        content = xml.documentElement()
+        
+        if content.tagName() != 'SLSession':
+            return
+        
+        node = content.firstChild()
+        while not node.isNull():
+            if node.toElement().tagName() != 'Loopers':
+                node = node.nextSibling()
+                continue
+            
+            sub_node = node.toElement().firstChild()
+            while not sub_node.isNull():
+                element = sub_node.toElement()
                 
+                if element.tagName() != 'Looper':
+                    sub_node = sub_node.nextSibling()
+                    continue
+                
+                audio_file_name = str(element.attribute('loop_audio'))
+                if audio_file_name.startswith("%s/" % self.project_path):
+                    element.setAttribute('loop_audio', os.path.relpath(audio_file_name))
+                    
+                sub_node = sub_node.nextSibling()
+                
+            node = node.nextSibling()
+        
+        try:
+            sl_file = open(self.session_file, 'w')
+        except:
+            return
+        
+        sl_file.write(xml.toString())
+        sl_file.close()
+        
     
     def initialize(self, project_path, session_name, full_client_id):
         self.project_path   = project_path
         self.session_name   = session_name
         self.full_client_id = full_client_id
         self.session_file = "%s/session.slsess" % self.project_path
-        print('eieiiei')
-        print(os.getcwd())
-        print(self.project_path)
         
         if not os.path.exists(self.project_path):
             os.makedirs(self.project_path)
         
-        print('ookoko')
-        
         os.chdir(self.project_path)
-        print('ookokfo')
-        print(os.getcwd())
         
-        time.sleep(0.5)
-        
-        server.send(self.sl_url, '/load_session', self.session_file, server.url, '/re-load')
-        
-        server.sendToDaemon('/reply', '/nsm/client/open', 'Ready')
-        
-        if self.isGuiShown():
-            server.sendToDaemon('/nsm/client/gui_is_shown')
+        if server.sl_is_ready:
+            self.loadSession()
         else:
-            server.sendToDaemon('/nsm/client/gui_is_hidden')
+            self.wait_for_load = True
         
+        
+    def loadSession(self):
+        self.wait_for_load = False
+        server.send(self.sl_url, '/load_session', self.session_file, server.url, '/re-load')
+        server.openReply()
+        server.sendGuiState(self.isGuiShown())
         
     def saveSlSession(self):
-         server.send(self.sl_url, '/save_session', self.session_file, server.url, '/resave', 1)
-         print('sssahhheve')
-         print('okokkd')
-         self.startFileChecker()
-         #server.sendToDaemon('/reply', '/nsm/client/save', 'Saved')
-         #todo save audio
+        self.startFileChecker()
+        server.send(self.sl_url, '/save_session', self.session_file, server.url, '/re-save', 1)
          
     def showOptionalGui(self):
-        print('yalloo')
         if not self.gui_process.state():
             self.gui_process.start('slgui', ['-P', str(self.sl_port)])
         
-        
     def hideOptionalGui(self):
-        print('yafzlloo')
         if self.gui_process.state():
             self.gui_process.terminate()
         
@@ -214,16 +249,12 @@ if __name__ == '__main__':
         sys.exit()
         
     daemon_address = getLibloAddress(NSM_URL)
-    #daemon_address = getLibloAddress('osc.udp://houston-MS-75922:16187/')
-
-    
     
     signal.signal(signal.SIGINT,  signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
     
     app = QCoreApplication(sys.argv)
     app.setApplicationName("SooperLooperNSM")
-    #app.setApplicationVersion(VERSION)
     app.setOrganizationName("SooperLooperNSM")
     
     timer = QTimer()
@@ -233,7 +264,7 @@ if __name__ == '__main__':
     
     signaler = nsm_client.NSMSignaler()
     
-    server = nsm_client.NSMThread('sooperlooper_nsm', signaler, daemon_address, False)
+    server = SlOSCThread('sooperlooper_nsm', signaler, daemon_address, False)
     
     general_object = GeneralObject()
     

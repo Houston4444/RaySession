@@ -51,3 +51,16 @@ class NSMThread(ServerThread):
         pid   = os.getpid()
         
         self.sendToDaemon('/nsm/server/announce', client_name, capabilities, executable_path, major, minor, pid)
+        
+    def openReply(self):
+        self.sendToDaemon('/reply', '/nsm/client/open', 'Ready')
+        
+    def saveReply(self):
+        print('saveReply')
+        self.sendToDaemon('/reply', '/nsm/client/save', 'Saved')
+        
+    def sendGuiState(self, state):
+        if state:
+            self.sendToDaemon('/nsm/client/gui_is_shown')
+        else:
+            self.sendToDaemon('/nsm/client/gui_is_hidden')

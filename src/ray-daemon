@@ -308,32 +308,33 @@ class FileCopier(QObject):
 
 class Client(QObject):
     #can be directly changed by OSC thread
-    gui_visible     = True
-    _reply_errcode  = 0
-    _reply_message  = None
-    progress        = 0
+    gui_visible      = True
+    _reply_errcode   = 0
+    _reply_message   = None
+    progress         = 0
     
     #have to be modified by main thread for security
-    addr            = None
-    pid             = 0
-    pending_command = COMMAND_NONE
-    active          = False
-    client_id       = ''
-    capabilities    = ''
-    did_announce    = False
+    addr             = None
+    pid              = 0
+    pending_command  = COMMAND_NONE
+    active           = False
+    client_id        = ''
+    capabilities     = ''
+    did_announce     = False
     
-    status          = CLIENT_STATUS_STOPPED
-    name            = ''
-    executable_path = ''
-    arguments_line  = ''
-    label           = ''
-    icon            = ''
-    pre_existing    = False
-    project_path    = ""
-    prefix_mode     = PREFIX_MODE_SESSION_NAME
-    auto_start      = True
-    check_last_save = True
-    sent_to_gui     = False
+    status           = CLIENT_STATUS_STOPPED
+    name             = ''
+    executable_path  = ''
+    arguments_line   = ''
+    label            = ''
+    icon             = ''
+    pre_existing     = False
+    project_path     = ""
+    prefix_mode      = PREFIX_MODE_SESSION_NAME
+    auto_start       = True
+    start_gui_hidden = False
+    check_last_save  = True
+    sent_to_gui      = False
     
     def __init__(self):
         QObject.__init__(self)
@@ -353,13 +354,13 @@ class Client(QObject):
     
     def readXmlProperties(self, ctx):
         #ctx is an xml sibling for client
-        self.executable_path = ctx.attribute('executable')
-        self.name            = ctx.attribute('name')
-        self.label           = ctx.attribute('label')
-        self.icon            = ctx.attribute('icon')
-        self.auto_start      = bool(ctx.attribute('launched') != '0')
-        self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
-        self.gui_visible     = bool(ctx.attribute('gui_visible') != '0')
+        self.executable_path  = ctx.attribute('executable')
+        self.name             = ctx.attribute('name')
+        self.label            = ctx.attribute('label')
+        self.icon             = ctx.attribute('icon')
+        self.auto_start       = bool(ctx.attribute('launched') != '0')
+        self.check_last_save  = bool(ctx.attribute('check_last_save') != '0')
+        self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         
         prefix_mode = ctx.attribute('prefix_mode')
         
@@ -396,7 +397,8 @@ class Client(QObject):
                 
         if self.isCapableOf(':optional-gui:'):
             if self.executable_path != 'ray-proxy':
-                ctx.setAttribute('gui_visible', self.gui_visible)
+                if self.start_gui_hidden:
+                    ctx.setAttribute('gui_visible', '0')
             
                 
     def setReply(self, errcode, message):
@@ -567,6 +569,9 @@ class Client(QObject):
         elif self.isDumbClient() and self.isRunning():
             self.status = CLIENT_STATUS_NOOP
             server.sendClientStatusToGui(self)
+            
+        if self.isCapableOf(':optional-gui:'):
+            self.start_gui_hidden = not bool(self.gui_visible)
             
     def stop(self):
         GUIMSG(_translate('GUIMSG', "Stopping client %s") % self.name)
@@ -963,7 +968,7 @@ class Client(QObject):
         if self.isCapableOf(":optional-gui:"):
             server.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
             
-            if not self.gui_visible:
+            if self.start_gui_hidden:
                 server.send(src_addr, "/nsm/client/hide_optional_gui")
                 
         jack_client_name    = self.getJackClientName()
