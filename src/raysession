@@ -269,6 +269,9 @@ class Client(object):
         self.widget = MainUI.createClientWidget(self)
         self.widget.updateClientData()
         
+        if self.hasGui:
+            self.setGuiEnabled()
+        
     def hasBeenRecentlySaved(self):
         if (time.time() - self.last_save) >= 60: #last save more than 60 seconds ago
             return False
