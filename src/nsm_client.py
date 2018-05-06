@@ -59,6 +59,12 @@ class NSMThread(ServerThread):
         print('saveReply')
         self.sendToDaemon('/reply', '/nsm/client/save', 'Saved')
         
+    def sendDirtyState(self, bool_dirty):
+        if bool_dirty:
+            self.sendToDaemon('/nsm/client/is_clean')
+        else:
+            self.sendToDaemon('/nsm/client/is_dirty')
+        
     def sendGuiState(self, state):
         if state:
             self.sendToDaemon('/nsm/client/gui_is_shown')

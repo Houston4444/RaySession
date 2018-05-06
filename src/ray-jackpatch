@@ -53,7 +53,7 @@ def portExists(name, mode, port_type):
 def setDirtyClean():
     global is_dirty
     is_dirty = False
-    NSMServer.sendToDaemon('/nsm/client/is_clean')
+    NSMServer.sendDirtyState(False)
 
 def timerDirtyFinish():
     global is_dirty
@@ -63,7 +63,7 @@ def timerDirtyFinish():
     
     if isDirtyNow():
         is_dirty = True
-        NSMServer.sendToDaemon('/nsm/client/is_dirty')
+        NSMServer.sendDirtyState(True)
 
 def isDirtyNow():
     for connection in connection_list:
@@ -344,7 +344,7 @@ def openFile(project_path, session_name, full_client_id):
         
         if content.tagName() != "RAY-JACKPATCH":
             file.close()
-            NSMServer.sendToDaemon('/reply', '/nsm/client/open', 'Ready')
+            NSMServer.openReply()
             return
         
         cte = content.toElement()
@@ -364,7 +364,7 @@ def openFile(project_path, session_name, full_client_id):
         
         makeMayConnections()
         
-    NSMServer.sendToDaemon('/reply', '/nsm/client/open', 'Ready')
+    NSMServer.openReply()
     setDirtyClean()
     dirty_checker.start()
     
@@ -409,7 +409,7 @@ def saveFile():
     file.write(xml.toString())
     file.close()
     
-    NSMServer.sendToDaemon('/reply', '/nsm/client/save', 'Saved')
+    NSMServer.saveReply()
     
     setDirtyClean()
 

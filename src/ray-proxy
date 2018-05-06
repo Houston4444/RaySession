@@ -309,7 +309,7 @@ class Proxy(QObject):
         self.session_name   = session_name
         self.full_client_id = full_client_id
         
-        server.sendToDaemon('/nsm/client/gui_is_hidden')
+        server.sendGuiState(False)
         
         if not os.path.exists(project_path):
             os.mkdir(project_path)
@@ -324,7 +324,7 @@ class Proxy(QObject):
         proxy_dialog.updateValuesFromProxyFile()
         
         if not self.proxy_file.is_launchable:
-            server.sendToDaemon('/reply', '/nsm/client/open', 'Ready')
+            server.openReply()
             proxy_dialog.show()
             return
         
@@ -366,10 +366,10 @@ class Proxy(QObject):
         os.kill(self.process.processId(), signal)
     
     def timerSaveFinished(self):
-        server.sendToDaemon('/reply', '/nsm/client/save', 'Saved.')
+        server.saveReply()
     
     def timerOpenFinished(self):
-        server.sendToDaemon('/reply', '/nsm/client/open', 'Ready.')
+        server.openReply()
         if self.isRunning() and proxy_dialog.isVisible():
             proxy_dialog.close()
     
