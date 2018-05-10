@@ -3072,6 +3072,18 @@ if __name__ == '__main__':
     osc_num      = parsed_args.osc_port
     gui_address  = parsed_args.gui_url
     
+    if not os.path.isdir(session_root):
+        if os.path.exists(session_root):
+            sys.stderr.write("%s exists and is not a dir, please choose another path !\n" % session_root)
+            sys.exit(1)
+        
+        try:
+            os.makedirs(session_root)
+        except:
+            sys.stderr.write("impossible to make dir %s , aborted !\n" % session_root)
+            sys.exit(1)
+    
+    
     signal.signal(signal.SIGINT,  signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
     
