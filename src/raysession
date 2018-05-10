@@ -1977,7 +1977,8 @@ class RayDaemon(object):
         self.executable      = 'ray-daemon'
         self.process         = QProcess()
         self.process.finished.connect(self.processFinished)
-        self.process.errorOccurred.connect(self.errorInProcess)
+        if QT_VERSION >= (5, 6):
+            self.process.errorOccurred.connect(self.errorInProcess)
         self.process.setProcessChannelMode(QProcess.ForwardedChannels)
         self.stopped_yet     = False
         self.is_local        = True

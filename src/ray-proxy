@@ -89,7 +89,8 @@ class ProxyDialog(QMainWindow):
         
         proxy.process.started.connect(self.proxyStarted)
         proxy.process.finished.connect(self.proxyFinished)
-        proxy.process.errorOccurred.connect(self.proxyErrorInProcess)
+        if QT_VERSION >= (5, 6):
+            proxy.process.errorOccurred.connect(self.proxyErrorInProcess)
     
     def checkAllowStart(self):
         self.fields_allow_start = True

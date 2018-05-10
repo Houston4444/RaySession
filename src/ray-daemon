@@ -139,7 +139,8 @@ class FileCopier(QObject):
         
         self.process = QProcess()
         self.process.finished.connect(self.processFinished)
-        self.process.errorOccurred.connect(self.errorOccurred)
+        if QT_VERSION >= (5, 6):
+            self.process.errorOccurred.connect(self.errorOccurred)
         
         self.timer = QTimer()
         self.timer.setInterval(250)
@@ -340,7 +341,8 @@ class Client(QObject):
         QObject.__init__(self)
         self.process = QProcess()
         self.process.started.connect(self.processStarted)
-        self.process.errorOccurred.connect(self.errorInProcess)
+        if QT_VERSION >= (5, 6):
+            self.process.errorOccurred.connect(self.errorInProcess)
         self.process.finished.connect(self.processFinished)
         self.process.readyReadStandardError.connect(self.standardError)
         self.process.readyReadStandardOutput.connect(self.standardOutput)

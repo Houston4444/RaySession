@@ -2,8 +2,19 @@ from liblo import Server
 import argparse
 import liblo
 import sys, os, shlex
-from PyQt5.QtCore import QLocale, QTranslator
+from PyQt5.QtCore import QLocale, QTranslator, QT_VERSION_STR
 
+#get qt version in list of ints
+QT_VERSION = []
+for strdigit in QT_VERSION_STR.split('.'):
+    QT_VERSION.append(int(strdigit))
+
+QT_VERSION = tuple(QT_VERSION)
+
+if QT_VERSION < (5, 6):
+    sys.stderr.write("WARNING: You are using a version of QT older than 5.6.\nYou won't be able to know if a process can't be launch.\n")
+
+#Ray Session version
 VERSION = "0.5.6"
 
 APP_TITLE = 'Ray Session'
