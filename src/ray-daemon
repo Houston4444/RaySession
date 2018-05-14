@@ -2183,7 +2183,7 @@ class SignaledSession(OperatingSession):
                 break
         else:
             for client in self.clients:
-                if (client.executable_path == executable_path
+                if (os.path.basename(client.executable_path) == os.path.basename(executable_path)
                     and not client.active
                     and client.pending_command == COMMAND_START):
                         client.serverAnnounce(path, args, src_addr, False)
@@ -3072,6 +3072,7 @@ if __name__ == '__main__':
     osc_num      = parsed_args.osc_port
     gui_address  = parsed_args.gui_url
     
+    #make session_root folder if needed
     if not os.path.isdir(session_root):
         if os.path.exists(session_root):
             sys.stderr.write("%s exists and is not a dir, please choose another path !\n" % session_root)
