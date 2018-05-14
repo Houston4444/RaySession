@@ -56,20 +56,43 @@ def signalHandler(sig, frame):
         MainUI.terminate_request = True
         ray_daemon.stop()
 
-def changeNsmFolder(parent_window):
+def changeRootFolder(parent_window):
+    #this function is the only one that takes cares of files present on system. 
+    #In a perfect world, this should be done in ray-daemon.
+    #But it's more user friendly to use a file picker child of raysession window
+    #and if ray-daemon is launched before, with a different session root, 
+    #then it gives the advantage to not change the default root.
+    
     global default_folder
-    nsm_folder = QFileDialog.getExistingDirectory(parent_window, "Choose NSM Folder", default_folder, QFileDialog.ShowDirsOnly)
-    if nsm_folder:
-        if not os.access(nsm_folder, os.W_OK):
-            errorDialog = QMessageBox(QMessageBox.Critical, 'unwritable dir', 'You have no permissions for %s,\nchoose another directory !' % nsm_folder)
+    root_folder = QFileDialog.getExistingDirectory(parent_window, 
+                                                  _translate("root_folder_dialogs", "Choose root folder for sessions"), 
+                                                  default_folder, 
+                                                  QFileDialog.ShowDirsOnly)
+    
+    #Security, kde dialogs sends $HOME if user type a folder path that doesn't already exists
+    if os.environ['HOME'] and root_folder == os.environ['HOME']:
+        return
+    
+    if root_folder:
+        errorDialog = QMessageBox(QMessageBox.Critical, 
+                                  _translate('root_folder_dialogs', 'unwritable dir'), 
+                                  _translate('root_folder_dialogs', '<p>You have no permissions for %s,<br>choose another directory !</p>') % root_folder)
+        
+        if not os.path.exists(root_folder):
+            try:
+                os.makedirs(root_folder)
+            except:
+                errorDialog.exec()
+                return
+        
+        if not os.access(root_folder, os.W_OK):
             errorDialog.exec()
             return
         
-        
-        default_folder = nsm_folder
+        default_folder = root_folder
         settings.setValue('default_folder', default_folder)
         
-        serverOSC.toDaemon('/ray/server/change_root', nsm_folder)
+        serverOSC.toDaemon('/ray/server/change_root', root_folder)
 
 def negate(color):
     red   = 255 - color.red()
@@ -389,6 +412,12 @@ class OSCServerT(ServerThread):
             return
         
         self.qsig.factory_client_template_found.emit(args)
+    
+    @make_method('/ray/gui/root_changed', 's')
+    def rayGuiRootChanged(self, path, args):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        
     
     @make_method('/ray/gui/server_announce', None)
     def serverAnnounce(self, path, args):
@@ -1215,7 +1244,7 @@ class OpenSessionDialog(ChildDialog):
         
         self.f_last_session_item = None
         
-        self.ui.toolButtonFolder.clicked.connect(self.changeNsmFolder)
+        self.ui.toolButtonFolder.clicked.connect(self.changeRootFolder)
         self.ui.sessionList.currentItemChanged.connect(self.currentItemChanged)
         self.ui.sessionList.setFocus(Qt.OtherFocusReason)
         self.ui.filterBar.textEdited.connect(self.updateFilteredList)
@@ -1315,8 +1344,8 @@ class OpenSessionDialog(ChildDialog):
     def preventOk(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(self.server_will_accept and self.has_selection))
     
-    def changeNsmFolder(self):
-        changeNsmFolder(self)
+    def changeRootFolder(self):
+        changeRootFolder(self)
         self.ui.currentNsmFolder.setText(default_folder)
         self.ui.sessionList.clear()
         serverOSC.startListSession()
@@ -1334,7 +1363,7 @@ class NewSessionDialog(ChildDialog):
         self.is_duplicate = bool(duplicate_window)
         
         self.ui.currentNsmFolder.setText(default_folder)
-        self.ui.toolButtonFolder.clicked.connect(self.changeNsmFolder)
+        self.ui.toolButtonFolder.clicked.connect(self.changeRootFolder)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
         self.ui.lineEdit.textChanged.connect(self.textChanged)
@@ -1432,8 +1461,8 @@ class NewSessionDialog(ChildDialog):
         self.text_is_valid = bool(text and not text in self.session_list)
         self.preventOk()
             
-    def changeNsmFolder(self):
-        changeNsmFolder(self)
+    def changeRootFolder(self):
+        changeRootFolder(self)
         self.ui.currentNsmFolder.setText(default_folder)
         self.session_list.clear()
         serverOSC.startListSession()
