@@ -800,6 +800,9 @@ class MainWindow(QMainWindow):
         
         self.connectListWidgetRequests()
     
+    def hideMessagesDock(self):
+        self.ui.actionToggleShowMessages.activate(False)
+    
     def openFileManager(self):
         serverOSC.toDaemon('/ray/server/openfolder')
     
@@ -2134,6 +2137,10 @@ if __name__ == '__main__':
     
     MainUI = MainWindow()
     MainUI.show()
+    
+    #The only way I found the not show Messages Dock by default.
+    if not settings.value('MainWindow/ShowMessages', False, type=bool):
+        MainUI.hideMessagesDock()
     
     if ray_daemon.launched_before:
         serverOSC.announce()
