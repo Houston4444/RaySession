@@ -94,12 +94,6 @@ def changeRootFolder(parent_window):
         
         serverOSC.toDaemon('/ray/server/change_root', root_folder)
 
-def negate(color):
-    red   = 255 - color.red()
-    green = 255 - color.green()
-    blue  = 255 - color.blue()
-    return QColor(red, green, blue)
-
 class Session(object):
     def __init__(self):
         self.client_list     = []
@@ -307,15 +301,9 @@ class TrashedClient(object):
         self.menu_action = menu_action
     
 class OscSignaler(QObject):
-    error_appears    = pyqtSignal()
-    
-    server_announce_sig = pyqtSignal()
     server_copying      = pyqtSignal(bool)
     new_message_sig     = pyqtSignal(str)
-    session_sig         = pyqtSignal()
     session_name_sig    = pyqtSignal(str, str)
-    session_seems_closed = pyqtSignal()
-    session_close_error = pyqtSignal()
     error_message       = pyqtSignal(list)
     
     new_client_added       = pyqtSignal(ClientData)
