@@ -36,9 +36,8 @@ import ui_client_trash
 import resources_rc
 
 from shared import *
-
 from list_widget_clients import *
-
+import nsm_client
 
 def str2bool(v):
     return bool(v.lower() == 'true')
@@ -401,11 +400,6 @@ class OSCServerT(ServerThread):
         
         self.qsig.factory_client_template_found.emit(args)
     
-    @make_method('/ray/gui/root_changed', 's')
-    def rayGuiRootChanged(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
-        
-        
     
     @make_method('/ray/gui/server_announce', None)
     def serverAnnounce(self, path, args):
@@ -567,6 +561,7 @@ class OSCServerT(ServerThread):
     
     def openSession(self, session_name):
         ifDebug('serverOSC::raysession_sends open session %s' % remove_accents(session_name))
+        print('marumba', session_name)
         self.toDaemon('/nsm/server/open', session_name)
         
     def saveSession(self):
@@ -789,7 +784,8 @@ class MainWindow(QMainWindow):
         self.connectListWidgetRequests()
     
     def hideMessagesDock(self):
-        self.ui.actionToggleShowMessages.activate(False)
+        #self.ui.actionToggleShowMessages.activate(False)
+        self.ui.dockWidgetMessages.setVisible(False)
     
     def openFileManager(self):
         serverOSC.toDaemon('/ray/server/openfolder')
@@ -1979,10 +1975,6 @@ class StopClientDialog(ChildDialog):
             self.wait_for_save = False
             self.accept()
             
-        
-        
-        
-    
 class ErrorDialog(ChildDialog):
     def __init__(self, parent, osc_args):
         ChildDialog.__init__(self, parent)
@@ -1991,7 +1983,6 @@ class ErrorDialog(ChildDialog):
         
         self.ui.label.setText(osc_args[2])
         
-
 class RayDaemon(object):
     def __init__(self):
         self.executable      = 'ray-daemon'
@@ -2060,6 +2051,53 @@ class RayDaemon(object):
             self.port = getFreeOscPort()
             self.address = Address(self.port)
   
+class NSMChild(QObject):
+    def __init__(self, nsm_signaler):
+        QObject.__init__(self)
+        self.nsm_signaler = nsm_signaler
+        self.nsm_signaler.server_sends_open.connect(self.open)
+        self.nsm_signaler.server_sends_save.connect(self.save)
+        self.nsm_signaler.show_optional_gui.connect(self.showOptionalGui)
+        self.nsm_signaler.hide_optional_gui.connect(self.hideOptionalGui)
+        
+        self.wait_for_open = False
+        self.wait_for_save = False
+        
+        self.serverNSM = nsm_client.NSMThread('raysession_child', nsm_signaler, parent_daemon_address, debug)
+        
+        self.serverNSM.start()
+        self.serverNSM.announce('Ray Session', ':switch:optional-gui:', 'raysession')
+        self.serverNSM.sendGuiState(not MainUI.isHidden())
+        
+        serverOSC.qsig.server_status_changed.connect(self.serverStatusChanged)
+    
+    def serverStatusChanged(self, server_status):
+        if server_status == SERVER_STATUS_READY:
+            if self.wait_for_open:
+                self.serverNSM.openReply()
+                self.wait_for_open = False
+            
+            elif self.wait_for_save:
+                self.serverNSM.saveReply()
+                self.wait_for_save = False
+    
+    def open(self, project_path, session_name, jack_client_name):
+        time.sleep(0.500)
+        self.wait_for_open = True
+        serverOSC.openSession(project_path)
+    
+    def save(self):
+        self.wait_for_save = True
+        serverOSC.saveSession()
+        
+    def showOptionalGui(self):
+        MainUI.show()
+        self.serverNSM.sendGuiState(True)
+        
+    def hideOptionalGui(self):
+        MainUI.hide()
+        self.serverNSM.sendGuiState(False)
+  
 if __name__ == '__main__':
     #connect signals
     signal.signal(signal.SIGINT , signalHandler)
@@ -2071,6 +2109,7 @@ if __name__ == '__main__':
     app.setApplicationVersion(VERSION)
     app.setOrganizationName("RaySession")
     app.setWindowIcon(QIcon(':/scalable/raysession.svg'))
+    app.setQuitOnLastWindowClosed(False)
     
     ### Translation process
     locale = QLocale.system().name()
@@ -2126,8 +2165,9 @@ if __name__ == '__main__':
     MainUI = MainWindow()
     MainUI.show()
     
-    #The only way I found the not show Messages Dock by default.
+    #The only way I found to not show Messages Dock by default.
     if not settings.value('MainWindow/ShowMessages', False, type=bool):
+        print('maro va ten')
         MainUI.hideMessagesDock()
     
     if ray_daemon.launched_before:
@@ -2135,6 +2175,12 @@ if __name__ == '__main__':
     else:
         ray_daemon.start()
     
+    if os.getenv('NSM_URL'):
+        parent_daemon_address = getLibloAddress(os.getenv('NSM_URL'))
+        nsm_signaler = nsm_client.NSMSignaler()
+        nsm_child = NSMChild(nsm_signaler)
+        
+        
     app.exec()
     
     serverOSC.stop()

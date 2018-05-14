@@ -1662,11 +1662,18 @@ class OperatingSession(Session):
         session_full_name = self.osc_args[0]
         
         spath = self.root + '/' + session_full_name
+        
         #will be used to set raysession as nsm client in the future
         if session_full_name.startswith('/'):
             spath = session_full_name
-        
-        
+            if not os.path.exists(spath):
+                try:
+                    os.makedirs(spath)
+                except:
+                    self.err_loading = ERR_CREATE_FAILED
+                    self.loadError()
+                    return
+            
         MESSAGE("Attempting to open %s" % spath)
         
         session_ray_file = spath + '/raysession.xml'
@@ -1693,10 +1700,25 @@ class OperatingSession(Session):
                 file = open(session_nsm_file, 'r')
                 server.sendGui('/ray/opening_nsm_session')
             except:
-                self.err_loading = ERR_CREATE_FAILED
-                self.loadError()
-                return
-        
+                try:
+                    ray_file = open(session_ray_file, 'w')
+                    
+                    xml = QDomDocument()
+                    p = xml.createElement('RAYSESSION')
+                    p.setAttribute('VERSION', VERSION)
+                    
+                    ray_file.write(xml.toString())
+                    ray_file.close()
+                    
+                    ray_file = open(session_ray_file, 'r')
+                    
+                    is_ray_file = True
+                    
+                except:
+                    self.err_loading = ERR_CREATE_FAILED
+                    self.loadError()
+                    return
+                
         GUIMSG(_translate('GUIMSG', "Opening session %s") % self.osc_args[0])
         
         self.removed_clients.clear()
@@ -3047,7 +3069,7 @@ class OscServerThread(ServerThread):
         MESSAGE("Registered with GUI")
         
     
-if __name__ == '__main__':    
+if __name__ == '__main__':
     session_root = "%s/Ray Sessions" % os.getenv('HOME')
     
     #Add RaySession/src to $PATH to can use ray-proxy and maybe future executables after make, whitout install
