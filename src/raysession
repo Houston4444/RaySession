@@ -789,7 +789,7 @@ class MainWindow(QMainWindow):
         self.connectListWidgetRequests()
     
     def hideMessagesDock(self):
-        self.ui.actionToggleShowMessages.activate(False)
+        self.ui.dockWidgetMessages.setVisible(False)
     
     def openFileManager(self):
         serverOSC.toDaemon('/ray/server/openfolder')
