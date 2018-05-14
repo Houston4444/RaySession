@@ -1706,6 +1706,7 @@ class OperatingSession(Session):
                     xml = QDomDocument()
                     p = xml.createElement('RAYSESSION')
                     p.setAttribute('VERSION', VERSION)
+                    xml.appendChild(p)
                     
                     ray_file.write(xml.toString())
                     ray_file.close()
@@ -1729,6 +1730,8 @@ class OperatingSession(Session):
         new_client_executables = []
         
         self.setPath(spath)
+        
+        print('rocamodeo')
         
         if is_ray_file:
             xml = QDomDocument()
@@ -1771,7 +1774,7 @@ class OperatingSession(Session):
                 node = node.nextSibling()
             
             ray_file.close()
-            
+            print('rocamodeo2')
         else:
             for line in file.read().split('\n'):
                 elements = line.split(':')
