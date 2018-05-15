@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -u
 
-import os, sys, shutil, string, random, time, subprocess, signal, unicodedata
+import os, sys, shutil, string, random, time, subprocess, signal, unicodedata, inspect
 from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject, QTimer, QProcess, QSettings, QStandardPaths
 from PyQt5.QtXml import QDomDocument
@@ -483,6 +483,7 @@ class Client(QObject):
             self.process.start(self.executable_path, arguments)
         else:
             self.process.start(self.executable_path)
+            #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path])
      
     def terminate(self):
         if self.isRunning():
@@ -975,6 +976,7 @@ class Client(QObject):
                 
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
+        
         server.send(src_addr, "/nsm/client/open", client_project_path,  session.name, jack_client_name)
         self.pending_command = COMMAND_OPEN
        
@@ -1706,6 +1708,11 @@ class OperatingSession(Session):
                     xml = QDomDocument()
                     p = xml.createElement('RAYSESSION')
                     p.setAttribute('VERSION', VERSION)
+                    
+                    if server.is_nsm_locked:
+                        name = os.path.basename(session_full_name).rpartition('.')[0]
+                        p.setAttribute('name', name)
+                    
                     xml.appendChild(p)
                     
                     ray_file.write(xml.toString())
@@ -1730,8 +1737,6 @@ class OperatingSession(Session):
         new_client_executables = []
         
         self.setPath(spath)
-        
-        print('rocamodeo')
         
         if is_ray_file:
             xml = QDomDocument()
@@ -1774,7 +1779,6 @@ class OperatingSession(Session):
                 node = node.nextSibling()
             
             ray_file.close()
-            print('rocamodeo2')
         else:
             for line in file.read().split('\n'):
                 elements = line.split(':')
@@ -2356,6 +2360,9 @@ class SignaledSession(OperatingSession):
         if self.terminated_yet:
             return
         
+        if file_copier.isActive():
+            file_copier.abort()
+        
         self.terminated_yet = True
         self.process_order = [self.close, self.exitNow]
         self.nextFunction()
@@ -2446,6 +2453,7 @@ class OscServerThread(ServerThread):
         ServerThread.__init__(self, osc_num)
         self.gui_list = []
         self.server_status = SERVER_STATUS_OFF
+        self.is_nsm_locked = False
 
     @make_method('/nsm/server/announce', 'sssiii')
     def nsmServerAnnounce(self, path, args, types, src_addr):
@@ -2482,6 +2490,12 @@ class OscServerThread(ServerThread):
         #self.sendClientStatusToGui(client)
         client.setStatus(CLIENT_STATUS_ERROR)
 
+    @make_method('/ray/server/set_nsm_locked', '')
+    def rayServerSetNsmLocked(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        self.is_nsm_locked = True
+    
     @make_method('/nsm/client/progress', 'f')
     def nsmClientProgress(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -2568,9 +2582,10 @@ class OscServerThread(ServerThread):
         label = args[0]
         signaler.gui_client_label.emit(client.client_id, label)
             
-    @make_method('/ray/gui/gui_announce', '')
+    @make_method('/ray/gui/gui_announce', 'i')
     def rayGuiGui_announce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
         self.announceGui(src_addr.url, True)
 
     @make_method('/ray/gui/client/stop', 's')
@@ -2610,8 +2625,6 @@ class OscServerThread(ServerThread):
         
         client = getClientById(args[0])
         
-        print('show_optional_gui daemon')
-        
         if client and client.active:
             self.send(client.addr, "/nsm/client/show_optional_gui")
 
@@ -2645,7 +2658,7 @@ class OscServerThread(ServerThread):
             return
         
         #don't allow clients to broadcast NSM commands
-        if args[0].startswith('/nsm/'):
+        if args[0].startswith('/nsm/') or args[0].startswith('/ray'):
             return
         
         for client in session.clients:
@@ -2665,6 +2678,9 @@ class OscServerThread(ServerThread):
     @make_method('/nsm/server/duplicate', 's')
     def nsmServerDuplicate(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.is_nsm_locked:
+            return
         
         if self.isOperationPending(src_addr, path):
             return
@@ -2767,6 +2783,9 @@ class OscServerThread(ServerThread):
     def nsmServerNew(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
+        if self.is_nsm_locked:
+            return
+        
         if self.isOperationPending(src_addr, path):
             return
         
@@ -2779,6 +2798,9 @@ class OscServerThread(ServerThread):
     @make_method('/ray/server/new_from_template', 'ss')
     def rayServerNewFromTemplate(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.is_nsm_locked:
+            return
         
         if self.isOperationPending(src_addr, path):
             return

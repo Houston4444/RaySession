@@ -300,6 +300,7 @@ class TrashedClient(object):
         self.menu_action = menu_action
     
 class OscSignaler(QObject):
+    server_announce     = pyqtSignal()
     server_copying      = pyqtSignal(bool)
     new_message_sig     = pyqtSignal(str)
     session_name_sig    = pyqtSignal(str, str)
@@ -402,8 +403,15 @@ class OSCServerT(ServerThread):
     
     
     @make_method('/ray/gui/server_announce', None)
-    def serverAnnounce(self, path, args):
+    def serverAnnounce(self, path, args, types, src_addr):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        
+        if ray_daemon.isAnnounced():
+            return
+        else:
+            ray_daemon.setAnnounced(src_addr)
+        
+        self.qsig.server_announce.emit()
     
     @make_method('/ray/gui/server/message', 's')
     def serverMessage(self, path, args):
@@ -544,9 +552,9 @@ class OSCServerT(ServerThread):
     def toDaemon(self, *args):
         self.send(ray_daemon.address, *args)
     
-    def announce(self):
+    def announce(self, nsm_locked=False):
         ifDebug('serverOSC::raysession_sends annouce')
-        self.send(ray_daemon.address, '/ray/gui/gui_announce')
+        self.send(ray_daemon.address, '/ray/gui/gui_announce', int(nsm_locked))
     
     def startListSession(self):
         ifDebug('serverOSC::raysession_sends list sessions')
@@ -740,6 +748,23 @@ class MainWindow(QMainWindow):
             self.ui.actionCloseSession.setIcon(RayIcon('window-close', dark=True))
             self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark=True))
             self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save', dark=True))
+        
+        if under_nsm:
+            self.ui.actionNewSession.setEnabled(False)
+            self.ui.actionOpenSession.setEnabled(False)
+            self.ui.actionDuplicateSession.setEnabled(False)
+            self.ui.actionCloseSession.setEnabled(False)
+            self.ui.actionAbortSession.setEnabled(False)
+            
+            self.ui.toolBar.setVisible(False)
+            self.ui.toolButtonDuplicateSession.setVisible(False)
+            self.ui.toolButtonAbortSession.setVisible(False)
+            self.ui.closeButton.setVisible(False)
+            self.ui.toolButtonControl2.setPopupMode(QToolButton.InstantPopup)
+            self.ui.toolButtonControl2.setMenu(self.controlMenu)
+            
+        else:
+            self.ui.toolButtonControl2.setVisible(False)
         
         #disable "keep focus" if daemon is not on this machine (it takes no sense in this case)
         if not ray_daemon.is_local:
@@ -1135,9 +1160,14 @@ class MainWindow(QMainWindow):
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             
-        if server_status == SERVER_STATUS_OFF:            
-            #self.ui.listWidget.clear()
-            
+        if under_nsm:
+            self.ui.actionNewSession.setEnabled(False)
+            self.ui.actionOpenSession.setEnabled(False)
+            self.ui.actionDuplicateSession.setEnabled(False)
+            self.ui.actionCloseSession.setEnabled(False)
+            self.ui.actionAbortSession.setEnabled(False)
+        
+        if server_status == SERVER_STATUS_OFF:
             if self.terminate_request:
                 app.quit()
     
@@ -1995,12 +2025,14 @@ class RayDaemon(object):
         self.launched_before = False
         self.address         = None
         self.port            = None
+        
+        self.is_announced    = False
+        self.is_nsm_locked   = False
     
     def processFinished(self, exit_code, exit_status):
         if not MainUI.isHidden():
             MainUI.daemonCrash()
             
-    
     def errorInProcess(self, error):
         MainUI.daemonCrash()
     
@@ -2024,7 +2056,10 @@ class RayDaemon(object):
         elif debug:
             arguments.append('--debug')
         
+        print('lancement de ray_daemon sur ', str(serverOSC.url))
+        
         self.process.start('ray-daemon', arguments)
+        #self.process.start('konsole', ['-e', 'ray-daemon'] + arguments) 
         
     def stop(self):
         if self.processIsRunning():
@@ -2049,27 +2084,51 @@ class RayDaemon(object):
         if not (self.address or self.port):
             self.port = getFreeOscPort()
             self.address = Address(self.port)
+            
+    def setAnnounced(self, src_addr):
+        self.port = src_addr.port
+        self.address = src_addr
+        self.is_announced = True
+        
+    def setNsmLocked(self):
+        self.is_nsm_locked = True
+        
+    def isAnnounced(self):
+        return self.is_announced
   
 class NSMChild(QObject):
-    def __init__(self, nsm_signaler):
+    def __init__(self):
         QObject.__init__(self)
-        self.nsm_signaler = nsm_signaler
+        self.nsm_signaler = nsm_client.NSMSignaler()
         self.nsm_signaler.server_sends_open.connect(self.open)
         self.nsm_signaler.server_sends_save.connect(self.save)
         self.nsm_signaler.show_optional_gui.connect(self.showOptionalGui)
         self.nsm_signaler.hide_optional_gui.connect(self.hideOptionalGui)
         
         self.wait_for_open = False
+        self.project_path  = ''
         self.wait_for_save = False
         
-        self.serverNSM = nsm_client.NSMThread('raysession_child', nsm_signaler, parent_daemon_address, debug)
+        self.server_announced = False
+        
+        self.serverNSM = nsm_client.NSMThread('raysession_child', self.nsm_signaler, parent_daemon_address, debug)
         
         self.serverNSM.start()
         self.serverNSM.announce('Ray Session', ':switch:optional-gui:', 'raysession')
-        self.serverNSM.sendGuiState(not MainUI.isHidden())
+        #
         
+        serverOSC.qsig.server_announce.connect(self.serverAnnounced)
         serverOSC.qsig.server_status_changed.connect(self.serverStatusChanged)
     
+    def serverAnnounced(self):
+        self.server_announced = True
+        self.serverNSM.sendGuiState(not MainUI.isHidden())
+        
+        serverOSC.toDaemon('/ray/server/set_nsm_locked')
+        
+        if self.wait_for_open:
+            serverOSC.openSession(self.project_path)
+            
     def serverStatusChanged(self, server_status):
         if server_status == SERVER_STATUS_READY:
             if self.wait_for_open:
@@ -2081,9 +2140,11 @@ class NSMChild(QObject):
                 self.wait_for_save = False
     
     def open(self, project_path, session_name, jack_client_name):
-        time.sleep(0.500)
         self.wait_for_open = True
-        serverOSC.openSession(project_path)
+        self.project_path  = project_path
+        
+        if self.server_announced:
+            serverOSC.openSession(project_path)
     
     def save(self):
         self.wait_for_save = True
@@ -2161,23 +2222,28 @@ if __name__ == '__main__':
     
     session = Session()
     
+    under_nsm = False
+    
+    if os.getenv('NSM_URL'):
+        parent_daemon_address = getLibloAddress(os.getenv('NSM_URL'))
+        under_nsm = True
+        nsm_child = NSMChild()
+        #app.setApplicationName("RaySession Childs")
+        settings_file = settings.fileName()
+        
+        settings = QSettings("%s/child_sessions" % settings_file.rpartition('/')[0])
+    
     MainUI = MainWindow()
     MainUI.show()
     
     #The only way I found to not show Messages Dock by default.
     if not settings.value('MainWindow/ShowMessages', False, type=bool):
-        print('maro va ten')
         MainUI.hideMessagesDock()
     
     if ray_daemon.launched_before:
-        serverOSC.announce()
+        serverOSC.announce(bool(under_nsm))
     else:
         ray_daemon.start()
-    
-    if os.getenv('NSM_URL'):
-        parent_daemon_address = getLibloAddress(os.getenv('NSM_URL'))
-        nsm_signaler = nsm_client.NSMSignaler()
-        nsm_child = NSMChild(nsm_signaler)
         
         
     app.exec()

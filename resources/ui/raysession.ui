@@ -211,6 +211,20 @@ QToolButton {border: none}</string>
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QToolButton" name="toolButtonControl2">
+               <property name="styleSheet">
+                <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+QToolButton {border: none}</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset theme="configure"/>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
            <item>
