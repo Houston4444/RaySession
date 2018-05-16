@@ -649,6 +649,7 @@ QToolButton {border: none}</string>
     <addaction name="actionAbortSession"/>
     <addaction name="actionDuplicateSession"/>
     <addaction name="actionSaveTemplateSession"/>
+    <addaction name="actionRenameSession"/>
     <addaction name="separator"/>
     <addaction name="actionOpenSessionFolder"/>
    </widget>
@@ -959,6 +960,17 @@ QToolButton {border: none}</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="actionRenameSession">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="edit-rename"/>
+   </property>
+   <property name="text">
+    <string>Rename</string>
    </property>
   </action>
  </widget>

@@ -59,6 +59,23 @@ class StackedSessionName(QStackedWidget):
     def setText(self, text):
         self.label_widget.setText(text)
         self.line_edit_widget.setText(text)
+        
+        self.setCurrentIndex(0)
+        
+    def toggleEdit(self):
+        print('tooogglretdit', self.is_editable, self.currentIndex())
+        
+        if not self.is_editable:
+            self.setCurrentIndex(0)
+            return
+        
+        if self.currentIndex() == 0:
+            self.setCurrentIndex(1)
+            self.line_edit_widget.setFocus(Qt.OtherFocusReason)
+        else:
+            self.setCurrentIndex(0)
+            
+        
             
     
             

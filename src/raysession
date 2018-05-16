@@ -100,6 +100,8 @@ class Session(object):
         self.name            = None
         self.is_running      = False
         self.server_status   = SERVER_STATUS_OFF
+        
+        self.is_renameable = True
     
     def setRunning(self, bool):
         self.is_running = bool
@@ -671,17 +673,6 @@ class MainWindow(QMainWindow):
         
         self.server_copying = False
         
-        ##set stackedWidget for session name
-        #self.labelSessionName    = QLabel()
-        #self.labelSessionName.setStyleSheet("QLabel {font-weight : bold}")
-        #self.labelSessionName.setAlignment(Qt.AlignHCenter)
-        
-        #self.lineEditSessionName = QLineEdit()
-        #self.lineEditSessionName.setAlignment(Qt.AlignHCenter)
-        
-        #self.ui.stackedWidgetSessionName.addWidget(self.labelSessionName)
-        #self.ui.stackedWidgetSessionName.addWidget(self.lineEditSessionName)
-        
         #set options with config file, restore geometry
         self.keep_focus = settings.value('keepfocus', True, type=bool)
         self.ui.actionKeepFocus.setChecked(self.keep_focus)
@@ -708,6 +699,7 @@ class MainWindow(QMainWindow):
         self.ui.actionSaveSession.triggered.connect(self.saveSession)
         self.ui.actionCloseSession.triggered.connect(self.closeSession)
         self.ui.actionAbortSession.triggered.connect(self.abortSession)
+        self.ui.actionRenameSession.triggered.connect(self.renameSessionAction)
         self.ui.actionDuplicateSession.triggered.connect(self.duplicateSession)
         self.ui.actionSaveTemplateSession.triggered.connect(self.saveTemplateSession)
         self.ui.actionOpenSessionFolder.triggered.connect(self.openFileManager)
@@ -783,6 +775,7 @@ class MainWindow(QMainWindow):
             self.ui.toolButtonControl2.setMenu(self.controlMenu)
             
             self.ui.stackedWidgetSessionName.setEditable(True)
+            self.ui.actionRenameSession.setEnabled(True)
             
         else:
             self.ui.toolButtonControl2.setVisible(False)
@@ -920,6 +913,10 @@ class MainWindow(QMainWindow):
         if dialog.result():
             serverOSC.abortSession()
     
+    def renameSessionAction(self):
+        print('ben mon gros tu fais qoui pas là')
+        self.ui.stackedWidgetSessionName.toggleEdit()
+    
     def duplicateSession(self):
         dialog = NewSessionDialog(self, True)
         dialog.exec()
@@ -930,7 +927,7 @@ class MainWindow(QMainWindow):
         
         session_name = dialog.getSessionName()
         serverOSC.duplicateSession(session_name)
-            
+       
     def saveTemplateSession(self):
         dialog = SaveTemplateSessionDialog(self)
         dialog.exec()
@@ -1116,16 +1113,15 @@ class MainWindow(QMainWindow):
         
         if session_name:
             self.setWindowTitle('%s - %s' % (APP_TITLE, session_name))
-            #self.labelSessionName.setText(session_name)
-            #self.lineEditSessionName.setText(session_name)
             self.ui.stackedWidgetSessionName.setText(session_name)
         else:
             self.setWindowTitle(APP_TITLE)
-            #self.labelSessionName.setText(_translate('main view', 'No Session Loaded'))
             self.ui.stackedWidgetSessionName.setText(_translate('main view', 'No Session Loaded'))
      
     def serverSessionRenameable(self, renameable):
-        self.ui.stackedWidgetSessionName.setEditable(renameable)
+        session.is_renameable = renameable
+        self.ui.stackedWidgetSessionName.setEditable(renameable and session.server_status == SERVER_STATUS_READY)
+        self.ui.actionRenameSession.setEnabled(renameable and session.server_status == SERVER_STATUS_READY)
      
     def serverSendsError(self, args):
         if not len(args) >= 3:
@@ -1186,6 +1182,13 @@ class MainWindow(QMainWindow):
         self.ui.actionAddExecutable.setEnabled(not close_or_off)
         self.ui.actionOpenSessionFolder.setEnabled(bool(server_status != SERVER_STATUS_OFF))
         
+        if ready and session.is_renameable:
+            self.ui.actionRenameSession.setEnabled(True)
+            self.ui.stackedWidgetSessionName.setEditable(True)
+        else:
+            self.ui.actionRenameSession.setEnabled(False)
+            self.ui.stackedWidgetSessionName.setEditable(False)
+        
         if self.server_copying:
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
@@ -1200,7 +1203,6 @@ class MainWindow(QMainWindow):
         if server_status == SERVER_STATUS_OFF:
             if self.terminate_request:
                 app.quit()
-    
     
     def serverTrashAdd(self, client_data):
         prettier_name = client_data.label if client_data.label else client_data.name
