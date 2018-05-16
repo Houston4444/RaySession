@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>412</width>
-    <height>522</height>
+    <width>413</width>
+    <height>570</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -128,24 +128,18 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="LabelSessionName">
+              <widget class="StackedSessionName" name="stackedWidgetSessionName">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
-               <property name="toolTip">
-                <string>Session Name</string>
+               <property name="lineWidth">
+                <number>0</number>
                </property>
-               <property name="styleSheet">
-                <string notr="true">QLabel {font-weight : bold}</string>
-               </property>
-               <property name="text">
-                <string>No Session Loaded</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
+               <property name="currentIndex">
+                <number>-1</number>
                </property>
               </widget>
              </item>
@@ -221,7 +215,8 @@ QToolButton {border: none}</string>
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset theme="configure"/>
+                <iconset theme="configure">
+                 <normaloff>.</normaloff>.</iconset>
                </property>
               </widget>
              </item>
@@ -238,7 +233,7 @@ QToolButton {border: none}</string>
              <property name="sizeHint" stdset="0">
               <size>
                <width>20</width>
-               <height>8</height>
+               <height>2</height>
               </size>
              </property>
             </spacer>
@@ -632,7 +627,7 @@ QToolButton {border: none}</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>412</width>
+     <width>413</width>
      <height>30</height>
     </rect>
    </property>
@@ -983,6 +978,12 @@ QToolButton {border: none}</string>
    <class>StatusBarNegativ</class>
    <extends>QLineEdit</extends>
    <header>status_bar</header>
+  </customwidget>
+  <customwidget>
+   <class>StackedSessionName</class>
+   <extends>QStackedWidget</extends>
+   <header>stacked_session_name</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

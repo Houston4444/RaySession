@@ -53,11 +53,12 @@ WAIT_FOR_STOP     = 1
 WAIT_FOR_ANNOUNCE = 2
 WAIT_FOR_REPLY    = 3
 
-TEMPLATE_NONE = 0
-TEMPLATE_SESSION_SAVE = 1
-TEMPLATE_SESSION_LOAD = 2
-TEMPLATE_CLIENT_SAVE  = 3
-TEMPLATE_CLIENT_LOAD  = 4
+TEMPLATE_NONE         = 0
+TEMPLATE_RENAME       = 1
+TEMPLATE_SESSION_SAVE = 2
+TEMPLATE_SESSION_LOAD = 3
+TEMPLATE_CLIENT_SAVE  = 4
+TEMPLATE_CLIENT_LOAD  = 5
 
 debug = False
 last_client_message = ''
@@ -473,6 +474,8 @@ class Client(QObject):
             return project_path
     
     def start(self):
+        session.setRenameable(False)
+        
         GUIMSG(_translate("GUIMSG", "Launching %s") % self.executable_path)
         os.environ['NSM_URL'] = server.url
         
@@ -482,8 +485,8 @@ class Client(QObject):
             arguments = shlex.split(self.arguments_line)
             self.process.start(self.executable_path, arguments)
         else:
-            self.process.start(self.executable_path)
-            #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path])
+            #self.process.start(self.executable_path)
+            self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path])
      
     def terminate(self):
         if self.isRunning():
@@ -537,6 +540,8 @@ class Client(QObject):
         self.active          = False
         self.pid             = 0
         
+        session.setRenameable(True)
+        
     def errorInProcess(self, error):
         if error == QProcess.FailedToStart:
             GUIMSG(_translate('GUIMSG', "Failed to start %s") % self.name)
@@ -551,6 +556,8 @@ class Client(QObject):
             
             if session.wait_for:
                 session.endTimerIfLastExpected(self)
+        
+        session.setRenameable(True)
     
     def stoppedSinceLong(self):
         self.stopped_since_long = True
@@ -817,6 +824,9 @@ class Client(QObject):
                 return
             
             spath = "%s/%s" % (session.root, new_session_full_name)
+        
+        elif template_save == TEMPLATE_RENAME:
+            spath = session.path
             
         elif template_save == TEMPLATE_SESSION_SAVE:
             spath = "%s/%s" % (session_template_root, new_session_full_name)
@@ -990,6 +1000,7 @@ class Session(QObject):
         self.path    = ""
         self.root    = ""
         
+        self.is_renameable = True
         self.forbidden_ids_list = []
     
     #############
@@ -1005,6 +1016,20 @@ class Session(QObject):
     def setPath(self, session_path):
         self.path = session_path
         self.setName(session_path.rpartition('/')[2])
+    
+    def setRenameable(self, renameable):
+        if not renameable:
+            if self.is_renameable:
+                self.is_renameable = False
+                server.sendGui('/ray/gui/session/renameable', 0)
+            return
+        
+        for client in self.clients:
+            if client.isRunning():
+                return
+            
+        self.is_renameable = True
+        server.sendGui('/ray/gui/session/renameable', 1)
     
     def getClient(self, client_id):
         for client in self.clients:
@@ -1937,6 +1962,7 @@ class SignaledSession(OperatingSession):
         signaler.server_new_from_tp.connect(self.serverNewSessionFromTemplate)
         signaler.server_open.connect(self.serverOpenSession)
         signaler.server_save.connect(self.serverSaveSession)
+        signaler.server_rename.connect(self.serverRenameSession)
         signaler.server_duplicate.connect(self.serverDuplicateSession)
         signaler.server_save_session_template.connect(self.serverSaveSessionTemplate)
         signaler.server_close.connect(self.serverCloseSession)
@@ -2004,6 +2030,29 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.close, self.closeDone]
         self.nextFunction()
+    
+    def serverRenameSession(self, new_session_name):
+        if self.process_order:
+            return
+        
+        if not self.path:
+            return
+        
+        if new_session_name == self.name:
+            return
+        
+        for client in self.clients:
+            if client.isRunning():
+                GUIMSG(_translate('GUIMSG', 'Stop all clients before rename session !'))
+                return
+        
+        for client in self.clients + self.removed_clients:
+            client.adjustFilesAfterCopy(new_session_name, TEMPLATE_RENAME)
+        
+        GUIMSG(_translate('GUIMSG', 'Session %s has been renamed to %s .') % (self.name, new_session_name))
+        self.name = new_session_name
+        
+        server.sendGui('/ray/gui/session/name', self.name, self.name)
     
     def serverDuplicateSession(self, path, args, src_addr):
         if self.process_order:
@@ -2420,6 +2469,7 @@ def generateClientId():
 class Signaler(QObject):
     server_announce    = pyqtSignal(str, list, object)
     server_reply       = pyqtSignal(str, list, object)
+    server_rename      = pyqtSignal(str)
     server_duplicate   = pyqtSignal(str, list, object)
     server_save_session_template = pyqtSignal(str, list, object)
     server_abort       = pyqtSignal(str, list, object)
@@ -2674,7 +2724,26 @@ class OscServerThread(ServerThread):
                 if gui_addr.url != src_addr.url:
                     self.send(gui_addr, Message(*args))
         
+    @make_method('/ray/server/rename', 's')
+    def rayServerRename(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
+        new_session_name = args[0]
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to rename.")
+            return
+        
+        if not pathIsValid(new_session_name):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
+        signaler.server_rename.emit(new_session_name)
+      
+      
     @make_method('/nsm/server/duplicate', 's')
     def nsmServerDuplicate(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))

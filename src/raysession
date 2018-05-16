@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView, QLabel, QLineEdit
 from PyQt5.QtGui     import QIcon , QCursor, QPalette, QPixmap, QFontDatabase
 from PyQt5.QtCore    import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
 import sys
@@ -304,6 +304,7 @@ class OscSignaler(QObject):
     server_copying      = pyqtSignal(bool)
     new_message_sig     = pyqtSignal(str)
     session_name_sig    = pyqtSignal(str, str)
+    session_renameable  = pyqtSignal(bool)
     error_message       = pyqtSignal(list)
     
     new_client_added       = pyqtSignal(ClientData)
@@ -432,6 +433,12 @@ class OSCServerT(ServerThread):
             
         name1, name2 = args
         self.qsig.session_name_sig.emit(name1, name2)
+    
+    @make_method('/ray/gui/session/renameable', 'i')
+    def guiSessionRenameable(self, path, args):
+        
+        renameable = bool(args[0])
+        self.qsig.session_renameable.emit(renameable)
     
     @make_method('/ray/gui/client/new', 'sssissssi')
     def newClientFromServer(self, path, args):
@@ -664,6 +671,17 @@ class MainWindow(QMainWindow):
         
         self.server_copying = False
         
+        ##set stackedWidget for session name
+        #self.labelSessionName    = QLabel()
+        #self.labelSessionName.setStyleSheet("QLabel {font-weight : bold}")
+        #self.labelSessionName.setAlignment(Qt.AlignHCenter)
+        
+        #self.lineEditSessionName = QLineEdit()
+        #self.lineEditSessionName.setAlignment(Qt.AlignHCenter)
+        
+        #self.ui.stackedWidgetSessionName.addWidget(self.labelSessionName)
+        #self.ui.stackedWidgetSessionName.addWidget(self.lineEditSessionName)
+        
         #set options with config file, restore geometry
         self.keep_focus = settings.value('keepfocus', True, type=bool)
         self.ui.actionKeepFocus.setChecked(self.keep_focus)
@@ -700,7 +718,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAboutQt.triggered.connect(app.aboutQt)
         
         self.ui.lineEditServerStatus.copyAborted.connect(self.abortCopy)
-        
+        self.ui.stackedWidgetSessionName.name_changed.connect(self.renameSession)
         
         #set control menu
         self.controlMenu = QMenu()
@@ -731,6 +749,7 @@ class MainWindow(QMainWindow):
         serverOSC.qsig.client_updated.connect(self.serverUpdatesClientProperties)
         serverOSC.qsig.new_message_sig.connect(self.serverPrintsMessage)
         serverOSC.qsig.session_name_sig.connect(self.serverRenamesSession)
+        serverOSC.qsig.session_renameable.connect(self.serverSessionRenameable)
         serverOSC.qsig.server_progress.connect(self.serverProgress)
         serverOSC.qsig.server_status_changed.connect(self.serverChangeServerStatus)
         serverOSC.qsig.server_copying.connect(self.serverCopying)
@@ -762,6 +781,8 @@ class MainWindow(QMainWindow):
             self.ui.closeButton.setVisible(False)
             self.ui.toolButtonControl2.setPopupMode(QToolButton.InstantPopup)
             self.ui.toolButtonControl2.setMenu(self.controlMenu)
+            
+            self.ui.stackedWidgetSessionName.setEditable(True)
             
         else:
             self.ui.toolButtonControl2.setVisible(False)
@@ -1011,7 +1032,10 @@ class MainWindow(QMainWindow):
             return
         
         serverOSC.abortCopy()
-        
+    
+    def renameSession(self, new_session_name):
+        serverOSC.toDaemon('/ray/server/rename', new_session_name)
+    
     def showClientTrashDialog(self, client_id):
         for trashed_client in session.trashed_clients:
             if trashed_client.data.client_id == client_id:
@@ -1092,11 +1116,17 @@ class MainWindow(QMainWindow):
         
         if session_name:
             self.setWindowTitle('%s - %s' % (APP_TITLE, session_name))
-            self.ui.LabelSessionName.setText(session_name)
+            #self.labelSessionName.setText(session_name)
+            #self.lineEditSessionName.setText(session_name)
+            self.ui.stackedWidgetSessionName.setText(session_name)
         else:
             self.setWindowTitle(APP_TITLE)
-            self.ui.LabelSessionName.setText(_translate('main view', 'No Session Loaded'))
-            
+            #self.labelSessionName.setText(_translate('main view', 'No Session Loaded'))
+            self.ui.stackedWidgetSessionName.setText(_translate('main view', 'No Session Loaded'))
+     
+    def serverSessionRenameable(self, renameable):
+        self.ui.stackedWidgetSessionName.setEditable(renameable)
+     
     def serverSendsError(self, args):
         if not len(args) >= 3:
             return
@@ -1207,14 +1237,17 @@ class MainWindow(QMainWindow):
         QMessageBox.critical(self, _translate('errors', "daemon crash!"), _translate('errors', "ray-daemon crashed, sorry !"))
         app.quit()
     
-    #Reimplemented Functions
-    
-    def closeEvent(self, event):
+    def saveWindowSettings(self):
         settings.setValue('MainWindow/geometry', self.saveGeometry())
         settings.setValue('MainWindow/WindowState', self.saveState())
         settings.setValue('MainWindow/ShowMenuBar', self.ui.menuBar.isVisible())
         settings.setValue('MainWindow/ShowMessages', self.ui.dockWidgetMessages.isVisible())
         settings.sync()
+    
+    #Reimplemented Functions
+    
+    def closeEvent(self, event):
+        self.saveWindowSettings()
         
         self.quitApp()
         event.ignore()
@@ -2147,6 +2180,8 @@ class NSMChild(QObject):
             serverOSC.openSession(project_path)
     
     def save(self):
+        MainUI.saveWindowSettings()
+        
         self.wait_for_save = True
         serverOSC.saveSession()
         
@@ -2228,10 +2263,8 @@ if __name__ == '__main__':
         parent_daemon_address = getLibloAddress(os.getenv('NSM_URL'))
         under_nsm = True
         nsm_child = NSMChild()
-        #app.setApplicationName("RaySession Childs")
-        settings_file = settings.fileName()
         
-        settings = QSettings("%s/child_sessions" % settings_file.rpartition('/')[0])
+        settings = QSettings('%s/child_sessions' % app.organizationName())
     
     MainUI = MainWindow()
     MainUI.show()
