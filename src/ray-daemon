@@ -326,8 +326,6 @@ class FileCopier(QObject):
         
         return self.is_active
         
-            
-
 class Client(QObject):
     #can be directly changed by OSC thread
     gui_visible      = True
@@ -2860,9 +2858,6 @@ class OscServerThread(ServerThread):
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
             return
-        
-        #if '/' in args[0]:
-            #self.send(src_addr, "/error", path, ERR_LAUNCH_FAILED, "Absolute paths are not permitted. Clients must be in $PATH" )
         
         signaler.server_add.emit(path, args, src_addr)
     

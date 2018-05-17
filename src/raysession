@@ -1986,7 +1986,6 @@ class newExecutableDialog(ChildDialog):
     
     def textChanged(self, text):
         self.text_will_accept = bool(text)
-        #self.text_will_accept = bool(text and text in self.exec_list)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(self.ui.checkBoxProxy.isChecked() or self.text_will_accept)
    
     def closeNow(self):
