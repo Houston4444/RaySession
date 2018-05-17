@@ -86,16 +86,12 @@ def isPIdChildOf(child_pid, parent_pid):
     ppid = child_pid
     this_pid = os.getpid()
     
-    print('huogra', child_pid, parent_pid, os.getpid())
-    print(time.time())
     while ppid != parent_pid and ppid > 1 and ppid != this_pid:
-        print('ger', ppid)
         try:
             ppid = int(subprocess.check_output(['ps', '-o', 'ppid=', '-p', str(ppid)]))
         except:
             return False
         
-    print(time.time())
     if ppid == parent_pid:
         return True
     
@@ -1192,8 +1188,8 @@ class Session(QObject):
                     wanted_id = self.generateClientIdAsNsm()
             
             #limit string to 10 characters
-            if len(wanted_id) >= 10:
-                wanted_id = wanted_id[:9]
+            if len(wanted_id) >= 11:
+                wanted_id = wanted_id[:10]
             
             if not wanted_id in self.forbidden_ids_list:
                 self.forbidden_ids_list.append(wanted_id)
@@ -2292,40 +2288,40 @@ class SignaledSession(OperatingSession):
     def serverAnnounce(self, path, args, src_addr):
         client_name, capabilities, executable_path, major, minor, pid = args
         
-        print('serverANNNNounce')
-        
         if self.wait_for == WAIT_FOR_STOP:
             return
         
         #we can't be absolutely sure that the announcer is the good one
         #but if client announce a known PID, we can be sure of which client is announcing
         for client in self.clients: 
-            print('serverANNNNounce1', client.pid, pid, client.executable_path, executable_path)
             if client.pid == pid and not client.active and client.isRunning():
                 client.serverAnnounce(path, args, src_addr, False)
                 break
         else:
-            print('serverANNNNounce2')
+            n=0
             for client in self.clients:
                 if (basename(client.executable_path) == basename(executable_path)
                     and not client.active
                     and client.pending_command == COMMAND_START):
-                        client.serverAnnounce(path, args, src_addr, False)
-                        break
+                        n+=1
+                        if n>1:
+                            break
+            
+            if n==1:
+                for client in self.clients:
+                    if (basename(client.executable_path) == basename(executable_path)
+                        and not client.active
+                        and client.pending_command == COMMAND_START):
+                            client.serverAnnounce(path, args, src_addr, False)
+                            break
             else:
-                print('serverANNNNounce3')
                 for client in self.clients:
                     if not client.active and client.pending_command == COMMAND_START:
                         if isPIdChildOf(pid, client.pid):
                             client.serverAnnounce(path, args, src_addr, False)
-                #for client in self.clients:
-                    #if not client.active and client.pending_command == COMMAND_START:
-                        #ppid = subprocess.check_output(['ps', '-o', 'ppid=', '-p', str(pid)])
+                            break
                 
-                #pass
                 #Ray Session won't add clients that aren't launched by Ray Session itself. 
-                #client = self.newClient(executable_path)
-                #client.serverAnnounce(path, args, src_addr, True)
             
         if self.wait_for == WAIT_FOR_ANNOUNCE:
             self.endTimerIfLastExpected(client)
@@ -2865,8 +2861,8 @@ class OscServerThread(ServerThread):
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
             return
         
-        if '/' in args[0]:
-            self.send(src_addr, "/error", path, ERR_LAUNCH_FAILED, "Absolute paths are not permitted. Clients must be in $PATH" )
+        #if '/' in args[0]:
+            #self.send(src_addr, "/error", path, ERR_LAUNCH_FAILED, "Absolute paths are not permitted. Clients must be in $PATH" )
         
         signaler.server_add.emit(path, args, src_addr)
     

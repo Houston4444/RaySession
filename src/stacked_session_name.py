@@ -63,8 +63,6 @@ class StackedSessionName(QStackedWidget):
         self.setCurrentIndex(0)
         
     def toggleEdit(self):
-        print('tooogglretdit', self.is_editable, self.currentIndex())
-        
         if not self.is_editable:
             self.setCurrentIndex(0)
             return
@@ -75,7 +73,11 @@ class StackedSessionName(QStackedWidget):
         else:
             self.setCurrentIndex(0)
             
+    def setOnEdit(self):
+        if not self.is_editable:
+            return
         
+        self.setCurrentIndex(1)
             
     
             

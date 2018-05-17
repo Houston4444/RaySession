@@ -438,6 +438,7 @@ class OSCServerT(ServerThread):
     
     @make_method('/ray/gui/session/renameable', 'i')
     def guiSessionRenameable(self, path, args):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         
         renameable = bool(args[0])
         self.qsig.session_renameable.emit(renameable)
@@ -578,7 +579,6 @@ class OSCServerT(ServerThread):
     
     def openSession(self, session_name):
         ifDebug('serverOSC::raysession_sends open session %s' % remove_accents(session_name))
-        print('marumba', session_name)
         self.toDaemon('/nsm/server/open', session_name)
         
     def saveSession(self):
@@ -1124,7 +1124,8 @@ class MainWindow(QMainWindow):
             self.ui.stackedWidgetSessionName.setText(_translate('main view', 'No Session Loaded'))
      
     def serverSessionRenameable(self, renameable):
-        self.ui.stackedWidgetSessionName.setEditable(session.is_renameable and session.server_status == SERVER_STATUS_READY)
+        session.is_renameable = renameable
+        self.ui.stackedWidgetSessionName.setEditable(renameable and session.server_status == SERVER_STATUS_READY)
      
     def serverSendsError(self, args):
         if not len(args) >= 3:
@@ -1187,6 +1188,9 @@ class MainWindow(QMainWindow):
         self.ui.actionOpenSessionFolder.setEnabled(bool(server_status != SERVER_STATUS_OFF))
         
         self.ui.stackedWidgetSessionName.setEditable(ready and session.is_renameable)
+        if under_nsm and ready and session.is_renameable:
+            self.ui.stackedWidgetSessionName.setOnEdit()
+            
         
         if self.server_copying:
             self.ui.actionSaveSession.setEnabled(False)
@@ -1202,8 +1206,6 @@ class MainWindow(QMainWindow):
         if server_status == SERVER_STATUS_OFF:
             if self.terminate_request:
                 app.quit()
-                
-        print('channnd', self.ui.actionRenameSession.isEnabled())
     
     def serverTrashAdd(self, client_data):
         prettier_name = client_data.label if client_data.label else client_data.name
@@ -1983,7 +1985,8 @@ class newExecutableDialog(ChildDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(state or self.text_will_accept)
     
     def textChanged(self, text):
-        self.text_will_accept = bool(text and text in self.exec_list)
+        self.text_will_accept = bool(text)
+        #self.text_will_accept = bool(text and text in self.exec_list)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(self.ui.checkBoxProxy.isChecked() or self.text_will_accept)
    
     def closeNow(self):
@@ -2090,8 +2093,6 @@ class RayDaemon(object):
             arguments.append('--debug-only')
         elif debug:
             arguments.append('--debug')
-        
-        print('lancement de ray_daemon sur ', str(serverOSC.url))
         
         self.process.start('ray-daemon', arguments)
         #self.process.start('konsole', ['-e', 'ray-daemon'] + arguments) 
