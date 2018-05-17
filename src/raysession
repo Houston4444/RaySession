@@ -914,7 +914,12 @@ class MainWindow(QMainWindow):
             serverOSC.abortSession()
     
     def renameSessionAction(self):
-        print('ben mon gros tu fais qoui pas là')
+        if not session.is_renameable:
+            QMessageBox.information(self, 
+                                    _translate("rename_session", "Rename Session"),
+                                    _translate("rename_session", "<p>In order to rename current session,<br>please first stop all clients.<br>then, double click on session name.</p>"))
+            return
+        
         self.ui.stackedWidgetSessionName.toggleEdit()
     
     def duplicateSession(self):
@@ -1119,9 +1124,7 @@ class MainWindow(QMainWindow):
             self.ui.stackedWidgetSessionName.setText(_translate('main view', 'No Session Loaded'))
      
     def serverSessionRenameable(self, renameable):
-        session.is_renameable = renameable
-        self.ui.stackedWidgetSessionName.setEditable(renameable and session.server_status == SERVER_STATUS_READY)
-        self.ui.actionRenameSession.setEnabled(renameable and session.server_status == SERVER_STATUS_READY)
+        self.ui.stackedWidgetSessionName.setEditable(session.is_renameable and session.server_status == SERVER_STATUS_READY)
      
     def serverSendsError(self, args):
         if not len(args) >= 3:
@@ -1177,17 +1180,13 @@ class MainWindow(QMainWindow):
         self.ui.actionCloseSession.setEnabled(ready)
         self.ui.actionAbortSession.setEnabled(not close_or_off)
         self.ui.actionDuplicateSession.setEnabled(not close_or_off)
+        self.ui.actionRenameSession.setEnabled(ready)
         self.ui.actionSaveTemplateSession.setEnabled(not close_or_off)
         self.ui.actionAddApplication.setEnabled(not close_or_off)
         self.ui.actionAddExecutable.setEnabled(not close_or_off)
         self.ui.actionOpenSessionFolder.setEnabled(bool(server_status != SERVER_STATUS_OFF))
         
-        if ready and session.is_renameable:
-            self.ui.actionRenameSession.setEnabled(True)
-            self.ui.stackedWidgetSessionName.setEditable(True)
-        else:
-            self.ui.actionRenameSession.setEnabled(False)
-            self.ui.stackedWidgetSessionName.setEditable(False)
+        self.ui.stackedWidgetSessionName.setEditable(ready and session.is_renameable)
         
         if self.server_copying:
             self.ui.actionSaveSession.setEnabled(False)
@@ -1203,6 +1202,8 @@ class MainWindow(QMainWindow):
         if server_status == SERVER_STATUS_OFF:
             if self.terminate_request:
                 app.quit()
+                
+        print('channnd', self.ui.actionRenameSession.isEnabled())
     
     def serverTrashAdd(self, client_data):
         prettier_name = client_data.label if client_data.label else client_data.name
@@ -1721,7 +1722,6 @@ class OpenNsmSessionInfoDialog(ChildDialog):
         
     def showThis(self, state):
         settings.setValue('OpenNsmSessionInfo', not bool(state))
-
 
 class quitAppDialog(ChildDialog):
     def __init__(self, parent):

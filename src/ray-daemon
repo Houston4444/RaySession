@@ -64,6 +64,12 @@ debug = False
 last_client_message = ''
 known_as_non_active = []
 
+def dirname(*args):
+    return os.path.dirname(*args)
+
+def basename(*args):
+    return os.path.basename(*args)
+
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         session.terminate()
@@ -76,6 +82,24 @@ def ifDebug(string):
     if debug:
         print(string, file=sys.stderr)
 
+def isPIdChildOf(child_pid, parent_pid):
+    ppid = child_pid
+    this_pid = os.getpid()
+    
+    print('huogra', child_pid, parent_pid, os.getpid())
+    print(time.time())
+    while ppid != parent_pid and ppid > 1 and ppid != this_pid:
+        print('ger', ppid)
+        try:
+            ppid = int(subprocess.check_output(['ps', '-o', 'ppid=', '-p', str(ppid)]))
+        except:
+            return False
+        
+    print(time.time())
+    if ppid == parent_pid:
+        return True
+    
+    return False
 
 def MESSAGE(string):
     global last_client_message
@@ -92,10 +116,10 @@ def CLIENT_MESSAGE(byte_string, client_name, client_id):
     
     client_str = "%s.%s" % (client_name, client_id)
     
-    if last_client_message != client_str:
-        if not debug_only:
+    if not debug_only:
+        if last_client_message != client_str:
             sys.stderr.write('\n[\033[90m%s-%s\033[0m]\n' % (client_name, client_id))
-            sys.stderr.buffer.write(byte_string)
+        sys.stderr.buffer.write(byte_string)
     
     last_client_message = client_str
 
@@ -268,7 +292,7 @@ class FileCopier(QObject):
             self.copy_size+=copy_file.size
             
             if dest_path_exists:
-                copy_file.dest_path = "%s/%s" % (dest_dir, os.path.basename(orig_path))
+                copy_file.dest_path = "%s/%s" % (dest_dir, basename(orig_path))
             else:
                 #WARNING works only with one file !!!
                 copy_file.dest_path = dest_dir
@@ -485,8 +509,8 @@ class Client(QObject):
             arguments = shlex.split(self.arguments_line)
             self.process.start(self.executable_path, arguments)
         else:
-            #self.process.start(self.executable_path)
-            self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path])
+            self.process.start(self.executable_path)
+            #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path])
      
     def terminate(self):
         if self.isRunning():
@@ -813,7 +837,7 @@ class Client(QObject):
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_save=TEMPLATE_NONE):            
         old_session_name = session.name
-        new_session_name = os.path.basename(new_session_full_name)
+        new_session_name = basename(new_session_full_name)
         new_client_id    = self.client_id
         old_client_id    = self.client_id
         xsessionx   = "XXX_SESSION_NAME_XXX"
@@ -1041,7 +1065,7 @@ class Session(QObject):
     def newClient(self, executable, client_id=None):
         client = Client()
         client.executable_path = executable
-        client.name = os.path.basename(executable)
+        client.name = basename(executable)
         client.client_id = client_id if client_id else self.generateClientId(executable)
         self.clients.append(client)
         return client
@@ -1347,7 +1371,7 @@ class OperatingSession(Session):
     
     def adjustFilesAfterCopy(self, template_mode):
         new_session_full_name = self.osc_args[0]
-        new_session_name = os.path.basename(new_session_full_name)
+        new_session_name = basename(new_session_full_name)
         spath = "%s/%s" % (self.root, new_session_full_name)
         
         #create temp clients from raysession.xml to adjust Files after copy
@@ -1654,7 +1678,7 @@ class OperatingSession(Session):
             return
         
         new_session_full_name = self.osc_args[0]
-        new_session_name = os.path.basename(new_session_full_name)
+        new_session_name = basename(new_session_full_name)
         spath = "%s/%s" % (self.root, new_session_full_name)
         
         if os.path.exists(spath):
@@ -1735,7 +1759,7 @@ class OperatingSession(Session):
                     p.setAttribute('VERSION', VERSION)
                     
                     if server.is_nsm_locked:
-                        name = os.path.basename(session_full_name).rpartition('.')[0]
+                        name = basename(session_full_name).rpartition('.')[0]
                         p.setAttribute('name', name)
                     
                     xml.appendChild(p)
@@ -2038,8 +2062,16 @@ class SignaledSession(OperatingSession):
         if not self.path:
             return
         
+        if file_copier.isActive():
+            return
+        
         if new_session_name == self.name:
             return
+        
+        if not server.is_nsm_locked:
+            for filename in os.listdir(dirname(self.path)):
+                if filename == new_session_name:
+                    return
         
         for client in self.clients:
             if client.isRunning():
@@ -2050,6 +2082,16 @@ class SignaledSession(OperatingSession):
             client.adjustFilesAfterCopy(new_session_name, TEMPLATE_RENAME)
         
         GUIMSG(_translate('GUIMSG', 'Session %s has been renamed to %s .') % (self.name, new_session_name))
+        
+        if not server.is_nsm_locked:
+            try:
+                spath = "%s/%s" % (dirname(self.path), new_session_name)
+                subprocess.run(['mv', self.path, spath])
+                self.path = spath
+                GUIMSG(_translate('GUIMSG', 'Session directory is now: %s') % self.path)
+            except:
+                pass
+        
         self.name = new_session_name
         
         server.sendGui('/ray/gui/session/name', self.name, self.name)
@@ -2112,7 +2154,7 @@ class SignaledSession(OperatingSession):
         
         client = Client()
         client.executable_path = executable
-        client.name            = os.path.basename(executable)
+        client.name            = basename(executable)
         client.client_id       = self.generateClientId(executable)
         client.icon            = client.name.lower().replace('_', '-')
         
@@ -2130,7 +2172,7 @@ class SignaledSession(OperatingSession):
         if debug:
             client.arguments_line += " --debug"
             
-        client.name            = os.path.basename(executable)
+        client.name            = basename(executable)
         client.client_id       = self.generateClientId(client.name)
         client.icon            = client.name.lower().replace('_', '-')
         
@@ -2250,24 +2292,37 @@ class SignaledSession(OperatingSession):
     def serverAnnounce(self, path, args, src_addr):
         client_name, capabilities, executable_path, major, minor, pid = args
         
+        print('serverANNNNounce')
+        
         if self.wait_for == WAIT_FOR_STOP:
             return
         
         #we can't be absolutely sure that the announcer is the good one
         #but if client announce a known PID, we can be sure of which client is announcing
-        for client in self.clients:
+        for client in self.clients: 
+            print('serverANNNNounce1', client.pid, pid, client.executable_path, executable_path)
             if client.pid == pid and not client.active and client.isRunning():
                 client.serverAnnounce(path, args, src_addr, False)
                 break
         else:
+            print('serverANNNNounce2')
             for client in self.clients:
-                if (os.path.basename(client.executable_path) == os.path.basename(executable_path)
+                if (basename(client.executable_path) == basename(executable_path)
                     and not client.active
                     and client.pending_command == COMMAND_START):
                         client.serverAnnounce(path, args, src_addr, False)
                         break
             else:
-                pass
+                print('serverANNNNounce3')
+                for client in self.clients:
+                    if not client.active and client.pending_command == COMMAND_START:
+                        if isPIdChildOf(pid, client.pid):
+                            client.serverAnnounce(path, args, src_addr, False)
+                #for client in self.clients:
+                    #if not client.active and client.pending_command == COMMAND_START:
+                        #ppid = subprocess.check_output(['ps', '-o', 'ppid=', '-p', str(pid)])
+                
+                #pass
                 #Ray Session won't add clients that aren't launched by Ray Session itself. 
                 #client = self.newClient(executable_path)
                 #client.serverAnnounce(path, args, src_addr, True)
@@ -2730,15 +2785,15 @@ class OscServerThread(ServerThread):
         
         new_session_name = args[0]
         
+        if '/' in new_session_name:
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
         if self.isOperationPending(src_addr, path):
             return
         
         if not session.path:
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to rename.")
-            return
-        
-        if not pathIsValid(new_session_name):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
             return
         
         signaler.server_rename.emit(new_session_name)
@@ -3167,7 +3222,7 @@ if __name__ == '__main__':
     session_root = "%s/Ray Sessions" % os.getenv('HOME')
     
     #Add RaySession/src to $PATH to can use ray-proxy and maybe future executables after make, whitout install
-    os.environ['PATH']="%s:%s" % (os.path.realpath(os.path.dirname(sys.argv[0])), os.environ['PATH'])
+    os.environ['PATH']="%s:%s" % (os.path.realpath(dirname(sys.argv[0])), os.environ['PATH'])
     
     
     parser = argparse.ArgumentParser()
@@ -3223,14 +3278,14 @@ if __name__ == '__main__':
     
     app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
     session_template_root = "%s/%s" % (app_config_path, 'session_templates')
-    session_template_factory_root = "%s/session_templates" % os.path.dirname(os.path.dirname(sys.argv[0]))
+    session_template_factory_root = "%s/session_templates" % dirname(dirname(sys.argv[0]))
     client_template_local_root = "%s/%s" % (app_config_path, 'client_templates')
-    client_template_factory_root = "%s/client_templates" % os.path.dirname(os.path.dirname(sys.argv[0]))
+    client_template_factory_root = "%s/client_templates" % dirname(dirname(sys.argv[0]))
     
     ### Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
-    if appTranslator.load("%s/locale/raysession_%s" % (os.path.dirname(os.path.dirname(sys.argv[0])), locale)):
+    if appTranslator.load("%s/locale/raysession_%s" % (dirname(dirname(sys.argv[0])), locale)):
         app.installTranslator(appTranslator)
     _translate = app.translate
     init_translation(_translate)
