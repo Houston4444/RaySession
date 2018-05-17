@@ -376,6 +376,7 @@ class Client(QObject):
     def readXmlProperties(self, ctx):
         #ctx is an xml sibling for client
         self.executable_path  = ctx.attribute('executable')
+        self.arguments_line   = ctx.attribute('arguments')
         self.name             = ctx.attribute('name')
         self.label            = ctx.attribute('label')
         self.icon             = ctx.attribute('icon')
@@ -409,6 +410,8 @@ class Client(QObject):
             ctx.setAttribute('icon', self.icon)
         if not self.check_last_save:
             ctx.setAttribute('check_last_save', "0")
+        if self.arguments_line:
+            ctx.setAttribute('arguments', self.arguments_line)
             
         if self.prefix_mode != PREFIX_MODE_SESSION_NAME:
             ctx.setAttribute('prefix_mode', self.prefix_mode)
@@ -501,6 +504,8 @@ class Client(QObject):
         
         if self.arguments_line:
             arguments = shlex.split(self.arguments_line)
+            
+            print('debbe', self.executable_path, arguments)
             self.process.start(self.executable_path, arguments)
         else:
             self.process.start(self.executable_path)
@@ -657,7 +662,8 @@ class Client(QObject):
             
         server.sendGui(ad,
                         self.client_id, 
-                        self.executable_path, 
+                        self.executable_path,
+                        self.arguments_line,
                         self.name, 
                         self.prefix_mode, 
                         self.project_path,
@@ -671,6 +677,7 @@ class Client(QObject):
     def updateClientProperties(self, client_data):
         self.client_id       = client_data.client_id
         self.executable_path = client_data.executable_path
+        self.arguments_line  = client_data.arguments
         self.prefix_mode     = client_data.prefix_mode
         self.project_path    = client_data.project_path
         self.label           = client_data.label
@@ -2736,7 +2743,7 @@ class OscServerThread(ServerThread):
         if client and client.active:
             self.send(client.addr, "/nsm/client/hide_optional_gui")
 
-    @make_method('/ray/gui/client/update_properties', 'sssissssi')
+    @make_method('/ray/gui/client/update_properties', 'ssssissssi')
     def rayGuiClientUpdateProperties(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
@@ -3194,7 +3201,8 @@ class OscServerThread(ServerThread):
             self.send(  gui_addr, 
                         '/ray/gui/client/new',
                         client.client_id, 
-                        client.executable_path, 
+                        client.executable_path,
+                        client.arguments_line,
                         client.name, 
                         client.prefix_mode, 
                         client.project_path,

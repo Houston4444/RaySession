@@ -192,6 +192,7 @@ class Client(object):
     def __init__(self, client_data, trashed=False):
         self.client_id       = client_data.client_id
         self.executable_path = client_data.executable_path
+        self.arguments       = client_data.arguments
         self.name            = client_data.name
         self.prefix_mode     = client_data.prefix_mode
         self.project_path    = client_data.project_path
@@ -247,6 +248,7 @@ class Client(object):
         
     def updateClientProperties(self, client_data):
         self.executable_path = client_data.executable_path
+        self.arguments       = client_data.arguments
         self.name            = client_data.name
         self.prefix_mode     = client_data.prefix_mode
         self.project_path    = client_data.project_path
@@ -443,14 +445,14 @@ class OSCServerT(ServerThread):
         renameable = bool(args[0])
         self.qsig.session_renameable.emit(renameable)
     
-    @make_method('/ray/gui/client/new', 'sssissssi')
+    @make_method('/ray/gui/client/new', 'ssssissssi')
     def newClientFromServer(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         
         client_data = ClientData(*args)
         self.qsig.new_client_added.emit(client_data)
     
-    @make_method('/ray/gui/client/update', 'sssissssi')
+    @make_method('/ray/gui/client/update', 'ssssissssi')
     def updateClientProperties(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         
@@ -539,7 +541,7 @@ class OSCServerT(ServerThread):
         
         self.qsig.clients_reordered.emit(args)
     
-    @make_method('/ray/gui/trash/add', 'sssissssi')
+    @make_method('/ray/gui/trash/add', 'ssssissssi')
     def rayGuiTrashAdd(self, path, args):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         

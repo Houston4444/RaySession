@@ -113,6 +113,7 @@ def areTheyAllString(args):
 class ClientData(object):
     client_id       = ''
     executable_path = ''
+    arguments       = ''
     name            = ''
     prefix_mode     = 2
     project_path    = ''
@@ -122,7 +123,8 @@ class ClientData(object):
     check_last_save = True
     
     def __init__(self, client_id, 
-                 executable, 
+                 executable,
+                 arguments="",
                  name='', 
                  prefix_mode=PREFIX_MODE_SESSION_NAME, 
                  project_path='', 
@@ -132,6 +134,7 @@ class ClientData(object):
                  check_last_save=True):
         self.client_id       = str(client_id)
         self.executable_path = str(executable)
+        self.arguments       = str(arguments)
         self.prefix_mode     = int(prefix_mode)
         self.label           = str(label)
         self.capabilities    = str(capabilities)
