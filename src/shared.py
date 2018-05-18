@@ -15,7 +15,7 @@ if QT_VERSION < (5, 6):
     sys.stderr.write("WARNING: You are using a version of QT older than 5.6.\nYou won't be able to know if a process can't be launch.\n")
 
 #Ray Session version
-VERSION = "0.5.6"
+VERSION = "0.6.0"
 
 APP_TITLE = 'Ray Session'
 
