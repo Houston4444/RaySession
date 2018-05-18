@@ -91,10 +91,10 @@ def CLIENT_MESSAGE(byte_string, client_name, client_id):
     
     client_str = "%s.%s" % (client_name, client_id)
     
-    if last_client_message != client_str:
-        if not debug_only:
+    if not debug_only:
+        if last_client_message != client_str:
             sys.stderr.write('\n[\033[90m%s-%s\033[0m]\n' % (client_name, client_id))
-            sys.stderr.buffer.write(byte_string)
+        sys.stderr.buffer.write(byte_string)
     
     last_client_message = client_str
 
