@@ -345,7 +345,8 @@ class Client(QObject):
     status           = CLIENT_STATUS_STOPPED
     name             = ''
     executable_path  = ''
-    arguments_line   = ''
+    arguments        = ''
+    tmp_arguments    = ''
     label            = ''
     icon             = ''
     pre_existing     = False
@@ -376,7 +377,7 @@ class Client(QObject):
     def readXmlProperties(self, ctx):
         #ctx is an xml sibling for client
         self.executable_path  = ctx.attribute('executable')
-        self.arguments_line   = ctx.attribute('arguments')
+        self.arguments        = ctx.attribute('arguments')
         self.name             = ctx.attribute('name')
         self.label            = ctx.attribute('label')
         self.icon             = ctx.attribute('icon')
@@ -410,8 +411,8 @@ class Client(QObject):
             ctx.setAttribute('icon', self.icon)
         if not self.check_last_save:
             ctx.setAttribute('check_last_save', "0")
-        if self.arguments_line:
-            ctx.setAttribute('arguments', self.arguments_line)
+        if self.arguments:
+            ctx.setAttribute('arguments', self.arguments)
             
         if self.prefix_mode != PREFIX_MODE_SESSION_NAME:
             ctx.setAttribute('prefix_mode', self.prefix_mode)
@@ -502,11 +503,17 @@ class Client(QObject):
         
         self.pending_command = COMMAND_START
         
-        if self.arguments_line:
-            arguments = shlex.split(self.arguments_line)
+        arguments = []
+        
+        if self.tmp_arguments:
+            arguments += shlex.split(self.tmp_arguments)
             
-            print('debbe', self.executable_path, arguments)
+        if self.arguments:
+            arguments += shlex.split(self.arguments)
+            
+        if arguments:
             self.process.start(self.executable_path, arguments)
+            #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path] + arguments)
         else:
             self.process.start(self.executable_path)
             #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path])
@@ -663,7 +670,7 @@ class Client(QObject):
         server.sendGui(ad,
                         self.client_id, 
                         self.executable_path,
-                        self.arguments_line,
+                        self.arguments,
                         self.name, 
                         self.prefix_mode, 
                         self.project_path,
@@ -677,7 +684,7 @@ class Client(QObject):
     def updateClientProperties(self, client_data):
         self.client_id       = client_data.client_id
         self.executable_path = client_data.executable_path
-        self.arguments_line  = client_data.arguments
+        self.arguments       = client_data.arguments
         self.prefix_mode     = client_data.prefix_mode
         self.project_path    = client_data.project_path
         self.label           = client_data.label
@@ -2169,9 +2176,9 @@ class SignaledSession(OperatingSession):
         client = Client()
         client.executable_path = 'ray-proxy'
         
-        client.arguments_line  = "--executable %s" % executable
+        client.tmp_arguments  = "--executable %s" % executable
         if debug:
-            client.arguments_line += " --debug"
+            client.tmp_arguments += " --debug"
             
         client.name            = basename(executable)
         client.client_id       = self.generateClientId(client.name)
@@ -2298,11 +2305,13 @@ class SignaledSession(OperatingSession):
         
         #we can't be absolutely sure that the announcer is the good one
         #but if client announce a known PID, we can be sure of which client is announcing
+        print('announce1', client_name, executable_path)
         for client in self.clients: 
             if client.pid == pid and not client.active and client.isRunning():
                 client.serverAnnounce(path, args, src_addr, False)
                 break
         else:
+            print('announce2')
             n=0
             for client in self.clients:
                 if (basename(client.executable_path) == basename(executable_path)
@@ -2313,6 +2322,7 @@ class SignaledSession(OperatingSession):
                             break
             
             if n==1:
+                print('announc3')
                 for client in self.clients:
                     if (basename(client.executable_path) == basename(executable_path)
                         and not client.active
@@ -2320,6 +2330,7 @@ class SignaledSession(OperatingSession):
                             client.serverAnnounce(path, args, src_addr, False)
                             break
             else:
+                print('announce4')
                 for client in self.clients:
                     if not client.active and client.pending_command == COMMAND_START:
                         if isPIdChildOf(pid, client.pid):
@@ -3202,7 +3213,7 @@ class OscServerThread(ServerThread):
                         '/ray/gui/client/new',
                         client.client_id, 
                         client.executable_path,
-                        client.arguments_line,
+                        client.arguments,
                         client.name, 
                         client.prefix_mode, 
                         client.project_path,

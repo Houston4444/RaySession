@@ -36,7 +36,8 @@ def signalHandler(sig, frame):
 
 def ifDebug(string):
     if debug:
-        print(string, file=sys.stderr)
+        #print(string, file=sys.stderr)
+        sys.stderr.write(string + '\n')
 
 class ProxyCopyDialog(QDialog):
     def __init__(self):

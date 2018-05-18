@@ -2,7 +2,7 @@
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from liblo import ServerThread, make_method
-import os
+import os, sys
         
 class NSMSignaler(QObject):
     server_sends_open = pyqtSignal(str, str, str)
