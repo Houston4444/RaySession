@@ -511,12 +511,8 @@ class Client(QObject):
         if self.arguments:
             arguments += shlex.split(self.arguments)
             
-        if arguments:
-            self.process.start(self.executable_path, arguments)
-            #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path] + arguments)
-        else:
-            self.process.start(self.executable_path)
-            #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path])
+        self.process.start(self.executable_path, arguments)
+        #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path] + arguments)
      
     def terminate(self):
         if self.isRunning():
@@ -1723,15 +1719,17 @@ class OperatingSession(Session):
         spath = self.root + '/' + session_full_name
         
         #will be used to set raysession as nsm client in the future
+        #if session_full_name.startswith('/') or server.is_nsm_locked:
         if session_full_name.startswith('/'):
             spath = session_full_name
-            if not os.path.exists(spath):
-                try:
-                    os.makedirs(spath)
-                except:
-                    self.err_loading = ERR_CREATE_FAILED
-                    self.loadError()
-                    return
+            
+        if not os.path.exists(spath):
+            try:
+                os.makedirs(spath)
+            except:
+                self.err_loading = ERR_CREATE_FAILED
+                self.loadError()
+                return
             
         MESSAGE("Attempting to open %s" % spath)
         
@@ -1761,7 +1759,6 @@ class OperatingSession(Session):
             except:
                 try:
                     ray_file = open(session_ray_file, 'w')
-                    
                     xml = QDomDocument()
                     p = xml.createElement('RAYSESSION')
                     p.setAttribute('VERSION', VERSION)
@@ -1783,6 +1780,8 @@ class OperatingSession(Session):
                     self.err_loading = ERR_CREATE_FAILED
                     self.loadError()
                     return
+                
+        print('moakdj', is_ray_file)
                 
         GUIMSG(_translate('GUIMSG', "Opening session %s") % self.osc_args[0])
         
@@ -2048,6 +2047,13 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.load, self.loadDone]
         self.nextFunction()
+    
+    #def serverOpenSessionWithTemplate(self, path, args, src_addr):
+        #if self.process_order:
+            #return
+        
+        #self.rememberOscArgs(path, args, src_addr)
+        
     
     def serverSaveSession(self, path, args, src_addr):
         if self.process_order:
@@ -2703,8 +2709,20 @@ class OscServerThread(ServerThread):
     def rayGuiGui_announce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        self.announceGui(src_addr.url, True)
+        self.announceGui(src_addr.url)
 
+    @make_method('/ray/gui/gui_disannounce', '')
+    def rayGuiGui_disannounce(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        for addr in self.gui_list:
+            if addr.url == src_addr.url:
+                break
+        else:
+            return
+        
+        self.gui_list.remove(addr)
+        
     @make_method('/ray/gui/client/stop', 's')
     def rayGuiClientStop(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -2961,7 +2979,16 @@ class OscServerThread(ServerThread):
             return
         
         signaler.server_open.emit(path, args, src_addr)
-            
+          
+    @make_method('/nsm/server/open', 'ss')
+    def nsmServerOpenWithTemplate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        signaler.server_new_from_tp.emit(path, args, src_addr)
+          
     @make_method('/nsm/server/close', '')
     def nsmServerClose(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -3197,13 +3224,13 @@ class OscServerThread(ServerThread):
         if tmp_template_list:
             self.send(src_addr, response_osc_path, *tmp_template_list)
     
-    def announceGui(self, url, is_reply):
+    def announceGui(self, url):
         gui_addr = Address(url)
         
-        if is_reply:
-            self.send(gui_addr, "/ray/gui/gui_announce", "hi" )
-        else:
-            self.send(gui_addr, "/ray/gui/server_announce", "hi" )
+        #if is_reply:
+            #self.send(gui_addr, "/ray/gui/gui_announce", "hi" )
+        #else:
+        self.send(gui_addr, "/ray/gui/server_announce", self.server_status, int(self.is_nsm_locked), session.root)
         
         self.send(gui_addr, "/ray/server_status", self.server_status)
         self.send(gui_addr, "/ray/gui/session/name",  session.name,  session.path)
@@ -3229,16 +3256,15 @@ class OscServerThread(ServerThread):
         
     
 if __name__ == '__main__':
-    session_root = "%s/Ray Sessions" % os.getenv('HOME')
-    
     #Add RaySession/src to $PATH to can use ray-proxy and maybe future executables after make, whitout install
     os.environ['PATH']="%s:%s" % (os.path.realpath(dirname(sys.argv[0])), os.environ['PATH'])
     
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--session-root', '-r', help='set root folder for sessions', default=session_root)
+    parser.add_argument('--session-root', '-r', help='set root folder for sessions')
     parser.add_argument('--osc-port', type=int, default=16187, help='select OSC port for the daemon')
     parser.add_argument('--gui-url', type=getLibloAddress, help=argparse.SUPPRESS)
+    parser.add_argument('--findfreeport', action='store_true', help='find another port if port is not free')
     parser.add_argument('--debug','-d',  action='store_true', help='see all OSC messages')
     parser.add_argument('--debug-only', '-do', action='store_true', help='debug without client messages')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
@@ -3252,18 +3278,7 @@ if __name__ == '__main__':
     session_root = parsed_args.session_root
     osc_num      = parsed_args.osc_port
     gui_address  = parsed_args.gui_url
-    
-    #make session_root folder if needed
-    if not os.path.isdir(session_root):
-        if os.path.exists(session_root):
-            sys.stderr.write("%s exists and is not a dir, please choose another path !\n" % session_root)
-            sys.exit(1)
-        
-        try:
-            os.makedirs(session_root)
-        except:
-            sys.stderr.write("impossible to make dir %s , aborted !\n" % session_root)
-            sys.exit(1)
+    findfreeport = parsed_args.findfreeport
     
     
     signal.signal(signal.SIGINT,  signalHandler)
@@ -3274,17 +3289,6 @@ if __name__ == '__main__':
     #app.setApplicationVersion(VERSION)
     app.setOrganizationName("RaySession")
     settings = QSettings()
-    
-    #this method works differently with pyqt or qt versions (probably) , so we need to ensure ray-daemon won't crash because of that.
-    known_as_non_active = []
-    
-    try:
-        known_as_non_active = settings.value('daemon/non_active_list', [], type=list)
-    except:
-        try:
-            known_as_non_active = settings.value('daemon/non_active_list', [])
-        except:
-            known_as_non_active = []
     
     app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
     session_template_root = "%s/%s" % (app_config_path, 'session_templates')
@@ -3300,6 +3304,33 @@ if __name__ == '__main__':
     _translate = app.translate
     init_translation(_translate)
     
+    
+    if not session_root:
+        session_root = "%s/%s" % (os.getenv('HOME'), _translate('daemon', 'Ray Network Sessions'))
+    
+    #make session_root folder if needed
+    if not os.path.isdir(session_root):
+        if os.path.exists(session_root):
+            sys.stderr.write("%s exists and is not a dir, please choose another path !\n" % session_root)
+            sys.exit(1)
+        
+        try:
+            os.makedirs(session_root)
+        except:
+            sys.stderr.write("impossible to make dir %s , aborted !\n" % session_root)
+            sys.exit(1)
+            
+    #this method works differently with pyqt or qt versions (probably) , so we need to ensure ray-daemon won't crash because of that.
+    known_as_non_active = []
+    
+    try:
+        known_as_non_active = settings.value('daemon/non_active_list', [], type=list)
+    except:
+        try:
+            known_as_non_active = settings.value('daemon/non_active_list', [])
+        except:
+            known_as_non_active = []
+    
     timer = QTimer()
     timer.setInterval(200)
     timer.timeout.connect(lambda: None)
@@ -3308,13 +3339,23 @@ if __name__ == '__main__':
     signaler    = Signaler()
     file_copier = FileCopier()
     session     = SignaledSession()
+    
     session.setRoot(session_root)
     
-    server = OscServerThread(getFreeOscPort(osc_num))
+    if findfreeport:
+        server = OscServerThread(getFreeOscPort(osc_num))
+    else:
+        if isOscPortFree(osc_num):
+            server = OscServerThread(osc_num)
+        else:
+            sys.stderr.write(_translate('daemon', 'port %i is not free, try another one\n') % osc_num)
+            sys.exit()
+        
+        
     server.start()
     
     if gui_address:
-        server.announceGui(gui_address.url, False)
+        server.announceGui(gui_address.url)
         
     MESSAGE(server.url)
     

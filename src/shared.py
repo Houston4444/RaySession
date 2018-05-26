@@ -1,6 +1,6 @@
 from liblo import Server
 import argparse
-import liblo
+import liblo, socket
 import sys, os, shlex
 from PyQt5.QtCore import QLocale, QTranslator, QT_VERSION_STR
 
@@ -57,10 +57,19 @@ def setDebug(bool):
     global debug
     debug = bool
 
+def isOscPortFree(port):
+    try:
+        testport = Server(port)
+    except:
+        return False
+    
+    del testport
+    return True
+
 def getFreeOscPort(default=16187):
     #get a free OSC port for daemon, start from default
     
-    if default == 65536:
+    if default >= 65536:
         default=16187
     
     daemon_port = default
@@ -96,6 +105,27 @@ def getLibloAddress(url):
             msg = "%r is an unknown osc url" % url
             raise argparse.ArgumentTypeError(msg)
 
+def areSameOscPort(url1, url2):
+    try:
+        address1 = Address(url1)
+        address2 = Address(url2)
+    except:
+        return False
+    
+    if address1.port != address2.port:
+        return False
+    
+    if address1.hostname == address2.hostname:
+        return True
+    
+    try:
+        if socket.gethostbyaddr(address1.hostname) == socket.gethostbyaddr(address2.hostname):
+            return True
+    except:
+        return False
+    
+    return False
+    
 def shellLineToArgs(string):
     try:
         args = shlex.split(string)

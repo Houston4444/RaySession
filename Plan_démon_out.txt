@@ -1,0 +1,60 @@
+PLAN démon externe
+
+démarage
+
+
+open()
+
+fichier net.xml existe et (adresse valide et pas l'adresse du NSM_URL)
+    si déjà démon tournant
+        si démon identique
+            si bon dossier racine
+                si ready
+                    envoi ouverture de session (si modèle avec modèle)
+                sinon
+                    quand ready/off ouverture de session (si modèle avec modèle)
+            sinon
+                si ready:
+                    envoi fermeture de session
+                désannonce au démon
+                fenêtre d'url avec erreur
+        sinon
+            si ready:
+                envoi fermeture de session
+            si pas off:
+                quand ready, fermeture de session
+                quand off, arrêter d'attendre
+            désannonce au démon
+            annonce au nouveau démon + timer 5s pour l'annonce du démon
+    sinon:
+        annonce au démon + timer 5s pour l'annonce du démon
+sinon
+    fenêtre d'url
+        validée:
+            annonce au démon + timer 5s pour l'annonce du démon
+        sinon:
+            fermeture
+
+annonce du démon:
+    si disponible et bon dossier racine
+        envoi ouverture de session (si modèle avec modèle)
+    sinon:
+        fenêtre d'url avec erreur
+
+timer 5s timeout:
+    fenêtre d'url + erreur
+
+save() -> save()
+
+sauver comme modèle
+    envoi d'une sauvegarde comme modèle de session
+    
+
+sauver session comme modèle -> envoi d'une sauvegarde comme modèle de session
+    
+    
+
+* mettre un autre dossier que "Ray Sessions" par défaut pour le démarrage du démon directement (évite les cafouillages)
+* option dans ray-daemon pour chercher une autre adresse si port indisponible
+
+* label d'erreur sur denêtre d'url

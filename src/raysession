@@ -1,9 +1,11 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView, QLabel, QLineEdit
 from PyQt5.QtGui     import QIcon , QCursor, QPalette, QPixmap, QFontDatabase
 from PyQt5.QtCore    import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
+from PyQt5.QtXml import QDomDocument
+
 import sys
 from liblo import *
 import subprocess
@@ -32,6 +34,7 @@ import ui_client_properties
 import ui_stop_client
 import ui_abort_copy
 import ui_client_trash
+import ui_daemon_url
 
 import resources_rc
 
@@ -48,12 +51,21 @@ def remove_accents(input_str):
 
 def signalHandler(sig, frame):
     if sig in (SIGINT, SIGTERM):
+        print('ramou', under_nsm)
         if ray_daemon.launched_before:
-            app.quit()
+            if under_nsm:
+                print('reamo')
+                serverOSC.closeSession()
+                MainUI.terminate_request = True
+            else:
+                print('mzoek')
+                app.quit()
             return
         
         MainUI.terminate_request = True
+        print('ramimou')
         ray_daemon.stop()
+        print('radur')
 
 def changeRootFolder(parent_window):
     #this function is the only one that takes cares of files present on system. 
@@ -131,6 +143,7 @@ class Session(object):
         if client:
             client.properties_dialog.close()
             self.client_list.remove(client)
+            del client
     
     def updateClientProperties(self, client_data):
         client = self.getClient(client_data.client_id)
@@ -304,7 +317,7 @@ class TrashedClient(object):
         self.menu_action = menu_action
     
 class OscSignaler(QObject):
-    server_announce     = pyqtSignal()
+    server_announce     = pyqtSignal(int, int, str)
     server_copying      = pyqtSignal(bool)
     new_message_sig     = pyqtSignal(str)
     session_name_sig    = pyqtSignal(str, str)
@@ -336,6 +349,9 @@ class OscSignaler(QObject):
     trash_remove = pyqtSignal(str)
     trash_clear  = pyqtSignal()
     trash_dialog = pyqtSignal(str)
+    
+    daemon_url_request = pyqtSignal()
+    daemon_url_changed = pyqtSignal()
     
     def __init__(self):
         QObject.__init__(self)
@@ -406,8 +422,8 @@ class OSCServerT(ServerThread):
         
         self.qsig.factory_client_template_found.emit(args)
     
-    
-    @make_method('/ray/gui/server_announce', None)
+        
+    @make_method('/ray/gui/server_announce', 'iis')
     def serverAnnounce(self, path, args, types, src_addr):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         
@@ -416,7 +432,12 @@ class OSCServerT(ServerThread):
         else:
             ray_daemon.setAnnounced(src_addr)
         
-        self.qsig.server_announce.emit()
+        self.qsig.server_announce.emit(*args)
+    
+    @make_method('/ray/gui/server_disannounce', '')
+    def serverDisannounce(self, path, args, types, src_addr):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        pass
     
     @make_method('/ray/gui/server/message', 's')
     def serverMessage(self, path, args):
@@ -565,8 +586,12 @@ class OSCServerT(ServerThread):
         self.send(ray_daemon.address, *args)
     
     def announce(self, nsm_locked=False):
-        ifDebug('serverOSC::raysession_sends annouce')
+        ifDebug('serverOSC::raysession_sends announce')
         self.send(ray_daemon.address, '/ray/gui/gui_announce', int(nsm_locked))
+    
+    def disannounce(self):
+        ifDebug('serverOSC::raysession_sends disannounce')
+        self.send(ray_daemon.address, '/ray/gui/gui_disannounce')
     
     def startListSession(self):
         ifDebug('serverOSC::raysession_sends list sessions')
@@ -754,6 +779,7 @@ class MainWindow(QMainWindow):
         serverOSC.qsig.trash_remove.connect(self.serverTrashRemove)
         serverOSC.qsig.trash_clear.connect(self.serverTrashClear)
         serverOSC.qsig.trash_dialog.connect(self.showClientTrashDialog)
+        serverOSC.qsig.daemon_url_request.connect(self.showDaemonUrlWindow)
         
         self.connectListWidgetRequests()
         
@@ -1054,6 +1080,19 @@ class MainWindow(QMainWindow):
         
         serverOSC.toDaemon('/ray/gui/trash/restore', client_id)
     
+    def showDaemonUrlWindow(self):
+        dialog = DaemonUrlWindow(self)
+        dialog.exec()
+        if not dialog.result():
+            if under_nsm and ray_daemon.launched_before:
+                app.quit()
+            return
+        
+        serverOSC.disannounce()
+        ray_daemon.setOscAddressViaUrl(dialog.getDaemonUrl())
+        serverOSC.announce(nsm_locked=under_nsm)
+        serverOSC.qsig.daemon_url_changed.emit()
+    
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
     
     def serverAddsClient(self, client_data):
@@ -1155,7 +1194,7 @@ class MainWindow(QMainWindow):
         
     def serverChangeServerStatus(self, server_status):
         session.updateServerStatus(server_status)
-        
+        print('server statuss szesez', server_status)
         self.ui.lineEditServerStatus.setText(serverStatusString(server_status))
         self.ui.frameCurrentSession.setEnabled(bool(server_status != SERVER_STATUS_OFF))
         
@@ -1206,7 +1245,9 @@ class MainWindow(QMainWindow):
             self.ui.actionAbortSession.setEnabled(False)
         
         if server_status == SERVER_STATUS_OFF:
+            print('server statuss offf')
             if self.terminate_request:
+                print('okezork')
                 app.quit()
     
     def serverTrashAdd(self, client_data):
@@ -2043,6 +2084,26 @@ class StopClientDialog(ChildDialog):
             self.wait_for_save = False
             self.accept()
             
+class DaemonUrlWindow(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_daemon_url.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self.ui.lineEdit.textEdited.connect(self.allowUrl)
+        
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        
+    def getDaemonUrl(self):
+        return self.ui.lineEdit.text()
+    
+    def allowUrl(self, text):
+        try:
+            addr = getLibloAddress(text)
+            self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
+        except:
+            self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+    
 class ErrorDialog(ChildDialog):
     def __init__(self, parent, osc_args):
         ChildDialog.__init__(self, parent)
@@ -2055,10 +2116,12 @@ class RayDaemon(object):
     def __init__(self):
         self.executable      = 'ray-daemon'
         self.process         = QProcess()
+        
         self.process.finished.connect(self.processFinished)
         if QT_VERSION >= (5, 6):
             self.process.errorOccurred.connect(self.errorInProcess)
         self.process.setProcessChannelMode(QProcess.ForwardedChannels)
+        
         self.stopped_yet     = False
         self.is_local        = True
         self.launched_before = False
@@ -2068,6 +2131,7 @@ class RayDaemon(object):
         self.is_announced    = False
         self.is_nsm_locked   = False
     
+    
     def processFinished(self, exit_code, exit_status):
         if not MainUI.isHidden():
             MainUI.daemonCrash()
@@ -2075,12 +2139,20 @@ class RayDaemon(object):
     def errorInProcess(self, error):
         MainUI.daemonCrash()
     
+    def setExternal(self):
+        self.launched_before = True
+    
     def setOscAddress(self, address):
+        print("apapapa")
         self.address = address
         self.launched_before = True
         if self.address.hostname != socket.gethostname():
             self.is_local = False
-            
+    
+    def setOscAddressViaUrl(self, url):
+        print('zoijoif')
+        self.setOscAddress(getLibloAddress(url)) 
+    
     def processIsRunning(self):
         return bool(self.process.state() == 2)
     
@@ -2132,6 +2204,19 @@ class RayDaemon(object):
         
     def isAnnounced(self):
         return self.is_announced
+    
+    def setDisannounced(self):
+        serverOSC.disannounce()
+        self.port = None
+        del self.address
+        self.address = None
+        self.is_announced = False
+    
+    def getUrl(self):
+        if self.address:
+            return self.address.url
+        
+        return ''
   
 class NSMChild(QObject):
     def __init__(self):
@@ -2146,25 +2231,39 @@ class NSMChild(QObject):
         self.project_path  = ''
         self.wait_for_save = False
         
-        self.server_announced = False
+        self.next_template = ''
+        self.next_session_root = ''
         
         self.serverNSM = nsm_client.NSMThread('raysession_child', self.nsm_signaler, parent_daemon_address, debug)
         
         self.serverNSM.start()
-        self.serverNSM.announce('Ray Session', ':switch:optional-gui:', 'raysession')
+        
         #
         
         serverOSC.qsig.server_announce.connect(self.serverAnnounced)
         serverOSC.qsig.server_status_changed.connect(self.serverStatusChanged)
     
-    def serverAnnounced(self):
-        self.server_announced = True
+    def serverAnnounced(self, server_status, is_nsm_locked, session_root):
+        if server_status != SERVER_STATUS_OFF:
+            ray_daemon.disannounce()
+            return
+        
+        if is_nsm_locked:
+            ray_daemon.setNsmLocked()
+        else:
+            serverOSC.toDaemon('/ray/server/set_nsm_locked')
+        
         self.serverNSM.sendGuiState(not MainUI.isHidden())
         
-        serverOSC.toDaemon('/ray/server/set_nsm_locked')
+        self.serverNSM.announce(_translate('child_session', 'Child Session'), ':switch:optional-gui:', 'raysession')
         
-        if self.wait_for_open:
-            serverOSC.openSession(self.project_path)
+        #if self.wait_for_open:
+            ##if self.next_template:
+                ##serverOSC.newSessionFromTemplate(self.project_path, self.next_template)
+            ##else:
+                #serverOSC.openSession(self.project_path)
+                
+        
             
     def serverStatusChanged(self, server_status):
         if server_status == SERVER_STATUS_READY:
@@ -2177,11 +2276,12 @@ class NSMChild(QObject):
                 self.wait_for_save = False
     
     def open(self, project_path, session_name, jack_client_name):
+        print('walou')
         self.wait_for_open = True
         self.project_path  = project_path
         
-        if self.server_announced:
-            serverOSC.openSession(project_path)
+        #if ray_daemon.isAnnounced():
+        serverOSC.openSession(project_path)
     
     def save(self):
         MainUI.saveWindowSettings()
@@ -2196,7 +2296,138 @@ class NSMChild(QObject):
     def hideOptionalGui(self):
         MainUI.hide()
         self.serverNSM.sendGuiState(False)
-  
+        
+class NSMChildOutside(NSMChild):
+    def __init__(self):
+        NSMChild.__init__(self)
+        self.wait_for_close = False
+        self.wait_for_url   = False
+        
+        self.next_daemon_url = ''
+        self.next_daemon_address = None
+        self.session_name = ''
+        serverOSC.qsig.daemon_url_changed.connect(self.openSession)
+        self.serverNSM.announce(_translate('network_session', 'Network Session'), ':switch:optional-gui:', 'ray-network')
+    
+    def serverAnnounced(self, server_status, is_nsm_locked, session_root):
+        if server_status != SERVER_STATUS_OFF:
+            ray_daemon.disannounce()
+            return
+        
+        if is_nsm_locked:
+            ray_daemon.setNsmLocked()
+        else:
+            serverOSC.toDaemon('/ray/server/set_nsm_locked')
+        
+        self.serverNSM.sendGuiState(not MainUI.isHidden())
+        
+        if self.wait_for_open:
+            if self.next_template:
+                serverOSC.newSessionFromTemplate(self.project_path, self.next_template)
+            else:
+                serverOSC.openSession(self.project_path)
+    
+    def save(self):
+        NSMChild.save(self)
+        self.saveConfigFile()
+    
+    def open(self, project_path, session_name, jack_client_name):
+        print('waloufa')
+        self.wait_for_open = True
+        self.project_path  = project_path
+        self.session_name  = session_name
+        
+        is_config_file_correct = self.readConfigFile()
+        
+        if is_config_file_correct:
+            serverOSC.announce()
+            serverOSC.openSession(self.session_name)
+        else:
+            serverOSC.qsig.daemon_url_request.emit()
+    
+    def readConfigFile(self):
+        file_path = "%s.xml" % self.project_path
+        try:
+            file = open(file_path, 'r')
+        except:
+            return False
+        
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        content = xml.documentElement()
+            
+        if content.tagName() != "RAYSESSION-NET":
+            file.close()
+            return False
+        
+        next_daemon_url = content.attribute('daemon_url')
+        
+        try:
+            next_daemon_address = getLibloAddress(next_daemon_url)
+            self.next_daemon_url = next_daemon_url
+            self.next_daemon_address = next_daemon_address
+        except:
+            return False
+        
+        #return True
+        
+        #if not ray_daemon.getUrl():
+            #ray_daemon.setOscAddressViaUrl(self.next_daemon_url)
+        #elif ray_daemon.getUrl() == self.next_daemon_url:
+            #self.wait_for_url = True
+            #serverOSC.toDaemon('/nsm/server/close')
+        
+        return True
+    
+    def saveConfigFile(self):
+        file_path = "%s.xml" % self.project_path
+        print('file_path', file_path)
+        
+        try:
+            print('mezo')
+            net_file = open(file_path, 'w')
+            print('zmok')
+            xml = QDomDocument()
+            print('zmoek')
+            print('kookodz', ray_daemon.getUrl())
+            p = xml.createElement('RAYSESSION-NET')
+            p.setAttribute('VERSION', VERSION)
+            
+            p.setAttribute('daemon_url', ray_daemon.getUrl())
+            
+            
+            xml.appendChild(p)
+            net_file.write(xml.toString())
+            net_file.close()
+            
+            return True
+        except:
+            print('qmkoe')
+            return False
+            
+    def serverStatusChanged(self, server_status):
+        if server_status == SERVER_STATUS_OFF:
+            if self.wait_for_url:
+                self.wait_for_url = False
+                serverOSC.disannounce()
+                ray_daemon.setOscAddress(self.next_daemon_url)
+                
+            elif self.wait_for_close:
+                print('je passe parr là')
+                serverOSC.disannounce()
+                app.quit()
+        else:
+            NSMChild.serverStatusChanged(self, server_status)
+    
+    def openSession(self):
+        if self.wait_for_open:
+            serverOSC.openSession(self.session_name)
+            
+    def closeSession(self):
+        self.wait_for_close = True
+        serverOSC.closeSession()
+        
+    
 if __name__ == '__main__':
     #connect signals
     signal.signal(signal.SIGINT , signalHandler)
@@ -2223,11 +2454,14 @@ if __name__ == '__main__':
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
     
     #Add RaySession/src to $PATH to can use raysession after make, whitout install
-    os.environ['PATH']="%s:%s" % (os.path.realpath(os.path.dirname(sys.argv[0])), os.environ['PATH'])
+    this_path = os.path.realpath(os.path.dirname(sys.argv[0]))
+    if not os.environ['PATH'].startswith("%s:" % this_path):
+        os.environ['PATH']="%s:%s" % (this_path, os.environ['PATH'])
     
     #get arguments
     parser = argparse.ArgumentParser(description=_translate('help', 'A session manager based on the Non-Session-Manager API for sound applications.'))
     parser.add_argument('--daemon-url', '-u', type=getLibloAddress, help='connect to this daemon url')
+    parser.add_argument('--out-daemon', action='store_true')
     parser.add_argument('--debug','-d',  action='store_true', help='display OSC messages')
     parser.add_argument('--debug-only','-do',  action='store_true', help='debug without client messages')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
@@ -2244,6 +2478,8 @@ if __name__ == '__main__':
         debug = True
     setDebug(debug)
     
+    nsm_out_daemon = parsed_args.out_daemon
+    
     #needed for signals SIGINT, SIGTERM
     timer = QTimer()
     timer.start(200)
@@ -2254,7 +2490,8 @@ if __name__ == '__main__':
     #get default folder
     default_folder = settings.value('default_folder', "%s/Ray Sessions" % os.getenv('HOME'), type=str )
     
-    ray_daemon.setNewOscAddress()
+    if not nsm_out_daemon:
+        ray_daemon.setNewOscAddress()
     
     serverOSC = OSCServerT()
     serverOSC.start()
@@ -2266,7 +2503,11 @@ if __name__ == '__main__':
     if os.getenv('NSM_URL'):
         parent_daemon_address = getLibloAddress(os.getenv('NSM_URL'))
         under_nsm = True
-        nsm_child = NSMChild()
+        if nsm_out_daemon:
+            nsm_child = NSMChildOutside()
+            ray_daemon.setExternal()
+        else:
+            nsm_child = NSMChild()
         
         settings = QSettings('%s/child_sessions' % app.organizationName())
     
@@ -2278,7 +2519,8 @@ if __name__ == '__main__':
         MainUI.hideMessagesDock()
     
     if ray_daemon.launched_before:
-        serverOSC.announce(bool(under_nsm))
+        if not nsm_out_daemon:
+            serverOSC.announce(bool(under_nsm))
     else:
         ray_daemon.start()
         
