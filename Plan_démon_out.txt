@@ -1,6 +1,62 @@
 PLAN démon externe
+le gui impose le nsm_locked à son annonce
+  puis le démon envoi le signal nsm_locked à ses gui déjà connectées
 
-démarage
+nom de session pas éditable en slave network
+
+fenêtre d'url
+    copier l'adresse tentée si tentée
+    liste déroulante url déjà utilisées 
+  
+interdire renommer session si ray-network comme client
+  
+
+démarage sans argument valide
+    fenêtre d'url
+    puis quand le démon s'annonce
+    
+démarrage avec arguments valides
+    connection au démon déjà faite
+    quand le démon s'annonce
+    annonce au démon parent
+    quand open
+        openSession( avec template si demandé)
+        
+    quand server ready
+        open reply
+        
+    quand save
+        saveSession
+        
+        
+        
+dans ray-daemon
+    quand list_user_session_templates:
+        for client capable de ray-network
+            lister et connecter le reply pour renvoi
+
+    quand sauver client comme modèle
+        si capable de ray-network et prêt:
+            saveSessionAsTemplate
+            setAttribute net_session_template
+            
+    quand sauver session comme modèle:
+        liste_desmachines
+        for client capable de ray-network et prêt:
+            si machine non dans list_des_machines
+                saveSessionAsTemplate
+                
+    quand dupliquer:
+        for client capable de ray-network et prêt:
+            envoi de pre_duplicate (créer préduplicate dans ray-daemon)
+            
+            
+            
+            faudrait-il pas la virer cette fonction dupliquer?
+            
+
+
+
 
 
 open()

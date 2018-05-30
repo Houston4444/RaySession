@@ -356,6 +356,7 @@ class Client(QObject):
     start_gui_hidden = False
     check_last_save  = True
     sent_to_gui      = False
+    net_template_session = ''
     
     def __init__(self):
         QObject.__init__(self)
@@ -457,6 +458,17 @@ class Client(QObject):
     
     def isCapableOf(self, capability):
         return bool(capability in self.capabilities)
+    
+    def setNetworkProperties(self, net_daemon_url, net_session_root):
+        if not self.isCapableOf(':ray-network:'):
+            return
+        
+        #self.net_daemon_url = net_daemon_url
+        #self.net_session_root = net_session_root
+        
+        self.arguments = '--daemon-url %s --net-session-root "%s"' % (net_daemon_url, net_session_root.replace('"', '\\"'))
+        print('argumoi', self.executable_path)
+        print(self.arguments)
     
     def setStatus(self, status):
         #CLIENT_STATUS_COPY is not a status as the other ones.
@@ -1015,6 +1027,9 @@ class Client(QObject):
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
         
+        if self.isCapableOf(':ray-network:'):
+            client_project_path = self.net_template_session
+        
         server.send(src_addr, "/nsm/client/open", client_project_path,  session.name, jack_client_name)
         self.pending_command = COMMAND_OPEN
        
@@ -1285,6 +1300,8 @@ class OperatingSession(Session):
         self.process_order = []
         
         self.terminated_yet = False
+        
+        self.load_tried = False
         
         
     
@@ -1717,9 +1734,6 @@ class OperatingSession(Session):
         session_full_name = self.osc_args[0]
         
         spath = self.root + '/' + session_full_name
-        
-        #will be used to set raysession as nsm client in the future
-        #if session_full_name.startswith('/') or server.is_nsm_locked:
         if session_full_name.startswith('/'):
             spath = session_full_name
             
@@ -1758,6 +1772,15 @@ class OperatingSession(Session):
                 server.sendGui('/ray/opening_nsm_session')
             except:
                 try:
+                    if len(self.osc_args) == 2 and not self.load_tried:
+                        #for network open ask, if open is called with a template arg, template session is loaded if there is no session here
+                        #load_tried is used to prevent infinite loop if template session file doesn't exists 
+                        self.load_tried = True
+                        self.process_order = [self.prepareTemplate, self.load ] + self.process_order
+                        self.nextFunction()
+                        #self.load_tried = False
+                        return
+                    
                     ray_file = open(session_ray_file, 'w')
                     xml = QDomDocument()
                     p = xml.createElement('RAYSESSION')
@@ -1790,7 +1813,7 @@ class OperatingSession(Session):
         
         
         self.new_clients = []
-        new_client_executables = []
+        new_client_exec_args = []
         
         self.setPath(spath)
         
@@ -1822,7 +1845,7 @@ class OperatingSession(Session):
                         
                         if tag_name == 'Clients':
                             if client.auto_start:
-                                new_client_executables.append(client.executable_path)
+                                new_client_exec_args.append((client.executable_path, client.arguments))
                             
                             self.new_clients.append(client)
                             
@@ -1845,15 +1868,15 @@ class OperatingSession(Session):
                     client.client_id       = elements[2]
                     client.prefix_mode     = PREFIX_MODE_CLIENT_NAME
                     self.new_clients.append(client)
-                    new_client_executables.append(client.executable_path)
+                    new_client_exec_args.append((client.executable_path, ''))
                     
             file.close()
         
         MESSAGE("Commanding unneeded and dumb clients to quit")
         
         for client in session.clients:
-            if client.active and client.isCapableOf(':switch:') and client.executable_path in new_client_executables:
-                new_client_executables.remove(client.executable_path)
+            if client.active and client.isCapableOf(':switch:') and (client.executable_path, client.arguments) in new_client_exec_args:
+                new_client_exec_args.remove((client.executable_path, client.arguments))
             else:
                 #client is not capable of switch, or is not wanted in the new session
                 if client.isRunning():
@@ -2025,6 +2048,8 @@ class SignaledSession(OperatingSession):
         
         signaler.copy_aborted.connect(self.abortCopy)
         
+        signaler.client_net_properties.connect(self.setClientNetworkProperties)
+        
     ############################# FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###############################
     
     def serverNewSession(self, path, args, src_addr):
@@ -2042,6 +2067,8 @@ class SignaledSession(OperatingSession):
         self.nextFunction()
         
     def serverOpenSession(self, path, args, src_addr):
+        self.load_tried = False
+        
         if self.process_order:
             return
         self.rememberOscArgs(path, args, src_addr)
@@ -2365,7 +2392,13 @@ class SignaledSession(OperatingSession):
                 self.endTimerIfLastExpected(client)
         else:
             MESSAGE("Reply from unknown client")
-            
+    
+    def setClientNetworkProperties(self, client_id, net_daemon_url, net_session_root):
+        for client in self.clients:
+            if client.client_id == client_id:
+                client.setNetworkProperties(net_daemon_url, net_session_root)
+                break
+    
     def guiClientStop(self, path, args):
         for client in self.clients:
             if client.client_id == args[0]:
@@ -2570,6 +2603,8 @@ class Signaler(QObject):
     gui_trash_restore           = pyqtSignal(str)
     gui_trash_remove_definitely = pyqtSignal(str)
     
+    client_net_properties = pyqtSignal(str, str, str)
+    
 
 class OscServerThread(ServerThread):
     def __init__(self, osc_num=0):
@@ -2704,6 +2739,17 @@ class OscServerThread(ServerThread):
         
         label = args[0]
         signaler.gui_client_label.emit(client.client_id, label)
+            
+    @make_method('/nsm/client/network_properties', 'ss')
+    def nsmClientNetworkProperties(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        client = getClientByAddress(src_addr)
+        if not client:
+            return
+        
+        net_daemon_url, net_session_root = args
+        signaler.client_net_properties.emit(client.client_id, net_daemon_url, net_session_root)
             
     @make_method('/ray/gui/gui_announce', 'i')
     def rayGuiGui_announce(self, path, args, types, src_addr):
@@ -2987,7 +3033,7 @@ class OscServerThread(ServerThread):
         if self.isOperationPending(src_addr, path):
             return
         
-        signaler.server_new_from_tp.emit(path, args, src_addr)
+        signaler.server_open.emit(path, args, src_addr)
           
     @make_method('/nsm/server/close', '')
     def nsmServerClose(self, path, args, types, src_addr):
@@ -3230,7 +3276,7 @@ class OscServerThread(ServerThread):
         #if is_reply:
             #self.send(gui_addr, "/ray/gui/gui_announce", "hi" )
         #else:
-        self.send(gui_addr, "/ray/gui/server_announce", self.server_status, int(self.is_nsm_locked), session.root)
+        self.send(gui_addr, "/ray/gui/daemon_announce", self.server_status, int(self.is_nsm_locked), session.root)
         
         self.send(gui_addr, "/ray/server_status", self.server_status)
         self.send(gui_addr, "/ray/gui/session/name",  session.name,  session.path)

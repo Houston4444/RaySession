@@ -1,4 +1,4 @@
-from liblo import Server
+from liblo import Server, Address
 import argparse
 import liblo, socket
 import sys, os, shlex
@@ -106,13 +106,47 @@ def getLibloAddress(url):
             raise argparse.ArgumentTypeError(msg)
 
 def areSameOscPort(url1, url2):
+    if url1 == url2:
+        return True
+    #print('areSameOscPort')
     try:
         address1 = Address(url1)
         address2 = Address(url2)
     except:
         return False
     
+    #print('zef')
+    
     if address1.port != address2.port:
+        return False
+    
+    if areOnSameMachine(url1, url2):
+        return True
+    
+    return False
+    
+    ##print('zmelf')
+    #if address1.hostname == address2.hostname:
+        #return True
+    
+    ##print('zemofk')
+    #try:
+        #if socket.gethostbyaddr(address1.hostname) == socket.gethostbyaddr(address2.hostname):
+            #return True
+    #except:
+        #return False
+    
+    ##print('mzokef')
+    #return False
+    
+def areOnSameMachine(url1, url2):
+    if url1 == url2:
+        return True
+    
+    try:
+        address1 = Address(url1)
+        address2 = Address(url2)
+    except:
         return False
     
     if address1.hostname == address2.hostname:
@@ -124,7 +158,9 @@ def areSameOscPort(url1, url2):
     except:
         return False
     
+    #print('mzokef')
     return False
+    
     
 def shellLineToArgs(string):
     try:
