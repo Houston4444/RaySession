@@ -1,7 +1,3 @@
-PLAN démon externe
-le gui impose le nsm_locked à son annonce
-  puis le démon envoi le signal nsm_locked à ses gui déjà connectées
-
 nom de session pas éditable en slave network
 
 fenêtre d'url
@@ -9,7 +5,7 @@ fenêtre d'url
     liste déroulante url déjà utilisées 
   
 interdire renommer session si ray-network comme client
-  
+
 
 démarage sans argument valide
     fenêtre d'url

@@ -43,11 +43,12 @@ from list_widget_clients import *
 import nsm_client
 
 #for use on network session under NSM
-ERR_NO_ERROR                =  0
-ERR_DAEMON_NO_ANNOUNCE      = -1
-ERR_DAEMON_NOT_OFF          = -2
-ERR_DAEMON_WRONG_ROOT       = -3
-ERR_DAEMON__NOT_NSM_LOCKED  = -4
+ERR_NO_ERROR               =  0
+ERR_DAEMON_NO_ANNOUNCE     = -1
+ERR_DAEMON_NOT_OFF         = -2
+ERR_DAEMON_WRONG_ROOT      = -3
+ERR_DAEMON_NOT_NSM_LOCKED  = -4
+ERR_DAEMON_WRONG_VERSION   = -5 
 
 
 def str2bool(v):
@@ -59,21 +60,17 @@ def remove_accents(input_str):
 
 def signalHandler(sig, frame):
     if sig in (SIGINT, SIGTERM):
-        print('ramou', under_nsm)
         if ray_daemon.launched_before:
             if under_nsm:
                 if session.server_status != SERVER_STATUS_OFF:
-                    serverOSC.closeSession()
+                    serverOSC.abortSession()
                 MainUI.terminate_request = True
             else:
-                print('mzoek')
                 app.quit()
             return
         
         MainUI.terminate_request = True
-        print('ramimou')
         ray_daemon.stop()
-        print('radur')
 
 def changeRootFolder(parent_window):
     #this function is the only one that takes cares of files present on system. 
@@ -326,7 +323,7 @@ class TrashedClient(object):
         self.menu_action = menu_action
     
 class Signaler(QObject):
-    daemon_announce     = pyqtSignal(Address, int, int, str)
+    daemon_announce     = pyqtSignal(Address, str, int, int, str)
     daemon_announce_ok  = pyqtSignal()
     daemon_nsm_locked   = pyqtSignal(bool)
     server_copying      = pyqtSignal(bool)
@@ -434,23 +431,28 @@ class OSCServerT(ServerThread):
         signaler.factory_client_template_found.emit(args)
     
         
-    @make_method('/ray/gui/daemon_announce', 'iis')
+    @make_method('/ray/gui/daemon_announce', 'siis')
     def serverAnnounce(self, path, args, types, src_addr):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         
         if ray_daemon.isAnnounced():
             return
-        #else:
-            #ray_daemon.setAnnounced(src_addr)
         
-        server_status, is_nsm_locked, session_root = args
+        version, server_status, is_nsm_locked, session_root = args
         
-        signaler.daemon_announce.emit(src_addr, server_status, is_nsm_locked, session_root)
+        signaler.daemon_announce.emit(src_addr, version, server_status, is_nsm_locked, session_root)
     
-    @make_method('/ray/gui/server_disannounce', '')
+    @make_method('/ray/gui/daemon_disannounce', '')
     def serverDisannounce(self, path, args, types, src_addr):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         pass
+    
+    @make_method('/ray/gui/daemon_nsm_locked', 'i')
+    def daemonNsmLocked(self, path, args, types, src_addr):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        nsm_locked = bool(args[0])
+        
+        signaler.daemon_nsm_locked.emit(nsm_locked)
     
     @make_method('/ray/gui/server/message', 's')
     def serverMessage(self, path, args):
@@ -600,11 +602,11 @@ class OSCServerT(ServerThread):
     
     def announce(self):
         ifDebug('serverOSC::raysession_sends announce')
-        self.send(ray_daemon.address, '/ray/gui/gui_announce', int(under_nsm))
+        self.send(ray_daemon.address, '/ray/gui/gui_announce', VERSION, int(under_nsm))
     
-    def disannounce(self):
+    def disannounce(self, src_addr):
         ifDebug('serverOSC::raysession_sends disannounce')
-        self.send(ray_daemon.address, '/ray/gui/gui_disannounce')
+        self.send(src_addr, '/ray/gui/gui_disannounce')
     
     def startListSession(self):
         ifDebug('serverOSC::raysession_sends list sessions')
@@ -763,6 +765,9 @@ class MainWindow(QMainWindow):
         self.controlToolButton.setPopupMode(QToolButton.InstantPopup)
         self.controlToolButton.setMenu(self.controlMenu)
         
+        self.ui.toolButtonControl2.setPopupMode(QToolButton.InstantPopup)
+        self.ui.toolButtonControl2.setMenu(self.controlMenu)
+        
         #set trash menu
         self.trashMenu = QMenu()
         self.ui.trashButton.setPopupMode(QToolButton.InstantPopup)
@@ -847,26 +852,22 @@ class MainWindow(QMainWindow):
         
         self.connectListWidgetRequests()
     
-    def setNsmLocked(self, is_nsm_locked):
-        if is_nsm_locked:
-            self.ui.actionNewSession.setEnabled(False)
-            self.ui.actionOpenSession.setEnabled(False)
-            self.ui.actionDuplicateSession.setEnabled(False)
-            self.ui.actionCloseSession.setEnabled(False)
-            self.ui.actionAbortSession.setEnabled(False)
+    def setNsmLocked(self, nsm_locked):
+        self.ui.actionNewSession.setEnabled(not nsm_locked)
+        self.ui.actionOpenSession.setEnabled(not nsm_locked)
+        self.ui.actionDuplicateSession.setEnabled(not nsm_locked)
+        self.ui.actionCloseSession.setEnabled(not nsm_locked)
+        self.ui.actionAbortSession.setEnabled(not nsm_locked)
+        
+        self.ui.toolBar.setVisible(not nsm_locked)
+        self.ui.toolButtonDuplicateSession.setVisible(not nsm_locked)
+        self.ui.toolButtonAbortSession.setVisible(not nsm_locked)
+        self.ui.closeButton.setVisible(not nsm_locked)
+        self.ui.toolButtonControl2.setVisible(nsm_locked)
+        
+        self.ui.stackedWidgetSessionName.setEditable(nsm_locked and not nsm_out_daemon)
+        self.ui.actionRenameSession.setEnabled(nsm_locked and not nsm_out_daemon)
             
-            self.ui.toolBar.setVisible(False)
-            self.ui.toolButtonDuplicateSession.setVisible(False)
-            self.ui.toolButtonAbortSession.setVisible(False)
-            self.ui.closeButton.setVisible(False)
-            self.ui.toolButtonControl2.setPopupMode(QToolButton.InstantPopup)
-            self.ui.toolButtonControl2.setMenu(self.controlMenu)
-            
-            self.ui.stackedWidgetSessionName.setEditable(True)
-            self.ui.actionRenameSession.setEnabled(True)
-            
-        else:
-            self.ui.toolButtonControl2.setVisible(False)
     
     def hideMessagesDock(self):
         self.ui.dockWidgetMessages.setVisible(False)
@@ -893,7 +894,9 @@ class MainWindow(QMainWindow):
         self.flash_open_bool = not self.flash_open_bool
     
     def quitApp(self):
-        if not ray_daemon.launched_before and session.isRunning():
+        
+        if session.isRunning() and (under_nsm or not ray_daemon.launched_before):
+        #if not ray_daemon.launched_before and session.isRunning():
             dialog = quitAppDialog(self)
             dialog.exec()
             if dialog.result():
@@ -1106,9 +1109,6 @@ class MainWindow(QMainWindow):
                 app.quit()
             return
         
-        #serverOSC.disannounce()
-        #ray_daemon.setOscAddressViaUrl(dialog.getDaemonUrl())
-        #serverOSC.announce(nsm_locked=under_nsm)
         signaler.daemon_url_changed.emit(dialog.ui.lineEdit.text())
     
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
@@ -2117,6 +2117,8 @@ class DaemonUrlWindow(ChildDialog):
             error_text = _translate("url_window", "<p>daemon at<br><strong>%s</strong><br>has a loaded session.<br>It can't be used for slave session</p>") % ex_url
         elif err_code == ERR_DAEMON_WRONG_ROOT:
             error_text = _translate("url_window", "<p>daemon at<br><strong>%s</strong><br>uses an other session root folder !<.p>") % ex_url
+        elif err_code == ERR_DAEMON_WRONG_VERSION:
+            error_text = _translate("url_window", "<p>daemon at<br><strong>%s</strong><br>uses an other Ray Session version.<.p>") % ex_url
         
         self.ui.labelError.setText(error_text)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -2198,18 +2200,22 @@ class RayDaemon(object):
             sys.stderr.write(_translate('error', "No announce from ray-daemon. RaySession can't works. Sorry.\n"))
             app.quit()
             
-    def receiveAnnounce(self, src_addr, server_status, nsm_locked, session_root):
+    def receiveAnnounce(self, src_addr, version, server_status, nsm_locked, session_root):
         self.announce_timer.stop()
         
-        #if nsm_out_daemon:
+        if version != VERSION:
+            signaler.daemon_url_request.emit(ERR_DAEMON_WRONG_VERSION, self.url)
+            self.disannounce(src_addr)
+            return
+        
         if net_session_root and session_root != net_session_root:
-            self.disannounce()
             signaler.daemon_url_request.emit(ERR_DAEMON_WRONG_ROOT, self.url)
+            self.disannounce(src_addr)
             return
                 
         if nsm_out_daemon and server_status != SERVER_STATUS_OFF:
-            self.disannounce()
             signaler.daemon_url_request.emit(ERR_DAEMON_NOT_OFF, self.url)
+            self.disannounce(src_addr)
             return
             
         self.is_announced  = True
@@ -2221,13 +2227,16 @@ class RayDaemon(object):
         
         if nsm_locked:
             signaler.daemon_nsm_locked.emit(True)
-        elif nsm_out_daemon:
+        elif under_nsm:
             serverOSC.toDaemon('/ray/server/set_nsm_locked')
         
         signaler.daemon_announce_ok.emit()
                 
-    def disannounce(self):
-        serverOSC.disannounce()
+    def disannounce(self, address=None):
+        if not address:
+            address = self.address
+        
+        serverOSC.disannounce(address)
         self.port = None
         self.url  = ''
         del self.address
@@ -2274,6 +2283,10 @@ class RayDaemon(object):
         #self.process.start('konsole', ['-e', 'ray-daemon'] + arguments) 
         
     def stop(self):
+        if self.launched_before:
+            self.disannounce()
+            return
+            
         if self.processIsRunning():
             if not self.stopped_yet:
                 self.process.terminate()

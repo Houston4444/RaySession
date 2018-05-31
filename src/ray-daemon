@@ -4,7 +4,6 @@ import os, sys, shutil, string, random, time, subprocess, signal, unicodedata, i
 from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject, QTimer, QProcess, QSettings, QStandardPaths
 from PyQt5.QtXml import QDomDocument
-from threading import Thread
 
 from shared import *
 
@@ -2612,6 +2611,7 @@ class OscServerThread(ServerThread):
         self.gui_list = []
         self.server_status = SERVER_STATUS_OFF
         self.is_nsm_locked = False
+        self.nsm_locker_url = ''
 
     @make_method('/nsm/server/announce', 'sssiii')
     def nsmServerAnnounce(self, path, args, types, src_addr):
@@ -2647,12 +2647,6 @@ class OscServerThread(ServerThread):
         
         #self.sendClientStatusToGui(client)
         client.setStatus(CLIENT_STATUS_ERROR)
-
-    @make_method('/ray/server/set_nsm_locked', '')
-    def rayServerSetNsmLocked(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        self.is_nsm_locked = True
     
     @make_method('/nsm/client/progress', 'f')
     def nsmClientProgress(self, path, args, types, src_addr):
@@ -2751,11 +2745,22 @@ class OscServerThread(ServerThread):
         net_daemon_url, net_session_root = args
         signaler.client_net_properties.emit(client.client_id, net_daemon_url, net_session_root)
             
-    @make_method('/ray/gui/gui_announce', 'i')
+    @make_method('/ray/gui/gui_announce', 'si')
     def rayGuiGui_announce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        self.announceGui(src_addr.url)
+        version    = args[0]
+        nsm_locked = bool(args[1])
+        
+        if nsm_locked:
+            self.is_nsm_locked = True
+            self.nsm_locker_url = src_addr.url
+            
+            for gui_addr in self.gui_list:
+                if gui_addr.url != src_addr.url:
+                    self.send(gui_addr, '/ray/gui/daemon_nsm_locked', 1)
+        
+        self.announceGui(src_addr.url, nsm_locked)
 
     @make_method('/ray/gui/gui_disannounce', '')
     def rayGuiGui_disannounce(self, path, args, types, src_addr):
@@ -2769,6 +2774,22 @@ class OscServerThread(ServerThread):
         
         self.gui_list.remove(addr)
         
+        if src_addr.url == self.nsm_locker_url:
+            self.is_nsm_locked  = False
+            self.nsm_locker_url = ''
+            self.sendGui('/ray/gui/daemon_nsm_locked', 0)
+    
+    @make_method('/ray/server/set_nsm_locked', '')
+    def rayServerSetNsmLocked(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        self.is_nsm_locked = True
+        self.nsm_locker_url = src_addr.url
+        
+        for gui_addr in self.gui_list:
+            if gui_addr.url != src_addr.url:
+                self.send(gui_addr, '/ray/gui/daemon_nsm_locked', 1)
+    
     @make_method('/ray/gui/client/stop', 's')
     def rayGuiClientStop(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -3270,13 +3291,10 @@ class OscServerThread(ServerThread):
         if tmp_template_list:
             self.send(src_addr, response_osc_path, *tmp_template_list)
     
-    def announceGui(self, url):
+    def announceGui(self, url, nsm_locked=False):
         gui_addr = Address(url)
         
-        #if is_reply:
-            #self.send(gui_addr, "/ray/gui/gui_announce", "hi" )
-        #else:
-        self.send(gui_addr, "/ray/gui/daemon_announce", self.server_status, int(self.is_nsm_locked), session.root)
+        self.send(gui_addr, "/ray/gui/daemon_announce", VERSION, self.server_status, int(self.is_nsm_locked), session.root)
         
         self.send(gui_addr, "/ray/server_status", self.server_status)
         self.send(gui_addr, "/ray/gui/session/name",  session.name,  session.path)
@@ -3308,7 +3326,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--session-root', '-r', help='set root folder for sessions')
-    parser.add_argument('--osc-port', type=int, default=16187, help='select OSC port for the daemon')
+    parser.add_argument('--osc-port', '-p', type=int, default=16187, help='select OSC port for the daemon')
     parser.add_argument('--gui-url', type=getLibloAddress, help=argparse.SUPPRESS)
     parser.add_argument('--findfreeport', action='store_true', help='find another port if port is not free')
     parser.add_argument('--debug','-d',  action='store_true', help='see all OSC messages')
