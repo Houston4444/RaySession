@@ -59,6 +59,7 @@ TEMPLATE_SESSION_LOAD = 3
 TEMPLATE_CLIENT_SAVE  = 4
 TEMPLATE_CLIENT_LOAD  = 5
 
+
 debug = False
 last_client_message = ''
 known_as_non_active = []
@@ -355,7 +356,7 @@ class Client(QObject):
     start_gui_hidden = False
     check_last_save  = True
     sent_to_gui      = False
-    net_template_session = ''
+    net_session_template = ''
     
     def __init__(self):
         QObject.__init__(self)
@@ -393,7 +394,9 @@ class Client(QObject):
                 if self.prefix_mode == 0:
                     self.project_path = ctx.attribute('project-path')
                     
-                    
+        
+        self.net_session_template = ctx.attribute('net_session_template')
+        
         if ctx.attribute('id'):
             #session use "id" for absolutely needed client_id
             self.client_id = ctx.attribute('id')
@@ -424,6 +427,10 @@ class Client(QObject):
             if self.executable_path != 'ray-proxy':
                 if self.start_gui_hidden:
                     ctx.setAttribute('gui_visible', '0')
+                    
+        if self.isCapableOf(':ray-network:'):
+            if self.net_session_template:
+                ctx.setAttribute('net_session_template', self.net_session_template)
             
                 
     def setReply(self, errcode, message):
@@ -494,6 +501,10 @@ class Client(QObject):
         return jack_client_name
     
     def getProjectPath(self):
+        if self.isCapableOf(':ray-network:'):
+            #for ray-network, use project_path for template, quite ugly but simple code.
+            return self.net_session_template
+        
         if self.prefix_mode == PREFIX_MODE_SESSION_NAME:
             return "%s/%s.%s" % (session.path, session.name, self.client_id)
         elif self.prefix_mode == PREFIX_MODE_CLIENT_NAME:
@@ -771,6 +782,11 @@ class Client(QObject):
                 
             os.makedirs(template_dir)
             
+            if self.isCapableOf(':ray-network:'):
+                if self.active:
+                    server.send(self.addr, '/nsm/client/save_as_template', template_name)
+                    self.net_session_template = template_name
+            
             if client_files:
                 self.setStatus(CLIENT_STATUS_COPY)
                 file_copier.startClientCopy(self.client_id, client_files, template_dir, self.saveAsTemplate_step1, self.saveAsTemplateAborted, [template_name])
@@ -1026,8 +1042,10 @@ class Client(QObject):
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
         
-        if self.isCapableOf(':ray-network:'):
-            client_project_path = self.net_template_session
+        #print('zzzoo', self.executable_path)
+        #if self.isCapableOf(':ray-network:'):
+            #print('zzzoos', self.net_session_template)
+            #client_project_path = self.net_session_template
         
         server.send(src_addr, "/nsm/client/open", client_project_path,  session.name, jack_client_name)
         self.pending_command = COMMAND_OPEN
@@ -1063,7 +1081,7 @@ class Session(QObject):
         if not renameable:
             if self.is_renameable:
                 self.is_renameable = False
-                server.sendGui('/ray/gui/session/renameable', 0)
+                server.sendRenameable(False)
             return
         
         for client in self.clients:
@@ -1071,7 +1089,7 @@ class Session(QObject):
                 return
             
         self.is_renameable = True
-        server.sendGui('/ray/gui/session/renameable', 1)
+        server.sendRenameable(True)
     
     def getClient(self, client_id):
         for client in self.clients:
@@ -1300,7 +1318,7 @@ class OperatingSession(Session):
         
         self.terminated_yet = False
         
-        self.load_tried = False
+        #self.load_tried = False
         
         
     
@@ -1665,6 +1683,11 @@ class OperatingSession(Session):
         if not os.path.exists(session_template_root):
             os.makedirs(session_template_root)
         
+        for client in self.clients:
+            if client.isCapableOf(':ray-network:') and client.active:
+                client.net_session_template = session_template_name
+                server.send(client.addr, '/nsm/client/save_session_template', session_template_name)
+        
         server.setServerStatus(SERVER_STATUS_COPY)
         file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted)
         
@@ -1771,14 +1794,14 @@ class OperatingSession(Session):
                 server.sendGui('/ray/opening_nsm_session')
             except:
                 try:
-                    if len(self.osc_args) == 2 and not self.load_tried:
-                        #for network open ask, if open is called with a template arg, template session is loaded if there is no session here
-                        #load_tried is used to prevent infinite loop if template session file doesn't exists 
-                        self.load_tried = True
-                        self.process_order = [self.prepareTemplate, self.load ] + self.process_order
-                        self.nextFunction()
-                        #self.load_tried = False
-                        return
+                    #if len(self.osc_args) == 2 and not self.load_tried:
+                        ##for network open ask, if open is called with a template arg, template session is loaded if there is no session here
+                        ##load_tried is used to prevent infinite loop if template session file doesn't exists 
+                        #self.load_tried = True
+                        #self.process_order = [self.prepareTemplate, self.load ] + self.process_order
+                        #self.nextFunction()
+                        ##self.load_tried = False
+                        #return
                     
                     ray_file = open(session_ray_file, 'w')
                     xml = QDomDocument()
@@ -2061,25 +2084,17 @@ class SignaledSession(OperatingSession):
     def serverNewSessionFromTemplate(self, path, args, src_addr):
         if self.process_order:
             return
+        
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.prepareTemplate, self.load, self.loadDone]
         self.nextFunction()
         
     def serverOpenSession(self, path, args, src_addr):
-        self.load_tried = False
-        
         if self.process_order:
             return
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.load, self.loadDone]
         self.nextFunction()
-    
-    #def serverOpenSessionWithTemplate(self, path, args, src_addr):
-        #if self.process_order:
-            #return
-        
-        #self.rememberOscArgs(path, args, src_addr)
-        
     
     def serverSaveSession(self, path, args, src_addr):
         if self.process_order:
@@ -2882,6 +2897,15 @@ class OscServerThread(ServerThread):
         
         new_session_name = args[0]
         
+        #prevent rename session in network session
+        if self.nsm_locker_url:
+            NSM_URL = os.getenv('NSM_URL')
+            if not NSM_URL:
+                return
+            
+            if not areSameOscPort(self.nsm_locker_url, NSM_URL):
+                return
+        
         if '/' in new_session_name:
             self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
             return
@@ -3045,6 +3069,8 @@ class OscServerThread(ServerThread):
         if self.isOperationPending(src_addr, path):
             return
         
+        print('oookopen')
+        
         signaler.server_open.emit(path, args, src_addr)
           
     @make_method('/nsm/server/open', 'ss')
@@ -3053,6 +3079,21 @@ class OscServerThread(ServerThread):
         
         if self.isOperationPending(src_addr, path):
             return
+        
+        session_name, template_name = args
+        
+        print('ozkopen', session_name, template_name)
+        
+        if template_name:
+            spath = ''
+            if session_name.startswith('/'):
+                spath = session_name
+            else:
+                spath = "%s/%s" % (session.root, session_name)
+            
+            if not os.path.exists(spath):
+                signaler.server_new_from_tp.emit(path, args, src_addr)
+                return
         
         signaler.server_open.emit(path, args, src_addr)
           
@@ -3291,6 +3332,20 @@ class OscServerThread(ServerThread):
         if tmp_template_list:
             self.send(src_addr, response_osc_path, *tmp_template_list)
     
+    def sendRenameable(self, renameable):
+        if not renameable:
+            self.sendGui('/ray/gui/session/renameable', 0)
+            return
+        
+        if self.nsm_locker_url:
+            NSM_URL = os.getenv('NSM_URL')
+            if not NSM_URL:
+                return
+            if not areSameOscPort(self.nsm_locker_url, NSM_URL):
+                return
+        
+        self.sendGui('/ray/gui/session/renameable', 1)
+    
     def announceGui(self, url, nsm_locked=False):
         gui_addr = Address(url)
         
@@ -3384,16 +3439,7 @@ if __name__ == '__main__':
             sys.stderr.write("impossible to make dir %s , aborted !\n" % session_root)
             sys.exit(1)
             
-    #this method works differently with pyqt or qt versions (probably) , so we need to ensure ray-daemon won't crash because of that.
-    known_as_non_active = []
-    
-    try:
-        known_as_non_active = settings.value('daemon/non_active_list', [], type=list)
-    except:
-        try:
-            known_as_non_active = settings.value('daemon/non_active_list', [])
-        except:
-            known_as_non_active = []
+    known_as_non_active = getListInSettings(settings, 'daemon/non_active_list')
     
     timer = QTimer()
     timer.setInterval(200)

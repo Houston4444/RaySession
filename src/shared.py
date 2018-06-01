@@ -48,6 +48,10 @@ SERVER_STATUS_READY     =  8
 SERVER_STATUS_SAVE      =  9
 SERVER_STATUS_CLOSE     = 10
 
+NSM_MODE_NO_NSM  = 0
+NSM_MODE_CHILD   = 1
+NSM_MODE_NETWORK = 2
+
 
 def ifDebug(string):
     if debug:
@@ -56,6 +60,18 @@ def ifDebug(string):
 def setDebug(bool):
     global debug
     debug = bool
+
+def getListInSettings(settings, path):
+    #getting a QSettings value of list type seems to not works the same way on all machines
+    try:
+        settings_list = settings.value(path, [], type=list)
+    except:
+        try:
+            settings_list = settings.value(path, [])
+        except:
+            settings_list = []
+            
+    return settings_list
 
 def isOscPortFree(port):
     try:

@@ -602,6 +602,15 @@ class OSCServerT(ServerThread):
     
     def announce(self):
         ifDebug('serverOSC::raysession_sends announce')
+        
+        nsm_mode = NSM_MODE_NO_NSM
+        
+        if under_nsm:
+            if nsm_out_daemon:
+                nsm_mode = NSM_MODE_NETWORK
+            else:
+                nsm_mode = NSM_MODE_CHILD
+        
         self.send(ray_daemon.address, '/ray/gui/gui_announce', VERSION, int(under_nsm))
     
     def disannounce(self, src_addr):
@@ -619,9 +628,12 @@ class OSCServerT(ServerThread):
     def newSessionFromTemplate(self, session_name, template_name):
         self.toDaemon('/ray/server/new_from_template', session_name, template_name)
     
-    def openSession(self, session_name):
+    def openSession(self, session_name, session_template=''):
         ifDebug('serverOSC::raysession_sends open session %s' % remove_accents(session_name))
-        self.toDaemon('/nsm/server/open', session_name)
+        if session_template:
+            self.toDaemon('/nsm/server/open', session_name, session_template)
+        else:
+            self.toDaemon('/nsm/server/open', session_name)
         
     def saveSession(self):
         ifDebug('serverOSC::raysession_sends save session')
@@ -1109,7 +1121,15 @@ class MainWindow(QMainWindow):
                 app.quit()
             return
         
-        signaler.daemon_url_changed.emit(dialog.ui.lineEdit.text())
+        new_url = dialog.getUrl()
+        
+        tried_urls = getListInSettings(settings, 'network/tried_urls')
+        if not new_url in tried_urls:
+            tried_urls.append(new_url)
+            
+        settings.setValue('network/tried_urls', tried_urls)
+        
+        signaler.daemon_url_changed.emit(new_url)
     
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
     
@@ -1184,7 +1204,7 @@ class MainWindow(QMainWindow):
      
     def serverSessionRenameable(self, renameable):
         session.is_renameable = renameable
-        self.ui.stackedWidgetSessionName.setEditable(renameable and session.server_status == SERVER_STATUS_READY)
+        self.ui.stackedWidgetSessionName.setEditable(renameable and session.server_status == SERVER_STATUS_READY and not nsm_out_daemon)
      
     def serverSendsError(self, args):
         if not len(args) >= 3:
@@ -1247,7 +1267,7 @@ class MainWindow(QMainWindow):
         self.ui.actionOpenSessionFolder.setEnabled(bool(server_status != SERVER_STATUS_OFF))
         
         self.ui.stackedWidgetSessionName.setEditable(ready and session.is_renameable)
-        if under_nsm and ready and session.is_renameable:
+        if under_nsm and not nsm_out_daemon and ready and session.is_renameable:
             self.ui.stackedWidgetSessionName.setOnEdit()
             
         
@@ -1650,7 +1670,10 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
         self.ui.labelNewTemplateName.setText(_translate('new client template', "New application template name :"))
         
         signaler.user_client_template_found.connect(self.addTemplatesToList)
+        
+        
         serverOSC.toDaemon('/ray/server/list_user_client_templates')
+        
         
         self.serverStatusChanged(session.server_status)
     
@@ -2108,7 +2131,7 @@ class DaemonUrlWindow(ChildDialog):
         self.ui = ui_daemon_url.Ui_Dialog()
         self.ui.setupUi(self)
         
-        self.ui.lineEdit.textEdited.connect(self.allowUrl)
+        self.ui.lineEdit.textChanged.connect(self.allowUrl)
         
         error_text = ''
         if err_code == ERR_DAEMON_NO_ANNOUNCE:
@@ -2123,15 +2146,27 @@ class DaemonUrlWindow(ChildDialog):
         self.ui.labelError.setText(error_text)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         
+        self.tried_urls = getListInSettings(settings, 'network/tried_urls')
+        
+        self.completer = QCompleter(self.tried_urls)
+        self.ui.lineEdit.setCompleter(self.completer)
+        
     def getDaemonUrl(self):
         return self.ui.lineEdit.text()
     
     def allowUrl(self, text):
+        if not text.startswith('osc.udp://'):
+            self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+            return
+        
         try:
             addr = getLibloAddress(text)
             self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
         except:
             self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+            
+    def getUrl(self):
+        return self.ui.lineEdit.text()
     
 class ErrorDialog(ChildDialog):
     def __init__(self, parent, osc_args):
@@ -2236,7 +2271,8 @@ class RayDaemon(object):
         if not address:
             address = self.address
         
-        serverOSC.disannounce(address)
+        if address:
+            serverOSC.disannounce(address)
         self.port = None
         self.url  = ''
         del self.address
@@ -2332,7 +2368,24 @@ class RayDaemon(object):
             return self.address.url
         
         return ''
-  
+
+class NSMThread(nsm_client.NSMThread):
+    def __init__(self, name, signaler, daemon_address, debug):
+        nsm_client.NSMThread.__init__(self, name, signaler, daemon_address, debug)
+        
+    @make_method('/nsm/client/list_session_templates', '')
+    def listSessionTemplates(self, path, args, types, src_addr):
+        pass
+    
+    @make_method('/nsm/client/save_as_template', 's')
+    def saveAsTemplate(self, path, args, types, src_addr):
+        serverOSC.saveTemplateSession(args[0])
+    
+    @make_method('/nsm/client/duplicate', 's')
+    def duplicate(self, path, args, types, src_addr):
+        pass
+    
+
 class NSMChild(QObject):
     def __init__(self):
         QObject.__init__(self)
@@ -2346,10 +2399,7 @@ class NSMChild(QObject):
         self.wait_for_save = False
         self.project_path  = ''
         
-        #self.next_template = ''
-        #self.next_session_root = ''
-        
-        self.serverNSM = nsm_client.NSMThread('raysession_child', self.nsm_signaler, parent_daemon_address, debug)        
+        self.serverNSM = NSMThread('raysession_child', self.nsm_signaler, parent_daemon_address, debug)        
         self.serverNSM.start()
         
         signaler.daemon_announce_ok.connect(self.announceToParent)
@@ -2358,28 +2408,6 @@ class NSMChild(QObject):
     def announceToParent(self):
         self.serverNSM.announce(_translate('child_session', 'Child Session'), ':switch:optional-gui:', 'raysession')
     
-    #def serverAnnounced(self, server_status, is_nsm_locked, session_root):
-        #if server_status != SERVER_STATUS_OFF:
-            #ray_daemon.disannounce()
-            #return
-        
-        #if is_nsm_locked:
-            #ray_daemon.setNsmLocked()
-        #else:
-            #serverOSC.toDaemon('/ray/server/set_nsm_locked')
-        
-        #self.serverNSM.sendGuiState(not MainUI.isHidden())
-        
-        #self.serverNSM.announce(_translate('child_session', 'Child Session'), ':switch:optional-gui:', 'raysession')
-        
-        #if self.wait_for_open:
-            ##if self.next_template:
-                ##serverOSC.newSessionFromTemplate(self.project_path, self.next_template)
-            ##else:
-                #serverOSC.openSession(self.project_path)
-                
-        
-            
     def serverStatusChanged(self, server_status):
         if server_status == SERVER_STATUS_READY:
             if self.wait_for_open:
@@ -2432,11 +2460,8 @@ class NSMChildOutside(NSMChild):
         self.template_name = project_path
         self.session_name  = session_name
         
-        if self.template_name:
-            serverOSC.openSession(self.session_name, self.template_name)
-        else:
-            serverOSC.openSession(self.session_name)
-            
+        serverOSC.openSession(self.session_name, self.template_name)
+        
     def closeSession(self):
         self.wait_for_close = True
         serverOSC.closeSession()

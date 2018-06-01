@@ -1,10 +1,12 @@
-nom de session pas éditable en slave network
-
-fenêtre d'url
-    copier l'adresse tentée si tentée
-    liste déroulante url déjà utilisées 
-  
 interdire renommer session si ray-network comme client
+voir l'affaire du gui
+
+revoir l'arrêt avec le démon qui fait trainer stderr
+
+
+
+
+
 
 
 démarage sans argument valide

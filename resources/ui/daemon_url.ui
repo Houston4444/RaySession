@@ -37,7 +37,10 @@
    <item>
     <widget class="QLineEdit" name="lineEdit">
      <property name="text">
-      <string>osc.udp://user-machine:16187/ </string>
+      <string>osc.udp://</string>
+     </property>
+     <property name="clearButtonEnabled">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
