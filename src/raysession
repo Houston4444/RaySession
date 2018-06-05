@@ -410,6 +410,9 @@ class OSCServerT(ServerThread):
         if not areTheyAllString(args):
             return
         
+        #if nsm_out_daemon:
+            
+        
         signaler.session_template_found.emit(args)
     
     @make_method('/reply_user_client_templates', None)

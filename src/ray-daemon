@@ -70,6 +70,9 @@ def dirname(*args):
 def basename(*args):
     return os.path.basename(*args)
 
+def pathIsValid(path):
+    return not bool('../' in path)
+
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         session.terminate()
@@ -123,6 +126,9 @@ def WARNING(string):
     print('[' + '\033[90m' + 'ray-daemon' + '\033[0m' + '] ' + '\033[93m' + string + '\033[0m', file=sys.stderr)
     
 def GUIMSG(message):
+    if not 'server' in globals():
+        return
+    
     server.sendGui('/ray/gui/server/message', message)
 
 def waitForJack():
@@ -202,9 +208,9 @@ class FileCopier(QObject):
             progress = float(current_size/self.copy_size)
             
             if self.client_id:
-                server.sendGui('/ray/gui/client/progress', self.client_id, progress)
+                self.sendGui('/ray/gui/client/progress', self.client_id, progress)
             else:
-                server.sendGui('/ray/gui/server_progress', progress)
+                self.sendGui('/ray/gui/server_progress', progress)
         
         self.timer.start()
     
@@ -356,10 +362,15 @@ class Client(QObject):
     start_gui_hidden = False
     check_last_save  = True
     sent_to_gui      = False
-    net_session_template = ''
     
-    def __init__(self):
+    net_session_template = ''
+    net_session_root     = ''
+    net_daemon_url       = ''
+    
+    def __init__(self, parent_session):
         QObject.__init__(self)
+        self.session = parent_session
+        
         self.process = QProcess()
         self.process.started.connect(self.processStarted)
         if QT_VERSION >= (5, 6):
@@ -403,7 +414,7 @@ class Client(QObject):
             
         elif ctx.attribute('client_id'):
             #template use "client_id" for wanted client_id
-            self.client_id       = session.generateClientId(ctx.attribute('client_id'))
+            self.client_id = self.session.generateClientId(ctx.attribute('client_id'))
         
     def writeXmlProperties(self, ctx):
         ctx.setAttribute('executable', self.executable_path)
@@ -428,11 +439,16 @@ class Client(QObject):
                 if self.start_gui_hidden:
                     ctx.setAttribute('gui_visible', '0')
                     
-        if self.isCapableOf(':ray-network:'):
-            if self.net_session_template:
-                ctx.setAttribute('net_session_template', self.net_session_template)
+        #if self.isCapableOf(':ray-network:'):
+        if self.net_session_template:
+            ctx.setAttribute('net_session_template', self.net_session_template)
             
-                
+    def sendGui(self, *args):
+        if not 'server' in globals():
+            return
+        
+        server.sendGui(*args)
+        
     def setReply(self, errcode, message):
         self._reply_message = message
         self._reply_errcode = errcode
@@ -469,12 +485,10 @@ class Client(QObject):
         if not self.isCapableOf(':ray-network:'):
             return
         
-        #self.net_daemon_url = net_daemon_url
-        #self.net_session_root = net_session_root
+        self.net_daemon_url   = net_daemon_url
+        self.net_session_root = net_session_root
         
-        self.arguments = '--daemon-url %s --net-session-root "%s"' % (net_daemon_url, net_session_root.replace('"', '\\"'))
-        print('argumoi', self.executable_path)
-        print(self.arguments)
+        self.arguments = '--daemon-url %s --net-session-root "%s"' % (self.net_daemon_url, self.net_session_root.replace('"', '\\"'))
     
     def setStatus(self, status):
         #CLIENT_STATUS_COPY is not a status as the other ones.
@@ -486,7 +500,7 @@ class Client(QObject):
             server.sendClientStatusToGui(self)
         
         if status == CLIENT_STATUS_COPY or file_copier.isActive(self.client_id):
-            server.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_COPY)
+            self.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_COPY)
     
     def getJackClientName(self):
         jack_client_name = self.name
@@ -506,19 +520,19 @@ class Client(QObject):
             return self.net_session_template
         
         if self.prefix_mode == PREFIX_MODE_SESSION_NAME:
-            return "%s/%s.%s" % (session.path, session.name, self.client_id)
+            return "%s/%s.%s" % (self.session.path, self.session.name, self.client_id)
         elif self.prefix_mode == PREFIX_MODE_CLIENT_NAME:
-            return "%s/%s.%s" % (session.path, self.name, self.client_id)
+            return "%s/%s.%s" % (self.session.path, self.name, self.client_id)
         else:
             current_dir = os.getcwd()
-            os.chdir(session.path)
+            os.chdir(self.session.path)
             project_path = os.path.realpath(self.project_path)
             os.chdir(current_dir)
             
             return project_path
     
     def start(self):
-        session.setRenameable(False)
+        self.session.setRenameable(False)
         
         GUIMSG(_translate("GUIMSG", "Launching %s") % self.executable_path)
         os.environ['NSM_URL'] = server.url
@@ -563,8 +577,8 @@ class Client(QObject):
         #MESSAGE("Process has pid: %i" % self.pid)
         
         
-        if session.osc_src_addr:
-            server.send(session.osc_src_addr, "/reply", session.osc_path, ERR_OK, "Launched." )
+        if self.session.osc_src_addr:
+            server.send(self.session.osc_src_addr, "/reply", self.session.osc_path, ERR_OK, "Launched." )
         
     
     def processFinished(self, exit_code, exit_status):
@@ -575,11 +589,11 @@ class Client(QObject):
         else:
             GUIMSG(_translate('GUIMSG', "Client %s died unexpectedly.") % self.name)
         
-        if session.wait_for:
-            session.endTimerIfLastExpected(self)
+        if self.session.wait_for:
+            self.session.endTimerIfLastExpected(self)
         
         if self.pending_command == COMMAND_QUIT:
-            session.removeClient(self)
+            self.session.removeClient(self)
             return
         else:
             self.setStatus(CLIENT_STATUS_STOPPED)
@@ -588,7 +602,7 @@ class Client(QObject):
         self.active          = False
         self.pid             = 0
         
-        session.setRenameable(True)
+        self.session.setRenameable(True)
         
     def errorInProcess(self, error):
         if error == QProcess.FailedToStart:
@@ -598,18 +612,18 @@ class Client(QObject):
             self.setStatus(CLIENT_STATUS_STOPPED)
             self.pending_command = COMMAND_NONE
             
-            #if session.osc_src_addr:
+            #if self.session.osc_src_addr:
                 ##Finally, not sure that it's a good idea to display error dialog in this case.
-                #server.send(session.osc_src_addr, "/error", session.osc_path, ERR_LAUNCH_FAILED, "Failed to launch process!")
+                #server.send(self.session.osc_src_addr, "/error", self.session.osc_path, ERR_LAUNCH_FAILED, "Failed to launch process!")
             
-            if session.wait_for:
-                session.endTimerIfLastExpected(self)
+            if self.session.wait_for:
+                self.session.endTimerIfLastExpected(self)
         
-        session.setRenameable(True)
+        self.session.setRenameable(True)
     
     def stoppedSinceLong(self):
         self.stopped_since_long = True
-        server.sendGui('/ray/gui/client/still_running', self.client_id)
+        self.sendGui('/ray/gui/client/still_running', self.client_id)
     
     def tellClientSessionIsLoaded(self):
         if self.active and not self.isDumbClient():
@@ -655,7 +669,7 @@ class Client(QObject):
                 self.terminate()
                 self.setStatus(CLIENT_STATUS_QUIT)
             else:
-                server.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
+                self.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
     
     def switch(self, new_client):
         old_client_id     = self.client_id
@@ -671,13 +685,13 @@ class Client(QObject):
         
         MESSAGE("Commanding %s to switch \"%s\"" % (self.name, client_project_path))
         
-        server.send(self.addr, "/nsm/client/open", client_project_path,  session.name, jack_client_name)
+        server.send(self.addr, "/nsm/client/open", client_project_path,  self.session.name, jack_client_name)
         
         
         self.pending_command = COMMAND_OPEN
         self.setStatus(CLIENT_STATUS_SWITCH)
             
-        server.sendGui("/ray/gui/client/switch", old_client_id, self.client_id)
+        self.sendGui("/ray/gui/client/switch", old_client_id, self.client_id)
     
     def sendGuiClientProperties(self, removed=False):
         ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
@@ -685,7 +699,7 @@ class Client(QObject):
         if removed:
             ad = '/ray/gui/trash/add'
             
-        server.sendGui(ad,
+        self.sendGui(ad,
                         self.client_id, 
                         self.executable_path,
                         self.arguments,
@@ -752,17 +766,17 @@ class Client(QObject):
         if os.path.exists(project_path):
             client_files.append(project_path)
             
-        if project_path.startswith('%s/' % session.path):
-            base_project = project_path.replace('%s/' % session.path, '', 1)
+        if project_path.startswith('%s/' % self.session.path):
+            base_project = project_path.replace('%s/' % self.session.path, '', 1)
             
-            for filename in os.listdir(session.path):
+            for filename in os.listdir(self.session.path):
                 if filename == base_project:
-                    full_file_name =  "%s/%s" % (session.path, filename)
+                    full_file_name =  "%s/%s" % (self.session.path, filename)
                     if not full_file_name in client_files:
                         client_files.append(full_file_name)
                         
                 elif filename.startswith('%s.' % base_project):
-                    client_files.append('%s/%s' % (session.path, filename))
+                    client_files.append('%s/%s' % (self.session.path, filename))
                     
         return client_files
             
@@ -782,10 +796,12 @@ class Client(QObject):
                 
             os.makedirs(template_dir)
             
-            if self.isCapableOf(':ray-network:'):
-                if self.active:
-                    server.send(self.addr, '/nsm/client/save_as_template', template_name)
-                    self.net_session_template = template_name
+            if self.net_daemon_url:
+                server.send(Address(self.net_daemon_url), '/ray/serve')
+            #if self.isCapableOf(':ray-network:'):
+                #if self.active:
+                    #server.send(self.addr, '/nsm/client/save_as_template', template_name)
+                    #self.net_session_template = template_name
             
             if client_files:
                 self.setStatus(CLIENT_STATUS_COPY)
@@ -867,7 +883,7 @@ class Client(QObject):
         self.setStatus(self.status)
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_save=TEMPLATE_NONE):            
-        old_session_name = session.name
+        old_session_name = self.session.name
         new_session_name = basename(new_session_full_name)
         new_client_id    = self.client_id
         old_client_id    = self.client_id
@@ -878,17 +894,17 @@ class Client(QObject):
             if self.prefix_mode != PREFIX_MODE_SESSION_NAME:
                 return
             
-            spath = "%s/%s" % (session.root, new_session_full_name)
+            spath = "%s/%s" % (self.session.root, new_session_full_name)
         
         elif template_save == TEMPLATE_RENAME:
-            spath = session.path
+            spath = self.session.path
             
         elif template_save == TEMPLATE_SESSION_SAVE:
             spath = "%s/%s" % (session_template_root, new_session_full_name)
             new_session_name = xsessionx
             
         elif template_save == TEMPLATE_SESSION_LOAD:
-            spath = "%s/%s" % (session.root, new_session_full_name)
+            spath = "%s/%s" % (self.session.root, new_session_full_name)
             old_session_name = xsessionx
             
         elif template_save == TEMPLATE_CLIENT_SAVE:
@@ -897,7 +913,7 @@ class Client(QObject):
             new_client_id    = xclient_idx
            
         elif template_save == TEMPLATE_CLIENT_LOAD:
-            spath = session.path
+            spath = self.session.path
             old_session_name = xsessionx
             old_client_id    = xclient_idx
         
@@ -1034,7 +1050,7 @@ class Client(QObject):
         self.setStatus(CLIENT_STATUS_OPEN)
         
         if self.isCapableOf(":optional-gui:"):
-            server.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
+            self.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
             
             if self.start_gui_hidden:
                 server.send(src_addr, "/nsm/client/hide_optional_gui")
@@ -1042,12 +1058,7 @@ class Client(QObject):
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
         
-        #print('zzzoo', self.executable_path)
-        #if self.isCapableOf(':ray-network:'):
-            #print('zzzoos', self.net_session_template)
-            #client_project_path = self.net_session_template
-        
-        server.send(src_addr, "/nsm/client/open", client_project_path,  session.name, jack_client_name)
+        server.send(src_addr, "/nsm/client/open", client_project_path,  self.session.name, jack_client_name)
         self.pending_command = COMMAND_OPEN
        
 class Session(QObject):
@@ -1077,6 +1088,12 @@ class Session(QObject):
         self.path = session_path
         self.setName(session_path.rpartition('/')[2])
     
+    def sendGui(self, *args):
+        if not 'server' in globals():
+            return
+        
+        server.sendGui(*args)
+    
     def setRenameable(self, renameable):
         if not renameable:
             if self.is_renameable:
@@ -1098,8 +1115,26 @@ class Session(QObject):
         else:
             ifDebug("client_id %s is not in ray-daemon session")
     
+    def getClientByAddress(self, addr):
+        if not addr:
+            return None
+        
+        for client in self.clients:
+            if client.addr and client.addr.url == addr.url:
+                return client
+    
+    def getClientByExecutable(self, executable):
+        for client in self.clients:
+            if client.executable_path == executable:
+                return client
+    
+    def getClientByExecutableAndId(self, executable, client_id):
+        for client in self.clients:
+            if client.client_id == client_id and client.executable_path == executable:
+                return client
+    
     def newClient(self, executable, client_id=None):
-        client = Client()
+        client = Client(self)
         client.executable_path = executable
         client.name = basename(executable)
         client.client_id = client_id if client_id else self.generateClientId(executable)
@@ -1122,7 +1157,7 @@ class Session(QObject):
         
         self.addClient(client)
         
-        server.sendGui('/ray/gui/trash/remove', client.client_id)
+        self.sendGui('/ray/gui/trash/remove', client.client_id)
         self.removed_clients.remove(client)
         
         if client.auto_start:
@@ -1137,7 +1172,7 @@ class Session(QObject):
         remove_item_list = []
         for i in range(len(self.clients)):
             if not self.clients[i].active:
-                server.sendGui("/ray/gui/client/status", session.clients[i].client_id, CLIENT_STATUS_REMOVED)
+                self.sendGui("/ray/gui/client/status", self.clients[i].client_id, CLIENT_STATUS_REMOVED)
                 remove_item_list.append(i)
         
         remove_item_list.reverse()
@@ -1318,10 +1353,6 @@ class OperatingSession(Session):
         
         self.terminated_yet = False
         
-        #self.load_tried = False
-        
-        
-    
     def rememberOscArgs(self, path, args, src_addr):
         self.osc_path     = path
         self.osc_args     = args
@@ -1442,7 +1473,7 @@ class OperatingSession(Session):
             if tag_name in ('Clients', 'RemovedClients'):
                 client_xml = node.toElement().firstChild()
                 while not client_xml.isNull():
-                    client = Client()
+                    client = Client(self)
                     cx = client_xml.toElement()
                     client.readXmlProperties(cx)
                     
@@ -1575,7 +1606,7 @@ class OperatingSession(Session):
             return
         
         server.setServerStatus(SERVER_STATUS_CLOSE)
-        server.sendGui('/ray/gui/trash/clear')
+        self.sendGui('/ray/gui/trash/clear')
         
         
         for client in self.clients.__reversed__():
@@ -1605,7 +1636,7 @@ class OperatingSession(Session):
                 
             self.setPath('')
             
-        server.sendGui("/ray/gui/session/name", "", "" )
+        self.sendGui("/ray/gui/session/name", "", "" )
         self.nextFunction()
     
     def closeDone(self):
@@ -1631,8 +1662,8 @@ class OperatingSession(Session):
         server.setServerStatus(SERVER_STATUS_NEW)
         self.setPath(spath)
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Created." )
-        server.sendGui("/ray/gui/session/session", self.osc_args[0])
-        server.sendGui("/ray/gui/session/name", self.osc_args[0], self.osc_args[0])
+        self.sendGui("/ray/gui/session/session", self.osc_args[0])
+        self.sendGui("/ray/gui/session/name", self.osc_args[0], self.osc_args[0])
         
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Session created")
         self.nextFunction()
@@ -1650,7 +1681,7 @@ class OperatingSession(Session):
         new_session_full_name = self.osc_args[0]
         spath = "%s/%s" % (self.root, new_session_full_name)
         
-        server.sendGui('/ray/gui/trash/clear')
+        self.sendGui('/ray/gui/trash/clear')
         
         server.setServerStatus(SERVER_STATUS_COPY)
         file_copier.startSessionCopy(self.path, spath, self.duplicate_step1, self.duplicateAborted)
@@ -1732,7 +1763,7 @@ class OperatingSession(Session):
             server.setServerStatus(SERVER_STATUS_COPY)
         else:
             server.setServerStatus(SERVER_STATUS_PRECOPY)
-            server.sendGui("/ray/gui/session/name",  new_session_name, new_session_name)
+            self.sendGui("/ray/gui/session/name",  new_session_name, new_session_name)
             
         file_copier.startSessionCopy(template_path, spath, self.prepareTemplate_step1, self.prepareTemplateAborted)
         
@@ -1748,7 +1779,7 @@ class OperatingSession(Session):
             server.setServerStatus(SERVER_STATUS_OFF)
         
             self.setPath('')
-            server.sendGui('/ray/gui/session/name', '', '')
+            self.sendGui('/ray/gui/session/name', '', '')
         
     
     def load(self):
@@ -1791,7 +1822,7 @@ class OperatingSession(Session):
         if not is_ray_file:
             try:
                 file = open(session_nsm_file, 'r')
-                server.sendGui('/ray/opening_nsm_session')
+                self.sendGui('/ray/opening_nsm_session')
             except:
                 try:
                     #if len(self.osc_args) == 2 and not self.load_tried:
@@ -1831,7 +1862,7 @@ class OperatingSession(Session):
         GUIMSG(_translate('GUIMSG', "Opening session %s") % self.osc_args[0])
         
         self.removed_clients.clear()
-        server.sendGui('/ray/gui/trash/clear')
+        self.sendGui('/ray/gui/trash/clear')
         
         
         self.new_clients = []
@@ -1861,7 +1892,7 @@ class OperatingSession(Session):
                 if tag_name in ('Clients', 'RemovedClients'):
                     client_xml = node.toElement().firstChild()
                     while not client_xml.isNull():
-                        client = Client()
+                        client = Client(self)
                         cx = client_xml.toElement()
                         client.readXmlProperties(cx)
                         
@@ -1884,7 +1915,7 @@ class OperatingSession(Session):
             for line in file.read().split('\n'):
                 elements = line.split(':')
                 if len(elements) >= 3:
-                    client = Client()
+                    client = Client(self)
                     client.name            = elements[0]
                     client.executable_path = elements[1]
                     client.client_id       = elements[2]
@@ -1896,7 +1927,7 @@ class OperatingSession(Session):
         
         MESSAGE("Commanding unneeded and dumb clients to quit")
         
-        for client in session.clients:
+        for client in self.clients:
             if client.active and client.isCapableOf(':switch:') and (client.executable_path, client.arguments) in new_client_exec_args:
                 new_client_exec_args.remove((client.executable_path, client.arguments))
             else:
@@ -1914,7 +1945,7 @@ class OperatingSession(Session):
         self.cleanExpected()
         self.purgeInactiveClients()
         
-        for client in session.clients:
+        for client in self.clients:
             client.pre_existing = True
             
         MESSAGE("Commanding smart clients to switch")
@@ -1927,9 +1958,9 @@ class OperatingSession(Session):
             #/* in a duplicated session, clients will have the same
             #* IDs, so be sure to pick the right one to avoid race
             #* conditions in JACK name registration. */
-            client = getClientByExecutableAndId(new_client.executable_path, new_client.client_id)
+            client = self.getClientByExecutableAndId(new_client.executable_path, new_client.client_id)
             if not client:
-                client = getClientByExecutable(new_client.executable_path)
+                client = self.getClientByExecutable(new_client.executable_path)
             
             if client and client.active and client.pre_existing and not client.isReplyPending():
                 #since we already shutdown clients not capable of 'switch', we can assume that these are.
@@ -1948,7 +1979,7 @@ class OperatingSession(Session):
             
             new_client_id_list.append(new_client.client_id)
             
-        server.sendGui("/ray/gui/session/name",  session.name, session.name)
+        self.sendGui("/ray/gui/session/name",  self.name, self.name)
         
         if has_switch:
             server.setServerStatus(SERVER_STATUS_SWITCH)
@@ -1967,7 +1998,7 @@ class OperatingSession(Session):
         self.timer_launch.start()
         
         self.reOrderClients(new_client_id_list)
-        server.sendGui('/ray/gui/clients_reordered', *new_client_id_list)
+        self.sendGui('/ray/gui/clients_reordered', *new_client_id_list)
         
         self.waitAndGoTo(5000, self.load_step2, WAIT_FOR_ANNOUNCE)
     
@@ -1991,7 +2022,7 @@ class OperatingSession(Session):
         self.tellAllClientsSessionIsLoaded()
         MESSAGE('Loaded')
         
-        server.sendGui("/ray/gui/session/name",  session.name, session.name)
+        self.sendGui("/ray/gui/session/name",  self.name, self.name)
         server.send(self.osc_src_addr, "/reply", self.osc_path, "Loaded.")
         
         self.nextFunction()
@@ -2149,7 +2180,7 @@ class SignaledSession(OperatingSession):
         
         self.name = new_session_name
         
-        server.sendGui('/ray/gui/session/name', self.name, self.name)
+        self.sendGui('/ray/gui/session/name', self.name, self.name)
     
     def serverDuplicateSession(self, path, args, src_addr):
         if self.process_order:
@@ -2183,7 +2214,7 @@ class SignaledSession(OperatingSession):
         
         for fds in os.walk(self.root):
             folder, folders, files = fds
-            if folder == session.root:
+            if folder == self.root:
                 continue
             
             already_send = False
@@ -2191,7 +2222,7 @@ class SignaledSession(OperatingSession):
             for file in files:
                 if file in ('raysession.xml', 'session.nsm'):
                     if not already_send:
-                        basefolder = folder.replace(session.root + '/', '')
+                        basefolder = folder.replace(self.root + '/', '')
                         server.send(src_addr, "/reply", "/nsm/server/list", basefolder)
                         already_send = True
                     
@@ -2207,7 +2238,7 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         executable = args[0]
         
-        client = Client()
+        client = Client(self)
         client.executable_path = executable
         client.name            = basename(executable)
         client.client_id       = self.generateClientId(executable)
@@ -2220,7 +2251,7 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         executable = args[0]
         
-        client = Client()
+        client = Client(self)
         client.executable_path = 'ray-proxy'
         
         client.tmp_arguments  = "--executable %s" % executable
@@ -2256,7 +2287,7 @@ class SignaledSession(OperatingSession):
                 continue
             
             if ct.attribute('template-name') == template_name:
-                client = Client()
+                client = Client(self)
                 client.readXmlProperties(ct)
                 
                 needed_version = ct.attribute('needed-version')
@@ -2394,7 +2425,7 @@ class SignaledSession(OperatingSession):
             return
         
         message = args[1]
-        client = getClientByAddress(src_addr)
+        client = self.getClientByAddress(src_addr)
         if client:
             client.setReply(ERR_OK, message)
             #MESSAGE( "Client \"%s\" replied with: %s in %fms" % ( client.name, message, client.milliseconds_since_last_command() ))
@@ -2417,19 +2448,19 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == args[0]:
                 client.stop()
-                server.sendGui("/reply", "Client stopped." )
+                self.sendGui("/reply", "Client stopped." )
                 break
         else:
-            server.sendGui("/error", -10, "No such client." )
+            self.sendGui("/error", -10, "No such client." )
     
     def guiClientKill(self, path, args):
         for client in self.clients:
             if client.client_id == args[0]:
                 client.kill()
-                server.sendGui("/reply", "Client killed." )
+                self.sendGui("/reply", "Client killed." )
                 break
         else:
-            server.sendGui("/error", -10, "No such client." )
+            self.sendGui("/error", -10, "No such client." )
     
     def guiClientRemove(self, path, args):
         client_id = args[0]
@@ -2445,16 +2476,16 @@ class SignaledSession(OperatingSession):
                 
                 self.removeClient(client)
                 
-                server.sendGui("/reply", "Client removed.")
+                self.sendGui("/reply", "Client removed.")
                 break
         else:
-            server.sendGui("/error", -10, "No such client.")
+            self.sendGui("/error", -10, "No such client.")
             
     def guiClientResume(self, path, args):
         for client in self.clients:
             if client.client_id == args[0] and not client.isRunning():
                 if file_copier.isActive(client.client_id):
-                    server.sendGui("/error", -13, "Impossible, copy running")
+                    self.sendGui("/error", -13, "Impossible, copy running")
                     return
                 
                 client.start()
@@ -2464,14 +2495,14 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == args[0] and client.active:
                 if file_copier.isActive(client.client_id):
-                    server.sendGui("/error", -13, "Impossible, copy running")
+                    self.sendGui("/error", -13, "Impossible, copy running")
                     return
                 client.save()
                 break
     
     def guiClientSaveTemplate(self, path, args):
         if file_copier.isActive():
-            server.sendGui("/error", -13, "Impossible, copy running")
+            self.sendGui("/error", -13, "Impossible, copy running")
             return
         
         for client in self.clients:
@@ -2503,7 +2534,7 @@ class SignaledSession(OperatingSession):
                 self.restoreClient(client)
                 break
         else:
-            server.sendGui("/error", -10, "No such client.")
+            self.sendGui("/error", -10, "No such client.")
             
     def guiTrashRemoveDefinitely(self, client_id):
         for client in self.removed_clients:
@@ -2512,7 +2543,7 @@ class SignaledSession(OperatingSession):
         else:
             return
         
-        server.sendGui('/ray/gui/trash/remove', client_id)
+        self.sendGui('/ray/gui/trash/remove', client_id)
         
         for file in client.getProjectFiles():
             try:
@@ -2535,54 +2566,6 @@ class SignaledSession(OperatingSession):
         self.terminated_yet = True
         self.process_order = [self.close, self.exitNow]
         self.nextFunction()
-        
-def getClientById(client_id):
-    for client in session.clients:
-        if client.client_id == client_id:
-            return client
-
-def getClientByExecutableAndId(executable, client_id):
-    for client in session.clients:
-        if client.client_id == client_id and client.executable_path == executable:
-            return client
-        
-def getClientByExecutable(executable):
-    for client in session.clients:
-        if client.executable_path == executable:
-            return client
-        
-def getClientByNameAndId(name, client_id):
-    for client in session.clients:
-        if client.client_id == client_id and client.name == name:
-            return client
-        
-def getClientByName(client_name):
-    for client in session.clients:
-        if client.name == client_name:
-            return client
-
-def getClientByAddress(addr):
-    if not addr:
-        return None
-    
-    for client in session.clients:
-        if client.addr and client.addr.url == addr.url:
-            return client
-
-def getClientByPid(pid):
-    for client in session.clients:
-        if client.pid == pid:
-            return client
-    
-def pathIsValid(path):
-    return not bool('../' in path)
-    
-def generateClientId():
-    client_id = 'n'
-    for l in range(4):
-        client_id += random.choice(string.ascii_uppercase)
-    
-    return client_id
 
 ##########################
 
@@ -2647,7 +2630,7 @@ class OscServerThread(ServerThread):
     def error(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        client = getClientByAddress(src_addr)
+        client = session.getClientByAddress(src_addr)
         if not client:
             WARNING("Error from unknown client")
             return
@@ -2666,7 +2649,7 @@ class OscServerThread(ServerThread):
     @make_method('/nsm/client/progress', 'f')
     def nsmClientProgress(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        client = getClientByAddress(src_addr)
+        client = session.getClientByAddress(src_addr)
         if not client:
             return
         
@@ -2679,7 +2662,7 @@ class OscServerThread(ServerThread):
         
         MESSAGE("Client sends dirty")
         
-        client = getClientByAddress(src_addr)
+        client = session.getClientByAddress(src_addr)
         if not client:
             return
         
@@ -2693,7 +2676,7 @@ class OscServerThread(ServerThread):
         
         MESSAGE("Client sends clean")
         
-        client = getClientByAddress(src_addr)
+        client = session.getClientByAddress(src_addr)
         if not client:
             return
         
@@ -2705,7 +2688,7 @@ class OscServerThread(ServerThread):
     def nsmClientMessage(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        client = getClientByAddress(src_addr)
+        client = session.getClientByAddress(src_addr)
         if not client:
             return
         
@@ -2717,7 +2700,7 @@ class OscServerThread(ServerThread):
         
         MESSAGE("Client sends gui hidden")
         
-        client = getClientByAddress(src_addr)
+        client = session.getClientByAddress(src_addr)
         if not client:
             return
         
@@ -2730,7 +2713,7 @@ class OscServerThread(ServerThread):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         MESSAGE("Client sends gui shown")
         
-        client = getClientByAddress(src_addr)
+        client = session.getClientByAddress(src_addr)
         if not client:
             return
         
@@ -2742,7 +2725,7 @@ class OscServerThread(ServerThread):
     def nsmClientLabel(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        client = getClientByAddress(src_addr)
+        client = session.getClientByAddress(src_addr)
         if not client:
             return
         
@@ -2753,7 +2736,7 @@ class OscServerThread(ServerThread):
     def nsmClientNetworkProperties(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        client = getClientByAddress(src_addr)
+        client = session.getClientByAddress(src_addr)
         if not client:
             return
         
@@ -2840,7 +2823,7 @@ class OscServerThread(ServerThread):
     def nsmGuiClientShow_optional_gui(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        client = getClientById(args[0])
+        client = session.getClient(args[0])
         
         if client and client.active:
             self.send(client.addr, "/nsm/client/show_optional_gui")
@@ -2849,7 +2832,7 @@ class OscServerThread(ServerThread):
     def nsmGuiClientHide_optional_gui(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        client = getClientById(args[0])
+        client = session.getClient(args[0])
         
         if client and client.active:
             self.send(client.addr, "/nsm/client/hide_optional_gui")
@@ -2957,6 +2940,25 @@ class OscServerThread(ServerThread):
         
         signaler.server_save_session_template.emit(path, args, src_addr)
         
+    @make_method('/ray/server/save_session_template', 'ss')
+    def nsmServerSaveSessionTemplateOff(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        #save as template an not loaded session
+        
+        session_name, template_name = args
+        
+        if not pathIsValid(session_name):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
+        if not pathIsValid(template_name):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
+        #tmp_session = OperatingSession()
+        
+        #signaler.server_save_session_template.emit(path, args, src_addr)
+    
     
     @make_method('/nsm/server/abort', '')
     def nsmServerAbort(self, path, args, types, src_addr):
