@@ -2,7 +2,7 @@
 
 import os, sys, shutil, string, random, time, subprocess, signal, unicodedata, inspect
 from liblo import ServerThread, Address, make_method, Message
-from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject, QTimer, QProcess, QSettings, QStandardPaths
+from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject, QTimer, QProcess, QProcessEnvironment, QSettings, QStandardPaths
 from PyQt5.QtXml import QDomDocument
 
 from shared import *
@@ -124,12 +124,6 @@ def CLIENT_MESSAGE(byte_string, client_name, client_id):
 
 def WARNING(string):
     print('[' + '\033[90m' + 'ray-daemon' + '\033[0m' + '] ' + '\033[93m' + string + '\033[0m', file=sys.stderr)
-    
-def GUIMSG(message):
-    if not 'server' in globals():
-        return
-    
-    server.sendGui('/ray/gui/server/message', message)
 
 def waitForJack():
     pass
@@ -146,15 +140,52 @@ def quitRay(sig, frame):
         MESSAGE(_translate('GUIMSG', 'Good Bye !'))
     app.quit()
 
+class ServerSender(QObject):
+    def __init__(self):
+        QObject.__init__(self)
+      
+    def hasServer(self):
+        return bool('server' in globals())
+
+    def send(self, *args):
+        if not self.hasServer():
+            return
+        
+        server.send(*args)
+            
+    def sendGui(self, *args):
+        if not self.hasServer():
+            return
+        
+        server.sendGui(*args)
+        
+    def sendGuiMessage(self, message):
+        if not self.hasServer():
+            return
+    
+        server.sendGui('/ray/gui/server/message', message)
+        
+    def setServerStatus(self, server_status):
+        if not self.hasServer():
+            return
+        
+        server.setServerStatus(server_status)
+        
+    def isNsmLocked(self):
+        if not self.hasServer():
+            return False
+        
+        return server.is_nsm_locked
+
 class CopyFile(object):
     slots = ['orig_path',
              'dest_path',
              'state',
              'size']
 
-class FileCopier(QObject):
+class FileCopier(ServerSender):
     def __init__(self):
-        QObject.__init__(self)
+        ServerSender.__init__(self)
         self.client_id      = ''
         self.next_function  = None
         self.abort_function = None
@@ -174,7 +205,12 @@ class FileCopier(QObject):
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.checkProgressSize)
         
+    def informCopytoGui(self, copy_state):
+        if not self.hasServer():
+            return
         
+        server.informCopytoGui(copy_state)
+    
     def getFileSize(self, filepath):
         if not os.path.exists(filepath):
             return 0
@@ -235,7 +271,7 @@ class FileCopier(QObject):
                             pass
                         
             self.is_active = False
-            server.informCopytoGui(False)
+            self.informCopytoGui(False)
             self.abort_function(*self.next_args)
             return
         
@@ -245,7 +281,7 @@ class FileCopier(QObject):
                 break
         else:
             self.is_active = False
-            server.informCopytoGui(False)
+            self.informCopytoGui(False)
             
             if self.next_function:
                 self.next_function(*self.next_args)
@@ -303,7 +339,7 @@ class FileCopier(QObject):
         
         
         if self.copy_files:
-            server.informCopytoGui(True)
+            self.informCopytoGui(True)
             self.nextProcess()
         else:
             self.next_function(*self.next_args)
@@ -332,7 +368,7 @@ class FileCopier(QObject):
         
         return self.is_active
         
-class Client(QObject):
+class Client(ServerSender):
     #can be directly changed by OSC thread
     gui_visible      = True
     _reply_errcode   = 0
@@ -368,8 +404,12 @@ class Client(QObject):
     net_daemon_url       = ''
     
     def __init__(self, parent_session):
-        QObject.__init__(self)
+        ServerSender.__init__(self)
         self.session = parent_session
+        
+        process_env = QProcessEnvironment.systemEnvironment()
+        if self.hasServer() and hasattr(server, 'url'):
+            process_env.insert('NSM_URL', server.url)
         
         self.process = QProcess()
         self.process.started.connect(self.processStarted)
@@ -378,6 +418,7 @@ class Client(QObject):
         self.process.finished.connect(self.processFinished)
         self.process.readyReadStandardError.connect(self.standardError)
         self.process.readyReadStandardOutput.connect(self.standardOutput)
+        self.process.setProcessEnvironment(process_env)
         
         #if client is'n't stopped 2secs after stop, another stop becames a kill!
         self.stopped_since_long = False
@@ -385,6 +426,21 @@ class Client(QObject):
         self.stopped_timer.setSingleShot(True)
         self.stopped_timer.setInterval(2000) #2sec
         self.stopped_timer.timeout.connect(self.stoppedSinceLong)
+    
+    def sendToSelfAddress(self, *args):
+        if not self.hasServer():
+            return
+        
+        if not self.addr:
+            return
+        
+        server.send(self.addr, *args)
+        
+    def sendStatusToGui(self):
+        if not self.hasServer():
+            return
+        
+        server.sendClientStatusToGui(self)
     
     def readXmlProperties(self, ctx):
         #ctx is an xml sibling for client
@@ -443,11 +499,6 @@ class Client(QObject):
         if self.net_session_template:
             ctx.setAttribute('net_session_template', self.net_session_template)
             
-    def sendGui(self, *args):
-        if not 'server' in globals():
-            return
-        
-        server.sendGui(*args)
         
     def setReply(self, errcode, message):
         self._reply_message = message
@@ -497,7 +548,7 @@ class Client(QObject):
         
         if status != CLIENT_STATUS_COPY:
             self.status = status
-            server.sendClientStatusToGui(self)
+            self.sendStatusToGui()
         
         if status == CLIENT_STATUS_COPY or file_copier.isActive(self.client_id):
             self.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_COPY)
@@ -534,8 +585,10 @@ class Client(QObject):
     def start(self):
         self.session.setRenameable(False)
         
-        GUIMSG(_translate("GUIMSG", "Launching %s") % self.executable_path)
-        os.environ['NSM_URL'] = server.url
+        self.sendGuiMessage(_translate("GUIMSG", "Launching %s") % self.executable_path)
+        
+        #if 'server' in globals() and hasattr(server, 'url'):
+            #os.environ['NSM_URL'] = server.url
         
         self.pending_command = COMMAND_START
         
@@ -578,16 +631,16 @@ class Client(QObject):
         
         
         if self.session.osc_src_addr:
-            server.send(self.session.osc_src_addr, "/reply", self.session.osc_path, ERR_OK, "Launched." )
+            self.session.oscReply("/reply", self.session.osc_path, ERR_OK, "Launched." )
         
     
     def processFinished(self, exit_code, exit_status):
         self.stopped_timer.stop()
         
         if self.pending_command in (COMMAND_KILL, COMMAND_QUIT):
-            GUIMSG(_translate('GUIMSG', "Client %s terminated because we told it to.") % self.name)
+            self.sendGuiMessage(_translate('GUIMSG', "Client %s terminated because we told it to.") % self.name)
         else:
-            GUIMSG(_translate('GUIMSG', "Client %s died unexpectedly.") % self.name)
+            self.sendGuiMessage(_translate('GUIMSG', "Client %s died unexpectedly.") % self.name)
         
         if self.session.wait_for:
             self.session.endTimerIfLastExpected(self)
@@ -606,7 +659,7 @@ class Client(QObject):
         
     def errorInProcess(self, error):
         if error == QProcess.FailedToStart:
-            GUIMSG(_translate('GUIMSG', "Failed to start %s") % self.name)
+            self.sendGuiMessage(_translate('GUIMSG', "Failed to start %s") % self.name)
             self.active     = False
             self.pid        = 0
             self.setStatus(CLIENT_STATUS_STOPPED)
@@ -614,7 +667,7 @@ class Client(QObject):
             
             #if self.session.osc_src_addr:
                 ##Finally, not sure that it's a good idea to display error dialog in this case.
-                #server.send(self.session.osc_src_addr, "/error", self.session.osc_path, ERR_LAUNCH_FAILED, "Failed to launch process!")
+                #self.session.oscReply("/error", self.session.osc_path, ERR_LAUNCH_FAILED, "Failed to launch process!")
             
             if self.session.wait_for:
                 self.session.endTimerIfLastExpected(self)
@@ -628,25 +681,25 @@ class Client(QObject):
     def tellClientSessionIsLoaded(self):
         if self.active and not self.isDumbClient():
             MESSAGE("Telling client %s that session is loaded." % self.name)
-            server.send(self.addr, "/nsm/client/session_is_loaded")
+            self.sendToSelfAddress("/nsm/client/session_is_loaded")
     
     def save(self):
         if self.active:
             MESSAGE("Telling %s to save" % self.name)
-            server.send(self.addr, "/nsm/client/save")
+            self.sendToSelfAddress("/nsm/client/save")
             
             self.pending_command = COMMAND_SAVE
             self.setStatus(CLIENT_STATUS_SAVE)
         
         elif self.isDumbClient() and self.isRunning():
             self.status = CLIENT_STATUS_NOOP
-            server.sendClientStatusToGui(self)
+            self.sendStatusToGui()
             
         if self.isCapableOf(':optional-gui:'):
             self.start_gui_hidden = not bool(self.gui_visible)
             
     def stop(self):
-        GUIMSG(_translate('GUIMSG', "Stopping client %s") % self.name)
+        self.sendGuiMessage(_translate('GUIMSG', "Stopping client %s") % self.name)
         if self.isRunning():
             self.pending_command = COMMAND_KILL
             self.setStatus(CLIENT_STATUS_QUIT)
@@ -685,7 +738,7 @@ class Client(QObject):
         
         MESSAGE("Commanding %s to switch \"%s\"" % (self.name, client_project_path))
         
-        server.send(self.addr, "/nsm/client/open", client_project_path,  self.session.name, jack_client_name)
+        self.sendToSelfAddress("/nsm/client/open", client_project_path,  self.session.name, jack_client_name)
         
         
         self.pending_command = COMMAND_OPEN
@@ -796,11 +849,11 @@ class Client(QObject):
                 
             os.makedirs(template_dir)
             
-            if self.net_daemon_url:
-                server.send(Address(self.net_daemon_url), '/ray/serve')
+            #if self.net_daemon_url:
+                #server.send(Address(self.net_daemon_url), '/ray/serve')
             #if self.isCapableOf(':ray-network:'):
                 #if self.active:
-                    #server.send(self.addr, '/nsm/client/save_as_template', template_name)
+                    #self.sendToSelfAddress('/nsm/client/save_as_template', template_name)
                     #self.net_session_template = template_name
             
             if client_files:
@@ -1029,7 +1082,7 @@ class Client(QObject):
         
         if major > NSM_API_VERSION_MAJOR:
             MESSAGE("Client is using incompatible and more recent API version %i.%i" % (major, minor))
-            server.send(src_addr, "/error", path, ERR_INCOMPATIBLE_API, "Server is using an incompatible API version." )
+            self.send(src_addr, "/error", path, ERR_INCOMPATIBLE_API, "Server is using an incompatible API version." )
             return
         
         #self.pid          = pid
@@ -1044,7 +1097,7 @@ class Client(QObject):
         
         MESSAGE("Process has pid: %i" % pid )
         MESSAGE("The client \"%s\" at \"%s\" informs us it's ready to receive commands." % (self.name, self.addr.url) )
-        server.send(src_addr, "/reply", path, "Well hello, stranger. Welcome to the party." if is_new else "Howdy, what took you so long?", APP_TITLE, ":server-control:broadcast:optional-gui:" )
+        self.send(src_addr, "/reply", path, "Well hello, stranger. Welcome to the party." if is_new else "Howdy, what took you so long?", APP_TITLE, ":server-control:broadcast:optional-gui:" )
         
         self.sendGuiClientProperties()
         self.setStatus(CLIENT_STATUS_OPEN)
@@ -1053,17 +1106,17 @@ class Client(QObject):
             self.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
             
             if self.start_gui_hidden:
-                server.send(src_addr, "/nsm/client/hide_optional_gui")
+                self.send(src_addr, "/nsm/client/hide_optional_gui")
                 
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
         
-        server.send(src_addr, "/nsm/client/open", client_project_path,  self.session.name, jack_client_name)
+        self.send(src_addr, "/nsm/client/open", client_project_path,  self.session.name, jack_client_name)
         self.pending_command = COMMAND_OPEN
        
-class Session(QObject):
+class Session(ServerSender):
     def __init__(self):
-        QObject.__init__(self)
+        ServerSender.__init__(self)
         self.clients = []
         self.new_clients = []
         self.removed_clients = []
@@ -1075,6 +1128,31 @@ class Session(QObject):
         self.forbidden_ids_list = []
     
     #############
+    def oscReply(self, *args):
+        if not self.osc_src_addr:
+            return
+        
+        if not self.hasServer():
+            return
+        
+        server.send(self.osc_src_addr, *args)
+    
+    def setRenameable(self, renameable):
+        if not renameable:
+            if self.is_renameable:
+                self.is_renameable = False
+                if self.hasServer():
+                    server.sendRenameable(False)
+            return
+        
+        for client in self.clients:
+            if client.isRunning():
+                return
+            
+        self.is_renameable = True
+        if self.hasServer():
+            server.sendRenameable(True)
+    
     
     def setRoot(self, session_root):
         if self.name:
@@ -1087,26 +1165,6 @@ class Session(QObject):
     def setPath(self, session_path):
         self.path = session_path
         self.setName(session_path.rpartition('/')[2])
-    
-    def sendGui(self, *args):
-        if not 'server' in globals():
-            return
-        
-        server.sendGui(*args)
-    
-    def setRenameable(self, renameable):
-        if not renameable:
-            if self.is_renameable:
-                self.is_renameable = False
-                server.sendRenameable(False)
-            return
-        
-        for client in self.clients:
-            if client.isRunning():
-                return
-            
-        self.is_renameable = True
-        server.sendRenameable(True)
     
     def getClient(self, client_id):
         for client in self.clients:
@@ -1367,9 +1425,9 @@ class OperatingSession(Session):
         
         if self.expected_clients:
             if wait_for == WAIT_FOR_ANNOUNCE:
-                GUIMSG(_translate('GUIMSG', 'waiting for clients announces...'))
+                self.sendGuiMessage(_translate('GUIMSG', 'waiting for clients announces...'))
             elif wait_for == WAIT_FOR_STOP:
-                GUIMSG(_translate('GUIMSG', 'waiting for clients to die...'))
+                self.sendGuiMessage(_translate('GUIMSG', 'waiting for clients to die...'))
             
             self.wait_for = wait_for
             self.timer.setSingleShot(True)
@@ -1393,16 +1451,16 @@ class OperatingSession(Session):
                 client_names += client.name + ', ' 
             
             if self.wait_for == WAIT_FOR_ANNOUNCE:
-                GUIMSG(_translate('GUIMSG', "%sdidn't announce") % client_names)
+                self.sendGuiMessage(_translate('GUIMSG', "%sdidn't announce") % client_names)
             elif self.wait_for == WAIT_FOR_STOP:
-                GUIMSG(_translate('GUIMSG', "%sstill alive !") % client_names)
+                self.sendGuiMessage(_translate('GUIMSG', "%sstill alive !") % client_names)
                 
             self.expected_clients.clear()
         else:
             if self.wait_for == WAIT_FOR_ANNOUNCE:
-                GUIMSG(_translate('GUIMSG', 'All expected clients are announced'))
+                self.sendGuiMessage(_translate('GUIMSG', 'All expected clients are announced'))
             elif self.wait_for == WAIT_FOR_STOP:
-                GUIMSG(_translate('GUIMSG', 'All expected clients are died'))
+                self.sendGuiMessage(_translate('GUIMSG', 'All expected clients are died'))
         self.wait_for = WAIT_FOR_NONE
     
     def nextFunction(self):
@@ -1436,7 +1494,7 @@ class OperatingSession(Session):
         if not (self.osc_src_addr or self.osc_path):
             return
         
-        server.send(self.osc_src_addr, "/error", self.osc_path, err, error_message)
+        self.oscReply("/error", self.osc_path, err, error_message)
     
     def adjustFilesAfterCopy(self, template_mode):
         new_session_full_name = self.osc_args[0]
@@ -1504,7 +1562,7 @@ class OperatingSession(Session):
             self.nextFunction()
             return
         
-        server.setServerStatus(SERVER_STATUS_SAVE)
+        self.setServerStatus(SERVER_STATUS_SAVE)
         
         for client in self.clients:
             if client.active:
@@ -1573,15 +1631,15 @@ class OperatingSession(Session):
         file.write(contents)
         file.close()
         
-        GUIMSG(_translate('GUIMSG', "Session saved."))
+        self.sendGuiMessage(_translate('GUIMSG', "Session saved."))
         MESSAGE("Session saved.")
         self.nextFunction()
     
     def saveDone(self):
         if not self.err_loading:
             MESSAGE("Done.")
-            server.send(self.osc_src_addr, "/reply", self.osc_path, "Saved." )
-        server.setServerStatus(SERVER_STATUS_READY)
+            self.oscReply("/reply", self.osc_path, "Saved." )
+        self.setServerStatus(SERVER_STATUS_READY)
     
     def saveError(self):
         MESSAGE("Failed")
@@ -1590,14 +1648,14 @@ class OperatingSession(Session):
             m = _translate('GUIMSG', "Can't save session, session file is unwriteable !")
         
         MESSAGE(m)
-        GUIMSG(m)
-        server.send(self.osc_src_addr, "/error", self.osc_path, ERR_CREATE_FAILED, m)
+        self.sendGuiMessage(m)
+        self.oscReply("/error", self.osc_path, ERR_CREATE_FAILED, m)
         
         self.process_order.clear()
-        server.setServerStatus(SERVER_STATUS_READY)
+        self.setServerStatus(SERVER_STATUS_READY)
         
     def close(self):
-        GUIMSG(_translate('GUIMSG', "Commanding attached clients to quit."))
+        self.sendGuiMessage(_translate('GUIMSG', "Commanding attached clients to quit."))
         self.expected_clients.clear()
         self.removed_clients.clear()
         
@@ -1605,7 +1663,7 @@ class OperatingSession(Session):
             self.nextFunction()
             return
         
-        server.setServerStatus(SERVER_STATUS_CLOSE)
+        self.setServerStatus(SERVER_STATUS_CLOSE)
         self.sendGui('/ray/gui/trash/clear')
         
         
@@ -1640,37 +1698,37 @@ class OperatingSession(Session):
         self.nextFunction()
     
     def closeDone(self):
-        server.send(self.osc_src_addr, "/reply", self.osc_path, "Closed.")
+        self.oscReply("/reply", self.osc_path, "Closed.")
         MESSAGE("Done")
-        server.setServerStatus(SERVER_STATUS_OFF)
+        self.setServerStatus(SERVER_STATUS_OFF)
     
     def abortDone(self):
-        server.send(self.osc_src_addr, "/reply", self.osc_path, "Aborted.")
+        self.oscReply("/reply", self.osc_path, "Aborted.")
         MESSAGE("Done")
-        server.setServerStatus(SERVER_STATUS_OFF)
+        self.setServerStatus(SERVER_STATUS_OFF)
         
     def new(self):
-        GUIMSG(_translate('GUIMSG', "Creating new session \"%s\"") % self.osc_args[0])
+        self.sendGuiMessage(_translate('GUIMSG', "Creating new session \"%s\"") % self.osc_args[0])
         spath = self.root + '/' + self.osc_args[0]
         
         try:
             os.makedirs(spath)
         except:
-            server.send(self.osc_src_addr, "/error", self.osc_path, ERR_CREATE_FAILED, "Could not create the session directory" )
+            self.oscReply("/error", self.osc_path, ERR_CREATE_FAILED, "Could not create the session directory" )
             return
         
-        server.setServerStatus(SERVER_STATUS_NEW)
+        self.setServerStatus(SERVER_STATUS_NEW)
         self.setPath(spath)
-        server.send(self.osc_src_addr, "/reply", self.osc_path, "Created." )
+        self.oscReply("/reply", self.osc_path, "Created." )
         self.sendGui("/ray/gui/session/session", self.osc_args[0])
         self.sendGui("/ray/gui/session/name", self.osc_args[0], self.osc_args[0])
         
-        server.send(self.osc_src_addr, "/reply", self.osc_path, "Session created")
+        self.oscReply("/reply", self.osc_path, "Session created")
         self.nextFunction()
     
     def newDone(self):
-        GUIMSG(_translate('GUIMSG', 'Session is ready'))
-        server.setServerStatus(SERVER_STATUS_READY)
+        self.sendGuiMessage(_translate('GUIMSG', 'Session is ready'))
+        self.setServerStatus(SERVER_STATUS_READY)
     
     def duplicate(self):
         if self.clientsHaveErrors():
@@ -1683,7 +1741,7 @@ class OperatingSession(Session):
         
         self.sendGui('/ray/gui/trash/clear')
         
-        server.setServerStatus(SERVER_STATUS_COPY)
+        self.setServerStatus(SERVER_STATUS_COPY)
         file_copier.startSessionCopy(self.path, spath, self.duplicate_step1, self.duplicateAborted)
     
     def duplicate_step1(self):
@@ -1692,7 +1750,7 @@ class OperatingSession(Session):
     
     def duplicateAborted(self):
         self.process_order.clear()
-        server.setServerStatus(SERVER_STATUS_READY)
+        self.setServerStatus(SERVER_STATUS_READY)
     
     def saveSessionTemplate(self):
         if self.clientsHaveErrors():
@@ -1707,7 +1765,7 @@ class OperatingSession(Session):
         if os.path.isdir(spath):
             if not os.access(spath, os.W_OK):
                 self.sendError(ERR_GENERAL_ERROR, _translate("error", "Impossible to save template, unwriteable file !" ))
-                server.setServerStatus(SERVER_STATUS_READY)
+                self.setServerStatus(SERVER_STATUS_READY)
                 return
             shutil.rmtree(spath)
         
@@ -1717,9 +1775,9 @@ class OperatingSession(Session):
         for client in self.clients:
             if client.isCapableOf(':ray-network:') and client.active:
                 client.net_session_template = session_template_name
-                server.send(client.addr, '/nsm/client/save_session_template', session_template_name)
+                self.send(client.addr, '/nsm/client/save_session_template', session_template_name)
         
-        server.setServerStatus(SERVER_STATUS_COPY)
+        self.setServerStatus(SERVER_STATUS_COPY)
         file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted)
         
     def saveSessionTemplate_step_1(self):
@@ -1729,12 +1787,12 @@ class OperatingSession(Session):
             client.adjustFilesAfterCopy(session_template_name, TEMPLATE_SESSION_SAVE)
         
         MESSAGE("Done")
-        server.send(self.osc_src_addr, "/reply", self.osc_path, "Saved as template.")
-        server.setServerStatus(SERVER_STATUS_READY)
+        self.oscReply("/reply", self.osc_path, "Saved as template.")
+        self.setServerStatus(SERVER_STATUS_READY)
     
     def saveSessionTemplateAborted(self):
         self.process_order.clear()
-        server.setServerStatus(SERVER_STATUS_READY)
+        self.setServerStatus(SERVER_STATUS_READY)
     
     def prepareTemplate(self):
         if len(self.osc_args) != 2:
@@ -1760,9 +1818,9 @@ class OperatingSession(Session):
             return
         
         if self.path:
-            server.setServerStatus(SERVER_STATUS_COPY)
+            self.setServerStatus(SERVER_STATUS_COPY)
         else:
-            server.setServerStatus(SERVER_STATUS_PRECOPY)
+            self.setServerStatus(SERVER_STATUS_PRECOPY)
             self.sendGui("/ray/gui/session/name",  new_session_name, new_session_name)
             
         file_copier.startSessionCopy(template_path, spath, self.prepareTemplate_step1, self.prepareTemplateAborted)
@@ -1774,9 +1832,9 @@ class OperatingSession(Session):
     def prepareTemplateAborted(self):
         self.process_order.clear()
         if self.name:
-            server.setServerStatus(SERVER_STATUS_READY)
+            self.setServerStatus(SERVER_STATUS_READY)
         else:
-            server.setServerStatus(SERVER_STATUS_OFF)
+            self.setServerStatus(SERVER_STATUS_OFF)
         
             self.setPath('')
             self.sendGui('/ray/gui/session/name', '', '')
@@ -1839,7 +1897,7 @@ class OperatingSession(Session):
                     p = xml.createElement('RAYSESSION')
                     p.setAttribute('VERSION', VERSION)
                     
-                    if server.is_nsm_locked:
+                    if self.isNsmLocked():
                         name = basename(session_full_name).rpartition('.')[0]
                         p.setAttribute('name', name)
                     
@@ -1859,7 +1917,7 @@ class OperatingSession(Session):
                 
         print('moakdj', is_ray_file)
                 
-        GUIMSG(_translate('GUIMSG', "Opening session %s") % self.osc_args[0])
+        self.sendGuiMessage(_translate('GUIMSG', "Opening session %s") % self.osc_args[0])
         
         self.removed_clients.clear()
         self.sendGui('/ray/gui/trash/clear')
@@ -1937,7 +1995,7 @@ class OperatingSession(Session):
                 client.quit()
         
         if self.expected_clients:
-            server.setServerStatus(SERVER_STATUS_CLEAR)
+            self.setServerStatus(SERVER_STATUS_CLEAR)
         
         self.waitAndGoTo(20000, self.load_step1, WAIT_FOR_STOP)
     
@@ -1982,9 +2040,9 @@ class OperatingSession(Session):
         self.sendGui("/ray/gui/session/name",  self.name, self.name)
         
         if has_switch:
-            server.setServerStatus(SERVER_STATUS_SWITCH)
+            self.setServerStatus(SERVER_STATUS_SWITCH)
         else:
-            server.setServerStatus(SERVER_STATUS_LAUNCH) 
+            self.setServerStatus(SERVER_STATUS_LAUNCH) 
         
         
         #* this part is a little tricky... the clients need some time to
@@ -2010,7 +2068,7 @@ class OperatingSession(Session):
         
         self.cleanExpected()
         
-        server.setServerStatus(SERVER_STATUS_OPEN)
+        self.setServerStatus(SERVER_STATUS_OPEN)
         
         for client in self.clients:
             if client.active and client.isReplyPending():
@@ -2023,13 +2081,13 @@ class OperatingSession(Session):
         MESSAGE('Loaded')
         
         self.sendGui("/ray/gui/session/name",  self.name, self.name)
-        server.send(self.osc_src_addr, "/reply", self.osc_path, "Loaded.")
+        self.oscReply("/reply", self.osc_path, "Loaded.")
         
         self.nextFunction()
     
     def loadDone(self):
         MESSAGE("Done")
-        server.setServerStatus(SERVER_STATUS_READY)
+        self.setServerStatus(SERVER_STATUS_READY)
     
     def loadError(self):
         MESSAGE("Failed")
@@ -2043,23 +2101,23 @@ class OperatingSession(Session):
         elif self.err_loading == ERR_BAD_PROJECT:
             m = _translate('Load Error', "Could not load session file.")
         
-        server.send(self.osc_src_addr, "/error", self.osc_path, self.err_loading, m)
+        self.oscReply("/error", self.osc_path, self.err_loading, m)
         
         if self.name:
-            server.setServerStatus(SERVER_STATUS_READY)
+            self.setServerStatus(SERVER_STATUS_READY)
         else:
-            server.setServerStatus(SERVER_STATUS_OFF)
+            self.setServerStatus(SERVER_STATUS_OFF)
             
         self.process_order.clear()
     
     def duplicateDone(self):
         MESSAGE("Done")
-        server.send(self.osc_src_addr, "/reply", self.osc_path, "Duplicated.")
-        server.setServerStatus(SERVER_STATUS_READY)
+        self.oscReply("/reply", self.osc_path, "Duplicated.")
+        self.setServerStatus(SERVER_STATUS_READY)
         
     def exitNow(self):
         MESSAGE("Bye Bye...")
-        server.setServerStatus(SERVER_STATUS_OFF)
+        self.setServerStatus(SERVER_STATUS_OFF)
         app.quit()
         
 class SignaledSession(OperatingSession):
@@ -2154,27 +2212,27 @@ class SignaledSession(OperatingSession):
         if new_session_name == self.name:
             return
         
-        if not server.is_nsm_locked:
+        if not self.isNsmLocked():
             for filename in os.listdir(dirname(self.path)):
                 if filename == new_session_name:
                     return
         
         for client in self.clients:
             if client.isRunning():
-                GUIMSG(_translate('GUIMSG', 'Stop all clients before rename session !'))
+                self.sendGuiMessage(_translate('GUIMSG', 'Stop all clients before rename session !'))
                 return
         
         for client in self.clients + self.removed_clients:
             client.adjustFilesAfterCopy(new_session_name, TEMPLATE_RENAME)
         
-        GUIMSG(_translate('GUIMSG', 'Session %s has been renamed to %s .') % (self.name, new_session_name))
+        self.sendGuiMessage(_translate('GUIMSG', 'Session %s has been renamed to %s .') % (self.name, new_session_name))
         
-        if not server.is_nsm_locked:
+        if not self.isNsmLocked():
             try:
                 spath = "%s/%s" % (dirname(self.path), new_session_name)
                 subprocess.run(['mv', self.path, spath])
                 self.path = spath
-                GUIMSG(_translate('GUIMSG', 'Session directory is now: %s') % self.path)
+                self.sendGuiMessage(_translate('GUIMSG', 'Session directory is now: %s') % self.path)
             except:
                 pass
         
@@ -2223,10 +2281,10 @@ class SignaledSession(OperatingSession):
                 if file in ('raysession.xml', 'session.nsm'):
                     if not already_send:
                         basefolder = folder.replace(self.root + '/', '')
-                        server.send(src_addr, "/reply", "/nsm/server/list", basefolder)
+                        self.send(src_addr, "/reply", "/nsm/server/list", basefolder)
                         already_send = True
                     
-        server.send(src_addr, path, ERR_OK, "Done.")
+        self.send(src_addr, path, ERR_OK, "Done.")
         
     def serverReorderClients(self, path, args):
         client_ids_list = args
