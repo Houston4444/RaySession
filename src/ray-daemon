@@ -2,7 +2,7 @@
 
 import os, sys, shutil, string, random, time, subprocess, signal, unicodedata, inspect
 from liblo import ServerThread, Address, make_method, Message
-from PyQt5.QtCore import QCoreApplication, pyqtSignal, pyqtSlot, QObject, QTimer, QProcess, QProcessEnvironment, QSettings, QStandardPaths
+from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject, QTimer, QProcess, QProcessEnvironment, QSettings, QStandardPaths
 from PyQt5.QtXml import QDomDocument
 
 from shared import *
@@ -468,6 +468,29 @@ class Client(ServerSender):
                     
         
         self.net_session_template = ctx.attribute('net_session_template')
+        
+        if basename(self.executable_path) == 'ray-network':
+            if self.arguments:
+                eat_url  = False
+                eat_root = False
+                
+                for arg in shlex.split(self.arguments):
+                    if arg in ('--daemon-url', '-u'):
+                        eat_url  = True
+                        continue
+                    elif arg in ('--session-root', '-r'):
+                        eat_root = True
+                        continue
+                    elif not (eat_url or eat_root):
+                        eat_url  = False
+                        eat_root = False
+                        continue
+                        
+                    if eat_url:
+                        self.net_daemon_url = arg
+                    elif eat_root:
+                        self.net_session_root = arg
+        
         
         if ctx.attribute('id'):
             #session use "id" for absolutely needed client_id
@@ -1126,10 +1149,10 @@ class Client(ServerSender):
         self.pending_command = COMMAND_OPEN
        
 class Session(ServerSender):
-    def __init__(self, root, for_butter=False):
+    def __init__(self, root):
         ServerSender.__init__(self)
         self.root = root
-        self.for_butter = for_butter
+        self.for_butter = False
         
         self.clients = []
         self.new_clients = []
@@ -1167,7 +1190,12 @@ class Session(ServerSender):
         if self.hasServer():
             server.sendRenameable(True)
     
-    
+    def message(self, string, even_butter=False):
+        if self.for_butter and not even_butter:
+            return
+        
+        MESSAGE(string)
+        
     def setRoot(self, session_root):
         if self.name:
             return
@@ -1236,7 +1264,7 @@ class Session(ServerSender):
             client.start()
     
     def tellAllClientsSessionIsLoaded(self):
-        MESSAGE("Telling all clients that session is loaded...")
+        self.message("Telling all clients that session is loaded...")
         for client in self.clients:
             client.tellClientSessionIsLoaded()
     
@@ -1397,8 +1425,8 @@ class Session(ServerSender):
 
 class OperatingSession(Session):
     #Session is separated in 3 parts only for faster search and modifications.
-    def __init__(self, root, for_butter=False):
-        Session.__init__(self, root, for_butter)
+    def __init__(self, root):
+        Session.__init__(self, root)
         self.wait_for = WAIT_FOR_NONE
         
         self.timer = QTimer()
@@ -1658,22 +1686,22 @@ class OperatingSession(Session):
         file.close()
         
         self.sendGuiMessage(_translate('GUIMSG', "Session saved."))
-        MESSAGE("Session saved.")
+        self.message("Session saved.")
         self.nextFunction()
     
     def saveDone(self):
         if not self.err_loading:
-            MESSAGE("Done.")
+            self.message("Done.")
             self.oscReply("/reply", self.osc_path, "Saved." )
         self.setServerStatus(SERVER_STATUS_READY)
     
     def saveError(self):
-        MESSAGE("Failed")
+        self.message("Failed")
         m = _translate('Load Error', "Unknown error")
         if self.err_saving == ERR_CREATE_FAILED:
             m = _translate('GUIMSG', "Can't save session, session file is unwriteable !")
         
-        MESSAGE(m)
+        self.message(m)
         self.sendGuiMessage(m)
         self.oscReply("/error", self.osc_path, ERR_CREATE_FAILED, m)
         
@@ -1725,12 +1753,12 @@ class OperatingSession(Session):
     
     def closeDone(self):
         self.oscReply("/reply", self.osc_path, "Closed.")
-        MESSAGE("Done")
+        self.message("Done")
         self.setServerStatus(SERVER_STATUS_OFF)
     
     def abortDone(self):
         self.oscReply("/reply", self.osc_path, "Aborted.")
-        MESSAGE("Done")
+        self.message("Done")
         self.setServerStatus(SERVER_STATUS_OFF)
         
     def new(self, new_session_name):
@@ -1781,12 +1809,6 @@ class OperatingSession(Session):
         self.setServerStatus(SERVER_STATUS_READY)
     
     def saveSessionTemplate(self, template_name):
-        #if self.clientsHaveErrors():
-            #self.sendError(ERR_GENERAL_ERROR, _translate('error', "Some clients could not save"))
-            #self.process_order.clear()
-            #return
-        
-        #session_template_name = self.osc_args[0]
         spath = "%s/%s" % (session_template_root, template_name)
         
         #overwrite existing template
@@ -1804,20 +1826,16 @@ class OperatingSession(Session):
             if client.executable_path == 'ray-network':
                 if client.net_daemon_url:
                     self.send(Address(client.net_daemon_url), '/ray/server/save_session_template', self.name, template_name, client.net_session_root)
-            #if client.isCapableOf(':ray-network:') and client.active:
-                #client.net_session_template = session_template_name
-                #self.send(client.addr, '/nsm/client/save_session_template', session_template_name)
         
         self.setServerStatus(SERVER_STATUS_COPY)
         file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted, [template_name])
         
     def saveSessionTemplate_step_1(self, template_name):
-        #session_template_name = self.osc_args[0]
-        
         for client in self.clients + self.removed_clients:
             client.adjustFilesAfterCopy(template_name, TEMPLATE_SESSION_SAVE)
         
-        MESSAGE("Done")
+        self.message("Done")
+        GUIMSG(_translate('GUIMSG', "Session saved as template named %s") % template_name)
         self.oscReply("/reply", self.osc_path, "Saved as template.")
         self.setServerStatus(SERVER_STATUS_READY)
     
@@ -1881,7 +1899,7 @@ class OperatingSession(Session):
                 self.loadError()
                 return
             
-        MESSAGE("Attempting to open %s" % spath)
+        self.message("Attempting to open %s" % spath)
         
         session_ray_file = spath + '/raysession.xml'
         session_nsm_file = spath + '/session.nsm'
@@ -2006,7 +2024,7 @@ class OperatingSession(Session):
                     
             file.close()
         
-        MESSAGE("Commanding unneeded and dumb clients to quit")
+        self.message("Commanding unneeded and dumb clients to quit")
         
         for client in self.clients:
             if client.active and client.isCapableOf(':switch:') and (client.executable_path, client.arguments) in new_client_exec_args:
@@ -2029,7 +2047,7 @@ class OperatingSession(Session):
         for client in self.clients:
             client.pre_existing = True
             
-        MESSAGE("Commanding smart clients to switch")
+        self.message("Commanding smart clients to switch")
         
         has_switch = False
         
@@ -2101,7 +2119,7 @@ class OperatingSession(Session):
     def load_step3(self):
         self.cleanExpected()
         self.tellAllClientsSessionIsLoaded()
-        MESSAGE('Loaded')
+        self.message('Loaded')
         
         self.sendGui("/ray/gui/session/name",  self.name, self.name)
         self.oscReply("/reply", self.osc_path, "Loaded.")
@@ -2109,11 +2127,11 @@ class OperatingSession(Session):
         self.nextFunction()
     
     def loadDone(self):
-        MESSAGE("Done")
+        self.message("Done")
         self.setServerStatus(SERVER_STATUS_READY)
     
     def loadError(self):
-        MESSAGE("Failed")
+        self.message("Failed")
         m = _translate('Load Error', "Unknown error")
         if self.err_loading == ERR_CREATE_FAILED:
             m = _translate('Load Error', "Could not create session file!")
@@ -2134,18 +2152,18 @@ class OperatingSession(Session):
         self.process_order.clear()
     
     def duplicateDone(self):
-        MESSAGE("Done")
+        self.message("Done")
         self.oscReply("/reply", self.osc_path, "Duplicated.")
         self.setServerStatus(SERVER_STATUS_READY)
         
     def exitNow(self):
-        MESSAGE("Bye Bye...")
+        self.message("Bye Bye...")
         self.setServerStatus(SERVER_STATUS_OFF)
         app.quit()
         
 class SignaledSession(OperatingSession):
-    def __init__(self, root, for_butter=False):
-        OperatingSession.__init__(self, root, for_butter)
+    def __init__(self, root):
+        OperatingSession.__init__(self, root)
         signaler.server_new.connect(self.serverNewSession)
         signaler.server_new_from_tp.connect(self.serverNewSessionFromTemplate)
         signaler.server_open.connect(self.serverOpenSession)
@@ -2279,9 +2297,12 @@ class SignaledSession(OperatingSession):
         if len(args) != 1:
             return
         
+        new_session_full_name = args[0]
+        
         self.rememberOscArgs(path, args, src_addr)
         
-        self.process_order = [self.save, (self.duplicate, args[0]), self.load, self.duplicateDone]
+        
+        self.process_order = [self.save, (self.duplicate, new_session_full_name), (self.load, new_session_full_name), self.duplicateDone]
         self.nextFunction()
         
     def serverSaveSessionTemplate(self, path, args, src_addr):
@@ -2309,22 +2330,6 @@ class SignaledSession(OperatingSession):
             file_copier.abort(self.nextFunction, [])
         else:
             self.nextFunction()
-    
-    def serverLoadAndTemplate(self, path, args, src_addr):
-        print('zmeoaa', path, args, src_addr)
-        
-        if len(args) != 2:
-            return
-        
-        self.rememberOscArgs(path, args, src_addr)
-        
-        new_session_full_name, template_name = args
-        
-        self.process_order = [(self.load, new_session_full_name), (self.saveSessionTemplate, template_name)]
-        
-        print('zmeoaaqqa', new_session_full_name, template_name)
-        
-        self.nextFunction()
     
     def serverListSessions(self, path, args, src_addr):
         if not self.root:
@@ -2546,7 +2551,7 @@ class SignaledSession(OperatingSession):
         client = self.getClientByAddress(src_addr)
         if client:
             client.setReply(ERR_OK, message)
-            #MESSAGE( "Client \"%s\" replied with: %s in %fms" % ( client.name, message, client.milliseconds_since_last_command() ))
+            #self.message( "Client \"%s\" replied with: %s in %fms" % ( client.name, message, client.milliseconds_since_last_command() ))
             client.pending_command = COMMAND_NONE
             
             client.setStatus(CLIENT_STATUS_READY)
@@ -2554,7 +2559,7 @@ class SignaledSession(OperatingSession):
             if self.wait_for == WAIT_FOR_REPLY:
                 self.endTimerIfLastExpected(client)
         else:
-            MESSAGE("Reply from unknown client")
+            self.message("Reply from unknown client")
     
     def setClientNetworkProperties(self, client_id, net_daemon_url, net_session_root):
         for client in self.clients:
@@ -2687,8 +2692,30 @@ class SignaledSession(OperatingSession):
 
 class ButterSession(OperatingSession):
     def __init__(self, root):
-        OperatingSession.__init__(self, root, for_butter=True)
+        OperatingSession.__init__(self, root)
+        self.for_butter = True
         
+    def butterLoadAndTemplate(self, path, args, src_addr):
+        if len(args) != 2:
+            return
+        
+        session_full_name, template_name = args
+        
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [(self.load, session_full_name), (self.saveSessionTemplate, template_name)]
+        
+        self.nextFunction()
+        
+    def butterDuplicate(self, path, args, src_addr):
+        if len(args) != 2:
+            return
+        
+        session_full_name_to_load, new_session_full_name = args
+        
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [(self.load, session_full_name_to_load), (self.duplicate, new_session_full_name)]
+        
+        self.nextFunction()
 
 ##########################
 
@@ -2726,14 +2753,20 @@ class Signaler(QObject):
     client_net_properties = pyqtSignal(str, str, str)
         
     butter_load_and_template = pyqtSignal(str, str, str)
+    butter_duplicate         = pyqtSignal(str, str, str)
     
     def __init__(self):
         QObject.__init__(self)
         self.butter_load_and_template.connect(self.butterLoadAndTemplate)
+        self.butter_duplicate.connect(self.butterDuplicate)
         
     def butterLoadAndTemplate(self, session_name, template_name, sess_root):
-        tmp_session = SignaledSession(sess_root, for_butter=True)
-        tmp_session.serverLoadAndTemplate('', [session_name, template_name], None)
+        tmp_session = ButterSession(sess_root)
+        tmp_session.butterLoadAndTemplate('', [session_name, template_name], None)
+        
+    def butterDuplicate(self, session_to_load, new_session, sess_root):
+        tmp_session = ButterSession(sess_root)
+        tmp_session.butterDuplicate('', [session_to_load, new_session], None)
 
 class OscServerThread(ServerThread):
     def __init__(self, osc_num=0):
