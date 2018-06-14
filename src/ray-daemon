@@ -51,6 +51,8 @@ WAIT_FOR_NONE     = 0
 WAIT_FOR_STOP     = 1
 WAIT_FOR_ANNOUNCE = 2
 WAIT_FOR_REPLY    = 3
+WAIT_FOR_DUPLICATE_START  = 4
+WAIT_FOR_DUPLICATE_FINISH = 5
 
 TEMPLATE_NONE         = 0
 TEMPLATE_RENAME       = 1
@@ -406,6 +408,7 @@ class Client(ServerSender):
     net_session_template = ''
     net_session_root     = ''
     net_daemon_url       = ''
+    net_duplicate_state  = -1
     
     def __init__(self, parent_session):
         ServerSender.__init__(self)
@@ -1190,8 +1193,8 @@ class Session(ServerSender):
         if self.hasServer():
             server.sendRenameable(True)
     
-    def message(self, string, even_butter=False):
-        if self.is_dummy and not even_butter:
+    def message(self, string, even_dummy=False):
+        if self.is_dummy and not even_dummy:
             return
         
         MESSAGE(string)
@@ -1762,8 +1765,6 @@ class OperatingSession(Session):
         self.setServerStatus(SERVER_STATUS_OFF)
         
     def new(self, new_session_name):
-        #new_session_name = self.osc_args[0]
-        
         self.sendGuiMessage(_translate('GUIMSG', "Creating new session \"%s\"") % new_session_name)
         spath = self.root + '/' + new_session_name
         
@@ -1792,15 +1793,33 @@ class OperatingSession(Session):
             self.process_order.clear()
             return
         
-        #new_session_full_name = self.osc_args[0]
         spath = "%s/%s" % (self.root, new_session_full_name)
         
         self.sendGui('/ray/gui/trash/clear')
         
-        self.setServerStatus(SERVER_STATUS_COPY)
-        file_copier.startSessionCopy(self.path, spath, self.duplicate_step1, self.duplicateAborted)
-    
+        for client in self.clients:
+            client.net_duplicate_state = -1
+            
+            if client.net_daemon_url:
+                self.send(client.net_daemon_url, '/nsm/server/duplicate', self.name, new_session_full_name, self.root)
+                self.expected_clients.append(client)
+        
+        self.waitAndGoTo(2000, self.duplicate_step1, WAIT_FOR_DUPLICATE_START) 
+        
     def duplicate_step1(self):
+        self.setServerStatus(SERVER_STATUS_COPY)
+        file_copier.startSessionCopy(self.path, spath, self.duplicate_step2, self.duplicateAborted)
+    
+    def duplicate_step2(self):
+        self.cleanExpected()
+        
+        for client in self.clients:
+            if client.net_duplicate_state == 0:
+                self.expected_clients.append(client)
+        
+        self.waitAndGoTo(3600000, self.duplicate_step3, WAIT_FOR_DUPLICATE_FINISH) #1Hour
+        
+    def duplicate_step3(self):
         self.adjustFilesAfterCopy(TEMPLATE_NONE)           
         self.nextFunction()
     
@@ -1885,8 +1904,6 @@ class OperatingSession(Session):
         
     def load(self, session_full_name):
         #terminate or switch clients
-        #session_full_name = self.osc_args[0]
-        
         spath = self.root + '/' + session_full_name
         if session_full_name.startswith('/'):
             spath = session_full_name
@@ -1926,15 +1943,6 @@ class OperatingSession(Session):
                 self.sendGui('/ray/opening_nsm_session')
             except:
                 try:
-                    #if len(self.osc_args) == 2 and not self.load_tried:
-                        ##for network open ask, if open is called with a template arg, template session is loaded if there is no session here
-                        ##load_tried is used to prevent infinite loop if template session file doesn't exists 
-                        #self.load_tried = True
-                        #self.process_order = [self.prepareTemplate, self.load ] + self.process_order
-                        #self.nextFunction()
-                        ##self.load_tried = False
-                        #return
-                    
                     ray_file = open(session_ray_file, 'w')
                     xml = QDomDocument()
                     p = xml.createElement('RAYSESSION')
@@ -2201,6 +2209,7 @@ class SignaledSession(OperatingSession):
         signaler.copy_aborted.connect(self.abortCopy)
         
         signaler.client_net_properties.connect(self.setClientNetworkProperties)
+        signaler.net_duplicate_state.connect(self.setClientNetDuplicateState)
         
     ############################# FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###############################
     
@@ -2567,6 +2576,17 @@ class SignaledSession(OperatingSession):
                 client.setNetworkProperties(net_daemon_url, net_session_root)
                 break
     
+    def setClientNetDuplicateState(self, src_addr, state):
+        for client in self.clients:
+            if client.net_daemon_url and areSameOscPort(client.net_daemon_url, src_addr.url):
+                client.net_duplicate_state = state
+                break
+        else:
+            return
+        
+        if (self.wait_for == WAIT_FOR_DUPLICATE_START and state == 0) or (self.wait_for == WAIT_FOR_DUPLICATE_FINISH and state == 1):
+            self.endTimerIfLastExpected(client)
+    
     def guiClientStop(self, path, args):
         for client in self.clients:
             if client.client_id == args[0]:
@@ -2695,7 +2715,7 @@ class DummySession(OperatingSession):
         OperatingSession.__init__(self, root)
         self.is_dummy = True
         
-    def butterLoadAndTemplate(self, path, args, src_addr):
+    def dummyLoadAndTemplate(self, path, args, src_addr):
         if len(args) != 2:
             return
         
@@ -2706,7 +2726,7 @@ class DummySession(OperatingSession):
         
         self.nextFunction()
         
-    def butterDuplicate(self, path, args, src_addr):
+    def dummyDuplicate(self, path, args, src_addr):
         if len(args) != 2:
             return
         
@@ -2751,22 +2771,23 @@ class Signaler(QObject):
     gui_trash_remove_definitely = pyqtSignal(str)
     
     client_net_properties = pyqtSignal(str, str, str)
+    net_duplicate_state   = pyqtSignal(object, int)
         
-    butter_load_and_template = pyqtSignal(str, str, str)
-    butter_duplicate         = pyqtSignal(str, str, str)
+    dummy_load_and_template = pyqtSignal(str, str, str)
+    dummy_duplicate         = pyqtSignal(str, str, str)
     
     def __init__(self):
         QObject.__init__(self)
-        self.butter_load_and_template.connect(self.butterLoadAndTemplate)
-        self.butter_duplicate.connect(self.butterDuplicate)
+        self.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
+        self.dummy_duplicate.connect(self.dummyDuplicate)
         
-    def butterLoadAndTemplate(self, session_name, template_name, sess_root):
+    def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
         tmp_session = DummySession(sess_root)
-        tmp_session.butterLoadAndTemplate('', [session_name, template_name], None)
+        tmp_session.dummyLoadAndTemplate('', [session_name, template_name], None)
         
-    def butterDuplicate(self, session_to_load, new_session, sess_root):
+    def dummyDuplicate(self, session_to_load, new_session, sess_root):
         tmp_session = DummySession(sess_root)
-        tmp_session.butterDuplicate('', [session_to_load, new_session], None)
+        tmp_session.dummyDuplicate('', [session_to_load, new_session], None)
 
 class OscServerThread(ServerThread):
     def __init__(self, osc_num=0):
@@ -2907,7 +2928,11 @@ class OscServerThread(ServerThread):
         
         net_daemon_url, net_session_root = args
         signaler.client_net_properties.emit(client.client_id, net_daemon_url, net_session_root)
-            
+      
+    @make_method('/ray/daemon/duplicate_state', 'i')
+    def rayDuplicateState(self, path, args, types, src_addr):
+        signaler.net_duplicate_state.emit(src_addr, args[0])
+      
     @make_method('/ray/gui/gui_announce', 'si')
     def rayGuiGui_announce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -3123,7 +3148,7 @@ class OscServerThread(ServerThread):
             signaler.server_save_session_template.emit(path, [template_name], src_addr)
             return
         
-        signaler.butter_load_and_template.emit(*args)
+        signaler.dummy_load_and_template.emit(*args)
     
     @make_method('/nsm/server/abort', '')
     def nsmServerAbort(self, path, args, types, src_addr):
@@ -3540,7 +3565,7 @@ class OscServerThread(ServerThread):
         self.gui_list.append(gui_addr)
         MESSAGE("Registered with GUI")
         
-#def butterLoadAndTemplate(session_name, template_name, sess_root):
+#def dummyLoadAndTemplate(session_name, template_name, sess_root):
     #tmp_session = OperatingSession(sess_root, is_dummy=True)
     #tmp_session.rememberOscArgs(path, [session_name], src_addr)
     #tmp_session.load()
