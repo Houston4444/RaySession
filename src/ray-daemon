@@ -143,13 +143,13 @@ def quitRay(sig, frame):
 class ServerSender(QObject):
     def __init__(self):
         QObject.__init__(self)
-        self.for_butter = False
+        self.is_dummy = False
       
     def hasServer(self):
         if not 'server' in globals():
             return False
         
-        return not self.for_butter
+        return not self.is_dummy
 
     def send(self, *args):
         if not self.hasServer():
@@ -410,7 +410,7 @@ class Client(ServerSender):
     def __init__(self, parent_session):
         ServerSender.__init__(self)
         self.session = parent_session
-        self.for_butter = self.session.for_butter
+        self.is_dummy = self.session.is_dummy
         
         process_env = QProcessEnvironment.systemEnvironment()
         if self.hasServer() and hasattr(server, 'url'):
@@ -613,7 +613,7 @@ class Client(ServerSender):
     def start(self):
         self.session.setRenameable(False)
         
-        if self.for_butter:
+        if self.is_dummy:
             return
         
         self.sendGuiMessage(_translate("GUIMSG", "Launching %s") % self.executable_path)
@@ -1152,7 +1152,7 @@ class Session(ServerSender):
     def __init__(self, root):
         ServerSender.__init__(self)
         self.root = root
-        self.for_butter = False
+        self.is_dummy = False
         
         self.clients = []
         self.new_clients = []
@@ -1191,7 +1191,7 @@ class Session(ServerSender):
             server.sendRenameable(True)
     
     def message(self, string, even_butter=False):
-        if self.for_butter and not even_butter:
+        if self.is_dummy and not even_butter:
             return
         
         MESSAGE(string)
@@ -2071,7 +2071,7 @@ class OperatingSession(Session):
                 #* resolution) and if too many clients start at once they
                 #* won't be able to find a free port. */
                 self.addClient(new_client)
-                if new_client.auto_start and not self.for_butter:
+                if new_client.auto_start and not self.is_dummy:
                     self.clients_to_launch.append(new_client)
                     if not new_client.executable_path in known_as_non_active:
                         self.expected_clients.append(new_client)
@@ -2690,10 +2690,10 @@ class SignaledSession(OperatingSession):
         self.process_order = [self.close, self.exitNow]
         self.nextFunction()
 
-class ButterSession(OperatingSession):
+class DummySession(OperatingSession):
     def __init__(self, root):
         OperatingSession.__init__(self, root)
-        self.for_butter = True
+        self.is_dummy = True
         
     def butterLoadAndTemplate(self, path, args, src_addr):
         if len(args) != 2:
@@ -2761,11 +2761,11 @@ class Signaler(QObject):
         self.butter_duplicate.connect(self.butterDuplicate)
         
     def butterLoadAndTemplate(self, session_name, template_name, sess_root):
-        tmp_session = ButterSession(sess_root)
+        tmp_session = DummySession(sess_root)
         tmp_session.butterLoadAndTemplate('', [session_name, template_name], None)
         
     def butterDuplicate(self, session_to_load, new_session, sess_root):
-        tmp_session = ButterSession(sess_root)
+        tmp_session = DummySession(sess_root)
         tmp_session.butterDuplicate('', [session_to_load, new_session], None)
 
 class OscServerThread(ServerThread):
@@ -3541,7 +3541,7 @@ class OscServerThread(ServerThread):
         MESSAGE("Registered with GUI")
         
 #def butterLoadAndTemplate(session_name, template_name, sess_root):
-    #tmp_session = OperatingSession(sess_root, for_butter=True)
+    #tmp_session = OperatingSession(sess_root, is_dummy=True)
     #tmp_session.rememberOscArgs(path, [session_name], src_addr)
     #tmp_session.load()
     #tmp_session.rememberOscArgs(path, [template_name], src_addr)
