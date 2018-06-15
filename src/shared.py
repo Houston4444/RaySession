@@ -103,6 +103,13 @@ def getFreeOscPort(default=16187):
     del testport
     return daemon_port
 
+def isValidOscUrl(url):
+    try:
+        address = liblo.Address(url)
+        return True
+    except:
+        return False
+
 def getLibloAddress(url):
     valid_url = False
     try:
