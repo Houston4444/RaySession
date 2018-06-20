@@ -251,7 +251,7 @@ class FileCopier(ServerSender):
             progress = float(current_size/self.copy_size)
             
             if self.client_id:
-                self.sendGui('/ray/gui/client/progress', self.client_id, progress)
+                self.sendGui('/ray/client/progress', self.client_id, progress)
             else:
                 self.sendGui('/ray/gui/server_progress', progress)
                 
@@ -485,7 +485,9 @@ class Client(ServerSender):
                 eat_url  = False
                 eat_root = False
                 
+                print('"erofji')
                 for arg in shlex.split(self.arguments):
+                    print(arg)
                     if arg in ('--daemon-url', '-u'):
                         eat_url  = True
                         continue
@@ -499,8 +501,14 @@ class Client(ServerSender):
                         
                     if eat_url:
                         self.net_daemon_url = arg
+                        eat_url = False
                     elif eat_root:
                         self.net_session_root = arg
+                        eat_root = False
+                        
+                print('zoefj')
+                print(self.net_daemon_url)
+                print(self.net_session_root)
         
         
         if ctx.attribute('id'):
@@ -599,7 +607,7 @@ class Client(ServerSender):
             self.sendStatusToGui()
         
         if status == CLIENT_STATUS_COPY or self.session.file_copier.isActive(self.client_id):
-            self.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_COPY)
+            self.sendGui("/ray/client/status", self.client_id, CLIENT_STATUS_COPY)
     
     def getJackClientName(self):
         jack_client_name = self.name
@@ -727,7 +735,7 @@ class Client(ServerSender):
     
     def stoppedSinceLong(self):
         self.stopped_since_long = True
-        self.sendGui('/ray/gui/client/still_running', self.client_id)
+        self.sendGui('/ray/client/still_running', self.client_id)
     
     def tellClientSessionIsLoaded(self):
         if self.active and not self.isDumbClient():
@@ -775,7 +783,7 @@ class Client(ServerSender):
                 self.terminate()
                 self.setStatus(CLIENT_STATUS_QUIT)
             else:
-                self.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_REMOVED)
+                self.sendGui("/ray/client/status", self.client_id, CLIENT_STATUS_REMOVED)
     
     def switch(self, new_client):
         old_client_id     = self.client_id
@@ -797,13 +805,13 @@ class Client(ServerSender):
         self.pending_command = COMMAND_OPEN
         self.setStatus(CLIENT_STATUS_SWITCH)
             
-        self.sendGui("/ray/gui/client/switch", old_client_id, self.client_id)
+        self.sendGui("/ray/client/switch", old_client_id, self.client_id)
     
     def sendGuiClientProperties(self, removed=False):
-        ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
+        ad = '/ray/client/update' if self.sent_to_gui else '/ray/client/new'
             
         if removed:
-            ad = '/ray/gui/trash/add'
+            ad = '/ray/trash/add'
             
         self.sendGui(ad,
                         self.client_id, 
@@ -903,7 +911,7 @@ class Client(ServerSender):
             os.makedirs(template_dir)
             
             if self.net_daemon_url:
-                self.send(Address(self.net_daemon_url), '/ray/server/save_session_template', self.session.name, template_name, self.net_session_root)
+                self.send(Address(self.net_daemon_url), '/ray/session/save_as_template', self.session.name, template_name, self.net_session_root)
             
             #if self.net_daemon_url:
                 #server.send(Address(self.net_daemon_url), '/ray/serve')
@@ -1159,7 +1167,7 @@ class Client(ServerSender):
         self.setStatus(CLIENT_STATUS_OPEN)
         
         if self.isCapableOf(":optional-gui:"):
-            self.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
+            self.sendGui("/ray/client/has_optional_gui", self.client_id)
             
             if self.start_gui_hidden:
                 self.send(src_addr, "/nsm/client/hide_optional_gui")
@@ -1281,7 +1289,7 @@ class Session(ServerSender):
         
         self.addClient(client)
         
-        self.sendGui('/ray/gui/trash/remove', client.client_id)
+        self.sendGui('/ray/trash/remove', client.client_id)
         self.removed_clients.remove(client)
         
         if client.auto_start:
@@ -1296,7 +1304,7 @@ class Session(ServerSender):
         remove_item_list = []
         for i in range(len(self.clients)):
             if not self.clients[i].active:
-                self.sendGui("/ray/gui/client/status", self.clients[i].client_id, CLIENT_STATUS_REMOVED)
+                self.sendGui("/ray/client/status", self.clients[i].client_id, CLIENT_STATUS_REMOVED)
                 remove_item_list.append(i)
         
         remove_item_list.reverse()
@@ -1750,7 +1758,7 @@ class OperatingSession(Session):
             return
         
         self.setServerStatus(SERVER_STATUS_CLOSE)
-        self.sendGui('/ray/gui/trash/clear')
+        self.sendGui('/ray/trash/clear')
         
         
         for client in self.clients.__reversed__():
@@ -1822,14 +1830,14 @@ class OperatingSession(Session):
             self.process_order.clear()
             return
         
-        self.sendGui('/ray/gui/trash/clear')
+        self.sendGui('/ray/trash/clear')
         
         for client in self.clients:
             client.net_duplicate_state = -1
             
             if client.net_daemon_url and isValidOscUrl(client.net_daemon_url):
                 print('ya du net daemon url', client.net_daemon_url)
-                self.send(Address(client.net_daemon_url), '/nsm/server/duplicate_only', self.name, new_session_full_name, client.net_session_root)
+                self.send(Address(client.net_daemon_url), '/ray/session/duplicate_only', self.name, new_session_full_name, client.net_session_root)
                 self.expected_clients.append(client)
         
         print('step 0', new_session_full_name)
@@ -1884,7 +1892,7 @@ class OperatingSession(Session):
         for client in self.clients:
             if client.executable_path == 'ray-network':
                 if client.net_daemon_url:
-                    self.send(Address(client.net_daemon_url), '/ray/server/save_session_template', self.name, template_name, client.net_session_root)
+                    self.send(Address(client.net_daemon_url), '/ray/session/save_as_template', self.name, template_name, client.net_session_root)
         
         self.setServerStatus(SERVER_STATUS_COPY)
         self.file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted, [template_name])
@@ -2009,7 +2017,7 @@ class OperatingSession(Session):
         self.sendGuiMessage(_translate('GUIMSG', "Opening session %s") % session_full_name)
         
         self.removed_clients.clear()
-        self.sendGui('/ray/gui/trash/clear')
+        self.sendGui('/ray/trash/clear')
         
         
         self.new_clients = []
@@ -2232,6 +2240,7 @@ class SignaledSession(OperatingSession):
         
         signaler.server_add.connect(self.serverAdd)
         signaler.server_add_proxy.connect(self.serverAddProxy)
+        signaler.server_add_client_template.connect(self.serverAddClientTemplate)
         signaler.server_add_user_client_template.connect(self.serverAddUserClientTemplate)
         signaler.server_add_factory_client_template.connect(self.serverAddFactoryClientTemplate)
         
@@ -2397,9 +2406,16 @@ class SignaledSession(OperatingSession):
         else:
             self.nextFunction()
     
-    def serverListSessions(self, path, args, src_addr):
+    def serverListSessions(self, src_addr, with_net):
+        if with_net:
+            for client in self.clients:
+                if client.net_daemon_url:
+                    self.send(Address(client.net_daemon_url), '/ray/server/list_sessions', 1)
+        
         if not self.root:
             return
+        
+        session_list = []
         
         for fds in os.walk(self.root):
             folder, folders, files = fds
@@ -2411,11 +2427,15 @@ class SignaledSession(OperatingSession):
             for file in files:
                 if file in ('raysession.xml', 'session.nsm'):
                     if not already_send:
-                        basefolder = folder.replace(self.root + '/', '')
-                        self.send(src_addr, "/reply", "/nsm/server/list", basefolder)
+                        basefolder = folder.replace(self.root + '/', '', 1)
+                        session_list.append(basefolder)
+                        if len(session_list) == 100:
+                            self.send(src_addr, "/reply_sessions_list", *session_list)
+                            session_list.clear()
                         already_send = True
                     
-        self.send(src_addr, path, ERR_OK, "Done.")
+        if session_list:
+            self.send(src_addr, "/reply_sessions_list", *session_list)
         
     def serverReorderClients(self, path, args):
         client_ids_list = args
@@ -2551,6 +2571,14 @@ class SignaledSession(OperatingSession):
     
     def addClientTemplateAborted(self, client):
         self.removeClient(client)
+    
+    def serverAddClientTemplate(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
+        
+        factory = bool(args[0])
+        template_name = args[1]
+        
+        self.addClientTemplate(template_name, factory)
     
     def serverAddUserClientTemplate(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
@@ -2752,7 +2780,7 @@ class SignaledSession(OperatingSession):
         else:
             return
         
-        self.sendGui('/ray/gui/trash/remove', client_id)
+        self.sendGui('/ray/trash/remove', client_id)
         
         for file in client.getProjectFiles():
             try:
@@ -2775,6 +2803,7 @@ class SignaledSession(OperatingSession):
         self.terminated_yet = True
         self.process_order = [self.close, self.exitNow]
         self.nextFunction()
+
 
 class DummySession(OperatingSession):
     def __init__(self, root):
@@ -2804,9 +2833,10 @@ class Signaler(QObject):
     server_new_from_tp = pyqtSignal(str, list, object)
     server_open        = pyqtSignal(str, list, object)
     server_save        = pyqtSignal(str, list, object)
-    server_list_sessions = pyqtSignal(str, list, object)
+    server_list_sessions = pyqtSignal(object, bool)
     server_add       = pyqtSignal(str, list, object)
     server_add_proxy = pyqtSignal(str, list, object)
+    server_add_client_template = pyqtSignal(str, list, object)
     server_add_user_client_template    = pyqtSignal(str, list, object)
     server_add_factory_client_template = pyqtSignal(str, list, object)
     server_reorder_clients = pyqtSignal(str, list)
@@ -2850,9 +2880,10 @@ class ClientCommunicating(ServerThread):
     def __init__(self, osc_num=0):
         ServerThread.__init__(self, osc_num)
         self.gui_list = []
-        self.server_status = SERVER_STATUS_OFF
-        self.is_nsm_locked = False
+        self.server_status  = SERVER_STATUS_OFF
+        self.is_nsm_locked  = False
         self.nsm_locker_url = ''
+        self.net_master_daemon_addr = None 
         
     @make_method('/nsm/server/announce', 'sssiii')
     def nsmServerAnnounce(self, path, args, types, src_addr):
@@ -2894,7 +2925,7 @@ class ClientCommunicating(ServerThread):
             return
         
         client.progress = args[0]
-        self.sendGui("/ray/gui/client/progress", client.client_id, client.progress)
+        self.sendGui("/ray/client/progress", client.client_id, client.progress)
     
     @make_method('/nsm/client/is_dirty', '')
     def nsmClientIs_dirty(self, path, args, types, src_addr):
@@ -2908,7 +2939,7 @@ class ClientCommunicating(ServerThread):
         
         client.dirty = 1
         
-        self.sendGui("/ray/gui/client/dirty", client.client_id, client.dirty)
+        self.sendGui("/ray/client/dirty", client.client_id, client.dirty)
 
     @make_method('/nsm/client/is_clean', '')
     def nsmClientIs_clean(self, path, args, types, src_addr):
@@ -2922,7 +2953,7 @@ class ClientCommunicating(ServerThread):
         
         client.dirty = 0
         
-        self.sendGui("/ray/gui/client/dirty", client.client_id, client.dirty)
+        self.sendGui("/ray/client/dirty", client.client_id, client.dirty)
     
     @make_method('/nsm/client/message', 'is')
     def nsmClientMessage(self, path, args, types, src_addr):
@@ -2932,7 +2963,7 @@ class ClientCommunicating(ServerThread):
         if not client:
             return
         
-        self.sendGui("/ray/gui/client/message", client.client_id, args[0], args[1])
+        self.sendGui("/ray/client/message", client.client_id, args[0], args[1])
 
     @make_method('/nsm/client/gui_is_hidden', '')
     def nsmClientGui_is_hidden(self, path, args, types, src_addr):
@@ -2946,7 +2977,7 @@ class ClientCommunicating(ServerThread):
         
         client.gui_visible = False
         
-        self.sendGui("/ray/gui/client/gui_visible", client.client_id, int(client.gui_visible))
+        self.sendGui("/ray/client/gui_visible", client.client_id, int(client.gui_visible))
 
     @make_method('/nsm/client/gui_is_shown', '')
     def nsmClientGui_is_shown(self, path, args, types, src_addr):
@@ -2959,7 +2990,7 @@ class ClientCommunicating(ServerThread):
         
         client.gui_visible = True
         
-        self.sendGui("/ray/gui/client/gui_visible", client.client_id, int(client.gui_visible))
+        self.sendGui("/ray/client/gui_visible", client.client_id, int(client.gui_visible))
 
     @make_method('/nsm/client/label', 's')
     def nsmClientLabel(self, path, args, types, src_addr):
@@ -2971,7 +3002,31 @@ class ClientCommunicating(ServerThread):
         
         label = args[0]
         signaler.gui_client_label.emit(client.client_id, label)
+      
+    @make_method('/nsm/server/broadcast', None)
+    def nsmServerBroadcast(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if not args:
+            return
+        
+        #don't allow clients to broadcast NSM commands
+        if args[0].startswith('/nsm/') or args[0].startswith('/ray'):
+            return
+        
+        for client in session.clients:
+            if not client.addr:
+                continue
             
+            if not areSameOscPort(client.addr.url, src_addr.url):
+                self.send(client.addr, Message(*args))
+                
+            #for gui_addr in self.gui_list:
+                ##also relay to attached GUI so that the broadcast can be
+                ##propagated to another NSMD instance
+                #if gui_addr.url != src_addr.url:
+                    #self.send(gui_addr, Message(*args))
+      
     @make_method('/nsm/client/network_properties', 'ss')
     def nsmClientNetworkProperties(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -2982,16 +3037,19 @@ class ClientCommunicating(ServerThread):
         
         net_daemon_url, net_session_root = args
         signaler.client_net_properties.emit(client.client_id, net_daemon_url, net_session_root)
-      
-    @make_method('/ray/net_daemon/duplicate_state', 'f')
-    def rayDuplicateState(self, path, args, types, src_addr):
-        signaler.net_duplicate_state.emit(src_addr, args[0])
 
 class OscServerThread(ClientCommunicating):
     def __init__(self, osc_num=0):
         ClientCommunicating.__init__(self, osc_num)
-      
-    @make_method('/ray/gui/gui_announce', 'si')
+        self.list_asker_addr = None
+    
+    @make_method('/osc/ping', '')
+    def oscPing(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        self.send(src_addr, "/reply", path)
+    
+    @make_method('/ray/server/gui_announce', 'si')
     def rayGuiGui_announce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
@@ -3008,7 +3066,7 @@ class OscServerThread(ClientCommunicating):
         
         self.announceGui(src_addr.url, nsm_locked)
 
-    @make_method('/ray/gui/gui_disannounce', '')
+    @make_method('/ray/server/gui_disannounce', '')
     def rayGuiGui_disannounce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
@@ -3036,349 +3094,7 @@ class OscServerThread(ClientCommunicating):
             if gui_addr.url != src_addr.url:
                 self.send(gui_addr, '/ray/gui/daemon_nsm_locked', 1)
     
-    @make_method('/ray/gui/client/stop', 's')
-    def rayGuiClientStop(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        signaler.gui_client_stop.emit(path, args)
-    
-    @make_method('/ray/gui/client/kill', 's')
-    def rayGuiClientKill(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        signaler.gui_client_kill.emit(path, args)            
-    
-    @make_method('/ray/gui/client/remove', 's')
-    def rayGuiClientRemove(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        signaler.gui_client_remove.emit(path, args)
-    
-    @make_method('/ray/gui/client/resume', 's')
-    def rayGuiClientResume(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        signaler.gui_client_resume.emit(path, args)
-                
-    @make_method('/ray/gui/client/save', 's')
-    def rayGuiClientSave(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        signaler.gui_client_save.emit(path, args)
-
-    @make_method('/ray/gui/client/save_as_template', 'ss')
-    def rayGuiClientSaveAsTemplate(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        signaler.gui_client_save_template.emit(path, args)
-    
-    @make_method('/ray/gui/client/show_optional_gui', 's')
-    def nsmGuiClientShow_optional_gui(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        client = session.getClient(args[0])
-        
-        if client and client.active:
-            self.send(client.addr, "/nsm/client/show_optional_gui")
-
-    @make_method('/ray/gui/client/hide_optional_gui', 's')
-    def nsmGuiClientHide_optional_gui(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        client = session.getClient(args[0])
-        
-        if client and client.active:
-            self.send(client.addr, "/nsm/client/hide_optional_gui")
-
-    @make_method('/ray/gui/client/update_properties', 'ssssissssi')
-    def rayGuiClientUpdateProperties(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        client_data = ClientData(*args)
-        signaler.gui_update_client_properties.emit(client_data)
-
-    @make_method('/osc/ping', '')
-    def oscPing(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        self.send(src_addr, "/reply", path)
-
-    @make_method('/nsm/server/broadcast', None)
-    def nsmServerBroadcast(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if not args:
-            return
-        
-        #don't allow clients to broadcast NSM commands
-        if args[0].startswith('/nsm/') or args[0].startswith('/ray'):
-            return
-        
-        for client in session.clients:
-            if not client.addr:
-                continue
-            
-            if client.addr.url != src_addr.url:
-                self.send(client.addr, Message(*args))
-                
-            for gui_addr in self.gui_list:
-                #also relay to attached GUI so that the broadcast can be
-                #propagated to another NSMD instance
-                if gui_addr.url != src_addr.url:
-                    self.send(gui_addr, Message(*args))
-        
-    @make_method('/ray/server/rename', 's')
-    def rayServerRename(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        new_session_name = args[0]
-        
-        #prevent rename session in network session
-        if self.nsm_locker_url:
-            NSM_URL = os.getenv('NSM_URL')
-            if not NSM_URL:
-                return
-            
-            if not areSameOscPort(self.nsm_locker_url, NSM_URL):
-                return
-        
-        if '/' in new_session_name:
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
-            return
-        
-        if self.isOperationPending(src_addr, path):
-            return
-        
-        if not session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to rename.")
-            return
-        
-        signaler.server_rename.emit(new_session_name)
-      
-      
-    @make_method('/nsm/server/duplicate', 's')
-    def nsmServerDuplicate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if self.is_nsm_locked:
-            return
-        
-        if self.isOperationPending(src_addr, path):
-            return
-        
-        if not session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to duplicate.")
-            return
-        
-        if not pathIsValid(args[0]):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
-            return
-        
-        signaler.server_duplicate.emit(path, args, src_addr)
-        
-    @make_method('/nsm/server/duplicate_only', 'sss')
-    def nsmServerDuplicateOnly(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        print('duplicate_only ici', args)
-        session_full_name, new_session_full_name, sess_root = args
-        
-        self.send(src_addr, '/ray/net_daemon/duplicate_state', 0)
-        
-        print(sess_root, session.root)
-        print(session_full_name, session.name)
-        
-        if sess_root == session.root and session_full_name == session.name:
-            signaler.server_duplicate_only.emit(path, [new_session_full_name], src_addr)
-            return
-        
-        signaler.dummy_duplicate.emit(src_addr, *args)
-        
-    @make_method('/ray/server/save_session_template', 's')
-    def nsmServerSaveSessionTemplate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if self.isOperationPending(src_addr, path):
-            return
-        
-        if not session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to save as template.")
-            return
-        
-        if not pathIsValid(args[0]):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
-            return
-        
-        signaler.server_save_session_template.emit(path, args, src_addr)
-        
-    @make_method('/ray/server/save_session_template', 'sss')
-    def nsmServerSaveSessionTemplateOff(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        #save as template an not loaded session
-        session_name, template_name, sess_root = args
-        
-        if not pathIsValid(session_name):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
-            return
-        
-        if not pathIsValid(template_name):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
-            return
-        
-        if sess_root == session.root and session_name == session.name:
-            signaler.server_save_session_template.emit(path, [template_name], src_addr)
-            return
-        
-        signaler.dummy_load_and_template.emit(*args)
-    
-    @make_method('/nsm/server/abort', '')
-    def nsmServerAbort(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if self.server_status == SERVER_STATUS_PRECOPY:
-            signaler.copy_aborted.emit()
-            return
-        
-        if not session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to abort." )
-            return
-        
-        signaler.server_abort.emit(path, args, src_addr)
-
-    @make_method('/nsm/server/list', '')
-    def nsmServerList(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        signaler.server_list_sessions.emit(path, args, src_addr)
-        
-    @make_method('/nsm/server/add', 's')
-    def nsmServerAdd(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if not session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
-            return
-        
-        signaler.server_add.emit(path, args, src_addr)
-    
-    @make_method('/ray/server/add_proxy', 's')
-    def rayServerAddProxy(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if not session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
-            return
-        
-        signaler.server_add_proxy.emit(path, args, src_addr)
-
-    
-
-    @make_method('/ray/server/add_user_client_template', 's')
-    def rayServerAddUserClientTemplate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if not session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
-            return
-        
-        signaler.server_add_user_client_template.emit(path, args, src_addr)
-
-    @make_method('/ray/server/add_factory_client_template', 's')
-    def rayServerAddFactoryClientTemplate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if not session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
-            return
-        
-        signaler.server_add_factory_client_template.emit(path, args, src_addr)
-
-    
-    @make_method('/nsm/server/new', 's')
-    def nsmServerNew(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if self.is_nsm_locked:
-            return
-        
-        if self.isOperationPending(src_addr, path):
-            return
-        
-        if not pathIsValid(args[0]):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
-            return
-        
-        signaler.server_new.emit(path, args, src_addr)
-    
-    @make_method('/ray/server/new_from_template', 'ss')
-    def rayServerNewFromTemplate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if self.is_nsm_locked:
-            return
-        
-        if self.isOperationPending(src_addr, path):
-            return
-        
-        signaler.server_new_from_tp.emit(path, args, src_addr)
-    
-    @make_method('/nsm/server/save', '')
-    def nsmServerSave(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if self.isOperationPending(src_addr, path):
-            return
-        
-        if not session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to save.")
-            return 0
-        
-        signaler.server_save.emit(path, args, src_addr)
-
-    @make_method('/nsm/server/open', 's')
-    def nsmServerOpen(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if self.isOperationPending(src_addr, path):
-            return
-        
-        print('oookopen')
-        
-        signaler.server_open.emit(path, args, src_addr)
-          
-    @make_method('/nsm/server/open', 'ss')
-    def nsmServerOpenWithTemplate(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if self.isOperationPending(src_addr, path):
-            return
-        
-        session_name, template_name = args
-        
-        print('ozkopen', session_name, template_name)
-        
-        if template_name:
-            spath = ''
-            if session_name.startswith('/'):
-                spath = session_name
-            else:
-                spath = "%s/%s" % (session.root, session_name)
-            
-            if not os.path.exists(spath):
-                signaler.server_new_from_tp.emit(path, args, src_addr)
-                return
-        
-        signaler.server_open.emit(path, args, src_addr)
-          
-    @make_method('/nsm/server/close', '')
-    def nsmServerClose(self, path, args, types, src_addr):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if self.isOperationPending(src_addr, path):
-            return
-        
-        if not  session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to close.")
-            return 0
-        
-        signaler.server_close.emit(path, args, src_addr)
-        
-    @make_method('/nsm/server/quit', '')
+    @make_method('/ray/server/quit', '')
     def nsmServerQuit(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         sys.exit(0)
@@ -3388,24 +3104,7 @@ class OscServerThread(ClientCommunicating):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         signaler.copy_aborted.emit()
-        
-    ###Additional Ray features###
     
-    @make_method('/ray/server/openfolder', '')
-    def rayServerOpenFolder(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        if  session.path:
-            subprocess.Popen(['xdg-open',  session.path])
-        
-    @make_method('/ray/server/reorder_clients', None)
-    def rayServerReorderClients(self, path, args):
-        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
-        if not areTheyAllString(args):
-            return
-        
-        signaler.server_reorder_clients.emit(path, args)
-        
     @make_method('/ray/server/change_root', 's')
     def rayServerChangeRoot(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -3472,8 +3171,337 @@ class OscServerThread(ClientCommunicating):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         self.listClientTemplates(src_addr, True)
+        
+    @make_method('/ray/server/list_sessions', 'i')
+    def nsmServerListAll(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        self.list_asker_addr = src_addr
+        with_net = bool(args[0])
+        signaler.server_list_sessions.emit(src_addr, with_net)
     
-    @make_method('/ray/gui/trash/restore', 's')
+    @make_method('/ray/server/new_session', 's')
+    def nsmServerNew(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.is_nsm_locked:
+            return
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        if not pathIsValid(args[0]):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
+        signaler.server_new.emit(path, args, src_addr)
+    
+    @make_method('/ray/server/new_from_template', 'ss')
+    def rayServerNewFromTemplate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.is_nsm_locked:
+            return
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        signaler.server_new_from_tp.emit(path, args, src_addr)
+    
+    @make_method('/ray/server/open_session', 's')
+    def nsmServerOpen(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        print('oookopen')
+        
+        signaler.server_open.emit(path, args, src_addr)
+          
+    @make_method('/ray/server/open_session', 'ss')
+    def nsmServerOpenWithTemplate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        session_name, template_name = args
+        
+        if template_name:
+            spath = ''
+            if session_name.startswith('/'):
+                spath = session_name
+            else:
+                spath = "%s/%s" % (session.root, session_name)
+            
+            if not os.path.exists(spath):
+                signaler.server_new_from_tp.emit(path, args, src_addr)
+                return
+        
+        signaler.server_open.emit(path, args, src_addr)
+    
+    @make_method('/reply_sessions_list', None)
+    def replySessionsList(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        #this reply is only used here for reply from net_daemon
+        #it directly resend its infos to the last gui that asked session list
+        if self.list_asker_addr:
+            self.send(self.list_asker_addr, '/reply_sessions_list', *args)
+    
+    
+    @make_method('/ray/session/save', '')
+    def nsmServerSave(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to save.")
+            return 0
+        
+        signaler.server_save.emit(path, args, src_addr)
+    
+    @make_method('/ray/session/save_as_template', 's')
+    def nsmServerSaveSessionTemplate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to save as template.")
+            return
+        
+        if not pathIsValid(args[0]):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
+        signaler.server_save_session_template.emit(path, args, src_addr)
+        
+    @make_method('/ray/session/save_as_template', 'sss')
+    def nsmServerSaveSessionTemplateOff(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        #save as template an not loaded session
+        session_name, template_name, sess_root = args
+        
+        if not pathIsValid(session_name):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
+        if not pathIsValid(template_name):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
+        if sess_root == session.root and session_name == session.name:
+            signaler.server_save_session_template.emit(path, [template_name], src_addr)
+            return
+        
+        signaler.dummy_load_and_template.emit(*args)
+    
+    @make_method('/ray/session/close', '')
+    def nsmServerClose(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        if not  session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to close.")
+            return 0
+        
+        signaler.server_close.emit(path, args, src_addr)
+    
+    @make_method('/ray/session/abort', '')
+    def nsmServerAbort(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.server_status == SERVER_STATUS_PRECOPY:
+            signaler.copy_aborted.emit()
+            return
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to abort." )
+            return
+        
+        signaler.server_abort.emit(path, args, src_addr)
+    
+    @make_method('/ray/session/duplicate', 's')
+    def nsmServerDuplicate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if self.is_nsm_locked:
+            return
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to duplicate.")
+            return
+        
+        if not pathIsValid(args[0]):
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
+        signaler.server_duplicate.emit(path, args, src_addr)
+        
+    @make_method('/ray/session/duplicate_only', 'sss')
+    def nsmServerDuplicateOnly(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        print('duplicate_only ici', args)
+        session_full_name, new_session_full_name, sess_root = args
+        
+        self.send(src_addr, '/ray/net_daemon/duplicate_state', 0)
+        
+        print(sess_root, session.root)
+        print(session_full_name, session.name)
+        
+        if sess_root == session.root and session_full_name == session.name:
+            signaler.server_duplicate_only.emit(path, [new_session_full_name], src_addr)
+            return
+        
+        signaler.dummy_duplicate.emit(src_addr, *args)
+    
+    @make_method('/ray/session/rename', 's')
+    def rayServerRename(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        new_session_name = args[0]
+        
+        #prevent rename session in network session
+        if self.nsm_locker_url:
+            NSM_URL = os.getenv('NSM_URL')
+            if not NSM_URL:
+                return
+            
+            if not areSameOscPort(self.nsm_locker_url, NSM_URL):
+                return
+        
+        if '/' in new_session_name:
+            self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
+            return
+        
+        if self.isOperationPending(src_addr, path):
+            return
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "No session to rename.")
+            return
+        
+        signaler.server_rename.emit(new_session_name)
+      
+    @make_method('/ray/session/add_executable', 's')
+    def nsmServerAdd(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
+            return
+        
+        signaler.server_add.emit(path, args, src_addr)
+    
+    @make_method('/ray/session/add_proxy', 's')
+    def rayServerAddProxy(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
+            return
+        
+        signaler.server_add_proxy.emit(path, args, src_addr)
+
+    @make_method('/ray/session/add_client_template', 'is')
+    def rayServerAddClientTemplate(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if not session.path:
+            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
+            return
+        
+        #factory = bool(args[0])
+        #template_name = args[1]
+        
+        signaler.server_add_client_template.emit(path, args, src_addr)
+    
+    @make_method('/ray/session/reorder_clients', None)
+    def rayServerReorderClients(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        if not areTheyAllString(args):
+            return
+        
+        signaler.server_reorder_clients.emit(path, args)
+    
+    @make_method('/ray/session/open_folder', '')
+    def rayServerOpenFolder(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        if  session.path:
+            subprocess.Popen(['xdg-open',  session.path])
+    
+    @make_method('/ray/client/stop', 's')
+    def rayGuiClientStop(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_stop.emit(path, args)
+    
+    @make_method('/ray/client/kill', 's')
+    def rayGuiClientKill(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_kill.emit(path, args)            
+    
+    @make_method('/ray/client/remove', 's')
+    def rayGuiClientRemove(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_remove.emit(path, args)
+    
+    @make_method('/ray/client/resume', 's')
+    def rayGuiClientResume(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_resume.emit(path, args)
+                
+    @make_method('/ray/client/save', 's')
+    def rayGuiClientSave(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        signaler.gui_client_save.emit(path, args)
+
+    @make_method('/ray/client/save_as_template', 'ss')
+    def rayGuiClientSaveAsTemplate(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        signaler.gui_client_save_template.emit(path, args)
+    
+    @make_method('/ray/client/show_optional_gui', 's')
+    def nsmGuiClientShow_optional_gui(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        client = session.getClient(args[0])
+        
+        if client and client.active:
+            self.send(client.addr, "/nsm/client/show_optional_gui")
+
+    @make_method('/ray/client/hide_optional_gui', 's')
+    def nsmGuiClientHide_optional_gui(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        client = session.getClient(args[0])
+        
+        if client and client.active:
+            self.send(client.addr, "/nsm/client/hide_optional_gui")
+
+    @make_method('/ray/client/update_properties', 'ssssissssi')
+    def rayGuiClientUpdateProperties(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        client_data = ClientData(*args)
+        signaler.gui_update_client_properties.emit(client_data)
+        
+    @make_method('/ray/net_daemon/duplicate_state', 'f')
+    def rayDuplicateState(self, path, args, types, src_addr):
+        signaler.net_duplicate_state.emit(src_addr, args[0])
+    
+    @make_method('/ray/trash/restore', 's')
     def rayGuiTrashRestore(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
@@ -3485,7 +3513,7 @@ class OscServerThread(ClientCommunicating):
         
         signaler.gui_trash_restore.emit(client_id)
         
-    @make_method('/ray/gui/trash/remove_definitely', 's')
+    @make_method('/ray/trash/remove_definitely', 's')
     def rayGuiTrashRemoveDefinitely(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
@@ -3510,7 +3538,7 @@ class OscServerThread(ClientCommunicating):
             self.send(gui_addr, *args)
     
     def sendClientStatusToGui(self, client):
-        self.sendGui("/ray/gui/client/status", client.client_id, client.status)
+        self.sendGui("/ray/client/status", client.client_id, client.status)
             
     def setServerStatus(self, server_status):
         self.server_status = server_status
@@ -3624,7 +3652,7 @@ class OscServerThread(ClientCommunicating):
         
         for client in session.clients:
             self.send(  gui_addr, 
-                        '/ray/gui/client/new',
+                        '/ray/client/new',
                         client.client_id, 
                         client.executable_path,
                         client.arguments,
@@ -3636,7 +3664,7 @@ class OscServerThread(ClientCommunicating):
                         client.capabilities,
                         int(client.check_last_save))
             
-            self.send(gui_addr, "/ray/gui/client/status", client.client_id,  client.status)
+            self.send(gui_addr, "/ray/client/status", client.client_id,  client.status)
         
         self.gui_list.append(gui_addr)
         MESSAGE("Registered with GUI")
