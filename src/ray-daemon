@@ -159,12 +159,6 @@ class ServerSender(QObject):
         
         server.send(*args)
         
-    #def sendEvenDummy(self, *args):
-        #if not 'server' in globals():
-            #return
-        
-        #server.send(*args)
-        
     def sendGui(self, *args):
         if not self.hasServer():
             return
@@ -196,8 +190,9 @@ class CopyFile(object):
              'size']
 
 class FileCopier(ServerSender):
-    def __init__(self):
+    def __init__(self, session):
         ServerSender.__init__(self)
+        self.session        = session
         self.client_id      = ''
         self.next_function  = None
         self.abort_function = None
@@ -259,6 +254,8 @@ class FileCopier(ServerSender):
                 self.sendGui('/ray/gui/client/progress', self.client_id, progress)
             else:
                 self.sendGui('/ray/gui/server_progress', progress)
+                
+            self.session.oscReply('/ray/net_daemon/duplicate_state', progress)
         
         self.timer.start()
     
@@ -440,6 +437,11 @@ class Client(ServerSender):
         self.stopped_timer.setSingleShot(True)
         self.stopped_timer.setInterval(2000) #2sec
         self.stopped_timer.timeout.connect(self.stoppedSinceLong)
+        
+        self.net_daemon_copy_timer = QTimer()
+        self.net_daemon_copy_timer.setSingleShot(True)
+        self.net_daemon_copy_timer.setInterval(3000)
+        self.net_daemon_copy_timer.timeout.connect(self.netDaemonOutOfTime)
     
     def sendToSelfAddress(self, *args):
         if not self.hasServer():
@@ -580,6 +582,13 @@ class Client(ServerSender):
         
         self.arguments = '--daemon-url %s --net-session-root "%s"' % (self.net_daemon_url, self.net_session_root.replace('"', '\\"'))
     
+    def netDaemonOutOfTime(self):
+        self.net_duplicate_state = -1
+        
+        if self.session.wait_for == WAIT_FOR_DUPLICATE_FINISH:
+            self.session.endTimerIfLastExpected(self)
+            
+    
     def setStatus(self, status):
         #CLIENT_STATUS_COPY is not a status as the other ones.
         #GUI needs to know if client is started/open/stopped while files are copied
@@ -589,7 +598,7 @@ class Client(ServerSender):
             self.status = status
             self.sendStatusToGui()
         
-        if status == CLIENT_STATUS_COPY or file_copier.isActive(self.client_id):
+        if status == CLIENT_STATUS_COPY or self.session.file_copier.isActive(self.client_id):
             self.sendGui("/ray/gui/client/status", self.client_id, CLIENT_STATUS_COPY)
     
     def getJackClientName(self):
@@ -905,7 +914,7 @@ class Client(ServerSender):
             
             if client_files:
                 self.setStatus(CLIENT_STATUS_COPY)
-                file_copier.startClientCopy(self.client_id, client_files, template_dir, self.saveAsTemplate_step1, self.saveAsTemplateAborted, [template_name])
+                self.session.file_copier.startClientCopy(self.client_id, client_files, template_dir, self.saveAsTemplate_step1, self.saveAsTemplateAborted, [template_name])
             else:
                 self.saveAsTemplate_step1(template_name)
 
@@ -1176,6 +1185,8 @@ class Session(ServerSender):
         
         self.is_renameable = True
         self.forbidden_ids_list = []
+        
+        self.file_copier = FileCopier(self)
     
     #############
     def oscReply(self, *args):
@@ -1831,7 +1842,7 @@ class OperatingSession(Session):
         print('step 1', new_session_full_name)
         
         self.setServerStatus(SERVER_STATUS_COPY)
-        file_copier.startSessionCopy(self.path, spath, self.duplicate_step2, self.duplicateAborted, [new_session_full_name])
+        self.file_copier.startSessionCopy(self.path, spath, self.duplicate_step2, self.duplicateAborted, [new_session_full_name])
     
     def duplicate_step2(self, new_session_full_name):
         print('nous sommes dans le dup step2')
@@ -1851,8 +1862,9 @@ class OperatingSession(Session):
         print('dup step 3')
         self.nextFunction()
     
-    def duplicateAborted(self):
+    def duplicateAborted(self, new_session_full_name):
         self.process_order.clear()
+        self.oscReply('/ray/net_daemon/duplicate_state', 1)
         self.setServerStatus(SERVER_STATUS_READY)
     
     def saveSessionTemplate(self, template_name):
@@ -1875,7 +1887,7 @@ class OperatingSession(Session):
                     self.send(Address(client.net_daemon_url), '/ray/server/save_session_template', self.name, template_name, client.net_session_root)
         
         self.setServerStatus(SERVER_STATUS_COPY)
-        file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted, [template_name])
+        self.file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted, [template_name])
         
     def saveSessionTemplate_step_1(self, template_name):
         for client in self.clients + self.removed_clients:
@@ -1914,7 +1926,7 @@ class OperatingSession(Session):
             self.setServerStatus(SERVER_STATUS_PRECOPY)
             self.sendGui("/ray/gui/session/name",  new_session_name, new_session_name)
             
-        file_copier.startSessionCopy(template_path, spath, self.prepareTemplate_step1, self.prepareTemplateAborted, [new_session_full_name])
+        self.file_copier.startSessionCopy(template_path, spath, self.prepareTemplate_step1, self.prepareTemplateAborted, [new_session_full_name])
         
     def prepareTemplate_step1(self, new_session_full_name):
         self.adjustFilesAfterCopy(new_session_full_name, TEMPLATE_SESSION_LOAD)
@@ -2298,7 +2310,7 @@ class SignaledSession(OperatingSession):
         if not self.path:
             return
         
-        if file_copier.isActive():
+        if self.file_copier.isActive():
             return
         
         if new_session_name == self.name:
@@ -2348,13 +2360,8 @@ class SignaledSession(OperatingSession):
         self.nextFunction()
     
     def serverDuplicateSessionOnly(self, path, args, src_addr):
-        if self.process_order:
-            return
-        
-        print('zoerithj')
-        print(args)
-        
-        if len(args) != 1:
+        if self.process_order or len(args) != 1 or self.file_copier.isActive():
+            self.oscReply('/ray/net_daemon/duplicate_state', 1)
             return
         
         new_session_full_name = args[0]
@@ -2385,8 +2392,8 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.close, self.abortDone]
         
-        if file_copier.isActive():
-            file_copier.abort(self.nextFunction, [])
+        if self.file_copier.isActive():
+            self.file_copier.abort(self.nextFunction, [])
         else:
             self.nextFunction()
     
@@ -2528,7 +2535,7 @@ class SignaledSession(OperatingSession):
                 
                 if full_name_files:
                     client.setStatus(CLIENT_STATUS_PRECOPY)
-                    file_copier.startClientCopy(client.client_id, full_name_files, self.path, self.addClientTemplate_step_1, self.addClientTemplateAborted, [client])
+                    self.file_copier.startClientCopy(client.client_id, full_name_files, self.path, self.addClientTemplate_step_1, self.addClientTemplateAborted, [client])
                 else:
                     self.addClientTemplate_step_1(client)
                     
@@ -2630,12 +2637,21 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.net_daemon_url and areSameOscPort(client.net_daemon_url, src_addr.url):
                 client.net_duplicate_state = state
+                client.net_daemon_copy_timer.stop()
                 break
         else:
             return
         
-        if (self.wait_for == WAIT_FOR_DUPLICATE_START and state == 0) or (self.wait_for == WAIT_FOR_DUPLICATE_FINISH and state == 1):
+        if state == 1:
+            if self.wait_for == WAIT_FOR_DUPLICATE_FINISH:
+                self.endTimerIfLastExpected(client)
+            return
+        
+        if (self.wait_for == WAIT_FOR_DUPLICATE_START and state == 0):
             self.endTimerIfLastExpected(client)
+            
+        client.net_daemon_copy_timer.start()
+            
     
     def guiClientStop(self, path, args):
         for client in self.clients:
@@ -2663,8 +2679,8 @@ class SignaledSession(OperatingSession):
                 if client.isRunning():
                     return
                 
-                if file_copier.isActive(client_id):
-                    file_copier.abort()
+                if self.file_copier.isActive(client_id):
+                    self.file_copier.abort()
                     return
                 
                 self.removeClient(client)
@@ -2677,7 +2693,7 @@ class SignaledSession(OperatingSession):
     def guiClientResume(self, path, args):
         for client in self.clients:
             if client.client_id == args[0] and not client.isRunning():
-                if file_copier.isActive(client.client_id):
+                if self.file_copier.isActive(client.client_id):
                     self.sendGui("/error", -13, "Impossible, copy running")
                     return
                 
@@ -2687,14 +2703,14 @@ class SignaledSession(OperatingSession):
     def guiClientSave(self, path, args):
         for client in self.clients:
             if client.client_id == args[0] and client.active:
-                if file_copier.isActive(client.client_id):
+                if self.file_copier.isActive(client.client_id):
                     self.sendGui("/error", -13, "Impossible, copy running")
                     return
                 client.save()
                 break
     
     def guiClientSaveTemplate(self, path, args):
-        if file_copier.isActive():
+        if self.file_copier.isActive():
             self.sendGui("/error", -13, "Impossible, copy running")
             return
         
@@ -2747,14 +2763,14 @@ class SignaledSession(OperatingSession):
         self.removed_clients.remove(client)
     
     def abortCopy(self):
-        file_copier.abort()
+        self.file_copier.abort()
     
     def terminate(self):
         if self.terminated_yet:
             return
         
-        if file_copier.isActive():
-            file_copier.abort()
+        if self.file_copier.isActive():
+            self.file_copier.abort()
         
         self.terminated_yet = True
         self.process_order = [self.close, self.exitNow]
@@ -2765,26 +2781,12 @@ class DummySession(OperatingSession):
         OperatingSession.__init__(self, root)
         self.is_dummy = True
         
-    def dummyLoadAndTemplate(self, path, args, src_addr):
-        if len(args) != 2:
-            return
-        
-        session_full_name, template_name = args
-        
-        self.rememberOscArgs(path, args, src_addr)
+    def dummyLoadAndTemplate(self, session_full_name, template_name):
         self.process_order = [(self.load, session_full_name), (self.saveSessionTemplate, template_name)]
-        
         self.nextFunction()
         
     def dummyDuplicate(self, session_to_load, new_session_full_name):
-        #if len(args) != 2:
-            #return
-        
-        #session_full_name_to_load, new_session_full_name = args
-        
-        #self.rememberOscArgs(path, args, src_addr)
         self.process_order = [(self.load, session_to_load), (self.duplicate, new_session_full_name), self.duplicateOnlyDone]
-        
         self.nextFunction()
 
 ##########################
@@ -2834,7 +2836,7 @@ class Signaler(QObject):
         
     def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
         tmp_session = DummySession(sess_root)
-        tmp_session.dummyLoadAndTemplate('', [session_name, template_name], None)
+        tmp_session.dummyLoadAndTemplate(session_name, template_name)
         
     def dummyDuplicate(self, src_addr, session_to_load, new_session, sess_root):
         tmp_session = DummySession(sess_root)
@@ -2981,7 +2983,7 @@ class ClientCommunicating(ServerThread):
         net_daemon_url, net_session_root = args
         signaler.client_net_properties.emit(client.client_id, net_daemon_url, net_session_root)
       
-    @make_method('/ray/net_daemon/duplicate_state', 'i')
+    @make_method('/ray/net_daemon/duplicate_state', 'f')
     def rayDuplicateState(self, path, args, types, src_addr):
         signaler.net_duplicate_state.emit(src_addr, args[0])
 
@@ -3492,7 +3494,7 @@ class OscServerThread(ClientCommunicating):
         signaler.gui_trash_remove_definitely.emit(client_id)
     
     def isOperationPending(self, src_addr, path):
-        if file_copier.isActive():
+        if session.file_copier.isActive():
             print('file copier is active, should send error')
             self.send(src_addr, "/error", path, ERR_COPY_RUNNING, "ray-daemon is copying files. Wait copy finish or abort copy, and restart operation !")
             return True
@@ -3720,7 +3722,7 @@ if __name__ == '__main__':
     timer.start()
     
     signaler    = Signaler()
-    file_copier = FileCopier()
+    #file_copier = FileCopier()
     session     = SignaledSession(session_root)
     
     #session.setRoot(session_root)
