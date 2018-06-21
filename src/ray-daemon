@@ -1881,7 +1881,7 @@ class OperatingSession(Session):
             client.adjustFilesAfterCopy(template_name, TEMPLATE_SESSION_SAVE)
         
         self.message("Done")
-        GUIMSG(_translate('GUIMSG', "Session saved as template named %s") % template_name)
+        self.sendGuiMessage(_translate('GUIMSG', "Session saved as template named %s") % template_name)
         self.oscReply("/reply", self.osc_path, "Saved as template.")
         self.setServerStatus(SERVER_STATUS_READY)
     
