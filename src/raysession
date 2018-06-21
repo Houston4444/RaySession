@@ -61,10 +61,9 @@ def remove_accents(input_str):
 def signalHandler(sig, frame):
     if sig in (SIGINT, SIGTERM):
         if ray_daemon.launched_before:
-            if under_nsm:
-                if session.server_status != SERVER_STATUS_OFF:
-                    serverOSC.abortSession()
+            if under_nsm and session.server_status != SERVER_STATUS_OFF:
                 MainUI.terminate_request = True
+                serverOSC.abortSession()
             else:
                 app.quit()
             return
@@ -924,9 +923,7 @@ class MainWindow(QMainWindow):
         self.flash_open_bool = not self.flash_open_bool
     
     def quitApp(self):
-        
         if session.isRunning() and (under_nsm or not ray_daemon.launched_before):
-        #if not ray_daemon.launched_before and session.isRunning():
             dialog = quitAppDialog(self)
             dialog.exec()
             if dialog.result():
@@ -1142,6 +1139,8 @@ class MainWindow(QMainWindow):
             tried_urls.append(new_url)
             
         settings.setValue('network/tried_urls', tried_urls)
+        settings.setValue('network/last_tried_url', new_url)
+        
         
         signaler.daemon_url_changed.emit(new_url)
     
@@ -1246,7 +1245,7 @@ class MainWindow(QMainWindow):
         
     def serverChangeServerStatus(self, server_status):
         session.updateServerStatus(server_status)
-        print('server statuss szesez', server_status)
+        
         self.ui.lineEditServerStatus.setText(serverStatusString(server_status))
         self.ui.frameCurrentSession.setEnabled(bool(server_status != SERVER_STATUS_OFF))
         
@@ -1297,9 +1296,7 @@ class MainWindow(QMainWindow):
             self.ui.actionAbortSession.setEnabled(False)
         
         if server_status == SERVER_STATUS_OFF:
-            print('server statuss offf')
             if self.terminate_request:
-                print('okezork')
                 app.quit()
     
     def serverTrashAdd(self, client_data):
@@ -2178,15 +2175,15 @@ class DaemonUrlWindow(ChildDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         
         self.tried_urls = getListInSettings(settings, 'network/tried_urls')
+        last_tried_url  = settings.value('network/last_tried_url', '', type=str)
         
         self.completer = QCompleter(self.tried_urls)
         self.ui.lineEdit.setCompleter(self.completer)
         
         if ex_url:
             self.ui.lineEdit.setText(ex_url)
-        
-        #if self.tried_urls:
-            #self.ui.lineEdit.textChanged.emit(self.ui.lineEdit.text())
+        elif last_tried_url:
+            self.ui.lineEdit.setText(last_tried_url)
         
     def getDaemonUrl(self):
         return self.ui.lineEdit.text()
@@ -2213,10 +2210,11 @@ class ErrorDialog(ChildDialog):
         
         self.ui.label.setText(osc_args[2])
         
-class RayDaemon(object):
+class RayDaemon(QObject):
     def __init__(self):
-        self.executable      = 'ray-daemon'
-        self.process         = QProcess()
+        QObject.__init__(self)
+        self.executable = 'ray-daemon'
+        self.process    = QProcess()
         
         self.process.finished.connect(self.processFinished)
         if QT_VERSION >= (5, 6):
@@ -2227,6 +2225,12 @@ class RayDaemon(object):
         self.announce_timer.setInterval(2000)
         self.announce_timer.setSingleShot(True)
         self.announce_timer.timeout.connect(self.announceTimerOut)
+        
+        #should not exist (wa for workaround)
+        self.wa_timer = QTimer()
+        self.wa_timer.setInterval(5)
+        self.wa_timer.setSingleShot(True)
+        self.wa_timer.timeout.connect(self.showDaemonUrlWindow)
         
         self.stopped_yet     = False
         self.is_local        = True
@@ -2259,11 +2263,14 @@ class RayDaemon(object):
     
     def callDaemon(self):
         if not self.address:
-            signaler.daemon_url_request.emit(ERR_NO_ERROR, self.url)
+            self.wa_timer.start()
             return
         
         self.announce_timer.start()
         serverOSC.announce()
+    
+    def showDaemonUrlWindow(self):
+        signaler.daemon_url_request.emit(ERR_NO_ERROR, self.url)
     
     def announceTimerOut(self):
         if self.launched_before:
@@ -2325,13 +2332,9 @@ class RayDaemon(object):
         self.port = self.address.port
         self.url  = self.address.url
         
-        #if self.address.hostname != socket.gethostname():
-            #self.is_local = False
-            
         self.is_local = bool(self.address.hostname == socket.gethostname())
     
     def setOscAddressViaUrl(self, url):
-        print('zoijoif')
         self.setOscAddress(getLibloAddress(url)) 
     
     def processIsRunning(self):
@@ -2610,13 +2613,7 @@ if __name__ == '__main__':
     if not settings.value('MainWindow/ShowMessages', False, type=bool):
         MainUI.hideMessagesDock()
     
-    #if ray_daemon.launched_before:
-        ##if not nsm_out_daemon:
-            ##print('zpeof')
-            #ray_daemon.callDaemon()
-    #else:
     ray_daemon.start()
-        
         
     app.exec()
     

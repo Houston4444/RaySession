@@ -485,9 +485,7 @@ class Client(ServerSender):
                 eat_url  = False
                 eat_root = False
                 
-                print('"erofji')
                 for arg in shlex.split(self.arguments):
-                    print(arg)
                     if arg in ('--daemon-url', '-u'):
                         eat_url  = True
                         continue
@@ -505,11 +503,6 @@ class Client(ServerSender):
                     elif eat_root:
                         self.net_session_root = arg
                         eat_root = False
-                        
-                print('zoefj')
-                print(self.net_daemon_url)
-                print(self.net_session_root)
-        
         
         if ctx.attribute('id'):
             #session use "id" for absolutely needed client_id
@@ -582,8 +575,6 @@ class Client(ServerSender):
     def setNetworkProperties(self, net_daemon_url, net_session_root):
         if not self.isCapableOf(':ray-network:'):
             return
-        
-        print('setnet', net_daemon_url, net_session_root)
         
         self.net_daemon_url   = net_daemon_url
         self.net_session_root = net_session_root
@@ -743,8 +734,6 @@ class Client(ServerSender):
             self.sendToSelfAddress("/nsm/client/session_is_loaded")
     
     def save(self):
-        print('zzzssavve')
-        
         if self.active:
             MESSAGE("Telling %s to save" % self.name)
             self.sendToSelfAddress("/nsm/client/save")
@@ -1836,38 +1825,28 @@ class OperatingSession(Session):
             client.net_duplicate_state = -1
             
             if client.net_daemon_url and isValidOscUrl(client.net_daemon_url):
-                print('ya du net daemon url', client.net_daemon_url)
                 self.send(Address(client.net_daemon_url), '/ray/session/duplicate_only', self.name, new_session_full_name, client.net_session_root)
                 self.expected_clients.append(client)
-        
-        print('step 0', new_session_full_name)
         
         self.waitAndGoTo(2000, (self.duplicate_step1, new_session_full_name), WAIT_FOR_DUPLICATE_START) 
         
     def duplicate_step1(self, new_session_full_name):
         spath = "%s/%s" % (self.root, new_session_full_name)
         
-        print('step 1', new_session_full_name)
-        
         self.setServerStatus(SERVER_STATUS_COPY)
         self.file_copier.startSessionCopy(self.path, spath, self.duplicate_step2, self.duplicateAborted, [new_session_full_name])
     
     def duplicate_step2(self, new_session_full_name):
-        print('nous sommes dans le dup step2')
-        
         self.cleanExpected()
         
         for client in self.clients:
             if client.net_duplicate_state == 0:
                 self.expected_clients.append(client)
         
-        print('nous allons sortir du dup step2')
-        
         self.waitAndGoTo(3600000, (self.duplicate_step3, new_session_full_name), WAIT_FOR_DUPLICATE_FINISH) #1Hour
         
     def duplicate_step3(self, new_session_full_name):
         self.adjustFilesAfterCopy(new_session_full_name, TEMPLATE_NONE)
-        print('dup step 3')
         self.nextFunction()
     
     def duplicateAborted(self, new_session_full_name):
@@ -2208,7 +2187,6 @@ class OperatingSession(Session):
         self.process_order.clear()
     
     def duplicateOnlyDone(self):
-        print('duponly done', self.osc_src_addr.url)
         self.oscReply('/ray/net_daemon/duplicate_state', 1)
     
     def duplicateDone(self):
@@ -2600,13 +2578,11 @@ class SignaledSession(OperatingSession):
         
         #we can't be absolutely sure that the announcer is the good one
         #but if client announce a known PID, we can be sure of which client is announcing
-        print('announce1', client_name, executable_path)
         for client in self.clients: 
             if client.pid == pid and not client.active and client.isRunning():
                 client.serverAnnounce(path, args, src_addr, False)
                 break
         else:
-            print('announce2')
             n=0
             for client in self.clients:
                 if (basename(client.executable_path) == basename(executable_path)
@@ -2617,7 +2593,6 @@ class SignaledSession(OperatingSession):
                             break
             
             if n==1:
-                print('announc3')
                 for client in self.clients:
                     if (basename(client.executable_path) == basename(executable_path)
                         and not client.active
@@ -2625,7 +2600,6 @@ class SignaledSession(OperatingSession):
                             client.serverAnnounce(path, args, src_addr, False)
                             break
             else:
-                print('announce4')
                 for client in self.clients:
                     if not client.active and client.pending_command == COMMAND_START:
                         if isPIdChildOf(pid, client.pid):
@@ -3215,8 +3189,6 @@ class OscServerThread(ClientCommunicating):
         if self.isOperationPending(src_addr, path):
             return
         
-        print('oookopen')
-        
         signaler.server_open.emit(path, args, src_addr)
           
     @make_method('/ray/server/open_session', 'ss')
@@ -3351,13 +3323,9 @@ class OscServerThread(ClientCommunicating):
     def nsmServerDuplicateOnly(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        print('duplicate_only ici', args)
         session_full_name, new_session_full_name, sess_root = args
         
         self.send(src_addr, '/ray/net_daemon/duplicate_state', 0)
-        
-        print(sess_root, session.root)
-        print(session_full_name, session.name)
         
         if sess_root == session.root and session_full_name == session.name:
             signaler.server_duplicate_only.emit(path, [new_session_full_name], src_addr)
@@ -3523,7 +3491,6 @@ class OscServerThread(ClientCommunicating):
     
     def isOperationPending(self, src_addr, path):
         if session.file_copier.isActive():
-            print('file copier is active, should send error')
             self.send(src_addr, "/error", path, ERR_COPY_RUNNING, "ray-daemon is copying files. Wait copy finish or abort copy, and restart operation !")
             return True
         
@@ -3767,10 +3734,12 @@ if __name__ == '__main__':
         
     server.start()
     
+    
     if gui_address:
         server.announceGui(gui_address.url)
         
     MESSAGE(server.url)
+    MESSAGE(getNetUrl(server.port))
     
     app.exec()
     

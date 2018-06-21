@@ -1,7 +1,7 @@
 from liblo import Server, Address
 import argparse
 import liblo, socket
-import sys, os, shlex
+import sys, os, shlex, subprocess
 from PyQt5.QtCore import QLocale, QTranslator, QT_VERSION_STR
 
 #get qt version in list of ints
@@ -131,14 +131,11 @@ def getLibloAddress(url):
 def areSameOscPort(url1, url2):
     if url1 == url2:
         return True
-    #print('areSameOscPort')
     try:
         address1 = Address(url1)
         address2 = Address(url2)
     except:
         return False
-    
-    #print('zef')
     
     if address1.port != address2.port:
         return False
@@ -147,20 +144,6 @@ def areSameOscPort(url1, url2):
         return True
     
     return False
-    
-    ##print('zmelf')
-    #if address1.hostname == address2.hostname:
-        #return True
-    
-    ##print('zemofk')
-    #try:
-        #if socket.gethostbyaddr(address1.hostname) == socket.gethostbyaddr(address2.hostname):
-            #return True
-    #except:
-        #return False
-    
-    ##print('mzokef')
-    #return False
     
 def areOnSameMachine(url1, url2):
     if url1 == url2:
@@ -181,9 +164,19 @@ def areOnSameMachine(url1, url2):
     except:
         return False
     
-    #print('mzokef')
     return False
     
+def getNetUrl(port):
+    try:
+        ips = subprocess.check_output(['hostname', '-I']).decode()
+        ip = ips.split(' ')[0]
+    except:
+        return ''
+    
+    if ip.count('.') != 3:
+        return ''
+    
+    return "osc.udp://%s:%i/" % (ip, port)
     
 def shellLineToArgs(string):
     try:
