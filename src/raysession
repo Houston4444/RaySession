@@ -2494,6 +2494,7 @@ class NSMChildOutside(NSMChild):
         NSMChild.save(self)
         
     def open(self, project_path, session_name, jack_client_name):
+        print('peorkjponnnnn', project_path, session_name, jack_client_name)
         self.wait_for_open = True
         
         #Here project_path is used for template if needed

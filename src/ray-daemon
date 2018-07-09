@@ -613,7 +613,7 @@ class Client(ServerSender):
         return jack_client_name
     
     def getProjectPath(self):
-        if self.isCapableOf(':ray-network:'):
+        if self.executable_path == 'ray-network':
             #for ray-network, use project_path for template, quite ugly but simple code.
             return self.net_session_template
         
@@ -900,6 +900,7 @@ class Client(ServerSender):
             os.makedirs(template_dir)
             
             if self.net_daemon_url:
+                self.net_session_template = template_name
                 self.send(Address(self.net_daemon_url), '/ray/session/save_as_template', self.session.name, template_name, self.net_session_root)
             
             #if self.net_daemon_url:
@@ -1869,9 +1870,10 @@ class OperatingSession(Session):
             os.makedirs(session_template_root)
         
         for client in self.clients:
-            if client.executable_path == 'ray-network':
-                if client.net_daemon_url:
+            if client.net_daemon_url:
+                if self.hasServer() and not areOnSameMachine(client.net_daemon_url, server.url):
                     self.send(Address(client.net_daemon_url), '/ray/session/save_as_template', self.name, template_name, client.net_session_root)
+                    #client.net_session_template = template_name
         
         self.setServerStatus(SERVER_STATUS_COPY)
         self.file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted, [template_name])
@@ -2266,6 +2268,8 @@ class SignaledSession(OperatingSession):
         
         new_session_full_name, template_name = args
         
+        print('zeporfk', args)
+        
         self.process_order = [self.save, (self.prepareTemplate, *args), (self.load, new_session_full_name), self.loadDone]
         self.nextFunction()
         
@@ -2368,6 +2372,10 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         
         template_name = args[0]
+        
+        for client in self.clients:
+            if client.executable_path == 'ray-network':
+                client.net_session_template = template_name
         
         self.process_order = [self.save, (self.saveSessionTemplate, template_name)]
         self.nextFunction()
@@ -3198,6 +3206,8 @@ class OscServerThread(ClientCommunicating):
         if self.isOperationPending(src_addr, path):
             return
         
+        print('openwithtemp', args)
+        
         session_name, template_name = args
         
         if template_name:
@@ -3208,6 +3218,7 @@ class OscServerThread(ClientCommunicating):
                 spath = "%s/%s" % (session.root, session_name)
             
             if not os.path.exists(spath):
+                print('nw from tprrp()')
                 signaler.server_new_from_tp.emit(path, args, src_addr)
                 return
         
