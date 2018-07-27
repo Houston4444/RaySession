@@ -675,7 +675,7 @@
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="648"/>
-        <source>&amp;view</source>
+        <source>&amp;View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
