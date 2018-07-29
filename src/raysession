@@ -47,8 +47,9 @@ ERR_NO_ERROR               =  0
 ERR_DAEMON_NO_ANNOUNCE     = -1
 ERR_DAEMON_NOT_OFF         = -2
 ERR_DAEMON_WRONG_ROOT      = -3
-ERR_DAEMON_NOT_NSM_LOCKED  = -4
-ERR_DAEMON_WRONG_VERSION   = -5 
+ERR_DAEMON_FORBIDDEN_ROOT  = -4
+ERR_DAEMON_NOT_NSM_LOCKED  = -5
+ERR_DAEMON_WRONG_VERSION   = -6 
 
 
 def str2bool(v):
@@ -624,7 +625,9 @@ class OSCServerT(ServerThread):
             else:
                 nsm_mode = NSM_MODE_CHILD
         
-        self.send(ray_daemon.address, '/ray/server/gui_announce', VERSION, int(under_nsm))
+        NSM_URL = os.getenv('NSM_URL')
+        
+        self.send(ray_daemon.address, '/ray/server/gui_announce', VERSION, int(under_nsm), NSM_URL)
     
     def disannounce(self, src_addr):
         ifDebug('serverOSC::raysession_sends disannounce')
@@ -2168,6 +2171,8 @@ class DaemonUrlWindow(ChildDialog):
             error_text = _translate("url_window", "<p>daemon at<br><strong>%s</strong><br>has a loaded session.<br>It can't be used for slave session</p>") % ex_url
         elif err_code == ERR_DAEMON_WRONG_ROOT:
             error_text = _translate("url_window", "<p>daemon at<br><strong>%s</strong><br>uses an other session root folder !<.p>") % ex_url
+        elif err_code == ERR_DAEMON_FORBIDDEN_ROOT:
+            error_text = _translate("url_window", "<p>daemon at<br><strong>%s</strong><br>uses a forbidden session root folder !<.p>") % ex_url
         elif err_code == ERR_DAEMON_WRONG_VERSION:
             error_text = _translate("url_window", "<p>daemon at<br><strong>%s</strong><br>uses an other Ray Session version.<.p>") % ex_url
         
@@ -2291,6 +2296,19 @@ class RayDaemon(QObject):
             signaler.daemon_url_request.emit(ERR_DAEMON_WRONG_ROOT, self.url)
             self.disannounce(src_addr)
             return
+        
+        for full_strings in forbidden_roots:
+            if type(full_strings) != list or len(full_strings) < 2:
+                continue
+            
+            print('orjg')
+            print(full_strings)
+            print(src_addr.url, full_strings[0])
+            if areOnSameMachine(src_addr.url, full_strings[0]):
+                if session_root in full_strings[1:]:
+                    signaler.daemon_url_request.emit(ERR_DAEMON_FORBIDDEN_ROOT, self.url)
+                    self.disannounce(src_addr)
+                    return
                 
         if nsm_out_daemon and server_status != SERVER_STATUS_OFF:
             signaler.daemon_url_request.emit(ERR_DAEMON_NOT_OFF, self.url)
@@ -2308,6 +2326,13 @@ class RayDaemon(QObject):
             signaler.daemon_nsm_locked.emit(True)
         elif under_nsm:
             serverOSC.toDaemon('/ray/server/set_nsm_locked')
+        
+        for full_strings in forbidden_roots:
+            if type(full_strings) != list or len(full_strings) < 2:
+                continue
+            
+            for root_folder in full_strings[1:]:
+                serverOSC.toDaemon('/ray/net_daemon/lock_root', full_strings[0], root_folder)
         
         signaler.daemon_announce_ok.emit()
                 
@@ -2488,13 +2513,13 @@ class NSMChildOutside(NSMChild):
         
     def announceToParent(self):
         self.serverNSM.announce(_translate('network_session', 'Network Session'), ':switch:optional-gui:ray-network:', 'ray-network')
+        self.serverNSM.sendToDaemon('/nsm/client/network_properties', ray_daemon.url, ray_daemon.session_root)
     
     def save(self):
         self.serverNSM.sendToDaemon('/nsm/client/network_properties', ray_daemon.url, ray_daemon.session_root)
         NSMChild.save(self)
         
     def open(self, project_path, session_name, jack_client_name):
-        print('peorkjponnnnn', project_path, session_name, jack_client_name)
         self.wait_for_open = True
         
         #Here project_path is used for template if needed
@@ -2545,6 +2570,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug','-d',  action='store_true', help='display OSC messages')
     parser.add_argument('--debug-only','-do',  action='store_true', help='debug without client messages')
     parser.add_argument('--net-session-root', type=str, default='', help=argparse.SUPPRESS)
+    parser.add_argument('--forbidden-root', dest='forbidden_roots', action='append', nargs='*', type=str, default=[], help=argparse.SUPPRESS)
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parsed_args = parser.parse_args()
         
@@ -2556,6 +2582,7 @@ if __name__ == '__main__':
     
     nsm_out_daemon   = parsed_args.out_daemon
     net_session_root = parsed_args.net_session_root
+    forbidden_roots  = parsed_args.forbidden_roots
     
     #needed for signals SIGINT, SIGTERM
     timer = QTimer()

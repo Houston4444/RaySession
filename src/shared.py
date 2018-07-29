@@ -159,12 +159,51 @@ def areOnSameMachine(url1, url2):
         return True
     
     try:
+        if ((socket.gethostbyname(address1.hostname) in ('127.0.0.1', '127.0.1.1')) and
+            (socket.gethostbyname(address2.hostname) in ('127.0.0.1', '127.0.1.1'))):
+            return True
+        
         if socket.gethostbyaddr(address1.hostname) == socket.gethostbyaddr(address2.hostname):
             return True
     except:
+        try:
+            ips = subprocess.check_output(['hostname', '-I']).decode()
+            ip = ips.split(' ')[0]
+            
+            if ip.count('.') != 3:
+                return False
+        
+            if not ip in (address1.hostname, address2.hostname):
+                return False
+            
+            try:
+                if socket.gethostbyname(address1.hostname) in ('127.0.0.1', '127.0.1.1'):
+                    if address2.hostname == ip:
+                        return True
+            except:
+                if socket.gethostbyname(address2.hostname) in ('127.0.0.1', '127.0.1.1'):
+                    if address1.hostname == ip:
+                        return True
+        
+        except:
+            return False
+        
         return False
     
     return False
+    
+def getUrl192(url):
+    try:
+        ips = subprocess.check_output(['hostname', '-I']).decode()
+        ip = ips.split(' ')[0]
+    except:
+        return url
+        
+    if ip.count('.') != 3:
+        return url
+    
+    suffix_port = url.rpartition(':')[2]
+    return "osc.udp://%s:%s" % (ip, suffix_port)
     
 def getNetUrl(port):
     try:

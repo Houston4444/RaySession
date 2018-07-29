@@ -36,6 +36,7 @@ ERR_CREATE_FAILED     = -10
 ERR_SESSION_LOCKED    = -11
 ERR_OPERATION_PENDING = -12
 ERR_COPY_RUNNING      = -13
+ERR_NET_ROOT_RUNNING  = -14
 
 COMMAND_NONE      = 0
 COMMAND_QUIT      = 1
@@ -54,12 +55,14 @@ WAIT_FOR_REPLY    = 3
 WAIT_FOR_DUPLICATE_START  = 4
 WAIT_FOR_DUPLICATE_FINISH = 5
 
-TEMPLATE_NONE         = 0
-TEMPLATE_RENAME       = 1
-TEMPLATE_SESSION_SAVE = 2
-TEMPLATE_SESSION_LOAD = 3
-TEMPLATE_CLIENT_SAVE  = 4
-TEMPLATE_CLIENT_LOAD  = 5
+TEMPLATE_NONE             = 0
+TEMPLATE_RENAME           = 1
+TEMPLATE_SESSION_SAVE     = 2
+TEMPLATE_SESSION_SAVE_NET = 3
+TEMPLATE_SESSION_LOAD     = 4
+TEMPLATE_SESSION_LOAD_NET = 5
+TEMPLATE_CLIENT_SAVE      = 6
+TEMPLATE_CLIENT_LOAD      = 7
 
 
 debug = False
@@ -141,6 +144,12 @@ def quitRay(sig, frame):
     else:
         MESSAGE(_translate('GUIMSG', 'Good Bye !'))
     app.quit()
+
+class locked_net_root(object):
+    def __init__(self):
+        object.__init__(self)
+        self.url   = ''
+        self.roots = []
 
 class ServerSender(QObject):
     def __init__(self):
@@ -576,8 +585,19 @@ class Client(ServerSender):
         if not self.isCapableOf(':ray-network:'):
             return
         
+        print('setnetwkprop')
+        print(net_daemon_url, net_session_root)
+        
+        if net_daemon_url == self.net_daemon_url and net_session_root == self.net_session_root:
+            return
+        
+        if self.net_daemon_url:
+            self.session.unlockNetRootFolder(self.net_daemon_url, self.net_session_root)
+        
         self.net_daemon_url   = net_daemon_url
         self.net_session_root = net_session_root
+        
+        self.session.lockNetRootFolder(net_daemon_url, net_session_root)
         
         self.arguments = '--daemon-url %s --net-session-root "%s"' % (self.net_daemon_url, self.net_session_root.replace('"', '\\"'))
     
@@ -649,6 +669,34 @@ class Client(ServerSender):
             
         if self.arguments:
             arguments += shlex.split(self.arguments)
+           
+        if self.executable_path == 'ray-network' and not self.net_daemon_url:
+            print('oumaa')
+            for addr_and_roots in self.session.locked_net_roots:
+                arguments.append('--forbidden-root')
+                arguments.append(addr_and_roots.url)
+                arguments += addr_and_roots.roots
+                
+        print(arguments)
+                
+                #if areOnSameMachine(self.net_daemon_url, addr_and_roots.url):
+                    #print('ouuppaz')
+                    #arguments.append('--forbidden-roots')
+                    #for root_folder in addr_and_roots.roots:
+                        #print('rondei', root_folder)
+                        #arguments.append(root_folder)
+                    #break
+            
+        #if self.net_daemon_url:
+            #for addr_and_roots in self.session.locked_net_roots:
+                #if type(addr_and_roots) != list or len(addr_and_roots) < 2:
+                    #continue
+                #if areOnSameMachine(addr_and_roots[0], self.net_daemon_url):
+                    #arguments += 
+                    #for root_folder in addr_and_roots[1:]:
+                        #if root_folder == client.net_session_root:
+                            #self.sendError(ERR_NET_ROOT_RUNNING, _translate('error', 'rĝpl'))
+                            #return False
             
         self.process.start(self.executable_path, arguments)
         #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path] + arguments)
@@ -1009,11 +1057,19 @@ class Client(ServerSender):
         elif template_save == TEMPLATE_SESSION_SAVE:
             spath = "%s/%s" % (session_template_root, new_session_full_name)
             new_session_name = xsessionx
-            
+        
+        elif template_save == TEMPLATE_SESSION_SAVE_NET:
+            spath = "%s/%s/%s" % (self.session.root , session_template_net_rootname, new_session_full_name)
+            new_session_name = xsessionx
+        
         elif template_save == TEMPLATE_SESSION_LOAD:
             spath = "%s/%s" % (self.session.root, new_session_full_name)
             old_session_name = xsessionx
-            
+        
+        elif template_save == TEMPLATE_SESSION_LOAD_NET:
+            spath = "%s/%s" % (self.session.root, new_session_full_name)
+            old_session_name = xsessionx
+        
         elif template_save == TEMPLATE_CLIENT_SAVE:
             spath = "%s/%s" % (client_template_local_root, new_session_full_name)
             new_session_name = xsessionx
@@ -1184,6 +1240,8 @@ class Session(ServerSender):
         self.is_renameable = True
         self.forbidden_ids_list = []
         
+        self.locked_net_roots = []
+        
         self.file_copier = FileCopier(self)
     
     #############
@@ -1222,6 +1280,7 @@ class Session(ServerSender):
         if self.name:
             return
         self.root = session_root
+        self.initLockedNetRoot()
     
     def setName(self, session_name):
         self.name = session_name
@@ -1269,21 +1328,93 @@ class Session(ServerSender):
         
         client.setStatus(CLIENT_STATUS_REMOVED)
         
-        if client.getProjectFiles():
+        if client.getProjectFiles() or client.net_daemon_url:
             self.removed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
+            
+        if client.net_daemon_url:
+            self.unlockNetRootFolder(client.net_daemon_url, client.net_session_root)
+        
         self.clients.remove(client)
     
     def restoreClient(self, client):
         client.sent_to_gui = False
         
-        self.addClient(client)
+        if not self.addClient(client):
+            return
         
         self.sendGui('/ray/trash/remove', client.client_id)
         self.removed_clients.remove(client)
         
         if client.auto_start:
             client.start()
+    
+    def initLockedNetRoot(self):
+        if not self.hasServer():
+            return
+        
+        print("zpeogkoko")
+        print(server.url)
+        print(self.root)
+        
+        addr_and_roots = locked_net_root()
+        addr_and_roots.url = server.url
+        addr_and_roots.roots.append(self.root)
+        self.locked_net_roots.clear()
+        self.locked_net_roots.append(addr_and_roots)
+    
+    def lockNetRootFolder(self, url, root_folder, src_url=''):
+        if not src_url:
+            src_url = url
+                
+        print('lockNet', url)
+                
+        for addr_and_roots in self.locked_net_roots:
+            print(addr_and_roots.url)
+            print(addr_and_roots.roots)
+            
+            if areOnSameMachine(addr_and_roots.url, url):
+                print("rezofk")
+                if not root_folder in addr_and_roots.roots:
+                    addr_and_roots.roots.append(root_folder)
+                break
+        else:
+            addr_and_roots = locked_net_root()
+            addr_and_roots.url = url
+            addr_and_roots.roots.append(root_folder)
+            self.locked_net_roots.append(addr_and_roots)
+        
+        for client in self.clients:
+            if client.net_daemon_url and not areSameOscPort(client.net_daemon_url, src_url):
+                print('clienttt')
+                print(client.net_daemon_url, src_url)
+                self.send(Address(client.net_daemon_url), '/ray/net_daemon/lock_root', url, root_folder)
+        
+        if self.hasServer() and server.net_master_daemon_url:
+            if not areSameOscPort(server.net_master_daemon_url, src_url):
+                print('masterrrr')
+                print(server.net_master_daemon_url, src_url)
+                self.send(Address(server.net_master_daemon_url), '/ray/net_daemon/lock_root', url, root_folder)
+                
+    def unlockNetRootFolder(self, url, root_folder, src_url=''):
+        if not src_url:
+            src_url = url
+        
+        for addr_and_roots in self.locked_net_roots:
+            if areOnSameMachine(addr_and_roots.url, url):
+                if root_folder in addr_and_roots.roots:
+                    addr_and_roots.roots.remove(root_folder)
+                    if not addr_and_roots.roots:
+                        self.locked_net_roots.remove(addr_and_roots)
+                break
+            
+        for client in self.clients:
+            if client.net_daemon_url and not areSameOscPort(client.net_daemon_url, src_url):
+                self.send(Address(client.net_daemon_url), '/ray/net_daemon/unlock_root', url, root_folder)
+        
+        if self.hasServer() and server.net_master_daemon_url:
+            if not areSameOscPort(server.net_master_daemon_url, src_url):
+                self.send(Address(server.net_master_daemon_url), '/ray/net_daemon/unlock_root', url, root_folder)
     
     def tellAllClientsSessionIsLoaded(self):
         self.message("Telling all clients that session is loaded...")
@@ -1426,8 +1557,32 @@ class Session(ServerSender):
                 
     
     def addClient(self, client):
+        if client.net_daemon_url:
+            for addr_and_roots in self.locked_net_roots:
+                if areOnSameMachine(addr_and_roots.url, getUrl192(client.net_daemon_url)):
+                    if client.net_session_root in addr_and_roots.roots:
+                        self.sendError(ERR_NET_ROOT_RUNNING, 
+                                       _translate('error', 'Impossible to add this Net Session, another net daemon uses "%s" as root folder on the same machine') % client.net_session_root)
+                        return False
+                    
         self.clients.append(client)
+        
+        if client.net_daemon_url:
+            self.lockNetRootFolder(client.net_daemon_url, client.net_session_root)
+            #for other_client in self.clients:
+                #if other_client.client_id != client.client_id:
+                    #if other_client.net_daemon_url:
+                        #self.send(Address(other_client.net_daemon_url), '/ray/net_daemon/lock_root', client.net_daemon_url, client.net_session_root)
+                        
+            #if self.hasServer() and server.net_master_daemon_url:
+                #self.send(Address(server.net_master_daemon_url), '/ray/net_daemon/lock_root', client.net_daemon_url, client.net_session_root)
+        
+            #for addr_and_roots in self.locked_net_roots:
+                #for root_folder in addr_and_roots.roots:
+                    #self.send(Address(client.net_daemon_url), '/ray/net_daemon/lock_root', addr_and_roots.url, root_folder)
+            
         client.sendGuiClientProperties()
+        return True
         
     def reOrderClients(self, client_ids_list):
         client_newlist  = []
@@ -1855,8 +2010,15 @@ class OperatingSession(Session):
         self.oscReply('/ray/net_daemon/duplicate_state', 1)
         self.setServerStatus(SERVER_STATUS_READY)
     
-    def saveSessionTemplate(self, template_name):
-        spath = "%s/%s" % (session_template_root, template_name)
+    def saveSessionTemplate(self, template_name, net=False):
+        template_root = session_template_root
+        
+        if net:
+            template_root = "%s/%s" % (self.root, session_template_net_rootname)
+        
+        print('saave as tp,', template_name, net, template_root)
+        
+        spath = "%s/%s" % (template_root, template_name)
         
         #overwrite existing template
         if os.path.isdir(spath):
@@ -1866,21 +2028,40 @@ class OperatingSession(Session):
                 return
             shutil.rmtree(spath)
         
-        if not os.path.exists(session_template_root):
-            os.makedirs(session_template_root)
+        if not os.path.exists(template_root):
+            os.makedirs(template_root)
+        
+        #machine_urls_already_seen = [server.url]
+        
+        #For network sessions, save as template the network session only if there is no other server on this same machine.
+        #Else, one could erase template just created by another one.
+        #To prevent all confusion, all seen machines are sended to prevent an erase by looping (a network session can contains another network session on the machine where is the master daemon, for example).
         
         for client in self.clients:
             if client.net_daemon_url:
-                if self.hasServer() and not areOnSameMachine(client.net_daemon_url, server.url):
-                    self.send(Address(client.net_daemon_url), '/ray/session/save_as_template', self.name, template_name, client.net_session_root)
-                    #client.net_session_template = template_name
+                print("ya fu ozdne')")
+                #if self.hasServer() and not areOnSameMachine(client.net_daemon_url, server.url):
+                    #print('mais ebi sur")')
+                    #for machine_url in machine_urls_already_seen:
+                        #if areOnSameMachine(client.net_daemon_url, machine_url):
+                            #break
+                    #else:
+                        #machines_string = ''
+                        #for machine_url in machine_urls_already_seen:
+                            #machines_string += "%s;" % machine_url
+                        
+                self.send(Address(client.net_daemon_url), '/ray/session/save_as_template', self.name, template_name, client.net_session_root)
+                        
+                        #machine_urls_already_seen.append(client.net_daemon_url)
         
         self.setServerStatus(SERVER_STATUS_COPY)
-        self.file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted, [template_name])
+        self.file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted, [template_name, net])
         
-    def saveSessionTemplate_step_1(self, template_name):
+    def saveSessionTemplate_step_1(self, template_name, net):
+        tp_mode = TEMPLATE_SESSION_SAVE_NET if net else TEMPLATE_SESSION_SAVE
+        
         for client in self.clients + self.removed_clients:
-            client.adjustFilesAfterCopy(template_name, TEMPLATE_SESSION_SAVE)
+            client.adjustFilesAfterCopy(template_name, tp_mode)
         
         self.message("Done")
         self.sendGuiMessage(_translate('GUIMSG', "Session saved as template named %s") % template_name)
@@ -1891,8 +2072,15 @@ class OperatingSession(Session):
         self.process_order.clear()
         self.setServerStatus(SERVER_STATUS_READY)
     
-    def prepareTemplate(self, new_session_full_name, template_name):
-        template_path = "%s/%s" % (session_template_root, template_name)
+    def prepareTemplate(self, new_session_full_name, template_name, net=False):
+        template_root = session_template_root
+        
+        if net:
+            template_root = "%s/%s" % (self.root, session_template_net_rootname)
+        
+        template_path = "%s/%s" % (template_root, template_name)
+        
+        print('eorigji', template_path, net)
         
         if template_name.startswith('///'):
             template_name = template_name.replace('///', '')
@@ -2107,7 +2295,9 @@ class OperatingSession(Session):
                 #* of port numbers from the system time (second
                 #* resolution) and if too many clients start at once they
                 #* won't be able to find a free port. */
-                self.addClient(new_client)
+                if not self.addClient(new_client):
+                    continue
+                    
                 if new_client.auto_start and not self.is_dummy:
                     self.clients_to_launch.append(new_client)
                     if not new_client.executable_path in known_as_non_active:
@@ -2257,7 +2447,7 @@ class SignaledSession(OperatingSession):
         self.process_order = [self.save, self.close, (self.new, args[0]), self.save, self.newDone]
         self.nextFunction()
         
-    def serverNewSessionFromTemplate(self, path, args, src_addr):
+    def serverNewSessionFromTemplate(self, path, args, src_addr, net=False):
         if self.process_order:
             return
         
@@ -2268,9 +2458,9 @@ class SignaledSession(OperatingSession):
         
         new_session_full_name, template_name = args
         
-        print('zeporfk', args)
+        print('eorijgeooo')
         
-        self.process_order = [self.save, (self.prepareTemplate, *args), (self.load, new_session_full_name), self.loadDone]
+        self.process_order = [self.save, (self.prepareTemplate, *args, net), (self.load, new_session_full_name), self.loadDone]
         self.nextFunction()
         
     def serverOpenSession(self, path, args, src_addr):
@@ -2362,12 +2552,16 @@ class SignaledSession(OperatingSession):
         self.process_order = [self.save, (self.duplicate, new_session_full_name), self.duplicateOnlyDone]
         self.nextFunction()
     
-    def serverSaveSessionTemplate(self, path, args, src_addr):
+    def serverSaveSessionTemplate(self, path, args, src_addr, net=False):
+        print('zmeofk')
+        
         if self.process_order:
             return
         
         if len(args) != 1:
             return
+        
+        print('zmeofksfv')
         
         self.rememberOscArgs(path, args, src_addr)
         
@@ -2377,7 +2571,9 @@ class SignaledSession(OperatingSession):
             if client.executable_path == 'ray-network':
                 client.net_session_template = template_name
         
-        self.process_order = [self.save, (self.saveSessionTemplate, template_name)]
+        print('ezroij')
+        
+        self.process_order = [self.save, (self.saveSessionTemplate, template_name, net)]
         self.nextFunction()
         
     def serverAbortSession(self, path, args, src_addr):
@@ -2439,8 +2635,8 @@ class SignaledSession(OperatingSession):
         client.client_id       = self.generateClientId(executable)
         client.icon            = client.name.lower().replace('_', '-')
         
-        self.addClient(client)
-        client.start()
+        if self.addClient(client):
+            client.start()
     
     def serverAddProxy(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
@@ -2457,8 +2653,8 @@ class SignaledSession(OperatingSession):
         client.client_id       = self.generateClientId(client.name)
         client.icon            = client.name.lower().replace('_', '-')
         
-        self.addClient(client)
-        client.start()
+        if self.addClient(client):
+            client.start()
     
     def addClientTemplate(self, template_name, factory=False):
         templates_root = client_template_local_root
@@ -2537,13 +2733,12 @@ class SignaledSession(OperatingSession):
                             full_name_files.append("%s/%s" % (template_path, file))
                             
                 
-                self.addClient(client)
-                
-                if full_name_files:
-                    client.setStatus(CLIENT_STATUS_PRECOPY)
-                    self.file_copier.startClientCopy(client.client_id, full_name_files, self.path, self.addClientTemplate_step_1, self.addClientTemplateAborted, [client])
-                else:
-                    self.addClientTemplate_step_1(client)
+                if self.addClient(client):
+                    if full_name_files:
+                        client.setStatus(CLIENT_STATUS_PRECOPY)
+                        self.file_copier.startClientCopy(client.client_id, full_name_files, self.path, self.addClientTemplate_step_1, self.addClientTemplateAborted, [client])
+                    else:
+                        self.addClientTemplate_step_1(client)
                     
                 break
             
@@ -2793,7 +2988,7 @@ class DummySession(OperatingSession):
         self.is_dummy = True
         
     def dummyLoadAndTemplate(self, session_full_name, template_name):
-        self.process_order = [(self.load, session_full_name), (self.saveSessionTemplate, template_name)]
+        self.process_order = [(self.load, session_full_name), (self.saveSessionTemplate, template_name, True)]
         self.nextFunction()
         
     def dummyDuplicate(self, session_to_load, new_session_full_name):
@@ -2808,11 +3003,11 @@ class Signaler(QObject):
     server_rename      = pyqtSignal(str)
     server_duplicate   = pyqtSignal(str, list, object)
     server_duplicate_only = pyqtSignal(str, list, object)
-    server_save_session_template = pyqtSignal(str, list, object)
+    server_save_session_template = pyqtSignal(str, list, object, bool)
     server_abort       = pyqtSignal(str, list, object)
     server_close       = pyqtSignal(str, list, object)
     server_new         = pyqtSignal(str, list, object)
-    server_new_from_tp = pyqtSignal(str, list, object)
+    server_new_from_tp = pyqtSignal(str, list, object, bool)
     server_open        = pyqtSignal(str, list, object)
     server_save        = pyqtSignal(str, list, object)
     server_list_sessions = pyqtSignal(object, bool)
@@ -2865,7 +3060,8 @@ class ClientCommunicating(ServerThread):
         self.server_status  = SERVER_STATUS_OFF
         self.is_nsm_locked  = False
         self.nsm_locker_url = ''
-        self.net_master_daemon_addr = None 
+        self.net_master_daemon_addr = None
+        self.net_master_daemon_url = ''
         
     @make_method('/nsm/server/announce', 'sssiii')
     def nsmServerAnnounce(self, path, args, types, src_addr):
@@ -3031,12 +3227,14 @@ class OscServerThread(ClientCommunicating):
         
         self.send(src_addr, "/reply", path)
     
-    @make_method('/ray/server/gui_announce', 'si')
+    @make_method('/ray/server/gui_announce', 'sis')
     def rayGuiGui_announce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         version    = args[0]
         nsm_locked = bool(args[1])
+        if nsm_locked:
+            self.net_master_daemon_url = args[2]
         
         if nsm_locked:
             self.is_nsm_locked = True
@@ -3188,7 +3386,7 @@ class OscServerThread(ClientCommunicating):
         if self.isOperationPending(src_addr, path):
             return
         
-        signaler.server_new_from_tp.emit(path, args, src_addr)
+        signaler.server_new_from_tp.emit(path, args, src_addr, False)
     
     @make_method('/ray/server/open_session', 's')
     def nsmServerOpen(self, path, args, types, src_addr):
@@ -3219,10 +3417,10 @@ class OscServerThread(ClientCommunicating):
             
             if not os.path.exists(spath):
                 print('nw from tprrp()')
-                signaler.server_new_from_tp.emit(path, args, src_addr)
+                signaler.server_new_from_tp.emit(path, args, src_addr, True)
                 return
         
-        signaler.server_open.emit(path, args, src_addr)
+        signaler.server_open.emit(path, [args[0]], src_addr)
     
     @make_method('/reply_sessions_list', None)
     def replySessionsList(self, path, args, types, src_addr):
@@ -3261,13 +3459,16 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
             return
         
-        signaler.server_save_session_template.emit(path, args, src_addr)
+        signaler.server_save_session_template.emit(path, args, src_addr, False)
         
     @make_method('/ray/session/save_as_template', 'sss')
     def nsmServerSaveSessionTemplateOff(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         #save as template an not loaded session
         session_name, template_name, sess_root = args
+        
+        print('zoeijz)')
+        print(args)
         
         if not pathIsValid(session_name):
             self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
@@ -3278,8 +3479,11 @@ class OscServerThread(ClientCommunicating):
             return
         
         if sess_root == session.root and session_name == session.name:
-            signaler.server_save_session_template.emit(path, [template_name], src_addr)
+            net = True
+            signaler.server_save_session_template.emit(path, [template_name], src_addr, net)
             return
+        
+        print('zlifjjjj')
         
         signaler.dummy_load_and_template.emit(*args)
     
@@ -3480,6 +3684,52 @@ class OscServerThread(ClientCommunicating):
     def rayDuplicateState(self, path, args, types, src_addr):
         signaler.net_duplicate_state.emit(src_addr, args[0])
     
+    #@make_method('/ray/net_daemon/update_locked_roots', 's')
+    #def rayNetUpdateLockeds(self, path, args, types, src_addr):
+        
+    @make_method('/ray/net_daemon/lock_root', 'ss')
+    def rayNetLockRoot(self, path, args, types, src_addr):
+        url, root_folder = args
+        
+        session.lockNetRootFolder(url, root_folder, src_addr.url)
+        #for addr_and_roots in session.locked_net_roots:
+            #if areOnSameMachine(addr_and_roots.url, url):
+                #if not root_folder in addr_and_roots.roots:
+                    #addr_and_roots.roots.append(root_folder)
+                #break
+        #else:
+            #addr_and_roots = locked_net_root()
+            #addr_and_roots.url = url
+            #addr_and_roots.roots.append(root_folder)
+            
+            #session.locked_net_roots.append(addr_and_roots)
+            
+        #for client in session.clients:
+            #if client.net_daemon_url and not areSameOscPort(client.net_daemon_url, src_addr.url):
+                #self.send(Address(client.net_daemon_url), '/ray/net_daemon/lock_root', url, root_folder)
+                
+        #if self.net_master_daemon_url and not areSameOscPort(self.net_master_daemon_url, src_addr.url):
+            #self.send(Address(self.net_master_daemon_url), '/ray/net_daemon/lock_root', url, root_folder)
+        
+    @make_method('/ray/net_daemon/unlock_root', 'ss')
+    def rayNetUnlockRoot(self, path, args, types, src_addr):
+        url, root_folder = args
+        
+        session.unlockNetRootFolder(url, root_folder, src_addr.url)
+        
+        #for addr_and_roots in session.locked_net_roots:
+            #if areOnSameMachine(addr_and_roots.url, url):
+                #if root_folder in addr_and_roots.roots:
+                    #addr_and_roots.roots.remove(root_folder)
+                #break
+    
+        #for client in session.clients:
+            #if client.net_daemon_url and not areSameOscPort(client.net_daemon_url, src_addr.url):
+                #self.send(Address(client.net_daemon_url), '/ray/net_daemon/unlock_root', url, root_folder)
+        
+        #if self.net_master_daemon_url and not areSameOscPort(self.net_master_daemon_url, src_addr.url):
+            #self.send(Address(self.net_master_daemon_url), '/ray/net_daemon/unlock_root', url, root_folder)
+        
     @make_method('/ray/trash/restore', 's')
     def rayGuiTrashRestore(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -3620,6 +3870,20 @@ class OscServerThread(ClientCommunicating):
         
         self.sendGui('/ray/gui/session/renameable', 1)
     
+    def dispatchLockRoot(self, lock_url, lock_root, urls):
+        for url in urls:
+            self.send(Address(url), '/ray/net_daemon/lock_root', lock_url, lock_root)
+        
+        if self.net_master_daemon_url:
+            self.send(Address(self.net_master_daemon_url), '/ray/net_daemon/lock_root', lock_url, lock_root)
+            
+    def dispatchUnlockRoot(self, lock_url, lock_root, urls):
+        for url in urls:
+            self.send(Address(url), '/ray/net_daemon/unlock_root', lock_url, lock_root)
+        
+        if self.net_master_daemon_url:
+            self.send(Address(self.net_master_daemon_url), '/ray/net_daemon/unlock_root', lock_url, lock_root)
+    
     def announceGui(self, url, nsm_locked=False):
         gui_addr = Address(url)
         
@@ -3691,10 +3955,11 @@ if __name__ == '__main__':
     settings = QSettings()
     
     app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
-    session_template_root = "%s/%s" % (app_config_path, 'session_templates')
+    session_template_root         = "%s/%s" % (app_config_path, 'session_templates')
     session_template_factory_root = "%s/session_templates" % dirname(dirname(sys.argv[0]))
-    client_template_local_root = "%s/%s" % (app_config_path, 'client_templates')
-    client_template_factory_root = "%s/client_templates" % dirname(dirname(sys.argv[0]))
+    session_template_net_rootname = ".ray-net-session-templates"
+    client_template_local_root    = "%s/%s" % (app_config_path, 'client_templates')
+    client_template_factory_root  = "%s/client_templates" % dirname(dirname(sys.argv[0]))
     
     ### Translation process
     locale = QLocale.system().name()
@@ -3745,6 +4010,7 @@ if __name__ == '__main__':
         
     server.start()
     
+    session.initLockedNetRoot()
     
     if gui_address:
         server.announceGui(gui_address.url)
