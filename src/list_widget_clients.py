@@ -22,7 +22,7 @@ class ClientSlot(QFrame):
         self.ui.toolButtonGUI.setVisible(False)
         
         #connect buttons to functions
-        self.ui.toolButtonGUI.clicked.connect(self.toggleGui)
+        self.ui.toolButtonGUI.toggleGui.connect(self.toggleGui)
         self.ui.startButton.clicked.connect(self.startClient)
         self.ui.stopButton.clicked.connect(self.stopClient)
         self.ui.killButton.clicked.connect(self.killClient)
@@ -193,54 +193,6 @@ class ClientSlot(QFrame):
             self.ui.lineEditClientStatus.setText('')
     
     def showGuiButton(self):
-        basecolor   = self.palette().base().color().name()
-        textcolor   = self.palette().buttonText().color().name()
-        textdbcolor = self.palette().brush(QPalette.Disabled, QPalette.WindowText).color().name()
-        
-        ##style = ("QToolButton{border-radius: 2px ;"
-                 ##"border-left:  1px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,"
-                    ##"stop:0 %s, stop:0.35 %s, stop:0.75 %s, stop:1 %s);" % (textcolor, basecolor, basecolor, textcolor)
-                 ##"border-right: 1px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,"
-                    ##"stop:0 %s, stop:0.25 %s, stop:0.75 %s, stop:1 %s);" % (textcolor, basecolor, basecolor, textcolor)
-                 ##"border-top: 1px solid %s;" % textcolor
-                 ##"border-bottom : 1px solid %s;" % textcolor
-                 ##"background-color: %s;" % basecolor 
-                 ##"font-size: 11px}"
-                 ##"QToolButton::checked{"
-                 ##"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1," 
-                    ##"stop:0 %s, stop:0.25 %s, stop:0.85 %s, stop:1 %s);" % (textcolor, basecolor, basecolor, textcolor)
-                 ##"margin-top:  0px;" 
-                 ##"margin-left: 0px }"
-                 ##"QToolButton::disabled{"
-                 ##"border-left: 1px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1," 
-                    ##"stop:0 %s, stop:0.25 %s, stop:0.75 %s, stop:1 %s);" % (textdbcolor, basecolor, basecolor, textdbcolor)
-                 ##"border-right: 1px solid qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1," 
-                    ##"stop:0 %s, stop:0.25 %s, stop:0.75 %s, stop:1 %s);" % (textdbcolor, basecolor, basecolor, textdbcolor)
-                 ##"border-top: 1px solid %s;" % textdbcolor 
-                 ##"border-bottom : 1px solid;" % textdbcolor
-                 ##"background-color: %s}" % basecolor
-        
-        style = "QToolButton{border-radius: 2px ;border-left: 1px solid " + \
-                "qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 " + textcolor + \
-                ", stop:0.35 " + basecolor + ", stop:0.75 " + basecolor + ", stop:1 " + textcolor + ")" + \
-                ";border-right: 1px solid " + "qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 " + textcolor + \
-                ", stop:0.25 " + basecolor + ", stop:0.75 " + basecolor + ", stop:1 " + textcolor + ")" + \
-                ";border-top: 1px solid " + textcolor + ";border-bottom : 1px solid " + textcolor +  \
-                "; background-color: " + basecolor + "; font-size: 11px" + "}" + \
-                "QToolButton::checked{background-color: " + \
-                "qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 " + textcolor + \
-                ", stop:0.25 " + basecolor + ", stop:0.85 " + basecolor + ", stop:1 " + textcolor + ")" + \
-                "; margin-top: 0px; margin-left: 0px " + "}" + \
-                "QToolButton::disabled{;border-left: 1px solid " + \
-                "qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 " + textdbcolor + \
-                ", stop:0.25 " + basecolor + ", stop:0.75 " + basecolor + ", stop:1 " + textdbcolor + ")" + \
-                ";border-right: 1px solid " + \
-                "qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 " + textdbcolor + \
-                ", stop:0.25 " + basecolor + ", stop:0.75 " + basecolor + ", stop:1 " + textdbcolor + ")" + \
-                ";border-top: 1px solid " + textdbcolor + ";border-bottom : 1px solid " + textdbcolor + \
-                "; background-color: " + basecolor + "}"
-        
-        self.ui.toolButtonGUI.setStyleSheet(style)
         self.ui.toolButtonGUI.setVisible(True)
         if self.client.executable_path in ('nsm-proxy', 'ray-proxy'):
             _translate = QApplication.translate
@@ -257,7 +209,7 @@ class ClientSlot(QFrame):
         else:
             self.list_widget.clientHideGuiRequest.emit(self.clientId())
             
-        self.gui_visible = not self.gui_visible
+        #self.gui_visible = not self.gui_visible
     
     def setDirtyState(self, bool_dirty):
         self.is_dirty_able = True

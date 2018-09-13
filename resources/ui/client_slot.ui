@@ -137,7 +137,7 @@ QToolButton {border: none}</string>
       </spacer>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButtonGUI">
+      <widget class="HideGuiButton" name="toolButtonGUI">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -458,6 +458,11 @@ QToolButton {border: none}</string>
    <class>StatusBar</class>
    <extends>QLineEdit</extends>
    <header>status_bar</header>
+  </customwidget>
+  <customwidget>
+   <class>HideGuiButton</class>
+   <extends>QToolButton</extends>
+   <header>hide_gui_button</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -148,8 +148,9 @@ def quitRay(sig, frame):
 class locked_net_root(object):
     def __init__(self):
         object.__init__(self)
-        self.url   = ''
-        self.roots = []
+        self.machine = ''
+        #self.url   = ''
+        self.roots   = []
 
 class ServerSender(QObject):
     def __init__(self):
@@ -672,10 +673,10 @@ class Client(ServerSender):
            
         if self.executable_path == 'ray-network' and not self.net_daemon_url:
             print('oumaa')
-            for addr_and_roots in self.session.locked_net_roots:
+            for machine_roots in self.session.locked_net_roots:
                 arguments.append('--forbidden-root')
-                arguments.append(addr_and_roots.url)
-                arguments += addr_and_roots.roots
+                arguments.append(machine_roots.machine)
+                arguments += machine_roots.roots
                 
         print(arguments)
                 
@@ -1357,11 +1358,12 @@ class Session(ServerSender):
         print(server.url)
         print(self.root)
         
-        addr_and_roots = locked_net_root()
-        addr_and_roots.url = server.url
-        addr_and_roots.roots.append(self.root)
+        machine_roots = locked_net_root()
+        machine_roots.machine = getMachine192()
+        #addr_and_roots.url = server.url
+        machine_roots.roots.append(self.root)
         self.locked_net_roots.clear()
-        self.locked_net_roots.append(addr_and_roots)
+        self.locked_net_roots.append(machine_roots)
     
     def lockNetRootFolder(self, url, root_folder, src_url=''):
         if not src_url:
@@ -1369,20 +1371,18 @@ class Session(ServerSender):
                 
         print('lockNet', url)
                 
-        for addr_and_roots in self.locked_net_roots:
-            print(addr_and_roots.url)
-            print(addr_and_roots.roots)
-            
-            if areOnSameMachine(addr_and_roots.url, url):
+        for machine_roots in self.locked_net_roots:
+            if machine_roots.machine == getMachine192():
                 print("rezofk")
-                if not root_folder in addr_and_roots.roots:
-                    addr_and_roots.roots.append(root_folder)
+                if not root_folder in machine_roots.roots:
+                    machine_roots.roots.append(root_folder)
                 break
         else:
-            addr_and_roots = locked_net_root()
-            addr_and_roots.url = url
-            addr_and_roots.roots.append(root_folder)
-            self.locked_net_roots.append(addr_and_roots)
+            machine_roots = locked_net_root()
+            machine_roots.machine = getMachine192()
+            #addr_and_roots.url = url
+            machine_roots.roots.append(root_folder)
+            self.locked_net_roots.append(machine_roots)
         
         for client in self.clients:
             if client.net_daemon_url and not areSameOscPort(client.net_daemon_url, src_url):
@@ -1400,12 +1400,13 @@ class Session(ServerSender):
         if not src_url:
             src_url = url
         
-        for addr_and_roots in self.locked_net_roots:
-            if areOnSameMachine(addr_and_roots.url, url):
-                if root_folder in addr_and_roots.roots:
-                    addr_and_roots.roots.remove(root_folder)
-                    if not addr_and_roots.roots:
-                        self.locked_net_roots.remove(addr_and_roots)
+        for machine_roots in self.locked_net_roots:
+            if machine_roots.machine == getMachine192():
+            #if areOnSameMachine(addr_and_roots.url, url):
+                if root_folder in machine_roots.roots:
+                    machine_roots.roots.remove(root_folder)
+                    if not machine_roots.roots:
+                        self.locked_net_roots.remove(machine_roots)
                 break
             
         for client in self.clients:
@@ -1558,9 +1559,10 @@ class Session(ServerSender):
     
     def addClient(self, client):
         if client.net_daemon_url:
-            for addr_and_roots in self.locked_net_roots:
-                if areOnSameMachine(addr_and_roots.url, getUrl192(client.net_daemon_url)):
-                    if client.net_session_root in addr_and_roots.roots:
+            for machine_roots in self.locked_net_roots:
+                if machine_roots.machine == getMachine192():
+                #if areOnSameMachine(addr_and_roots.url, getUrl192(client.net_daemon_url)):
+                    if client.net_session_root in machine_roots.roots:
                         self.sendError(ERR_NET_ROOT_RUNNING, 
                                        _translate('error', 'Impossible to add this Net Session, another net daemon uses "%s" as root folder on the same machine') % client.net_session_root)
                         return False
