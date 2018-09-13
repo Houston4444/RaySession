@@ -1473,6 +1473,8 @@ class Session(ServerSender):
     def generateClientId(self, wanted_id=""):
         self.updateForbiddenIdsList()
         
+        wanted_id = basename(wanted_id)
+        
         if wanted_id:
             for to_rm in ('ray-', 'non-', 'carla-'):
                 if wanted_id.startswith(to_rm):
