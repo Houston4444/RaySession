@@ -748,8 +748,8 @@ class MainWindow(QMainWindow):
         self.server_copying = False
         
         #set options with config file, restore geometry
-        self.save_all_from_saved_client = settings.value('SaveAllFromSavedClient', True, type=bool)
-        #self.ui.actionSaveAllFromSavedClient.setChecked(self.save_all_from_saved_client)
+        self.save_all_from_saved_client = settings.value('save_all_from_saved_client', True, type=bool)
+        self.ui.actionSaveAllFromSavedClient.setChecked(self.save_all_from_saved_client)
         serverOSC.toDaemon('/ray/option/save_from_client', int(self.save_all_from_saved_client))
         
         self.keep_focus = settings.value('keepfocus', True, type=bool)
@@ -928,7 +928,7 @@ class MainWindow(QMainWindow):
     def saveAllFromClientToggled(self, bool):
         self.save_all_from_saved_client = bool
         serverOSC.toDaemon('/ray/option/save_from_client', int(self.save_all_from_saved_client))
-        settings.setValue('SaveAllFromSavedClient', self.save_all_from_saved_client)
+        settings.setValue('save_all_from_saved_client', self.save_all_from_saved_client)
     
     def flashOpen(self):
         for client in session.client_list:
