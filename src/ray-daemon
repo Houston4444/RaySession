@@ -423,6 +423,8 @@ class Client(ServerSender):
     net_daemon_url       = ''
     net_duplicate_state  = -1
     
+    last_save_time = 0.00
+    
     def __init__(self, parent_session):
         ServerSender.__init__(self)
         self.session = parent_session
@@ -2840,6 +2842,10 @@ class SignaledSession(OperatingSession):
         if client:
             client.setReply(ERR_OK, message)
             #self.message( "Client \"%s\" replied with: %s in %fms" % ( client.name, message, client.milliseconds_since_last_command() ))
+            
+            if client.pending_command == COMMAND_SAVE:
+                client.last_save_time = time.time()
+            
             client.pending_command = COMMAND_NONE
             
             client.setStatus(CLIENT_STATUS_READY)
@@ -3152,7 +3158,9 @@ class ClientCommunicating(ServerThread):
         self.sendGui("/ray/client/dirty", client.client_id, client.dirty)
         
         if self.option_save_from_client:
-            signaler.server_save_from_client.emit(path, args, src_addr, client.client_id)
+            if client.pending_command != COMMAND_SAVE:
+                if time.time() - client.last_save_time > 1.00:
+                    signaler.server_save_from_client.emit(path, args, src_addr, client.client_id)
     
     @make_method('/nsm/client/message', 'is')
     def nsmClientMessage(self, path, args, types, src_addr):
