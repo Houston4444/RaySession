@@ -1800,7 +1800,7 @@ class OperatingSession(Session):
     #for example, at the end of save(), timer is launched, 
     #then, when timer is timeout or when all client replied, save_step1 is launched
         
-    def save(self):
+    def save(self, from_client_id=''):
         if not self.path:
             self.nextFunction()
             return
@@ -1808,6 +1808,9 @@ class OperatingSession(Session):
         self.setServerStatus(SERVER_STATUS_SAVE)
         
         for client in self.clients:
+            if from_client_id and client.client_id == from_client_id:
+                continue
+            
             if client.active:
                 self.expected_clients.append(client)
                 client.save()
@@ -2402,6 +2405,7 @@ class SignaledSession(OperatingSession):
         signaler.server_new_from_tp.connect(self.serverNewSessionFromTemplate)
         signaler.server_open.connect(self.serverOpenSession)
         signaler.server_save.connect(self.serverSaveSession)
+        signaler.server_save_from_client.connect(self.serverSaveSessionFromClient)
         signaler.server_rename.connect(self.serverRenameSession)
         signaler.server_duplicate.connect(self.serverDuplicateSession)
         signaler.server_duplicate_only.connect(self.serverDuplicateSessionOnly)
@@ -2480,6 +2484,15 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.saveDone]
         self.nextFunction()
+        
+    def serverSaveSessionFromClient(self, path, args, src_addr, client_id):
+        if self.process_order:
+            return
+        
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [(self.save, client_id), self.saveDone]
+        self.nextFunction()
+        
         
     def serverCloseSession(self, path, args, src_addr):
         if self.process_order:
@@ -3014,6 +3027,7 @@ class Signaler(QObject):
     server_new_from_tp = pyqtSignal(str, list, object, bool)
     server_open        = pyqtSignal(str, list, object)
     server_save        = pyqtSignal(str, list, object)
+    server_save_from_client = pyqtSignal(str, list, object, str)
     server_list_sessions = pyqtSignal(object, bool)
     server_add       = pyqtSignal(str, list, object)
     server_add_proxy = pyqtSignal(str, list, object)
@@ -3136,6 +3150,9 @@ class ClientCommunicating(ServerThread):
         client.dirty = 0
         
         self.sendGui("/ray/client/dirty", client.client_id, client.dirty)
+        
+        if self.option_save_from_client:
+            signaler.server_save_from_client.emit(path, args, src_addr, client.client_id)
     
     @make_method('/nsm/client/message', 'is')
     def nsmClientMessage(self, path, args, types, src_addr):
@@ -3224,6 +3241,7 @@ class OscServerThread(ClientCommunicating):
     def __init__(self, osc_num=0):
         ClientCommunicating.__init__(self, osc_num)
         self.list_asker_addr = None
+        self.option_save_from_client = True
     
     @make_method('/osc/ping', '')
     def oscPing(self, path, args, types, src_addr):
@@ -3753,6 +3771,14 @@ class OscServerThread(ClientCommunicating):
         client_id = args[0]
         
         signaler.gui_trash_remove_definitely.emit(client_id)
+    
+    @make_method('/ray/option/save_from_client', 'i')
+    def rayOptionSaveFromClient(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+    
+        self.option_save_from_client = bool(args[0])
+        
+        print('toggledd save', self.option_save_from_client)
     
     def isOperationPending(self, src_addr, path):
         if session.file_copier.isActive():

@@ -638,6 +638,8 @@ QToolButton {border: none}</string>
     <addaction name="actionNewSession"/>
     <addaction name="actionOpenSession"/>
     <addaction name="separator"/>
+    <addaction name="actionSaveAllFromSavedClient"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuSession">
@@ -655,7 +657,7 @@ QToolButton {border: none}</string>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
-     <string>&amp;view</string>
+     <string>&amp;View</string>
     </property>
     <addaction name="actionToggleShowMessages"/>
     <addaction name="actionShowMenuBar"/>
@@ -967,10 +969,29 @@ QToolButton {border: none}</string>
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset theme="edit-rename"/>
+    <iconset theme="edit-rename">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Rename</string>
+    <string>&amp;Rename</string>
+   </property>
+  </action>
+  <action name="actionSaveAllFromSavedClient">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="document-save-all">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save All From Saved Client</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some clients (Ardour, Qtractor...) sends their saved state to RaySession.&lt;/p&gt;&lt;p&gt;When this option is checked, the session is saved when a client sends that it has been saved.&lt;/p&gt;&lt;p&gt;For example, a Ctrl-S in Ardour will also save all the current Ray Session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
  </widget>
