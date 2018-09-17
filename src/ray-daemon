@@ -424,6 +424,7 @@ class Client(ServerSender):
     net_duplicate_state  = -1
     
     last_save_time = 0.00
+    last_dirty = 0.00
     
     def __init__(self, parent_session):
         ServerSender.__init__(self)
@@ -584,6 +585,9 @@ class Client(ServerSender):
     def isCapableOf(self, capability):
         return bool(capability in self.capabilities)
     
+    def guiMsgStyle(self):
+        return "%s (%s):" % (self.name, self.client_id)
+    
     def setNetworkProperties(self, net_daemon_url, net_session_root):
         if not self.isCapableOf(':ray-network:'):
             return
@@ -655,10 +659,12 @@ class Client(ServerSender):
     def start(self):
         self.session.setRenameable(False)
         
+        self.last_dirty = 0.00
+        
         if self.is_dummy:
             return
         
-        self.sendGuiMessage(_translate("GUIMSG", "Launching %s") % self.executable_path)
+        self.sendGuiMessage(_translate("GUIMSG", "%s launching") % self.guiMsgStyle())
         
         #if 'server' in globals() and hasattr(server, 'url'):
             #os.environ['NSM_URL'] = server.url
@@ -739,9 +745,10 @@ class Client(ServerSender):
         self.stopped_timer.stop()
         
         if self.pending_command in (COMMAND_KILL, COMMAND_QUIT):
-            self.sendGuiMessage(_translate('GUIMSG', "Client %s terminated because we told it to.") % self.name)
+            self.sendGuiMessage(_translate('GUIMSG', "%s terminated as planned") % self.guiMsgStyle())
+            #self.sendGuiMessage(_translate('GUIMSG', "Client %s (%s) terminated because we told it to.") % (self.name, self.client_id))
         else:
-            self.sendGuiMessage(_translate('GUIMSG', "Client %s died unexpectedly.") % self.name)
+            self.sendGuiMessage(_translate('GUIMSG', "%s died unexpectedly.") % self.guiMsgStyle())
         
         if self.session.wait_for:
             self.session.endTimerIfLastExpected(self)
@@ -760,7 +767,7 @@ class Client(ServerSender):
         
     def errorInProcess(self, error):
         if error == QProcess.FailedToStart:
-            self.sendGuiMessage(_translate('GUIMSG', "Failed to start %s") % self.name)
+            self.sendGuiMessage(_translate('GUIMSG', "%s Failed to start !") % self.guiMsgStyle())
             self.active     = False
             self.pid        = 0
             self.setStatus(CLIENT_STATUS_STOPPED)
@@ -800,7 +807,7 @@ class Client(ServerSender):
             self.start_gui_hidden = not bool(self.gui_visible)
             
     def stop(self):
-        self.sendGuiMessage(_translate('GUIMSG', "Stopping client %s") % self.name)
+        self.sendGuiMessage(_translate('GUIMSG', "%s stopping") % self.guiMsgStyle())
         if self.isRunning():
             self.pending_command = COMMAND_KILL
             self.setStatus(CLIENT_STATUS_QUIT)
@@ -3133,13 +3140,16 @@ class ClientCommunicating(ServerThread):
     def nsmClientIs_dirty(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        MESSAGE("Client sends dirty")
+        
         
         client = session.getClientByAddress(src_addr)
         if not client:
             return
         
+        MESSAGE("%s sends dirty" % client.client_id)
+        
         client.dirty = 1
+        client.last_dirty = time.time()
         
         self.sendGui("/ray/client/dirty", client.client_id, client.dirty)
 
@@ -3147,11 +3157,11 @@ class ClientCommunicating(ServerThread):
     def nsmClientIs_clean(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        MESSAGE("Client sends clean")
-        
         client = session.getClientByAddress(src_addr)
         if not client:
             return
+        
+        MESSAGE("%s sends clean" % client.client_id)
         
         client.dirty = 0
         
@@ -3159,8 +3169,9 @@ class ClientCommunicating(ServerThread):
         
         if self.option_save_from_client:
             if client.pending_command != COMMAND_SAVE:
-                if time.time() - client.last_save_time > 1.00:
-                    signaler.server_save_from_client.emit(path, args, src_addr, client.client_id)
+                if client.last_dirty and time.time() - client.last_dirty > 0.20:
+                    if time.time() - client.last_save_time > 1.00:
+                        signaler.server_save_from_client.emit(path, args, src_addr, client.client_id)
     
     @make_method('/nsm/client/message', 'is')
     def nsmClientMessage(self, path, args, types, src_addr):
