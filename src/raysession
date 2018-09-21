@@ -1575,6 +1575,8 @@ class NewSessionDialog(ChildDialog):
         if self.is_duplicate:
             self.ui.labelTemplate.setVisible(False)
             self.ui.comboBoxTemplate.setVisible(False)
+            self.ui.labelNewSessionName.setText(_translate('Duplicate', 'Duplicated session name :'))
+            self.setWindowTitle(_translate('Duplicate', 'Duplicate Session'))
         else:
             serverOSC.toDaemon('/ray/server/list_session_templates')
         
