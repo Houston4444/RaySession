@@ -5,12 +5,12 @@
        type="text/css"
        id="current-color-scheme">
       .ColorScheme-Text {
-        color:#959799;
+        color:9d9d9d;
       }
       </style>
   </defs>
   <path
-     style="fill:currentColor;fill-opacity:0.5;stroke:none" 
+     style="fill:currentColor;fill-opacity:0.25;stroke:none" 
      d="M 16.001953 3.9980469 A 12 12 0 0 0 4.0019531 15.998047 A 12 12 0 0 0 16.001953 27.998047 A 12 12 0 0 0 28.001953 15.998047 A 12 12 0 0 0 16.001953 3.9980469 z M 16.001953 4.9980469 A 11 11 0 0 1 27.001953 15.998047 A 11 11 0 0 1 16.001953 26.998047 A 11 11 0 0 1 5.0019531 15.998047 A 11 11 0 0 1 16.001953 4.9980469 z M 12 12 L 12 20 L 20 20 L 20 12 L 12 12 z "
      id="path91" 
      class="ColorScheme-Text"
