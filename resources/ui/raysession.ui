@@ -93,8 +93,8 @@
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset theme="edit-duplicate">
-                 <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+                <iconset resource="../resources.qrc">
+                 <normaloff>:/scalable/breeze/xml-node-duplicate.svg</normaloff>:/scalable/breeze/xml-node-duplicate.svg</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -116,8 +116,8 @@
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset theme="document-save-as-template">
-                 <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+                <iconset resource="../resources.qrc">
+                 <normaloff>:/scalable/breeze/document-save-as-template.svg</normaloff>:/scalable/breeze/document-save-as-template.svg</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -906,8 +906,8 @@ QToolButton {border: none}</string>
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset theme="edit-duplicate">
-     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+    <iconset resource="../resources.qrc">
+     <normaloff>:/scalable/breeze/xml-node-duplicate.svg</normaloff>:/scalable/breeze/xml-node-duplicate.svg</iconset>
    </property>
    <property name="text">
     <string>&amp;Duplicate</string>

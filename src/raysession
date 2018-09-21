@@ -721,7 +721,10 @@ class RayIcon(QIcon):
     def __init__(self, icon_name, dark=False):
         QIcon.__init__(self)
         breeze = 'breeze-dark' if dark else 'breeze'
-        self.addPixmap(QPixmap(':scalable/%s/%s' % (breeze, icon_name)), QIcon.Normal, QIcon.Off)
+        self.addFile(':scalable/%s/%s' % (breeze, icon_name), QSize(22,22))
+        
+        
+        #self.addPixmap(QPixmap(':scalable/%s/%s' % (breeze, icon_name)), QIcon.Normal, QIcon.Off)
         self.addPixmap(QPixmap(':scalable/%s/disabled/%s' % (breeze, icon_name)), QIcon.Disabled, QIcon.Off)
 
 class MainWindow(QMainWindow):
@@ -841,11 +844,24 @@ class MainWindow(QMainWindow):
         
         self.connectListWidgetRequests()
         
-        if app.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
-            self.ui.actionCloseSession.setIcon(RayIcon('window-close', dark=True))
-            self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark=True))
-            self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save', dark=True))
+        if self.ui.actionAddExecutable.icon().isNull():
+            self.ui.actionAddExecutable.setIcon(QIcon.fromTheme('system-run'))
+        if self.ui.actionControlMenu.icon().isNull():
+            self.ui.actionControlMenu.setIcon(QIcon.fromTheme('configuration_section'))
+        if self.ui.trashButton.icon().isNull():
+            self.ui.trashButton.setIcon(QIcon.fromTheme('user-trash'))
         
+        
+        dark = bool(app.palette().brush(2, QPalette.WindowText).color().lightness() > 128)
+        #if app.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
+        self.ui.actionDuplicateSession.setIcon(RayIcon('xml-node-duplicate', dark))
+        self.ui.actionSaveTemplateSession.setIcon(RayIcon('document-save-as-template', dark))
+        #self.ui.actionSaveTemplateSession.setIcon(QIcon(':scalable/breeze-dark/document-save-as-template'))
+        self.ui.actionCloseSession.setIcon(RayIcon('window-close', dark))
+        self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark))
+        self.ui.actionSaveSession.setIcon(RayIcon('document-save', dark))
+        self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save', dark))
+            
         self.setNsmLocked(under_nsm)
         
         
