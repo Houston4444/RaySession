@@ -37,6 +37,31 @@
         <file>scalable/breeze-dark/disabled/list-remove.svg</file>
         <file>scalable/breeze-dark/disabled/document-save-as-template.svg</file>
         <file>scalable/breeze-dark/disabled/xml-node-duplicate.svg</file>
+        <file>app_icons/dark/curve-connector.svg</file>
+        <file>app_icons/ardour.svg</file>
+        <file>app_icons/calf.svg</file>
+        <file>app_icons/carla.svg</file>
+        <file>app_icons/curve-connector.svg</file>
+        <file>app_icons/drumkv1.svg</file>
+        <file>app_icons/dadada.svg</file>
+        <file>app_icons/gx_head.png</file>
+        <file>app_icons/h2-icon.svg</file>
+        <file>app_icons/jack_mixer.svg</file>
+        <file>app_icons/luppp.png</file>
+        <file>app_icons/non-mixer.png</file>
+        <file>app_icons/non-sequencer.png</file>
+        <file>app_icons/non-timeline.png</file>
+        <file>app_icons/padthv1.svg</file>
+        <file>app_icons/patchage.svg</file>
+        <file>app_icons/qsampler.png</file>
+        <file>app_icons/qtractor.svg</file>
+        <file>app_icons/rosegarden.png</file>
+        <file>app_icons/samplv1.svg</file>
+        <file>app_icons/seq24.png</file>
+        <file>app_icons/sooperlooper.png</file>
+        <file>app_icons/synthv1.svg</file>
+        <file>app_icons/vmpk.svgz</file>
+        <file>app_icons/zynaddsubfx.svg</file>
         <file>fonts/Ubuntu-C.ttf</file>
         <file>fonts/Ubuntu-R.ttf</file>
     </qresource>
