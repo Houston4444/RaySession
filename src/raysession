@@ -1768,10 +1768,10 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.lineEditIcon.setText(self.client.icon_name)
         self.ui.lineEditLabel.setText(self.client.label)
         self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
-        self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(self.client.icon_name))
+        self.ui.toolButtonIcon.setIcon(getAppIcon(self.client.icon_name, self))
         
     def changeIconwithText(self, text):
-        self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(text))
+        self.ui.toolButtonIcon.setIcon(getAppIcon(text, self))
         
     def saveChanges(self):
         self.client.label           = self.ui.lineEditLabel.text()
@@ -1959,7 +1959,7 @@ class AddApplicationDialog(ChildDialog):
             
             self.user_template_list.append(template_name)
             
-            self.ui.templateList.addItem(QListWidgetItem(QIcon.fromTheme(icon_name), template_name, self.ui.templateList))
+            self.ui.templateList.addItem(QListWidgetItem(getAppIcon(icon_name, self), template_name, self.ui.templateList))
             
             self.ui.templateList.sortItems()
             
@@ -1976,7 +1976,7 @@ class AddApplicationDialog(ChildDialog):
             
             self.factory_template_list.append(template_name)
             
-            self.ui.templateList.addItem(QListWidgetItem(QIcon.fromTheme(icon_name), template_name, self.ui.templateList))
+            self.ui.templateList.addItem(QListWidgetItem(getAppIcon(icon_name, self), template_name, self.ui.templateList))
             
             self.ui.templateList.sortItems()
             

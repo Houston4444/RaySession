@@ -124,30 +124,8 @@ class ClientSlot(QFrame):
         self.ui.ClientName.setToolTip('Executable : ' + self.client.executable_path + '\n' + 'NSM id : ' + self.clientId())
         
         #set icon
-        icon_button = self.ui.iconButton
-        
-        icon_button.setIcon(QIcon.fromTheme(self.client.icon_name))
-        
-        print('pzioef update')
-        
-        dark_place = "/dark/"
-        dark = bool(self.palette().brush(2, QPalette.WindowText).color().lightness() > 128)
-        
-        
-        if icon_button.icon().isNull():
-            for ext in ('svg', 'png'):
-                filename = ":app_icons/%s.%s" % (self.client.icon_name, ext)
-                darkname = ":app_icons/dark/%s.%s" % (self.client.icon_name, ext)
-                
-                if dark and QFile.exists(darkname):
-                    filename = darkname
-                
-                if QFile.exists(filename):
-                    icon = QIcon()
-                    #icon.addPixmap(QPixmap(filename))
-                    icon.addFile(filename)
-                    icon_button.setIcon(icon)
-                    break
+        #dark = bool(self.palette().brush(2, QPalette.WindowText).color().lightness() > 128)
+        self.ui.iconButton.setIcon(getAppIcon(self.client.icon_name, self))
         
     def updateStatus(self, status):
         self.ui.lineEditClientStatus.setText(clientStatusString(status))

@@ -2,7 +2,8 @@ from liblo import Server, Address
 import argparse
 import liblo, socket
 import sys, os, shlex, subprocess
-from PyQt5.QtCore import QLocale, QTranslator, QT_VERSION_STR
+from PyQt5.QtCore import QLocale, QTranslator, QT_VERSION_STR, QFile
+from PyQt5.QtGui  import QIcon
 
 #get qt version in list of ints
 QT_VERSION = []
@@ -244,6 +245,26 @@ def areTheyAllString(args):
         if type(arg) != str:
             return False
     return True
+
+def getAppIcon(icon_name, dark):
+    
+    icon = QIcon.fromTheme(icon_name)
+    
+    if icon.isNull():
+        for ext in ('svg', 'svgz', 'png'):
+            filename = ":app_icons/%s.%s" % (icon_name, ext)
+            darkname = ":app_icons/dark/%s.%s" % (icon_name, ext)
+            
+            if dark and QFile.exists(darkname):
+                filename = darkname
+            
+            if QFile.exists(filename):
+                del icon
+                icon = QIcon()
+                icon.addFile(filename)
+                break
+            
+    return icon
 
 class ClientData(object):
     client_id       = ''
