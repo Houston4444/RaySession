@@ -124,7 +124,6 @@ class ClientSlot(QFrame):
         self.ui.ClientName.setToolTip('Executable : ' + self.client.executable_path + '\n' + 'NSM id : ' + self.clientId())
         
         #set icon
-        #dark = bool(self.palette().brush(2, QPalette.WindowText).color().lightness() > 128)
         self.ui.iconButton.setIcon(getAppIcon(self.client.icon_name, self))
         
     def updateStatus(self, status):

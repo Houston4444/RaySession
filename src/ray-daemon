@@ -680,13 +680,10 @@ class Client(ServerSender):
             arguments += shlex.split(self.arguments)
            
         if self.executable_path == 'ray-network' and not self.net_daemon_url:
-            print('oumaa')
             for machine_roots in self.session.locked_net_roots:
                 arguments.append('--forbidden-root')
                 arguments.append(machine_roots.machine)
                 arguments += machine_roots.roots
-                
-        print(arguments)
                 
                 #if areOnSameMachine(self.net_daemon_url, addr_and_roots.url):
                     #print('ouuppaz')
@@ -2032,8 +2029,6 @@ class OperatingSession(Session):
         if net:
             template_root = "%s/%s" % (self.root, session_template_net_rootname)
         
-        print('saave as tp,', template_name, net, template_root)
-        
         spath = "%s/%s" % (template_root, template_name)
         
         #overwrite existing template
@@ -2095,8 +2090,6 @@ class OperatingSession(Session):
             template_root = "%s/%s" % (self.root, session_template_net_rootname)
         
         template_path = "%s/%s" % (template_root, template_name)
-        
-        print('eorigji', template_path, net)
         
         if template_name.startswith('///'):
             template_name = template_name.replace('///', '')
@@ -2475,8 +2468,6 @@ class SignaledSession(OperatingSession):
         
         new_session_full_name, template_name = args
         
-        print('eorijgeooo')
-        
         self.process_order = [self.save, (self.prepareTemplate, *args, net), (self.load, new_session_full_name), self.loadDone]
         self.nextFunction()
         
@@ -2579,15 +2570,11 @@ class SignaledSession(OperatingSession):
         self.nextFunction()
     
     def serverSaveSessionTemplate(self, path, args, src_addr, net=False):
-        print('zmeofk')
-        
         if self.process_order:
             return
         
         if len(args) != 1:
             return
-        
-        print('zmeofksfv')
         
         self.rememberOscArgs(path, args, src_addr)
         
@@ -2596,8 +2583,6 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.executable_path == 'ray-network':
                 client.net_session_template = template_name
-        
-        print('ezroij')
         
         self.process_order = [self.save, (self.saveSessionTemplate, template_name, net)]
         self.nextFunction()
@@ -3187,11 +3172,11 @@ class ClientCommunicating(ServerThread):
     def nsmClientGui_is_hidden(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        MESSAGE("Client sends gui hidden")
-        
         client = session.getClientByAddress(src_addr)
         if not client:
             return
+        
+        MESSAGE("Client '%s' sends gui hidden" % client.client_id)
         
         client.gui_visible = False
         
@@ -3200,11 +3185,12 @@ class ClientCommunicating(ServerThread):
     @make_method('/nsm/client/gui_is_shown', '')
     def nsmClientGui_is_shown(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        MESSAGE("Client sends gui shown")
         
         client = session.getClientByAddress(src_addr)
         if not client:
             return
+        
+        MESSAGE("Client '%s' sends gui shown" % client.client_id)
         
         client.gui_visible = True
         
@@ -3445,8 +3431,6 @@ class OscServerThread(ClientCommunicating):
         if self.isOperationPending(src_addr, path):
             return
         
-        print('openwithtemp', args)
-        
         session_name, template_name = args
         
         if template_name:
@@ -3457,7 +3441,6 @@ class OscServerThread(ClientCommunicating):
                 spath = "%s/%s" % (session.root, session_name)
             
             if not os.path.exists(spath):
-                print('nw from tprrp()')
                 signaler.server_new_from_tp.emit(path, args, src_addr, True)
                 return
         
@@ -3508,9 +3491,6 @@ class OscServerThread(ClientCommunicating):
         #save as template an not loaded session
         session_name, template_name, sess_root = args
         
-        print('zoeijz)')
-        print(args)
-        
         if not pathIsValid(session_name):
             self.send(src_addr, "/error", path, ERR_CREATE_FAILED, "Invalid session name.")
             return
@@ -3523,8 +3503,6 @@ class OscServerThread(ClientCommunicating):
             net = True
             signaler.server_save_session_template.emit(path, [template_name], src_addr, net)
             return
-        
-        print('zlifjjjj')
         
         signaler.dummy_load_and_template.emit(*args)
     
@@ -3796,8 +3774,6 @@ class OscServerThread(ClientCommunicating):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
     
         self.option_save_from_client = bool(args[0])
-        
-        print('toggledd save', self.option_save_from_client)
     
     def isOperationPending(self, src_addr, path):
         if session.file_copier.isActive():
