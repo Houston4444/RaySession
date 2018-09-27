@@ -1209,8 +1209,14 @@ class Client(ServerSender):
         self.active       = True
         self.did_announce = True
         
+        print('zoeizaza')
+        print(known_as_non_active)
+        print(self.executable_path)
+        
         if self.executable_path in known_as_non_active:
+            print('removing %s from list' % self.executable_path) 
             known_as_non_active.remove(self.executable_path)
+            print(known_as_non_active)
         
         MESSAGE("Process has pid: %i" % pid )
         MESSAGE("The client \"%s\" at \"%s\" informs us it's ready to receive commands." % (self.name, self.addr.url) )
@@ -1360,9 +1366,9 @@ class Session(ServerSender):
         if not self.hasServer():
             return
         
-        print("zpeogkoko")
-        print(server.url)
-        print(self.root)
+        #print("zpeogkoko")
+        #print(server.url)
+        #print(self.root)
         
         machine_roots = locked_net_root()
         machine_roots.machine = getMachine192()
@@ -1379,7 +1385,6 @@ class Session(ServerSender):
                 
         for machine_roots in self.locked_net_roots:
             if machine_roots.machine == getMachine192():
-                print("rezofk")
                 if not root_folder in machine_roots.roots:
                     machine_roots.roots.append(root_folder)
                 break
@@ -2610,9 +2615,14 @@ class SignaledSession(OperatingSession):
         
         session_list = []
         
-        for fds in os.walk(self.root):
-            folder, folders, files = fds
-            if folder == self.root:
+        for root, dirs, files in os.walk(self.root):
+            #exclude hidden files and dirs
+            files   = [f for f in files if not f.startswith('.')]
+            dirs[:] = [d for d in dirs  if not d.startswith('.')]
+        
+        #for fds in os.walk(self.root):
+            #folder, folders, files = fds
+            if root == self.root:
                 continue
             
             already_send = False
@@ -2620,7 +2630,7 @@ class SignaledSession(OperatingSession):
             for file in files:
                 if file in ('raysession.xml', 'session.nsm'):
                     if not already_send:
-                        basefolder = folder.replace(self.root + '/', '', 1)
+                        basefolder = root.replace(self.root + '/', '', 1)
                         session_list.append(basefolder)
                         if len(session_list) == 100:
                             self.send(src_addr, "/reply_sessions_list", *session_list)
@@ -3254,7 +3264,7 @@ class OscServerThread(ClientCommunicating):
         
         self.send(src_addr, "/reply", path)
     
-    @make_method('/ray/server/gui_announce', 'sis')
+    @make_method('/ray/server/gui_announce', 'sisi')
     def rayGuiGui_announce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
@@ -3270,6 +3280,8 @@ class OscServerThread(ClientCommunicating):
             for gui_addr in self.gui_list:
                 if gui_addr.url != src_addr.url:
                     self.send(gui_addr, '/ray/gui/daemon_nsm_locked', 1)
+        
+        self.option_save_from_client = bool(args[3])
         
         self.announceGui(src_addr.url, nsm_locked)
 
@@ -3951,9 +3963,10 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--session-root', '-r', help='set root folder for sessions')
-    parser.add_argument('--osc-port', '-p', type=int, default=16187, help='select OSC port for the daemon')
-    parser.add_argument('--gui-url', type=getLibloAddress, help=argparse.SUPPRESS)
+    parser.add_argument('--osc-port', '-p', type=int, default=0, help='select OSC port for the daemon')
     parser.add_argument('--findfreeport', action='store_true', help='find another port if port is not free')
+    parser.add_argument('--gui-url', type=getLibloAddress, help=argparse.SUPPRESS)
+    parser.add_argument('--config-dir', '-c', type=str, default='', help='use a custom config dir')
     parser.add_argument('--debug','-d',  action='store_true', help='see all OSC messages')
     parser.add_argument('--debug-only', '-do', action='store_true', help='debug without client messages')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
@@ -3966,9 +3979,17 @@ if __name__ == '__main__':
     
     session_root = parsed_args.session_root
     osc_num      = parsed_args.osc_port
-    gui_address  = parsed_args.gui_url
     findfreeport = parsed_args.findfreeport
+    gui_address  = parsed_args.gui_url
+    config_dir   = parsed_args.config_dir
     
+    if osc_num == 0:
+        osc_num = 16187
+        findfreeport = True
+    
+    if config_dir and not os.access(config_dir, os.W_OK):
+        sys.stderr.write('%s is not a writable config dir, try another one\n' % config_dir)
+        sys.exit(1)
     
     signal.signal(signal.SIGINT,  signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
@@ -3977,9 +3998,15 @@ if __name__ == '__main__':
     app.setApplicationName("RaySession")
     #app.setApplicationVersion(VERSION)
     app.setOrganizationName("RaySession")
-    settings = QSettings()
     
-    app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
+    if config_dir:
+        settings = QSettings("%s/RaySession.conf" % config_dir)
+        app_config_path = config_dir
+    else:
+        settings = QSettings()
+        app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
+    
+    
     session_template_root         = "%s/%s" % (app_config_path, 'session_templates')
     session_template_factory_root = "%s/session_templates" % dirname(dirname(sys.argv[0]))
     session_template_net_rootname = ".ray-net-session-templates"

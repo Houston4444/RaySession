@@ -626,8 +626,19 @@ class OSCServerT(ServerThread):
                 nsm_mode = NSM_MODE_CHILD
         
         NSM_URL = os.getenv('NSM_URL')
+        if not NSM_URL:
+            NSM_URL=""
         
-        self.send(ray_daemon.address, '/ray/server/gui_announce', VERSION, int(under_nsm), NSM_URL)
+        save_all_from_saved_client = False
+        if MainUI in globals():
+            save_all_from_saved_client = MainUI.save_all_from_saved_client
+            
+        
+        self.send(ray_daemon.address, '/ray/server/gui_announce', 
+                  VERSION, 
+                  int(under_nsm), 
+                  NSM_URL,
+                  int(save_all_from_saved_client))
     
     def disannounce(self, src_addr):
         ifDebug('serverOSC::raysession_sends disannounce')
@@ -753,7 +764,7 @@ class MainWindow(QMainWindow):
         #set options with config file, restore geometry
         self.save_all_from_saved_client = settings.value('save_all_from_saved_client', True, type=bool)
         self.ui.actionSaveAllFromSavedClient.setChecked(self.save_all_from_saved_client)
-        serverOSC.toDaemon('/ray/option/save_from_client', int(self.save_all_from_saved_client))
+        #serverOSC.toDaemon('/ray/option/save_from_client', int(self.save_all_from_saved_client))
         
         self.keep_focus = settings.value('keepfocus', True, type=bool)
         self.ui.actionKeepFocus.setChecked(self.keep_focus)
@@ -954,15 +965,45 @@ class MainWindow(QMainWindow):
         self.flash_open_bool = not self.flash_open_bool
     
     def quitApp(self):
-        if session.isRunning() and (under_nsm or not ray_daemon.launched_before):
+        if ray_daemon.launched_before and not under_nsm:
+            self.quitAppNow()
+            return
+        
+        if session.isRunning():
             dialog = quitAppDialog(self)
             dialog.exec()
             if dialog.result():
-                QApplication.quit()
+                self.quitAppNow()
+                #QApplication.quit()
+                #self.quitAppNow()
+                
             
         else:
-            QApplication.quit()
+            self.quitAppNow()
+            #QApplication.quit()
+            
+            
+        #if session.isRunning() and (under_nsm or not ray_daemon.launched_before):
+            #dialog = quitAppDialog(self)
+            #dialog.exec()
+            #if dialog.result():
+                ##QApplication.quit()
+                #self.quitAppNow()
+            
+        #else:
+            ##self.quitAppNow()
+            #QApplication.quit()
     
+    def quitAppNow(self):
+        if ray_daemon.launched_before:
+            QApplication.quit()
+        else:
+            ray_daemon.stop()
+        
+        
+        #print('arret du démon')
+        #ray_daemon.stop()
+        
     def newClientTemplate(self, client_id):
         dialog = SaveTemplateClientDialog(self)
         dialog.exec()
@@ -2261,12 +2302,6 @@ class RayDaemon(QObject):
         self.announce_timer.setSingleShot(True)
         self.announce_timer.timeout.connect(self.announceTimerOut)
         
-        #should not exist (wa for workaround)
-        self.wa_timer = QTimer()
-        self.wa_timer.setInterval(5)
-        self.wa_timer.setSingleShot(True)
-        self.wa_timer.timeout.connect(self.showDaemonUrlWindow)
-        
         self.stopped_yet     = False
         self.is_local        = True
         self.launched_before = False
@@ -2282,8 +2317,13 @@ class RayDaemon(QObject):
     
     
     def processFinished(self, exit_code, exit_status):
+        if self.stopped_yet:
+            app.quit()
+            return
+        
         if not MainUI.isHidden():
             MainUI.daemonCrash()
+            return
             
     def errorInProcess(self, error):
         MainUI.daemonCrash()
@@ -2298,7 +2338,8 @@ class RayDaemon(QObject):
     
     def callDaemon(self):
         if not self.address:
-            self.wa_timer.start()
+            #I don't know really why, but it works only with a timer 
+            QTimer.singleShot(5, self.showDaemonUrlWindow)
             return
         
         self.announce_timer.start()
@@ -2317,7 +2358,8 @@ class RayDaemon(QObject):
     def receiveAnnounce(self, src_addr, version, server_status, nsm_locked, session_root):
         self.announce_timer.stop()
         
-        if version != VERSION:
+        if version.split('.')[:1] != VERSION.split('.')[:1]:
+            #works only if the two firsts digits are the same (ex: 0.6)
             signaler.daemon_url_request.emit(ERR_DAEMON_WRONG_VERSION, self.url)
             self.disannounce(src_addr)
             return
@@ -2331,9 +2373,6 @@ class RayDaemon(QObject):
             if type(full_strings) != list or len(full_strings) < 2:
                 continue
             
-            print('orjg')
-            print(full_strings)
-            print(src_addr.url, full_strings[0])
             if areOnSameMachine(src_addr.url, full_strings[0]):
                 if session_root in full_strings[1:]:
                     signaler.daemon_url_request.emit(ERR_DAEMON_FORBIDDEN_ROOT, self.url)
@@ -2409,6 +2448,10 @@ class RayDaemon(QObject):
             arguments.append('--debug-only')
         elif debug:
             arguments.append('--debug')
+            
+        if config_dir:
+            arguments.append('--config-dir')
+            arguments.append(config_dir)
         
         self.process.start('ray-daemon', arguments)
         #self.process.start('konsole', ['-e', 'ray-daemon'] + arguments) 
@@ -2422,19 +2465,11 @@ class RayDaemon(QObject):
             if not self.stopped_yet:
                 self.process.terminate()
                 self.stopped_yet = True
-            
-    def waitEnd(self):
-        if not self.processIsRunning():
-            return
-        
-        print('waiting for daemon to die', file=sys.stderr)
-        
-        for i in range(100):
-            if self.processIsRunning():
-                return
-            time.sleep(0.050)
-            
-        print('ray-daemon is still running, sorry !', file=sys.stderr)
+                QTimer.singleShot(5000, self.notEndedAfterWait)
+    
+    def notEndedAfterWait(self):
+        sys.stderr.write('ray-daemon is still running, sorry !\n')
+        app.quit()
     
     def setNewOscAddress(self):
         if not (self.address or self.port):
@@ -2597,13 +2632,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=_translate('help', 'A session manager based on the Non-Session-Manager API for sound applications.'))
     parser.add_argument('--daemon-url', '-u', type=getLibloAddress, help='connect to this daemon url')
     parser.add_argument('--out-daemon', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--config-dir', '-c', type=str, default='', help='use a custom config dir')
     parser.add_argument('--debug','-d',  action='store_true', help='display OSC messages')
     parser.add_argument('--debug-only','-do',  action='store_true', help='debug without client messages')
     parser.add_argument('--net-session-root', type=str, default='', help=argparse.SUPPRESS)
     parser.add_argument('--forbidden-root', dest='forbidden_roots', action='append', nargs='*', type=str, default=[], help=argparse.SUPPRESS)
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parsed_args = parser.parse_args()
-        
+    
+    
     debug      = parsed_args.debug
     debug_only = parsed_args.debug_only
     if debug_only:
@@ -2613,6 +2650,11 @@ if __name__ == '__main__':
     nsm_out_daemon   = parsed_args.out_daemon
     net_session_root = parsed_args.net_session_root
     forbidden_roots  = parsed_args.forbidden_roots
+    config_dir       = parsed_args.config_dir
+    
+    if config_dir and not os.access(config_dir, os.W_OK):
+        sys.stderr.write('%s is not a writable config dir, try another one\n' % config_dir)
+        sys.exit(1)
     
     #needed for signals SIGINT, SIGTERM
     timer = QTimer()
@@ -2626,11 +2668,13 @@ if __name__ == '__main__':
     
     if parsed_args.daemon_url:
         ray_daemon.setOscAddress(parsed_args.daemon_url)
-    
-    if not nsm_out_daemon:
+    elif not nsm_out_daemon:
         ray_daemon.setNewOscAddress()
     
-    settings = QSettings()
+    if config_dir:
+        settings = QSettings("%s/RaySession.conf" % config_dir)
+    else:
+        settings = QSettings()
     
     #get default folder
     default_folder = settings.value('default_folder', "%s/Ray Sessions" % os.getenv('HOME'), type=str )
@@ -2676,9 +2720,7 @@ if __name__ == '__main__':
     app.exec()
     
     serverOSC.stop()
-    ray_daemon.stop()
     MainUI.hide()
-    ray_daemon.waitEnd()
     
     del MainUI
     del app

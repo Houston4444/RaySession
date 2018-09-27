@@ -3,7 +3,7 @@ import argparse
 import liblo, socket
 import sys, os, shlex, subprocess
 from PyQt5.QtCore import QLocale, QTranslator, QT_VERSION_STR, QFile
-from PyQt5.QtGui  import QIcon
+from PyQt5.QtGui  import QIcon, QPalette
 
 #get qt version in list of ints
 QT_VERSION = []
@@ -246,7 +246,8 @@ def areTheyAllString(args):
             return False
     return True
 
-def getAppIcon(icon_name, dark):
+def getAppIcon(icon_name, widget):
+    dark = bool(widget.palette().brush(2, QPalette.WindowText).color().lightness() > 128)
     
     icon = QIcon.fromTheme(icon_name)
     
