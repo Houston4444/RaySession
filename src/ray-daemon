@@ -145,13 +145,6 @@ def quitRay(sig, frame):
         MESSAGE(_translate('GUIMSG', 'Good Bye !'))
     app.quit()
 
-class locked_net_root(object):
-    def __init__(self):
-        object.__init__(self)
-        self.machine = ''
-        #self.url   = ''
-        self.roots   = []
-
 class MultiDaemonFile(object):
     def __init__(self):
         self.file_path = '/tmp/RaySession/multi-daemon.xml'
@@ -264,7 +257,6 @@ class MultiDaemonFile(object):
     
     def isFreeForRoot(self, daemon_id, root_path):
         if not self.openFile():
-            print('pas ouvrir ficgier()')
             return True
         
         
@@ -743,19 +735,11 @@ class Client(ServerSender):
         if not self.isCapableOf(':ray-network:'):
             return
         
-        print('setnetwkprop')
-        print(net_daemon_url, net_session_root)
-        
         if net_daemon_url == self.net_daemon_url and net_session_root == self.net_session_root:
             return
         
-        #if self.net_daemon_url:
-            #self.session.unlockNetRootFolder(self.net_daemon_url, self.net_session_root)
-        
         self.net_daemon_url   = net_daemon_url
         self.net_session_root = net_session_root
-        
-        #self.session.lockNetRootFolder(net_daemon_url, net_session_root)
         
         self.arguments = '--daemon-url %s --net-session-root "%s"' % (self.net_daemon_url, self.net_session_root.replace('"', '\\"'))
     
@@ -833,35 +817,6 @@ class Client(ServerSender):
         if self.hasServer() and self.executable_path == 'ray-network':
             arguments.append('--net-daemon-id')
             arguments.append(str(server.net_daemon_id))
-        #if self.executable_path == 'ray-network' and not self.net_daemon_url:
-            ##for machine_roots in self.session.locked_net_roots:
-                ##arguments.append('--forbidden-root')
-                ##arguments.append(machine_roots.machine)
-                ##arguments += machine_roots.roots
-            #if self.hasServer():
-                #for machine, roots in server.locked_net_roots:
-                    #arguments.append('--forbidden-root')
-                    #arguments.append(machine)
-                    #arguments += roots
-                
-                #if areOnSameMachine(self.net_daemon_url, addr_and_roots.url):
-                    #print('ouuppaz')
-                    #arguments.append('--forbidden-roots')
-                    #for root_folder in addr_and_roots.roots:
-                        #print('rondei', root_folder)
-                        #arguments.append(root_folder)
-                    #break
-            
-        #if self.net_daemon_url:
-            #for addr_and_roots in self.session.locked_net_roots:
-                #if type(addr_and_roots) != list or len(addr_and_roots) < 2:
-                    #continue
-                #if areOnSameMachine(addr_and_roots[0], self.net_daemon_url):
-                    #arguments += 
-                    #for root_folder in addr_and_roots[1:]:
-                        #if root_folder == client.net_session_root:
-                            #self.sendError(ERR_NET_ROOT_RUNNING, _translate('error', 'rĝpl'))
-                            #return False
             
         self.process.start(self.executable_path, arguments)
         #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path] + arguments)
@@ -1368,14 +1323,8 @@ class Client(ServerSender):
         self.active       = True
         self.did_announce = True
         
-        print('zoeizaza')
-        print(known_as_non_active)
-        print(self.executable_path)
-        
         if self.executable_path in known_as_non_active:
-            print('removing %s from list' % self.executable_path) 
             known_as_non_active.remove(self.executable_path)
-            print(known_as_non_active)
         
         MESSAGE("Process has pid: %i" % pid )
         MESSAGE("The client \"%s\" at \"%s\" informs us it's ready to receive commands." % (self.name, self.addr.url) )
@@ -1411,8 +1360,6 @@ class Session(ServerSender):
         
         self.is_renameable = True
         self.forbidden_ids_list = []
-        
-        self.locked_net_roots = []
         
         self.file_copier = FileCopier(self)
     
@@ -1521,72 +1468,6 @@ class Session(ServerSender):
         
         if client.auto_start:
             client.start()
-    
-    #def initLockedNetRoot(self):
-        #if not self.hasServer():
-            #return
-        
-        ##print("zpeogkoko")
-        ##print(server.url)
-        ##print(self.root)
-        
-        #machine_roots = locked_net_root()
-        #machine_roots.machine = getThis192()
-        ##addr_and_roots.url = server.url
-        #machine_roots.roots.append(self.root)
-        #self.locked_net_roots.clear()
-        #self.locked_net_roots.append(machine_roots)
-    
-    #def lockNetRootFolder(self, url, root_folder, src_url=''):
-        #if not src_url:
-            #src_url = url
-                
-        #print('lockNet', url)
-                
-        #for machine_roots in self.locked_net_roots:
-            #if machine_roots.machine == getMachine192():
-                #if not root_folder in machine_roots.roots:
-                    #machine_roots.roots.append(root_folder)
-                #break
-        #else:
-            #machine_roots = locked_net_root()
-            #machine_roots.machine = getMachine192()
-            ##addr_and_roots.url = url
-            #machine_roots.roots.append(root_folder)
-            #self.locked_net_roots.append(machine_roots)
-        
-        #for client in self.clients:
-            #if client.net_daemon_url and not areSameOscPort(client.net_daemon_url, src_url):
-                #print('clienttt')
-                #print(client.net_daemon_url, src_url)
-                #self.send(Address(client.net_daemon_url), '/ray/net_daemon/lock_root', url, root_folder)
-        
-        #if self.hasServer() and server.net_master_daemon_url:
-            #if not areSameOscPort(server.net_master_daemon_url, src_url):
-                #print('masterrrr')
-                #print(server.net_master_daemon_url, src_url)
-                #self.send(Address(server.net_master_daemon_url), '/ray/net_daemon/lock_root', url, root_folder)
-                
-    #def unlockNetRootFolder(self, url, root_folder, src_url=''):
-        #if not src_url:
-            #src_url = url
-        
-        #for machine_roots in self.locked_net_roots:
-            #if machine_roots.machine == getMachine192():
-            ##if areOnSameMachine(addr_and_roots.url, url):
-                #if root_folder in machine_roots.roots:
-                    #machine_roots.roots.remove(root_folder)
-                    #if not machine_roots.roots:
-                        #self.locked_net_roots.remove(machine_roots)
-                #break
-            
-        #for client in self.clients:
-            #if client.net_daemon_url and not areSameOscPort(client.net_daemon_url, src_url):
-                #self.send(Address(client.net_daemon_url), '/ray/net_daemon/unlock_root', url, root_folder)
-        
-        #if self.hasServer() and server.net_master_daemon_url:
-            #if not areSameOscPort(server.net_master_daemon_url, src_url):
-                #self.send(Address(server.net_master_daemon_url), '/ray/net_daemon/unlock_root', url, root_folder)
     
     def tellAllClientsSessionIsLoaded(self):
         self.message("Telling all clients that session is loaded...")
@@ -1731,31 +1612,7 @@ class Session(ServerSender):
                 
     
     def addClient(self, client):
-        #if client.net_daemon_url:
-            #for machine_roots in self.locked_net_roots:
-                #if machine_roots.machine == getMachine192():
-                ##if areOnSameMachine(addr_and_roots.url, getUrl192(client.net_daemon_url)):
-                    #if client.net_session_root in machine_roots.roots:
-                        #self.sendError(ERR_NET_ROOT_RUNNING, 
-                                       #_translate('error', 'Impossible to add this Net Session, another net daemon uses "%s" as root folder on the same machine') % client.net_session_root)
-                        #return False
-                    
         self.clients.append(client)
-        
-        #if client.net_daemon_url:
-            #self.lockNetRootFolder(client.net_daemon_url, client.net_session_root)
-            #for other_client in self.clients:
-                #if other_client.client_id != client.client_id:
-                    #if other_client.net_daemon_url:
-                        #self.send(Address(other_client.net_daemon_url), '/ray/net_daemon/lock_root', client.net_daemon_url, client.net_session_root)
-                        
-            #if self.hasServer() and server.net_master_daemon_url:
-                #self.send(Address(server.net_master_daemon_url), '/ray/net_daemon/lock_root', client.net_daemon_url, client.net_session_root)
-        
-            #for addr_and_roots in self.locked_net_roots:
-                #for root_folder in addr_and_roots.roots:
-                    #self.send(Address(client.net_daemon_url), '/ray/net_daemon/lock_root', addr_and_roots.url, root_folder)
-            
         client.sendGuiClientProperties()
         return True
         
@@ -2207,7 +2064,6 @@ class OperatingSession(Session):
         if not os.path.exists(template_root):
             os.makedirs(template_root)
         
-        #machine_urls_already_seen = [server.url]
         
         #For network sessions, save as template the network session only if there is no other server on this same machine.
         #Else, one could erase template just created by another one.
@@ -2215,20 +2071,7 @@ class OperatingSession(Session):
         
         for client in self.clients:
             if client.net_daemon_url:
-                print("ya fu ozdne')")
-                #if self.hasServer() and not areOnSameMachine(client.net_daemon_url, server.url):
-                    #print('mais ebi sur")')
-                    #for machine_url in machine_urls_already_seen:
-                        #if areOnSameMachine(client.net_daemon_url, machine_url):
-                            #break
-                    #else:
-                        #machines_string = ''
-                        #for machine_url in machine_urls_already_seen:
-                            #machines_string += "%s;" % machine_url
-                        
                 self.send(Address(client.net_daemon_url), '/ray/session/save_as_template', self.name, template_name, client.net_session_root)
-                        
-                        #machine_urls_already_seen.append(client.net_daemon_url)
         
         self.setServerStatus(SERVER_STATUS_COPY)
         self.file_copier.startSessionCopy(self.path, spath, self.saveSessionTemplate_step_1, self.saveSessionTemplateAborted, [template_name, net])
@@ -3434,8 +3277,6 @@ class OscServerThread(ClientCommunicating):
         self.list_asker_addr = None
         
         self.option_save_from_client = True
-        
-        self.locked_net_roots = []
     
     @make_method('/osc/ping', '')
     def oscPing(self, path, args, types, src_addr):
@@ -3900,65 +3741,6 @@ class OscServerThread(ClientCommunicating):
     def rayDuplicateState(self, path, args, types, src_addr):
         signaler.net_duplicate_state.emit(src_addr, args[0])
     
-    #@make_method('/ray/net_daemon/update_locked_roots', 's')
-    #def rayNetUpdateLockeds(self, path, args, types, src_addr):
-        
-    #@make_method('/ray/net_daemon/lock_root', 'ss')
-    #def rayNetLockRoot(self, path, args, types, src_addr):
-        ##if not areTheyAllString():
-            ##return
-        
-        #machine, root_folder = args
-        
-        
-            
-        #self.lockRoot(machine, root_folder, src_addr)
-            
-        
-        
-        ##session.lockNetRootFolder(machine, root_folder, src_addr.url)
-        
-        
-        
-        
-        ##for addr_and_roots in session.locked_net_roots:
-            ##if areOnSameMachine(addr_and_roots.url, url):
-                ##if not root_folder in addr_and_roots.roots:
-                    ##addr_and_roots.roots.append(root_folder)
-                ##break
-        ##else:
-            ##addr_and_roots = locked_net_root()
-            ##addr_and_roots.url = url
-            ##addr_and_roots.roots.append(root_folder)
-            
-            ##session.locked_net_roots.append(addr_and_roots)
-            
-        ##for client in session.clients:
-            ##if client.net_daemon_url and not areSameOscPort(client.net_daemon_url, src_addr.url):
-                ##self.send(Address(client.net_daemon_url), '/ray/net_daemon/lock_root', url, root_folder)
-                
-        ##if self.net_master_daemon_url and not areSameOscPort(self.net_master_daemon_url, src_addr.url):
-            ##self.send(Address(self.net_master_daemon_url), '/ray/net_daemon/lock_root', url, root_folder)
-        
-    #@make_method('/ray/net_daemon/unlock_root', 'ss')
-    #def rayNetUnlockRoot(self, path, args, types, src_addr):
-        #machine, root_folder = args
-                        
-        
-                
-        
-        ##session.unlockNetRootFolder(machine, root_folder, src_addr.url)
-        
-        ##for addr_and_roots in session.locked_net_roots:
-            ##if areOnSameMachine(addr_and_roots.url, url):
-                ##if root_folder in addr_and_roots.roots:
-                    ##addr_and_roots.roots.remove(root_folder)
-                ##break
-        
-        #self.unlockRoot(machine, root_folder, src_addr)
-        
-        
-        
     @make_method('/ray/trash/restore', 's')
     def rayGuiTrashRestore(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -4105,70 +3887,6 @@ class OscServerThread(ClientCommunicating):
         
         self.sendGui('/ray/gui/session/renameable', 1)
     
-    #def lockRoot(self, machine, root_folder, src_addr):
-        #for m, roots in self.locked_net_roots:
-            #if m == machine:
-                #if root_folder in roots:
-                    #return
-                #else:
-                    #roots.append(root_folder)
-                    #break
-        #else:
-            #self.locked_net_roots.append([machine, [root_folder]])
-        
-        
-        #for client in session.clients:
-            #if client.net_daemon_url and not areSameOscPort(client.net_daemon_url, src_addr.url):
-                #print('send lock %s %s to %s' % (machine, root_folder, client.net_daemon_url))
-                #self.send(Address(client.net_daemon_url),  '/ray/net_daemon/lock_root', machine, root_folder)
-        
-        #if self.net_master_daemon_url and not areSameOscPort(self.net_master_daemon_url, src_addr.url):
-            #print('send lock %s %s to master %s' % (machine, root_folder, self.net_master_daemon_url))
-            #self.send(Address(self.net_master_daemon_url), '/ray/net_daemon/lock_root', machine, root_folder)
-    
-    #def unlockRoot(self, machine, root_folder, src_addr=None):
-        #for i in range(len(self.locked_net_roots)):
-            #m, roots = self.locked_net_roots[i]
-            #if m == machine:
-                #if not root_folder in roots:
-                    #return
-                #else:
-                    #roots.remove(root_folder)
-                    #if not roots:
-                        #self.locked_net_roots.__delitem__(i)
-                    #break
-        
-        #for client in session.clients:
-            #if client.net_daemon_url:
-                #if not src_addr or not areSameOscPort(client.net_daemon_url, src_addr.url):
-                    #print('send unlock %s %s to %s' % (machine, root_folder, client.net_daemon_url))
-                    ##self.send(Address(client.net_daemon_url), 
-                              ##'/ray/net_daemon/unlock_root', 
-                              ##machine, 
-                              ##root_folder)
-        
-        #if self.net_master_daemon_url:
-            #if not src_addr or not areSameOscPort(self.net_master_daemon_url, src_addr.url):
-                #print('send unlock %s %s to master %s' % (machine, root_folder, self.net_master_daemon_url))
-                ##self.send(Address(self.net_master_daemon_url), 
-                          ##'/ray/net_daemon/unlock_root', 
-                          ##machine, 
-                          ##root_folder)
-    
-    #def dispatchLockRoot(self, lock_url, lock_root, urls):
-        #for url in urls:
-            #self.send(Address(url), '/ray/net_daemon/lock_root', lock_url, lock_root)
-        
-        #if self.net_master_daemon_url:
-            #self.send(Address(self.net_master_daemon_url), '/ray/net_daemon/lock_root', lock_url, lock_root)
-            
-    #def dispatchUnlockRoot(self, lock_url, lock_root, urls):
-        #for url in urls:
-            #self.send(Address(url), '/ray/net_daemon/unlock_root', lock_url, lock_root)
-        
-        #if self.net_master_daemon_url:
-            #self.send(Address(self.net_master_daemon_url), '/ray/net_daemon/unlock_root', lock_url, lock_root)
-    
     def announceGui(self, url, nsm_locked=False, is_net_free=True):
         gui_addr = Address(url)
         
@@ -4293,10 +4011,7 @@ if __name__ == '__main__':
     timer.start()
     
     signaler    = Signaler()
-    #file_copier = FileCopier()
     session     = SignaledSession(session_root)
-    
-    #session.setRoot(session_root)
     
     if findfreeport:
         server = OscServerThread(getFreeOscPort(osc_num))
@@ -4309,8 +4024,6 @@ if __name__ == '__main__':
         
     
     server.start()
-    
-    #session.initLockedNetRoot()
     
     if gui_address:
         server.announceGui(gui_address.url)
