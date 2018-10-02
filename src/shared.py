@@ -205,10 +205,10 @@ def getUrl192(url):
     
     suffix_port = url.rpartition(':')[2]
     return "osc.udp://%s:%s" % (ip, suffix_port)
-  
-def getMachine192():
+
+def getThis192():
     global machine192
-    
+        
     if 'machine192' in globals():
         return machine192
 
@@ -219,7 +219,39 @@ def getMachine192():
         return ip
     except:
         return ''
-  
+
+def getMachine192(hostname=None):
+    if hostname == None:
+        return getThis192()
+        #global machine192
+        
+        #if 'machine192' in globals():
+            #return machine192
+
+        #try:
+            #ips = subprocess.check_output(['hostname', '-I']).decode()
+            #ip = ips.split(' ')[0]
+            #machine192 = ip
+            #return ip
+        #except:
+            #return ''
+    else:
+        if hostname in ('localhost', socket.gethostname()):
+            return getThis192()
+        
+        return socket.gethostbyname(hostname)
+
+def getMachine192ByUrl(url):
+    try:
+        addr = Address(url)
+    except:
+        return ''
+    
+    hostname = addr.hostname
+    del addr
+    
+    return getMachine192(hostname)
+
 def getNetUrl(port):
     try:
         ips = subprocess.check_output(['hostname', '-I']).decode()

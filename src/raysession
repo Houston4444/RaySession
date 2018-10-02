@@ -323,7 +323,7 @@ class TrashedClient(object):
         self.menu_action = menu_action
     
 class Signaler(QObject):
-    daemon_announce     = pyqtSignal(Address, str, int, int, str)
+    daemon_announce     = pyqtSignal(Address, str, int, int, str, int)
     daemon_announce_ok  = pyqtSignal()
     daemon_nsm_locked   = pyqtSignal(bool)
     server_copying      = pyqtSignal(bool)
@@ -445,16 +445,21 @@ class OSCServerT(ServerThread):
         signaler.factory_client_template_found.emit(args)
     
         
-    @make_method('/ray/gui/daemon_announce', 'siis')
+    @make_method('/ray/gui/daemon_announce', 'siisi')
     def serverAnnounce(self, path, args, types, src_addr):
         ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
         
         if ray_daemon.isAnnounced():
             return
         
-        version, server_status, is_nsm_locked, session_root = args
+        version, server_status, is_nsm_locked, session_root, is_net_free = args
         
-        signaler.daemon_announce.emit(src_addr, version, server_status, is_nsm_locked, session_root)
+        signaler.daemon_announce.emit(src_addr, 
+                                      version, 
+                                      server_status, 
+                                      is_nsm_locked, 
+                                      session_root, 
+                                      is_net_free)
     
     @make_method('/ray/gui/daemon_disannounce', '')
     def serverDisannounce(self, path, args, types, src_addr):
@@ -638,7 +643,8 @@ class OSCServerT(ServerThread):
                   VERSION, 
                   int(under_nsm), 
                   NSM_URL,
-                  int(save_all_from_saved_client))
+                  int(save_all_from_saved_client),
+                  net_daemon_id)
     
     def disannounce(self, src_addr):
         ifDebug('serverOSC::raysession_sends disannounce')
@@ -2355,7 +2361,7 @@ class RayDaemon(QObject):
             sys.stderr.write(_translate('error', "No announce from ray-daemon. RaySession can't works. Sorry.\n"))
             app.quit()
             
-    def receiveAnnounce(self, src_addr, version, server_status, nsm_locked, session_root):
+    def receiveAnnounce(self, src_addr, version, server_status, nsm_locked, session_root, is_net_free):
         self.announce_timer.stop()
         
         if version.split('.')[:1] != VERSION.split('.')[:1]:
@@ -2369,11 +2375,18 @@ class RayDaemon(QObject):
             self.disannounce(src_addr)
             return
         
+        if not is_net_free:
+            signaler.daemon_url_request.emit(ERR_DAEMON_WRONG_ROOT, self.url)
+            self.disannounce(src_addr)
+            return
+        
         for full_strings in forbidden_roots:
+            print('forbidden_roots on raysession')
+            print(full_strings)
             if type(full_strings) != list or len(full_strings) < 2:
                 continue
             
-            if areOnSameMachine(src_addr.url, full_strings[0]):
+            if getMachine192(src_addr.hostname) == full_strings[0]:
                 if session_root in full_strings[1:]:
                     signaler.daemon_url_request.emit(ERR_DAEMON_FORBIDDEN_ROOT, self.url)
                     self.disannounce(src_addr)
@@ -2637,6 +2650,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug-only','-do',  action='store_true', help='debug without client messages')
     parser.add_argument('--net-session-root', type=str, default='', help=argparse.SUPPRESS)
     parser.add_argument('--forbidden-root', dest='forbidden_roots', action='append', nargs='*', type=str, default=[], help=argparse.SUPPRESS)
+    parser.add_argument('--net-daemon-id', type=int, default=0, help=argparse.SUPPRESS)
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parsed_args = parser.parse_args()
     
@@ -2650,6 +2664,7 @@ if __name__ == '__main__':
     nsm_out_daemon   = parsed_args.out_daemon
     net_session_root = parsed_args.net_session_root
     forbidden_roots  = parsed_args.forbidden_roots
+    net_daemon_id    = parsed_args.net_daemon_id
     config_dir       = parsed_args.config_dir
     
     if config_dir and not os.access(config_dir, os.W_OK):
