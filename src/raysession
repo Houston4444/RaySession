@@ -984,37 +984,11 @@ class MainWindow(QMainWindow):
             dialog.exec()
             if dialog.result():
                 self.quitAppNow()
-                #QApplication.quit()
-                #self.quitAppNow()
-                
-            
         else:
             self.quitAppNow()
-            #QApplication.quit()
-            
-            
-        #if session.isRunning() and (under_nsm or not ray_daemon.launched_before):
-            #dialog = quitAppDialog(self)
-            #dialog.exec()
-            #if dialog.result():
-                ##QApplication.quit()
-                #self.quitAppNow()
-            
-        #else:
-            ##self.quitAppNow()
-            #QApplication.quit()
     
     def quitAppNow(self):
-        if ray_daemon.launched_before:
-            ray_daemon.disannounce()
-            QApplication.quit()
-        else:
-            print("yokolélé")
-            ray_daemon.stop()
-        
-        
-        #print('arret du démon')
-        #ray_daemon.stop()
+        ray_daemon.stop()
         
     def newClientTemplate(self, client_id):
         dialog = SaveTemplateClientDialog(self)
@@ -2331,8 +2305,7 @@ class RayDaemon(QObject):
     
     def processFinished(self, exit_code, exit_status):
         if self.stopped_yet:
-            print('jemenvais')
-            app.quit()
+            QApplication.quit()
             return
         
         if not MainUI.isHidden():
@@ -2384,21 +2357,10 @@ class RayDaemon(QObject):
             return
         
         if not is_net_free:
-            signaler.daemon_url_request.emit(ERR_DAEMON_WRONG_ROOT, self.url)
+            signaler.daemon_url_request.emit(ERR_DAEMON_FORBIDDEN_ROOT, self.url)
             self.disannounce(src_addr)
             return
         
-        for full_strings in forbidden_roots:
-            print('forbidden_roots on raysession')
-            print(full_strings)
-            if type(full_strings) != list or len(full_strings) < 2:
-                continue
-            
-            if getMachine192(src_addr.hostname) == full_strings[0]:
-                if session_root in full_strings[1:]:
-                    signaler.daemon_url_request.emit(ERR_DAEMON_FORBIDDEN_ROOT, self.url)
-                    self.disannounce(src_addr)
-                    return
                 
         if nsm_out_daemon and server_status != SERVER_STATUS_OFF:
             signaler.daemon_url_request.emit(ERR_DAEMON_NOT_OFF, self.url)
@@ -2417,13 +2379,6 @@ class RayDaemon(QObject):
         elif under_nsm:
             serverOSC.toDaemon('/ray/server/set_nsm_locked')
         
-        for full_strings in forbidden_roots:
-            if type(full_strings) != list or len(full_strings) < 2:
-                continue
-            
-            for root_folder in full_strings[1:]:
-                serverOSC.toDaemon('/ray/net_daemon/lock_root', full_strings[0], root_folder)
-        
         signaler.daemon_announce_ok.emit()
                 
     def disannounce(self, address=None):
@@ -2431,14 +2386,12 @@ class RayDaemon(QObject):
             address = self.address
         
         if address:
-            print('censé disannouncer')
             serverOSC.disannounce(address)
         self.port = None
         self.url  = ''
         del self.address
         self.address = None
         self.is_announced = False
-        QApplication.quit()
         
     def setExternal(self):
         self.launched_before = True
@@ -2482,13 +2435,11 @@ class RayDaemon(QObject):
     def stop(self):
         if self.launched_before:
             self.disannounce()
-            #app.quit()
+            QApplication.quit()
             return
             
         if self.processIsRunning():
-            print("aroum")
             if not self.stopped_yet:
-                print("arouemm")
                 self.process.terminate()
                 self.stopped_yet = True
                 QTimer.singleShot(5000, self.notEndedAfterWait)
@@ -2662,7 +2613,6 @@ if __name__ == '__main__':
     parser.add_argument('--debug','-d',  action='store_true', help='display OSC messages')
     parser.add_argument('--debug-only','-do',  action='store_true', help='debug without client messages')
     parser.add_argument('--net-session-root', type=str, default='', help=argparse.SUPPRESS)
-    parser.add_argument('--forbidden-root', dest='forbidden_roots', action='append', nargs='*', type=str, default=[], help=argparse.SUPPRESS)
     parser.add_argument('--net-daemon-id', type=int, default=0, help=argparse.SUPPRESS)
     parser.add_argument('-v', '--version', action='version', version=VERSION)
     parsed_args = parser.parse_args()
@@ -2676,7 +2626,6 @@ if __name__ == '__main__':
     
     nsm_out_daemon   = parsed_args.out_daemon
     net_session_root = parsed_args.net_session_root
-    forbidden_roots  = parsed_args.forbidden_roots
     net_daemon_id    = parsed_args.net_daemon_id
     config_dir       = parsed_args.config_dir
     
