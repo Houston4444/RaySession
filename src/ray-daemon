@@ -1399,7 +1399,6 @@ class Session(ServerSender):
         if self.name:
             return
         self.root = session_root
-        self.initLockedNetRoot()
     
     def setName(self, session_name):
         self.name = session_name
@@ -1451,9 +1450,6 @@ class Session(ServerSender):
         if client.getProjectFiles() or client.net_daemon_url:
             self.removed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
-            
-        if client.net_daemon_url:
-            self.unlockNetRootFolder(client.net_daemon_url, client.net_session_root)
         
         self.clients.remove(client)
     
@@ -3265,10 +3261,6 @@ class ClientCommunicating(ServerThread):
         
         net_daemon_url, net_session_root = args
         
-        
-        
-        self.lockRoot(getMachine192ByUrl(net_daemon_url), net_session_root, src_addr)
-        
         signaler.client_net_properties.emit(client.client_id, net_daemon_url, net_session_root)
 
 class OscServerThread(ClientCommunicating):
@@ -3311,6 +3303,8 @@ class OscServerThread(ClientCommunicating):
     @make_method('/ray/server/gui_disannounce', '')
     def rayGuiGui_disannounce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        print('gui_diiss')
         
         for addr in self.gui_list:
             if addr.url == src_addr.url:
