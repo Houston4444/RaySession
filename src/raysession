@@ -2233,6 +2233,8 @@ class DaemonUrlWindow(ChildDialog):
             error_text = _translate("url_window", "<p>daemon at<br><strong>%s</strong><br>uses a forbidden session root folder !<.p>") % ex_url
         elif err_code == ERR_DAEMON_WRONG_VERSION:
             error_text = _translate("url_window", "<p>daemon at<br><strong>%s</strong><br>uses an other Ray Session version.<.p>") % ex_url
+        else:
+            error_text = _translate("url window", "<p align=\"left\">To run a network session,<br>open a terminal on another computer of this network.<br>Launch ray-daemon on port 1234 (for example)<br>by typing the command :</p><p align=\"left\"><code>ray-daemon -p 1234</code></p><p align=\"left\">Then paste below the first url<br>that ray-daemon gives you at startup.</p><p></p>")
         
         self.ui.labelError.setText(error_text)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -2247,11 +2249,17 @@ class DaemonUrlWindow(ChildDialog):
             self.ui.lineEdit.setText(ex_url)
         elif last_tried_url:
             self.ui.lineEdit.setText(last_tried_url)
+            
         
     def getDaemonUrl(self):
         return self.ui.lineEdit.text()
     
     def allowUrl(self, text):
+        if not text:
+            self.ui.lineEdit.completer().complete()
+            self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+            return
+        
         if not text.startswith('osc.udp://'):
             self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
             return
@@ -2264,6 +2272,7 @@ class DaemonUrlWindow(ChildDialog):
             
     def getUrl(self):
         return self.ui.lineEdit.text()
+        
     
 class ErrorDialog(ChildDialog):
     def __init__(self, parent, osc_args):

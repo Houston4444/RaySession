@@ -4022,8 +4022,8 @@ if __name__ == '__main__':
     if gui_address:
         server.announceGui(gui_address.url)
         
-    MESSAGE(server.url)
     MESSAGE(getNetUrl(server.port))
+    MESSAGE(server.url)
     
     multi_daemon_file = MultiDaemonFile()
     multi_daemon_file.update()
