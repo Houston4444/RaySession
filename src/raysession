@@ -51,7 +51,6 @@ ERR_DAEMON_FORBIDDEN_ROOT  = -4
 ERR_DAEMON_NOT_NSM_LOCKED  = -5
 ERR_DAEMON_WRONG_VERSION   = -6 
 
-print('masi')
 def str2bool(v):
     return bool(v.lower() == 'true')
 
@@ -61,16 +60,12 @@ def remove_accents(input_str):
 
 def signalHandler(sig, frame):
     if sig in (SIGINT, SIGTERM):
-        print(sig, 'SIGTERM')
         if ray_daemon.launched_before:
             if under_nsm and session.server_status != SERVER_STATUS_OFF:
                 MainUI.terminate_request = True
                 serverOSC.abortSession()
-                print('session aboadn')
             else:
-                print('à deux doigts de quit')
                 ray_daemon.stop()
-                #app.quit()
             return
         
         MainUI.terminate_request = True
@@ -385,13 +380,13 @@ class OSCServerT(ServerThread):
     
     @make_method('/error', None)
     def errorFromServer(self, errorpath, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (errorpath, str(args)))
+        self.debugg(path, args)
         
         signaler.error_message.emit(args)
     
     @make_method('/reply', 'ss')
-    def receiveFromServer(self, path_reply, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path_reply, str(args)))
+    def receiveFromServer(self, path, args):
+        self.debugg(path, args)
         
         #if args[0] == '/ray/server/list_sessions':
             #session_name = args[1]
@@ -400,7 +395,7 @@ class OSCServerT(ServerThread):
     
     @make_method('/reply_sessions_list', None)
     def replySessionsList(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         if not areTheyAllString(args):
             return
@@ -411,7 +406,7 @@ class OSCServerT(ServerThread):
             
     @make_method('/reply_path', None)
     def replyPath(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         if not areTheyAllString(args):
             return
@@ -420,7 +415,7 @@ class OSCServerT(ServerThread):
     
     @make_method('/reply_session_templates', None)
     def replySessionTemplates(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         if not areTheyAllString(args):
             return
@@ -432,7 +427,7 @@ class OSCServerT(ServerThread):
     
     @make_method('/reply_user_client_templates', None)
     def replyUserClientTemplates(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         if not areTheyAllString(args):
             return
@@ -441,7 +436,7 @@ class OSCServerT(ServerThread):
     
     @make_method('/reply_factory_client_templates', None)
     def replyFactoryClientTemplates(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         if not areTheyAllString(args):
             return
@@ -451,7 +446,7 @@ class OSCServerT(ServerThread):
         
     @make_method('/ray/gui/daemon_announce', 'siisi')
     def serverAnnounce(self, path, args, types, src_addr):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         if ray_daemon.isAnnounced():
             return
@@ -467,19 +462,19 @@ class OSCServerT(ServerThread):
     
     @make_method('/ray/gui/daemon_disannounce', '')
     def serverDisannounce(self, path, args, types, src_addr):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         pass
     
     @make_method('/ray/gui/daemon_nsm_locked', 'i')
     def daemonNsmLocked(self, path, args, types, src_addr):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         nsm_locked = bool(args[0])
         
         signaler.daemon_nsm_locked.emit(nsm_locked)
     
     @make_method('/ray/gui/server/message', 's')
     def serverMessage(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
             
         message = args[0]
         signaler.new_message_sig.emit(message)
@@ -492,28 +487,28 @@ class OSCServerT(ServerThread):
     
     @make_method('/ray/gui/session/name', 'ss')
     def guiSessionName(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
             
         name1, name2 = args
         signaler.session_name_sig.emit(name1, name2)
     
     @make_method('/ray/gui/session/renameable', 'i')
     def guiSessionRenameable(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         renameable = bool(args[0])
         signaler.session_renameable.emit(renameable)
     
     @make_method('/ray/client/new', 'ssssissssi')
     def newClientFromServer(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         client_data = ClientData(*args)
         signaler.new_client_added.emit(client_data)
     
     @make_method('/ray/client/update', 'ssssissssi')
     def updateClientProperties(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         client_data = ClientData(*args)
         signaler.client_updated.emit(client_data)
@@ -521,7 +516,7 @@ class OSCServerT(ServerThread):
         
     @make_method('/ray/client/status', 'si')
     def guiClientStatus(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
             
         client_id, status = args
             
@@ -533,7 +528,7 @@ class OSCServerT(ServerThread):
         
     @make_method('/ray/client/switch', 'ss')
     def guiClientSwitch(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         old_client_id, new_client_id = args
         
@@ -541,7 +536,7 @@ class OSCServerT(ServerThread):
         
     @make_method('/ray/client/progress', 'sf')
     def guiClientProgress(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         client_id, progress = args
         
@@ -549,7 +544,7 @@ class OSCServerT(ServerThread):
         
     @make_method('/ray/client/dirty', 'si')
     def guiClientDirty(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
             
         client_id, dirty_num = args
         bool_dirty = bool(dirty_num)
@@ -558,28 +553,29 @@ class OSCServerT(ServerThread):
         
     @make_method('/ray/client/has_optional_gui', 's')
     def guiClientHasOptionalGui(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
             
         client_id = args[0]
         signaler.client_has_gui.emit(client_id)
         
     @make_method('/ray/client/gui_visible', 'si')
     def guiClientGuiVisible(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
             
         client_id, state = args
         signaler.client_gui_visible_sig.emit(client_id, bool(state))
       
     @make_method('/ray/client/still_running', 's')
     def guiClientStillRunning(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
             
         client_id = args[0]
         signaler.client_still_running.emit(client_id)
         
     @make_method('/ray/gui/server_progress', 'f')
     def guiServerProgress(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
+        
         progress = args[0]
         signaler.server_progress.emit(progress)
     
@@ -602,23 +598,26 @@ class OSCServerT(ServerThread):
     
     @make_method('/ray/trash/add', 'ssssissssi')
     def rayGuiTrashAdd(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         client_data = ClientData(*args)
         signaler.trash_add.emit(client_data)
         
     @make_method('/ray/trash/remove', 's')
     def rayGuiTrashRemove(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         client_id = args[0]
         signaler.trash_remove.emit(client_id)
         
     @make_method('/ray/trash/clear', '')
     def rayGuiTrashClear(self, path, args):
-        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
+        self.debugg(path, args)
         
         signaler.trash_clear.emit()
+    
+    def debugg(self, path, args):
+        ifDebug('serverOSC::raysession_receives %s, %s' % (path, str(args)))
     
     def toDaemon(self, *args):
         self.send(ray_daemon.address, *args)
@@ -736,6 +735,7 @@ class OSCServerT(ServerThread):
         
     def abortCopy(self):
         self.toDaemon('/ray/server/abort_copy')
+        
     #def 
 
 class RayIcon(QIcon):
@@ -1476,22 +1476,6 @@ class OpenSessionDialog(ChildDialog):
         
         self.server_will_accept = bool(server_status in (SERVER_STATUS_OFF, SERVER_STATUS_READY) and not self.server_copying)
         self.preventOk()
-        
-    #def addSession(self, session_name):
-        #if session_name == settings.value('last_session', type=str):
-            #self.f_last_session_item = QListWidgetItem(session_name)
-            #self.ui.sessionList.addItem(self.f_last_session_item)
-            #self.ui.sessionList.setCurrentItem(self.f_last_session_item)
-        #else:
-            #self.ui.sessionList.addItem(session_name)
-        
-        #self.ui.sessionList.sortItems()
-        
-        #if self.f_last_session_item:
-            #current_index = self.ui.sessionList.currentIndex()
-            #self.ui.sessionList.scrollTo(current_index)
-        #else:
-            #self.ui.sessionList.setCurrentRow(0)
         
     def addSessions(self, session_names):
         for session_name in session_names:

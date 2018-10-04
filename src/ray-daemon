@@ -3304,8 +3304,6 @@ class OscServerThread(ClientCommunicating):
     def rayGuiGui_disannounce(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        print('gui_diiss')
-        
         for addr in self.gui_list:
             if addr.url == src_addr.url:
                 break
