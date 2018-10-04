@@ -1,8 +1,2 @@
 #!/bin/bash
-
-echo lako
-for arg in "$@";do
-    echo "$arg"
-done
-
 exec raysession --out-daemon "$@"

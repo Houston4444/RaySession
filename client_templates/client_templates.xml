@@ -31,4 +31,5 @@
  <Client-Template template-name="Jack Mixer" icon="jack_mixer" client_id="jack_mixer" executable="ray-proxy" label="Jack Mixer" name="Ray Proxy" try-exec="jack_mixer"/>
  <Client-Template template-name="Non-Sequencer" executable="non-sequencer" name="Non-Sequencer" icon="non-sequencer" client_id="sequencer"/>
  <Client-Template template-name="JACK Connexions" icon="curve-connector" client_id="patch" executable="ray-jackpatch" name="Jack Connexions"/>
+ <Client-Template name="ray-network" label="Network Session" template-name="Network Session" icon="network-wired" executable="ray-network" client_id="network"/>
 </RAY-CLIENT-TEMPLATES>
