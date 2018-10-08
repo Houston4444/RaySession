@@ -30,6 +30,9 @@ class ClientSlot(QFrame):
         self.ui.closeButton.clicked.connect(self.removeClient)
         self.ui.lineEditClientStatus.copyAborted.connect(self.abortCopy)
         
+        self.icon_on  = QIcon()
+        self.icon_off = QIcon()
+        
         self.updateClientData()
         
         self.ui.actionSaveAsApplicationTemplate.triggered.connect(self.saveAsApplicationTemplate)
@@ -124,7 +127,16 @@ class ClientSlot(QFrame):
         self.ui.ClientName.setToolTip('Executable : ' + self.client.executable_path + '\n' + 'NSM id : ' + self.clientId())
         
         #set icon
-        self.ui.iconButton.setIcon(getAppIcon(self.client.icon_name, self))
+        self.icon_on  = getAppIcon(self.client.icon_name, self)
+        self.icon_off = QIcon(self.icon_on.pixmap(32, 32, QIcon.Disabled))
+        
+        self.grayIcon(bool(self.client.status in (CLIENT_STATUS_STOPPED, CLIENT_STATUS_PRECOPY)))
+        
+    def grayIcon(self, gray):
+        if gray:
+            self.ui.iconButton.setIcon(self.icon_off)
+        else:
+            self.ui.iconButton.setIcon(self.icon_on)
         
     def updateStatus(self, status):
         self.ui.lineEditClientStatus.setText(clientStatusString(status))
@@ -134,30 +146,30 @@ class ClientSlot(QFrame):
             self.ui.stopButton.setEnabled(True)
             self.ui.saveButton.setEnabled(False)
             self.ui.closeButton.setEnabled(False)
-            self.ui.iconButton.setEnabled(True)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
             self.ui.ClientName.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
+            self.grayIcon(False)
                 
         elif status == CLIENT_STATUS_READY:
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.closeButton.setEnabled(False)
-            self.ui.iconButton.setEnabled(True)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
             self.ui.ClientName.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
             self.ui.saveButton.setEnabled(True)
+            self.grayIcon(False)
             
         elif status == CLIENT_STATUS_STOPPED:
             self.ui.startButton.setEnabled(True)
             self.ui.stopButton.setEnabled(False)
             self.ui.saveButton.setEnabled(False)
             self.ui.closeButton.setEnabled(True)
-            self.ui.iconButton.setEnabled(False)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
+            self.grayIcon(True)
             
             self.ui.stopButton.setVisible(True)
             self.ui.killButton.setVisible(False)
@@ -169,10 +181,10 @@ class ClientSlot(QFrame):
             self.ui.stopButton.setEnabled(False)
             self.ui.saveButton.setEnabled(False)
             self.ui.closeButton.setEnabled(True)
-            self.ui.iconButton.setEnabled(False)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
+            self.grayIcon(True)
             
             self.ui.stopButton.setVisible(True)
             self.ui.killButton.setVisible(False)
