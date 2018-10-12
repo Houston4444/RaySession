@@ -1151,7 +1151,7 @@
     <message>
         <location filename="../src/shared.py" line="376"/>
         <source>noop</source>
-        <translation type="unfinished"></translation>
+        <translation>pas-op</translation>
     </message>
     <message>
         <location filename="../src/shared.py" line="378"/>
@@ -1190,7 +1190,7 @@
     <message>
         <location filename="../src/ray-daemon" line="4014"/>
         <source>Ray Network Sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Sessions de réseau Ray</translation>
     </message>
     <message>
         <location filename="../src/ray-daemon" line="4044"/>
