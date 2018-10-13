@@ -123,9 +123,11 @@ class ProxyDialog(QMainWindow):
                 self.ui.comboStopSig.setCurrentText(sig_str)
                 break
         
+        self.ui.checkBoxWaitWindow.setChecked(proxy_file.wait_window)
+        
         self.checkAllowStart()
         
-    def firstLaunch(self, executable, config_file, arguments_line, save_signal, stop_signal):
+    def firstLaunch(self, executable, config_file, arguments_line, save_signal, stop_signal, wait_window):
         self.ui.lineEditExecutable.setText(executable)
         self.ui.lineEditConfigFile.setText(config_file)
         self.ui.lineEditArguments.setText(arguments_line)
@@ -507,7 +509,7 @@ class ProxyFile(object):
         self.arguments_line = cte.attribute('arguments')
         save_signal         = cte.attribute('save_signal')
         stop_signal         = cte.attribute('stop_signal')
-        self.wait_window    = cte.attribute('wait_window')
+        self.wait_window    = bool(int(cte.attribute('wait_window')))
         
         
         file.close()
