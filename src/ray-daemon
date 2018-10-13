@@ -691,7 +691,6 @@ class Client(ServerSender):
                 if self.start_gui_hidden:
                     ctx.setAttribute('gui_visible', '0')
                     
-        #if self.isCapableOf(':ray-network:'):
         if self.net_session_template:
             ctx.setAttribute('net_session_template', self.net_session_template)
             
@@ -1071,13 +1070,6 @@ class Client(ServerSender):
             if self.net_daemon_url:
                 self.net_session_template = template_name
                 self.send(Address(self.net_daemon_url), '/ray/session/save_as_template', self.session.name, template_name, self.net_session_root)
-            
-            #if self.net_daemon_url:
-                #server.send(Address(self.net_daemon_url), '/ray/serve')
-            #if self.isCapableOf(':ray-network:'):
-                #if self.active:
-                    #self.sendToSelfAddress('/nsm/client/save_as_template', template_name)
-                    #self.net_session_template = template_name
             
             if client_files:
                 self.setStatus(CLIENT_STATUS_COPY)

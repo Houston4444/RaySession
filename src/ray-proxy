@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -u
 
-import os, sys, time, signal
+import os, sys, time, signal, shutil
 from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtCore import pyqtSignal, QObject, QTimer, QProcess, QSettings, QLocale, QTranslator, QFile
 from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QMainWindow
@@ -38,6 +38,9 @@ def ifDebug(string):
     if debug:
         #print(string, file=sys.stderr)
         sys.stderr.write(string + '\n')
+
+
+
 
 class ProxyCopyDialog(QDialog):
     def __init__(self):
@@ -189,8 +192,9 @@ class ProxyDialog(QMainWindow):
         arguments_line = self.ui.lineEditArguments.text()
         save_signal    = save_signals[self.ui.comboSaveSig.currentText()]
         stop_signal    = stop_signals[self.ui.comboStopSig.currentText()]
+        wait_window    = self.ui.checkBoxWaitWindow.isChecked()
         
-        proxy.proxy_file.saveFile(executable, config_file, arguments_line, save_signal, stop_signal)
+        proxy.proxy_file.saveFile(executable, config_file, arguments_line, save_signal, stop_signal, wait_window)
     
     def startProcess(self):
         self.saveProxyFile()
@@ -271,6 +275,8 @@ class Proxy(QObject):
         self.stop_signal    = signal.SIGTERM
         self.label          = None
         
+        self.wait_window    = False
+        
         self.timer_save = QTimer()
         self.timer_save.setSingleShot(True)
         self.timer_save.setInterval(300)
@@ -289,6 +295,12 @@ class Proxy(QObject):
         self.timer_close.start()
         self.process_start_time = time.time()
         
+        self.timer_window = QTimer()
+        self.timer_window.setInterval(100)
+        self.timer_window.timeout.connect(self.checkWindow)
+        self.timer_window_n = 0
+        
+        
         signaler.server_sends_open.connect(self.initialize)
         signaler.server_sends_save.connect(self.saveProcess)
         signaler.show_optional_gui.connect(self.showOptionalGui)
@@ -296,6 +308,71 @@ class Proxy(QObject):
     
     def isRunning(self):
         return bool(self.process.state() == QProcess.Running)
+    
+    def checkWindow(self):
+        self.timer_window_n+=1
+        
+        if self.timer_window_n > 600:
+            #600 x 50ms = 30s max until ray-proxy replyOpen to Session Manager
+            self.checkWindowEnded()
+            return
+        
+        try:
+            #get all windows and their PID with wmctrl
+            wmctrl_all = subprocess.check_output(['wmctrl', '-l', '-p']).decode()
+        except:
+            self.checkWindowEnded()
+            return
+        
+        if not wmctrl_all:
+            self.checkWindowEnded()
+            return
+        
+        all_lines = wmctrl_all.split('\n')
+        pids = []
+        
+        #get all windows pids
+        for line in all_lines:
+            if not line:
+                continue
+            
+            line_sep = line.split(' ')
+            non_empt = []
+            for el in line_sep:
+                if el:
+                    non_empt.append(el)
+            
+            if len(non_empt) >= 3 and non_empt[2].isdigit():
+                pids.append(int(non_empt[2]))
+            else:
+                #window manager seems to not work correctly with wmctrl, so replyOpen now
+                self.checkWindowEnded()
+                return
+            
+        parent_pid = self.process.pid()
+            
+        #check in pids if one comes from this ray-proxy
+        for pid in pids:
+            if pid < parent_pid:
+                continue
+            
+            ppid = pid
+            
+            while ppid != parent_pid and ppid > 1:
+                try:
+                    ppid = int(subprocess.check_output(['ps', '-o', 'ppid=', '-p', str(ppid)]))
+                except:
+                    self.checkWindowEnded()
+                    return
+                
+            if ppid == parent_pid:
+                #a window appears with a pid child of this ray-proxy, replyOpen
+                QTimer.singleShot(200, self.checkWindowEnded)
+                break
+            
+    def checkWindowEnded(self):
+        self.timer_window.stop()
+        server.openReply()
     
     def processFinished(self, exit_code):
         if self.is_finishable:
@@ -371,7 +448,11 @@ class Proxy(QObject):
         server.saveReply()
     
     def timerOpenFinished(self):
-        server.openReply()
+        if self.proxy_file.wait_window:
+            self.timer_window.start()
+        else:
+            server.openReply()
+            
         if self.isRunning() and proxy_dialog.isVisible():
             proxy_dialog.close()
     
@@ -400,6 +481,7 @@ class ProxyFile(object):
         self.args_line   = ''
         self.save_signal = None
         self.stop_signal = signal.SIGTERM
+        self.wait_window = False
         
         self.is_launchable = False
         
@@ -425,6 +507,7 @@ class ProxyFile(object):
         self.arguments_line = cte.attribute('arguments')
         save_signal         = cte.attribute('save_signal')
         stop_signal         = cte.attribute('stop_signal')
+        self.wait_window    = cte.attribute('wait_window')
         
         
         file.close()
@@ -469,7 +552,7 @@ class ProxyFile(object):
         
         self.is_launchable = True
     
-    def saveFile(self, executable, config_file, arguments_line, save_signal, stop_signal):
+    def saveFile(self, executable, config_file, arguments_line, save_signal, stop_signal, wait_window):
         try:
             file = open(self.path, 'w')
         except:
@@ -486,6 +569,7 @@ class ProxyFile(object):
         p.setAttribute('config_file', config_file)
         p.setAttribute('save_signal', str(int(save_signal)))
         p.setAttribute('stop_signal', str(int(save_signal)))
+        p.setAttribute('wait_window', wait_window)
         
         xml.appendChild(p)
         

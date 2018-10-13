@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>463</width>
-    <height>282</height>
+    <height>304</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -74,8 +74,7 @@
          </property>
          <property name="icon">
           <iconset theme="folder-open">
-           <normaloff/>
-          </iconset>
+           <normaloff>.</normaloff>.</iconset>
          </property>
          <property name="toolButtonStyle">
           <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -104,6 +103,19 @@
        </item>
       </layout>
      </widget>
+    </item>
+    <item>
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
     </item>
     <item>
      <widget class="QGroupBox" name="groupBox_3">
@@ -158,29 +170,22 @@
          </property>
          <property name="icon">
           <iconset theme="send-to-symbolic">
-           <normaloff/>
-          </iconset>
+           <normaloff>.</normaloff>.</iconset>
          </property>
          <property name="toolButtonStyle">
           <enum>Qt::ToolButtonTextBesideIcon</enum>
          </property>
         </widget>
        </item>
+       <item row="2" column="0" colspan="3">
+        <widget class="QCheckBox" name="checkBoxWaitWindow">
+         <property name="text">
+          <string>Wait window before reply (needs wmctrl)</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
-    </item>
-    <item>
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
     </item>
     <item>
      <widget class="QLabel" name="labelError">
@@ -217,8 +222,7 @@
         </property>
         <property name="icon">
          <iconset theme="media-playback-start">
-          <normaloff/>
-         </iconset>
+          <normaloff>.</normaloff>.</iconset>
         </property>
        </widget>
       </item>
@@ -229,8 +233,7 @@
         </property>
         <property name="icon">
          <iconset theme="media-playback-stop">
-          <normaloff/>
-         </iconset>
+          <normaloff>.</normaloff>.</iconset>
         </property>
        </widget>
       </item>
