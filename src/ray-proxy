@@ -126,13 +126,6 @@ class ProxyDialog(QMainWindow):
         self.ui.checkBoxWaitWindow.setChecked(proxy_file.wait_window)
         
         self.checkAllowStart()
-        
-    def firstLaunch(self, executable, config_file, arguments_line, save_signal, stop_signal, wait_window):
-        self.ui.lineEditExecutable.setText(executable)
-        self.ui.lineEditConfigFile.setText(config_file)
-        self.ui.lineEditArguments.setText(arguments_line)
-        self.yet_connected = True
-        self.show()
     
     def browseFile(self):
         config_file, ok = QFileDialog.getOpenFileName(self, _translate('Dialog', 'Select File to use as CONFIG_FILE'))
