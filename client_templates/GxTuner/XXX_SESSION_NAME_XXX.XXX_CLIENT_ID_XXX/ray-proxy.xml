@@ -1,3 +1,3 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE RAY-PROXY>
-<RAY-PROXY arguments="http://guitarix.sourceforge.net/plugins/gxtuner#tuner&#xa;" save_signal="10" VERSION="0.3.0" stop_signal="10" config_file="" executable="carla-single"/>
+<RAY-PROXY arguments="http://guitarix.sourceforge.net/plugins/gxtuner#tuner&#xa;" save_signal="10" VERSION="0.3.0" stop_signal="10" config_file="" executable="carla-single" wait_window="1"/>

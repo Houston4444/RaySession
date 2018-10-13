@@ -1,3 +1,3 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE RAY-PROXY>
-<RAY-PROXY executable="rosegarden" save_signal="10" stop_signal="10" config_file="$RAY_SESSION_NAME.rg" arguments="&quot;$CONFIG_FILE&quot;" label="Rosegarden" icon="rosegarden" VERSION="0.3.0"/>
+<RAY-PROXY executable="rosegarden" save_signal="10" stop_signal="10" config_file="$RAY_SESSION_NAME.rg" arguments="&quot;$CONFIG_FILE&quot;" label="Rosegarden" icon="rosegarden" VERSION="0.3.0" wait_window="1"/>
