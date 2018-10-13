@@ -1,5 +1,5 @@
 <RAY-CLIENT-TEMPLATES>
- <Client-Template template-name="Hydrogen" executable="hydrogen" label="Hydrogen"  name="Hydrogen" icon="h2-icon" client_id="hydrogen" needed-version="1.0.0"/>
+<!--  <Client-Template template-name="Hydrogen" executable="hydrogen" label="Hydrogen"  name="Hydrogen" icon="h2-icon" client_id="hydrogen" needed-version="1.0.0"/> -->
  <Client-Template template-name="Hydrogen" executable="ray-proxy" label="Hydrogen"  name="Ray Proxy" icon="h2-icon" client_id="hydrogen"/>
  <Client-Template template-name="Ardour" executable="ardour"  name="Ardour" icon="ardour" client_id="ardour"/>
  <Client-Template template-name="Ardour6" executable="Ardour6"  name="Ardour" icon="ardour" client_id="ardour"/>
