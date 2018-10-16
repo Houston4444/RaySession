@@ -34,7 +34,6 @@ raysession: src/ui_abort_copy.py src/ui_abort_session.py src/ui_about_raysession
 	    src/ui_nsm_open_info.py src/ui_open_session.py src/ui_proxy_copy.py src/ui_proxy_gui.py src/ui_quit_app.py \
 	    src/ui_raysession.py src/ui_save_template_session.py src/ui_stop_client.py
 
-
 src/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
 # -----------------------------------------------------------------------------------------------------------------------------------------
