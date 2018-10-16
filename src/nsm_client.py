@@ -7,6 +7,7 @@ import os, sys
 class NSMSignaler(QObject):
     server_sends_open = pyqtSignal(str, str, str)
     server_sends_save = pyqtSignal()
+    session_is_loaded = pyqtSignal()
     show_optional_gui = pyqtSignal()
     hide_optional_gui = pyqtSignal()
 
@@ -27,6 +28,11 @@ class NSMThread(ServerThread):
     def nsmClientSave(self, path, args):
         self.ifDebug('serverOSC::%s_receives %s, %s' % (self.name, path, str(args)))
         self.signaler.server_sends_save.emit()
+        
+    @make_method('/nsm/client/session_is_loaded', '')
+    def nsmClientSessionIsLoaded(self, path, args):
+        self.ifDebug('serverOSC::%s_receives %s, %s' % (self.name, path, str(args)))
+        self.signaler.session_is_loaded.emit()
         
     @make_method('/nsm/client/show_optional_gui', '')
     def nsmClientShow_optional_gui(self, path, args):
