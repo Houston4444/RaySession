@@ -502,8 +502,13 @@ class ProxyFile(object):
         self.arguments_line = cte.attribute('arguments')
         save_signal         = cte.attribute('save_signal')
         stop_signal         = cte.attribute('stop_signal')
-        self.wait_window    = bool(int(cte.attribute('wait_window')))
         
+        wait_window = cte.attribute('wait_window')
+        
+        if wait_window.isdigit():
+            self.wait_window = bool(int(wait_window))
+        else:
+            self.wait_window = False
         
         file.close()
         

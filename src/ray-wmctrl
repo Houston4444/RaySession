@@ -46,9 +46,12 @@ def isChildOfDaemon(pid):
     if daemon_pid == 0:
         return True
     
+    if pid < daemon_pid:
+        return False
+    
     ppid = pid
     
-    while ppid != daemon_pid and ppid > 1:
+    while ppid > daemon_pid and ppid > 1:
         try:
             ppid = int(subprocess.check_output(['ps', '-o', 'ppid=', '-p', str(ppid)]))
         except:
