@@ -2,12 +2,14 @@
 
 import sys, os
 import pathlib
+from PyQt5.QtCore import QSettings
+from PyQt5.QtXml  import QDomDocument, QDomText
 
-STATE_OFF       = 0
-STATE_WRITTEN   = 1
-STATE_NO_CONFIG = 2
-STATE_PERMANENT = 3
-STATE_ERROR     = 4
+#STATE_OFF       = 0
+#STATE_WRITTEN   = 1
+#STATE_NO_CONFIG = 2
+#STATE_PERMANENT = 3
+#STATE_ERROR     = 4
 
 class PickerType(object):
     def __init__(self, config_path):
@@ -30,7 +32,6 @@ class PickerType(object):
             except:
                 return None
         else:
-            print('no cffu', self.config_path)
             return ""
         
     def printContents(self, contents):
@@ -133,13 +134,12 @@ class PickerTypeFltk(PickerType):
                         line += spath
                         empty_fav = True
                 
-            #else:
             if line or not fav0_found:
                 contents+= "%s\n" % line
         
         if not empty_fav:
             num+=1
-            contents+="favorite%.2d:%s" % (num, spath)
+            contents += "favorite%.2d:%s" % (num, spath)
             
         if self.printContents(contents):
             self.written = True
@@ -183,28 +183,149 @@ class PickerTypeFltk(PickerType):
         if self.printContents(contents):
             self.written = False
 
+class PickerTypeQt5(PickerType):
+    def makeBookmark(self, spath):
+        if self.written:
+            return
+        
+        if not os.path.exists(self.config_path):
+            #do not write shortcuts if file was not created by Qt5 himself
+            return
+        
+        url = pathlib.Path(spath).as_uri()
+        
+        settings = QSettings(self.config_path, QSettings.IniFormat)
+        shortcuts = settings.value('FileDialog/shortcuts', type=list)
+        
+        if url in shortcuts:
+            return
+        
+        shortcuts.append(url)
+        
+        
+        if settings.setValue('FileDialog/shortcuts', shortcuts):
+            settings.sync()
+            self.written = True
+            
+    def removeBookmark(self, spath):
+        if not self.written:
+            return
+        
+        if not os.path.exists(self.config_path):
+            self.written = False
+            return
+        
+        url = pathlib.Path(spath).as_uri()
+        
+        settings = QSettings(self.config_path, QSettings.IniFormat)
+        shortcuts = settings.value('FileDialog/shortcuts', type=list)
+        
+        if not url in shortcuts:
+            self.written = False
+            return
+        
+        shortcuts.remove(url)
+        
+        if settings.setValue('FileDialog/shortcuts', shortcuts):
+            settings.sync()
+            self.written = False
+
+class PickerTypeKde5(PickerType):
+    def makeBookmark(self, spath):
+        if self.written:
+            return
+        
+        contents = self.getContents()
+        if not contents:
+            #we won't write a file for kde5 if file doesn't already exists
+            return
+        
+        url = pathlib.Path(spath).as_uri()
+        
+        xml = QDomDocument()
+        xml.setContent(contents)
+        content = xml.documentElement()
+        if content.tagName() != 'xbel':
+            return
+        
+        node = content.firstChild()
+        while not node.isNull():
+            el = node.toElement()
+            if el.tagName() == 'bookmark':
+                if el.attribute('href') == url:
+                    #bookmark already exists
+                    return
+            
+            node = node.nextSibling()
+        
+        bk = xml.createElement('bookmark')
+        bk.setAttribute('href', url)
+        title = xml.createElement('title')
+        title_text = xml.createTextNode(os.path.basename(spath))
+        title.appendChild(title_text)
+        bk.appendChild(title)
+        content.appendChild(bk)
+        
+        if self.printContents(xml.toString()):
+            self.written = True
+            
+            
+    def removeBookmark(self, spath):
+        if not self.written:
+            return
+        
+        contents = self.getContents()
+        if not contents:
+            self.written = False
+            return
+        
+        url = pathlib.Path(spath).as_uri()
+        
+        xml = QDomDocument()
+        xml.setContent(contents)
+        content = xml.documentElement()
+        if content.tagName() != 'xbel':
+            return
+        
+        node = content.firstChild()
+        while not node.isNull():
+            el = node.toElement()
+            if el.tagName() == 'bookmark':
+                if el.attribute('href') == url:
+                    content.removeChild(node)
+                    break
+            
+            node = node.nextSibling()
+        else:
+            self.written = False
+            return
+        
+        if self.printContents(xml.toString()):
+            self.written = False
+        
+        
 class BookmarkMaker(object):
     def __init__(self):
         HOME = os.getenv('HOME')
         self.gtk2 = PickerTypeGtk("%s/.gtk-bookmarks" % HOME)
         self.gtk3 = PickerTypeGtk("%s/.config/gtk-3.0/bookmarks" % HOME)
         self.fltk = PickerTypeFltk("%s/.fltk/fltk.org/filechooser.prefs" % HOME)
-        self.kde5 = PickerType("%s/.local/share/user-places.xbel" % HOME)
-        self.qt4  = PickerType("%s/.config/Trolltech.conf" % HOME) #but seems impossible
-        self.qt5  = PickerType("%s/.config/QtProject.conf" % HOME)
+        self.kde5 = PickerTypeKde5("%s/.local/share/user-places.xbel" % HOME)
+        #self.qt4  = PickerType("%s/.config/Trolltech.conf" % HOME) #seems impossible
+        self.qt5  = PickerTypeQt5("%s/.config/QtProject.conf" % HOME)
         
     def makeAll(self, spath):
-        for picker in (self.gtk2, self.gtk3, self.fltk):
+        for picker in (self.gtk2, self.gtk3, self.fltk, self.kde5, self.qt5):
             picker.makeBookmark(spath)
         
     def removeAll(self, spath):
-        for picker in (self.gtk2, self.gtk3, self.fltk):
+        for picker in (self.gtk2, self.gtk3, self.fltk, self.kde5, self.qt5):
             picker.written = True
             picker.removeBookmark(spath)
         
 if __name__ == '__main__':
     bm_maker = BookmarkMaker()
-    bm_maker.removeAll(sys.argv[1])
+    bm_maker.makeAll(sys.argv[1])
     
         
         
