@@ -1,0 +1,7 @@
+gtk2: .gtk-bookmarks
+gtk3: .config/gtk-3.0/bookmarks
+fltk: .fltk/fltk.org/filechooser.prefs
+kde : .local/share/user-places.xbel
+qt4 : .config/Trolltech.conf #but seems impossible
+qt5 : .config/QtProject.conf
+wine: add link to Desktop

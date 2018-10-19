@@ -133,11 +133,12 @@ def getActiveWindowList():
             
     return active_window_list
 
-def openFile(project_path, session_name, full_client_id):
+def openFile(project_path, session_name_in, full_client_id):
     saved_windows.clear()
     
-    global file_path
+    global file_path, session_name
     file_path = "%s.xml" % project_path
+    session_name = session_name_in
     
     if os.path.isfile(file_path):
         try:
@@ -241,9 +242,13 @@ def sessionIsLoaded():
             if awin.wclass == win.wclass and awin.name == win.name:
                 win.id = awin.id
                 moveWin(awin.id, awin.desktop, win.desktop)
-                break
-            
-            
+                
+            elif awin.wclass == win.wclass:
+                if session_name:
+                    win_name_sps = win.name.split(session_name, 1)
+                    if len(win_name_sps) == 2:
+                        if awin.name.startswith(win_name_sps[0]) and awin.name.endswith(win_name_sps[1]):
+                            moveWin(awin.id, awin.desktop, win.desktop)
             
             
             
@@ -258,6 +263,8 @@ if __name__ == '__main__':
         sys.exit()
     
     daemon_address = getLibloAddress(NSM_URL)
+    
+    session_name = ''
     
     signaler = Signaler()
     signaler.server_sends_open.connect(openFile)

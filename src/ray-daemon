@@ -145,6 +145,28 @@ def quitRay(sig, frame):
         MESSAGE(_translate('GUIMSG', 'Good Bye !'))
     app.quit()
 
+class BookmarkMaker(object):
+    def __init__(self):
+        HOME = os.getenv('HOME')
+        self.gtk2_path = "%s/.gtk-bookmarks" % HOME
+        self.gtk3_path = "%s/.config/gtk-3.0/bookmarks" % HOME
+        self.fltk_path = "%s/.fltk/fltk.org/filechooser.prefs" % HOME
+        self.kde5_path = "%s/.local/share/user-places.xbel" % HOME
+        self.qt4_path  = "%s/.config/Trolltech.conf" % HOME #but seems impossible
+        self.qt5_path  = "%s/.config/QtProject.conf" % HOME
+        
+    def makeBookmarks(self, spath):
+        #gtk2
+        try:
+            gtk2_file = open(self.gtk2_file)
+        except:
+            pass
+        
+        contents = gtk2_file.read()
+        
+    
+    
+
 class MultiDaemonFile(object):
     def __init__(self):
         self.file_path = '/tmp/RaySession/multi-daemon.xml'
