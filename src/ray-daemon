@@ -6,6 +6,7 @@ from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject, QTimer, QProcess
 from PyQt5.QtXml import QDomDocument
 
 from shared import *
+from bookmarker import BookMarker
 
 
 
@@ -1376,6 +1377,8 @@ class Session(ServerSender):
         self.forbidden_ids_list = []
         
         self.file_copier = FileCopier(self)
+        
+        self.bookmarker = BookMarker()
     
     #############
     def oscReply(self, *args):
@@ -1418,9 +1421,18 @@ class Session(ServerSender):
         self.name = session_name
     
     def setPath(self, session_path):
+        if self.path:
+            self.bookmarker.removeAll(self.path)
+            self.bookmarker.saveStates(settings, self.path)
+        
         self.path = session_path
         self.setName(session_path.rpartition('/')[2])
+        
         multi_daemon_file.update()
+        
+        if self.path:
+            self.bookmarker.makeAll(self.path)
+            self.bookmarker.saveStates(settings, self.path)
     
     def getClient(self, client_id):
         for client in self.clients:

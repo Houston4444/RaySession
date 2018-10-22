@@ -2,8 +2,10 @@
 
 import sys, os
 import pathlib
-from PyQt5.QtCore import QSettings
+from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
 from PyQt5.QtXml  import QDomDocument, QDomText
+
+QFileDialogMagic = 190
 
 #STATE_OFF       = 0
 #STATE_WRITTEN   = 1
@@ -98,8 +100,8 @@ class PickerTypeGtk(PickerType):
             if url:
                 contents += "%s\n" % url
         
-        if self.printContents(contents):
-            self.written = False
+        self.printContents(contents)
+        self.written = False
         
 class PickerTypeFltk(PickerType):
     def makeBookmark(self, spath):
@@ -180,8 +182,159 @@ class PickerTypeFltk(PickerType):
             else:
                 contents+= "%s\n" % line
                     
-        if self.printContents(contents):
+        self.printContents(contents)
+        self.written = False
+
+class PickerTypeQt4(PickerType):
+    def makeBookmark(self, spath):
+        if self.written:
+            return
+        
+        if not os.path.exists(self.config_path):
+            #do not write shortcuts if file was not created by Qt4 himself
+            return
+        
+        url = pathlib.Path(spath).as_uri()
+        
+        settings = QSettings(self.config_path, QSettings.IniFormat)
+        if not settings.isWritable():
+            return
+        
+        data = settings.value('Qt/filedialog')
+        stream = QDataStream(data, QIODevice.ReadOnly)
+        
+        magic   = stream.readUInt32()
+        version = stream.readUInt32()
+        if not (magic == QFileDialogMagic and version == 3):
+            return
+        
+        split_states = stream.readBytes()
+        
+        bookmarks_len = stream.readUInt32()
+        bookmarks = []
+        for bm in range(bookmarks_len):
+            qUrl = QUrl()
+            stream >> qUrl
+            
+            if qUrl.url() == url:
+                #spath already in qt4 bookmarks
+                return
+            
+            bookmarks.append(qUrl)
+            
+            
+        history_len = stream.readUInt32()
+        history = []
+        for h in range(history_len):
+            his = stream.readQString()
+            history.append(his)
+            
+        current_dir = stream.readQString()
+        header_data = stream.readBytes()
+        view_mode   = stream.readUInt32()
+        
+        
+        #now rewrite bytes
+        
+        new_data = QByteArray()
+        new_stream = QDataStream(new_data, QIODevice.WriteOnly)
+        
+        new_stream.writeUInt32(magic)
+        new_stream.writeUInt32(3)
+        new_stream.writeBytes(split_states)
+        new_stream.writeUInt32(bookmarks_len+1)
+        for bm in bookmarks:
+            new_stream << bm
+            
+        qUrl = QUrl(url)
+        new_stream << qUrl
+        
+        new_stream.writeQStringList(history)
+        new_stream.writeQString(current_dir)
+        new_stream.writeBytes(header_data)
+        new_stream.writeUInt32(view_mode)
+        
+        settings.setValue('Qt/filedialog', new_data)
+        settings.sync()
+        
+        self.written = True
+    
+    def removeBookmark(self, spath):
+        if not self.written:
+            return
+        
+        if not os.path.exists(self.config_path):
             self.written = False
+            return
+        
+        url = pathlib.Path(spath).as_uri()
+        
+        settings = QSettings(self.config_path, QSettings.IniFormat)
+        if not settings.isWritable():
+            self.written = False
+            return
+        
+        data = settings.value('Qt/filedialog')
+        stream = QDataStream(data, QIODevice.ReadOnly)
+        
+        magic   = stream.readUInt32()
+        version = stream.readUInt32()
+        if not (magic == QFileDialogMagic and version == 3):
+            self.written = False
+            return
+        
+        split_states = stream.readBytes()
+        
+        bookmark_found = False
+        bookmarks_len = stream.readUInt32()
+        bookmarks = []
+        for bm in range(bookmarks_len):
+            qUrl = QUrl()
+            stream >> qUrl
+            
+            if qUrl.url() == url:
+                bookmark_found = True
+            else:
+                bookmarks.append(qUrl)
+            
+        if not bookmark_found:
+            self.written = False
+            return
+        
+        history_len = stream.readUInt32()
+        history = []
+        for h in range(history_len):
+            his = stream.readQString()
+            history.append(his)
+            
+        current_dir = stream.readQString()
+        header_data = stream.readBytes()
+        view_mode   = stream.readUInt32()
+        
+        #now rewrite bytes
+        
+        new_data = QByteArray()
+        new_stream = QDataStream(new_data, QIODevice.WriteOnly)
+        
+        new_stream.writeUInt32(magic)
+        new_stream.writeUInt32(3)
+        new_stream.writeBytes(split_states)
+        new_stream.writeUInt32(bookmarks_len-1)
+        for bm in bookmarks:
+            new_stream << bm
+            
+        qUrl = QUrl(url)
+        new_stream << qUrl
+        
+        new_stream.writeQStringList(history)
+        new_stream.writeQString(current_dir)
+        new_stream.writeBytes(header_data)
+        new_stream.writeUInt32(view_mode)
+        
+        settings.setValue('Qt/filedialog', new_data)
+        settings.sync()
+        
+        self.written = False
 
 class PickerTypeQt5(PickerType):
     def makeBookmark(self, spath):
@@ -195,6 +348,9 @@ class PickerTypeQt5(PickerType):
         url = pathlib.Path(spath).as_uri()
         
         settings = QSettings(self.config_path, QSettings.IniFormat)
+        if not settings.isWritable():
+            return
+        
         shortcuts = settings.value('FileDialog/shortcuts', type=list)
         
         if url in shortcuts:
@@ -203,9 +359,9 @@ class PickerTypeQt5(PickerType):
         shortcuts.append(url)
         
         
-        if settings.setValue('FileDialog/shortcuts', shortcuts):
-            settings.sync()
-            self.written = True
+        settings.setValue('FileDialog/shortcuts', shortcuts)
+        settings.sync()
+        self.written = True
             
     def removeBookmark(self, spath):
         if not self.written:
@@ -226,9 +382,9 @@ class PickerTypeQt5(PickerType):
         
         shortcuts.remove(url)
         
-        if settings.setValue('FileDialog/shortcuts', shortcuts):
-            settings.sync()
-            self.written = False
+        settings.setValue('FileDialog/shortcuts', shortcuts)
+        settings.sync()
+        self.written = False
 
 class PickerTypeKde5(PickerType):
     def makeBookmark(self, spath):
@@ -285,6 +441,7 @@ class PickerTypeKde5(PickerType):
         xml.setContent(contents)
         content = xml.documentElement()
         if content.tagName() != 'xbel':
+            self.written = False
             return
         
         node = content.firstChild()
@@ -300,32 +457,48 @@ class PickerTypeKde5(PickerType):
             self.written = False
             return
         
-        if self.printContents(xml.toString()):
-            self.written = False
+        self.printContents(xml.toString())
+        self.written = False
         
         
-class BookmarkMaker(object):
+class BookMarker(object):
     def __init__(self):
         HOME = os.getenv('HOME')
         self.gtk2 = PickerTypeGtk("%s/.gtk-bookmarks" % HOME)
         self.gtk3 = PickerTypeGtk("%s/.config/gtk-3.0/bookmarks" % HOME)
         self.fltk = PickerTypeFltk("%s/.fltk/fltk.org/filechooser.prefs" % HOME)
         self.kde5 = PickerTypeKde5("%s/.local/share/user-places.xbel" % HOME)
-        #self.qt4  = PickerType("%s/.config/Trolltech.conf" % HOME) #seems impossible
+        self.qt4  = PickerTypeQt4("%s/.config/Trolltech.conf" % HOME) #seems impossible
         self.qt5  = PickerTypeQt5("%s/.config/QtProject.conf" % HOME)
         
     def makeAll(self, spath):
-        for picker in (self.gtk2, self.gtk3, self.fltk, self.kde5, self.qt5):
+        for picker in (self.gtk2, self.gtk3, self.fltk, self.kde5, self.qt4, self.qt5):
             picker.makeBookmark(spath)
         
     def removeAll(self, spath):
-        for picker in (self.gtk2, self.gtk3, self.fltk, self.kde5, self.qt5):
+        for picker in (self.gtk2, self.gtk3, self.fltk, self.kde5, self.qt4, self.qt5):
             picker.written = True
             picker.removeBookmark(spath)
+    
+    def saveStates(self, settings, spath):
+        #settings.setValue('TmpBookmarks/session', spath)
+        #settings.setValue('TmpBookmarks/gtk2', self.gtk2.written)
+        #settings.setValue('TmpBookmarks/gtk3', self.gtk3.written)
+        #settings.setValue('TmpBookmarks/fltk', self.fltk.written)
+        #settings.setValue('TmpBookmarks/kde4', self.kde5.written)
+        #settings.setValue('TmpBookmarks/qt5' , self.qt5.written)
+        #settings.sync()
+        pass
         
+    def eraseFromSettings(self, settings):
+        #self.gtk2.written = settings.value('TmpBookmarks/gtk2', type=bool)
+        #self.gtk3.written = settings.value('TmpBookmarks/gtk3', type=bool)
+        #self.fltk.written = 
+        pass
+    
 if __name__ == '__main__':
-    bm_maker = BookmarkMaker()
-    bm_maker.makeAll(sys.argv[1])
+    bm_maker = BookMarker()
+    bm_maker.removeAll(sys.argv[1])
     
         
         

@@ -379,7 +379,7 @@ class OSCServerT(ServerThread):
         #signaler = OscSignaler()
     
     @make_method('/error', None)
-    def errorFromServer(self, errorpath, args):
+    def errorFromServer(self, path, args):
         self.debugg(path, args)
         
         signaler.error_message.emit(args)
