@@ -13,10 +13,10 @@ class PickerType(object):
         self.config_path = config_path
         self.written     = False
         
-    def makeBookmark(self, url):
+    def makeBookmark(self, spath):
         pass
     
-    def removeBookmark(self, url):
+    def removeBookmark(self, spath):
         pass
     
     def getContents(self):
