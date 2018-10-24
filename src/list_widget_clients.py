@@ -29,7 +29,7 @@ class ClientSlot(QFrame):
         self.ui.saveButton.clicked.connect(self.saveClient)
         self.ui.closeButton.clicked.connect(self.removeClient)
         self.ui.lineEditClientStatus.copyAborted.connect(self.abortCopy)
-        self.ui.ClientName.name_changed.connect(self.updateLabel)
+        #self.ui.ClientName.name_changed.connect(self.updateLabel)
         
         self.icon_on  = QIcon()
         self.icon_off = QIcon()

@@ -108,7 +108,7 @@ QToolButton {border: none}</string>
       </spacer>
      </item>
      <item>
-      <widget class="StackedSessionName" name="ClientName">
+      <widget class="QLabel" name="ClientName">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -463,11 +463,6 @@ QToolButton {border: none}</string>
    <class>HideGuiButton</class>
    <extends>QToolButton</extends>
    <header>hide_gui_button</header>
-  </customwidget>
-  <customwidget>
-   <class>StackedSessionName</class>
-   <extends>QLabel</extends>
-   <header>stacked_session_name</header>
   </customwidget>
  </customwidgets>
  <resources>
