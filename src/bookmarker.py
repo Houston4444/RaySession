@@ -7,12 +7,6 @@ from PyQt5.QtXml  import QDomDocument, QDomText
 
 QFileDialogMagic = 190
 
-#STATE_OFF       = 0
-#STATE_WRITTEN   = 1
-#STATE_NO_CONFIG = 2
-#STATE_PERMANENT = 3
-#STATE_ERROR     = 4
-
 class PickerType(object):
     def __init__(self, config_path):
         self.config_path = config_path
@@ -216,7 +210,7 @@ class PickerTypeQt4(PickerType):
             qUrl = QUrl()
             stream >> qUrl
             
-            if qUrl.url() == url:
+            if qUrl.isLocalFile() and qUrl.toLocalFile() == spath:
                 #spath already in qt4 bookmarks
                 return
             
@@ -292,11 +286,11 @@ class PickerTypeQt4(PickerType):
             qUrl = QUrl()
             stream >> qUrl
             
-            if qUrl.url() == url:
+            if qUrl.isLocalFile() and qUrl.toLocalFile() == spath:
                 bookmark_found = True
             else:
                 bookmarks.append(qUrl)
-            
+                
         if not bookmark_found:
             self.written = False
             return
@@ -462,43 +456,167 @@ class PickerTypeKde5(PickerType):
         
         
 class BookMarker(object):
-    def __init__(self):
+    def __init__(self, config_path):
+        self.bookmarks_memory = "%s/bookmarks.xml" % config_path
+        self.daemon_port      = 0
+        
+        if not os.path.exists(config_path):
+            try:
+                os.makedirs(config_path)
+            except:
+                pass
+        
         HOME = os.getenv('HOME')
+        
+        
         self.gtk2 = PickerTypeGtk("%s/.gtk-bookmarks" % HOME)
         self.gtk3 = PickerTypeGtk("%s/.config/gtk-3.0/bookmarks" % HOME)
         self.fltk = PickerTypeFltk("%s/.fltk/fltk.org/filechooser.prefs" % HOME)
         self.kde5 = PickerTypeKde5("%s/.local/share/user-places.xbel" % HOME)
-        self.qt4  = PickerTypeQt4("%s/.config/Trolltech.conf" % HOME) #seems impossible
+        self.qt4  = PickerTypeQt4("%s/.config/Trolltech.conf" % HOME)
         self.qt5  = PickerTypeQt5("%s/.config/QtProject.conf" % HOME)
         
+    def setDaemonPort(self, port):
+        self.daemon_port = port
+    
+    def getXml(self):
+        xml = QDomDocument()
+        file_exists = False
+        
+        if os.path.exists(self.bookmarks_memory):
+            try:
+                file = open(self.bookmarks_memory, 'r')
+                xml.setContent(file.read())
+                file_exists = True
+            except:
+                try:
+                    os.path.remove(self.bookmarks_memory)
+                except:
+                    return None
+        
+        if not file_exists:
+            bms_xml = xml.createElement('Bookmarks')
+            xml.appendChild(bms_xml)
+            
+        return xml
+    
+    def writeXmlFile(self, xml):
+        try:
+            file = open(self.bookmarks_memory, 'w')
+            file.write(xml.toString())
+        except:
+            return
+    
+    def getPickersForXml(self):
+        string = ":"
+        if self.gtk2.written:
+            string += "gtk2:"
+        if self.gtk3.written:
+            string += "gtk3:"
+        if self.fltk.written:
+            string += "fltk:"
+        if self.kde5.written:
+            string += "kde5:"
+        if self.qt4.written:
+            string += "qt4:"
+        if self.qt5.written:
+            string += "qt5:"
+        
+        return string
+    
     def makeAll(self, spath):
         for picker in (self.gtk2, self.gtk3, self.fltk, self.kde5, self.qt4, self.qt5):
             picker.makeBookmark(spath)
         
+        xml = self.getXml()
+        if not xml:
+            return
+            
+        xml_content = xml.documentElement()
+        node = xml_content.firstChild()
+        
+        bke = xml.createElement('bookmarker')
+        bke.setAttribute('port', self.daemon_port)
+        bke.setAttribute('session_path', spath)
+        bke.setAttribute('pickers', self.getPickersForXml())
+        node = xml_content.firstChild()
+        xml_content.appendChild(bke)
+        
+        self.writeXmlFile(xml)
+        
     def removeAll(self, spath):
         for picker in (self.gtk2, self.gtk3, self.fltk, self.kde5, self.qt4, self.qt5):
-            picker.written = True
             picker.removeBookmark(spath)
+            
+        xml = self.getXml()
+        if not xml:
+            return
+            
+        xml_content = xml.documentElement()
+        nodes = xml_content.childNodes()
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            
+            bke = node.toElement()
+            port = bke.attribute('port')
+            session_path = bke.attribute('session_path')
+            
+            if port.isdigit() and int(port) == self.daemon_port and session_path == spath:
+                xml_content.removeChild(node)
+                break
+            
+        self.writeXmlFile(xml)
+            
     
-    def saveStates(self, settings, spath):
-        #settings.setValue('TmpBookmarks/session', spath)
-        #settings.setValue('TmpBookmarks/gtk2', self.gtk2.written)
-        #settings.setValue('TmpBookmarks/gtk3', self.gtk3.written)
-        #settings.setValue('TmpBookmarks/fltk', self.fltk.written)
-        #settings.setValue('TmpBookmarks/kde4', self.kde5.written)
-        #settings.setValue('TmpBookmarks/qt5' , self.qt5.written)
-        #settings.sync()
-        pass
+    def clean(self, all_session_paths):
+        xml = self.getXml()
+        if not xml:
+            return
         
-    def eraseFromSettings(self, settings):
-        #self.gtk2.written = settings.value('TmpBookmarks/gtk2', type=bool)
-        #self.gtk3.written = settings.value('TmpBookmarks/gtk3', type=bool)
-        #self.fltk.written = 
-        pass
+        xml_content = xml.documentElement()
+        nodes = xml_content.childNodes()
+        nodes_to_remove = []
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            bke = node.toElement()
+            spath   = bke.attribute('session_path')
+            pickers = bke.attribute('pickers')
+            
+            if not spath:
+                nodes_to_remove.append(node)
+                continue
+            
+            if not spath in all_session_paths:
+                if ":gtk2:" in pickers:
+                    self.gtk2.written = True
+                    self.gtk2.removeBookmark(spath)
+                if ":gtk3:" in pickers:
+                    self.gtk3.written = True
+                    self.gtk3.removeBookmark(spath)
+                if ":fltk:" in pickers:
+                    self.fltk.written = True
+                    self.fltk.removeBookmark(spath)
+                if ":kde5:" in pickers:
+                    self.kde5.written = True
+                    self.kde5.removeBookmark(spath)
+                if ":qt4:" in pickers:
+                    self.qt4.written = True
+                    self.qt4.removeBookmark(spath)
+                if ":qt5:" in pickers:
+                    self.qt5.written = True
+                    self.qt5.removeBookmark(spath)
+            
+                nodes_to_remove.append(node)
+            
+        for node in nodes_to_remove:
+            xml_content.removeChild(node)
+            
+        self.writeXmlFile(xml)
     
 if __name__ == '__main__':
     bm_maker = BookMarker()
-    bm_maker.removeAll(sys.argv[1])
+    bm_maker.makeAll(sys.argv[1])
     
         
         

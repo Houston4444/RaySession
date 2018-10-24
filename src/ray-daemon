@@ -146,28 +146,6 @@ def quitRay(sig, frame):
         MESSAGE(_translate('GUIMSG', 'Good Bye !'))
     app.quit()
 
-class BookmarkMaker(object):
-    def __init__(self):
-        HOME = os.getenv('HOME')
-        self.gtk2_path = "%s/.gtk-bookmarks" % HOME
-        self.gtk3_path = "%s/.config/gtk-3.0/bookmarks" % HOME
-        self.fltk_path = "%s/.fltk/fltk.org/filechooser.prefs" % HOME
-        self.kde5_path = "%s/.local/share/user-places.xbel" % HOME
-        self.qt4_path  = "%s/.config/Trolltech.conf" % HOME #but seems impossible
-        self.qt5_path  = "%s/.config/QtProject.conf" % HOME
-        
-    def makeBookmarks(self, spath):
-        #gtk2
-        try:
-            gtk2_file = open(self.gtk2_file)
-        except:
-            pass
-        
-        contents = gtk2_file.read()
-        
-    
-    
-
 class MultiDaemonFile(object):
     def __init__(self):
         self.file_path = '/tmp/RaySession/multi-daemon.xml'
@@ -223,7 +201,6 @@ class MultiDaemonFile(object):
         element.setAttribute('port', server.port)
         element.setAttribute('user', os.getenv('USER'))
     
-    
     def update(self):
         if not self.openFile():
             ds = self.xml.createElement('Deamons')
@@ -238,16 +215,16 @@ class MultiDaemonFile(object):
             found = False
             
             xml_content = self.xml.documentElement()
-            node = xml_content.firstChild()
-            while not node.isNull():
+            
+            nodes = xml_content.childNodes()
+            for i in range(nodes.count()):
+                node = nodes.at(i)
                 dxe = node.toElement()
-                pid = dxe.attribute('pid')
+                pid  = dxe.attribute('pid')
                 
                 if pid.isdigit() and pid == str(os.getpid()):
                     self.setAttributes(dxe)
                     found = True
-                    
-                node = node.nextSibling()
                 
             if not found:
                 dm_xml = self.xml.createElement('Deamon')
@@ -261,40 +238,36 @@ class MultiDaemonFile(object):
             return
         
         xml_content = self.xml.documentElement()
-        node = xml_content.firstChild()
+        nodes = xml_content.childNodes()
         
-        while not node.isNull():
+        for i in range(nodes.count()):
+            node = nodes.at(i)
             dxe = node.toElement()
             pid = dxe.attribute('pid')
             
             if pid.isdigit() and pid == str(os.getpid()):
                 break
-            
-            node = node.nextSibling()
         else:
             return
 
         xml_content.removeChild(node)
         self.writeFile()
         
-    
     def isFreeForRoot(self, daemon_id, root_path):
         if not self.openFile():
             return True
         
-        
         xml_content = self.xml.documentElement()
-        node = xml_content.firstChild()
+        nodes = xml_content.childNodes()
         
-        while not node.isNull():
+        for i in range(nodes.count()):
+            node = nodes.at(i)
             dxe = node.toElement()
             if (dxe.attribute('net_daemon_id') == str(daemon_id) and
                 dxe.attribute('root')      == root_path):
                     pid = dxe.attribute('pid')
                     if pid.isdigit() and self.pidExists(int(pid)):
                         return False
-                    
-            node = node.nextSibling()
             
         return True
     
@@ -303,21 +276,38 @@ class MultiDaemonFile(object):
             return True
         
         xml_content = self.xml.documentElement()
-        node = xml_content.firstChild()
+        nodes = xml_content.childNodes()
         
-        while not node.isNull():
+        for i in range(nodes.count()):
+            node = nodes.at(i)
             dxe = node.toElement()
             if dxe.attribute('session_path') == session_path:
                 pid = dxe.attribute('pid')
                 if pid.isdigit() and self.pidExists(int(pid)):
                     return False
-                    
-            node = node.nextSibling()
             
         return True
         
+    def getAllSessionPaths(self):
+        if not self.openFile():
+            return []
+        
+        all_session_paths = []
+        
+        xml_content = self.xml.documentElement()
+        nodes = xml_content.childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            dxe = node.toElement()
+            spath = dxe.attribute('session_path')
+            pid   = dxe.attribute('pid')
+            if spath and pid.isdigit() and self.pidExists(int(pid)):
+                all_session_paths.append(spath)
                 
-    
+        return all_session_paths
+            
+            
 class ServerSender(QObject):
     def __init__(self):
         QObject.__init__(self)
@@ -1378,7 +1368,7 @@ class Session(ServerSender):
         
         self.file_copier = FileCopier(self)
         
-        self.bookmarker = BookMarker()
+        self.bookmarker = BookMarker(app_config_path)
     
     #############
     def oscReply(self, *args):
@@ -1423,16 +1413,17 @@ class Session(ServerSender):
     def setPath(self, session_path):
         if self.path:
             self.bookmarker.removeAll(self.path)
-            self.bookmarker.saveStates(settings, self.path)
+            #self.bookmarker.saveStates(settings, self.path)
         
         self.path = session_path
         self.setName(session_path.rpartition('/')[2])
         
         multi_daemon_file.update()
         
-        if self.path:
+        if self.path and self.hasServer():
+            self.bookmarker.setDaemonPort(server.port)
             self.bookmarker.makeAll(self.path)
-            self.bookmarker.saveStates(settings, self.path)
+            #self.bookmarker.saveStates(settings, self.path)
     
     def getClient(self, client_id):
         for client in self.clients:
@@ -1818,21 +1809,21 @@ class OperatingSession(Session):
         
         content.setAttribute('name', new_session_name)
         
-        node = content.firstChild()
-        while not node.isNull():
+        nodes = content.childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
             tag_name = node.toElement().tagName()
             if tag_name in ('Clients', 'RemovedClients'):
-                client_xml = node.toElement().firstChild()
-                while not client_xml.isNull():
+                clients_xml = node.toElement().childNodes()
+                
+                for j in range(clients_xml.count()):
+                    client_xml = clients_xml.at(j)
                     client = Client(self)
                     cx = client_xml.toElement()
                     client.readXmlProperties(cx)
                     
                     tmp_clients.append(client)
-                    
-                    client_xml = client_xml.nextSibling()
-                    
-            node = node.nextSibling()
         
         ray_file.close()
         
@@ -2258,12 +2249,16 @@ class OperatingSession(Session):
             if sess_name:
                 self.name = sess_name
             
-            node = content.firstChild()
-            while not node.isNull():
+            nodes = content.childNodes()
+            
+            for i in range(nodes.count()):
+                node = nodes.at(i)
                 tag_name = node.toElement().tagName()
                 if tag_name in ('Clients', 'RemovedClients'):
-                    client_xml = node.toElement().firstChild()
-                    while not client_xml.isNull():
+                    clients_xml = node.toElement().childNodes()
+                    
+                    for j in range(clients_xml.count()):
+                        client_xml = clients_xml.at(j)
                         client = Client(self)
                         cx = client_xml.toElement()
                         client.readXmlProperties(cx)
@@ -2277,10 +2272,6 @@ class OperatingSession(Session):
                         elif tag_name == 'RemovedClients':
                             self.removed_clients.append(client)
                             client.sendGuiClientProperties(removed=True)
-                        
-                        client_xml = client_xml.nextSibling()
-                        
-                node = node.nextSibling()
             
             ray_file.close()
         else:
@@ -4051,6 +4042,7 @@ if __name__ == '__main__':
     
     multi_daemon_file = MultiDaemonFile()
     multi_daemon_file.update()
+    session.bookmarker.clean(multi_daemon_file.getAllSessionPaths())
     
     app.exec()
     
