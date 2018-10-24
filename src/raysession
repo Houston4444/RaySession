@@ -1790,6 +1790,8 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.icon_name       = self.ui.lineEditIcon.text()
         self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
         self.client.sendPropertiesToDaemon()
+        #better for user to wait a little before close the window
+        QTimer.singleShot(150, self.accept)
 
 class ClientTrashDialog(ChildDialog):
     def __init__(self, parent, client_data):

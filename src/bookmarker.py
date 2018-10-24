@@ -4,6 +4,7 @@ import sys, os
 import pathlib
 from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
 from PyQt5.QtXml  import QDomDocument, QDomText
+from shared import *
 
 QFileDialogMagic = 190
 
@@ -345,13 +346,12 @@ class PickerTypeQt5(PickerType):
         if not settings.isWritable():
             return
         
-        shortcuts = settings.value('FileDialog/shortcuts', type=list)
+        shortcuts = getListInSettings(settings, 'FileDialog/shortcuts')
         
         if url in shortcuts:
             return
         
         shortcuts.append(url)
-        
         
         settings.setValue('FileDialog/shortcuts', shortcuts)
         settings.sync()
@@ -467,7 +467,6 @@ class BookMarker(object):
                 pass
         
         HOME = os.getenv('HOME')
-        
         
         self.gtk2 = PickerTypeGtk("%s/.gtk-bookmarks" % HOME)
         self.gtk3 = PickerTypeGtk("%s/.config/gtk-3.0/bookmarks" % HOME)

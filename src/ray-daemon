@@ -3286,6 +3286,7 @@ class OscServerThread(ClientCommunicating):
         self.list_asker_addr = None
         
         self.option_save_from_client = True
+        self.option_bookmark_session = True
     
     @make_method('/osc/ping', '')
     def oscPing(self, path, args, types, src_addr):
@@ -3313,7 +3314,8 @@ class OscServerThread(ClientCommunicating):
             self.net_daemon_id = args[4]
             is_net_free = multi_daemon_file.isFreeForRoot(self.net_daemon_id, session.root)
         
-        self.option_save_from_client = bool(args[3])
+        self.option_save_from_client = bool(args[3] & OPTION_SAVE_FROM_CLIENT)
+        self.option_bookmark_session = bool(args[3] & OPTION_BOOKMARK_SESSION)
             
         self.announceGui(src_addr.url, nsm_locked, is_net_free)
 
