@@ -29,6 +29,7 @@ class ClientSlot(QFrame):
         self.ui.saveButton.clicked.connect(self.saveClient)
         self.ui.closeButton.clicked.connect(self.removeClient)
         self.ui.lineEditClientStatus.copyAborted.connect(self.abortCopy)
+        self.ui.ClientName.name_changed.connect(self.updateLabel)
         
         self.icon_on  = QIcon()
         self.icon_off = QIcon()
@@ -117,6 +118,10 @@ class ClientSlot(QFrame):
     
     def openPropertiesDialog(self):
         self.list_widget.clientPropertiesRequest.emit(self.clientId())
+    
+    def updateLabel(self, label):
+        self.list_widget.updateLabelRequest.emit(self.clientId(), label)
+        
     
     def updateClientData(self):
         #set main label
@@ -271,6 +276,7 @@ class ListWidgetClients(QListWidget):
     clientShowGuiRequest   = pyqtSignal(str)
     clientSaveTemplateRequest = pyqtSignal(str)
     clientPropertiesRequest   = pyqtSignal(str)
+    updateLabelRequest        = pyqtSignal(str, str)
     
     def __init__(self, parent):
         QListWidget.__init__(self, parent)

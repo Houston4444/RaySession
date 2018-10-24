@@ -263,6 +263,10 @@ class Client(object):
     def allowKill(self):
         self.widget.allowKill()
         
+    def updateLabel(self, label):
+        self.label = label
+        self.sendPropertiesToDaemon()
+        
     def updateClientProperties(self, client_data):
         self.executable_path = client_data.executable_path
         self.arguments       = client_data.arguments
@@ -904,6 +908,7 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.clientShowGuiRequest.connect(serverOSC.showClientOptionalGui)
         self.ui.listWidget.clientSaveTemplateRequest.connect(self.newClientTemplate)
         self.ui.listWidget.clientPropertiesRequest.connect(self.openClientProperties)
+        self.ui.listWidget.updateLabelRequest.connect(self.updateClientLabel)
     
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
@@ -1006,6 +1011,13 @@ class MainWindow(QMainWindow):
             return
         
         client.showPropertiesDialog()
+    
+    def updateClientLabel(self, client_id, label):
+        client = session.getClient(client_id)
+        if not client:
+            return
+        
+        client.updateLabel(label)
     
     def createNewSession(self):
         self.ui.dockWidgetMessages.setVisible(False)
