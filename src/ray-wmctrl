@@ -107,7 +107,7 @@ def getActiveWindowList():
             if el:
                 properties.append(el)
                 
-        if len(properties) >= 5 and properties[1].lstrip('-').isdigit() and properties[2].isdigit():
+        if len(properties) >= 6 and properties[1].lstrip('-').isdigit() and properties[2].isdigit():
             pid = int(properties[2])
             if not isChildOfDaemon(pid):
                 continue
@@ -117,7 +117,7 @@ def getActiveWindowList():
             wclass  = properties[3]
             
             name = ""
-            for prop in properties[4:]:
+            for prop in properties[5:]:
                 name+=prop
                 name+=" "
             name = name[:-1] #remove last space
