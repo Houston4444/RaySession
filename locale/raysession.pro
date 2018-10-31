@@ -6,6 +6,7 @@ FORMS        += ../resources/ui/client_properties.ui
 FORMS        += ../resources/ui/client_slot.ui
 FORMS        += ../resources/ui/client_trash.ui
 FORMS        += ../resources/ui/daemon_url.ui
+FORMS        += ../resources/ui/edit_executable.ui
 FORMS        += ../resources/ui/error_dialog.ui
 FORMS        += ../resources/ui/new_executable.ui
 FORMS        += ../resources/ui/new_session.ui

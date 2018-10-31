@@ -35,6 +35,7 @@ import ui_stop_client
 import ui_abort_copy
 import ui_client_trash
 import ui_daemon_url
+import ui_edit_executable
 
 import resources_rc
 
@@ -1773,6 +1774,21 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
     def addTemplatesToList(self, template_list):
         for template in template_list:
             self.template_list.append(template.split('/')[0])
+
+class EditExecutableDialog(ChildDialog):
+    def __init__(self, parent, client):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_edit_executable.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self.ui.lineEditExecutable.setText(client.executable_path)
+        self.ui.lineEditArguments.setText(client.arguments)
+        
+    def getExecutable(self):
+        return self.ui.lineEditExecutable.text()
+    
+    def getArguments(self):
+        return self.ui.lineEditArguments.text()
   
 class ClientPropertiesDialog(ChildDialog):
     def __init__(self, parent, client):
@@ -1784,9 +1800,11 @@ class ClientPropertiesDialog(ChildDialog):
         
         self.ui.lineEditIcon.textEdited.connect(self.changeIconwithText)
         self.ui.pushButtonSaveChanges.clicked.connect(self.saveChanges)
+        self.ui.toolButtonEditExecutable.clicked.connect(self.editExecutable)
         
     def updateContents(self):
         self.ui.labelExecutable.setText(self.client.executable_path)
+        self.ui.labelArguments.setText(self.client.arguments)
         self.ui.labelId.setText(self.client.client_id)
         self.ui.labelClientName.setText(self.client.name)
         self.ui.lineEditIcon.setText(self.client.icon_name)
@@ -1796,8 +1814,18 @@ class ClientPropertiesDialog(ChildDialog):
         
     def changeIconwithText(self, text):
         self.ui.toolButtonIcon.setIcon(getAppIcon(text, self))
-        
+    
+    def editExecutable(self):
+        dialog = EditExecutableDialog(self, self.client)
+        dialog.exec()
+        if dialog.result():
+            self.ui.labelExecutable.setText(dialog.getExecutable())
+            self.ui.labelArguments.setText(dialog.getArguments())
+            
+    
     def saveChanges(self):
+        self.client.executable_path = self.ui.labelExecutable.text()
+        self.client.arguments       = self.ui.labelArguments.text()
         self.client.label           = self.ui.lineEditLabel.text()
         self.client.icon_name       = self.ui.lineEditIcon.text()
         self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
