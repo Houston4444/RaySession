@@ -73,7 +73,7 @@ def signalHandler(sig, frame):
         ray_daemon.stop()
 
 def changeRootFolder(parent_window):
-    #this function is the only one that takes cares of files present on system. 
+    #this function is the only one that takes cares of files present on system (except config files). 
     #In a perfect world, this should be done in ray-daemon.
     #But it's more user friendly to use a file picker child of raysession window
     #and if ray-daemon is launched before, with a different session root, 
@@ -383,7 +383,6 @@ class Signaler(QObject):
 class OSCServerT(ServerThread):
     def __init__(self):
         ServerThread.__init__(self)
-        #signaler = OscSignaler()
     
     @make_method('/error', None)
     def errorFromServer(self, path, args):
@@ -409,8 +408,6 @@ class OSCServerT(ServerThread):
         
         signaler.add_sessions_to_list.emit(args)
         
-        
-            
     @make_method('/reply_path', None)
     def replyPath(self, path, args):
         self.debugg(path, args)
@@ -426,9 +423,6 @@ class OSCServerT(ServerThread):
         
         if not areTheyAllString(args):
             return
-        
-        #if nsm_out_daemon:
-            
         
         signaler.session_template_found.emit(args)
     
@@ -738,16 +732,11 @@ class OSCServerT(ServerThread):
     def abortCopy(self):
         self.toDaemon('/ray/server/abort_copy')
         
-    #def 
-
 class RayIcon(QIcon):
     def __init__(self, icon_name, dark=False):
         QIcon.__init__(self)
         breeze = 'breeze-dark' if dark else 'breeze'
         self.addFile(':scalable/%s/%s' % (breeze, icon_name), QSize(22,22))
-        
-        
-        #self.addPixmap(QPixmap(':scalable/%s/%s' % (breeze, icon_name)), QIcon.Normal, QIcon.Off)
         self.addPixmap(QPixmap(':scalable/%s/disabled/%s' % (breeze, icon_name)), QIcon.Disabled, QIcon.Off)
 
 class MainWindow(QMainWindow):
@@ -774,12 +763,12 @@ class MainWindow(QMainWindow):
         self.server_copying = False
         
         #set options with config file, restore geometry
-        self.save_all_from_saved_client = settings.value('save_all_from_saved_client', True, type=bool)
-        self.ui.actionSaveAllFromSavedClient.setChecked(self.save_all_from_saved_client)
+        #self.save_all_from_saved_client = settings.value('save_all_from_saved_client', True, type=bool)
+        #self.ui.actionSaveAllFromSavedClient.setChecked(self.save_all_from_saved_client)
         
-        self.bookmark_session_folder = settings.value('bookmark_session_folder', True, type=bool)
-        self.ui.actionBookmarkSessionFolder.setChecked(self.bookmark_session_folder)
-        #serverOSC.toDaemon('/ray/option/save_from_client', int(self.save_all_from_saved_client))
+        #self.bookmark_session_folder = settings.value('bookmark_session_folder', True, type=bool)
+        #self.ui.actionBookmarkSessionFolder.setChecked(self.bookmark_session_folder)
+        ##serverOSC.toDaemon('/ray/option/save_from_client', int(self.save_all_from_saved_client))
         
         self.keep_focus = settings.value('keepfocus', True, type=bool)
         self.ui.actionKeepFocus.setChecked(self.keep_focus)
@@ -974,14 +963,10 @@ class MainWindow(QMainWindow):
             self.timer_raisewin.stop()
     
     def saveAllFromClientToggled(self, state):
-        #self.save_all_from_saved_client = bool
         serverOSC.toDaemon('/ray/option/save_from_client', int(state))
-        #settings.setValue('save_all_from_saved_client', self.save_all_from_saved_client)
     
     def bookmarkSessionFolderToggled(self, state):
-        #self.bookmark_session_folder = bool
         serverOSC.toDaemon('/ray/option/bookmark_session_folder', int(state))
-        #settings.setValue('bookmark_session_folder', self.bookmark_session_folder)
     
     def flashOpen(self):
         for client in session.client_list:
@@ -1379,7 +1364,6 @@ class MainWindow(QMainWindow):
         if server_status == SERVER_STATUS_OFF:
             if self.terminate_request:
                 ray_daemon.stop()
-                #QApplication.quit()
     
     def serverTrashAdd(self, client_data):
         prettier_name = client_data.label if client_data.label else client_data.name

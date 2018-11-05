@@ -13,12 +13,12 @@ from bookmarker import BookMarker
 #ray-daemon doesn't really cares if jack is running or not
 #but if jack is running, it just ask all jack ports between many clients launchs or stops
 #It 'maybe' prevent some jack bugs
-try:
-    import dbus
-    bus = dbus.SessionBus()
-    jack_bus = bus.get_object('org.jackaudio.service', '/org/jackaudio/Controller')
-except:
-    jack_bus = None
+#try:
+    #import dbus
+    #bus = dbus.SessionBus()
+    #jack_bus = bus.get_object('org.jackaudio.service', '/org/jackaudio/Controller')
+#except:
+    #jack_bus = None
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -130,12 +130,6 @@ def CLIENT_MESSAGE(byte_string, client_name, client_id):
 
 def WARNING(string):
     print('[' + '\033[90m' + 'ray-daemon' + '\033[0m' + '] ' + '\033[93m' + string + '\033[0m', file=sys.stderr)
-
-def waitForJack():
-    pass
-    #if jack_bus and jack_bus.IsStarted():
-        #all_ports = jack_bus.GetAllPorts()
-        #del all_ports
         
 def quitRay(sig, frame):
     for client in session.clients:
@@ -813,9 +807,6 @@ class Client(ServerSender):
         
         self.sendGuiMessage(_translate("GUIMSG", "%s launching") % self.guiMsgStyle())
         
-        #if 'server' in globals() and hasattr(server, 'url'):
-            #os.environ['NSM_URL'] = server.url
-        
         self.pending_command = COMMAND_START
         
         arguments = []
@@ -1321,7 +1312,6 @@ class Client(ServerSender):
             self.send(src_addr, "/error", path, ERR_INCOMPATIBLE_API, "Server is using an incompatible API version." )
             return
         
-        #self.pid          = pid
         self.capabilities = capabilities
         self.addr         = src_addr
         self.name         = client_name
@@ -1361,7 +1351,6 @@ class Session(ServerSender):
         self.removed_clients = []
         self.name    = ""
         self.path    = ""
-        #self.root    = ""
         
         self.is_renameable = True
         self.forbidden_ids_list = []
@@ -1413,7 +1402,6 @@ class Session(ServerSender):
     def setPath(self, session_path):
         if self.path:
             self.bookmarker.removeAll(self.path)
-            #self.bookmarker.saveStates(settings, self.path)
         
         self.path = session_path
         self.setName(session_path.rpartition('/')[2])
@@ -1423,7 +1411,6 @@ class Session(ServerSender):
         if self.path and self.hasServer() and server.option_bookmark_session:
             self.bookmarker.setDaemonPort(server.port)
             self.bookmarker.makeAll(self.path)
-            #self.bookmarker.saveStates(settings, self.path)
     
     def getClient(self, client_id):
         for client in self.clients:
@@ -1755,7 +1742,6 @@ class OperatingSession(Session):
     
     def timerLaunchTimeOut(self):
         if self.clients_to_launch:
-            waitForJack()
             self.clients_to_launch[0].start()
             self.clients_to_launch.__delitem__(0)
             
@@ -1764,7 +1750,6 @@ class OperatingSession(Session):
             
     def timerQuitTimeOut(self):
         if self.clients_to_quit:
-            waitForJack()
             self.clients_to_quit[0].quit()
             self.clients_to_quit.__delitem__(0)
             
@@ -1781,7 +1766,6 @@ class OperatingSession(Session):
         self.oscReply("/error", self.osc_path, err, error_message)
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_mode):
-        #new_session_full_name = self.osc_args[0]
         new_session_name = basename(new_session_full_name)
         spath = "%s/%s" % (self.root, new_session_full_name)
         
@@ -2231,7 +2215,6 @@ class OperatingSession(Session):
         new_client_exec_args = []
         
         self.setPath(spath)
-        #multi_daemon_file.update()
         
         if is_ray_file:
             xml = QDomDocument()
@@ -2647,9 +2630,7 @@ class SignaledSession(OperatingSession):
             #exclude hidden files and dirs
             files   = [f for f in files if not f.startswith('.')]
             dirs[:] = [d for d in dirs  if not d.startswith('.')]
-        
-        #for fds in os.walk(self.root):
-            #folder, folders, files = fds
+            
             if root == self.root:
                 continue
             
@@ -3684,9 +3665,6 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, "Cannot add to session because no session is loaded." )
             return
         
-        #factory = bool(args[0])
-        #template_name = args[1]
-        
         signaler.server_add_client_template.emit(path, args, src_addr)
     
     @make_method('/ray/session/reorder_clients', None)
@@ -3947,14 +3925,6 @@ class OscServerThread(ClientCommunicating):
         
         self.gui_list.append(gui_addr)
         MESSAGE("Registered with GUI")
-        
-#def dummyLoadAndTemplate(session_name, template_name, sess_root):
-    #tmp_session = OperatingSession(sess_root, is_dummy=True)
-    #tmp_session.rememberOscArgs(path, [session_name], src_addr)
-    #tmp_session.load()
-    #tmp_session.rememberOscArgs(path, [template_name], src_addr)
-    #tmp_session.saveSessionTemplate()
-
 
 if __name__ == '__main__':
     #Add RaySession/src to $PATH to can use ray-proxy and maybe future executables after make, whitout install
@@ -3996,7 +3966,6 @@ if __name__ == '__main__':
     
     app = QCoreApplication(sys.argv)
     app.setApplicationName("RaySession")
-    #app.setApplicationVersion(VERSION)
     app.setOrganizationName("RaySession")
     
     if config_dir:
