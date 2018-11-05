@@ -365,6 +365,8 @@ class Signaler(QObject):
     daemon_url_request = pyqtSignal(int, str)
     daemon_url_changed = pyqtSignal(str)
     
+    daemon_options = pyqtSignal(int)
+    
     def __init__(self):
         QObject.__init__(self)
         
@@ -456,12 +458,12 @@ class OSCServerT(ServerThread):
         if ray_daemon.isAnnounced():
             return
         
-        version, server_status, is_nsm_locked, session_root, is_net_free = args
+        version, server_status, options, session_root, is_net_free = args
         
         signaler.daemon_announce.emit(src_addr, 
                                       version, 
                                       server_status, 
-                                      is_nsm_locked, 
+                                      options, 
                                       session_root, 
                                       is_net_free)
     
@@ -642,16 +644,11 @@ class OSCServerT(ServerThread):
         if not NSM_URL:
             NSM_URL=""
         
-        save_all_from_saved_client = False
-        if MainUI in globals():
-            save_all_from_saved_client = MainUI.save_all_from_saved_client
-            
-        
         self.send(ray_daemon.address, '/ray/server/gui_announce', 
                   VERSION, 
                   int(under_nsm), 
                   NSM_URL,
-                  int(save_all_from_saved_client),
+                  0,
                   net_daemon_id)
     
     def disannounce(self, src_addr):
@@ -779,6 +776,9 @@ class MainWindow(QMainWindow):
         #set options with config file, restore geometry
         self.save_all_from_saved_client = settings.value('save_all_from_saved_client', True, type=bool)
         self.ui.actionSaveAllFromSavedClient.setChecked(self.save_all_from_saved_client)
+        
+        self.bookmark_session_folder = settings.value('bookmark_session_folder', True, type=bool)
+        self.ui.actionBookmarkSessionFolder.setChecked(self.bookmark_session_folder)
         #serverOSC.toDaemon('/ray/option/save_from_client', int(self.save_all_from_saved_client))
         
         self.keep_focus = settings.value('keepfocus', True, type=bool)
@@ -814,6 +814,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAddExecutable.triggered.connect(self.addExecutable)
         self.ui.actionKeepFocus.toggled.connect(self.toggleKeepFocus)
         self.ui.actionSaveAllFromSavedClient.toggled.connect(self.saveAllFromClientToggled)
+        self.ui.actionBookmarkSessionFolder.toggled.connect(self.bookmarkSessionFolderToggled)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(app.aboutQt)
         
@@ -828,6 +829,7 @@ class MainWindow(QMainWindow):
         self.controlMenu.addAction(self.ui.actionKeepFocus)
         self.controlMenu.addSeparator()
         self.controlMenu.addAction(self.ui.actionSaveAllFromSavedClient)
+        self.controlMenu.addAction(self.ui.actionBookmarkSessionFolder)
         
         self.controlToolButton = self.ui.toolBar.widgetForAction(self.ui.actionControlMenu)
         self.controlToolButton.setPopupMode(QToolButton.InstantPopup)
@@ -867,6 +869,7 @@ class MainWindow(QMainWindow):
         signaler.trash_dialog.connect(self.showClientTrashDialog)
         signaler.daemon_url_request.connect(self.showDaemonUrlWindow)
         signaler.daemon_nsm_locked.connect(self.setNsmLocked)
+        signaler.daemon_options.connect(self.setDaemonOptions)
         
         self.connectListWidgetRequests()
         
@@ -879,10 +882,9 @@ class MainWindow(QMainWindow):
         
         
         dark = bool(app.palette().brush(2, QPalette.WindowText).color().lightness() > 128)
-        #if app.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
+        
         self.ui.actionDuplicateSession.setIcon(RayIcon('xml-node-duplicate', dark))
         self.ui.actionSaveTemplateSession.setIcon(RayIcon('document-save-as-template', dark))
-        #self.ui.actionSaveTemplateSession.setIcon(QIcon(':scalable/breeze-dark/document-save-as-template'))
         self.ui.actionCloseSession.setIcon(RayIcon('window-close', dark))
         self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark))
         self.ui.actionSaveSession.setIcon(RayIcon('document-save', dark))
@@ -949,7 +951,10 @@ class MainWindow(QMainWindow):
         
         self.ui.stackedWidgetSessionName.setEditable(nsm_locked and not nsm_out_daemon)
         self.ui.actionRenameSession.setEnabled(nsm_locked and not nsm_out_daemon)
-            
+    
+    def setDaemonOptions(self, options):
+        self.ui.actionSaveAllFromSavedClient.setChecked(bool(options & OPTION_SAVE_FROM_CLIENT))
+        self.ui.actionBookmarkSessionFolder.setChecked( bool(options & OPTION_BOOKMARK_SESSION))
     
     def hideMessagesDock(self):
         self.ui.dockWidgetMessages.setVisible(False)
@@ -968,10 +973,15 @@ class MainWindow(QMainWindow):
         if not bool:
             self.timer_raisewin.stop()
     
-    def saveAllFromClientToggled(self, bool):
-        self.save_all_from_saved_client = bool
-        serverOSC.toDaemon('/ray/option/save_from_client', int(self.save_all_from_saved_client))
-        settings.setValue('save_all_from_saved_client', self.save_all_from_saved_client)
+    def saveAllFromClientToggled(self, state):
+        #self.save_all_from_saved_client = bool
+        serverOSC.toDaemon('/ray/option/save_from_client', int(state))
+        #settings.setValue('save_all_from_saved_client', self.save_all_from_saved_client)
+    
+    def bookmarkSessionFolderToggled(self, state):
+        #self.bookmark_session_folder = bool
+        serverOSC.toDaemon('/ray/option/bookmark_session_folder', int(state))
+        #settings.setValue('bookmark_session_folder', self.bookmark_session_folder)
     
     def flashOpen(self):
         for client in session.client_list:
@@ -2377,7 +2387,7 @@ class RayDaemon(QObject):
             sys.stderr.write(_translate('error', "No announce from ray-daemon. RaySession can't works. Sorry.\n"))
             app.quit()
             
-    def receiveAnnounce(self, src_addr, version, server_status, nsm_locked, session_root, is_net_free):
+    def receiveAnnounce(self, src_addr, version, server_status, options, session_root, is_net_free):
         self.announce_timer.stop()
         
         if version.split('.')[:1] != VERSION.split('.')[:1]:
@@ -2406,15 +2416,19 @@ class RayDaemon(QObject):
         self.address = src_addr
         self.port    = src_addr.port
         self.url     = src_addr.url
-        self.is_nsm_locked = nsm_locked
         self.session_root  = session_root
         
-        if nsm_locked:
+        self.is_nsm_locked         = options & OPTION_NSM_LOCKED
+        save_all_from_saved_client = options & OPTION_SAVE_FROM_CLIENT
+        bookmark_session_folder    = options & OPTION_BOOKMARK_SESSION
+        
+        if self.is_nsm_locked:
             signaler.daemon_nsm_locked.emit(True)
         elif under_nsm:
             serverOSC.toDaemon('/ray/server/set_nsm_locked')
         
         signaler.daemon_announce_ok.emit()
+        signaler.daemon_options.emit(options)
                 
     def disannounce(self, address=None):
         if not address:

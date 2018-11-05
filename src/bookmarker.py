@@ -348,8 +348,10 @@ class PickerTypeQt5(PickerType):
         
         shortcuts = getListInSettings(settings, 'FileDialog/shortcuts')
         
-        if url in shortcuts:
-            return
+        for sc in shortcuts:
+            sc_url = QUrl(sc)
+            if sc_url.isLocalFile() and sc_url.toLocalFile() == spath:
+                return
         
         shortcuts.append(url)
         
@@ -368,13 +370,16 @@ class PickerTypeQt5(PickerType):
         url = pathlib.Path(spath).as_uri()
         
         settings = QSettings(self.config_path, QSettings.IniFormat)
-        shortcuts = settings.value('FileDialog/shortcuts', type=list)
+        shortcuts = getListInSettings(settings, 'FileDialog/shortcuts')
         
-        if not url in shortcuts:
+        for sc in shortcuts:
+            sc_url = QUrl(sc)
+            if sc_url.isLocalFile() and sc_url.toLocalFile() == spath:
+                shortcuts.remove(sc)
+                break
+        else:
             self.written = False
             return
-        
-        shortcuts.remove(url)
         
         settings.setValue('FileDialog/shortcuts', shortcuts)
         settings.sync()

@@ -638,7 +638,6 @@ QToolButton {border: none}</string>
     <addaction name="actionNewSession"/>
     <addaction name="actionOpenSession"/>
     <addaction name="separator"/>
-    <addaction name="actionSaveAllFromSavedClient"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
@@ -678,10 +677,18 @@ QToolButton {border: none}</string>
     <addaction name="actionAddApplication"/>
     <addaction name="actionAddExecutable"/>
    </widget>
+   <widget class="QMenu" name="menuOptions">
+    <property name="title">
+     <string>Options</string>
+    </property>
+    <addaction name="actionSaveAllFromSavedClient"/>
+    <addaction name="actionBookmarkSessionFolder"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSession"/>
    <addaction name="menuAdd"/>
    <addaction name="menuView"/>
+   <addaction name="menuOptions"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
@@ -992,6 +999,20 @@ QToolButton {border: none}</string>
    </property>
    <property name="toolTip">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some clients (Ardour, Qtractor...) sends their saved state to RaySession.&lt;/p&gt;&lt;p&gt;When this option is checked, the session is saved when a client sends that it has been saved.&lt;/p&gt;&lt;p&gt;For example, a Ctrl-S in Ardour will also save all the current Ray Session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="actionBookmarkSessionFolder">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="bookmarks"/>
+   </property>
+   <property name="text">
+    <string>Provide bookmarks for session folder</string>
    </property>
   </action>
  </widget>
