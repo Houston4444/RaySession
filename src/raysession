@@ -804,6 +804,7 @@ class MainWindow(QMainWindow):
         self.ui.actionKeepFocus.toggled.connect(self.toggleKeepFocus)
         self.ui.actionSaveAllFromSavedClient.toggled.connect(self.saveAllFromClientToggled)
         self.ui.actionBookmarkSessionFolder.toggled.connect(self.bookmarkSessionFolderToggled)
+        self.ui.actionDesktopsMemory.toggled.connect(self.desktopsMemoryToggled)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(app.aboutQt)
         
@@ -819,6 +820,7 @@ class MainWindow(QMainWindow):
         self.controlMenu.addSeparator()
         self.controlMenu.addAction(self.ui.actionSaveAllFromSavedClient)
         self.controlMenu.addAction(self.ui.actionBookmarkSessionFolder)
+        self.controlMenu.addAction(self.ui.actionDesktopsMemory)
         
         self.controlToolButton = self.ui.toolBar.widgetForAction(self.ui.actionControlMenu)
         self.controlToolButton.setPopupMode(QToolButton.InstantPopup)
@@ -944,6 +946,13 @@ class MainWindow(QMainWindow):
     def setDaemonOptions(self, options):
         self.ui.actionSaveAllFromSavedClient.setChecked(bool(options & OPTION_SAVE_FROM_CLIENT))
         self.ui.actionBookmarkSessionFolder.setChecked( bool(options & OPTION_BOOKMARK_SESSION))
+        self.ui.actionDesktopsMemory.setChecked(bool(options & OPTION_DESKTOPS_MEMORY))
+        
+        has_wmctrl = bool(options & OPTION_HAS_WMCTRL)
+        self.ui.actionDesktopsMemory.setEnabled(has_wmctrl)
+        if has_wmctrl:
+            self.ui.actionDesktopsMemory.setText(_translate('actions', 'Desktops Memory'))
+        
     
     def hideMessagesDock(self):
         self.ui.dockWidgetMessages.setVisible(False)
@@ -967,6 +976,9 @@ class MainWindow(QMainWindow):
     
     def bookmarkSessionFolderToggled(self, state):
         serverOSC.toDaemon('/ray/option/bookmark_session_folder', int(state))
+    
+    def desktopsMemoryToggled(self, state):
+        serverOSC.toDaemon('/ray/option/desktops_memory', int(state))
     
     def flashOpen(self):
         for client in session.client_list:

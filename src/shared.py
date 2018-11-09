@@ -53,9 +53,11 @@ NSM_MODE_NO_NSM  = 0
 NSM_MODE_CHILD   = 1
 NSM_MODE_NETWORK = 2
 
-OPTION_NSM_LOCKED       = 0x01
-OPTION_SAVE_FROM_CLIENT = 0x02
-OPTION_BOOKMARK_SESSION = 0x04
+OPTION_NSM_LOCKED       = 0x001
+OPTION_SAVE_FROM_CLIENT = 0x002
+OPTION_BOOKMARK_SESSION = 0x004
+OPTION_HAS_WMCTRL       = 0x008
+OPTION_DESKTOPS_MEMORY  = 0x010
 
 def ifDebug(string):
     if debug:
@@ -76,6 +78,24 @@ def getListInSettings(settings, path):
             settings_list = []
             
     return settings_list
+
+def isPidChildOf(child_pid, parent_pid):
+    if child_pid < parent_pid:
+        return False
+    
+    ppid = child_pid
+    this_pid = os.getpid()
+    
+    while ppid != parent_pid and ppid > 1 and ppid != this_pid:
+        try:
+            ppid = int(subprocess.check_output(['ps', '-o', 'ppid=', '-p', str(ppid)]))
+        except:
+            return False
+        
+    if ppid == parent_pid:
+        return True
+    
+    return False
 
 def isOscPortFree(port):
     try:

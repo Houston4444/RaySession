@@ -7,6 +7,7 @@ from PyQt5.QtXml import QDomDocument
 
 from shared import *
 from bookmarker import BookMarker
+from desktops_memory import DesktopsMemory
 
 
 
@@ -90,21 +91,6 @@ def remove_accents(input_str):
 def ifDebug(string):
     if debug:
         print(string, file=sys.stderr)
-
-def isPIdChildOf(child_pid, parent_pid):
-    ppid = child_pid
-    this_pid = os.getpid()
-    
-    while ppid != parent_pid and ppid > 1 and ppid != this_pid:
-        try:
-            ppid = int(subprocess.check_output(['ps', '-o', 'ppid=', '-p', str(ppid)]))
-        except:
-            return False
-        
-    if ppid == parent_pid:
-        return True
-    
-    return False
 
 def MESSAGE(string):
     global last_client_message
@@ -1357,7 +1343,8 @@ class Session(ServerSender):
         
         self.file_copier = FileCopier(self)
         
-        self.bookmarker = BookMarker(app_config_path)
+        self.bookmarker      = BookMarker(app_config_path)
+        self.desktops_memory = DesktopsMemory(self)
     
     #############
     def oscReply(self, *args):
@@ -1408,9 +1395,13 @@ class Session(ServerSender):
         
         multi_daemon_file.update()
         
-        if self.path and self.hasServer() and server.option_bookmark_session:
-            self.bookmarker.setDaemonPort(server.port)
-            self.bookmarker.makeAll(self.path)
+        if self.path and self.hasServer():
+            if server.option_bookmark_session:
+                self.bookmarker.setDaemonPort(server.port)
+                self.bookmarker.makeAll(self.path)
+                
+            if server.option_desktops_memory:
+                self.desktops_memory.setSessionPath(self.path)
     
     def getClient(self, client_id):
         for client in self.clients:
@@ -1869,9 +1860,9 @@ class OperatingSession(Session):
         p.setAttribute('VERSION', VERSION)
         p.setAttribute('name', self.name)
         
-        xml_cls = xml.createElement('Clients')
+        xml_cls   = xml.createElement('Clients')
         xml_rmcls = xml.createElement('RemovedClients')
-        
+        xml_wins  = xml.createElement('Windows')
         for client in self.clients:
             cl = xml.createElement('client')
             cl.setAttribute('id', client.client_id)
@@ -1888,10 +1879,23 @@ class OperatingSession(Session):
             client.writeXmlProperties(cl)
             
             xml_rmcls.appendChild(cl)
-            
+        
+        if self.hasServer() and server.option_desktops_memory:
+            self.desktops_memory.save()
+        
+        for win in self.desktops_memory.saved_windows:
+            xml_win = xml.createElement('window')
+            xml_win.setAttribute('class', win.wclass)
+            xml_win.setAttribute('name', win.name)
+            xml_win.setAttribute('desktop', win.desktop)
+            xml_wins.appendChild(xml_win)
+        
         p.appendChild(xml_cls)
         p.appendChild(xml_rmcls)
+        p.appendChild(xml_wins)
+        
         xml.appendChild(p)
+        
         
         contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"
                     "<!DOCTYPE RAYSESSION>\n")
@@ -2255,6 +2259,10 @@ class OperatingSession(Session):
                         elif tag_name == 'RemovedClients':
                             self.removed_clients.append(client)
                             client.sendGuiClientProperties(removed=True)
+                            
+                elif tag_name == "Windows":
+                    if self.hasServer() and server.option_desktops_memory:
+                        self.desktops_memory.readXml(node.toElement())
             
             ray_file.close()
         else:
@@ -2368,6 +2376,10 @@ class OperatingSession(Session):
         
     def load_step3(self):
         self.cleanExpected()
+        
+        if self.hasServer() and server.option_desktops_memory:
+            self.desktops_memory.replace()
+        
         self.tellAllClientsSessionIsLoaded()
         self.message('Loaded')
         
@@ -2835,7 +2847,7 @@ class SignaledSession(OperatingSession):
             else:
                 for client in self.clients:
                     if not client.active and client.pending_command == COMMAND_START:
-                        if isPIdChildOf(pid, client.pid):
+                        if isPidChildOf(pid, client.pid):
                             client.serverAnnounce(path, args, src_addr, False)
                             break
                 
@@ -2860,6 +2872,15 @@ class SignaledSession(OperatingSession):
             client.pending_command = COMMAND_NONE
             
             client.setStatus(CLIENT_STATUS_READY)
+            
+            if self.hasServer() and server.server_status == SERVER_STATUS_READY:
+                #for client in self.clients:
+                    #if client.isCapableOf(':desktops:'):
+                        #client.tellClientSessionIsLoaded()
+                        #break
+                        
+                if server.option_desktops_memory:
+                    self.desktops_memory.replace()
             
             if self.wait_for == WAIT_FOR_REPLY:
                 self.endTimerIfLastExpected(client)
@@ -3279,6 +3300,12 @@ class OscServerThread(ClientCommunicating):
         
         self.option_save_from_client = settings.value('daemon/save_all_from_saved_client', True, type=bool)
         self.option_bookmark_session = settings.value('daemon/bookmark_session_folder', True, type=bool)
+        self.option_desktops_memory   = settings.value('daemon/desktops_memory', False, type=bool)
+        
+        self.option_has_wmctrl = bool(shutil.which('wmctrl'))
+        if not self.option_has_wmctrl:
+            self.option_desktops_memory = False
+        
     
     @make_method('/osc/ping', '')
     def oscPing(self, path, args, types, src_addr):
@@ -3775,6 +3802,12 @@ class OscServerThread(ClientCommunicating):
         self.option_bookmark_session = bool(args[0])
         signaler.bookmark_option_changed.emit(bool(args[0]))        
     
+    @make_method('/ray/option/desktops_memory', 'i')
+    def rayOptionDesktopsMemory(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        self.option_desktops_memory = bool(args[0])
+    
     def isOperationPending(self, src_addr, path):
         if session.file_copier.isActive():
             self.send(src_addr, "/error", path, ERR_COPY_RUNNING, "ray-daemon is copying files. Wait copy finish or abort copy, and restart operation !")
@@ -3830,24 +3863,23 @@ class OscServerThread(ClientCommunicating):
         if content.tagName() != "RAY-CLIENT-TEMPLATES":
             return
         
-        node = content.firstChild()
-        while not node.isNull():
+        nodes = content.childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
             ct = node.toElement()
             tag_name = ct.tagName()
             if tag_name != 'Client-Template':
-                node = node.nextSibling()
                 continue
             
             template_name = ct.attribute('template-name')
             
             if not template_name or template_name in template_list:
-                node = node.nextSibling()
                 continue
             
             executable = ct.attribute('executable') 
             
             if not executable:
-                node = node.nextSibling()
                 continue
             
             try_exec_line = ct.attribute('try-exec')
@@ -3866,7 +3898,6 @@ class OscServerThread(ClientCommunicating):
                     break
             
             if not try_exec_ok:
-                node = node.nextSibling()
                 continue
             
             template_list.append("%s/%s" % (template_name, ct.attribute('icon') ))
@@ -3875,8 +3906,6 @@ class OscServerThread(ClientCommunicating):
             if len(tmp_template_list) == 100:
                 self.send(src_addr, response_osc_path, *tmp_template_list)
                 template_list.clear()
-        
-            node = node.nextSibling()
         
         if tmp_template_list:
             self.send(src_addr, response_osc_path, *tmp_template_list)
@@ -3898,9 +3927,11 @@ class OscServerThread(ClientCommunicating):
     def announceGui(self, url, nsm_locked=False, is_net_free=True):
         gui_addr = Address(url)
         
-        options = (OPTION_NSM_LOCKED       * self.is_nsm_locked +
+        options = (OPTION_NSM_LOCKED       * self.is_nsm_locked           +
                    OPTION_SAVE_FROM_CLIENT * self.option_save_from_client +
-                   OPTION_BOOKMARK_SESSION * self.option_bookmark_session)
+                   OPTION_BOOKMARK_SESSION * self.option_bookmark_session +
+                   OPTION_HAS_WMCTRL       * self.option_has_wmctrl       +
+                   OPTION_DESKTOPS_MEMORY  * self.option_desktops_memory)
         
         self.send(gui_addr, "/ray/gui/daemon_announce", VERSION, self.server_status, options, session.root, int(is_net_free))
         
@@ -4045,6 +4076,7 @@ if __name__ == '__main__':
     settings.setValue('daemon/non_active_list', known_as_non_active)
     settings.setValue('daemon/save_all_from_saved_client', server.option_save_from_client)
     settings.setValue('daemon/bookmark_session_folder', server.option_bookmark_session)
+    settings.setValue('daemon/desktops_memory', server.option_desktops_memory)
     settings.sync()
     
     server.stop()
