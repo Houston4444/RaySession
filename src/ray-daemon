@@ -1399,9 +1399,6 @@ class Session(ServerSender):
             if server.option_bookmark_session:
                 self.bookmarker.setDaemonPort(server.port)
                 self.bookmarker.makeAll(self.path)
-                
-            if server.option_desktops_memory:
-                self.desktops_memory.setSessionPath(self.path)
     
     def getClient(self, client_id):
         for client in self.clients:

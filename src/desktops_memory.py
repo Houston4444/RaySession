@@ -24,10 +24,10 @@ def moveWin(win_id, desktop_from, desktop_to):
             
 class DesktopsMemory(object):
     def __init__(self, session):
-        self.session_path  = ''
-        self.saved_windows = []
+        self.session = session
+        self.saved_windows      = []
         self.active_window_list = []
-        self.daemon_pids = []
+        self.daemon_pids     = []
         self.non_daemon_pids = []
     
     def isChildOfDaemon(self, pid):
@@ -58,9 +58,13 @@ class DesktopsMemory(object):
         
         self.non_daemon_pids.append(pid)
         return False
-    
-    def setSessionPath(self, spath):
-        self.session_path = spath
+        
+    def isNameInSession(self, name):
+        for client in self.session.clients:
+            if client.name == name and client.active:
+                return True
+                
+        return False
         
     def setActiveWindowList(self):
         try:
@@ -84,14 +88,30 @@ class DesktopsMemory(object):
                     properties.append(el)
                     
             if len(properties) >= 6 and properties[1].lstrip('-').isdigit() and properties[2].isdigit():
-                pid = int(properties[2])
-                
-                if not self.isChildOfDaemon(pid):
-                    continue
-                
                 wid     = properties[0]
                 desktop = int(properties[1])
+                pid     = int(properties[2])
                 wclass  = properties[3]
+                
+                ignore_pid = False
+                
+                #fltk based apps don't send their pids to wmctrl, so if win seems to be one of these apps
+                #and app is running in the session, assume that this window is child of this ray-daemon
+                if pid == 0 and '.' in wclass:
+                    class_name = wclass.split('.')[0]
+                    
+                    exceptions = {'luppp'        : 'Luppp',
+                                  'Non-Mixer'    : 'Non-Mixer',
+                                  'Non-Sequencer': 'Non-Sequencer',
+                                  'Non-Timeline' : 'Non-Timeline'}
+                    
+                    if class_name in exceptions:
+                        if self.isNameInSession(exceptions[class_name]):
+                            ignore_pid = True
+                
+                
+                if not (ignore_pid or self.isChildOfDaemon(pid)):
+                    continue
                 
                 name = ""
                 for prop in properties[5:]:
@@ -143,8 +163,8 @@ class DesktopsMemory(object):
                     break
                     
                 elif win.wclass == awin.wclass:
-                    if self.session_name:
-                        win_name_sps = win.name.split(session_name, 1)
+                    if self.session.name:
+                        win_name_sps = win.name.split(self.session.name, 1)
                         if len(win_name_sps) == 2:
                             if awin.name.startswith(win_name_sps[0]) and awin.name.endswith(win_name_sps[1]):
                                 moveWin(awin.id, awin.desktop, win.desktop)
