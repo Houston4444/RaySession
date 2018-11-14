@@ -34,4 +34,5 @@
  <Client-Template template-name="JACK Connexions" icon="curve-connector" client_id="patch" executable="ray-jackpatch" name="Jack Connexions"/>
  <Client-Template name="ray-network" label="Network Session" template-name="Network Session" icon="network-wired" executable="ray-network" client_id="network"/>
  <Client-Template icon="adljack" template-name="ADLjack" executable="adljack" client_id="adl" name="ADLjack"/>
+ <Client-Template icon="ADLplug" template-name="ADLplug" executable="ADLplug" client_id="adlplug" name="ADLplug"/>
 </RAY-CLIENT-TEMPLATES>

@@ -2709,11 +2709,13 @@ class SignaledSession(OperatingSession):
         if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
             return
         
-        node = xml.documentElement().firstChild()
-        while not node.isNull():
+        nodes = xml.documentElement().childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
             ct = node.toElement()
+            
             if ct.tagName() != 'Client-Template':
-                node = node.nextSibling()
                 continue
             
             if ct.attribute('template-name') == template_name:
@@ -2727,7 +2729,11 @@ class SignaledSession(OperatingSession):
                     needed_version = ''
                 
                 if factory and needed_version:
-                    full_program_version = subprocess.check_output([client.executable_path, '--version']).decode()
+                    try:
+                        full_program_version = subprocess.check_output([client.executable_path, '--version']).decode()
+                    except:
+                        continue
+                    
                     previous_is_digit = False
                     program_version = ''
                     for character in full_program_version:
@@ -2743,7 +2749,6 @@ class SignaledSession(OperatingSession):
                                 break
                             
                     if not program_version:
-                        node = node.nextSibling()
                         continue
                     
                     
@@ -2780,8 +2785,6 @@ class SignaledSession(OperatingSession):
                         self.addClientTemplate_step_1(client)
                     
                 break
-            
-            node = node.nextSibling()
     
     def addClientTemplate_step_1(self, client):
         client.adjustFilesAfterCopy(self.name, TEMPLATE_CLIENT_LOAD)
