@@ -2637,10 +2637,11 @@ if __name__ == '__main__':
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
     
-    #Add RaySession/src to $PATH to can use raysession after make, whitout install
+    #Add RaySession/src/bin to $PATH to can use raysession after make, whitout install
     this_path = os.path.realpath(os.path.dirname(sys.argv[0]))
-    if not os.environ['PATH'].startswith("%s:" % this_path):
-        os.environ['PATH']="%s:%s" % (this_path, os.environ['PATH'])
+    bin_path = "%s/bin"  % os.path.dirname(this_path)
+    if not os.environ['PATH'].startswith("%s:" % bin_path):
+        os.environ['PATH']="%s:%s" % (bin_path, os.environ['PATH'])
     
     #get arguments
     parser = argparse.ArgumentParser(description=_translate('help', 'A session manager based on the Non-Session-Manager API for sound applications.'))
