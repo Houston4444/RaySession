@@ -14,5 +14,5 @@
 /locale/*.qm
 
 #python cache
-/src/__pycache__/
+/src/*/__pycache__/
 
