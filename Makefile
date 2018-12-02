@@ -28,12 +28,26 @@ src/resources_rc.py: resources/resources.qrc
 
 UI: raysession
 
-raysession: src/ui_abort_copy.py src/ui_abort_session.py src/ui_about_raysession.py \
-	    src/ui_add_application.py src/ui_client_properties.py src/ui_client_slot.py src/ui_client_trash.py \
-	    src/ui_edit_executable.py src/ui_daemon_url.py src/ui_error_dialog.py src/ui_new_executable.py \
-	    src/ui_new_session.py src/ui_nsm_open_info.py src/ui_open_session.py src/ui_proxy_copy.py \
-	    src/ui_proxy_gui.py src/ui_quit_app.py src/ui_raysession.py src/ui_save_template_session.py \
-	    src/ui_stop_client.py
+raysession: src/gui/ui_abort_copy.py \
+	    src/gui/ui_abort_session.py \
+	    src/gui/ui_about_raysession.py \
+	    src/gui/ui_add_application.py \
+	    src/gui/ui_client_properties.py \
+	    src/gui/ui_client_slot.py \
+	    src/gui/ui_client_trash.py \
+	    src/gui/ui_edit_executable.py \
+	    src/gui/ui_daemon_url.py \
+	    src/gui/ui_error_dialog.py \
+	    src/gui/ui_new_executable.py \
+	    src/gui/ui_new_session.py \
+	    src/gui/ui_nsm_open_info.py \
+	    src/gui/ui_open_session.py \
+	    src/gui/ui_proxy_copy.py \
+	    src/gui/ui_proxy_gui.py \
+	    src/gui/ui_quit_app.py \
+	    src/gui/ui_raysession.py \
+	    src/gui/ui_save_template_session.py \
+	    src/gui/ui_stop_client.py
 
 src/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
