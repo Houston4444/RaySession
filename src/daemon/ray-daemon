@@ -4011,10 +4011,10 @@ if __name__ == '__main__':
     
     
     session_template_root         = "%s/%s" % (app_config_path, 'session_templates')
-    session_template_factory_root = "%s/session_templates" % dirname(dirname(sys.argv[0]))
+    session_template_factory_root = "%s/session_templates" % dirname(dirname(dirname(sys.argv[0])))
     session_template_net_rootname = ".ray-net-session-templates"
     client_template_local_root    = "%s/%s" % (app_config_path, 'client_templates')
-    client_template_factory_root  = "%s/client_templates" % dirname(dirname(sys.argv[0]))
+    client_template_factory_root  = "%s/client_templates" % dirname(dirname(dirname(sys.argv[0])))
     
     ### Translation process
     locale = QLocale.system().name()
