@@ -18,9 +18,9 @@ all: RES UI LOCALE
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # Resources
 
-RES: src/resources_rc.py
+RES: src/gui/resources_rc.py
 
-src/resources_rc.py: resources/resources.qrc
+src/gui/resources_rc.py: resources/resources.qrc
 	$(PYRCC) $< -o $@
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_save_template_session.py \
 	    src/gui/ui_stop_client.py
 
-src/ui_%.py: resources/ui/%.ui
+src/gui/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # # Translations Files
@@ -63,8 +63,8 @@ locale/%.qm: locale/%.ts
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	rm -f *~ src/*~ src/*.pyc src/ui_*.py src/resources_rc.py locale/*.qm
-	rm -f -R src/__pycache__
+	rm -f *~ src/*~ src/*.pyc src/gui/ui_*.py src/gui/resources_rc.py locale/*.qm
+	rm -f -R src/__pycache__ src/gui/__pycache__
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 debug:
