@@ -1,0 +1,1 @@
+../../shared/nsm_client.py
