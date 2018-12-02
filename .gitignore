@@ -3,12 +3,15 @@
 !/.git
 
 #UI builds
-/src/ui_*.py
+/src/gui/ui_*.py
+/src/clients/proxy/ui_*.py
 
 #resources qt build
-/src/resources_rc.py
+/src/gui/resources_rc.py
 
 /src/.*
+/src/*/.*
+/src/*/*/.*
 
 #translations
 /locale/*.qm

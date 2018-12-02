@@ -26,7 +26,7 @@ src/gui/resources_rc.py: resources/resources.qrc
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # UI code
 
-UI: raysession
+UI: raysession ray_proxy
 
 raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_abort_session.py \
@@ -42,14 +42,18 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_new_session.py \
 	    src/gui/ui_nsm_open_info.py \
 	    src/gui/ui_open_session.py \
-	    src/gui/ui_proxy_copy.py \
-	    src/gui/ui_proxy_gui.py \
 	    src/gui/ui_quit_app.py \
 	    src/gui/ui_raysession.py \
 	    src/gui/ui_save_template_session.py \
 	    src/gui/ui_stop_client.py
 
 src/gui/ui_%.py: resources/ui/%.ui
+	$(PYUIC) $< -o $@
+	
+ray_proxy: src/clients/proxy/ui_proxy_copy.py \
+	   src/clients/proxy/ui_proxy_gui.py
+	
+src/clients/proxy/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # # Translations Files
@@ -63,7 +67,8 @@ locale/%.qm: locale/%.ts
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	rm -f *~ src/*~ src/*.pyc src/gui/ui_*.py src/gui/resources_rc.py locale/*.qm
+	rm -f *~ src/*~ src/*.pyc src/gui/ui_*.py src/clients/proxy/ui_*.py \
+	      src/gui/resources_rc.py locale/*.qm
 	rm -f -R src/__pycache__ src/gui/__pycache__
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
