@@ -10,7 +10,7 @@ DESTDIR =
 LINK   = ln -s
 PYUIC ?= pyuic5
 PYRCC ?= pyrcc5
-LRELEASE ?= lrelease-qt4
+LRELEASE ?= lrelease
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 all: RES UI LOCALE
