@@ -3,9 +3,9 @@
 # ---------------------- #
 # Created by houston4444
 #
-
 PREFIX  = /usr/local
 DESTDIR =
+DEST_RAY := $(DESTDIR)$(PREFIX)/share/raysession
 
 LINK   = ln -s
 PYUIC ?= pyuic5
@@ -90,57 +90,55 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/raysession/
-	install -d $(DESTDIR)$(PREFIX)/share/raysession/src/
-	install -d $(DESTDIR)$(PREFIX)/share/raysession/locale/
+	install -d $(DEST_RAY)/
+	install -d $(DEST_RAY)/locale/
 	
 	# Copy Client Templates Factory
-	cp -r client_templates  $(DESTDIR)$(PREFIX)/share/raysession/
-	cp -r session_templates $(DESTDIR)$(PREFIX)/share/raysession/
-
-# 	# Install script files and binaries
-	install -m 755 data/raysession                    $(DESTDIR)$(PREFIX)/bin/ 
-	install -m 755 data/ray-daemon                    $(DESTDIR)$(PREFIX)/bin/ 
-# 	install -m 755 data/ray-proxy                     $(DESTDIR)$(PREFIX)/bin/
+	cp -r client_templates  $(DEST_RAY)/
+	cp -r session_templates $(DEST_RAY)/
 	
-	install -m 644 data/*.desktop                     $(DESTDIR)$(PREFIX)/share/applications/
+	# Copy Desktop Files
+	install -m 644 data/*.desktop $(DESTDIR)$(PREFIX)/share/applications/
 
 	# Install icons
-	install -m 644 resources/16x16/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
-	install -m 644 resources/24x24/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/24x24/apps/
-	install -m 644 resources/32x32/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/32x32/apps/
-	install -m 644 resources/48x48/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -m 644 resources/48x48/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -m 644 resources/64x64/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/64x64/apps/
-	install -m 644 resources/96x96/raysession.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/96x96/apps/
-	install -m 644 resources/128x128/raysession.png   $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-	install -m 644 resources/256x256/raysession.png   $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
+	install -m 644 resources/16x16/raysession.png   \
+		$(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
+	install -m 644 resources/24x24/raysession.png   \
+		$(DESTDIR)$(PREFIX)/share/icons/hicolor/24x24/apps/
+	install -m 644 resources/32x32/raysession.png   \
+		$(DESTDIR)$(PREFIX)/share/icons/hicolor/32x32/apps/
+	install -m 644 resources/48x48/raysession.png   \
+		$(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
+	install -m 644 resources/48x48/raysession.png   \
+		$(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
+	install -m 644 resources/64x64/raysession.png   \
+		$(DESTDIR)$(PREFIX)/share/icons/hicolor/64x64/apps/
+	install -m 644 resources/96x96/raysession.png   \
+		$(DESTDIR)$(PREFIX)/share/icons/hicolor/96x96/apps/
+	install -m 644 resources/128x128/raysession.png \
+		$(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
+	install -m 644 resources/256x256/raysession.png \
+		$(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 
 	# Install icons, scalable
-	install -m 644 resources/scalable/raysession.svg  $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
+	install -m 644 resources/scalable/raysession.svg \
+		$(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 
 	# Install main code
-	install -m 755 src/raysession        $(DESTDIR)$(PREFIX)/share/raysession/src/
-	install -m 755 src/ray-daemon        $(DESTDIR)$(PREFIX)/share/raysession/src/
-	install -m 755 src/ray-proxy         $(DESTDIR)$(PREFIX)/share/raysession/src/
-	install -m 755 src/ray-jackpatch     $(DESTDIR)$(PREFIX)/share/raysession/src/
-	install -m 755 src/sooperlooper_lash $(DESTDIR)$(PREFIX)/share/raysession/src/
-	install -m 644 src/*.py $(DESTDIR)$(PREFIX)/share/raysession/src/
+	cp -r src $(DEST_RAY)/
+	
+	#link main scripts to bin
+	$(LINK) $(DEST_RAY)/src/gui/raysession    $(DESTDIR)$(PREFIX)/bin/
+	$(LINK) $(DEST_RAY)/src/daemon/ray-daemon $(DESTDIR)$(PREFIX)/bin/
 	
 	# Install Translations
-	install -m 644 locale/*.qm $(DESTDIR)$(PREFIX)/share/raysession/locale/
-	
-	# Adjust PREFIX value in script file
-	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/raysession
-	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/ray-daemon
-# 	sed -i "s?X-PREFIX-X?$(PREFIX)?" $(DESTDIR)$(PREFIX)/bin/ray-proxy
-# -----------------------------------------------------------------------------------------------------------------------------------------
+	install -m 644 locale/*.qm $(DEST_RAY)/locale/
+	-----------------------------------------------------------------------------------------------------------------------------------------
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/raysession
 	rm -f $(DESTDIR)$(PREFIX)/bin/ray-daemon
-	rm -f $(DESTDIR)$(PREFIX)/bin/ray-proxy
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/raysession.desktop
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/raysession.png
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/raysession.svg
-	rm -rf $(DESTDIR)$(PREFIX)/share/raysession/
+	rm -rf $(DEST_RAY)

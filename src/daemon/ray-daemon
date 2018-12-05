@@ -3958,8 +3958,8 @@ class OscServerThread(ClientCommunicating):
         MESSAGE("Registered with GUI")
 
 if __name__ == '__main__':
-    #Add RaySession/src/bin to $PATH to can use ray-proxy and maybe future executables after make, whitout install
-    this_path = os.path.realpath(os.path.dirname(sys.argv[0]))
+    #Add raysession/src/bin to $PATH to can use ray executables after make, whitout install
+    this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
     bin_path = "%s/bin"  % os.path.dirname(this_path)
     if not os.environ['PATH'].startswith("%s:" % bin_path):
         os.environ['PATH']="%s:%s" % (bin_path, os.environ['PATH'])

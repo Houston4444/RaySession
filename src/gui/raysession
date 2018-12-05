@@ -2628,7 +2628,7 @@ if __name__ == '__main__':
     ### Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
-    if appTranslator.load("%s/locale/raysession_%s" % (os.path.dirname(os.path.dirname(os.path.dirname(sys.argv[0]))), locale)):
+    if appTranslator.load("%s/locale/raysession_%s" % (os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), locale)):
         app.installTranslator(appTranslator)
     _translate = app.translate
     init_translation(_translate)
@@ -2637,8 +2637,8 @@ if __name__ == '__main__':
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
     
-    #Add RaySession/src/bin to $PATH to can use raysession after make, whitout install
-    this_path = os.path.realpath(os.path.dirname(sys.argv[0]))
+    #Add raysession/src/bin to $PATH to can use raysession after make, whitout install
+    this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
     bin_path = "%s/bin"  % os.path.dirname(this_path)
     if not os.environ['PATH'].startswith("%s:" % bin_path):
         os.environ['PATH']="%s:%s" % (bin_path, os.environ['PATH'])
