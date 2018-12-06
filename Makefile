@@ -7,10 +7,16 @@ PREFIX  = /usr/local
 DESTDIR =
 DEST_RAY := $(DESTDIR)$(PREFIX)/share/raysession
 
-LINK   = ln -s
-PYUIC ?= pyuic5
-PYRCC ?= pyrcc5
-LRELEASE ?= lrelease
+LINK = ln -s
+PYUIC := pyuic5
+PYRCC := pyrcc5
+
+LRELEASE := lrelease
+ifeq (, $(shell which lrelease))
+ LRELEASE := lrelease-qt5
+endif
+
+
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 all: RES UI LOCALE
