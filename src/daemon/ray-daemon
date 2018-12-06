@@ -3964,16 +3964,24 @@ if __name__ == '__main__':
     if not os.environ['PATH'].startswith("%s:" % bin_path):
         os.environ['PATH']="%s:%s" % (bin_path, os.environ['PATH'])
     
-    
     parser = argparse.ArgumentParser()
-    parser.add_argument('--session-root', '-r', help='set root folder for sessions')
-    parser.add_argument('--osc-port', '-p', type=int, default=0, help='select OSC port for the daemon')
-    parser.add_argument('--findfreeport', action='store_true', help='find another port if port is not free')
-    parser.add_argument('--gui-url', type=getLibloAddress, help=argparse.SUPPRESS)
-    parser.add_argument('--config-dir', '-c', type=str, default='', help='use a custom config dir')
-    parser.add_argument('--debug','-d',  action='store_true', help='see all OSC messages')
-    parser.add_argument('--debug-only', '-do', action='store_true', help='debug without client messages')
+    parser.add_argument('--session-root', '-r', 
+                        help='set root folder for sessions')
+    parser.add_argument('--osc-port', '-p', 
+                        type=int, default=0, 
+                        help='select OSC port for the daemon')
+    parser.add_argument('--findfreeport', action='store_true', 
+                        help='find another port if port is not free')
+    parser.add_argument('--gui-url', type=getLibloAddress, 
+                        help=argparse.SUPPRESS)
+    parser.add_argument('--config-dir', '-c', type=str, default='', 
+                        help='use a custom config dir')
+    parser.add_argument('--debug','-d',  action='store_true', 
+                        help='see all OSC messages')
+    parser.add_argument('--debug-only', '-do', action='store_true', 
+                        help='debug without client messages')
     parser.add_argument('-v', '--version', action='version', version=VERSION)
+    
     parsed_args = parser.parse_args()
     
     debug        = parsed_args.debug
@@ -3992,7 +4000,8 @@ if __name__ == '__main__':
         findfreeport = True
     
     if config_dir and not os.access(config_dir, os.W_OK):
-        sys.stderr.write('%s is not a writable config dir, try another one\n' % config_dir)
+        sys.stderr.write('%s is not a writable config dir, try another one\n'
+                         % config_dir)
         sys.exit(1)
     
     signal.signal(signal.SIGINT,  signalHandler)
@@ -4007,20 +4016,31 @@ if __name__ == '__main__':
         app_config_path = config_dir
     else:
         settings = QSettings()
-        app_config_path = "%s/%s" % (QStandardPaths.writableLocation(QStandardPaths.ConfigLocation), app.organizationName())
+        app_config_path = "%s/%s" % (
+            QStandardPaths.writableLocation(QStandardPaths.ConfigLocation),
+            app.organizationName()  )
     
     
-    session_template_root         = "%s/%s" % (app_config_path, 'session_templates')
-    session_template_factory_root = "%s/session_templates" % dirname(dirname(dirname(sys.argv[0])))
+    session_template_root         = "%s/%s" % (app_config_path, 
+                                               'session_templates')
+    session_template_factory_root = "%s/session_templates" % (
+        dirname(dirname(dirname(os.path.realpath(__file__)))))
+        
     session_template_net_rootname = ".ray-net-session-templates"
-    client_template_local_root    = "%s/%s" % (app_config_path, 'client_templates')
-    client_template_factory_root  = "%s/client_templates" % dirname(dirname(dirname(sys.argv[0])))
+    client_template_local_root    = "%s/%s" % (app_config_path,
+                                               'client_templates')
+    client_template_factory_root  = "%s/client_templates" % (
+        dirname(dirname(dirname(os.path.realpath(__file__)))))
+    
+    print(session_template_factory_root, client_template_factory_root)
     
     ### Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
-    if appTranslator.load("%s/locale/raysession_%s" % (dirname(dirname(sys.argv[0])), locale)):
+    if appTranslator.load("%s/locale/raysession_%s" % 
+                          (dirname(os.path.realpath(__file__)), locale)):
         app.installTranslator(appTranslator)
+        
     _translate = app.translate
     init_translation(_translate)
     
