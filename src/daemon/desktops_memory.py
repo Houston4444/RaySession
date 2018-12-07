@@ -1,6 +1,8 @@
 #!/usr/bin/python3 -u
 
-from shared import *
+import os
+import subprocess
+import sys
 
 class WindowProperties(object):
     id      = ""
@@ -20,8 +22,8 @@ def moveWin(win_id, desktop_from, desktop_to):
     if desktop_from == -1:
         subprocess.run(['wmctrl', 'i', '-r', win_id, '-b', 'remove,sticky'])
         
-    subprocess.run(['wmctrl', '-i', '-r', win_id, '-t', str(desktop_to)])           
-            
+    subprocess.run(['wmctrl', '-i', '-r', win_id, '-t', str(desktop_to)])
+    
 class DesktopsMemory(object):
     def __init__(self, session):
         self.session = session
@@ -47,7 +49,8 @@ class DesktopsMemory(object):
         
         while ppid > daemon_pid and ppid > 1:
             try:
-                ppid = int(subprocess.check_output(['ps', '-o', 'ppid=', '-p', str(ppid)]))
+                ppid = int(subprocess.check_output(['ps', '-o', 'ppid=',
+                                                    '-p', str(ppid)]))
             except:
                 self.non_daemon_pids.append(pid)
                 return False
@@ -68,7 +71,8 @@ class DesktopsMemory(object):
         
     def setActiveWindowList(self):
         try:
-            wmctrl_all = subprocess.check_output(['wmctrl', '-l', '-p', '-x']).decode()
+            wmctrl_all = subprocess.check_output(['wmctrl', '-l',
+                                                  '-p', '-x']).decode()
         except:
             sys.stderr.write('unable to use wmctrl')
             return
@@ -87,7 +91,9 @@ class DesktopsMemory(object):
                 if el:
                     properties.append(el)
                     
-            if len(properties) >= 6 and properties[1].lstrip('-').isdigit() and properties[2].isdigit():
+            if (len(properties) >= 6
+                    and properties[1].lstrip('-').isdigit()
+                    and properties[2].isdigit()):
                 wid     = properties[0]
                 desktop = int(properties[1])
                 pid     = int(properties[2])
@@ -165,10 +171,12 @@ class DesktopsMemory(object):
                 elif win.wclass == awin.wclass:
                     if self.session.name:
                         win_name_sps = win.name.split(self.session.name, 1)
-                        if len(win_name_sps) == 2:
-                            if awin.name.startswith(win_name_sps[0]) and awin.name.endswith(win_name_sps[1]):
-                                moveWin(awin.id, awin.desktop, win.desktop)
-                                break
+                        
+                        if (len(win_name_sps) == 2
+                                and awin.name.startswith(win_name_sps[0])
+                                and awin.name.endswith(win_name_sps[1])):
+                            moveWin(awin.id, awin.desktop, win.desktop)
+                            break
                                 
     def readXml(self, xml_element):
         self.saved_windows.clear()

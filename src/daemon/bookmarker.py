@@ -475,7 +475,8 @@ class BookMarker(object):
         
         self.gtk2 = PickerTypeGtk("%s/.gtk-bookmarks" % HOME)
         self.gtk3 = PickerTypeGtk("%s/.config/gtk-3.0/bookmarks" % HOME)
-        self.fltk = PickerTypeFltk("%s/.fltk/fltk.org/filechooser.prefs" % HOME)
+        self.fltk = PickerTypeFltk("%s/.fltk/fltk.org/filechooser.prefs"
+                                    % HOME)
         self.kde5 = PickerTypeKde5("%s/.local/share/user-places.xbel" % HOME)
         self.qt4  = PickerTypeQt4("%s/.config/Trolltech.conf" % HOME)
         self.qt5  = PickerTypeQt5("%s/.config/QtProject.conf" % HOME)
@@ -529,7 +530,8 @@ class BookMarker(object):
         return string
     
     def makeAll(self, spath):
-        for picker in (self.gtk2, self.gtk3, self.fltk, self.kde5, self.qt4, self.qt5):
+        for picker in (self.gtk2, self.gtk3, self.fltk,
+                       self.kde5, self.qt4, self.qt5):
             picker.makeBookmark(spath)
         
         xml = self.getXml()
@@ -549,7 +551,8 @@ class BookMarker(object):
         self.writeXmlFile(xml)
         
     def removeAll(self, spath):
-        for picker in (self.gtk2, self.gtk3, self.fltk, self.kde5, self.qt4, self.qt5):
+        for picker in (self.gtk2, self.gtk3, self.fltk,
+                       self.kde5, self.qt4, self.qt5):
             picker.removeBookmark(spath)
             
         xml = self.getXml()
@@ -565,7 +568,9 @@ class BookMarker(object):
             port = bke.attribute('port')
             session_path = bke.attribute('session_path')
             
-            if port.isdigit() and int(port) == self.daemon_port and session_path == spath:
+            if (port.isdigit()
+                    and int(port) == self.daemon_port
+                    and session_path == spath):
                 xml_content.removeChild(node)
                 break
             

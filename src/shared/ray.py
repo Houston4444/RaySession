@@ -22,44 +22,49 @@ VERSION = "0.6.1"
 
 APP_TITLE = 'Ray Session'
 
-PREFIX_MODE_UNDEF        = 0
-PREFIX_MODE_CLIENT_NAME  = 1
-PREFIX_MODE_SESSION_NAME = 2
+class PrefixMode():
+    UNDEF        = 0
+    CLIENT_NAME  = 1
+    SESSION_NAME = 2
 
-CLIENT_STATUS_STOPPED =  0
-CLIENT_STATUS_LAUNCH  =  1
-CLIENT_STATUS_OPEN    =  2
-CLIENT_STATUS_READY   =  3
-CLIENT_STATUS_PRECOPY =  4
-CLIENT_STATUS_COPY    =  5
-CLIENT_STATUS_SAVE    =  6
-CLIENT_STATUS_SWITCH  =  7
-CLIENT_STATUS_QUIT    =  8
-CLIENT_STATUS_NOOP    =  9
-CLIENT_STATUS_ERROR   = 10
-CLIENT_STATUS_REMOVED = 11
+class ClientStatus():
+    STOPPED =  0
+    LAUNCH  =  1
+    OPEN    =  2
+    READY   =  3
+    PRECOPY =  4
+    COPY    =  5
+    SAVE    =  6
+    SWITCH  =  7
+    QUIT    =  8
+    NOOP    =  9
+    ERROR   = 10
+    REMOVED = 11
 
-SERVER_STATUS_OFF       =  0
-SERVER_STATUS_NEW       =  1
-SERVER_STATUS_OPEN      =  2
-SERVER_STATUS_CLEAR     =  3
-SERVER_STATUS_SWITCH    =  4
-SERVER_STATUS_LAUNCH    =  5
-SERVER_STATUS_PRECOPY   =  6
-SERVER_STATUS_COPY      =  7
-SERVER_STATUS_READY     =  8
-SERVER_STATUS_SAVE      =  9
-SERVER_STATUS_CLOSE     = 10
-
-NSM_MODE_NO_NSM  = 0
-NSM_MODE_CHILD   = 1
-NSM_MODE_NETWORK = 2
-
-OPTION_NSM_LOCKED       = 0x001
-OPTION_SAVE_FROM_CLIENT = 0x002
-OPTION_BOOKMARK_SESSION = 0x004
-OPTION_HAS_WMCTRL       = 0x008
-OPTION_DESKTOPS_MEMORY  = 0x010
+class ServerStatus():
+    OFF     =  0
+    NEW     =  1
+    OPEN    =  2
+    CLEAR   =  3
+    SWITCH  =  4
+    LAUNCH  =  5
+    PRECOPY =  6
+    COPY    =  7
+    READY   =  8
+    SAVE    =  9
+    CLOSE   = 10
+    
+class NSMMode():
+    NO_NSM  = 0
+    CHILD   = 1
+    NETWORK = 2
+    
+class Option():
+    NSM_LOCKED       = 0x001
+    SAVE_FROM_CLIENT = 0x002
+    BOOKMARK_SESSION = 0x004
+    HAS_WMCTRL       = 0x008
+    DESKTOPS_MEMORY  = 0x010
 
 debug = False
 
@@ -250,18 +255,6 @@ def getThis192():
 def getMachine192(hostname=None):
     if hostname == None:
         return getThis192()
-        #global machine192
-        
-        #if 'machine192' in globals():
-            #return machine192
-
-        #try:
-            #ips = subprocess.check_output(['hostname', '-I']).decode()
-            #ip = ips.split(' ')[0]
-            #machine192 = ip
-            #return ip
-        #except:
-            #return ''
     else:
         if hostname in ('localhost', socket.gethostname()):
             return getThis192()
@@ -342,7 +335,7 @@ class ClientData(object):
                  executable,
                  arguments="",
                  name='', 
-                 prefix_mode=PREFIX_MODE_SESSION_NAME, 
+                 prefix_mode=PrefixMode.SESSION_NAME, 
                  project_path='', 
                  label='', 
                  icon='', 
@@ -379,30 +372,32 @@ def serverStatusString(server_status):
 
 def init_translation(_translate):    
     global client_status_strings
-    client_status_strings = {CLIENT_STATUS_STOPPED: _translate('client status', "stopped"),
-                             CLIENT_STATUS_LAUNCH : _translate('client status', "launch"),
-                             CLIENT_STATUS_OPEN   : _translate('client status', "open"),
-                             CLIENT_STATUS_READY  : _translate('client status', "ready"),
-                             CLIENT_STATUS_PRECOPY: _translate('client status', "copy"),
-                             CLIENT_STATUS_COPY   : _translate('client status', "copy"),
-                             CLIENT_STATUS_SAVE   : _translate('client status', "save"),
-                             CLIENT_STATUS_SWITCH : _translate('client status', "switch"),
-                             CLIENT_STATUS_QUIT   : _translate('client status', "quit"),
-                             CLIENT_STATUS_NOOP   : _translate('client status', "noop"),
-                             CLIENT_STATUS_ERROR  : _translate('client status', "error"),
-                             CLIENT_STATUS_REMOVED: _translate('client status', "removed") }
+    client_status_strings = {
+        ClientStatus.STOPPED: _translate('client status', "stopped"),
+        ClientStatus.LAUNCH : _translate('client status', "launch"),
+        ClientStatus.OPEN   : _translate('client status', "open"),
+        ClientStatus.READY  : _translate('client status', "ready"),
+        ClientStatus.PRECOPY: _translate('client status', "copy"),
+        ClientStatus.COPY   : _translate('client status', "copy"),
+        ClientStatus.SAVE   : _translate('client status', "save"),
+        ClientStatus.SWITCH : _translate('client status', "switch"),
+        ClientStatus.QUIT   : _translate('client status', "quit"),
+        ClientStatus.NOOP   : _translate('client status', "noop"),
+        ClientStatus.ERROR  : _translate('client status', "error"),
+        ClientStatus.REMOVED: _translate('client status', "removed") }
     
     global server_status_strings
-    server_status_strings = {SERVER_STATUS_OFF      : _translate('server status', "off"),
-                             SERVER_STATUS_NEW      : _translate('server status', "new"),
-                             SERVER_STATUS_OPEN     : _translate('server status', "open"),
-                             SERVER_STATUS_CLEAR    : _translate('server status', "clear"),
-                             SERVER_STATUS_SWITCH   : _translate('server status', "switch"),
-                             SERVER_STATUS_LAUNCH   : _translate('server status', "launch"),
-                             SERVER_STATUS_PRECOPY  : _translate('server status', "copy"),
-                             SERVER_STATUS_COPY     : _translate('server status', "copy"),
-                             SERVER_STATUS_READY    : _translate('server status', "ready"),
-                             SERVER_STATUS_SAVE     : _translate('server status', "save"),
-                             SERVER_STATUS_CLOSE    : _translate('server status', "close") }
+    server_status_strings = {
+        ServerStatus.OFF      : _translate('server status', "off"),
+        ServerStatus.NEW      : _translate('server status', "new"),
+        ServerStatus.OPEN     : _translate('server status', "open"),
+        ServerStatus.CLEAR    : _translate('server status', "clear"),
+        ServerStatus.SWITCH   : _translate('server status', "switch"),
+        ServerStatus.LAUNCH   : _translate('server status', "launch"),
+        ServerStatus.PRECOPY  : _translate('server status', "copy"),
+        ServerStatus.COPY     : _translate('server status', "copy"),
+        ServerStatus.READY    : _translate('server status', "ready"),
+        ServerStatus.SAVE     : _translate('server status', "save"),
+        ServerStatus.CLOSE    : _translate('server status', "close") }
 
         
