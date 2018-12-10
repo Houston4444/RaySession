@@ -64,3 +64,13 @@ class ServerSender(QObject):
             return False
         
         return server.is_nsm_locked
+    
+    def getServer(self):
+        return OscServerThread.getInstance()
+    
+    def getServerUrl(self):
+        server = OscServerThread.getInstance()
+        if server:
+            return server.url
+        else:
+            return ''

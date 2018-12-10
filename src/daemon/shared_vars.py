@@ -14,3 +14,7 @@ COMMAND_START     = 5
 COMMAND_CLOSE     = 6
 COMMAND_DUPLICATE = 7
 COMMAND_NEW       = 8
+
+known_as_non_active = []
+
+translator = None

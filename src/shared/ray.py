@@ -66,6 +66,52 @@ class Option():
     HAS_WMCTRL       = 0x008
     DESKTOPS_MEMORY  = 0x010
 
+class Err():
+    OK                =  0
+    GENERAL_ERROR     = -1
+    INCOMPATIBLE_API  = -2
+    BLACKLISTED       = -3
+    LAUNCH_FAILED     = -4
+    NO_SUCH_FILE      = -5
+    NO_SESSION_OPEN   = -6
+    UNSAVED_CHANGES   = -7
+    NOT_NOW           = -8
+    BAD_PROJECT       = -9
+    CREATE_FAILED     = -10
+    SESSION_LOCKED    = -11
+    OPERATION_PENDING = -12
+    COPY_RUNNING      = -13
+    NET_ROOT_RUNNING  = -14
+
+class Command():
+    NONE      = 0
+    QUIT      = 1
+    KILL      = 2
+    SAVE      = 3
+    OPEN      = 4
+    START     = 5
+    CLOSE     = 6
+    DUPLICATE = 7
+    NEW       = 8
+
+class WaitFor():
+    NONE     = 0
+    STOP     = 1
+    ANNOUNCE = 2
+    REPLY    = 3
+    DUPLICATE_START  = 4
+    DUPLICATE_FINISH = 5
+
+class Template():
+    NONE             = 0
+    RENAME           = 1
+    SESSION_SAVE     = 2
+    SESSION_SAVE_NET = 3
+    SESSION_LOAD     = 4
+    SESSION_LOAD_NET = 5
+    CLIENT_SAVE      = 6
+    CLIENT_LOAD      = 7
+
 debug = False
 
 def ifDebug(string):

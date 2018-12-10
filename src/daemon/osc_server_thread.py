@@ -71,7 +71,7 @@ class ClientCommunicating(ServerThread):
         terminal.MESSAGE("Client \"%s\" replied with error: %s (%i)"
                          % ( client.name, message, err_code ))
         
-        client.pending_command = shv.COMMAND_NONE
+        client.pending_command = ray.Command.NONE
         client.setStatus(ray.ClientStatus.ERROR)
     
     @make_method('/nsm/client/progress', 'f')
@@ -117,7 +117,7 @@ class ClientCommunicating(ServerThread):
         self.sendGui("/ray/client/dirty", client.client_id, client.dirty)
         
         if self.option_save_from_client:
-            if (client.pending_command != shv.COMMAND_SAVE
+            if (client.pending_command != ray.Command.SAVE
                 and client.last_dirty 
                 and time.time() - client.last_dirty > 0.20
                 and time.time() - client.last_save_time > 1.00):
