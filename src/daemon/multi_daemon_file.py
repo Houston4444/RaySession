@@ -2,12 +2,21 @@ import os
 from PyQt5.QtXml import QDomDocument
 from osc_server_thread import OscServerThread
 
+instance = None
+
 class MultiDaemonFile(object):
     def __init__(self, session):
         self.session = session
         
         self.file_path = '/tmp/RaySession/multi-daemon.xml'
         self.xml = QDomDocument()
+    
+        global instance
+        instance = self
+        
+    @staticmethod
+    def getInstance():
+        return instance
     
     def pidExists(self, pid):
         if type(pid) == str:
@@ -54,7 +63,6 @@ class MultiDaemonFile(object):
     def setAttributes(self, element):
         server = OscServerThread.getInstance()
         if not server:
-            print('nooos  server')
             return
         
         element.setAttribute('net_daemon_id', server.net_daemon_id)

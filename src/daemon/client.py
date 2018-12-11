@@ -1,6 +1,11 @@
 import os
+import shutil
+import subprocess
+
+from liblo import Address
 from PyQt5.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
+from PyQt5.QtXml import QDomDocument
 
 import ray
 import terminal
@@ -562,7 +567,7 @@ class Client(ServerSender):
         if self.prefix_mode != ray.PrefixMode.UNDEF:
             client_files = self.getProjectFiles()
                         
-            template_dir = "%s/%s" % (client_template_local_root, 
+            template_dir = "%s/%s" % (shv.client_template_local_root, 
                                       template_name)
             
             if os.path.exists(template_dir):
@@ -596,7 +601,7 @@ class Client(ServerSender):
         if self.prefix_mode != ray.PrefixMode.UNDEF:
             self.adjustFilesAfterCopy(template_name, ray.Template.CLIENT_SAVE)
             
-        xml_file = "%s/%s" % (client_template_local_root,
+        xml_file = "%s/%s" % (shv.client_template_local_root,
                               'client_templates.xml')
         
         #security check
@@ -609,8 +614,8 @@ class Client(ServerSender):
                 subprocess.run('rm', '-R', xml_file)
         
         
-        if not os.path.isdir(client_template_local_root):
-            os.makedirs(client_template_local_root)
+        if not os.path.isdir(shv.client_template_local_root):
+            os.makedirs(shv.client_template_local_root)
         
         #create client_templates.xml if not exists
         if not os.path.isfile(xml_file):
@@ -683,12 +688,12 @@ class Client(ServerSender):
             spath = self.session.path
             
         elif template_save == ray.Template.SESSION_SAVE:
-            spath = "%s/%s" % (session_template_root, new_session_full_name)
+            spath = "%s/%s" % (shv.session_template_root, new_session_full_name)
             new_session_name = xsessionx
         
         elif template_save == ray.Template.SESSION_SAVE_NET:
             spath = "%s/%s/%s" % (self.session.root, 
-                                  session_template_net_rootname,
+                                  shv.session_template_net_rootname,
                                   new_session_full_name)
             new_session_name = xsessionx
         
@@ -701,7 +706,7 @@ class Client(ServerSender):
             old_session_name = xsessionx
         
         elif template_save == ray.Template.CLIENT_SAVE:
-            spath = "%s/%s" % (client_template_local_root,
+            spath = "%s/%s" % (shv.client_template_local_root,
                                new_session_full_name)
             new_session_name = xsessionx
             new_client_id    = xclient_idx

@@ -54,7 +54,17 @@ class ServerSender(QObject):
             return
         
         server.setServerStatus(server_status)
+    
+    def getServerStatus(self):
+        if self.is_dummy:
+            return -1
         
+        server = OscServerThread.getInstance()
+        if not server:
+            return -1
+        
+        return server.server_status
+    
     def isNsmLocked(self):
         if self.is_dummy:
             return False
