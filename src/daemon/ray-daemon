@@ -1,35 +1,21 @@
 #!/usr/bin/python3 -u
 
 import argparse
-import functools
-import inspect
 import os
-import random
-import shutil
 import signal
-import subprocess
 import sys
-import time
 import unicodedata
 
-from liblo import ServerThread, Address, make_method, Message
-from PyQt5.QtCore import (QCoreApplication, pyqtSignal, QObject, QTimer,
-                          QProcess, QSettings, 
+from PyQt5.QtCore import (QCoreApplication, QTimer, QSettings, 
                           QStandardPaths, QLocale, QTranslator)
-from PyQt5.QtXml import QDomDocument
 
 import terminal
 import shared_vars as shv
 import ray
 from osc_server_thread import OscServerThread
-from bookmarker        import BookMarker
-from desktops_memory   import DesktopsMemory
 from multi_daemon_file import MultiDaemonFile
-from signaler          import Signaler
-from server_sender     import ServerSender
-from file_copier       import FileCopier
-from client            import Client
-from session import SignaledSession, DummySession
+from signaler import Signaler
+from session  import SignaledSession
 
 #ray-daemon doesn't really cares if jack is running or not
 #but if jack is running, it just ask all jack ports between many clients launchs or stops
@@ -197,8 +183,8 @@ if __name__ == '__main__':
                              % session_root)
             sys.exit(1)
             
-    shv.known_as_non_active = ray.getListInSettings(settings, 
-                                            'daemon/non_active_list')
+    shv.known_as_non_active = ray.getListInSettings(
+                                settings, 'daemon/non_active_list')
     
     timer = QTimer()
     timer.setInterval(200)
@@ -248,7 +234,6 @@ if __name__ == '__main__':
     settings.sync()
     
     server.stop()
-    
     
     del server
     del session
