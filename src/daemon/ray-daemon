@@ -12,6 +12,7 @@ from PyQt5.QtCore import (QCoreApplication, QTimer, QSettings,
 import terminal
 import shared_vars as shv
 import ray
+from daemon_tools import TemplateRoots
 from osc_server_thread import OscServerThread
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
@@ -123,32 +124,12 @@ if __name__ == '__main__':
     
     if config_dir:
         settings = QSettings("%s/RaySession.conf" % config_dir)
-        app_config_path = config_dir
     else:
         settings = QSettings()
-        app_config_path = "%s/%s" % (
-            QStandardPaths.writableLocation(QStandardPaths.ConfigLocation),
-            app.organizationName())
     
     shv.settings = settings
     
-    session_template_root         = "%s/%s" % (app_config_path, 
-                                               'session_templates')
-    session_template_factory_root = "%s/session_templates" % (
-        dirname(dirname(dirname(os.path.realpath(__file__)))))
-        
-    session_template_net_rootname = ".ray-net-session-templates"
-    client_template_local_root    = "%s/%s" % (app_config_path,
-                                               'client_templates')
-    client_template_factory_root  = "%s/client_templates" % (
-        dirname(dirname(dirname(os.path.realpath(__file__)))))
-    
-    shv.app_config_path               = app_config_path
-    shv.session_template_root         = session_template_root
-    shv.session_template_factory_root = session_template_factory_root
-    shv.session_template_net_rootname = session_template_net_rootname
-    shv.client_template_local_root    = client_template_local_root
-    shv.client_template_factory_root  = client_template_factory_root
+    TemplateRoots.initConfig(config_dir)
     
     ### Translation process
     locale = QLocale.system().name()
@@ -160,8 +141,6 @@ if __name__ == '__main__':
         app.installTranslator(appTranslator)
         
     _translate = app.translate
-    #Translator.setInstance(_translate)
-    
     
     if not session_root:
         session_root = "%s/%s" % (os.getenv('HOME'), 

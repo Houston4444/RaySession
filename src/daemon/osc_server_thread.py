@@ -9,9 +9,9 @@ from PyQt5.QtXml import QDomDocument
 #from shared import *
 import ray
 import terminal
-import shared_vars as shv
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
+from daemon_tools import TemplateRoots
 
 debug = False
 instance = None
@@ -363,14 +363,14 @@ class OscServerThread(ClientCommunicating):
     def rayServerListSessionTemplates(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        if not os.path.isdir(shv.session_template_root):
+        if not os.path.isdir(TemplateRoots.user_sessions):
             return
         
         template_list = []
         
-        all_files = os.listdir(shv.session_template_root)
+        all_files = os.listdir(TemplateRoots.user_sessions)
         for file in all_files:
-            if os.path.isdir("%s/%s" % (shv.session_template_root, file)):
+            if os.path.isdir("%s/%s" % (TemplateRoots.user_sessions, file)):
                 template_list.append(file)
                 
                 if len(template_list) == 100:
@@ -810,11 +810,11 @@ class OscServerThread(ClientCommunicating):
         template_list = []
         tmp_template_list = []
         
-        templates_root    = shv.client_template_local_root
+        templates_root    = TemplateRoots.user_clients
         response_osc_path = '/reply_user_client_templates'
         
         if factory:
-            templates_root    = shv.client_template_factory_root
+            templates_root    = TemplateRoots.factory_clients
             response_osc_path = '/reply_factory_client_templates'
         
         

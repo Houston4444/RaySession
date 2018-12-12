@@ -19,6 +19,7 @@ from signaler          import Signaler
 from server_sender     import ServerSender
 from file_copier       import FileCopier
 from client            import Client
+from daemon_tools      import TemplateRoots
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instanciate()
@@ -790,11 +791,11 @@ class OperatingSession(Session):
         self.setServerStatus(ray.ServerStatus.READY)
     
     def saveSessionTemplate(self, template_name, net=False):
-        template_root = shv.session_template_root
+        template_root = TemplateRoots.user_sessions
         
         if net:
             template_root = "%s/%s" \
-                            % (self.root, shv.session_template_net_rootname)
+                            % (self.root, TemplateRoots.net_session_name)
         
         spath = "%s/%s" % (template_root, template_name)
         
@@ -860,18 +861,18 @@ class OperatingSession(Session):
     
     def prepareTemplate(self, new_session_full_name, 
                         template_name, net=False):
-        template_root = shv.session_template_root
+        template_root = TemplateRoots.user_sessions
         
         if net:
             template_root = "%s/%s" \
-                            % (self.root, shv.session_template_net_rootname)
+                            % (self.root, TemplateRoots.net_session_name)
         
         template_path = "%s/%s" % (template_root, template_name)
         
         if template_name.startswith('///'):
             template_name = template_name.replace('///', '')
             template_path = "%s/%s" \
-                            % (shv.session_template_factory_root, template_name)
+                            % (TemplateRoots.factory_sessions, template_name)
             
         if not os.path.isdir(template_path):
             self.sendError(ray.Err.GENERAL_ERROR, 
@@ -1534,9 +1535,9 @@ class SignaledSession(OperatingSession):
             client.start()
     
     def addClientTemplate(self, template_name, factory=False):
-        templates_root = shv.client_template_local_root
+        templates_root = TemplateRoots.user_clients
         if factory:
-            templates_root = shv.client_template_factory_root
+            templates_root = TemplateRoots.factory_clients
             
         xml_file = "%s/%s" % (templates_root, 'client_templates.xml')
         file = open(xml_file, 'r')
