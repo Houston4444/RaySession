@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import sys, os
+import os
 import pathlib
+import sys
+
 from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
 from PyQt5.QtXml  import QDomDocument, QDomText
-from shared import *
+import ray
 
 QFileDialogMagic = 190
 
@@ -346,7 +348,7 @@ class PickerTypeQt5(PickerType):
         if not settings.isWritable():
             return
         
-        shortcuts = getListInSettings(settings, 'FileDialog/shortcuts')
+        shortcuts = ray.getListInSettings(settings, 'FileDialog/shortcuts')
         
         for sc in shortcuts:
             sc_url = QUrl(sc)
@@ -370,7 +372,7 @@ class PickerTypeQt5(PickerType):
         url = pathlib.Path(spath).as_uri()
         
         settings = QSettings(self.config_path, QSettings.IniFormat)
-        shortcuts = getListInSettings(settings, 'FileDialog/shortcuts')
+        shortcuts = ray.getListInSettings(settings, 'FileDialog/shortcuts')
         
         for sc in shortcuts:
             sc_url = QUrl(sc)

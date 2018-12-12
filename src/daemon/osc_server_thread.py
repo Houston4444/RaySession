@@ -11,6 +11,7 @@ import ray
 import terminal
 import shared_vars as shv
 from signaler import Signaler
+from multi_daemon_file import MultiDaemonFile
 
 debug = False
 instance = None
@@ -43,7 +44,7 @@ class ClientCommunicating(ServerThread):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN, 
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN, 
                       "Sorry, but there's no session open "
                       + "for this application to join.")
             return
@@ -260,8 +261,12 @@ class OscServerThread(ClientCommunicating):
                     self.send(gui_addr, '/ray/gui/daemon_nsm_locked', 1)
                     
             self.net_daemon_id = args[4]
-            is_net_free = multi_daemon_file.isFreeForRoot(self.net_daemon_id,
-                                                          self.session.root)
+            
+            multi_daemon_file = MultiDaemonFile.getInstance()
+            
+            if multi_daemon_file:
+                is_net_free = multi_daemon_file.isFreeForRoot(
+                    self.net_daemon_id, self.session.root)
         
         #not needed here, in fact args[3] isn't used, that was for that:
         self.option_save_from_client = \
@@ -285,7 +290,10 @@ class OscServerThread(ClientCommunicating):
         
         if src_addr.url == self.nsm_locker_url:
             self.net_daemon_id  = random.randint(1, 999999999)
-            multi_daemon_file.update()
+            
+            multi_daemon_file = MultiDaemonFile.getInstance()
+            if multi_daemon_file:
+                multi_daemon_file.update()
             
             self.is_nsm_locked  = False
             self.nsm_locker_url = ''
@@ -407,7 +415,7 @@ class OscServerThread(ClientCommunicating):
             return
         
         if not pathIsValid(args[0]):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED,
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return
         
@@ -473,7 +481,7 @@ class OscServerThread(ClientCommunicating):
             return
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to save.")
             return 0
         
@@ -487,12 +495,12 @@ class OscServerThread(ClientCommunicating):
             return
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to save as template.")
             return
         
         if not pathIsValid(args[0]):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED,
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return
         
@@ -506,12 +514,12 @@ class OscServerThread(ClientCommunicating):
         session_name, template_name, sess_root = args
         
         if not pathIsValid(session_name):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED,
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return
         
         if not pathIsValid(template_name):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED,
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return
         
@@ -532,7 +540,7 @@ class OscServerThread(ClientCommunicating):
             return
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to close.")
             return 0
         
@@ -547,7 +555,7 @@ class OscServerThread(ClientCommunicating):
             return
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to abort." )
             return
         
@@ -564,12 +572,12 @@ class OscServerThread(ClientCommunicating):
             return
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to duplicate.")
             return
         
         if not pathIsValid(args[0]):
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED,
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return
         
@@ -607,7 +615,7 @@ class OscServerThread(ClientCommunicating):
                 return
         
         if '/' in new_session_name:
-            self.send(src_addr, "/error", path, ERR_CREATE_FAILED,
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return
         
@@ -615,7 +623,7 @@ class OscServerThread(ClientCommunicating):
             return
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to rename.")
             return
         
@@ -626,7 +634,7 @@ class OscServerThread(ClientCommunicating):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return
         
@@ -637,7 +645,7 @@ class OscServerThread(ClientCommunicating):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return
         
@@ -648,7 +656,7 @@ class OscServerThread(ClientCommunicating):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return
         
@@ -734,7 +742,7 @@ class OscServerThread(ClientCommunicating):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ERR_NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return
         
@@ -771,14 +779,14 @@ class OscServerThread(ClientCommunicating):
     
     def isOperationPending(self, src_addr, path):
         if self.session.file_copier.isActive():
-            self.send(src_addr, "/error", path, ERR_COPY_RUNNING, 
+            self.send(src_addr, "/error", path, ray.Err.COPY_RUNNING, 
                       "ray-daemon is copying files. "
                         + "Wait copy finish or abort copy, "
                         + "and restart operation !")
             return True
         
         if self.session.process_order:
-            self.send(src_addr, "/error", path, ERR_OPERATION_PENDING,
+            self.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
                       "An operation pending.")
             return True
         

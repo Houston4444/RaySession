@@ -231,7 +231,7 @@ if __name__ == '__main__':
     terminal.MESSAGE(ray.getNetUrl(server.port))
     terminal.MESSAGE(server.url)
     
-    multi_daemon_file = MultiDaemonFile(session)
+    multi_daemon_file = MultiDaemonFile(session, server)
     multi_daemon_file.update()
     session.bookmarker.clean(multi_daemon_file.getAllSessionPaths())
     

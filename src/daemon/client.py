@@ -1,4 +1,5 @@
 import os
+import shlex
 import shutil
 import subprocess
 
@@ -316,7 +317,10 @@ class Client(ServerSender):
             arguments.append(str(self.getServer().net_daemon_id))
             
         self.process.start(self.executable_path, arguments)
-        #self.process.start('konsole', ['--hide-tabbar', '--hide-menubar', '-e', self.executable_path] + arguments)
+        #self.process.start(
+            #'konsole', 
+            #['--hide-tabbar', '--hide-menubar', '-e', self.executable_path]
+                #+ arguments)
      
     def terminate(self):
         if self.isRunning():

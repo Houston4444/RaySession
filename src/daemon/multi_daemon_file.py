@@ -1,12 +1,12 @@
 import os
 from PyQt5.QtXml import QDomDocument
-from osc_server_thread import OscServerThread
 
 instance = None
 
 class MultiDaemonFile(object):
-    def __init__(self, session):
+    def __init__(self, session, server):
         self.session = session
+        self.server  = server
         
         self.file_path = '/tmp/RaySession/multi-daemon.xml'
         self.xml = QDomDocument()
@@ -61,15 +61,11 @@ class MultiDaemonFile(object):
             return
     
     def setAttributes(self, element):
-        server = OscServerThread.getInstance()
-        if not server:
-            return
-        
-        element.setAttribute('net_daemon_id', server.net_daemon_id)
+        element.setAttribute('net_daemon_id', self.server.net_daemon_id)
         element.setAttribute('root', self.session.root)
         element.setAttribute('session_path', self.session.path)
         element.setAttribute('pid', os.getpid())
-        element.setAttribute('port', server.port)
+        element.setAttribute('port', self.server.port)
         element.setAttribute('user', os.getenv('USER'))
     
     def update(self):

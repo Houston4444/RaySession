@@ -3,7 +3,7 @@ import subprocess
 from PyQt5.QtCore import QProcess, QTimer
 from osc_server_thread import OscServerThread
 from server_sender import ServerSender
-import shared
+import ray
 
 class CopyFile(object):
     slots = ['orig_path',
@@ -26,7 +26,7 @@ class FileCopier(ServerSender):
         
         self.process = QProcess()
         self.process.finished.connect(self.processFinished)
-        if shared.QT_VERSION >= (5, 6):
+        if ray.QT_VERSION >= (5, 6):
             self.process.errorOccurred.connect(self.errorOccurred)
         
         self.timer = QTimer()
