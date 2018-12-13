@@ -1323,6 +1323,10 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, (self.load, *args), self.loadDone]
         self.nextFunction()
+        
+    def serverOpenSessionAtStart(self, session_name):
+        self.process_order = [self.save, (self.load, session_name), self.loadDone]
+        self.nextFunction()
     
     def serverSaveSession(self, path, args, src_addr):
         if self.process_order:

@@ -88,6 +88,7 @@ class CommandLineArgs(argparse.Namespace):
     config_dir   = ''
     debug        = False
     debug_only   = False
+    session      = ''
     
     @classmethod
     def eatAttributes(cls, parsed_args):
@@ -113,6 +114,8 @@ class ArgParser(argparse.ArgumentParser):
         argparse.ArgumentParser.__init__(self)
         self.add_argument('--session-root', '-r', 
                           help='set root folder for sessions')
+        self.add_argument('--session', '-s', type=str, default='',
+                          help='session to load at startup')
         self.add_argument('--osc-port', '-p', 
                           type=int, default=0, 
                           help='select OSC port for the daemon')
@@ -126,6 +129,7 @@ class ArgParser(argparse.ArgumentParser):
                           help='see all OSC messages')
         self.add_argument('--debug-only', '-do', action='store_true', 
                           help='debug without client messages')
+        
         self.add_argument('-v', '--version', action='version',
                           version=ray.VERSION)
         

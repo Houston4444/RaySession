@@ -105,6 +105,10 @@ if __name__ == '__main__':
     #clean bookmarks created by crashed daemons
     session.bookmarker.clean(multi_daemon_file.getAllSessionPaths())
     
+    #load session asked from command line
+    if CommandLineArgs.session:
+        session.serverOpenSessionAtStart(CommandLineArgs.session)
+    
     #connect SIGINT and SIGTERM
     signal.signal(signal.SIGINT,  signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
