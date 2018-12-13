@@ -46,7 +46,8 @@ class FileCopier(ServerSender):
             return 0
         
         try:
-            du_full = subprocess.check_output(['nice', '-n', '15', 'du', '-sb', filepath]).decode()
+            du_full = subprocess.check_output(
+                ['nice', '-n', '15', 'du', '-sb', filepath]).decode()
         except:
             du_full = ""
             
@@ -132,12 +133,15 @@ class FileCopier(ServerSender):
         for copy_file in self.copy_files:
             if copy_file.state == 0:
                 copy_file.state = 1
-                self.process.start('nice' , ['-n', '+15', 'cp', '-R', copy_file.orig_path, copy_file.dest_path])
+                self.process.start('nice' , 
+                                   ['-n', '+15', 'cp', '-R', 
+                                    copy_file.orig_path, copy_file.dest_path])
                 break
             
         self.timer.start()
     
-    def start(self, src_list, dest_dir, next_function, abort_function, next_args=[]):
+    def start(self, src_list, dest_dir, next_function,
+              abort_function, next_args=[]):
         self.abort_function = abort_function
         self.next_function  = next_function
         self.next_args      = next_args
@@ -162,7 +166,8 @@ class FileCopier(ServerSender):
             self.copy_size+=copy_file.size
             
             if dest_path_exists:
-                copy_file.dest_path = "%s/%s" % (dest_dir, os.path.basename(orig_path))
+                copy_file.dest_path = "%s/%s" % (dest_dir,
+                                                 os.path.basename(orig_path))
             else:
                 #WARNING works only with one file !!!
                 copy_file.dest_path = dest_dir
@@ -176,13 +181,17 @@ class FileCopier(ServerSender):
         else:
             self.next_function(*self.next_args)
         
-    def startClientCopy(self, client_id, src_list, dest_dir, next_function, abort_function, next_args=[]):
+    def startClientCopy(self, client_id, src_list, dest_dir, next_function,
+                        abort_function, next_args=[]):
         self.client_id = client_id
-        self.start(src_list, dest_dir, next_function, abort_function, next_args)
+        self.start(src_list, dest_dir, next_function,
+                   abort_function, next_args)
         
-    def startSessionCopy(self, src_dir, dest_dir, next_function, abort_function, next_args=[]):
+    def startSessionCopy(self, src_dir, dest_dir, next_function,
+                         abort_function, next_args=[]):
         self.client_id = ''
-        self.start([src_dir], dest_dir, next_function, abort_function, next_args)
+        self.start([src_dir], dest_dir, next_function,
+                   abort_function, next_args)
         
     def abort(self, abort_function=None, next_args=[]):
         if abort_function:

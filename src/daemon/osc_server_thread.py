@@ -8,25 +8,25 @@ from PyQt5.QtXml import QDomDocument
 
 #from shared import *
 import ray
-import terminal
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
-from daemon_tools import TemplateRoots
+from daemon_tools import TemplateRoots, settings, CommandLineArgs, Terminal
 
-debug = False
 instance = None
-signaler = Signaler.instanciate()
+signaler = Signaler.instance()
 
 
 def pathIsValid(path):
     return not bool('../' in path)
 
 def ifDebug(string):
-    if debug:
-        print(string, file=sys.stderr)
+    if CommandLineArgs.debug:
+        sys.stderr.write(string + '\n')
 
 #Osc server thread separated in many classes for confort.
-#ClientCommunicating contains NSM protocol. Paths have to be never changed.
+
+#ClientCommunicating contains NSM protocol.
+#OSC paths have to be never changed.
 class ClientCommunicating(ServerThread):
     def __init__(self, session, osc_num=0):
         ServerThread.__init__(self, osc_num)
@@ -62,14 +62,14 @@ class ClientCommunicating(ServerThread):
         
         client = self.session.getClientByAddress(src_addr)
         if not client:
-            terminal.WARNING("Error from unknown client")
+            Terminal.warning("Error from unknown client")
             return
         
         err_code = args[1]
         message  = args[2]
         client.setReply(err_code, message)
         
-        terminal.MESSAGE("Client \"%s\" replied with error: %s (%i)"
+        Terminal.message("Client \"%s\" replied with error: %s (%i)"
                          % ( client.name, message, err_code ))
         
         client.pending_command = ray.Command.NONE
@@ -96,7 +96,7 @@ class ClientCommunicating(ServerThread):
         if not client:
             return
         
-        terminal.MESSAGE("%s sends dirty" % client.client_id)
+        Terminal.message("%s sends dirty" % client.client_id)
         
         client.dirty = 1
         client.last_dirty = time.time()
@@ -111,7 +111,7 @@ class ClientCommunicating(ServerThread):
         if not client:
             return
         
-        terminal.MESSAGE("%s sends clean" % client.client_id)
+        Terminal.message("%s sends clean" % client.client_id)
         
         client.dirty = 0
         
@@ -144,7 +144,7 @@ class ClientCommunicating(ServerThread):
         if not client:
             return
         
-        terminal.MESSAGE("Client '%s' sends gui hidden" % client.client_id)
+        Terminal.message("Client '%s' sends gui hidden" % client.client_id)
         
         client.gui_visible = False
         
@@ -159,7 +159,7 @@ class ClientCommunicating(ServerThread):
         if not client:
             return
         
-        terminal.MESSAGE("Client '%s' sends gui shown" % client.client_id)
+        Terminal.message("Client '%s' sends gui shown" % client.client_id)
         
         client.gui_visible = True
         
@@ -215,7 +215,7 @@ class ClientCommunicating(ServerThread):
                                             net_session_root)
 
 class OscServerThread(ClientCommunicating):
-    def __init__(self, session, settings, osc_num=0):
+    def __init__(self, session, osc_num=0):
         ClientCommunicating.__init__(self, session, osc_num)
         self.list_asker_addr = None
         
@@ -792,6 +792,12 @@ class OscServerThread(ClientCommunicating):
         
         return False
         
+    def send(self, *args):
+        ifDebug('serverOSC::ray-daemon sends: '
+                + str(args[1:]))
+        
+        ClientCommunicating.send(self, *args)
+        
     def sendGui(self, *args):
         for gui_addr in self.gui_list:
             self.send(gui_addr, *args)
@@ -935,4 +941,4 @@ class OscServerThread(ClientCommunicating):
                       client.client_id,  client.status)
         
         self.gui_list.append(gui_addr)
-        terminal.MESSAGE("Registered with GUI")
+        Terminal.message("Registered with GUI")

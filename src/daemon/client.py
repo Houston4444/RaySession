@@ -9,10 +9,8 @@ from PyQt5.QtCore import (QCoreApplication, QProcess,
 from PyQt5.QtXml import QDomDocument
 
 import ray
-import terminal
-import shared_vars as shv
 from server_sender import ServerSender
-from daemon_tools  import TemplateRoots
+from daemon_tools  import TemplateRoots, Terminal, non_active_clients
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -26,10 +24,11 @@ def basename(*args):
     return os.path.basename(*args)
 
 class Client(ServerSender):
-    #can be directly changed by OSC thread
-    gui_visible      = True
     _reply_errcode   = 0
     _reply_message   = None
+    
+    #can be directly changed by OSC thread
+    gui_visible      = True
     progress         = 0
     
     #have to be modified by main thread for security
@@ -336,18 +335,18 @@ class Client(ServerSender):
     
     def standardError(self):
         standard_error = self.process.readAllStandardError().data()
-        terminal.CLIENT_MESSAGE(standard_error, self.name, self.client_id)
+        Terminal.clientMessage(standard_error, self.name, self.client_id)
         
     def standardOutput(self):
         standard_output = self.process.readAllStandardOutput().data()
-        terminal.CLIENT_MESSAGE(standard_output, self.name, self.client_id)
+        Terminal.clientMessage(standard_output, self.name, self.client_id)
     
     def processStarted(self):
         self.stopped_since_long = False
         self.pid    = self.process.pid()
         self.setStatus(ray.ClientStatus.LAUNCH)
         
-        #terminal.MESSAGE("Process has pid: %i" % self.pid)
+        #Terminal.message("Process has pid: %i" % self.pid)
         
         if self.session.osc_src_addr:
             self.session.oscReply("/reply", self.session.osc_path, 
@@ -408,13 +407,13 @@ class Client(ServerSender):
     
     def tellClientSessionIsLoaded(self):
         if self.active and not self.isDumbClient():
-            terminal.MESSAGE("Telling client %s that session is loaded."
+            Terminal.message("Telling client %s that session is loaded."
                              % self.name)
             self.sendToSelfAddress("/nsm/client/session_is_loaded")
     
     def save(self):
         if self.active:
-            terminal.MESSAGE("Telling %s to save" % self.name)
+            Terminal.message("Telling %s to save" % self.name)
             self.sendToSelfAddress("/nsm/client/save")
             
             self.pending_command = ray.Command.SAVE
@@ -439,7 +438,7 @@ class Client(ServerSender):
                 self.stopped_timer.start()
     
     def quit(self):
-        terminal.MESSAGE("Commanding %s to quit" % self.name)
+        Terminal.message("Commanding %s to quit" % self.name)
         if self.active:
             
             self.pending_command = ray.Command.QUIT
@@ -467,7 +466,7 @@ class Client(ServerSender):
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
         
-        terminal.MESSAGE("Commanding %s to switch \"%s\""
+        Terminal.message("Commanding %s to switch \"%s\""
                          % (self.name, client_project_path))
         
         self.sendToSelfAddress("/nsm/client/open", client_project_path,
@@ -862,7 +861,7 @@ class Client(ServerSender):
             return
         
         if major > NSM_API_VERSION_MAJOR:
-            terminal.MESSAGE(
+            Terminal.message(
                 "Client is using incompatible and more recent " 
                 + "API version %i.%i" % (major, minor))
             self.send(src_addr, "/error", path, ray.Err.INCOMPATIBLE_API, 
@@ -875,11 +874,11 @@ class Client(ServerSender):
         self.active       = True
         self.did_announce = True
         
-        if self.executable_path in shv.known_as_non_active:
-            shv.known_as_non_active.remove(self.executable_path)
+        if self.executable_path in non_active_clients:
+            non_active_clients.remove(self.executable_path)
         
-        terminal.MESSAGE("Process has pid: %i" % pid )
-        terminal.MESSAGE(
+        Terminal.message("Process has pid: %i" % pid )
+        Terminal.message(
             "The client \"%s\" at \"%s\" " % (self.name, self.addr.url)
             + "informs us it's ready to receive commands.")
         

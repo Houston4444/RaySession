@@ -1,7 +1,13 @@
-from liblo import Server, Address
+
+
 import argparse
-import liblo, socket
-import sys, os, shlex, subprocess
+import liblo
+import os
+import shlex
+import socket
+import subprocess
+import sys
+from liblo import Server, Address
 from PyQt5.QtCore import QLocale, QTranslator, QT_VERSION_STR, QFile
 from PyQt5.QtGui  import QIcon, QPalette
 
@@ -15,19 +21,19 @@ QT_VERSION = tuple(QT_VERSION)
 if QT_VERSION < (5, 6):
     sys.stderr.write(
         "WARNING: You are using a version of QT older than 5.6.\n"
-        + "You won't be able to know if a process can't be launch.\n")
+        + "You won't be warned if a process can't be launch.\n")
 
 #Ray Session version
 VERSION = "0.6.1"
 
 APP_TITLE = 'Ray Session'
 
-class PrefixMode():
+class PrefixMode:
     UNDEF        = 0
     CLIENT_NAME  = 1
     SESSION_NAME = 2
 
-class ClientStatus():
+class ClientStatus:
     STOPPED =  0
     LAUNCH  =  1
     OPEN    =  2
@@ -41,7 +47,7 @@ class ClientStatus():
     ERROR   = 10
     REMOVED = 11
 
-class ServerStatus():
+class ServerStatus:
     OFF     =  0
     NEW     =  1
     OPEN    =  2
@@ -54,19 +60,19 @@ class ServerStatus():
     SAVE    =  9
     CLOSE   = 10
     
-class NSMMode():
+class NSMMode:
     NO_NSM  = 0
     CHILD   = 1
     NETWORK = 2
     
-class Option():
+class Option:
     NSM_LOCKED       = 0x001
     SAVE_FROM_CLIENT = 0x002
     BOOKMARK_SESSION = 0x004
     HAS_WMCTRL       = 0x008
     DESKTOPS_MEMORY  = 0x010
 
-class Err():
+class Err:
     OK                =  0
     GENERAL_ERROR     = -1
     INCOMPATIBLE_API  = -2
@@ -83,7 +89,7 @@ class Err():
     COPY_RUNNING      = -13
     NET_ROOT_RUNNING  = -14
 
-class Command():
+class Command:
     NONE      = 0
     QUIT      = 1
     KILL      = 2
@@ -94,7 +100,7 @@ class Command():
     DUPLICATE = 7
     NEW       = 8
 
-class WaitFor():
+class WaitFor:
     NONE     = 0
     STOP     = 1
     ANNOUNCE = 2
@@ -102,7 +108,7 @@ class WaitFor():
     DUPLICATE_START  = 4
     DUPLICATE_FINISH = 5
 
-class Template():
+class Template:
     NONE             = 0
     RENAME           = 1
     SESSION_SAVE     = 2
@@ -121,6 +127,14 @@ def ifDebug(string):
 def setDebug(bool):
     global debug
     debug = bool
+
+def addSelfBinToPath():
+    #Add raysession/src/bin to $PATH to can use ray executables after make
+    #Warning, will works only if link to this file is in RaySession/*/*/*.py
+    this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
+    bin_path = "%s/bin"  % os.path.dirname(this_path)
+    if not os.environ['PATH'].startswith("%s:" % bin_path):
+        os.environ['PATH']="%s:%s" % (bin_path, os.environ['PATH'])
 
 def getListInSettings(settings, path):
     #getting a QSettings value of list type seems to not works the same way on all machines
@@ -365,45 +379,6 @@ def getAppIcon(icon_name, widget):
             
     return icon
 
-class ClientData(object):
-    client_id       = ''
-    executable_path = ''
-    arguments       = ''
-    name            = ''
-    prefix_mode     = 2
-    project_path    = ''
-    label           = ''
-    icon            = ''
-    capabilities    = ''
-    check_last_save = True
-    
-    def __init__(self, client_id, 
-                 executable,
-                 arguments="",
-                 name='', 
-                 prefix_mode=PrefixMode.SESSION_NAME, 
-                 project_path='', 
-                 label='', 
-                 icon='', 
-                 capabilities='',
-                 check_last_save=True):
-        self.client_id       = str(client_id)
-        self.executable_path = str(executable)
-        self.arguments       = str(arguments)
-        self.prefix_mode     = int(prefix_mode)
-        self.label           = str(label)
-        self.capabilities    = str(capabilities)
-        self.check_last_save = bool(check_last_save)
-        
-        self.name  = str(name) if name else os.path.basename(self.executable_path)
-        self.icon  = str(icon) if icon else self.name.lower().replace('_', '-')
-        
-        if self.prefix_mode == 0:
-            if self.project_path:
-                self.project_path = str(project_path)
-            else:
-                self.prefix_mode = 2
-
 def clientStatusString(status):
     if not 0 <= status < len(client_status_strings):
         return _translate('client status', "invalid")
@@ -445,5 +420,44 @@ def init_translation(_translate):
         ServerStatus.READY    : _translate('server status', "ready"),
         ServerStatus.SAVE     : _translate('server status', "save"),
         ServerStatus.CLOSE    : _translate('server status', "close") }
-
+    
+class ClientData:
+    client_id       = ''
+    executable_path = ''
+    arguments       = ''
+    name            = ''
+    prefix_mode     = 2
+    project_path    = ''
+    label           = ''
+    icon            = ''
+    capabilities    = ''
+    check_last_save = True
+    
+    def __init__(self,
+                 client_id, 
+                 executable,
+                 arguments="",
+                 name='', 
+                 prefix_mode=PrefixMode.SESSION_NAME, 
+                 project_path='', 
+                 label='', 
+                 icon='', 
+                 capabilities='',
+                 check_last_save=True):
+        self.client_id       = str(client_id)
+        self.executable_path = str(executable)
+        self.arguments       = str(arguments)
+        self.prefix_mode     = int(prefix_mode)
+        self.label           = str(label)
+        self.capabilities    = str(capabilities)
+        self.check_last_save = bool(check_last_save)
         
+        self.name = str(name) if name else os.path.basename(
+                                                    self.executable_path)
+        self.icon = str(icon) if icon else self.name.lower().replace('_', '-')
+        
+        if self.prefix_mode == 0:
+            if self.project_path:
+                self.project_path = str(project_path)
+            else:
+                self.prefix_mode = 2

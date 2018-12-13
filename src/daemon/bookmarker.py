@@ -7,10 +7,11 @@ import sys
 from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
 from PyQt5.QtXml  import QDomDocument, QDomText
 import ray
+from daemon_tools import getAppConfigPath
 
 QFileDialogMagic = 190
 
-class PickerType(object):
+class PickerType:
     def __init__(self, config_path):
         self.config_path = config_path
         self.written     = False
@@ -193,11 +194,11 @@ class PickerTypeQt4(PickerType):
         
         url = pathlib.Path(spath).as_uri()
         
-        settings = QSettings(self.config_path, QSettings.IniFormat)
-        if not settings.isWritable():
+        settings_qt4 = QSettings(self.config_path, QSettings.IniFormat)
+        if not settings_qt4.isWritable():
             return
         
-        data = settings.value('Qt/filedialog')
+        data = settings_qt4.value('Qt/filedialog')
         stream = QDataStream(data, QIODevice.ReadOnly)
         
         magic   = stream.readUInt32()
@@ -251,8 +252,8 @@ class PickerTypeQt4(PickerType):
         new_stream.writeBytes(header_data)
         new_stream.writeUInt32(view_mode)
         
-        settings.setValue('Qt/filedialog', new_data)
-        settings.sync()
+        settings_qt4.setValue('Qt/filedialog', new_data)
+        settings_qt4.sync()
         
         self.written = True
     
@@ -266,12 +267,12 @@ class PickerTypeQt4(PickerType):
         
         url = pathlib.Path(spath).as_uri()
         
-        settings = QSettings(self.config_path, QSettings.IniFormat)
-        if not settings.isWritable():
+        settings_qt4 = QSettings(self.config_path, QSettings.IniFormat)
+        if not settings_qt4.isWritable():
             self.written = False
             return
         
-        data = settings.value('Qt/filedialog')
+        data = settings_qt4.value('Qt/filedialog')
         stream = QDataStream(data, QIODevice.ReadOnly)
         
         magic   = stream.readUInt32()
@@ -328,8 +329,8 @@ class PickerTypeQt4(PickerType):
         new_stream.writeBytes(header_data)
         new_stream.writeUInt32(view_mode)
         
-        settings.setValue('Qt/filedialog', new_data)
-        settings.sync()
+        settings_qt4.setValue('Qt/filedialog', new_data)
+        settings_qt4.sync()
         
         self.written = False
 
@@ -344,11 +345,11 @@ class PickerTypeQt5(PickerType):
         
         url = pathlib.Path(spath).as_uri()
         
-        settings = QSettings(self.config_path, QSettings.IniFormat)
-        if not settings.isWritable():
+        settings_qt5 = QSettings(self.config_path, QSettings.IniFormat)
+        if not settings_qt5.isWritable():
             return
         
-        shortcuts = ray.getListInSettings(settings, 'FileDialog/shortcuts')
+        shortcuts = ray.getListInSettings(settings_qt5, 'FileDialog/shortcuts')
         
         for sc in shortcuts:
             sc_url = QUrl(sc)
@@ -357,8 +358,8 @@ class PickerTypeQt5(PickerType):
         
         shortcuts.append(url)
         
-        settings.setValue('FileDialog/shortcuts', shortcuts)
-        settings.sync()
+        settings_qt5.setValue('FileDialog/shortcuts', shortcuts)
+        settings_qt5.sync()
         self.written = True
             
     def removeBookmark(self, spath):
@@ -371,8 +372,8 @@ class PickerTypeQt5(PickerType):
         
         url = pathlib.Path(spath).as_uri()
         
-        settings = QSettings(self.config_path, QSettings.IniFormat)
-        shortcuts = ray.getListInSettings(settings, 'FileDialog/shortcuts')
+        settings_qt5 = QSettings(self.config_path, QSettings.IniFormat)
+        shortcuts = ray.getListInSettings(settings_qt5, 'FileDialog/shortcuts')
         
         for sc in shortcuts:
             sc_url = QUrl(sc)
@@ -383,8 +384,8 @@ class PickerTypeQt5(PickerType):
             self.written = False
             return
         
-        settings.setValue('FileDialog/shortcuts', shortcuts)
-        settings.sync()
+        settings_qt5.setValue('FileDialog/shortcuts', shortcuts)
+        settings_qt5.sync()
         self.written = False
 
 class PickerTypeKde5(PickerType):
@@ -462,16 +463,10 @@ class PickerTypeKde5(PickerType):
         self.written = False
         
         
-class BookMarker(object):
-    def __init__(self, config_path):
-        self.bookmarks_memory = "%s/bookmarks.xml" % config_path
+class BookMarker:
+    def __init__(self):
+        self.bookmarks_memory = "%s/bookmarks.xml" % getAppConfigPath()
         self.daemon_port      = 0
-        
-        if not os.path.exists(config_path):
-            try:
-                os.makedirs(config_path)
-            except:
-                pass
         
         HOME = os.getenv('HOME')
         

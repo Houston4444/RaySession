@@ -9,139 +9,46 @@ import unicodedata
 from PyQt5.QtCore import (QCoreApplication, QTimer, QSettings, 
                           QStandardPaths, QLocale, QTranslator)
 
-import terminal
-import shared_vars as shv
 import ray
-from daemon_tools import TemplateRoots
+from daemon_tools import (initDaemonTools, settings, non_active_clients,
+                          getCodeRoot, CommandLineArgs, ArgParser, Terminal)
 from osc_server_thread import OscServerThread
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
 from session  import SignaledSession
 
-#ray-daemon doesn't really cares if jack is running or not
-#but if jack is running, it just ask all jack ports between many clients launchs or stops
-#It 'maybe' prevent some jack bugs
-#try:
-    #import dbus
-    #bus = dbus.SessionBus()
-    #jack_bus = bus.get_object('org.jackaudio.service', '/org/jackaudio/Controller')
-#except:
-    #jack_bus = None
-
-debug = False
-#shv.known_as_non_active = []
-
-def dirname(*args):
-    return os.path.dirname(*args)
-
-def basename(*args):
-    return os.path.basename(*args)
-
-def pathIsValid(path):
-    return not bool('../' in path)
-
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         session.terminate()
-        
-def remove_accents(input_str):
-    nfkd_form = unicodedata.normalize('NFKD', input_str)
-    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()
 
-def ifDebug(string):
-    if debug:
-        print(string, file=sys.stderr)
-    
-def quitRay(sig, frame):
-    for client in session.clients:
-        if client.isRunning():
-            terminal.MESSAGE(
-                _translate('GUIMSG', 'Good Bye ! Clients are still running.'))
-            break
-    else:
-        terminal.MESSAGE(_translate('GUIMSG', 'Good Bye !'))
-    app.quit()
-       
-
-##########################
 
 if __name__ == '__main__':
-    #Add raysession/src/bin to $PATH to can use ray executables after make,
-    #whitout install
-    this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
-    bin_path = "%s/bin"  % os.path.dirname(this_path)
-    if not os.environ['PATH'].startswith("%s:" % bin_path):
-        os.environ['PATH']="%s:%s" % (bin_path, os.environ['PATH'])
+    #add RaySession/src/bin to $PATH
+    ray.addSelfBinToPath()
     
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--session-root', '-r', 
-                        help='set root folder for sessions')
-    parser.add_argument('--osc-port', '-p', 
-                        type=int, default=0, 
-                        help='select OSC port for the daemon')
-    parser.add_argument('--findfreeport', action='store_true', 
-                        help='find another port if port is not free')
-    parser.add_argument('--gui-url', type=ray.getLibloAddress, 
-                        help=argparse.SUPPRESS)
-    parser.add_argument('--config-dir', '-c', type=str, default='', 
-                        help='use a custom config dir')
-    parser.add_argument('--debug','-d',  action='store_true', 
-                        help='see all OSC messages')
-    parser.add_argument('--debug-only', '-do', action='store_true', 
-                        help='debug without client messages')
-    parser.add_argument('-v', '--version', action='version',
-                        version=ray.VERSION)
+    #check arguments
+    parser = ArgParser()
     
-    parsed_args = parser.parse_args()
-    
-    debug        = parsed_args.debug
-    debug_only   = parsed_args.debug_only
-    if debug_only:
-        debug = True
-        terminal.debug_only = True
-    
-    session_root = parsed_args.session_root
-    osc_num      = parsed_args.osc_port
-    findfreeport = parsed_args.findfreeport
-    gui_address  = parsed_args.gui_url
-    config_dir   = parsed_args.config_dir
-    
-    if osc_num == 0:
-        osc_num = 16187
-        findfreeport = True
-    
-    if config_dir and not os.access(config_dir, os.W_OK):
-        sys.stderr.write('%s is not a writable config dir, try another one\n'
-                         % config_dir)
-        sys.exit(1)
-    
-    signal.signal(signal.SIGINT,  signalHandler)
-    signal.signal(signal.SIGTERM, signalHandler)
-    
+    #create app
     app = QCoreApplication(sys.argv)
     app.setApplicationName("RaySession")
     app.setOrganizationName("RaySession")
     
-    if config_dir:
-        settings = QSettings("%s/RaySession.conf" % config_dir)
-    else:
-        settings = QSettings()
-    
-    shv.settings = settings
-    
-    TemplateRoots.initConfig(config_dir)
+    #
+    initDaemonTools()
     
     ### Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
     
     if appTranslator.load("%s/locale/raysession_%s"
-                            % (dirname(dirname(dirname(os.path.realpath(__file__)))),
-                               locale)):
+                            % (getCodeRoot(), locale)):
         app.installTranslator(appTranslator)
         
     _translate = app.translate
     
+    #manage session_root
+    session_root = CommandLineArgs.session_root
     if not session_root:
         session_root = "%s/%s" % (os.getenv('HOME'), 
                                   _translate('daemon', 
@@ -152,7 +59,7 @@ if __name__ == '__main__':
         if os.path.exists(session_root):
             sys.stderr.write(
                 "%s exists and is not a dir, please choose another path !\n"
-                % session_root)
+                    % session_root)
             sys.exit(1)
         
         try:
@@ -161,50 +68,62 @@ if __name__ == '__main__':
             sys.stderr.write("impossible to make dir %s , aborted !\n"
                              % session_root)
             sys.exit(1)
-            
-    shv.known_as_non_active = ray.getListInSettings(
-                                settings, 'daemon/non_active_list')
     
+    
+    #create session
+    #signaler = Signaler()
+    session  = SignaledSession(session_root)
+    
+    #create and start server
+    if CommandLineArgs.findfreeport:
+        server = OscServerThread(
+                    session,
+                    ray.getFreeOscPort(CommandLineArgs.osc_port))
+    else:
+        if ray.isOscPortFree(CommandLineArgs.osc_port):
+            server = OscServerThread(session, CommandLineArgs.osc_port)
+        else:
+            sys.stderr.write(
+                _translate('daemon', 
+                           'port %i is not free, try another one\n')
+                    % CommandLineArgs.osc_port)
+            sys.exit()
+    server.start()
+    
+    #announce server to GUI
+    if CommandLineArgs.gui_url:
+        server.announceGui(CommandLineArgs.gui_url.url)
+        
+    #print server url
+    Terminal.message(ray.getNetUrl(server.port))
+    Terminal.message(server.url)
+    
+    #create or update multi_daemon_file in /tmp
+    multi_daemon_file = MultiDaemonFile(session, server)
+    multi_daemon_file.update()
+    
+    #clean bookmarks created by crashed daemons
+    session.bookmarker.clean(multi_daemon_file.getAllSessionPaths())
+    
+    #connect SIGINT and SIGTERM
+    signal.signal(signal.SIGINT,  signalHandler)
+    signal.signal(signal.SIGTERM, signalHandler)
+    
+    #needed for SIGINT and SIGTERM
     timer = QTimer()
     timer.setInterval(200)
     timer.timeout.connect(lambda: None)
     timer.start()
     
-    signaler = Signaler.instanciate()
-    session  = SignaledSession(session_root)
-    
-    if findfreeport:
-        server = OscServerThread(session, settings, 
-                                 ray.getFreeOscPort(osc_num))
-    else:
-        if ray.isOscPortFree(osc_num):
-            server = OscServerThread(session, settings, osc_num)
-        else:
-            sys.stderr.write(
-                _translate('daemon', 
-                           'port %i is not free, try another one\n')
-                % osc_num)
-            sys.exit()
-        
-    server.debug = debug
-    
-    server.start()
-    
-    if gui_address:
-        server.announceGui(gui_address.url)
-        
-    terminal.MESSAGE(ray.getNetUrl(server.port))
-    terminal.MESSAGE(server.url)
-    
-    multi_daemon_file = MultiDaemonFile(session, server)
-    multi_daemon_file.update()
-    session.bookmarker.clean(multi_daemon_file.getAllSessionPaths())
-    
+    #start app
     app.exec()
+    #app is stopped
     
+    #update multi_daemon_file without this server
     multi_daemon_file.quit()
     
-    settings.setValue('daemon/non_active_list', shv.known_as_non_active)
+    #save settings
+    settings.setValue('daemon/non_active_list', non_active_clients)
     settings.setValue('daemon/save_all_from_saved_client', 
                       server.option_save_from_client)
     settings.setValue('daemon/bookmark_session_folder', 
@@ -212,9 +131,9 @@ if __name__ == '__main__':
     settings.setValue('daemon/desktops_memory', server.option_desktops_memory)
     settings.sync()
     
+    #stop the server
     server.stop()
     
     del server
     del session
     del app
-    

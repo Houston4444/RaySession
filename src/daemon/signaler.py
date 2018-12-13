@@ -1,4 +1,5 @@
 from PyQt5.QtCore import QObject, pyqtSignal
+#from session import DummySession
 
 instance = None
 
@@ -45,7 +46,7 @@ class Signaler(QObject):
     dummy_duplicate         = pyqtSignal(object, str, str, str)
     
     @staticmethod
-    def instanciate():
+    def instance():
         global instance
         
         if not instance:
@@ -54,15 +55,22 @@ class Signaler(QObject):
     
     def __init__(self):
         QObject.__init__(self)
-        self.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
-        self.dummy_duplicate.connect(self.dummyDuplicate)
+        global instance
+        instance = self
+        #self.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
+        #self.dummy_duplicate.connect(self.dummyDuplicate)
         
-    def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
-        tmp_session = DummySession(sess_root)
-        tmp_session.dummyLoadAndTemplate(session_name, template_name)
+    #def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
+        #tmp_session = DummySession(sess_root)
+        #tmp_session.dummyLoadAndTemplate(session_name, template_name)
         
-    def dummyDuplicate(self, src_addr, session_to_load,
-                       new_session, sess_root):
-        tmp_session = DummySession(sess_root)
-        tmp_session.osc_src_addr = src_addr
-        tmp_session.dummyDuplicate(session_to_load, new_session)
+    #def dummyDuplicate(self, src_addr, session_to_load,
+                       #new_session, sess_root):
+        #tmp_session = DummySession(sess_root)
+        #tmp_session.osc_src_addr = src_addr
+        #tmp_session.dummyDuplicate(session_to_load, new_session)
+        
+#Signaler.dummy_load_and_template.connect(dummyLoadAndTemplate)
+#Signaler.dummy_duplicate.connect(dummyDuplicate)
+
+

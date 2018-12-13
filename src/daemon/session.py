@@ -7,10 +7,8 @@ import sys
 import time
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QTimer
-from PyQt5.QtXml import QDomDocument
+from PyQt5.QtXml  import QDomDocument
 
-import terminal
-import shared_vars as shv
 import ray
 from bookmarker        import BookMarker
 from desktops_memory   import DesktopsMemory
@@ -19,10 +17,10 @@ from signaler          import Signaler
 from server_sender     import ServerSender
 from file_copier       import FileCopier
 from client            import Client
-from daemon_tools      import TemplateRoots
+from daemon_tools import TemplateRoots, settings, non_active_clients, Terminal
 
 _translate = QCoreApplication.translate
-signaler = Signaler.instanciate()
+signaler = Signaler.instance()
 
 def dirname(*args):
     return os.path.dirname(*args)
@@ -47,7 +45,7 @@ class Session(ServerSender):
         
         self.file_copier = FileCopier(self)
         
-        self.bookmarker = BookMarker(shv.app_config_path)
+        self.bookmarker = BookMarker()
         self.desktops_memory = DesktopsMemory(self)
     
     #############
@@ -77,7 +75,7 @@ class Session(ServerSender):
         if self.is_dummy and not even_dummy:
             return
         
-        terminal.MESSAGE(string)
+        Terminal.message(string)
         
     def setRoot(self, session_root):
         if self.name:
@@ -1130,7 +1128,7 @@ class OperatingSession(Session):
                     
                 if new_client.auto_start and not self.is_dummy:
                     self.clients_to_launch.append(new_client)
-                    if not new_client.executable_path in shv.known_as_non_active:
+                    if not new_client.executable_path in non_active_clients:
                         self.expected_clients.append(new_client)
             
             new_client_id_list.append(new_client.client_id)
@@ -1161,9 +1159,9 @@ class OperatingSession(Session):
     
     def load_step2(self):
         for client in self.expected_clients:
-            shv.known_as_non_active.append(client.executable_path)
-        shv.settings.setValue('daemon/non_active_list', shv.known_as_non_active)
-        shv.settings.sync()
+            non_active_clients.append(client.executable_path)
+        settings.setValue('daemon/non_active_list', non_active_clients)
+        settings.sync()
         
         self.cleanExpected()
         
@@ -1231,6 +1229,7 @@ class OperatingSession(Session):
 class SignaledSession(OperatingSession):
     def __init__(self, root):
         OperatingSession.__init__(self, root)
+        
         signaler.server_new.connect(self.serverNewSession)
         signaler.server_new_from_tp.connect(self.serverNewSessionFromTemplate)
         signaler.server_open.connect(self.serverOpenSession)
@@ -1283,6 +1282,10 @@ class SignaledSession(OperatingSession):
         signaler.client_net_properties.connect(
             self.setClientNetworkProperties)
         signaler.net_duplicate_state.connect(self.setClientNetDuplicateState)
+        
+        signaler.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
+        signaler.dummy_duplicate.connect(self.dummyDuplicate)
+        
         
     ############################# FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###############################
     
@@ -1739,6 +1742,16 @@ class SignaledSession(OperatingSession):
                 self.endTimerIfLastExpected(client)
         else:
             self.message("Reply from unknown client")
+    
+    def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
+        tmp_session = DummySession(sess_root)
+        tmp_session.dummyLoadAndTemplate(session_name, template_name)
+        
+    def dummyDuplicate(self, src_addr, session_to_load,
+                       new_session, sess_root):
+        tmp_session = DummySession(sess_root)
+        tmp_session.osc_src_addr = src_addr
+        tmp_session.dummyDuplicate(session_to_load, new_session)
     
     def setClientNetworkProperties(self, client_id, 
                                    net_daemon_url, net_session_root):
