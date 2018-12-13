@@ -2,8 +2,8 @@
 
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView, QLabel, QLineEdit
-from PyQt5.QtGui     import QIcon , QCursor, QPalette, QPixmap, QFontDatabase
-from PyQt5.QtCore    import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
+from PyQt5.QtGui import QIcon , QCursor, QPalette, QPixmap, QFontDatabase
+from PyQt5.QtCore import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
 from PyQt5.QtXml import QDomDocument
 
 import sys
