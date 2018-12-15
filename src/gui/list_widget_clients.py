@@ -3,8 +3,9 @@ from PyQt5.QtGui     import QIcon, QPalette, QPixmap, QFontMetrics, QFont, QFont
 from PyQt5.QtCore    import Qt, pyqtSignal, QSize, QFile
  
 import ui_client_slot
-
+from gui_server_thread import GUIServerThread 
 from shared import *
+from gui_tools import clientStatusString
 
     
 class ClientSlot(QFrame):
@@ -95,22 +96,35 @@ class ClientSlot(QFrame):
     def clientId(self):
         return self.client.client_id
     
+    def toDaemon(self, *args):
+        server = GUIServerThread.instance()
+        if server:
+            server.toDaemon(*args)
+    
     def startClient(self):
-        self.list_widget.clientStartRequest.emit(self.clientId())
+        self.toDaemon('/ray/client/resume', self.clientId())
+        #self.list_widget.clientStartRequest.emit(self.clientId())
         
     def stopClient(self):
-        self.list_widget.clientStopRequest.emit(self.clientId())
+        self.toDaemon('/ray/client/stop', self.clientId())
+        #self.list_widget.clientStopRequest.emit(self.clientId())
     
     def killClient(self):
-        self.list_widget.clientKillRequest.emit(self.clientId())
+        self.toDaemon('/ray/client/kill', self.clientId())
+        #self.list_widget.clientKillRequest.emit(self.clientId())
     
     def saveClient(self):
-        self.list_widget.clientSaveRequest.emit(self.clientId())
+        self.toDaemon('/ray/client/save', self.clientId())
+        #self.list_widget.clientSaveRequest.emit(self.clientId())
     
     def removeClient(self):
-        self.list_widget.clientRemoveRequest.emit(self.clientId())
+        self.toDaemon('/ray/client/remove', self.clientId())
+        #self.list_widget.clientRemoveRequest.emit(self.clientId())
     
     def abortCopy(self):
+        #server = self.getServer()
+        #if server:
+            #server.abortCopyClient(self.clientId())
         self.list_widget.clientAbortCopyRequest.emit(self.clientId())
     
     def saveAsApplicationTemplate(self):
@@ -222,8 +236,10 @@ class ClientSlot(QFrame):
         
     def toggleGui(self):
         if not self.gui_visible:
-            self.list_widget.clientShowGuiRequest.emit(self.clientId())
+            self.toDaemon('/ray/client/show_optional_gui', self.clientId())
+            #self.list_widget.clientShowGuiRequest.emit(self.clientId())
         else:
+            self.toDaemon('/ray/client/hide_optional_gui', self.clientId())
             self.list_widget.clientHideGuiRequest.emit(self.clientId())
             
         #self.gui_visible = not self.gui_visible
@@ -282,6 +298,9 @@ class ListWidgetClients(QListWidget):
         QListWidget.__init__(self, parent)
         self.last_n = 0
     
+    def getServer(self):
+        return GUIServerThread.instance()
+    
     def createClientWidget(self, client_data):
         item = ClientItem(self, client_data)
         item.setSortNumber(self.last_n)
@@ -335,7 +354,9 @@ class ListWidgetClients(QListWidget):
             client_id = item.getClientId()
             client_ids_list.append(client_id)
         
-        self.orderChanged.emit(client_ids_list)
+        server = GUIServerThread.instance()
+        if server:
+            server.orderChanged(client_ids_list)
         
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):

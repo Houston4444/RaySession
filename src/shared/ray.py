@@ -386,6 +386,19 @@ def clientStatusString(status):
     return client_status_strings[status]
 
 def serverStatusString(server_status):
+    server_status_strings = {
+        ServerStatus.OFF    : _translate('server status', "off"),
+        ServerStatus.NEW    : _translate('server status', "new"),
+        ServerStatus.OPEN   : _translate('server status', "open"),
+        ServerStatus.CLEAR  : _translate('server status', "clear"),
+        ServerStatus.SWITCH : _translate('server status', "switch"),
+        ServerStatus.LAUNCH : _translate('server status', "launch"),
+        ServerStatus.PRECOPY: _translate('server status', "copy"),
+        ServerStatus.COPY   : _translate('server status', "copy"),
+        ServerStatus.READY  : _translate('server status', "ready"),
+        ServerStatus.SAVE   : _translate('server status', "save"),
+        ServerStatus.CLOSE  : _translate('server status', "close") }
+    
     if not 0 <= server_status < len(server_status_strings):
         return _translate('server status', "invalid")
     
