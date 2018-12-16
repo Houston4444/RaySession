@@ -1022,7 +1022,7 @@ QToolButton {border: none}</string>
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Desktops Memory (requires wmctrl)</string>
+    <string>&amp;Desktops Memory (requires wmctrl)</string>
    </property>
   </action>
  </widget>
@@ -1030,7 +1030,7 @@ QToolButton {border: none}</string>
   <customwidget>
    <class>SessionFrame</class>
    <extends>QFrame</extends>
-   <header>sessionframe</header>
+   <header>surclassed_widgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -1041,12 +1041,12 @@ QToolButton {border: none}</string>
   <customwidget>
    <class>StatusBarNegativ</class>
    <extends>QLineEdit</extends>
-   <header>status_bar</header>
+   <header>surclassed_widgets</header>
   </customwidget>
   <customwidget>
    <class>StackedSessionName</class>
    <extends>QStackedWidget</extends>
-   <header>stacked_session_name</header>
+   <header>surclassed_widgets</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -1,5 +1,5 @@
 import time
-
+import sys
 import child_dialogs
 import ray
 from gui_server_thread import GUIServerThread
@@ -96,8 +96,9 @@ class Client(object):
     def sendPropertiesToDaemon(self):
         server = GUIServerThread.instance()
         if not server:
-            sys.stderr.write('Server not found. Client %s can not send its properties'
-                             % self.client_id)
+            sys.stderr.write(
+                'Server not found. Client %s can not send its properties' %
+                self.client_id)
             return
 
         server.toDaemon('/ray/client/update_properties',

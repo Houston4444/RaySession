@@ -457,12 +457,12 @@ QToolButton {border: none}</string>
   <customwidget>
    <class>StatusBar</class>
    <extends>QLineEdit</extends>
-   <header>status_bar</header>
+   <header>surclassed_widgets</header>
   </customwidget>
   <customwidget>
    <class>HideGuiButton</class>
    <extends>QToolButton</extends>
-   <header>hide_gui_button</header>
+   <header>surclassed_widgets</header>
   </customwidget>
  </customwidgets>
  <resources>
