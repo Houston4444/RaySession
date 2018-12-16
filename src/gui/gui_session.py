@@ -74,16 +74,10 @@ class Session(object):
         return _instance
     
     def quit(self):
-        print('kk')
-        self._server.stop()
         print('kkk')
         self._main_win.hide()
         
         #del self._main_win._server
-        del self._daemon_manager._server
-        
-        print('kkkk')
-        del self._server
         print('kkkkk')
         del self._main_win
         print('jjoo')
@@ -106,12 +100,16 @@ class Session(object):
                 return client
         else:
             sys.stderr.write(
-                "session::getClient client %s not in client_list !!!\n"
+                "session::getClient client '%s' not in client_list !!!\n"
                     % client_id)
+            
+            print(self.client_list)
+            print(self.name)
     
     def addClient(self, client_data):
         client = Client(self, client_data)
         self.client_list.append(client)
+        print('addClient ok', client.client_id)
     
     def removeClient(self, client_id):
         client = self.getClient(client_id)
@@ -119,6 +117,8 @@ class Session(object):
             client.properties_dialog.close()
             self.client_list.remove(client)
             del client
+            
+        print('removeClient warum')
     
     def updateClientProperties(self, client_data):
         client = self.getClient(client_data.client_id)
@@ -169,7 +169,7 @@ class Session(object):
             new_client_list.append(client)
         
         self.client_list.clear()
-        MainUI.reCreateListWidget()
+        self._main_win.reCreateListWidget()
         
         self.client_list = new_client_list
         for client in self.client_list:

@@ -14,7 +14,10 @@ from child_dialogs import (
     StopClientDialog, DaemonUrlWindow, ErrorDialog)
 from gui_server_thread import GUIServerThread
 from gui_client import TrashedClient
+
 import ray
+import list_widget_clients
+
 
 import ui_raysession
 import ui_client_slot
@@ -27,7 +30,6 @@ class MainWindow(QMainWindow):
         
         self._session = session
         self._signaler = self._session._signaler
-        #self._server   = self._session._server
         self._daemon_manager = self._session._daemon_manager
         
         self.mouse_is_inside   = False
@@ -141,7 +143,7 @@ class MainWindow(QMainWindow):
         sg.daemon_nsm_locked.connect(self.setNsmLocked)
         sg.daemon_options.connect(self.setDaemonOptions)
         
-        self.connectListWidgetRequests()
+        #self.connectListWidgetRequests()
         
         if self.ui.actionAddExecutable.icon().isNull():
             self.ui.actionAddExecutable.setIcon(QIcon.fromTheme('system-run'))
@@ -169,20 +171,12 @@ class MainWindow(QMainWindow):
             self.ui.actionKeepFocus.setChecked(False)
             self.ui.actionKeepFocus.setEnabled(False)
     
-    def connectListWidgetRequests(self):
-        #connect the listWidget signals to OSC server
-        #self.ui.listWidget.orderChanged.connect(self._server.changeClientOrder)
-        #self.ui.listWidget.clientStartRequest.connect(self._server.startClient)
-        #self.ui.listWidget.clientStopRequest.connect(self.clientStopRequest)
-        #self.ui.listWidget.clientKillRequest.connect(self._server.killClient)
-        #self.ui.listWidget.clientSaveRequest.connect(self._server.saveClient)
-        #self.ui.listWidget.clientRemoveRequest.connect(self._server.removeClient)
-        self.ui.listWidget.clientAbortCopyRequest.connect(self.abortCopyClient)
-        #self.ui.listWidget.clientHideGuiRequest.connect(self._server.hideClientOptionalGui)
-        #self.ui.listWidget.clientShowGuiRequest.connect(self._server.showClientOptionalGui)
-        self.ui.listWidget.clientSaveTemplateRequest.connect(self.newClientTemplate)
-        self.ui.listWidget.clientPropertiesRequest.connect(self.openClientProperties)
-        self.ui.listWidget.updateLabelRequest.connect(self.updateClientLabel)
+    #def connectListWidgetRequests(self):
+        ##connect the listWidget signals to OSC server
+        #self.ui.listWidget.clientAbortCopyRequest.connect(self.abortCopyClient)
+        #self.ui.listWidget.clientSaveTemplateRequest.connect(self.newClientTemplate)
+        #self.ui.listWidget.clientPropertiesRequest.connect(self.openClientProperties)
+        #self.ui.listWidget.updateLabelRequest.connect(self.updateClientLabel)
     
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
@@ -194,7 +188,8 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.clear()
         self.ui.verticalLayout.removeWidget(self.ui.listWidget)
         del self.ui.listWidget
-        self.ui.listWidget = ListWidgetClients(self.ui.frameCurrentSession)
+        self.ui.listWidget = list_widget_clients.ListWidgetClients(
+                                        self.ui.frameCurrentSession)
         self.ui.listWidget.setAcceptDrops(True)
         self.ui.listWidget.setStyleSheet("QFrame{border:none}")
         self.ui.listWidget.setDragEnabled(True)
@@ -205,7 +200,7 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setObjectName("listWidget")
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
         
-        self.connectListWidgetRequests()
+        #self.connectListWidgetRequests()
     
     def setNsmLocked(self, nsm_locked):
         self.ui.actionNewSession.setEnabled(not nsm_locked)
@@ -323,10 +318,8 @@ class MainWindow(QMainWindow):
         settings.setValue('last_used_template', template_name)
         
         if template_name:
-            #self._server.newSessionFromTemplate(session_name, template_name)
             self.toDaemon('/ray/server/new_from_template', session_name, template_name)
         else:
-            #self._server.newSession(session_name)
             self.toDaemon('/ray/server/new_session', session_name)
       
     def openSession(self, action):
@@ -340,11 +333,9 @@ class MainWindow(QMainWindow):
             
         session_name = dialog.getSelectedSession()
         self.toDaemon('/ray/server/open_session', session_name)
-        #self._server.openSession(session_name)
     
     def closeSession(self):
         settings.setValue('last_session', self._session.name)
-        #self._server.closeSession()
         self.toDaemon('/ray/session/close')
         
     def abortSession(self):
@@ -352,14 +343,17 @@ class MainWindow(QMainWindow):
         dialog.exec()
         
         if dialog.result():
-            #self._server.abortSession()
             self.toDaemon('/ray/session/abort')
     
     def renameSessionAction(self):
         if not self._session.is_renameable:
-            QMessageBox.information(self, 
-                                    _translate("rename_session", "Rename Session"),
-                                    _translate("rename_session", "<p>In order to rename current session,<br>please first stop all clients.<br>then, double click on session name.</p>"))
+            QMessageBox.information(
+                self, 
+                _translate("rename_session", "Rename Session"),
+                _translate("rename_session",
+                           "<p>In order to rename current session,<br>"
+                            + "please first stop all clients.<br>"
+                            + "then, double click on session name.</p>"))
             return
         
         self.ui.stackedWidgetSessionName.toggleEdit()
@@ -373,7 +367,7 @@ class MainWindow(QMainWindow):
         settings.setValue('last_session', self._session.name)
         
         session_name = dialog.getSessionName()
-        self._server.duplicateSession(session_name)
+        self.toDaemon('/ray/session/duplicate', session_name)
        
     def saveTemplateSession(self):
         dialog = SaveTemplateSessionDialog(self)
@@ -382,14 +376,14 @@ class MainWindow(QMainWindow):
             return
         
         session_template_name = dialog.getTemplateName()
-        self._server.saveTemplateSession(session_template_name)
+        self.toDaemon('/ray/session/save_as_template', session_template_name)
     
     def aboutRaySession(self):
         dialog = AboutRaySessionDialog(self)
         dialog.exec()
     
     def saveSession(self):
-        self._server.saveSession()
+        self.toDaemon('/ray/session/save')
     
     def addApplication(self):
         if self._session.server_status in (ray.ServerStatus.CLOSE, ray.ServerStatus.OFF):
@@ -402,7 +396,7 @@ class MainWindow(QMainWindow):
         if dialog.result():
             template_name = dialog.getSelectedTemplate()
             factory = dialog.isTemplateFactory(template_name)
-            self._server.toDaemon('/ray/session/add_client_template', int(factory), template_name)
+            self.toDaemon('/ray/session/add_client_template', int(factory), template_name)
     
     def addExecutable(self):
         if self._session.server_status in (ray.ServerStatus.CLOSE, ray.ServerStatus.OFF):
@@ -417,11 +411,11 @@ class MainWindow(QMainWindow):
         proxy   = dialog.runViaProxy()
         
         if proxy:
-            self._server.toDaemon('/ray/session/add_proxy', command)
+            self.toDaemon('/ray/session/add_proxy', command)
         else:
-            self._server.addClient(command)
+            self.toDaemon('/ray/session/add_executable', command)
     
-    def clientStopRequest(self, client_id):
+    def stopClient(self, client_id):
         client = self._session.getClient(client_id)
         if not client:
             return
@@ -434,13 +428,13 @@ class MainWindow(QMainWindow):
                     if not dialog.result():
                         return
                     
-            elif (time.time() - client.last_save) >= 60: #last save (or start) more than 60 seconds ago
+            elif (time.time() - client.last_save) >= 10: #last save (or start) more than 60 seconds ago
                 dialog = StopClientDialog(self, client_id)
                 dialog.exec()
                 if not dialog.result():
                     return
                 
-        self._server.stopClient(client_id)
+        self.toDaemon('/ray/client/stop', client_id)
     
     def abortCopy(self):
         if not self.server_copying:
@@ -455,7 +449,7 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
         
-        self._server.abortCopy()
+        self.toDaemon('/ray/server/abort_copy')
     
     def abortCopyClient(self, client_id):
         if not self.server_copying:
@@ -471,10 +465,10 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
         
-        self._server.abortCopy()
+        self.toDaemon('/ray/server/abort_copy')
     
     def renameSession(self, new_session_name):
-        self._server.toDaemon('/ray/session/rename', new_session_name)
+        self.toDaemon('/ray/session/rename', new_session_name)
     
     def showClientTrashDialog(self, client_id):
         for trashed_client in self._session.trashed_clients:
@@ -488,7 +482,7 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
         
-        self._server.toDaemon('/ray/trash/restore', client_id)
+        self.toDaemon('/ray/trash/restore', client_id)
     
     def showDaemonUrlWindow(self, err_code, ex_url=''):
         dialog = DaemonUrlWindow(self, err_code, ex_url)
@@ -500,7 +494,7 @@ class MainWindow(QMainWindow):
         
         new_url = dialog.getUrl()
         
-        tried_urls = getListInSettings(settings, 'network/tried_urls')
+        tried_urls = ray.getListInSettings(settings, 'network/tried_urls')
         if not new_url in tried_urls:
             tried_urls.append(new_url)
             

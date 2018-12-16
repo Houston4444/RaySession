@@ -264,7 +264,7 @@ class GUIServerThread(ServerThread):
     
     def debugg(self, path, args):
         if CommandLineArgs.debug:
-            sys.stderr.write('serverOSC::raysession_receives %s, %s.\n'
+            sys.stderr.write('\033[93mserverOSC::raysession_receives\033[0m %s, %s.\n'
                                 % (path, str(args)))
     
     def toDaemon(self, *args):

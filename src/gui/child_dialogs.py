@@ -1,13 +1,14 @@
+import os
 import sys
-from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QListWidgetItem
-from PyQt5.QtCore import Qt
+import time
+from PyQt5.QtWidgets import (QDialog, QDialogButtonBox, QListWidgetItem,
+                             QCompleter, QMessageBox)
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt, QTimer
 
 import ray
-#from gui_signaler import Signaler
 from gui_server_thread import GUIServerThread
-#from daemon_manager import DaemonManager
 from gui_tools import settings, default_session_root, ErrDaemon, _translate
-#from gui_session import Session
 
 import ui_open_session
 import ui_new_session
@@ -26,14 +27,10 @@ import ui_client_trash
 import ui_daemon_url
 import ui_edit_executable
 
-#signaler = Signaler.instance()
-#session = Session.instance()
-
 class ChildDialog(QDialog):
     def __init__(self, parent):
         QDialog.__init__(self, parent)
         self._session = parent._session
-        #self._server   = self._session._server
         self._signaler = self._session._signaler
         
         daemon_manager = self._session._daemon_manager
@@ -50,7 +47,8 @@ class ChildDialog(QDialog):
         if server:
             server.toDaemon(*args)
         else:
-            sys.stderr.write('Error No GUI OSC Server, can not send %s' % args)
+            sys.stderr.write('Error No GUI OSC Server, can not send %s.\n'
+                                % args)
         
     def serverStatusChanged(self, server_status):
         return
@@ -86,8 +84,7 @@ class OpenSessionDialog(ChildDialog):
         self.ui.currentNsmFolder.setText(default_session_root)
         
         self._signaler.add_sessions_to_list.connect(self.addSessions)
-        print('devrait lister')
-        #self._server.startListSession()
+        
         self.toDaemon('/ray/server/list_sessions', 0)
         
         if self.daemon_launched_before:
@@ -429,10 +426,10 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.lineEditIcon.setText(self.client.icon_name)
         self.ui.lineEditLabel.setText(self.client.label)
         self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
-        self.ui.toolButtonIcon.setIcon(getAppIcon(self.client.icon_name, self))
+        self.ui.toolButtonIcon.setIcon(ray.getAppIcon(self.client.icon_name, self))
         
     def changeIconwithText(self, text):
-        self.ui.toolButtonIcon.setIcon(getAppIcon(text, self))
+        self.ui.toolButtonIcon.setIcon(ray.getAppIcon(text, self))
     
     def editExecutable(self):
         dialog = EditExecutableDialog(self, self.client)
@@ -638,7 +635,7 @@ class AddApplicationDialog(ChildDialog):
             
             self.user_template_list.append(template_name)
             
-            self.ui.templateList.addItem(QListWidgetItem(getAppIcon(icon_name, self), template_name, self.ui.templateList))
+            self.ui.templateList.addItem(QListWidgetItem(ray.getAppIcon(icon_name, self), template_name, self.ui.templateList))
             
             self.ui.templateList.sortItems()
             
@@ -655,7 +652,7 @@ class AddApplicationDialog(ChildDialog):
             
             self.factory_template_list.append(template_name)
             
-            self.ui.templateList.addItem(QListWidgetItem(getAppIcon(icon_name, self), template_name, self.ui.templateList))
+            self.ui.templateList.addItem(QListWidgetItem(ray.getAppIcon(icon_name, self), template_name, self.ui.templateList))
             
             self.ui.templateList.sortItems()
             
@@ -893,7 +890,7 @@ class DaemonUrlWindow(ChildDialog):
         self.ui.labelError.setText(error_text)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         
-        self.tried_urls = getListInSettings(settings, 'network/tried_urls')
+        self.tried_urls = ray.getListInSettings(settings, 'network/tried_urls')
         last_tried_url  = settings.value('network/last_tried_url', '', type=str)
         
         self.completer = QCompleter(self.tried_urls)
@@ -919,7 +916,7 @@ class DaemonUrlWindow(ChildDialog):
             return
         
         try:
-            addr = getLibloAddress(text)
+            addr = ray.getLibloAddress(text)
             self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
         except:
             self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)

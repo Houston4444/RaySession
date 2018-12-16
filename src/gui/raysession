@@ -1,20 +1,20 @@
 #!/usr/bin/python3 -u
 
+import argparse
+import os
+import signal
+import socket
+import subprocess
+import sys
+import time
+import unicodedata
 
+from liblo import make_method
+#from signal import signal, SIGINT, SIGTERM, SIGUSR1, SIGUSR2
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView, QLabel, QLineEdit
 from PyQt5.QtGui import QIcon , QCursor, QPalette, QPixmap, QFontDatabase
 from PyQt5.QtCore import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
 
-import sys
-from liblo import *
-import subprocess
-from signal import signal, SIGINT, SIGTERM, SIGUSR1, SIGUSR2
-import signal
-import unicodedata
-import os
-import socket
-import time
-import argparse
 
 #import UIs
 import ui_raysession
@@ -35,7 +35,6 @@ from gui_tools import (ArgParser, CommandLineArgs, settings, initGuiTools,
                        default_session_root, ErrDaemon, _translate)
 from gui_server_thread import GUIServerThread
 from gui_session import Session
-from shared import *
 from list_widget_clients import *
 import nsm_client
 import ray
@@ -50,17 +49,21 @@ def remove_accents(input_str):
     return u"".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()    
 
 def signalHandler(sig, frame):
-    if sig in (SIGINT, SIGTERM):
+    if sig in (signal.SIGINT, signal.SIGTERM):
         if session._daemon_manager.launched_before:
-            if CommandLineArgs.under_nsm and session.server_status != ray.ServerStatus.OFF:
-                MainUI.terminate_request = True
-                server.abortSession()
+            if (CommandLineArgs.under_nsm
+                    and session.server_status != ray.ServerStatus.OFF):
+                session._main_win.terminate_request = True
+                
+                server = GUIServerThread.instance()
+                if server:
+                    server.abortSession()
             else:
-                daemon_manager.stop()
+                session._daemon_manager.stop()
             return
         
-        #MainUI.terminate_request = True
-        #daemon_manager.stop()
+        session._main_win.terminate_request = True
+        session._daemon_manager.stop()
         app.quit()
 
 def changeRootFolder(parent_window):
@@ -100,13 +103,6 @@ def changeRootFolder(parent_window):
         settings.setValue('default_session_root', default_session_root)
         
         server.toDaemon('/ray/server/change_root', root_folder)
-
-class TrashedClient(object):
-    def __init__(self, client_data, menu_action):
-        self.data        = client_data
-        self.menu_action = menu_action
-        
-
 
 class NSMThread(nsm_client.NSMThread):
     def __init__(self, name, signaler, daemon_address, debug):
@@ -214,7 +210,7 @@ if __name__ == '__main__':
     #set Qt Application
     app = QApplication(sys.argv)
     app.setApplicationName("RaySession")
-    app.setApplicationVersion(VERSION)
+    app.setApplicationVersion(ray.VERSION)
     app.setOrganizationName("RaySession")
     app.setWindowIcon(QIcon(':/scalable/raysession.svg'))
     app.setQuitOnLastWindowClosed(False)
@@ -225,7 +221,7 @@ if __name__ == '__main__':
     if appTranslator.load("%s/locale/raysession_%s" % (os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), locale)):
         app.installTranslator(appTranslator)
     _translate = app.translate
-    init_translation(_translate)
+    #init_translation(_translate)
     
     
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
@@ -285,11 +281,11 @@ if __name__ == '__main__':
         
     app.exec()
     
-    #server.stop()
+    server.stop()
     #MainUI.hide()
     
     #del MainUI
-    #session.quit()
+    session.quit()
     #server.stop()
-    #del session
-    #del app
+    del session
+    del app

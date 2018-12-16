@@ -1,12 +1,13 @@
+import time
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QApplication
 from PyQt5.QtGui     import QIcon, QPalette, QPixmap, QFontMetrics, QFont, QFontDatabase
 from PyQt5.QtCore    import Qt, pyqtSignal, QSize, QFile
  
-import ui_client_slot
+import ray
 from gui_server_thread import GUIServerThread 
-from shared import *
-from gui_tools import clientStatusString
+from gui_tools import clientStatusString, _translate
 
+import ui_client_slot
     
 class ClientSlot(QFrame):
     def __init__(self, list_widget, client):
@@ -15,8 +16,9 @@ class ClientSlot(QFrame):
         self.ui.setupUi(self)
         
         #needed variables
-        self.list_widget     = list_widget
-        self.client          = client
+        self.list_widget = list_widget
+        self.client      = client
+        self._main_win = self.client._session._main_win
         
         self.is_dirty_able   = False
         self.gui_visible     = True
@@ -106,8 +108,10 @@ class ClientSlot(QFrame):
         #self.list_widget.clientStartRequest.emit(self.clientId())
         
     def stopClient(self):
-        self.toDaemon('/ray/client/stop', self.clientId())
+        #we need to prevent accidental stop with a window confirmation
+        #under conditions
         #self.list_widget.clientStopRequest.emit(self.clientId())
+        self._main_win.stopClient(self.clientId())
     
     def killClient(self):
         self.toDaemon('/ray/client/kill', self.clientId())
@@ -125,16 +129,20 @@ class ClientSlot(QFrame):
         #server = self.getServer()
         #if server:
             #server.abortCopyClient(self.clientId())
-        self.list_widget.clientAbortCopyRequest.emit(self.clientId())
+        #self.list_widget.clientAbortCopyRequest.emit(self.clientId())
+        self._main_win.abortCopyClient(self.clientId())
     
     def saveAsApplicationTemplate(self):
-        self.list_widget.clientSaveTemplateRequest.emit(self.clientId())
+        #self.list_widget.clientSaveTemplateRequest.emit(self.clientId())
+        self._main_win.newClientTemplate(self.clientId())
     
     def openPropertiesDialog(self):
-        self.list_widget.clientPropertiesRequest.emit(self.clientId())
+        #self.list_widget.clientPropertiesRequest.emit(self.clientId())
+        self._main_win.openClientProperties(self.clientId())
     
     def updateLabel(self, label):
-        self.list_widget.updateLabelRequest.emit(self.clientId(), label)
+        self._main_win.updateClientLabel(self.clientId(), label)
+        #self.list_widget.updateLabelRequest.emit(self.clientId(), label)
         
     
     def updateClientData(self):
@@ -146,10 +154,10 @@ class ClientSlot(QFrame):
         self.ui.ClientName.setToolTip('Executable : ' + self.client.executable_path + '\n' + 'NSM id : ' + self.clientId())
         
         #set icon
-        self.icon_on  = getAppIcon(self.client.icon_name, self)
+        self.icon_on  = ray.getAppIcon(self.client.icon_name, self)
         self.icon_off = QIcon(self.icon_on.pixmap(32, 32, QIcon.Disabled))
         
-        self.grayIcon(bool(self.client.status in (CLIENT_STATUS_STOPPED, CLIENT_STATUS_PRECOPY)))
+        self.grayIcon(bool(self.client.status in (ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY)))
         
     def grayIcon(self, gray):
         if gray:
@@ -160,7 +168,7 @@ class ClientSlot(QFrame):
     def updateStatus(self, status):
         self.ui.lineEditClientStatus.setText(clientStatusString(status))
         
-        if status in (CLIENT_STATUS_LAUNCH, CLIENT_STATUS_OPEN, CLIENT_STATUS_SWITCH):
+        if status in (ray.ClientStatus.LAUNCH, ray.ClientStatus.OPEN, ray.ClientStatus.SWITCH):
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.saveButton.setEnabled(False)
@@ -170,7 +178,7 @@ class ClientSlot(QFrame):
             self.ui.toolButtonGUI.setEnabled(True)
             self.grayIcon(False)
                 
-        elif status == CLIENT_STATUS_READY:
+        elif status == ray.ClientStatus.READY:
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.closeButton.setEnabled(False)
@@ -180,7 +188,7 @@ class ClientSlot(QFrame):
             self.ui.saveButton.setEnabled(True)
             self.grayIcon(False)
             
-        elif status == CLIENT_STATUS_STOPPED:
+        elif status == ray.ClientStatus.STOPPED:
             self.ui.startButton.setEnabled(True)
             self.ui.stopButton.setEnabled(False)
             self.ui.saveButton.setEnabled(False)
@@ -195,7 +203,7 @@ class ClientSlot(QFrame):
             
             self.ui.saveButton.setIcon(self.saveIcon)
             
-        elif status == CLIENT_STATUS_PRECOPY:
+        elif status == ray.ClientStatus.PRECOPY:
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(False)
             self.ui.saveButton.setEnabled(False)
@@ -210,7 +218,7 @@ class ClientSlot(QFrame):
             
             self.ui.saveButton.setIcon(self.saveIcon)
             
-        elif status == CLIENT_STATUS_COPY:
+        elif status == ray.ClientStatus.COPY:
             self.ui.saveButton.setEnabled(False)
 				
     def allowKill(self):
@@ -219,14 +227,13 @@ class ClientSlot(QFrame):
             
     def flashIfOpen(self, boolflash):
         if boolflash:
-            self.ui.lineEditClientStatus.setText(clientStatusString(CLIENT_STATUS_OPEN))
+            self.ui.lineEditClientStatus.setText(clientStatusString(ray.ClientStatus.OPEN))
         else:
             self.ui.lineEditClientStatus.setText('')
     
     def showGuiButton(self):
         self.ui.toolButtonGUI.setVisible(True)
         if self.client.executable_path in ('nsm-proxy', 'ray-proxy'):
-            _translate = QApplication.translate
             self.ui.toolButtonGUI.setText(_translate('client_slot', 'proxy'))
             self.ui.toolButtonGUI.setToolTip(_translate('client_slot', 'Display proxy window'))
      
@@ -281,25 +288,9 @@ class ClientItem(QListWidgetItem):
         return self.f_widget.clientId()
 
 class ListWidgetClients(QListWidget):
-    orderChanged = pyqtSignal(list)
-    clientStartRequest     = pyqtSignal(str)
-    clientStopRequest      = pyqtSignal(str)
-    clientKillRequest      = pyqtSignal(str)
-    clientSaveRequest      = pyqtSignal(str)
-    clientRemoveRequest    = pyqtSignal(str)
-    clientAbortCopyRequest = pyqtSignal(str)
-    clientHideGuiRequest   = pyqtSignal(str)
-    clientShowGuiRequest   = pyqtSignal(str)
-    clientSaveTemplateRequest = pyqtSignal(str)
-    clientPropertiesRequest   = pyqtSignal(str)
-    updateLabelRequest        = pyqtSignal(str, str)
-    
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
         self.last_n = 0
-    
-    def getServer(self):
-        return GUIServerThread.instance()
     
     def createClientWidget(self, client_data):
         item = ClientItem(self, client_data)
