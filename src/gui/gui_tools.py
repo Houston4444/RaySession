@@ -175,19 +175,23 @@ class ArgParser(argparse.ArgumentParser):
                 'A session manager based on the Non-Session-Manager API '
                 + 'for sound applications.'))
         self.add_argument('--daemon-url', '-u', type=ray.getLibloAddress,
-                          help='connect to this daemon url')
+                          help=_translate('help',
+                                          'connect to this daemon url'))
         self.add_argument('--out-daemon', action='store_true',
                           help=argparse.SUPPRESS)
         self.add_argument('--session-root', '-r', type=str,
-                          help='Use this session root folder')
+                          help=_translate(
+                              'help', 'Use this folder as root for sessions'))
         self.add_argument('--session', '-s', type=str,
-                          help='Open this session at startup')
+                          help=_translate('help', 
+                                          'Open this session at startup'))
         self.add_argument('--config-dir', '-c', type=str, default='',
-                          help='use a custom config dir')
+                          help=_translate('help', 'use a custom config dir'))
         self.add_argument('--debug', '-d', action='store_true',
-                          help='display OSC messages')
+                          help=_translate('help', 'display OSC messages'))
         self.add_argument('--debug-only', '-do', action='store_true',
-                          help='debug without client messages')
+                          help=_translate('help',
+                                          'debug without client messages'))
         self.add_argument('--net-session-root', type=str, default='',
                           help=argparse.SUPPRESS)
         self.add_argument('--net-daemon-id', type=int, default=0,

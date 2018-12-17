@@ -44,13 +44,8 @@ def signalHandler(sig, frame):
         
         session._main_win.terminate_request = True
         session._daemon_manager.stop()
-        app.quit()
 
 if __name__ == '__main__':
-    #connect signals
-    signal.signal(signal.SIGINT , signalHandler)
-    signal.signal(signal.SIGTERM, signalHandler)
-    
     #set Qt Application
     app = QApplication(sys.argv)
     app.setApplicationName("RaySession")
@@ -75,6 +70,10 @@ if __name__ == '__main__':
     
     #get arguments
     parser = ArgParser()
+    
+    #connect signals
+    signal.signal(signal.SIGINT , signalHandler)
+    signal.signal(signal.SIGTERM, signalHandler)
     
     #needed for signals SIGINT, SIGTERM
     timer = QTimer()

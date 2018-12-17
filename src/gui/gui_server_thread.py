@@ -277,7 +277,7 @@ class GUIServerThread(ServerThread):
     def toDaemon(self, *args):
         if CommandLineArgs.debug:
             sys.stderr.write(
-                '\033[94mOSC::gui_sends\033[0m %s, %s.\n' %
+                '\033[94mOSC::gui_sends\033[0m %s.\n' %
                 (str(args)))
         self.send(self._daemon_manager.address, *args)
 
