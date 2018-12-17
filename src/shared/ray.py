@@ -28,7 +28,6 @@ VERSION = "0.6.1"
 
 APP_TITLE = 'Ray Session'
 
-
 class PrefixMode:
     UNDEF = 0
     CLIENT_NAME = 1

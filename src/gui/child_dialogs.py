@@ -2,13 +2,14 @@ import os
 import sys
 import time
 from PyQt5.QtWidgets import (QDialog, QDialogButtonBox, QListWidgetItem,
-                             QCompleter, QMessageBox)
+                             QCompleter, QMessageBox, QFileDialog)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QSettings
 
 import ray
 from gui_server_thread import GUIServerThread
-from gui_tools import settings, default_session_root, ErrDaemon, _translate
+from gui_tools import (default_session_root, ErrDaemon, _translate,
+                       CommandLineArgs, RS)
 
 import ui_open_session
 import ui_new_session
@@ -26,7 +27,6 @@ import ui_abort_copy
 import ui_client_trash
 import ui_daemon_url
 import ui_edit_executable
-
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -56,6 +56,44 @@ class ChildDialog(QDialog):
     def serverCopying(self, bool_copying):
         self.server_copying = bool_copying
         self.serverStatusChanged(self._session.server_status)
+        
+    def changeRootFolder(self):
+        root_folder = QFileDialog.getExistingDirectory(
+            self, 
+            _translate("root_folder_dialogs",
+                       "Choose root folder for sessions"), 
+            CommandLineArgs.session_root, 
+            QFileDialog.ShowDirsOnly)
+        
+        if not root_folder:
+            return
+        
+        # Security, kde dialogs sends $HOME if user type a folder path
+        # that doesn't already exists.
+        if os.getenv('HOME') and root_folder == os.getenv('HOME'):
+            return
+        
+        errorDialog = QMessageBox(
+            QMessageBox.Critical, 
+            _translate('root_folder_dialogs', 'unwritable dir'), 
+            _translate(
+                'root_folder_dialogs',
+                '<p>You have no permissions for %s,<br>' % root_folder \
+                    + 'choose another directory !</p>'))
+        
+        if not os.path.exists(root_folder):
+            try:
+                os.makedirs(root_folder)
+            except:
+                errorDialog.exec()
+                return
+        
+        if not os.access(root_folder, os.W_OK):
+            errorDialog.exec()
+            return
+        
+        RS.settings.setValue('default_session_root', root_folder)
+        self.toDaemon('/ray/server/change_root', root_folder)
 
     def leaveEvent(self, event):
         if self.isActiveWindow():
@@ -81,10 +119,13 @@ class OpenSessionDialog(ChildDialog):
         self.ui.filterBar.textEdited.connect(self.updateFilteredList)
         self.ui.filterBar.updownpressed.connect(self.updownPressed)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
-
-        self.ui.currentNsmFolder.setText(default_session_root)
+        
+        #session_root = RS.settings.value('default_session_root', '')
+        
+        self.ui.currentNsmFolder.setText(CommandLineArgs.session_root)
 
         self._signaler.add_sessions_to_list.connect(self.addSessions)
+        self._signaler.root_changed.connect(self.rootChanged)
 
         self.toDaemon('/ray/server/list_sessions', 0)
 
@@ -100,17 +141,24 @@ class OpenSessionDialog(ChildDialog):
 
     def serverStatusChanged(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
-            bool(server_status == ray.ServerStatus.OFF))
+            bool(server_status in (ray.ServerStatus.OFF,
+                                   ray.ServerStatus.READY,
+                                   ray.ServerStatus.CLOSE)))
 
         self.server_will_accept = bool(
             server_status in (
                 ray.ServerStatus.OFF,
                 ray.ServerStatus.READY) and not self.server_copying)
         self.preventOk()
+        
+    def rootChanged(self, session_root):
+        self.ui.currentNsmFolder.setText(session_root)
+        self.ui.sessionList.clear()
+        self.toDaemon('/ray/server/list_sessions', 0)
 
     def addSessions(self, session_names):
         for session_name in session_names:
-            if session_name == settings.value('last_session', type=str):
+            if session_name == RS.settings.value('last_session', type=str):
                 self.f_last_session_item = QListWidgetItem(session_name)
                 self.ui.sessionList.addItem(self.f_last_session_item)
                 self.ui.sessionList.setCurrentItem(self.f_last_session_item)
@@ -184,12 +232,12 @@ class OpenSessionDialog(ChildDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
             bool(self.server_will_accept and self.has_selection))
 
-    def changeRootFolder(self):
-        changeRootFolder(self)
-        self.ui.currentNsmFolder.setText(default_session_root)
-        self.ui.sessionList.clear()
-        # self._server.startListSession()
-        self.toDaemon('/ray/server/list_sessions', 0)
+    #def changeRootFolder(self):
+        #changeRootFolder(self)
+        #self.ui.currentNsmFolder.setText(default_session_root)
+        #self.ui.sessionList.clear()
+        ## self._server.startListSession()
+        #self.toDaemon('/ray/server/list_sessions', 0)
 
     def getSelectedSession(self):
         if self.ui.sessionList.currentItem():
@@ -204,7 +252,7 @@ class NewSessionDialog(ChildDialog):
 
         self.is_duplicate = bool(duplicate_window)
 
-        self.ui.currentNsmFolder.setText(default_session_root)
+        self.ui.currentNsmFolder.setText(CommandLineArgs.session_root)
         self.ui.toolButtonFolder.clicked.connect(self.changeRootFolder)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
@@ -216,7 +264,7 @@ class NewSessionDialog(ChildDialog):
         self._signaler.server_status_changed.connect(self.serverStatusChanged)
 
         self._signaler.add_sessions_to_list.connect(self.addSessionsToList)
-        # self._server.startListSession(with_net=True)
+        
         self.toDaemon('/ray/server/list_sessions', 1)
 
         self._signaler.session_template_found.connect(self.addTemplatesToList)
@@ -256,7 +304,12 @@ class NewSessionDialog(ChildDialog):
                 server_status == ray.ServerStatus.READY and not self.server_copying)
 
         self.preventOk()
-
+    
+    def rootChanged(self, session_root):
+        self.ui.currentNsmFolder.setText(session_root)
+        self.ui.sessionList.clear()
+        self.toDaemon('/ray/server/list_sessions', 1)
+    
     def initComboBox(self):
         self.ui.comboBoxTemplate.clear()
         self.ui.comboBoxTemplate.addItem(
@@ -268,7 +321,7 @@ class NewSessionDialog(ChildDialog):
         self.ui.comboBoxTemplate.insertSeparator(2)
 
     def setLastTemplateSelected(self):
-        last_used_template = settings.value('last_used_template', type=str)
+        last_used_template = RS.settings.value('last_used_template', type=str)
 
         if last_used_template.startswith('///'):
             if last_used_template == '///withJACKPATCH':
@@ -317,7 +370,6 @@ class NewSessionDialog(ChildDialog):
         self.preventOk()
 
     def changeRootFolder(self):
-        changeRootFolder(self)
         self.ui.currentNsmFolder.setText(default_session_root)
         self.session_list.clear()
         # self._server.startListSession()
@@ -589,7 +641,7 @@ class OpenNsmSessionInfoDialog(ChildDialog):
         self.ui.checkBox.stateChanged.connect(self.showThis)
 
     def showThis(self, state):
-        settings.setValue('OpenNsmSessionInfo', not bool(state))
+        RS.settings.setValue('OpenNsmSessionInfo', not bool(state))
 
 
 class QuitAppDialog(ChildDialog):
@@ -641,9 +693,9 @@ class AddApplicationDialog(ChildDialog):
         self.ui = ui_add_application.Ui_DialogAddApplication()
         self.ui.setupUi(self)
 
-        self.ui.checkBoxFactory.setChecked(settings.value(
+        self.ui.checkBoxFactory.setChecked(RS.settings.value(
             'AddApplication/factory_box', True, type=bool))
-        self.ui.checkBoxUser.setChecked(settings.value(
+        self.ui.checkBoxUser.setChecked(RS.settings.value(
             'AddApplication/user_box', True, type=bool))
 
         self.ui.checkBoxFactory.stateChanged.connect(self.factoryBoxChanged)
@@ -840,13 +892,13 @@ class AddApplicationDialog(ChildDialog):
         return True
 
     def saveCheckBoxes(self):
-        settings.setValue(
+        RS.settings.setValue(
             'AddApplication/factory_box',
             self.ui.checkBoxFactory.isChecked())
-        settings.setValue(
+        RS.settings.setValue(
             'AddApplication/user_box',
             self.ui.checkBoxUser.isChecked())
-        settings.sync()
+        RS.settings.sync()
 
 
 class NewExecutableDialog(ChildDialog):
@@ -992,8 +1044,8 @@ class DaemonUrlWindow(ChildDialog):
         self.ui.labelError.setText(error_text)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
-        self.tried_urls = ray.getListInSettings(settings, 'network/tried_urls')
-        last_tried_url = settings.value('network/last_tried_url', '', type=str)
+        self.tried_urls = ray.getListInSettings(RS.settings, 'network/tried_urls')
+        last_tried_url = RS.settings.value('network/last_tried_url', '', type=str)
 
         self.completer = QCompleter(self.tried_urls)
         self.ui.lineEdit.setCompleter(self.completer)

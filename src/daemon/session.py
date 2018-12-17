@@ -2,6 +2,7 @@ import functools
 import os
 import random
 import shutil
+import string
 import subprocess
 import sys
 import time
@@ -17,7 +18,8 @@ from signaler          import Signaler
 from server_sender     import ServerSender
 from file_copier       import FileCopier
 from client            import Client
-from daemon_tools import TemplateRoots, settings, non_active_clients, Terminal
+from daemon_tools import (TemplateRoots, RS, non_active_clients,
+                          Terminal, CommandLineArgs)
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -107,7 +109,7 @@ class Session(ServerSender):
             if client.client_id == client_id:
                 return client
         else:
-            ifDebug("client_id %s is not in ray-daemon session")
+            sys.stderr.write("client_id %s is not in ray-daemon session\n")
     
     def getClientByAddress(self, addr):
         if not addr:
@@ -932,13 +934,13 @@ class OperatingSession(Session):
         multi_daemon_file = MultiDaemonFile.getInstance()
         if (multi_daemon_file
                 and not multi_daemon_file.isFreeForSession(spath)):
-            WARNING("Session is used by another daemon")
+            Terminal.warning("Session is used by another daemon")
             self.err_loading = ray.Err.SESSION_LOCKED
             self.loadError()
             return
         
         if os.path.isfile(spath + '/.lock'):
-            WARNING("Session is locked by another process")
+            Terminal.warning("Session is locked by another process")
             self.err_loading = ray.Err.SESSION_LOCKED
             self.loadError()
             return
@@ -1160,8 +1162,8 @@ class OperatingSession(Session):
     def load_step2(self):
         for client in self.expected_clients:
             non_active_clients.append(client.executable_path)
-        settings.setValue('daemon/non_active_list', non_active_clients)
-        settings.sync()
+        RS.settings.setValue('daemon/non_active_list', non_active_clients)
+        RS.settings.sync()
         
         self.cleanExpected()
         
@@ -1531,7 +1533,7 @@ class SignaledSession(OperatingSession):
         client.executable_path = 'ray-proxy'
         
         client.tmp_arguments  = "--executable %s" % executable
-        if debug:
+        if CommandLineArgs.debug:
             client.tmp_arguments += " --debug"
             
         client.name            = basename(executable)

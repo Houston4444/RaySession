@@ -10,7 +10,7 @@ from PyQt5.QtCore import (QCoreApplication, QTimer, QSettings,
                           QStandardPaths, QLocale, QTranslator)
 
 import ray
-from daemon_tools import (initDaemonTools, settings, non_active_clients,
+from daemon_tools import (initDaemonTools, RS, non_active_clients,
                           getCodeRoot, CommandLineArgs, ArgParser, Terminal)
 from osc_server_thread import OscServerThread
 from multi_daemon_file import MultiDaemonFile
@@ -126,14 +126,14 @@ if __name__ == '__main__':
     #update multi_daemon_file without this server
     multi_daemon_file.quit()
     
-    #save settings
-    settings.setValue('daemon/non_active_list', non_active_clients)
-    settings.setValue('daemon/save_all_from_saved_client', 
+    #save RS.settings
+    RS.settings.setValue('daemon/non_active_list', non_active_clients)
+    RS.settings.setValue('daemon/save_all_from_saved_client', 
                       server.option_save_from_client)
-    settings.setValue('daemon/bookmark_session_folder', 
+    RS.settings.setValue('daemon/bookmark_session_folder', 
                       server.option_bookmark_session)
-    settings.setValue('daemon/desktops_memory', server.option_desktops_memory)
-    settings.sync()
+    RS.settings.setValue('daemon/desktops_memory', server.option_desktops_memory)
+    RS.settings.sync()
     
     #stop the server
     server.stop()

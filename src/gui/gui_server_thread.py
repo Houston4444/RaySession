@@ -228,6 +228,13 @@ class GUIServerThread(ServerThread):
     def rayServerStatus(self, path, args):
         server_status = args[0]
         self._signaler.server_status_changed.emit(server_status)
+        
+    @make_method('/ray/server/root_changed', 's')
+    def rayServerRootChanged(self, path, args):
+        session_root = args[0]
+        
+        CommandLineArgs.changeSessionRoot(session_root)
+        self._signaler.root_changed.emit(session_root)
 
     @make_method('/ray/opening_nsm_session', None)
     def rayOpeningNsmSession(self, path, args):
@@ -264,12 +271,14 @@ class GUIServerThread(ServerThread):
     def debugg(self, path, args):
         if CommandLineArgs.debug:
             sys.stderr.write(
-                '\033[93mserverOSC::raysession_receives\033[0m %s, %s.\n' %
+                '\033[93mOSC::gui_receives\033[0m %s, %s.\n' %
                 (path, str(args)))
 
     def toDaemon(self, *args):
-        print('shod send', self._daemon_manager.address, *args)
-        print(*args)
+        if CommandLineArgs.debug:
+            sys.stderr.write(
+                '\033[94mOSC::gui_sends\033[0m %s, %s.\n' %
+                (str(args)))
         self.send(self._daemon_manager.address, *args)
 
     def announce(self):
@@ -299,8 +308,6 @@ class GUIServerThread(ServerThread):
 
     def startListSession(self, with_net=False):
         ifDebug('serverOSC::raysession_sends list sessions')
-
-        print('opooo')
 
         if with_net:
             self.toDaemon('/ray/server/list_sessions', 1)

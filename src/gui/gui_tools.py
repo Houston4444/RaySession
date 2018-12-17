@@ -7,18 +7,33 @@ from PyQt5.QtGui import QIcon, QPixmap
 
 import ray
 
-_translate = QApplication.translate
 
-settings = QSettings()
+
+g_settings = QSettings()
 default_session_root = "%s/Ray Sessions" % (os.getenv('HOME'))
 
+def _translate(*args):
+    return QApplication.translate(*args)
+
+def setDefaultSessionRoot(path):
+    global default_session_root
+    default_session_root = path
+    
+def getDefaultSessionRoot():
+    return default_session_root
+
+class RS:
+    settings = QSettings()
+    
+    @classmethod
+    def setSettings(cls, settings):
+        del cls.settings
+        cls.settings = settings
 
 def initGuiTools():
-    global settings, default_session_root, _translate
-
-    del settings
-
-    _translate = QApplication.translate
+    #global g_settings
+    
+    #_translate = QApplication.translate
 
     if CommandLineArgs.under_nsm:
         settings = QSettings('%s/child_sessions'
@@ -27,10 +42,14 @@ def initGuiTools():
         settings = QSettings(CommandLineArgs.config_dir)
     else:
         settings = QSettings()
+       
+    RS.setSettings(settings)
 
-    default_session_root = settings.value('default_session_root',
-                                          default_session_root,
-                                          type=str)
+    #default_session_root = 
+    CommandLineArgs.changeSessionRoot(
+        settings.value('default_session_root',
+                       "%s/Ray Sessions" % (os.getenv('HOME')),
+                        type=str))
 
 def dirname(*args):
     return os.path.dirname(*args)
@@ -111,6 +130,7 @@ class CommandLineArgs(argparse.Namespace):
     net_daemon_id = 0
     under_nsm = False
     NSM_URL = ''
+    session_root = ''
 
     @classmethod
     def eatAttributes(cls, parsed_args):
@@ -136,6 +156,18 @@ class CommandLineArgs(argparse.Namespace):
                 sys.exit(1)
 
             cls.under_nsm = True
+        
+        if not cls.session_root:
+            cls.session_root = RS.settings.value(
+                                    'default_session_root',
+                                    '%s/Ray Sessions' % os.getenv('HOME'))
+        
+        if cls.session_root.endswith('/'):
+            cls.session_root = cls.session_root[:-1]
+            
+    @classmethod
+    def changeSessionRoot(cls, path):
+        cls.session_root = path
 
 
 class ArgParser(argparse.ArgumentParser):
@@ -150,6 +182,8 @@ class ArgParser(argparse.ArgumentParser):
                           help='connect to this daemon url')
         self.add_argument('--out-daemon', action='store_true',
                           help=argparse.SUPPRESS)
+        self.add_argument('--session-root', '-r', type=str,
+                          help='Use this session root folder')
         self.add_argument('--config-dir', '-c', type=str, default='',
                           help='use a custom config dir')
         self.add_argument('--debug', '-d', action='store_true',

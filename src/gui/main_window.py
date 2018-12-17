@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBox
 from PyQt5.QtGui import QIcon, QCursor, QPalette, QPixmap, QFontDatabase
 from PyQt5.QtCore import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
 
-from gui_tools import (settings, RayIcon, CommandLineArgs, _translate,
+from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
                        serverStatusString)
 from child_dialogs import (
     OpenSessionDialog, NewSessionDialog, SaveTemplateSessionDialog,
@@ -50,13 +50,13 @@ class MainWindow(QMainWindow):
 
         self.server_copying = False
 
-        self.keep_focus = settings.value('keepfocus', True, type=bool)
+        self.keep_focus = RS.settings.value('keepfocus', True, type=bool)
         self.ui.actionKeepFocus.setChecked(self.keep_focus)
-        if settings.value('MainWindow/geometry'):
-            self.restoreGeometry(settings.value('MainWindow/geometry'))
-        if settings.value('MainWindow/WindowState'):
-            self.restoreState(settings.value('MainWindow/WindowState'))
-        self.ui.actionShowMenuBar.activate(settings.value(
+        if RS.settings.value('MainWindow/geometry'):
+            self.restoreGeometry(RS.settings.value('MainWindow/geometry'))
+        if RS.settings.value('MainWindow/WindowState'):
+            self.restoreState(RS.settings.value('MainWindow/WindowState'))
+        self.ui.actionShowMenuBar.activate(RS.settings.value(
             'MainWindow/ShowMenuBar', False, type=bool))
 
         # set default action for tools buttons
@@ -264,7 +264,7 @@ class MainWindow(QMainWindow):
     def toggleKeepFocus(self, bool):
         self.keep_focus = bool
         if self._daemon_manager.is_local:
-            settings.setValue('keepfocus', self.keep_focus)
+            RS.settings.setValue('keepfocus', self.keep_focus)
         if not bool:
             self.timer_raisewin.stop()
 
@@ -334,7 +334,7 @@ class MainWindow(QMainWindow):
         session_name = dialog.getSessionName()
         template_name = dialog.getTemplateName()
 
-        settings.setValue('last_used_template', template_name)
+        RS.settings.setValue('last_used_template', template_name)
 
         if template_name:
             self.toDaemon(
@@ -351,13 +351,13 @@ class MainWindow(QMainWindow):
             return
 
         if self._session.isRunning():
-            settings.setValue('last_session', self._session.name)
+            RS.settings.setValue('last_session', self._session.name)
 
         session_name = dialog.getSelectedSession()
         self.toDaemon('/ray/server/open_session', session_name)
 
     def closeSession(self):
-        settings.setValue('last_session', self._session.name)
+        RS.settings.setValue('last_session', self._session.name)
         self.toDaemon('/ray/session/close')
 
     def abortSession(self):
@@ -386,7 +386,7 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        settings.setValue('last_session', self._session.name)
+        RS.settings.setValue('last_session', self._session.name)
 
         session_name = dialog.getSessionName()
         self.toDaemon('/ray/session/duplicate', session_name)
@@ -527,12 +527,12 @@ class MainWindow(QMainWindow):
 
         new_url = dialog.getUrl()
 
-        tried_urls = ray.getListInSettings(settings, 'network/tried_urls')
+        tried_urls = ray.getListInSettings(RS.settings, 'network/tried_urls')
         if new_url not in tried_urls:
             tried_urls.append(new_url)
 
-        settings.setValue('network/tried_urls', tried_urls)
-        settings.setValue('network/last_tried_url', new_url)
+        RS.settings.setValue('network/tried_urls', tried_urls)
+        RS.settings.setValue('network/last_tried_url', new_url)
 
         self._signaler.daemon_url_changed.emit(new_url)
 
@@ -626,7 +626,7 @@ class MainWindow(QMainWindow):
         error_dialog.exec()
 
     def serverOpensNsmSession(self):
-        if not settings.value('OpenNsmSessionInfo', True, type=bool):
+        if not RS.settings.value('OpenNsmSessionInfo', True, type=bool):
             return
 
         dialog = OpenNsmSessionInfoDialog(self)
@@ -749,15 +749,15 @@ class MainWindow(QMainWindow):
         QApplication.quit()
 
     def saveWindowSettings(self):
-        settings.setValue('MainWindow/geometry', self.saveGeometry())
-        settings.setValue('MainWindow/WindowState', self.saveState())
-        settings.setValue(
+        RS.settings.setValue('MainWindow/geometry', self.saveGeometry())
+        RS.settings.setValue('MainWindow/WindowState', self.saveState())
+        RS.settings.setValue(
             'MainWindow/ShowMenuBar',
             self.ui.menuBar.isVisible())
-        settings.setValue(
+        RS.settings.setValue(
             'MainWindow/ShowMessages',
             self.ui.dockWidgetMessages.isVisible())
-        settings.sync()
+        RS.settings.sync()
 
     # Reimplemented Functions
 

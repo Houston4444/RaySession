@@ -13,7 +13,7 @@ from PyQt5.QtCore import QLocale, QTranslator, QTimer
 from gui_signaler import Signaler
 from daemon_manager import DaemonManager
 from gui_tools import (
-    ArgParser, CommandLineArgs, settings, initGuiTools, default_session_root,
+    ArgParser, CommandLineArgs, initGuiTools, default_session_root,
     ErrDaemon, _translate, getCodeRoot)
 from gui_server_thread import GUIServerThread
 from gui_session import Session

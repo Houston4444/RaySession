@@ -7,7 +7,7 @@ from daemon_manager import DaemonManager
 from gui_client import Client
 from gui_signaler import Signaler
 from gui_server_thread import GUIServerThread
-from gui_tools import initGuiTools, CommandLineArgs, settings
+from gui_tools import initGuiTools, CommandLineArgs, RS
 from main_window import MainWindow
 from nsm_child import NSMChild, NSMChildOutside
 
@@ -72,7 +72,7 @@ class Session(object):
         self._main_win.show()
 
         # The only way I found to not show Messages Dock by default.
-        if not settings.value('MainWindow/ShowMessages', False, type=bool):
+        if not RS.settings.value('MainWindow/ShowMessages', False, type=bool):
             self._main_win.hideMessagesDock()
 
         self._daemon_manager.start()
@@ -85,13 +85,8 @@ class Session(object):
         return _instance
 
     def quit(self):
-        print('kkk')
         self._main_win.hide()
-
-        #del self._main_win._server
-        print('kkkkk')
         del self._main_win
-        print('jjoo')
 
     def setRunning(self, bool):
         self.is_running = bool
@@ -114,13 +109,9 @@ class Session(object):
                 "session::getClient client '%s' not in client_list !!!\n"
                 % client_id)
 
-            print(self.client_list)
-            print(self.name)
-
     def addClient(self, client_data):
         client = Client(self, client_data)
         self.client_list.append(client)
-        print('addClient ok', client.client_id)
 
     def removeClient(self, client_id):
         client = self.getClient(client_id)
@@ -128,8 +119,6 @@ class Session(object):
             client.properties_dialog.close()
             self.client_list.remove(client)
             del client
-
-        print('removeClient warum')
 
     def updateClientProperties(self, client_data):
         client = self.getClient(client_data.client_id)

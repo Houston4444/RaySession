@@ -207,7 +207,7 @@ class DaemonManager(QObject):
         # start process
         arguments = ['--gui-url', str(server.url),
                      '--osc-port', str(self.port),
-                     '--session-root', default_session_root]
+                     '--session-root', CommandLineArgs.session_root]
 
         if CommandLineArgs.debug_only:
             arguments.append('--debug-only')

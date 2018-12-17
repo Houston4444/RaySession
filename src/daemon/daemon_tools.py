@@ -20,18 +20,30 @@ def getCodeRoot():
     return dirname(dirname(dirname(os.path.realpath(__file__))))
 
 def initDaemonTools():
-    global settings, non_active_clients
-    del settings, non_active_clients
+    global non_active_clients
+    del non_active_clients
     
     if CommandLineArgs.config_dir:
         settings = QSettings(CommandLineArgs.config_dir)
     else:
         settings = QSettings()
+        
+    RS.setSettings(settings)
     
     non_active_clients = ray.getListInSettings(settings, 
                                                'daemon/non_active_list')
     
     TemplateRoots.initConfig()
+
+
+class RS:
+    settings = QSettings()
+    
+    @classmethod
+    def setSettings(cls, settings):
+        del cls.settings
+        cls.settings = settings
+        
 
 class TemplateRoots:
     net_session_name = ".ray-net-session-templates"

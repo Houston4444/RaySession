@@ -11,7 +11,7 @@ from PyQt5.QtXml import QDomDocument
 import ray
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
-from daemon_tools import TemplateRoots, settings, CommandLineArgs, Terminal
+from daemon_tools import TemplateRoots, CommandLineArgs, Terminal, RS
 
 instance = None
 signaler = Signaler.instance()
@@ -220,11 +220,11 @@ class OscServerThread(ClientCommunicating):
         ClientCommunicating.__init__(self, session, osc_num)
         self.list_asker_addr = None
         
-        self.option_save_from_client = settings.value(
+        self.option_save_from_client = RS.settings.value(
             'daemon/save_all_from_saved_client', True, type=bool)
-        self.option_bookmark_session = settings.value(
+        self.option_bookmark_session = RS.settings.value(
             'daemon/bookmark_session_folder', True, type=bool)
-        self.option_desktops_memory  = settings.value(
+        self.option_desktops_memory  = RS.settings.value(
             'daemon/desktops_memory', False, type=bool)
         
         self.option_has_wmctrl = bool(shutil.which('wmctrl'))
@@ -326,12 +326,15 @@ class OscServerThread(ClientCommunicating):
     def rayServerChangeRoot(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        if self.session.path:
-            self.send(src_addr, '/reply', 
-                      "Can't change session_root while a session is running")
+        if self.isOperationPending(src_addr, path):
+            self.send(src_addr, '/error', 
+                      "Can't change session_root. Operation pending")
             return
         
-        self.session.setRoot(args[0])
+        session_root = args[0]
+        
+        self.session.setRoot(session_root)
+        self.sendGui('/ray/server/root_changed', session_root)
     
     @make_method('/ray/server/list_path', '')
     def rayServerListPath(self, path, args, types, src_addr):
@@ -397,12 +400,11 @@ class OscServerThread(ClientCommunicating):
         
     @make_method('/ray/server/list_sessions', 'i')
     def nsmServerListAll(self, path, args, types, src_addr):
-        print('zmeof')
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        print('zeli')
+        
         self.list_asker_addr = src_addr
         with_net = bool(args[0])
-        print('rmoan')
+        
         signaler.server_list_sessions.emit(src_addr, with_net)
     
     @make_method('/ray/server/new_session', 's')
