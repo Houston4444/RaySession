@@ -13,6 +13,7 @@ class NSMSignaler(QObject):
     show_optional_gui = pyqtSignal()
     hide_optional_gui = pyqtSignal()
 
+instance = None
 
 class NSMThread(ServerThread):
     def __init__(self, name, signaler, daemon_address, debug):
@@ -21,6 +22,13 @@ class NSMThread(ServerThread):
         self.signaler = signaler
         self.daemon_address = daemon_address
         self.debug = debug
+        
+        global instance
+        instance = self
+        
+    @staticmethod
+    def instance():
+        return instance
 
     @make_method('/nsm/client/open', 'sss')
     def nsmClientOpen(self, path, args):

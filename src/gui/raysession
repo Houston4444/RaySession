@@ -1,44 +1,32 @@
 #!/usr/bin/python3 -u
 
+#libs
 import argparse
 import os
 import signal
-import socket
-import subprocess
 import sys
-import time
-import unicodedata
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QIcon, QFontDatabase
+from PyQt5.QtCore import QLocale, QTranslator, QTimer
 
-from liblo import make_method
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView, QLabel, QLineEdit
-from PyQt5.QtGui import QIcon , QCursor, QPalette, QPixmap, QFontDatabase
-from PyQt5.QtCore import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
-
+#local imports
+from gui_signaler import Signaler
+from daemon_manager import DaemonManager
+from gui_tools import (
+    ArgParser, CommandLineArgs, settings, initGuiTools, default_session_root,
+    ErrDaemon, _translate, getCodeRoot)
+from gui_server_thread import GUIServerThread
+from gui_session import Session
+import nsm_client
+import ray
 
 #import UIs
 import ui_raysession
 import ui_client_slot
 
+#import Qt resources
 import resources_rc
 
-from gui_signaler import Signaler
-from daemon_manager import DaemonManager
-from child_dialogs import (
-    OpenSessionDialog, NewSessionDialog, SaveTemplateSessionDialog,
-    SaveTemplateClientDialog, EditExecutableDialog, ClientPropertiesDialog,
-    ClientTrashDialog, AbortSessionDialog, AbortServerCopyDialog,
-    AbortClientCopyDialog, OpenNsmSessionInfoDialog, QuitAppDialog,
-    AboutRaySessionDialog, AddApplicationDialog, NewExecutableDialog,
-    StopClientDialog, DaemonUrlWindow, ErrorDialog)
-from gui_tools import (ArgParser, CommandLineArgs, settings, initGuiTools,
-                       default_session_root, ErrDaemon, _translate)
-from gui_server_thread import GUIServerThread
-from gui_session import Session
-from list_widget_clients import *
-import nsm_client
-import ray
-
-signaler = Signaler.instance()
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -58,45 +46,6 @@ def signalHandler(sig, frame):
         session._daemon_manager.stop()
         app.quit()
 
-def changeRootFolder(parent_window):
-    #this function is the only one that takes cares of files present on system (except config files). 
-    #In a perfect world, this should be done in ray-daemon.
-    #But it's more user friendly to use a file picker child of raysession window
-    #and if ray-daemon is launched before, with a different session root, 
-    #then it gives the advantage to not change the default root.
-    
-    global default_session_root
-    root_folder = QFileDialog.getExistingDirectory(parent_window, 
-                                                  _translate("root_folder_dialogs", "Choose root folder for sessions"), 
-                                                  default_session_root, 
-                                                  QFileDialog.ShowDirsOnly)
-    
-    #Security, kde dialogs sends $HOME if user type a folder path that doesn't already exists
-    if os.environ['HOME'] and root_folder == os.environ['HOME']:
-        return
-    
-    if root_folder:
-        errorDialog = QMessageBox(
-            QMessageBox.Critical, 
-            _translate('root_folder_dialogs', 'unwritable dir'), 
-            _translate('root_folder_dialogs', '<p>You have no permissions for %s,<br>choose another directory !</p>') % root_folder)
-        
-        if not os.path.exists(root_folder):
-            try:
-                os.makedirs(root_folder)
-            except:
-                errorDialog.exec()
-                return
-        
-        if not os.access(root_folder, os.W_OK):
-            errorDialog.exec()
-            return
-        
-        default_session_root = root_folder
-        settings.setValue('default_session_root', default_session_root)
-        
-        server.toDaemon('/ray/server/change_root', root_folder)      
-    
 if __name__ == '__main__':
     #connect signals
     signal.signal(signal.SIGINT , signalHandler)
@@ -113,11 +62,8 @@ if __name__ == '__main__':
     ### Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
-    if appTranslator.load("%s/locale/raysession_%s" % (os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), locale)):
+    if appTranslator.load("%s/locale/raysession_%s" % (getCodeRoot(), locale)):
         app.installTranslator(appTranslator)
-    _translate = app.translate
-    #init_translation(_translate)
-    
     
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
@@ -135,52 +81,14 @@ if __name__ == '__main__':
     timer.start(200)
     timer.timeout.connect(lambda: None)
     
-    #signaler = Signaler()
-    
-    ##build and configure daemon_manager object
-    #daemon_manager = DaemonManager()
-    
-    #if CommandLineArgs.daemon_url:
-        #daemon_manager.setOscAddress(CommandLineArgs.daemon_url)
-    #elif not CommandLineArgs.out_daemon:
-        #daemon_manager.setNewOscAddress()
-    
-    
-    
-    ##build and start liblo server
-    #server = GUIServerThread(daemon_manager)
-    #server.start()
-    
     #build session
     server = GUIServerThread()
     session = Session()
-    #server.start()
-    #server = GUIServerThread(session)
-    
-    #if CommandLineArgs.under_nsm:
-        #if CommandLineArgs.out_daemon:
-            #nsm_child = NSMChildOutside()
-            #daemon_manager.setExternal()
-        #else:
-            #nsm_child = NSMChild()
-    
-    ##build and show Main UI
-    #MainUI = MainWindow()
-    #MainUI.show()
-    
-    ##The only way I found to not show Messages Dock by default.
-    #if not settings.value('MainWindow/ShowMessages', False, type=bool):
-        #MainUI.hideMessagesDock()
-    
-    #daemon_manager.start()
         
     app.exec()
     
     server.stop()
-    #MainUI.hide()
-    
-    #del MainUI
     session.quit()
-    #server.stop()
+    
     del session
     del app

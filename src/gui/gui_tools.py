@@ -32,6 +32,11 @@ def initGuiTools():
                                           default_session_root,
                                           type=str)
 
+def dirname(*args):
+    return os.path.dirname(*args)
+
+def getCodeRoot():
+    return dirname(dirname(dirname(os.path.realpath(__file__))))
 
 def serverStatusString(server_status):
     server_status_strings = {

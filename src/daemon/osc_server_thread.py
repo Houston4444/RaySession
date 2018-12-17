@@ -2,6 +2,7 @@ import os
 import sys
 import random
 import shutil
+import subprocess
 import time
 from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtXml import QDomDocument
@@ -456,7 +457,7 @@ class OscServerThread(ClientCommunicating):
             if session_name.startswith('/'):
                 spath = session_name
             else:
-                spath = "%s/%s" % (session.root, session_name)
+                spath = "%s/%s" % (self.session.root, session_name)
             
             if not os.path.exists(spath):
                 signaler.server_new_from_tp.emit(path, args, src_addr, True)

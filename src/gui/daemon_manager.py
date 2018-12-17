@@ -195,6 +195,7 @@ class DaemonManager(QObject):
 
     def start(self):
         if self.launched_before:
+            print('calll daemonn')
             self.callDaemon()
             return
 

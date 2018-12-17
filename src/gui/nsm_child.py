@@ -17,29 +17,36 @@ class NSMChild:
         self.wait_for_save = False
         self.project_path  = ''
         
-        self.serverNSM = nsm_client.NSMThread('raysession_child',
-                                              self.nsm_signaler,
-                                              CommandLineArgs.NSM_URL,
-                                              CommandLineArgs.debug)        
-        self.serverNSM.start()
+        serverNSM = nsm_client.NSMThread('raysession_child',
+                                         self.nsm_signaler,
+                                         CommandLineArgs.NSM_URL,
+                                         CommandLineArgs.debug)        
+        serverNSM.start()
         
         self._session._signaler.daemon_announce_ok.connect(
             self.announceToParent)
         self._session._signaler.server_status_changed.connect(
             self.serverStatusChanged)
-    
+        
     def announceToParent(self):
-        self.serverNSM.announce(_translate('child_session', 'Child Session'),
-                                ':switch:optional-gui:', 'raysession')
+        serverNSM = nsm_client.NSMThread.instance()
+        
+        if serverNSM:
+            serverNSM.announce(_translate('child_session', 'Child Session'),
+                               ':switch:optional-gui:', 'raysession')
     
     def serverStatusChanged(self, server_status):
         if server_status == ray.ServerStatus.READY:
+            serverNSM = nsm_client.NSMThread.instance()
+            if not serverNSM:
+                return
+            
             if self.wait_for_open:
-                self.serverNSM.openReply()
+                serverNSM.openReply()
                 self.wait_for_open = False
             
             elif self.wait_for_save:
-                self.serverNSM.saveReply()
+                serverNSM.saveReply()
                 self.wait_for_save = False
     
     def open(self, project_path, session_name, jack_client_name):
@@ -63,13 +70,19 @@ class NSMChild:
     def showOptionalGui(self):
         if self._session._main_win:
             self._session._main_win.show()
-        self.serverNSM.sendGuiState(True)
+            
+        serverNSM = nsm_client.NSMThread.instance()
+        if serverNSM:
+            serverNSM.sendGuiState(True)
         
     def hideOptionalGui(self):
         if self._session._main_win:
             self._session._main_win.hide()
             
-        self.serverNSM.sendGuiState(False)
+        serverNSM = nsm_client.NSMThread.instance()
+        
+        if serverNSM:
+            serverNSM.sendGuiState(False)
         
         
 class NSMChildOutside(NSMChild):
@@ -81,23 +94,28 @@ class NSMChildOutside(NSMChild):
         self.template_name = ''
         
     def announceToParent(self):
-        self.serverNSM.announce(_translate('network_session',
+        serverNSM = nsm_client.NSMThread.instance()
+        
+        if serverNSM:
+            serverNSM.announce(_translate('network_session',
                                            'Network Session'),
                                 ':switch:optional-gui:ray-network:',
                                 'ray-network')
         
-        daemon_manager = self._session._daemon_manager
         
-        self.serverNSM.sendToDaemon(
-            '/nsm/client/network_properties',
-            self._session._daemon_manager.url,
-            self._session._daemon_manager.session_root)
+            serverNSM.sendToDaemon(
+                '/nsm/client/network_properties',
+                self._session._daemon_manager.url,
+                self._session._daemon_manager.session_root)
     
     def save(self):
-        self.serverNSM.sendToDaemon(
-            '/nsm/client/network_properties',
-            self._session._daemon_manager.url,
-            self._session._daemon_manager.session_root)
+        serverNSM = nsm_client.NSMThread.instance()
+        
+        if serverNSM:
+            serverNSM.sendToDaemon(
+                '/nsm/client/network_properties',
+                self._session._daemon_manager.url,
+                self._session._daemon_manager.session_root)
         
         NSMChild.save(self)
         
