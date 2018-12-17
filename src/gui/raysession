@@ -10,7 +10,6 @@ import time
 import unicodedata
 
 from liblo import make_method
-#from signal import signal, SIGINT, SIGTERM, SIGUSR1, SIGUSR2
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView, QLabel, QLineEdit
 from PyQt5.QtGui import QIcon , QCursor, QPalette, QPixmap, QFontDatabase
 from PyQt5.QtCore import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
@@ -40,13 +39,6 @@ import nsm_client
 import ray
 
 signaler = Signaler.instance()
-
-def str2bool(v):
-    return bool(v.lower() == 'true')
-
-def remove_accents(input_str):
-    nfkd_form = unicodedata.normalize('NFKD', input_str)
-    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)]).lower()    
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
