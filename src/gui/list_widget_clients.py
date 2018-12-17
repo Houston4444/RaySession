@@ -306,7 +306,7 @@ class ClientSlot(QFrame):
             # self.list_widget.clientShowGuiRequest.emit(self.clientId())
         else:
             self.toDaemon('/ray/client/hide_optional_gui', self.clientId())
-            self.list_widget.clientHideGuiRequest.emit(self.clientId())
+            #self.list_widget.clientHideGuiRequest.emit(self.clientId())
 
         #self.gui_visible = not self.gui_visible
 

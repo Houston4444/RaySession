@@ -9,6 +9,7 @@ from gui_signaler import Signaler
 from gui_server_thread import GUIServerThread
 from gui_tools import initGuiTools, CommandLineArgs, settings
 from main_window import MainWindow
+from nsm_child import NSMChild, NSMChildOutside
 
 _instance = None
 
@@ -42,14 +43,29 @@ class Session(object):
                 self._daemon_manager.setExternal()
             else:
                 self._nsm_child = NSMChild(self)
-
+        
+        # build nsm_child if NSM_URL in env
+        self._nsm_child = None
+        
+        if CommandLineArgs.under_nsm:
+            if CommandLineArgs.out_daemon:
+                self._nsm_child = NSMChildOutside(self)
+                self._daemon_manager.setExternal()
+            else:
+                self._nsm_child = NSMChild(self)
+        
         # build and show Main UI
         self._main_win = MainWindow(self)
-
+        
+        
+        
         # build and start liblo server
 
         self._daemon_manager.finishInit()
         server.finishInit(self)
+        
+        #if self._nsm_child:
+            #self._nsm_child.finishInit()
         # self._nsm_child.finishInit()
         # self._main_win.finishInit()
 

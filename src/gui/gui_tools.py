@@ -105,6 +105,7 @@ class CommandLineArgs(argparse.Namespace):
     net_session_root = ''
     net_daemon_id = 0
     under_nsm = False
+    NSM_URL = ''
 
     @classmethod
     def eatAttributes(cls, parsed_args):
@@ -123,8 +124,7 @@ class CommandLineArgs(argparse.Namespace):
 
         if os.getenv('NSM_URL'):
             try:
-                parent_daemon_address = ray.getLibloAddress(
-                    os.getenv('NSM_URL'))
+                cls.NSM_URL = ray.getLibloAddress(os.getenv('NSM_URL'))
             except BaseException:
                 sys.stderr.write('%s is not a valid NSM_URL\n'
                                  % os.getenv('NSM_URL'))
