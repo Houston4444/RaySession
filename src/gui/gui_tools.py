@@ -31,10 +31,6 @@ class RS:
         cls.settings = settings
 
 def initGuiTools():
-    #global g_settings
-    
-    #_translate = QApplication.translate
-
     if CommandLineArgs.under_nsm:
         settings = QSettings('%s/child_sessions'
                              % QApplication.organizationName())
@@ -44,8 +40,7 @@ def initGuiTools():
         settings = QSettings()
        
     RS.setSettings(settings)
-
-    #default_session_root = 
+    
     CommandLineArgs.changeSessionRoot(
         settings.value('default_session_root',
                        "%s/Ray Sessions" % (os.getenv('HOME')),
@@ -131,6 +126,7 @@ class CommandLineArgs(argparse.Namespace):
     under_nsm = False
     NSM_URL = ''
     session_root = ''
+    session = ''
 
     @classmethod
     def eatAttributes(cls, parsed_args):
@@ -184,6 +180,8 @@ class ArgParser(argparse.ArgumentParser):
                           help=argparse.SUPPRESS)
         self.add_argument('--session-root', '-r', type=str,
                           help='Use this session root folder')
+        self.add_argument('--session', '-s', type=str,
+                          help='Open this session at startup')
         self.add_argument('--config-dir', '-c', type=str, default='',
                           help='use a custom config dir')
         self.add_argument('--debug', '-d', action='store_true',

@@ -195,7 +195,6 @@ class DaemonManager(QObject):
 
     def start(self):
         if self.launched_before:
-            print('calll daemonn')
             self.callDaemon()
             return
 
@@ -208,6 +207,10 @@ class DaemonManager(QObject):
         arguments = ['--gui-url', str(server.url),
                      '--osc-port', str(self.port),
                      '--session-root', CommandLineArgs.session_root]
+        
+        if CommandLineArgs.session:
+            arguments.append('--session')
+            arguments.append(CommandLineArgs.session)
 
         if CommandLineArgs.debug_only:
             arguments.append('--debug-only')

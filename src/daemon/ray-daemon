@@ -71,7 +71,6 @@ if __name__ == '__main__':
     
     
     #create session
-    #signaler = Signaler()
     session  = SignaledSession(session_root)
     
     #create and start server
@@ -95,8 +94,9 @@ if __name__ == '__main__':
         server.announceGui(CommandLineArgs.gui_url.url)
         
     #print server url
-    Terminal.message(ray.getNetUrl(server.port))
-    Terminal.message(server.url)
+    Terminal.message('URL : %s' % ray.getNetUrl(server.port))
+    Terminal.message('      %s' % server.url)
+    Terminal.message('ROOT: %s' % CommandLineArgs.session_root)
     
     #create or update multi_daemon_file in /tmp
     multi_daemon_file = MultiDaemonFile(session, server)

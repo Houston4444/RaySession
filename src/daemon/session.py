@@ -83,7 +83,11 @@ class Session(ServerSender):
         if self.name:
             return
         self.root = session_root
-    
+        
+        multi_daemon_file = MultiDaemonFile.getInstance()
+        if multi_daemon_file:
+            multi_daemon_file.update()
+        
     def setName(self, session_name):
         self.name = session_name
     
