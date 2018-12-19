@@ -179,6 +179,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark))
         self.ui.actionSaveSession.setIcon(RayIcon('document-save', dark))
         self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save', dark))
+        self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
 
         self.setNsmLocked(CommandLineArgs.under_nsm)
 

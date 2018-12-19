@@ -1021,6 +1021,10 @@ QToolButton {border: none}</string>
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/scalable/breeze/view-list-icons.svg</normaloff>:/scalable/breeze/view-list-icons.svg</iconset>
+   </property>
    <property name="text">
     <string>&amp;Desktops Memory (requires wmctrl)</string>
    </property>
