@@ -12,10 +12,13 @@ PYUIC := pyuic5
 PYRCC := pyrcc5
 
 LRELEASE := lrelease
-ifeq (, $(shell which lrelease))
+ifeq (, $(shell which $(LRELEASE)))
  LRELEASE := lrelease-qt5
 endif
 
+ifeq (, $(shell which $(LRELEASE)))
+ LRELEASE := lrelease-qt4
+endif
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
