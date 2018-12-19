@@ -4,10 +4,9 @@
 import os, sys, time, signal
 from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject, QTimer, QProcess, QSettings, QLocale, QTranslator, QFile
-#from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QMainWindow
 from PyQt5.QtXml import QDomDocument
 
-from shared import *
+import ray
 import nsm_client
 
 def signalHandler(sig, frame):
@@ -36,7 +35,7 @@ class GeneralObject(QObject):
         self.sl_process.setProcessChannelMode(QProcess.ForwardedChannels)
         self.sl_process.finished.connect(self.slProcessFinished)
         
-        self.sl_port = getFreeOscPort(9951)
+        self.sl_port = ray.getFreeOscPort(9951)
         self.sl_url = Address(self.sl_port)
         
         
@@ -247,7 +246,7 @@ if __name__ == '__main__':
         print('Could not register as NSM client.', file=sys.stderr)
         sys.exit()
         
-    daemon_address = getLibloAddress(NSM_URL)
+    daemon_address = ray.getLibloAddress(NSM_URL)
     
     signal.signal(signal.SIGINT,  signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)

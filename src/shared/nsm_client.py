@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from PyQt5.QtCore import QObject, pyqtSignal
-from liblo import ServerThread, make_method
 import os
 import sys
+from PyQt5.QtCore import QObject, pyqtSignal
+from liblo import ServerThread, make_method
+
 
 
 class NSMSignaler(QObject):

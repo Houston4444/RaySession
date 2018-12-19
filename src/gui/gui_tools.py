@@ -75,17 +75,18 @@ def serverStatusString(server_status):
 def clientStatusString(client_status):
     client_status_strings = {
         ray.ClientStatus.STOPPED: _translate('client status', "stopped"),
-        ray.ClientStatus.LAUNCH: _translate('client status', "launch"),
-        ray.ClientStatus.OPEN: _translate('client status', "open"),
-        ray.ClientStatus.READY: _translate('client status', "ready"),
+        ray.ClientStatus.LAUNCH : _translate('client status', "launch"),
+        ray.ClientStatus.OPEN   : _translate('client status', "open"),
+        ray.ClientStatus.READY  : _translate('client status', "ready"),
         ray.ClientStatus.PRECOPY: _translate('client status', "copy"),
-        ray.ClientStatus.COPY: _translate('client status', "copy"),
-        ray.ClientStatus.SAVE: _translate('client status', "save"),
-        ray.ClientStatus.SWITCH: _translate('client status', "switch"),
-        ray.ClientStatus.QUIT: _translate('client status', "quit"),
-        ray.ClientStatus.NOOP: _translate('client status', "noop"),
-        ray.ClientStatus.ERROR: _translate('client status', "error"),
-        ray.ClientStatus.REMOVED: _translate('client status', "removed")}
+        ray.ClientStatus.COPY   : _translate('client status', "copy"),
+        ray.ClientStatus.SAVE   : _translate('client status', "save"),
+        ray.ClientStatus.SWITCH : _translate('client status', "switch"),
+        ray.ClientStatus.QUIT   : _translate('client status', "quit"),
+        ray.ClientStatus.NOOP   : _translate('client status', "noop"),
+        ray.ClientStatus.ERROR  : _translate('client status', "error"),
+        ray.ClientStatus.REMOVED: _translate('client status', "removed"),
+        ray.ClientStatus.UNDEF  : _translate('client_status', "")}
 
     if not 0 <= client_status < len(client_status_strings):
         return _translate('client_status', 'invalid')

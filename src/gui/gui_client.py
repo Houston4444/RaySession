@@ -10,15 +10,15 @@ class Client(object):
         self._session = session
         self._main_win = self._session._main_win
 
-        self.client_id = client_data.client_id
+        self.client_id       = client_data.client_id
         self.executable_path = client_data.executable_path
-        self.arguments = client_data.arguments
-        self.name = client_data.name
-        self.prefix_mode = client_data.prefix_mode
-        self.project_path = client_data.project_path
-        self.label = client_data.label
-        self.icon_name = client_data.icon
-        self.capabilities = client_data.capabilities
+        self.arguments       = client_data.arguments
+        self.name            = client_data.name
+        self.prefix_mode     = client_data.prefix_mode
+        self.project_path    = client_data.project_path
+        self.label           = client_data.label
+        self.icon_name       = client_data.icon
+        self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
 
         self.status = ray.ClientStatus.STOPPED
@@ -74,14 +74,15 @@ class Client(object):
 
     def updateClientProperties(self, client_data):
         self.executable_path = client_data.executable_path
-        self.arguments = client_data.arguments
-        self.name = client_data.name
-        self.prefix_mode = client_data.prefix_mode
-        self.project_path = client_data.project_path
-        self.label = client_data.label
-        self.icon_name = client_data.icon
-        self.capabilities = client_data.capabilities
+        self.arguments       = client_data.arguments
+        self.name            = client_data.name
+        self.prefix_mode     = client_data.prefix_mode
+        self.project_path    = client_data.project_path
+        self.label           = client_data.label
+        self.icon_name       = client_data.icon
+        self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
+        
         self.widget.updateClientData()
 
     def prettierName(self):
@@ -97,8 +98,8 @@ class Client(object):
         server = GUIServerThread.instance()
         if not server:
             sys.stderr.write(
-                'Server not found. Client %s can not send its properties' %
-                self.client_id)
+                'Server not found. Client %s can not send its properties\n'
+                    % self.client_id)
             return
 
         server.toDaemon('/ray/client/update_properties',

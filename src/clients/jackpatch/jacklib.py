@@ -19,7 +19,10 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from ctypes import *
+from ctypes import (
+    cdll, c_int, c_uint8, c_uint32, c_uint64, c_int32, Structure, 
+    c_float, c_size_t, POINTER, c_double, c_float, ARRAY, 
+    c_char_p, CFUNCTYPE, c_void_p, c_ulong, pointer)
 from sys import platform
 
 # ------------------------------------------------------------------------------------------------------------

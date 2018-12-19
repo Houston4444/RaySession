@@ -165,6 +165,11 @@ class StatusBar(QLineEdit):
 
         self.basecolor = self.palette().base().color().name()
         self.bluecolor = self.palette().highlight().color().name()
+        
+        # ui_client_slot.py will display "stopped" status.
+        # we need to not stay on this status text
+        # especially at client switch because widget is recreated.
+        self._first_text_done = False
 
     def showNextText(self):
         if self.next_texts:
@@ -173,8 +178,20 @@ class StatusBar(QLineEdit):
             self.setText(next_text, True)
         else:
             self.timer.stop()
+            
+    def setFontForText(self, text):
+        if QFontMetrics(self.ubuntu_font).width(text) > (self.width() - 10):
+            self.setFont(self.ubuntu_font_cond)
+        else:
+            self.setFont(self.ubuntu_font)
 
     def setText(self, text, from_timer=False):
+        if not self._first_text_done:
+            self.setFontForText(text)
+            QLineEdit.setText(self, text)
+            self._first_text_done = True
+            return
+        
         if text and not from_timer:
             if self.timer.isActive():
                 self.next_texts.append(text)
@@ -184,10 +201,7 @@ class StatusBar(QLineEdit):
         if not text:
             self.next_texts.clear()
 
-        if QFontMetrics(self.ubuntu_font).width(text) > (self.width() - 10):
-            self.setFont(self.ubuntu_font_cond)
-        else:
-            self.setFont(self.ubuntu_font)
+        self.setFontForText(text)
 
         self.setStyleSheet('')
 

@@ -1,5 +1,6 @@
 import time
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QApplication
+from PyQt5.QtWidgets import (QListWidget, QListWidgetItem, QFrame, QMenu, 
+                             QLineEdit)
 from PyQt5.QtGui import QIcon, QPalette, QPixmap, QFontMetrics, QFont, QFontDatabase
 from PyQt5.QtCore import Qt, pyqtSignal, QSize, QFile
 
@@ -34,6 +35,10 @@ class ClientSlot(QFrame):
         self.ui.closeButton.clicked.connect(self.removeClient)
         self.ui.lineEditClientStatus.copyAborted.connect(self.abortCopy)
         # self.ui.ClientName.name_changed.connect(self.updateLabel)
+        
+        # prevent "stopped" status displayed at client switch
+        #self.ui.lineEditClientStatus,.setTextNow(
+                          #clientStatusString(self.client.status))
 
         self.icon_on = QIcon()
         self.icon_off = QIcon()
@@ -151,44 +156,32 @@ class ClientSlot(QFrame):
 
     def startClient(self):
         self.toDaemon('/ray/client/resume', self.clientId())
-        # self.list_widget.clientStartRequest.emit(self.clientId())
 
     def stopClient(self):
         # we need to prevent accidental stop with a window confirmation
         # under conditions
-        # self.list_widget.clientStopRequest.emit(self.clientId())
         self._main_win.stopClient(self.clientId())
 
     def killClient(self):
         self.toDaemon('/ray/client/kill', self.clientId())
-        # self.list_widget.clientKillRequest.emit(self.clientId())
 
     def saveClient(self):
         self.toDaemon('/ray/client/save', self.clientId())
-        # self.list_widget.clientSaveRequest.emit(self.clientId())
 
     def removeClient(self):
         self.toDaemon('/ray/client/remove', self.clientId())
-        # self.list_widget.clientRemoveRequest.emit(self.clientId())
 
     def abortCopy(self):
-        #server = self.getServer()
-        # if server:
-            # server.abortCopyClient(self.clientId())
-        # self.list_widget.clientAbortCopyRequest.emit(self.clientId())
         self._main_win.abortCopyClient(self.clientId())
 
     def saveAsApplicationTemplate(self):
-        # self.list_widget.clientSaveTemplateRequest.emit(self.clientId())
         self._main_win.newClientTemplate(self.clientId())
 
     def openPropertiesDialog(self):
-        # self.list_widget.clientPropertiesRequest.emit(self.clientId())
         self._main_win.openClientProperties(self.clientId())
 
     def updateLabel(self, label):
         self._main_win.updateClientLabel(self.clientId(), label)
-        #self.list_widget.updateLabelRequest.emit(self.clientId(), label)
 
     def updateClientData(self):
         # set main label
@@ -197,11 +190,9 @@ class ClientSlot(QFrame):
 
         # set tool tip
         self.ui.ClientName.setToolTip(
-            'Executable : ' +
-            self.client.executable_path +
-            '\n' +
-            'NSM id : ' +
-            self.clientId())
+            'Executable : '
+                + self.client.executable_path + '\n'
+                + 'Client id : ' + self.clientId())
 
         # set icon
         self.icon_on = ray.getAppIcon(self.client.icon_name, self)

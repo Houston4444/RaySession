@@ -29,52 +29,53 @@ VERSION = "0.6.1"
 APP_TITLE = 'Ray Session'
 
 class PrefixMode:
-    UNDEF = 0
-    CLIENT_NAME = 1
+    UNDEF        = 0
+    CLIENT_NAME  = 1
     SESSION_NAME = 2
 
 
 class ClientStatus:
-    STOPPED = 0
-    LAUNCH = 1
-    OPEN = 2
-    READY = 3
-    PRECOPY = 4
-    COPY = 5
-    SAVE = 6
-    SWITCH = 7
-    QUIT = 8
-    NOOP = 9
-    ERROR = 10
+    STOPPED =  0
+    LAUNCH  =  1
+    OPEN    =  2
+    READY   =  3
+    PRECOPY =  4
+    COPY    =  5
+    SAVE    =  6
+    SWITCH  =  7
+    QUIT    =  8
+    NOOP    =  9
+    ERROR   = 10
     REMOVED = 11
+    UNDEF   = 12
 
 
 class ServerStatus:
-    OFF = 0
-    NEW = 1
-    OPEN = 2
-    CLEAR = 3
-    SWITCH = 4
-    LAUNCH = 5
+    OFF     = 0
+    NEW     = 1
+    OPEN    = 2
+    CLEAR   = 3
+    SWITCH  = 4
+    LAUNCH  = 5
     PRECOPY = 6
-    COPY = 7
-    READY = 8
-    SAVE = 9
-    CLOSE = 10
+    COPY    = 7
+    READY   = 8
+    SAVE    = 9
+    CLOSE   = 10
 
 
 class NSMMode:
-    NO_NSM = 0
-    CHILD = 1
+    NO_NSM  = 0
+    CHILD   = 1
     NETWORK = 2
 
 
 class Option:
-    NSM_LOCKED = 0x001
+    NSM_LOCKED       = 0x001
     SAVE_FROM_CLIENT = 0x002
     BOOKMARK_SESSION = 0x004
-    HAS_WMCTRL = 0x008
-    DESKTOPS_MEMORY = 0x010
+    HAS_WMCTRL       = 0x008
+    DESKTOPS_MEMORY  = 0x010
 
 
 class Err:
