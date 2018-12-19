@@ -147,17 +147,17 @@
     <message>
         <location filename="../src/clients/proxy/ray-proxy" line="59"/>
         <source>%s is not in proxy directory</source>
-        <translation type="unfinished">%s n&apos;est pas dans le répertoire du proxy</translation>
+        <translation>%s n&apos;est pas dans le répertoire du proxy</translation>
     </message>
     <message>
         <location filename="../src/clients/proxy/ray-proxy" line="132"/>
         <source>Select File to use as CONFIG_FILE</source>
-        <translation type="unfinished">Sélectionnez le fichier à utiliser comme CONFIG_FILE</translation>
+        <translation>Sélectionnez le fichier à utiliser comme CONFIG_FILE</translation>
     </message>
     <message>
         <location filename="../src/clients/proxy/ray-proxy" line="222"/>
         <source>Executable failed to launch ! It&apos;s maybe not present on system.</source>
-        <translation type="unfinished">Échec du lancement ! L&apos;exécutable n&apos;est peut-être pas présent sur le système.</translation>
+        <translation>Échec du lancement ! L&apos;exécutable n&apos;est peut-être pas présent sur le système.</translation>
     </message>
     <message>
         <location filename="../resources/ui/client_properties.ui" line="14"/>
@@ -342,42 +342,42 @@
     <message>
         <location filename="../resources/ui/client_properties.ui" line="47"/>
         <source>Arguments</source>
-        <translation type="unfinished"></translation>
+        <translation>Arguments</translation>
     </message>
     <message>
         <location filename="../resources/ui/client_properties.ui" line="184"/>
         <source>Edit executable</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer l&apos;exécutable</translation>
     </message>
     <message>
         <location filename="../resources/ui/edit_executable.ui" line="14"/>
         <source>Edit Executable</source>
-        <translation type="unfinished"></translation>
+        <translation>Editer l&apos;exécutable</translation>
     </message>
     <message>
         <location filename="../resources/ui/edit_executable.ui" line="20"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit executable is strongly discouraged !&lt;br/&gt;It can be useful if you use many versions of a same software.&lt;br/&gt;Change it only if you are sure of what you are doing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Editer l&apos;exécutable est vivement déconseillé !&lt;br/&gt;Ça peut s&apos;avérer pratique si vous utilisez plusieurs versions d&apos;un même programme.&lt;br/&gt;Ne changez celà que si vous êtes certains de ce que vous faites.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/edit_executable.ui" line="40"/>
         <source>Executable :</source>
-        <translation type="unfinished">Exécutable :</translation>
+        <translation>Exécutable :</translation>
     </message>
     <message>
         <location filename="../resources/ui/edit_executable.ui" line="63"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Arguments are supposed to not be supported by NSM protocol.&lt;br/&gt;In some cases it can works, but no warranty !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Les arguments sont censés ne pas être supportés par le protocole NSM.&lt;br/&gt;Dans certains cas ça peut fonctionner, mais aucune garantie !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/edit_executable.ui" line="83"/>
         <source>Arguments :</source>
-        <translation type="unfinished">Arguments :</translation>
+        <translation>Arguments :</translation>
     </message>
     <message>
         <location filename="../resources/ui/edit_executable.ui" line="106"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;You will have to save changes in Properties window&lt;br/&gt;and restart the client to apply these changes.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Vous devez sauvegarder le changements dans la fenêtre de propriétés&lt;br/&gt;et redémarrer le client pour appliquer ces changements.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
 </context>
 <context>
@@ -1388,57 +1388,57 @@ existe déjà</translation>
     <message>
         <location filename="../src/shared/shared.py" line="388"/>
         <source>invalid</source>
-        <translation type="unfinished">non valide</translation>
+        <translation>non valide</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="408"/>
         <source>off</source>
-        <translation type="unfinished">éteint</translation>
+        <translation>éteint</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="409"/>
         <source>new</source>
-        <translation type="unfinished">création</translation>
+        <translation>création</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="410"/>
         <source>open</source>
-        <translation type="unfinished">ouverture</translation>
+        <translation>ouverture</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="411"/>
         <source>clear</source>
-        <translation type="unfinished">nettoyage</translation>
+        <translation>nettoyage</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="412"/>
         <source>switch</source>
-        <translation type="unfinished">changement</translation>
+        <translation>changement</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="413"/>
         <source>launch</source>
-        <translation type="unfinished">lancement</translation>
+        <translation>lancement</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="416"/>
         <source>ready</source>
-        <translation type="unfinished">prêt</translation>
+        <translation>prêt</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="417"/>
         <source>save</source>
-        <translation type="unfinished">sauvegarde</translation>
+        <translation>sauvegarde</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="418"/>
         <source>close</source>
-        <translation type="unfinished">fermeture</translation>
+        <translation>fermeture</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="415"/>
         <source>copy</source>
-        <translation type="unfinished">copie</translation>
+        <translation>copie</translation>
     </message>
 </context>
 <context>
