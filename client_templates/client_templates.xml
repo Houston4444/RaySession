@@ -35,4 +35,5 @@
  <Client-Template name="ray-network" label="Network Session" template-name="Network Session" icon="network-wired" executable="ray-network" client_id="network"/>
  <Client-Template icon="adljack" template-name="ADLjack" executable="adljack" client_id="adl" name="ADLjack"/>
  <Client-Template icon="ADLplug" template-name="ADLplug" executable="ADLplug" client_id="adlplug" name="ADLplug"/>
+ <Client-Template icon="petri-foo" template-name="Petri-Foo" executable="petri-foo" client_id="petrifoo" name="Petri-Foo"/>
 </RAY-CLIENT-TEMPLATES>
