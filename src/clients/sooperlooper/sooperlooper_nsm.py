@@ -1,9 +1,13 @@
 #!/usr/bin/python3 -u
 
 
-import os, sys, time, signal
+import os
+import signal
+import sys
+import time
 from liblo import ServerThread, Address, make_method, Message
-from PyQt5.QtCore import QCoreApplication, pyqtSignal, QObject, QTimer, QProcess, QSettings, QLocale, QTranslator, QFile
+from PyQt5.QtCore import (QCoreApplication, pyqtSignal, QObject, QTimer,
+                          QProcess, QSettings, QLocale, QTranslator, QFile)
 from PyQt5.QtXml import QDomDocument
 
 import ray
@@ -15,7 +19,8 @@ def signalHandler(sig, frame):
         
 class SlOSCThread(nsm_client.NSMThread):
     def __init__(self, name, signaler, daemon_address, debug):
-        nsm_client.NSMThread.__init__(self, name, signaler, daemon_address, debug)
+        nsm_client.NSMThread.__init__(self, name, signaler,
+                                      daemon_address, debug)
         self.sl_is_ready = False
         
     @make_method('/pongSL', 'ssi')
@@ -190,7 +195,8 @@ class GeneralObject(QObject):
                 
                 audio_file_name = str(element.attribute('loop_audio'))
                 if audio_file_name.startswith("%s/" % self.project_path):
-                    element.setAttribute('loop_audio', os.path.relpath(audio_file_name))
+                    element.setAttribute('loop_audio',
+                                         os.path.relpath(audio_file_name))
                     
                 sub_node = sub_node.nextSibling()
                 
@@ -224,12 +230,14 @@ class GeneralObject(QObject):
         
     def loadSession(self):
         self.wait_for_load = False
-        server.send(self.sl_url, '/load_session', self.session_file, server.url, '/re-load')
+        server.send(self.sl_url, '/load_session', self.session_file,
+                    server.url, '/re-load')
         server.openReply()
         
     def saveSlSession(self):
         self.startFileChecker()
-        server.send(self.sl_url, '/save_session', self.session_file, server.url, '/re-save', 1)
+        server.send(self.sl_url, '/save_session', self.session_file,
+                    server.url, '/re-save', 1)
          
     def showOptionalGui(self):
         if not self.gui_process.state():
@@ -243,7 +251,7 @@ class GeneralObject(QObject):
 if __name__ == '__main__':
     NSM_URL = os.getenv('NSM_URL')
     if not NSM_URL:
-        print('Could not register as NSM client.', file=sys.stderr)
+        sys.stderr.write('Could not register as NSM client.\n')
         sys.exit()
         
     daemon_address = ray.getLibloAddress(NSM_URL)
