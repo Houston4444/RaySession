@@ -139,9 +139,14 @@ install:
 	# Install main code
 	cp -r src $(DEST_RAY)/
 	
-	#link main scripts to bin
-	$(LINK) $(DEST_RAY)/src/gui/raysession    $(DESTDIR)$(PREFIX)/bin/
-	$(LINK) $(DEST_RAY)/src/daemon/ray-daemon $(DESTDIR)$(PREFIX)/bin/
+	# install main bash scripts to bin
+	install -m 755 data/raysession $(DESTDIR)$(PREFIX)/bin/
+	install -m 755 data/ray-daemon $(DESTDIR)$(PREFIX)/bin/
+	
+	# modify PREFIX in main bash scripts
+	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
+		$(DESTDIR)$(PREFIX)/bin/raysession \
+		$(DESTDIR)$(PREFIX)/bin/ray-daemon
 	
 	# Install Translations
 	install -m 644 locale/*.qm $(DEST_RAY)/locale/
