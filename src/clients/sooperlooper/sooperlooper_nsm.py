@@ -22,10 +22,12 @@ class SlOSCThread(nsm_client.NSMThread):
         nsm_client.NSMThread.__init__(self, name, signaler,
                                       daemon_address, debug)
         self.sl_is_ready = False
+        self.number_of_loops = 0
         
     @make_method('/pongSL', 'ssi')
     def pong(self, path, args):
         self.sl_is_ready = True
+        self.number_of_loops = args[2]
         
         if general_object.wait_for_load:
             general_object.sl_ready.emit()
@@ -55,13 +57,13 @@ class GeneralObject(QObject):
         self.session_path   = ''
         self.session_name   = ''
         self.full_client_id = ''
+        self.session_file = ''
+        self.session_bak  = ''
         
         self.file_timer = QTimer()
-        self.file_timer.setInterval(50)
+        self.file_timer.setInterval(100)
         self.file_timer.timeout.connect(self.checkFile)
         self.n_file_timer  = 0
-        self.file_exists   = False
-        self.file_contents = None
         
         signaler.server_sends_open.connect(self.initialize)
         signaler.server_sends_save.connect(self.saveSlSession)
@@ -116,20 +118,15 @@ class GeneralObject(QObject):
         server.sendGuiState(False)
     
     def startFileChecker(self):
-        self.file_exists  = bool(os.path.exists(self.session_file))
         self.n_file_timer = 0
         
-        if self.file_exists:
-            try:
-                file = open(self.session_file)
-                self.file_contents = file.read()
-            except:
-                pass
+        if os.path.exists(self.session_file):
+            self.stopFileChecker()
+            return
         
         self.file_timer.start()
     
     def stopFileChecker(self):
-        self.file_exists  = bool(os.path.exists(self.session_file))
         self.n_file_timer = 0
         self.file_timer.stop()
         
@@ -138,29 +135,14 @@ class GeneralObject(QObject):
         server.saveReply()
         
     def checkFile(self):
-        if self.n_file_timer > 20: #more than 1 second
+        if self.n_file_timer > 200: #more than 20 second
             self.stopFileChecker()
             return
         
-        if not self.file_exists:
-            if os.path.exists(self.session_file):
-                self.stopFileChecker()
-                return
+        if os.path.exists(self.session_file):
+            self.stopFileChecker()
+            return
                 
-        else:
-            try:
-                file = open(self.session_file)
-                file_contents = file.read()
-                if file_contents != self.file_contents:
-                    self.stopFileChecker()
-                    return
-                
-                self.file_contents = file_contents
-                
-            except:
-                pass
-                
-        
         self.n_file_timer+=1
      
     def xmlCorrection(self):
@@ -179,28 +161,27 @@ class GeneralObject(QObject):
         if content.tagName() != 'SLSession':
             return
         
-        node = content.firstChild()
-        while not node.isNull():
+        nodes = content.childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            
             if node.toElement().tagName() != 'Loopers':
-                node = node.nextSibling()
                 continue
             
-            sub_node = node.toElement().firstChild()
-            while not sub_node.isNull():
+            sub_nodes = node.childNodes()
+            
+            for j in range(sub_nodes.count()):
+                sub_node = sub_nodes.at(j)
                 element = sub_node.toElement()
                 
                 if element.tagName() != 'Looper':
-                    sub_node = sub_node.nextSibling()
                     continue
                 
                 audio_file_name = str(element.attribute('loop_audio'))
                 if audio_file_name.startswith("%s/" % self.project_path):
                     element.setAttribute('loop_audio',
                                          os.path.relpath(audio_file_name))
-                    
-                sub_node = sub_node.nextSibling()
-                
-            node = node.nextSibling()
         
         try:
             sl_file = open(self.session_file, 'w')
@@ -216,6 +197,7 @@ class GeneralObject(QObject):
         self.session_name   = session_name
         self.full_client_id = full_client_id
         self.session_file = "%s/session.slsess" % self.project_path
+        self.session_bak  = "%s/session.slsess.bak" % self.project_path
         
         if not os.path.exists(self.project_path):
             os.makedirs(self.project_path)
@@ -235,10 +217,22 @@ class GeneralObject(QObject):
         server.openReply()
         
     def saveSlSession(self):
-        self.startFileChecker()
+        #server.send(self.sl_url, '/sl/-1/hit', 'pause_on')
+        server.send(self.sl_url, '/sl/-1/hit', 'trigger')
+        #server.send(self.sl_url, 's/-1/hit', 'pause')
+        #server.send(self.sl_url, 's/0/forceup', 'trigger')
+        #server.send(self.sl_url, '/sl/-1/loop_pos', 0.0)
+        if os.path.exists(self.session_bak):
+            os.remove(self.session_bak)
+            
+        if os.path.exists(self.session_file):
+            os.rename(self.session_file, self.session_bak)
+        
         server.send(self.sl_url, '/save_session', self.session_file,
                     server.url, '/re-save', 1)
-         
+        
+        self.startFileChecker()
+        
     def showOptionalGui(self):
         if not self.gui_process.state():
             self.gui_process.start('slgui', ['-P', str(self.sl_port)])
