@@ -12,6 +12,8 @@ from PyQt5.QtXml import QDomDocument
 
 import ray
 import nsm_client
+import jacklib
+import threading
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -81,6 +83,51 @@ class GeneralObject(QObject):
         self.ping_timer.setInterval(100)
         self.ping_timer.timeout.connect(self.pingSL)
         self.ping_timer.start()
+        
+        self.transport_timer = QTimer()
+        self.transport_timer.setInterval(2)
+        self.transport_timer.timeout.connect(self.checkTransport)
+        
+        self.transport_playing = False
+        self.will_trig = False
+    
+    def JackShutdownCallback(self, arg=None):
+        self.transport_timer.stop()
+        return 0
+    
+    def checkTransport(self):
+        pos = jacklib.jack_position_t()
+        pos.valid = 0
+
+        state = jacklib.transport_query(jack_client, jacklib.pointer(pos))
+        
+        if self.will_trig:
+            if pos.beat == pos.beats_per_bar:
+                if (pos.ticks_per_beat - pos.tick) <= 4:
+                    # we are at 4 ticks or less from next bar (arbitrary)
+                    # so we send a trig message to sooperlooper
+                    server.send(self.sl_url, '/sl/-1/hit', 'trigger')
+                    self.will_trig = False
+                    return
+        
+        if (self.transport_playing
+                and state == jacklib.JackTransportStopped):
+            if self.will_trig:
+                self.will_trig = False
+            else:
+                server.send(self.sl_url, '/sl/-1/hit', 'pause_on')
+            
+            self.transport_playing = False
+            
+        elif (not self.transport_playing
+              and state == jacklib.JackTransportRolling):
+            if pos.beat == 1 and pos.tick == 0:
+                server.send(self.sl_url, '/sl/-1/hit', 'trigger')
+                
+            else:
+                self.will_trig = True
+            
+            self.transport_playing = True
     
     def pingSL(self):
         if server.sl_is_ready:
@@ -148,13 +195,11 @@ class GeneralObject(QObject):
     def xmlCorrection(self):
         try:
             sl_file = open(self.session_file)
+            xml = QDomDocument()
+            xml.setContent(sl_file.read())
+            sl_file.close()
         except:
             return
-        
-        xml = QDomDocument()
-        xml.setContent(sl_file.read())
-        
-        sl_file.close()
         
         content = xml.documentElement()
         
@@ -179,6 +224,7 @@ class GeneralObject(QObject):
                     continue
                 
                 audio_file_name = str(element.attribute('loop_audio'))
+                
                 if audio_file_name.startswith("%s/" % self.project_path):
                     element.setAttribute('loop_audio',
                                          os.path.relpath(audio_file_name))
@@ -208,7 +254,9 @@ class GeneralObject(QObject):
             self.loadSession()
         else:
             self.wait_for_load = True
-        
+            
+        if jack_client:
+            self.transport_timer.start()
         
     def loadSession(self):
         self.wait_for_load = False
@@ -217,11 +265,6 @@ class GeneralObject(QObject):
         server.openReply()
         
     def saveSlSession(self):
-        #server.send(self.sl_url, '/sl/-1/hit', 'pause_on')
-        server.send(self.sl_url, '/sl/-1/hit', 'trigger')
-        #server.send(self.sl_url, 's/-1/hit', 'pause')
-        #server.send(self.sl_url, 's/0/forceup', 'trigger')
-        #server.send(self.sl_url, '/sl/-1/loop_pos', 0.0)
         if os.path.exists(self.session_bak):
             os.remove(self.session_bak)
             
@@ -240,8 +283,7 @@ class GeneralObject(QObject):
     def hideOptionalGui(self):
         if self.gui_process.state():
             self.gui_process.terminate()
-        
-        
+
 if __name__ == '__main__':
     NSM_URL = os.getenv('NSM_URL')
     if not NSM_URL:
@@ -265,6 +307,11 @@ if __name__ == '__main__':
     signaler = nsm_client.NSMSignaler()
     
     server = SlOSCThread('sooperlooper_nsm', signaler, daemon_address, False)
+    
+    jack_client = jacklib.client_open(
+        "sooper_ray_wk",
+        jacklib.JackNoStartServer | jacklib.JackSessionID,
+        None)
     
     general_object = GeneralObject()
     
