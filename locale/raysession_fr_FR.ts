@@ -347,17 +347,17 @@
     <message>
         <location filename="../resources/ui/client_properties.ui" line="184"/>
         <source>Edit executable</source>
-        <translation>Editer l&apos;exécutable</translation>
+        <translation>Éditer l&apos;exécutable</translation>
     </message>
     <message>
         <location filename="../resources/ui/edit_executable.ui" line="14"/>
         <source>Edit Executable</source>
-        <translation>Editer l&apos;exécutable</translation>
+        <translation>Éditer l&apos;exécutable</translation>
     </message>
     <message>
         <location filename="../resources/ui/edit_executable.ui" line="20"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit executable is strongly discouraged !&lt;br/&gt;It can be useful if you use many versions of a same software.&lt;br/&gt;Change it only if you are sure of what you are doing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Editer l&apos;exécutable est vivement déconseillé !&lt;br/&gt;Ça peut s&apos;avérer pratique si vous utilisez plusieurs versions d&apos;un même programme.&lt;br/&gt;Ne changez celà que si vous êtes certains de ce que vous faites.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Éditer l&apos;exécutable est vivement déconseillé !&lt;br/&gt;Ça peut s&apos;avérer pratique si vous utilisez plusieurs versions d&apos;un même programme.&lt;br/&gt;Ne changez cela que si vous êtes certains de ce que vous faites.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/edit_executable.ui" line="40"/>
@@ -377,7 +377,7 @@
     <message>
         <location filename="../resources/ui/edit_executable.ui" line="106"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;You will have to save changes in Properties window&lt;br/&gt;and restart the client to apply these changes.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Vous devez sauvegarder le changements dans la fenêtre de propriétés&lt;br/&gt;et redémarrer le client pour appliquer ces changements.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Vous devez sauvegarder les changements dans la fenêtre de propriétés&lt;br/&gt;et redémarrer le client pour appliquer ces changements.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
 </context>
 <context>
@@ -1388,7 +1388,7 @@ existe déjà</translation>
     <message>
         <location filename="../src/shared/shared.py" line="388"/>
         <source>invalid</source>
-        <translation>non valide</translation>
+        <translation>invalide</translation>
     </message>
     <message>
         <location filename="../src/shared/shared.py" line="408"/>
