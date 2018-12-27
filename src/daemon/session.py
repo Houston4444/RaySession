@@ -79,8 +79,11 @@ class Session(ServerSender):
         Terminal.message(string)
         
     def setRoot(self, session_root):
-        if self.name:
+        if self.path:
+            raise NameError("impossible to change root. session %s is loaded"
+                                % self.path)
             return
+        
         self.root = session_root
         
         multi_daemon_file = MultiDaemonFile.getInstance()
@@ -121,17 +124,6 @@ class Session(ServerSender):
         for client in self.clients:
             if client.addr and client.addr.url == addr.url:
                 return client
-    
-    def getClientByExecutable(self, executable):
-        for client in self.clients:
-            if client.executable_path == executable:
-                return client
-    
-    def getClientByExecutableAndId(self, executable, client_id):
-        for client in self.clients:
-            if (client.client_id == client_id
-                and client.executable_path == executable):
-                    return client
     
     def newClient(self, executable, client_id=None):
         client = Client(self)
