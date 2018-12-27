@@ -308,10 +308,13 @@ if __name__ == '__main__':
     
     server = SlOSCThread('sooperlooper_nsm', signaler, daemon_address, False)
     
-    jack_client = jacklib.client_open(
-        "sooper_ray_wk",
-        jacklib.JackNoStartServer | jacklib.JackSessionID,
-        None)
+    if len(sys.argv) > 1 and sys.argv[1] == '--transport_workaround':
+        jack_client = jacklib.client_open(
+            "sooper_ray_wk",
+            jacklib.JackNoStartServer | jacklib.JackSessionID,
+            None)
+    else:
+        jack_client = None
     
     general_object = GeneralObject()
     

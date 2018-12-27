@@ -1,5 +1,7 @@
 #!/usr/bin/python3 -u
 
+# old file, prefer use sooperlooper_nsm. But it's maybe used by someones.
+
 import sys
 import subprocess
 import time
