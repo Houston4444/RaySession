@@ -112,9 +112,7 @@ class Signaler(nsm_client.NSMSignaler):
 
 def JackShutdownCallback(arg=None):
     app.quit()
-    
     return 0
-    
     
 def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
     portPtr = jacklib.port_by_id(jack_client, portId)

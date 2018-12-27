@@ -10,7 +10,7 @@ from PyQt5.QtXml import QDomDocument
 
 import ray
 from server_sender import ServerSender
-from daemon_tools  import TemplateRoots, Terminal, non_active_clients
+from daemon_tools  import TemplateRoots, Terminal, RS
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -47,7 +47,6 @@ class Client(ServerSender):
     tmp_arguments    = ''
     label            = ''
     icon             = ''
-    pre_existing     = False
     project_path     = ""
     prefix_mode      = ray.PrefixMode.SESSION_NAME
     auto_start       = True
@@ -412,19 +411,19 @@ class Client(ServerSender):
             self.sendToSelfAddress("/nsm/client/session_is_loaded")
     
     def save(self):
-        if self.active:
-            Terminal.message("Telling %s to save" % self.name)
-            self.sendToSelfAddress("/nsm/client/save")
+        if self.isRunning():
+            if self.active:
+                Terminal.message("Telling %s to save" % self.name)
+                self.sendToSelfAddress("/nsm/client/save")
+                
+                self.pending_command = ray.Command.SAVE
+                self.setStatus(ray.ClientStatus.SAVE)
             
-            self.pending_command = ray.Command.SAVE
-            self.setStatus(ray.ClientStatus.SAVE)
-        
-        elif self.isDumbClient() and self.isRunning():
-            self.status = ray.ClientStatus.NOOP
-            self.sendStatusToGui()
-            
-        if self.isCapableOf(':optional-gui:'):
-            self.start_gui_hidden = not bool(self.gui_visible)
+            elif self.isDumbClient():
+                self.setStatus(ray.ClientStatus.NOOP)
+                
+            if self.isCapableOf(':optional-gui:'):
+                self.start_gui_hidden = not bool(self.gui_visible)
             
     def stop(self):
         self.sendGuiMessage(_translate('GUIMSG', "%s stopping")
@@ -432,27 +431,21 @@ class Client(ServerSender):
         if self.isRunning():
             self.pending_command = ray.Command.KILL
             self.setStatus(ray.ClientStatus.QUIT)
-            self.process.terminate()
             
             if not self.stopped_timer.isActive():
                 self.stopped_timer.start()
+                
+            self.process.terminate()
     
     def quit(self):
         Terminal.message("Commanding %s to quit" % self.name)
-        if self.active:
-            
+        if self.isRunning():
             self.pending_command = ray.Command.QUIT
             self.terminate()
             self.setStatus(ray.ClientStatus.QUIT)
-        
-        elif self.isDumbClient():
-            if self.isRunning():
-                self.pending_command = ray.Command.QUIT
-                self.terminate()
-                self.setStatus(ray.ClientStatus.QUIT)
-            else:
-                self.sendGui("/ray/client/status", self.client_id, 
-                             ray.ClientStatus.REMOVED)
+        else:
+            self.sendGui("/ray/client/status", self.client_id, 
+                         ray.ClientStatus.REMOVED)
     
     def switch(self, new_client):
         old_client_id     = self.client_id
@@ -874,8 +867,8 @@ class Client(ServerSender):
         self.active       = True
         self.did_announce = True
         
-        if self.executable_path in non_active_clients:
-            non_active_clients.remove(self.executable_path)
+        if self.executable_path in RS.non_active_clients:
+            RS.non_active_clients.remove(self.executable_path)
         
         Terminal.message("Process has pid: %i" % pid )
         Terminal.message(

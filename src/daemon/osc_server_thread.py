@@ -690,10 +690,11 @@ class OscServerThread(ClientCommunicating):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         signaler.gui_client_kill.emit(path, args)            
     
-    @make_method('/ray/client/remove', 's')
+    @make_method('/ray/client/trash', 's')
     def rayGuiClientRemove(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        signaler.gui_client_remove.emit(path, args)
+        print('yo trash aei')
+        signaler.gui_client_trash.emit(path, args)
     
     @make_method('/ray/client/resume', 's')
     def rayGuiClientResume(self, path, args):

@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow
 import os
 import sys
+import inspect
 
 import ray
 from daemon_manager import DaemonManager
@@ -57,17 +58,8 @@ class Session(object):
         # build and show Main UI
         self._main_win = MainWindow(self)
         
-        
-        
-        # build and start liblo server
-
         self._daemon_manager.finishInit()
         server.finishInit(self)
-        
-        #if self._nsm_child:
-            #self._nsm_child.finishInit()
-        # self._nsm_child.finishInit()
-        # self._main_win.finishInit()
 
         self._main_win.show()
 
@@ -105,9 +97,11 @@ class Session(object):
             if client.client_id == client_id:
                 return client
         else:
-            sys.stderr.write(
-                "session::getClient client '%s' not in client_list !!!\n"
-                % client_id)
+            raise NameError("gui_session does not contains client %s"
+                                % client_id)
+            #sys.stderr.write(
+                #"session::getClient client '%s' not in client_list !!!\n"
+                #% client_id)
 
     def addClient(self, client_data):
         client = Client(self, client_data)
@@ -161,6 +155,12 @@ class Session(object):
     def reOrderClients(self, client_id_list):
         new_client_list = []
         for client_id in client_id_list:
+            #for client in self.client:
+                #if client.client_id == client_id:
+                    #break
+            #else:
+                #continue
+            
             client = self.getClient(client_id)
 
             if not client:

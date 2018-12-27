@@ -32,7 +32,7 @@ class ClientSlot(QFrame):
         self.ui.stopButton.clicked.connect(self.stopClient)
         self.ui.killButton.clicked.connect(self.killClient)
         self.ui.saveButton.clicked.connect(self.saveClient)
-        self.ui.closeButton.clicked.connect(self.removeClient)
+        self.ui.closeButton.clicked.connect(self.trashClient)
         self.ui.lineEditClientStatus.copyAborted.connect(self.abortCopy)
         # self.ui.ClientName.name_changed.connect(self.updateLabel)
         
@@ -168,8 +168,8 @@ class ClientSlot(QFrame):
     def saveClient(self):
         self.toDaemon('/ray/client/save', self.clientId())
 
-    def removeClient(self):
-        self.toDaemon('/ray/client/remove', self.clientId())
+    def trashClient(self):
+        self.toDaemon('/ray/client/trash', self.clientId())
 
     def abortCopy(self):
         self._main_win.abortCopyClient(self.clientId())

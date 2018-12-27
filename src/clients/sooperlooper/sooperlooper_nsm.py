@@ -105,7 +105,7 @@ class GeneralObject(QObject):
             if pos.beat == pos.beats_per_bar:
                 if (pos.ticks_per_beat - pos.tick) <= 4:
                     # we are at 4 ticks or less from next bar (arbitrary)
-                    # so we send a trig message to sooperlooper
+                    # so we send a trig message to sooperlooper.
                     server.send(self.sl_url, '/sl/-1/hit', 'trigger')
                     self.will_trig = False
                     return

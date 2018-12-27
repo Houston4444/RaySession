@@ -10,8 +10,8 @@ from PyQt5.QtCore import (QCoreApplication, QTimer, QSettings,
                           QStandardPaths, QLocale, QTranslator)
 
 import ray
-from daemon_tools import (initDaemonTools, RS, non_active_clients,
-                          getCodeRoot, CommandLineArgs, ArgParser, Terminal)
+from daemon_tools import (initDaemonTools, RS, getCodeRoot,
+                          CommandLineArgs, ArgParser, Terminal)
 from osc_server_thread import OscServerThread
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     multi_daemon_file.quit()
     
     #save RS.settings
-    RS.settings.setValue('daemon/non_active_list', non_active_clients)
+    RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
     RS.settings.setValue('daemon/save_all_from_saved_client', 
                       server.option_save_from_client)
     RS.settings.setValue('daemon/bookmark_session_folder', 

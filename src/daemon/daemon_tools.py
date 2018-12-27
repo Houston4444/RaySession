@@ -6,7 +6,7 @@ from PyQt5.QtCore import QCoreApplication, QStandardPaths, QSettings
 import ray
 
 settings = QSettings()
-non_active_clients = []
+#non_active_clients = []
 
 def dirname(*args):
     return os.path.dirname(*args)
@@ -20,8 +20,8 @@ def getCodeRoot():
     return dirname(dirname(dirname(os.path.realpath(__file__))))
 
 def initDaemonTools():
-    global non_active_clients
-    del non_active_clients
+    #global non_active_clients
+    #del non_active_clients
     
     if CommandLineArgs.config_dir:
         settings = QSettings(CommandLineArgs.config_dir)
@@ -30,20 +30,24 @@ def initDaemonTools():
         
     RS.setSettings(settings)
     
-    non_active_clients = ray.getListInSettings(settings, 
-                                               'daemon/non_active_list')
-    
+    RS.setNonActiveClients(ray.getListInSettings(settings, 
+                                                 'daemon/non_active_list'))
     TemplateRoots.initConfig()
 
 
 class RS:
     settings = QSettings()
+    non_active_clients = []
     
     @classmethod
     def setSettings(cls, settings):
         del cls.settings
         cls.settings = settings
         
+    @classmethod
+    def setNonActiveClients(cls, nalist):
+        del cls.non_active_clients
+        cls.non_active_clients = nalist
 
 class TemplateRoots:
     net_session_name = ".ray-net-session-templates"

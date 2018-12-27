@@ -18,8 +18,7 @@ from signaler          import Signaler
 from server_sender     import ServerSender
 from file_copier       import FileCopier
 from client            import Client
-from daemon_tools import (TemplateRoots, RS, non_active_clients,
-                          Terminal, CommandLineArgs)
+from daemon_tools import TemplateRoots, RS, Terminal, CommandLineArgs
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -145,8 +144,9 @@ class Session(ServerSender):
         self.clients.append(client)
         return client
     
-    def removeClient(self, client):
+    def trashClient(self, client):
         if not client in self.clients:
+            raise NameError("No client to remove: %s" % client.client_id)
             return
         
         client.setStatus(ray.ClientStatus.REMOVED)
@@ -154,6 +154,15 @@ class Session(ServerSender):
         if client.getProjectFiles() or client.net_daemon_url:
             self.removed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
+        
+        self.clients.remove(client)
+    
+    def removeClient(self, client):
+        if not client in self.clients:
+            raise NameError("No client to remove: %s" % client.client_id)
+            return
+        
+        client.setStatus(ray.ClientStatus.REMOVED)
         
         self.clients.remove(client)
     
@@ -1072,20 +1081,24 @@ class OperatingSession(Session):
         self.message("Commanding unneeded and dumb clients to quit")
         
         for client in self.clients:
-            if (client.active
-                and client.isCapableOf(':switch:')
+            if ((client.active and client.isCapableOf(':switch:')
+                    or (client.isDumbClient() and client.isRunning()))
                 and ((client.executable_path, client.arguments)
                      in new_client_exec_args)):
-                
+                # client will switch
+                # or keep alive if non active and running
                 new_client_exec_args.remove(
                     (client.executable_path, client.arguments))
                 
             else:
-                #client is not capable of switch, or is not wanted 
-                #in the new session
+                # client is not capable of switch, or is not wanted 
+                # in the new session
                 if client.isRunning():
                     self.expected_clients.append(client)
-                client.quit()
+                    client.quit()
+                else:
+                    client.quit()
+                    self.removeClient(client)
         
         if self.expected_clients:
             self.setServerStatus(ray.ServerStatus.CLEAR)
@@ -1094,10 +1107,6 @@ class OperatingSession(Session):
     
     def load_step1(self):
         self.cleanExpected()
-        self.purgeInactiveClients()
-        
-        for client in self.clients:
-            client.pre_existing = True
             
         self.message("Commanding smart clients to switch")
         
@@ -1109,17 +1118,24 @@ class OperatingSession(Session):
             #/* in a duplicated session, clients will have the same
             #* IDs, so be sure to pick the right one to avoid race
             #* conditions in JACK name registration. */
-            client = self.getClientByExecutableAndId(
-                new_client.executable_path, new_client.client_id)
+            for client in self.clients:
+                if (client.client_id == new_client.client_id
+                    and client.executable_path == new_client.executable_path
+                    and client.arguments == new_client.arguments):
+                    #we found the good existing client
+                    break
+            else:
+                for client in self.clients:
+                    if (client.executable_path == new_client.executable_path
+                            and client.arguments == new_client.arguments):
+                        #we found a switchable client
+                        break
+                else:
+                    client = None
             
-            if not client:
-                client = self.getClientByExecutable(
-                            new_client.executable_path)
             
-            if (client
-                and client.active
-                and client.pre_existing
-                and not client.isReplyPending()):
+            if client and client.isRunning():
+                if client.active and not client.isReplyPending():
                     #since we already shutdown clients not capable of 
                     #'switch', we can assume that these are.
                     client.switch(new_client)
@@ -1134,7 +1150,9 @@ class OperatingSession(Session):
                     
                 if new_client.auto_start and not self.is_dummy:
                     self.clients_to_launch.append(new_client)
-                    if not new_client.executable_path in non_active_clients:
+                    
+                    if (not new_client.executable_path
+                            in RS.non_active_clients):
                         self.expected_clients.append(new_client)
             
             new_client_id_list.append(new_client.client_id)
@@ -1165,9 +1183,10 @@ class OperatingSession(Session):
     
     def load_step2(self):
         for client in self.expected_clients:
-            non_active_clients.append(client.executable_path)
-        RS.settings.setValue('daemon/non_active_list', non_active_clients)
-        RS.settings.sync()
+            if not client.executable_path in RS.non_active_clients:
+                RS.non_active_clients.append(client.executable_path)
+                
+        RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
         
         self.cleanExpected()
         
@@ -1176,6 +1195,9 @@ class OperatingSession(Session):
         for client in self.clients:
             if client.active and client.isReplyPending():
                 self.expected_clients.append(client)
+            elif client.isRunning() and client.isDumbClient():
+                client.setStatus(ray.ClientStatus.NOOP)
+                
         self.waitAndGoTo(10000, self.load_step3, ray.WaitFor.REPLY)
         
     def load_step3(self):
@@ -1268,7 +1290,7 @@ class SignaledSession(OperatingSession):
         
         signaler.gui_client_stop.connect(self.guiClientStop)
         signaler.gui_client_kill.connect(self.guiClientKill)
-        signaler.gui_client_remove.connect(self.guiClientRemove)
+        signaler.gui_client_trash.connect(self.guiClientTrash)
         signaler.gui_client_resume.connect(self.guiClientResume)
         signaler.gui_client_save.connect(self.guiClientSave)
         signaler.gui_client_save_template.connect(self.guiClientSaveTemplate)
@@ -1809,7 +1831,7 @@ class SignaledSession(OperatingSession):
         else:
             self.sendGui("/error", -10, "No such client." )
     
-    def guiClientRemove(self, path, args):
+    def guiClientTrash(self, path, args):
         client_id = args[0]
         
         for client in self.clients:
@@ -1821,7 +1843,7 @@ class SignaledSession(OperatingSession):
                     self.file_copier.abort()
                     return
                 
-                self.removeClient(client)
+                self.trashClient(client)
                 
                 self.sendGui("/reply", "Client removed.")
                 break

@@ -26,7 +26,7 @@ class Signaler(QObject):
     server_reorder_clients = pyqtSignal(str, list)
     gui_client_stop    = pyqtSignal(str, list)
     gui_client_kill    = pyqtSignal(str, list)
-    gui_client_remove  = pyqtSignal(str, list)
+    gui_client_trash  = pyqtSignal(str, list)
     gui_client_resume  = pyqtSignal(str, list)
     gui_client_save    = pyqtSignal(str, list)
     gui_client_save_template = pyqtSignal(str, list)
