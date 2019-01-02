@@ -244,6 +244,8 @@ class GeneralObject(QObject):
         self.full_client_id = full_client_id
         self.session_file = "%s/session.slsess" % self.project_path
         self.session_bak  = "%s/session.slsess.bak" % self.project_path
+        self.midi_bindings_file = "%s/session.slb" % self.project_path
+        #self.midi_bindings_bak  = "%s/session.slb.bak" % self.project_path
         
         if not os.path.exists(self.project_path):
             os.makedirs(self.project_path)
@@ -262,6 +264,9 @@ class GeneralObject(QObject):
         self.wait_for_load = False
         server.send(self.sl_url, '/load_session', self.session_file,
                     server.url, '/re-load')
+        
+        server.send(self.sl_url, '/load_midi_bindings',
+                    self.midi_bindings_file, '')
         server.openReply()
         
     def saveSlSession(self):
@@ -273,6 +278,9 @@ class GeneralObject(QObject):
         
         server.send(self.sl_url, '/save_session', self.session_file,
                     server.url, '/re-save', 1)
+        
+        server.send(self.sl_url, '/save_midi_bindings',
+                    self.midi_bindings_file, '')
         
         self.startFileChecker()
         
