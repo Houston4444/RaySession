@@ -358,11 +358,11 @@ class Client(ServerSender):
         if self.pending_command in (ray.Command.KILL, ray.Command.QUIT):
             self.sendGuiMessage(_translate('GUIMSG', 
                                            "%s terminated as planned")
-                                % self.guiMsgStyle())
+                                    % self.guiMsgStyle())
         else:
             self.sendGuiMessage(_translate('GUIMSG',
                                            "%s died unexpectedly.")
-                                % self.guiMsgStyle())
+                                    % self.guiMsgStyle())
         
         if self.session.wait_for:
             self.session.endTimerIfLastExpected(self)
@@ -376,6 +376,7 @@ class Client(ServerSender):
         self.pending_command = ray.Command.NONE
         self.active          = False
         self.pid             = 0
+        self.addr            = None
         
         self.session.setRenameable(True)
         

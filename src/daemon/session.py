@@ -629,7 +629,6 @@ class OperatingSession(Session):
         
         contents += xml.toString()
         
-        
         file.write(contents)
         file.close()
         
@@ -689,7 +688,7 @@ class OperatingSession(Session):
     def close_step2(self):
         self.cleanExpected()
         
-        self.purgeInactiveClients()
+        #self.purgeInactiveClients()
         self.clients.clear()
         
         if self.path:
