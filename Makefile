@@ -47,6 +47,7 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_edit_executable.py \
 	    src/gui/ui_daemon_url.py \
 	    src/gui/ui_error_dialog.py \
+	    src/gui/ui_list_snapshots.py \
 	    src/gui/ui_new_executable.py \
 	    src/gui/ui_new_session.py \
 	    src/gui/ui_nsm_open_info.py \

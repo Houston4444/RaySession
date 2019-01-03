@@ -13,6 +13,7 @@ from PyQt5.QtXml  import QDomDocument
 import ray
 from bookmarker        import BookMarker
 from desktops_memory   import DesktopsMemory
+from snapshoter        import Snapshoter
 from multi_daemon_file import MultiDaemonFile
 from signaler          import Signaler
 from server_sender     import ServerSender
@@ -48,6 +49,7 @@ class Session(ServerSender):
         
         self.bookmarker = BookMarker()
         self.desktops_memory = DesktopsMemory(self)
+        self.snapshoter = Snapshoter(self)
     
     #############
     def oscReply(self, *args):
@@ -634,6 +636,8 @@ class OperatingSession(Session):
         
         self.sendGuiMessage(_translate('GUIMSG', "Session saved."))
         self.message("Session saved.")
+        
+        self.snapshoter.save()
         self.nextFunction()
     
     def saveDone(self):
@@ -1267,6 +1271,8 @@ class SignaledSession(OperatingSession):
         
         signaler.server_reorder_clients.connect(self.serverReorderClients)
         
+        signaler.server_list_snapshots.connect(self.serverListSnapshots)
+        
         signaler.server_add.connect(self.serverAdd)
         signaler.server_add_proxy.connect(self.serverAddProxy)
         signaler.server_add_client_template.connect(
@@ -1528,6 +1534,25 @@ class SignaledSession(OperatingSession):
         
         self.reOrderClients(client_ids_list)
         
+    def serverListSnapshots(self, src_addr):
+        snapshots = self.snapshoter.list()
+        
+        i=0
+        snap_send = []
+        
+        for snapshot in snapshots:
+            if i == 20:
+                self.serverSend(src_addr, '/ray/reply_snapshots_list',
+                                *snap_send)
+                
+                snap_send.clear()
+                i=0
+            else:
+                snap_send.append(snapshot)
+                i+=1
+        
+        if snap_send:
+            self.serverSend(src_addr, '/ray/reply_snapshots_list', *snap_send)
     
     def serverAdd(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)

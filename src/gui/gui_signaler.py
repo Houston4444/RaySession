@@ -31,6 +31,7 @@ class Signaler(QObject):
     session_template_found = pyqtSignal(list)
     user_client_template_found = pyqtSignal(list)
     factory_client_template_found = pyqtSignal(list)
+    snapshots_found = pyqtSignal(list)
     server_progress = pyqtSignal(float)
     server_status_changed = pyqtSignal(int)
     clients_reordered = pyqtSignal(list)

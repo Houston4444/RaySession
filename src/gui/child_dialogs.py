@@ -1,8 +1,9 @@
 import os
 import sys
 import time
-from PyQt5.QtWidgets import (QDialog, QDialogButtonBox, QListWidgetItem,
-                             QCompleter, QMessageBox, QFileDialog)
+from PyQt5.QtWidgets import (
+    QDialog, QDialogButtonBox, QListWidgetItem,
+    QCompleter, QMessageBox, QFileDialog, QTreeWidgetItem)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QTimer, QSettings
 
@@ -13,6 +14,7 @@ from gui_tools import (default_session_root, ErrDaemon, _translate,
 
 import ui_open_session
 import ui_new_session
+import ui_list_snapshots
 import ui_save_template_session
 import ui_nsm_open_info
 import ui_abort_session
@@ -27,6 +29,7 @@ import ui_abort_copy
 import ui_client_trash
 import ui_daemon_url
 import ui_edit_executable
+
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -379,6 +382,20 @@ class NewSessionDialog(ChildDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
             bool(self.server_will_accept and self.text_is_valid))
 
+class SnapshotsDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_list_snapshots.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self._signaler.snapshots_found.connect(self.addSnapshots)
+        
+        self.toDaemon('/ray/session/list_snapshots')
+        
+    def addSnapshots(self, snapshots):
+        for snapshot in snapshots:
+            item = QTreeWidgetItem([snapshot])
+            self.ui.snapshotsList.addTopLevelItem(item)
 
 class AbstractSaveTemplateDialog(ChildDialog):
     def __init__(self, parent):

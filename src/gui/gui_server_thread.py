@@ -89,6 +89,15 @@ class GUIServerThread(ServerThread):
             return
 
         self._signaler.factory_client_template_found.emit(args)
+        
+    @make_method('/reply_snapshots_list', None)
+    def replySnapshotsList(self, path, args):
+        self.debugg(path, args)
+        
+        if not ray.areTheyAllString(args):
+            return 
+        
+        self._signaler.snapshots_found.emit(args)
 
     @make_method('/ray/gui/daemon_announce', 'siisi')
     def serverAnnounce(self, path, args, types, src_addr):

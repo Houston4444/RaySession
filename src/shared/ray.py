@@ -76,6 +76,8 @@ class Option:
     BOOKMARK_SESSION = 0x004
     HAS_WMCTRL       = 0x008
     DESKTOPS_MEMORY  = 0x010
+    HAS_GIT          = 0x020
+    SNAPSHOTS        = 0x040
 
 
 class Err:

@@ -226,11 +226,17 @@ class OscServerThread(ClientCommunicating):
             'daemon/bookmark_session_folder', True, type=bool)
         self.option_desktops_memory  = RS.settings.value(
             'daemon/desktops_memory', False, type=bool)
+        self.option_snapshots        = RS.settings.value(
+            'daemon/snapshots', True, type=bool)
         
         self.option_has_wmctrl = bool(shutil.which('wmctrl'))
         if not self.option_has_wmctrl:
             self.option_desktops_memory = False
-            
+        
+        self.option_has_git = bool(shutil.which('git'))
+        if not self.option_has_git:
+            self.option_snapshots = False
+        
         global instance
         instance = self
         
@@ -674,6 +680,12 @@ class OscServerThread(ClientCommunicating):
         
         signaler.server_reorder_clients.emit(path, args)
     
+    @make_method('/ray/session/list_snapshots', '')
+    def rayServerListSnapshots(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        signaler.server_list_snapshots.emit(src_addr)
+    
     @make_method('/ray/session/open_folder', '')
     def rayServerOpenFolder(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
@@ -780,6 +792,12 @@ class OscServerThread(ClientCommunicating):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         self.option_desktops_memory = bool(args[0])
+    
+    @make_method('/ray/option/snapshots', 'i')
+    def rayOptionSnapshots(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        self.option_snapshots = bool(args[0])
     
     def isOperationPending(self, src_addr, path):
         if self.session.file_copier.isActive():
@@ -917,7 +935,9 @@ class OscServerThread(ClientCommunicating):
             + ray.Option.SAVE_FROM_CLIENT * self.option_save_from_client
             + ray.Option.BOOKMARK_SESSION * self.option_bookmark_session
             + ray.Option.HAS_WMCTRL * self.option_has_wmctrl
-            + ray.Option.DESKTOPS_MEMORY * self.option_desktops_memory)
+            + ray.Option.DESKTOPS_MEMORY * self.option_desktops_memory
+            + ray.Option.HAS_GIT * self.option_has_git
+            + ray.Option.SNAPSHOTS * self.option_snapshots)
         
         self.send(gui_addr, "/ray/gui/daemon_announce", ray.VERSION,
                   self.server_status, options, self.session.root,

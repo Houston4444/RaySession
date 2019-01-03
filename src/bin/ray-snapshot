@@ -1,0 +1,50 @@
+#!/bin/bash
+
+session_path="$1"
+date="$2"
+[ "$3" ] && tagname="$3" || tagname="ray"
+
+# check arguments exists
+[ "$session_path" ] && [ "$date" ] || exit 1
+
+# check git presence on system
+which git > /dev/null || exit 1
+
+# check .git, if it's not a dir, exit.
+[ -f "$session_path/.git" ] && exit 1
+
+# if dir doesn't exists, init git.
+[ -d "$session_path/.git" ] || git -C "$session_path" init
+    
+
+
+ignored_extensions="wav flac ogg mp3 mp4 avi peak midi mid"
+
+contents=""
+
+# prepare exclude of unwanted files
+for extension in $ignored_extensions;
+do
+    contents+="*.$extension
+"
+done
+
+# add to exclusion too big files
+big_files=$(find "$session_path" -size +50M)
+contents+="$big_files"
+
+# write exclude file
+echo "$contents" > "$session_path/.git/info/exclude"
+
+# add all modified files to git
+git -C "$session_path" add -A
+
+remove_last_tag=false
+# make commit
+if git -C "$session_path" commit -m "$date";then
+    # if commit works with modifications, then tag.
+    git -C "$session_path" tag -a "$date" -m "$tagname"
+fi
+
+    
+    
