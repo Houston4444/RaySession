@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>413</width>
+    <width>415</width>
     <height>570</height>
    </rect>
   </property>
@@ -449,6 +449,35 @@ QToolButton {border: none}</string>
                   </spacer>
                  </item>
                  <item>
+                  <widget class="QToolButton" name="toolButtonSnapshots">
+                   <property name="maximumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go back to a previous state of the session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">QToolButton { border: none}</string>
+                   </property>
+                   <property name="text">
+                    <string>Snapshots</string>
+                   </property>
+                   <property name="icon">
+                    <iconset theme="media-seek-backward" resource="../resources.qrc">
+                     <normaloff>:/scalable/breeze/document-save.svg</normaloff>:/scalable/breeze/document-save.svg</iconset>
+                   </property>
+                   <property name="iconSize">
+                    <size>
+                     <width>16</width>
+                     <height>16</height>
+                    </size>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
                   <widget class="StatusBarNegativ" name="lineEditServerStatus">
                    <property name="minimumSize">
                     <size>
@@ -627,7 +656,7 @@ QToolButton {border: none}</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>413</width>
+     <width>415</width>
      <height>30</height>
     </rect>
    </property>
@@ -650,6 +679,7 @@ QToolButton {border: none}</string>
     <addaction name="actionAbortSession"/>
     <addaction name="actionDuplicateSession"/>
     <addaction name="actionSaveTemplateSession"/>
+    <addaction name="actionReturnToAPreviousState"/>
     <addaction name="actionRenameSession"/>
     <addaction name="separator"/>
     <addaction name="actionOpenSessionFolder"/>
@@ -1027,6 +1057,17 @@ QToolButton {border: none}</string>
    </property>
    <property name="text">
     <string>&amp;Desktops Memory (requires wmctrl)</string>
+   </property>
+  </action>
+  <action name="actionReturnToAPreviousState">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="media-seek-backward"/>
+   </property>
+   <property name="text">
+    <string>Return To A Previous State (requires git)</string>
    </property>
   </action>
  </widget>

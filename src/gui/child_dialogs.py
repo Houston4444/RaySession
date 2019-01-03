@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QListWidgetItem,
     QCompleter, QMessageBox, QFileDialog, QTreeWidgetItem)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QTimer, QSettings
+from PyQt5.QtCore import Qt, QTimer, QSettings, QTime, QDate
 
 import ray
 from gui_server_thread import GUIServerThread
@@ -30,6 +30,37 @@ import ui_client_trash
 import ui_daemon_url
 import ui_edit_executable
 
+class Snapshot:
+    valid = False
+    year  = 0
+    month = 0
+    day   = 0
+    hour  = 0
+    min   = 0
+    sec   = 0
+    text  = ''
+    
+    def __lt__(self, other):
+        if not other.valid:
+            return True
+        
+        if not self.valid:
+            return False
+        
+        if self.year != other.year:
+            return self.year < other.year
+        if self.month != other.month:
+            return self.month < other.month
+        if self.day != other.day:
+            return self.day < other.day
+        if self.hour != other.hour:
+            return self.hour < other.hour
+        if self.min != other.min:
+            return self.min < other.min
+        if self.sec != other.sec:
+            return self.sec < other.sec
+        
+        return False
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -391,10 +422,54 @@ class SnapshotsDialog(ChildDialog):
         self._signaler.snapshots_found.connect(self.addSnapshots)
         
         self.toDaemon('/ray/session/list_snapshots')
+        self.snapshots = []
         
     def addSnapshots(self, snapshots):
         for snapshot in snapshots:
-            item = QTreeWidgetItem([snapshot])
+            snap = Snapshot()
+            snap.text = snapshot
+            
+            elements = snapshot.split('_')
+            if len(elements) >= 6:
+                year  = elements[0]
+                month = elements[1]
+                day   = elements[2]
+                hour  = elements[3]
+                min   = elements[4]
+                sec   = elements[5]
+                
+                for el in (year, month, day, hour, min, sec):
+                    if not el.isdigit():
+                        break
+                else:
+                    snap.valid = True
+                    snap.year  = int(year)
+                    snap.month = int(month)
+                    snap.day   = int(day)
+                    snap.hour  = int(hour)
+                    snap.min   = int(min)
+                    snap.sec   = int(sec)
+                
+            self.snapshots.append(snap)
+        
+        self.snapshots.sort()
+        self.snapshots.reverse()
+        self.ui.snapshotsList.clear()
+        
+        for snap in self.snapshots:
+            if snap.valid:
+                date = QDate(snap.year, snap.month, snap.day)
+                time = QTime(snap.hour, snap.min, snap.sec)
+                display_text = "%s at %s" % (
+                    date.toString('dddd d MMMM yyyy'),
+                    time.toString('HH:mm'))
+            else:
+                display_text = snap.text
+        
+            
+            item = QTreeWidgetItem([display_text])
+            #sub_item = QTreeWidgetItem(['erg'])
+            #item.addChild(sub_item)
             self.ui.snapshotsList.addTopLevelItem(item)
 
 class AbstractSaveTemplateDialog(ChildDialog):

@@ -1542,7 +1542,7 @@ class SignaledSession(OperatingSession):
         
         for snapshot in snapshots:
             if i == 20:
-                self.serverSend(src_addr, '/ray/reply_snapshots_list',
+                self.serverSend(src_addr, '/reply_snapshots_list',
                                 *snap_send)
                 
                 snap_send.clear()
@@ -1552,7 +1552,7 @@ class SignaledSession(OperatingSession):
                 i+=1
         
         if snap_send:
-            self.serverSend(src_addr, '/ray/reply_snapshots_list', *snap_send)
+            self.serverSend(src_addr, '/reply_snapshots_list', *snap_send)
     
     def serverAdd(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)

@@ -45,7 +45,11 @@ class Snapshoter:
         all_list_utf = all_list.decode()
         all_tags = all_list_utf.split('\n')
         
-        return all_tags
+        for tag in all_tags:
+            if tag.count('_') < 5:
+                all_tags.remove(tag)
+        
+        return all_tags.__reversed__()
     
     def initSession(self):
         gitdir = self.getGitDir()
