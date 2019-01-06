@@ -30,15 +30,23 @@ import ui_client_trash
 import ui_daemon_url
 import ui_edit_executable
 
+GROUP_ELEMENT = 0
+GROUP_DAY     = 1
+GROUP_MONTH   = 2
+GROUP_YEAR    = 3
+GROUP_MAIN    = 4
+
 class Snapshot:
     valid = False
-    year  = 0
-    month = 0
-    day   = 0
+    year  = 1
+    month = 1
+    day   = 1
     hour  = 0
     min   = 0
     sec   = 0
     text  = ''
+    sub_type = GROUP_ELEMENT
+    item = None
     
     def __lt__(self, other):
         if not other.valid:
@@ -61,6 +69,141 @@ class Snapshot:
             return self.sec < other.sec
         
         return False
+    
+    def canTake(self, other):
+        return False
+    
+    def isOfSameGroup(self, other, sub_type):
+        if self.year == other.year:
+            if sub_type == GROUP_YEAR:
+                return True
+            
+            if self.month == other.month:
+                if sub_type == GROUP_MONTH:
+                    return True
+                
+                if self.day == other.day:
+                    if sub_type == GROUP_DAY:
+                        return True
+        return False
+    
+    def makeItems(self, sub_type):
+        date = QDate(self.year, self.month, self.day)
+        time = QTime(self.hour, self.min, self.sec)
+        display_text = "%s at %s" % (
+                date.toString('dddd d MMMM yyyy'),
+                time.toString('HH:mm'))
+        
+        if not self.valid:
+            display_text = self.text
+        
+        elif sub_type in (GROUP_YEAR, GROUP_MONTH):
+            display_text = "%s at %s" % (
+                date.toString('dddd d MMMM'),
+                time.toString('HH:mm'))
+        elif sub_type == GROUP_DAY:
+            display_text = "at %s" % time.toString('HH:mm')
+        
+        item = QTreeWidgetItem([display_text])
+        item.setData(0, Qt.UserRole, self.text)
+        
+        return item
+
+
+class SnapGroup(Snapshot):
+    def __init__(self, sub_type=GROUP_MAIN):
+        Snapshot.__init__(self)
+        self.sub_type = sub_type
+        self.snapshots = []
+    
+    def canTake(self, other):
+        if self.sub_type == GROUP_MAIN:
+            return True
+        
+        if self.year != other.year:
+            return False
+        
+        if self.sub_type == GROUP_YEAR:
+            return True
+        
+        if self.month != other.month:
+            return False
+        
+        if self.sub_type == GROUP_MONTH:
+            return True
+        
+        if self.day != other.day:
+            return False
+        
+        return True
+    
+    def add(self, new_snapshot):
+        if not new_snapshot.valid:
+            print('add non valid', new_snapshot.text)
+            self.snapshots.append(new_snapshot)
+            return
+        
+        if self.sub_type <= 1:
+            self.snapshots.append(new_snapshot)
+            return
+        
+        for snapshot in self.snapshots:
+            if snapshot.canTake(new_snapshot):
+                snapshot.add(new_snapshot)
+                break
+        else:
+            snap_group = SnapGroup(self.sub_type -1)
+            snap_group.year  = new_snapshot.year
+            snap_group.month = new_snapshot.month
+            snap_group.day   = new_snapshot.day
+            snap_group.add(new_snapshot)
+            self.snapshots.append(snap_group)
+    
+    def sort(self):
+        for snapshot in self.snapshots:
+            if snapshot.sub_type:
+                snapshot.sort()
+                
+        self.snapshots.sort()
+        self.snapshots.reverse()
+    
+    def reOrganize(self):
+        # if an element of this group is a group that contains 
+        # only one element(group or not), push this element to this group.
+        for snapshot in self.snapshots:
+            if snapshot.sub_type and len(snapshot.snapshots) == 1:
+                to_move_snapshot = snapshot.snapshots[0]
+                self.snapshots.remove(snapshot)
+                self.snapshots.append(to_move_snapshot)
+        
+        # reOrganize also all sub_groups
+        for snapshot in self.snapshots:
+            if snapshot.sub_type:
+                snapshot.reOrganize()
+                    
+    def makeItems(self, sub_type=GROUP_MAIN):
+        date = QDate(self.year, self.month, self.day)
+        time = QTime(self.hour, self.min, self.sec)
+        display_text = ''
+        
+        if self.sub_type == GROUP_MAIN:
+            return None
+        
+        if self.sub_type == GROUP_YEAR:
+            display_text = date.toString('yyyy')
+        elif self.sub_type == GROUP_MONTH:
+            display_text = date.toString('MMMM yyyy')
+        elif self.sub_type == GROUP_DAY:
+            display_text = date.toString('dddd d MMMM yyyy')
+            
+        item = QTreeWidgetItem([display_text])
+        
+        for snapshot in self.snapshots:
+            sub_item = snapshot.makeItems(self.sub_type)
+            item.addChild(sub_item)
+        
+        return item
+    
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -423,13 +566,24 @@ class SnapshotsDialog(ChildDialog):
         
         self.toDaemon('/ray/session/list_snapshots')
         self.snapshots = []
+        self.main_snap_group = SnapGroup()
         
-    def addSnapshots(self, snapshots):
-        for snapshot in snapshots:
-            snap = Snapshot()
-            snap.text = snapshot
+        self.ui.snapshotsList.header().hide()
+        self.ui.snapshotsList.currentItemChanged.connect(self.currentItemChanged)
+    
+    def currentItemChanged(self, current, previous):
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
+           bool(current.data(0, Qt.UserRole))) 
+    
+    def addSnapshots(self, snaptexts):
+        for snaptext in snaptexts:
+            if not snaptext:
+                continue
             
-            elements = snapshot.split('_')
+            snapshot = Snapshot()
+            snapshot.text = snaptext
+            
+            elements = snaptext.split('_')
             if len(elements) >= 6:
                 year  = elements[0]
                 month = elements[1]
@@ -442,35 +596,28 @@ class SnapshotsDialog(ChildDialog):
                     if not el.isdigit():
                         break
                 else:
-                    snap.valid = True
-                    snap.year  = int(year)
-                    snap.month = int(month)
-                    snap.day   = int(day)
-                    snap.hour  = int(hour)
-                    snap.min   = int(min)
-                    snap.sec   = int(sec)
-                
-            self.snapshots.append(snap)
+                    snapshot.valid = True
+                    snapshot.year  = int(year)
+                    snapshot.month = int(month)
+                    snapshot.day   = int(day)
+                    snapshot.hour  = int(hour)
+                    snapshot.min   = int(min)
+                    snapshot.sec   = int(sec)
+            
+            self.main_snap_group.add(snapshot)
+            
+        self.main_snap_group.reOrganize()
+        self.main_snap_group.sort()
         
-        self.snapshots.sort()
-        self.snapshots.reverse()
         self.ui.snapshotsList.clear()
         
-        for snap in self.snapshots:
-            if snap.valid:
-                date = QDate(snap.year, snap.month, snap.day)
-                time = QTime(snap.hour, snap.min, snap.sec)
-                display_text = "%s at %s" % (
-                    date.toString('dddd d MMMM yyyy'),
-                    time.toString('HH:mm'))
-            else:
-                display_text = snap.text
-        
-            
-            item = QTreeWidgetItem([display_text])
-            #sub_item = QTreeWidgetItem(['erg'])
-            #item.addChild(sub_item)
+        for snapshot in self.main_snap_group.snapshots:
+            item = snapshot.makeItems(GROUP_MAIN)
             self.ui.snapshotsList.addTopLevelItem(item)
+    
+    def getSelectedSnapshot(self):
+        item = self.ui.snapshotsList.currentItem()
+        return item.data(0, Qt.UserRole)
 
 class AbstractSaveTemplateDialog(ChildDialog):
     def __init__(self, parent):

@@ -45,9 +45,13 @@ class Snapshoter:
         all_list_utf = all_list.decode()
         all_tags = all_list_utf.split('\n')
         
-        for tag in all_tags:
-            if tag.count('_') < 5:
-                all_tags.remove(tag)
+        if len(all_tags) >= 1:
+            if not all_tags[-1]:
+                all_tags = all_tags[:-1]
+        
+        if len(all_tags) >= 1:
+            if all_tags[-1] == 'list':
+                all_tags = all_tags[:-1]
         
         return all_tags.__reversed__()
     

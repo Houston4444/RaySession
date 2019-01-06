@@ -402,6 +402,11 @@ class MainWindow(QMainWindow):
     def returnToAPreviousState(self):
         dialog = child_dialogs.SnapshotsDialog(self)
         dialog.exec()
+        if not dialog.result():
+            return 
+        
+        snapshot = dialog.getSelectedSnapshot()
+        print(snapshot)
         
 
     def aboutRaySession(self):
