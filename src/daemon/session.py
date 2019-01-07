@@ -692,7 +692,10 @@ class OperatingSession(Session):
     def close_step2(self):
         self.cleanExpected()
         
-        #self.purgeInactiveClients()
+        for client in self.clients:
+            self.removeClient(client)
+        
+        # belt and suspenders
         self.clients.clear()
         
         if self.path:
