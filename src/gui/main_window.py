@@ -406,7 +406,7 @@ class MainWindow(QMainWindow):
             return 
         
         snapshot = dialog.getSelectedSnapshot()
-        print(snapshot)
+        self.toDaemon('/ray/session/open_snapshot', snapshot)
         
 
     def aboutRaySession(self):

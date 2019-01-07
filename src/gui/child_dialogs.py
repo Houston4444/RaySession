@@ -202,6 +202,9 @@ class SnapGroup(Snapshot):
             sub_item = snapshot.makeItems(self.sub_type)
             item.addChild(sub_item)
         
+        # set this group item not selectable
+        item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
+        
         return item
     
 
@@ -568,12 +571,13 @@ class SnapshotsDialog(ChildDialog):
         self.snapshots = []
         self.main_snap_group = SnapGroup()
         
-        self.ui.snapshotsList.header().hide()
+        self.ui.snapshotsList.setHeaderHidden(True)
+        #self.ui.snapshotsList.setRootIsDecorated(False)
         self.ui.snapshotsList.currentItemChanged.connect(self.currentItemChanged)
     
     def currentItemChanged(self, current, previous):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
-           bool(current.data(0, Qt.UserRole))) 
+           bool(current and current.data(0, Qt.UserRole))) 
     
     def addSnapshots(self, snaptexts):
         for snaptext in snaptexts:

@@ -742,6 +742,10 @@ class OperatingSession(Session):
         self.sendGuiMessage(_translate('GUIMSG', 'Session is ready'))
         self.setServerStatus(ray.ServerStatus.READY)
     
+    def initSnapshot(self, spath, snapshot):
+        self.snapshoter.load(spath, snapshot)
+        self.nextFunction()
+    
     def duplicate(self, new_session_full_name):
         if self.clientsHaveErrors():
             self.sendError(ray.Err.GENERAL_ERROR, 
@@ -1267,6 +1271,7 @@ class SignaledSession(OperatingSession):
             self.serverSaveSessionTemplate)
         signaler.server_close.connect(self.serverCloseSession)
         signaler.server_abort.connect(self.serverAbortSession)
+        signaler.server_open_snapshot.connect(self.serverOpenSnapshot)
         signaler.server_list_sessions.connect(self.serverListSessions)
         
         signaler.server_reorder_clients.connect(self.serverReorderClients)
@@ -1374,6 +1379,22 @@ class SignaledSession(OperatingSession):
             return
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.close, self.closeDone]
+        self.nextFunction()
+    
+    def serverOpenSnapshot(self, path, args, src_addr):
+        if self.process_order:
+            return
+        
+        if not self.path:
+            return 
+        
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [self.save, 
+                              self.close, 
+                              (self.initSnapshot, self.path, args[0]),
+                              (self.load, self.path), 
+                              self.loadDone]
+        
         self.nextFunction()
     
     def serverRenameSession(self, new_session_name):

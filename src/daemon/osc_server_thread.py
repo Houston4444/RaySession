@@ -608,6 +608,12 @@ class OscServerThread(ClientCommunicating):
         
         signaler.dummy_duplicate.emit(src_addr, *args)
     
+    @make_method('/ray/session/open_snapshot', 's')
+    def raySessionOpenSnapshot(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        signaler.server_open_snapshot.emit(path, args, src_addr)
+    
     @make_method('/ray/session/rename', 's')
     def rayServerRename(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))

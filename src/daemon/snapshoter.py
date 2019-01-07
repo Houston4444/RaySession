@@ -106,4 +106,7 @@ class Snapshoter:
         #self.runGit('commit', '-m', tagdate)
         #self.runGit('tag', '-a', tagdate, '-m', 'ray')
         
-    
+    def load(self, spath, snapshot):
+        print('reload snapshot')
+        subprocess.run(['git', '-C', spath, 'checkout', snapshot])
+        print('snapshot reloadded')

@@ -18,6 +18,7 @@ class Signaler(QObject):
     server_save        = pyqtSignal(str, list, object)
     server_save_from_client = pyqtSignal(str, list, object, str)
     server_list_sessions = pyqtSignal(object, bool)
+    server_open_snapshot = pyqtSignal(str, list, object)
     server_add       = pyqtSignal(str, list, object)
     server_add_proxy = pyqtSignal(str, list, object)
     server_add_client_template = pyqtSignal(str, list, object)
