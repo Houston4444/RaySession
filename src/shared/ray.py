@@ -186,6 +186,28 @@ def isPidChildOf(child_pid, parent_pid):
 
     return False
 
+def isGitTaggable(string):
+    if not string:
+        return False
+    
+    if string.startswith('/'):
+        return False
+    
+    if string.endswith('/'):
+        return False
+    
+    if string.endswith('.'):
+        return False
+    
+    for forbidden in (' ', '~', '^', ':', '?', '*',
+                      '[', '..', '@{', '\\', '//', ','):
+        if forbidden in string:
+            return False
+    
+    if string == "@":
+        return False
+    
+    return True
 
 def isOscPortFree(port):
     try:

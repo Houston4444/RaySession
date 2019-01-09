@@ -1,9 +1,12 @@
 from PyQt5.QtCore import Qt, QDateTime, QDate, QTime
 from PyQt5.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 
+import ray
+
 from child_dialogs import ChildDialog
 from gui_tools import _translate
 import ui_list_snapshots
+import ui_snapshot_name
 
 GROUP_ELEMENT = 0
 GROUP_DAY     = 1
@@ -19,6 +22,7 @@ class Snapshot:
     before_rewind_to = ''
     date_time = None
     rewind_date_time = None
+    label = ''
     
     def __init__(self, date_time):
         self.date_time = date_time
@@ -47,6 +51,12 @@ class Snapshot:
         
         return self.date_time.isValid()
     
+    def isToday(self):
+        return bool(self.date_time.date() == QDate.currentDate())
+    
+    def isYesterday(self):
+        return bool(self.date_time.date() == QDate.currentDate().addDays(-1))
+    
     def canTake(self, other):
         return False
     
@@ -69,17 +79,28 @@ class Snapshot:
         return common_group
     
     def makeItem(self, sub_type):
+        if self.isToday():
+            day_string = _translate('snapshots', 'Today')
+        elif self.isYesterday():
+            day_string = _translate('snapshots', 'Yesterday')
+        else:
+            day_string = self.date_time.toString('dddd d MMMM yyyy')
+        
         display_text = "%s at %s" % (
-                self.date_time.toString('dddd d MMMM yyyy'),
-                self.date_time.toString('HH:mm'))
+                            day_string,
+                            self.date_time.toString('HH:mm'))
         
         if not self.isValid():
             display_text = self.text
         
         elif sub_type in (GROUP_YEAR, GROUP_MONTH):
+            if not self.isToday() or self.isYesterday():
+                day_string = self.date_time.toString('dddd d MMMM')
+                
             display_text = "%s at %s" % (
-                self.date_time.toString('dddd d MMMM'),
-                self.date_time.toString('HH:mm'))
+                                day_string,
+                                self.date_time.toString('HH:mm'))
+            
         elif sub_type == GROUP_DAY:
             display_text = "at %s" % self.date_time.toString('HH:mm')
         
@@ -93,6 +114,9 @@ class Snapshot:
                 display_text += self.rewind_date_time.toString('d MMM hh:mm')
             else:
                 display_text += self.rewind_date_time.toString('d MMM yyyy hh:mm')
+        
+        if self.label:
+            display_text += "  %s" % self.label
         
         #if self.before_rewind_to:
             #display_text += " before rewind to %s" % (
@@ -191,9 +215,9 @@ class SnapGroup(Snapshot):
             display_text = self.date_time.toString('MMMM yyyy')
         elif self.sub_type == GROUP_DAY:
             display_text = self.date_time.toString('dddd d MMMM yyyy')
-            if QDate.currentDate() == self.date_time.date():
+            if self.isToday():
                 display_text = _translate('snapshots', 'Today')
-            elif self.date_time.date() == QDate.currentDate().addDays(-1):
+            elif self.isYesterday():
                 display_text = _translate('snapshots', 'Yesterday')
             
         item = QTreeWidgetItem([display_text])
@@ -207,7 +231,23 @@ class SnapGroup(Snapshot):
         
         return item
 
-
+class TakeSnapshotDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_snapshot_name.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self.ui.lineEdit.textChanged.connect(self.textChanged)
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        
+    def textChanged(self, text):
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
+            ray.isGitTaggable(text))
+        
+    def getSnapshotName(self):
+        return self.ui.lineEdit.text()
+    
+    
 class SnapshotsDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
@@ -215,6 +255,7 @@ class SnapshotsDialog(ChildDialog):
         self.ui.setupUi(self)
         
         self._signaler.snapshots_found.connect(self.addSnapshots)
+        self.ui.pushButtonSnapshotNow.clicked.connect(self.takeSnapshot)
         
         self.toDaemon('/ray/session/list_snapshots')
         self.snapshots = []
@@ -236,17 +277,36 @@ class SnapshotsDialog(ChildDialog):
                 continue
             
             time_str, coma, rewind_time_str = snaptext.partition(',')
-            if time_str.endswith('_'):
+            while time_str.endswith('_'):
                 time_str = time_str[:-1]
+            
+            label = ''
+            strs = time_str.split('_')
+            
+            if len(strs) > 6:
+                time_str = ''
+                i = 0
+                for stri in strs:
+                    if i < 6: 
+                        time_str += "%s_" % stri
+                    else:
+                        label += "%s_" % stri
+                    i+=1
+                    
+                time_str = time_str[:-1]
+                label = label[:-1]
             
             date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
             rw_date_time = QDateTime.fromString(rewind_time_str,
-                                                '_yyyy_M_d_h_m_s')
+                                                'yyyy_M_d_h_m_s')
             if not rw_date_time.isValid():
                 rw_date_time = None
             
+            print(snaptext, rw_date_time, rewind_time_str)
+            
             snapshot = Snapshot(date_time)
             snapshot.text = snaptext
+            snapshot.label = label
             snapshot.rewind_date_time = rw_date_time
             
             self.main_snap_group.add(snapshot)
@@ -265,3 +325,12 @@ class SnapshotsDialog(ChildDialog):
     def getSelectedSnapshot(self):
         item = self.ui.snapshotsList.currentItem()
         return item.data(0, Qt.UserRole)
+    
+    def takeSnapshot(self):
+        dialog = TakeSnapshotDialog(self)
+        dialog.exec()
+        if dialog.result():
+            snapshot_label = dialog.getSnapshotName()
+            self.toDaemon('/ray/session/take_snapshot', snapshot_label)
+    
+    

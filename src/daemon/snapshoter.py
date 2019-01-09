@@ -99,11 +99,18 @@ class Snapshoter:
         
         return tagdate
     
-    def save(self):
-        subprocess.run(['ray-snapshot', self.session.path, self.getTagDate()])
+    def save(self, name=''):
+        snapshot_name = self.getTagDate()
+        if name:
+            snapshot_name = "%s_%s" % (snapshot_name, name)
+            
+        subprocess.run(['ray-snapshot', self.session.path, snapshot_name])
+        
+        if self.session.hasServer():
+            self.session.sendGui('/reply_snapshots_list', snapshot_name)
         
     def load(self, spath, snapshot):
-        tag_for_last = "%s_,_%s" % (self.getTagDate(), snapshot)
+        tag_for_last = "%s,%s" % (self.getTagDate(), snapshot)
         subprocess.run(['git', '-C', spath, 'tag', '-a', tag_for_last, '-m' 'ray'])
         
         print('reload snapshot')

@@ -1277,6 +1277,7 @@ class SignaledSession(OperatingSession):
             self.serverDuplicateSessionOnly)
         signaler.server_save_session_template.connect(
             self.serverSaveSessionTemplate)
+        signaler.take_snapshot.connect(self.snapshoter.save)
         signaler.server_close.connect(self.serverCloseSession)
         signaler.server_abort.connect(self.serverAbortSession)
         signaler.server_open_snapshot.connect(self.serverOpenSnapshot)

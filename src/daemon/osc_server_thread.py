@@ -541,6 +541,16 @@ class OscServerThread(ClientCommunicating):
         
         signaler.dummy_load_and_template.emit(*args)
     
+    @make_method('/ray/session/take_snapshot', 's')
+    def raySessionTakeSnapshot(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        tag_name = args[0]
+        if not ray.isGitTaggable(tag_name):
+            return
+        
+        signaler.take_snapshot.emit(tag_name)
+    
     @make_method('/ray/session/close', '')
     def nsmServerClose(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
