@@ -54,17 +54,18 @@ def getCodeRoot():
 
 def serverStatusString(server_status):
     server_status_strings = {
-        ray.ServerStatus.OFF: _translate('server status', "off"),
-        ray.ServerStatus.NEW: _translate('server status', "new"),
-        ray.ServerStatus.OPEN: _translate('server status', "open"),
-        ray.ServerStatus.CLEAR: _translate('server status', "clear"),
-        ray.ServerStatus.SWITCH: _translate('server status', "switch"),
-        ray.ServerStatus.LAUNCH: _translate('server status', "launch"),
-        ray.ServerStatus.PRECOPY: _translate('server status', "copy"),
-        ray.ServerStatus.COPY: _translate('server status', "copy"),
-        ray.ServerStatus.READY: _translate('server status', "ready"),
-        ray.ServerStatus.SAVE: _translate('server status', "save"),
-        ray.ServerStatus.CLOSE: _translate('server status', "close")}
+        ray.ServerStatus.OFF     : _translate('server status', "off"),
+        ray.ServerStatus.NEW     : _translate('server status', "new"),
+        ray.ServerStatus.OPEN    : _translate('server status', "open"),
+        ray.ServerStatus.CLEAR   : _translate('server status', "clear"),
+        ray.ServerStatus.SWITCH  : _translate('server status', "switch"),
+        ray.ServerStatus.LAUNCH  : _translate('server status', "launch"),
+        ray.ServerStatus.PRECOPY : _translate('server status', "copy"),
+        ray.ServerStatus.COPY    : _translate('server status', "copy"),
+        ray.ServerStatus.READY   : _translate('server status', "ready"),
+        ray.ServerStatus.SAVE    : _translate('server status', "save"),
+        ray.ServerStatus.CLOSE   : _translate('server status', "close"),
+        ray.ServerStatus.SNAPSHOT: _translate('server_status', "snapshot")}
 
     if not 0 <= server_status < len(server_status_strings):
         return _translate('server status', "invalid")

@@ -544,7 +544,7 @@ class OperatingSession(Session):
     # then, when timer is timeout or when all client replied, 
     # save_step1 is launched.
         
-    def save(self, from_client_id=''):
+    def save(self, from_client_id='', prevent_snapshot=False):
         if not self.path:
             self.nextFunction()
             return
@@ -559,9 +559,11 @@ class OperatingSession(Session):
                 self.expected_clients.append(client)
             client.save()
                 
-        self.waitAndGoTo(10000, self.save_step1, ray.WaitFor.REPLY)
+        self.waitAndGoTo(10000,
+                         (self.save_step1, prevent_snapshot),
+                         ray.WaitFor.REPLY)
             
-    def save_step1(self):
+    def save_step1(self, prevent_snapshot=False):
         self.cleanExpected()
         
         if not self.path:
@@ -637,7 +639,11 @@ class OperatingSession(Session):
         self.sendGuiMessage(_translate('GUIMSG', "Session saved."))
         self.message("Session saved.")
         
-        self.snapshoter.save()
+        server = self.getServer()
+        if server and server.option_snapshots and not prevent_snapshot:
+            self.setServerStatus(ray.ServerStatus.SNAPSHOT)
+            self.snapshoter.save()
+            
         self.nextFunction()
     
     def saveDone(self):
@@ -673,7 +679,6 @@ class OperatingSession(Session):
         
         self.setServerStatus(ray.ServerStatus.CLOSE)
         self.sendGui('/ray/trash/clear')
-        
         
         for client in self.clients.__reversed__():
             if client.isRunning():
@@ -1392,7 +1397,7 @@ class SignaledSession(OperatingSession):
             return 
         
         self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [self.save, 
+        self.process_order = [(self.save, '', True), 
                               self.close, 
                               (self.initSnapshot, self.path, args[0]),
                               (self.load, self.path), 
@@ -1808,7 +1813,7 @@ class SignaledSession(OperatingSession):
             if (server 
                     and self.getServerStatus() == ray.ServerStatus.READY
                     and server.option_desktops_memory):
-                        self.desktops_memory.replace()
+                self.desktops_memory.replace()
             
             if self.wait_for == ray.WaitFor.REPLY:
                 self.endTimerIfLastExpected(client)

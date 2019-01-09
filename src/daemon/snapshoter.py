@@ -91,22 +91,21 @@ class Snapshoter:
         exclude_file.write(contents)
         exclude_file.close()
     
-    def save(self):
-        #self.initSession()
-        #self.excludeUndesired()
-        
+    def getTagDate(self):
         date = time.localtime()
         tagdate = "%s_%s_%s_%s_%s_%s" % (
                     date.tm_year, date.tm_mon, date.tm_mday,
                     date.tm_hour, date.tm_min, date.tm_sec)
         
-        subprocess.run(['ray-snapshot', self.session.path, tagdate])
-        
-        #self.runGit('add', '-A')
-        #self.runGit('commit', '-m', tagdate)
-        #self.runGit('tag', '-a', tagdate, '-m', 'ray')
+        return tagdate
+    
+    def save(self):
+        subprocess.run(['ray-snapshot', self.session.path, self.getTagDate()])
         
     def load(self, spath, snapshot):
+        tag_for_last = "%s_,_%s" % (self.getTagDate(), snapshot)
+        subprocess.run(['git', '-C', spath, 'tag', '-a', tag_for_last, '-m' 'ray'])
+        
         print('reload snapshot')
         subprocess.run(['git', '-C', spath, 'checkout', snapshot])
         print('snapshot reloadded')

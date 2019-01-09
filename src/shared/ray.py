@@ -51,17 +51,18 @@ class ClientStatus:
 
 
 class ServerStatus:
-    OFF     = 0
-    NEW     = 1
-    OPEN    = 2
-    CLEAR   = 3
-    SWITCH  = 4
-    LAUNCH  = 5
-    PRECOPY = 6
-    COPY    = 7
-    READY   = 8
-    SAVE    = 9
-    CLOSE   = 10
+    OFF      =  0
+    NEW      =  1
+    OPEN     =  2
+    CLEAR    =  3
+    SWITCH   =  4
+    LAUNCH   =  5
+    PRECOPY  =  6
+    COPY     =  7
+    READY    =  8
+    SAVE     =  9
+    CLOSE    = 10
+    SNAPSHOT = 11
 
 
 class NSMMode:

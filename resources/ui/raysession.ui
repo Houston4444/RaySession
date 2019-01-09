@@ -713,6 +713,7 @@ QToolButton {border: none}</string>
     </property>
     <addaction name="actionSaveAllFromSavedClient"/>
     <addaction name="actionBookmarkSessionFolder"/>
+    <addaction name="actionSessionsLogging"/>
     <addaction name="actionDesktopsMemory"/>
    </widget>
    <addaction name="menuFile"/>
@@ -1064,10 +1065,25 @@ QToolButton {border: none}</string>
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset theme="media-seek-backward"/>
+    <iconset theme="media-seek-backward">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Return To A Previous State (requires git)</string>
+    <string>Return To A &amp;Previous State (requires git)</string>
+   </property>
+  </action>
+  <action name="actionSessionsLogging">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="deep-history"/>
+   </property>
+   <property name="text">
+    <string>Sessions Logging (requires git)</string>
    </property>
   </action>
  </widget>

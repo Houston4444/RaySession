@@ -111,6 +111,7 @@ class MainWindow(QMainWindow):
         self.controlMenu.addSeparator()
         self.controlMenu.addAction(self.ui.actionSaveAllFromSavedClient)
         self.controlMenu.addAction(self.ui.actionBookmarkSessionFolder)
+        self.controlMenu.addAction(self.ui.actionSessionsLogging)
         self.controlMenu.addAction(self.ui.actionDesktopsMemory)
 
         self.controlToolButton = self.ui.toolBar.widgetForAction(
@@ -238,12 +239,20 @@ class MainWindow(QMainWindow):
             bool(options & ray.Option.BOOKMARK_SESSION))
         self.ui.actionDesktopsMemory.setChecked(
             bool(options & ray.Option.DESKTOPS_MEMORY))
+        self.ui.actionSessionsLogging.setChecked(
+            bool(options & ray.Option.SNAPSHOTS))
 
         has_wmctrl = bool(options & ray.Option.HAS_WMCTRL)
         self.ui.actionDesktopsMemory.setEnabled(has_wmctrl)
         if has_wmctrl:
             self.ui.actionDesktopsMemory.setText(
                 _translate('actions', 'Desktops Memory'))
+            
+        has_git = bool(options & ray.Option.HAS_GIT)
+        self.ui.actionSessionsLogging.setEnabled(has_git)
+        if has_git:
+            self.ui.actionSessionsLogging.setText(
+                _translate('actions', 'Sessions Logging'))
 
     def toDaemon(self, *args):
         server = GUIServerThread.instance()
