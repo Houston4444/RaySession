@@ -9,17 +9,64 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>336</width>
+    <width>362</width>
     <height>379</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Open Session</string>
+   <string>Snapshots Manager</string>
   </property>
   <property name="modal">
    <bool>false</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select from the list below the snapshot to be recalled&lt;br/&gt;to return to a past state of the session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonSnapshotNow">
+       <property name="text">
+        <string>Take a snapshot now !</string>
+       </property>
+       <property name="icon">
+        <iconset theme="camera-photo"/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
    <item>
     <widget class="QTreeWidget" name="snapshotsList">
      <property name="alternatingRowColors">
@@ -27,6 +74,9 @@
      </property>
      <property name="allColumnsShowFocus">
       <bool>false</bool>
+     </property>
+     <property name="headerHidden">
+      <bool>true</bool>
      </property>
      <property name="columnCount">
       <number>1</number>
@@ -36,6 +86,16 @@
        <string/>
       </property>
      </column>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="checkBoxAutoSnapshot">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Make a snapshot at each session save.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Auto snapshot at save for this session</string>
+     </property>
     </widget>
    </item>
    <item>

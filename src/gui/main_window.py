@@ -6,6 +6,7 @@ from PyQt5.QtCore import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize,
 from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
                        serverStatusString)
 import child_dialogs
+import snapshots_dialog
 from gui_server_thread import GUIServerThread
 from gui_client import TrashedClient
 
@@ -409,7 +410,7 @@ class MainWindow(QMainWindow):
         self.toDaemon('/ray/session/save_as_template', session_template_name)
         
     def returnToAPreviousState(self):
-        dialog = child_dialogs.SnapshotsDialog(self)
+        dialog = snapshots_dialog.SnapshotsDialog(self)
         dialog.exec()
         if not dialog.result():
             return 
