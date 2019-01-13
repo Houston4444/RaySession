@@ -59,6 +59,8 @@ class Client(ServerSender):
     net_daemon_url       = ''
     net_duplicate_state  = -1
     
+    git_ignored_extensions = ray.getGitIgnoredExtensions()
+    
     last_save_time = 0.00
     last_dirty = 0.00
     
@@ -270,6 +272,18 @@ class Client(ServerSender):
             jack_client_name += numid
         
         return jack_client_name
+    
+    def getPrefixString(self):
+        if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
+            return self.session.name
+        
+        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+            return self.name
+        
+        if self.prefix_mode == ray.PrefixMode.UNDEF:
+            return self.project_path
+        
+        return ''
     
     def getProjectPath(self):
         if self.executable_path == 'ray-network':

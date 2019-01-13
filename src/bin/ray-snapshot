@@ -34,7 +34,7 @@ big_files=$(find "$session_path" -size +50M)
 contents+="$big_files"
 
 # write exclude file
-echo "$contents" > "$session_path/.git/info/exclude"
+# echo "$contents" > "$session_path/.git/info/exclude"
 
 # add all modified files to git
 git -C "$session_path" add -A
