@@ -670,7 +670,6 @@ class OperatingSession(Session):
         self.setServerStatus(ray.ServerStatus.CLOSE)
         self.sendGui('/ray/trash/clear')
         
-        
         for client in self.clients.__reversed__():
             if client.isRunning():
                 self.expected_clients.append(client)
@@ -688,11 +687,9 @@ class OperatingSession(Session):
     def close_step2(self):
         self.cleanExpected()
         
-        for client in self.clients:
-            self.removeClient(client)
-        
-        # belt and suspenders
-        self.clients.clear()
+        while self.clients:
+            for client in self.clients:
+                self.removeClient(client)
         
         if self.path:
             lock_file =  self.path + '/.lock'

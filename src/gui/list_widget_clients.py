@@ -397,7 +397,7 @@ class ListWidgetClients(QListWidget):
 
         server = GUIServerThread.instance()
         if server:
-            server.orderChanged(client_ids_list)
+            server.changeClientOrder(client_ids_list)
 
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):
