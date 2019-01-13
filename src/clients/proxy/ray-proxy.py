@@ -667,11 +667,13 @@ if __name__ == '__main__':
     # Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
+    
     if appTranslator.load(
         "%s/locale/raysession_%s" %
         (os.path.dirname(
             os.path.dirname(
-            sys.argv[0])),
+                os.path.dirname(
+                    sys.argv[0]))),
          locale)):
         app.installTranslator(appTranslator)
     _translate = app.translate
