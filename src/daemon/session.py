@@ -687,9 +687,10 @@ class OperatingSession(Session):
     def close_step2(self):
         self.cleanExpected()
         
-        while self.clients:
-            for client in self.clients:
-                self.removeClient(client)
+        for client in self.clients:
+            client.setStatus(ray.ClientStatus.REMOVED)
+        
+        self.clients.clear()
         
         if self.path:
             lock_file =  self.path + '/.lock'
@@ -1071,7 +1072,11 @@ class OperatingSession(Session):
         
         self.message("Commanding unneeded and dumb clients to quit")
         
-        for client in self.clients:
+        remove_client_list = []
+        
+        for i in range(len(self.clients)):
+            client = self.clients[i]
+            
             if ((client.active and client.isCapableOf(':switch:')
                     or (client.isDumbClient() and client.isRunning()))
                 and ((client.executable_path, client.arguments)
@@ -1088,8 +1093,15 @@ class OperatingSession(Session):
                     self.expected_clients.append(client)
                     client.quit()
                 else:
-                    client.quit()
-                    self.removeClient(client)
+                    remove_client_list.append(client)
+                    #self.removeClient(client)
+        
+        for client in remove_client_list:
+            client.setStatus(ray.ClientStatus.REMOVED)
+            if client in self.clients:
+                self.clients.remove(client)
+            else:
+                raise NameError('no client %s to remove' % client.client_id)
         
         if self.expected_clients:
             self.setServerStatus(ray.ServerStatus.CLEAR)
