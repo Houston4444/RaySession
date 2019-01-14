@@ -1074,32 +1074,31 @@ class OperatingSession(Session):
         
         remove_client_list = []
         
-        for i in range(len(self.clients)):
-            client = self.clients[i]
-            
+        for client in self.clients:
             if ((client.active and client.isCapableOf(':switch:')
                     or (client.isDumbClient() and client.isRunning()))
-                and ((client.executable_path, client.arguments)
+                and ((client.running_executable, client.running_arguments)
                      in new_client_exec_args)):
                 # client will switch
                 # or keep alive if non active and running
+                print('k1sw', client.client_id)
                 new_client_exec_args.remove(
-                    (client.executable_path, client.arguments))
+                    (client.running_executable, client.running_arguments))
                 
             else:
                 # client is not capable of switch, or is not wanted 
                 # in the new session
                 if client.isRunning():
+                    print('k2quit', client.client_id)
                     self.expected_clients.append(client)
                     client.quit()
                 else:
+                    print('k3rem', client.client_id)
                     remove_client_list.append(client)
-                    #self.removeClient(client)
         
         for client in remove_client_list:
-            client.setStatus(ray.ClientStatus.REMOVED)
             if client in self.clients:
-                self.clients.remove(client)
+                self.removeClient(client)
             else:
                 raise NameError('no client %s to remove' % client.client_id)
         
@@ -1123,14 +1122,14 @@ class OperatingSession(Session):
             #* conditions in JACK name registration. */
             for client in self.clients:
                 if (client.client_id == new_client.client_id
-                    and client.executable_path == new_client.executable_path
-                    and client.arguments == new_client.arguments):
+                    and client.running_executable == new_client.executable_path
+                    and client.running_arguments == new_client.arguments):
                     #we found the good existing client
                     break
             else:
                 for client in self.clients:
-                    if (client.executable_path == new_client.executable_path
-                            and client.arguments == new_client.arguments):
+                    if (client.running_executable == new_client.executable_path
+                        and client.running_arguments == new_client.arguments):
                         #we found a switchable client
                         break
                 else:
