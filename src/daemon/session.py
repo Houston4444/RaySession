@@ -1024,6 +1024,8 @@ class OperatingSession(Session):
             if sess_name:
                 self.name = sess_name
             
+            client_id_list = []
+            
             nodes = content.childNodes()
             
             for i in range(nodes.count()):
@@ -1038,6 +1040,10 @@ class OperatingSession(Session):
                         cx = client_xml.toElement()
                         client.readXmlProperties(cx)
                         
+                        if client.client_id in client_id_list:
+                            # prevent double same id
+                            continue
+                        
                         if tag_name == 'Clients':
                             if client.auto_start:
                                 new_client_exec_args.append(
@@ -1049,7 +1055,12 @@ class OperatingSession(Session):
                         elif tag_name == 'RemovedClients':
                             self.removed_clients.append(client)
                             client.sendGuiClientProperties(removed=True)
-                            
+                        
+                        else:
+                            continue
+                        
+                        client_id_list.append(client.client_id)
+                        
                 elif tag_name == "Windows":
                     server = self.getServer()
                     if server and server.option_desktops_memory:
@@ -1081,7 +1092,6 @@ class OperatingSession(Session):
                      in new_client_exec_args)):
                 # client will switch
                 # or keep alive if non active and running
-                print('k1sw', client.client_id)
                 new_client_exec_args.remove(
                     (client.running_executable, client.running_arguments))
                 
@@ -1089,11 +1099,9 @@ class OperatingSession(Session):
                 # client is not capable of switch, or is not wanted 
                 # in the new session
                 if client.isRunning():
-                    print('k2quit', client.client_id)
                     self.expected_clients.append(client)
                     client.quit()
                 else:
-                    print('k3rem', client.client_id)
                     remove_client_list.append(client)
         
         for client in remove_client_list:
