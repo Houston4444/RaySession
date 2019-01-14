@@ -216,7 +216,8 @@ class ClientSlot(QFrame):
         if status in (
                 ray.ClientStatus.LAUNCH,
                 ray.ClientStatus.OPEN,
-                ray.ClientStatus.SWITCH):
+                ray.ClientStatus.SWITCH,
+                ray.ClientStatus.NOOP):
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.saveButton.setEnabled(False)
@@ -397,7 +398,7 @@ class ListWidgetClients(QListWidget):
 
         server = GUIServerThread.instance()
         if server:
-            server.orderChanged(client_ids_list)
+            server.changeClientOrder(client_ids_list)
 
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):

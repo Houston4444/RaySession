@@ -44,6 +44,8 @@ class Client(ServerSender):
     name             = ''
     executable_path  = ''
     arguments        = ''
+    running_executable = ''
+    running_arguments  = ''
     tmp_arguments    = ''
     label            = ''
     icon             = ''
@@ -329,6 +331,9 @@ class Client(ServerSender):
             arguments.append('--net-daemon-id')
             arguments.append(str(self.getServer().net_daemon_id))
             
+        self.running_executable = self.executable_path
+        self.running_arguments  = self.arguments
+        
         self.process.start(self.executable_path, arguments)
         #self.process.start(
             #'konsole', 
