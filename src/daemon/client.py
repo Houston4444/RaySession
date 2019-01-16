@@ -889,12 +889,6 @@ class Client(ServerSender):
         self.sendGuiClientProperties()
         self.setStatus(ray.ClientStatus.OPEN)
         
-        if self.isCapableOf(":optional-gui:"):
-            self.sendGui("/ray/client/has_optional_gui", self.client_id)
-            
-            if self.start_gui_hidden:
-                self.send(src_addr, "/nsm/client/hide_optional_gui")
-                
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
         
@@ -902,3 +896,9 @@ class Client(ServerSender):
                   self.session.name, jack_client_name)
         
         self.pending_command = ray.Command.OPEN
+        
+        if self.isCapableOf(":optional-gui:"):
+            self.sendGui("/ray/client/has_optional_gui", self.client_id)
+            
+            if self.start_gui_hidden:
+                self.send(src_addr, "/nsm/client/hide_optional_gui")
