@@ -38,4 +38,6 @@
  <Client-Template icon="ADLplug" template-name="ADLplug" executable="ADLplug" client_id="adlplug" name="ADLplug"/>
  <Client-Template icon="petri-foo" template-name="Petri-Foo" executable="petri-foo" client_id="petrifoo" name="Petri-Foo"/>
  <Client-Template name="Shuriken" template-name="Shuriken" executable="shuriken" icon="shuriken" client_id="shuriken"/>
+ <Client-Template name="Patroneo" icon="patroneo" executable="patroneo" template-name="Patroneo" client_id="patroneo"/>
+ <Client-Template name="Fluajho" icon="fluajho" executable="fluajho" template-name="Fluajho" client_id="fluajho"/>
 </RAY-CLIENT-TEMPLATES>
