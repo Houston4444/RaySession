@@ -29,7 +29,7 @@
  <Client-Template template-name="Seq24" executable="ray-proxy" label="Seq24" client_id="seq24" name="Ray Proxy" icon="seq24" try-exec="seq24"/>
  <Client-Template executable="ray-proxy" name="Ray Proxy" icon="sequencer64" template-name="Sequencer64" client_id="seq64" label="Sequencer64" try-exec="seq64"/>
  <Client-Template template-name="SooperLooper" icon="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" name="SooperLooper" try-exec="sooperlooper;slgui"/>
-  <Client-Template template-name="SooperLooper +Transport" icon="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" name="SooperLooper" try-exec="sooperlooper;slgui" arguments="--transport_workaround"/>
+ <Client-Template template-name="SooperLooper +Transport" icon="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" name="SooperLooper" try-exec="sooperlooper;slgui" arguments="--transport_workaround"/>
  <Client-Template template-name="Jack Mixer" icon="jack_mixer" client_id="jack_mixer" executable="ray-proxy" label="Jack Mixer" name="Ray Proxy" try-exec="jack_mixer"/>
  <Client-Template template-name="Non-Sequencer" executable="non-sequencer" name="Non-Sequencer" icon="non-sequencer" client_id="sequencer"/>
  <Client-Template template-name="JACK Connexions" icon="curve-connector" client_id="patch" executable="ray-jackpatch" name="Jack Connexions"/>
