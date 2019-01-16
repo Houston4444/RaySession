@@ -29,7 +29,7 @@
  <Client-Template template-name="Seq24" executable="ray-proxy" label="Seq24" client_id="seq24" name="Ray Proxy" icon="seq24" try-exec="seq24"/>
  <Client-Template executable="ray-proxy" name="Ray Proxy" icon="sequencer64" template-name="Sequencer64" client_id="seq64" label="Sequencer64" try-exec="seq64"/>
  <Client-Template template-name="SooperLooper" icon="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" name="SooperLooper" try-exec="sooperlooper;slgui"/>
-  <Client-Template template-name="SooperLooper +Transport" icon="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" name="SooperLooper" try-exec="sooperlooper;slgui" arguments="--transport_workaround"/>
+ <Client-Template template-name="SooperLooper +Transport" icon="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" name="SooperLooper" try-exec="sooperlooper;slgui" arguments="--transport_workaround"/>
  <Client-Template template-name="Jack Mixer" icon="jack_mixer" client_id="jack_mixer" executable="ray-proxy" label="Jack Mixer" name="Ray Proxy" try-exec="jack_mixer"/>
  <Client-Template template-name="Non-Sequencer" executable="non-sequencer" name="Non-Sequencer" icon="non-sequencer" client_id="sequencer"/>
  <Client-Template template-name="JACK Connexions" icon="curve-connector" client_id="patch" executable="ray-jackpatch" name="Jack Connexions"/>
@@ -38,4 +38,6 @@
  <Client-Template icon="ADLplug" template-name="ADLplug" executable="ADLplug" client_id="adlplug" name="ADLplug"/>
  <Client-Template icon="petri-foo" template-name="Petri-Foo" executable="petri-foo" client_id="petrifoo" name="Petri-Foo"/>
  <Client-Template name="Shuriken" template-name="Shuriken" executable="shuriken" icon="shuriken" client_id="shuriken"/>
+ <Client-Template name="Patroneo" icon="patroneo" executable="patroneo" template-name="Patroneo" client_id="patroneo"/>
+ <Client-Template name="Fluajho" icon="fluajho" executable="fluajho" template-name="Fluajho" client_id="fluajho"/>
 </RAY-CLIENT-TEMPLATES>
