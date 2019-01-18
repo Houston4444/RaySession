@@ -640,10 +640,16 @@ class OperatingSession(Session):
         self.message("Session saved.")
         
         server = self.getServer()
-        if server and server.option_snapshots and not prevent_snapshot:
-            if self.snapshoter.hasChanges():
-                self.setServerStatus(ray.ServerStatus.SNAPSHOT)
-                self.snapshoter.save()
+        print('monf')
+        print(server and server.option_snapshots 
+                and not prevent_snapshot)
+        print(self.snapshoter.hasChanges())
+        if (server and server.option_snapshots 
+                and not prevent_snapshot
+                and self.snapshoter.hasChanges()):
+            self.setServerStatus(ray.ServerStatus.SNAPSHOT)
+            self.snapshoter.save()
+            return
             
         self.nextFunction()
     

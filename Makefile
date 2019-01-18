@@ -90,7 +90,7 @@ debug:
 
 install:
 	#clean unwanted __pycache__ folders
-	rm -f -R src/__pycache__ src/*/__pycache__
+	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__
 	
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/

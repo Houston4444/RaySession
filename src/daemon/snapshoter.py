@@ -4,12 +4,12 @@ import shutil
 import subprocess
 import sys
 import time
-from PyQt5.QtCore import QProcess, QProcessEnvironment
+from PyQt5.QtCore import QProcess, QProcessEnvironment, QTimer
 
 import ray
 
 def gitStringer(string):
-    for char in (' ', '*', '?'):
+    for char in (' ', '*', '?', '[', ']', '(', ')'):
         string = string.replace(char, "\\" + char)
       
     for char in ('#', '!'):
@@ -26,6 +26,23 @@ class Snapshoter:
         self.exclude_path = 'info/exclude'
         self.max_file_size = 50 #in Mb
         
+        self.next_snapshot_name = ''
+        
+        
+        self.adder_process = QProcess()
+        self.adder_process.finished.connect(self.save_step_1)
+        self.adder_process.readyReadStandardOutput.connect(self.adderStandardOutput)
+        
+        self.adder_timer = QTimer()
+        self.adder_timer.setSingleShot(True)
+        self.adder_timer.setInterval(2000)
+        self.adder_timer.timeout.connect(self.gitAdderTooLong)
+    
+    def adderStandardOutput(self):
+        print('moerko')
+        standard_output = self.adder_process.readAllStandardOutput().data()
+        print('adddd', standard_output.decode())
+    
     def getGitDir(self):
         if not self.session.path:
             raise NameError("attempting to save with no session path !!!")
@@ -74,7 +91,7 @@ class Snapshoter:
         
         return tagdate
     
-    def writeExcludeFile(self):
+    def writeExcludeFile(self, spath):
         file_path = "%s/%s/%s" % (
                         self.session.path, self.gitname, self.exclude_path)
         
@@ -117,7 +134,6 @@ class Snapshoter:
                     
         contents += '\n'
         contents += "# Extensions ignored by clients\n"
-        
         
         # write client specific ignored extension
         for client in self.session.clients:
@@ -189,7 +205,7 @@ class Snapshoter:
             return False
         
         if not self.isInit():
-            return False
+            return True
         
         try:
             process = subprocess.run(
@@ -197,9 +213,25 @@ class Snapshoter:
         except:
             return False
         
-        return bool(process.returncode)
+        if process.returncode:
+            return True
+        
+        try:
+            command = self.getGitCommandList('ls-files',
+                                             '--exclude-standard',
+                                             '--others')
+            output = subprocess.check_output(command)
+        except:
+            return False
+        
+        return bool(output)
+    
+    def gitAdderTooLong(self):
+        print("c'est trop long")
     
     def save(self, name=''):
+        self.next_snapshot_name = name
+        
         if not self.session.path:
             return
             
@@ -211,25 +243,29 @@ class Snapshoter:
         
         self.writeExcludeFile()
         
-        self.runGit('add', '-A')
+        all_args = self.getGitCommandList('add', '-A', '-v')
+        
+        self.adder_timer.start()
+        self.adder_process.start(all_args.pop(0), all_args)
+        
+    def save_step_1(self):
+        self.adder_timer.stop()
         self.runGit('commit', '-m', 'ray')
                 
         snapshot_name = self.getTagDate()
-        if name:
-            snapshot_name = "%s_%s" % (snapshot_name, name)
+        if self.next_snapshot_name:
+            snapshot_name = "%s_%s" % (snapshot_name, self.next_snapshot_name)
         
         self.runGit('tag', '-a', snapshot_name, '-m', 'ray')
         
         if self.session.hasServer():
             self.session.sendGui('/reply_snapshots_list', snapshot_name)
+            
+        self.session.nextFunction()
         
     def load(self, spath, snapshot):
         tag_for_last = "%s,%s" % (self.getTagDate(), snapshot)
-        self.runGitAt(spath, 'tag', '-a', tag_for_last, '-m', 'ray')
+        self.runGitAt(spath, 'reset', '--hard')
+        #self.runGitAt(spath, 'tag', '-a', tag_for_last, '-m', 'ray')
+        self.runGitAt(spath, 'checkout', snapshot)
         
-        try:
-            self.runGitAt(spath, 'checkout', snapshot)
-        except:
-            return False
-        
-        return True

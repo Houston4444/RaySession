@@ -167,7 +167,7 @@ def getListInSettings(settings, path):
     return settings_list
 
 def getGitIgnoredExtensions():
-    return ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak"
+    return ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
 
 def isPidChildOf(child_pid, parent_pid):
     if child_pid < parent_pid:
