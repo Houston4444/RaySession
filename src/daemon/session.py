@@ -50,6 +50,7 @@ class Session(ServerSender):
         self.bookmarker = BookMarker()
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
+        self.snapshoter.saved.connect(self.save_step2)
     
     #############
     def oscReply(self, *args):
@@ -371,6 +372,9 @@ class OperatingSession(Session):
         self.osc_args     = args
         self.osc_src_addr = src_addr
     
+    #def afterProcessGoTo(self, process, follow, wait_for):
+    #def whenReadyGoTo(self, 
+    
     def waitAndGoTo(self, duration, follow, wait_for, single_shot=True):
         self.timer.stop()
         
@@ -544,7 +548,7 @@ class OperatingSession(Session):
     # then, when timer is timeout or when all client replied, 
     # save_step1 is launched.
         
-    def save(self, from_client_id='', prevent_snapshot=False):
+    def save(self, from_client_id='', rewind_snapshot=''):
         if not self.path:
             self.nextFunction()
             return
@@ -560,10 +564,10 @@ class OperatingSession(Session):
             client.save()
                 
         self.waitAndGoTo(10000,
-                         (self.save_step1, prevent_snapshot),
+                         (self.save_step1, rewind_snapshot),
                          ray.WaitFor.REPLY)
             
-    def save_step1(self, prevent_snapshot=False):
+    def save_step1(self, rewind_snapshot=''):
         self.cleanExpected()
         
         if not self.path:
@@ -640,17 +644,17 @@ class OperatingSession(Session):
         self.message("Session saved.")
         
         server = self.getServer()
-        print('monf')
-        print(server and server.option_snapshots 
-                and not prevent_snapshot)
-        print(self.snapshoter.hasChanges())
         if (server and server.option_snapshots 
-                and not prevent_snapshot
-                and self.snapshoter.hasChanges()):
+                and (rewind_snapshot or self.snapshoter.hasChanges())):
             self.setServerStatus(ray.ServerStatus.SNAPSHOT)
-            self.snapshoter.save()
-            return
-            
+            self.snapshoter.save('', rewind_snapshot)
+            # snapshoter saved is connected to save_step2
+        else:
+            self.save_step2()
+        
+        #envoyer vers step2 après signal saved si voulu(snapshoter)
+    
+    def save_step2(self):
         self.nextFunction()
     
     def saveDone(self):
@@ -1422,9 +1426,11 @@ class SignaledSession(OperatingSession):
             return 
         
         self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [(self.save, '', True), 
+        snapshot = args[0]
+        
+        self.process_order = [(self.save, '', snapshot), 
                               self.close, 
-                              (self.initSnapshot, self.path, args[0]),
+                              (self.initSnapshot, self.path, snapshot),
                               (self.load, self.path), 
                               self.loadDone]
         

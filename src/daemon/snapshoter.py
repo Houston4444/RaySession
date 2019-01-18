@@ -4,9 +4,11 @@ import shutil
 import subprocess
 import sys
 import time
-from PyQt5.QtCore import QProcess, QProcessEnvironment, QTimer
+from PyQt5.QtCore import (QProcess, QProcessEnvironment, QTimer,
+                          QObject, pyqtSignal)
 
 import ray
+from daemon_tools import Terminal
 
 def gitStringer(string):
     for char in (' ', '*', '?', '[', ']', '(', ')'):
@@ -19,15 +21,18 @@ def gitStringer(string):
     return string
     
     
-class Snapshoter:
+class Snapshoter(QObject):
+    saved = pyqtSignal()
+    
     def __init__(self, session):
+        QObject.__init__(self)
         self.session = session
         self.gitname = '.ray-snapshots'
         self.exclude_path = 'info/exclude'
         self.max_file_size = 50 #in Mb
         
-        self.next_snapshot_name = ''
-        
+        self.next_snapshot_name  = ''
+        self.next_rw_snapshot = ''
         
         self.adder_process = QProcess()
         self.adder_process.finished.connect(self.save_step_1)
@@ -91,7 +96,7 @@ class Snapshoter:
         
         return tagdate
     
-    def writeExcludeFile(self, spath):
+    def writeExcludeFile(self):
         file_path = "%s/%s/%s" % (
                         self.session.path, self.gitname, self.exclude_path)
         
@@ -229,16 +234,25 @@ class Snapshoter:
     def gitAdderTooLong(self):
         print("c'est trop long")
     
-    def save(self, name=''):
-        self.next_snapshot_name = name
-        
+    def canSave(self):
         if not self.session.path:
-            return
+            return False
             
         if not self.isInit():
             self.runGit('init')
             
         if not self.isInit():
+            return False
+        
+        return True
+    
+    def save(self, name='', rewind_snapshot=''):
+        self.next_snapshot_name  = name
+        self.next_rw_snapshot = rewind_snapshot
+        
+        if not self.canSave():
+            Terminal.message("can't snapshot")
+            self.saved.emit()
             return
         
         self.writeExcludeFile()
@@ -247,24 +261,28 @@ class Snapshoter:
         
         self.adder_timer.start()
         self.adder_process.start(all_args.pop(0), all_args)
+        # self.adder_process.finished is connected to self.save_step_1
         
     def save_step_1(self):
         self.adder_timer.stop()
         self.runGit('commit', '-m', 'ray')
                 
         snapshot_name = self.getTagDate()
+        
         if self.next_snapshot_name:
             snapshot_name = "%s_%s" % (snapshot_name, self.next_snapshot_name)
-        
+        elif self.next_rw_snapshot:
+            snapshot_name = "%s,%s" % (snapshot_name, self.next_rw_snapshot)
+            
         self.runGit('tag', '-a', snapshot_name, '-m', 'ray')
         
         if self.session.hasServer():
             self.session.sendGui('/reply_snapshots_list', snapshot_name)
             
-        self.session.nextFunction()
+        self.saved.emit()
         
     def load(self, spath, snapshot):
-        tag_for_last = "%s,%s" % (self.getTagDate(), snapshot)
+        #tag_for_last = "%s,%s" % (self.getTagDate(), snapshot)
         self.runGitAt(spath, 'reset', '--hard')
         #self.runGitAt(spath, 'tag', '-a', tag_for_last, '-m', 'ray')
         self.runGitAt(spath, 'checkout', snapshot)
