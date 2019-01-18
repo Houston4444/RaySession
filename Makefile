@@ -80,7 +80,7 @@ locale/%.qm: locale/%.ts
 clean:
 	rm -f *~ src/*~ src/*.pyc src/gui/ui_*.py src/clients/proxy/ui_*.py \
 	      src/gui/resources_rc.py locale/*.qm
-	rm -f -R src/__pycache__ src/*/__pycache__
+	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 debug:
