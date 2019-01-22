@@ -6,7 +6,7 @@ import sys
 import time
 from PyQt5.QtCore import (QProcess, QProcessEnvironment, QTimer,
                           QObject, pyqtSignal)
-
+from PyQt5.QtXml import QDomDocument
 import ray
 from daemon_tools import Terminal
 
@@ -29,6 +29,7 @@ class Snapshoter(QObject):
         self.session = session
         self.gitname = '.ray-snapshots'
         self.exclude_path = 'info/exclude'
+        self.history_path = "session_history.xml"
         self.max_file_size = 50 #in Mb
         
         self.next_snapshot_name  = ''
@@ -74,6 +75,9 @@ class Snapshoter(QObject):
         if not gitdir:
             return []
         
+        if not self.isInit():
+            return []
+        
         all_list = subprocess.check_output(self.getGitCommandList('tag'))
         all_list_utf = all_list.decode()
         all_tags = all_list_utf.split('\n')
@@ -95,6 +99,82 @@ class Snapshoter(QObject):
                     date.tm_hour, date.tm_min, date.tm_sec)
         
         return tagdate
+    
+    def writeHistoryFile(self, date_str, snapshot_name='', rewind_snapshot=''):
+        file_path = "%s/%s/%s" % (
+                        self.session.path, self.gitname, self.history_path)
+        
+        #history_contents = ""
+        xml = QDomDocument()
+        
+        if not os.path.exists(file_path):
+            #history_contents = ""
+            pass
+            
+        try:
+            history_file = open(file_path, 'r')
+            xml.setContent(history_file.read())
+            history_file.close()
+        except:
+            pass
+        
+        if xml.firstChild().isNull():
+            SNS_xml = xml.createElement('SNAPSHOTS')
+            xml.appendChild(SNS_xml)
+        else:
+            SNS_xml = xml.firstChild()
+        
+        
+        
+        snapshot_el = xml.createElement('Snapshot')
+        snapshot_el.setAttribute('ref', date_str)
+        snapshot_el.setAttribute('name', snapshot_name)
+        snapshot_el.setAttribute('rewind_snapshot', rewind_snapshot)
+        snapshot_el.setAttribute('session_name', self.session.name)
+        snapshot_el.setAttribute('VERSION', ray.VERSION)
+        
+        for client in self.session.clients + self.session.removed_clients:
+            client_el = xml.createElement('client')
+            client.writeXmlProperties(client_el)
+            
+            for client_file_path in client.getProjectFiles():
+                base_path = client_file_path.replace(
+                    "%s/" % self.session.path, '', 1)
+                file_xml = xml.createElement('file')
+                file_xml.setAttribute('path', base_path)
+                client_el.appendChild(file_xml)
+            
+            snapshot_el.appendChild(client_el)
+            
+            
+        
+        #session_xml = QDomDocument()
+        #session_xml_path = "%s/raysession.xml" % self.session.path
+        
+        #try:
+            #session_file = open(session_xml_path, 'r')
+            #session_xml.setContent(session_file.read())
+        #except:
+            #return
+        
+        ##session_el = session_xml.firstChild()
+        
+        #for i in range(session_xml.childNodes().count()):
+            #node = session_xml.childNodes().at(i)
+            #if node.toElement().tagName() == 'RAYSESSION':
+                #snapshot_el.appendChild(node)
+                #break
+            
+        #print(session_el.toElement().attribute('VERSION'))
+        print('zifj')
+        #snapshot_el.appendChild(session_el)
+        print('evrf')
+        SNS_xml.appendChild(snapshot_el)
+        print('eirji)')
+        print(xml.toString())
+        history_file = open(file_path, 'w')
+        history_file.write(xml.toString())
+        history_file.close()
     
     def writeExcludeFile(self):
         file_path = "%s/%s/%s" % (
@@ -248,13 +328,14 @@ class Snapshoter(QObject):
     
     def save(self, name='', rewind_snapshot=''):
         self.next_snapshot_name  = name
-        self.next_rw_snapshot = rewind_snapshot
+        self._rw_snapshot = rewind_snapshot
         
         if not self.canSave():
             Terminal.message("can't snapshot")
             self.saved.emit()
             return
         
+        self.writeHistoryFile(self.getTagDate())
         self.writeExcludeFile()
         
         all_args = self.getGitCommandList('add', '-A', '-v')
@@ -271,8 +352,11 @@ class Snapshoter(QObject):
         
         if self.next_snapshot_name:
             snapshot_name = "%s_%s" % (snapshot_name, self.next_snapshot_name)
-        elif self.next_rw_snapshot:
-            snapshot_name = "%s,%s" % (snapshot_name, self.next_rw_snapshot)
+        elif self._rw_snapshot:
+            snapshot_name = "%s,%s" % (snapshot_name, self._rw_snapshot)
+            
+        print('ukulélé')
+        print(snapshot_name)
             
         self.runGit('tag', '-a', snapshot_name, '-m', 'ray')
         
@@ -283,7 +367,9 @@ class Snapshoter(QObject):
         
     def load(self, spath, snapshot):
         #tag_for_last = "%s,%s" % (self.getTagDate(), snapshot)
+        print('load bien executé')
         self.runGitAt(spath, 'reset', '--hard')
+        print('tadididia')
         #self.runGitAt(spath, 'tag', '-a', tag_for_last, '-m', 'ray')
         self.runGitAt(spath, 'checkout', snapshot)
         

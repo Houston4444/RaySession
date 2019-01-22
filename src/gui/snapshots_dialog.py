@@ -23,6 +23,7 @@ class Snapshot:
     date_time = None
     rewind_date_time = None
     label = ''
+    rewind_label = ''
     
     def __init__(self, date_time):
         self.date_time = date_time
@@ -107,7 +108,9 @@ class Snapshot:
         if self.rewind_date_time:
             display_text += " before rewind to "
             
-            if self.rewind_date_time.date() == self.date_time.date():
+            if self.rewind_label:
+                display_text += self.rewind_label
+            elif self.rewind_date_time.date() == self.date_time.date():
                 display_text += self.rewind_date_time.toString('hh:mm')
             elif (self.rewind_date_time.date().year()
                   == self.date_time.date().year()):
@@ -117,10 +120,6 @@ class Snapshot:
         
         if self.label:
             display_text += "  %s" % self.label
-        
-        #if self.before_rewind_to:
-            #display_text += " before rewind to %s" % (
-                                #self.before_rewind_to)
         
         item = QTreeWidgetItem([display_text])
         item.setData(0, Qt.UserRole, self.text)
@@ -271,43 +270,65 @@ class SnapshotsDialog(ChildDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
            bool(current and current.data(0, Qt.UserRole))) 
     
+    def decodeTimeString(self, time_str):
+        while time_str.endswith('_'):
+            time_str = time_str[:-1]
+        
+        label = ''
+        strs = time_str.split('_')
+        
+        if len(strs) > 6:
+            time_str = ''
+            i = 0
+            for stri in strs:
+                if i < 6: 
+                    time_str += "%s_" % stri
+                else:
+                    label += "%s_" % stri
+                i+=1
+                
+            time_str = time_str[:-1]
+            label = label[:-1]
+            
+        return (time_str, label)
+    
     def addSnapshots(self, snaptexts):
         for snaptext in snaptexts:
             if not snaptext:
                 continue
             
-            time_str, coma, rewind_time_str = snaptext.partition(',')
-            while time_str.endswith('_'):
-                time_str = time_str[:-1]
+            time_str_full, coma, rw_time_str_full = snaptext.partition(',')
             
-            label = ''
-            strs = time_str.split('_')
             
-            if len(strs) > 6:
-                time_str = ''
-                i = 0
-                for stri in strs:
-                    if i < 6: 
-                        time_str += "%s_" % stri
-                    else:
-                        label += "%s_" % stri
-                    i+=1
+            #label = ''
+            #strs = time_str.split('_')
+            
+            #if len(strs) > 6:
+                #time_str = ''
+                #i = 0
+                #for stri in strs:
+                    #if i < 6: 
+                        #time_str += "%s_" % stri
+                    #else:
+                        #label += "%s_" % stri
+                    #i+=1
                     
-                time_str = time_str[:-1]
-                label = label[:-1]
+                #time_str = time_str[:-1]
+                #label = label[:-1]
+            time_str, label = self.decodeTimeString(time_str_full)
+            rw_time_str, rw_label = self.decodeTimeString(rw_time_str_full)
             
             date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
-            rw_date_time = QDateTime.fromString(rewind_time_str,
+            rw_date_time = QDateTime.fromString(rw_time_str,
                                                 'yyyy_M_d_h_m_s')
             if not rw_date_time.isValid():
                 rw_date_time = None
-            
-            print(snaptext, rw_date_time, rewind_time_str)
             
             snapshot = Snapshot(date_time)
             snapshot.text = snaptext
             snapshot.label = label
             snapshot.rewind_date_time = rw_date_time
+            snapshot.rewind_label = rw_label
             
             self.main_snap_group.add(snapshot)
             
