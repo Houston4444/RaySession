@@ -546,9 +546,6 @@ class OscServerThread(ClientCommunicating):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
         tag_name = args[0]
-        if not ray.isGitTaggable(tag_name):
-            return
-        
         signaler.take_snapshot.emit(tag_name)
     
     @make_method('/ray/session/close', '')

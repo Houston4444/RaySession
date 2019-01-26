@@ -20,16 +20,23 @@ def gitStringer(string):
 
     return string
 
-def fullRefForGui(ref, name, rewind_snapshot):
-    output=ref
-    if name:
-        output+= '_'
-        output+= name
-    if rewind_snapshot:
-        output+= ','
-        output+= rewind_snapshot
+def fullRefForGui(ref, name, rw_ref, rw_name=''):
+    #output=ref
+    #if name:
+        #output+= '_'
+        #output+= name
+    #if rewind_snapshot:
+        #output+= ','
+        #output+= rewind_snapshot
     
-    return output
+    #return output
+
+    #output = ref
+    #output+= ':'
+    #if rewind_snapshot:
+        #output+= rewind_snapshot
+    #print("%s:%s\n%s:%s" % (ref, name, rw_ref, rw_name))    
+    return "%s:%s\n%s:%s" % (ref, name, rw_ref, rw_name) 
 
 class Snapshoter(QObject):
     saved = pyqtSignal()
@@ -103,6 +110,7 @@ class Snapshoter(QObject):
         nodes = SNS_xml.childNodes()
         
         all_tags = []
+        all_snaps = []
         
         for i in range(nodes.count()):
             node = nodes.at(i)
@@ -111,8 +119,25 @@ class Snapshoter(QObject):
             ref   = el.attribute('ref')
             name  = el.attribute('name')
             rw_sn = el.attribute('rewind_snapshot')
+            rw_name = ""
                 
-            all_tags.append(fullRefForGui(ref, name, rw_sn))
+            if not ref.replace('_', '').isdigit():
+                continue
+                
+            if '\n' in name:
+                name = ""
+            
+            if not rw_sn.replace('_', '').isdigit():
+                rw_sn = ""
+            
+            if rw_sn:
+                for snap in all_snaps:
+                    if snap[0] == rw_sn and not '\n' in snap[1]:
+                        rw_name = snap[1]
+                        break
+            
+            all_snaps.append((ref, name))
+            all_tags.append(fullRefForGui(ref, name, rw_sn, rw_name))
             
         return all_tags.__reversed__()
     
@@ -301,18 +326,10 @@ class Snapshoter(QObject):
             return True
         
         try:
-            process = subprocess.run(
-                self.getGitCommandList('diff', '--exit-code', '--quiet'))
-        except:
-            return False
-        
-        if process.returncode:
-            return True
-        
-        try:
             command = self.getGitCommandList('ls-files',
                                              '--exclude-standard',
-                                             '--others')
+                                             '--others',
+                                             '--modified')
             output = subprocess.check_output(command)
         except:
             return False
@@ -364,7 +381,7 @@ class Snapshoter(QObject):
             #snapshot_name = "%s,%s" % (snapshot_name, self._rw_snapshot)
             
         print('ukulélé')
-        print(snapshot_name)
+        #print(snapshot_name)
             
         self.runGit('tag', '-a', ref, '-m', 'ray')
         self.writeHistoryFile(ref, self.next_snapshot_name, self._rw_snapshot)

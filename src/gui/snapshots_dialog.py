@@ -62,6 +62,12 @@ class Snapshot:
     def canTake(self, other):
         return False
     
+    def reOrganize(self):
+        pass
+    
+    def add(self):
+        pass
+    
     def commonGroup(self, other):
         if not (self.isValid() and other.isValid()):
             return GROUP_MAIN
@@ -79,6 +85,8 @@ class Snapshot:
             return self.sub_type +1
         
         return common_group
+    
+    
     
     def makeItem(self, sub_type):
         if self.isToday():
@@ -120,7 +128,7 @@ class Snapshot:
                 display_text += self.rewind_date_time.toString('d MMM yyyy hh:mm')
         
         if self.label:
-            display_text += "  %s" % self.label
+            display_text += "\n%s" % self.label
         
         item = QTreeWidgetItem([display_text])
         item.setData(0, Qt.UserRole, self.text)
@@ -158,6 +166,17 @@ class SnapGroup(Snapshot):
         
         return True
     
+    def hasUngroupableWith(self, new_snapshot, sub_type):
+        for snapshot in self.snapshots:
+            if snapshot.commonGroup(new_snapshot) > sub_type:
+                return True
+        
+        #print('pas dingroupable', new_snapshot.text, sub_type)
+        #for snapshot in self.snapshots:
+            #print(snapshot.commonGroup(new_snapshot))
+                  
+        return False
+    
     def add(self, new_snapshot):
         if not new_snapshot.isValid():
             self.snapshots.append(new_snapshot)
@@ -172,14 +191,26 @@ class SnapGroup(Snapshot):
                 snapshot.add(new_snapshot)
                 return
         
-        # check if at least one snapshot can't group with new_snapshot
-        for snapshot in self.snapshots:
-            if snapshot.commonGroup(new_snapshot) >= self.sub_type:
-                break
-        else:
-            # no one can't group, so directly add this snapshot (or group)
-            self.snapshots.append(new_snapshot)
-            return
+        ## check if at least one snapshot can't group with new_snapshot
+        #for snapshot in self.snapshots:
+            #if snapshot.commonGroup(new_snapshot) >= self.sub_type:
+                #break
+        #else:
+            ## no one can't group, so directly add this snapshot (or group)
+            #self.snapshots.append(new_snapshot)
+            #return
+        
+        #shared_group = GROUP_DAY
+        
+        #if len(self.snapshots) > 1:
+            #for snapshot in self.snapshots[1:]:
+                #common = snapshot.commonGroup(self.snapshots[0])
+                #if common > shared_group:
+                    #shared_group = common
+                    
+                #if shared_group >= self.sub_type:
+                    #break
+        
         
         for snapshot in self.snapshots:
             common_group = snapshot.commonGroup(new_snapshot)
@@ -241,8 +272,7 @@ class TakeSnapshotDialog(ChildDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         
     def textChanged(self, text):
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
-            ray.isGitTaggable(text))
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(text))
         
     def getSnapshotName(self):
         return self.ui.lineEdit.text()
@@ -298,26 +328,15 @@ class SnapshotsDialog(ChildDialog):
             if not snaptext:
                 continue
             
-            time_str_full, coma, rw_time_str_full = snaptext.partition(',')
+            time_str_full, line_change, rw_time_str_full = snaptext.partition('\n')
+            time_str, two_points, label = time_str_full.partition(':')
+            rw_time_str, two_points, rw_label = rw_time_str_full.partition(':')
             
+            #time_str, label = self.decodeTimeString(time_str_full)
+            #rw_time_str, rw_label = self.decodeTimeString(rw_time_str_full)
             
-            #label = ''
-            #strs = time_str.split('_')
-            
-            #if len(strs) > 6:
-                #time_str = ''
-                #i = 0
-                #for stri in strs:
-                    #if i < 6: 
-                        #time_str += "%s_" % stri
-                    #else:
-                        #label += "%s_" % stri
-                    #i+=1
-                    
-                #time_str = time_str[:-1]
-                #label = label[:-1]
-            time_str, label = self.decodeTimeString(time_str_full)
-            rw_time_str, rw_label = self.decodeTimeString(rw_time_str_full)
+            #time_str = snaptext.partition(':')[0]
+            #label = 
             
             date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
             rw_date_time = QDateTime.fromString(rw_time_str,
