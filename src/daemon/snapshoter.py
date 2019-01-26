@@ -19,8 +19,18 @@ def gitStringer(string):
             string = "\\" + string
 
     return string
+
+def fullRefForGui(ref, name, rewind_snapshot):
+    output=ref
+    if name:
+        output+= '_'
+        output+= name
+    if rewind_snapshot:
+        output+= ','
+        output+= rewind_snapshot
     
-    
+    return output
+
 class Snapshoter(QObject):
     saved = pyqtSignal()
     
@@ -45,7 +55,6 @@ class Snapshoter(QObject):
         self.adder_timer.timeout.connect(self.gitAdderTooLong)
     
     def adderStandardOutput(self):
-        print('moerko')
         standard_output = self.adder_process.readAllStandardOutput().data()
         print('adddd', standard_output.decode())
     
@@ -70,26 +79,41 @@ class Snapshoter(QObject):
         
         return first_args + list(args)
     
+    
     def list(self):
-        gitdir = self.getGitDir()
-        if not gitdir:
-            return []
-        
         if not self.isInit():
             return []
         
-        all_list = subprocess.check_output(self.getGitCommandList('tag'))
-        all_list_utf = all_list.decode()
-        all_tags = all_list_utf.split('\n')
+        file_path = "%s/%s/%s" % (
+                        self.session.path, self.gitname, self.history_path)
         
-        if len(all_tags) >= 1:
-            if not all_tags[-1]:
-                all_tags = all_tags[:-1]
+        xml = QDomDocument()
+            
+        try:
+            history_file = open(file_path, 'r')
+            xml.setContent(history_file.read())
+            history_file.close()
+        except:
+            return []
         
-        if len(all_tags) >= 1:
-            if all_tags[-1] == 'list':
-                all_tags = all_tags[:-1]
+        SNS_xml = xml.documentElement()
+        if SNS_xml.tagName() != 'SNAPSHOTS':
+            return []
         
+        nodes = SNS_xml.childNodes()
+        
+        all_tags = []
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            el = node.toElement()
+            
+            ref   = el.attribute('ref')
+            name  = el.attribute('name')
+            rw_sn = el.attribute('rewind_snapshot')
+                
+            all_tags.append(fullRefForGui(ref, name, rw_sn))
+            
         return all_tags.__reversed__()
     
     def getTagDate(self):
@@ -101,15 +125,13 @@ class Snapshoter(QObject):
         return tagdate
     
     def writeHistoryFile(self, date_str, snapshot_name='', rewind_snapshot=''):
+        if not self.session.path:
+            return
+        
         file_path = "%s/%s/%s" % (
                         self.session.path, self.gitname, self.history_path)
         
-        #history_contents = ""
         xml = QDomDocument()
-        
-        if not os.path.exists(file_path):
-            #history_contents = ""
-            pass
             
         try:
             history_file = open(file_path, 'r')
@@ -118,13 +140,15 @@ class Snapshoter(QObject):
         except:
             pass
         
+        #content = xml.documentElement()
+        #if content.tagName() == 'SNAPSHOTS':
+            
+        
         if xml.firstChild().isNull():
             SNS_xml = xml.createElement('SNAPSHOTS')
             xml.appendChild(SNS_xml)
         else:
             SNS_xml = xml.firstChild()
-        
-        
         
         snapshot_el = xml.createElement('Snapshot')
         snapshot_el.setAttribute('ref', date_str)
@@ -146,32 +170,8 @@ class Snapshoter(QObject):
             
             snapshot_el.appendChild(client_el)
             
-            
-        
-        #session_xml = QDomDocument()
-        #session_xml_path = "%s/raysession.xml" % self.session.path
-        
-        #try:
-            #session_file = open(session_xml_path, 'r')
-            #session_xml.setContent(session_file.read())
-        #except:
-            #return
-        
-        ##session_el = session_xml.firstChild()
-        
-        #for i in range(session_xml.childNodes().count()):
-            #node = session_xml.childNodes().at(i)
-            #if node.toElement().tagName() == 'RAYSESSION':
-                #snapshot_el.appendChild(node)
-                #break
-            
-        #print(session_el.toElement().attribute('VERSION'))
-        print('zifj')
-        #snapshot_el.appendChild(session_el)
-        print('evrf')
         SNS_xml.appendChild(snapshot_el)
-        print('eirji)')
-        print(xml.toString())
+        
         history_file = open(file_path, 'w')
         history_file.write(xml.toString())
         history_file.close()
@@ -254,11 +254,19 @@ class Snapshoter(QObject):
             
             for filename in filenames:
                 if filename.endswith(session_ign_list):
+                    if os.path.islink(filename):
+                        short_folder = foldername.replace(
+                                        self.session.path + '/', '', 1)
+                        line = gitStringer("%s/%s" % (short_folder, filename))
+                        contents += '!%s\n' % line
                     # file with extension globally ignored but
                     # unignored by its client will not be ignored
                     # and that is well as this.
                     continue
                         
+                if os.path.islink(filename):
+                    continue
+                
                 try:
                     file_size = os.path.getsize(os.path.join(foldername,
                                                              filename))
@@ -335,7 +343,7 @@ class Snapshoter(QObject):
             self.saved.emit()
             return
         
-        self.writeHistoryFile(self.getTagDate())
+        #self.writeHistoryFile(self.getTagDate())
         self.writeExcludeFile()
         
         all_args = self.getGitCommandList('add', '-A', '-v')
@@ -348,20 +356,23 @@ class Snapshoter(QObject):
         self.adder_timer.stop()
         self.runGit('commit', '-m', 'ray')
                 
-        snapshot_name = self.getTagDate()
+        ref = self.getTagDate()
         
-        if self.next_snapshot_name:
-            snapshot_name = "%s_%s" % (snapshot_name, self.next_snapshot_name)
-        elif self._rw_snapshot:
-            snapshot_name = "%s,%s" % (snapshot_name, self._rw_snapshot)
+        #if self.next_snapshot_name:
+            #snapshot_name = "%s_%s" % (snapshot_name, self.next_snapshot_name)
+        #elif self._rw_snapshot:
+            #snapshot_name = "%s,%s" % (snapshot_name, self._rw_snapshot)
             
         print('ukulélé')
         print(snapshot_name)
             
-        self.runGit('tag', '-a', snapshot_name, '-m', 'ray')
+        self.runGit('tag', '-a', ref, '-m', 'ray')
+        self.writeHistoryFile(ref, self.next_snapshot_name, self._rw_snapshot)
         
         if self.session.hasServer():
-            self.session.sendGui('/reply_snapshots_list', snapshot_name)
+            self.session.sendGui('/reply_snapshots_list',
+                                 fullRefForGui(ref, self.next_snapshot_name, 
+                                               self._rw_snapshot))
             
         self.saved.emit()
         

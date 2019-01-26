@@ -24,6 +24,7 @@ class Snapshot:
     rewind_date_time = None
     label = ''
     rewind_label = ''
+    ref = ''
     
     def __init__(self, date_time):
         self.date_time = date_time
