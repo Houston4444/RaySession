@@ -40,14 +40,19 @@ class Snapshoter(QObject):
         self.adder_process.finished.connect(self.save_step_1)
         self.adder_process.readyReadStandardOutput.connect(self.adderStandardOutput)
         
-        self.adder_timer = QTimer()
-        self.adder_timer.setSingleShot(True)
-        self.adder_timer.setInterval(2000)
-        self.adder_timer.timeout.connect(self.gitAdderTooLong)
+        self._n_file_changed = 0
+        self._n_file_treated = 0
     
     def adderStandardOutput(self):
         standard_output = self.adder_process.readAllStandardOutput().data()
-        print('adddd', standard_output.decode())
+        
+        if not self._n_file_changed:
+            return
+        
+        self._n_file_treated += len(standard_output.decode().split('\n')) -1
+        
+        self.session.sendGui('/ray/gui/server_progress',
+                             self._n_file_treated / self._n_file_changed)
     
     def getGitDir(self):
         if not self.session.path:
@@ -317,10 +322,10 @@ class Snapshoter(QObject):
         except:
             return False
         
+        self._n_file_treated = 0
+        self._n_file_changed = len(output.decode().split('\n')) -1
+        
         return bool(output)
-    
-    def gitAdderTooLong(self):
-        print("c'est trop long")
     
     def canSave(self):
         if not self.session.path:
@@ -347,23 +352,13 @@ class Snapshoter(QObject):
         
         all_args = self.getGitCommandList('add', '-A', '-v')
         
-        self.adder_timer.start()
         self.adder_process.start(all_args.pop(0), all_args)
         # self.adder_process.finished is connected to self.save_step_1
         
     def save_step_1(self):
-        self.adder_timer.stop()
         self.runGit('commit', '-m', 'ray')
                 
         ref = self.getTagDate()
-        
-        #if self.next_snapshot_name:
-            #snapshot_name = "%s_%s" % (snapshot_name, self.next_snapshot_name)
-        #elif self._rw_snapshot:
-            #snapshot_name = "%s,%s" % (snapshot_name, self._rw_snapshot)
-            
-        print('ukulélé')
-        #print(snapshot_name)
             
         self.runGit('tag', '-a', ref, '-m', 'ray')
         self.writeHistoryFile(ref, self.next_snapshot_name, self._rw_snapshot)
@@ -376,10 +371,6 @@ class Snapshoter(QObject):
         self.saved.emit()
         
     def load(self, spath, snapshot):
-        #tag_for_last = "%s,%s" % (self.getTagDate(), snapshot)
-        print('load bien executé')
         self.runGitAt(spath, 'reset', '--hard')
-        print('tadididia')
-        #self.runGitAt(spath, 'tag', '-a', tag_for_last, '-m', 'ray')
         self.runGitAt(spath, 'checkout', snapshot)
         

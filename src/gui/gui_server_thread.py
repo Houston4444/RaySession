@@ -229,6 +229,8 @@ class GUIServerThread(ServerThread):
     @make_method('/ray/gui/server_progress', 'f')
     def guiServerProgress(self, path, args):
         self.debugg(path, args)
+        
+        print('youplaz', args[0])
 
         progress = args[0]
         self._signaler.server_progress.emit(progress)
