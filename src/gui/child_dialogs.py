@@ -29,7 +29,7 @@ import ui_abort_copy
 import ui_client_trash
 import ui_daemon_url
 import ui_edit_executable
-
+import ui_snapshot_progress
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -1007,6 +1007,19 @@ class StopClientDialog(ChildDialog):
             self.wait_for_save = False
             self.accept()
 
+class SnapShotProgressDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_snapshot_progress.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self._signaler.server_progress.connect(self.serverProgress)
+        
+    def serverStatusChanged(self, server_status):
+        self.close()
+        
+    def serverProgress(self, value):
+        self.ui.progressBar.setValue(value)
 
 class DaemonUrlWindow(ChildDialog):
     def __init__(self, parent, err_code, ex_url):

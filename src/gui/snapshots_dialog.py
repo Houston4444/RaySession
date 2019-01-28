@@ -313,7 +313,6 @@ class SnapshotsDialog(ChildDialog):
             utc_date_time.setTimeSpec(Qt.OffsetFromUTC)
             utc_rw_date_time.setTimeSpec(Qt.OffsetFromUTC)
             
-            
             date_time = None
             rw_date_time = None
             
@@ -322,8 +321,6 @@ class SnapshotsDialog(ChildDialog):
             
             if utc_rw_date_time.isValid():
                 rw_date_time = utc_rw_date_time.toLocalTime()
-            
-            print('pqk', date_time.time().hour(), utc_date_time.time().hour())
             
             snapshot = Snapshot(date_time)
             snapshot.text = snaptext

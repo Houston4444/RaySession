@@ -374,3 +374,11 @@ class Snapshoter(QObject):
         self.runGitAt(spath, 'reset', '--hard')
         self.runGitAt(spath, 'checkout', snapshot)
         
+    def abort(self):
+        if not self.adder_process.state():
+            return 
+        
+        self.adder_process.terminate()
+        
+        # TODO uncheck auto snapshot
+        

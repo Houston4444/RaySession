@@ -56,6 +56,7 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_raysession.py \
 	    src/gui/ui_save_template_session.py \
 	    src/gui/ui_snapshot_name.py \
+	    src/gui/ui_snapshot_progress.py \
 	    src/gui/ui_stop_client.py
 
 src/gui/ui_%.py: resources/ui/%.ui

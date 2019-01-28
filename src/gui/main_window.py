@@ -42,6 +42,13 @@ class MainWindow(QMainWindow):
         self.timer_flicker_open.timeout.connect(self.flashOpen)
         self.flash_open_list = []
         self.flash_open_bool = False
+        
+        # timer for too long snapshots, display snapshot progress dialog
+        self.timer_snapshot = QTimer()
+        self.timer_snapshot.setSingleShot(True)
+        self.timer_snapshot.setInterval(2000)
+        self.timer_snapshot.timeout.connect(self.showSnapshotProgressDialog)
+        
 
         self.server_copying = False
 
@@ -535,6 +542,15 @@ class MainWindow(QMainWindow):
 
         self.toDaemon('/ray/trash/restore', client_id)
 
+    def showSnapshotProgressDialog(self):
+        dialog = child_dialogs.SnapShotProgressDialog(self)
+        dialog.exec()
+        
+        if not dialog.result():
+            return 
+        
+        self.toDaemon('/ray/snapshot/abort')
+        
     def showDaemonUrlWindow(self, err_code, ex_url=''):
         dialog = child_dialogs.DaemonUrlWindow(self, err_code, ex_url)
         dialog.exec()
@@ -668,6 +684,11 @@ class MainWindow(QMainWindow):
             serverStatusString(server_status))
         self.ui.frameCurrentSession.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
+        
+        if server_status == ray.ServerStatus.SNAPSHOT:
+            self.timer_snapshot.start()
+        elif self.timer_snapshot.isActive():
+            self.timer_snapshot.stop()
 
         if server_status == ray.ServerStatus.COPY:
             self.ui.actionSaveSession.setEnabled(False)
