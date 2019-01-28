@@ -3,9 +3,8 @@ import os
 import shutil
 import subprocess
 import sys
-import time
 from PyQt5.QtCore import (QProcess, QProcessEnvironment, QTimer,
-                          QObject, pyqtSignal)
+                          QObject, pyqtSignal, QDateTime)
 from PyQt5.QtXml import QDomDocument
 import ray
 from daemon_tools import Terminal
@@ -21,21 +20,6 @@ def gitStringer(string):
     return string
 
 def fullRefForGui(ref, name, rw_ref, rw_name=''):
-    #output=ref
-    #if name:
-        #output+= '_'
-        #output+= name
-    #if rewind_snapshot:
-        #output+= ','
-        #output+= rewind_snapshot
-    
-    #return output
-
-    #output = ref
-    #output+= ':'
-    #if rewind_snapshot:
-        #output+= rewind_snapshot
-    #print("%s:%s\n%s:%s" % (ref, name, rw_ref, rw_name))    
     return "%s:%s\n%s:%s" % (ref, name, rw_ref, rw_name) 
 
 class Snapshoter(QObject):
@@ -142,10 +126,13 @@ class Snapshoter(QObject):
         return all_tags.__reversed__()
     
     def getTagDate(self):
-        date = time.localtime()
+        date_time = QDateTime.currentDateTimeUtc()
+        date = date_time.date()
+        time = date_time.time()
+        
         tagdate = "%s_%s_%s_%s_%s_%s" % (
-                    date.tm_year, date.tm_mon, date.tm_mday,
-                    date.tm_hour, date.tm_min, date.tm_sec)
+                    date.year(), date.month(), date.day(),
+                    time.hour(), time.minute(), time.second())
         
         return tagdate
     
@@ -164,10 +151,6 @@ class Snapshoter(QObject):
             history_file.close()
         except:
             pass
-        
-        #content = xml.documentElement()
-        #if content.tagName() == 'SNAPSHOTS':
-            
         
         if xml.firstChild().isNull():
             SNS_xml = xml.createElement('SNAPSHOTS')
@@ -360,7 +343,6 @@ class Snapshoter(QObject):
             self.saved.emit()
             return
         
-        #self.writeHistoryFile(self.getTagDate())
         self.writeExcludeFile()
         
         all_args = self.getGitCommandList('add', '-A', '-v')

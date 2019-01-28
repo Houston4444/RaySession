@@ -54,9 +54,15 @@ class Snapshot:
         return self.date_time.isValid()
     
     def isToday(self):
+        if not self.date_time:
+            return False
+        
         return bool(self.date_time.date() == QDate.currentDate())
     
     def isYesterday(self):
+        if not self.date_time:
+            return False
+        
         return bool(self.date_time.date() == QDate.currentDate().addDays(-1))
     
     def canTake(self, other):
@@ -93,39 +99,40 @@ class Snapshot:
             day_string = _translate('snapshots', 'Today')
         elif self.isYesterday():
             day_string = _translate('snapshots', 'Yesterday')
-        else:
+        elif self.isValid():
             day_string = self.date_time.toString('dddd d MMMM yyyy')
         
-        display_text = "%s at %s" % (
-                            day_string,
-                            self.date_time.toString('HH:mm'))
         
         if not self.isValid():
             display_text = self.text
-        
-        elif sub_type in (GROUP_YEAR, GROUP_MONTH):
-            if not self.isToday() or self.isYesterday():
-                day_string = self.date_time.toString('dddd d MMMM')
-                
+        else:
             display_text = "%s at %s" % (
-                                day_string,
-                                self.date_time.toString('HH:mm'))
+                            day_string,
+                            self.date_time.toString('HH:mm'))
             
-        elif sub_type == GROUP_DAY:
-            display_text = "at %s" % self.date_time.toString('HH:mm')
-        
-        if self.rewind_date_time:
-            display_text += " before rewind to "
+            if sub_type in (GROUP_YEAR, GROUP_MONTH):
+                if not self.isToday() or self.isYesterday():
+                    day_string = self.date_time.toString('dddd d MMMM')
+                    
+                display_text = "%s at %s" % (
+                                    day_string,
+                                    self.date_time.toString('HH:mm'))
+                
+            elif sub_type == GROUP_DAY:
+                display_text = "at %s" % self.date_time.toString('HH:mm')
             
-            if self.rewind_label:
-                display_text += self.rewind_label
-            elif self.rewind_date_time.date() == self.date_time.date():
-                display_text += self.rewind_date_time.toString('hh:mm')
-            elif (self.rewind_date_time.date().year()
-                  == self.date_time.date().year()):
-                display_text += self.rewind_date_time.toString('d MMM hh:mm')
-            else:
-                display_text += self.rewind_date_time.toString('d MMM yyyy hh:mm')
+            if self.rewind_date_time:
+                display_text += "\nbefore rewind to "
+                
+                if self.rewind_label:
+                    display_text += self.rewind_label
+                elif self.rewind_date_time.date() == self.date_time.date():
+                    display_text += self.rewind_date_time.toString('hh:mm')
+                elif (self.rewind_date_time.date().year()
+                    == self.date_time.date().year()):
+                    display_text += self.rewind_date_time.toString('d MMM hh:mm')
+                else:
+                    display_text += self.rewind_date_time.toString('d MMM yyyy hh:mm')
         
         if self.label:
             display_text += "\n%s" % self.label
@@ -149,8 +156,6 @@ class SnapGroup(Snapshot):
         
         if self.year() != other.year():
             return False
-        #if self.year != other.year:
-            #return False
         
         if self.sub_type == GROUP_YEAR:
             return True
@@ -166,17 +171,6 @@ class SnapGroup(Snapshot):
         
         return True
     
-    def hasUngroupableWith(self, new_snapshot, sub_type):
-        for snapshot in self.snapshots:
-            if snapshot.commonGroup(new_snapshot) > sub_type:
-                return True
-        
-        #print('pas dingroupable', new_snapshot.text, sub_type)
-        #for snapshot in self.snapshots:
-            #print(snapshot.commonGroup(new_snapshot))
-                  
-        return False
-    
     def add(self, new_snapshot):
         if not new_snapshot.isValid():
             self.snapshots.append(new_snapshot)
@@ -190,27 +184,6 @@ class SnapGroup(Snapshot):
             if snapshot.canTake(new_snapshot):
                 snapshot.add(new_snapshot)
                 return
-        
-        ## check if at least one snapshot can't group with new_snapshot
-        #for snapshot in self.snapshots:
-            #if snapshot.commonGroup(new_snapshot) >= self.sub_type:
-                #break
-        #else:
-            ## no one can't group, so directly add this snapshot (or group)
-            #self.snapshots.append(new_snapshot)
-            #return
-        
-        #shared_group = GROUP_DAY
-        
-        #if len(self.snapshots) > 1:
-            #for snapshot in self.snapshots[1:]:
-                #common = snapshot.commonGroup(self.snapshots[0])
-                #if common > shared_group:
-                    #shared_group = common
-                    
-                #if shared_group >= self.sub_type:
-                    #break
-        
         
         for snapshot in self.snapshots:
             common_group = snapshot.commonGroup(new_snapshot)
@@ -240,7 +213,9 @@ class SnapGroup(Snapshot):
         if self.sub_type == GROUP_MAIN:
             return None
         
-        if self.sub_type == GROUP_YEAR:
+        if not self.date_time:
+            display_text = self.text
+        elif self.sub_type == GROUP_YEAR:
             display_text = self.date_time.toString('yyyy')
         elif self.sub_type == GROUP_MONTH:
             display_text = self.date_time.toString('MMMM yyyy')
@@ -332,17 +307,23 @@ class SnapshotsDialog(ChildDialog):
             time_str, two_points, label = time_str_full.partition(':')
             rw_time_str, two_points, rw_label = rw_time_str_full.partition(':')
             
-            #time_str, label = self.decodeTimeString(time_str_full)
-            #rw_time_str, rw_label = self.decodeTimeString(rw_time_str_full)
-            
-            #time_str = snaptext.partition(':')[0]
-            #label = 
-            
-            date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
-            rw_date_time = QDateTime.fromString(rw_time_str,
+            utc_date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
+            utc_rw_date_time = QDateTime.fromString(rw_time_str,
                                                 'yyyy_M_d_h_m_s')
-            if not rw_date_time.isValid():
-                rw_date_time = None
+            utc_date_time.setTimeSpec(Qt.OffsetFromUTC)
+            utc_rw_date_time.setTimeSpec(Qt.OffsetFromUTC)
+            
+            
+            date_time = None
+            rw_date_time = None
+            
+            if utc_date_time.isValid():
+                date_time = utc_date_time.toLocalTime()
+            
+            if utc_rw_date_time.isValid():
+                rw_date_time = utc_rw_date_time.toLocalTime()
+            
+            print('pqk', date_time.time().hour(), utc_date_time.time().hour())
             
             snapshot = Snapshot(date_time)
             snapshot.text = snaptext
@@ -373,5 +354,3 @@ class SnapshotsDialog(ChildDialog):
         if dialog.result():
             snapshot_label = dialog.getSnapshotName()
             self.toDaemon('/ray/session/take_snapshot', snapshot_label)
-    
-    
