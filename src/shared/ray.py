@@ -175,13 +175,29 @@ def isPidChildOf(child_pid, parent_pid):
 
     ppid = child_pid
     this_pid = os.getpid()
-
-    while ppid != parent_pid and ppid > 1 and ppid != this_pid:
+    
+    while ppid > parent_pid:
         try:
-            ppid = int(subprocess.check_output(
-                ['ps', '-o', 'ppid=', '-p', str(ppid)]))
+            proc_file = open('/proc/%i/status' % ppid, 'r')
+            proc_contents = proc_file.read()
         except BaseException:
             return False
+        
+        for line in proc_contents.split('\n'):
+            if line.startswith('PPid:'):
+                ppid_str = line.rpartition('\t')[2]
+                if ppid_str.isdigit():
+                    ppid = int(ppid_str)
+                    break
+        else:
+            return
+
+    #while ppid != parent_pid and ppid > 1 and ppid != this_pid:
+        #try:
+            #ppid = int(subprocess.check_output(
+                #['ps', '-o', 'ppid=', '-p', str(ppid)]))
+        #except BaseException:
+            #return False
 
     if ppid == parent_pid:
         return True
