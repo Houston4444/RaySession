@@ -24,7 +24,7 @@ if QT_VERSION < (5, 6):
         + "You won't be warned if a process can't be launch.\n")
 
 # Ray Session version
-VERSION = "0.7.1"
+VERSION = "0.7.2"
 
 APP_TITLE = 'Ray Session'
 

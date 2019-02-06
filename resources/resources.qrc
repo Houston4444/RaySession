@@ -43,6 +43,7 @@
         <file>scalable/breeze-dark/disabled/view-list-icons.svg</file>
         <file>app_icons/dark/curve-connector.svg</file>
         <file>app_icons/dark/network-wired.svg</file>
+        <file>app_icons/ADLplug.png</file>
         <file>app_icons/ardour.svg</file>
         <file>app_icons/calf.svg</file>
         <file>app_icons/carla.svg</file>
@@ -57,6 +58,7 @@
         <file>app_icons/non-mixer.png</file>
         <file>app_icons/non-sequencer.png</file>
         <file>app_icons/non-timeline.png</file>
+        <file>app_icons/OPNplug.png</file>
         <file>app_icons/padthv1.svg</file>
         <file>app_icons/patchage.svg</file>
         <file>app_icons/patroneo.png</file>
