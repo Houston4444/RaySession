@@ -193,6 +193,10 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument('--debug-only', '-do', action='store_true',
                           help=_translate('help',
                                           'debug without client messages'))
+        self.add_argument('s', action='session', type=str,
+                          help=_translate('session',
+                                          'load with a given session from the CLI'
+                                          'note that an empty session will be created if session_name doesn't exists.'))
         self.add_argument('--net-session-root', type=str, default='',
                           help=argparse.SUPPRESS)
         self.add_argument('--net-daemon-id', type=int, default=0,
