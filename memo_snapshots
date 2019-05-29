@@ -4,7 +4,7 @@ modifiables mais voilà
 Ingnorer les sessions réseaux
 
 Extensions ignorées
-    une liste d'extensions ingnorées est interne au soft pour l'initialisation git de la session.
+    une liste d'extensions ignorées est interne au soft pour l'initialisation git de la session.
     Cette liste peut être modifiée dans le gestionnaire de clichés.
     La liste peut également être modifiée par client.
     ce qui donne un .ray-snapshots/info/exclude dans ce genre:

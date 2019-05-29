@@ -40,6 +40,8 @@ class Snapshoter(QObject):
         self.adder_process.finished.connect(self.save_step_1)
         self.adder_process.readyReadStandardOutput.connect(self.adderStandardOutput)
         
+        self._adder_aborted = False
+        
         self._n_file_changed = 0
         self._n_file_treated = 0
     
@@ -89,7 +91,7 @@ class Snapshoter(QObject):
             history_file = open(file_path, 'r')
             xml.setContent(history_file.read())
             history_file.close()
-        except:
+        except BaseException:
             return []
         
         SNS_xml = xml.documentElement()
@@ -185,6 +187,7 @@ class Snapshoter(QObject):
             
         SNS_xml.appendChild(snapshot_el)
         
+        # let python print exception if any
         history_file = open(file_path, 'w')
         history_file.write(xml.toString())
         history_file.close()
@@ -352,10 +355,15 @@ class Snapshoter(QObject):
         
         all_args = self.getGitCommandList('add', '-A', '-v')
         
+        self._adder_aborted = False
         self.adder_process.start(all_args.pop(0), all_args)
         # self.adder_process.finished is connected to self.save_step_1
         
     def save_step_1(self):
+        if self._adder_aborted:
+            # TODO unset session auto-snapshot
+            return
+        
         self.runGit('commit', '-m', 'ray')
                 
         ref = self.getTagDate()
@@ -378,6 +386,7 @@ class Snapshoter(QObject):
         if not self.adder_process.state():
             return 
         
+        self._adder_aborted = True
         self.adder_process.terminate()
         
         # TODO uncheck auto snapshot
