@@ -767,7 +767,7 @@ class OscServerThread(ClientCommunicating):
         if client and client.active:
             self.send(client.addr, "/nsm/client/hide_optional_gui")
 
-    @make_method('/ray/client/update_properties', 'ssssissssi')
+    @make_method('/ray/client/update_properties', 'ssssissssis')
     def rayGuiClientUpdateProperties(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
@@ -984,7 +984,8 @@ class OscServerThread(ClientCommunicating):
                       client.label,
                       client.icon,
                       client.capabilities,
-                      int(client.check_last_save))
+                      int(client.check_last_save),
+                      client.ignored_extensions)
             
             self.send(gui_addr, "/ray/client/status",
                       client.client_id,  client.status)

@@ -20,6 +20,7 @@ class Client(object):
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
+        self.ignored_extensions = client_data.ignored_extensions
 
         self.status = ray.ClientStatus.STOPPED
         self.previous_status = ray.ClientStatus.STOPPED
@@ -112,7 +113,8 @@ class Client(object):
                         self.label,
                         self.icon_name,
                         self.capabilities,
-                        int(self.check_last_save))
+                        int(self.check_last_save),
+                        self.ignored_extensions)
 
     def showPropertiesDialog(self):
         self.properties_dialog.updateContents()

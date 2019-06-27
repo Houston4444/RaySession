@@ -160,14 +160,14 @@ class GUIServerThread(ServerThread):
         renameable = bool(args[0])
         self._signaler.session_renameable.emit(renameable)
 
-    @make_method('/ray/client/new', 'ssssissssi')
+    @make_method('/ray/client/new', 'ssssissssis')
     def newClientFromServer(self, path, args):
         self.debugg(path, args)
 
         client_data = ray.ClientData(*args)
         self._signaler.new_client_added.emit(client_data)
 
-    @make_method('/ray/client/update', 'ssssissssi')
+    @make_method('/ray/client/update', 'ssssissssis')
     def updateClientProperties(self, path, args):
         self.debugg(path, args)
 
@@ -265,7 +265,7 @@ class GUIServerThread(ServerThread):
 
         self._signaler.clients_reordered.emit(args)
 
-    @make_method('/ray/trash/add', 'ssssissssi')
+    @make_method('/ray/trash/add', 'ssssissssis')
     def rayGuiTrashAdd(self, path, args):
         self.debugg(path, args)
 

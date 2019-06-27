@@ -222,7 +222,8 @@ class Snapshoter(QObject):
             contents+= "*%s\n" % extension 
             
             for client in self.session.clients:
-                cext_list = client.git_ignored_extensions.split(' ')
+                cext_list = client.ignored_extensions.split(' ')
+                
                 if not extension in cext_list:
                     contents += "!%s.%s/**/*%s\n" % (
                         gitStringer(client.getPrefixString()),
@@ -238,7 +239,7 @@ class Snapshoter(QObject):
         
         # write client specific ignored extension
         for client in self.session.clients:
-            cext_list = client.git_ignored_extensions.split(' ')
+            cext_list = client.ignored_extensions.split(' ')
             for extension in cext_list:
                 if not extension:
                     continue

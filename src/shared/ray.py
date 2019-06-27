@@ -475,6 +475,7 @@ class ClientData:
     icon = ''
     capabilities = ''
     check_last_save = True
+    ignored_extensions = getGitIgnoredExtensions()
 
     def __init__(self,
                  client_id,
@@ -486,7 +487,8 @@ class ClientData:
                  label='',
                  icon='',
                  capabilities='',
-                 check_last_save=True):
+                 check_last_save=True,
+                 ignored_extensions=getGitIgnoredExtensions()):
         self.client_id = str(client_id)
         self.executable_path = str(executable)
         self.arguments = str(arguments)
@@ -494,6 +496,7 @@ class ClientData:
         self.label = str(label)
         self.capabilities = str(capabilities)
         self.check_last_save = bool(check_last_save)
+        self.ignored_extensions = str(ignored_extensions)
 
         self.name = str(name) if name else os.path.basename(
             self.executable_path)

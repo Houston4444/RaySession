@@ -61,7 +61,7 @@ class Client(ServerSender):
     net_daemon_url       = ''
     net_duplicate_state  = -1
     
-    git_ignored_extensions = ray.getGitIgnoredExtensions()
+    ignored_extensions = ray.getGitIgnoredExtensions()
     
     last_save_time = 0.00
     last_dirty = 0.00
@@ -119,6 +119,9 @@ class Client(ServerSender):
         self.auto_start       = bool(ctx.attribute('launched') != '0')
         self.check_last_save  = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
+        
+        if ctx.attribute('ignored_extensions'):
+            self.ignored_extensions = ctx.attribute('ignored_extensions')
         
         prefix_mode = ctx.attribute('prefix_mode')
         
@@ -189,6 +192,9 @@ class Client(ServerSender):
         if self.net_session_template:
             ctx.setAttribute('net_session_template',
                              self.net_session_template)
+            
+        if self.ignored_extensions != ray.getGitIgnoredExtensions():
+            ctx.setAttribute('ignored_extensions', self.ignored_extensions)
             
         
     def setReply(self, errcode, message):
@@ -506,7 +512,8 @@ class Client(ServerSender):
                         self.label,
                         self.icon,
                         self.capabilities,
-                        int(self.check_last_save))
+                        int(self.check_last_save),
+                        self.ignored_extensions)
         
         self.sent_to_gui = True
     
@@ -520,6 +527,7 @@ class Client(ServerSender):
         self.icon            = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
+        self.ignored_extensions = client_data.ignored_extensions
         
         self.sendGuiClientProperties()
     

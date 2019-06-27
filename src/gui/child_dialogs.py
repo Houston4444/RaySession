@@ -516,6 +516,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
         self.ui.toolButtonIcon.setIcon(
             ray.getAppIcon(self.client.icon_name, self))
+        self.ui.lineEditIgnoredExtensions.setText(self.client.ignored_extensions)
 
     def changeIconwithText(self, text):
         self.ui.toolButtonIcon.setIcon(ray.getAppIcon(text, self))
@@ -533,6 +534,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.label = self.ui.lineEditLabel.text()
         self.client.icon_name = self.ui.lineEditIcon.text()
         self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
+        self.client.ignored_extensions = self.ui.lineEditIgnoredExtensions.text()
         self.client.sendPropertiesToDaemon()
         # better for user to wait a little before close the window
         QTimer.singleShot(150, self.accept)
