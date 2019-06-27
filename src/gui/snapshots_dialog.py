@@ -343,7 +343,10 @@ class SnapshotsDialog(ChildDialog):
     
     def getSelectedSnapshot(self):
         item = self.ui.snapshotsList.currentItem()
-        return item.data(0, Qt.UserRole)
+        full_str = item.data(0, Qt.UserRole)
+        snapshot_ref = full_str.partition('\n')[0].partition(':')[0]
+        
+        return snapshot_ref
     
     def takeSnapshot(self):
         dialog = TakeSnapshotDialog(self)

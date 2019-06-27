@@ -379,8 +379,10 @@ class Snapshoter(QObject):
         self.saved.emit()
         
     def load(self, spath, snapshot):
+        snapshot_ref = snapshot.partition('\n')[0].partition(':')[0]
+        
         self.runGitAt(spath, 'reset', '--hard')
-        self.runGitAt(spath, 'checkout', snapshot)
+        self.runGitAt(spath, 'checkout', snapshot_ref)
         
     def abort(self):
         if not self.adder_process.state():
