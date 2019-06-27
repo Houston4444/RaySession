@@ -313,6 +313,9 @@ class Snapshoter(QObject):
         if not self.session.path:
             return False
         
+        if self.isAutoSnapshotPrevented():
+            return False
+        
         if not self.isInit():
             return True
         
@@ -415,3 +418,8 @@ class Snapshoter(QObject):
                     file.close()
                 except PermissionError:
                     return
+                
+    def isAutoSnapshotPrevented(self):
+        auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path, self.gitname)
+        
+        return bool(os.path.exists(auto_snap_file))
