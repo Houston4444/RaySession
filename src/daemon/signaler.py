@@ -28,6 +28,7 @@ class Signaler(QObject):
     server_reorder_clients = pyqtSignal(str, list)
     server_list_snapshots = pyqtSignal(object)
     server_set_auto_snapshot = pyqtSignal(bool)
+    server_ask_auto_snapshot = pyqtSignal(object)
     gui_client_stop    = pyqtSignal(str, list)
     gui_client_kill    = pyqtSignal(str, list)
     gui_client_trash  = pyqtSignal(str, list)

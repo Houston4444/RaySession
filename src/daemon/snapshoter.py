@@ -392,10 +392,10 @@ class Snapshoter(QObject):
         if not self.adder_process.state():
             return 
         
+        self.setAutoSnapshot(False)
+        
         self._adder_aborted = True
         self.adder_process.terminate()
-        
-        # TODO uncheck auto snapshot
     
     def setAutoSnapshot(self, bool_snapshot):
         auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path, self.gitname)

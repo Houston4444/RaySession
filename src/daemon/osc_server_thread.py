@@ -705,6 +705,12 @@ class OscServerThread(ClientCommunicating):
         
         signaler.server_set_auto_snapshot.emit(bool(args[0]))
     
+    @make_method('/ray/session/ask_auto_snapshot', '')
+    def rayServerHasAutoSnapshot(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        signaler.server_ask_auto_snapshot.emit(src_addr)
+    
     @make_method('/ray/session/open_folder', '')
     def rayServerOpenFolder(self, path, args):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))

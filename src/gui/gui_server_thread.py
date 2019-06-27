@@ -98,6 +98,12 @@ class GUIServerThread(ServerThread):
             return 
         
         self._signaler.snapshots_found.emit(args)
+        
+    @make_method('/reply_auto_snapshot', 'i')
+    def replyAutoSnapshot(self, path, args):
+        self.debugg(path, args)
+        
+        self._signaler.reply_auto_snapshot.emit(bool(args[0]))
 
     @make_method('/ray/gui/daemon_announce', 'siisi')
     def serverAnnounce(self, path, args, types, src_addr):
