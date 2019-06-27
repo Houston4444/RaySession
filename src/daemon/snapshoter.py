@@ -362,6 +362,7 @@ class Snapshoter(QObject):
     def save_step_1(self):
         if self._adder_aborted:
             # TODO unset session auto-snapshot
+            # send auto snapshot disabled message to GUI
             return
         
         self.runGit('commit', '-m', 'ray')
@@ -392,4 +393,25 @@ class Snapshoter(QObject):
         self.adder_process.terminate()
         
         # TODO uncheck auto snapshot
+    
+    def setAutoSnapshot(self, bool_snapshot):
+        auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path, self.gitname)
+        file_exists = bool(os.path.exists(auto_snap_file))
         
+        if bool_snapshot:
+            if file_exists:
+                try:
+                    os.remove(auto_snap_file)
+                except PermissionError:
+                    return
+        else:
+            if not file_exists:
+                contents = "# This file prevent auto snapshots for this session (RaySession)\n"
+                contents += "# remove it if you want auto snapshots back"
+                
+                try:
+                    file = open(auto_snap_file, 'w')
+                    file.write(contents)
+                    file.close()
+                except PermissionError:
+                    return

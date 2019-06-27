@@ -1314,6 +1314,7 @@ class SignaledSession(OperatingSession):
         signaler.server_reorder_clients.connect(self.serverReorderClients)
         
         signaler.server_list_snapshots.connect(self.serverListSnapshots)
+        signaler.server_set_auto_snapshot.connect(self.serverSetAutoSnapshot)
         
         signaler.server_add.connect(self.serverAdd)
         signaler.server_add_proxy.connect(self.serverAddProxy)
@@ -1613,6 +1614,9 @@ class SignaledSession(OperatingSession):
         
         if snap_send:
             self.serverSend(src_addr, '/reply_snapshots_list', *snap_send)
+    
+    def serverSetAutoSnapshot(self, bool_snapshot):
+        self.snapshoter.setAutoSnapshot(bool_snapshot)
     
     def serverAdd(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)

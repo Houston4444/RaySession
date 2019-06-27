@@ -270,6 +270,7 @@ class SnapshotsDialog(ChildDialog):
         #self.ui.snapshotsList.setRootIsDecorated(False)
         self.ui.snapshotsList.currentItemChanged.connect(
             self.currentItemChanged)
+        self.ui.checkBoxAutoSnapshot.stateChanged.connect(self.setAutoSnapshot)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
     
     def currentItemChanged(self, current, previous):
@@ -354,3 +355,6 @@ class SnapshotsDialog(ChildDialog):
         if dialog.result():
             snapshot_label = dialog.getSnapshotName()
             self.toDaemon('/ray/session/take_snapshot', snapshot_label)
+    
+    def setAutoSnapshot(self, bool_snapshot):
+        self.toDaemon('/ray/session/set_auto_snapshot', int(bool_snapshot))
