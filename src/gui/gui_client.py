@@ -1,6 +1,7 @@
 import time
 import sys
 import child_dialogs
+import snapshots_dialog
 import ray
 from gui_server_thread import GUIServerThread
 
@@ -33,6 +34,7 @@ class Client(object):
         self.widget = self._main_win.createClientWidget(self)
         self.properties_dialog = child_dialogs.ClientPropertiesDialog(
             self._main_win, self)
+        self.snapshots_dialog = snapshots_dialog.ClientSnapshotsDialog(self._main_win, self)
 
     def setStatus(self, status):
         self.previous_status = self.status
@@ -120,6 +122,10 @@ class Client(object):
         self.properties_dialog.updateContents()
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()
+        
+    def openSnapshotsDialog(self):
+        self.snapshots_dialog.show()
+        self.snapshots_dialog.activateWindow()
 
     def reCreateWidget(self):
         del self.widget

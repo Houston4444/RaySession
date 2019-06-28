@@ -48,11 +48,13 @@ class ClientSlot(QFrame):
         self.ui.actionSaveAsApplicationTemplate.triggered.connect(
             self.saveAsApplicationTemplate)
         self.ui.actionProperties.triggered.connect(self.openPropertiesDialog)
+        self.ui.actionReturnToAPreviousState.triggered.connect(self.client.openSnapshotsDialog)
 
         self.menu = QMenu(self)
 
         self.menu.addAction(self.ui.actionSaveAsApplicationTemplate)
         self.menu.addAction(self.ui.actionProperties)
+        self.menu.addAction(self.ui.actionReturnToAPreviousState)
 
         self.ui.iconButton.setMenu(self.menu)
 
@@ -179,6 +181,9 @@ class ClientSlot(QFrame):
 
     def openPropertiesDialog(self):
         self._main_win.openClientProperties(self.clientId())
+        
+    def openSnapshotsDialog(self):
+        self._main_win.openClientSnapshotsDialog(self.clientId())
 
     def updateLabel(self, label):
         self._main_win.updateClientLabel(self.clientId(), label)

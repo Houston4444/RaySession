@@ -332,6 +332,13 @@ class MainWindow(QMainWindow):
             return
 
         client.showPropertiesDialog()
+        
+    def openClientSnapshotsDialog(self, client_id):
+        client = self._session.getClient(client_id)
+        if not client:
+            return
+        
+        client.showSnapshotDialog()
 
     def updateClientLabel(self, client_id, label):
         client = self._session.getClient(client_id)
