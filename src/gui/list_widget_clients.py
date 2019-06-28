@@ -47,8 +47,8 @@ class ClientSlot(QFrame):
 
         self.ui.actionSaveAsApplicationTemplate.triggered.connect(
             self.saveAsApplicationTemplate)
-        self.ui.actionProperties.triggered.connect(self.openPropertiesDialog)
-        self.ui.actionReturnToAPreviousState.triggered.connect(self.client.openSnapshotsDialog)
+        self.ui.actionProperties.triggered.connect(self.client.showPropertiesDialog)
+        self.ui.actionReturnToAPreviousState.triggered.connect(self.client.showSnapshotsDialog)
 
         self.menu = QMenu(self)
 

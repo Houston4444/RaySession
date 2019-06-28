@@ -123,7 +123,7 @@ class Client(object):
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()
         
-    def openSnapshotsDialog(self):
+    def showSnapshotsDialog(self):
         self.snapshots_dialog.show()
         self.snapshots_dialog.activateWindow()
 

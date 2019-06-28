@@ -326,20 +326,6 @@ class MainWindow(QMainWindow):
         template_name = dialog.getTemplateName()
         self.toDaemon('/ray/client/save_as_template', client_id, template_name)
 
-    def openClientProperties(self, client_id):
-        client = self._session.getClient(client_id)
-        if not client:
-            return
-
-        client.showPropertiesDialog()
-        
-    def openClientSnapshotsDialog(self, client_id):
-        client = self._session.getClient(client_id)
-        if not client:
-            return
-        
-        client.showSnapshotDialog()
-
     def updateClientLabel(self, client_id, label):
         client = self._session.getClient(client_id)
         if not client:
