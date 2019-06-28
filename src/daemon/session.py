@@ -1596,8 +1596,8 @@ class SignaledSession(OperatingSession):
         
         self.reOrderClients(client_ids_list)
         
-    def serverListSnapshots(self, src_addr):
-        snapshots = self.snapshoter.list()
+    def serverListSnapshots(self, src_addr, client_id=""):
+        snapshots = self.snapshoter.list(client_id)
         
         i=0
         snap_send = []

@@ -417,7 +417,7 @@ class MainWindow(QMainWindow):
         self.toDaemon('/ray/session/save_as_template', session_template_name)
         
     def returnToAPreviousState(self):
-        dialog = snapshots_dialog.SnapshotsDialog(self)
+        dialog = snapshots_dialog.SessionSnapshotsDialog(self)
         dialog.exec()
         if not dialog.result():
             return 

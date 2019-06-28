@@ -697,7 +697,7 @@ class OscServerThread(ClientCommunicating):
     def rayServerListSnapshots(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
-        signaler.server_list_snapshots.emit(src_addr)
+        signaler.server_list_snapshots.emit(src_addr, '')
     
     @make_method('/ray/session/set_auto_snapshot', 'i')
     def rayServerSetAutoSnapshot(self, path, args):
@@ -773,7 +773,15 @@ class OscServerThread(ClientCommunicating):
         
         client_data = ray.ClientData(*args)
         signaler.gui_update_client_properties.emit(client_data)
+    
+    @make_method('/ray/client/list_snapshots', 's')
+    def rayClientListSnapshots(self, path, args, types, src_addr):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
         
+        client_id = args[0]
+        
+        signaler.server_list_snapshots.emit(src_addr, client_id)
+    
     @make_method('/ray/net_daemon/duplicate_state', 'f')
     def rayDuplicateState(self, path, args, types, src_addr):
         signaler.net_duplicate_state.emit(src_addr, args[0])

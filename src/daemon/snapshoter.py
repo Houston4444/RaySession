@@ -78,7 +78,7 @@ class Snapshoter(QObject):
         return first_args + list(args)
     
     
-    def list(self):
+    def list(self, client_id=""):
         if not self.isInit():
             return []
         

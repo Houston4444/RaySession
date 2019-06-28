@@ -261,10 +261,7 @@ class SnapshotsDialog(ChildDialog):
         
         self._signaler.reply_auto_snapshot.connect(self.ui.checkBoxAutoSnapshot.setChecked)
         self._signaler.snapshots_found.connect(self.addSnapshots)
-        self.ui.pushButtonSnapshotNow.clicked.connect(self.takeSnapshot)
         
-        self.toDaemon('/ray/session/ask_auto_snapshot')
-        self.toDaemon('/ray/session/list_snapshots')
         self.snapshots = []
         self.main_snap_group = SnapGroup()
         
@@ -272,7 +269,7 @@ class SnapshotsDialog(ChildDialog):
         #self.ui.snapshotsList.setRootIsDecorated(False)
         self.ui.snapshotsList.currentItemChanged.connect(
             self.currentItemChanged)
-        self.ui.checkBoxAutoSnapshot.stateChanged.connect(self.setAutoSnapshot)
+        
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
     
     def currentItemChanged(self, current, previous):
@@ -351,6 +348,19 @@ class SnapshotsDialog(ChildDialog):
         
         return snapshot_ref
     
+    
+
+class SessionSnapshotsDialog(SnapshotsDialog):
+    def __init__(self, parent):
+        SnapshotsDialog.__init__(self, parent)
+        
+        self.ui.pushButtonSnapshotNow.clicked.connect(self.takeSnapshot)
+        
+        self.toDaemon('/ray/session/ask_auto_snapshot')
+        self.toDaemon('/ray/session/list_snapshots')
+        
+        self.ui.checkBoxAutoSnapshot.stateChanged.connect(self.setAutoSnapshot)
+        
     def takeSnapshot(self):
         dialog = TakeSnapshotDialog(self)
         dialog.exec()
@@ -360,3 +370,14 @@ class SnapshotsDialog(ChildDialog):
     
     def setAutoSnapshot(self, bool_snapshot):
         self.toDaemon('/ray/session/set_auto_snapshot', int(bool_snapshot))
+
+class ClientSnapshotsDialog(SnapshotsDialog):
+    def __init__(self, parent, client):
+        SnapshotsDialog.__init__(self, parent)
+        self.ui.pushButtonSnapshotNow.hide()
+        self.ui.checkBoxAutoSnapshot.hide()
+        
+        self.client = client
+        
+        self.toDaemon('ray/client/list_snapshots', client.client_id)
+        
