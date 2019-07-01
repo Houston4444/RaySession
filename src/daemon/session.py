@@ -1294,24 +1294,14 @@ class SignaledSession(OperatingSession):
         OperatingSession.__init__(self, root)
         
         signaler.osc_recv.connect(self.oscReceive)
-        signaler.server_new.connect(self.serverNewSession)
         signaler.server_new_from_tp.connect(self.serverNewSessionFromTemplate)
-        signaler.server_open.connect(self.serverOpenSession)
-        signaler.server_save.connect(self.serverSaveSession)
         signaler.server_save_from_client.connect(
             self.serverSaveSessionFromClient)
         signaler.server_rename.connect(self.serverRenameSession)
-        signaler.server_duplicate.connect(self.serverDuplicateSession)
-        signaler.server_duplicate_only.connect(
-            self.serverDuplicateSessionOnly)
         signaler.server_save_session_template.connect(
             self.serverSaveSessionTemplate)
-        signaler.take_snapshot.connect(self.snapshoter.save)
-        signaler.server_close.connect(self.serverCloseSession)
-        signaler.server_abort.connect(self.serverAbortSession)
         signaler.server_open_snapshot.connect(self.serverOpenSnapshot)
         signaler.server_open_client_snapshot.connect(self.serverOpenClientSnapshot)
-        signaler.server_list_sessions.connect(self.serverListSessions)
         
         signaler.server_reorder_clients.connect(self.serverReorderClients)
         
@@ -1319,16 +1309,6 @@ class SignaledSession(OperatingSession):
         signaler.server_set_auto_snapshot.connect(self.serverSetAutoSnapshot)
         signaler.server_ask_auto_snapshot.connect(self.serverAskAutoSnapshot)
         
-        signaler.server_add.connect(self.serverAdd)
-        signaler.server_add_proxy.connect(self.serverAddProxy)
-        signaler.server_add_client_template.connect(
-            self.serverAddClientTemplate)
-        signaler.server_add_user_client_template.connect(
-            self.serverAddUserClientTemplate)
-        signaler.server_add_factory_client_template.connect(
-            self.serverAddFactoryClientTemplate)
-        
-        signaler.server_announce.connect(self.serverAnnounce)
         signaler.server_reply.connect(self.serverReply)
         
         signaler.gui_client_stop.connect(self.guiClientStop)
@@ -1337,7 +1317,6 @@ class SignaledSession(OperatingSession):
         signaler.gui_client_resume.connect(self.guiClientResume)
         signaler.gui_client_save.connect(self.guiClientSave)
         signaler.gui_client_save_template.connect(self.guiClientSaveTemplate)
-        signaler.gui_client_label.connect(self.guiClientLabel)
         signaler.gui_client_icon.connect(self.guiClientIcon)
         signaler.gui_update_client_properties.connect(
             self.updateClientProperties)
@@ -1348,85 +1327,204 @@ class SignaledSession(OperatingSession):
         
         signaler.bookmark_option_changed.connect(self.bookmarkOptionChanged)
         
-        signaler.copy_aborted.connect(self.abortCopy)
+        #signaler.copy_aborted.connect(self.abortCopy)
         
-        signaler.client_net_properties.connect(
-            self.setClientNetworkProperties)
         signaler.net_duplicate_state.connect(self.setClientNetDuplicateState)
         
         signaler.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
-        signaler.dummy_duplicate.connect(self.dummyDuplicate)
         
         
     ############################# FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###############################
     
-    def oscReceive(self, path, args, types, src_addr):
-        if path == '/nsm/server/announce':
-            print("nananaaannorud")
+    def nsm_server_announce(self, path, args, src_addr):
+        client_name, capabilities, executable_path, major, minor, pid = args
+        
+        if self.wait_for == ray.WaitFor.STOP:
+            return
+        
+        #we can't be absolutely sure that the announcer is the good one
+        #but if client announce a known PID, 
+        #we can be sure of which client is announcing
+        for client in self.clients: 
+            if client.pid == pid and not client.active and client.isRunning():
+                client.serverAnnounce(path, args, src_addr, False)
+                break
+        else:
+            n=0
+            for client in self.clients:
+                if (basename(client.executable_path) \
+                        == basename(executable_path)
+                    and not client.active
+                    and client.pending_command == ray.Command.START):
+                        n+=1
+                        if n>1:
+                            break
+            
+            if n==1:
+                for client in self.clients:
+                    if (basename(client.executable_path) \
+                            == basename(executable_path)
+                        and not client.active
+                        and client.pending_command == ray.Command.START):
+                            client.serverAnnounce(path, args, src_addr, False)
+                            break
+            else:
+                for client in self.clients:
+                    if (not client.active
+                        and client.pending_command == ray.Command.START):
+                            if ray.isPidChildOf(pid, client.pid):
+                                client.serverAnnounce(path, args, 
+                                                      src_addr, False)
+                                break
+                
+                #Ray Session won't add clients that aren't launched 
+                #by Ray Session itself. 
+            
+        if self.wait_for == ray.WaitFor.ANNOUNCE:
+            self.endTimerIfLastExpected(client)
+            
+    def nsm_client_label(self, path, args, src_addr):
+        client = self.getClientByAddress(src_addr)
+        if client:
+            client.setLabel(args[0])
     
-    def serverNewSession(self, path, args, src_addr):
+    def nsm_client_network_properties(self, path, args, src_addr):
+        client = self.getClientByAddress(src_addr)
+        if client:
+            net_daemon_url, net_session_root = args
+            client.setNetworkProperties(net_daemon_url, net_session_root)
+    
+    def ray_server_abort_copy(self, path, args, src_addr):
+        self.file_copier.abort()
+    
+    def ray_server_list_sessions(self, path, args, src_addr):
+        with_net = args[0]
+        
+        if with_net:
+            for client in self.clients:
+                if client.net_daemon_url:
+                    self.send(Address(client.net_daemon_url), 
+                              '/ray/server/list_sessions', 1)
+        
+        if not self.root:
+            return
+        
+        session_list = []
+        
+        for root, dirs, files in os.walk(self.root):
+            #exclude hidden files and dirs
+            files   = [f for f in files if not f.startswith('.')]
+            dirs[:] = [d for d in dirs  if not d.startswith('.')]
+            
+            if root == self.root:
+                continue
+            
+            already_send = False
+            
+            for file in files:
+                if file in ('raysession.xml', 'session.nsm'):
+                    if not already_send:
+                        basefolder = root.replace(self.root + '/', '', 1)
+                        session_list.append(basefolder)
+                        if len(session_list) == 100:
+                            self.send(src_addr, "/reply_sessions_list",
+                                      *session_list)
+                            
+                            session_list.clear()
+                        already_send = True
+                    
+        if session_list:
+            self.send(src_addr, "/reply_sessions_list", *session_list)
+    
+    def ray_server_new_session(self, path, args, src_addr):
         if self.process_order:
             return
+        
         self.rememberOscArgs(path, args, src_addr)
+        
         if len(args) < 1:
             return
         
         self.process_order = [self.save, self.close, (self.new, args[0]),
                               self.save, self.newDone]
         self.nextFunction()
-        
-    def serverNewSessionFromTemplate(self, path, args, src_addr, net=False):
-        if self.process_order:
-            return
-        
-        self.rememberOscArgs(path, args, src_addr)
-        
-        if len(args) != 2:
-            return
-        
-        new_session_full_name, template_name = args
-        
-        self.process_order = [self.save, 
-                              (self.prepareTemplate, *args, net), 
-                              (self.load, new_session_full_name),
-                              self.loadDone]
-        self.nextFunction()
-        
-    def serverOpenSession(self, path, args, src_addr):
+    
+    def ray_server_open_session(self, path, args, src_addr):
         if self.process_order:
             return
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, (self.load, *args), self.loadDone]
         self.nextFunction()
-        
-    def serverOpenSessionAtStart(self, session_name):
-        self.process_order = [self.save, (self.load, session_name), self.loadDone]
-        self.nextFunction()
     
-    def serverSaveSession(self, path, args, src_addr):
+    def ray_session_save(self, path, args, src_addr):
         if self.process_order:
             return
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.saveDone]
         self.nextFunction()
+    
+    def ray_session_take_snapshot(self, path, args, src_addr):
+        self.snapshoter.save(args[0])
         
-    def serverSaveSessionFromClient(self, path, args, src_addr, client_id):
-        if self.process_order:
-            return
-        
-        self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [(self.save, client_id), self.saveDone]
-        self.nextFunction()
-        
-        
-    def serverCloseSession(self, path, args, src_addr):
+    def ray_session_close(self, path, args, src_addr):
         if self.process_order:
             return
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.close, self.closeDone]
         self.nextFunction()
     
-    def serverOpenSnapshot(self, path, args, src_addr):
+    def ray_session_abort(self, path, args, src_addr):
+        self.wait_for = ray.WaitFor.NONE
+        self.timer.stop()
+        
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [self.close, self.abortDone]
+        
+        if self.file_copier.isActive():
+            self.file_copier.abort(self.nextFunction, [])
+        else:
+            self.nextFunction()
+    
+    def ray_session_duplicate(self, path, args, src_addr):
+        if self.process_order:
+            return
+        
+        if len(args) != 1:
+            return
+        
+        new_session_full_name = args[0]
+        
+        self.rememberOscArgs(path, args, src_addr)
+        
+        self.process_order = [self.save, 
+                              (self.duplicate, new_session_full_name), 
+                              (self.load, new_session_full_name), 
+                              self.duplicateDone]
+        self.nextFunction()
+        
+    def ray_session_duplicate_only(self, path, args, src_addr):
+        session_to_load, new_session, sess_root = args
+        
+        if sess_root == self.root and session_to_load == self.name:
+            if (self.process_order
+                or len(args) != 1
+                or self.file_copier.isActive()):
+                    self.oscReply('/ray/net_daemon/duplicate_state', 1)
+                    return
+            
+            self.rememberOscArgs(path, args, src_addr)
+            
+            self.process_order = [self.save, 
+                                (self.duplicate, new_session),
+                                self.duplicateOnlyDone]
+            self.nextFunction()
+        
+        else:
+            tmp_session = DummySession(sess_root)
+            tmp_session.osc_src_addr = src_addr
+            tmp_session.dummyDuplicate(session_to_load, new_session)
+    
+    def ray_session_open_snapshot(self, path, args, src_addr):
         if self.process_order:
             return
         
@@ -1444,16 +1542,9 @@ class SignaledSession(OperatingSession):
         
         self.nextFunction()
     
-    def serverOpenClientSnapshot(self, client_id, snapshot):
-        if self.process_order:
-            return
+    def ray_session_rename(self, path, args, src_addr):
+        new_session_name = args[0]
         
-        if not self.path:
-            return
-        
-        
-    
-    def serverRenameSession(self, new_session_name):
         if self.process_order:
             return
         
@@ -1502,39 +1593,99 @@ class SignaledSession(OperatingSession):
         
         self.sendGui('/ray/gui/session/name', self.name, self.name)
     
-    def serverDuplicateSession(self, path, args, src_addr):
+    def ray_session_add_executable(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
+        executable = args[0]
+        
+        client = Client(self)
+        client.executable_path = executable
+        client.name            = basename(executable)
+        client.client_id       = self.generateClientId(executable)
+        client.icon            = client.name.lower().replace('_', '-')
+        
+        if self.addClient(client):
+            client.start()
+    
+    def ray_session_add_proxy(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
+        executable = args[0]
+        
+        client = Client(self)
+        client.executable_path = 'ray-proxy'
+        
+        client.tmp_arguments  = "--executable %s" % executable
+        if CommandLineArgs.debug:
+            client.tmp_arguments += " --debug"
+            
+        client.name      = basename(executable)
+        client.client_id = self.generateClientId(client.name)
+        client.icon      = client.name.lower().replace('_', '-')
+        
+        if self.addClient(client):
+            client.start()
+    
+    def ray_session_add_client_template(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
+        
+        factory = bool(args[0])
+        template_name = args[1]
+        
+        self.addClientTemplate(template_name, factory)
+    
+    def oscReceive(self, path, args, types, src_addr):
+        func_name = path.replace('/', '', 1).replace('/', '_')
+        
+        if func_name in self.__dir__():
+            function = self.__getattribute__(func_name)
+            function(path, args, src_addr)
+        
+    def serverNewSessionFromTemplate(self, path, args, src_addr, net=False):
         if self.process_order:
             return
         
-        if len(args) != 1:
+        self.rememberOscArgs(path, args, src_addr)
+        
+        if len(args) != 2:
             return
         
-        new_session_full_name = args[0]
-        
-        self.rememberOscArgs(path, args, src_addr)
-        
+        new_session_full_name, template_name = args
         
         self.process_order = [self.save, 
-                              (self.duplicate, new_session_full_name), 
-                              (self.load, new_session_full_name), 
-                              self.duplicateDone]
+                              (self.prepareTemplate, *args, net), 
+                              (self.load, new_session_full_name),
+                              self.loadDone]
         self.nextFunction()
+        
+    def serverOpenSessionAtStart(self, session_name):
+        self.process_order = [self.save, (self.load, session_name), self.loadDone]
+        self.nextFunction()
+        
+    def serverSaveSessionFromClient(self, path, args, src_addr, client_id):
+        if self.process_order:
+            return
+        
+        self.rememberOscArgs(path, args, src_addr)
+        self.process_order = [(self.save, client_id), self.saveDone]
+        self.nextFunction()
+        
+        
     
-    def serverDuplicateSessionOnly(self, path, args, src_addr):
-        if (self.process_order
-            or len(args) != 1
-            or self.file_copier.isActive()):
-                self.oscReply('/ray/net_daemon/duplicate_state', 1)
-                return
+    
+    
+    
+    def serverOpenClientSnapshot(self, client_id, snapshot):
+        if self.process_order:
+            return
         
-        new_session_full_name = args[0]
+        if not self.path:
+            return
         
-        self.rememberOscArgs(path, args, src_addr)
         
-        self.process_order = [self.save, 
-                              (self.duplicate, new_session_full_name),
-                              self.duplicateOnlyDone]
-        self.nextFunction()
+    
+
+    
+    
+    
     
     def serverSaveSessionTemplate(self, path, args, src_addr, net=False):
         if self.process_order:
@@ -1557,54 +1708,9 @@ class SignaledSession(OperatingSession):
                                net)]
         self.nextFunction()
         
-    def serverAbortSession(self, path, args, src_addr):
-        self.wait_for = ray.WaitFor.NONE
-        self.timer.stop()
-        
-        self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [self.close, self.abortDone]
-        
-        if self.file_copier.isActive():
-            self.file_copier.abort(self.nextFunction, [])
-        else:
-            self.nextFunction()
     
-    def serverListSessions(self, src_addr, with_net):
-        if with_net:
-            for client in self.clients:
-                if client.net_daemon_url:
-                    self.send(Address(client.net_daemon_url), 
-                              '/ray/server/list_sessions', 1)
-        
-        if not self.root:
-            return
-        
-        session_list = []
-        
-        for root, dirs, files in os.walk(self.root):
-            #exclude hidden files and dirs
-            files   = [f for f in files if not f.startswith('.')]
-            dirs[:] = [d for d in dirs  if not d.startswith('.')]
-            
-            if root == self.root:
-                continue
-            
-            already_send = False
-            
-            for file in files:
-                if file in ('raysession.xml', 'session.nsm'):
-                    if not already_send:
-                        basefolder = root.replace(self.root + '/', '', 1)
-                        session_list.append(basefolder)
-                        if len(session_list) == 100:
-                            self.send(src_addr, "/reply_sessions_list",
-                                      *session_list)
-                            
-                            session_list.clear()
-                        already_send = True
-                    
-        if session_list:
-            self.send(src_addr, "/reply_sessions_list", *session_list)
+    
+    
         
     def serverReorderClients(self, path, args):
         client_ids_list = args
@@ -1638,36 +1744,9 @@ class SignaledSession(OperatingSession):
         auto_snapshot = not bool(self.snapshoter.isAutoSnapshotPrevented())
         self.send(src_addr, '/reply_auto_snapshot',  int(auto_snapshot))
     
-    def serverAdd(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
-        executable = args[0]
-        
-        client = Client(self)
-        client.executable_path = executable
-        client.name            = basename(executable)
-        client.client_id       = self.generateClientId(executable)
-        client.icon            = client.name.lower().replace('_', '-')
-        
-        if self.addClient(client):
-            client.start()
     
-    def serverAddProxy(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
-        executable = args[0]
-        
-        client = Client(self)
-        client.executable_path = 'ray-proxy'
-        
-        client.tmp_arguments  = "--executable %s" % executable
-        if CommandLineArgs.debug:
-            client.tmp_arguments += " --debug"
-            
-        client.name            = basename(executable)
-        client.client_id       = self.generateClientId(client.name)
-        client.icon            = client.name.lower().replace('_', '-')
-        
-        if self.addClient(client):
-            client.start()
+    
+    
     
     def addClientTemplate(self, template_name, factory=False):
         templates_root = TemplateRoots.user_clients
@@ -1778,73 +1857,6 @@ class SignaledSession(OperatingSession):
     def addClientTemplateAborted(self, client):
         self.removeClient(client)
     
-    def serverAddClientTemplate(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
-        
-        factory = bool(args[0])
-        template_name = args[1]
-        
-        self.addClientTemplate(template_name, factory)
-    
-    def serverAddUserClientTemplate(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
-        template_name = args[0]
-        
-        self.addClientTemplate(template_name, False)
-        
-    def serverAddFactoryClientTemplate(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
-        template_name = args[0]
-        
-        self.addClientTemplate(template_name, True)
-     
-    def serverAnnounce(self, path, args, src_addr):
-        client_name, capabilities, executable_path, major, minor, pid = args
-        
-        if self.wait_for == ray.WaitFor.STOP:
-            return
-        
-        #we can't be absolutely sure that the announcer is the good one
-        #but if client announce a known PID, 
-        #we can be sure of which client is announcing
-        for client in self.clients: 
-            if client.pid == pid and not client.active and client.isRunning():
-                client.serverAnnounce(path, args, src_addr, False)
-                break
-        else:
-            n=0
-            for client in self.clients:
-                if (basename(client.executable_path) \
-                        == basename(executable_path)
-                    and not client.active
-                    and client.pending_command == ray.Command.START):
-                        n+=1
-                        if n>1:
-                            break
-            
-            if n==1:
-                for client in self.clients:
-                    if (basename(client.executable_path) \
-                            == basename(executable_path)
-                        and not client.active
-                        and client.pending_command == ray.Command.START):
-                            client.serverAnnounce(path, args, src_addr, False)
-                            break
-            else:
-                for client in self.clients:
-                    if (not client.active
-                        and client.pending_command == ray.Command.START):
-                            if ray.isPidChildOf(pid, client.pid):
-                                client.serverAnnounce(path, args, 
-                                                      src_addr, False)
-                                break
-                
-                #Ray Session won't add clients that aren't launched 
-                #by Ray Session itself. 
-            
-        if self.wait_for == ray.WaitFor.ANNOUNCE:
-            self.endTimerIfLastExpected(client)
-    
     def serverReply(self, path, args, src_addr):
         if self.wait_for == ray.WaitFor.STOP:
             return
@@ -1878,19 +1890,6 @@ class SignaledSession(OperatingSession):
     def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
         tmp_session = DummySession(sess_root)
         tmp_session.dummyLoadAndTemplate(session_name, template_name)
-        
-    def dummyDuplicate(self, src_addr, session_to_load,
-                       new_session, sess_root):
-        tmp_session = DummySession(sess_root)
-        tmp_session.osc_src_addr = src_addr
-        tmp_session.dummyDuplicate(session_to_load, new_session)
-    
-    def setClientNetworkProperties(self, client_id, 
-                                   net_daemon_url, net_session_root):
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.setNetworkProperties(net_daemon_url, net_session_root)
-                break
     
     def setClientNetDuplicateState(self, src_addr, state):
         for client in self.clients:
@@ -1978,12 +1977,6 @@ class SignaledSession(OperatingSession):
             if client.client_id == args[0]:
                 client.saveAsTemplate(args[1])
                 break
-    
-    def guiClientLabel(self, client_id, label):
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.setLabel(label)
-                break
             
     def guiClientIcon(self, client_id, icon):
         for client in self.clients:
@@ -2028,9 +2021,6 @@ class SignaledSession(OperatingSession):
                 self.bookmarker.makeAll(self.path)
             else:
                 self.bookmarker.removeAll(self.path)
-    
-    def abortCopy(self):
-        self.file_copier.abort()
     
     def terminate(self):
         if self.terminated_yet:
