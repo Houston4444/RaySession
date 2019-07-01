@@ -34,7 +34,6 @@ class Client(object):
         self.widget = self._main_win.createClientWidget(self)
         self.properties_dialog = child_dialogs.ClientPropertiesDialog(
             self._main_win, self)
-        self.snapshots_dialog = snapshots_dialog.ClientSnapshotsDialog(self._main_win, self)
 
     def setStatus(self, status):
         self.previous_status = self.status
@@ -124,8 +123,9 @@ class Client(object):
         self.properties_dialog.activateWindow()
         
     def showSnapshotsDialog(self):
-        self.snapshots_dialog.show()
-        self.snapshots_dialog.activateWindow()
+        dialog = snapshots_dialog.ClientSnapshotsDialog(self._main_win, self)
+        dialog.show()
+        dialog.activateWindow()
 
     def reCreateWidget(self):
         del self.widget

@@ -299,6 +299,7 @@ class SnapshotsDialog(ChildDialog):
         return (time_str, label)
     
     def addSnapshots(self, snaptexts):
+        print('jijijiji')
         for snaptext in snaptexts:
             if not snaptext:
                 continue
@@ -379,5 +380,6 @@ class ClientSnapshotsDialog(SnapshotsDialog):
         
         self.client = client
         
-        self.toDaemon('ray/client/list_snapshots', client.client_id)
+        print('encvio')
+        self.toDaemon('/ray/client/list_snapshots', client.client_id)
         

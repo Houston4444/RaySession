@@ -103,9 +103,21 @@ class Snapshoter(QObject):
         all_tags = []
         all_snaps = []
         
+        print(file_path)
+        
         for i in range(nodes.count()):
             node = nodes.at(i)
             el = node.toElement()
+            
+            if client_id:
+                client_nodes = node.childNodes()
+                for j in range(client_nodes.count()):
+                    client_node = client_nodes.at(j)
+                    client_el = client_node.toElement()
+                    if client_el.attribute('client_id') == client_id:
+                        break
+                else:
+                    continue
             
             ref   = el.attribute('ref')
             name  = el.attribute('name')
@@ -175,6 +187,7 @@ class Snapshoter(QObject):
         for client in self.session.clients + self.session.removed_clients:
             client_el = xml.createElement('client')
             client.writeXmlProperties(client_el)
+            client_el.setAttribute('client_id', client.client_id)
             
             for client_file_path in client.getProjectFiles():
                 base_path = client_file_path.replace(
