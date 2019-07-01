@@ -103,8 +103,6 @@ class Snapshoter(QObject):
         all_tags = []
         all_snaps = []
         
-        print(file_path)
-        
         for i in range(nodes.count()):
             node = nodes.at(i)
             el = node.toElement()
@@ -378,8 +376,7 @@ class Snapshoter(QObject):
         
     def save_step_1(self):
         if self._adder_aborted:
-            # TODO unset session auto-snapshot
-            # send auto snapshot disabled message to GUI
+            self.setAutoSnapshot(False)
             return
         
         self.runGit('commit', '-m', 'ray')

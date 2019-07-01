@@ -4,7 +4,9 @@ import random
 import shutil
 import subprocess
 import time
-from liblo import ServerThread, Address, make_method, Message
+from liblo import ServerThread, Address, Message
+import liblo
+#from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtXml import QDomDocument
 
 #from shared import *
@@ -23,6 +25,32 @@ def pathIsValid(path):
 def ifDebug(string):
     if CommandLineArgs.debug:
         sys.stderr.write(string + '\n')
+
+def make_method(path, types):
+    print('dans le makeeem', path, types)
+    def decorated(func):
+        print('dans le decorated', path, types)
+        @liblo.make_method(path, types)
+        def wrapper(*args, **kwargs):
+            print('dans le wrapper')
+            for arg in args:
+                print('|', arg)
+            response = func(*args[:-1], **kwargs)
+            print('makcoe')
+            return response
+        return wrapper
+    return decorated
+    #def wrapper(*args, **kwargs):
+        #print('ramess', args, kwargs)
+        ###return func(*args, **kwargs)
+    
+    
+    
+    #wrapper()
+    #print(path, types)
+    ##print(*args, *kwargs)
+    
+    #liblo.make_method(path, types)
 
 #Osc server thread separated in many classes for confort.
 
@@ -407,7 +435,7 @@ class OscServerThread(ClientCommunicating):
     @make_method('/ray/server/list_sessions', 'i')
     def nsmServerListAll(self, path, args, types, src_addr):
         ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
-        
+        print('llf')
         self.list_asker_addr = src_addr
         with_net = bool(args[0])
         
@@ -781,6 +809,14 @@ class OscServerThread(ClientCommunicating):
         client_id = args[0]
         
         signaler.server_list_snapshots.emit(src_addr, client_id)
+    
+    @make_method('/ray/client/load_snapshot', 'ss')
+    def rayClientLoadSnapshot(self, path, args):
+        ifDebug('serverOSC::ray-daemon_receives %s, %s' % (path, str(args)))
+        
+        cliend_id, snapshot = args
+        
+        signaler.server_open_client_snapshot.emit(client_id, snapshot)
     
     @make_method('/ray/net_daemon/duplicate_state', 'f')
     def rayDuplicateState(self, path, args, types, src_addr):

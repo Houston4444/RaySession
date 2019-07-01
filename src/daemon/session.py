@@ -1293,6 +1293,7 @@ class SignaledSession(OperatingSession):
     def __init__(self, root):
         OperatingSession.__init__(self, root)
         
+        signaler.osc_recv.connect(self.oscReceive)
         signaler.server_new.connect(self.serverNewSession)
         signaler.server_new_from_tp.connect(self.serverNewSessionFromTemplate)
         signaler.server_open.connect(self.serverOpenSession)
@@ -1309,6 +1310,7 @@ class SignaledSession(OperatingSession):
         signaler.server_close.connect(self.serverCloseSession)
         signaler.server_abort.connect(self.serverAbortSession)
         signaler.server_open_snapshot.connect(self.serverOpenSnapshot)
+        signaler.server_open_client_snapshot.connect(self.serverOpenClientSnapshot)
         signaler.server_list_sessions.connect(self.serverListSessions)
         
         signaler.server_reorder_clients.connect(self.serverReorderClients)
@@ -1357,6 +1359,10 @@ class SignaledSession(OperatingSession):
         
         
     ############################# FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###############################
+    
+    def oscReceive(self, path, args, types, src_addr):
+        if path == '/nsm/server/announce':
+            print("nananaaannorud")
     
     def serverNewSession(self, path, args, src_addr):
         if self.process_order:
@@ -1437,6 +1443,15 @@ class SignaledSession(OperatingSession):
                               self.loadDone]
         
         self.nextFunction()
+    
+    def serverOpenClientSnapshot(self, client_id, snapshot):
+        if self.process_order:
+            return
+        
+        if not self.path:
+            return
+        
+        
     
     def serverRenameSession(self, new_session_name):
         if self.process_order:

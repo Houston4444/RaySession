@@ -4,6 +4,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 instance = None
 
 class Signaler(QObject):
+    osc_recv = pyqtSignal(str, list, str, object)
     server_announce    = pyqtSignal(str, list, object)
     server_reply       = pyqtSignal(str, list, object)
     server_rename      = pyqtSignal(str)
@@ -29,6 +30,7 @@ class Signaler(QObject):
     server_list_snapshots = pyqtSignal(object, str)
     server_set_auto_snapshot = pyqtSignal(bool)
     server_ask_auto_snapshot = pyqtSignal(object)
+    server_open_client_snapshot = pyqtSignal(str, str)
     gui_client_stop    = pyqtSignal(str, list)
     gui_client_kill    = pyqtSignal(str, list)
     gui_client_trash  = pyqtSignal(str, list)
