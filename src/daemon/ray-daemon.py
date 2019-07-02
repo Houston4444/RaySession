@@ -26,15 +26,11 @@ if __name__ == '__main__':
     #add RaySession/src/bin to $PATH
     ray.addSelfBinToPath()
     
-    #check arguments
-    parser = ArgParser()
-    
     #create app
     app = QCoreApplication(sys.argv)
     app.setApplicationName("RaySession")
     app.setOrganizationName("RaySession")
     
-    #
     initDaemonTools()
     
     ### Translation process
@@ -46,6 +42,9 @@ if __name__ == '__main__':
         app.installTranslator(appTranslator)
         
     _translate = app.translate
+    
+    #check arguments
+    parser = ArgParser()
     
     #manage session_root
     session_root = CommandLineArgs.session_root
