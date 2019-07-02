@@ -1431,11 +1431,20 @@ class SignaledSession(OperatingSession):
         OperatingSession.__init__(self, root)
         
         signaler.osc_recv.connect(self.oscReceive)
-        signaler.server_save_from_client.connect(
-            self.serverSaveSessionFromClient)
         signaler.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
         
     def oscReceive(self, path, args, types, src_addr):
+        nsm_corres = {"/nsm/server/add" : "/ray/session/add_executable",
+                      "/nsm/server/save": "/ray/session/save",
+                      "/nsm/server/open": "/ray/server/open",
+                      "/nsm/server/new" : "/ray/server/new",
+                      "/nsm/server/duplicate": "/ray/session/duplicate",
+                      "/nsm/server/close": "/ray/session/close",
+                      "/nsm/server/abort": "/ray/session/abort",
+                      "/nsm/server/quit" : "/ray/server/quit"}
+                      # /nsm/server/list is not used here because it doesn't
+                      # works as /ray/server/list_sessions
+        
         func_name = path.replace('/', '', 1).replace('/', '_')
         
         if func_name in self.__dir__():
@@ -1520,6 +1529,23 @@ class SignaledSession(OperatingSession):
                 self.endTimerIfLastExpected(client)
         else:
             self.message("Reply from unknown client")
+    
+    def nsm_client_is_clean(self, path, args, src_addr):
+        # save session from client clean (not dirty) message
+        if self.process_order:
+            return 
+        
+        if self.file_copier.isActive():
+            return 
+        
+        self.rememberOscArgs(path, args, None)
+        
+        client = self.getClientByAddress(src_addr)
+        if not client:
+            return
+        
+        self.process_order = [(self.save, client.client_id), self.saveDone]
+        self.nextFunction()
     
     def nsm_client_label(self, path, args, src_addr):
         client = self.getClientByAddress(src_addr)
@@ -1956,14 +1982,6 @@ class SignaledSession(OperatingSession):
     def serverOpenSessionAtStart(self, session_name):
         self.process_order = [self.save, (self.load, session_name),
                               self.loadDone]
-        self.nextFunction()
-        
-    def serverSaveSessionFromClient(self, path, args, src_addr, client_id):
-        if self.process_order:
-            return
-        
-        self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [(self.save, client_id), self.saveDone]
         self.nextFunction()
     
     def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
