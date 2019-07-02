@@ -32,13 +32,29 @@ def basename(*args):
 
 def session_operation(func):
     def wrapper(*args, **kwargs):
-        a = list(args)
-        sess = a[0]
-        if sess.process_order:
+        if len(args) < 4:
             return 
-        sess.rememberOscArgs(*args[1:])
+        
+        sess, path, osc_args, src_addr, *rest = args
+        
+        if sess.process_order:
+            self.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
+                      "An operation pending.")
+            return
+        
+        if sess.file_copier.isActive():
+            sess.send(src_addr, "/error", path, ray.Err.COPY_RUNNING, 
+                      "ray-daemon is copying files.\n"
+                        + "Wait copy finish or abort copy,\n"
+                        + "and restart operation !\n")
+            return
+        
+        sess.rememberOscArgs(path, osc_args, src_addr)
+        
         response = func(*args)
+        
         sess.nextFunction()
+        
         return response
     return wrapper
 
@@ -1415,15 +1431,17 @@ class SignaledSession(OperatingSession):
         OperatingSession.__init__(self, root)
         
         signaler.osc_recv.connect(self.oscReceive)
-        signaler.server_new_from_tp.connect(self.serverNewSessionFromTemplate)
         signaler.server_save_from_client.connect(
             self.serverSaveSessionFromClient)
-        signaler.server_save_session_template.connect(
-            self.serverSaveSessionTemplate)
-        signaler.server_reply.connect(self.serverReply)
         signaler.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
         
+    def oscReceive(self, path, args, types, src_addr):
+        func_name = path.replace('/', '', 1).replace('/', '_')
         
+        if func_name in self.__dir__():
+            function = self.__getattribute__(func_name)
+            function(path, args, src_addr)
+            
     ############## FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###################
     
     def nsm_server_announce(self, path, args, src_addr):
@@ -1472,7 +1490,37 @@ class SignaledSession(OperatingSession):
             
         if self.wait_for == ray.WaitFor.ANNOUNCE:
             self.endTimerIfLastExpected(client)
+    
+    def reply(self, path, args, src_addr):
+        if self.wait_for == ray.WaitFor.STOP:
+            return
+        
+        message = args[1]
+        client = self.getClientByAddress(src_addr)
+        if client:
+            client.setReply(ray.Err.OK, message)
+            #self.message( "Client \"%s\" replied with: %s in %fms"
+                         #% (client.name, message, 
+                            #client.milliseconds_since_last_command()))
             
+            if client.pending_command == ray.Command.SAVE:
+                client.last_save_time = time.time()
+            
+            client.pending_command = ray.Command.NONE
+            
+            client.setStatus(ray.ClientStatus.READY)
+            
+            server = self.getServer()
+            if (server 
+                    and self.getServerStatus() == ray.ServerStatus.READY
+                    and server.option_desktops_memory):
+                self.desktops_memory.replace()
+            
+            if self.wait_for == ray.WaitFor.REPLY:
+                self.endTimerIfLastExpected(client)
+        else:
+            self.message("Reply from unknown client")
+    
     def nsm_client_label(self, path, args, src_addr):
         client = self.getClientByAddress(src_addr)
         if client:
@@ -1528,16 +1576,62 @@ class SignaledSession(OperatingSession):
     
     @session_operation
     def ray_server_new_session(self, path, args, src_addr):
+        if len(args) == 2 and args[1]:
+            session_name, template_name = args
+            
+            spath = ''
+            if session_name.startswith('/'):
+                spath = session_name
+            else:
+                spath = "%s/%s" % (self.root, session_name)
+            
+            if not os.path.exists(spath):
+                self.process_order = [self.save, 
+                                      (self.prepareTemplate, *args, False), 
+                                      (self.load, session_name),
+                                       self.newDone]
+                return
+        
         self.process_order = [self.save, self.close, (self.new, args[0]),
                               self.save, self.newDone]
     
     @session_operation
     def ray_server_open_session(self, path, args, src_addr):
-        self.process_order = [self.save, (self.load, *args), self.loadDone]
+        if len(args) == 2 and args[1]:
+            session_name, template_name = args
+            
+            spath = ''
+            if session_name.startswith('/'):
+                spath = session_name
+            else:
+                spath = "%s/%s" % (self.root, session_name)
+            
+            if not os.path.exists(spath):
+                self.process_order = [self.save, 
+                                      (self.prepareTemplate, *args, True), 
+                                      (self.load, session_name),
+                                       self.loadDone]
+                return
+            
+        self.process_order = [self.save, (self.load, args[0]),
+                              self.loadDone]
     
     @session_operation
     def ray_session_save(self, path, args, src_addr):
         self.process_order = [self.save, self.saveDone]
+    
+    @session_operation
+    def ray_session_save_as_template(self, path, args, src_addr):
+        template_name = args[0]
+        net = bool(len(args) == 3)
+        
+        for client in self.clients:
+            if client.executable_path == 'ray-network':
+                client.net_session_template = template_name
+        
+        self.process_order = [self.save, 
+                              (self.saveSessionTemplate, 
+                               template_name, net)]
     
     def ray_session_take_snapshot(self, path, args, src_addr):
         self.snapshoter.save(args[0])
@@ -1852,39 +1946,16 @@ class SignaledSession(OperatingSession):
             
         self.removed_clients.remove(client)
     
-    def ray_option_bookmark_session_folder(self, state):
+    def ray_option_bookmark_session_folder(self, path, args, src_addr):
         if self.path:
             if args[0]:
                 self.bookmarker.makeAll(self.path)
             else:
                 self.bookmarker.removeAll(self.path)
-    
-    def oscReceive(self, path, args, types, src_addr):
-        func_name = path.replace('/', '', 1).replace('/', '_')
-        
-        if func_name in self.__dir__():
-            function = self.__getattribute__(func_name)
-            function(path, args, src_addr)
-        
-    def serverNewSessionFromTemplate(self, path, args, src_addr, net=False):
-        if self.process_order:
-            return
-        
-        self.rememberOscArgs(path, args, src_addr)
-        
-        if len(args) != 2:
-            return
-        
-        new_session_full_name, template_name = args
-        
-        self.process_order = [self.save, 
-                              (self.prepareTemplate, *args, net), 
-                              (self.load, new_session_full_name),
-                              self.loadDone]
-        self.nextFunction()
         
     def serverOpenSessionAtStart(self, session_name):
-        self.process_order = [self.save, (self.load, session_name), self.loadDone]
+        self.process_order = [self.save, (self.load, session_name),
+                              self.loadDone]
         self.nextFunction()
         
     def serverSaveSessionFromClient(self, path, args, src_addr, client_id):
@@ -1894,57 +1965,6 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [(self.save, client_id), self.saveDone]
         self.nextFunction()
-        
-    def serverSaveSessionTemplate(self, path, args, src_addr, net=False):
-        if self.process_order:
-            return
-        
-        if len(args) != 1:
-            return
-        
-        self.rememberOscArgs(path, args, src_addr)
-        
-        template_name = args[0]
-        
-        for client in self.clients:
-            if client.executable_path == 'ray-network':
-                client.net_session_template = template_name
-        
-        self.process_order = [self.save, 
-                              (self.saveSessionTemplate, 
-                               template_name, 
-                               net)]
-        self.nextFunction()
-    
-    def serverReply(self, path, args, src_addr):
-        if self.wait_for == ray.WaitFor.STOP:
-            return
-        
-        message = args[1]
-        client = self.getClientByAddress(src_addr)
-        if client:
-            client.setReply(ray.Err.OK, message)
-            #self.message( "Client \"%s\" replied with: %s in %fms"
-                         #% (client.name, message, 
-                            #client.milliseconds_since_last_command()))
-            
-            if client.pending_command == ray.Command.SAVE:
-                client.last_save_time = time.time()
-            
-            client.pending_command = ray.Command.NONE
-            
-            client.setStatus(ray.ClientStatus.READY)
-            
-            server = self.getServer()
-            if (server 
-                    and self.getServerStatus() == ray.ServerStatus.READY
-                    and server.option_desktops_memory):
-                self.desktops_memory.replace()
-            
-            if self.wait_for == ray.WaitFor.REPLY:
-                self.endTimerIfLastExpected(client)
-        else:
-            self.message("Reply from unknown client")
     
     def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
         tmp_session = DummySession(sess_root)

@@ -366,12 +366,12 @@ class OscServerThread(ClientCommunicating):
     def nsmServerListAll(self, path, args, types, src_addr):
         self.list_asker_addr = src_addr
     
-    @make_method('/ray/server/new_session', 's')
+    @make_method('/ray/server/new_session', None)
     def nsmServerNew(self, path, args, types, src_addr):
-        if self.is_nsm_locked:
+        if not ray.areTheyAllString(args):
             return False
         
-        if self.isOperationPending(src_addr, path):
+        if self.is_nsm_locked:
             return False
         
         if not pathIsValid(args[0]):
@@ -379,38 +379,10 @@ class OscServerThread(ClientCommunicating):
                       "Invalid session name.")
             return False
     
-    @make_method('/ray/server/new_from_template', 'ss')
-    def rayServerNewFromTemplate(self, path, args, types, src_addr):
-        if self.is_nsm_locked:
-            return False
-        
-        if self.isOperationPending(src_addr, path):
-            return False
-        
-        signaler.server_new_from_tp.emit(path, args, src_addr, False)
-    
-    @make_method('/ray/server/open_session', 's')
+    @make_method('/ray/server/open_session', None)
     def nsmServerOpen(self, path, args, types, src_addr):
-        if self.isOperationPending(src_addr, path):
+        if not ray.areTheyAllString(args):
             return False
-          
-    @make_method('/ray/server/open_session', 'ss')
-    def nsmServerOpenWithTemplate(self, path, args, types, src_addr):
-        if self.isOperationPending(src_addr, path):
-            return False
-        
-        session_name, template_name = args
-        
-        if template_name:
-            spath = ''
-            if session_name.startswith('/'):
-                spath = session_name
-            else:
-                spath = "%s/%s" % (self.session.root, session_name)
-            
-            if not os.path.exists(spath):
-                signaler.server_new_from_tp.emit(path, args, src_addr, True)
-                return False
     
     @make_method('/reply_sessions_list', None)
     def replySessionsList(self, path, args, types, src_addr):
@@ -422,55 +394,45 @@ class OscServerThread(ClientCommunicating):
     
     @make_method('/ray/session/save', '')
     def nsmServerSave(self, path, args, types, src_addr):
-        if self.isOperationPending(src_addr, path):
-            return False
-        
         if not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to save.")
             return False
     
-    @make_method('/ray/session/save_as_template', 's')
+    @make_method('/ray/session/save_as_template', None)
     def nsmServerSaveSessionTemplate(self, path, args, types, src_addr):
-        if self.isOperationPending(src_addr, path):
+        if not len(args) in (1, 3):
             return False
         
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "No session to save as template.")
+        if not ray.areTheyAllString(args):
             return False
         
-        if not pathIsValid(args[0]):
-            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
-                      "Invalid session name.")
-            return False
-        
-        signaler.server_save_session_template.emit(path, args,
-                                                   src_addr, False)
-        
-    @make_method('/ray/session/save_as_template', 'sss')
-    def nsmServerSaveSessionTemplateOff(self, path, args, types, src_addr):
-        #save as template an not loaded session
-        session_name, template_name, sess_root = args
-        
+        session_name = args[0]
         if not pathIsValid(session_name):
             self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
         
-        if not pathIsValid(template_name):
-            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
-                      "Invalid session name.")
-            return False
+        if len(args) == 3:
+            #save as template an not loaded session
+            session_name, template_name, sess_root = args
         
-        if (sess_root == self.session.root
-                and session_name == self.session.name):
-            net = True
-            signaler.server_save_session_template.emit(path, [template_name],
-                                                       src_addr, net)
-            return False
+            if not pathIsValid(template_name):
+                self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
+                        "Invalid session name.")
+                return False
         
-        signaler.dummy_load_and_template.emit(*args)
+            if not (sess_root == self.session.root
+                    and session_name == self.session.name):
+                signaler.dummy_load_and_template.emit(*args)
+                return False
+            
+                #net = True
+                #signaler.server_save_session_template.emit(path, [template_name],
+                                                        #src_addr, net)
+                #return False
+        
+        
     
     @make_method('/ray/session/take_snapshot', 's')
     def raySessionTakeSnapshot(self, path, args, types, src_addr):
@@ -478,9 +440,6 @@ class OscServerThread(ClientCommunicating):
     
     @make_method('/ray/session/close', '')
     def nsmServerClose(self, path, args, types, src_addr):
-        if self.isOperationPending(src_addr, path):
-            return False
-        
         if not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to close.")
@@ -500,9 +459,6 @@ class OscServerThread(ClientCommunicating):
     @make_method('/ray/session/duplicate', 's')
     def nsmServerDuplicate(self, path, args, types, src_addr):
         if self.is_nsm_locked:
-            return False
-        
-        if self.isOperationPending(src_addr, path):
             return False
         
         if not self.session.path:

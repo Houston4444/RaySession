@@ -335,10 +335,7 @@ class GUIServerThread(ServerThread):
         self.toDaemon('/ray/server/new_session', session_name)
 
     def newSessionFromTemplate(self, session_name, template_name):
-        self.toDaemon(
-            '/ray/server/new_from_template',
-            session_name,
-            template_name)
+        self.toDaemon('/ray/server/new_session', session_name, template_name)
 
     def openSession(self, session_name, session_template=''):
         if session_template:

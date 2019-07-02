@@ -53,7 +53,7 @@ if __name__ == '__main__':
         session_root = "%s/%s" % (os.getenv('HOME'), 
                                   _translate('daemon', 
                                              'Ray Network Sessions'))
-    
+                                  
     #make session_root folder if needed
     if not os.path.isdir(session_root):
         if os.path.exists(session_root):

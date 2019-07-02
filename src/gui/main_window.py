@@ -346,10 +346,8 @@ class MainWindow(QMainWindow):
         RS.settings.setValue('last_used_template', template_name)
 
         if template_name:
-            self.toDaemon(
-                '/ray/server/new_from_template',
-                session_name,
-                template_name)
+            self.toDaemon('/ray/server/new_session', session_name,
+                          template_name)
         else:
             self.toDaemon('/ray/server/new_session', session_name)
 

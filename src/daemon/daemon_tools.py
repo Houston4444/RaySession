@@ -128,7 +128,13 @@ class CommandLineArgs(argparse.Namespace):
 class ArgParser(argparse.ArgumentParser):
     def __init__(self):
         argparse.ArgumentParser.__init__(self)
-        self.add_argument('--session-root', '-r', 
+        _translate = QCoreApplication.translate
+        
+        default_root = "%s/%s" % (os.getenv('HOME'), 
+                                  _translate('daemon', 
+                                             'Ray Network Sessions'))
+        
+        self.add_argument('--session-root', '-r', type=str, default=default_root,
                           help='set root folder for sessions')
         self.add_argument('--session', '-s', type=str, default='',
                           help='session to load at startup')
