@@ -1297,39 +1297,12 @@ class SignaledSession(OperatingSession):
         signaler.server_new_from_tp.connect(self.serverNewSessionFromTemplate)
         signaler.server_save_from_client.connect(
             self.serverSaveSessionFromClient)
-        signaler.server_rename.connect(self.serverRenameSession)
         signaler.server_save_session_template.connect(
             self.serverSaveSessionTemplate)
-        signaler.server_open_snapshot.connect(self.serverOpenSnapshot)
-        signaler.server_open_client_snapshot.connect(self.serverOpenClientSnapshot)
-        
-        signaler.server_reorder_clients.connect(self.serverReorderClients)
-        
-        signaler.server_list_snapshots.connect(self.serverListSnapshots)
-        signaler.server_set_auto_snapshot.connect(self.serverSetAutoSnapshot)
-        signaler.server_ask_auto_snapshot.connect(self.serverAskAutoSnapshot)
         
         signaler.server_reply.connect(self.serverReply)
         
-        signaler.gui_client_stop.connect(self.guiClientStop)
-        signaler.gui_client_kill.connect(self.guiClientKill)
-        signaler.gui_client_trash.connect(self.guiClientTrash)
-        signaler.gui_client_resume.connect(self.guiClientResume)
-        signaler.gui_client_save.connect(self.guiClientSave)
-        signaler.gui_client_save_template.connect(self.guiClientSaveTemplate)
         signaler.gui_client_icon.connect(self.guiClientIcon)
-        signaler.gui_update_client_properties.connect(
-            self.updateClientProperties)
-        
-        signaler.gui_trash_restore.connect(self.guiTrashRestore)
-        signaler.gui_trash_remove_definitely.connect(
-            self.guiTrashRemoveDefinitely)
-        
-        signaler.bookmark_option_changed.connect(self.bookmarkOptionChanged)
-        
-        #signaler.copy_aborted.connect(self.abortCopy)
-        
-        signaler.net_duplicate_state.connect(self.setClientNetDuplicateState)
         
         signaler.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
         
@@ -1398,6 +1371,7 @@ class SignaledSession(OperatingSession):
         self.file_copier.abort()
     
     def ray_server_list_sessions(self, path, args, src_addr):
+        print('rieao', args)
         with_net = args[0]
         
         if with_net:
@@ -1632,6 +1606,173 @@ class SignaledSession(OperatingSession):
         
         self.addClientTemplate(template_name, factory)
     
+    def ray_session_reorder_clients(self, path, args, src_addr):
+        client_ids_list = args
+        self.reOrderClients(client_ids_list)
+    
+    def ray_session_list_snapshots(self, path, args, src_addr, client_id=""):
+        snapshots = self.snapshoter.list(client_id)
+        
+        i=0
+        snap_send = []
+        
+        for snapshot in snapshots:
+            if i == 20:
+                self.serverSend(src_addr, '/reply_snapshots_list', *snap_send)
+                
+                snap_send.clear()
+                i=0
+            else:
+                snap_send.append(snapshot)
+                i+=1
+        
+        if snap_send:
+            self.serverSend(src_addr, '/reply_snapshots_list', *snap_send)
+    
+    def ray_session_set_auto_snapshot(self, path, args, src_addr):
+        self.snapshoter.setAutoSnapshot(bool(args[0]))
+    
+    def ray_session_ask_auto_snapshot(self, path, args, src_addr):
+        auto_snapshot = not bool(self.snapshoter.isAutoSnapshotPrevented())
+        self.send(src_addr, '/reply_auto_snapshot',  int(auto_snapshot))
+    
+    def ray_client_stop(self, path, args, src_addr):
+        for client in self.clients:
+            if client.client_id == args[0]:
+                client.stop()
+                self.send(src_addr, "/reply", "Client stopped." )
+                break
+        else:
+            self.send(src_addr, "/error", -10, "No such client." )
+    
+    def ray_client_kill(self, path, args, src_addr):
+        for client in self.clients:
+            if client.client_id == args[0]:
+                client.kill()
+                self.send(src_addr, "/reply", "Client killed." )
+                break
+        else:
+            self.send(src_addr, "/error", -10, "No such client." )
+    
+    def ray_client_trash(self, path, args, src_addr):
+        client_id = args[0]
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                if client.isRunning():
+                    return
+                
+                if self.file_copier.isActive(client_id):
+                    self.file_copier.abort()
+                    return
+                
+                self.trashClient(client)
+                
+                self.send(src_addr, "/reply", "Client removed.")
+                break
+        else:
+            self.send(src_addr, "/error", -10, "No such client.")
+    
+    def ray_client_resume(self, path, args, src_addr):
+        for client in self.clients:
+            if client.client_id == args[0] and not client.isRunning():
+                if self.file_copier.isActive(client.client_id):
+                    self.send(src_addr, "/error", -13,
+                              "Impossible, copy running")
+                    return
+                
+                client.start()
+                break
+    
+    def ray_client_save(self, path, args, src_addr):
+        for client in self.clients:
+            if client.client_id == args[0] and client.active:
+                if self.file_copier.isActive(client.client_id):
+                    self.send(src_addr, "/error", -13,
+                              "Impossible, copy running")
+                    return
+                client.save()
+                break
+    
+    def ray_client_save_as_template(self, path, args, src_addr):
+        if self.file_copier.isActive():
+            self.send(src_addr, "/error", -13, "Impossible, copy running")
+            return
+        
+        for client in self.clients:
+            if client.client_id == args[0]:
+                client.saveAsTemplate(args[1])
+                break
+    
+    def ray_client_update_properties(self, path, args, src_addr):
+        client_data = ray.ClientData(*args)
+        
+        for client in self.clients:
+            if client.client_id == client_data.client_id:
+                client.updateClientProperties(client_data)
+                break
+    
+    def ray_client_list_snapshots(self, path, args, src_addr):
+        self.ray_session_list_snapshots(path, [], src_addr, args[0])
+    
+    def ray_client_load_snapshot(self, path, args, src_addr):
+        # TODO
+        pass
+    
+    def ray_net_daemon_duplicate_state(self, path, args, src_addr):
+        state = args[0]
+        
+        for client in self.clients:
+            if (client.net_daemon_url
+                and ray.areSameOscPort(client.net_daemon_url, src_addr.url)):
+                    client.net_duplicate_state = state
+                    client.net_daemon_copy_timer.stop()
+                    break
+        else:
+            return
+        
+        if state == 1:
+            if self.wait_for == ray.WaitFor.DUPLICATE_FINISH:
+                self.endTimerIfLastExpected(client)
+            return
+        
+        if (self.wait_for == ray.WaitFor.DUPLICATE_START and state == 0):
+            self.endTimerIfLastExpected(client)
+            
+        client.net_daemon_copy_timer.start()
+    
+    def ray_trash_restore(self, path, args, src_addr):
+        for client in self.removed_clients:
+            if client.client_id == args[0]:
+                self.restoreClient(client)
+                break
+        else:
+            self.send(src_addr, "/error", -10, "No such client.")
+    
+    def ray_trash_remove_definitely(self, path, args, src_addr):
+        for client in self.removed_clients:
+            if client.client_id == args[0]:
+                break
+        else:
+            return
+        
+        self.sendGui('/ray/trash/remove', client_id)
+        
+        for file in client.getProjectFiles():
+            try:
+                subprocess.run(['rm', '-R', file])
+            except:
+                continue
+            
+        self.removed_clients.remove(client)
+    
+    def ray_option_bookmark_session_folder(self, state):
+        if self.path:
+            if args[0]:
+                self.bookmarker.makeAll(self.path)
+            else:
+                self.bookmarker.removeAll(self.path)
+    
     def oscReceive(self, path, args, types, src_addr):
         func_name = path.replace('/', '', 1).replace('/', '_')
         
@@ -1668,25 +1809,6 @@ class SignaledSession(OperatingSession):
         self.process_order = [(self.save, client_id), self.saveDone]
         self.nextFunction()
         
-        
-    
-    
-    
-    
-    def serverOpenClientSnapshot(self, client_id, snapshot):
-        if self.process_order:
-            return
-        
-        if not self.path:
-            return
-        
-        
-    
-
-    
-    
-    
-    
     def serverSaveSessionTemplate(self, path, args, src_addr, net=False):
         if self.process_order:
             return
@@ -1708,46 +1830,6 @@ class SignaledSession(OperatingSession):
                                net)]
         self.nextFunction()
         
-    
-    
-    
-        
-    def serverReorderClients(self, path, args):
-        client_ids_list = args
-        
-        self.reOrderClients(client_ids_list)
-        
-    def serverListSnapshots(self, src_addr, client_id=""):
-        snapshots = self.snapshoter.list(client_id)
-        
-        i=0
-        snap_send = []
-        
-        for snapshot in snapshots:
-            if i == 20:
-                self.serverSend(src_addr, '/reply_snapshots_list',
-                                *snap_send)
-                
-                snap_send.clear()
-                i=0
-            else:
-                snap_send.append(snapshot)
-                i+=1
-        
-        if snap_send:
-            self.serverSend(src_addr, '/reply_snapshots_list', *snap_send)
-    
-    def serverSetAutoSnapshot(self, bool_snapshot):
-        self.snapshoter.setAutoSnapshot(bool_snapshot)
-    
-    def serverAskAutoSnapshot(self, src_addr):
-        auto_snapshot = not bool(self.snapshoter.isAutoSnapshotPrevented())
-        self.send(src_addr, '/reply_auto_snapshot',  int(auto_snapshot))
-    
-    
-    
-    
-    
     def addClientTemplate(self, template_name, factory=False):
         templates_root = TemplateRoots.user_clients
         if factory:
@@ -1891,92 +1973,20 @@ class SignaledSession(OperatingSession):
         tmp_session = DummySession(sess_root)
         tmp_session.dummyLoadAndTemplate(session_name, template_name)
     
-    def setClientNetDuplicateState(self, src_addr, state):
-        for client in self.clients:
-            if (client.net_daemon_url
-                and ray.areSameOscPort(client.net_daemon_url, src_addr.url)):
-                    client.net_duplicate_state = state
-                    client.net_daemon_copy_timer.stop()
-                    break
-        else:
-            return
-        
-        if state == 1:
-            if self.wait_for == ray.WaitFor.DUPLICATE_FINISH:
-                self.endTimerIfLastExpected(client)
-            return
-        
-        if (self.wait_for == ray.WaitFor.DUPLICATE_START and state == 0):
-            self.endTimerIfLastExpected(client)
-            
-        client.net_daemon_copy_timer.start()
+    
             
     
-    def guiClientStop(self, path, args):
-        for client in self.clients:
-            if client.client_id == args[0]:
-                client.stop()
-                self.sendGui("/reply", "Client stopped." )
-                break
-        else:
-            self.sendGui("/error", -10, "No such client." )
     
-    def guiClientKill(self, path, args):
-        for client in self.clients:
-            if client.client_id == args[0]:
-                client.kill()
-                self.sendGui("/reply", "Client killed." )
-                break
-        else:
-            self.sendGui("/error", -10, "No such client." )
     
-    def guiClientTrash(self, path, args):
-        client_id = args[0]
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                if client.isRunning():
-                    return
-                
-                if self.file_copier.isActive(client_id):
-                    self.file_copier.abort()
-                    return
-                
-                self.trashClient(client)
-                
-                self.sendGui("/reply", "Client removed.")
-                break
-        else:
-            self.sendGui("/error", -10, "No such client.")
+    
+    
+    
             
-    def guiClientResume(self, path, args):
-        for client in self.clients:
-            if client.client_id == args[0] and not client.isRunning():
-                if self.file_copier.isActive(client.client_id):
-                    self.sendGui("/error", -13, "Impossible, copy running")
-                    return
-                
-                client.start()
-                break
     
-    def guiClientSave(self, path, args):
-        for client in self.clients:
-            if client.client_id == args[0] and client.active:
-                if self.file_copier.isActive(client.client_id):
-                    self.sendGui("/error", -13, "Impossible, copy running")
-                    return
-                client.save()
-                break
     
-    def guiClientSaveTemplate(self, path, args):
-        if self.file_copier.isActive():
-            self.sendGui("/error", -13, "Impossible, copy running")
-            return
-        
-        for client in self.clients:
-            if client.client_id == args[0]:
-                client.saveAsTemplate(args[1])
-                break
+    
+    
+    
             
     def guiClientIcon(self, client_id, icon):
         for client in self.clients:
@@ -1984,43 +1994,13 @@ class SignaledSession(OperatingSession):
                 client.setIcon(icon)
                 break
     
-    def updateClientProperties(self, client_data):
-        for client in self.clients:
-            if client.client_id == client_data.client_id:
-                client.updateClientProperties(client_data)
-                break
     
-    def guiTrashRestore(self, client_id):
-        for client in self.removed_clients:
-            if client.client_id == client_id:
-                self.restoreClient(client)
-                break
-        else:
-            self.sendGui("/error", -10, "No such client.")
-            
-    def guiTrashRemoveDefinitely(self, client_id):
-        for client in self.removed_clients:
-            if client.client_id == client_id:
-                break
-        else:
-            return
-        
-        self.sendGui('/ray/trash/remove', client_id)
-        
-        for file in client.getProjectFiles():
-            try:
-                subprocess.run(['rm', '-R', file])
-            except:
-                continue
-            
-        self.removed_clients.remove(client)
     
-    def bookmarkOptionChanged(self, state):
-        if self.path:
-            if state:
-                self.bookmarker.makeAll(self.path)
-            else:
-                self.bookmarker.removeAll(self.path)
+    
+            
+    
+    
+    
     
     def terminate(self):
         if self.terminated_yet:

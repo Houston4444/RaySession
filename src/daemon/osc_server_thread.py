@@ -574,20 +574,18 @@ class OscServerThread(ClientCommunicating):
     def rayServerReorderClients(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             return False
-        
-        signaler.server_reorder_clients.emit(path, args)
     
     @make_method('/ray/session/list_snapshots', '')
     def rayServerListSnapshots(self, path, args, types, src_addr):
-        signaler.server_list_snapshots.emit(src_addr, '')
+        pass
     
     @make_method('/ray/session/set_auto_snapshot', 'i')
     def rayServerSetAutoSnapshot(self, path, args, types, src_addr):
-        signaler.server_set_auto_snapshot.emit(bool(args[0]))
+        pass
     
     @make_method('/ray/session/ask_auto_snapshot', '')
     def rayServerHasAutoSnapshot(self, path, args, types, src_addr):
-        signaler.server_ask_auto_snapshot.emit(src_addr)
+        pass
     
     @make_method('/ray/session/open_folder', '')
     def rayServerOpenFolder(self, path, args, types, src_addr):
@@ -596,27 +594,27 @@ class OscServerThread(ClientCommunicating):
     
     @make_method('/ray/client/stop', 's')
     def rayGuiClientStop(self, path, args, types, src_addr):
-        signaler.gui_client_stop.emit(path, args)
+        pass
     
     @make_method('/ray/client/kill', 's')
     def rayGuiClientKill(self, path, args, types, src_addr):
-        signaler.gui_client_kill.emit(path, args)            
+        pass           
     
     @make_method('/ray/client/trash', 's')
     def rayGuiClientRemove(self, path, args, types, src_addr):
-        signaler.gui_client_trash.emit(path, args)
+        pass
     
     @make_method('/ray/client/resume', 's')
     def rayGuiClientResume(self, path, args, types, src_addr):
-        signaler.gui_client_resume.emit(path, args)
+        pass
                 
     @make_method('/ray/client/save', 's')
     def rayGuiClientSave(self, path, args, types, src_addr):
-        signaler.gui_client_save.emit(path, args)
+        pass
 
     @make_method('/ray/client/save_as_template', 'ss')
     def rayGuiClientSaveAsTemplate(self, path, args, types, src_addr):
-        signaler.gui_client_save_template.emit(path, args)
+        pass
     
     @make_method('/ray/client/show_optional_gui', 's')
     def nsmGuiClientShow_optional_gui(self, path, args, types, src_addr):
@@ -634,22 +632,19 @@ class OscServerThread(ClientCommunicating):
 
     @make_method('/ray/client/update_properties', 'ssssissssis')
     def rayGuiClientUpdateProperties(self, path, args, types, src_addr):
-        client_data = ray.ClientData(*args)
-        signaler.gui_update_client_properties.emit(client_data)
+        pass
     
     @make_method('/ray/client/list_snapshots', 's')
     def rayClientListSnapshots(self, path, args, types, src_addr):
-        client_id = args[0]
-        signaler.server_list_snapshots.emit(src_addr, client_id)
+        pass
     
     @make_method('/ray/client/load_snapshot', 'ss')
     def rayClientLoadSnapshot(self, path, args, types, src_addr):
-        cliend_id, snapshot = args
-        signaler.server_open_client_snapshot.emit(client_id, snapshot)
+        pass
     
     @make_method('/ray/net_daemon/duplicate_state', 'f')
     def rayDuplicateState(self, path, args, types, src_addr):
-        signaler.net_duplicate_state.emit(src_addr, args[0])
+        pass
     
     @make_method('/ray/trash/restore', 's')
     def rayGuiTrashRestore(self, path, args, types, src_addr):
@@ -658,14 +653,9 @@ class OscServerThread(ClientCommunicating):
                       "Cannot add to session because no session is loaded.")
             return False
         
-        client_id = args[0]
-        
-        signaler.gui_trash_restore.emit(client_id)
-        
     @make_method('/ray/trash/remove_definitely', 's')
     def rayGuiTrashRemoveDefinitely(self, path, args, types, src_addr):
-        client_id = args[0]
-        signaler.gui_trash_remove_definitely.emit(client_id)
+        pass
     
     @make_method('/ray/option/save_from_client', 'i')
     def rayOptionSaveFromClient(self, path, args, types, src_addr):
@@ -674,7 +664,6 @@ class OscServerThread(ClientCommunicating):
     @make_method('/ray/option/bookmark_session_folder', 'i')
     def rayOptionBookmarkSessionFolder(self, path, args, types, src_addr):
         self.option_bookmark_session = bool(args[0])
-        signaler.bookmark_option_changed.emit(bool(args[0]))        
     
     @make_method('/ray/option/desktops_memory', 'i')
     def rayOptionDesktopsMemory(self, path, args, types, src_addr):
