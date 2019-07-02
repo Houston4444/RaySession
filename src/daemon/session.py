@@ -30,6 +30,18 @@ def dirname(*args):
 def basename(*args):
     return os.path.basename(*args)
 
+def session_operation(func):
+    def wrapper(*args, **kwargs):
+        a = list(args)
+        sess = a[0]
+        if sess.process_order:
+            return 
+        sess.rememberOscArgs(*args[1:])
+        response = func(*args)
+        sess.nextFunction()
+        return response
+    return wrapper
+
 class Session(ServerSender):
     def __init__(self, root):
         ServerSender.__init__(self)
@@ -1289,6 +1301,115 @@ class OperatingSession(Session):
         self.setServerStatus(ray.ServerStatus.OFF)
         QCoreApplication.quit()
         
+    def addClientTemplate(self, template_name, factory=False):
+        templates_root = TemplateRoots.user_clients
+        if factory:
+            templates_root = TemplateRoots.factory_clients
+            
+        xml_file = "%s/%s" % (templates_root, 'client_templates.xml')
+        file = open(xml_file, 'r')
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        file.close()
+        
+        if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
+            return
+        
+        nodes = xml.documentElement().childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            ct = node.toElement()
+            
+            if ct.tagName() != 'Client-Template':
+                continue
+            
+            if ct.attribute('template-name') == template_name:
+                client = Client(self)
+                client.readXmlProperties(ct)
+                
+                needed_version = ct.attribute('needed-version')
+                
+                if (needed_version.startswith('.')
+                    or needed_version.endswith('.')
+                    or not needed_version.replace('.', '').isdigit()):
+                        #needed-version not writed correctly, ignores it
+                        needed_version = ''
+                
+                if factory and needed_version:
+                    try:
+                        full_program_version = subprocess.check_output(
+                            [client.executable_path, '--version']).decode()
+                    except:
+                        continue
+                    
+                    previous_is_digit = False
+                    program_version = ''
+                    
+                    for character in full_program_version:
+                        if character.isdigit():
+                            program_version+=character
+                            previous_is_digit = True
+                        elif character == '.':
+                            if previous_is_digit:
+                                program_version+=character
+                            previous_is_digit = False
+                        else:
+                            if program_version:
+                                break
+                            
+                    if not program_version:
+                        continue
+                    
+                    
+                    neededs = []
+                    progvss = []
+                    
+                    for n in needed_version.split('.'):
+                        neededs.append(int(n))
+                        
+                    for n in program_version.split('.'):
+                        progvss.append(int(n))
+                    
+                    if neededs > progvss:
+                        node = node.nextSibling()
+                        continue
+                
+                full_name_files = []
+                
+                if not needed_version: 
+                    #if there is a needed version, 
+                    #then files are ignored because factory templates with
+                    #version must be NSM compatible
+                    #and dont need files (factory)
+                    template_path = "%s/%s" % (templates_root, template_name)
+                    
+                    if os.path.isdir(template_path):
+                        for file in os.listdir(template_path):
+                            full_name_files.append("%s/%s"
+                                                   % (template_path, file))
+                            
+                if self.addClient(client):
+                    if full_name_files:
+                        client.setStatus(ray.ClientStatus.PRECOPY)
+                        self.file_copier.startClientCopy(
+                            client.client_id, full_name_files, self.path, 
+                            self.addClientTemplate_step_1, 
+                            self.addClientTemplateAborted, [client])
+                    else:
+                        self.addClientTemplate_step_1(client)
+                    
+                break
+    
+    def addClientTemplate_step_1(self, client):
+        client.adjustFilesAfterCopy(self.name, ray.Template.CLIENT_LOAD)
+        
+        if client.auto_start:
+            client.start()
+    
+    def addClientTemplateAborted(self, client):
+        self.removeClient(client)
+        
 class SignaledSession(OperatingSession):
     def __init__(self, root):
         OperatingSession.__init__(self, root)
@@ -1299,15 +1420,11 @@ class SignaledSession(OperatingSession):
             self.serverSaveSessionFromClient)
         signaler.server_save_session_template.connect(
             self.serverSaveSessionTemplate)
-        
         signaler.server_reply.connect(self.serverReply)
-        
-        signaler.gui_client_icon.connect(self.guiClientIcon)
-        
         signaler.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
         
         
-    ############################# FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###############################
+    ############## FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###################
     
     def nsm_server_announce(self, path, args, src_addr):
         client_name, capabilities, executable_path, major, minor, pid = args
@@ -1371,7 +1488,6 @@ class SignaledSession(OperatingSession):
         self.file_copier.abort()
     
     def ray_server_list_sessions(self, path, args, src_addr):
-        print('rieao', args)
         with_net = args[0]
         
         if with_net:
@@ -1410,42 +1526,25 @@ class SignaledSession(OperatingSession):
         if session_list:
             self.send(src_addr, "/reply_sessions_list", *session_list)
     
+    @session_operation
     def ray_server_new_session(self, path, args, src_addr):
-        if self.process_order:
-            return
-        
-        self.rememberOscArgs(path, args, src_addr)
-        
-        if len(args) < 1:
-            return
-        
         self.process_order = [self.save, self.close, (self.new, args[0]),
                               self.save, self.newDone]
-        self.nextFunction()
     
+    @session_operation
     def ray_server_open_session(self, path, args, src_addr):
-        if self.process_order:
-            return
-        self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, (self.load, *args), self.loadDone]
-        self.nextFunction()
     
+    @session_operation
     def ray_session_save(self, path, args, src_addr):
-        if self.process_order:
-            return
-        self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.saveDone]
-        self.nextFunction()
     
     def ray_session_take_snapshot(self, path, args, src_addr):
         self.snapshoter.save(args[0])
-        
+    
+    @session_operation
     def ray_session_close(self, path, args, src_addr):
-        if self.process_order:
-            return
-        self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.save, self.close, self.closeDone]
-        self.nextFunction()
     
     def ray_session_abort(self, path, args, src_addr):
         self.wait_for = ray.WaitFor.NONE
@@ -1459,22 +1558,14 @@ class SignaledSession(OperatingSession):
         else:
             self.nextFunction()
     
+    @session_operation
     def ray_session_duplicate(self, path, args, src_addr):
-        if self.process_order:
-            return
-        
-        if len(args) != 1:
-            return
-        
         new_session_full_name = args[0]
-        
-        self.rememberOscArgs(path, args, src_addr)
         
         self.process_order = [self.save, 
                               (self.duplicate, new_session_full_name), 
                               (self.load, new_session_full_name), 
                               self.duplicateDone]
-        self.nextFunction()
         
     def ray_session_duplicate_only(self, path, args, src_addr):
         session_to_load, new_session, sess_root = args
@@ -1498,14 +1589,11 @@ class SignaledSession(OperatingSession):
             tmp_session.osc_src_addr = src_addr
             tmp_session.dummyDuplicate(session_to_load, new_session)
     
+    @session_operation
     def ray_session_open_snapshot(self, path, args, src_addr):
-        if self.process_order:
-            return
-        
         if not self.path:
             return 
         
-        self.rememberOscArgs(path, args, src_addr)
         snapshot = args[0]
         
         self.process_order = [(self.save, '', snapshot), 
@@ -1513,8 +1601,6 @@ class SignaledSession(OperatingSession):
                               (self.initSnapshot, self.path, snapshot),
                               (self.load, self.path), 
                               self.loadDone]
-        
-        self.nextFunction()
     
     def ray_session_rename(self, path, args, src_addr):
         new_session_name = args[0]
@@ -1829,115 +1915,6 @@ class SignaledSession(OperatingSession):
                                template_name, 
                                net)]
         self.nextFunction()
-        
-    def addClientTemplate(self, template_name, factory=False):
-        templates_root = TemplateRoots.user_clients
-        if factory:
-            templates_root = TemplateRoots.factory_clients
-            
-        xml_file = "%s/%s" % (templates_root, 'client_templates.xml')
-        file = open(xml_file, 'r')
-        xml = QDomDocument()
-        xml.setContent(file.read())
-        file.close()
-        
-        if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
-            return
-        
-        nodes = xml.documentElement().childNodes()
-        
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            ct = node.toElement()
-            
-            if ct.tagName() != 'Client-Template':
-                continue
-            
-            if ct.attribute('template-name') == template_name:
-                client = Client(self)
-                client.readXmlProperties(ct)
-                
-                needed_version = ct.attribute('needed-version')
-                
-                if (needed_version.startswith('.')
-                    or needed_version.endswith('.')
-                    or not needed_version.replace('.', '').isdigit()):
-                        #needed-version not writed correctly, ignores it
-                        needed_version = ''
-                
-                if factory and needed_version:
-                    try:
-                        full_program_version = subprocess.check_output(
-                            [client.executable_path, '--version']).decode()
-                    except:
-                        continue
-                    
-                    previous_is_digit = False
-                    program_version = ''
-                    
-                    for character in full_program_version:
-                        if character.isdigit():
-                            program_version+=character
-                            previous_is_digit = True
-                        elif character == '.':
-                            if previous_is_digit:
-                                program_version+=character
-                            previous_is_digit = False
-                        else:
-                            if program_version:
-                                break
-                            
-                    if not program_version:
-                        continue
-                    
-                    
-                    neededs = []
-                    progvss = []
-                    
-                    for n in needed_version.split('.'):
-                        neededs.append(int(n))
-                        
-                    for n in program_version.split('.'):
-                        progvss.append(int(n))
-                    
-                    if neededs > progvss:
-                        node = node.nextSibling()
-                        continue
-                
-                full_name_files = []
-                
-                if not needed_version: 
-                    #if there is a needed version, 
-                    #then files are ignored because factory templates with
-                    #version must be NSM compatible
-                    #and dont need files (factory)
-                    template_path = "%s/%s" % (templates_root, template_name)
-                    
-                    if os.path.isdir(template_path):
-                        for file in os.listdir(template_path):
-                            full_name_files.append("%s/%s"
-                                                   % (template_path, file))
-                            
-                if self.addClient(client):
-                    if full_name_files:
-                        client.setStatus(ray.ClientStatus.PRECOPY)
-                        self.file_copier.startClientCopy(
-                            client.client_id, full_name_files, self.path, 
-                            self.addClientTemplate_step_1, 
-                            self.addClientTemplateAborted, [client])
-                    else:
-                        self.addClientTemplate_step_1(client)
-                    
-                break
-    
-    def addClientTemplate_step_1(self, client):
-        client.adjustFilesAfterCopy(self.name, ray.Template.CLIENT_LOAD)
-        
-        if client.auto_start:
-            client.start()
-    
-    def addClientTemplateAborted(self, client):
-        self.removeClient(client)
     
     def serverReply(self, path, args, src_addr):
         if self.wait_for == ray.WaitFor.STOP:
@@ -1972,35 +1949,6 @@ class SignaledSession(OperatingSession):
     def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
         tmp_session = DummySession(sess_root)
         tmp_session.dummyLoadAndTemplate(session_name, template_name)
-    
-    
-            
-    
-    
-    
-    
-    
-    
-            
-    
-    
-    
-    
-    
-            
-    def guiClientIcon(self, client_id, icon):
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.setIcon(icon)
-                break
-    
-    
-    
-    
-            
-    
-    
-    
     
     def terminate(self):
         if self.terminated_yet:
