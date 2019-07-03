@@ -64,7 +64,7 @@ class ClientCommunicating(liblo.ServerThread):
         
     @ray_method('/reply', 'ss')
     def reply(self, path, args, types, src_addr):
-        signaler.server_reply.emit(path, args, src_addr)
+        pass
             
     @ray_method('/error', 'sis')
     def error(self, path, args, types, src_addr):

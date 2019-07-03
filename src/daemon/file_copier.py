@@ -157,6 +157,30 @@ class FileCopier(ServerSender):
                 self.abort_function(*self.next_args)
                 return
         
+        if type(src_list) == str:
+            src_dir = src_list
+            src_list = []
+            
+            if not os.path.isdir(src_dir):
+                self.abort_function(*self.next_args)
+                return
+            
+            try:
+                tmp_list = os.listdir(src_dir)
+            except:
+                self.abort_function(*self.next_args)
+                return
+                
+            for path in tmp_list:
+                if path == '.ray-snapshots':
+                    continue
+                
+                full_path = "%s/%s" % (src_dir, path)
+                src_list.append(full_path)
+            
+            if not dest_path_exists:
+                os.makedirs(dest_dir)
+        
         for orig_path in src_list:
             copy_file = CopyFile()
             copy_file.state     = 0
@@ -190,7 +214,7 @@ class FileCopier(ServerSender):
     def startSessionCopy(self, src_dir, dest_dir, next_function,
                          abort_function, next_args=[]):
         self.client_id = ''
-        self.start([src_dir], dest_dir, next_function,
+        self.start(src_dir, dest_dir, next_function,
                    abort_function, next_args)
         
     def abort(self, abort_function=None, next_args=[]):
