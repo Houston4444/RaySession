@@ -397,7 +397,6 @@ class Snapshoter(QObject):
         self._adder_aborted = False
         self.adder_process.start(all_args.pop(0), all_args)
         # self.adder_process.finished is connected to self.save_step_1
-        print('snap save1 done')
         
     def save_step_1(self):
         if self._adder_aborted:
@@ -415,7 +414,6 @@ class Snapshoter(QObject):
             self.session.sendGui('/reply_snapshots_list',
                                  fullRefForGui(ref, self.next_snapshot_name, 
                                                self._rw_snapshot))
-        print('snap save2 done')
         self.saved.emit()
         
     def load(self, spath, snapshot):
