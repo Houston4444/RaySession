@@ -1624,7 +1624,7 @@ class SignaledSession(OperatingSession):
                     if not already_send:
                         basefolder = root.replace(self.root + '/', '', 1)
                         session_list.append(basefolder)
-                        if len(session_list) == 100:
+                        if len(session_list) == 20:
                             self.send(src_addr, "/reply_sessions_list",
                                       *session_list)
                             
