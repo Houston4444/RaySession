@@ -77,10 +77,9 @@ class Snapshoter(QObject):
         
         return first_args + list(args)
     
-    
-    def list(self, client_id=""):
+    def getHistoryXmlDocumentElement(self):
         if not self.isInit():
-            return []
+            return None
         
         file_path = "%s/%s/%s" % (
                         self.session.path, self.gitname, self.history_path)
@@ -92,10 +91,35 @@ class Snapshoter(QObject):
             xml.setContent(history_file.read())
             history_file.close()
         except BaseException:
-            return []
+            return None
         
         SNS_xml = xml.documentElement()
         if SNS_xml.tagName() != 'SNAPSHOTS':
+            return None
+        
+        return SNS_xml
+        
+    def list(self, client_id=""):
+        #if not self.isInit():
+            #return []
+        
+        #file_path = "%s/%s/%s" % (
+                        #self.session.path, self.gitname, self.history_path)
+        
+        #xml = QDomDocument()
+            
+        #try:
+            #history_file = open(file_path, 'r')
+            #xml.setContent(history_file.read())
+            #history_file.close()
+        #except BaseException:
+            #return []
+        
+        #SNS_xml = xml.documentElement()
+        #if SNS_xml.tagName() != 'SNAPSHOTS':
+            #return []
+        SNS_xml = self.getHistoryXmlDocumentElement()
+        if not SNS_xml:
             return []
         
         nodes = SNS_xml.childNodes()
@@ -373,6 +397,7 @@ class Snapshoter(QObject):
         self._adder_aborted = False
         self.adder_process.start(all_args.pop(0), all_args)
         # self.adder_process.finished is connected to self.save_step_1
+        print('snap save1 done')
         
     def save_step_1(self):
         if self._adder_aborted:
@@ -390,7 +415,7 @@ class Snapshoter(QObject):
             self.session.sendGui('/reply_snapshots_list',
                                  fullRefForGui(ref, self.next_snapshot_name, 
                                                self._rw_snapshot))
-            
+        print('snap save2 done')
         self.saved.emit()
         
     def load(self, spath, snapshot):
@@ -398,6 +423,64 @@ class Snapshoter(QObject):
         
         self.runGitAt(spath, 'reset', '--hard')
         self.runGitAt(spath, 'checkout', snapshot_ref)
+    
+    def loadClientExclusive(self, client_id, snapshot):
+        #if not self.isInit():
+            #return []
+        
+        #file_path = "%s/%s/%s" % (
+                        #self.session.path, self.gitname, self.history_path)
+        
+        #xml = QDomDocument()
+            
+        #try:
+            #history_file = open(file_path, 'r')
+            #xml.setContent(history_file.read())
+            #history_file.close()
+        #except BaseException:
+            #return
+        
+        #SNS_xml = xml.documentElement()
+        #if SNS_xml.tagName() != 'SNAPSHOTS':
+            #return
+        
+        SNS_xml = self.getHistoryXmlDocumentElement()
+        if not SNS_xml:
+            # TODO send error
+            return 
+        
+        nodes = SNS_xml.childNodes()
+        
+        client_path_list = []
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            el = node.toElement()
+            
+            if el.attribute('ref') != snapshot:
+                continue
+            
+            client_nodes = node.childNodes()
+            
+            for j in range(client_nodes.count()):
+                client_node = client_nodes.at(j)
+                client_el = client_node.toElement()
+                
+                if client_el.attribute('client_id') != client_id:
+                    continue
+                
+                file_nodes = client_node.childNodes()
+                
+                for k in range(file_nodes.count()):
+                    file_node = file_nodes.at(k)
+                    file_el = file_node.toElement()
+                    file_path = file_el.attribute('path')
+                    if file_path:
+                        client_path_list.append(file_path)
+        
+        self.runGitAt(self.session.path, 'reset', '--hard')
+        self.runGitAt(self.session.path, 'checkout', snapshot, '--',
+                      *client_path_list)
         
     def abort(self):
         if not self.adder_process.state():
@@ -409,7 +492,8 @@ class Snapshoter(QObject):
         self.adder_process.terminate()
     
     def setAutoSnapshot(self, bool_snapshot):
-        auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path, self.gitname)
+        auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path,
+                                                          self.gitname)
         file_exists = bool(os.path.exists(auto_snap_file))
         
         if bool_snapshot:

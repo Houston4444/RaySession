@@ -114,10 +114,11 @@ class Command:
 class WaitFor:
     NONE = 0
     STOP = 1
-    ANNOUNCE = 2
-    REPLY = 3
-    DUPLICATE_START = 4
-    DUPLICATE_FINISH = 5
+    STOP_ONE = 2
+    ANNOUNCE = 3
+    REPLY = 4
+    DUPLICATE_START = 5
+    DUPLICATE_FINISH = 6
 
 
 class Template:

@@ -1426,6 +1426,31 @@ class OperatingSession(Session):
     def addClientTemplateAborted(self, client):
         self.removeClient(client)
         
+    def closeClient(self, client):
+        self.setServerStatus(ray.ServerStatus.READY)
+        
+        self.expected_clients.append(client)
+        client.stop()
+        
+        self.waitAndGoTo(30000, (self.closeClient_step1, client),
+                         ray.WaitFor.STOP_ONE)
+        
+    def closeClient_step1(self, client):
+        if client in self.expected_clients:
+            client.kill()
+            
+        self.waitAndGoTo(1000, self.nextFunction, ray.WaitFor.STOP_ONE)
+        
+    def loadClientSnapshot(self, client_id, snapshot):
+        self.setServerStatus(ray.ServerStatus.READY)
+        
+        self.snapshoter.loadClientExclusive(client_id, snapshot)
+        self.nextFunction()
+        
+    def startClient(self, client):
+        client.start()
+        self.nextFunction()
+    
 class SignaledSession(OperatingSession):
     def __init__(self, root):
         OperatingSession.__init__(self, root)
@@ -1946,9 +1971,25 @@ class SignaledSession(OperatingSession):
     def ray_client_list_snapshots(self, path, args, src_addr):
         self.ray_session_list_snapshots(path, [], src_addr, args[0])
     
-    def ray_client_load_snapshot(self, path, args, src_addr):
-        # TODO
-        pass
+    @session_operation
+    def ray_client_open_snapshot(self, path, args, src_addr):
+        client_id, snapshot = args
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                if client.isRunning():
+                    self.process_order = [self.save,
+                                          (self.closeClient, client),
+                                          (self.loadClientSnapshot, client_id, 
+                                           snapshot),
+                                          (self.startClient, client)]
+                else:
+                    self.process_order = [self.save,
+                                          (self.loadClientSnapshot, client_id,
+                                           snapshot)]
+        else:
+            self.send(src_addr, '/error', path,
+                      "No client with %s client_id" % client_id)
     
     def ray_net_daemon_duplicate_state(self, path, args, src_addr):
         state = args[0]

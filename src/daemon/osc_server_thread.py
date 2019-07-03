@@ -655,7 +655,7 @@ class OscServerThread(ClientCommunicating):
     def rayClientListSnapshots(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/client/load_snapshot', 'ss')
+    @ray_method('/ray/client/open_snapshot', 'ss')
     def rayClientLoadSnapshot(self, path, args, types, src_addr):
         pass
     
