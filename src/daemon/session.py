@@ -1434,7 +1434,7 @@ class SignaledSession(OperatingSession):
         signaler.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
         
     def oscReceive(self, path, args, types, src_addr):
-        nsm_corres = {"/nsm/server/add" : "/ray/session/add_executable",
+        nsm_equivs = {"/nsm/server/add" : "/ray/session/add_executable",
                       "/nsm/server/save": "/ray/session/save",
                       "/nsm/server/open": "/ray/server/open",
                       "/nsm/server/new" : "/ray/server/new",
@@ -1444,6 +1444,10 @@ class SignaledSession(OperatingSession):
                       "/nsm/server/quit" : "/ray/server/quit"}
                       # /nsm/server/list is not used here because it doesn't
                       # works as /ray/server/list_sessions
+        
+        nsm_path = nsm_equivs.get(path)
+        if nsm_path:
+            path = nsm_path
         
         func_name = path.replace('/', '', 1).replace('/', '_')
         
@@ -1599,6 +1603,27 @@ class SignaledSession(OperatingSession):
                     
         if session_list:
             self.send(src_addr, "/reply_sessions_list", *session_list)
+    
+    def nsm_server_list(self, path, args, src_addr):
+        if not self.root:
+            return
+        
+        session_list = []
+        
+        for root, dirs, files in os.walk(self.root):
+            #exclude hidden files and dirs
+            files   = [f for f in files if not f.startswith('.')]
+            dirs[:] = [d for d in dirs  if not d.startswith('.')]
+            
+            if root == self.root:
+                continue
+            
+            for file in files:
+                if file in ('raysession.xml', 'session.nsm'):
+                    if not already_send:
+                        basefolder = root.replace(self.root + '/', '', 1)
+                        self.send(src_addr, '/reply', '/nsm/server/list',
+                                  basefolder)
     
     @session_operation
     def ray_server_new_session(self, path, args, src_addr):
