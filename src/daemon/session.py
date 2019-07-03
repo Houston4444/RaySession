@@ -58,6 +58,7 @@ def session_operation(func):
         return response
     return wrapper
 
+
 class Session(ServerSender):
     def __init__(self, root):
         ServerSender.__init__(self)
@@ -79,6 +80,7 @@ class Session(ServerSender):
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
         self.snapshoter.saved.connect(self.save_step2)
+        self.auto_snapshot = True
     
     #############
     def oscReply(self, *args):
@@ -672,7 +674,7 @@ class OperatingSession(Session):
         self.message("Session saved.")
         
         server = self.getServer()
-        if (server and server.option_snapshots 
+        if (self.auto_snapshot and server and server.option_snapshots 
                 and (rewind_snapshot or self.snapshoter.hasChanges())):
             self.setServerStatus(ray.ServerStatus.SNAPSHOT)
             self.snapshoter.save('', rewind_snapshot)
@@ -1120,6 +1122,9 @@ class OperatingSession(Session):
                         self.desktops_memory.readXml(node.toElement())
             
             ray_file.close()
+            
+            self.auto_snapshot = not self.snapshoter.isAutoSnapshotPrevented()
+            
         else:
             for line in file.read().split('\n'):
                 elements = line.split(':')
@@ -1810,7 +1815,7 @@ class SignaledSession(OperatingSession):
             try:
                 spath = "%s/%s" % (dirname(self.path), new_session_name)
                 subprocess.run(['mv', self.path, spath])
-                self.path = spath
+                self.setPath(spath)
                 
                 self.sendGuiMessage(
                     _translate('GUIMSG', 'Session directory is now: %s')
@@ -1818,8 +1823,6 @@ class SignaledSession(OperatingSession):
                 
             except:
                 pass
-        
-        self.name = new_session_name
         
         self.sendGui('/ray/gui/session/name', self.name, self.name)
     
@@ -1887,10 +1890,12 @@ class SignaledSession(OperatingSession):
     
     def ray_session_set_auto_snapshot(self, path, args, src_addr):
         self.snapshoter.setAutoSnapshot(bool(args[0]))
+        self.auto_snapshot = bool(args[0])
     
     def ray_session_ask_auto_snapshot(self, path, args, src_addr):
-        auto_snapshot = not bool(self.snapshoter.isAutoSnapshotPrevented())
-        self.send(src_addr, '/reply_auto_snapshot',  int(auto_snapshot))
+        self.auto_snapshot = not bool(
+            self.snapshoter.isAutoSnapshotPrevented())
+        self.send(src_addr, '/reply_auto_snapshot',  int(self.auto_snapshot))
     
     def ray_client_stop(self, path, args, src_addr):
         for client in self.clients:

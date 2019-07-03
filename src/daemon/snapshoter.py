@@ -349,9 +349,6 @@ class Snapshoter(QObject):
         if not self.session.path:
             return False
         
-        if self.isAutoSnapshotPrevented():
-            return False
-        
         if not self.isInit():
             return True
         
