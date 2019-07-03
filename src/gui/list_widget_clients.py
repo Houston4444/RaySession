@@ -53,8 +53,8 @@ class ClientSlot(QFrame):
         self.menu = QMenu(self)
 
         self.menu.addAction(self.ui.actionSaveAsApplicationTemplate)
-        self.menu.addAction(self.ui.actionProperties)
         self.menu.addAction(self.ui.actionReturnToAPreviousState)
+        self.menu.addAction(self.ui.actionProperties)
 
         self.ui.iconButton.setMenu(self.menu)
 

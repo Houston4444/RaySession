@@ -877,14 +877,14 @@ class OperatingSession(Session):
             os.makedirs(template_root)
         
         
-        #For network sessions, 
-        #save as template the network session only 
-        #if there is no other server on this same machine.
-        #Else, one could erase template just created by another one.
-        #To prevent all confusion, 
-        #all seen machines are sended to prevent an erase by looping 
-        #(a network session can contains another network session 
-        #on the machine where is the master daemon, for example).
+        # For network sessions, 
+        # save as template the network session only 
+        # if there is no other server on this same machine.
+        # Else, one could erase template just created by another one.
+        # To prevent all confusion, 
+        # all seen machines are sent to prevent an erase by looping 
+        # (a network session can contains another network session 
+        # on the machine where is the master daemon, for example).
         
         for client in self.clients:
             if client.net_daemon_url:
@@ -1555,7 +1555,7 @@ class SignaledSession(OperatingSession):
             
             server = self.getServer()
             if (server 
-                    and self.getServerStatus() == ray.ServerStatus.READY
+                    and server.getServerStatus() == ray.ServerStatus.READY
                     and server.option_desktops_memory):
                 self.desktops_memory.replace()
             
@@ -1722,6 +1722,17 @@ class SignaledSession(OperatingSession):
         self.process_order = [self.save, self.close, self.closeDone]
     
     def ray_session_abort(self, path, args, src_addr):
+        if (self.hasServer()
+                    and self.getServer().getServerStatus()
+                        == ray.ServerStatus.PRECOPY):
+                self.file_copier.abort()
+                return
+        
+        if not self.path:
+            self.serverSend(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "No session to abort." )
+            return
+        
         self.wait_for = ray.WaitFor.NONE
         self.timer.stop()
         

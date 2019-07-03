@@ -475,14 +475,7 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/session/abort', '')
     def raySessionAbort(self, path, args, types, src_addr):
-        if self.server_status == ray.ServerStatus.PRECOPY:
-            signaler.copy_aborted.emit()
-            return False
-        
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "No session to abort." )
-            return False
+        pass
     
     @ray_method('/nsm/server/abort', '')
     def nsmServerAbort(self, path, args, types, src_addr):
@@ -721,6 +714,9 @@ class OscServerThread(ClientCommunicating):
     def setServerStatus(self, server_status):
         self.server_status = server_status
         self.sendGui('/ray/server_status', server_status) 
+    
+    def getServerStatus(self):
+        return self.server_status
     
     def informCopytoGui(self, copy_state):
         self.sendGui('/ray/gui/server/copying', int(copy_state))
