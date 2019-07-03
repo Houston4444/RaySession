@@ -317,15 +317,6 @@ class MainWindow(QMainWindow):
     def quitAppNow(self):
         self._daemon_manager.stop()
 
-    def newClientTemplate(self, client_id):
-        dialog = child_dialogs.SaveTemplateClientDialog(self)
-        dialog.exec()
-        if not dialog.result():
-            return
-
-        template_name = dialog.getTemplateName()
-        self.toDaemon('/ray/client/save_as_template', client_id, template_name)
-
     def updateClientLabel(self, client_id, label):
         client = self._session.getClient(client_id)
         if not client:

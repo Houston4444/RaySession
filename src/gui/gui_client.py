@@ -121,14 +121,6 @@ class Client(object):
         self.properties_dialog.updateContents()
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()
-        
-    def showSnapshotsDialog(self):
-        dialog = snapshots_dialog.ClientSnapshotsDialog(self._main_win, self)
-        dialog.exec()
-        if dialog.result():
-            snapshot = dialog.getSelectedSnapshot()
-            self._main_win.toDaemon('/ray/client/open_snapshot',
-                                   self.client_id, snapshot)
 
     def reCreateWidget(self):
         del self.widget

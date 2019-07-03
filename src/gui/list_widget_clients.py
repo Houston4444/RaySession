@@ -7,8 +7,11 @@ from PyQt5.QtCore import Qt, pyqtSignal, QSize, QFile
 import ray
 from gui_server_thread import GUIServerThread
 from gui_tools import clientStatusString, _translate
+import child_dialogs
+import snapshots_dialog
 
 import ui_client_slot
+
 
 
 class ClientSlot(QFrame):
@@ -47,8 +50,10 @@ class ClientSlot(QFrame):
 
         self.ui.actionSaveAsApplicationTemplate.triggered.connect(
             self.saveAsApplicationTemplate)
-        self.ui.actionProperties.triggered.connect(self.client.showPropertiesDialog)
-        self.ui.actionReturnToAPreviousState.triggered.connect(self.client.showSnapshotsDialog)
+        self.ui.actionProperties.triggered.connect(
+            self.client.showPropertiesDialog)
+        self.ui.actionReturnToAPreviousState.triggered.connect(
+            self.openSnapshotsDialog)
 
         self.menu = QMenu(self)
 
@@ -177,13 +182,23 @@ class ClientSlot(QFrame):
         self._main_win.abortCopyClient(self.clientId())
 
     def saveAsApplicationTemplate(self):
-        self._main_win.newClientTemplate(self.clientId())
+        dialog = child_dialogs.SaveTemplateClientDialog(self._main_win)
+        dialog.exec()
+        if not dialog.result():
+            return
 
-    def openPropertiesDialog(self):
-        self._main_win.openClientProperties(self.clientId())
+        template_name = dialog.getTemplateName()
+        self.toDaemon('/ray/client/save_as_template', self.clientId(),
+                      template_name)
         
     def openSnapshotsDialog(self):
-        self._main_win.openClientSnapshotsDialog(self.clientId())
+        dialog = snapshots_dialog.ClientSnapshotsDialog(self._main_win,
+                                                        self.client)
+        dialog.exec()
+        if dialog.result():
+            snapshot = dialog.getSelectedSnapshot()
+            self.toDaemon('/ray/client/open_snapshot',
+                          self.clientId(), snapshot)
 
     def updateLabel(self, label):
         self._main_win.updateClientLabel(self.clientId(), label)
