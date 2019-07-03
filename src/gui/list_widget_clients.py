@@ -60,6 +60,9 @@ class ClientSlot(QFrame):
         self.menu.addAction(self.ui.actionSaveAsApplicationTemplate)
         self.menu.addAction(self.ui.actionReturnToAPreviousState)
         self.menu.addAction(self.ui.actionProperties)
+        
+        self.ui.actionReturnToAPreviousState.setVisible(
+            self._main_win.has_git)
 
         self.ui.iconButton.setMenu(self.menu)
 
@@ -332,6 +335,11 @@ class ClientSlot(QFrame):
 
     def setProgress(self, progress):
         self.ui.lineEditClientStatus.setProgress(progress)
+        
+    def setDaemonOptions(self, options):
+        print('efrok', has_git)
+        has_git = bool(options & ray.Option.HAS_GIT)
+        self.ui.actionReturnToAPreviousState.setVisible(has_git)
 
     def contextMenuEvent(self, event):
         act_selected = self.menu.exec(self.mapToGlobal(event.pos()))

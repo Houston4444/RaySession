@@ -195,6 +195,8 @@ class MainWindow(QMainWindow):
         if not self._daemon_manager.is_local:
             self.ui.actionKeepFocus.setChecked(False)
             self.ui.actionKeepFocus.setEnabled(False)
+            
+        self.has_git = False
 
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
@@ -258,9 +260,15 @@ class MainWindow(QMainWindow):
             
         has_git = bool(options & ray.Option.HAS_GIT)
         self.ui.actionSessionsLogging.setEnabled(has_git)
+        self.ui.actionReturnToAPreviousState.setVisible(has_git)
+        self.ui.toolButtonSnapshots.setVisible(has_git)
         if has_git:
             self.ui.actionSessionsLogging.setText(
                 _translate('actions', 'Sessions Logging'))
+        
+        self.has_git = has_git
+        for client in self._session.client_list:
+            client.widget.setDaemonOptions(options)
 
     def toDaemon(self, *args):
         server = GUIServerThread.instance()

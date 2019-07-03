@@ -18,8 +18,10 @@ def ray_method(path, types):
     def decorated(func):
         @liblo.make_method(path, types)
         def wrapper(*args, **kwargs):
-            ifDebug('serverOSC::raysession_receives %s, %s' 
-                    % (path, str(args)))
+            if CommandLineArgs.debug:
+                sys.stderr.write(
+                    '\033[93mOSC::gui_receives\033[0m %s, %s.\n'
+                        % (path, str(args)))
             response = func(*args[:-1], **kwargs)
             return response
         return wrapper
@@ -232,12 +234,6 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/trash/clear', '')
     def rayGuiTrashClear(self, path, args, types, src_addr):
         self._signaler.trash_clear.emit()
-
-    def debugg(self, path, args):
-        if CommandLineArgs.debug:
-            sys.stderr.write(
-                '\033[93mOSC::gui_receives\033[0m %s, %s.\n' %
-                (path, str(args)))
 
     def toDaemon(self, *args):
         if CommandLineArgs.debug:
