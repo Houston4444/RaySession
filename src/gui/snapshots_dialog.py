@@ -193,7 +193,7 @@ class SnapGroup(Snapshot):
         
         smallest_cg = self.sub_type
         
-        # find the smallest common group with others 
+        # find the smallest common group with any other 
         for snapshot in self.snapshots:
             common_group = snapshot.commonGroup(new_snapshot)
             if common_group < smallest_cg:
@@ -207,19 +207,20 @@ class SnapGroup(Snapshot):
                 break
         else:
             # There is no snap outside of smallest_cg
-            # but there are maybe snapshots to group 
-            cgf = 0
+            # but there are maybe others snapshots to group together
+            cg_final = 0
             compare_snap = Snapshot(None)
             
             for cg in (GROUP_DAY, GROUP_MONTH, GROUP_YEAR):
-                if cgf:
+                if cg_final:
                     break
                 
                 if cg >= smallest_cg:
                     continue
                 
+                # compare all existing snapshots with all others
                 for i in range(len(self.snapshots)):
-                    if cgf:
+                    if cg_final:
                         break
                     
                     compare_snap = self.snapshots[i]
@@ -237,42 +238,50 @@ class SnapGroup(Snapshot):
                         
                         if (snapshot.commonGroup(compare_snap) == cg
                                 and snapshot.commonGroup(new_snapshot) > cg):
-                            cgf = cg
+                            cg_final = cg
                             break
             
-            if cgf:
+            if cg_final:
                 
-                snap_group = SnapGroup(compare_snap.date_time, cgf)
+                snap_group = SnapGroup(compare_snap.date_time, cg_final)
+                self.addGroup(snap_group)
+                #to_rem = []
                 
-                to_rem = []
-                
-                for i in range(len(self.snapshots)):
-                    snapshot = self.snapshots[i]
-                    if snap_group.canTake(snapshot):
-                        snap_group.add(snapshot)
-                        print("    addit", cgf, snapshot.sub_type, snapshot.text)
-                        to_rem.append(i)
+                #for i in range(len(self.snapshots)):
+                    #snapshot = self.snapshots[i]
+                    #if snap_group.canTake(snapshot):
+                        #snap_group.add(snapshot)
+                        #print("    addit", cg_final, snapshot.sub_type, snapshot.text)
+                        #to_rem.append(i)
                         
-                to_rem.reverse()
+                #to_rem.reverse()
                 
-                for i in to_rem:
-                    self.snapshots.__delitem__(i)
+                #for i in to_rem:
+                    #self.snapshots.__delitem__(i)
                         
-                self.snapshots.append(snap_group)
+                #self.snapshots.append(snap_group)
                 
             self.snapshots.append(new_snapshot)
             return
         
-        
         # create group and add to this all snaps which have to.
         snap_group = SnapGroup(new_snapshot.date_time, smallest_cg)
+        snap_group.add(new_snapshot)
+        self.addGroup(snap_group)
+    
+    def addGroup(self, snap_group):
+        to_rem = []
         
-        for snapshot in self.snapshots:
+        for i in range(len(self.snapshots)):
+            snapshot = self.snapshots[i]
             if snap_group.canTake(snapshot):
                 snap_group.add(snapshot)
-                self.snapshots.remove(snapshot)
+                to_rem.append(i)
+                
+        to_rem.reverse()
+        for i in to_rem:
+            self.snapshots.__delitem__(i)
         
-        snap_group.add(new_snapshot)
         self.snapshots.append(snap_group)
     
     def sort(self):
