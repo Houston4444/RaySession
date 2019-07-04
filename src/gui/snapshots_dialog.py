@@ -242,24 +242,8 @@ class SnapGroup(Snapshot):
                             break
             
             if cg_final:
-                
                 snap_group = SnapGroup(compare_snap.date_time, cg_final)
                 self.addGroup(snap_group)
-                #to_rem = []
-                
-                #for i in range(len(self.snapshots)):
-                    #snapshot = self.snapshots[i]
-                    #if snap_group.canTake(snapshot):
-                        #snap_group.add(snapshot)
-                        #print("    addit", cg_final, snapshot.sub_type, snapshot.text)
-                        #to_rem.append(i)
-                        
-                #to_rem.reverse()
-                
-                #for i in to_rem:
-                    #self.snapshots.__delitem__(i)
-                        
-                #self.snapshots.append(snap_group)
                 
             self.snapshots.append(new_snapshot)
             return

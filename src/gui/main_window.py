@@ -103,6 +103,8 @@ class MainWindow(QMainWindow):
             self.bookmarkSessionFolderToggled)
         self.ui.actionDesktopsMemory.toggled.connect(
             self.desktopsMemoryToggled)
+        self.ui.actionSessionsLogging.toggled.connect(
+            self.sessionsLoggingToggled)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
 
@@ -301,6 +303,9 @@ class MainWindow(QMainWindow):
     def desktopsMemoryToggled(self, state):
         self.toDaemon('/ray/option/desktops_memory', int(state))
 
+    def sessionsLoggingToggled(self, state):
+        self.toDaemon('/ray/option/snapshots', int(state))
+        
     def flashOpen(self):
         for client in self._session.client_list:
             if client.status == ray.ClientStatus.OPEN:
