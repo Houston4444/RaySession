@@ -103,8 +103,8 @@ class MainWindow(QMainWindow):
             self.bookmarkSessionFolderToggled)
         self.ui.actionDesktopsMemory.toggled.connect(
             self.desktopsMemoryToggled)
-        self.ui.actionSessionsLogging.toggled.connect(
-            self.sessionsLoggingToggled)
+        self.ui.actionAutoSnapshot.toggled.connect(
+            self.autoSnapshotToggled)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
 
@@ -121,7 +121,7 @@ class MainWindow(QMainWindow):
         self.controlMenu.addSeparator()
         self.controlMenu.addAction(self.ui.actionSaveAllFromSavedClient)
         self.controlMenu.addAction(self.ui.actionBookmarkSessionFolder)
-        self.controlMenu.addAction(self.ui.actionSessionsLogging)
+        self.controlMenu.addAction(self.ui.actionAutoSnapshot)
         self.controlMenu.addAction(self.ui.actionDesktopsMemory)
 
         self.controlToolButton = self.ui.toolBar.widgetForAction(
@@ -251,7 +251,7 @@ class MainWindow(QMainWindow):
             bool(options & ray.Option.BOOKMARK_SESSION))
         self.ui.actionDesktopsMemory.setChecked(
             bool(options & ray.Option.DESKTOPS_MEMORY))
-        self.ui.actionSessionsLogging.setChecked(
+        self.ui.actionAutoSnapshot.setChecked(
             bool(options & ray.Option.SNAPSHOTS))
 
         has_wmctrl = bool(options & ray.Option.HAS_WMCTRL)
@@ -261,12 +261,12 @@ class MainWindow(QMainWindow):
                 _translate('actions', 'Desktops Memory'))
             
         has_git = bool(options & ray.Option.HAS_GIT)
-        self.ui.actionSessionsLogging.setEnabled(has_git)
+        self.ui.actionAutoSnapshot.setEnabled(has_git)
         self.ui.actionReturnToAPreviousState.setVisible(has_git)
         self.ui.toolButtonSnapshots.setVisible(has_git)
         if has_git:
-            self.ui.actionSessionsLogging.setText(
-                _translate('actions', 'Sessions Logging'))
+            self.ui.actionAutoSnapshot.setText(
+                _translate('actions', 'Auto Snapshot at Save'))
         
         self.has_git = has_git
         for client in self._session.client_list:
@@ -303,7 +303,7 @@ class MainWindow(QMainWindow):
     def desktopsMemoryToggled(self, state):
         self.toDaemon('/ray/option/desktops_memory', int(state))
 
-    def sessionsLoggingToggled(self, state):
+    def autoSnapshotToggled(self, state):
         self.toDaemon('/ray/option/snapshots', int(state))
         
     def flashOpen(self):
