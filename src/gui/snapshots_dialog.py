@@ -22,6 +22,7 @@ class Snapshot:
     before_rewind_to = ''
     date_time = None
     rewind_date_time = None
+    session_name = ""
     label = ''
     rewind_label = ''
     ref = ''
@@ -133,6 +134,9 @@ class Snapshot:
                     display_text += self.rewind_date_time.toString('d MMM hh:mm')
                 else:
                     display_text += self.rewind_date_time.toString('d MMM yyyy hh:mm')
+                    
+            elif self.session_name:
+                display_text += "\nsession name: %s" % self.session_name
         
         if self.label:
             display_text += "\n%s" % self.label
@@ -372,7 +376,11 @@ class SnapshotsDialog(ChildDialog):
             if not snaptext:
                 continue
             
-            time_str_full, line_change, rw_time_str_full = snaptext.partition('\n')
+            time_str_full, line_change, rw_time_str_full_sess = \
+                snaptext.partition('\n')
+            rw_time_str_full, line_change, session_name = \
+                rw_time_str_full_sess.partition('\n')
+            
             time_str, two_points, label = time_str_full.partition(':')
             rw_time_str, two_points, rw_label = rw_time_str_full.partition(':')
             
@@ -396,6 +404,7 @@ class SnapshotsDialog(ChildDialog):
             snapshot.label = label
             snapshot.rewind_date_time = rw_date_time
             snapshot.rewind_label = rw_label
+            snapshot.session_name = session_name
             
             self.main_snap_group.add(snapshot)
             

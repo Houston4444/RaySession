@@ -19,7 +19,9 @@ def gitStringer(string):
 
     return string
 
-def fullRefForGui(ref, name, rw_ref, rw_name=''):
+def fullRefForGui(ref, name, rw_ref, rw_name='', session_name=''):
+    if session_name:
+        return "%s:%s\n%s:%s\n%s" % (ref, name, rw_ref, rw_name, session_name) 
     return "%s:%s\n%s:%s" % (ref, name, rw_ref, rw_name) 
 
 class Snapshoter(QObject):
@@ -128,7 +130,11 @@ class Snapshoter(QObject):
             name  = el.attribute('name')
             rw_sn = el.attribute('rewind_snapshot')
             rw_name = ""
-                
+            ss_name = el.attribute('session_name')
+            
+            if ss_name == self.session.name:
+                ss_name = ""
+            
             if not ref.replace('_', '').isdigit():
                 continue
                 
@@ -145,7 +151,7 @@ class Snapshoter(QObject):
                         break
             
             all_snaps.append((ref, name))
-            all_tags.append(fullRefForGui(ref, name, rw_sn, rw_name))
+            all_tags.append(fullRefForGui(ref, name, rw_sn, rw_name, ss_name))
             
         return all_tags.__reversed__()
     
@@ -181,20 +187,6 @@ class Snapshoter(QObject):
             xml.appendChild(SNS_xml)
         else:
             SNS_xml = xml.firstChild()
-        
-        # check if session has been renamed since last snapshot
-        child_nodes = SNS_xml.childNodes()
-        cc = child_nodes.count()
-        if cc:
-            last_snapshot = child_nodes.at(cc -1)
-            lsnel = last_snapshot.toElement()
-            if (lsnel.tagName() == 'Snapshot'
-                    and lsnel.attribute('session_name') != self.session.name
-                    and not lsnel.attribute('rewind_snapshot')):
-                lsnel.setAttribute(
-                    'rewind_snapshot',
-                    '___RENAMED___%s' % lsnel.attribute('session_name'))
-            
         
         snapshot_el = xml.createElement('Snapshot')
         snapshot_el.setAttribute('ref', date_str)
