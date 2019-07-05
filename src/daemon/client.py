@@ -187,7 +187,7 @@ class Client(ServerSender):
         if self.icon:
             ctx.setAttribute('icon', self.icon)
         if not self.check_last_save:
-            ctx.setAttribute('check_last_save', "0")
+            ctx.setAttribute('check_last_save', 0)
         if self.arguments:
             ctx.setAttribute('arguments', self.arguments)
             
@@ -207,19 +207,12 @@ class Client(ServerSender):
                              self.net_session_template)
             
         if self.ignored_extensions != ray.getGitIgnoredExtensions():
-            client_exts = []
-            global_exts = []
             ignored = ""
             unignored = ""
+            client_exts = [e for e in self.ignored_extensions.split(' ') if e]
+            global_exts = [e for e in 
+                           ray.getGitIgnoredExtensions().split(' ') if e]
             
-            for ext in self.ignored_extensions.split(' '):
-                if ext:
-                    client_exts.append(ext)
-                    
-            for ext in ray.getGitIgnoredExtensions().split(' '):
-                if ext:
-                    client_exts.append(ext)
-                    
             for cext in client_exts:
                 if not cext in global_exts:
                     ignored += " %s" % cext
@@ -228,10 +221,16 @@ class Client(ServerSender):
                 if not gext in client_exts:
                     unignored += " %s" % gext
                     
-            ctx.setAttribute('ignored_extensions', ignored)
-            ctx.setAttribute('unignored_extensions', unignored)
-            
-        
+            if ignored:        
+                ctx.setAttribute('ignored_extensions', ignored)
+            else:
+                ctx.removeAttribute('ignored_extensions')
+                
+            if unignored:
+                ctx.setAttribute('unignored_extensions', unignored)
+            else:
+                ctx.removeAttribute('unignored_extensions')
+                
     def setReply(self, errcode, message):
         self._reply_message = message
         self._reply_errcode = errcode
