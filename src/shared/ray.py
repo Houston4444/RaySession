@@ -63,6 +63,7 @@ class ServerStatus:
     SAVE     =  9
     CLOSE    = 10
     SNAPSHOT = 11
+    REWIND   = 12
 
 
 class NSMMode:

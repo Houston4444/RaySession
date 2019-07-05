@@ -791,6 +791,7 @@ class OperatingSession(Session):
         self.setServerStatus(ray.ServerStatus.READY)
     
     def initSnapshot(self, spath, snapshot):
+        self.setServerStatus(ray.ServerStatus.REWIND)
         self.snapshoter.load(spath, snapshot)
         self.nextFunction()
     
