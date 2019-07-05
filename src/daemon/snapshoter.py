@@ -19,9 +19,9 @@ def gitStringer(string):
 
     return string
 
-def fullRefForGui(ref, name, rw_ref, rw_name='', session_name=''):
-    if session_name:
-        return "%s:%s\n%s:%s\n%s" % (ref, name, rw_ref, rw_name, session_name) 
+def fullRefForGui(ref, name, rw_ref, rw_name='', ss_name=''):
+    if ss_name:
+        return "%s:%s\n%s:%s\n%s" % (ref, name, rw_ref, rw_name, ss_name) 
     return "%s:%s\n%s:%s" % (ref, name, rw_ref, rw_name) 
 
 class Snapshoter(QObject):
@@ -111,6 +111,7 @@ class Snapshoter(QObject):
         
         all_tags = []
         all_snaps = []
+        prv_session_name = self.session.name
         
         for i in range(nodes.count()):
             node = nodes.at(i)
@@ -130,10 +131,20 @@ class Snapshoter(QObject):
             name  = el.attribute('name')
             rw_sn = el.attribute('rewind_snapshot')
             rw_name = ""
-            ss_name = el.attribute('session_name')
+            session_name = el.attribute('session_name')
             
-            if ss_name == self.session.name:
-                ss_name = ""
+            # don't list snapshot from client before session renamed
+            if client_id and session_name != self.session.name:
+                client = self.session.getClient(client_id)
+                if (client
+                    and client.prefix_mode == ray.PrefixMode.SESSION_NAME):
+                        continue
+            
+            ss_name = ""
+            if session_name != prv_session_name:
+                ss_name = session_name
+            
+            prv_session_name = session_name
             
             if not ref.replace('_', '').isdigit():
                 continue
