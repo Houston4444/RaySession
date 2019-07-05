@@ -182,6 +182,20 @@ class Snapshoter(QObject):
         else:
             SNS_xml = xml.firstChild()
         
+        # check if session has been renamed since last snapshot
+        child_nodes = SNS_xml.childNodes()
+        cc = child_nodes.count()
+        if cc:
+            last_snapshot = child_nodes.at(cc -1)
+            lsnel = last_snapshot.toElement()
+            if (lsnel.tagName() == 'Snapshot'
+                    and lsnel.attribute('session_name') != self.session.name
+                    and not lsnel.attribute('rewind_snapshot')):
+                lsnel.setAttribute(
+                    'rewind_snapshot',
+                    '___RENAMED___%s' % lsnel.attribute('session_name'))
+            
+        
         snapshot_el = xml.createElement('Snapshot')
         snapshot_el.setAttribute('ref', date_str)
         snapshot_el.setAttribute('name', snapshot_name)
