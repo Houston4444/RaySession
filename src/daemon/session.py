@@ -1448,9 +1448,9 @@ class OperatingSession(Session):
         self.waitAndGoTo(1000, self.nextFunction, ray.WaitFor.STOP_ONE)
         
     def loadClientSnapshot(self, client_id, snapshot):
-        self.setServerStatus(ray.ServerStatus.READY)
-        
+        self.setServerStatus(ray.ServerStatus.REWIND)
         self.snapshoter.loadClientExclusive(client_id, snapshot)
+        self.setServerStatus(ray.ServerStatus.READY)
         self.nextFunction()
         
     def startClient(self, client):
