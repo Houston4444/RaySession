@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
 from PyQt5.QtGui import QFont, QFontDatabase, QFontMetrics, QPalette
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
+import time
 
 class HideGuiButton(QToolButton):
     toggleGui = pyqtSignal()
@@ -166,6 +167,8 @@ class StatusBar(QLineEdit):
         self.basecolor = self.palette().base().color().name()
         self.bluecolor = self.palette().highlight().color().name()
         
+        self.last_status_time = 0.0
+        
         # ui_client_slot.py will display "stopped" status.
         # we need to not stay on this status text
         # especially at client switch because widget is recreated.
@@ -186,6 +189,8 @@ class StatusBar(QLineEdit):
             self.setFont(self.ubuntu_font)
 
     def setText(self, text, from_timer=False):
+        self.last_status_time = time.time()
+        
         if not self._first_text_done:
             self.setFontForText(text)
             QLineEdit.setText(self, text)
@@ -209,6 +214,10 @@ class StatusBar(QLineEdit):
 
     def setProgress(self, progress):
         if not 0.0 <= progress <= 1.0:
+            return
+        
+        # no progress display in the first second
+        if time.time() - self.last_status_time < 1.0:
             return
 
         pre_progress = progress - 0.03

@@ -120,8 +120,21 @@ class Client(ServerSender):
         self.check_last_save  = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         
-        if ctx.attribute('ignored_extensions'):
-            self.ignored_extensions = ctx.attribute('ignored_extensions')
+        
+        ign_exts = ctx.attribute('ignored_extensions').split(' ')
+        unign_exts = ctx.attribute('unignored_extensions').split(' ')
+        
+        global_exts = ray.getGitIgnoredExtensions().split(' ')
+        self.ignored_extensions = ""
+        
+        for ext in global_exts:
+            if ext and not ext in unign_exts:
+                self.ignored_extensions+= " %s" % ext
+                
+        for ext in ign_exts:
+            if ext and not ext in global_exts:
+                self.ignored_extensions+= " %s" % ext
+                
         
         prefix_mode = ctx.attribute('prefix_mode')
         
@@ -194,7 +207,29 @@ class Client(ServerSender):
                              self.net_session_template)
             
         if self.ignored_extensions != ray.getGitIgnoredExtensions():
-            ctx.setAttribute('ignored_extensions', self.ignored_extensions)
+            client_exts = []
+            global_exts = []
+            ignored = ""
+            unignored = ""
+            
+            for ext in self.ignored_extensions.split(' '):
+                if ext:
+                    client_exts.append(ext)
+                    
+            for ext in ray.getGitIgnoredExtensions().split(' '):
+                if ext:
+                    client_exts.append(ext)
+                    
+            for cext in client_exts:
+                if not cext in global_exts:
+                    ignored += " %s" % cext
+            
+            for gext in global_exts:
+                if not gext in client_exts:
+                    unignored += " %s" % gext
+                    
+            ctx.setAttribute('ignored_extensions', ignored)
+            ctx.setAttribute('unignored_extensions', unignored)
             
         
     def setReply(self, errcode, message):
