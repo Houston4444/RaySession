@@ -77,6 +77,15 @@ class Terminal:
                             % string)
         
         cls._last_client_name = 'daemon'
+        
+    @classmethod
+    def beforeSnapshotMessage(cls):
+        if cls._last_client_name and cls._last_client_name != 'daemon':
+            sys.stderr.write('\n')
+        
+        sys.stderr.write('\n[\033[90mray-daemon-git\033[0m]\n')
+        
+        cls._last_client_name = 'snapshoter'    
 
     @classmethod
     def clientMessage(cls, byte_string, client_name, client_id):

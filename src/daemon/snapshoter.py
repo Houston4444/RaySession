@@ -63,6 +63,7 @@ class Snapshoter(QObject):
         return "%s/%s" % (self.session.path, self.gitname)
     
     def runGit(self, *args):
+        
         subprocess.run(self.getGitCommandList(*args))
     
     def runGitAt(self, spath, *args):
@@ -100,24 +101,6 @@ class Snapshoter(QObject):
         return SNS_xml
         
     def list(self, client_id=""):
-        #if not self.isInit():
-            #return []
-        
-        #file_path = "%s/%s/%s" % (
-                        #self.session.path, self.gitname, self.history_path)
-        
-        #xml = QDomDocument()
-            
-        #try:
-            #history_file = open(file_path, 'r')
-            #xml.setContent(history_file.read())
-            #history_file.close()
-        #except BaseException:
-            #return []
-        
-        #SNS_xml = xml.documentElement()
-        #if SNS_xml.tagName() != 'SNAPSHOTS':
-            #return []
         SNS_xml = self.getHistoryXmlDocumentElement()
         if not SNS_xml:
             return []
@@ -400,6 +383,7 @@ class Snapshoter(QObject):
             self.setAutoSnapshot(False)
             return
         
+        Terminal.beforeSnapshotMessage()
         self.runGit('commit', '-m', 'ray')
                 
         ref = self.getTagDate()
@@ -420,25 +404,6 @@ class Snapshoter(QObject):
         self.runGitAt(spath, 'checkout', snapshot_ref)
     
     def loadClientExclusive(self, client_id, snapshot):
-        #if not self.isInit():
-            #return []
-        
-        #file_path = "%s/%s/%s" % (
-                        #self.session.path, self.gitname, self.history_path)
-        
-        #xml = QDomDocument()
-            
-        #try:
-            #history_file = open(file_path, 'r')
-            #xml.setContent(history_file.read())
-            #history_file.close()
-        #except BaseException:
-            #return
-        
-        #SNS_xml = xml.documentElement()
-        #if SNS_xml.tagName() != 'SNAPSHOTS':
-            #return
-        
         SNS_xml = self.getHistoryXmlDocumentElement()
         if not SNS_xml:
             # TODO send error
@@ -474,6 +439,7 @@ class Snapshoter(QObject):
                         client_path_list.append(file_path)
         
         self.runGitAt(self.session.path, 'reset', '--hard')
+        Terminal.beforeSnapshotMessage()
         self.runGitAt(self.session.path, 'checkout', snapshot, '--',
                       *client_path_list)
         

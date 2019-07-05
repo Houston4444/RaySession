@@ -1476,10 +1476,9 @@ class SignaledSession(OperatingSession):
                       # works as /ray/server/list_sessions
         
         nsm_path = nsm_equivs.get(path)
-        if nsm_path:
-            path = nsm_path
+        func_path = nsm_path if nsm_path else path
         
-        func_name = path.replace('/', '', 1).replace('/', '_')
+        func_name = func_path.replace('/', '', 1).replace('/', '_')
         
         if func_name in self.__dir__():
             function = self.__getattribute__(func_name)
