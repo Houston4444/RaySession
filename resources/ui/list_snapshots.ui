@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>399</width>
-    <height>594</height>
+    <height>338</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,9 +21,9 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="label_2">
+    <widget class="QLabel" name="label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Snapshots are NOT backups !!!&lt;/p&gt;&lt;p&gt;Besides, It's recommend to copy your session folder elsewhere&lt;br/&gt;before to ask a previous snapshot.&lt;/p&gt;&lt;p&gt;Snapshots ignore audio files and other big files,&lt;br/&gt;else snapshot process would be too long, &lt;br/&gt;and the session folder size would be too big.&lt;/p&gt;&lt;p&gt;That being said, you can decide that your work in the last hours&lt;br/&gt;was not a good idea and return to a previous snapshot !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select from the list below the snapshot to be recalled&lt;br/&gt;to return to a past state of the session :&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -80,13 +80,6 @@
       </spacer>
      </item>
     </layout>
-   </item>
-   <item>
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select from the list below the snapshot to be recalled&lt;br/&gt;to return to a past state of the session :&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-    </widget>
    </item>
    <item>
     <widget class="QTreeWidget" name="snapshotsList">

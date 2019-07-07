@@ -4,9 +4,11 @@ from PyQt5.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 import ray
 
 from child_dialogs import ChildDialog
-from gui_tools import _translate
+from gui_tools import _translate, RS
+
 import ui_list_snapshots
 import ui_snapshot_name
+import ui_snapshots_info
 
 GROUP_ELEMENT = 0
 GROUP_DAY     = 1
@@ -426,7 +428,27 @@ class SnapshotsDialog(ChildDialog):
         
         return snapshot_ref
     
+    def showEvent(self, event):
+        ChildDialog.showEvent(self, event)
+        
+        if RS.settings.value('hide_snapshots_info'):
+            return
+        
+        info_dialog = SnapshotsInfoDialog(self)
+        info_dialog.exec()
+        
+        if info_dialog.hasToBeHiddenNextTime():
+            RS.settings.setValue('hide_snapshots_info', True)
+        
     
+class SnapshotsInfoDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_snapshots_info.Ui_Dialog()
+        self.ui.setupUi(self)
+    
+    def hasToBeHiddenNextTime(self):
+        return self.ui.checkBox.isChecked()
 
 class SessionSnapshotsDialog(SnapshotsDialog):
     def __init__(self, parent):
