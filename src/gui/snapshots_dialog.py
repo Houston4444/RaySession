@@ -109,7 +109,7 @@ class Snapshot:
         if not self.isValid():
             display_text = self.text
         else:
-            display_text = "%s at %s" % (
+            display_text = _translate('snapshots', "%s at %s") % (
                             day_string,
                             self.date_time.toString('HH:mm'))
             
@@ -117,15 +117,17 @@ class Snapshot:
                 if not self.isToday() or self.isYesterday():
                     day_string = self.date_time.toString('dddd d MMMM')
                     
-                display_text = "%s at %s" % (
+                display_text = _translate('snapshots', "%s at %s") % (
                                     day_string,
                                     self.date_time.toString('HH:mm'))
                 
             elif sub_type == GROUP_DAY:
-                display_text = "at %s" % self.date_time.toString('HH:mm')
+                display_text = _translate('snapshots', "at %s") \
+                                 % self.date_time.toString('HH:mm')
             
             if self.rewind_date_time:
-                display_text += "\nbefore rewind to "
+                display_text += '\n'
+                display_text += _translate('snapshots', "before rewind to ")
                 
                 if self.rewind_label:
                     display_text += self.rewind_label

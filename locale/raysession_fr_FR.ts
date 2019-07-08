@@ -1266,12 +1266,12 @@
 <context>
     <name>actions</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="260"/>
+        <location filename="../src/gui/main_window.py" line="262"/>
         <source>Desktops Memory</source>
         <translation>Mémoire des Bureaux</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="268"/>
+        <location filename="../src/gui/main_window.py" line="270"/>
         <source>Auto Snapshot at Save</source>
         <translation>Cliché Automatique à la Sauvegarde</translation>
     </message>
@@ -1433,12 +1433,12 @@ existe déjà</translation>
 <context>
     <name>errors</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="783"/>
+        <location filename="../src/gui/main_window.py" line="785"/>
         <source>daemon crash!</source>
         <translation>Plantage du démon !</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="783"/>
+        <location filename="../src/gui/main_window.py" line="785"/>
         <source>ray-daemon crashed, sorry !</source>
         <translation>ray-daemon a planté, désolé !</translation>
     </message>
@@ -1484,7 +1484,7 @@ existe déjà</translation>
 <context>
     <name>main view</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="639"/>
+        <location filename="../src/gui/main_window.py" line="641"/>
         <source>No Session Loaded</source>
         <translation>Pas de session chargée</translation>
     </message>
@@ -1516,12 +1516,12 @@ existe déjà</translation>
 <context>
     <name>rename_session</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="383"/>
+        <location filename="../src/gui/main_window.py" line="385"/>
         <source>Rename Session</source>
         <translation>Renommer la Session</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="383"/>
+        <location filename="../src/gui/main_window.py" line="385"/>
         <source>&lt;p&gt;In order to rename current session,&lt;br&gt;please first stop all clients.&lt;br&gt;then, double click on session name.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Pour renommer la session en cours,&lt;br&gt;Arrêtez d&apos;abord tous les clients.&lt;br&gt;ensuite, double-cliquez sur le nom de la session.&lt;/p&gt;</translation>
     </message>
@@ -1646,14 +1646,29 @@ Voulez-vous l&apos;écraser ?</translation>
 <context>
     <name>snapshots</name>
     <message>
-        <location filename="../src/gui/snapshots_dialog.py" line="300"/>
+        <location filename="../src/gui/snapshots_dialog.py" line="302"/>
         <source>Today</source>
         <translation>Aujourd&apos;hui</translation>
     </message>
     <message>
-        <location filename="../src/gui/snapshots_dialog.py" line="302"/>
+        <location filename="../src/gui/snapshots_dialog.py" line="304"/>
         <source>Yesterday</source>
         <translation>Hier</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/snapshots_dialog.py" line="120"/>
+        <source>%s at %s</source>
+        <translation type="unfinished">%s à %s</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/snapshots_dialog.py" line="125"/>
+        <source>at %s</source>
+        <translation type="unfinished">à %s</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/snapshots_dialog.py" line="130"/>
+        <source>before rewind to </source>
+        <translation type="unfinished">Avant de revenir à </translation>
     </message>
 </context>
 <context>
