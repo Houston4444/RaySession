@@ -131,6 +131,7 @@ if __name__ == '__main__':
                       server.option_save_from_client)
     RS.settings.setValue('daemon/bookmark_session_folder', 
                       server.option_bookmark_session)
+    RS.settings.setValue('daemon/auto_snapshot', server.option_snapshots)
     RS.settings.setValue('daemon/desktops_memory', server.option_desktops_memory)
     RS.settings.sync()
     

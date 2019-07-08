@@ -253,6 +253,8 @@ class MainWindow(QMainWindow):
             bool(options & ray.Option.DESKTOPS_MEMORY))
         self.ui.actionAutoSnapshot.setChecked(
             bool(options & ray.Option.SNAPSHOTS))
+        
+        print('autosnapshot', ray.Option.SNAPSHOTS, options & ray.Option.SNAPSHOTS)
 
         has_wmctrl = bool(options & ray.Option.HAS_WMCTRL)
         self.ui.actionDesktopsMemory.setEnabled(has_wmctrl)
