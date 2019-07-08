@@ -207,7 +207,6 @@ class OscServerThread(ClientCommunicating):
         self.option_snapshots        = RS.settings.value(
             'daemon/auto_snapshot', True, type=bool)
         
-        print('as1', self.option_snapshots)
         self.option_has_wmctrl = bool(shutil.which('wmctrl'))
         if not self.option_has_wmctrl:
             self.option_desktops_memory = False
@@ -215,7 +214,7 @@ class OscServerThread(ClientCommunicating):
         self.option_has_git = bool(shutil.which('git'))
         if not self.option_has_git:
             self.option_snapshots = False
-        print('as2', self.option_snapshots)
+            
         global instance
         instance = self
         
