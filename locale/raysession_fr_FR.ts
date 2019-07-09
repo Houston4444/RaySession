@@ -1658,17 +1658,17 @@ Voulez-vous l&apos;écraser ?</translation>
     <message>
         <location filename="../src/gui/snapshots_dialog.py" line="120"/>
         <source>%s at %s</source>
-        <translation type="unfinished">%s à %s</translation>
+        <translation>%s à %s</translation>
     </message>
     <message>
         <location filename="../src/gui/snapshots_dialog.py" line="125"/>
         <source>at %s</source>
-        <translation type="unfinished">à %s</translation>
+        <translation>à %s</translation>
     </message>
     <message>
         <location filename="../src/gui/snapshots_dialog.py" line="130"/>
         <source>before rewind to </source>
-        <translation type="unfinished">Avant de revenir à </translation>
+        <translation>Avant de revenir à </translation>
     </message>
 </context>
 <context>
