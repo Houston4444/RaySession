@@ -5,6 +5,7 @@ from PyQt5.QtCore import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize,
 
 from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
                        serverStatusString)
+import add_application_dialog
 import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GUIServerThread
@@ -436,7 +437,7 @@ class MainWindow(QMainWindow):
                 ray.ServerStatus.OFF):
             return
 
-        dialog = child_dialogs.AddApplicationDialog(self)
+        dialog = add_application_dialog.AddApplicationDialog(self)
         dialog.exec()
         dialog.saveCheckBoxes()
 

@@ -1,6 +1,7 @@
 # Ray Session TODO
 
     Jack Patchbay
+    remove user templates from GUI
     drop file directly on session
     manual
     allow scripts
