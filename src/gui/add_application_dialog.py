@@ -43,8 +43,6 @@ class AddApplicationDialog(ChildDialog):
         self.has_selection = False
 
         self.serverStatusChanged(self._session.server_status)
-        
-        self.toDaemon('/ray/server/list_sessions', 'opre', 'pof')
 
     def factoryBoxChanged(self, state):
         if not state:
