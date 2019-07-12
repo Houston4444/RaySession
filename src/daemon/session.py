@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 from liblo import Address
-from PyQt5.QtCore import QCoreApplication, QTimer
+from PyQt5.QtCore import QCoreApplication, QTimer, QProcess
 from PyQt5.QtXml  import QDomDocument
 
 import ray
@@ -1616,8 +1616,20 @@ class SignaledSession(OperatingSession):
                 
                 if factory and needed_version:
                     try:
-                        full_program_version = subprocess.check_output(
-                            [client.executable_path, '--version']).decode()
+                        version_process = QProcess()
+                        version_process.start(client.executable_path, ['--version'])
+                        version_process.waitForFinished(500)
+                        
+                        if version_process.state():
+                            version_process.terminate()
+                            version_process.waitForFinished(500)
+                            print(version_process.state())
+                            continue
+                        
+                        full_program_version = str(
+                            version_process.readAllStandardOutput(),
+                            encoding='utf-8')
+                        
                     except:
                         continue
                     
