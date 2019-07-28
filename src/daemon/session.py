@@ -1167,18 +1167,12 @@ class OperatingSession(Session):
                      in new_client_exec_args)):
                 # client will switch
                 # or keep alive if non active and running
-                print('23will switch', client.executable_path)
                 new_client_exec_args.remove(
                     (client.running_executable, client.running_arguments))
                 
             else:
                 # client is not capable of switch, or is not wanted 
                 # in the new session
-                print('23wont switch', client.executable_path)
-                print('active:', client.active)
-                print('switch:', client.isCapableOf(':switch:'))
-                print('dumb:', client.isDumbClient())
-                print('run_exec', client.running_executable)
                 if client.isRunning():
                     self.expected_clients.append(client)
                     client.quit()
