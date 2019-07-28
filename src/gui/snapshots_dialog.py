@@ -321,13 +321,27 @@ class TakeSnapshotDialog(ChildDialog):
         self.ui.setupUi(self)
         
         self.ui.lineEdit.textChanged.connect(self.textChanged)
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.ui.pushButtonSave.setEnabled(False)
+        self.ui.pushButtonSnapshot.setEnabled(False)
+        
+        self.__save_asked = False
+        self.ui.pushButtonSave.clicked.connect(self.acceptWithSave)
         
     def textChanged(self, text):
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(text))
+        #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(text))
+        self.ui.pushButtonSave.setEnabled(bool(text))
+        self.ui.pushButtonSnapshot.setEnabled(bool(text))
         
     def getSnapshotName(self):
         return self.ui.lineEdit.text()
+    
+    def saveAsked(self):
+        return self.__save_asked
+    
+    def acceptWithSave(self):
+        self.__save_asked = True
+        self.accept()
     
     
 class SnapshotsDialog(ChildDialog):
