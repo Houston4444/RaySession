@@ -25,8 +25,6 @@ def fullRefForGui(ref, name, rw_ref, rw_name='', ss_name=''):
     return "%s:%s\n%s:%s" % (ref, name, rw_ref, rw_name) 
 
 class Snapshoter(QObject):
-    saved = pyqtSignal()
-    
     def __init__(self, session):
         QObject.__init__(self)
         self.session = session
@@ -387,7 +385,6 @@ class Snapshoter(QObject):
         
         if not self.canSave():
             Terminal.message("can't snapshot")
-            #self.saved.emit()
             return
         
         self.writeExcludeFile()
@@ -415,7 +412,6 @@ class Snapshoter(QObject):
             self.session.sendGui('/reply_snapshots_list',
                                  fullRefForGui(ref, self.next_snapshot_name, 
                                                self._rw_snapshot))
-        #self.saved.emit()
         if self.next_function:
             self.next_function()
         

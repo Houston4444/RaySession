@@ -79,7 +79,6 @@ class Session(ServerSender):
         self.bookmarker = BookMarker()
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
-        self.snapshoter.saved.connect(self.save_step2)
         self.auto_snapshot = True
     
     #############
@@ -591,7 +590,7 @@ class OperatingSession(Session):
     # then, when timer is timeout or when all client replied, 
     # save_step1 is launched.
         
-    def save(self, from_client_id='', rewind_snapshot=''):
+    def save(self, from_client_id='', prevent_snapshot=False):
         if not self.path:
             self.nextFunction()
             return
@@ -607,10 +606,10 @@ class OperatingSession(Session):
             client.save()
                 
         self.waitAndGoTo(10000,
-                         (self.save_step1, rewind_snapshot),
+                         (self.save_step1, prevent_snapshot),
                          ray.WaitFor.REPLY)
             
-    def save_step1(self, rewind_snapshot=''):
+    def save_step1(self, prevent_snapshot):
         self.cleanExpected()
         
         if not self.path:
@@ -687,16 +686,22 @@ class OperatingSession(Session):
         self.message("Session saved.")
         
         server = self.getServer()
-        if (self.auto_snapshot and server and server.option_snapshots 
-                and (rewind_snapshot or self.snapshoter.hasChanges())):
-            self.setServerStatus(ray.ServerStatus.SNAPSHOT)
-            self.snapshoter.save('', rewind_snapshot)
-            # snapshoter saved is connected to save_step2
-        else:
-            self.save_step2()
-    
-    def save_step2(self):
+        if (not prevent_snapshot
+                and server and server.option_snapshots and self.auto_snapshot
+                and (self.snapshoter.hasChanges())):
+            # add snapshot at the beginning of process_order
+            self.process_order.insert(0, (self.snapshot))
+            
         self.nextFunction()
+        
+            #self.setServerStatus(ray.ServerStatus.SNAPSHOT)
+            #self.snapshoter.save('', rewind_snapshot)
+            ## snapshoter saved is connected to save_step2
+        #else:
+            #self.save_step2()
+    
+    #def save_step2(self):
+        #self.nextFunction()
     
     def saveDone(self):
         if not self.err_loading:
@@ -1821,7 +1826,8 @@ class SignaledSession(OperatingSession):
         
         snapshot = args[0]
         
-        self.process_order = [(self.save, '', snapshot), 
+        self.process_order = [self.save,
+                              (self.snapshot, '', snapshot),
                               self.close, 
                               (self.initSnapshot, self.path, snapshot),
                               (self.load, self.path), 
