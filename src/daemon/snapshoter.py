@@ -46,6 +46,8 @@ class Snapshoter(QObject):
         
         self._n_file_changed = 0
         self._n_file_treated = 0
+        
+        self.next_function = None
     
     def adderStandardOutput(self):
         standard_output = self.adder_process.readAllStandardOutput().data()
@@ -378,13 +380,14 @@ class Snapshoter(QObject):
         
         return True
     
-    def save(self, name='', rewind_snapshot=''):
+    def save(self, name='', rewind_snapshot='', next_function=None):
         self.next_snapshot_name  = name
         self._rw_snapshot = rewind_snapshot
+        self.next_function = next_function
         
         if not self.canSave():
             Terminal.message("can't snapshot")
-            self.saved.emit()
+            #self.saved.emit()
             return
         
         self.writeExcludeFile()
@@ -412,7 +415,9 @@ class Snapshoter(QObject):
             self.session.sendGui('/reply_snapshots_list',
                                  fullRefForGui(ref, self.next_snapshot_name, 
                                                self._rw_snapshot))
-        self.saved.emit()
+        #self.saved.emit()
+        if self.next_function:
+            self.next_function()
         
     def load(self, spath, snapshot):
         snapshot_ref = snapshot.partition('\n')[0].partition(':')[0]

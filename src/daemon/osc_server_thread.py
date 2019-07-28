@@ -455,7 +455,7 @@ class OscServerThread(ClientCommunicating):
                 signaler.dummy_load_and_template.emit(*args)
                 return False
     
-    @ray_method('/ray/session/take_snapshot', 's')
+    @ray_method('/ray/session/take_snapshot', 'si')
     def raySessionTakeSnapshot(self, path, args, types, src_addr):
         pass
     

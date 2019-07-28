@@ -38,7 +38,7 @@ def session_operation(func):
         sess, path, osc_args, src_addr, *rest = args
         
         if sess.process_order:
-            self.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
+            sess.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
                       "An operation pending.")
             return
         
@@ -405,9 +405,6 @@ class OperatingSession(Session):
         self.osc_args     = args
         self.osc_src_addr = src_addr
     
-    #def afterProcessGoTo(self, process, follow, wait_for):
-    #def whenReadyGoTo(self, 
-    
     def waitAndGoTo(self, duration, follow, wait_for, single_shot=True):
         self.timer.stop()
         
@@ -697,8 +694,6 @@ class OperatingSession(Session):
             # snapshoter saved is connected to save_step2
         else:
             self.save_step2()
-        
-        #envoyer vers step2 après signal saved si voulu(snapshoter)
     
     def save_step2(self):
         self.nextFunction()
@@ -722,7 +717,18 @@ class OperatingSession(Session):
         
         self.process_order.clear()
         self.setServerStatus(ray.ServerStatus.READY)
+    
+    def snapshot(self, snapshot_name='', rewind_snapshot=''):
+        self.setServerStatus(ray.ServerStatus.SNAPSHOT)
+        self.snapshoter.save(snapshot_name, rewind_snapshot, self.snapshot_step1)
         
+    def snapshot_step1(self):
+        self.setServerStatus(ray.ServerStatus.READY)
+        self.nextFunction()
+        
+    def snapshotDone(self):
+        pass
+    
     def close(self):
         self.sendGuiMessage(
             _translate('GUIMSG', "Commanding attached clients to quit."))
@@ -1739,8 +1745,16 @@ class SignaledSession(OperatingSession):
                               (self.saveSessionTemplate, 
                                template_name, net)]
     
+    @session_operation
     def ray_session_take_snapshot(self, path, args, src_addr):
-        self.snapshoter.save(args[0])
+        snapshot_name, with_save = args
+            
+        self.process_order.clear()
+        
+        if with_save:
+            self.process_order.append(self.save)
+        self.process_order += [(self.snapshot, snapshot_name),
+                               self.snapshotDone]
     
     @session_operation
     def ray_session_close(self, path, args, src_addr):
