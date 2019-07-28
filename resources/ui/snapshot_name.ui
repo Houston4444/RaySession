@@ -53,7 +53,7 @@
    <item>
     <widget class="QLabel" name="labelExecutable">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can save the session before snapshot.&lt;/p&gt;&lt;p&gt;Save is recommended,&lt;br/&gt;unless you made unwanted changes since the last session save.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can save the session before the snapshot.&lt;/p&gt;&lt;p&gt;Save is recommended,&lt;br/&gt;unless you made unwanted changes since the last session save.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
