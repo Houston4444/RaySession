@@ -54,6 +54,7 @@ class Client(ServerSender):
     auto_start       = True
     start_gui_hidden = False
     check_last_save  = True
+    is_external      = False
     sent_to_gui      = False
     
     net_session_template = ''
@@ -375,6 +376,9 @@ class Client(ServerSender):
         self.running_arguments  = self.arguments
         
         self.process.start(self.executable_path, arguments)
+        
+        ## Here for another way to debug clients.
+        ## Konsole is a terminal software.
         #self.process.start(
             #'konsole', 
             #['--hide-tabbar', '--hide-menubar', '-e', self.executable_path]
@@ -382,13 +386,22 @@ class Client(ServerSender):
      
     def terminate(self):
         if self.isRunning():
-            self.process.terminate()
+            if self.is_external:
+                os.kill(self.pid, 15) # 15 means signal.SIGTERM
+            else:
+                self.process.terminate()
         
     def kill(self):
+        if self.is_external:
+            os.kill(self.pid, 9) # 9 means signal.SIGKILL
+            return
+            
         if self.isRunning():
             self.process.kill()
             
     def isRunning(self):
+        if self.is_external:
+            return True
         return bool(self.process.state() == 2)
     
     def standardError(self):
@@ -413,6 +426,7 @@ class Client(ServerSender):
     
     def processFinished(self, exit_code, exit_status):
         self.stopped_timer.stop()
+        self.is_external = False
         
         if self.pending_command in (ray.Command.KILL, ray.Command.QUIT):
             self.sendGuiMessage(_translate('GUIMSG', 
@@ -443,8 +457,8 @@ class Client(ServerSender):
         if error == QProcess.FailedToStart:
             self.sendGuiMessage(_translate('GUIMSG', "%s Failed to start !") 
                                 % self.guiMsgStyle())
-            self.active     = False
-            self.pid        = 0
+            self.active = False
+            self.pid    = 0
             self.setStatus(ray.ClientStatus.STOPPED)
             self.pending_command = ray.Command.NONE
             
@@ -488,6 +502,11 @@ class Client(ServerSender):
     def stop(self):
         self.sendGuiMessage(_translate('GUIMSG', "%s stopping")
                             % self.guiMsgStyle())
+        
+        #if self.is_external:
+            #os.kill(self.pid, 15) # 15 means signal.SIGTERM
+            #return
+            
         if self.isRunning():
             self.pending_command = ray.Command.KILL
             self.setStatus(ray.ClientStatus.QUIT)
@@ -495,7 +514,7 @@ class Client(ServerSender):
             if not self.stopped_timer.isActive():
                 self.stopped_timer.start()
                 
-            self.process.terminate()
+            self.terminate()
     
     def quit(self):
         Terminal.message("Commanding %s to quit" % self.name)
@@ -928,6 +947,10 @@ class Client(ServerSender):
         self.name         = client_name
         self.active       = True
         self.did_announce = True
+        
+        if self.is_external:
+            self.pid = pid
+            self.running_executable = executable_path
         
         if self.executable_path in RS.non_active_clients:
             RS.non_active_clients.remove(self.executable_path)

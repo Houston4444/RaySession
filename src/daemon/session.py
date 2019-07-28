@@ -368,7 +368,6 @@ class Session(ServerSender):
             self.clients.append(client)
 
 class OperatingSession(Session):
-    #Session is separated in 3 parts only for faster search and modifications.
     def __init__(self, root):
         Session.__init__(self, root)
         self.wait_for = ray.WaitFor.NONE
@@ -396,6 +395,10 @@ class OperatingSession(Session):
         self.process_order = []
         
         self.terminated_yet = False
+        
+        self.externals_timer = QTimer()
+        self.externals_timer.setInterval(100)
+        self.externals_timer.timeout.connect(self.checkExternalsStates)
         
     def rememberOscArgs(self, path, args, src_addr):
         self.osc_path     = path
@@ -504,6 +507,19 @@ class OperatingSession(Session):
             
         if not self.clients_to_quit:
             self.timer_quit.stop()
+    
+    def checkExternalsStates(self):
+        has_externals = False
+        
+        for client in self.clients:
+            if client.is_external:
+                has_externals = True
+                if not os.path.exists('/proc/%i' % client.pid):
+                    # Quite dirty, but works.
+                    client.processFinished(0, 0)
+                    
+        if not has_externals:
+            self.externals_timer.stop()
     
     def sendError(self, err, error_message):
         #clear process order to allow other new operations
@@ -1151,12 +1167,18 @@ class OperatingSession(Session):
                      in new_client_exec_args)):
                 # client will switch
                 # or keep alive if non active and running
+                print('23will switch', client.executable_path)
                 new_client_exec_args.remove(
                     (client.running_executable, client.running_arguments))
                 
             else:
                 # client is not capable of switch, or is not wanted 
                 # in the new session
+                print('23wont switch', client.executable_path)
+                print('active:', client.active)
+                print('switch:', client.isCapableOf(':switch:'))
+                print('dumb:', client.isDumbClient())
+                print('run_exec', client.running_executable)
                 if client.isRunning():
                     self.expected_clients.append(client)
                     client.quit()
@@ -1501,7 +1523,7 @@ class SignaledSession(OperatingSession):
                 client.serverAnnounce(path, args, src_addr, False)
                 break
         else:
-            n=0
+            n = 0
             for client in self.clients:
                 if (basename(client.executable_path) \
                         == basename(executable_path)
@@ -1510,8 +1532,17 @@ class SignaledSession(OperatingSession):
                         n+=1
                         if n>1:
                             break
-            
-            if n==1:
+                        
+            if n == 0:
+                # Client launched externally from daemon
+                # by command : $:NSM_URL=url executable
+                client = self.newClient(args[2])
+                client.is_external = True
+                self.externals_timer.start()
+                client.serverAnnounce(path, args, src_addr, True)
+                return
+                
+            if n == 1:
                 for client in self.clients:
                     if (basename(client.executable_path) \
                             == basename(executable_path)
