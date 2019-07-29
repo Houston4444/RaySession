@@ -1832,7 +1832,7 @@ class SignaledSession(OperatingSession):
         
         snapshot = args[0]
         
-        self.process_order = [self.save,
+        self.process_order = [(self.save, '', True),
                               (self.snapshot, '', snapshot),
                               self.close, 
                               (self.initSnapshot, self.path, snapshot),

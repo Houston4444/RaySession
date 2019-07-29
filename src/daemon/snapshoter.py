@@ -51,12 +51,14 @@ class Snapshoter(QObject):
         
         self._n_file_changed = 0
         self._n_file_treated = 0
+        self._changes_counted = False
         
         self.next_function  = None
         self.error_function = None
     
     def adderStandardOutput(self):
         standard_output = self.adder_process.readAllStandardOutput().data()
+        Terminal.snapshoterMessage(standard_output, ' add -A -v')
         
         if not self._n_file_changed:
             return
@@ -404,6 +406,7 @@ class Snapshoter(QObject):
         
         self._n_file_treated = 0
         self._n_file_changed = len(output.decode().split('\n')) -1
+        self._changes_counted = True
         
         return bool(output)
     
@@ -436,7 +439,15 @@ class Snapshoter(QObject):
         all_args = self.getGitCommandList('add', '-A', '-v')
         
         self._adder_aborted = False
-        self.adder_process.start(self.git_exec, all_args)
+        
+        if not self._changes_counted:
+            self.hasChanges()
+            
+        if self._n_file_changed:
+            self.adder_process.start(self.git_exec, all_args)
+        else:
+            self.save_step_1()
+            
         # self.adder_process.finished is connected to self.save_step_1
         
     def save_step_1(self):
@@ -446,7 +457,9 @@ class Snapshoter(QObject):
         
         if self._n_file_changed:
             if not self.runGitProcess('commit', '-m', 'ray'):
-                return 
+                return
+        
+        self._changes_counted = False
         
         ref = self.getTagDate()
             
