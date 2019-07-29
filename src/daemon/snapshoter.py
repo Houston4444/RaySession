@@ -37,6 +37,10 @@ class Snapshoter(QObject):
         self.next_snapshot_name  = ''
         self.next_rw_snapshot = ''
         
+        self.changes_checker = QProcess()
+        self.changes_checker.readyReadStandardOutput.connect(
+            self.changesCheckerStandardOutput)
+        
         self.adder_process = QProcess()
         self.adder_process.finished.connect(self.save_step_1)
         self.adder_process.readyReadStandardOutput.connect(
@@ -55,6 +59,10 @@ class Snapshoter(QObject):
         
         self.next_function  = None
         self.error_function = None
+    
+    def changesCheckerStandardOutput(self):
+        standard_output = self.changes_checker.readAllStandardOutput().data()
+        self._n_file_changed += len(standard_output.decode().split('\n')) -1
     
     def adderStandardOutput(self):
         standard_output = self.adder_process.readAllStandardOutput().data()
@@ -400,20 +408,21 @@ class Snapshoter(QObject):
         if not self.isInit():
             return True
         
-        try:
-            command = self.getGitCommandList('ls-files',
-                                             '--exclude-standard',
-                                             '--others',
-                                             '--modified')
-            output = subprocess.check_output([self.git_exec] + command)
-        except:
-            return False
+        args = self.getGitCommandList('ls-files',
+                                         '--exclude-standard',
+                                         '--others',
+                                         '--modified')
+        if self.changes_checker.state():
+            self.changes_checker.kill()
         
+        self._n_file_changed = 0
         self._n_file_treated = 0
-        self._n_file_changed = len(output.decode().split('\n')) -1
         self._changes_counted = True
         
-        return bool(output)
+        self.changes_checker.start(self.git_exec, args)
+        self.changes_checker.waitForFinished(2000)
+        
+        return bool(self._n_file_changed)
     
     def canSave(self):
         if not self.session.path:
