@@ -1058,32 +1058,20 @@ class OperatingSession(Session):
                     self.loadError(ray.Err.CREATE_FAILED)
                     return
                 
-        self.sendGuiMessage(_translate('GUIMSG', "Opening session %s")
-                                % session_full_name)
-        
-        self.removed_clients.clear()
-        self.sendGui('/ray/trash/clear')
-        
-        
         self.new_clients = []
         self.new_removed_clients = []
         new_client_exec_args = []
         
-        self.setPath(spath)
-        
         if is_ray_file:
-            print('gjo')
             xml = QDomDocument()
             try:
-                print('koof')
                 xml.setContent(ray_file.read())
             except:
-                print('foko')
                 self.loadError(ray.Err.BAD_PROJECT)
                 return
-            print('odko')
+            
             content = xml.documentElement()
-            print(content.tagName())
+            
             if content.tagName() != "RAYSESSION":
                 ray_file.close()
                 self.loadError(ray.Err.BAD_PROJECT)
@@ -1122,8 +1110,8 @@ class OperatingSession(Session):
                             self.new_clients.append(client)
                             
                         elif tag_name == 'RemovedClients':
-                            self.removed_clients.append(client)
-                            client.sendGuiClientProperties(removed=True)
+                            self.new_removed_clients.append(client)
+                            #client.sendGuiClientProperties(removed=True)
                         
                         else:
                             continue
@@ -1136,8 +1124,6 @@ class OperatingSession(Session):
                         self.desktops_memory.readXml(node.toElement())
             
             ray_file.close()
-            
-            self.auto_snapshot = not self.snapshoter.isAutoSnapshotPrevented()
             
         else:
             for line in file.read().split('\n'):
@@ -1153,9 +1139,24 @@ class OperatingSession(Session):
                     
             file.close()
         
+        # Here we are sure to have all needed
+        # Load work starts here
+        self.sendGuiMessage(_translate('GUIMSG', "Opening session %s")
+                                % session_full_name)
+        
+        self.setPath(spath)
+        
+        self.sendGui('/ray/trash/clear')
+        self.removed_clients.clear()
+        for client in self.new_removed_clients:
+            self.removed_clients.append(client)
+            client.sendGuiClientProperties(removed=True)
+        
+        self.auto_snapshot = not self.snapshoter.isAutoSnapshotPrevented()
+        
         self.message("Commanding unneeded and dumb clients to quit")
         
-        remove_client_list = []
+        byebye_client_list = []
         
         for client in self.clients:
             if ((client.active and client.isCapableOf(':switch:')
@@ -1174,9 +1175,9 @@ class OperatingSession(Session):
                     self.expected_clients.append(client)
                     client.quit()
                 else:
-                    remove_client_list.append(client)
+                    byebye_client_list.append(client)
         
-        for client in remove_client_list:
+        for client in byebye_client_list:
             if client in self.clients:
                 self.removeClient(client)
             else:
@@ -1314,7 +1315,6 @@ class OperatingSession(Session):
         elif err_loading == ray.Err.BAD_PROJECT:
             m = _translate('Load Error', "Could not load session file.")
         
-        print('okorko', m)
         self.oscReply("/error", self.osc_path, err_loading, m)
         
         if self.path:
