@@ -45,7 +45,7 @@ class GUIServerThread(liblo.ServerThread):
 
     @ray_method('/error', None)
     def errorFromServer(self, path, args, types, src_addr):
-        pass
+        self._signaler.error_message.emit(args)
 
     @ray_method('/reply', 'ss')
     def receiveFromServer(self, path, args, types, src_addr):
