@@ -28,7 +28,7 @@ class Snapshoter(QObject):
     def __init__(self, session):
         QObject.__init__(self)
         self.session = session
-        self.gitname = '.ray-snapshots'
+        self.gitdir = '.ray-snapshots'
         self.exclude_path = 'info/exclude'
         self.history_path = "session_history.xml"
         self.max_file_size = 50 #in Mb
@@ -38,9 +38,14 @@ class Snapshoter(QObject):
         
         self.adder_process = QProcess()
         self.adder_process.finished.connect(self.save_step_1)
-        self.adder_process.readyReadStandardOutput.connect(self.adderStandardOutput)
+        self.adder_process.readyReadStandardOutput.connect(
+            self.adderStandardOutput)
         
         self._adder_aborted = False
+        
+        self.git_process = QProcess()
+        self.git_process.readyReadStandardOutput.connect(self.standardOutput)
+        self.git_process.readyReadStandardError.connect(self.standardError)
         
         self._n_file_changed = 0
         self._n_file_treated = 0
@@ -58,25 +63,32 @@ class Snapshoter(QObject):
         self.session.sendGui('/ray/gui/server_progress',
                              self._n_file_treated / self._n_file_changed)
     
+    def standardError(self):
+        standard_error = self.git_process.readAllStandardError().data()
+        Terminal.snapshoterMessage(standard_error)
+        
+    def standardOutput(self):
+        standard_output = self.git_process.readAllStandardOutput().data()
+        Terminal.snapshoterMessage(standard_output)
+    
     def getGitDir(self):
         if not self.session.path:
             raise NameError("attempting to save with no session path !!!")
         
-        return "%s/%s" % (self.session.path, self.gitname)
+        return "%s/%s" % (self.session.path, self.gitdir)
     
     def runGit(self, *args):
-        
         subprocess.run(self.getGitCommandList(*args))
     
     def runGitAt(self, spath, *args):
         first_args = ['git', '--work-tree', spath, '--git-dir',
-                      "%s/%s" % (spath, self.gitname)]
+                      "%s/%s" % (spath, self.gitdir)]
         
         subprocess.run(first_args + list(args))
     
     def getGitCommandList(self, *args):
         first_args = ['git', '--work-tree', self.session.path, '--git-dir',
-                      "%s/%s" % (self.session.path, self.gitname)]
+                      "%s/%s" % (self.session.path, self.gitdir)]
         
         return first_args + list(args)
     
@@ -85,7 +97,7 @@ class Snapshoter(QObject):
             return None
         
         file_path = "%s/%s/%s" % (
-                        self.session.path, self.gitname, self.history_path)
+                        self.session.path, self.gitdir, self.history_path)
         
         xml = QDomDocument()
             
@@ -182,7 +194,7 @@ class Snapshoter(QObject):
             return
         
         file_path = "%s/%s/%s" % (
-                        self.session.path, self.gitname, self.history_path)
+                        self.session.path, self.gitdir, self.history_path)
         
         xml = QDomDocument()
             
@@ -229,7 +241,7 @@ class Snapshoter(QObject):
     
     def writeExcludeFile(self):
         file_path = "%s/%s/%s" % (
-                        self.session.path, self.gitname, self.exclude_path)
+                        self.session.path, self.gitdir, self.exclude_path)
         
         try:
             exclude_file = open(file_path, 'w')
@@ -244,7 +256,7 @@ class Snapshoter(QObject):
         contents += "# If you want to add/remove files managed by git\n"
         contents += "# Create/Edit .gitignore in the session folder\n"
         contents += "\n"
-        contents += "%s\n" % self.gitname
+        contents += "%s\n" % self.gitdir
         contents += "\n"
         contents += "# Globally ignored extensions\n"
         
@@ -295,12 +307,12 @@ class Snapshoter(QObject):
         contents += '\n'
         contents += "# Too big Files\n"
         
-        no_check_list = (self.gitname)
+        no_check_list = (self.gitdir)
         # check too big files
         for foldername, subfolders, filenames in os.walk(self.session.path):
             subfolders[:] = [d for d in subfolders if d not in no_check_list]
             
-            if foldername == "%s/%s" % (self.session.path, self.gitname):
+            if foldername == "%s/%s" % (self.session.path, self.gitdir):
                 continue
             
             
@@ -343,7 +355,7 @@ class Snapshoter(QObject):
             return False
         
         return os.path.isfile("%s/%s/%s" % (
-                self.session.path, self.gitname, self.exclude_path))
+                self.session.path, self.gitdir, self.exclude_path))
         
     def hasChanges(self):
         if not self.session.path:
@@ -400,12 +412,18 @@ class Snapshoter(QObject):
             self.setAutoSnapshot(False)
             return
         
-        Terminal.beforeSnapshotMessage()
-        self.runGit('commit', '-m', 'ray')
-                
+        all_args = self.getGitCommandList('commit', '-m', 'ray')
+        #self.runGit('commit', '-m', 'ray')
+        self.git_process.start(all_args.pop(0), all_args)
+        self.git_process.waitForFinished(2000)
+        
         ref = self.getTagDate()
             
-        self.runGit('tag', '-a', ref, '-m', 'ray')
+        #self.runGit('tag', '-a', ref, '-m', 'ray')
+        all_args = self.getGitCommandList('tag', '-a', ref, '-m', 'ray')
+        self.git_process.start(all_args.pop(0), all_args)
+        self.git_process.waitForFinished(2000)
+        
         self.writeHistoryFile(ref, self.next_snapshot_name, self._rw_snapshot)
         
         if self.session.hasServer():
@@ -472,7 +490,7 @@ class Snapshoter(QObject):
     
     def setAutoSnapshot(self, bool_snapshot):
         auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path,
-                                                          self.gitname)
+                                                          self.gitdir)
         file_exists = bool(os.path.exists(auto_snap_file))
         
         if bool_snapshot:
@@ -494,6 +512,6 @@ class Snapshoter(QObject):
                     return
                 
     def isAutoSnapshotPrevented(self):
-        auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path, self.gitname)
+        auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path, self.gitdir)
         
         return bool(os.path.exists(auto_snap_file))
