@@ -409,9 +409,9 @@ class Snapshoter(QObject):
             return True
         
         args = self.getGitCommandList('ls-files',
-                                         '--exclude-standard',
-                                         '--others',
-                                         '--modified')
+                                      '--exclude-standard',
+                                      '--others',
+                                      '--modified')
         if self.changes_checker.state():
             self.changes_checker.kill()
         
