@@ -714,11 +714,7 @@ class OperatingSession(Session):
     def snapshot(self, snapshot_name='', rewind_snapshot=''):
         self.setServerStatus(ray.ServerStatus.SNAPSHOT)
         self.snapshoter.save(snapshot_name, rewind_snapshot,
-                             self.snapshot_step1, self.snapshotError)
-        
-    def snapshot_step1(self):
-        self.setServerStatus(ray.ServerStatus.READY)
-        self.nextFunction()
+                             self.nextFunction, self.snapshotError)
         
     def snapshotDone(self):
         self.setServerStatus(ray.ServerStatus.READY)
@@ -825,8 +821,29 @@ class OperatingSession(Session):
     
     def initSnapshot(self, spath, snapshot):
         self.setServerStatus(ray.ServerStatus.REWIND)
-        self.snapshoter.load(spath, snapshot)
-        self.nextFunction()
+        if self.snapshoter.load(spath, snapshot, self.initSnapshotError):
+            self.nextFunction()
+            
+    def initSnapshotError(self, err, info_str=''):
+        m = _translate('Snapshot Error', "Snapshot error")
+        if err == ray.Err.SUBPROCESS_UNTERMINATED:
+            m = _translate('Snapshot Error',
+                           "command didn't stop normally:\n%s") % info_str
+        elif err == ray.Err.SUBPROCESS_CRASH:
+            m = _translate('Snapshot Error',
+                           "command crashes:\n%s") % info_str
+        elif err == ray.Err.SUBPROCESS_EXITCODE:
+            m = _translate('Snapshot Error',
+                           "command exit with an error code:\n%s") % info_str
+        elif err == ray.Err.NO_SUCH_FILE:
+            m = _translate('Snapshot Error',
+                           "error reading file:\n%s") % info_str
+        self.message(m)
+        self.sendGuiMessage(m)
+        self.oscReply("/error", self.osc_path, err, m)
+        
+        self.setServerStatus(ray.ServerStatus.OFF)
+        self.process_order.clear()
     
     def duplicate(self, new_session_full_name):
         if self.clientsHaveErrors():
@@ -1482,10 +1499,32 @@ class OperatingSession(Session):
         
     def loadClientSnapshot(self, client_id, snapshot):
         self.setServerStatus(ray.ServerStatus.REWIND)
-        self.snapshoter.loadClientExclusive(client_id, snapshot)
-        self.setServerStatus(ray.ServerStatus.READY)
-        self.nextFunction()
+        if self.snapshoter.loadClientExclusive(client_id, snapshot,
+                                               self.loadClientSnapshotError):
+            self.setServerStatus(ray.ServerStatus.READY)
+            self.nextFunction()
+    
+    def loadClientSnapshotError(self, err, info_str=''):
+        m = _translate('Snapshot Error', "Snapshot error")
+        if err == ray.Err.SUBPROCESS_UNTERMINATED:
+            m = _translate('Snapshot Error',
+                           "command didn't stop normally:\n%s") % info_str
+        elif err == ray.Err.SUBPROCESS_CRASH:
+            m = _translate('Snapshot Error',
+                           "command crashes:\n%s") % info_str
+        elif err == ray.Err.SUBPROCESS_EXITCODE:
+            m = _translate('Snapshot Error',
+                           "command exit with an error code:\n%s") % info_str
+        elif err == ray.Err.NO_SUCH_FILE:
+            m = _translate('Snapshot Error',
+                           "error reading file:\n%s") % info_str
+        self.message(m)
+        self.sendGuiMessage(m)
+        self.oscReply("/error", self.osc_path, err, m)
         
+        self.setServerStatus(ray.ServerStatus.OFF)
+        self.process_order.clear()
+    
     def startClient(self, client):
         client.start()
         self.nextFunction()
@@ -2045,15 +2084,18 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == client_id:
                 if client.isRunning():
-                    self.process_order = [self.save,
+                    self.process_order = [(self.save, '', True),
+                                          (self.snapshot, '', snapshot),
                                           (self.closeClient, client),
-                                          (self.loadClientSnapshot, client_id, 
+                                          (self.loadClientSnapshot, client_id,
                                            snapshot),
                                           (self.startClient, client)]
                 else:
-                    self.process_order = [self.save,
+                    self.process_order = [(self.save, '', True),
+                                          (self.snapshot, '', snapshot),
                                           (self.loadClientSnapshot, client_id,
                                            snapshot)]
+                break
         else:
             self.send(src_addr, '/error', path,
                       "No client with %s client_id" % client_id)

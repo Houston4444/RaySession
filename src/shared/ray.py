@@ -437,7 +437,6 @@ def shellLineToArgs(string):
 
     return args
 
-
 def areTheyAllString(args):
     for arg in args:
         if type(arg) != str:
