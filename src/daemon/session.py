@@ -384,9 +384,6 @@ class OperatingSession(Session):
         self.timer_quit.timeout.connect(self.timerQuitTimeOut)
         self.clients_to_quit = []
         
-        self.err_loading = ray.Err.OK
-        self.err_saving  = ray.Err.OK
-        
         self.osc_path     = None
         self.osc_args     = None
         self.osc_src_addr = None
@@ -550,8 +547,7 @@ class OperatingSession(Session):
         
         if content.tagName() != "RAYSESSION":
             ray_file.close()
-            self.err_loading = ray.Err.BAD_PROJECT
-            self.loadError()
+            self.loadError(ray.Err.BAD_PROJECT)
             return
         
         content.setAttribute('name', new_session_name)
@@ -620,17 +616,13 @@ class OperatingSession(Session):
         
         if (os.path.isfile(session_file)
             and not os.access(session_file, os.W_OK)):
-                self.err_saving = ray.Err.CREATE_FAILED
-                self.saveError()
+                self.saveError(ray.Err.CREATE_FAILED)
                 return
         try:
             file = open(session_file, 'w')
         except:
-            self.err_saving = ray.Err.CREATE_FAILED
-            self.saveError()
+            self.saveError(ray.Err.CREATE_FAILED)
             return
-        
-        self.err_saving = ray.Err.OK
         
         xml = QDomDocument()
         p = xml.createElement('RAYSESSION')
@@ -679,7 +671,12 @@ class OperatingSession(Session):
         
         contents += xml.toString()
         
-        file.write(contents)
+        try:
+            file.write(contents)
+        except:
+            file.close()
+            self.saveError(ray.Err.CREATE_FAILED)
+            
         file.close()
         
         self.sendGuiMessage(_translate('GUIMSG', "Session saved."))
@@ -693,26 +690,16 @@ class OperatingSession(Session):
             self.process_order.insert(0, (self.snapshot))
             
         self.nextFunction()
-        
-            #self.setServerStatus(ray.ServerStatus.SNAPSHOT)
-            #self.snapshoter.save('', rewind_snapshot)
-            ## snapshoter saved is connected to save_step2
-        #else:
-            #self.save_step2()
-    
-    #def save_step2(self):
-        #self.nextFunction()
     
     def saveDone(self):
-        if not self.err_loading:
-            self.message("Done.")
-            self.oscReply("/reply", self.osc_path, "Saved." )
+        self.message("Done.")
+        self.oscReply("/reply", self.osc_path, "Saved." )
         self.setServerStatus(ray.ServerStatus.READY)
     
-    def saveError(self):
+    def saveError(self, err_saving):
         self.message("Failed")
         m = _translate('Load Error', "Unknown error")
-        if self.err_saving == ray.Err.CREATE_FAILED:
+        if err_saving == ray.Err.CREATE_FAILED:
             m = _translate(
                 'GUIMSG', "Can't save session, session file is unwriteable !")
         
@@ -753,7 +740,7 @@ class OperatingSession(Session):
                 self.expected_clients.append(client)
                 self.clients_to_quit.append(client)
                 self.timer_quit.start()
-        
+                
         self.waitAndGoTo(30000, self.close_step1, ray.WaitFor.STOP)
     
     def close_step1(self):
@@ -1015,22 +1002,19 @@ class OperatingSession(Session):
             try:
                 os.makedirs(spath)
             except:
-                self.err_loading = ray.Err.CREATE_FAILED
-                self.loadError()
+                self.loadError(ray.Err.CREATE_FAILED)
                 return
         
         multi_daemon_file = MultiDaemonFile.getInstance()
         if (multi_daemon_file
                 and not multi_daemon_file.isFreeForSession(spath)):
             Terminal.warning("Session is used by another daemon")
-            self.err_loading = ray.Err.SESSION_LOCKED
-            self.loadError()
+            self.loadError(ray.Err.SESSION_LOCKED)
             return
         
         if os.path.isfile(spath + '/.lock'):
             Terminal.warning("Session is locked by another process")
-            self.err_loading = ray.Err.SESSION_LOCKED
-            self.loadError()
+            self.loadError(ray.Err.SESSION_LOCKED)
             return
         
         
@@ -1038,10 +1022,6 @@ class OperatingSession(Session):
         
         session_ray_file = spath + '/raysession.xml'
         session_nsm_file = spath + '/session.nsm'
-        
-        self.err_loading = ray.Err.OK
-        
-        
         
         is_ray_file = True
         
@@ -1075,8 +1055,7 @@ class OperatingSession(Session):
                     is_ray_file = True
                     
                 except:
-                    self.err_loading = ray.Err.CREATE_FAILED
-                    self.loadError()
+                    self.loadError(ray.Err.CREATE_FAILED)
                     return
                 
         self.sendGuiMessage(_translate('GUIMSG', "Opening session %s")
@@ -1087,20 +1066,27 @@ class OperatingSession(Session):
         
         
         self.new_clients = []
+        self.new_removed_clients = []
         new_client_exec_args = []
         
         self.setPath(spath)
         
         if is_ray_file:
+            print('gjo')
             xml = QDomDocument()
-            xml.setContent(ray_file.read())
-
+            try:
+                print('koof')
+                xml.setContent(ray_file.read())
+            except:
+                print('foko')
+                self.loadError(ray.Err.BAD_PROJECT)
+                return
+            print('odko')
             content = xml.documentElement()
-            
+            print(content.tagName())
             if content.tagName() != "RAYSESSION":
                 ray_file.close()
-                self.err_loading = ray.Err.BAD_PROJECT
-                self.loadError()
+                self.loadError(ray.Err.BAD_PROJECT)
                 return
             
             sess_name = content.attribute('name')
@@ -1315,22 +1301,23 @@ class OperatingSession(Session):
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.READY)
     
-    def loadError(self):
+    def loadError(self, err_loading):
         self.message("Failed")
         m = _translate('Load Error', "Unknown error")
-        if self.err_loading == ray.Err.CREATE_FAILED:
+        if err_loading == ray.Err.CREATE_FAILED:
             m = _translate('Load Error', "Could not create session file!")
-        elif self.err_loading == ray.Err.SESSION_LOCKED:
+        elif err_loading == ray.Err.SESSION_LOCKED:
             m = _translate('Load Error', 
                            "Session is locked by another process!")
-        elif self.err_loading == ray.Err.NO_SUCH_FILE:
+        elif err_loading == ray.Err.NO_SUCH_FILE:
             m = _translate('Load Error', "The named session does not exist.")
-        elif self.err_loading == ray.Err.BAD_PROJECT:
+        elif err_loading == ray.Err.BAD_PROJECT:
             m = _translate('Load Error', "Could not load session file.")
         
-        self.oscReply("/error", self.osc_path, self.err_loading, m)
+        print('okorko', m)
+        self.oscReply("/error", self.osc_path, err_loading, m)
         
-        if self.name:
+        if self.path:
             self.setServerStatus(ray.ServerStatus.READY)
         else:
             self.setServerStatus(ray.ServerStatus.OFF)

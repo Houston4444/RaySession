@@ -471,7 +471,6 @@ class Client(ServerSender):
             
             if self.session.wait_for:
                 self.session.endTimerIfLastExpected(self)
-        
         self.session.setRenameable(True)
     
     def stoppedSinceLong(self):
