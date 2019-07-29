@@ -712,14 +712,27 @@ class OperatingSession(Session):
     
     def snapshot(self, snapshot_name='', rewind_snapshot=''):
         self.setServerStatus(ray.ServerStatus.SNAPSHOT)
-        self.snapshoter.save(snapshot_name, rewind_snapshot, self.snapshot_step1)
+        self.snapshoter.save(snapshot_name, rewind_snapshot,
+                             self.snapshot_step1, self.snapshotError)
         
     def snapshot_step1(self):
         self.setServerStatus(ray.ServerStatus.READY)
         self.nextFunction()
         
     def snapshotDone(self):
-        pass
+        self.setServerStatus(ray.ServerStatus.READY)
+    
+    def snapshotError(self, err_snapshot, info_str=''):
+        m = _translate('Snapshot Error', "Unknown error")
+        if err_snapshot == ray.Err.SUBPROCESS_UNTERMINATED:
+            m = _translate('Snapshot Error',
+                           "git didn't stop normally.\n%s") % info_str
+        
+        self.message(m)
+        self.sendGuiMessage(m)
+        self.oscReply("/error", self.osc_path, err_snapshot, m)
+        
+        self.nextFunction()
     
     def close(self):
         self.sendGuiMessage(

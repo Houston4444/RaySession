@@ -28,6 +28,7 @@ class Snapshoter(QObject):
     def __init__(self, session):
         QObject.__init__(self)
         self.session = session
+        self.git_exec = 'git'
         self.gitdir = '.ray-snapshots'
         self.exclude_path = 'info/exclude'
         self.history_path = "session_history.xml"
@@ -46,11 +47,13 @@ class Snapshoter(QObject):
         self.git_process = QProcess()
         self.git_process.readyReadStandardOutput.connect(self.standardOutput)
         self.git_process.readyReadStandardError.connect(self.standardError)
+        self.git_command = ''
         
         self._n_file_changed = 0
         self._n_file_treated = 0
         
-        self.next_function = None
+        self.next_function  = None
+        self.error_function = None
     
     def adderStandardOutput(self):
         standard_output = self.adder_process.readAllStandardOutput().data()
@@ -65,17 +68,40 @@ class Snapshoter(QObject):
     
     def standardError(self):
         standard_error = self.git_process.readAllStandardError().data()
-        Terminal.snapshoterMessage(standard_error)
+        Terminal.snapshoterMessage(standard_error, self.git_command)
         
     def standardOutput(self):
         standard_output = self.git_process.readAllStandardOutput().data()
-        Terminal.snapshoterMessage(standard_output)
+        Terminal.snapshoterMessage(standard_output, self.git_command)
     
     def getGitDir(self):
         if not self.session.path:
             raise NameError("attempting to save with no session path !!!")
         
         return "%s/%s" % (self.session.path, self.gitdir)
+    
+    def runGitProcess(self, *all_args):
+        self.git_command = ''
+        for arg in all_args:
+            self.git_command += ' %s' % arg
+        
+        err = ray.Err.OK
+        
+        git_args = self.getGitCommandList(*all_args)
+        self.git_process.start(self.git_exec, git_args)
+        if not self.git_process.waitForFinished(2000):
+            self.git_process.kill()
+            err = ray.Err.SUBPROCESS_UNTERMINATED
+        else:
+            if self.git_process.exitStatus():
+                err = err.ray.Err.SUBPROCESS_CRASH
+            elif self.git_process.exitCode():
+                err = err.ray.Err.SUBPROCESS_EXITCODE
+        
+        if err and self.error_function:
+            self.error_function(err, str(all_args))
+            
+        return not(bool(err))
     
     def runGit(self, *args):
         subprocess.run(self.getGitCommandList(*args))
@@ -87,7 +113,7 @@ class Snapshoter(QObject):
         subprocess.run(first_args + list(args))
     
     def getGitCommandList(self, *args):
-        first_args = ['git', '--work-tree', self.session.path, '--git-dir',
+        first_args = ['--work-tree', self.session.path, '--git-dir',
                       "%s/%s" % (self.session.path, self.gitdir)]
         
         return first_args + list(args)
@@ -369,9 +395,12 @@ class Snapshoter(QObject):
                                              '--exclude-standard',
                                              '--others',
                                              '--modified')
-            output = subprocess.check_output(command)
+            output = subprocess.check_output([self.git_exec] + command)
         except:
             return False
+        #if not self.runGitProcess('ls-files', '--exclude-standard',
+                                  #'--others', '--modified'):
+            #return False
         
         self._n_file_treated = 0
         self._n_file_changed = len(output.decode().split('\n')) -1
@@ -381,19 +410,22 @@ class Snapshoter(QObject):
     def canSave(self):
         if not self.session.path:
             return False
-            
+        
         if not self.isInit():
-            self.runGit('init')
+            if not self.runGitProcess('init'):
+                return False
             
         if not self.isInit():
             return False
         
         return True
     
-    def save(self, name='', rewind_snapshot='', next_function=None):
+    def save(self, name='', rewind_snapshot='',
+             next_function=None, error_function=None):
         self.next_snapshot_name  = name
         self._rw_snapshot = rewind_snapshot
         self.next_function = next_function
+        self.error_function = error_function
         
         if not self.canSave():
             Terminal.message("can't snapshot")
@@ -404,25 +436,38 @@ class Snapshoter(QObject):
         all_args = self.getGitCommandList('add', '-A', '-v')
         
         self._adder_aborted = False
-        self.adder_process.start(all_args.pop(0), all_args)
+        self.adder_process.start(self.git_exec, all_args)
         # self.adder_process.finished is connected to self.save_step_1
         
     def save_step_1(self):
+        print('okokof')
         if self._adder_aborted:
             self.setAutoSnapshot(False)
             return
         
-        all_args = self.getGitCommandList('commit', '-m', 'ray')
-        #self.runGit('commit', '-m', 'ray')
-        self.git_process.start(all_args.pop(0), all_args)
-        self.git_process.waitForFinished(2000)
+        #all_args = self.getGitCommandList('commit', '-m', 'ray')
+        if not self.runGitProcess('commit', '-m', 'ray'):
+            return 
+        
+        #self.git_process.start(all_args.pop(0), all_args)
+        #self.git_process.waitForFinished(2000)
+        #if self.git_process.state:
+            #self.git_process.kill()
+            #self.error_function(ray.Err.SUBPROCESS_UNTERMINATED)
+            #return
         
         ref = self.getTagDate()
             
-        #self.runGit('tag', '-a', ref, '-m', 'ray')
-        all_args = self.getGitCommandList('tag', '-a', ref, '-m', 'ray')
-        self.git_process.start(all_args.pop(0), all_args)
-        self.git_process.waitForFinished(2000)
+        #all_args = self.getGitCommandList('tag', '-a', ref, '-m', 'ray')
+        if not self.runGitProcess('tag', '-a', ref, '-m', 'ray'):
+            return 
+        
+        #self.git_process.start(all_args.pop(0), all_args)
+        #self.git_process.waitForFinished(2000)
+        #if self.git_process.state:
+            #self.git_process.kill()
+            #self.error_function(ray.Err.SUBPROCESS_UNTERMINATED)
+            #return
         
         self.writeHistoryFile(ref, self.next_snapshot_name, self._rw_snapshot)
         
@@ -430,6 +475,8 @@ class Snapshoter(QObject):
             self.session.sendGui('/reply_snapshots_list',
                                  fullRefForGui(ref, self.next_snapshot_name, 
                                                self._rw_snapshot))
+        self.error_function = None
+        
         if self.next_function:
             self.next_function()
         

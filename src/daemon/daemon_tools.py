@@ -79,12 +79,15 @@ class Terminal:
         cls._last_client_name = 'daemon'
         
     @classmethod
-    def snapshoterMessage(cls, byte_string):
-        if cls._last_client_name != 'snapshoter':
-            sys.stderr.write('\n[\033[90mray-daemon-git\033[0m]\n')
+    def snapshoterMessage(cls, byte_string, command=''):
+        snapshoter_str = "snapshoter:.%s" % command
+        
+        if cls._last_client_name != snapshoter_str:
+            sys.stderr.write('\n[\033[90mray-daemon-git%s\033[0m]\n'
+                             % command)
         sys.stderr.buffer.write(byte_string)
         
-        cls._last_client_name = 'snapshoter'
+        cls._last_client_name = snapshoter_str
 
     @classmethod
     def clientMessage(cls, byte_string, client_name, client_id):
