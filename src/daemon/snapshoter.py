@@ -81,31 +81,31 @@ class Snapshoter(QObject):
         return "%s/%s" % (self.session.path, self.gitdir)
     
     def runGitProcess(self, *all_args):
+        return self.runGitProcessAt(self.session.path, *all_args)
+    
+    def runGitProcessAt(self, spath, *all_args):
         self.git_command = ''
         for arg in all_args:
             self.git_command += ' %s' % arg
         
         err = ray.Err.OK
         
-        git_args = self.getGitCommandList(*all_args)
+        git_args = self.getGitCommandListAt(spath, *all_args)
         self.git_process.start(self.git_exec, git_args)
         if not self.git_process.waitForFinished(2000):
             self.git_process.kill()
             err = ray.Err.SUBPROCESS_UNTERMINATED
         else:
             if self.git_process.exitStatus():
-                err = err.ray.Err.SUBPROCESS_CRASH
+                err = ray.Err.SUBPROCESS_CRASH
             elif self.git_process.exitCode():
-                err = err.ray.Err.SUBPROCESS_EXITCODE
+                err = ray.Err.SUBPROCESS_EXITCODE
         
         if err and self.error_function:
             self.error_function(err, str(all_args))
             
         return not(bool(err))
-    
-    def runGit(self, *args):
-        subprocess.run(self.getGitCommandList(*args))
-    
+        
     def runGitAt(self, spath, *args):
         first_args = ['git', '--work-tree', spath, '--git-dir',
                       "%s/%s" % (spath, self.gitdir)]
@@ -113,8 +113,11 @@ class Snapshoter(QObject):
         subprocess.run(first_args + list(args))
     
     def getGitCommandList(self, *args):
-        first_args = ['--work-tree', self.session.path, '--git-dir',
-                      "%s/%s" % (self.session.path, self.gitdir)]
+        return self.getGitCommandListAt(self.session.path, *args)
+    
+    def getGitCommandListAt(self, spath, *args):
+        first_args = ['--work-tree', spath, '--git-dir',
+                      "%s/%s" % (spath, self.gitdir)]
         
         return first_args + list(args)
     
@@ -398,9 +401,6 @@ class Snapshoter(QObject):
             output = subprocess.check_output([self.git_exec] + command)
         except:
             return False
-        #if not self.runGitProcess('ls-files', '--exclude-standard',
-                                  #'--others', '--modified'):
-            #return False
         
         self._n_file_treated = 0
         self._n_file_changed = len(output.decode().split('\n')) -1
@@ -440,34 +440,18 @@ class Snapshoter(QObject):
         # self.adder_process.finished is connected to self.save_step_1
         
     def save_step_1(self):
-        print('okokof')
         if self._adder_aborted:
             self.setAutoSnapshot(False)
             return
         
-        #all_args = self.getGitCommandList('commit', '-m', 'ray')
-        if not self.runGitProcess('commit', '-m', 'ray'):
-            return 
-        
-        #self.git_process.start(all_args.pop(0), all_args)
-        #self.git_process.waitForFinished(2000)
-        #if self.git_process.state:
-            #self.git_process.kill()
-            #self.error_function(ray.Err.SUBPROCESS_UNTERMINATED)
-            #return
+        if self._n_file_changed:
+            if not self.runGitProcess('commit', '-m', 'ray'):
+                return 
         
         ref = self.getTagDate()
             
-        #all_args = self.getGitCommandList('tag', '-a', ref, '-m', 'ray')
         if not self.runGitProcess('tag', '-a', ref, '-m', 'ray'):
             return 
-        
-        #self.git_process.start(all_args.pop(0), all_args)
-        #self.git_process.waitForFinished(2000)
-        #if self.git_process.state:
-            #self.git_process.kill()
-            #self.error_function(ray.Err.SUBPROCESS_UNTERMINATED)
-            #return
         
         self.writeHistoryFile(ref, self.next_snapshot_name, self._rw_snapshot)
         
@@ -483,8 +467,11 @@ class Snapshoter(QObject):
     def load(self, spath, snapshot):
         snapshot_ref = snapshot.partition('\n')[0].partition(':')[0]
         
-        self.runGitAt(spath, 'reset', '--hard')
-        self.runGitAt(spath, 'checkout', snapshot_ref)
+        if not self.runGitProcessAt(spath, 'reset', '--hard'):
+            return
+        
+        if not self.runGitProcessAt(spath, 'checkout', snapshot_ref):
+            return
     
     def loadClientExclusive(self, client_id, snapshot):
         SNS_xml = self.getHistoryXmlDocumentElement()

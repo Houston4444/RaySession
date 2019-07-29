@@ -699,6 +699,7 @@ class OperatingSession(Session):
     def saveError(self, err_saving):
         self.message("Failed")
         m = _translate('Load Error', "Unknown error")
+        print('saveError')
         if err_saving == ray.Err.CREATE_FAILED:
             m = _translate(
                 'GUIMSG', "Can't save session, session file is unwriteable !")
@@ -727,7 +728,12 @@ class OperatingSession(Session):
         if err_snapshot == ray.Err.SUBPROCESS_UNTERMINATED:
             m = _translate('Snapshot Error',
                            "git didn't stop normally.\n%s") % info_str
-        
+        elif err_snapshot == ray.Err.SUBPROCESS_CRASH:
+            m = _translate('Snapshot Error',
+                           "git crashes.\n%s") % info_str
+        elif err_snapshot == ray.Err.SUBPROCESS_EXITCODE:
+            m = _translate('Snapshot Error',
+                           "git exit with an error code.\n%s") % info_str
         self.message(m)
         self.sendGuiMessage(m)
         self.oscReply("/error", self.osc_path, err_snapshot, m)
