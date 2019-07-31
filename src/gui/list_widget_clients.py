@@ -36,7 +36,7 @@ class ClientSlot(QFrame):
         self.ui.killButton.clicked.connect(self.killClient)
         self.ui.saveButton.clicked.connect(self.saveClient)
         self.ui.closeButton.clicked.connect(self.trashClient)
-        self.ui.lineEditClientStatus.copyAborted.connect(self.abortCopy)
+        self.ui.lineEditClientStatus.statusPressed.connect(self.abortCopy)
         # self.ui.ClientName.name_changed.connect(self.updateLabel)
         
         # prevent "stopped" status displayed at client switch

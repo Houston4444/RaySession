@@ -148,7 +148,7 @@ class StackedSessionName(QStackedWidget):
         
 
 class StatusBar(QLineEdit):
-    copyAborted = pyqtSignal()
+    statusPressed = pyqtSignal()
 
     def __init__(self, parent):
         QLineEdit.__init__(self)
@@ -233,7 +233,7 @@ class StatusBar(QLineEdit):
         self.setStyleSheet(style)
 
     def mousePressEvent(self, event):
-        self.copyAborted.emit()
+        self.statusPressed.emit()
 
 
 class StatusBarNegativ(StatusBar):

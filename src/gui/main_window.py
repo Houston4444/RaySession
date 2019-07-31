@@ -109,7 +109,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
 
-        self.ui.lineEditServerStatus.copyAborted.connect(self.abortCopy)
+        self.ui.lineEditServerStatus.statusPressed.connect(self.abortCopy)
         self.ui.stackedWidgetSessionName.name_changed.connect(
             self.renameSession)
 
