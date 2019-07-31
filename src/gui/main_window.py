@@ -109,7 +109,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
 
-        self.ui.lineEditServerStatus.statusPressed.connect(self.abortCopy)
+        self.ui.lineEditServerStatus.statusPressed.connect(self.statusBarPressed)
         self.ui.stackedWidgetSessionName.name_changed.connect(
             self.renameSession)
 
@@ -198,7 +198,9 @@ class MainWindow(QMainWindow):
         if not self._daemon_manager.is_local:
             self.ui.actionKeepFocus.setChecked(False)
             self.ui.actionKeepFocus.setEnabled(False)
-            
+        
+        self.server_progress = 0.0
+        
         self.has_git = False
 
     def createClientWidget(self, client):
@@ -490,21 +492,28 @@ class MainWindow(QMainWindow):
 
         self.toDaemon('/ray/client/stop', client_id)
 
-    def abortCopy(self):
-        if not self.server_copying:
-            return
-
+    def statusBarPressed(self):
         if self._session.server_status not in (
-                ray.ServerStatus.PRECOPY, ray.ServerStatus.COPY):
+                ray.ServerStatus.PRECOPY,
+                ray.ServerStatus.COPY,
+                ray.ServerStatus.SNAPSHOT):
             return
+        
+        if self._session.server_status in (ray.ServerStatus.PRECOPY,
+                                           ray.ServerStatus.COPY):
+            if not self.server_copying:
+                return
 
-        dialog = child_dialogs.AbortServerCopyDialog(self)
-        dialog.exec()
+            dialog = child_dialogs.AbortServerCopyDialog(self)
+            dialog.exec()
 
-        if not dialog.result():
-            return
+            if not dialog.result():
+                return
 
-        self.toDaemon('/ray/server/abort_copy')
+            self.toDaemon('/ray/server/abort_copy')
+        
+        elif self._session.server_status == ray.ServerStatus.SNAPSHOT:
+            self.showSnapshotProgressDialog()
 
     def abortCopyClient(self, client_id):
         if not self.server_copying:
@@ -547,7 +556,7 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return 
         
-        self.toDaemon('/ray/snapshot/abort')
+        self.toDaemon('/ray/server/abort_snapshot')
         
     def showDaemonUrlWindow(self, err_code, ex_url=''):
         dialog = child_dialogs.DaemonUrlWindow(self, err_code, ex_url)
@@ -669,6 +678,7 @@ class MainWindow(QMainWindow):
         self._session.reOrderClients(client_id_list)
 
     def serverProgress(self, progress):
+        self.server_progress = progress
         self.ui.lineEditServerStatus.setProgress(progress)
 
     def serverCopying(self, copying):

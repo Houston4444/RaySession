@@ -802,6 +802,7 @@ class SnapShotProgressDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_snapshot_progress.Ui_Dialog()
         self.ui.setupUi(self)
+        self.ui.progressBar.setValue(parent.server_progress * 100)
         self._signaler.server_progress.connect(self.serverProgress)
         
     def serverStatusChanged(self, server_status):

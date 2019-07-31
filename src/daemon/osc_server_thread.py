@@ -299,6 +299,10 @@ class OscServerThread(ClientCommunicating):
     def rayServerAbortCopy(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/server/abort_snapshot', '')
+    def rayServerAbortSnapshot(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/server/change_root', 's')
     def rayServerChangeRoot(self, path, args, types, src_addr):
         if self.isOperationPending(src_addr, path):

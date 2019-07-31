@@ -1676,6 +1676,9 @@ class SignaledSession(OperatingSession):
     def ray_server_abort_copy(self, path, args, src_addr):
         self.file_copier.abort()
     
+    def ray_server_abort_snapshot(self, path, args, src_addr):
+        self.snapshoter.abort()
+    
     def ray_server_list_sessions(self, path, args, src_addr):
         with_net = args[0]
         

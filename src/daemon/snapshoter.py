@@ -470,7 +470,8 @@ class Snapshoter(QObject):
         
     def save_step_1(self):
         if self._adder_aborted:
-            self.setAutoSnapshot(False)
+            if self.next_function:
+                self.next_function()
             return
         
         if self._n_file_changed:
