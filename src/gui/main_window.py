@@ -200,6 +200,7 @@ class MainWindow(QMainWindow):
             self.ui.actionKeepFocus.setEnabled(False)
         
         self.server_progress = 0.0
+        self.progress_dialog_visible = False
         
         self.has_git = False
 
@@ -550,8 +551,15 @@ class MainWindow(QMainWindow):
         self.toDaemon('/ray/trash/restore', client_id)
 
     def showSnapshotProgressDialog(self):
+        if self.progress_dialog_visible:
+            return
+        self.progress_dialog_visible = True
+        
         dialog = child_dialogs.SnapShotProgressDialog(self)
+        dialog.serverProgress(self.server_progress)
         dialog.exec()
+        
+        self.progress_dialog_visible = False
         
         if not dialog.result():
             return 

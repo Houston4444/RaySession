@@ -714,8 +714,14 @@ class OperatingSession(Session):
     def snapshot(self, snapshot_name='', rewind_snapshot=''):
         self.setServerStatus(ray.ServerStatus.SNAPSHOT)
         self.snapshoter.save(snapshot_name, rewind_snapshot,
-                             self.nextFunction, self.snapshotError)
-        
+                             self.snapshot_step1, self.snapshotError)
+    
+    def snapshot_step1(self, aborted=False):
+        if aborted:
+            self.message('Snapshot aborted')
+            self.sendGuiMessage(_translate('Snapshot', 'Snapshot aborted'))
+        self.nextFunction()
+    
     def snapshotDone(self):
         self.setServerStatus(ray.ServerStatus.READY)
     

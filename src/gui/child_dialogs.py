@@ -802,7 +802,6 @@ class SnapShotProgressDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_snapshot_progress.Ui_Dialog()
         self.ui.setupUi(self)
-        self.ui.progressBar.setValue(parent.server_progress * 100)
         self._signaler.server_progress.connect(self.serverProgress)
         
     def serverStatusChanged(self, server_status):
@@ -810,7 +809,7 @@ class SnapShotProgressDialog(ChildDialog):
         
     def serverProgress(self, value):
         self.ui.progressBar.setValue(value * 100)
-
+        
 
 class DaemonUrlWindow(ChildDialog):
     def __init__(self, parent, err_code, ex_url):
