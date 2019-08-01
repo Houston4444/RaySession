@@ -79,7 +79,6 @@ class Session(ServerSender):
         self.bookmarker = BookMarker()
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
-        self.auto_snapshot = True
     
     #############
     def oscReply(self, *args):
@@ -684,8 +683,9 @@ class OperatingSession(Session):
         
         server = self.getServer()
         if (not prevent_snapshot
-                and server and server.option_snapshots and self.auto_snapshot
-                and (self.snapshoter.hasChanges())):
+                and server and server.option_snapshots
+                and not self.snapshoter.isAutoSnapshotPrevented()
+                and self.snapshoter.hasChanges()):
             # add snapshot at the beginning of process_order
             self.process_order.insert(0, (self.snapshot))
             
@@ -1193,8 +1193,6 @@ class OperatingSession(Session):
         for client in self.new_removed_clients:
             self.removed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
-        
-        self.auto_snapshot = not self.snapshoter.isAutoSnapshotPrevented()
         
         self.message("Commanding unneeded and dumb clients to quit")
         
@@ -2000,12 +1998,11 @@ class SignaledSession(OperatingSession):
     
     def ray_session_set_auto_snapshot(self, path, args, src_addr):
         self.snapshoter.setAutoSnapshot(bool(args[0]))
-        self.auto_snapshot = bool(args[0])
     
     def ray_session_ask_auto_snapshot(self, path, args, src_addr):
-        self.auto_snapshot = not bool(
+        auto_snapshot = not bool(
             self.snapshoter.isAutoSnapshotPrevented())
-        self.send(src_addr, '/reply_auto_snapshot',  int(self.auto_snapshot))
+        self.send(src_addr, '/reply_auto_snapshot',  int(auto_snapshot))
     
     def ray_client_stop(self, path, args, src_addr):
         for client in self.clients:
