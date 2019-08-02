@@ -347,6 +347,51 @@ class Client(ServerSender):
             
             return project_path
     
+    def getProxyExecutable(self):
+        if os.path.basename(self.executable_path) != 'ray-proxy':
+            return ""
+        
+        xml_file = "%s/ray-proxy.xml" % self.getProjectPath()
+        xml = QDomDocument()
+        try:
+            file = open(xml_file, 'r')
+            xml.setContent(file.read())
+        except:
+            return ""
+        
+        content = xml.documentElement()
+        if content.tagName() != "RAY-PROXY":
+            file.close()
+            return ""
+            
+        executable = content.attribute('executable')
+        file.close()
+        
+        return executable
+    
+    def setDefaultGitIgnored(self, executable=""):
+        executable = executable if executable else self.executable_path
+        executable = os.path.basename(executable)
+        if executable == 'ray-proxy':
+            executable = self.getProxyExecutable()
+        
+        if executable in (
+                'ardour', 'ardour4', 'ardour5', 'ardour6',
+                'Ardour', 'Ardour4', 'Ardour5', 'Ardour6',
+                'qtractor'):
+            self.ignored_extensions += " .mid"
+            
+        elif executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
+            if '.wav' in self.ignored_extensions:
+                self.ignored_extensions = \
+                    self.ignored_extensions.replace('.wav', '')
+                
+        elif executable == 'samplv1_jack':
+            for ext in ('.wav', '.flac', '.ogg', '.mp3'):
+                if ext in self.ignored_extensions:
+                    self.ignored_extensions = \
+                        self.ignored_extensions.replace(ext, '')
+    
     def start(self):
         self.session.setRenameable(False)
         

@@ -1945,6 +1945,7 @@ class SignaledSession(OperatingSession):
         client.name            = basename(executable)
         client.client_id       = self.generateClientId(executable)
         client.icon            = client.name.lower().replace('_', '-')
+        client.setDefaultGitIgnored()
         
         if self.addClient(client):
             client.start()
@@ -1963,6 +1964,7 @@ class SignaledSession(OperatingSession):
         client.name      = basename(executable)
         client.client_id = self.generateClientId(client.name)
         client.icon      = client.name.lower().replace('_', '-')
+        client.setDefaultGitIgnored(executable)
         
         if self.addClient(client):
             client.start()
