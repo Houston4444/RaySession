@@ -365,6 +365,7 @@ class Session(ServerSender):
         for client in client_newlist:
             self.clients.append(client)
 
+
 class OperatingSession(Session):
     def __init__(self, root):
         Session.__init__(self, root)
@@ -1532,7 +1533,8 @@ class OperatingSession(Session):
     def startClient(self, client):
         client.start()
         self.nextFunction()
-    
+
+
 class SignaledSession(OperatingSession):
     def __init__(self, root):
         OperatingSession.__init__(self, root)
@@ -2179,6 +2181,7 @@ class SignaledSession(OperatingSession):
         self.terminated_yet = True
         self.process_order = [self.close, self.exitNow]
         self.nextFunction()
+
 
 class DummySession(OperatingSession):
     def __init__(self, root):
