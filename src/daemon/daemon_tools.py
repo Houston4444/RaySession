@@ -34,6 +34,26 @@ def initDaemonTools():
                                                  'daemon/non_active_list'))
     TemplateRoots.initConfig()
 
+def getGitDefaultUnAndIgnored(executable):
+    ignored = ""
+    unignored = ""
+    
+    if executable in (
+            'ardour', 'ardour4', 'ardour5', 'ardour6',
+            'Ardour', 'Ardour4', 'Ardour5', 'Ardour6',
+            'qtractor'):
+        self.ignored_extensions += " .mid"
+        
+    elif executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
+        if '.wav' in self.ignored_extensions:
+            self.ignored_extensions = \
+                self.ignored_extensions.replace('.wav', '')
+            
+    elif executable == 'samplv1_jack':
+        for ext in ('.wav', '.flac', '.ogg', '.mp3'):
+            if ext in self.ignored_extensions:
+                self.ignored_extensions = \
+                    self.ignored_extensions.replace(ext, '')
 
 class RS:
     settings = QSettings()

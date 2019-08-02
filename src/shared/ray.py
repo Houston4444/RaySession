@@ -24,6 +24,13 @@ if QT_VERSION < (5, 6):
         + "You won't be warned if a process can't be launch.\n")
 
 # Ray Session version
+#VERSION_TUPLE = (0, 8, 0)
+#VERSION = ""
+#for i in VERSION_TUPLE:
+    #if i != 0:
+        #VERSION += '.'
+    #VERSION += str(i)
+    
 VERSION = "0.8.0"
 
 APP_TITLE = 'Ray Session'
@@ -148,6 +155,14 @@ def setDebug(bool):
     global debug
     debug = bool
 
+def versionToTuple(version_str):
+    version_list = []
+    for c in version_str.split('.'):
+        if not c.isdigit():
+            return ()
+        version_list.append(int(c))
+        
+    return tuple(version_list)
 
 def addSelfBinToPath():
     # Add raysession/src/bin to $PATH to can use ray executables after make
