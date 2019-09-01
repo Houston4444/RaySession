@@ -35,26 +35,23 @@ def initDaemonTools():
     TemplateRoots.initConfig()
 
 def getGitDefaultUnAndIgnored(executable):
-    ignored = ""
-    unignored = ""
+    ignored = []
+    unignored = []
     
     if executable in (
             'ardour', 'ardour4', 'ardour5', 'ardour6',
             'Ardour', 'Ardour4', 'Ardour5', 'Ardour6',
             'qtractor'):
-        self.ignored_extensions += " .mid"
+        ignored.append(".mid")
         
     elif executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
-        if '.wav' in self.ignored_extensions:
-            self.ignored_extensions = \
-                self.ignored_extensions.replace('.wav', '')
+        unignored.append('.wav')
             
     elif executable == 'samplv1_jack':
-        for ext in ('.wav', '.flac', '.ogg', '.mp3'):
-            if ext in self.ignored_extensions:
-                self.ignored_extensions = \
-                    self.ignored_extensions.replace(ext, '')
-
+        unignored = ['.wav', '.flac', '.ogg', '.mp3']
+        
+    return (ignored, unignored)
+    
 class RS:
     settings = QSettings()
     non_active_clients = []

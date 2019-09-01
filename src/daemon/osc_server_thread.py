@@ -10,7 +10,8 @@ from PyQt5.QtXml import QDomDocument
 import ray
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
-from daemon_tools import TemplateRoots, CommandLineArgs, Terminal, RS
+from daemon_tools import (TemplateRoots, CommandLineArgs, Terminal, RS,
+                          getGitDefaultUnAndIgnored)
 
 instance = None
 signaler = Signaler.instance()
@@ -725,6 +726,39 @@ class OscServerThread(ClientCommunicating):
     def informCopytoGui(self, copy_state):
         self.sendGui('/ray/gui/server/copying', int(copy_state))
     
+    def rewriteUserTemplatesFile(self, content, templates_file):
+        if not os.access(templates_file, os.W_OK):
+            return False
+        
+        file_version = content.attribute('VERSION')
+        if ray.versionToTuple(file_version) >= ray.versionToTuple(ray.VERSION):
+            return False
+        
+        content.setAttribute('VERSION', ray.VERSION)
+        if ray.versionToTuple(file_version) >= (0, 8, 0):
+            return True
+            
+        nodes = content.childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            ct = node.toElement()
+            tag_name = ct.tagName()
+            if tag_name != 'Client-Template':
+                continue
+            
+            executable = ct.attribute('executable') 
+            if not executable:
+                continue
+            
+            ign_list, unign_list = getGitDefaultUnAndIgnored(executable)
+            if ign_list:
+                ct.setAttribute('ignored_extensions', " ".join(ign_list))
+            if unign_list:
+                ct.setAttribute('unignored_extensions', " ".join(unign_list))
+        
+        return True
+    
     def listClientTemplates(self, src_addr, factory=False):
         template_list = []
         tmp_template_list = []
@@ -754,6 +788,13 @@ class OscServerThread(ClientCommunicating):
         
         if content.tagName() != "RAY-CLIENT-TEMPLATES":
             return
+        
+        file_rewritten = False
+        
+        if not factory:
+            if content.attribute('VERSION') != ray.VERSION:
+                file_rewritten = self.rewriteUserTemplatesXml(
+                                    content, templates_file)
         
         nodes = content.childNodes()
         
