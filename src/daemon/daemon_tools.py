@@ -37,14 +37,8 @@ def initDaemonTools():
 def getGitDefaultUnAndIgnored(executable):
     ignored = []
     unignored = []
-    
-    if executable in (
-            'ardour', 'ardour4', 'ardour5', 'ardour6',
-            'Ardour', 'Ardour4', 'Ardour5', 'Ardour6',
-            'qtractor'):
-        ignored.append(".mid")
         
-    elif executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
+    if executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
         unignored.append('.wav')
             
     elif executable == 'samplv1_jack':
