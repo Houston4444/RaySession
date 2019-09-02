@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="2.0" language="fr_FR" sourcelanguage="">
+<!DOCTYPE TS>
+<TS version="2.1" language="fr_FR">
 <context>
     <name>AbortSession</name>
     <message>
@@ -461,17 +462,17 @@
     <message>
         <location filename="../src/gui/ui_snapshot_name.py" line="60"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can save the session before the snapshot.&lt;/p&gt;&lt;p&gt;Save is recommended,&lt;br/&gt;unless you made unwanted changes since the last session save.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Vous pouvez sauvegarder la session avant de prendre le cliché.&lt;/p&gt;&lt;p&gt;La sauvegarde est recommandée,&lt;br/&gt;sauf si vous avez fait des changements indésirés depuis la dernière sauvegarde.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_snapshot_name.py" line="61"/>
         <source>Save &amp;&amp; Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Sauvegarde &amp;&amp; Cliché</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_snapshot_name.py" line="62"/>
         <source>Snapshot Only</source>
-        <translation type="unfinished"></translation>
+        <translation>Cliché uniquement</translation>
     </message>
 </context>
 <context>
@@ -634,17 +635,17 @@
     <message>
         <location filename="../resources/ui/snapshot_and_save.ui" line="26"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Do you want to save the session before snapshot ?&lt;/p&gt;&lt;p&gt;Save is recommended,&lt;br/&gt;unless you made unwanted changes since the last session save.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Voulez-vous sauvegarder la session avant de prendre le cliché ?&lt;/p&gt;&lt;p&gt;La sauvegarde est recommandée,&lt;br/&gt;sauf si vous avez fait des changements indésirés depuis la dernière sauvegarde de session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/snapshot_and_save.ui" line="38"/>
         <source>Save &amp;&amp; Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Sauvegarde &amp;&amp; Cliché</translation>
     </message>
     <message>
         <location filename="../resources/ui/snapshot_and_save.ui" line="49"/>
         <source>Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Cliché</translation>
     </message>
 </context>
 <context>
@@ -1297,7 +1298,7 @@
     <message>
         <location filename="../src/daemon/session.py" line="726"/>
         <source>Snapshot aborted</source>
-        <translation type="unfinished"></translation>
+        <translation>Cliché Abandonné</translation>
     </message>
 </context>
 <context>
@@ -1305,54 +1306,61 @@
     <message>
         <location filename="../src/daemon/session.py" line="733"/>
         <source>Unknown error</source>
-        <translation type="unfinished">Erreur inconnue</translation>
+        <translation>Erreur inconnue</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.py" line="735"/>
         <source>git didn&apos;t stop normally.
 %s</source>
-        <translation type="unfinished"></translation>
+        <translation>git ne s&apos;est pas arrêté normalement.
+%s</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.py" line="738"/>
         <source>git crashes.
 %s</source>
-        <translation type="unfinished"></translation>
+        <translation>git a planté.
+%s</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.py" line="741"/>
         <source>git exit with an error code.
 %s</source>
-        <translation type="unfinished"></translation>
+        <translation>git s&apos;est terminé avec un code d&apos;erreur.
+%s</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.py" line="1524"/>
         <source>Snapshot error</source>
-        <translation type="unfinished"></translation>
+        <translation>Erreur de cliché</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.py" line="1526"/>
         <source>command didn&apos;t stop normally:
 %s</source>
-        <translation type="unfinished"></translation>
+        <translation>la commande ne s&apos;est pas arrêtée normalement:
+%s</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.py" line="1529"/>
         <source>command crashes:
 %s</source>
-        <translation type="unfinished"></translation>
+        <translation>la commande a planté:
+%s</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.py" line="1532"/>
         <source>command exit with an error code:
 %s</source>
-        <translation type="unfinished"></translation>
+        <translation>la commande s&apos;est terminée avec un code d&apos;erreur:
+%s</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.py" line="1535"/>
         <source>error reading file:
 %s</source>
-        <translation type="unfinished"></translation>
+        <translation>erreur de lecture du fichier:
+%s</translation>
     </message>
 </context>
 <context>
