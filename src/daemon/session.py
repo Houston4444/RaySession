@@ -52,7 +52,6 @@ def session_operation(func):
         sess.rememberOscArgs(path, osc_args, src_addr)
         
         response = func(*args)
-        print('zeofk')
         sess.nextFunction()
         
         return response
@@ -468,9 +467,7 @@ class OperatingSession(Session):
         self.wait_for = ray.WaitFor.NONE
     
     def nextFunction(self):
-        print('okef')
         if len(self.process_order) > 0:
-            print('ezkof')
             next_item = self.process_order[0]
             next_function = next_item
             arguments = []
@@ -589,7 +586,6 @@ class OperatingSession(Session):
     # save_step1 is launched.
         
     def save(self, from_client_id='', prevent_snapshot=False):
-        print('fksaeve')
         if not self.path:
             self.nextFunction()
             return
@@ -703,7 +699,7 @@ class OperatingSession(Session):
     def saveError(self, err_saving):
         self.message("Failed")
         m = _translate('Load Error', "Unknown error")
-        print('saveError')
+        
         if err_saving == ray.Err.CREATE_FAILED:
             m = _translate(
                 'GUIMSG', "Can't save session, session file is unwriteable !")
@@ -1424,7 +1420,6 @@ class OperatingSession(Session):
                     if version_process.state():
                         version_process.terminate()
                         version_process.waitForFinished(500)
-                        print(version_process.state())
                         continue
                     
                     full_program_version = str(

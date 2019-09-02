@@ -18,6 +18,7 @@ FORMS += ../resources/ui/proxy_gui.ui
 FORMS += ../resources/ui/quit_app.ui
 FORMS += ../resources/ui/raysession.ui
 FORMS += ../resources/ui/save_template_session.ui
+FORMS += ../resources/ui/snapshot_and_save.ui
 FORMS += ../resources/ui/snapshot_name.ui
 FORMS += ../resources/ui/snapshot_progress.ui
 FORMS += ../resources/ui/snapshots_info.ui
@@ -58,6 +59,6 @@ SOURCES += ../src/gui/ui_snapshots_info.py
 SOURCES += ../src/gui/ui_stop_client.py
 SOURCES += ../src/shared/shared.py
 
-TRANSLATIONS += raysession_en_EN.ts
+TRANSLATIONS += raysession_en_US.ts
 TRANSLATIONS += raysession_fr_FR.ts
 

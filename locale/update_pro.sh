@@ -28,7 +28,7 @@ for dir in daemon gui shared;do
 done
 
 contents+="
-TRANSLATIONS += raysession_en_EN.ts
+TRANSLATIONS += raysession_en_US.ts
 TRANSLATIONS += raysession_fr_FR.ts
 "
 

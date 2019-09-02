@@ -337,7 +337,6 @@ class ClientSlot(QFrame):
         self.ui.lineEditClientStatus.setProgress(progress)
         
     def setDaemonOptions(self, options):
-        print('efrok', has_git)
         has_git = bool(options & ray.Option.HAS_GIT)
         self.ui.actionReturnToAPreviousState.setVisible(has_git)
 

@@ -483,8 +483,8 @@ class SessionSnapshotsDialog(SnapshotsDialog):
         if dialog.result():
             snapshot_label = dialog.getSnapshotName()
             with_save = dialog.saveAsked()
-            print("goog")
-            self.toDaemon('/ray/session/take_snapshot', snapshot_label, int(with_save))
+            self.toDaemon('/ray/session/take_snapshot', snapshot_label,
+                          int(with_save))
     
     def setAutoSnapshot(self, bool_snapshot):
         self.toDaemon('/ray/session/set_auto_snapshot', int(bool_snapshot))

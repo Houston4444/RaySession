@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.1" language="fr_FR">
+<!DOCTYPE TS><TS version="2.0" language="fr_FR" sourcelanguage="">
 <context>
     <name>AbortSession</name>
     <message>
@@ -400,12 +399,12 @@
         <translation>Extensions ignorées par les clichés :</translation>
     </message>
     <message>
-        <location filename="../src/gui/ui_snapshot_name.py" line="41"/>
+        <location filename="../src/gui/ui_snapshot_name.py" line="58"/>
         <source>Name Snapshot</source>
         <translation>Nommer le Cliché</translation>
     </message>
     <message>
-        <location filename="../src/gui/ui_snapshot_name.py" line="42"/>
+        <location filename="../src/gui/ui_snapshot_name.py" line="59"/>
         <source>Snapshot Name :</source>
         <translation>Nom du Cliché :</translation>
     </message>
@@ -458,6 +457,21 @@
         <location filename="../src/gui/ui_snapshots_info.py" line="42"/>
         <source>Do not show this message again</source>
         <translation>Ne plus afficher ce message</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/ui_snapshot_name.py" line="60"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can save the session before the snapshot.&lt;/p&gt;&lt;p&gt;Save is recommended,&lt;br/&gt;unless you made unwanted changes since the last session save.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/gui/ui_snapshot_name.py" line="61"/>
+        <source>Save &amp;&amp; Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/gui/ui_snapshot_name.py" line="62"/>
+        <source>Snapshot Only</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -617,6 +631,21 @@
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
+    <message>
+        <location filename="../resources/ui/snapshot_and_save.ui" line="26"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Do you want to save the session before snapshot ?&lt;/p&gt;&lt;p&gt;Save is recommended,&lt;br/&gt;unless you made unwanted changes since the last session save.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/snapshot_and_save.ui" line="38"/>
+        <source>Save &amp;&amp; Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/snapshot_and_save.ui" line="49"/>
+        <source>Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DialogSaveTemplateSession</name>
@@ -692,107 +721,107 @@
         <translation type="obsolete">Arrêt du client %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="425"/>
+        <location filename="../src/daemon/session.py" line="421"/>
         <source>waiting for clients announces...</source>
         <translation>en attente des annonces des clients...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="428"/>
+        <location filename="../src/daemon/session.py" line="424"/>
         <source>waiting for clients to die...</source>
         <translation>en attente de l&apos;arrêt des clients...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="454"/>
+        <location filename="../src/daemon/session.py" line="450"/>
         <source>%sdidn&apos;t announce</source>
         <translation>%s ne s&apos;est pas annoncé</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="458"/>
+        <location filename="../src/daemon/session.py" line="454"/>
         <source>%sstill alive !</source>
         <translation>%s est toujours en vie !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="464"/>
+        <location filename="../src/daemon/session.py" line="460"/>
         <source>All expected clients are announced</source>
         <translation>Tous les clients attendus sont annoncés</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="469"/>
+        <location filename="../src/daemon/session.py" line="465"/>
         <source>All expected clients are died</source>
         <translation>Tous les clients attendus sont arrêtés</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="700"/>
+        <location filename="../src/daemon/session.py" line="708"/>
         <source>Can&apos;t save session, session file is unwriteable !</source>
         <translation>Impossible de sauvegarder la session, le fichier de session n&apos;est pas inscriptible !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="673"/>
+        <location filename="../src/daemon/session.py" line="685"/>
         <source>Session saved.</source>
         <translation>Session sauvegardée.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="711"/>
+        <location filename="../src/daemon/session.py" line="750"/>
         <source>Commanding attached clients to quit.</source>
         <translation>Ordonne aux clients attachés de s&apos;arrêter.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="767"/>
+        <location filename="../src/daemon/session.py" line="806"/>
         <source>Creating new session &quot;%s&quot;</source>
         <translation>Création d&apos;une nouvelle session &quot;%s&quot;</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="790"/>
+        <location filename="../src/daemon/session.py" line="829"/>
         <source>Session is ready</source>
         <translation>La session est prête</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1055"/>
+        <location filename="../src/daemon/session.py" line="1190"/>
         <source>Opening session %s</source>
         <translation>Ouverture de la session &quot;%s&quot;</translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="357"/>
+        <location filename="../src/daemon/client.py" line="403"/>
         <source>%s launching</source>
         <translation>%s lancé</translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="418"/>
+        <location filename="../src/daemon/client.py" line="477"/>
         <source>%s terminated as planned</source>
         <translation>%s s&apos;est arrêté comme prévu</translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="422"/>
+        <location filename="../src/daemon/client.py" line="481"/>
         <source>%s died unexpectedly.</source>
         <translation>%s s&apos;est arrêté de manière inexpliquée.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="444"/>
+        <location filename="../src/daemon/client.py" line="503"/>
         <source>%s Failed to start !</source>
         <translation>%s n&apos;a pas réussi à démarrer !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="489"/>
+        <location filename="../src/daemon/client.py" line="547"/>
         <source>%s stopping</source>
         <translation>%s est en train de s&apos;arrêter</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="912"/>
+        <location filename="../src/daemon/session.py" line="972"/>
         <source>Session saved as template named %s</source>
         <translation>Session sauvegardée comme modèle nommé %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1813"/>
+        <location filename="../src/daemon/session.py" line="1924"/>
         <source>Stop all clients before rename session !</source>
         <translation>Arrêtez tous les clients avant de renommer la session !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1821"/>
+        <location filename="../src/daemon/session.py" line="1932"/>
         <source>Session %s has been renamed to %s .</source>
         <translation>La session %s a été renommée %s.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1831"/>
+        <location filename="../src/daemon/session.py" line="1942"/>
         <source>Session directory is now: %s</source>
         <translation>Le répertoire de la session est maintenant: %s</translation>
     </message>
@@ -800,27 +829,27 @@
 <context>
     <name>Load Error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="1293"/>
+        <location filename="../src/daemon/session.py" line="1351"/>
         <source>Unknown error</source>
         <translation>Erreur inconnue</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1295"/>
+        <location filename="../src/daemon/session.py" line="1353"/>
         <source>Could not create session file!</source>
         <translation>Impossible de créer le fichier de session !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1297"/>
+        <location filename="../src/daemon/session.py" line="1355"/>
         <source>Session is locked by another process!</source>
         <translation>La session est verrouillée par un autre processus !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1300"/>
+        <location filename="../src/daemon/session.py" line="1358"/>
         <source>The named session does not exist.</source>
         <translation>La session sus-nommée n&apos;existe pas.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1302"/>
+        <location filename="../src/daemon/session.py" line="1360"/>
         <source>Could not load session file.</source>
         <translation>Impossible de charger le fichier de session.</translation>
     </message>
@@ -1264,14 +1293,77 @@
     </message>
 </context>
 <context>
+    <name>Snapshot</name>
+    <message>
+        <location filename="../src/daemon/session.py" line="726"/>
+        <source>Snapshot aborted</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Snapshot Error</name>
+    <message>
+        <location filename="../src/daemon/session.py" line="733"/>
+        <source>Unknown error</source>
+        <translation type="unfinished">Erreur inconnue</translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.py" line="735"/>
+        <source>git didn&apos;t stop normally.
+%s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.py" line="738"/>
+        <source>git crashes.
+%s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.py" line="741"/>
+        <source>git exit with an error code.
+%s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.py" line="1524"/>
+        <source>Snapshot error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.py" line="1526"/>
+        <source>command didn&apos;t stop normally:
+%s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.py" line="1529"/>
+        <source>command crashes:
+%s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.py" line="1532"/>
+        <source>command exit with an error code:
+%s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/daemon/session.py" line="1535"/>
+        <source>error reading file:
+%s</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>actions</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="262"/>
+        <location filename="../src/gui/main_window.py" line="266"/>
         <source>Desktops Memory</source>
         <translation>Mémoire des Bureaux</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="270"/>
+        <location filename="../src/gui/main_window.py" line="274"/>
         <source>Auto Snapshot at Save</source>
         <translation>Cliché Automatique à la Sauvegarde</translation>
     </message>
@@ -1371,7 +1463,7 @@
 <context>
     <name>client_stop</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="982"/>
+        <location filename="../src/gui/child_dialogs.py" line="767"/>
         <source>&lt;strong&gt;%s&lt;/strong&gt; seems to has not been saved for %i minute(s).&lt;br /&gt;Do you really want to stop it ?</source>
         <translation>&lt;strong&gt;%s&lt;/strong&gt; semble ne pas aboir été sauvegardé depuis %i minute(s).&lt;br /&gt;Voulez-vous vraiment l&apos;arrêter ?</translation>
     </message>
@@ -1394,22 +1486,22 @@
 <context>
     <name>error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="800"/>
+        <location filename="../src/daemon/session.py" line="860"/>
         <source>Some clients could not save</source>
         <translation>Certains clients ne peuvent pas être sauvegardés</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="866"/>
+        <location filename="../src/daemon/session.py" line="926"/>
         <source>Impossible to save template, unwriteable file !</source>
         <translation>Impossible de sauvegarder le modèle, fichier non inscriptible !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="939"/>
+        <location filename="../src/daemon/session.py" line="999"/>
         <source>No template named %s</source>
         <translation>Pas de modèle nommé %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="948"/>
+        <location filename="../src/daemon/session.py" line="1008"/>
         <source>Folder 
 %s 
 already exists</source>
@@ -1418,7 +1510,7 @@ already exists</source>
 existe déjà</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="527"/>
+        <location filename="../src/daemon/session.py" line="538"/>
         <source>impossible to read %s</source>
         <translation>impossible de lire %s</translation>
     </message>
@@ -1433,12 +1525,12 @@ existe déjà</translation>
 <context>
     <name>errors</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="785"/>
+        <location filename="../src/gui/main_window.py" line="804"/>
         <source>daemon crash!</source>
         <translation>Plantage du démon !</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="785"/>
+        <location filename="../src/gui/main_window.py" line="804"/>
         <source>ray-daemon crashed, sorry !</source>
         <translation>ray-daemon a planté, désolé !</translation>
     </message>
@@ -1484,7 +1576,7 @@ existe déjà</translation>
 <context>
     <name>main view</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="641"/>
+        <location filename="../src/gui/main_window.py" line="659"/>
         <source>No Session Loaded</source>
         <translation>Pas de session chargée</translation>
     </message>
@@ -1500,7 +1592,7 @@ existe déjà</translation>
 <context>
     <name>new client template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="453"/>
+        <location filename="../src/gui/child_dialogs.py" line="454"/>
         <source>New application template name :</source>
         <translation>Nom du nouveau modèle d&apos;application :</translation>
     </message>
@@ -1516,12 +1608,12 @@ existe déjà</translation>
 <context>
     <name>rename_session</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="385"/>
+        <location filename="../src/gui/main_window.py" line="389"/>
         <source>Rename Session</source>
         <translation>Renommer la Session</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="385"/>
+        <location filename="../src/gui/main_window.py" line="389"/>
         <source>&lt;p&gt;In order to rename current session,&lt;br&gt;please first stop all clients.&lt;br&gt;then, double click on session name.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Pour renommer la session en cours,&lt;br&gt;Arrêtez d&apos;abord tous les clients.&lt;br&gt;ensuite, double-cliquez sur le nom de la session.&lt;/p&gt;</translation>
     </message>
@@ -1618,7 +1710,7 @@ existe déjà</translation>
 <context>
     <name>session template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="409"/>
+        <location filename="../src/gui/child_dialogs.py" line="410"/>
         <source>Overwrite Template ?</source>
         <translation>Écraser le modèle ?</translation>
     </message>
@@ -1626,7 +1718,7 @@ existe déjà</translation>
 <context>
     <name>session_template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="409"/>
+        <location filename="../src/gui/child_dialogs.py" line="410"/>
         <source>Template &lt;strong&gt;%s&lt;/strong&gt; already exists.
 Overwrite it ?</source>
         <translation>Le modèle &lt;strong&gt;%s&lt;/strong&gt; existe déjà.
@@ -1674,7 +1766,7 @@ Voulez-vous l&apos;écraser ?</translation>
 <context>
     <name>url window</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1058"/>
+        <location filename="../src/gui/child_dialogs.py" line="844"/>
         <source>&lt;p align=&quot;left&quot;&gt;To run a network session,&lt;br&gt;open a terminal on another computer of this network.&lt;br&gt;Launch ray-daemon on port 1234 (for example)&lt;br&gt;by typing the command :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Then paste below the first url&lt;br&gt;that ray-daemon gives you at startup.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</source>
         <translation>&lt;p align=&quot;left&quot;&gt;Pour lancer une session réseau,&lt;br&gt;ouvrez un terminal sur un autre ordinateur de ce réseau.&lt;br&gt;Launcez ray-daemon sur le port 1234 (par exemple)&lt;br&gt;en tapant la commande suivante :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Ensuite collez ci-dessous la première url&lt;br&gt;que ray-daemon affiche au démarrage.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</translation>
     </message>
@@ -1682,7 +1774,7 @@ Voulez-vous l&apos;écraser ?</translation>
 <context>
     <name>url_window</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1038"/>
+        <location filename="../src/gui/child_dialogs.py" line="824"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;didn&apos;t announce !&lt;br&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Le démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;ne s&apos;est pas annoncé !&lt;br&gt;&lt;/p&gt;</translation>
     </message>
@@ -1692,22 +1784,22 @@ Voulez-vous l&apos;écraser ?</translation>
         <translation type="obsolete">&lt;p&gt;La démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;a déjà une session chargée.&lt;br&gt;Il n&apos;est pas utilisable pour une session esclave&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1046"/>
+        <location filename="../src/gui/child_dialogs.py" line="832"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses an other session root folder !&lt;.p&gt;</source>
         <translation>&lt;p&gt;Le démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;n&apos;utilise pas le bon dossier de sessions racine !&lt;.p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1050"/>
+        <location filename="../src/gui/child_dialogs.py" line="836"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses a forbidden session root folder !&lt;.p&gt;</source>
         <translation>&lt;p&gt;Le démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;utilise un dossier de sessions racine interdit !&lt;.p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1054"/>
+        <location filename="../src/gui/child_dialogs.py" line="840"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses an other Ray Session version.&lt;.p&gt;</source>
         <translation>&lt;p&gt;Le démon à &apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;utilise une autre version de RaySession.&lt;.p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1042"/>
+        <location filename="../src/gui/child_dialogs.py" line="828"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;has a loaded self._session.&lt;br&gt;It can&apos;t be used for slave session&lt;/p&gt;</source>
         <translation>&lt;p&gt;le démon à&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;a une session chargée.&lt;br&gt;Il ne peut pas être utilisé pour une session exclave&lt;/p&gt;</translation>
     </message>
