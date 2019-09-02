@@ -727,17 +727,20 @@ class OscServerThread(ClientCommunicating):
         self.sendGui('/ray/gui/server/copying', int(copy_state))
     
     def rewriteUserTemplatesFile(self, content, templates_file):
+        print('okfkfk')
         if not os.access(templates_file, os.W_OK):
             return False
-        
+        print('fkoerv')
         file_version = content.attribute('VERSION')
+        print(file_version)
         if ray.versionToTuple(file_version) >= ray.versionToTuple(ray.VERSION):
             return False
-        
+        print('fokfo')
+        print(ray.versionToTuple(file_version))
         content.setAttribute('VERSION', ray.VERSION)
         if ray.versionToTuple(file_version) >= (0, 8, 0):
             return True
-            
+        print('eofk')
         nodes = content.childNodes()
         
         for i in range(nodes.count()):
@@ -779,7 +782,7 @@ class OscServerThread(ClientCommunicating):
         if not os.access(templates_file, os.R_OK):
             return
         
-        file = open(templates_file)
+        file = open(templates_file, 'r')
         xml = QDomDocument()
         xml.setContent(file.read())
         file.close()
@@ -793,7 +796,7 @@ class OscServerThread(ClientCommunicating):
         
         if not factory:
             if content.attribute('VERSION') != ray.VERSION:
-                file_rewritten = self.rewriteUserTemplatesXml(
+                file_rewritten = self.rewriteUserTemplatesFile(
                                     content, templates_file)
         
         nodes = content.childNodes()
@@ -838,12 +841,21 @@ class OscServerThread(ClientCommunicating):
             tmp_template_list.append("%s/%s" % (template_name,
                                                 ct.attribute('icon')))
             
-            if len(tmp_template_list) == 100:
+            if len(tmp_template_list) == 20:
                 self.send(src_addr, response_osc_path, *tmp_template_list)
                 template_list.clear()
         
         if tmp_template_list:
             self.send(src_addr, response_osc_path, *tmp_template_list)
+            
+        if file_rewritten:
+            try:
+                file = open(templates_file, 'w')
+                file.write(xml.toString())
+                file.close()
+            except:
+                sys.stderr.write(
+                    'unable to rewrite User Client Templates XML File\n')
     
     def sendRenameable(self, renameable):
         if not renameable:
