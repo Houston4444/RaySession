@@ -727,20 +727,18 @@ class OscServerThread(ClientCommunicating):
         self.sendGui('/ray/gui/server/copying', int(copy_state))
     
     def rewriteUserTemplatesFile(self, content, templates_file):
-        print('okfkfk')
         if not os.access(templates_file, os.W_OK):
             return False
-        print('fkoerv')
+        
         file_version = content.attribute('VERSION')
-        print(file_version)
+        
         if ray.versionToTuple(file_version) >= ray.versionToTuple(ray.VERSION):
             return False
-        print('fokfo')
-        print(ray.versionToTuple(file_version))
+        
         content.setAttribute('VERSION', ray.VERSION)
         if ray.versionToTuple(file_version) >= (0, 8, 0):
             return True
-        print('eofk')
+        
         nodes = content.childNodes()
         
         for i in range(nodes.count()):
