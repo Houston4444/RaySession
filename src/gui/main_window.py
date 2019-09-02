@@ -5,13 +5,9 @@ from PyQt5.QtCore import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize,
 
 from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
                        serverStatusString)
-from child_dialogs import (
-    OpenSessionDialog, NewSessionDialog, SaveTemplateSessionDialog,
-    SaveTemplateClientDialog, EditExecutableDialog, ClientPropertiesDialog,
-    ClientTrashDialog, AbortSessionDialog, AbortServerCopyDialog,
-    AbortClientCopyDialog, OpenNsmSessionInfoDialog, QuitAppDialog,
-    AboutRaySessionDialog, AddApplicationDialog, NewExecutableDialog,
-    StopClientDialog, DaemonUrlWindow, ErrorDialog)
+import add_application_dialog
+import child_dialogs
+import snapshots_dialog
 from gui_server_thread import GUIServerThread
 from gui_client import TrashedClient
 
@@ -47,6 +43,13 @@ class MainWindow(QMainWindow):
         self.timer_flicker_open.timeout.connect(self.flashOpen)
         self.flash_open_list = []
         self.flash_open_bool = False
+        
+        # timer for too long snapshots, display snapshot progress dialog
+        self.timer_snapshot = QTimer()
+        self.timer_snapshot.setSingleShot(True)
+        self.timer_snapshot.setInterval(2000)
+        self.timer_snapshot.timeout.connect(self.showSnapshotProgressDialog)
+        
 
         self.server_copying = False
 
@@ -75,6 +78,8 @@ class MainWindow(QMainWindow):
             self.ui.actionAddApplication)
         self.ui.toolButtonAddExecutable.setDefaultAction(
             self.ui.actionAddExecutable)
+        self.ui.toolButtonSnapshots.setDefaultAction(
+            self.ui.actionReturnToAPreviousState)
 
         # connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
@@ -87,6 +92,8 @@ class MainWindow(QMainWindow):
         self.ui.actionDuplicateSession.triggered.connect(self.duplicateSession)
         self.ui.actionSaveTemplateSession.triggered.connect(
             self.saveTemplateSession)
+        self.ui.actionReturnToAPreviousState.triggered.connect(
+            self.returnToAPreviousState)
         self.ui.actionOpenSessionFolder.triggered.connect(self.openFileManager)
         self.ui.actionAddApplication.triggered.connect(self.addApplication)
         self.ui.actionAddExecutable.triggered.connect(self.addExecutable)
@@ -97,10 +104,12 @@ class MainWindow(QMainWindow):
             self.bookmarkSessionFolderToggled)
         self.ui.actionDesktopsMemory.toggled.connect(
             self.desktopsMemoryToggled)
+        self.ui.actionAutoSnapshot.toggled.connect(
+            self.autoSnapshotToggled)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
 
-        self.ui.lineEditServerStatus.copyAborted.connect(self.abortCopy)
+        self.ui.lineEditServerStatus.statusPressed.connect(self.statusBarPressed)
         self.ui.stackedWidgetSessionName.name_changed.connect(
             self.renameSession)
 
@@ -113,6 +122,7 @@ class MainWindow(QMainWindow):
         self.controlMenu.addSeparator()
         self.controlMenu.addAction(self.ui.actionSaveAllFromSavedClient)
         self.controlMenu.addAction(self.ui.actionBookmarkSessionFolder)
+        self.controlMenu.addAction(self.ui.actionAutoSnapshot)
         self.controlMenu.addAction(self.ui.actionDesktopsMemory)
 
         self.controlToolButton = self.ui.toolBar.widgetForAction(
@@ -188,6 +198,11 @@ class MainWindow(QMainWindow):
         if not self._daemon_manager.is_local:
             self.ui.actionKeepFocus.setChecked(False)
             self.ui.actionKeepFocus.setEnabled(False)
+        
+        self.server_progress = 0.0
+        self.progress_dialog_visible = False
+        
+        self.has_git = False
 
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
@@ -240,12 +255,28 @@ class MainWindow(QMainWindow):
             bool(options & ray.Option.BOOKMARK_SESSION))
         self.ui.actionDesktopsMemory.setChecked(
             bool(options & ray.Option.DESKTOPS_MEMORY))
+        self.ui.actionAutoSnapshot.setChecked(
+            bool(options & ray.Option.SNAPSHOTS))
+        
+        print('autosnapshot', ray.Option.SNAPSHOTS, options & ray.Option.SNAPSHOTS)
 
         has_wmctrl = bool(options & ray.Option.HAS_WMCTRL)
         self.ui.actionDesktopsMemory.setEnabled(has_wmctrl)
         if has_wmctrl:
             self.ui.actionDesktopsMemory.setText(
                 _translate('actions', 'Desktops Memory'))
+            
+        has_git = bool(options & ray.Option.HAS_GIT)
+        self.ui.actionAutoSnapshot.setEnabled(has_git)
+        self.ui.actionReturnToAPreviousState.setVisible(has_git)
+        self.ui.toolButtonSnapshots.setVisible(has_git)
+        if has_git:
+            self.ui.actionAutoSnapshot.setText(
+                _translate('actions', 'Auto Snapshot at Save'))
+        
+        self.has_git = has_git
+        for client in self._session.client_list:
+            client.widget.setDaemonOptions(options)
 
     def toDaemon(self, *args):
         server = GUIServerThread.instance()
@@ -278,6 +309,9 @@ class MainWindow(QMainWindow):
     def desktopsMemoryToggled(self, state):
         self.toDaemon('/ray/option/desktops_memory', int(state))
 
+    def autoSnapshotToggled(self, state):
+        self.toDaemon('/ray/option/snapshots', int(state))
+        
     def flashOpen(self):
         for client in self._session.client_list:
             if client.status == ray.ClientStatus.OPEN:
@@ -292,7 +326,7 @@ class MainWindow(QMainWindow):
             return
 
         if self._session.isRunning():
-            dialog = QuitAppDialog(self)
+            dialog = child_dialogs.QuitAppDialog(self)
             dialog.exec()
             if dialog.result():
                 self.quitAppNow()
@@ -301,22 +335,6 @@ class MainWindow(QMainWindow):
 
     def quitAppNow(self):
         self._daemon_manager.stop()
-
-    def newClientTemplate(self, client_id):
-        dialog = SaveTemplateClientDialog(self)
-        dialog.exec()
-        if not dialog.result():
-            return
-
-        template_name = dialog.getTemplateName()
-        self.toDaemon('/ray/client/save_as_template', client_id, template_name)
-
-    def openClientProperties(self, client_id):
-        client = self._session.getClient(client_id)
-        if not client:
-            return
-
-        client.showPropertiesDialog()
 
     def updateClientLabel(self, client_id, label):
         client = self._session.getClient(client_id)
@@ -327,7 +345,7 @@ class MainWindow(QMainWindow):
 
     def createNewSession(self):
         self.ui.dockWidgetMessages.setVisible(False)
-        dialog = NewSessionDialog(self)
+        dialog = child_dialogs.NewSessionDialog(self)
         dialog.exec()
         if not dialog.result():
             return
@@ -338,15 +356,13 @@ class MainWindow(QMainWindow):
         RS.settings.setValue('last_used_template', template_name)
 
         if template_name:
-            self.toDaemon(
-                '/ray/server/new_from_template',
-                session_name,
-                template_name)
+            self.toDaemon('/ray/server/new_session', session_name,
+                          template_name)
         else:
             self.toDaemon('/ray/server/new_session', session_name)
 
     def openSession(self, action):
-        dialog = OpenSessionDialog(self)
+        dialog = child_dialogs.OpenSessionDialog(self)
         dialog.exec()
         if not dialog.result():
             return
@@ -362,7 +378,7 @@ class MainWindow(QMainWindow):
         self.toDaemon('/ray/session/close')
 
     def abortSession(self):
-        dialog = AbortSessionDialog(self)
+        dialog = child_dialogs.AbortSessionDialog(self)
         dialog.exec()
 
         if dialog.result():
@@ -382,7 +398,7 @@ class MainWindow(QMainWindow):
         self.ui.stackedWidgetSessionName.toggleEdit()
 
     def duplicateSession(self):
-        dialog = NewSessionDialog(self, True)
+        dialog = child_dialogs.NewSessionDialog(self, True)
         dialog.exec()
         if not dialog.result():
             return
@@ -393,16 +409,26 @@ class MainWindow(QMainWindow):
         self.toDaemon('/ray/session/duplicate', session_name)
 
     def saveTemplateSession(self):
-        dialog = SaveTemplateSessionDialog(self)
+        dialog = child_dialogs.SaveTemplateSessionDialog(self)
         dialog.exec()
         if not dialog.result():
             return
 
         session_template_name = dialog.getTemplateName()
         self.toDaemon('/ray/session/save_as_template', session_template_name)
+        
+    def returnToAPreviousState(self):
+        dialog = snapshots_dialog.SessionSnapshotsDialog(self)
+        dialog.exec()
+        if not dialog.result():
+            return 
+        
+        snapshot = dialog.getSelectedSnapshot()
+        self.toDaemon('/ray/session/open_snapshot', snapshot)
+        
 
     def aboutRaySession(self):
-        dialog = AboutRaySessionDialog(self)
+        dialog = child_dialogs.AboutRaySessionDialog(self)
         dialog.exec()
 
     def saveSession(self):
@@ -414,7 +440,7 @@ class MainWindow(QMainWindow):
                 ray.ServerStatus.OFF):
             return
 
-        dialog = AddApplicationDialog(self)
+        dialog = add_application_dialog.AddApplicationDialog(self)
         dialog.exec()
         dialog.saveCheckBoxes()
 
@@ -432,7 +458,7 @@ class MainWindow(QMainWindow):
                 ray.ServerStatus.OFF):
             return
 
-        dialog = NewExecutableDialog(self)
+        dialog = child_dialogs.NewExecutableDialog(self)
         dialog.exec()
         if not dialog.result():
             return
@@ -453,35 +479,42 @@ class MainWindow(QMainWindow):
         if client.status == ray.ClientStatus.READY and client.check_last_save:
             if client.has_dirty:
                 if client.dirty_state:
-                    dialog = StopClientDialog(self, client_id)
+                    dialog = child_dialogs.StopClientDialog(self, client_id)
                     dialog.exec()
                     if not dialog.result():
                         return
 
             # last save (or start) more than 60 seconds ago
             elif (time.time() - client.last_save) >= 10:
-                dialog = StopClientDialog(self, client_id)
+                dialog = child_dialogs.StopClientDialog(self, client_id)
                 dialog.exec()
                 if not dialog.result():
                     return
 
         self.toDaemon('/ray/client/stop', client_id)
 
-    def abortCopy(self):
-        if not self.server_copying:
-            return
-
+    def statusBarPressed(self):
         if self._session.server_status not in (
-                ray.ServerStatus.PRECOPY, ray.ServerStatus.COPY):
+                ray.ServerStatus.PRECOPY,
+                ray.ServerStatus.COPY,
+                ray.ServerStatus.SNAPSHOT):
             return
+        
+        if self._session.server_status in (ray.ServerStatus.PRECOPY,
+                                           ray.ServerStatus.COPY):
+            if not self.server_copying:
+                return
 
-        dialog = AbortServerCopyDialog(self)
-        dialog.exec()
+            dialog = child_dialogs.AbortServerCopyDialog(self)
+            dialog.exec()
 
-        if not dialog.result():
-            return
+            if not dialog.result():
+                return
 
-        self.toDaemon('/ray/server/abort_copy')
+            self.toDaemon('/ray/server/abort_copy')
+        
+        elif self._session.server_status == ray.ServerStatus.SNAPSHOT:
+            self.showSnapshotProgressDialog()
 
     def abortCopyClient(self, client_id):
         if not self.server_copying:
@@ -492,7 +525,7 @@ class MainWindow(QMainWindow):
                 ray.ClientStatus.COPY, ray.ClientStatus.PRECOPY):
             return
 
-        dialog = AbortClientCopyDialog(self, client_id)
+        dialog = child_dialogs.AbortClientCopyDialog(self, client_id)
         dialog.exec()
 
         if not dialog.result():
@@ -510,15 +543,31 @@ class MainWindow(QMainWindow):
         else:
             return
 
-        dialog = ClientTrashDialog(self, trashed_client.data)
+        dialog = child_dialogs.ClientTrashDialog(self, trashed_client.data)
         dialog.exec()
         if not dialog.result():
             return
 
         self.toDaemon('/ray/trash/restore', client_id)
 
+    def showSnapshotProgressDialog(self):
+        if self.progress_dialog_visible:
+            return
+        self.progress_dialog_visible = True
+        
+        dialog = child_dialogs.SnapShotProgressDialog(self)
+        dialog.serverProgress(self.server_progress)
+        dialog.exec()
+        
+        self.progress_dialog_visible = False
+        
+        if not dialog.result():
+            return 
+        
+        self.toDaemon('/ray/server/abort_snapshot')
+        
     def showDaemonUrlWindow(self, err_code, ex_url=''):
-        dialog = DaemonUrlWindow(self, err_code, ex_url)
+        dialog = child_dialogs.DaemonUrlWindow(self, err_code, ex_url)
         dialog.exec()
         if not dialog.result():
             if (CommandLineArgs.under_nsm
@@ -623,20 +672,21 @@ class MainWindow(QMainWindow):
         if not len(args) >= 3:
             return
 
-        error_dialog = ErrorDialog(self, args)
+        error_dialog = child_dialogs.ErrorDialog(self, args)
         error_dialog.exec()
 
     def serverOpensNsmSession(self):
         if not RS.settings.value('OpenNsmSessionInfo', True, type=bool):
             return
 
-        dialog = OpenNsmSessionInfoDialog(self)
+        dialog = child_dialogs.OpenNsmSessionInfoDialog(self)
         dialog.exec()
 
     def serverReorderClients(self, client_id_list):
         self._session.reOrderClients(client_id_list)
 
     def serverProgress(self, progress):
+        self.server_progress = progress
         self.ui.lineEditServerStatus.setProgress(progress)
 
     def serverCopying(self, copying):
@@ -650,11 +700,17 @@ class MainWindow(QMainWindow):
             serverStatusString(server_status))
         self.ui.frameCurrentSession.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
+        
+        if server_status == ray.ServerStatus.SNAPSHOT:
+            self.timer_snapshot.start()
+        elif self.timer_snapshot.isActive():
+            self.timer_snapshot.stop()
 
         if server_status == ray.ServerStatus.COPY:
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(False)
+            self.ui.actionReturnToAPreviousState.setEnabled(False)
             return
 
         if server_status == ray.ServerStatus.PRECOPY:
@@ -663,6 +719,7 @@ class MainWindow(QMainWindow):
             self.ui.actionAbortSession.setEnabled(True)
             self.ui.actionDuplicateSession.setEnabled(False)
             self.ui.actionSaveTemplateSession.setEnabled(False)
+            self.ui.actionReturnToAPreviousState.setEnabled(False)
             self.ui.actionAddApplication.setEnabled(False)
             self.ui.actionAddExecutable.setEnabled(False)
             self.ui.actionOpenSessionFolder.setEnabled(True)
@@ -678,6 +735,7 @@ class MainWindow(QMainWindow):
         self.ui.actionCloseSession.setEnabled(ready)
         self.ui.actionAbortSession.setEnabled(not close_or_off)
         self.ui.actionDuplicateSession.setEnabled(not close_or_off)
+        self.ui.actionReturnToAPreviousState.setEnabled(not close_or_off)
         self.ui.actionRenameSession.setEnabled(ready)
         self.ui.actionSaveTemplateSession.setEnabled(not close_or_off)
         self.ui.actionAddApplication.setEnabled(not close_or_off)

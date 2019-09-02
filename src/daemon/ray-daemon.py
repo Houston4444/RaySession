@@ -26,15 +26,11 @@ if __name__ == '__main__':
     #add RaySession/src/bin to $PATH
     ray.addSelfBinToPath()
     
-    #check arguments
-    parser = ArgParser()
-    
     #create app
     app = QCoreApplication(sys.argv)
     app.setApplicationName("RaySession")
     app.setOrganizationName("RaySession")
     
-    #
     initDaemonTools()
     
     ### Translation process
@@ -47,13 +43,16 @@ if __name__ == '__main__':
         
     _translate = app.translate
     
+    #check arguments
+    parser = ArgParser()
+    
     #manage session_root
     session_root = CommandLineArgs.session_root
     if not session_root:
         session_root = "%s/%s" % (os.getenv('HOME'), 
                                   _translate('daemon', 
                                              'Ray Network Sessions'))
-    
+                                  
     #make session_root folder if needed
     if not os.path.isdir(session_root):
         if os.path.exists(session_root):
@@ -132,6 +131,7 @@ if __name__ == '__main__':
                       server.option_save_from_client)
     RS.settings.setValue('daemon/bookmark_session_folder', 
                       server.option_bookmark_session)
+    RS.settings.setValue('daemon/auto_snapshot', server.option_snapshots)
     RS.settings.setValue('daemon/desktops_memory', server.option_desktops_memory)
     RS.settings.sync()
     

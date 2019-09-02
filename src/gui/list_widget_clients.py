@@ -7,8 +7,11 @@ from PyQt5.QtCore import Qt, pyqtSignal, QSize, QFile
 import ray
 from gui_server_thread import GUIServerThread
 from gui_tools import clientStatusString, _translate
+import child_dialogs
+import snapshots_dialog
 
 import ui_client_slot
+
 
 
 class ClientSlot(QFrame):
@@ -33,7 +36,7 @@ class ClientSlot(QFrame):
         self.ui.killButton.clicked.connect(self.killClient)
         self.ui.saveButton.clicked.connect(self.saveClient)
         self.ui.closeButton.clicked.connect(self.trashClient)
-        self.ui.lineEditClientStatus.copyAborted.connect(self.abortCopy)
+        self.ui.lineEditClientStatus.statusPressed.connect(self.abortCopy)
         # self.ui.ClientName.name_changed.connect(self.updateLabel)
         
         # prevent "stopped" status displayed at client switch
@@ -47,12 +50,19 @@ class ClientSlot(QFrame):
 
         self.ui.actionSaveAsApplicationTemplate.triggered.connect(
             self.saveAsApplicationTemplate)
-        self.ui.actionProperties.triggered.connect(self.openPropertiesDialog)
+        self.ui.actionProperties.triggered.connect(
+            self.client.showPropertiesDialog)
+        self.ui.actionReturnToAPreviousState.triggered.connect(
+            self.openSnapshotsDialog)
 
         self.menu = QMenu(self)
 
         self.menu.addAction(self.ui.actionSaveAsApplicationTemplate)
+        self.menu.addAction(self.ui.actionReturnToAPreviousState)
         self.menu.addAction(self.ui.actionProperties)
+        
+        self.ui.actionReturnToAPreviousState.setVisible(
+            self._main_win.has_git)
 
         self.ui.iconButton.setMenu(self.menu)
 
@@ -175,10 +185,23 @@ class ClientSlot(QFrame):
         self._main_win.abortCopyClient(self.clientId())
 
     def saveAsApplicationTemplate(self):
-        self._main_win.newClientTemplate(self.clientId())
+        dialog = child_dialogs.SaveTemplateClientDialog(self._main_win)
+        dialog.exec()
+        if not dialog.result():
+            return
 
-    def openPropertiesDialog(self):
-        self._main_win.openClientProperties(self.clientId())
+        template_name = dialog.getTemplateName()
+        self.toDaemon('/ray/client/save_as_template', self.clientId(),
+                      template_name)
+        
+    def openSnapshotsDialog(self):
+        dialog = snapshots_dialog.ClientSnapshotsDialog(self._main_win,
+                                                        self.client)
+        dialog.exec()
+        if dialog.result():
+            snapshot = dialog.getSelectedSnapshot()
+            self.toDaemon('/ray/client/open_snapshot',
+                          self.clientId(), snapshot)
 
     def updateLabel(self, label):
         self._main_win.updateClientLabel(self.clientId(), label)
@@ -312,6 +335,11 @@ class ClientSlot(QFrame):
 
     def setProgress(self, progress):
         self.ui.lineEditClientStatus.setProgress(progress)
+        
+    def setDaemonOptions(self, options):
+        print('efrok', has_git)
+        has_git = bool(options & ray.Option.HAS_GIT)
+        self.ui.actionReturnToAPreviousState.setVisible(has_git)
 
     def contextMenuEvent(self, event):
         act_selected = self.menu.exec(self.mapToGlobal(event.pos()))

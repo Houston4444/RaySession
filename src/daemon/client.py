@@ -54,12 +54,15 @@ class Client(ServerSender):
     auto_start       = True
     start_gui_hidden = False
     check_last_save  = True
+    is_external      = False
     sent_to_gui      = False
     
     net_session_template = ''
     net_session_root     = ''
     net_daemon_url       = ''
     net_duplicate_state  = -1
+    
+    ignored_extensions = ray.getGitIgnoredExtensions()
     
     last_save_time = 0.00
     last_dirty = 0.00
@@ -118,6 +121,22 @@ class Client(ServerSender):
         self.check_last_save  = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         
+        
+        ign_exts = ctx.attribute('ignored_extensions').split(' ')
+        unign_exts = ctx.attribute('unignored_extensions').split(' ')
+        
+        global_exts = ray.getGitIgnoredExtensions().split(' ')
+        self.ignored_extensions = ""
+        
+        for ext in global_exts:
+            if ext and not ext in unign_exts:
+                self.ignored_extensions+= " %s" % ext
+                
+        for ext in ign_exts:
+            if ext and not ext in global_exts:
+                self.ignored_extensions+= " %s" % ext
+                
+        
         prefix_mode = ctx.attribute('prefix_mode')
         
         if prefix_mode and prefix_mode.isdigit():
@@ -169,7 +188,7 @@ class Client(ServerSender):
         if self.icon:
             ctx.setAttribute('icon', self.icon)
         if not self.check_last_save:
-            ctx.setAttribute('check_last_save', "0")
+            ctx.setAttribute('check_last_save', 0)
         if self.arguments:
             ctx.setAttribute('arguments', self.arguments)
             
@@ -188,7 +207,31 @@ class Client(ServerSender):
             ctx.setAttribute('net_session_template',
                              self.net_session_template)
             
-        
+        if self.ignored_extensions != ray.getGitIgnoredExtensions():
+            ignored = ""
+            unignored = ""
+            client_exts = [e for e in self.ignored_extensions.split(' ') if e]
+            global_exts = [e for e in 
+                           ray.getGitIgnoredExtensions().split(' ') if e]
+            
+            for cext in client_exts:
+                if not cext in global_exts:
+                    ignored += " %s" % cext
+            
+            for gext in global_exts:
+                if not gext in client_exts:
+                    unignored += " %s" % gext
+                    
+            if ignored:        
+                ctx.setAttribute('ignored_extensions', ignored)
+            else:
+                ctx.removeAttribute('ignored_extensions')
+                
+            if unignored:
+                ctx.setAttribute('unignored_extensions', unignored)
+            else:
+                ctx.removeAttribute('unignored_extensions')
+                
     def setReply(self, errcode, message):
         self._reply_message = message
         self._reply_errcode = errcode
@@ -273,6 +316,18 @@ class Client(ServerSender):
         
         return jack_client_name
     
+    def getPrefixString(self):
+        if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
+            return self.session.name
+        
+        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+            return self.name
+        
+        if self.prefix_mode == ray.PrefixMode.UNDEF:
+            return self.project_path
+        
+        return ''
+    
     def getProjectPath(self):
         if self.executable_path == 'ray-network':
             #for ray-network, use project_path for template,
@@ -291,6 +346,51 @@ class Client(ServerSender):
             os.chdir(current_dir)
             
             return project_path
+    
+    def getProxyExecutable(self):
+        if os.path.basename(self.executable_path) != 'ray-proxy':
+            return ""
+        
+        xml_file = "%s/ray-proxy.xml" % self.getProjectPath()
+        xml = QDomDocument()
+        try:
+            file = open(xml_file, 'r')
+            xml.setContent(file.read())
+        except:
+            return ""
+        
+        content = xml.documentElement()
+        if content.tagName() != "RAY-PROXY":
+            file.close()
+            return ""
+            
+        executable = content.attribute('executable')
+        file.close()
+        
+        return executable
+    
+    def setDefaultGitIgnored(self, executable=""):
+        executable = executable if executable else self.executable_path
+        executable = os.path.basename(executable)
+        if executable == 'ray-proxy':
+            executable = self.getProxyExecutable()
+        
+        if executable in (
+                'ardour', 'ardour4', 'ardour5', 'ardour6',
+                'Ardour', 'Ardour4', 'Ardour5', 'Ardour6',
+                'qtractor'):
+            self.ignored_extensions += " .mid"
+            
+        elif executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
+            if '.wav' in self.ignored_extensions:
+                self.ignored_extensions = \
+                    self.ignored_extensions.replace('.wav', '')
+                
+        elif executable == 'samplv1_jack':
+            for ext in ('.wav', '.flac', '.ogg', '.mp3'):
+                if ext in self.ignored_extensions:
+                    self.ignored_extensions = \
+                        self.ignored_extensions.replace(ext, '')
     
     def start(self):
         self.session.setRenameable(False)
@@ -321,6 +421,9 @@ class Client(ServerSender):
         self.running_arguments  = self.arguments
         
         self.process.start(self.executable_path, arguments)
+        
+        ## Here for another way to debug clients.
+        ## Konsole is a terminal software.
         #self.process.start(
             #'konsole', 
             #['--hide-tabbar', '--hide-menubar', '-e', self.executable_path]
@@ -328,13 +431,22 @@ class Client(ServerSender):
      
     def terminate(self):
         if self.isRunning():
-            self.process.terminate()
+            if self.is_external:
+                os.kill(self.pid, 15) # 15 means signal.SIGTERM
+            else:
+                self.process.terminate()
         
     def kill(self):
+        if self.is_external:
+            os.kill(self.pid, 9) # 9 means signal.SIGKILL
+            return
+            
         if self.isRunning():
             self.process.kill()
             
     def isRunning(self):
+        if self.is_external:
+            return True
         return bool(self.process.state() == 2)
     
     def standardError(self):
@@ -359,6 +471,7 @@ class Client(ServerSender):
     
     def processFinished(self, exit_code, exit_status):
         self.stopped_timer.stop()
+        self.is_external = False
         
         if self.pending_command in (ray.Command.KILL, ray.Command.QUIT):
             self.sendGuiMessage(_translate('GUIMSG', 
@@ -389,8 +502,8 @@ class Client(ServerSender):
         if error == QProcess.FailedToStart:
             self.sendGuiMessage(_translate('GUIMSG', "%s Failed to start !") 
                                 % self.guiMsgStyle())
-            self.active     = False
-            self.pid        = 0
+            self.active = False
+            self.pid    = 0
             self.setStatus(ray.ClientStatus.STOPPED)
             self.pending_command = ray.Command.NONE
             
@@ -403,7 +516,6 @@ class Client(ServerSender):
             
             if self.session.wait_for:
                 self.session.endTimerIfLastExpected(self)
-        
         self.session.setRenameable(True)
     
     def stoppedSinceLong(self):
@@ -434,6 +546,11 @@ class Client(ServerSender):
     def stop(self):
         self.sendGuiMessage(_translate('GUIMSG', "%s stopping")
                             % self.guiMsgStyle())
+        
+        #if self.is_external:
+            #os.kill(self.pid, 15) # 15 means signal.SIGTERM
+            #return
+            
         if self.isRunning():
             self.pending_command = ray.Command.KILL
             self.setStatus(ray.ClientStatus.QUIT)
@@ -441,7 +558,7 @@ class Client(ServerSender):
             if not self.stopped_timer.isActive():
                 self.stopped_timer.start()
                 
-            self.process.terminate()
+            self.terminate()
     
     def quit(self):
         Terminal.message("Commanding %s to quit" % self.name)
@@ -492,7 +609,8 @@ class Client(ServerSender):
                         self.label,
                         self.icon,
                         self.capabilities,
-                        int(self.check_last_save))
+                        int(self.check_last_save),
+                        self.ignored_extensions)
         
         self.sent_to_gui = True
     
@@ -506,6 +624,7 @@ class Client(ServerSender):
         self.icon            = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
+        self.ignored_extensions = client_data.ignored_extensions
         
         self.sendGuiClientProperties()
     
@@ -872,6 +991,10 @@ class Client(ServerSender):
         self.name         = client_name
         self.active       = True
         self.did_announce = True
+        
+        if self.is_external:
+            self.pid = pid
+            self.running_executable = executable_path
         
         if self.executable_path in RS.non_active_clients:
             RS.non_active_clients.remove(self.executable_path)

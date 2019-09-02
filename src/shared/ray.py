@@ -24,7 +24,14 @@ if QT_VERSION < (5, 6):
         + "You won't be warned if a process can't be launch.\n")
 
 # Ray Session version
-VERSION = "0.7.2"
+#VERSION_TUPLE = (0, 8, 0)
+#VERSION = ""
+#for i in VERSION_TUPLE:
+    #if i != 0:
+        #VERSION += '.'
+    #VERSION += str(i)
+    
+VERSION = "0.8.0"
 
 APP_TITLE = 'Ray Session'
 
@@ -51,17 +58,19 @@ class ClientStatus:
 
 
 class ServerStatus:
-    OFF     = 0
-    NEW     = 1
-    OPEN    = 2
-    CLEAR   = 3
-    SWITCH  = 4
-    LAUNCH  = 5
-    PRECOPY = 6
-    COPY    = 7
-    READY   = 8
-    SAVE    = 9
-    CLOSE   = 10
+    OFF      =  0
+    NEW      =  1
+    OPEN     =  2
+    CLEAR    =  3
+    SWITCH   =  4
+    LAUNCH   =  5
+    PRECOPY  =  6
+    COPY     =  7
+    READY    =  8
+    SAVE     =  9
+    CLOSE    = 10
+    SNAPSHOT = 11
+    REWIND   = 12
 
 
 class NSMMode:
@@ -76,6 +85,8 @@ class Option:
     BOOKMARK_SESSION = 0x004
     HAS_WMCTRL       = 0x008
     DESKTOPS_MEMORY  = 0x010
+    HAS_GIT          = 0x020
+    SNAPSHOTS        = 0x040
 
 
 class Err:
@@ -94,6 +105,9 @@ class Err:
     OPERATION_PENDING = -12
     COPY_RUNNING = -13
     NET_ROOT_RUNNING = -14
+    SUBPROCESS_UNTERMINATED = -15
+    SUBPROCESS_CRASH = -16
+    SUBPROCESS_EXITCODE = -17
 
 
 class Command:
@@ -111,10 +125,11 @@ class Command:
 class WaitFor:
     NONE = 0
     STOP = 1
-    ANNOUNCE = 2
-    REPLY = 3
-    DUPLICATE_START = 4
-    DUPLICATE_FINISH = 5
+    STOP_ONE = 2
+    ANNOUNCE = 3
+    REPLY = 4
+    DUPLICATE_START = 5
+    DUPLICATE_FINISH = 6
 
 
 class Template:
@@ -140,6 +155,14 @@ def setDebug(bool):
     global debug
     debug = bool
 
+def versionToTuple(version_str):
+    version_list = []
+    for c in version_str.split('.'):
+        if not c.isdigit():
+            return ()
+        version_list.append(int(c))
+        
+    return tuple(version_list)
 
 def addSelfBinToPath():
     # Add raysession/src/bin to $PATH to can use ray executables after make
@@ -163,6 +186,8 @@ def getListInSettings(settings, path):
 
     return settings_list
 
+def getGitIgnoredExtensions():
+    return ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
 
 def isPidChildOf(child_pid, parent_pid):
     if child_pid < parent_pid:
@@ -170,19 +195,57 @@ def isPidChildOf(child_pid, parent_pid):
 
     ppid = child_pid
     this_pid = os.getpid()
-
-    while ppid != parent_pid and ppid > 1 and ppid != this_pid:
+    
+    while ppid > parent_pid:
         try:
-            ppid = int(subprocess.check_output(
-                ['ps', '-o', 'ppid=', '-p', str(ppid)]))
+            proc_file = open('/proc/%i/status' % ppid, 'r')
+            proc_contents = proc_file.read()
         except BaseException:
             return False
+        
+        for line in proc_contents.split('\n'):
+            if line.startswith('PPid:'):
+                ppid_str = line.rpartition('\t')[2]
+                if ppid_str.isdigit():
+                    ppid = int(ppid_str)
+                    break
+        else:
+            return
+
+    #while ppid != parent_pid and ppid > 1 and ppid != this_pid:
+        #try:
+            #ppid = int(subprocess.check_output(
+                #['ps', '-o', 'ppid=', '-p', str(ppid)]))
+        #except BaseException:
+            #return False
 
     if ppid == parent_pid:
         return True
 
     return False
 
+def isGitTaggable(string):
+    if not string:
+        return False
+    
+    if string.startswith('/'):
+        return False
+    
+    if string.endswith('/'):
+        return False
+    
+    if string.endswith('.'):
+        return False
+    
+    for forbidden in (' ', '~', '^', ':', '?', '*',
+                      '[', '..', '@{', '\\', '//', ','):
+        if forbidden in string:
+            return False
+    
+    if string == "@":
+        return False
+    
+    return True
 
 def isOscPortFree(port):
     try:
@@ -389,7 +452,6 @@ def shellLineToArgs(string):
 
     return args
 
-
 def areTheyAllString(args):
     for arg in args:
         if type(arg) != str:
@@ -432,6 +494,7 @@ class ClientData:
     icon = ''
     capabilities = ''
     check_last_save = True
+    ignored_extensions = getGitIgnoredExtensions()
 
     def __init__(self,
                  client_id,
@@ -443,7 +506,8 @@ class ClientData:
                  label='',
                  icon='',
                  capabilities='',
-                 check_last_save=True):
+                 check_last_save=True,
+                 ignored_extensions=getGitIgnoredExtensions()):
         self.client_id = str(client_id)
         self.executable_path = str(executable)
         self.arguments = str(arguments)
@@ -451,6 +515,7 @@ class ClientData:
         self.label = str(label)
         self.capabilities = str(capabilities)
         self.check_last_save = bool(check_last_save)
+        self.ignored_extensions = str(ignored_extensions)
 
         self.name = str(name) if name else os.path.basename(
             self.executable_path)

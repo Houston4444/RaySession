@@ -47,6 +47,7 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_edit_executable.py \
 	    src/gui/ui_daemon_url.py \
 	    src/gui/ui_error_dialog.py \
+	    src/gui/ui_list_snapshots.py \
 	    src/gui/ui_new_executable.py \
 	    src/gui/ui_new_session.py \
 	    src/gui/ui_nsm_open_info.py \
@@ -54,6 +55,9 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_quit_app.py \
 	    src/gui/ui_raysession.py \
 	    src/gui/ui_save_template_session.py \
+	    src/gui/ui_snapshot_name.py \
+	    src/gui/ui_snapshots_info.py \
+	    src/gui/ui_snapshot_progress.py \
 	    src/gui/ui_stop_client.py
 
 src/gui/ui_%.py: resources/ui/%.ui
@@ -78,7 +82,7 @@ locale/%.qm: locale/%.ts
 clean:
 	rm -f *~ src/*~ src/*.pyc src/gui/ui_*.py src/clients/proxy/ui_*.py \
 	      src/gui/resources_rc.py locale/*.qm
-	rm -f -R src/__pycache__ src/*/__pycache__
+	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 debug:
@@ -88,7 +92,7 @@ debug:
 
 install:
 	#clean unwanted __pycache__ folders
-	rm -f -R src/__pycache__ src/*/__pycache__
+	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__
 	
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/

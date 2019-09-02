@@ -1,12 +1,12 @@
 import os
 import sys
-from liblo import ServerThread, make_method, Address
+import liblo
 
 import ray
 from gui_tools import CommandLineArgs
 from gui_signaler import Signaler
 
-#signaler = Signaler.instance()
+signaler = Signaler.instance()
 _instance = None
 
 
@@ -14,10 +14,22 @@ def ifDebug(string):
     if CommandLineArgs.debug:
         sys.stderr.write(string + '\n')
 
+def ray_method(path, types):
+    def decorated(func):
+        @liblo.make_method(path, types)
+        def wrapper(*args, **kwargs):
+            if CommandLineArgs.debug:
+                sys.stderr.write(
+                    '\033[93mOSC::gui_receives\033[0m %s, %s.\n'
+                        % (path, str(args)))
+            response = func(*args[:-1], **kwargs)
+            return response
+        return wrapper
+    return decorated
 
-class GUIServerThread(ServerThread):
+class GUIServerThread(liblo.ServerThread):
     def __init__(self):
-        ServerThread.__init__(self)
+        liblo.ServerThread.__init__(self)
 
         global _instance
         _instance = self
@@ -31,69 +43,62 @@ class GUIServerThread(ServerThread):
     def instance():
         return _instance
 
-    @make_method('/error', None)
-    def errorFromServer(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/error', None)
+    def errorFromServer(self, path, args, types, src_addr):
         self._signaler.error_message.emit(args)
 
-    @make_method('/reply', 'ss')
-    def receiveFromServer(self, path, args):
-        self.debugg(path, args)
+    @ray_method('/reply', 'ss')
+    def receiveFromServer(self, path, args, types, src_addr):
+        pass
 
-        # if args[0] == '/ray/server/list_sessions':
-        #session_name = args[1]
-        # self._signaler.add_session_to_list.emit(session_name)
-
-    @make_method('/reply_sessions_list', None)
-    def replySessionsList(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/reply_sessions_list', None)
+    def replySessionsList(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             return
 
         self._signaler.add_sessions_to_list.emit(args)
 
-    @make_method('/reply_path', None)
-    def replyPath(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/reply_path', None)
+    def replyPath(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             return
 
         self._signaler.new_executable.emit(args)
 
-    @make_method('/reply_session_templates', None)
-    def replySessionTemplates(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/reply_session_templates', None)
+    def replySessionTemplates(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             return
 
         self._signaler.session_template_found.emit(args)
 
-    @make_method('/reply_user_client_templates', None)
-    def replyUserClientTemplates(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/reply_user_client_templates', None)
+    def replyUserClientTemplates(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             return
 
         self._signaler.user_client_template_found.emit(args)
 
-    @make_method('/reply_factory_client_templates', None)
-    def replyFactoryClientTemplates(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/reply_factory_client_templates', None)
+    def replyFactoryClientTemplates(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             return
 
         self._signaler.factory_client_template_found.emit(args)
+        
+    @ray_method('/reply_snapshots_list', None)
+    def replySnapshotsList(self, path, args, types, src_addr):
+        if not ray.areTheyAllString(args):
+            return 
+        
+        self._signaler.snapshots_found.emit(args)
+        
+    @ray_method('/reply_auto_snapshot', 'i')
+    def replyAutoSnapshot(self, path, args, types, src_addr):
+        self._signaler.reply_auto_snapshot.emit(bool(args[0]))
 
-    @make_method('/ray/gui/daemon_announce', 'siisi')
+    @ray_method('/ray/gui/daemon_announce', 'siisi')
     def serverAnnounce(self, path, args, types, src_addr):
-        self.debugg(path, args)
-
         if self._daemon_manager.isAnnounced():
             return
 
@@ -106,63 +111,47 @@ class GUIServerThread(ServerThread):
                                             session_root,
                                             is_net_free)
 
-    @make_method('/ray/gui/daemon_disannounce', '')
+    @ray_method('/ray/gui/daemon_disannounce', '')
     def serverDisannounce(self, path, args, types, src_addr):
-        self.debugg(path, args)
         pass
 
-    @make_method('/ray/gui/daemon_nsm_locked', 'i')
+    @ray_method('/ray/gui/daemon_nsm_locked', 'i')
     def daemonNsmLocked(self, path, args, types, src_addr):
-        self.debugg(path, args)
         nsm_locked = bool(args[0])
 
         self._signaler.daemon_nsm_locked.emit(nsm_locked)
 
-    @make_method('/ray/gui/server/message', 's')
-    def serverMessage(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/gui/server/message', 's')
+    def serverMessage(self, path, args, types, src_addr):
         message = args[0]
         self._signaler.new_message_sig.emit(message)
 
-    @make_method('/ray/gui/server/copying', 'i')
-    def guiServerCopying(self, path, args):
+    @ray_method('/ray/gui/server/copying', 'i')
+    def guiServerCopying(self, path, args, types, src_addr):
         copying = bool(int(args[0]))
-
         self._signaler.server_copying.emit(copying)
 
-    @make_method('/ray/gui/session/name', 'ss')
-    def guiSessionName(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/gui/session/name', 'ss')
+    def guiSessionName(self, path, args, types, src_addr):
         name1, name2 = args
         self._signaler.session_name_sig.emit(name1, name2)
 
-    @make_method('/ray/gui/session/renameable', 'i')
-    def guiSessionRenameable(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/gui/session/renameable', 'i')
+    def guiSessionRenameable(self, path, args, types, src_addr):
         renameable = bool(args[0])
         self._signaler.session_renameable.emit(renameable)
 
-    @make_method('/ray/client/new', 'ssssissssi')
-    def newClientFromServer(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/client/new', 'ssssissssis')
+    def newClientFromServer(self, path, args, types, src_addr):
         client_data = ray.ClientData(*args)
         self._signaler.new_client_added.emit(client_data)
 
-    @make_method('/ray/client/update', 'ssssissssi')
-    def updateClientProperties(self, path, args):
-        self.debugg(path, args)
+    @ray_method('/ray/client/update', 'ssssissssis')
+    def updateClientProperties(self, path, args, types, src_addr):
+        pass
 
-        client_data = ray.ClientData(*args)
-        self._signaler.client_updated.emit(client_data)
-
-    @make_method('/ray/client/status', 'si')
-    def guiClientStatus(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/client/status', 'si')
+    def guiClientStatus(self, path, args, types, src_addr):
         client_id, status = args
 
         if status == ray.ClientStatus.REMOVED:
@@ -171,108 +160,80 @@ class GUIServerThread(ServerThread):
 
         self._signaler.client_status_changed.emit(client_id, status)
 
-    @make_method('/ray/client/switch', 'ss')
-    def guiClientSwitch(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/client/switch', 'ss')
+    def guiClientSwitch(self, path, args, types, src_addr):
         old_client_id, new_client_id = args
-
         self._signaler.client_switched.emit(old_client_id, new_client_id)
 
-    @make_method('/ray/client/progress', 'sf')
-    def guiClientProgress(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/client/progress', 'sf')
+    def guiClientProgress(self, path, args, types, src_addr):
         client_id, progress = args
-
         self._signaler.client_progress.emit(client_id, progress)
 
-    @make_method('/ray/client/dirty', 'si')
-    def guiClientDirty(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/client/dirty', 'si')
+    def guiClientDirty(self, path, args, types, src_addr):
         client_id, dirty_num = args
         bool_dirty = bool(dirty_num)
 
         self._signaler.client_dirty_sig.emit(client_id, bool_dirty)
 
-    @make_method('/ray/client/has_optional_gui', 's')
-    def guiClientHasOptionalGui(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/client/has_optional_gui', 's')
+    def guiClientHasOptionalGui(self, path, args, types, src_addr):
         client_id = args[0]
         self._signaler.client_has_gui.emit(client_id)
 
-    @make_method('/ray/client/gui_visible', 'si')
-    def guiClientGuiVisible(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/client/gui_visible', 'si')
+    def guiClientGuiVisible(self, path, args, types, src_addr):
         client_id, state = args
         self._signaler.client_gui_visible_sig.emit(client_id, bool(state))
 
-    @make_method('/ray/client/still_running', 's')
-    def guiClientStillRunning(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/client/still_running', 's')
+    def guiClientStillRunning(self, path, args, types, src_addr):
         client_id = args[0]
         self._signaler.client_still_running.emit(client_id)
 
-    @make_method('/ray/gui/server_progress', 'f')
-    def guiServerProgress(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/gui/server_progress', 'f')
+    def guiServerProgress(self, path, args, types, src_addr):
         progress = args[0]
         self._signaler.server_progress.emit(progress)
 
-    @make_method('/ray/server_status', 'i')
-    def rayServerStatus(self, path, args):
+    @ray_method('/ray/server_status', 'i')
+    def rayServerStatus(self, path, args, types, src_addr):
         server_status = args[0]
         self._signaler.server_status_changed.emit(server_status)
         
-    @make_method('/ray/server/root_changed', 's')
-    def rayServerRootChanged(self, path, args):
+    @ray_method('/ray/server/root_changed', 's')
+    def rayServerRootChanged(self, path, args, types, src_addr):
         session_root = args[0]
         
         CommandLineArgs.changeSessionRoot(session_root)
         self._signaler.root_changed.emit(session_root)
 
-    @make_method('/ray/opening_nsm_session', None)
-    def rayOpeningNsmSession(self, path, args):
+    @ray_method('/ray/opening_nsm_session', None)
+    def rayOpeningNsmSession(self, path, args, types, src_addr):
         self._signaler.opening_session.emit()
 
-    @make_method('/ray/gui/clients_reordered', None)
-    def rayGuiReorderClients(self, path, args):
+    @ray_method('/ray/gui/clients_reordered', None)
+    def rayGuiReorderClients(self, path, args, types, src_addr):
         for arg in args:
             if not isinstance(arg, str):
                 return
 
         self._signaler.clients_reordered.emit(args)
 
-    @make_method('/ray/trash/add', 'ssssissssi')
-    def rayGuiTrashAdd(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/trash/add', 'ssssissssis')
+    def rayGuiTrashAdd(self, path, args, types, src_addr):
         client_data = ray.ClientData(*args)
         self._signaler.trash_add.emit(client_data)
 
-    @make_method('/ray/trash/remove', 's')
-    def rayGuiTrashRemove(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/trash/remove', 's')
+    def rayGuiTrashRemove(self, path, args, types, src_addr):
         client_id = args[0]
         self._signaler.trash_remove.emit(client_id)
 
-    @make_method('/ray/trash/clear', '')
-    def rayGuiTrashClear(self, path, args):
-        self.debugg(path, args)
-
+    @ray_method('/ray/trash/clear', '')
+    def rayGuiTrashClear(self, path, args, types, src_addr):
         self._signaler.trash_clear.emit()
-
-    def debugg(self, path, args):
-        if CommandLineArgs.debug:
-            sys.stderr.write(
-                '\033[93mOSC::gui_receives\033[0m %s, %s.\n' %
-                (path, str(args)))
 
     def toDaemon(self, *args):
         if CommandLineArgs.debug:
@@ -308,20 +269,13 @@ class GUIServerThread(ServerThread):
 
     def startListSession(self, with_net=False):
         ifDebug('serverOSC::raysession_sends list sessions')
-
-        if with_net:
-            self.toDaemon('/ray/server/list_sessions', 1)
-        else:
-            self.toDaemon('/ray/server/list_sessions', 0)
+        self.toDaemon('/ray/server/list_sessions', int(with_net))
 
     def newSession(self, session_name):
         self.toDaemon('/ray/server/new_session', session_name)
 
     def newSessionFromTemplate(self, session_name, template_name):
-        self.toDaemon(
-            '/ray/server/new_from_template',
-            session_name,
-            template_name)
+        self.toDaemon('/ray/server/new_session', session_name, template_name)
 
     def openSession(self, session_name, session_template=''):
         if session_template:

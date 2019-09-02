@@ -34,7 +34,18 @@ def initDaemonTools():
                                                  'daemon/non_active_list'))
     TemplateRoots.initConfig()
 
-
+def getGitDefaultUnAndIgnored(executable):
+    ignored = []
+    unignored = []
+        
+    if executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
+        unignored.append('.wav')
+            
+    elif executable == 'samplv1_jack':
+        unignored = ['.wav', '.flac', '.ogg', '.mp3']
+        
+    return (ignored, unignored)
+    
 class RS:
     settings = QSettings()
     non_active_clients = []
@@ -77,6 +88,17 @@ class Terminal:
                             % string)
         
         cls._last_client_name = 'daemon'
+        
+    @classmethod
+    def snapshoterMessage(cls, byte_string, command=''):
+        snapshoter_str = "snapshoter:.%s" % command
+        
+        if cls._last_client_name != snapshoter_str:
+            sys.stderr.write('\n[\033[90mray-daemon-git%s\033[0m]\n'
+                             % command)
+        sys.stderr.buffer.write(byte_string)
+        
+        cls._last_client_name = snapshoter_str
 
     @classmethod
     def clientMessage(cls, byte_string, client_name, client_id):
@@ -128,7 +150,13 @@ class CommandLineArgs(argparse.Namespace):
 class ArgParser(argparse.ArgumentParser):
     def __init__(self):
         argparse.ArgumentParser.__init__(self)
-        self.add_argument('--session-root', '-r', 
+        _translate = QCoreApplication.translate
+        
+        default_root = "%s/%s" % (os.getenv('HOME'), 
+                                  _translate('daemon', 
+                                             'Ray Network Sessions'))
+        
+        self.add_argument('--session-root', '-r', type=str, default=default_root,
                           help='set root folder for sessions')
         self.add_argument('--session', '-s', type=str, default='',
                           help='session to load at startup')

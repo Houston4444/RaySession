@@ -21,5 +21,8 @@
 /src/*/*/__pycache__/
 
 # ignore kdevelop file
-/RaySession/kdev4
+RaySession.kdev4
+
+# ignore memo
+memo_snapshots
 

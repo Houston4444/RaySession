@@ -1,0 +1,15 @@
+#!/bin/bash
+
+session_path="$1"
+
+[ "$session_path" ] || exit 1
+
+# check git presence on system
+which git > /dev/null || exit 1
+
+# check .git dir. exit if not exists
+[ -d "$session_path/.git" ] || exit 1
+
+all_tags=$(git -C "$session_path" tag 2>/dev/null) || exit 1
+
+echo "$all_tags"

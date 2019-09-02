@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
 from PyQt5.QtGui import QFont, QFontDatabase, QFontMetrics, QPalette
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
+import time
 
 class HideGuiButton(QToolButton):
     toggleGui = pyqtSignal()
@@ -147,7 +148,7 @@ class StackedSessionName(QStackedWidget):
         
 
 class StatusBar(QLineEdit):
-    copyAborted = pyqtSignal()
+    statusPressed = pyqtSignal()
 
     def __init__(self, parent):
         QLineEdit.__init__(self)
@@ -165,6 +166,8 @@ class StatusBar(QLineEdit):
 
         self.basecolor = self.palette().base().color().name()
         self.bluecolor = self.palette().highlight().color().name()
+        
+        self.last_status_time = 0.0
         
         # ui_client_slot.py will display "stopped" status.
         # we need to not stay on this status text
@@ -186,6 +189,8 @@ class StatusBar(QLineEdit):
             self.setFont(self.ubuntu_font)
 
     def setText(self, text, from_timer=False):
+        self.last_status_time = time.time()
+        
         if not self._first_text_done:
             self.setFontForText(text)
             QLineEdit.setText(self, text)
@@ -210,6 +215,10 @@ class StatusBar(QLineEdit):
     def setProgress(self, progress):
         if not 0.0 <= progress <= 1.0:
             return
+        
+        # no progress display in the first second
+        if time.time() - self.last_status_time < 1.0:
+            return
 
         pre_progress = progress - 0.03
         if pre_progress < 0:
@@ -224,7 +233,7 @@ class StatusBar(QLineEdit):
         self.setStyleSheet(style)
 
     def mousePressEvent(self, event):
-        self.copyAborted.emit()
+        self.statusPressed.emit()
 
 
 class StatusBarNegativ(StatusBar):

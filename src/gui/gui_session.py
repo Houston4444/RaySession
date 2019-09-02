@@ -24,9 +24,7 @@ class Session(object):
         self.server_status = ray.ServerStatus.OFF
 
         self.is_renameable = True
-
-        #global _instance
-        #_instance = self
+        
         self._signaler = Signaler()
 
         server = GUIServerThread.instance()
@@ -99,9 +97,6 @@ class Session(object):
         else:
             raise NameError("gui_session does not contains client %s"
                                 % client_id)
-            #sys.stderr.write(
-                #"session::getClient client '%s' not in client_list !!!\n"
-                #% client_id)
 
     def addClient(self, client_data):
         client = Client(self, client_data)
@@ -155,12 +150,6 @@ class Session(object):
     def reOrderClients(self, client_id_list):
         new_client_list = []
         for client_id in client_id_list:
-            #for client in self.client:
-                #if client.client_id == client_id:
-                    #break
-            #else:
-                #continue
-            
             client = self.getClient(client_id)
 
             if not client:
