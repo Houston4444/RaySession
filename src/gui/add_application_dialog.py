@@ -1,5 +1,5 @@
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QDialogButtonBox, QListWidgetItem
+from PyQt5.QtCore import Qt, QTimer, QSize
+from PyQt5.QtWidgets import QDialogButtonBox, QListWidgetItem, QFrame
 
 import ray
 
@@ -7,6 +7,37 @@ from gui_tools import RS
 from child_dialogs import ChildDialog
 
 import ui_add_application
+import ui_template_slot
+
+class TemplateSlot(QFrame):
+    def __init__(self, icon, name, factory, favorite):
+        QFrame.__init__(self)
+        self.ui = ui_template_slot.Ui_Frame()
+        self.ui.setupUi(self)
+        
+        self.ui.toolButtonIcon.setIcon(icon)
+        self.ui.label.setText(name)
+        self.ui.toolButtonUser.setVisible(not factory)
+        #self.ui.toolButtonFavorite
+        
+class TemplateItem(QListWidgetItem):
+    def __init__(self, parent, icon, name, factory, favorite):
+        QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
+        self.f_widget = TemplateSlot(icon, name, factory, favorite)
+        self.setData(Qt.UserRole, name)
+        parent.setItemWidget(self, self.f_widget)
+        self.setSizeHint(QSize(100, 28))
+    #def __lt__(self, other):
+        #self_name = self.data(Qt.UserRole)
+        #other_name = other.data(Qt.UserRole)
+        #if not other_name:
+            #return True
+        
+        #sorted_names = [self_name, other_name]
+        #sorted_names.sort()
+        #if self_name == sorted_names[0]:
+            #return True
+        #return False
 
 class AddApplicationDialog(ChildDialog):
     def __init__(self, parent):
@@ -73,14 +104,15 @@ class AddApplicationDialog(ChildDialog):
                 icon_name = template.split('/')[1]
 
             self.user_template_list.append(template_name)
+            
+            list_widget = TemplateItem(self.ui.templateList,
+                                          ray.getAppIcon(icon_name, self),
+                                          template_name, 
+                                          False, 
+                                          False)
 
-            self.ui.templateList.addItem(
-                QListWidgetItem(
-                    ray.getAppIcon(
-                        icon_name,
-                        self),
-                    template_name,
-                    self.ui.templateList))
+            self.ui.templateList.addItem(list_widget)
+            print(self.ui.templateList.count())
 
             self.ui.templateList.sortItems()
 
@@ -96,14 +128,14 @@ class AddApplicationDialog(ChildDialog):
                 icon_name = template.split('/')[1]
 
             self.factory_template_list.append(template_name)
+            
+            list_widget = TemplateItem(self.ui.templateList,
+                                          ray.getAppIcon(icon_name, self),
+                                          template_name, 
+                                          True, 
+                                          False)
 
-            self.ui.templateList.addItem(
-                QListWidgetItem(
-                    ray.getAppIcon(
-                        icon_name,
-                        self),
-                    template_name,
-                    self.ui.templateList))
+            self.ui.templateList.addItem(list_widget)
 
             self.ui.templateList.sortItems()
 
@@ -116,19 +148,25 @@ class AddApplicationDialog(ChildDialog):
         for i in range(self.ui.templateList.count()):
             self.ui.templateList.item(i).setHidden(False)
 
-        liist = self.ui.templateList.findItems(filter_text, Qt.MatchContains)
+        #liist = self.ui.templateList.findItems(filter_text, Qt.MatchContains)
+        liist = []
+        for i in range(self.ui.templateList.count()):
+            item = self.ui.templateList.item(i)
+            if filter_text in item.data(Qt.UserRole):
+                liist.append(item)
 
         seen_template_list = []
 
         # hide all non matching items
         for i in range(self.ui.templateList.count()):
-            template_name = self.ui.templateList.item(i).text()
+            template_name = self.ui.templateList.item(i).data(Qt.UserRole)
 
             if self.ui.templateList.item(i) not in liist:
                 self.ui.templateList.item(i).setHidden(True)
                 continue
 
-            if self.ui.checkBoxFactory.isChecked() and self.ui.checkBoxUser.isChecked():
+            if (self.ui.checkBoxFactory.isChecked()
+                    and self.ui.checkBoxUser.isChecked()):
                 if template_name in seen_template_list:
                     self.ui.templateList.item(i).setHidden(True)
                 else:
@@ -200,7 +238,7 @@ class AddApplicationDialog(ChildDialog):
 
     def getSelectedTemplate(self):
         if self.ui.templateList.currentItem():
-            return self.ui.templateList.currentItem().text()
+            return self.ui.templateList.currentItem().data(Qt.UserRole)
 
     def isTemplateFactory(self, template_name):
         if not self.ui.checkBoxUser.isChecked():
