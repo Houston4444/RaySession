@@ -27,17 +27,21 @@ class TemplateItem(QListWidgetItem):
         self.setData(Qt.UserRole, name)
         parent.setItemWidget(self, self.f_widget)
         self.setSizeHint(QSize(100, 28))
-    #def __lt__(self, other):
-        #self_name = self.data(Qt.UserRole)
-        #other_name = other.data(Qt.UserRole)
-        #if not other_name:
-            #return True
         
-        #sorted_names = [self_name, other_name]
-        #sorted_names.sort()
-        #if self_name == sorted_names[0]:
-            #return True
-        #return False
+        self.f_factory = factory
+        
+    def __lt__(self, other):
+        self_name = self.data(Qt.UserRole)
+        other_name = other.data(Qt.UserRole)
+        
+        if other_name == None:
+            return False
+        
+        if self_name == other_name:
+            # make the user template on top
+            return not self.f_factory
+            
+        return bool(self.data(Qt.UserRole).lower() < other.data(Qt.UserRole).lower())
 
 class AddApplicationDialog(ChildDialog):
     def __init__(self, parent):
@@ -102,18 +106,20 @@ class AddApplicationDialog(ChildDialog):
             if '/' in template:
                 template_name = template.split('/')[0]
                 icon_name = template.split('/')[1]
+                
+            if template_name in self.user_template_list:
+                continue
 
             self.user_template_list.append(template_name)
             
             list_widget = TemplateItem(self.ui.templateList,
-                                          ray.getAppIcon(icon_name, self),
-                                          template_name, 
-                                          False, 
-                                          False)
+                                       ray.getAppIcon(icon_name, self),
+                                       template_name, 
+                                       False, 
+                                       False)
 
             self.ui.templateList.addItem(list_widget)
-            print(self.ui.templateList.count())
-
+            
             self.ui.templateList.sortItems()
 
         self.updateFilteredList()
@@ -126,17 +132,19 @@ class AddApplicationDialog(ChildDialog):
             if '/' in template:
                 template_name = template.split('/')[0]
                 icon_name = template.split('/')[1]
+                
+            if template_name in self.factory_template_list:
+                continue
 
             self.factory_template_list.append(template_name)
             
             list_widget = TemplateItem(self.ui.templateList,
-                                          ray.getAppIcon(icon_name, self),
-                                          template_name, 
-                                          True, 
-                                          False)
+                                       ray.getAppIcon(icon_name, self),
+                                       template_name, 
+                                       True, 
+                                       False)
 
             self.ui.templateList.addItem(list_widget)
-
             self.ui.templateList.sortItems()
 
         self.updateFilteredList()
@@ -147,60 +155,72 @@ class AddApplicationDialog(ChildDialog):
         # show all items
         for i in range(self.ui.templateList.count()):
             self.ui.templateList.item(i).setHidden(False)
+            
+        #liist = []
+        #for i in range(self.ui.templateList.count()):
+            #item = self.ui.templateList.item(i)
+            #if filter_text in item.data(Qt.UserRole):
+                #liist.append(item)
 
-        #liist = self.ui.templateList.findItems(filter_text, Qt.MatchContains)
-        liist = []
-        for i in range(self.ui.templateList.count()):
-            item = self.ui.templateList.item(i)
-            if filter_text in item.data(Qt.UserRole):
-                liist.append(item)
-
-        seen_template_list = []
+        #seen_template_list = []
 
         # hide all non matching items
         for i in range(self.ui.templateList.count()):
-            template_name = self.ui.templateList.item(i).data(Qt.UserRole)
+            
+            
+            item = self.ui.templateList.item(i)
+            template_name = item.data(Qt.UserRole)
 
-            if self.ui.templateList.item(i) not in liist:
-                self.ui.templateList.item(i).setHidden(True)
-                continue
+            #if item not in liist:
+                #item.setHidden(True)
+                #continue
+            
+            if not filter_text.lower() in template_name.lower():
+                item.setHidden(True)
+            
+            if item.f_factory and not self.ui.checkBoxFactory.isChecked():
+                item.setHidden(True)
+            
+            if not item.f_factory and not self.ui.checkBoxUser.isChecked():
+                item.setHidden(True)
 
-            if (self.ui.checkBoxFactory.isChecked()
-                    and self.ui.checkBoxUser.isChecked()):
-                if template_name in seen_template_list:
-                    self.ui.templateList.item(i).setHidden(True)
-                else:
-                    seen_template_list.append(template_name)
+            #if (self.ui.checkBoxFactory.isChecked()
+                    #and self.ui.checkBoxUser.isChecked()):
+                #if template_name in seen_template_list:
+                    #item.setHidden(True)
+                #else:
+                    #seen_template_list.append(template_name)
 
-            elif self.ui.checkBoxFactory.isChecked():
-                if template_name not in self.factory_template_list:
-                    self.ui.templateList.item(i).setHidden(True)
-                    continue
+            #elif self.ui.checkBoxFactory.isChecked():
+                #if template_name not in self.factory_template_list:
+                    #item.setHidden(True)
+                    #continue
 
-                if template_name in seen_template_list:
-                    self.ui.templateList.item(i).setHidden(True)
-                else:
-                    seen_template_list.append(template_name)
+                #if template_name in seen_template_list:
+                    #item.setHidden(True)
+                #else:
+                    #seen_template_list.append(template_name)
 
-            elif self.ui.checkBoxUser.isChecked():
-                if template_name not in self.user_template_list:
-                    self.ui.templateList.item(i).setHidden(True)
+            #elif self.ui.checkBoxUser.isChecked():
+                #if template_name not in self.user_template_list:
+                    #item.setHidden(True)
 
-                if template_name in seen_template_list:
-                    self.ui.templateList.item(i).setHidden(True)
-                else:
-                    seen_template_list.append(template_name)
+                #if template_name in seen_template_list:
+                    #item.setHidden(True)
+                #else:
+                    #seen_template_list.append(template_name)
+        #self.ui.templateList.sortItems()
 
         # if selected item not in list, then select the first visible
-        if not self.ui.templateList.currentItem(
-        ) or self.ui.templateList.currentItem().isHidden():
+        if (not self.ui.templateList.currentItem()
+                or self.ui.templateList.currentItem().isHidden()):
             for i in range(self.ui.templateList.count()):
                 if not self.ui.templateList.item(i).isHidden():
                     self.ui.templateList.setCurrentRow(i)
                     break
 
-        if not self.ui.templateList.currentItem(
-        ) or self.ui.templateList.currentItem().isHidden():
+        if (not self.ui.templateList.currentItem()
+                or self.ui.templateList.currentItem().isHidden()):
             self.ui.filterBar.setStyleSheet(
                 "QLineEdit { background-color: red}")
             self.ui.templateList.setCurrentItem(None)
@@ -237,8 +257,9 @@ class AddApplicationDialog(ChildDialog):
             bool(self.server_will_accept and self.has_selection))
 
     def getSelectedTemplate(self):
-        if self.ui.templateList.currentItem():
-            return self.ui.templateList.currentItem().data(Qt.UserRole)
+        item = self.ui.templateList.currentItem()
+        if item:
+            return (item.data(Qt.UserRole), item.f_factory)
 
     def isTemplateFactory(self, template_name):
         if not self.ui.checkBoxUser.isChecked():

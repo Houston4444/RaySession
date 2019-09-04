@@ -443,8 +443,8 @@ class MainWindow(QMainWindow):
         dialog.saveCheckBoxes()
 
         if dialog.result():
-            template_name = dialog.getSelectedTemplate()
-            factory = dialog.isTemplateFactory(template_name)
+            template_name, factory = dialog.getSelectedTemplate()
+            #factory = dialog.isTemplateFactory(template_name)
             self.toDaemon(
                 '/ray/session/add_client_template',
                 int(factory),
