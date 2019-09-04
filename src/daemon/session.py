@@ -2154,7 +2154,7 @@ class SignaledSession(OperatingSession):
         else:
             return
         
-        self.sendGui('/ray/trash/remove', client_id)
+        self.sendGui('/ray/trash/remove', client.client_id)
         
         for file in client.getProjectFiles():
             try:
