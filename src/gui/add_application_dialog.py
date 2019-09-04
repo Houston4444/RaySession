@@ -1,5 +1,6 @@
 from PyQt5.QtCore import Qt, QTimer, QSize
 from PyQt5.QtWidgets import QDialogButtonBox, QListWidgetItem, QFrame
+from PyQt5.QtGui import QIcon, QPalette
 
 import ray
 
@@ -18,8 +19,15 @@ class TemplateSlot(QFrame):
         self.ui.toolButtonIcon.setIcon(icon)
         self.ui.label.setText(name)
         self.ui.toolButtonUser.setVisible(not factory)
-        #self.ui.toolButtonFavorite
         
+        if (self.palette().brush(2, QPalette.WindowText).color().lightness()
+                > 128):
+            self.ui.toolButtonUser.setIcon(
+                QIcon(':scalable/breeze-dark/im-user.svg'))
+            self.ui.toolButtonFavorite.setIcon(
+                QIcon(':scalable/breeze-dark/draw-star.svg'))
+     
+     
 class TemplateItem(QListWidgetItem):
     def __init__(self, parent, icon, name, factory, favorite):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)

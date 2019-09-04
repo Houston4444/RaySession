@@ -15,6 +15,10 @@
         <file>scalable/breeze/document-save-as-template.svg</file>
         <file>scalable/breeze/xml-node-duplicate.svg</file>
         <file>scalable/breeze/view-list-icons.svg</file>
+        <file>scalable/breeze/im-user.svg</file>
+        <file>scalable/breeze/draw-star.svg</file>
+        <file>scalable/breeze/star-yellow.svg</file>
+        <file>scalable/breeze/empty-icon.svg</file>
         <file>scalable/breeze/disabled/media-playback-start.svg</file>
         <file>scalable/breeze/disabled/media-playback-stop.svg</file>
         <file>scalable/breeze/disabled/document-save.svg</file>
@@ -33,6 +37,8 @@
         <file>scalable/breeze-dark/document-save-as-template.svg</file>
         <file>scalable/breeze-dark/xml-node-duplicate.svg</file>
         <file>scalable/breeze-dark/view-list-icons.svg</file>
+        <file>scalable/breeze-dark/im-user.svg</file>
+        <file>scalable/breeze-dark/draw-star.svg</file>
         <file>scalable/breeze-dark/disabled/media-playback-start.svg</file>
         <file>scalable/breeze-dark/disabled/media-playback-stop.svg</file>
         <file>scalable/breeze-dark/disabled/document-save.svg</file>

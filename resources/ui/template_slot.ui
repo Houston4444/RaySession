@@ -71,8 +71,8 @@
       <string>...</string>
      </property>
      <property name="icon">
-      <iconset theme="user">
-       <normaloff>.</normaloff>.</iconset>
+      <iconset resource="../resources.qrc">
+       <normaloff>:/scalable/breeze/im-user.svg</normaloff>:/scalable/breeze/im-user.svg</iconset>
      </property>
     </widget>
    </item>
@@ -85,13 +85,15 @@
       <string>...</string>
      </property>
      <property name="icon">
-      <iconset theme="view-media-favorite">
-       <normaloff>.</normaloff>.</iconset>
+      <iconset resource="../resources.qrc">
+       <normaloff>:/scalable/breeze/draw-star.svg</normaloff>:/scalable/breeze/draw-star.svg</iconset>
      </property>
     </widget>
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
