@@ -148,7 +148,8 @@ class GUIServerThread(liblo.ServerThread):
 
     @ray_method('/ray/client/update', 'ssssissssis')
     def updateClientProperties(self, path, args, types, src_addr):
-        pass
+        client_data = ray.ClientData(*args)
+        self._signaler.client_updated.emit(client_data)
 
     @ray_method('/ray/client/status', 'si')
     def guiClientStatus(self, path, args, types, src_addr):
