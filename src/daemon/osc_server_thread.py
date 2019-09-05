@@ -902,7 +902,6 @@ class OscServerThread(ClientCommunicating):
                   self.session.name, self.session.path)
         
         for favorite in RS.favorites:
-            print('yalafav', favorite.name)
             self.send(gui_addr, "/ray/gui/favorite",
                       favorite.name, favorite.icon, int(favorite.factory))
         

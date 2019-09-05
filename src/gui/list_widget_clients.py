@@ -371,9 +371,8 @@ class ListWidgetClients(QListWidget):
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
         self.last_n = 0
+        self._session = None
         
-        self.menu = QMenu()
-
     def createClientWidget(self, client_data):
         item = ClientItem(self, client_data)
         item.setSortNumber(self.last_n)
@@ -413,16 +412,9 @@ class ListWidgetClients(QListWidget):
             n += 1
 
         self.sortItems()
-        
-    def updateFavorites(self, favorite_list):
-        self.menu.clear()
-        
-        for favorite in favorite_list:
-            print('adddact', favorite.name)
-            act_app = self.menu.addAction(ray.getAppIcon(favorite.icon, self),
-                                favorite.name)
-            act_app.setData([favorite.name, favorite.factory])
-            act_app.triggered.connect(self.launchFavorite)
+    
+    def setSession(self, session):
+        self._session = session
     
     def toDaemon(self, *args):
         server = GUIServerThread.instance()
@@ -454,9 +446,25 @@ class ListWidgetClients(QListWidget):
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
-            print('rok')
-            print(self.menu.actions())
-            act_selected = self.menu.exec(self.mapToGlobal(event.pos()))
+            
+            menu = QMenu()
+            fav_menu = QMenu(_translate('menu', 'Favorites'), menu)
+            fav_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
+            
+            if self._session:
+                for favorite in self._session.favorite_list:
+                    act_app = fav_menu.addAction(
+                        ray.getAppIcon(favorite.icon, self), favorite.name)
+                    act_app.setData([favorite.name, favorite.factory])
+                    act_app.triggered.connect(self.launchFavorite)
+            
+                menu.addMenu(fav_menu)
+                
+                menu.addAction(
+                    self._session._main_win.ui.actionAddApplication)
+                menu.addAction(self._session._main_win.ui.actionAddExecutable)
+            
+                act_selected = menu.exec(self.mapToGlobal(event.pos()))
             event.accept()
             return
 

@@ -214,8 +214,6 @@ class MainWindow(QMainWindow):
         # (when reorder widgets sometimes one widget is totally hidden 
         # until user resize the window)
         # It has to be modified when ui_raysession is modified.
-        
-        menu = self.ui.listWidget.menu
 
         self.ui.listWidget.clear()
         self.ui.verticalLayout.removeWidget(self.ui.listWidget)
@@ -230,7 +228,7 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setUniformItemSizes(True)
         self.ui.listWidget.setBatchSize(80)
         self.ui.listWidget.setObjectName("listWidget")
-        self.ui.listWidget.menu = menu
+        self.ui.listWidget.setSession(self._session)
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
 
         # self.connectListWidgetRequests()
