@@ -67,6 +67,7 @@ class Session(ServerSender):
         self.clients = []
         self.new_clients = []
         self.removed_clients = []
+        self.favorites = []
         self.name = ""
         self.path = ""
         
@@ -2170,7 +2171,27 @@ class SignaledSession(OperatingSession):
                 self.bookmarker.makeAll(self.path)
             else:
                 self.bookmarker.removeAll(self.path)
+    
+    def ray_favorites_remember(self, path, args, src_addr):
+        name, icon, int_factory = args
         
+        for favorite in RS.favorites:
+            if (favorite.name == name
+                    and bool(int_factory) == favorite.factory):
+                favorite.icon = icon
+                break
+        else:
+            RS.favorites.append(ray.Favorite(name, icon, bool(int_factory)))
+    
+    def ray_favorites_forget(self, path, args, src_addr):
+        name, int_factory = args
+        
+        for favorite in RS.favorites:
+            if (favorite.name == name
+                    and bool(int_factory) == favorite.factory):
+                RS.favorites.remove(favorite)
+                break
+    
     def serverOpenSessionAtStart(self, session_name):
         self.process_order = [self.save, (self.load, session_name),
                               self.loadDone]

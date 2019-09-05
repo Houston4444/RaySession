@@ -164,6 +164,7 @@ class MainWindow(QMainWindow):
         sg.trash_remove.connect(self.serverTrashRemove)
         sg.trash_clear.connect(self.serverTrashClear)
         sg.trash_dialog.connect(self.showClientTrashDialog)
+        sg.get_favorite.connect(self.addFavorite)
         sg.daemon_url_request.connect(self.showDaemonUrlWindow)
         sg.daemon_nsm_locked.connect(self.setNsmLocked)
         sg.daemon_options.connect(self.setDaemonOptions)
@@ -213,6 +214,9 @@ class MainWindow(QMainWindow):
         # (when reorder widgets sometimes one widget is totally hidden 
         # until user resize the window)
         # It has to be modified when ui_raysession is modified.
+        
+        menu = self.ui.listWidget.menu
+
         self.ui.listWidget.clear()
         self.ui.verticalLayout.removeWidget(self.ui.listWidget)
         del self.ui.listWidget
@@ -226,6 +230,7 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setUniformItemSizes(True)
         self.ui.listWidget.setBatchSize(80)
         self.ui.listWidget.setObjectName("listWidget")
+        self.ui.listWidget.menu = menu
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
 
         # self.connectListWidgetRequests()
@@ -547,6 +552,9 @@ class MainWindow(QMainWindow):
             return
 
         self.toDaemon('/ray/trash/restore', client_id)
+        
+    def addFavorite(self, name, icon_name, factory):
+        self._session.addFavorite(name, icon_name, factory, True)
 
     def showSnapshotProgressDialog(self):
         if self.progress_dialog_visible:

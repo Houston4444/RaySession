@@ -11,27 +11,63 @@ import ui_add_application
 import ui_template_slot
 
 class TemplateSlot(QFrame):
-    def __init__(self, icon, name, factory, favorite):
+    def __init__(self, list_widget, item, session, icon, name, factory):
         QFrame.__init__(self)
         self.ui = ui_template_slot.Ui_Frame()
         self.ui.setupUi(self)
         
-        self.ui.toolButtonIcon.setIcon(icon)
+        self.list_widget = list_widget
+        self.item = item
+        self._session = session
+        self.name = name
+        self.icon_name = icon
+        self.factory = factory
+        
+        self.ui.toolButtonIcon.setIcon(ray.getAppIcon(icon, self))
         self.ui.label.setText(name)
         self.ui.toolButtonUser.setVisible(not factory)
+        
+        self.is_favorite = False
+        
+        self.favicon_not = QIcon(':scalable/breeze/draw-star.svg')
         
         if (self.palette().brush(2, QPalette.WindowText).color().lightness()
                 > 128):
             self.ui.toolButtonUser.setIcon(
                 QIcon(':scalable/breeze-dark/im-user.svg'))
+            self.favicon_not = QIcon(':scalable/breeze-dark/draw-star.svg')
+        
+        for favorite in self._session.favorite_list:
+            if favorite.name == name and favorite.factory == factory:
+                self.is_favorite = True
+                break
+        
+        if self.is_favorite:
             self.ui.toolButtonFavorite.setIcon(
-                QIcon(':scalable/breeze-dark/draw-star.svg'))
+                QIcon(':scalable/breeze/star-yellow.svg'))
+        else:
+            self.ui.toolButtonFavorite.setIcon(self.favicon_not)
+        
+        self.ui.toolButtonFavorite.clicked.connect(self.favoriteClicked)
+    
+    def favoriteClicked(self):
+        self.is_favorite = not self.is_favorite
+        
+        if self.is_favorite:
+            self.ui.toolButtonFavorite.setIcon(
+                QIcon(':scalable/breeze/star-yellow.svg'))
+            self._session.addFavorite(self.name, self.icon_name, self.factory)
+        else:
+            self.ui.toolButtonFavorite.setIcon(self.favicon_not)
+            self._session.removeFavorite(self.name, self.factory)
+        
+        self.list_widget.setCurrentItem(self.item)
      
      
 class TemplateItem(QListWidgetItem):
-    def __init__(self, parent, icon, name, factory, favorite):
+    def __init__(self, parent, session, icon, name, factory):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
-        self.f_widget = TemplateSlot(icon, name, factory, favorite)
+        self.f_widget = TemplateSlot(parent, self, session, icon, name, factory)
         self.setData(Qt.UserRole, name)
         parent.setItemWidget(self, self.f_widget)
         self.setSizeHint(QSize(100, 28))
@@ -56,6 +92,8 @@ class AddApplicationDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_add_application.Ui_DialogAddApplication()
         self.ui.setupUi(self)
+        
+        self._session = parent._session
 
         self.ui.checkBoxFactory.setChecked(RS.settings.value(
             'AddApplication/factory_box', True, type=bool))
@@ -121,9 +159,9 @@ class AddApplicationDialog(ChildDialog):
             self.user_template_list.append(template_name)
             
             list_widget = TemplateItem(self.ui.templateList,
-                                       ray.getAppIcon(icon_name, self),
+                                       self._session,
+                                       icon_name,
                                        template_name, 
-                                       False, 
                                        False)
 
             self.ui.templateList.addItem(list_widget)
@@ -147,10 +185,10 @@ class AddApplicationDialog(ChildDialog):
             self.factory_template_list.append(template_name)
             
             list_widget = TemplateItem(self.ui.templateList,
-                                       ray.getAppIcon(icon_name, self),
+                                       self._session,
+                                       icon_name,
                                        template_name, 
-                                       True, 
-                                       False)
+                                       True)
 
             self.ui.templateList.addItem(list_widget)
             self.ui.templateList.sortItems()

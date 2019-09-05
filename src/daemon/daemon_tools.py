@@ -32,6 +32,7 @@ def initDaemonTools():
     
     RS.setNonActiveClients(ray.getListInSettings(settings, 
                                                  'daemon/non_active_list'))
+    RS.setFavorites(ray.getListInSettings(settings, 'daemon/favorites'))
     TemplateRoots.initConfig()
 
 def getGitDefaultUnAndIgnored(executable):
@@ -49,6 +50,7 @@ def getGitDefaultUnAndIgnored(executable):
 class RS:
     settings = QSettings()
     non_active_clients = []
+    favorites = []
     
     @classmethod
     def setSettings(cls, settings):
@@ -59,6 +61,10 @@ class RS:
     def setNonActiveClients(cls, nalist):
         del cls.non_active_clients
         cls.non_active_clients = nalist
+        
+    @classmethod
+    def setFavorites(cls, favorites):
+        cls.favorites = favorites
 
 class TemplateRoots:
     net_session_name = ".ray-net-session-templates"

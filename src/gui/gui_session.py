@@ -15,10 +15,18 @@ from nsm_child import NSMChild, NSMChildOutside
 _instance = None
 
 
+
+    
+    #def __init__(self, name, icon, factory):
+        #self.name = name
+        #self.icon = icon
+        #self.factory = factory
+
 class Session(object):
     def __init__(self):
         self.client_list = []
         self.trashed_clients = []
+        self.favorite_list = []
         self.name = None
         self.is_running = False
         self.server_status = ray.ServerStatus.OFF
@@ -164,3 +172,38 @@ class Session(object):
         for client in self.client_list:
             client.reCreateWidget()
             client.widget.updateStatus(client.status)
+            
+    def addFavorite(self, name, icon_name, factory, from_server=False):
+        print('nafav', name, from_server)
+        for favorite in self.favorite_list:
+            if favorite.name == name and favorite.factory == factory:
+                favorite.icon = icon_name
+                return 
+        
+        fav = ray.Favorite(name, icon_name, factory)
+        self.favorite_list.append(fav)
+        
+        self._main_win.ui.listWidget.updateFavorites(
+            self.favorite_list)
+        
+        for favorite in self.favorite_list:
+            print('fv', favorite.name, favorite.factory)
+        
+        if not from_server:
+            server = GUIServerThread.instance()
+            if server:
+                server.toDaemon('/ray/favorites/remember', name,
+                                icon_name, int(factory))
+        
+    def removeFavorite(self, name, factory):
+        for favorite in self.favorite_list:
+            if favorite.name == name and favorite.factory == factory:
+                self.favorite_list.remove(favorite)
+                break
+            
+        self._main_win.ui.listWidget.updateFavorites(
+            self.favorite_list)
+        
+        server = GUIServerThread.instance()
+        if server:
+            server.toDaemon('/ray/favorites/forget', name, int(factory))

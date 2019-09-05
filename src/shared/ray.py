@@ -143,6 +143,13 @@ class Template:
     CLIENT_LOAD = 7
 
 
+class Favorite():
+    def __init__(self, name, icon, factory):
+        self.name = name
+        self.icon = icon
+        self.factory = factory
+        
+
 debug = False
 
 

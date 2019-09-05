@@ -125,8 +125,11 @@ if __name__ == '__main__':
     #update multi_daemon_file without this server
     multi_daemon_file.quit()
     
+    print('favs', RS.favorites)
+    
     #save RS.settings
     RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
+    RS.settings.setValue('daemon/favorites', RS.favorites)
     RS.settings.setValue('daemon/save_all_from_saved_client', 
                       server.option_save_from_client)
     RS.settings.setValue('daemon/bookmark_session_folder', 

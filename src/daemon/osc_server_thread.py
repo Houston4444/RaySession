@@ -688,6 +688,18 @@ class OscServerThread(ClientCommunicating):
     def rayOptionSnapshots(self, path, args, types, src_addr):
         self.option_snapshots = bool(args[0])
     
+    @ray_method('/ray/favorites/list', '')
+    def rayFavoritesList(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/favorites/remember', 'ssi')
+    def rayFavoriteAdd(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/favorites/forget', 'si')
+    def rayFavoriteRemove(self, path, args, types, src_addr):
+        pass
+    
     def isOperationPending(self, src_addr, path):
         if self.session.file_copier.isActive():
             self.send(src_addr, "/error", path, ray.Err.COPY_RUNNING, 
@@ -888,6 +900,11 @@ class OscServerThread(ClientCommunicating):
         self.send(gui_addr, "/ray/server_status", self.server_status)
         self.send(gui_addr, "/ray/gui/session/name",
                   self.session.name, self.session.path)
+        
+        for favorite in RS.favorites:
+            print('yalafav', favorite.name)
+            self.send(gui_addr, "/ray/gui/favorite",
+                      favorite.name, favorite.icon, int(favorite.factory))
         
         for client in self.session.clients:
             self.send(gui_addr, 

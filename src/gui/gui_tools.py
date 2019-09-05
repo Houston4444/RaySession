@@ -116,7 +116,7 @@ class RayIcon(QIcon):
             QPixmap(
                 ':scalable/%s/disabled/%s' %
                 (breeze, icon_name)), QIcon.Disabled, QIcon.Off)
-
+    
 
 class CommandLineArgs(argparse.Namespace):
     daemon_url = None
