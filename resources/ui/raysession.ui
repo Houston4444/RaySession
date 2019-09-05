@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>415</width>
+    <width>448</width>
     <height>570</height>
    </rect>
   </property>
@@ -329,6 +329,21 @@ QToolButton {border: none}</string>
                     </size>
                    </property>
                   </spacer>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="toolButtonFavorites">
+                   <property name="styleSheet">
+                    <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+QToolButton {border: none}</string>
+                   </property>
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../resources.qrc">
+                     <normaloff>:/scalable/breeze/star-yellow.svg</normaloff>:/scalable/breeze/star-yellow.svg</iconset>
+                   </property>
+                  </widget>
                  </item>
                  <item>
                   <widget class="QToolButton" name="toolButtonAddApplication">
@@ -656,7 +671,7 @@ QToolButton {border: none}</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>415</width>
+     <width>448</width>
      <height>30</height>
     </rect>
    </property>

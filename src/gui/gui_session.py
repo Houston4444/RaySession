@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QMenu
 import os
 import sys
 import inspect
@@ -182,6 +182,8 @@ class Session(object):
         fav = ray.Favorite(name, icon_name, factory)
         self.favorite_list.append(fav)
         
+        self._main_win.updateFavoritesMenu()
+        
         if not from_server:
             server = GUIServerThread.instance()
             if server:
@@ -193,7 +195,9 @@ class Session(object):
             if favorite.name == name and favorite.factory == factory:
                 self.favorite_list.remove(favorite)
                 break
-            
+        
+        self._main_win.updateFavoritesMenu()
+        
         server = GUIServerThread.instance()
         if server:
             server.toDaemon('/ray/favorites/forget', name, int(factory))

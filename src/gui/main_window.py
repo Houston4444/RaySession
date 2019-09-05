@@ -132,6 +132,11 @@ class MainWindow(QMainWindow):
 
         self.ui.toolButtonControl2.setPopupMode(QToolButton.InstantPopup)
         self.ui.toolButtonControl2.setMenu(self.controlMenu)
+        
+        # set favorites menu
+        self.favorites_menu = QMenu()
+        self.ui.toolButtonFavorites.setPopupMode(QToolButton.InstantPopup)
+        self.ui.toolButtonFavorites.setMenu(self.favorites_menu)
 
         # set trash menu
         self.trashMenu = QMenu()
@@ -804,13 +809,29 @@ class MainWindow(QMainWindow):
         self.trashMenu.clear()
         self.ui.trashButton.setEnabled(False)
 
+    @pyqtSlot()
+    def launchFavorite(self):
+        template_name, factory = self.sender().data()
+        self.toDaemon('/ray/session/add_client_template',
+                      int(factory),
+                      template_name)
+        
+    def updateFavoritesMenu(self):
+        self.favorites_menu.clear()
+        
+        for favorite in self._session.favorite_list:
+            act_app = self.favorites_menu.addAction(
+                        ray.getAppIcon(favorite.icon, self), favorite.name)
+            act_app.setData([favorite.name, favorite.factory])
+            act_app.triggered.connect(self.launchFavorite)
+        
     def daemonCrash(self):
         QMessageBox.critical(
             self, _translate(
                 'errors', "daemon crash!"), _translate(
                 'errors', "ray-daemon crashed, sorry !"))
         QApplication.quit()
-
+        
     def saveWindowSettings(self):
         RS.settings.setValue('MainWindow/geometry', self.saveGeometry())
         RS.settings.setValue('MainWindow/WindowState', self.saveState())
