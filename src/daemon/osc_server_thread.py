@@ -688,10 +688,6 @@ class OscServerThread(ClientCommunicating):
     def rayOptionSnapshots(self, path, args, types, src_addr):
         self.option_snapshots = bool(args[0])
     
-    @ray_method('/ray/favorites/list', '')
-    def rayFavoritesList(self, path, args, types, src_addr):
-        pass
-    
     @ray_method('/ray/favorites/add', 'ssi')
     def rayFavoriteAdd(self, path, args, types, src_addr):
         name, icon, int_factory = args
@@ -705,9 +701,7 @@ class OscServerThread(ClientCommunicating):
             RS.favorites.append(ray.Favorite(name, icon, bool(int_factory)))
             
         for gui_addr in self.gui_list:
-            print(gui_addr.url, src_addr.url)
             if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                print('toityespas add')
                 self.send(gui_addr, '/ray/gui/favorites/added', *args)
             
     @ray_method('/ray/favorites/remove', 'si')
@@ -721,9 +715,7 @@ class OscServerThread(ClientCommunicating):
                 break
             
         for gui_addr in self.gui_list:
-            print(gui_addr.url, src_addr.url)
             if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                print('toityespas remov')
                 self.send(gui_addr, '/ray/gui/favorites/removed', *args)
     
     def isOperationPending(self, src_addr, path):
