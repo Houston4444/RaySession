@@ -112,18 +112,25 @@ class SessionItem(QTreeWidgetItem):
     def __init__(self, list):
         QTreeWidgetItem.__init__(self, list)
         
-    def pathContains(self, string):
-        #return True
-        if string.lower() in self.data(0, Qt.UserRole).lower():
+    def showConditionnaly(self, string):
+        if not string:
+            self.setExpanded(False)
+            self.setHidden(False)
             return True
         
+        show = bool(string.lower() in self.data(0, Qt.UserRole).lower())
+        
+        n=0
         for i in range(self.childCount()):
-            if self.child(i).pathContains(string.lower()):
-                self.setExpanded(True)
-                return True
-        
-        return False
-        
+            if self.child(i).showConditionnaly(string.lower()):
+                n+=1
+        if n:
+            show = True
+            
+        self.setExpanded(bool(n))
+        self.setHidden(not show)
+        return show
+            
     def __lt__(self, other):
         if self.childCount() and not other.childCount():
             return True
@@ -261,14 +268,13 @@ class OpenSessionDialog(ChildDialog):
         filter_text = self.ui.filterBar.displayText()
         root_item = self.ui.sessionList.invisibleRootItem()
 
-        # show all items
-        for i in range(root_item.childCount()):
-            root_item.child(i).setHidden(False)
+        ## show all items
+        #for i in range(root_item.childCount()):
+            #root_item.child(i).setHidden(False)
 
-        # hide all non matching items
+        ## hide all non matching items
         for i in range(root_item.childCount()):
-            if not root_item.child(i).pathContains(filter_text):
-                root_item.child(i).setHidden(True)
+            root_item.child(i).showConditionnaly(filter_text)
 
         # if selected item not in list, then select the first visible
         if (not self.ui.sessionList.currentItem()
@@ -338,7 +344,6 @@ class OpenSessionDialog(ChildDialog):
     
     def goIfAny(self, item, column):
         if item.childCount():
-            print('ofooof')
             return 
         
         if (self.server_will_accept and self.has_selection
