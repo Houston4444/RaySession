@@ -2,8 +2,8 @@ import os
 import sys
 import time
 from PyQt5.QtWidgets import (
-    QDialog, QDialogButtonBox, QListWidgetItem,
-    QCompleter, QMessageBox, QFileDialog)
+    QDialog, QDialogButtonBox, QTreeWidgetItem,
+    QCompleter, QMessageBox, QFileDialog, QWidget)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QTimer
 
@@ -108,6 +108,60 @@ class ChildDialog(QDialog):
         QDialog.enterEvent(self, event)
 
 
+class SessionItem(QTreeWidgetItem):
+    def __init__(self, list):
+        QTreeWidgetItem.__init__(self, list)
+        
+    def pathContains(self, string):
+        #return True
+        if string.lower() in self.data(0, Qt.UserRole).lower():
+            return True
+        
+        for i in range(self.childCount()):
+            if self.child(i).pathContains(string.lower()):
+                self.setExpanded(True)
+                return True
+        
+        return False
+        
+    def __lt__(self, other):
+        if self.childCount() and not other.childCount():
+            return True
+        
+        if other.childCount() and not self.childCount():
+            return False
+        
+        return bool(self.data(0, Qt.UserRole).lower()
+                    < other.data(0, Qt.UserRole).lower())
+
+class SessionFolder:
+    name = ""
+    has_session = True
+    path = ""
+    
+    def __init__(self, name):
+        self.name = name
+        self.subfolders = []
+    
+    def setPath(self, path):
+        self.path = path
+    
+    def makeItem(self):
+        item = SessionItem([self.name])
+        
+        item.setData(0, Qt.UserRole, self.path)
+        if self.subfolders:
+            item.setIcon(0, QIcon.fromTheme('folder'))
+        
+        if not self.path:
+            item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
+        
+        for folder in self.subfolders:
+            sub_item = folder.makeItem()
+            item.addChild(sub_item)
+            
+        return item
+    
 class OpenSessionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
@@ -117,13 +171,16 @@ class OpenSessionDialog(ChildDialog):
         self.f_last_session_item = None
 
         self.ui.toolButtonFolder.clicked.connect(self.changeRootFolder)
-        self.ui.sessionList.currentItemChanged.connect(self.currentItemChanged)
+        self.ui.sessionList.currentItemChanged.connect(
+            self.currentItemChanged)
         self.ui.sessionList.setFocus(Qt.OtherFocusReason)
+        self.ui.sessionList.itemDoubleClicked.connect(self.goIfAny)
+        self.ui.sessionList.itemClicked.connect(self.deployItem)
         self.ui.filterBar.textEdited.connect(self.updateFilteredList)
         self.ui.filterBar.updownpressed.connect(self.updownPressed)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.currentNsmFolder.setText(CommandLineArgs.session_root)
-
+        
         self._signaler.add_sessions_to_list.connect(self.addSessions)
         self._signaler.root_changed.connect(self.rootChanged)
 
@@ -138,6 +195,10 @@ class OpenSessionDialog(ChildDialog):
         self.has_selection = False
 
         self.serverStatusChanged(self._session.server_status)
+        
+        self.folders = []
+        self.all_items = []
+        
 
     def serverStatusChanged(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
@@ -158,45 +219,68 @@ class OpenSessionDialog(ChildDialog):
 
     def addSessions(self, session_names):
         for session_name in session_names:
-            if session_name == RS.settings.value('last_session', type=str):
-                self.f_last_session_item = QListWidgetItem(session_name)
-                self.ui.sessionList.addItem(self.f_last_session_item)
-                self.ui.sessionList.setCurrentItem(self.f_last_session_item)
-            else:
-                self.ui.sessionList.addItem(session_name)
+            #if session_name == RS.settings.value('last_session', type=str):
+                #self.f_last_session_item = QTreeWidgetItem([session_name], 0)
+                #self.ui.sessionList.addTopLevelItem(self.f_last_session_item)
+                #self.ui.sessionList.setCurrentItem(self.f_last_session_item)
+                
+            folder_div = session_name.split('/')
+            folders = self.folders
+            
+            for i in range(len(folder_div)):
+                f = folder_div[i]
+                for g in folders:
+                    if g.name == f:
+                        if i+1 == len(folder_div):
+                            g.setPath(session_name)
+                            
+                        folders = g.subfolders
+                        break
+                else:
+                    new_folder = SessionFolder(f)
+                    if i+1 == len(folder_div):
+                        new_folder.setPath(session_name)
+                    folders.append(new_folder)
+                    folders = new_folder.subfolders
+                        
+        self.ui.sessionList.clear()
+        
+        for folder in self.folders:
+            item = folder.makeItem()
+            self.ui.sessionList.addTopLevelItem(item)
+        
+        self.ui.sessionList.sortByColumn(0, Qt.AscendingOrder)
 
-            self.ui.sessionList.sortItems()
-
-            if self.f_last_session_item:
-                current_index = self.ui.sessionList.currentIndex()
-                self.ui.sessionList.scrollTo(current_index)
-            else:
-                self.ui.sessionList.setCurrentRow(0)
+        if self.f_last_session_item:
+            current_index = self.ui.sessionList.currentIndex()
+            self.ui.sessionList.scrollTo(current_index)
+        else:
+            self.ui.sessionList.setCurrentItem(None)
 
     def updateFilteredList(self, filt):
         filter_text = self.ui.filterBar.displayText()
+        root_item = self.ui.sessionList.invisibleRootItem()
 
         # show all items
-        for i in range(self.ui.sessionList.count()):
-            self.ui.sessionList.item(i).setHidden(False)
-
-        liist = self.ui.sessionList.findItems(filter_text, Qt.MatchContains)
+        for i in range(root_item.childCount()):
+            root_item.child(i).setHidden(False)
 
         # hide all non matching items
-        for i in range(self.ui.sessionList.count()):
-            if self.ui.sessionList.item(i) not in liist:
-                self.ui.sessionList.item(i).setHidden(True)
+        for i in range(root_item.childCount()):
+            if not root_item.child(i).pathContains(filter_text):
+                root_item.child(i).setHidden(True)
 
         # if selected item not in list, then select the first visible
-        if not self.ui.sessionList.currentItem(
-        ) or self.ui.sessionList.currentItem().isHidden():
-            for i in range(self.ui.sessionList.count()):
-                if not self.ui.sessionList.item(i).isHidden():
-                    self.ui.sessionList.setCurrentRow(i)
+        if (not self.ui.sessionList.currentItem()
+                or self.ui.sessionList.currentItem().isHidden()):
+            for i in range(root_item.childCount()):
+                item = root_item.child(i)
+                if not item.isHidden():
+                    self.ui.sessionList.setCurrentItem(item)
                     break
 
-        if not self.ui.sessionList.currentItem(
-        ) or self.ui.sessionList.currentItem().isHidden():
+        if (not self.ui.sessionList.currentItem()
+                or self.ui.sessionList.currentItem().isHidden()):
             self.ui.filterBar.setStyleSheet(
                 "QLineEdit { background-color: red}")
             self.ui.sessionList.setCurrentItem(None)
@@ -205,24 +289,27 @@ class OpenSessionDialog(ChildDialog):
             self.ui.sessionList.scrollTo(self.ui.sessionList.currentIndex())
 
     def updownPressed(self, key):
-        row = self.ui.sessionList.currentRow()
+        root_item = self.ui.sessionList.invisibleRootItem()
+        row = self.ui.sessionList.currentIndex().row()
+        
         if key == Qt.Key_Up:
             if row == 0:
                 return
             row -= 1
-            while self.ui.sessionList.item(row).isHidden():
+            while root_item.child(row).isHidden():
                 if row == 0:
                     return
                 row -= 1
         elif key == Qt.Key_Down:
-            if row == self.ui.sessionList.count() - 1:
+            if row == root_item.childCount() - 1:
                 return
             row += 1
-            while self.ui.sessionList.item(row).isHidden():
-                if row == self.ui.sessionList.count() - 1:
+            while root_item.child(row).isHidden():
+                if row == root_item.childCount() - 1:
                     return
                 row += 1
-        self.ui.sessionList.setCurrentRow(row)
+                
+        self.ui.sessionList.setCurrentItem(root_item.child(row))
 
     def currentItemChanged(self, item, previous_item):
         self.has_selection = bool(item)
@@ -241,8 +328,23 @@ class OpenSessionDialog(ChildDialog):
 
     def getSelectedSession(self):
         if self.ui.sessionList.currentItem():
-            return self.ui.sessionList.currentItem().text()
-
+            return self.ui.sessionList.currentItem().data(0, Qt.UserRole)
+    
+    def deployItem(self, item, column):
+        if not item.childCount():
+            return 
+        
+        item.setExpanded(not item.isExpanded())
+    
+    def goIfAny(self, item, column):
+        if item.childCount():
+            print('ofooof')
+            return 
+        
+        if (self.server_will_accept and self.has_selection
+            and self.ui.sessionList.currentItem().data(0, Qt.UserRole)):
+                self.accept()
+            
 
 class NewSessionDialog(ChildDialog):
     def __init__(self, parent, duplicate_window=False):

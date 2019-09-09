@@ -49,8 +49,7 @@
        </property>
        <property name="icon">
         <iconset theme="folder-open">
-         <normaloff/>
-        </iconset>
+         <normaloff>.</normaloff>.</iconset>
        </property>
       </widget>
      </item>
@@ -87,13 +86,21 @@
     </layout>
    </item>
    <item>
-    <widget class="QListWidget" name="sessionList">
+    <widget class="QTreeWidget" name="sessionList">
      <property name="alternatingRowColors">
       <bool>false</bool>
      </property>
-     <property name="sortingEnabled">
+     <property name="rootIsDecorated">
+      <bool>false</bool>
+     </property>
+     <property name="headerHidden">
       <bool>true</bool>
      </property>
+     <column>
+      <property name="text">
+       <string notr="true">1</string>
+      </property>
+     </column>
     </widget>
    </item>
    <item>
