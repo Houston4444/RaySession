@@ -113,11 +113,6 @@ class SessionItem(QTreeWidgetItem):
         QTreeWidgetItem.__init__(self, list)
         
     def showConditionnaly(self, string):
-        if not string:
-            self.setExpanded(False)
-            self.setHidden(False)
-            return True
-        
         show = bool(string.lower() in self.data(0, Qt.UserRole).lower())
         
         n=0
@@ -127,7 +122,7 @@ class SessionItem(QTreeWidgetItem):
         if n:
             show = True
             
-        self.setExpanded(bool(n))
+        self.setExpanded(bool(n and string))
         self.setHidden(not show)
         return show
             
@@ -138,8 +133,7 @@ class SessionItem(QTreeWidgetItem):
         if other.childCount() and not self.childCount():
             return False
         
-        return bool(self.data(0, Qt.UserRole).lower()
-                    < other.data(0, Qt.UserRole).lower())
+        return bool(self.text(0).lower() < other.text(0).lower())
 
 class SessionFolder:
     name = ""
@@ -268,10 +262,6 @@ class OpenSessionDialog(ChildDialog):
         filter_text = self.ui.filterBar.displayText()
         root_item = self.ui.sessionList.invisibleRootItem()
 
-        ## show all items
-        #for i in range(root_item.childCount()):
-            #root_item.child(i).setHidden(False)
-
         ## hide all non matching items
         for i in range(root_item.childCount()):
             root_item.child(i).showConditionnaly(filter_text)
@@ -324,13 +314,6 @@ class OpenSessionDialog(ChildDialog):
     def preventOk(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
             bool(self.server_will_accept and self.has_selection))
-
-    #def changeRootFolder(self):
-        #changeRootFolder(self)
-        #self.ui.currentNsmFolder.setText(default_session_root)
-        #self.ui.sessionList.clear()
-        ## self._server.startListSession()
-        #self.toDaemon('/ray/server/list_sessions', 0)
 
     def getSelectedSession(self):
         if self.ui.sessionList.currentItem():
