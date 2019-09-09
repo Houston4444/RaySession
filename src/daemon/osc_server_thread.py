@@ -369,7 +369,56 @@ class OscServerThread(ClientCommunicating):
     def rayServerListFactoryClientTemplates(self, path, args, types,
                                             src_addr):
         self.listClientTemplates(src_addr, True)
+    
+    @ray_method('/ray/server/remove_client_template', 's')
+    def rayServerRemoveClientTemplate(self, path, args, types, src_addr):
+        template_name = args[0]
         
+        templates_root    = TemplateRoots.user_clients
+        templates_file = "%s/%s" % (templates_root, 'client_templates.xml')
+        
+        if not os.path.isfile(templates_file):
+            return
+        
+        if not os.access(templates_file, os.W_OK):
+            return
+        
+        file = open(templates_file, 'r')
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        file.close()
+        
+        content = xml.documentElement()
+        
+        if content.tagName() != "RAY-CLIENT-TEMPLATES":
+            return
+        
+        nodes = content.childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            ct = node.toElement()
+            tag_name = ct.tagName()
+            if tag_name != 'Client-Template':
+                continue
+            
+            if template_name == ct.attribute('template-name'):
+                break
+        else:
+            return False
+        
+        content.removeChild(nodes.at(i))
+        
+        file = open(templates_file, 'w')
+        file.write(xml.toString())
+        file.close()
+        
+        template_dir = '%s/%s' % (templates_root, template_name)
+        
+        if os.path.isdir(template_dir):
+            subprocess.run(['rm', '-R', template_dir])
+        
+    
     @ray_method('/ray/server/list_sessions', 'i')
     def rayServerListSessions(self, path, args, types, src_addr):
         self.list_asker_addr = src_addr

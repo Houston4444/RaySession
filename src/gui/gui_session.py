@@ -14,14 +14,6 @@ from nsm_child import NSMChild, NSMChildOutside
 
 _instance = None
 
-
-
-    
-    #def __init__(self, name, icon, factory):
-        #self.name = name
-        #self.icon = icon
-        #self.factory = factory
-
 class Session(object):
     def __init__(self):
         self.client_list = []

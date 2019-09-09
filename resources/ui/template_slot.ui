@@ -65,7 +65,8 @@
    <item>
     <widget class="QToolButton" name="toolButtonUser">
      <property name="styleSheet">
-      <string notr="true">QToolButton {border: none}</string>
+      <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+QToolButton {border: none}</string>
      </property>
      <property name="text">
       <string>...</string>
@@ -73,6 +74,9 @@
      <property name="icon">
       <iconset resource="../resources.qrc">
        <normaloff>:/scalable/breeze/im-user.svg</normaloff>:/scalable/breeze/im-user.svg</iconset>
+     </property>
+     <property name="popupMode">
+      <enum>QToolButton::InstantPopup</enum>
      </property>
     </widget>
    </item>
