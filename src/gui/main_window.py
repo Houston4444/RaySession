@@ -169,7 +169,8 @@ class MainWindow(QMainWindow):
         sg.trash_remove.connect(self.serverTrashRemove)
         sg.trash_clear.connect(self.serverTrashClear)
         sg.trash_dialog.connect(self.showClientTrashDialog)
-        sg.get_favorite.connect(self.addFavorite)
+        sg.favorite_added.connect(self.addFavorite)
+        sg.favorite_removed.connect(self.removeFavorite)
         sg.daemon_url_request.connect(self.showDaemonUrlWindow)
         sg.daemon_nsm_locked.connect(self.setNsmLocked)
         sg.daemon_options.connect(self.setDaemonOptions)
@@ -558,6 +559,9 @@ class MainWindow(QMainWindow):
         
     def addFavorite(self, name, icon_name, factory):
         self._session.addFavorite(name, icon_name, factory, True)
+        
+    def removeFavorite(self, name, factory):
+        self._session.removeFavorite(name, factory, True)
 
     def showSnapshotProgressDialog(self):
         if self.progress_dialog_visible:

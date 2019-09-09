@@ -43,7 +43,8 @@ class Signaler(QObject):
     trash_clear = pyqtSignal()
     trash_dialog = pyqtSignal(str)
     
-    get_favorite = pyqtSignal(str, str, bool)
+    favorite_added = pyqtSignal(str, str, bool)
+    favorite_removed = pyqtSignal(str, bool)
 
     daemon_url_request = pyqtSignal(int, str)
     daemon_url_changed = pyqtSignal(str)

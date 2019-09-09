@@ -692,13 +692,39 @@ class OscServerThread(ClientCommunicating):
     def rayFavoritesList(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/favorites/remember', 'ssi')
+    @ray_method('/ray/favorites/add', 'ssi')
     def rayFavoriteAdd(self, path, args, types, src_addr):
-        pass
-    
-    @ray_method('/ray/favorites/forget', 'si')
+        name, icon, int_factory = args
+        
+        for favorite in RS.favorites:
+            if (favorite.name == name
+                    and bool(int_factory) == favorite.factory):
+                favorite.icon = icon
+                break
+        else:
+            RS.favorites.append(ray.Favorite(name, icon, bool(int_factory)))
+            
+        for gui_addr in self.gui_list:
+            print(gui_addr.url, src_addr.url)
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                print('toityespas add')
+                self.send(gui_addr, '/ray/gui/favorites/added', *args)
+            
+    @ray_method('/ray/favorites/remove', 'si')
     def rayFavoriteRemove(self, path, args, types, src_addr):
-        pass
+        name, int_factory = args
+        
+        for favorite in RS.favorites:
+            if (favorite.name == name
+                    and bool(int_factory) == favorite.factory):
+                RS.favorites.remove(favorite)
+                break
+            
+        for gui_addr in self.gui_list:
+            print(gui_addr.url, src_addr.url)
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                print('toityespas remov')
+                self.send(gui_addr, '/ray/gui/favorites/removed', *args)
     
     def isOperationPending(self, src_addr, path):
         if self.session.file_copier.isActive():
@@ -902,7 +928,7 @@ class OscServerThread(ClientCommunicating):
                   self.session.name, self.session.path)
         
         for favorite in RS.favorites:
-            self.send(gui_addr, "/ray/gui/favorite",
+            self.send(gui_addr, "/ray/gui/favorites/added",
                       favorite.name, favorite.icon, int(favorite.factory))
         
         for client in self.session.clients:

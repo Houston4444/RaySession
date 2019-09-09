@@ -236,10 +236,15 @@ class GUIServerThread(liblo.ServerThread):
     def rayGuiTrashClear(self, path, args, types, src_addr):
         self._signaler.trash_clear.emit()
         
-    @ray_method('/ray/gui/favorite', 'ssi')
-    def rayGuiFavorite(self, path, args, types, src_addr):
+    @ray_method('/ray/gui/favorites/added', 'ssi')
+    def rayGuiFavoritesAdded(self, path, args, types, src_addr):
         name, icon, int_factory = args
-        self._signaler.get_favorite.emit(name, icon, bool(int_factory))
+        self._signaler.favorite_added.emit(name, icon, bool(int_factory))
+        
+    @ray_method('/ray/gui/favorites/removed', 'si')
+    def rayGuiFavoritesRemoved(self, path, args, types, src_addr):
+        name, int_factory = args
+        self._signaler.favorite_removed.emit(name, bool(int_factory))
 
     def toDaemon(self, *args):
         if CommandLineArgs.debug:

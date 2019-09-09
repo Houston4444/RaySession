@@ -1484,6 +1484,17 @@ class OperatingSession(Session):
                         self.addClientTemplate_step_1(client)
                     
                 break
+        else:
+            # no template found with that name
+            for favorite in RS.favorites:
+                if (favorite.name == template_name
+                        and favorite.factory == factory):
+                    print('naplus', favorite.name)
+                    self.sendGui('/ray/gui/favorites/removed',
+                                 favorite.name,
+                                 int(favorite.factory))
+                    RS.favorites.remove(favorite)
+                    break
     
     def addClientTemplate_step_1(self, client):
         client.adjustFilesAfterCopy(self.name, ray.Template.CLIENT_LOAD)
@@ -2172,25 +2183,25 @@ class SignaledSession(OperatingSession):
             else:
                 self.bookmarker.removeAll(self.path)
     
-    def ray_favorites_remember(self, path, args, src_addr):
-        name, icon, int_factory = args
+    #def ray_favorites_add(self, path, args, src_addr):
+        #name, icon, int_factory = args
         
-        for favorite in RS.favorites:
-            if (favorite.name == name
-                    and bool(int_factory) == favorite.factory):
-                favorite.icon = icon
-                break
-        else:
-            RS.favorites.append(ray.Favorite(name, icon, bool(int_factory)))
+        #for favorite in RS.favorites:
+            #if (favorite.name == name
+                    #and bool(int_factory) == favorite.factory):
+                #favorite.icon = icon
+                #break
+        #else:
+            #RS.favorites.append(ray.Favorite(name, icon, bool(int_factory)))
     
-    def ray_favorites_forget(self, path, args, src_addr):
-        name, int_factory = args
+    #def ray_favorites_remove(self, path, args, src_addr):
+        #name, int_factory = args
         
-        for favorite in RS.favorites:
-            if (favorite.name == name
-                    and bool(int_factory) == favorite.factory):
-                RS.favorites.remove(favorite)
-                break
+        #for favorite in RS.favorites:
+            #if (favorite.name == name
+                    #and bool(int_factory) == favorite.factory):
+                #RS.favorites.remove(favorite)
+                #break
     
     def serverOpenSessionAtStart(self, session_name):
         self.process_order = [self.save, (self.load, session_name),

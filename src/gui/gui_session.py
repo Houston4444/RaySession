@@ -187,10 +187,10 @@ class Session(object):
         if not from_server:
             server = GUIServerThread.instance()
             if server:
-                server.toDaemon('/ray/favorites/remember', name,
+                server.toDaemon('/ray/favorites/add', name,
                                 icon_name, int(factory))
         
-    def removeFavorite(self, name, factory):
+    def removeFavorite(self, name, factory, from_server=False):
         for favorite in self.favorite_list:
             if favorite.name == name and favorite.factory == factory:
                 self.favorite_list.remove(favorite)
@@ -198,6 +198,7 @@ class Session(object):
         
         self._main_win.updateFavoritesMenu()
         
-        server = GUIServerThread.instance()
-        if server:
-            server.toDaemon('/ray/favorites/forget', name, int(factory))
+        if not from_server:
+            server = GUIServerThread.instance()
+            if server:
+                server.toDaemon('/ray/favorites/remove', name, int(factory))
