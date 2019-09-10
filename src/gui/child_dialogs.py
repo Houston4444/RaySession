@@ -138,21 +138,6 @@ class SessionItem(QTreeWidgetItem):
                 break
             
         return item
-    
-    #def containsItem(self, item):
-        #for i in range(self.childCount()):
-            #if self.child(i) == item or self.child(i).containsItem(item):
-                #return True
-        
-        #return False
-        
-    #def deployUntil(self, item):
-        #if self.containsItem(item):
-            #self.setExpanded(True)
-        
-        #for i in range(self.childCount()):
-            #if self.child(i).containsItem(item):
-                #self.child(i).deployUntil(item)
         
     def __lt__(self, other):
         if self.childCount() and not other.childCount():
@@ -352,7 +337,7 @@ class OpenSessionDialog(ChildDialog):
         if not item.childCount():
             return 
         
-        if time.time() - self._last_mouse_click > 0.5:
+        if time.time() - self._last_mouse_click > 0.35:
             item.setExpanded(not item.isExpanded())
             
         self._last_mouse_click = time.time()
