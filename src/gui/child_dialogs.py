@@ -323,7 +323,7 @@ class OpenSessionDialog(ChildDialog):
         self.ui.sessionList.setCurrentItem(root_item.child(row))
 
     def currentItemChanged(self, item, previous_item):
-        self.has_selection = bool(item)
+        self.has_selection = bool(item and item.data(0, Qt.UserRole))
         self.preventOk()
 
     def preventOk(self):

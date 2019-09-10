@@ -446,6 +446,10 @@ class ListWidgetClients(QListWidget):
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
+    
+    def contextMenuEvent(self, event):
+        if not self.itemAt(event.pos()):
+            self.setCurrentRow(-1)
             
             menu = QMenu()
             fav_menu = QMenu(_translate('menu', 'Favorites'), menu)

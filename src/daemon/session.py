@@ -1788,6 +1788,10 @@ class SignaledSession(OperatingSession):
         if len(args) == 2 and args[1]:
             session_name, template_name = args
             
+            if not session_name:
+                # send error TODO
+                return
+            
             spath = ''
             if session_name.startswith('/'):
                 spath = session_name
@@ -1801,9 +1805,12 @@ class SignaledSession(OperatingSession):
                                        self.loadDone]
                 return
             
+        if not args[0]:
+            # send error TODO
+            return 
+        
         self.process_order = [self.save, (self.load, args[0]),
                               self.loadDone]
-            
             
     @session_operation
     def ray_session_save(self, path, args, src_addr):
