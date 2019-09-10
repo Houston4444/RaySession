@@ -457,6 +457,14 @@ class NewSessionDialog(ChildDialog):
         if not last_used_template:
             self.ui.comboBoxTemplate.setCurrentIndex(1)
 
+    def setLastSubFolderSelected(self):
+        last_subfolder = RS.settings.value('last_subfolder', type=str)
+        
+        if last_subfolder:
+            self.ui.comboBoxSubFolder.setCurrentText(last_subfolder)
+        else:
+            self.ui.comboBoxSubFolder.setCurrentIndex(0)
+    
     def addSessionsToList(self, session_names):
         self.session_list += session_names
         
@@ -468,6 +476,7 @@ class NewSessionDialog(ChildDialog):
         
         self.sub_folders.sort()
         self.initSubFolderCombobox()
+        self.setLastSubFolderSelected()
 
     def addTemplatesToList(self, template_list):
         for template in template_list:
@@ -501,7 +510,13 @@ class NewSessionDialog(ChildDialog):
             return '///withJACKPATCH'
 
         return self.ui.comboBoxTemplate.currentText()
-
+    
+    def getSubFolder(self):
+        if self.ui.comboBoxSubFolder.currentIndex() == 0:
+            return ""
+        
+        return  self.ui.comboBoxSubFolder.currentText()
+    
     def textChanged(self, text):
         self.text_is_valid = bool(text and text not in self.session_list)
         self.preventOk()

@@ -359,8 +359,10 @@ class MainWindow(QMainWindow):
 
         session_name = dialog.getSessionName()
         template_name = dialog.getTemplateName()
+        subfolder = dialog.getSubFolder()
 
         RS.settings.setValue('last_used_template', template_name)
+        RS.settings.setValue('last_subfolder', subfolder)
         if self._session.isRunning():
             RS.settings.setValue('last_session', self._session.getShortPath())
 
