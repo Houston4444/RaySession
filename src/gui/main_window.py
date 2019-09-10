@@ -361,6 +361,8 @@ class MainWindow(QMainWindow):
         template_name = dialog.getTemplateName()
 
         RS.settings.setValue('last_used_template', template_name)
+        if self._session.isRunning():
+            RS.settings.setValue('last_session', self._session.getShortPath())
 
         if template_name:
             self.toDaemon('/ray/server/new_session', session_name,
@@ -375,13 +377,13 @@ class MainWindow(QMainWindow):
             return
 
         if self._session.isRunning():
-            RS.settings.setValue('last_session', self._session.name)
+            RS.settings.setValue('last_session', self._session.getShortPath())
 
         session_name = dialog.getSelectedSession()
         self.toDaemon('/ray/server/open_session', session_name)
 
     def closeSession(self):
-        RS.settings.setValue('last_session', self._session.name)
+        RS.settings.setValue('last_session', self._session.getShortPath())
         self.toDaemon('/ray/session/close')
 
     def abortSession(self):
@@ -389,6 +391,7 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
         if dialog.result():
+            RS.settings.setValue('last_session', self._session.getShortPath())
             self.toDaemon('/ray/session/abort')
 
     def renameSessionAction(self):
@@ -663,6 +666,7 @@ class MainWindow(QMainWindow):
 
     def serverRenamesSession(self, session_name, session_path):
         self._session.setName(session_name)
+        self._session.setPath(session_path)
 
         if session_name:
             self.setWindowTitle('%s - %s' % (ray.APP_TITLE, session_name))

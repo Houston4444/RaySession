@@ -815,9 +815,8 @@ class OperatingSession(Session):
         self.setServerStatus(ray.ServerStatus.NEW)
         self.setPath(spath)
         self.oscReply("/reply", self.osc_path, "Created." )
-        self.sendGui("/ray/gui/session/session", new_session_name)
         self.sendGui("/ray/gui/session/name",
-                     new_session_name, new_session_name)
+                     self.name, self.path)
         
         self.oscReply("/reply", self.osc_path, "Session created")
         self.nextFunction()
@@ -1012,7 +1011,7 @@ class OperatingSession(Session):
         else:
             self.setServerStatus(ray.ServerStatus.PRECOPY)
             self.sendGui("/ray/gui/session/name",  
-                         new_session_name, new_session_name)
+                         new_session_name, spath)
             
         self.file_copier.startSessionCopy(template_path, 
                                           spath, 
@@ -1281,7 +1280,7 @@ class OperatingSession(Session):
             
             new_client_id_list.append(new_client.client_id)
             
-        self.sendGui("/ray/gui/session/name",  self.name, self.name)
+        self.sendGui("/ray/gui/session/name",  self.name, self.path)
         
         
         if has_switch:
@@ -1334,7 +1333,7 @@ class OperatingSession(Session):
         self.tellAllClientsSessionIsLoaded()
         self.message('Loaded')
         
-        self.sendGui("/ray/gui/session/name",  self.name, self.name)
+        self.sendGui("/ray/gui/session/name",  self.name, self.path)
         self.oscReply("/reply", self.osc_path, "Loaded.")
         
         self.nextFunction()
@@ -1953,7 +1952,7 @@ class SignaledSession(OperatingSession):
             except:
                 pass
         
-        self.sendGui('/ray/gui/session/name', self.name, self.name)
+        self.sendGui('/ray/gui/session/name', self.name, self.path)
     
     def ray_session_add_executable(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)

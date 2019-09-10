@@ -133,8 +133,8 @@ class GUIServerThread(liblo.ServerThread):
 
     @ray_method('/ray/gui/session/name', 'ss')
     def guiSessionName(self, path, args, types, src_addr):
-        name1, name2 = args
-        self._signaler.session_name_sig.emit(name1, name2)
+        session_name, session_path = args
+        self._signaler.session_name_sig.emit(session_name, session_path)
 
     @ray_method('/ray/gui/session/renameable', 'i')
     def guiSessionRenameable(self, path, args, types, src_addr):

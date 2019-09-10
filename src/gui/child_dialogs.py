@@ -125,7 +125,35 @@ class SessionItem(QTreeWidgetItem):
         self.setExpanded(bool(n and string))
         self.setHidden(not show)
         return show
+    
+    def findItemWith(self, string):
+        if self.data(0, Qt.UserRole) == string:
+            return self
+        
+        item = None
+        
+        for i in range(self.childCount()):
+            item = self.child(i).findItemWith(string)
+            if item:
+                break
             
+        return item
+    
+    #def containsItem(self, item):
+        #for i in range(self.childCount()):
+            #if self.child(i) == item or self.child(i).containsItem(item):
+                #return True
+        
+        #return False
+        
+    #def deployUntil(self, item):
+        #if self.containsItem(item):
+            #self.setExpanded(True)
+        
+        #for i in range(self.childCount()):
+            #if self.child(i).containsItem(item):
+                #self.child(i).deployUntil(item)
+        
     def __lt__(self, other):
         if self.childCount() and not other.childCount():
             return True
@@ -169,8 +197,6 @@ class OpenSessionDialog(ChildDialog):
         self.ui = ui_open_session.Ui_DialogOpenSession()
         self.ui.setupUi(self)
 
-        self.f_last_session_item = None
-
         self.ui.toolButtonFolder.clicked.connect(self.changeRootFolder)
         self.ui.sessionList.currentItemChanged.connect(
             self.currentItemChanged)
@@ -200,6 +226,8 @@ class OpenSessionDialog(ChildDialog):
         self.folders = []
         self.all_items = []
         
+        self._last_mouse_click = 0
+        
 
     def serverStatusChanged(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
@@ -220,11 +248,6 @@ class OpenSessionDialog(ChildDialog):
 
     def addSessions(self, session_names):
         for session_name in session_names:
-            #if session_name == RS.settings.value('last_session', type=str):
-                #self.f_last_session_item = QTreeWidgetItem([session_name], 0)
-                #self.ui.sessionList.addTopLevelItem(self.f_last_session_item)
-                #self.ui.sessionList.setCurrentItem(self.f_last_session_item)
-                
             folder_div = session_name.split('/')
             folders = self.folders
             
@@ -251,12 +274,18 @@ class OpenSessionDialog(ChildDialog):
             self.ui.sessionList.addTopLevelItem(item)
         
         self.ui.sessionList.sortByColumn(0, Qt.AscendingOrder)
-
-        if self.f_last_session_item:
-            current_index = self.ui.sessionList.currentIndex()
-            self.ui.sessionList.scrollTo(current_index)
-        else:
-            self.ui.sessionList.setCurrentItem(None)
+        
+        # Try to select last used session
+        root_item = self.ui.sessionList.invisibleRootItem()
+        for i in range(root_item.childCount()):
+            item = root_item.child(i)
+            last_session_item = item.findItemWith(
+                RS.settings.value('last_session', type=str))
+            
+            if last_session_item:
+                self.ui.sessionList.setCurrentItem(last_session_item)
+                self.ui.sessionList.scrollToItem(last_session_item)
+                break
 
     def updateFilteredList(self, filt):
         filter_text = self.ui.filterBar.displayText()
@@ -323,8 +352,11 @@ class OpenSessionDialog(ChildDialog):
         if not item.childCount():
             return 
         
-        item.setExpanded(not item.isExpanded())
-    
+        if time.time() - self._last_mouse_click > 0.5:
+            item.setExpanded(not item.isExpanded())
+            
+        self._last_mouse_click = time.time()
+        
     def goIfAny(self, item, column):
         if item.childCount():
             return 

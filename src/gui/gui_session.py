@@ -19,7 +19,8 @@ class Session(object):
         self.client_list = []
         self.trashed_clients = []
         self.favorite_list = []
-        self.name = None
+        self.name = ''
+        self.path = ''
         self.is_running = False
         self.server_status = ray.ServerStatus.OFF
 
@@ -89,6 +90,16 @@ class Session(object):
 
     def setName(self, session_name):
         self.name = session_name
+        
+    def setPath(self, session_path):
+        self.path = session_path
+        
+    def getShortPath(self):
+        if self.path.startswith(CommandLineArgs.session_root):
+            return self.path.replace(
+                '%s/' % CommandLineArgs.session_root, '', 1)
+        
+        return self.path
 
     def getClient(self, client_id):
         for client in self.client_list:
