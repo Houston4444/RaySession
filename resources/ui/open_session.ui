@@ -23,7 +23,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QLabel" name="labelNsmFolder">
+      <widget class="QLabel" name="labelSessionsFolder">
        <property name="text">
         <string>Sessions Folder :</string>
        </property>
@@ -33,12 +33,12 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="currentNsmFolder">
+      <widget class="QLabel" name="currentSessionsFolder">
        <property name="styleSheet">
         <string notr="true">font-style :  italic</string>
        </property>
        <property name="text">
-        <string>/home/user/NSM Sessions</string>
+        <string>/home/user/Ray Sessions</string>
        </property>
       </widget>
      </item>

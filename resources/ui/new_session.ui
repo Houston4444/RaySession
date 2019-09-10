@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>290</width>
-    <height>202</height>
+    <width>318</width>
+    <height>256</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,7 +26,7 @@
       <enum>QLayout::SetDefaultConstraint</enum>
      </property>
      <item>
-      <widget class="QLabel" name="labelNsmFolder">
+      <widget class="QLabel" name="labelSessionsFolder">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -34,7 +34,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>NSM Folder :</string>
+        <string>Sessions Folder :</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -42,7 +42,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="currentNsmFolder">
+      <widget class="QLabel" name="currentSessionsFolder">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -98,6 +98,26 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="labelSubFolder">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Sub Folder :</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBoxSubFolder"/>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="QLabel" name="labelNewSessionName">

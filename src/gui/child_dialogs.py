@@ -95,6 +95,7 @@ class ChildDialog(QDialog):
             errorDialog.exec()
             return
         
+        print("herni", root_folder)
         RS.settings.setValue('default_session_root', root_folder)
         self.toDaemon('/ray/server/change_root', root_folder)
 
@@ -191,7 +192,7 @@ class OpenSessionDialog(ChildDialog):
         self.ui.filterBar.textEdited.connect(self.updateFilteredList)
         self.ui.filterBar.updownpressed.connect(self.updownPressed)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
-        self.ui.currentNsmFolder.setText(CommandLineArgs.session_root)
+        self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
         
         self._signaler.add_sessions_to_list.connect(self.addSessions)
         self._signaler.root_changed.connect(self.rootChanged)
@@ -200,8 +201,8 @@ class OpenSessionDialog(ChildDialog):
 
         if self.daemon_launched_before:
             self.ui.toolButtonFolder.setVisible(False)
-            self.ui.currentNsmFolder.setVisible(False)
-            self.ui.labelNsmFolder.setVisible(False)
+            self.ui.currentSessionsFolder.setVisible(False)
+            self.ui.labelSessionsFolder.setVisible(False)
 
         self.server_will_accept = False
         self.has_selection = False
@@ -227,7 +228,7 @@ class OpenSessionDialog(ChildDialog):
         self.preventOk()
         
     def rootChanged(self, session_root):
-        self.ui.currentNsmFolder.setText(session_root)
+        self.ui.currentSessionsFolder.setText(session_root)
         self.ui.sessionList.clear()
         self.toDaemon('/ray/server/list_sessions', 0)
 
@@ -359,7 +360,7 @@ class NewSessionDialog(ChildDialog):
 
         self.is_duplicate = bool(duplicate_window)
 
-        self.ui.currentNsmFolder.setText(CommandLineArgs.session_root)
+        self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
         self.ui.toolButtonFolder.clicked.connect(self.changeRootFolder)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
@@ -367,15 +368,15 @@ class NewSessionDialog(ChildDialog):
 
         self.session_list = []
         self.template_list = []
+        self.sub_folders = []
 
         self._signaler.server_status_changed.connect(self.serverStatusChanged)
-
         self._signaler.add_sessions_to_list.connect(self.addSessionsToList)
+        self._signaler.session_template_found.connect(self.addTemplatesToList)
+        self._signaler.root_changed.connect(self.rootChanged)
         
         self.toDaemon('/ray/server/list_sessions', 1)
-
-        self._signaler.session_template_found.connect(self.addTemplatesToList)
-
+        
         if self.is_duplicate:
             self.ui.labelTemplate.setVisible(False)
             self.ui.comboBoxTemplate.setVisible(False)
@@ -387,11 +388,14 @@ class NewSessionDialog(ChildDialog):
 
         if self.daemon_launched_before:
             self.ui.toolButtonFolder.setVisible(False)
-            self.ui.currentNsmFolder.setVisible(False)
-            self.ui.labelNsmFolder.setVisible(False)
+            self.ui.currentSessionsFolder.setVisible(False)
+            self.ui.labelSessionsFolder.setVisible(False)
 
-        self.initComboBox()
+        self.initTemplatesComboBox()
         self.setLastTemplateSelected()
+        
+        self.ui.labelSubFolder.setVisible(False)
+        self.ui.comboBoxSubFolder.setVisible(False)
 
         self.server_will_accept = False
         self.text_is_valid = False
@@ -413,11 +417,13 @@ class NewSessionDialog(ChildDialog):
         self.preventOk()
     
     def rootChanged(self, session_root):
-        self.ui.currentNsmFolder.setText(session_root)
-        self.ui.sessionList.clear()
+        self.ui.currentSessionsFolder.setText(session_root)
+        self.session_list.clear()
+        self.sub_folders.clear()
+        self.initSubFolderCombobox()
         self.toDaemon('/ray/server/list_sessions', 1)
     
-    def initComboBox(self):
+    def initTemplatesComboBox(self):
         self.ui.comboBoxTemplate.clear()
         self.ui.comboBoxTemplate.addItem(
             _translate('session_template', "empty"))
@@ -427,6 +433,17 @@ class NewSessionDialog(ChildDialog):
                 "with JACK patch memory"))
         self.ui.comboBoxTemplate.insertSeparator(2)
 
+    def initSubFolderCombobox(self):
+        self.ui.comboBoxSubFolder.clear()
+        self.ui.comboBoxSubFolder.addItem(_translate('new_session', 'none'))
+        
+        for sub_folder in self.sub_folders:
+            self.ui.comboBoxSubFolder.addItem(QIcon.fromTheme('folder'), 
+                                              sub_folder)
+        
+        self.ui.labelSubFolder.setVisible(bool(self.sub_folders))
+        self.ui.comboBoxSubFolder.setVisible(bool(self.sub_folders))
+        
     def setLastTemplateSelected(self):
         last_used_template = RS.settings.value('last_used_template', type=str)
 
@@ -442,6 +459,15 @@ class NewSessionDialog(ChildDialog):
 
     def addSessionsToList(self, session_names):
         self.session_list += session_names
+        
+        for session_name in session_names:
+            if '/' in session_name:
+                new_dir = os.path.dirname(session_name)
+                if not new_dir in self.sub_folders:
+                    self.sub_folders.append(new_dir)
+        
+        self.sub_folders.sort()
+        self.initSubFolderCombobox()
 
     def addTemplatesToList(self, template_list):
         for template in template_list:
@@ -453,7 +479,7 @@ class NewSessionDialog(ChildDialog):
 
         self.template_list.sort()
 
-        self.initComboBox()
+        self.initTemplatesComboBox()
 
         for template_name in self.template_list:
             self.ui.comboBoxTemplate.addItem(template_name)
@@ -461,7 +487,11 @@ class NewSessionDialog(ChildDialog):
         self.setLastTemplateSelected()
 
     def getSessionName(self):
-        return self.ui.lineEdit.text()
+        if self.ui.comboBoxSubFolder.currentIndex():
+            return '%s/%s' % (self.ui.comboBoxSubFolder.currentText(),
+                              self.ui.lineEdit.text())
+        else:
+            return self.ui.lineEdit.text()
 
     def getTemplateName(self):
         if self.ui.comboBoxTemplate.currentIndex() == 0:
@@ -475,12 +505,6 @@ class NewSessionDialog(ChildDialog):
     def textChanged(self, text):
         self.text_is_valid = bool(text and text not in self.session_list)
         self.preventOk()
-
-    def changeRootFolder(self):
-        self.ui.currentNsmFolder.setText(default_session_root)
-        self.session_list.clear()
-        # self._server.startListSession()
-        self.toDaemon('/ray/server/list_sessions', 0)
 
     def preventOk(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
