@@ -518,7 +518,15 @@ class NewSessionDialog(ChildDialog):
         return  self.ui.comboBoxSubFolder.currentText()
     
     def textChanged(self, text):
-        self.text_is_valid = bool(text and text not in self.session_list)
+        full_session_text = text
+        if self.ui.comboBoxSubFolder.currentIndex():
+            full_session_text = "%s/%s" % (
+                                    self.ui.comboBoxSubFolder.currentText(),
+                                    text)
+            
+        self.text_is_valid = bool(text
+                                  and full_session_text 
+                                        not in self.session_list)
         self.preventOk()
 
     def preventOk(self):
