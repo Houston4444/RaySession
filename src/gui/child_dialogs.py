@@ -95,7 +95,6 @@ class ChildDialog(QDialog):
             errorDialog.exec()
             return
         
-        print("herni", root_folder)
         RS.settings.setValue('default_session_root', root_folder)
         self.toDaemon('/ray/server/change_root', root_folder)
 
@@ -230,6 +229,7 @@ class OpenSessionDialog(ChildDialog):
     def rootChanged(self, session_root):
         self.ui.currentSessionsFolder.setText(session_root)
         self.ui.sessionList.clear()
+        self.folders.clear()
         self.toDaemon('/ray/server/list_sessions', 0)
 
     def addSessions(self, session_names):
