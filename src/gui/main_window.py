@@ -88,28 +88,32 @@ class MainWindow(QMainWindow):
         self.ui.actionSaveSession.triggered.connect(self.saveSession)
         self.ui.actionCloseSession.triggered.connect(self.closeSession)
         self.ui.actionAbortSession.triggered.connect(self.abortSession)
-        self.ui.actionRenameSession.triggered.connect(self.renameSessionAction)
-        self.ui.actionDuplicateSession.triggered.connect(self.duplicateSession)
+        self.ui.actionRenameSession.triggered.connect(
+            self.renameSessionAction)
+        self.ui.actionDuplicateSession.triggered.connect(
+            self.duplicateSession)
         self.ui.actionSaveTemplateSession.triggered.connect(
             self.saveTemplateSession)
         self.ui.actionReturnToAPreviousState.triggered.connect(
             self.returnToAPreviousState)
-        self.ui.actionOpenSessionFolder.triggered.connect(self.openFileManager)
+        self.ui.actionOpenSessionFolder.triggered.connect(
+            self.openFileManager)
         self.ui.actionAddApplication.triggered.connect(self.addApplication)
         self.ui.actionAddExecutable.triggered.connect(self.addExecutable)
         self.ui.actionKeepFocus.toggled.connect(self.toggleKeepFocus)
-        self.ui.actionSaveAllFromSavedClient.toggled.connect(
+        self.ui.actionSaveAllFromSavedClient.triggered.connect(
             self.saveAllFromClientToggled)
-        self.ui.actionBookmarkSessionFolder.toggled.connect(
+        self.ui.actionBookmarkSessionFolder.triggered.connect(
             self.bookmarkSessionFolderToggled)
-        self.ui.actionDesktopsMemory.toggled.connect(
+        self.ui.actionDesktopsMemory.triggered.connect(
             self.desktopsMemoryToggled)
-        self.ui.actionAutoSnapshot.toggled.connect(
+        self.ui.actionAutoSnapshot.triggered.connect(
             self.autoSnapshotToggled)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
 
-        self.ui.lineEditServerStatus.statusPressed.connect(self.statusBarPressed)
+        self.ui.lineEditServerStatus.statusPressed.connect(
+            self.statusBarPressed)
         self.ui.stackedWidgetSessionName.name_changed.connect(
             self.renameSession)
 

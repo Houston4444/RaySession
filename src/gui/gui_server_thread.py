@@ -18,10 +18,13 @@ def ray_method(path, types):
     def decorated(func):
         @liblo.make_method(path, types)
         def wrapper(*args, **kwargs):
+            t_thread, t_path, t_args, t_types, src_addr, rest = args
+            
             if CommandLineArgs.debug:
                 sys.stderr.write(
-                    '\033[93mOSC::gui_receives\033[0m %s, %s.\n'
-                        % (path, str(args)))
+                    '\033[93mOSC::gui_receives\033[0m %s, %s, %s, %s\n'
+                    % (t_path, t_types, t_args, src_addr.url))
+                
             response = func(*args[:-1], **kwargs)
             return response
         return wrapper
@@ -130,6 +133,11 @@ class GUIServerThread(liblo.ServerThread):
     def guiServerCopying(self, path, args, types, src_addr):
         copying = bool(int(args[0]))
         self._signaler.server_copying.emit(copying)
+        
+    @ray_method('/ray/gui/server/options', 'i')
+    def rayGuiServerOptions(self, path, args, types, src_addr):
+        options = args[0]
+        self._signaler.daemon_options.emit(options)
 
     @ray_method('/ray/gui/session/name', 'ss')
     def guiSessionName(self, path, args, types, src_addr):
@@ -245,17 +253,23 @@ class GUIServerThread(liblo.ServerThread):
     def rayGuiFavoritesRemoved(self, path, args, types, src_addr):
         name, int_factory = args
         self._signaler.favorite_removed.emit(name, bool(int_factory))
-
+    
+    def send(self, *args):
+        ifDebug('\033[95mOSC::gui sends\033[0m '
+                + str(args[1:]))
+        
+        liblo.ServerThread.send(self, *args)
+    
     def toDaemon(self, *args):
-        if CommandLineArgs.debug:
-            sys.stderr.write(
-                '\033[94mOSC::gui_sends\033[0m %s.\n' %
-                (str(args)))
+        #if CommandLineArgs.debug:
+            #sys.stderr.write(
+                #'\033[95mOSC::gui_sends\033[0m %s.\n' %
+                #(str(args)))
         self.send(self._daemon_manager.address, *args)
 
     def announce(self):
         if CommandLineArgs.debug:
-            sys.stderr.write('serverOSC::raysession_sends announce')
+            sys.stderr.write('serverOSC::raysession_sends announce\n')
 
         nsm_mode = ray.NSMMode.NO_NSM
 

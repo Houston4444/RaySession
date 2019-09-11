@@ -28,11 +28,16 @@ def ray_method(path, types):
     def decorated(func):
         @liblo.make_method(path, types)
         def wrapper(*args, **kwargs):
-            ifDebug('serverOSC::ray-daemon_receives %s, %s' 
-                    % (path, str(args)))
+            #ifDebug('serverOSC::ray-daemon_receives %s, %s' 
+                    #% (path, str(args)))
+            t_thread, t_path, t_args, t_types, src_addr, rest = args
+            if CommandLineArgs.debug:
+                sys.stderr.write('\033[94mOSC::daemon_receives\033[0m %s, %s, %s, %s\n'
+                                % (t_path, t_types, t_args, src_addr.url))
+            
             response = func(*args[:-1], **kwargs)
             if response != False:
-                t_thread, t_path, t_args, t_types, src_addr, rest = args
+                #t_thread, t_path, t_args, t_types, src_addr, rest = args
                 signaler.osc_recv.emit(t_path, t_args, t_types, src_addr)
             
             return response
@@ -239,7 +244,7 @@ class OscServerThread(ClientCommunicating):
             self.nsm_locker_url = src_addr.url
             
             for gui_addr in self.gui_list:
-                if gui_addr.url != src_addr.url:
+                if not ray.areSameOscPort(gui_addr.url, src_addr.url):
                     self.send(gui_addr, '/ray/gui/daemon_nsm_locked', 1)
                     
             self.net_daemon_id = args[4]
@@ -249,12 +254,6 @@ class OscServerThread(ClientCommunicating):
             if multi_daemon_file:
                 is_net_free = multi_daemon_file.isFreeForRoot(
                     self.net_daemon_id, self.session.root)
-        
-        #not needed here, in fact args[3] isn't used, that was for that:
-        self.option_save_from_client = \
-            bool(args[3] & ray.Option.SAVE_FROM_CLIENT)
-        self.option_bookmark_session = \
-            bool(args[3] & ray.Option.BOOKMARK_SESSION)
             
         self.announceGui(src_addr.url, nsm_locked, is_net_free)
 
@@ -724,18 +723,42 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/option/save_from_client', 'i')
     def rayOptionSaveFromClient(self, path, args, types, src_addr):
         self.option_save_from_client = bool(args[0])
+        
+        options = self.getOptions()
+        
+        for gui_addr in self.gui_list:
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                self.send(gui_addr, '/ray/gui/server/options', options)
     
     @ray_method('/ray/option/bookmark_session_folder', 'i')
     def rayOptionBookmarkSessionFolder(self, path, args, types, src_addr):
         self.option_bookmark_session = bool(args[0])
+        
+        options = self.getOptions()
+        
+        for gui_addr in self.gui_list:
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                self.send(gui_addr, '/ray/gui/server/options', options)
     
     @ray_method('/ray/option/desktops_memory', 'i')
     def rayOptionDesktopsMemory(self, path, args, types, src_addr):
         self.option_desktops_memory = bool(args[0])
+        
+        options = self.getOptions()
+        
+        for gui_addr in self.gui_list:
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                self.send(gui_addr, '/ray/gui/server/options', options)
     
     @ray_method('/ray/option/snapshots', 'i')
     def rayOptionSnapshots(self, path, args, types, src_addr):
         self.option_snapshots = bool(args[0])
+        
+        options = self.getOptions()
+        
+        for gui_addr in self.gui_list:
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                self.send(gui_addr, '/ray/gui/server/options', options)
     
     @ray_method('/ray/favorites/add', 'ssi')
     def rayFavoriteAdd(self, path, args, types, src_addr):
@@ -783,7 +806,7 @@ class OscServerThread(ClientCommunicating):
         return False
         
     def send(self, *args):
-        ifDebug('serverOSC::ray-daemon sends: '
+        ifDebug('\033[96mOSC::daemon sends\033[0m '
                 + str(args[1:]))
         
         ClientCommunicating.send(self, *args)
@@ -948,9 +971,7 @@ class OscServerThread(ClientCommunicating):
         
         self.sendGui('/ray/gui/session/renameable', 1)
     
-    def announceGui(self, url, nsm_locked=False, is_net_free=True):
-        gui_addr = liblo.Address(url)
-        
+    def getOptions(self):
         options = (
             ray.Option.NSM_LOCKED * self.is_nsm_locked
             + ray.Option.SAVE_FROM_CLIENT * self.option_save_from_client
@@ -959,6 +980,13 @@ class OscServerThread(ClientCommunicating):
             + ray.Option.DESKTOPS_MEMORY * self.option_desktops_memory
             + ray.Option.HAS_GIT * self.option_has_git
             + ray.Option.SNAPSHOTS * self.option_snapshots)
+        
+        return options
+    
+    def announceGui(self, url, nsm_locked=False, is_net_free=True):
+        gui_addr = liblo.Address(url)
+        
+        options = self.getOptions()
         
         self.send(gui_addr, "/ray/gui/daemon_announce", ray.VERSION,
                   self.server_status, options, self.session.root,
