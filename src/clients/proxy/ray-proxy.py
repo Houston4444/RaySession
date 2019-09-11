@@ -480,7 +480,12 @@ class Proxy(QObject):
 
         arguments_line = os.path.expandvars(self.proxy_file.arguments_line)
         arguments = ray.shellLineToArgs(arguments_line)
-
+        
+        dangerous_save = int(bool(config_file and config_file in arguments
+                                  and not self.save_signal))
+        
+        server.sendToDaemon('/nsm/client/warning_no_save', dangerous_save)
+        
         self.process.start(self.proxy_file.executable, arguments)
         self.timer_open.start()
 
@@ -635,7 +640,7 @@ class ProxyFile(object):
         file.close()
 
         self.readFile()
-
+    
 
 if __name__ == '__main__':
     NSM_URL = os.getenv('NSM_URL')
@@ -697,7 +702,7 @@ if __name__ == '__main__':
     proxy_dialog = ProxyDialog()
 
     
-    server.announce('Ray Proxy', ':optional-gui:', 'ray-proxy')
+    server.announce('Ray Proxy', ':optional-gui:warning-no-save:', 'ray-proxy')
 
     app.exec()
 

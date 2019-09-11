@@ -29,6 +29,7 @@ class Client(object):
         self.gui_visible = False
         self.has_dirty = False
         self.dirty_state = True
+        self.warning_no_save = False
         self.last_save = time.time()
 
         self.widget = self._main_win.createClientWidget(self)
@@ -60,6 +61,10 @@ class Client(object):
         self.dirty_state = bool_dirty
         self.widget.setDirtyState(bool_dirty)
 
+    def setWarningNoSaveState(self, bool_warning):
+        self.warning_no_save = bool_warning
+        self.widget.setWarningNoSaveState(bool_warning)
+    
     def setProgress(self, progress):
         self.widget.setProgress(progress)
 

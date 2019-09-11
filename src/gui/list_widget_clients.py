@@ -88,6 +88,12 @@ class ClientSlot(QFrame):
             QPixmap(':scalable/breeze/document-unsaved'),
             QIcon.Normal,
             QIcon.Off)
+        
+        self.noSaveIcon = QIcon()
+        self.noSaveIcon.addPixmap(
+            QPixmap(':scalable/breeze/document-nosave'),
+            QIcon.Normal,
+            QIcon.Off)
 
         # choose button colors
         if self.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
@@ -133,6 +139,12 @@ class ClientSlot(QFrame):
             self.unsavedIcon = QIcon()
             self.unsavedIcon.addPixmap(
                 QPixmap(':scalable/breeze-dark/document-unsaved'),
+                QIcon.Normal,
+                QIcon.Off)
+            
+            self.noSaveIcon = QIcon()
+            self.noSaveIcon.addPixmap(
+                QPixmap(':scalable/breeze-dark/document-nosave'),
                 QIcon.Normal,
                 QIcon.Off)
 
@@ -333,6 +345,12 @@ class ClientSlot(QFrame):
         else:
             self.ui.saveButton.setIcon(self.savedIcon)
 
+    def setWarningNoSaveState(self, bool_warning):
+        if bool_warning:
+            self.ui.saveButton.setIcon(self.noSaveIcon)
+        else:
+            self.ui.saveButton.setIcon(self.saveIcon)
+    
     def setProgress(self, progress):
         self.ui.lineEditClientStatus.setProgress(progress)
         

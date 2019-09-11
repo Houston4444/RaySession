@@ -10,6 +10,7 @@
         <file>scalable/breeze/document-save.svg</file>
         <file>scalable/breeze/document-saved.svg</file>
         <file>scalable/breeze/document-unsaved.svg</file>
+        <file>scalable/breeze/document-nosave.svg</file>
         <file>scalable/breeze/window-close.svg</file>
         <file>scalable/breeze/list-remove.svg</file>
         <file>scalable/breeze/document-save-as-template.svg</file>
@@ -32,6 +33,7 @@
         <file>scalable/breeze-dark/document-save.svg</file>
         <file>scalable/breeze-dark/document-saved.svg</file>
         <file>scalable/breeze-dark/document-unsaved.svg</file>
+        <file>scalable/breeze-dark/document-nosave.svg</file>
         <file>scalable/breeze-dark/window-close.svg</file>
         <file>scalable/breeze-dark/list-remove.svg</file>
         <file>scalable/breeze-dark/document-save-as-template.svg</file>

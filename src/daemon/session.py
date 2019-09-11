@@ -1698,12 +1698,11 @@ class SignaledSession(OperatingSession):
     
     def nsm_client_warning_no_save(self, path, args, src_addr):
         client = self.getClientByAddress(src_addr)
-        if client and client.isCapableOf(':warning_no_save:'):
+        if client and client.isCapableOf(':warning-no-save:'):
             client.warning_no_save = bool(args[0])
             
-            self.sendGui('/ray/gui/client/warning_no_save',
-                         client.client_id,
-                         client.warning_no_save)
+            self.sendGui('/ray/client/warning_no_save',
+                         client.client_id, args[0])
     
     def ray_server_abort_copy(self, path, args, src_addr):
         self.file_copier.abort()

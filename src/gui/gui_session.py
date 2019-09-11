@@ -145,6 +145,12 @@ class Session(object):
         if client:
             client.setDirtyState(bool_dirty)
 
+    def setClientWarningNoSaveState(self, client_id, bool_warning):
+        print('gkgo', bool_warning)
+        client = self.getClient(client_id)
+        if client:
+            client.setWarningNoSaveState(bool_warning)
+    
     def switchClient(self, old_client_id, new_client_id):
         client = self.getClient(old_client_id)
         if client:
