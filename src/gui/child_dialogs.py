@@ -25,6 +25,7 @@ import ui_error_dialog
 import ui_quit_app
 import ui_client_properties
 import ui_stop_client
+import ui_stop_client_no_save
 import ui_abort_copy
 import ui_client_trash
 import ui_daemon_url
@@ -950,6 +951,29 @@ class StopClientDialog(ChildDialog):
             self.wait_for_save = False
             self.accept()
 
+
+class StopClientNoSaveDialog(ChildDialog):
+    def __init__(self, parent, client_id):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_stop_client_no_save.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self.client_id = client_id
+        self.client = self._session.getClient(client_id)
+
+        if self.client:
+            text = self.ui.label.text() % self.client.prettierName()
+            
+        self._signaler.client_status_changed.connect(
+            self.serverUpdatesClientStatus)
+    
+    def serverUpdatesClientStatus(self, client_id, status):
+        if client_id != self.client_id:
+            return
+
+        if status in (ray.ClientStatus.STOPPED, ray.ClientStatus.REMOVED):
+            self.reject()
+            return
 
 class SnapShotProgressDialog(ChildDialog):
     def __init__(self, parent):

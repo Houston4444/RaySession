@@ -494,8 +494,15 @@ class MainWindow(QMainWindow):
         client = self._session.getClient(client_id)
         if not client:
             return
+        
+        if client.warning_no_save:
+            dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
+            dialog.exec()
+            if not dialog.result():
+                return
 
-        if client.status == ray.ClientStatus.READY and client.check_last_save:
+        elif (client.status == ray.ClientStatus.READY
+              and client.check_last_save):
             if client.has_dirty:
                 if client.dirty_state:
                     dialog = child_dialogs.StopClientDialog(self, client_id)
