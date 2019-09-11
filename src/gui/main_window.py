@@ -330,15 +330,16 @@ class MainWindow(QMainWindow):
         if (self._daemon_manager.launched_before
                 and not CommandLineArgs.under_nsm):
             self.quitAppNow()
-            return
+            return True
 
         if self._session.isRunning():
             dialog = child_dialogs.QuitAppDialog(self)
             dialog.exec()
-            if dialog.result():
-                self.quitAppNow()
-        else:
-            self.quitAppNow()
+            if not dialog.result():
+                return False
+            
+        self.quitAppNow()
+        return True
 
     def quitAppNow(self):
         self._daemon_manager.stop()
@@ -857,9 +858,11 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         self.saveWindowSettings()
-
-        self.quitApp()
-        event.ignore()
+        
+        if self.quitApp():
+            QMainWindow.closeEvent(self, event)
+        else:
+            event.ignore()
 
     def leaveEvent(self, event):
         if self.isActiveWindow():
