@@ -25,6 +25,7 @@ class Signaler(QObject):
     client_has_gui = pyqtSignal(str)
     client_gui_visible_sig = pyqtSignal(str, int)
     client_still_running = pyqtSignal(str)
+    client_warning_no_save = pyqtSignal(str, bool)
     client_updated = pyqtSignal(object)
     add_sessions_to_list = pyqtSignal(list)
     new_executable = pyqtSignal(list)

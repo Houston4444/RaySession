@@ -44,10 +44,10 @@ def ray_method(path, types):
         return wrapper
     return decorated
 
-#Osc server thread separated in many classes for confort.
+# Osc server thread separated in many classes for confort.
 
-#ClientCommunicating contains NSM protocol.
-#OSC paths have to be never changed.
+# ClientCommunicating contains NSM protocol.
+# OSC paths have to be never changed.
 class ClientCommunicating(liblo.ServerThread):
     def __init__(self, session, osc_num=0):
         liblo.ServerThread.__init__(self, osc_num)
@@ -199,6 +199,11 @@ class ClientCommunicating(liblo.ServerThread):
     def nsmClientNetworkProperties(self, path, args, types, src_addr):
         pass
 
+    @ray_method('/nsm/client/warning_no_save', 'i')
+    def nsmClientWarningNoSave(self, path, args, types, src_addr):
+        pass
+    
+    
 class OscServerThread(ClientCommunicating):
     def __init__(self, session, osc_num=0):
         ClientCommunicating.__init__(self, session, osc_num)
