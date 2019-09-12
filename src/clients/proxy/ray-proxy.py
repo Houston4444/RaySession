@@ -28,6 +28,7 @@ ERR_WRONG_SAVE_SIGNAL = -5
 ERR_WRONG_STOP_SIGNAL = -6
 
 
+
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         if proxy.isRunning():
@@ -79,14 +80,7 @@ class ProxyDialog(QMainWindow):
         self.fields_allow_start = False
         self.process_is_running = False
 
-        self.ui.comboSaveSig.addItem(_translate('proxy', 'None'), 0)
-        self.ui.comboSaveSig.addItem('SIGUSR1', int(signal.SIGUSR1))
-        self.ui.comboSaveSig.addItem('SIGUSR2', int(signal.SIGUSR2))
-        self.ui.comboSaveSig.addItem('SIGINT',  int(signal.SIGINT))
         
-        self.ui.comboStopSig.addItem('SIGTERM', int(signal.SIGTERM))
-        self.ui.comboStopSig.addItem('SIGINT', int(signal.SIGINT))
-        self.ui.comboStopSig.addItem('SIGHUP', int(signal.SIGHUP))
         self.ui.toolButtonBrowse.clicked.connect(self.browseFile)
 
         self.ui.lineEditExecutable.textEdited.connect(
@@ -95,7 +89,20 @@ class ProxyDialog(QMainWindow):
             self.lineEditArgumentsChanged)
         self.ui.lineEditConfigFile.textChanged.connect(
             self.lineEditConfigFileChanged)
-
+        
+        self.ui.comboSaveSig.addItem(_translate('proxy', 'None'), 0)
+        self.ui.comboSaveSig.addItem('SIGUSR1', int(signal.SIGUSR1))
+        self.ui.comboSaveSig.addItem('SIGUSR2', int(signal.SIGUSR2))
+        self.ui.comboSaveSig.addItem('SIGINT',  int(signal.SIGINT))
+        self.ui.comboSaveSig.activated.connect(self.comboSaveSigChanged)
+        self.ui.comboSaveSig.setCurrentIndex(0)
+        
+        self.ui.comboStopSig.addItem('SIGTERM', int(signal.SIGTERM))
+        self.ui.comboStopSig.addItem('SIGINT', int(signal.SIGINT))
+        self.ui.comboStopSig.addItem('SIGHUP', int(signal.SIGHUP))
+        self.ui.comboStopSig.activated.connect(self.comboStopSigChanged)
+        self.ui.comboStopSig.setCurrentIndex(0)
+        
         self.ui.comboSaveSig.currentTextChanged.connect(self.allowSaveTest)
         self.ui.toolButtonTestSave.clicked.connect(self.testSave)
         self.ui.toolButtonTestSave.setEnabled(False)
@@ -118,7 +125,7 @@ class ProxyDialog(QMainWindow):
         self.fields_allow_start = True
         if not self.ui.lineEditExecutable.text():
             self.fields_allow_start = False
-
+        
         if ray.shellLineToArgs(self.ui.lineEditArguments.text()) is None:
             self.fields_allow_start = False
 
@@ -126,19 +133,19 @@ class ProxyDialog(QMainWindow):
             bool(not self.process_is_running and self.fields_allow_start))
 
     def updateValuesFromProxyFile(self):
-        proxy_file = proxy.proxy_file
+        #proxy_file = proxy.proxy_file
 
-        self.ui.lineEditExecutable.setText(proxy_file.executable)
-        self.ui.lineEditConfigFile.setText(proxy_file.config_file)
-        self.ui.lineEditArguments.setText(proxy_file.arguments_line)
+        self.ui.lineEditExecutable.setText(proxy.executable)
+        self.ui.lineEditConfigFile.setText(proxy.config_file)
+        self.ui.lineEditArguments.setText(proxy.arguments_line)
                 
-        save_index = self.ui.comboSaveSig.findData(proxy_file.save_signal)
+        save_index = self.ui.comboSaveSig.findData(proxy.save_signal)
         self.ui.comboSaveSig.setCurrentIndex(save_index)
 
-        stop_index = self.ui.comboStopSig.findData(proxy_file.stop_signal)
+        stop_index = self.ui.comboStopSig.findData(proxy.stop_signal)
         self.ui.comboStopSig.setCurrentIndex(stop_index)
 
-        self.ui.checkBoxWaitWindow.setChecked(proxy_file.wait_window)
+        self.ui.checkBoxWaitWindow.setChecked(proxy.wait_window)
 
         self.checkAllowStart()
 
@@ -186,9 +193,34 @@ class ProxyDialog(QMainWindow):
     def lineEditConfigFileChanged(self, text):
         if text and not self.ui.lineEditArguments.text():
             self.ui.lineEditArguments.setText('"$CONFIG_FILE"')
-        elif not text and self.ui.lineEditArguments.text() == '"$CONFIG_FILE"':
+        elif (not text 
+              and self.ui.lineEditArguments.text() == '"$CONFIG_FILE"'):
             self.ui.lineEditArguments.setText('')
 
+    def comboSaveSigChanged(self, index):
+        save_signal = 0
+        
+        if index == 1:
+            save_signal = signal.SIGUSR1
+        elif index == 2:
+            save_signal = signal.SIGUSR2
+        elif index == 3:
+            save_signal = signal.SIGINT
+            
+        save_signal = int(save_signal)
+        self.proxy.setSaveSignal(save_signal)
+            
+    def comboStopSigChanged(self, index):
+        stop_signal = signal.SIGTERM
+        
+        if index == 1:
+            stop_signal = signal.SIGINT
+        elif index == 2:
+            stop_signal = signal.SIGTERM
+            
+        stop_signal = int(stop_signal)
+        self.proxy.setStopSignal(stop_signal)
+    
     def allowSaveTest(self, text=None):
         if text is None:
             text = self.ui.comboSaveSig.currentText()
@@ -200,7 +232,7 @@ class ProxyDialog(QMainWindow):
         save_signal = self.ui.comboSaveSig.currentData()
         proxy.saveProcess(save_signal)
 
-    def saveProxyFile(self):
+    def saveProxy(self):
         executable = self.ui.lineEditExecutable.text()
         config_file = self.ui.lineEditConfigFile.text()
         arguments_line = self.ui.lineEditArguments.text()
@@ -208,7 +240,7 @@ class ProxyDialog(QMainWindow):
         stop_signal = self.ui.comboStopSig.currentData()
         wait_window = self.ui.checkBoxWaitWindow.isChecked()
 
-        proxy.proxy_file.saveFile(
+        proxy.updateAndSave(
             executable,
             config_file,
             arguments_line,
@@ -217,9 +249,9 @@ class ProxyDialog(QMainWindow):
             wait_window)
 
     def startProcess(self):
-        self.saveProxyFile()
+        self.saveProxy()
 
-        if proxy.proxy_file.is_launchable:
+        if proxy.is_launchable:
             proxy.startProcess()
 
     def stopProcess(self):
@@ -262,7 +294,7 @@ class ProxyDialog(QMainWindow):
         settings.sync()
 
         if self.fields_allow_start:
-            self.saveProxyFile()
+            self.saveProxy()
 
         QMainWindow.closeEvent(self, event)
 
@@ -297,21 +329,24 @@ class Proxy(QObject):
         self.process.setProcessChannelMode(QProcess.ForwardedChannels)
         self.process.finished.connect(self.processFinished)
 
-        self.proxy_file = None
-        self.project_path = None
-        self.session_name = None
-        self.full_client_id = None
+        #self.proxy_file = None
+        self.is_launchable = False
+        self.project_path = ""
+        self.path = ""
+        self.session_name = ""
+        self.full_client_id = ""
 
         self.executable = executable
         self.arguments = []
         self.arguments_line = ''
-        self.config_file = None
-        self.save_signal = None
-        self.stop_signal = signal.SIGTERM
-        self.label = None
+        self.config_file = ""
+        self.save_signal = 0
+        self.stop_signal = int(signal.SIGTERM)
+        self.label = ""
         
         self.wait_window = False
 
+        self._config_file_used = False
         self._wait_for_stop = False
         
         self.timer_save = QTimer()
@@ -347,208 +382,15 @@ class Proxy(QObject):
 
     def waitForStop(self):
         self._wait_for_stop = True
+    
+    def setSaveSignal(self, int_signal):
+        self.save_signal = int_signal
+        print('jfi', int_signal)
+        self.sendWarningNoSave()
         
-    def checkWindow(self):
-        self.timer_window_n += 1
-
-        if self.timer_window_n > 600:
-            # 600 x 50ms = 30s max until ray-proxy replyOpen to Session Manager
-            self.checkWindowEnded()
-            return
-
-        try:
-            # get all windows and their PID with wmctrl
-            wmctrl_all = subprocess.check_output(
-                ['wmctrl', '-l', '-p']).decode()
-        except BaseException:
-            self.checkWindowEnded()
-            return
-
-        if not wmctrl_all:
-            self.checkWindowEnded()
-            return
-
-        all_lines = wmctrl_all.split('\n')
-        pids = []
-
-        # get all windows pids
-        for line in all_lines:
-            if not line:
-                continue
-
-            line_sep = line.split(' ')
-            non_empt = []
-            for el in line_sep:
-                if el:
-                    non_empt.append(el)
-
-            if len(non_empt) >= 3 and non_empt[2].isdigit():
-                pids.append(int(non_empt[2]))
-            else:
-                # window manager seems to not work correctly with wmctrl, so
-                # replyOpen now
-                self.checkWindowEnded()
-                return
-
-        parent_pid = self.process.pid()
-
-        # check in pids if one comes from this ray-proxy
-        for pid in pids:
-            if pid < parent_pid:
-                continue
-
-            ppid = pid
-
-            while ppid != parent_pid and ppid > 1:
-                try:
-                    proc_file = open('/proc/%i/status' % ppid, 'r')
-                    proc_contents = proc_file.read()
-                except BaseException:
-                    self.checkWindowEnded()
-                    return
-                    
-                for line in proc_contents.split('\n'):
-                    if line.startswith('PPid:'):
-                        ppid_str = line.rpartition('\t')[2]
-                        if ppid_str.isdigit():
-                            ppid = int(ppid_str)
-                            break
-                else:
-                    self.checkWindowEnded()
-                    return
-                
-
-            if ppid == parent_pid:
-                # a window appears with a pid child of this ray-proxy,
-                # replyOpen
-                QTimer.singleShot(200, self.checkWindowEnded)
-                break
-
-    def checkWindowEnded(self):
-        self.timer_window.stop()
-        server.openReply()
-
-    def processFinished(self, exit_code):
-        if self._wait_for_stop:
-            app.quit()
-            
-        if self.is_finishable:
-            if not proxy_dialog.isVisible():
-                #sys.exit(0)
-                app.quit()
-        else:
-            duration = time.time() - self.process_start_time
-            proxy_dialog.processTerminateShortly(duration)
-            # proxy_dialog.show()
-
-    def initialize(self, project_path, session_name, full_client_id):
-        self.project_path = project_path
-        self.session_name = session_name
-        self.full_client_id = full_client_id
-
-        server.sendGuiState(False)
-
-        if not os.path.exists(project_path):
-            os.mkdir(project_path)
-
-        os.chdir(project_path)
-
-        proxy_dialog.setWindowTitle(self.full_client_id)
-
-        self.proxy_file = ProxyFile(project_path, self.executable)
-        self.proxy_file.readFile()
-
-        proxy_dialog.updateValuesFromProxyFile()
-
-        if not self.proxy_file.is_launchable:
-            server.openReply()
-            proxy_dialog.show()
-            return
-
-        self.startProcess()
-
-    def startProcess(self):
-        os.environ['NSM_CLIENT_ID'] = self.full_client_id
-        os.environ['RAY_SESSION_NAME'] = self.session_name
-
-        # enable environment vars in config_file
-        config_file = os.path.expandvars(self.proxy_file.config_file)
-        os.environ['CONFIG_FILE'] = config_file
-
-        # Useful for launching with specifics arguments clients NSM compatible
-        os.unsetenv('NSM_URL')
-
-        arguments_line = os.path.expandvars(self.proxy_file.arguments_line)
-        arguments = ray.shellLineToArgs(arguments_line)
-        
-        dangerous_save = int(bool(config_file and config_file in arguments
-                                  and not self.save_signal))
-        
-        server.sendToDaemon('/nsm/client/warning_no_save', dangerous_save)
-        
-        self.process.start(self.proxy_file.executable, arguments)
-        self.timer_open.start()
-
-    def saveProcess(self, save_signal=0):
-        if not save_signal:
-            save_signal = self.proxy_file.save_signal
-
-        if self.isRunning() and save_signal:
-            os.kill(self.process.processId(), save_signal)
-
-        self.timer_save.start()
-
-    def stopProcess(self, signal=signal.SIGTERM):
-        if signal is None:
-            return
-
-        if not self.isRunning():
-            return
-
-        os.kill(self.process.processId(), signal)
-
-    def timerSaveFinished(self):
-        server.saveReply()
-
-    def timerOpenFinished(self):
-        if self.proxy_file.wait_window:
-            self.timer_window.start()
-        else:
-            server.openReply()
-
-        if self.isRunning() and proxy_dialog.isVisible():
-            proxy_dialog.close()
-
-    def timerCloseFinished(self):
-        self.is_finishable = True
-
-    def stop(self):
-        if self.process.state:
-            self.process.terminate()
-
-    def showOptionalGui(self):
-        proxy_dialog.show()
-
-    def hideOptionalGui(self):
-        if not proxy_dialog.isHidden():
-            proxy_dialog.close()
-
-
-class ProxyFile(object):
-    def __init__(self, project_path, executable=''):
-        self.file = None
-        self.path = "%s/ray-proxy.xml" % project_path
-
-        self.executable = executable
-        self.arguments_line = ''
-        self.config_file = ''
-        self.args_line = ''
-        self.save_signal = 0
-        self.stop_signal = int(signal.SIGTERM)
-        self.wait_window = False
-
-        self.is_launchable = False
-
+    def setStopSignal(self, int_signal):
+        self.stop_signal = int_signal
+    
     def readFile(self):
         self.is_launchable = False
         try:
@@ -640,6 +482,239 @@ class ProxyFile(object):
         file.close()
 
         self.readFile()
+    
+    def updateValues(self, executable, config_file, arguments_line,
+                     save_signal, stop_signal, wait_window):
+        self.executable = executable
+        self.config_file = config_file
+        self.arguments_line = arguments_line
+        self.save_signal = save_signal
+        self.stop_signal = stop_signal
+        self.wait_window = wait_window
+    
+    def saveProxyFile(self):
+        self.saveFile(
+            self.executable,
+            self.config_file,
+            self.arguments_line,
+            self.save_signal,
+            self.stop_signal,
+            self.wait_window)
+    
+    def updateAndSave(self, executable, config_file, arguments_line,
+                      save_signal, stop_signal, wait_window):
+        self.updateValues(executable, config_file, arguments_line,
+                          save_signal, stop_signal, wait_window)
+        self.saveProxyFile()
+    
+    def processFinished(self, exit_code):
+        if self._wait_for_stop:
+            app.quit()
+            
+        if self.is_finishable:
+            if not proxy_dialog.isVisible():
+                #sys.exit(0)
+                app.quit()
+        else:
+            duration = time.time() - self.process_start_time
+            proxy_dialog.processTerminateShortly(duration)
+            # proxy_dialog.show()
+    
+    def checkWindow(self):
+        self.timer_window_n += 1
+
+        if self.timer_window_n > 600:
+            # 600 x 50ms = 30s max until ray-proxy 
+            # replyOpen to Session Manager
+            self.checkWindowEnded()
+            return
+
+        try:
+            # get all windows and their PID with wmctrl
+            wmctrl_all = subprocess.check_output(
+                ['wmctrl', '-l', '-p']).decode()
+        except BaseException:
+            self.checkWindowEnded()
+            return
+
+        if not wmctrl_all:
+            self.checkWindowEnded()
+            return
+
+        all_lines = wmctrl_all.split('\n')
+        pids = []
+
+        # get all windows pids
+        for line in all_lines:
+            if not line:
+                continue
+
+            line_sep = line.split(' ')
+            non_empt = []
+            for el in line_sep:
+                if el:
+                    non_empt.append(el)
+
+            if len(non_empt) >= 3 and non_empt[2].isdigit():
+                pids.append(int(non_empt[2]))
+            else:
+                # window manager seems to not work correctly with wmctrl, so
+                # replyOpen now
+                self.checkWindowEnded()
+                return
+
+        parent_pid = self.process.pid()
+
+        # check in pids if one comes from this ray-proxy
+        for pid in pids:
+            if pid < parent_pid:
+                continue
+
+            ppid = pid
+
+            while ppid != parent_pid and ppid > 1:
+                try:
+                    proc_file = open('/proc/%i/status' % ppid, 'r')
+                    proc_contents = proc_file.read()
+                except BaseException:
+                    self.checkWindowEnded()
+                    return
+                    
+                for line in proc_contents.split('\n'):
+                    if line.startswith('PPid:'):
+                        ppid_str = line.rpartition('\t')[2]
+                        if ppid_str.isdigit():
+                            ppid = int(ppid_str)
+                            break
+                else:
+                    self.checkWindowEnded()
+                    return
+                
+            if ppid == parent_pid:
+                # a window appears with a pid child of this ray-proxy,
+                # replyOpen
+                QTimer.singleShot(200, self.checkWindowEnded)
+                break
+
+    def checkWindowEnded(self):
+        self.timer_window.stop()
+        server.openReply()
+
+    def initialize(self, project_path, session_name, full_client_id):
+        self.project_path = project_path
+        self.session_name = session_name
+        self.full_client_id = full_client_id
+
+        server.sendGuiState(False)
+
+        if not os.path.exists(project_path):
+            os.mkdir(project_path)
+
+        os.chdir(project_path)
+
+        #proxy_dialog.setWindowTitle(self.full_client_id)
+        
+        self.path = os.path.join(project_path, "ray-proxy.xml")
+        self.readFile()
+
+        proxy_dialog.updateValuesFromProxyFile()
+
+        if not self.is_launchable:
+            server.openReply()
+            proxy_dialog.show()
+            return
+
+        self.startProcess()
+    
+    def sendWarningNoSave(self):
+        dangerous_save = int(self._config_file_used and not self.save_signal)
+        print(self.config_file)
+        print(bool(self.config_file in ray.shellLineToArgs(self.arguments_line)))
+        print(self.save_signal)
+            
+        server.sendToDaemon('/nsm/client/warning_no_save', dangerous_save)
+    
+    def startProcess(self):
+        os.environ['NSM_CLIENT_ID'] = self.full_client_id
+        os.environ['RAY_SESSION_NAME'] = self.session_name
+
+        # enable environment vars in config_file
+        config_file = os.path.expandvars(self.config_file)
+        os.environ['CONFIG_FILE'] = config_file
+
+        # Useful for launching NSM compatible clients with specifics arguments
+        os.unsetenv('NSM_URL')
+
+        arguments_line = os.path.expandvars(self.arguments_line)
+        arguments = ray.shellLineToArgs(arguments_line)
+        
+        self._config_file_used = bool(config_file
+                                      and config_file in arguments)
+        self.sendWarningNoSave()
+        
+        self.process.start(self.executable, arguments)
+        self.timer_open.start()
+
+    def saveProcess(self, save_signal=0):
+        if not save_signal:
+            save_signal = self.save_signal
+
+        if self.isRunning() and save_signal:
+            os.kill(self.process.processId(), save_signal)
+
+        self.timer_save.start()
+
+    def stopProcess(self, signal=signal.SIGTERM):
+        if signal is None:
+            return
+
+        if not self.isRunning():
+            return
+
+        os.kill(self.process.processId(), signal)
+
+    def timerSaveFinished(self):
+        server.saveReply()
+
+    def timerOpenFinished(self):
+        if self.wait_window:
+            self.timer_window.start()
+        else:
+            server.openReply()
+
+        if self.isRunning() and proxy_dialog.isVisible():
+            proxy_dialog.close()
+
+    def timerCloseFinished(self):
+        self.is_finishable = True
+
+    def stop(self):
+        if self.process.state:
+            self.process.terminate()
+
+    def showOptionalGui(self):
+        proxy_dialog.show()
+
+    def hideOptionalGui(self):
+        if not proxy_dialog.isHidden():
+            proxy_dialog.close()
+
+
+class ProxyFile(object):
+    def __init__(self, project_path, executable=''):
+        
+
+        self.executable = executable
+        self.arguments_line = ''
+        self.config_file = ''
+        self.args_line = ''
+        self.save_signal = 0
+        self.stop_signal = int(signal.SIGTERM)
+        self.wait_window = False
+
+        
+
+    
     
 
 if __name__ == '__main__':
