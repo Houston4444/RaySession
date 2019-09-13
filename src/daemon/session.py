@@ -682,13 +682,13 @@ class OperatingSession(Session):
         self.sendGuiMessage(_translate('GUIMSG', "Session saved."))
         self.message("Session saved.")
         
-        server = self.getServer()
-        if (not prevent_snapshot
-                and server and server.option_snapshots
-                and not self.snapshoter.isAutoSnapshotPrevented()
-                and self.snapshoter.hasChanges()):
-            # add snapshot at the beginning of process_order
-            self.process_order.insert(0, (self.snapshot))
+        #server = self.getServer()
+        #if (not prevent_snapshot
+                #and server and server.option_snapshots
+                #and not self.snapshoter.isAutoSnapshotPrevented()
+                #and self.snapshoter.hasChanges()):
+            ## add snapshot at the beginning of process_order
+            #self.process_order.insert(0, (self.snapshot))
             
         self.nextFunction()
     
@@ -712,7 +712,16 @@ class OperatingSession(Session):
         self.process_order.clear()
         self.setServerStatus(ray.ServerStatus.READY)
     
-    def snapshot(self, snapshot_name='', rewind_snapshot=''):
+    def snapshot(self, snapshot_name='', rewind_snapshot='', force=False):
+        if not force:
+            server = self.getServer()
+            if not (server and server.option_snapshots
+                    and not self.snapshoter.isAutoSnapshotPrevented()
+                    and self.snapshoter.hasChanges()):
+                # add snapshot at the beginning of process_order
+                self.nextFunction()
+                return
+        
         self.setServerStatus(ray.ServerStatus.SNAPSHOT)
         self.snapshoter.save(snapshot_name, rewind_snapshot,
                              self.snapshot_step1, self.snapshotError)
@@ -742,6 +751,24 @@ class OperatingSession(Session):
         self.oscReply("/error", self.osc_path, err_snapshot, m)
         
         self.nextFunction()
+    
+    def closeNoSaveClients(self):
+        self.expected_clients.clear()
+        
+        has_nosave_clients = False
+        
+        for client in self.clients:
+            if client.isRunning() and client.warning_no_save:
+                self.expected_clients.append(client)
+                #self.clients_to_quit.append(client)
+                #self.timer_quit.start()
+                has_nosave_clients = True
+        
+        if has_nosave_clients:
+            self.setServerStatus(ray.ServerStatus.WAIT_USER)
+        
+        # user has 2 minutes to close (and save) the no-save clients 
+        self.waitAndGoTo(120000, self.nextFunction, ray.WaitFor.STOP)
     
     def close(self):
         self.sendGuiMessage(
@@ -1632,9 +1659,6 @@ class SignaledSession(OperatingSession):
                                                       src_addr, False)
                                 break
                 
-                #Ray Session won't add clients that aren't launched 
-                #by Ray Session itself. 
-            
         if self.wait_for == ray.WaitFor.ANNOUNCE:
             self.endTimerIfLastExpected(client)
     
@@ -1682,7 +1706,9 @@ class SignaledSession(OperatingSession):
         if not client:
             return
         
-        self.process_order = [(self.save, client.client_id), self.saveDone]
+        self.process_order = [(self.save, client.client_id),
+                              self.snapshot,
+                              self.saveDone]
         self.nextFunction()
     
     def nsm_client_label(self, path, args, src_addr):
@@ -1782,14 +1808,21 @@ class SignaledSession(OperatingSession):
                 spath = "%s/%s" % (self.root, session_name)
             
             if not os.path.exists(spath):
-                self.process_order = [self.save, 
+                self.process_order = [self.save,
+                                      self.closeNoSaveClients,
+                                      self.snapshot,
                                       (self.prepareTemplate, *args, False), 
                                       (self.load, session_name),
                                        self.newDone]
                 return
         
-        self.process_order = [self.save, self.close, (self.new, args[0]),
-                              self.save, self.newDone]
+        self.process_order = [self.save,
+                              self.closeNoSaveClients,
+                              self.snapshot,
+                              self.close,
+                              (self.new, args[0]),
+                              self.save,
+                              self.newDone]
     
     @session_operation
     def ray_server_open_session(self, path, args, src_addr):
@@ -1807,7 +1840,9 @@ class SignaledSession(OperatingSession):
                 spath = "%s/%s" % (self.root, session_name)
             
             if not os.path.exists(spath):
-                self.process_order = [self.save, 
+                self.process_order = [self.save,
+                                      self.closeNoSaveClients,
+                                      self.snapshot,
                                       (self.prepareTemplate, *args, True), 
                                       (self.load, session_name),
                                        self.loadDone]
@@ -1817,12 +1852,15 @@ class SignaledSession(OperatingSession):
             # send error TODO
             return 
         
-        self.process_order = [self.save, (self.load, args[0]),
+        self.process_order = [self.save,
+                              self.closeNoSaveClients,
+                              self.snapshot,
+                              (self.load, args[0]),
                               self.loadDone]
             
     @session_operation
     def ray_session_save(self, path, args, src_addr):
-        self.process_order = [self.save, self.saveDone]
+        self.process_order = [self.save, self.snapshot, self.saveDone]
     
     @session_operation
     def ray_session_save_as_template(self, path, args, src_addr):
@@ -1833,7 +1871,7 @@ class SignaledSession(OperatingSession):
             if client.executable_path == 'ray-network':
                 client.net_session_template = template_name
         
-        self.process_order = [self.save, 
+        self.process_order = [self.save, self.snapshot,
                               (self.saveSessionTemplate, 
                                template_name, net)]
     
@@ -1845,12 +1883,16 @@ class SignaledSession(OperatingSession):
         
         if with_save:
             self.process_order.append(self.save)
-        self.process_order += [(self.snapshot, snapshot_name),
+        self.process_order += [(self.snapshot, snapshot_name, '', True),
                                self.snapshotDone]
     
     @session_operation
     def ray_session_close(self, path, args, src_addr):
-        self.process_order = [self.save, self.close, self.closeDone]
+        self.process_order = [self.save,
+                              self.closeNoSaveClients,
+                              self.snapshot,
+                              self.close,
+                              self.closeDone]
     
     def ray_session_abort(self, path, args, src_addr):
         if (self.hasServer()
@@ -1879,7 +1921,9 @@ class SignaledSession(OperatingSession):
     def ray_session_duplicate(self, path, args, src_addr):
         new_session_full_name = args[0]
         
-        self.process_order = [self.save, 
+        self.process_order = [self.save,
+                              self.closeNoSaveClients,
+                              self.snapshot,
                               (self.duplicate, new_session_full_name), 
                               (self.load, new_session_full_name), 
                               self.duplicateDone]
@@ -1896,9 +1940,10 @@ class SignaledSession(OperatingSession):
             
             self.rememberOscArgs(path, args, src_addr)
             
-            self.process_order = [self.save, 
-                                (self.duplicate, new_session),
-                                self.duplicateOnlyDone]
+            self.process_order = [self.save,
+                                  self.snapshot,
+                                  (self.duplicate, new_session),
+                                  self.duplicateOnlyDone]
             self.nextFunction()
         
         else:
@@ -1913,8 +1958,9 @@ class SignaledSession(OperatingSession):
         
         snapshot = args[0]
         
-        self.process_order = [(self.save, '', True),
-                              (self.snapshot, '', snapshot),
+        self.process_order = [self.save,
+                              self.closeNoSaveClients,
+                              (self.snapshot, '', snapshot, True),
                               self.close, 
                               (self.initSnapshot, self.path, snapshot),
                               (self.load, self.path), 
@@ -2127,15 +2173,15 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == client_id:
                 if client.isRunning():
-                    self.process_order = [(self.save, '', True),
-                                          (self.snapshot, '', snapshot),
+                    self.process_order = [self.save,
+                                          (self.snapshot, '', snapshot, True),
                                           (self.closeClient, client),
                                           (self.loadClientSnapshot, client_id,
                                            snapshot),
                                           (self.startClient, client)]
                 else:
-                    self.process_order = [(self.save, '', True),
-                                          (self.snapshot, '', snapshot),
+                    self.process_order = [self.save,
+                                          (self.snapshot, '', snapshot, True),
                                           (self.loadClientSnapshot, client_id,
                                            snapshot)]
                 break
@@ -2224,9 +2270,12 @@ class DummySession(OperatingSession):
         self.is_dummy = True
         
     def dummyLoadAndTemplate(self, session_full_name, template_name):
-        self.process_order = [(self.load, session_full_name), (self.saveSessionTemplate, template_name, True)]
+        self.process_order = [(self.load, session_full_name),
+                              (self.saveSessionTemplate, template_name, True)]
         self.nextFunction()
         
     def dummyDuplicate(self, session_to_load, new_session_full_name):
-        self.process_order = [(self.load, session_to_load), (self.duplicate, new_session_full_name), self.duplicateOnlyDone]
+        self.process_order = [(self.load, session_to_load),
+                              (self.duplicate, new_session_full_name),
+                              self.duplicateOnlyDone]
         self.nextFunction()

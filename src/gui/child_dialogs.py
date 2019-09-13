@@ -963,6 +963,7 @@ class StopClientNoSaveDialog(ChildDialog):
 
         if self.client:
             text = self.ui.label.text() % self.client.prettierName()
+            self.ui.label.setText(text)
             
         self._signaler.client_status_changed.connect(
             self.serverUpdatesClientStatus)

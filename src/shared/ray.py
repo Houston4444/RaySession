@@ -71,6 +71,7 @@ class ServerStatus:
     CLOSE    = 10
     SNAPSHOT = 11
     REWIND   = 12
+    WAIT_USER = 13
 
 
 class NSMMode:
