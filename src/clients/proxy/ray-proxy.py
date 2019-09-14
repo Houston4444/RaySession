@@ -511,7 +511,6 @@ class Proxy(QObject):
             
         if self.is_finishable:
             if not proxy_dialog.isVisible():
-                #sys.exit(0)
                 app.quit()
         else:
             duration = time.time() - self.process_start_time

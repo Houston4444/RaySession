@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>349</width>
-    <height>268</height>
+    <width>353</width>
+    <height>302</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;We have no possibility to save some of presents clients.&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;So, it's preferable that you close yourself these clients,&lt;br/&gt;probably by closing there windows.&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Please close yourself the programs with this save icon:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Some active clients do not offer any save possibility !&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;Therefore, it is best that you close these clients yourself,&lt;br/&gt;probably by closing their windows and saving changes.&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Please close yourself the programs with this save icon:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -77,7 +77,7 @@
    <item>
     <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>You've got 2 minutes !</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You've got 2 minutes !&lt;br/&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;You can do it without closing this dialog window.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

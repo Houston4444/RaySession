@@ -385,9 +385,11 @@ class OperatingSession(Session):
         self.timer_quit.timeout.connect(self.timerQuitTimeOut)
         self.clients_to_quit = []
         
-        self.timer_waituser = QTimer()
-        self.timer_waituser.setInterval(120000)
-        self.timer_waituser.timeout.connect(self.timerWaituserTimeOut)
+        self.timer_waituser_progress = QTimer()
+        self.timer_waituser_progress.setInterval(500)
+        self.timer_waituser_progress.timeout.connect(
+            self.timerWaituserProgressTimeOut)
+        self.timer_wu_progress_n = 0
         
         self.osc_path     = None
         self.osc_args     = None
@@ -444,11 +446,16 @@ class OperatingSession(Session):
             
             if self.timer_redondant:
                 self.timer.start()
+                if self.timer_waituser_progress.isActive():
+                    self.timer_wu_progress_n = 0
+                    self.timer_waituser_progress.start()
             
         if not self.expected_clients:
             self.timer.setSingleShot(True)
             self.timer.stop()
             self.timer.start(0)
+            
+            self.timer_waituser_progress.stop()
     
     def cleanExpected(self):
         if self.expected_clients:
@@ -512,10 +519,14 @@ class OperatingSession(Session):
         if not self.clients_to_quit:
             self.timer_quit.stop()
     
-    def timerWaituserTimeOut(self):
+    def timerWaituserProgressTimeOut(self):
         if not self.expected_clients:
-            self.nextFunction()
-            return
+            self.timer_waituser_progress.stop()
+        
+        self.timer_wu_progress_n += 1
+        
+        ratio = float(self.timer_wu_progress_n / 240)
+        self.sendGui('/ray/gui/server_progress', ratio)
         
     def checkExternalsStates(self):
         has_externals = False
@@ -695,14 +706,6 @@ class OperatingSession(Session):
         
         self.sendGuiMessage(_translate('GUIMSG', "Session saved."))
         self.message("Session saved.")
-        
-        #server = self.getServer()
-        #if (not prevent_snapshot
-                #and server and server.option_snapshots
-                #and not self.snapshoter.isAutoSnapshotPrevented()
-                #and self.snapshoter.hasChanges()):
-            ## add snapshot at the beginning of process_order
-            #self.process_order.insert(0, (self.snapshot))
             
         self.nextFunction()
     
@@ -773,16 +776,13 @@ class OperatingSession(Session):
         
         for client in self.clients:
             if client.isRunning() and client.warning_no_save:
-                #if (client.isCapableOf(':optional-gui:')
-                    #and client.executable_path == 'ray-proxy':
-                        #client.sendToSelfAddress('/nsm/client/hide_optional-gui')
                 self.expected_clients.append(client)
                 has_nosave_clients = True
         
         if has_nosave_clients:
             self.setServerStatus(ray.ServerStatus.WAIT_USER)
-        
-        self.timer_waituser.start()
+            self.timer_wu_progress_n = 0
+            self.timer_waituser_progress.start()
         
         # Timer (2mn) is restarted if an expected client has been closed
         self.waitAndGoTo(120000, self.nextFunction, ray.WaitFor.STOP, True)
