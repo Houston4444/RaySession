@@ -798,10 +798,14 @@ class MainWindow(QMainWindow):
             self.ui.actionDuplicateSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(False)
-
+        
         if server_status == ray.ServerStatus.OFF:
             if self.terminate_request:
                 self._daemon_manager.stop()
+                
+        if server_status == ray.ServerStatus.WAIT_USER:
+            dialog = child_dialogs.WaitingCloseUserDialog(self)
+            dialog.exec()
 
     def serverTrashAdd(self, client_data):
         prettier_name = client_data.name

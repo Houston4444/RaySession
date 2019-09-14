@@ -61,7 +61,8 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_snapshot_progress.py \
 	    src/gui/ui_stop_client.py \
 	    src/gui/ui_stop_client_no_save.py \
-	    src/gui/ui_template_slot.py
+	    src/gui/ui_template_slot.py \
+	    src/gui/ui_waiting_close_user.py
 
 src/gui/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@

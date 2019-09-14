@@ -31,6 +31,7 @@ import ui_client_trash
 import ui_daemon_url
 import ui_edit_executable
 import ui_snapshot_progress
+import ui_waiting_close_user
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -1058,6 +1059,16 @@ class DaemonUrlWindow(ChildDialog):
     def getUrl(self):
         return self.ui.lineEdit.text()
 
+
+class WaitingCloseUserDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_waiting_close_user.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+    def serverStatusChanged(self, server_status):
+        if server_status != ray.ServerStatus.WAIT_USER:
+            self.accept()
 
 class ErrorDialog(ChildDialog):
     def __init__(self, parent, osc_args):
