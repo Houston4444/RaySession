@@ -495,7 +495,7 @@ class MainWindow(QMainWindow):
         if not client:
             return
         
-        if client.warning_no_save:
+        if client.warning_no_save and client.check_last_save:
             dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
             dialog.exec()
             if not dialog.result():
@@ -520,14 +520,16 @@ class MainWindow(QMainWindow):
         self.toDaemon('/ray/client/stop', client_id)
 
     def statusBarPressed(self):
-        if self._session.server_status not in (
+        status = self._session.server_status
+        
+        if status not in (
                 ray.ServerStatus.PRECOPY,
                 ray.ServerStatus.COPY,
-                ray.ServerStatus.SNAPSHOT):
+                ray.ServerStatus.SNAPSHOT,
+                ray.ServerStatus.WAIT_USER):
             return
         
-        if self._session.server_status in (ray.ServerStatus.PRECOPY,
-                                           ray.ServerStatus.COPY):
+        if status in (ray.ServerStatus.PRECOPY, ray.ServerStatus.COPY):
             if not self.server_copying:
                 return
 
@@ -539,8 +541,12 @@ class MainWindow(QMainWindow):
 
             self.toDaemon('/ray/server/abort_copy')
         
-        elif self._session.server_status == ray.ServerStatus.SNAPSHOT:
+        elif status == ray.ServerStatus.SNAPSHOT:
             self.showSnapshotProgressDialog()
+            
+        elif status == ray.ServerStatus.WAIT_USER:
+            dialog = child_dialogs.WaitingCloseUserDialog(self)
+            dialog.exec()
 
     def abortCopyClient(self, client_id):
         if not self.server_copying:

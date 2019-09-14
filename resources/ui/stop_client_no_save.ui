@@ -30,7 +30,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;We have no possibility to save the client &lt;span style=&quot; font-weight:600;&quot;&gt;%s&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;For this reason, it's preferable that you close yourself this client,&lt;br/&gt;saving its changes or not.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;We have no possibility to save the client &lt;span style=&quot; font-weight:600;&quot;&gt;%s&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;For this reason, it's preferable that you close yourself this client,&lt;br/&gt;probably by closing its window, saving its changes or not.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -53,7 +53,7 @@
    <item>
     <widget class="QCheckBox" name="checkBox">
      <property name="text">
-      <string>Don't prevent to stop this client again !</string>
+      <string>Don't prevent to stop this client again (discouraged)</string>
      </property>
     </widget>
    </item>

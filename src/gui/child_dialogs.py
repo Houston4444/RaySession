@@ -965,7 +965,9 @@ class StopClientNoSaveDialog(ChildDialog):
         if self.client:
             text = self.ui.label.text() % self.client.prettierName()
             self.ui.label.setText(text)
-            
+        
+        self.ui.checkBox.stateChanged.connect(self.checkBoxClicked)
+        
         self._signaler.client_status_changed.connect(
             self.serverUpdatesClientStatus)
     
@@ -976,6 +978,10 @@ class StopClientNoSaveDialog(ChildDialog):
         if status in (ray.ClientStatus.STOPPED, ray.ClientStatus.REMOVED):
             self.reject()
             return
+        
+    def checkBoxClicked(self, state):
+        self.client.check_last_save = not bool(state)
+        self.client.sendPropertiesToDaemon()
 
 class SnapShotProgressDialog(ChildDialog):
     def __init__(self, parent):
