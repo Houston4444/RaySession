@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QSize, QFile
 
 import ray
 from gui_server_thread import GUIServerThread
-from gui_tools import clientStatusString, _translate
+from gui_tools import clientStatusString, _translate, isDarkTheme
 import child_dialogs
 import snapshots_dialog
 
@@ -96,7 +96,7 @@ class ClientSlot(QFrame):
             QIcon.Off)
 
         # choose button colors
-        if self.palette().brush(2, QPalette.WindowText).color().lightness() > 128:
+        if isDarkTheme(self):
             startIcon = QIcon()
             startIcon.addPixmap(
                 QPixmap(':scalable/breeze-dark/media-playback-start'),

@@ -7,13 +7,20 @@
     <x>0</x>
     <y>0</y>
     <width>349</width>
-    <height>340</height>
+    <height>268</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Snapshots Informations</string>
+   <string>Close clients yourself !</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;We have no possibility to save some of presents clients.&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;So, it's preferable that you close yourself these clients,&lt;br/&gt;probably by closing there windows.&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Please close yourself the programs with this save icon:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
@@ -30,23 +37,12 @@
       </spacer>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButton">
-       <property name="styleSheet">
-        <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
-QToolButton {border: none}</string>
-       </property>
+      <widget class="QLabel" name="labelSaveIcon">
        <property name="text">
-        <string>...</string>
+        <string/>
        </property>
-       <property name="icon">
-        <iconset resource="../resources.qrc">
-         <normaloff>:/scalable/breeze/document-nosave.svg</normaloff>:/scalable/breeze/document-nosave.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>48</width>
-         <height>48</height>
-        </size>
+       <property name="pixmap">
+        <pixmap resource="../resources.qrc">:/scalable/breeze/document-nosave.svg</pixmap>
        </property>
       </widget>
      </item>
@@ -66,9 +62,25 @@ QToolButton {border: none}</string>
     </layout>
    </item>
    <item>
-    <widget class="QLabel" name="label">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;We have no possibility to save some of presents clients.&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;So, it's prefferable that you close yourself these clients,&lt;br/&gt;probably by closing there windows.&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Please close yourself the following programs:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>You've got 2 minutes !</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
      </property>
     </widget>
    </item>
@@ -86,29 +98,9 @@ QToolButton {border: none}</string>
     </spacer>
    </item>
    <item>
-    <widget class="QLabel" name="labelClients">
-     <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Program1&lt;br/&gt;Program2&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
     <widget class="QCheckBox" name="checkBox">
      <property name="text">
-      <string>Do not show this message again</string>
+      <string>Do not show this message again (discouraged)</string>
      </property>
      <property name="checked">
       <bool>true</bool>

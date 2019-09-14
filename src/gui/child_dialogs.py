@@ -4,13 +4,13 @@ import time
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QTreeWidgetItem,
     QCompleter, QMessageBox, QFileDialog, QWidget)
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import Qt, QTimer
 
 import ray
 from gui_server_thread import GUIServerThread
 from gui_tools import (default_session_root, ErrDaemon, _translate,
-                       CommandLineArgs, RS)
+                       CommandLineArgs, RS, isDarkTheme)
 
 import ui_open_session
 import ui_new_session
@@ -1065,6 +1065,10 @@ class WaitingCloseUserDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_waiting_close_user.Ui_Dialog()
         self.ui.setupUi(self)
+        
+        if isDarkTheme(self):
+            self.ui.labelSaveIcon.setPixmap(
+                QPixmap(':scalable/breeze-dark/document-nosave.svg'))
         
     def serverStatusChanged(self, server_status):
         if server_status != ray.ServerStatus.WAIT_USER:

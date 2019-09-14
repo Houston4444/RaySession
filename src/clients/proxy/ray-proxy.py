@@ -42,7 +42,6 @@ def signalHandler(sig, frame):
 
 def ifDebug(string):
     if debug:
-        #print(string, file=sys.stderr)
         sys.stderr.write(string + '\n')
 
 
@@ -385,7 +384,6 @@ class Proxy(QObject):
     
     def setSaveSignal(self, int_signal):
         self.save_signal = int_signal
-        print('jfi', int_signal)
         self.sendWarningNoSave()
         
     def setStopSignal(self, int_signal):
@@ -628,10 +626,6 @@ class Proxy(QObject):
     
     def sendWarningNoSave(self):
         dangerous_save = int(self._config_file_used and not self.save_signal)
-        print(self.config_file)
-        print(bool(self.config_file in ray.shellLineToArgs(self.arguments_line)))
-        print(self.save_signal)
-            
         server.sendToDaemon('/nsm/client/warning_no_save', dangerous_save)
     
     def startProcess(self):

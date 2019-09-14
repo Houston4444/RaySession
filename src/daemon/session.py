@@ -372,6 +372,7 @@ class OperatingSession(Session):
         self.wait_for = ray.WaitFor.NONE
         
         self.timer = QTimer()
+        self.timer_redondant = False
         self.expected_clients = []
         
         self.timer_launch = QTimer()
@@ -383,6 +384,10 @@ class OperatingSession(Session):
         self.timer_quit.setInterval(100)
         self.timer_quit.timeout.connect(self.timerQuitTimeOut)
         self.clients_to_quit = []
+        
+        self.timer_waituser = QTimer()
+        self.timer_waituser.setInterval(120000)
+        self.timer_waituser.timeout.connect(self.timerWaituserTimeOut)
         
         self.osc_path     = None
         self.osc_args     = None
@@ -401,10 +406,10 @@ class OperatingSession(Session):
         self.osc_args     = args
         self.osc_src_addr = src_addr
     
-    def waitAndGoTo(self, duration, follow, wait_for, single_shot=True):
+    def waitAndGoTo(self, duration, follow, wait_for, redondant=False):
         self.timer.stop()
         
-        #we need to delete timer to change the timeout connect
+        # we need to delete timer to change the timeout connect
         del self.timer
         self.timer = QTimer()
         
@@ -424,6 +429,8 @@ class OperatingSession(Session):
                 self.sendGuiMessage(
                     _translate('GUIMSG', 'waiting for clients to die...'))
             
+            self.timer_redondant = redondant
+            
             self.wait_for = wait_for
             self.timer.setSingleShot(True)
             self.timer.timeout.connect(follow)
@@ -434,6 +441,10 @@ class OperatingSession(Session):
     def endTimerIfLastExpected(self, client):
         if client in self.expected_clients:
             self.expected_clients.remove(client)
+            
+            if self.timer_redondant:
+                self.timer.start()
+            
         if not self.expected_clients:
             self.timer.setSingleShot(True)
             self.timer.stop()
@@ -501,6 +512,11 @@ class OperatingSession(Session):
         if not self.clients_to_quit:
             self.timer_quit.stop()
     
+    def timerWaituserTimeOut(self):
+        if not self.expected_clients:
+            self.nextFunction()
+            return
+        
     def checkExternalsStates(self):
         has_externals = False
         
@@ -586,7 +602,7 @@ class OperatingSession(Session):
     # then, when timer is timeout or when all client replied, 
     # save_step1 is launched.
         
-    def save(self, from_client_id='', prevent_snapshot=False):
+    def save(self, from_client_id=''):
         if not self.path:
             self.nextFunction()
             return
@@ -601,11 +617,9 @@ class OperatingSession(Session):
                 self.expected_clients.append(client)
             client.save()
                 
-        self.waitAndGoTo(10000,
-                         (self.save_step1, prevent_snapshot),
-                         ray.WaitFor.REPLY)
+        self.waitAndGoTo(10000, self.save_step1, ray.WaitFor.REPLY)
             
-    def save_step1(self, prevent_snapshot):
+    def save_step1(self):
         self.cleanExpected()
         
         if not self.path:
@@ -759,16 +773,19 @@ class OperatingSession(Session):
         
         for client in self.clients:
             if client.isRunning() and client.warning_no_save:
+                #if (client.isCapableOf(':optional-gui:')
+                    #and client.executable_path == 'ray-proxy':
+                        #client.sendToSelfAddress('/nsm/client/hide_optional-gui')
                 self.expected_clients.append(client)
-                #self.clients_to_quit.append(client)
-                #self.timer_quit.start()
                 has_nosave_clients = True
         
         if has_nosave_clients:
             self.setServerStatus(ray.ServerStatus.WAIT_USER)
         
-        # user has 2 minutes to close (and save) the no-save clients 
-        self.waitAndGoTo(120000, self.nextFunction, ray.WaitFor.STOP)
+        self.timer_waituser.start()
+        
+        # Timer (2mn) is restarted if an expected client has been closed
+        self.waitAndGoTo(120000, self.nextFunction, ray.WaitFor.STOP, True)
     
     def close(self):
         self.sendGuiMessage(

@@ -3,7 +3,7 @@ import os
 import sys
 from PyQt5.QtCore import QSettings, QSize
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QPalette
 
 import ray
 
@@ -45,6 +45,11 @@ def initGuiTools():
         settings.value('default_session_root',
                        "%s/Ray Sessions" % (os.getenv('HOME')),
                         type=str))
+
+def isDarkTheme(widget):
+    return bool(
+        widget.palette().brush(2, QPalette.WindowText).color().lightness()
+        > 128)
 
 def dirname(*args):
     return os.path.dirname(*args)
