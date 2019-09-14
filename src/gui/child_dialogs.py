@@ -1076,9 +1076,18 @@ class WaitingCloseUserDialog(ChildDialog):
             self.ui.labelSaveIcon.setPixmap(
                 QPixmap(':scalable/breeze-dark/document-nosave.svg'))
         
+        #self.ui.checkBox.setChecked(
+            #bool(RS.settings.value(
+                #'hide_wait_close_user_dialog', False, type=bool)))
+        
+        #self.ui.checkBox.clicked.connect(self.checkBoxClicked)
+        
     def serverStatusChanged(self, server_status):
         if server_status != ray.ServerStatus.WAIT_USER:
             self.accept()
+            
+    #def checkBoxClicked(self, state):
+        #RS.settings.setValue('hide_wait_close_user_dialog', bool(state))
 
 class ErrorDialog(ChildDialog):
     def __init__(self, parent, osc_args):

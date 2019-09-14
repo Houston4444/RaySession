@@ -567,7 +567,7 @@ class MainWindow(QMainWindow):
 
     def renameSession(self, new_session_name):
         self.toDaemon('/ray/session/rename', new_session_name)
-
+    
     def showClientTrashDialog(self, client_id):
         for trashed_client in self._session.trashed_clients:
             if trashed_client.data.client_id == client_id:
@@ -811,7 +811,9 @@ class MainWindow(QMainWindow):
                 
         if server_status == ray.ServerStatus.WAIT_USER:
             dialog = child_dialogs.WaitingCloseUserDialog(self)
+            self.activateWindow()
             dialog.exec()
+            
 
     def serverTrashAdd(self, client_data):
         prettier_name = client_data.name
