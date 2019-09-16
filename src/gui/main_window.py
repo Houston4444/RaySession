@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
             self.statusBarPressed)
         self.ui.stackedWidgetSessionName.name_changed.connect(
             self.renameSession)
-
+        
         # set control menu
         self.controlMenu = QMenu()
         self.controlMenu.addAction(self.ui.actionShowMenuBar)
@@ -138,10 +138,12 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonControl2.setMenu(self.controlMenu)
         
         # set favorites menu
-        self.favorites_menu = QMenu()
+        self.favorites_menu = QMenu(_translate('menu', 'Favorites'))
+        self.favorites_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
         self.ui.toolButtonFavorites.setPopupMode(QToolButton.InstantPopup)
         self.ui.toolButtonFavorites.setMenu(self.favorites_menu)
-
+        self.ui.menuAdd.addMenu(self.favorites_menu)
+        
         # set trash menu
         self.trashMenu = QMenu()
         self.ui.trashButton.setPopupMode(QToolButton.InstantPopup)
@@ -792,6 +794,8 @@ class MainWindow(QMainWindow):
         self.ui.actionAddExecutable.setEnabled(not close_or_off)
         self.ui.toolButtonFavorites.setEnabled(
             bool(self._session.favorite_list and not close_or_off))
+        self.favorites_menu.setEnabled(
+            bool(self._session.favorite_list and not close_or_off))
         self.ui.actionOpenSessionFolder.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
 
@@ -879,13 +883,14 @@ class MainWindow(QMainWindow):
     def updateFavoritesMenu(self):
         self.favorites_menu.clear()
         
-        self.ui.toolButtonFavorites.setEnabled(
-            bool(self._session.favorite_list
-                 and not self._session.server_status in (
-                     ray.ServerStatus.OFF,
-                     ray.ServerStatus.CLOSE,
-                     ray.ServerStatus.OUT_SAVE,
-                     ray.ServerStatus.OUT_SNAPSHOT)))
+        enable = bool(self._session.favorite_list
+                      and not self._session.server_status in (
+                        ray.ServerStatus.OFF,
+                        ray.ServerStatus.CLOSE,
+                        ray.ServerStatus.OUT_SAVE,
+                        ray.ServerStatus.OUT_SNAPSHOT))
+        
+        self.ui.toolButtonFavorites.setEnabled(enable)
         
         for favorite in self._session.favorite_list:
             act_app = self.favorites_menu.addAction(
