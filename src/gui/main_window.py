@@ -770,18 +770,24 @@ class MainWindow(QMainWindow):
         close_or_off = bool(
             server_status in (
                 ray.ServerStatus.CLOSE,
+                ray.ServerStatus.OUT_SAVE,
+                ray.ServerStatus.OUT_SNAPSHOT,
                 ray.ServerStatus.OFF))
         ready = bool(server_status == ray.ServerStatus.READY)
 
         self.ui.actionSaveSession.setEnabled(ready)
         self.ui.actionCloseSession.setEnabled(ready)
-        self.ui.actionAbortSession.setEnabled(not close_or_off)
+        self.ui.actionAbortSession.setEnabled(
+            not bool(server_status in (ray.ServerStatus.CLOSE,
+                                       ray.ServerStatus.OFF)))
         self.ui.actionDuplicateSession.setEnabled(not close_or_off)
         self.ui.actionReturnToAPreviousState.setEnabled(not close_or_off)
         self.ui.actionRenameSession.setEnabled(ready)
         self.ui.actionSaveTemplateSession.setEnabled(not close_or_off)
         self.ui.actionAddApplication.setEnabled(not close_or_off)
         self.ui.actionAddExecutable.setEnabled(not close_or_off)
+        self.ui.toolButtonFavorites.setEnabled(
+            bool(self._session.favorite_list and not close_or_off))
         self.ui.actionOpenSessionFolder.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
 
@@ -857,6 +863,9 @@ class MainWindow(QMainWindow):
         
     def updateFavoritesMenu(self):
         self.favorites_menu.clear()
+        
+        self.ui.toolButtonFavorites.setEnabled(
+            bool(self._session.favorite_list))
         
         for favorite in self._session.favorite_list:
             act_app = self.favorites_menu.addAction(

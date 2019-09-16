@@ -72,7 +72,9 @@ def serverStatusString(server_status):
         ray.ServerStatus.CLOSE   : _translate('server status', "close"),
         ray.ServerStatus.SNAPSHOT: _translate('server_status', "snapshot"),
         ray.ServerStatus.REWIND  : _translate('server_status', "rewind"),
-        ray.ServerStatus.WAIT_USER : _translate('server_status', "waiting")}
+        ray.ServerStatus.WAIT_USER : _translate('server_status', "waiting"),
+        ray.ServerStatus.OUT_SAVE: _translate('server_status', "save"),
+        ray.ServerStatus.OUT_SNAPSHOT: _translate('server_status', "snapshot")}
 
     if not 0 <= server_status < len(server_status_strings):
         return _translate('server status', "invalid")

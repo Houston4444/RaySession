@@ -332,6 +332,9 @@ QToolButton {border: none}</string>
                  </item>
                  <item>
                   <widget class="QToolButton" name="toolButtonFavorites">
+                   <property name="toolTip">
+                    <string>Favorite Applications</string>
+                   </property>
                    <property name="styleSheet">
                     <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
 QToolButton {border: none}</string>
