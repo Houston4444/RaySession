@@ -798,6 +798,9 @@ class MainWindow(QMainWindow):
         self.ui.stackedWidgetSessionName.setEditable(
             ready and self._session.is_renameable)
         
+        self.ui.trashButton.setEnabled(bool(self._session.trashed_clients)
+                                       and not close_or_off)
+        
         if (CommandLineArgs.under_nsm
                 and not CommandLineArgs.out_daemon
                 and ready
@@ -838,7 +841,15 @@ class MainWindow(QMainWindow):
         trashed_client = TrashedClient(client_data, act_x_trashed)
 
         self._session.trashed_clients.append(trashed_client)
-        self.ui.trashButton.setEnabled(True)
+        print('koff', prettier_name, self._session.server_status)
+        self.ui.trashButton.setEnabled(
+            bool(not self._session.server_status in (
+                        ray.ServerStatus.OFF,
+                        ray.ServerStatus.OUT_SAVE,
+                        ray.ServerStatus.WAIT_USER,
+                        ray.ServerStatus.OUT_SNAPSHOT,
+                        ray.ServerStatus.CLOSE)))
+        #self.ui.trashButton.setEnabled(True)
 
     def serverTrashRemove(self, client_id):
         for trashed_client in self._session.trashed_clients:

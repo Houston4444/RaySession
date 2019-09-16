@@ -357,7 +357,6 @@ class SnapshotsDialog(ChildDialog):
         self.main_snap_group = SnapGroup()
         
         self.ui.snapshotsList.setHeaderHidden(True)
-        #self.ui.snapshotsList.setRootIsDecorated(False)
         self.ui.snapshotsList.currentItemChanged.connect(
             self.currentItemChanged)
         
