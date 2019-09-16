@@ -535,6 +535,18 @@ class OscServerThread(ClientCommunicating):
     def raySessionAbort(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/session/cancel_close', '')
+    def raySessionCancelClose(self, path, args, types, src_addr):
+        if not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "No session to cancel close.")
+            return False
+    
+    @ray_method('/ray/session/skip_wait_user', '')
+    def raySessionSkipWaitUser(self, path, args, types, src_addr):
+        if not self.server_status == ray.ServerStatus.WAIT_USER:
+            return False
+        
     @ray_method('/nsm/server/abort', '')
     def nsmServerAbort(self, path, args, types, src_addr):
         if self.server_status == ray.ServerStatus.PRECOPY:

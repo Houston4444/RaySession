@@ -1080,6 +1080,9 @@ class WaitingCloseUserDialog(ChildDialog):
             self.ui.labelSaveIcon.setPixmap(
                 QPixmap(':scalable/breeze-dark/document-nosave.svg'))
         
+        self.ui.pushButtonOk.setFocus(True)
+        self.ui.pushButtonUndo.clicked.connect(self.undoClose)
+        self.ui.pushButtonSkip.clicked.connect(self.skip)
         #self.ui.checkBox.setChecked(
             #bool(RS.settings.value(
                 #'hide_wait_close_user_dialog', False, type=bool)))
@@ -1089,7 +1092,13 @@ class WaitingCloseUserDialog(ChildDialog):
     def serverStatusChanged(self, server_status):
         if server_status != ray.ServerStatus.WAIT_USER:
             self.accept()
-            
+    
+    def undoClose(self):
+        self.toDaemon('/ray/session/cancel_close')
+    
+    def skip(self):
+        self.toDaemon('/ray/session/skip_wait_user')
+        
     #def checkBoxClicked(self, state):
         #RS.settings.setValue('hide_wait_close_user_dialog', bool(state))
 

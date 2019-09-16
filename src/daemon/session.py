@@ -630,7 +630,7 @@ class OperatingSession(Session):
             if client.active:
                 self.expected_clients.append(client)
             client.save()
-                
+            
         self.waitAndGoTo(10000, self.save_step1, ray.WaitFor.REPLY)
             
     def save_step1(self):
@@ -1941,6 +1941,25 @@ class SignaledSession(OperatingSession):
             self.file_copier.abort(self.nextFunction, [])
         else:
             self.nextFunction()
+    
+    def ray_session_cancel_close(self, path, args, src_addr):
+        if not self.process_order:
+            return 
+        
+        self.timer.stop()
+        self.timer_waituser_progress.stop()
+        self.process_order.clear()
+        self.cleanExpected()
+        self.setServerStatus(ray.ServerStatus.READY)
+        
+    def ray_session_skip_wait_user(self, path, args, src_addr):
+        if not self.process_order:
+            return 
+        
+        self.timer.stop()
+        self.timer_waituser_progress.stop()
+        self.cleanExpected()
+        self.nextFunction()
     
     @session_operation
     def ray_session_duplicate(self, path, args, src_addr):
