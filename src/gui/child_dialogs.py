@@ -716,7 +716,11 @@ class ClientTrashDialog(ChildDialog):
         self.ui.pushButtonRemove.clicked.connect(self.removeClient)
 
     def serverStatusChanged(self, server_status):
-        if server_status in (ray.ServerStatus.CLOSE, ray.ServerStatus.OFF):
+        if server_status in (ray.ServerStatus.CLOSE,
+                             ray.ServerStatus.OFF,
+                             ray.ServerStatus.OUT_SAVE,
+                             ray.ServerStatus.OUT_SNAPSHOT,
+                             ray.ServerStatus.WAIT_USER):
             self.reject()
 
     def removeClient(self):

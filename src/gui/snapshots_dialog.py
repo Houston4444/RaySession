@@ -475,7 +475,8 @@ class SessionSnapshotsDialog(SnapshotsDialog):
         self.toDaemon('/ray/session/ask_auto_snapshot')
         self.toDaemon('/ray/session/list_snapshots')
         
-        self.ui.checkBoxAutoSnapshot.stateChanged.connect(self.setAutoSnapshot)
+        self.ui.checkBoxAutoSnapshot.stateChanged.connect(
+            self.setAutoSnapshot)
         
     def takeSnapshot(self):
         dialog = TakeSnapshotDialog(self)

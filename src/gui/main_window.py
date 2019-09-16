@@ -526,6 +526,7 @@ class MainWindow(QMainWindow):
                 ray.ServerStatus.PRECOPY,
                 ray.ServerStatus.COPY,
                 ray.ServerStatus.SNAPSHOT,
+                ray.ServerStatus.OUT_SNAPSHOT,
                 ray.ServerStatus.WAIT_USER):
             return
         
@@ -541,7 +542,8 @@ class MainWindow(QMainWindow):
 
             self.toDaemon('/ray/server/abort_copy')
         
-        elif status == ray.ServerStatus.SNAPSHOT:
+        elif status in (ray.ServerStatus.SNAPSHOT,
+                        ray.ServerStatus.OUT_SNAPSHOT):
             self.showSnapshotProgressDialog()
             
         elif status == ray.ServerStatus.WAIT_USER:
@@ -743,7 +745,8 @@ class MainWindow(QMainWindow):
         self.ui.frameCurrentSession.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
         
-        if server_status == ray.ServerStatus.SNAPSHOT:
+        if server_status in (ray.ServerStatus.SNAPSHOT,
+                             ray.ServerStatus.OUT_SNAPSHOT):
             self.timer_snapshot.start()
         elif self.timer_snapshot.isActive():
             self.timer_snapshot.stop()
@@ -770,6 +773,7 @@ class MainWindow(QMainWindow):
         close_or_off = bool(
             server_status in (
                 ray.ServerStatus.CLOSE,
+                ray.ServerStatus.WAIT_USER,
                 ray.ServerStatus.OUT_SAVE,
                 ray.ServerStatus.OUT_SNAPSHOT,
                 ray.ServerStatus.OFF))
@@ -865,7 +869,12 @@ class MainWindow(QMainWindow):
         self.favorites_menu.clear()
         
         self.ui.toolButtonFavorites.setEnabled(
-            bool(self._session.favorite_list))
+            bool(self._session.favorite_list
+                 and not self._session.server_status in (
+                     ray.ServerStatus.OFF,
+                     ray.ServerStatus.CLOSE,
+                     ray.ServerStatus.OUT_SAVE,
+                     ray.ServerStatus.OUT_SNAPSHOT)))
         
         for favorite in self._session.favorite_list:
             act_app = self.favorites_menu.addAction(

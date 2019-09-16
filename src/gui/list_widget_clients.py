@@ -464,16 +464,24 @@ class ListWidgetClients(QListWidget):
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
+            
+        QListWidget.mousePressEvent(self, event)
     
     def contextMenuEvent(self, event):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
             
-            menu = QMenu()
-            fav_menu = QMenu(_translate('menu', 'Favorites'), menu)
-            fav_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
-            
-            if self._session:
+            if (self._session
+                    and not self._session.server_status in (
+                        ray.ServerStatus.OFF,
+                        ray.ServerStatus.CLOSE,
+                        ray.ServerStatus.OUT_SAVE,
+                        ray.ServerStatus.WAIT_USER,
+                        ray.ServerStatus.OUT_SNAPSHOT)):
+                menu = QMenu()
+                fav_menu = QMenu(_translate('menu', 'Favorites'), menu)
+                fav_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
+                
                 for favorite in self._session.favorite_list:
                     act_app = fav_menu.addAction(
                         ray.getAppIcon(favorite.icon, self), favorite.name)
@@ -489,5 +497,5 @@ class ListWidgetClients(QListWidget):
                 act_selected = menu.exec(self.mapToGlobal(event.pos()))
             event.accept()
             return
-
-        QListWidget.mousePressEvent(self, event)
+        
+        
