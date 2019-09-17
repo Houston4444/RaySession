@@ -1946,12 +1946,6 @@ class SignaledSession(OperatingSession):
                               self.closeDone]
     
     def ray_session_abort(self, path, args, src_addr):
-        if (self.hasServer()
-                    and self.getServer().getServerStatus()
-                        == ray.ServerStatus.PRECOPY):
-                self.file_copier.abort()
-                return
-        
         if not self.path:
             self.serverSend(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to abort." )
@@ -1960,8 +1954,39 @@ class SignaledSession(OperatingSession):
         self.wait_for = ray.WaitFor.NONE
         self.timer.stop()
         
+        # Non Session Manager can't abort if an operation pending
+        # RS can and it would be a big regression to remove this feature
+        # So before to abort we need to send an error reply
+        # to the last server control message
+        # if an operation pending.
+        if self.process_order and self.osc_path.startswith('/nsm/server/'):
+            short_path = self.osc_path.rpartition('/')[2]
+            
+            if short_path == 'save':
+                self.saveError(ray.Err.CREATE_FAILED)
+            elif short_path == 'open':
+                self.loadError(ray.Err.SESSION_LOCKED)
+            elif short_path == 'new':
+                self.oscReply("/error", self.osc_path, ray.Err.CREATE_FAILED, 
+                          "Could not create the session directory")
+            elif short_path == 'duplicate':
+                self.duplicateAborted(self.osc_args[0])
+            elif short_path in ('close', 'abort', 'quit'):
+                # let the current close works here
+                self.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
+                      "An operation pending.")
+                return 
+        
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.close, self.abortDone]
+        
+        if self.file_copier.isActive():
+            self.file_copier.abort(self.nextFunction, [])
+        else:
+            self.nextFunction()
+    
+    def nsm_server_quit(self, path, args, src_addr):
+        self.process_order = [self.close, self.exitNow]
         
         if self.file_copier.isActive():
             self.file_copier.abort(self.nextFunction, [])

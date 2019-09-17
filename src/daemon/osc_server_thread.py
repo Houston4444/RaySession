@@ -298,7 +298,7 @@ class OscServerThread(ClientCommunicating):
         
     @ray_method('/nsm/server/quit', '')
     def nsmServerQuit(self, path, args, types, src_addr):
-        sys.exit(0)
+        pass
     
     @ray_method('/ray/server/abort_copy', '')
     def rayServerAbortCopy(self, path, args, types, src_addr):
@@ -533,7 +533,9 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/session/abort', '')
     def raySessionAbort(self, path, args, types, src_addr):
-        pass
+        if self.server_status == ray.ServerStatus.PRECOPY:
+            signaler.copy_aborted.emit()
+            return False
     
     @ray_method('/ray/session/cancel_close', '')
     def raySessionCancelClose(self, path, args, types, src_addr):
@@ -549,13 +551,13 @@ class OscServerThread(ClientCommunicating):
         
     @ray_method('/nsm/server/abort', '')
     def nsmServerAbort(self, path, args, types, src_addr):
-        if self.server_status == ray.ServerStatus.PRECOPY:
-            signaler.copy_aborted.emit()
-            return False
-        
         if not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to abort." )
+            
+            if self.server_status == ray.ServerStatus.PRECOPY:
+                # normally no session path if PRECOPY status
+                signaler.copy_aborted.emit()
             return False
     
     @ray_method('/ray/session/duplicate', 's')
