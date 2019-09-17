@@ -40,6 +40,8 @@ class NSMThread(ServerThread):
             return 
             
         if reply_path == '/nsm/server/announce':
+            print('jfi')
+            print(args)
             self.server_capabilities = args[3]
 
     @make_method('/nsm/client/open', 'sss')

@@ -103,6 +103,7 @@ class ProxyDialog(QMainWindow):
         self.ui.comboNoSave.addItem(
             _translate('proxy', "2 - Accept windows close"))
         self.ui.comboNoSave.setCurrentIndex(2)
+        self.ui.comboNoSave.activated.connect(self.comboNoSaveChanged)
         self.ui.labelNoSaveLevel.setToolTip(self.ui.comboNoSave.toolTip())
         
         self.ui.comboStopSig.addItem('SIGTERM', int(signal.SIGTERM))
@@ -236,6 +237,10 @@ class ProxyDialog(QMainWindow):
             
         stop_signal = int(stop_signal)
         self.proxy.setStopSignal(stop_signal)
+    
+    def comboNoSaveChanged(self, index):
+        self.proxy.no_save_level = index
+        self.proxy.sendNoSaveLevel()
     
     def allowSaveTest(self, text=None):
         if text is None:
@@ -656,8 +661,10 @@ class Proxy(QObject):
     
     def sendNoSaveLevel(self):
         if ':no-save-level:' in server.getServerCapabilities():
-            server.sendToDaemon('/nsm/client/no_save_level',
-                                self.no_save_level)
+            nsl = self.no_save_level
+            if self.save_signal:
+                nsl = 0
+            server.sendToDaemon('/nsm/client/no_save_level', nsl)
     
     def startProcess(self):
         os.environ['NSM_CLIENT_ID'] = self.full_client_id

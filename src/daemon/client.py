@@ -1005,11 +1005,12 @@ class Client(ServerSender):
             "The client \"%s\" at \"%s\" " % (self.name, self.addr.url)
             + "informs us it's ready to receive commands.")
         
+        print('yalou path', path)
         self.send(src_addr, "/reply", path, 
                   "Well hello, stranger. Welcome to the party."
                   if is_new else "Howdy, what took you so long?",
                   ray.APP_TITLE,
-                  ":server-control:broadcast:optional-gui:no-save-level")
+                  ":server-control:broadcast:optional-gui:no-save-level:")
         
         self.sendGuiClientProperties()
         self.setStatus(ray.ClientStatus.OPEN)
