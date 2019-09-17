@@ -1008,7 +1008,8 @@ class Client(ServerSender):
         self.send(src_addr, "/reply", path, 
                   "Well hello, stranger. Welcome to the party."
                   if is_new else "Howdy, what took you so long?",
-                  ray.APP_TITLE, ":server-control:broadcast:optional-gui:" )
+                  ray.APP_TITLE,
+                  ":server-control:broadcast:optional-gui:no-save-level")
         
         self.sendGuiClientProperties()
         self.setStatus(ray.ClientStatus.OPEN)

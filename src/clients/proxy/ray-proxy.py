@@ -404,7 +404,7 @@ class Proxy(QObject):
     
     def setSaveSignal(self, int_signal):
         self.save_signal = int_signal
-        self.sendWarningNoSave()
+        self.sendNoSaveLevel()
         
     def setStopSignal(self, int_signal):
         self.stop_signal = int_signal
@@ -654,8 +654,10 @@ class Proxy(QObject):
 
         self.startProcess()
     
-    def sendWarningNoSave(self):
-        server.sendToDaemon('/nsm/client/no_save_level', self.no_save_level)
+    def sendNoSaveLevel(self):
+        if ':no-save-level:' in server.getServerCapabilities():
+            server.sendToDaemon('/nsm/client/no_save_level',
+                                self.no_save_level)
     
     def startProcess(self):
         os.environ['NSM_CLIENT_ID'] = self.full_client_id
@@ -673,7 +675,7 @@ class Proxy(QObject):
         
         self._config_file_used = bool(config_file
                                       and config_file in arguments)
-        self.sendWarningNoSave()
+        self.sendNoSaveLevel()
         
         self.process.start(self.executable, arguments)
         self.timer_open.start()

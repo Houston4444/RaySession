@@ -23,6 +23,7 @@ class NSMThread(ServerThread):
         self.signaler = signaler
         self.daemon_address = daemon_address
         self.debug = debug
+        self.server_capabilities = ""
         
         global instance
         instance = self
@@ -30,6 +31,16 @@ class NSMThread(ServerThread):
     @staticmethod
     def instance():
         return instance
+    
+    @make_method('/reply', None)
+    def serverReply(self, path, args):
+        if args:
+            reply_path = args[0]
+        else:
+            return 
+            
+        if reply_path == '/nsm/server/announce':
+            self.server_capabilities = args[3]
 
     @make_method('/nsm/client/open', 'sss')
     def nsmClientOpen(self, path, args):
@@ -65,10 +76,13 @@ class NSMThread(ServerThread):
             'serverOSC::%s_receives %s, %s' %
             (self.name, path, str(args)))
         self.signaler.hide_optional_gui.emit()
-
+    
+    def getServerCapabilities(self):
+        return self.server_capabilities
+    
     def ifDebug(self, string):
         if self.debug:
-            print(string, file=sys.stderr)
+            sys.stderr.write("%s\n" % string)
 
     def sendToDaemon(self, *args):
         self.send(self.daemon_address, *args)
