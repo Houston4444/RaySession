@@ -102,7 +102,6 @@ class ProxyDialog(QMainWindow):
             _translate('proxy', "1 - Transmit missing save"))
         self.ui.comboNoSave.addItem(
             _translate('proxy', "2 - Accept windows close"))
-        self.ui.comboNoSave.activated.connect(self.comboNoSaveChanged)
         self.ui.comboNoSave.setCurrentIndex(2)
         
         self.ui.comboStopSig.addItem('SIGTERM', int(signal.SIGTERM))
@@ -141,8 +140,6 @@ class ProxyDialog(QMainWindow):
             bool(not self.process_is_running and self.fields_allow_start))
 
     def updateValuesFromProxyFile(self):
-        #proxy_file = proxy.proxy_file
-
         self.ui.lineEditExecutable.setText(proxy.executable)
         self.ui.lineEditConfigFile.setText(proxy.config_file)
         self.ui.lineEditArguments.setText(proxy.arguments_line)
@@ -150,6 +147,9 @@ class ProxyDialog(QMainWindow):
         save_index = self.ui.comboSaveSig.findData(proxy.save_signal)
         self.ui.comboSaveSig.setCurrentIndex(save_index)
 
+        self.ui.comboNoSave.setCurrentIndex(proxy.no_save_level)
+        self.ui.comboNoSave.setEnabled(not bool(proxy.save_signal))
+        
         stop_index = self.ui.comboStopSig.findData(proxy.stop_signal)
         self.ui.comboStopSig.setCurrentIndex(stop_index)
 
@@ -220,9 +220,6 @@ class ProxyDialog(QMainWindow):
         save_signal = int(save_signal)
         self.proxy.setSaveSignal(save_signal)
     
-    def comboNoSaveChanged(self, index):
-        pass
-    
     def comboStopSigChanged(self, index):
         stop_signal = signal.SIGTERM
         
@@ -250,6 +247,7 @@ class ProxyDialog(QMainWindow):
         config_file = self.ui.lineEditConfigFile.text()
         arguments_line = self.ui.lineEditArguments.text()
         save_signal = self.ui.comboSaveSig.currentData()
+        no_save_level = self.ui.comboNoSave.currentIndex()
         stop_signal = self.ui.comboStopSig.currentData()
         wait_window = self.ui.checkBoxWaitWindow.isChecked()
 
@@ -258,6 +256,7 @@ class ProxyDialog(QMainWindow):
             config_file,
             arguments_line,
             save_signal,
+            no_save_level,
             stop_signal,
             wait_window)
 
@@ -354,6 +353,7 @@ class Proxy(QObject):
         self.arguments_line = ''
         self.config_file = ""
         self.save_signal = 0
+        self.no_save_level = 2
         self.stop_signal = int(signal.SIGTERM)
         self.label = ""
         
@@ -425,6 +425,7 @@ class Proxy(QObject):
         self.config_file = cte.attribute('config_file')
         self.arguments_line = cte.attribute('arguments')
         save_signal = cte.attribute('save_signal')
+        no_save_level = cte.attribute('no_save_level')
         stop_signal = cte.attribute('stop_signal')
 
         wait_window = cte.attribute('wait_window')
@@ -438,7 +439,12 @@ class Proxy(QObject):
 
         if save_signal.isdigit():
             self.save_signal = int(save_signal)
-            
+        
+        if no_save_level.isdigit():
+            self.no_save_level = int(no_save_level)
+        else:
+            self.no_save_level = 2
+        
         versions = [file_version, '0.7.1']
         versions.sort()
         
@@ -464,6 +470,7 @@ class Proxy(QObject):
             config_file,
             arguments_line,
             save_signal,
+            no_save_level,
             stop_signal,
             wait_window):
         try:
@@ -481,6 +488,7 @@ class Proxy(QObject):
         p.setAttribute('arguments', arguments_line)
         p.setAttribute('config_file', config_file)
         p.setAttribute('save_signal', str(int(save_signal)))
+        p.setAttribute('no_save_level', str(no_save_level))
         p.setAttribute('stop_signal', str(int(stop_signal)))
         p.setAttribute('wait_window', wait_window)
 
@@ -496,11 +504,12 @@ class Proxy(QObject):
         self.readFile()
     
     def updateValues(self, executable, config_file, arguments_line,
-                     save_signal, stop_signal, wait_window):
+                     save_signal, no_save_level, stop_signal, wait_window):
         self.executable = executable
         self.config_file = config_file
         self.arguments_line = arguments_line
         self.save_signal = save_signal
+        self.no_save_level = no_save_level
         self.stop_signal = stop_signal
         self.wait_window = wait_window
     
@@ -510,13 +519,15 @@ class Proxy(QObject):
             self.config_file,
             self.arguments_line,
             self.save_signal,
+            self.no_save_level,
             self.stop_signal,
             self.wait_window)
     
     def updateAndSave(self, executable, config_file, arguments_line,
-                      save_signal, stop_signal, wait_window):
-        self.updateValues(executable, config_file, arguments_line,
-                          save_signal, stop_signal, wait_window)
+                      save_signal, no_save_level, stop_signal, wait_window):
+        self.updateValues(executable, config_file, arguments_line, 
+                          save_signal, no_save_level,
+                          stop_signal, wait_window)
         self.saveProxyFile()
     
     def processFinished(self, exit_code):
@@ -638,8 +649,7 @@ class Proxy(QObject):
         self.startProcess()
     
     def sendWarningNoSave(self):
-        dangerous_save = int(self._config_file_used and not self.save_signal)
-        server.sendToDaemon('/nsm/client/warning_no_save', dangerous_save)
+        server.sendToDaemon('/nsm/client/warning_no_save', self.no_save_level)
     
     def startProcess(self):
         os.environ['NSM_CLIENT_ID'] = self.full_client_id
