@@ -44,10 +44,14 @@ def session_operation(func):
             return
         
         if sess.file_copier.isActive():
-            sess.send(src_addr, "/error", path, ray.Err.COPY_RUNNING, 
-                      "ray-daemon is copying files.\n"
-                        + "Wait copy finish or abort copy,\n"
-                        + "and restart operation !\n")
+            if path.startswith('/nsm/server/'):
+                sess.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
+                      "An operation pending.")
+            else:
+                sess.send(src_addr, "/error", path, ray.Err.COPY_RUNNING, 
+                        "ray-daemon is copying files.\n"
+                            + "Wait copy finish or abort copy,\n"
+                            + "and restart operation !\n")
             return
         
         sess.rememberOscArgs(path, osc_args, src_addr)
@@ -889,8 +893,6 @@ class OperatingSession(Session):
         self.oscReply("/reply", self.osc_path, "Created." )
         self.sendGui("/ray/gui/session/name",
                      self.name, self.path)
-        
-        self.oscReply("/reply", self.osc_path, "Session created")
         self.nextFunction()
     
     def newDone(self):
@@ -976,7 +978,11 @@ class OperatingSession(Session):
     
     def duplicateAborted(self, new_session_full_name):
         self.process_order.clear()
-        self.oscReply('/ray/net_daemon/duplicate_state', 1)
+        if self.osc_path.startswith('/nsm/server/'):
+            self.oscReply("/error", self.osc_path,
+                          ray.Err.NO_SUCH_FILE, "No such file.")
+        else:
+            self.oscReply('/ray/net_daemon/duplicate_state', 1)
         self.setServerStatus(ray.ServerStatus.READY)
     
     def saveSessionTemplate(self, template_name, net=False):
@@ -1821,25 +1827,25 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, "/reply_sessions_list", *session_list)
     
     def nsm_server_list(self, path, args, src_addr):
-        if not self.root:
-            return
-        
         session_list = []
         
-        for root, dirs, files in os.walk(self.root):
-            #exclude hidden files and dirs
-            files   = [f for f in files if not f.startswith('.')]
-            dirs[:] = [d for d in dirs  if not d.startswith('.')]
-            
-            if root == self.root:
-                continue
-            
-            for file in files:
-                if file in ('raysession.xml', 'session.nsm'):
-                    if not already_send:
-                        basefolder = root.replace(self.root + '/', '', 1)
-                        self.send(src_addr, '/reply', '/nsm/server/list',
-                                  basefolder)
+        if self.root:
+            for root, dirs, files in os.walk(self.root):
+                #exclude hidden files and dirs
+                files   = [f for f in files if not f.startswith('.')]
+                dirs[:] = [d for d in dirs  if not d.startswith('.')]
+                
+                if root == self.root:
+                    continue
+                
+                for file in files:
+                    if file in ('raysession.xml', 'session.nsm'):
+                        if not already_send:
+                            basefolder = root.replace(self.root + '/', '', 1)
+                            self.send(src_addr, '/reply', '/nsm/server/list',
+                                    basefolder)
+        
+        self.send(src_addr, path, ray.Err.OK, "Done.")
     
     @session_operation
     def ray_server_new_session(self, path, args, src_addr):

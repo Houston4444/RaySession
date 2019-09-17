@@ -575,10 +575,7 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/nsm/server/duplicate', 's')
     def nsmServerDuplicate(self, path, args, types, src_addr):
-        if self.is_nsm_locked:
-            return False
-        
-        if not self.session.path:
+        if self.is_nsm_locked or not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to duplicate.")
             return False
@@ -631,9 +628,16 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/nsm/server/add', 's')
     def nsmServerAdd(self, path, args, types, src_addr):
+        executable_path = args[0]
+        
         if not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
+            return False
+        
+        if '/' in executable_path:
+            self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
+                "Absolute paths are not permitted. Clients must be in $PATH")
             return False
     
     @ray_method('/ray/session/add_proxy', 's')

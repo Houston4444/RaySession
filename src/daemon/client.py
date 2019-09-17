@@ -246,8 +246,7 @@ class Client(ServerSender):
         self.sendGuiClientProperties()
         
     def hasError(self):
-        if self._reply_errcode:
-            return self._reply_errcode
+        return bool(self._reply_errcode)
         
     def errorCode(self):
         return self._reply_errcode
@@ -508,12 +507,12 @@ class Client(ServerSender):
             self.setStatus(ray.ClientStatus.STOPPED)
             self.pending_command = ray.Command.NONE
             
-            #if self.session.osc_src_addr:
-                ##Finally, not sure that it's a good idea to display error 
-                ##dialog in this case.
-                #self.session.oscReply("/error", self.session.osc_path, 
-                                      #ray.Err.LAUNCH_FAILED, 
-                                      #"Failed to launch process!")
+            if self.session.osc_src_addr:
+                #Finally, not sure that it's a good idea to display error 
+                #dialog in this case.
+                self.session.oscReply("/error", self.session.osc_path, 
+                                      ray.Err.LAUNCH_FAILED, 
+                                      "Failed to launch process!")
             
             if self.session.wait_for:
                 self.session.endTimerIfLastExpected(self)
@@ -984,7 +983,7 @@ class Client(ServerSender):
                 "Client is using incompatible and more recent " 
                 + "API version %i.%i" % (major, minor))
             self.send(src_addr, "/error", path, ray.Err.INCOMPATIBLE_API, 
-                      "Server is using an incompatible API version." )
+                      "Server is using an incompatible API version.")
             return
         
         self.capabilities = capabilities
@@ -1005,7 +1004,6 @@ class Client(ServerSender):
             "The client \"%s\" at \"%s\" " % (self.name, self.addr.url)
             + "informs us it's ready to receive commands.")
         
-        print('yalou path', path)
         self.send(src_addr, "/reply", path, 
                   "Well hello, stranger. Welcome to the party."
                   if is_new else "Howdy, what took you so long?",
