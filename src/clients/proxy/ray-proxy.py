@@ -103,6 +103,7 @@ class ProxyDialog(QMainWindow):
         self.ui.comboNoSave.addItem(
             _translate('proxy', "2 - Accept windows close"))
         self.ui.comboNoSave.setCurrentIndex(2)
+        self.ui.labelNoSaveLevel.setToolTip(self.ui.comboNoSave.toolTip())
         
         self.ui.comboStopSig.addItem('SIGTERM', int(signal.SIGTERM))
         self.ui.comboStopSig.addItem('SIGINT', int(signal.SIGINT))
@@ -184,6 +185,11 @@ class ProxyDialog(QMainWindow):
                     qfile.copy(config_file)
 
         self.config_file = os.path.relpath(config_file)
+        if (proxy.session_name
+            and (self.config_file == proxy.session_name
+                 or self.config_file.startswith("%s." % proxy.session_name))):
+            self.config_file = self.config_file.replace(proxy.session_name,
+                                                        "$RAY_SESSION_NAME")
         self.ui.lineEditConfigFile.setText(self.config_file)
 
     def lineEditExecutableEdited(self, text):
