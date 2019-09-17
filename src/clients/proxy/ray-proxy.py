@@ -96,6 +96,15 @@ class ProxyDialog(QMainWindow):
         self.ui.comboSaveSig.activated.connect(self.comboSaveSigChanged)
         self.ui.comboSaveSig.setCurrentIndex(0)
         
+        self.ui.comboNoSave.addItem(
+            _translate('proxy', "0 - Ignore missing save"))
+        self.ui.comboNoSave.addItem(
+            _translate('proxy', "1 - Transmit missing save"))
+        self.ui.comboNoSave.addItem(
+            _translate('proxy', "2 - Accept windows close"))
+        self.ui.comboNoSave.activated.connect(self.comboNoSaveChanged)
+        self.ui.comboNoSave.setCurrentIndex(2)
+        
         self.ui.comboStopSig.addItem('SIGTERM', int(signal.SIGTERM))
         self.ui.comboStopSig.addItem('SIGINT', int(signal.SIGINT))
         self.ui.comboStopSig.addItem('SIGHUP', int(signal.SIGHUP))
@@ -197,6 +206,8 @@ class ProxyDialog(QMainWindow):
             self.ui.lineEditArguments.setText('')
 
     def comboSaveSigChanged(self, index):
+        self.ui.comboNoSave.setEnabled(bool(index == 0))
+        
         save_signal = 0
         
         if index == 1:
@@ -208,7 +219,10 @@ class ProxyDialog(QMainWindow):
             
         save_signal = int(save_signal)
         self.proxy.setSaveSignal(save_signal)
-            
+    
+    def comboNoSaveChanged(self, index):
+        pass
+    
     def comboStopSigChanged(self, index):
         stop_signal = signal.SIGTERM
         

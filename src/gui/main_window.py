@@ -828,7 +828,6 @@ class MainWindow(QMainWindow):
                 
         if server_status == ray.ServerStatus.WAIT_USER:
             dialog = child_dialogs.WaitingCloseUserDialog(self)
-            self.activateWindow()
             dialog.exec()
             
 
