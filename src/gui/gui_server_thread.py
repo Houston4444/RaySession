@@ -201,11 +201,10 @@ class GUIServerThread(liblo.ServerThread):
         client_id = args[0]
         self._signaler.client_still_running.emit(client_id)
         
-    @ray_method('/ray/client/warning_no_save', 'si')
+    @ray_method('/ray/client/no_save_level', 'si')
     def rayClientWarningNoSave(self, path, args, types, src_addr):
-        client_id, int_warning_no_save = args
-        self._signaler.client_warning_no_save.emit(client_id,
-                                                   bool(int_warning_no_save))
+        client_id, warning_no_save = args
+        self._signaler.client_no_save_level.emit(client_id, warning_no_save)
 
     @ray_method('/ray/gui/server_progress', 'f')
     def guiServerProgress(self, path, args, types, src_addr):

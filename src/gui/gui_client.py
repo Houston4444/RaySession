@@ -29,7 +29,7 @@ class Client(object):
         self.gui_visible = False
         self.has_dirty = False
         self.dirty_state = True
-        self.warning_no_save = False
+        self.no_save_level = 0
         self.last_save = time.time()
 
         self.widget = self._main_win.createClientWidget(self)
@@ -61,9 +61,9 @@ class Client(object):
         self.dirty_state = bool_dirty
         self.widget.setDirtyState(bool_dirty)
 
-    def setWarningNoSaveState(self, bool_warning):
-        self.warning_no_save = bool_warning
-        self.widget.setWarningNoSaveState(bool_warning)
+    def setNoSaveLevel(self, no_save_level):
+        self.no_save_level = no_save_level
+        self.widget.setNoSaveLevel(no_save_level)
     
     def setProgress(self, progress):
         self.widget.setProgress(progress)
@@ -136,7 +136,8 @@ class Client(object):
             self.setGuiEnabled()
 
     def hasBeenRecentlySaved(self):
-        if (time.time() - self.last_save) >= 60:  # last save more than 60 seconds ago
+        if (time.time() - self.last_save) >= 60:  
+            # last save more than 60 seconds ago
             return False
 
         return True

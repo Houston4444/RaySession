@@ -345,8 +345,8 @@ class ClientSlot(QFrame):
         else:
             self.ui.saveButton.setIcon(self.savedIcon)
 
-    def setWarningNoSaveState(self, bool_warning):
-        if bool_warning:
+    def setNoSaveLevel(self, no_save_level):
+        if no_save_level:
             self.ui.saveButton.setIcon(self.noSaveIcon)
         else:
             self.ui.saveButton.setIcon(self.saveIcon)

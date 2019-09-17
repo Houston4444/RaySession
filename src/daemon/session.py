@@ -783,7 +783,7 @@ class OperatingSession(Session):
         nosave_clients_n = 0
         
         for client in self.clients:
-            if client.isRunning() and client.warning_no_save:
+            if client.isRunning() and client.no_save_level:
                 self.expected_clients.append(client)
                 nosave_clients_n += 1
         
@@ -794,7 +794,7 @@ class OperatingSession(Session):
                 for client in self.expected_clients:
                     self.desktops_memory.findAndClose(client.pid)
         
-        duration = 1000 * math.sqrt(nosave_clients_n)
+        duration = int(1000 * math.sqrt(nosave_clients_n))
         self.waitAndGoTo(duration, self.closeNoSaveClients_step1,
                          ray.WaitFor.STOP)
     
@@ -803,7 +803,7 @@ class OperatingSession(Session):
         has_nosave_clients = False
         
         for client in self.clients:
-            if client.isRunning() and client.warning_no_save:
+            if client.isRunning() and client.no_save_level:
                 self.expected_clients.append(client)
                 has_nosave_clients = True
         
@@ -1767,13 +1767,13 @@ class SignaledSession(OperatingSession):
             net_daemon_url, net_session_root = args
             client.setNetworkProperties(net_daemon_url, net_session_root)
     
-    def nsm_client_warning_no_save(self, path, args, src_addr):
+    def nsm_client_no_save_level(self, path, args, src_addr):
         client = self.getClientByAddress(src_addr)
         if client and client.isCapableOf(':warning-no-save:'):
-            client.warning_no_save = bool(args[0])
+            client.no_save_level = args[0]
             
-            self.sendGui('/ray/client/warning_no_save',
-                         client.client_id, args[0])
+            self.sendGui('/ray/client/no_save_level',
+                         client.client_id, client.no_save_level)
     
     def ray_server_abort_copy(self, path, args, src_addr):
         self.file_copier.abort()

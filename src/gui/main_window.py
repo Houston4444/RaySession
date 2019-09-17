@@ -158,8 +158,8 @@ class MainWindow(QMainWindow):
         sg.client_has_gui.connect(self.serverSetsClientHasGui)
         sg.client_gui_visible_sig.connect(self.serverSetsClientGuiState)
         sg.client_dirty_sig.connect(self.serverSetsClientDirtyState)
-        sg.client_warning_no_save.connect(
-            self.serverSetClientWarningNoSaveState)
+        sg.client_no_save_level.connect(
+            self.serverSetClientNoSaveLevel)
         sg.client_switched.connect(self.serverSwitchesClient)
         sg.client_progress.connect(self.serverClientProgress)
         sg.client_still_running.connect(self.serverStillRunningClient)
@@ -497,7 +497,7 @@ class MainWindow(QMainWindow):
         if not client:
             return
         
-        if client.warning_no_save and client.check_last_save:
+        if client.no_save_level and client.check_last_save:
             dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
             dialog.exec()
             if not dialog.result():
@@ -683,8 +683,8 @@ class MainWindow(QMainWindow):
     def serverSetsClientDirtyState(self, client_id, bool_dirty):
         self._session.setClientDirtyState(client_id, bool_dirty)
         
-    def serverSetClientWarningNoSaveState(self, client_id, bool_warning):
-        self._session.setClientWarningNoSaveState(client_id, bool_warning)
+    def serverSetClientNoSaveLevel(self, client_id, no_save_level):
+        self._session.setClientNoSaveLevel(client_id, no_save_level)
 
     def serverStillRunningClient(self, client_id):
         self._session.clientIsStillRunning(client_id)

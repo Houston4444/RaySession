@@ -199,8 +199,8 @@ class ClientCommunicating(liblo.ServerThread):
     def nsmClientNetworkProperties(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/nsm/client/warning_no_save', 'i')
-    def nsmClientWarningNoSave(self, path, args, types, src_addr):
+    @ray_method('/nsm/client/no_save_level', 'i')
+    def nsmClientNoSaveLevel(self, path, args, types, src_addr):
         pass
     
     

@@ -655,7 +655,7 @@ class Proxy(QObject):
         self.startProcess()
     
     def sendWarningNoSave(self):
-        server.sendToDaemon('/nsm/client/warning_no_save', self.no_save_level)
+        server.sendToDaemon('/nsm/client/no_save_level', self.no_save_level)
     
     def startProcess(self):
         os.environ['NSM_CLIENT_ID'] = self.full_client_id

@@ -54,7 +54,7 @@ class Client(ServerSender):
     auto_start       = True
     start_gui_hidden = False
     check_last_save  = True
-    warning_no_save  = False
+    no_save_level    = 0
     is_external      = False
     sent_to_gui      = False
     
