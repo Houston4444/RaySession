@@ -780,21 +780,21 @@ class OperatingSession(Session):
     
     def closeNoSaveClients(self):
         self.cleanExpected()
-        nosave_clients_n = 0
+        nosave2_clients_n = 0
         
         for client in self.clients:
-            if client.isRunning() and client.no_save_level:
+            if client.isRunning() and client.no_save_level == 2:
                 self.expected_clients.append(client)
-                nosave_clients_n += 1
+                nosave2_clients_n += 1
         
-        if nosave_clients_n:
+        if nosave2_clients_n:
             server = self.getServer()
             if server and server.option_has_wmctrl:
                 self.desktops_memory.setActiveWindowList()
                 for client in self.expected_clients:
                     self.desktops_memory.findAndClose(client.pid)
         
-        duration = int(1000 * math.sqrt(nosave_clients_n))
+        duration = int(1000 * math.sqrt(nosave2_clients_n))
         self.waitAndGoTo(duration, self.closeNoSaveClients_step1,
                          ray.WaitFor.STOP)
     
