@@ -1,4 +1,5 @@
 import functools
+import math
 import os
 import random
 import shutil
@@ -778,8 +779,27 @@ class OperatingSession(Session):
         self.nextFunction()
     
     def closeNoSaveClients(self):
-        self.expected_clients.clear()
+        self.cleanExpected()
+        nosave_clients_n = 0
         
+        for client in self.clients:
+            if client.isRunning() and client.warning_no_save:
+                self.expected_clients.append(client)
+                nosave_clients_n += 1
+        
+        if nosave_clients_n:
+            server = self.getServer()
+            if server and server.option_has_wmctrl:
+                self.desktops_memory.setActiveWindowList()
+                for client in self.expected_clients:
+                    self.desktops_memory.findAndClose(client.pid)
+        
+        duration = 1000 * math.sqrt(nosave_clients_n)
+        self.waitAndGoTo(duration, self.closeNoSaveClients_step1,
+                         ray.WaitFor.STOP)
+    
+    def closeNoSaveClients_step1(self):
+        self.cleanExpected()
         has_nosave_clients = False
         
         for client in self.clients:

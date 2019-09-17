@@ -4,6 +4,11 @@ import os
 import subprocess
 import sys
 
+from PyQt5.QtCore import QProcess
+
+import ray
+
+
 class WindowProperties(object):
     id      = ""
     desktop = 0
@@ -47,17 +52,21 @@ class DesktopsMemory(object):
         
         ppid = pid
         
-        while ppid > daemon_pid and ppid > 1:
-            try:
-                ppid = int(subprocess.check_output(['ps', '-o', 'ppid=',
-                                                    '-p', str(ppid)]))
-            except:
-                self.non_daemon_pids.append(pid)
-                return False
-            
-        if ppid == daemon_pid:
+        if ray.isPidChildOf(pid, daemon_pid):
             self.daemon_pids.append(pid)
             return True
+        
+        #while ppid > daemon_pid and ppid > 1:
+            #try:
+                #ppid = int(subprocess.check_output(['ps', '-o', 'ppid=',
+                                                    #'-p', str(ppid)]))
+            #except:
+                #self.non_daemon_pids.append(pid)
+                #return False
+            
+        #if ppid == daemon_pid:
+            #self.daemon_pids.append(pid)
+            #return True
         
         self.non_daemon_pids.append(pid)
         return False
@@ -101,8 +110,10 @@ class DesktopsMemory(object):
                 
                 ignore_pid = False
                 
-                #fltk based apps don't send their pids to wmctrl, so if win seems to be one of these apps
-                #and app is running in the session, assume that this window is child of this ray-daemon
+                # fltk based apps don't send their pids to wmctrl,
+                # so if win seems to be one of these apps
+                # and app is running in the session,
+                # assume that this window is child of this ray-daemon
                 if pid == 0 and '.' in wclass:
                     class_name = wclass.split('.')[0]
                     
@@ -114,7 +125,6 @@ class DesktopsMemory(object):
                     if class_name in exceptions:
                         if self.isNameInSession(exceptions[class_name]):
                             ignore_pid = True
-                
                 
                 if not (ignore_pid or self.isChildOfDaemon(pid)):
                     continue
@@ -199,3 +209,8 @@ class DesktopsMemory(object):
                 win.desktop = int(desktop)
             
             self.saved_windows.append(win)
+            
+    def findAndClose(self, pid):
+        for awin in self.active_window_list:
+            if ray.isPidChildOf(awin.pid, pid):
+                QProcess.startDetached('wmctrl', ['-i', '-c', awin.id])
