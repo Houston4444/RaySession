@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>353</width>
-    <height>264</height>
+    <height>272</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -98,6 +98,13 @@
     </spacer>
    </item>
    <item>
+    <widget class="QCheckBox" name="checkBox">
+     <property name="text">
+      <string>Do not show again</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <spacer name="horizontalSpacer_3">
@@ -118,7 +125,8 @@
         <string>Undo</string>
        </property>
        <property name="icon">
-        <iconset theme="edit-undo"/>
+        <iconset theme="edit-undo">
+         <normaloff>.</normaloff>.</iconset>
        </property>
       </widget>
      </item>
@@ -128,7 +136,8 @@
         <string>Ok</string>
        </property>
        <property name="icon">
-        <iconset theme="dialog-ok"/>
+        <iconset theme="dialog-ok">
+         <normaloff>.</normaloff>.</iconset>
        </property>
       </widget>
      </item>
@@ -138,7 +147,8 @@
         <string>Skip</string>
        </property>
        <property name="icon">
-        <iconset theme="go-next-skip"/>
+        <iconset theme="go-next-skip">
+         <normaloff>.</normaloff>.</iconset>
        </property>
       </widget>
      </item>

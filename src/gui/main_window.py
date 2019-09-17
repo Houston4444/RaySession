@@ -827,8 +827,10 @@ class MainWindow(QMainWindow):
                 self._daemon_manager.stop()
                 
         if server_status == ray.ServerStatus.WAIT_USER:
-            dialog = child_dialogs.WaitingCloseUserDialog(self)
-            dialog.exec()
+            if not RS.settings.value(
+                    'hide_wait_close_user_dialog', False, type=bool):
+                dialog = child_dialogs.WaitingCloseUserDialog(self)
+                dialog.exec()
             
 
     def serverTrashAdd(self, client_data):
@@ -852,7 +854,6 @@ class MainWindow(QMainWindow):
                         ray.ServerStatus.WAIT_USER,
                         ray.ServerStatus.OUT_SNAPSHOT,
                         ray.ServerStatus.CLOSE)))
-        #self.ui.trashButton.setEnabled(True)
 
     def serverTrashRemove(self, client_id):
         for trashed_client in self._session.trashed_clients:
