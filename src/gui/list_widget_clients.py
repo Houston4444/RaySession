@@ -247,7 +247,7 @@ class ClientSlot(QFrame):
 
     def updateStatus(self, status):
         self.ui.lineEditClientStatus.setText(clientStatusString(status))
-
+        
         if status in (
                 ray.ClientStatus.LAUNCH,
                 ray.ClientStatus.OPEN,
@@ -330,12 +330,8 @@ class ClientSlot(QFrame):
     def toggleGui(self):
         if not self.gui_visible:
             self.toDaemon('/ray/client/show_optional_gui', self.clientId())
-            # self.list_widget.clientShowGuiRequest.emit(self.clientId())
         else:
             self.toDaemon('/ray/client/hide_optional_gui', self.clientId())
-            #self.list_widget.clientHideGuiRequest.emit(self.clientId())
-
-        #self.gui_visible = not self.gui_visible
 
     def setDirtyState(self, bool_dirty):
         self.is_dirty_able = True

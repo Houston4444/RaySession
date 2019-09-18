@@ -492,9 +492,9 @@ class Client(ServerSender):
             self.setStatus(ray.ClientStatus.STOPPED)
                 
         self.pending_command = ray.Command.NONE
-        self.active          = False
-        self.pid             = 0
-        self.addr            = None
+        self.active = False
+        self.pid = 0
+        self.addr = None
         
         self.session.setRenameable(True)
         
@@ -528,9 +528,12 @@ class Client(ServerSender):
                              % self.name)
             self.sendToSelfAddress("/nsm/client/session_is_loaded")
     
+    def canSaveNow(self):
+        return bool(self.active and not self.no_save_level) 
+    
     def save(self):
         if self.isRunning():
-            if self.active:
+            if self.canSaveNow():
                 Terminal.message("Telling %s to save" % self.name)
                 self.sendToSelfAddress("/nsm/client/save")
                 

@@ -632,7 +632,7 @@ class OperatingSession(Session):
             if from_client_id and client.client_id == from_client_id:
                 continue
             
-            if client.active:
+            if client.canSaveNow():
                 self.expected_clients.append(client)
             client.save()
             
