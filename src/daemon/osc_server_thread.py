@@ -188,7 +188,8 @@ class ClientCommunicating(liblo.ServerThread):
             
             if not ray.areSameOscPort(client.addr.url, src_addr.url):
                 self.send(client.addr, liblo.Message(*args))
-                
+            
+            # TODO broadcast to slave daemons 
             #for gui_addr in self.gui_list:
                 ##also relay to attached GUI so that the broadcast can be
                 ##propagated to another NSMD instance

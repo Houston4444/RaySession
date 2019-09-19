@@ -636,11 +636,19 @@ class OperatingSession(Session):
                 self.expected_clients.append(client)
             client.save()
             
-        self.waitAndGoTo(10000, self.save_step1, ray.WaitFor.REPLY)
+        self.waitAndGoTo(10000, (self.save_step1, outing), ray.WaitFor.REPLY)
             
-    def save_step1(self):
+    def save_step1(self, outing=False):
         self.cleanExpected()
         
+        if outing:
+            for client in self.clients:
+                if client.hasError():
+                    self.oscReply('/error', self.osc_path,
+                                  ray.Err.GENERAL_ERROR,
+                                  "Some clients could not save")
+                    break
+                
         if not self.path:
             self.nextFunction()
             return
@@ -1566,7 +1574,6 @@ class OperatingSession(Session):
             for favorite in RS.favorites:
                 if (favorite.name == template_name
                         and favorite.factory == factory):
-                    print('naplus', favorite.name)
                     self.sendGui('/ray/gui/favorites/removed',
                                  favorite.name,
                                  int(favorite.factory))
@@ -1578,6 +1585,8 @@ class OperatingSession(Session):
         
         if client.auto_start:
             client.start()
+        else:
+            client.setStatus(ray.ClientStatus.STOPPED)
     
     def addClientTemplateAborted(self, client):
         self.removeClient(client)

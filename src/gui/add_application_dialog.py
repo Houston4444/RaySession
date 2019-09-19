@@ -180,8 +180,7 @@ class AddApplicationDialog(ChildDialog):
             icon_name = ''
 
             if '/' in template:
-                template_name = template.split('/')[0]
-                icon_name = template.split('/')[1]
+                template_name, slash, icon_name = template.partition('/')
                 
             if template_name in self.user_template_list:
                 continue
@@ -206,8 +205,7 @@ class AddApplicationDialog(ChildDialog):
             icon_name = ''
 
             if '/' in template:
-                template_name = template.split('/')[0]
-                icon_name = template.split('/')[1]
+                template_name, slash, icon_name = template.partition('/')
                 
             if template_name in self.factory_template_list:
                 continue

@@ -976,6 +976,7 @@ class StopClientNoSaveDialog(ChildDialog):
             self.ui.label.setText(text)
         
         self.ui.checkBox.stateChanged.connect(self.checkBoxClicked)
+        self.ui.pushButtonCancel.setFocus(True)
         
         self._signaler.client_status_changed.connect(
             self.serverUpdatesClientStatus)
@@ -991,6 +992,7 @@ class StopClientNoSaveDialog(ChildDialog):
     def checkBoxClicked(self, state):
         self.client.check_last_save = not bool(state)
         self.client.sendPropertiesToDaemon()
+
 
 class SnapShotProgressDialog(ChildDialog):
     def __init__(self, parent):
