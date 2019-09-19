@@ -898,11 +898,16 @@ class NewExecutableDialog(ChildDialog):
             self.ui.checkBoxProxy.isChecked() or self.text_will_accept)
 
     def closeNow(self):
-        if self.ui.lineEdit.text() in self.exec_list or self.ui.checkBoxProxy.isChecked():
+        if (self.ui.lineEdit.text() in self.exec_list
+                or self.ui.checkBoxProxy.isChecked()):
             self.accept()
 
     def serverStatusChanged(self, server_status):
-        if server_status in (ray.ServerStatus.CLOSE, ray.ServerStatus.OFF):
+        if server_status in (ray.ServerStatus.OUT_SAVE,
+                             ray.ServerStatus.OUT_SNAPSHOT,
+                             ray.ServerStatus.WAIT_USER,
+                             ray.ServerStatus.CLOSE,
+                             ray.ServerStatus.OFF):
             self.reject()
 
 
