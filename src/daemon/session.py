@@ -1664,6 +1664,11 @@ class SignaledSession(OperatingSession):
         client_name, capabilities, executable_path, major, minor, pid = args
         
         if self.wait_for == ray.WaitFor.STOP:
+            if path.startswith('/nsm/server/'):
+                # Error is wrong but compatible with NSM API
+                self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN, 
+                          "Sorry, but there's no session open "
+                          + "for this application to join.")
             return
         
         #we can't be absolutely sure that the announcer is the good one
@@ -1674,42 +1679,57 @@ class SignaledSession(OperatingSession):
                 client.serverAnnounce(path, args, src_addr, False)
                 break
         else:
-            n = 0
             for client in self.clients:
-                if (basename(client.executable_path) \
-                        == basename(executable_path)
-                    and not client.active
-                    and client.pending_command == ray.Command.START):
-                        n+=1
-                        if n>1:
-                            break
-                        
-            if n == 0:
+                if (not client.active and client.isRunning()
+                    and ray.isPidChildOf(pid, client.pid)):
+                        client.serverAnnounce(path, args, src_addr, False)
+                        break
+            else:
                 # Client launched externally from daemon
                 # by command : $:NSM_URL=url executable
                 client = self.newClient(args[2])
-                client.is_external = True
                 self.externals_timer.start()
                 client.serverAnnounce(path, args, src_addr, True)
-                return
+            
+            
+            
+            
+            #n = 0
+            #for client in self.clients:
+                #if (basename(client.executable_path) \
+                        #== basename(executable_path)
+                    #and not client.active
+                    #and client.pending_command == ray.Command.START):
+                        #n+=1
+                        #if n>1:
+                            #break
+                        
+            #if n == 0:
+                ## Client launched externally from daemon
+                ## by command : $:NSM_URL=url executable
+                #client = self.newClient(args[2])
+                #client.is_external = True
+                #self.externals_timer.start()
+                #client.serverAnnounce(path, args, src_addr, True)
+                #return
                 
-            if n == 1:
-                for client in self.clients:
-                    if (basename(client.executable_path) \
-                            == basename(executable_path)
-                        and not client.active
-                        and client.pending_command == ray.Command.START):
-                            client.serverAnnounce(path, args, src_addr, False)
-                            break
-            else:
-                for client in self.clients:
-                    if (not client.active
-                        and client.pending_command == ray.Command.START):
-                            if ray.isPidChildOf(pid, client.pid):
-                                client.serverAnnounce(path, args, 
-                                                      src_addr, False)
-                                break
-                
+            #elif n == 1:
+                #for client in self.clients:
+                    #if (basename(client.executable_path) \
+                            #== basename(executable_path)
+                        #and not client.active
+                        #and client.pending_command == ray.Command.START):
+                            #client.serverAnnounce(path, args, src_addr, False)
+                            #break
+            #else:
+                #for client in self.clients:
+                    #if (not client.active
+                        #and client.pending_command == ray.Command.START):
+                            #if ray.isPidChildOf(pid, client.pid):
+                                #client.serverAnnounce(path, args, 
+                                                      #src_addr, False)
+                                #break
+        
         if self.wait_for == ray.WaitFor.ANNOUNCE:
             self.endTimerIfLastExpected(client)
     

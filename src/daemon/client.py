@@ -255,8 +255,7 @@ class Client(ServerSender):
         return self._reply_message
     
     def isReplyPending(self):
-        if self.pending_command:
-            return self.pending_command
+        return bool(self.pending_command)
         
     def isDumbClient(self):
         return bool(not self.did_announce)
@@ -508,11 +507,14 @@ class Client(ServerSender):
             self.pending_command = ray.Command.NONE
             
             if self.session.osc_src_addr:
-                #Finally, not sure that it's a good idea to display error 
-                #dialog in this case.
+                error_message = "Failed to launch process!"
+                if not self.session.osc_path.startswith('/nsm/server/'):
+                    error_message = _translate('client',
+                                               "Failed to launch process !")
+                    
                 self.session.oscReply("/error", self.session.osc_path, 
                                       ray.Err.LAUNCH_FAILED, 
-                                      "Failed to launch process!")
+                                      error_message)
             
             if self.session.wait_for:
                 self.session.endTimerIfLastExpected(self)
@@ -964,7 +966,6 @@ class Client(ServerSender):
                                                      config_file.replace(
                                                         old_session_name, 
                                                         new_session_name)))
-                                            
                 file.close()
                         
             except:
@@ -979,6 +980,8 @@ class Client(ServerSender):
         client_name, capabilities, executable_path, major, minor, pid = args
         
         if self.pending_command in (ray.Command.QUIT, ray.Command.KILL):
+            # assume to not answer to a dying client.
+            # He will never know, or perhaps, it depends on beliefs.
             return
         
         if major > NSM_API_VERSION_MAJOR:
@@ -995,7 +998,8 @@ class Client(ServerSender):
         self.active       = True
         self.did_announce = True
         
-        if self.is_external:
+        if is_new:
+            self.is_external = True
             self.pid = pid
             self.running_executable = executable_path
         
@@ -1007,11 +1011,23 @@ class Client(ServerSender):
             "The client \"%s\" at \"%s\" " % (self.name, self.addr.url)
             + "informs us it's ready to receive commands.")
         
+        server = self.getServer()
+        if not server:
+            return 
+        
+        # if this daemon is under another NSM session
+        # do not enable server-control
+        # because new, open and duplicate are forbidden 
+        server_capabilities = "" 
+        if not server.is_nsm_locked:
+            server_capabilities += ":server-control"
+        server_capabilities += ":broadcast:optional-gui:no-save-level:"
+        
         self.send(src_addr, "/reply", path, 
                   "Well hello, stranger. Welcome to the party."
                   if is_new else "Howdy, what took you so long?",
                   ray.APP_TITLE,
-                  ":server-control:broadcast:optional-gui:no-save-level:")
+                  server_capabilities)
         
         self.sendGuiClientProperties()
         self.setStatus(ray.ClientStatus.OPEN)

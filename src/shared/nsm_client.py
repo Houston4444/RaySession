@@ -40,6 +40,7 @@ class NSMThread(ServerThread):
             return 
             
         if reply_path == '/nsm/server/announce':
+            print(args)
             self.server_capabilities = args[3]
 
     @make_method('/nsm/client/open', 'sss')
@@ -47,6 +48,7 @@ class NSMThread(ServerThread):
         self.ifDebug(
             'serverOSC::%s_receives %s, %s' %
             (self.name, path, str(args)))
+        print('aej', args)
         self.signaler.server_sends_open.emit(*args)
 
     @make_method('/nsm/client/save', '')

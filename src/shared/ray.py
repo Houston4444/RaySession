@@ -204,7 +204,6 @@ def isPidChildOf(child_pid, parent_pid):
         return False
 
     ppid = child_pid
-    this_pid = os.getpid()
     
     while ppid > parent_pid:
         try:
@@ -220,7 +219,7 @@ def isPidChildOf(child_pid, parent_pid):
                     ppid = int(ppid_str)
                     break
         else:
-            return
+            return False
 
     #while ppid != parent_pid and ppid > 1 and ppid != this_pid:
         #try:
