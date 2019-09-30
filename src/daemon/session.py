@@ -2271,7 +2271,9 @@ class SignaledSession(OperatingSession):
     
     def ray_client_save_as_template(self, path, args, src_addr):
         if self.file_copier.isActive():
-            self.send(src_addr, "/error", -13, "Impossible, copy running")
+            self.send(src_addr, "/error",
+                      ray.Err.COPY_RUNNING,
+                      _translate('error_message', "Impossible, copy running"))
             return
         
         for client in self.clients:

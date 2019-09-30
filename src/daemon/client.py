@@ -734,12 +734,12 @@ class Client(ServerSender):
         #security check
         if os.path.exists(xml_file):
             if not os.access(xml_file, os.W_OK):
+                # TODO send error
                 return
             
             if os.path.isdir(xml_file):
                 #should not be a dir, remove it !
                 subprocess.run('rm', '-R', xml_file)
-        
         
         if not os.path.isdir(TemplateRoots.user_clients):
             os.makedirs(TemplateRoots.user_clients)
@@ -764,8 +764,7 @@ class Client(ServerSender):
         if not content.tagName() == 'RAY-CLIENT-TEMPLATES':
             return
         
-        
-        #remove existing template if it has the same name as the new one
+        # remove existing template if it has the same name as the new one
         node = content.firstChild()
         while not node.isNull():
             if node.toElement().tagName() != 'Client-Template':
@@ -792,6 +791,10 @@ class Client(ServerSender):
         file = open(xml_file, 'w')
         file.write(xml.toString())
         file.close()
+        
+        self.sendGuiMessage(
+            _translate('message', 'Client template %s created')
+                % template_name)
     
     def saveAsTemplateAborted(self, template_name):
         self.setStatus(self.status)
