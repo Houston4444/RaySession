@@ -300,7 +300,7 @@ class Client(ServerSender):
         
         if (status == ray.ClientStatus.COPY
             or self.session.file_copier.isActive(self.client_id)):
-                self.sendGui("/ray/client/status", self.client_id, 
+                self.sendGui("/ray/gui/client/status", self.client_id, 
                              ray.ClientStatus.COPY)
     
     def getJackClientName(self):
@@ -522,7 +522,7 @@ class Client(ServerSender):
     
     def stoppedSinceLong(self):
         self.stopped_since_long = True
-        self.sendGui('/ray/client/still_running', self.client_id)
+        self.sendGui('/ray/gui/client/still_running', self.client_id)
     
     def tellClientSessionIsLoaded(self):
         if self.active and not self.isDumbClient():
@@ -572,7 +572,7 @@ class Client(ServerSender):
             self.terminate()
             self.setStatus(ray.ClientStatus.QUIT)
         else:
-            self.sendGui("/ray/client/status", self.client_id, 
+            self.sendGui("/ray/gui/client/status", self.client_id, 
                          ray.ClientStatus.REMOVED)
     
     def switch(self, new_client):
@@ -596,10 +596,10 @@ class Client(ServerSender):
         self.pending_command = ray.Command.OPEN
         self.setStatus(ray.ClientStatus.SWITCH)
             
-        self.sendGui("/ray/client/switch", old_client_id, self.client_id)
+        self.sendGui("/ray/gui/client/switch", old_client_id, self.client_id)
     
     def sendGuiClientProperties(self, removed=False):
-        ad = '/ray/client/update' if self.sent_to_gui else '/ray/client/new'
+        ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
             
         if removed:
             ad = '/ray/trash/add'
@@ -1044,7 +1044,7 @@ class Client(ServerSender):
         self.pending_command = ray.Command.OPEN
         
         if self.isCapableOf(":optional-gui:"):
-            self.sendGui("/ray/client/has_optional_gui", self.client_id)
+            self.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
             
             if self.start_gui_hidden:
                 self.send(src_addr, "/nsm/client/hide_optional_gui")

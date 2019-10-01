@@ -215,7 +215,7 @@ class Session(ServerSender):
         remove_item_list = []
         for i in range(len(self.clients)):
             if not self.clients[i].active:
-                self.sendGui("/ray/client/status", self.clients[i].client_id,
+                self.sendGui("/ray/gui/client/status", self.clients[i].client_id,
                              ray.ClientStatus.REMOVED)
                 remove_item_list.append(i)
         
@@ -1807,7 +1807,7 @@ class SignaledSession(OperatingSession):
         if client and client.isCapableOf(':warning-no-save:'):
             client.no_save_level = args[0]
             
-            self.sendGui('/ray/client/no_save_level',
+            self.sendGui('/ray/gui/client/no_save_level',
                          client.client_id, client.no_save_level)
     
     def ray_server_abort_copy(self, path, args, src_addr):

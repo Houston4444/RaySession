@@ -126,17 +126,17 @@ class GUIServerThread(liblo.ServerThread):
         renameable = bool(args[0])
         self._signaler.session_renameable.emit(renameable)
 
-    @ray_method('/ray/client/new', 'ssssissssis')
+    @ray_method('/ray/gui/client/new', 'ssssissssis')
     def newClientFromServer(self, path, args, types, src_addr):
         client_data = ray.ClientData(*args)
         self._signaler.new_client_added.emit(client_data)
 
-    @ray_method('/ray/client/update', 'ssssissssis')
+    @ray_method('/ray/gui/client/update', 'ssssissssis')
     def updateClientProperties(self, path, args, types, src_addr):
         client_data = ray.ClientData(*args)
         self._signaler.client_updated.emit(client_data)
 
-    @ray_method('/ray/client/status', 'si')
+    @ray_method('/ray/gui/client/status', 'si')
     def guiClientStatus(self, path, args, types, src_addr):
         client_id, status = args
 
@@ -146,39 +146,39 @@ class GUIServerThread(liblo.ServerThread):
 
         self._signaler.client_status_changed.emit(client_id, status)
 
-    @ray_method('/ray/client/switch', 'ss')
+    @ray_method('/ray/gui/client/switch', 'ss')
     def guiClientSwitch(self, path, args, types, src_addr):
         old_client_id, new_client_id = args
         self._signaler.client_switched.emit(old_client_id, new_client_id)
 
-    @ray_method('/ray/client/progress', 'sf')
+    @ray_method('/ray/gui/client/progress', 'sf')
     def guiClientProgress(self, path, args, types, src_addr):
         client_id, progress = args
         self._signaler.client_progress.emit(client_id, progress)
 
-    @ray_method('/ray/client/dirty', 'si')
+    @ray_method('/ray/gui/client/dirty', 'si')
     def guiClientDirty(self, path, args, types, src_addr):
         client_id, dirty_num = args
         bool_dirty = bool(dirty_num)
 
         self._signaler.client_dirty_sig.emit(client_id, bool_dirty)
 
-    @ray_method('/ray/client/has_optional_gui', 's')
+    @ray_method('/ray/gui/client/has_optional_gui', 's')
     def guiClientHasOptionalGui(self, path, args, types, src_addr):
         client_id = args[0]
         self._signaler.client_has_gui.emit(client_id)
 
-    @ray_method('/ray/client/gui_visible', 'si')
+    @ray_method('/ray/gui/client/gui_visible', 'si')
     def guiClientGuiVisible(self, path, args, types, src_addr):
         client_id, state = args
         self._signaler.client_gui_visible_sig.emit(client_id, bool(state))
 
-    @ray_method('/ray/client/still_running', 's')
+    @ray_method('/ray/gui/client/still_running', 's')
     def guiClientStillRunning(self, path, args, types, src_addr):
         client_id = args[0]
         self._signaler.client_still_running.emit(client_id)
         
-    @ray_method('/ray/client/no_save_level', 'si')
+    @ray_method('/ray/gui/client/no_save_level', 'si')
     def rayClientWarningNoSave(self, path, args, types, src_addr):
         client_id, warning_no_save = args
         self._signaler.client_no_save_level.emit(client_id, warning_no_save)
@@ -243,10 +243,6 @@ class GUIServerThread(liblo.ServerThread):
         liblo.ServerThread.send(self, *args)
     
     def toDaemon(self, *args):
-        #if CommandLineArgs.debug:
-            #sys.stderr.write(
-                #'\033[95mOSC::gui_sends\033[0m %s.\n' %
-                #(str(args)))
         self.send(self._daemon_manager.address, *args)
 
     def announce(self):

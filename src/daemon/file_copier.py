@@ -75,7 +75,7 @@ class FileCopier(ServerSender):
             progress = float(current_size/self.copy_size)
             
             if self.client_id:
-                self.sendGui('/ray/client/progress', self.client_id, progress)
+                self.sendGui('/ray/gui/client/progress', self.client_id, progress)
             else:
                 self.sendGui('/ray/gui/server_progress', progress)
                 

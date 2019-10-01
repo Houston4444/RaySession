@@ -108,7 +108,7 @@ class ClientCommunicating(liblo.ServerThread):
             return False
         
         client.progress = args[0]
-        self.sendGui("/ray/client/progress", client.client_id, 
+        self.sendGui("/ray/gui/client/progress", client.client_id, 
                      client.progress)
     
     @ray_method('/nsm/client/is_dirty', '')
@@ -122,7 +122,7 @@ class ClientCommunicating(liblo.ServerThread):
         client.dirty = 1
         client.last_dirty = time.time()
         
-        self.sendGui("/ray/client/dirty", client.client_id, client.dirty)
+        self.sendGui("/ray/gui/client/dirty", client.client_id, client.dirty)
 
     @ray_method('/nsm/client/is_clean', '')
     def nsmClientIs_clean(self, path, args, types, src_addr):
@@ -134,7 +134,7 @@ class ClientCommunicating(liblo.ServerThread):
         
         client.dirty = 0
         
-        self.sendGui("/ray/client/dirty", client.client_id, client.dirty)
+        self.sendGui("/ray/gui/client/dirty", client.client_id, client.dirty)
         
         if self.option_save_from_client:
             if (client.pending_command != ray.Command.SAVE
@@ -153,7 +153,8 @@ class ClientCommunicating(liblo.ServerThread):
         if not client:
             return False
         
-        self.sendGui("/ray/client/message", client.client_id, args[0], args[1])
+        self.sendGui("/ray/gui/client/message",
+                     client.client_id, args[0], args[1])
 
     @ray_method('/nsm/client/gui_is_hidden', '')
     def nsmClientGui_is_hidden(self, path, args, types, src_addr):
@@ -165,7 +166,7 @@ class ClientCommunicating(liblo.ServerThread):
         
         client.gui_visible = False
         
-        self.sendGui("/ray/client/gui_visible", client.client_id,
+        self.sendGui("/ray/gui/client/gui_visible", client.client_id,
                      int(client.gui_visible))
 
     @ray_method('/nsm/client/gui_is_shown', '')
@@ -178,7 +179,7 @@ class ClientCommunicating(liblo.ServerThread):
         
         client.gui_visible = True
         
-        self.sendGui("/ray/client/gui_visible", client.client_id,
+        self.sendGui("/ray/gui/client/gui_visible", client.client_id,
                      int(client.gui_visible))
 
     @ray_method('/nsm/client/label', 's')
@@ -858,7 +859,8 @@ class OscServerThread(ClientCommunicating):
             self.send(gui_addr, *args)
     
     def sendClientStatusToGui(self, client):
-        self.sendGui("/ray/client/status", client.client_id, client.status)
+        self.sendGui("/ray/gui/client/status",
+                     client.client_id, client.status)
             
     def setServerStatus(self, server_status):
         self.server_status = server_status
@@ -1042,7 +1044,7 @@ class OscServerThread(ClientCommunicating):
         
         for client in self.session.clients:
             self.send(gui_addr, 
-                      '/ray/client/new',
+                      '/ray/gui/client/new',
                       client.client_id, 
                       client.executable_path,
                       client.arguments,
@@ -1055,7 +1057,7 @@ class OscServerThread(ClientCommunicating):
                       int(client.check_last_save),
                       client.ignored_extensions)
             
-            self.send(gui_addr, "/ray/client/status",
+            self.send(gui_addr, "/ray/gui/client/status",
                       client.client_id,  client.status)
         
         self.gui_list.append(gui_addr)
