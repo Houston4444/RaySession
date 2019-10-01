@@ -491,7 +491,8 @@ class Snapshoter(QObject):
             if self.error_function:
                 self.error_function(err)
         
-        self.session.sendGui('/reply_snapshots_list',
+        # not really a reply, not strong.
+        self.session.sendGui('/reply', '/ray/session/list_snapshots',
                              fullRefForGui(ref, self.next_snapshot_name,
                                            self._rw_snapshot))
         self.error_function = None

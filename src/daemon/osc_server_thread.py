@@ -59,6 +59,7 @@ class ClientCommunicating(liblo.ServerThread):
         self.net_master_daemon_addr = None
         self.net_master_daemon_url = ''
         self.net_daemon_id = random.randint(1, 999999999)
+        self.list_asker_addr = None
         
     @ray_method('/nsm/server/announce', 'sssiii')
     def nsmServerAnnounce(self, path, args, types, src_addr):
@@ -68,9 +69,20 @@ class ClientCommunicating(liblo.ServerThread):
                       + "for this application to join.")
             return False
         
-    @ray_method('/reply', 'ss')
+    @ray_method('/reply', None)
     def reply(self, path, args, types, src_addr):
-        pass
+        if len(args) < 2:
+            return False
+        
+        if not ray.areTheyAllString(args):
+            return False
+        
+        if args[0] == '/ray/server/list_sessions':
+            # this reply is only used here for reply from net_daemon
+            # it directly resend its infos
+            # to the last gui that asked session list
+            if self.list_asker_addr:
+                self.send(self.list_asker_addr, *args)
             
     @ray_method('/error', 'sis')
     def error(self, path, args, types, src_addr):
@@ -208,7 +220,6 @@ class ClientCommunicating(liblo.ServerThread):
 class OscServerThread(ClientCommunicating):
     def __init__(self, session, osc_num=0):
         ClientCommunicating.__init__(self, session, osc_num)
-        self.list_asker_addr = None
         
         self.option_save_from_client = RS.settings.value(
             'daemon/save_all_from_saved_client', True, type=bool)
@@ -327,11 +338,11 @@ class OscServerThread(ClientCommunicating):
         tmp_exec_list = []
         
         pathlist = os.getenv('PATH').split(':')
-        for path in pathlist:
-            if os.path.isdir(path):
-                listexe = os.listdir(path)
+        for pathdir in pathlist:
+            if os.path.isdir(pathdir):
+                listexe = os.listdir(pathdir)
                 for exe in listexe:
-                    fullexe = path + '/' + exe
+                    fullexe = pathdir + '/' + exe
                     
                     if (os.path.isfile(fullexe)
                             and os.access(fullexe, os.X_OK)
@@ -340,11 +351,12 @@ class OscServerThread(ClientCommunicating):
                         tmp_exec_list.append(exe)
                         
                         if len(tmp_exec_list) == 100:
-                            self.send(src_addr, '/reply_path', *tmp_exec_list)
+                            self.send(src_addr, '/reply',
+                                      path, *tmp_exec_list)
                             tmp_exec_list.clear()
         
         if tmp_exec_list:
-            self.send(src_addr, '/reply_path', *tmp_exec_list)
+            self.send(src_addr, '/reply', path, *tmp_exec_list)
             
     @ray_method('/ray/server/list_session_templates', '')
     def rayServerListSessionTemplates(self, path, args, types, src_addr):
@@ -359,21 +371,20 @@ class OscServerThread(ClientCommunicating):
                 template_list.append(file)
                 
                 if len(template_list) == 100:
-                    self.send(src_addr, '/reply_session_templates',
-                              *template_list)
+                    self.send(src_addr, '/reply', path, *template_list)
                     template_list.clear()
                     
         if template_list:
-            self.send(src_addr, '/reply_session_templates', *template_list)
+            self.send(src_addr, '/reply', path, *template_list)
     
     @ray_method('/ray/server/list_user_client_templates', '')
     def rayServerListUserClientTemplates(self, path, args, types, src_addr):
-        self.listClientTemplates(src_addr, False)
+        self.listClientTemplates(src_addr, path)
     
     @ray_method('/ray/server/list_factory_client_templates', '')
     def rayServerListFactoryClientTemplates(self, path, args, types,
                                             src_addr):
-        self.listClientTemplates(src_addr, True)
+        self.listClientTemplates(src_addr, path)
     
     @ray_method('/ray/server/remove_client_template', 's')
     def rayServerRemoveClientTemplate(self, path, args, types, src_addr):
@@ -893,17 +904,15 @@ class OscServerThread(ClientCommunicating):
         
         return True
     
-    def listClientTemplates(self, src_addr, factory=False):
+    def listClientTemplates(self, src_addr, path):
         template_list = []
         tmp_template_list = []
         
-        templates_root    = TemplateRoots.user_clients
-        response_osc_path = '/reply_user_client_templates'
+        templates_root = TemplateRoots.user_clients
         
+        factory = bool('factory' in path)
         if factory:
-            templates_root    = TemplateRoots.factory_clients
-            response_osc_path = '/reply_factory_client_templates'
-        
+            templates_root = TemplateRoots.factory_clients
         
         templates_file = "%s/%s" % (templates_root, 'client_templates.xml')
         
@@ -959,8 +968,8 @@ class OscServerThread(ClientCommunicating):
             try_exec_ok = True
             
             for try_exec in try_exec_list:
-                path = shutil.which(try_exec)
-                if not path:
+                exec_path = shutil.which(try_exec)
+                if not exec_path:
                     try_exec_ok = False
                     break
             
@@ -973,11 +982,11 @@ class OscServerThread(ClientCommunicating):
                                                 ct.attribute('icon')))
             
             if len(tmp_template_list) == 20:
-                self.send(src_addr, response_osc_path, *tmp_template_list)
+                self.send(src_addr, '/reply', path, *tmp_template_list)
                 template_list.clear()
         
         if tmp_template_list:
-            self.send(src_addr, response_osc_path, *tmp_template_list)
+            self.send(src_addr, '/reply', path, *tmp_template_list)
             
         if file_rewritten:
             try:

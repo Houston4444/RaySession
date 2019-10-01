@@ -1838,22 +1838,22 @@ class SignaledSession(OperatingSession):
             if root == self.root:
                 continue
             
-            already_send = False
+            already_sent = False
             
             for file in files:
                 if file in ('raysession.xml', 'session.nsm'):
-                    if not already_send:
+                    if not already_sent:
                         basefolder = root.replace(self.root + '/', '', 1)
                         session_list.append(basefolder)
                         if len(session_list) == 20:
-                            self.send(src_addr, "/reply_sessions_list",
+                            self.send(src_addr, "/reply", path,
                                       *session_list)
                             
                             session_list.clear()
-                        already_send = True
+                        already_sent = True
                     
         if session_list:
-            self.send(src_addr, "/reply_sessions_list", *session_list)
+            self.send(src_addr, "/reply", path, *session_list)
     
     def nsm_server_list(self, path, args, src_addr):
         session_list = []
@@ -2191,7 +2191,7 @@ class SignaledSession(OperatingSession):
         
         for snapshot in snapshots:
             if i == 20:
-                self.serverSend(src_addr, '/reply_snapshots_list', *snap_send)
+                self.serverSend(src_addr, '/reply', path, *snap_send)
                 
                 snap_send.clear()
                 i=0
@@ -2200,7 +2200,7 @@ class SignaledSession(OperatingSession):
                 i+=1
         
         if snap_send:
-            self.serverSend(src_addr, '/reply_snapshots_list', *snap_send)
+            self.serverSend(src_addr, '/reply', path, *snap_send)
     
     def ray_session_set_auto_snapshot(self, path, args, src_addr):
         self.snapshoter.setAutoSnapshot(bool(args[0]))

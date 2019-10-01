@@ -50,51 +50,28 @@ class GUIServerThread(liblo.ServerThread):
     def errorFromServer(self, path, args, types, src_addr):
         self._signaler.error_message.emit(args)
 
-    @ray_method('/reply', 'ss')
+    @ray_method('/reply', None)
     def receiveFromServer(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/reply_sessions_list', None)
-    def replySessionsList(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
+        if len(args) < 2:
             return
-
-        self._signaler.add_sessions_to_list.emit(args)
-
-    @ray_method('/reply_path', None)
-    def replyPath(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
-            return
-
-        self._signaler.new_executable.emit(args)
-
-    @ray_method('/reply_session_templates', None)
-    def replySessionTemplates(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
-            return
-
-        self._signaler.session_template_found.emit(args)
-
-    @ray_method('/reply_user_client_templates', None)
-    def replyUserClientTemplates(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
-            return
-
-        self._signaler.user_client_template_found.emit(args)
-
-    @ray_method('/reply_factory_client_templates', None)
-    def replyFactoryClientTemplates(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
-            return
-
-        self._signaler.factory_client_template_found.emit(args)
         
-    @ray_method('/reply_snapshots_list', None)
-    def replySnapshotsList(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
-            return 
+            return
         
-        self._signaler.snapshots_found.emit(args)
+        reply_path = args.pop(0)
+        
+        if reply_path == '/ray/server/list_sessions':
+            self._signaler.add_sessions_to_list.emit(args)
+        elif reply_path == '/ray/server/list_path':
+            self._signaler.new_executable.emit(args)
+        elif reply_path == '/ray/server/list_session_templates':
+            self._signaler.session_template_found.emit(args)
+        elif reply_path == '/ray/server/list_user_client_templates':
+            self._signaler.user_client_template_found.emit(args)
+        elif reply_path == '/ray/server/list_factory_client_templates':
+            self._signaler.factory_client_template_found.emit(args)
+        elif reply_path == '/ray/session/list_snapshots':
+            self._signaler.snapshots_found.emit(args)
         
     @ray_method('/reply_auto_snapshot', 'i')
     def replyAutoSnapshot(self, path, args, types, src_addr):
