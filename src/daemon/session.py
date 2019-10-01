@@ -1649,8 +1649,8 @@ class SignaledSession(OperatingSession):
     def oscReceive(self, path, args, types, src_addr):
         nsm_equivs = {"/nsm/server/add" : "/ray/session/add_executable",
                       "/nsm/server/save": "/ray/session/save",
-                      "/nsm/server/open": "/ray/server/open",
-                      "/nsm/server/new" : "/ray/server/new",
+                      "/nsm/server/open": "/ray/server/open_session",
+                      "/nsm/server/new" : "/ray/server/new_session",
                       "/nsm/server/duplicate": "/ray/session/duplicate",
                       "/nsm/server/close": "/ray/session/close",
                       "/nsm/server/abort": "/ray/session/abort",
@@ -1869,10 +1869,9 @@ class SignaledSession(OperatingSession):
                 
                 for file in files:
                     if file in ('raysession.xml', 'session.nsm'):
-                        if not already_send:
-                            basefolder = root.replace(self.root + '/', '', 1)
-                            self.send(src_addr, '/reply', '/nsm/server/list',
-                                    basefolder)
+                        basefolder = root.replace(self.root + '/', '', 1)
+                        self.send(src_addr, '/reply', '/nsm/server/list',
+                                basefolder)
         
         self.send(src_addr, path, ray.Err.OK, "Done.")
     
@@ -2014,7 +2013,7 @@ class SignaledSession(OperatingSession):
         else:
             self.nextFunction()
     
-    def nsm_server_quit(self, path, args, src_addr):
+    def ray_server_quit(self, path, args, src_addr):
         self.process_order = [self.close, self.exitNow]
         
         if self.file_copier.isActive():
