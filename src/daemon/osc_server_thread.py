@@ -83,6 +83,9 @@ class ClientCommunicating(liblo.ServerThread):
             # to the last gui that asked session list
             if self.list_asker_addr:
                 self.send(self.list_asker_addr, *args)
+        
+        if not len(args) == 2:
+            return False
             
     @ray_method('/error', 'sis')
     def error(self, path, args, types, src_addr):
@@ -475,14 +478,6 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/nsm/server/open', 's')
     def nsmServerOpen(self, path, args, types, src_addr):
         pass
-    
-    @ray_method('/reply_sessions_list', None)
-    def replySessionsList(self, path, args, types, src_addr):
-        # this reply is only used here for reply from net_daemon
-        # it directly resend its infos to the last gui that asked session list
-        if self.list_asker_addr:
-            self.send(self.list_asker_addr, '/reply_sessions_list', *args)
-    
     
     @ray_method('/ray/session/save', '')
     def raySessionSave(self, path, args, types, src_addr):
