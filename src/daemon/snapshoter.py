@@ -73,7 +73,7 @@ class Snapshoter(QObject):
         
         self._n_file_treated += len(standard_output.decode().split('\n')) -1
         
-        self.session.sendGui('/ray/gui/server_progress',
+        self.session.sendGui('/ray/gui/server/progress',
                              self._n_file_treated / self._n_file_changed)
     
     def standardError(self):

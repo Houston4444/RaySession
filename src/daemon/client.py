@@ -602,7 +602,7 @@ class Client(ServerSender):
         ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
             
         if removed:
-            ad = '/ray/trash/add'
+            ad = '/ray/gui/trash/add'
             
         self.sendGui(ad,
                         self.client_id, 

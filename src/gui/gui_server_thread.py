@@ -46,7 +46,7 @@ class GUIServerThread(liblo.ServerThread):
     def instance():
         return _instance
 
-    @ray_method('/error', None)
+    @ray_method('/error', 'sis')
     def errorFromServer(self, path, args, types, src_addr):
         self._signaler.error_message.emit(args)
 
@@ -72,12 +72,8 @@ class GUIServerThread(liblo.ServerThread):
             self._signaler.factory_client_template_found.emit(args)
         elif reply_path == '/ray/session/list_snapshots':
             self._signaler.snapshots_found.emit(args)
-        
-    @ray_method('/reply_auto_snapshot', 'i')
-    def replyAutoSnapshot(self, path, args, types, src_addr):
-        self._signaler.reply_auto_snapshot.emit(bool(args[0]))
 
-    @ray_method('/ray/gui/daemon_announce', 'siisi')
+    @ray_method('/ray/gui/server/announce', 'siisi')
     def serverAnnounce(self, path, args, types, src_addr):
         if self._daemon_manager.isAnnounced():
             return
@@ -91,41 +87,74 @@ class GUIServerThread(liblo.ServerThread):
                                             session_root,
                                             is_net_free)
 
-    @ray_method('/ray/gui/daemon_disannounce', '')
+    @ray_method('/ray/gui/server/disannounce', '')
     def serverDisannounce(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/gui/daemon_nsm_locked', 'i')
+    @ray_method('/ray/gui/server/nsm_locked', 'i')
     def daemonNsmLocked(self, path, args, types, src_addr):
         nsm_locked = bool(args[0])
 
         self._signaler.daemon_nsm_locked.emit(nsm_locked)
-
+    
+    @ray_method('/ray/gui/server/root', 's')
+    def rayServerRootChanged(self, path, args, types, src_addr):
+        session_root = args[0]
+        
+        CommandLineArgs.changeSessionRoot(session_root)
+        self._signaler.root_changed.emit(session_root)
+    
+    @ray_method('/ray/gui/server/options', 'i')
+    def rayGuiServerOptions(self, path, args, types, src_addr):
+        options = args[0]
+        self._signaler.daemon_options.emit(options)
+    
+    @ray_method('/ray/gui/server/status', 'i')
+    def rayServerStatus(self, path, args, types, src_addr):
+        server_status = args[0]
+        self._signaler.server_status_changed.emit(server_status)
+    
+    @ray_method('/ray/gui/server/copying', 'i')
+    def guiServerCopying(self, path, args, types, src_addr):
+        copying = bool(int(args[0]))
+        self._signaler.server_copying.emit(copying)
+    
+    @ray_method('/ray/gui/server/progress', 'f')
+    def guiServerProgress(self, path, args, types, src_addr):
+        progress = args[0]
+        self._signaler.server_progress.emit(progress)
+        
     @ray_method('/ray/gui/server/message', 's')
     def serverMessage(self, path, args, types, src_addr):
         message = args[0]
         self._signaler.new_message_sig.emit(message)
 
-    @ray_method('/ray/gui/server/copying', 'i')
-    def guiServerCopying(self, path, args, types, src_addr):
-        copying = bool(int(args[0]))
-        self._signaler.server_copying.emit(copying)
-        
-    @ray_method('/ray/gui/server/options', 'i')
-    def rayGuiServerOptions(self, path, args, types, src_addr):
-        options = args[0]
-        self._signaler.daemon_options.emit(options)
-
     @ray_method('/ray/gui/session/name', 'ss')
     def guiSessionName(self, path, args, types, src_addr):
         session_name, session_path = args
         self._signaler.session_name_sig.emit(session_name, session_path)
-
+    
+    @ray_method('/ray/gui/session/auto_snapshot', 'i')
+    def replyAutoSnapshot(self, path, args, types, src_addr):
+        self._signaler.reply_auto_snapshot.emit(bool(args[0]))
+    
+    @ray_method('/ray/gui/session/is_nsm', '')
+    def rayOpeningNsmSession(self, path, args, types, src_addr):
+        self._signaler.opening_session.emit()
+    
     @ray_method('/ray/gui/session/renameable', 'i')
     def guiSessionRenameable(self, path, args, types, src_addr):
         renameable = bool(args[0])
         self._signaler.session_renameable.emit(renameable)
+    
+    @ray_method('/ray/gui/session/sort_clients', None)
+    def rayGuiReorderClients(self, path, args, types, src_addr):
+        for arg in args:
+            if not isinstance(arg, str):
+                return
 
+        self._signaler.clients_reordered.emit(args)
+    
     @ray_method('/ray/gui/client/new', 'ssssissssis')
     def newClientFromServer(self, path, args, types, src_addr):
         client_data = ray.ClientData(*args)
@@ -183,46 +212,17 @@ class GUIServerThread(liblo.ServerThread):
         client_id, warning_no_save = args
         self._signaler.client_no_save_level.emit(client_id, warning_no_save)
 
-    @ray_method('/ray/gui/server_progress', 'f')
-    def guiServerProgress(self, path, args, types, src_addr):
-        progress = args[0]
-        self._signaler.server_progress.emit(progress)
-
-    @ray_method('/ray/server_status', 'i')
-    def rayServerStatus(self, path, args, types, src_addr):
-        server_status = args[0]
-        self._signaler.server_status_changed.emit(server_status)
-        
-    @ray_method('/ray/server/root_changed', 's')
-    def rayServerRootChanged(self, path, args, types, src_addr):
-        session_root = args[0]
-        
-        CommandLineArgs.changeSessionRoot(session_root)
-        self._signaler.root_changed.emit(session_root)
-
-    @ray_method('/ray/opening_nsm_session', None)
-    def rayOpeningNsmSession(self, path, args, types, src_addr):
-        self._signaler.opening_session.emit()
-
-    @ray_method('/ray/gui/clients_reordered', None)
-    def rayGuiReorderClients(self, path, args, types, src_addr):
-        for arg in args:
-            if not isinstance(arg, str):
-                return
-
-        self._signaler.clients_reordered.emit(args)
-
-    @ray_method('/ray/trash/add', 'ssssissssis')
+    @ray_method('/ray/gui/trash/add', 'ssssissssis')
     def rayGuiTrashAdd(self, path, args, types, src_addr):
         client_data = ray.ClientData(*args)
         self._signaler.trash_add.emit(client_data)
 
-    @ray_method('/ray/trash/remove', 's')
+    @ray_method('/ray/gui/trash/remove', 's')
     def rayGuiTrashRemove(self, path, args, types, src_addr):
         client_id = args[0]
         self._signaler.trash_remove.emit(client_id)
 
-    @ray_method('/ray/trash/clear', '')
+    @ray_method('/ray/gui/trash/clear', '')
     def rayGuiTrashClear(self, path, args, types, src_addr):
         self._signaler.trash_clear.emit()
         

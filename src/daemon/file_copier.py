@@ -77,7 +77,7 @@ class FileCopier(ServerSender):
             if self.client_id:
                 self.sendGui('/ray/gui/client/progress', self.client_id, progress)
             else:
-                self.sendGui('/ray/gui/server_progress', progress)
+                self.sendGui('/ray/gui/server/progress', progress)
                 
             self.session.oscReply('/ray/net_daemon/duplicate_state', progress)
         

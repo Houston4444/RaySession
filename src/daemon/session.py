@@ -200,7 +200,7 @@ class Session(ServerSender):
         if not self.addClient(client):
             return
         
-        self.sendGui('/ray/trash/remove', client.client_id)
+        self.sendGui('/ray/gui/trash/remove', client.client_id)
         self.removed_clients.remove(client)
         
         if client.auto_start:
@@ -531,7 +531,7 @@ class OperatingSession(Session):
         self.timer_wu_progress_n += 1
         
         ratio = float(self.timer_wu_progress_n / 240)
-        self.sendGui('/ray/gui/server_progress', ratio)
+        self.sendGui('/ray/gui/server/progress', ratio)
         
     def checkExternalsStates(self):
         has_externals = False
@@ -839,7 +839,7 @@ class OperatingSession(Session):
             return
         
         self.setServerStatus(ray.ServerStatus.CLOSE)
-        self.sendGui('/ray/trash/clear')
+        self.sendGui('/ray/gui/trash/clear')
         
         for client in self.clients.__reversed__():
             if client.isRunning():
@@ -940,7 +940,7 @@ class OperatingSession(Session):
             self.process_order.clear()
             return
         
-        self.sendGui('/ray/trash/clear')
+        self.sendGui('/ray/gui/trash/clear')
         
         for client in self.clients:
             client.net_duplicate_state = -1
@@ -1161,7 +1161,6 @@ class OperatingSession(Session):
         if not is_ray_file:
             try:
                 file = open(session_nsm_file, 'r')
-                self.sendGui('/ray/opening_nsm_session')
             except:
                 try:
                     ray_file = open(session_ray_file, 'w')
@@ -1274,7 +1273,10 @@ class OperatingSession(Session):
         
         self.setPath(spath)
         
-        self.sendGui('/ray/trash/clear')
+        if not is_ray_file:
+            self.sendGui('/ray/gui/session/is_nsm')
+        
+        self.sendGui('/ray/gui/trash/clear')
         self.removed_clients.clear()
         for client in self.new_removed_clients:
             self.removed_clients.append(client)
@@ -1386,7 +1388,7 @@ class OperatingSession(Session):
         self.timer_launch.start()
         
         self.reOrderClients(new_client_id_list)
-        self.sendGui('/ray/gui/clients_reordered', *new_client_id_list)
+        self.sendGui('/ray/gui/session/sort_clients', *new_client_id_list)
         
         self.waitAndGoTo(5000, self.load_step2, ray.WaitFor.ANNOUNCE)
     
@@ -2184,6 +2186,10 @@ class SignaledSession(OperatingSession):
         self.reOrderClients(client_ids_list)
     
     def ray_session_list_snapshots(self, path, args, src_addr, client_id=""):
+        auto_snapshot = not bool(
+            self.snapshoter.isAutoSnapshotPrevented())
+        self.sendGui('/ray/gui/session/auto_snapshot',  int(auto_snapshot))
+        
         snapshots = self.snapshoter.list(client_id)
         
         i=0
@@ -2204,11 +2210,6 @@ class SignaledSession(OperatingSession):
     
     def ray_session_set_auto_snapshot(self, path, args, src_addr):
         self.snapshoter.setAutoSnapshot(bool(args[0]))
-    
-    def ray_session_ask_auto_snapshot(self, path, args, src_addr):
-        auto_snapshot = not bool(
-            self.snapshoter.isAutoSnapshotPrevented())
-        self.send(src_addr, '/reply_auto_snapshot',  int(auto_snapshot))
     
     def ray_client_stop(self, path, args, src_addr):
         for client in self.clients:
@@ -2351,7 +2352,7 @@ class SignaledSession(OperatingSession):
         else:
             return
         
-        self.sendGui('/ray/trash/remove', client.client_id)
+        self.sendGui('/ray/gui/trash/remove', client.client_id)
         
         for file in client.getProjectFiles():
             try:

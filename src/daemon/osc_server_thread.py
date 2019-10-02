@@ -266,7 +266,7 @@ class OscServerThread(ClientCommunicating):
             
             for gui_addr in self.gui_list:
                 if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                    self.send(gui_addr, '/ray/gui/daemon_nsm_locked', 1)
+                    self.send(gui_addr, '/ray/gui/server/nsm_locked', 1)
                     
             self.net_daemon_id = args[4]
             
@@ -297,7 +297,7 @@ class OscServerThread(ClientCommunicating):
             
             self.is_nsm_locked  = False
             self.nsm_locker_url = ''
-            self.sendGui('/ray/gui/daemon_nsm_locked', 0)
+            self.sendGui('/ray/gui/server/nsm_locked', 0)
     
     @ray_method('/ray/server/set_nsm_locked', '')
     def rayServerSetNsmLocked(self, path, args, types, src_addr):
@@ -306,7 +306,7 @@ class OscServerThread(ClientCommunicating):
         
         for gui_addr in self.gui_list:
             if gui_addr.url != src_addr.url:
-                self.send(gui_addr, '/ray/gui/daemon_nsm_locked', 1)
+                self.send(gui_addr, '/ray/gui/server/nsm_locked', 1)
     
     @ray_method('/ray/server/quit', '')
     def nsmServerQuit(self, path, args, types, src_addr):
@@ -334,7 +334,7 @@ class OscServerThread(ClientCommunicating):
         session_root = args[0]
         
         self.session.setRoot(session_root)
-        self.sendGui('/ray/server/root_changed', session_root)
+        self.sendGui('/ray/gui/server/root', session_root)
     
     @ray_method('/ray/server/list_path', '')
     def rayServerListPath(self, path, args, types, src_addr):
@@ -684,10 +684,6 @@ class OscServerThread(ClientCommunicating):
     def rayServerSetAutoSnapshot(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/session/ask_auto_snapshot', '')
-    def rayServerHasAutoSnapshot(self, path, args, types, src_addr):
-        pass
-    
     @ray_method('/ray/session/open_folder', '')
     def rayServerOpenFolder(self, path, args, types, src_addr):
         if self.session.path:
@@ -859,7 +855,7 @@ class OscServerThread(ClientCommunicating):
             
     def setServerStatus(self, server_status):
         self.server_status = server_status
-        self.sendGui('/ray/server_status', server_status) 
+        self.sendGui('/ray/gui/server/status', server_status) 
     
     def getServerStatus(self):
         return self.server_status
@@ -1025,11 +1021,11 @@ class OscServerThread(ClientCommunicating):
         
         options = self.getOptions()
         
-        self.send(gui_addr, "/ray/gui/daemon_announce", ray.VERSION,
+        self.send(gui_addr, "/ray/gui/server/announce", ray.VERSION,
                   self.server_status, options, self.session.root,
                   int(is_net_free))
         
-        self.send(gui_addr, "/ray/server_status", self.server_status)
+        self.send(gui_addr, "/ray/gui/server/status", self.server_status)
         self.send(gui_addr, "/ray/gui/session/name",
                   self.session.name, self.session.path)
         

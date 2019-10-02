@@ -471,7 +471,6 @@ class SessionSnapshotsDialog(SnapshotsDialog):
         
         self.ui.pushButtonSnapshotNow.clicked.connect(self.takeSnapshot)
         
-        self.toDaemon('/ray/session/ask_auto_snapshot')
         self.toDaemon('/ray/session/list_snapshots')
         
         self.ui.checkBoxAutoSnapshot.stateChanged.connect(
