@@ -60,15 +60,11 @@ class ClientCommunicating(liblo.ServerThread):
         self.net_master_daemon_url = ''
         self.net_daemon_id = random.randint(1, 999999999)
         self.list_asker_addr = None
-        
-    @ray_method('/nsm/server/announce', 'sssiii')
-    def nsmServerAnnounce(self, path, args, types, src_addr):
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN, 
-                      "Sorry, but there's no session open "
-                      + "for this application to join.")
-            return False
-        
+    
+    @ray_method('/osc/ping', '')
+    def oscPing(self, path, args, types, src_addr):
+        self.send(src_addr, "/reply", path)
+    
     @ray_method('/reply', None)
     def reply(self, path, args, types, src_addr):
         if len(args) < 2:
@@ -83,6 +79,7 @@ class ClientCommunicating(liblo.ServerThread):
             # to the last gui that asked session list
             if self.list_asker_addr:
                 self.send(self.list_asker_addr, *args)
+            return False
         
         if not len(args) == 2:
             return False
@@ -103,6 +100,113 @@ class ClientCommunicating(liblo.ServerThread):
         
         client.pending_command = ray.Command.NONE
         client.setStatus(ray.ClientStatus.ERROR)
+    
+    # SERVER_CONTROL messages
+    # following messages only for :server-control: capability
+    @ray_method('/nsm/server/add', 's')
+    def nsmServerAdd(self, path, args, types, src_addr):
+        executable_path = args[0]
+        
+        if not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "Cannot add to session because no session is loaded.")
+            return False
+        
+        if '/' in executable_path:
+            self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
+                "Absolute paths are not permitted. Clients must be in $PATH")
+            return False
+    
+    @ray_method('/nsm/server/save', '')
+    def nsmServerSave(self, path, args, types, src_addr):
+        if not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "No session to save.")
+            return False
+    
+    @ray_method('/nsm/server/open', 's')
+    def nsmServerOpen(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/nsm/server/new', 's')
+    def nsmServerNew(self, path, args, types, src_addr):
+        if self.is_nsm_locked:
+            return False
+        
+        if not pathIsValid(args[0]):
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
+                      "Invalid session name.")
+            return False
+    
+    @ray_method('/nsm/server/duplicate', 's')
+    def nsmServerDuplicate(self, path, args, types, src_addr):
+        if self.is_nsm_locked or not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "No session to duplicate.")
+            return False
+        
+        if not pathIsValid(args[0]):
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
+                      "Invalid session name.")
+            return False
+    
+    @ray_method('/nsm/server/close', '')
+    def nsmServerClose(self, path, args, types, src_addr):
+        if not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "No session to close.")
+            return False
+    
+    @ray_method('/nsm/server/abort', '')
+    def nsmServerAbort(self, path, args, types, src_addr):
+        if not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "No session to abort." )
+            
+            if self.server_status == ray.ServerStatus.PRECOPY:
+                # normally no session path if PRECOPY status
+                signaler.copy_aborted.emit()
+            return False
+    
+    @ray_method('/nsm/server/quit', '')
+    def nsmServerQuit(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/nsm/server/list', '')
+    def nsmServerList(self, path, args, types, src_addr):
+        pass
+    # END OF SERVER_CONTROL messages
+    
+    @ray_method('/nsm/server/announce', 'sssiii')
+    def nsmServerAnnounce(self, path, args, types, src_addr):
+        if not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN, 
+                      "Sorry, but there's no session open "
+                      + "for this application to join.")
+            return False
+    
+    @ray_method('/nsm/server/broadcast', None)
+    def nsmServerBroadcast(self, path, args, types, src_addr):
+        if not args:
+            return False
+        
+        #don't allow clients to broadcast NSM commands
+        if args[0].startswith('/nsm/') or args[0].startswith('/ray'):
+            return False
+        
+        for client in self.session.clients:
+            if not client.addr:
+                continue
+            
+            if not ray.areSameOscPort(client.addr.url, src_addr.url):
+                self.send(client.addr, liblo.Message(*args))
+            
+            # TODO broadcast to slave daemons 
+            #for gui_addr in self.gui_list:
+                ##also relay to attached GUI so that the broadcast can be
+                ##propagated to another NSMD instance
+                #if gui_addr.url != src_addr.url:
+                    #self.send(gui_addr, Message(*args))
     
     @ray_method('/nsm/client/progress', 'f')
     def nsmClientProgress(self, path, args, types, src_addr):
@@ -189,29 +293,6 @@ class ClientCommunicating(liblo.ServerThread):
     def nsmClientLabel(self, path, args, types, src_addr):
         pass
       
-    @ray_method('/nsm/server/broadcast', None)
-    def nsmServerBroadcast(self, path, args, types, src_addr):
-        if not args:
-            return False
-        
-        #don't allow clients to broadcast NSM commands
-        if args[0].startswith('/nsm/') or args[0].startswith('/ray'):
-            return False
-        
-        for client in self.session.clients:
-            if not client.addr:
-                continue
-            
-            if not ray.areSameOscPort(client.addr.url, src_addr.url):
-                self.send(client.addr, liblo.Message(*args))
-            
-            # TODO broadcast to slave daemons 
-            #for gui_addr in self.gui_list:
-                ##also relay to attached GUI so that the broadcast can be
-                ##propagated to another NSMD instance
-                #if gui_addr.url != src_addr.url:
-                    #self.send(gui_addr, Message(*args))
-      
     @ray_method('/nsm/client/network_properties', 'ss')
     def nsmClientNetworkProperties(self, path, args, types, src_addr):
         pass
@@ -248,10 +329,6 @@ class OscServerThread(ClientCommunicating):
     @staticmethod
     def getInstance():
         return instance
-    
-    @ray_method('/osc/ping', '')
-    def oscPing(self, path, args, types, src_addr):
-        self.send(src_addr, "/reply", path)
     
     @ray_method('/ray/server/gui_announce', 'sisii')
     def rayGuiGui_announce(self, path, args, types, src_addr):
@@ -309,12 +386,8 @@ class OscServerThread(ClientCommunicating):
                 self.send(gui_addr, '/ray/gui/server/nsm_locked', 1)
     
     @ray_method('/ray/server/quit', '')
-    def nsmServerQuit(self, path, args, types, src_addr):
+    def rayServerQuit(self, path, args, types, src_addr):
         sys.exit(0)
-        
-    @ray_method('/nsm/server/quit', '')
-    def nsmServerQuit(self, path, args, types, src_addr):
-        pass
     
     @ray_method('/ray/server/abort_copy', '')
     def rayServerAbortCopy(self, path, args, types, src_addr):
@@ -443,10 +516,6 @@ class OscServerThread(ClientCommunicating):
     def rayServerListSessions(self, path, args, types, src_addr):
         self.list_asker_addr = src_addr
     
-    @ray_method('/nsm/server/list', '')
-    def nsmServerList(self, path, args, types, src_addr):
-        pass
-    
     @ray_method('/ray/server/new_session', None)
     def rayServerNewSession(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
@@ -460,34 +529,13 @@ class OscServerThread(ClientCommunicating):
                       "Invalid session name.")
             return False
     
-    @ray_method('/nsm/server/new', 's')
-    def nsmServerNew(self, path, args, types, src_addr):
-        if self.is_nsm_locked:
-            return False
-        
-        if not pathIsValid(args[0]):
-            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
-                      "Invalid session name.")
-            return False
-    
     @ray_method('/ray/server/open_session', None)
     def rayServerOpenSession(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             return False
     
-    @ray_method('/nsm/server/open', 's')
-    def nsmServerOpen(self, path, args, types, src_addr):
-        pass
-    
     @ray_method('/ray/session/save', '')
     def raySessionSave(self, path, args, types, src_addr):
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "No session to save.")
-            return False
-    
-    @ray_method('/nsm/server/save', '')
-    def nsmServerSave(self, path, args, types, src_addr):
         if not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to save.")
@@ -532,13 +580,6 @@ class OscServerThread(ClientCommunicating):
                       "No session to close.")
             return False
     
-    @ray_method('/nsm/server/close', '')
-    def nsmServerClose(self, path, args, types, src_addr):
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "No session to close.")
-            return False
-    
     @ray_method('/ray/session/abort', '')
     def raySessionAbort(self, path, args, types, src_addr):
         if self.server_status == ray.ServerStatus.PRECOPY:
@@ -556,17 +597,6 @@ class OscServerThread(ClientCommunicating):
     def raySessionSkipWaitUser(self, path, args, types, src_addr):
         if not self.server_status == ray.ServerStatus.WAIT_USER:
             return False
-        
-    @ray_method('/nsm/server/abort', '')
-    def nsmServerAbort(self, path, args, types, src_addr):
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "No session to abort." )
-            
-            if self.server_status == ray.ServerStatus.PRECOPY:
-                # normally no session path if PRECOPY status
-                signaler.copy_aborted.emit()
-            return False
     
     @ray_method('/ray/session/duplicate', 's')
     def raySessionDuplicate(self, path, args, types, src_addr):
@@ -574,18 +604,6 @@ class OscServerThread(ClientCommunicating):
             return False
         
         if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "No session to duplicate.")
-            return False
-        
-        if not pathIsValid(args[0]):
-            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
-                      "Invalid session name.")
-            return False
-    
-    @ray_method('/nsm/server/duplicate', 's')
-    def nsmServerDuplicate(self, path, args, types, src_addr):
-        if self.is_nsm_locked or not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to duplicate.")
             return False
@@ -631,20 +649,6 @@ class OscServerThread(ClientCommunicating):
       
     @ray_method('/ray/session/add_executable', 's')
     def raySessionAddExecutable(self, path, args, types, src_addr):
-        executable_path = args[0]
-        
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
-            return False
-        
-        if '/' in executable_path:
-            self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
-                "Absolute paths are not permitted. Clients must be in $PATH")
-            return False
-    
-    @ray_method('/nsm/server/add', 's')
-    def nsmServerAdd(self, path, args, types, src_addr):
         executable_path = args[0]
         
         if not self.session.path:
