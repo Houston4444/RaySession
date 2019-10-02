@@ -455,7 +455,7 @@ class ListWidgetClients(QListWidget):
 
         server = GUIServerThread.instance()
         if server:
-            server.changeClientOrder(client_ids_list)
+            server.toDaemon('/ray/session/reorder_clients', *client_ids_list)
 
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):

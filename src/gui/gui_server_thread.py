@@ -267,18 +267,7 @@ class GUIServerThread(liblo.ServerThread):
                   CommandLineArgs.net_daemon_id)
 
     def disannounce(self, src_addr):
-        ifDebug('serverOSC::raysession_sends disannounce')
         self.send(src_addr, '/ray/server/gui_disannounce')
-
-    def startListSession(self, with_net=False):
-        ifDebug('serverOSC::raysession_sends list sessions')
-        self.toDaemon('/ray/server/list_sessions', int(with_net))
-
-    def newSession(self, session_name):
-        self.toDaemon('/ray/server/new_session', session_name)
-
-    def newSessionFromTemplate(self, session_name, template_name):
-        self.toDaemon('/ray/server/new_session', session_name, template_name)
 
     def openSession(self, session_name, session_template=''):
         if session_template:
@@ -290,62 +279,10 @@ class GUIServerThread(liblo.ServerThread):
             self.toDaemon('/ray/server/open_session', session_name)
 
     def saveSession(self):
-        ifDebug('serverOSC::raysession_sends save session')
         self.toDaemon('/ray/session/save')
 
     def closeSession(self):
-        ifDebug('serverOSC::raysession_sends close session')
         self.toDaemon('/ray/session/close')
 
     def abortSession(self):
-        ifDebug('serverOSC::raysession_sends abort session')
         self.toDaemon('/ray/session/abort')
-
-    def duplicateSession(self, session_name):
-        ifDebug('serverOSC::raysession_sends duplication session')
-        self.toDaemon('/ray/session/duplicate', session_name)
-
-    def saveTemplateSession(self, session_template_name):
-        ifDebug('serverOSC::raysession_sends save template session')
-        self.toDaemon('/ray/session/save_as_template', session_template_name)
-
-    def startClient(self, client_id):
-        ifDebug('serverOSC::raysession_sends start client %s' % client_id)
-        self.toDaemon('/ray/client/resume', client_id)
-
-    def stopClient(self, client_id):
-        ifDebug('serverOSC::raysession_sends stop client %s' % client_id)
-        self.toDaemon('/ray/client/stop', client_id)
-
-    def killClient(self, client_id):
-        ifDebug('serverOSC::raysession_sends stop client %s' % client_id)
-        self.toDaemon('/ray/client/kill', client_id)
-
-    def saveClient(self, client_id):
-        ifDebug('serverOSC::raysession_sends save client %s' % client_id)
-        self.toDaemon('/ray/client/save', client_id)
-
-    def removeClient(self, client_id):
-        ifDebug('serverOSC::raysession_sends remove client %s' % client_id)
-        self.toDaemon('/ray/client/remove', client_id)
-
-    def showClientOptionalGui(self, client_id):
-        ifDebug('serverOSC::raysession_sends show optional GUI %s' % client_id)
-        self.toDaemon('/ray/client/show_optional_gui', client_id)
-
-    def hideClientOptionalGui(self, client_id):
-        ifDebug('serverOSC::raysession_sends hide optional GUI %s' % client_id)
-        self.toDaemon('/ray/client/hide_optional_gui', client_id)
-
-    def saveClientTemplate(self, client_id, template_name):
-        self.toDaemon('/ray/client/save_as_template', client_id, template_name)
-
-    def addClient(self, program_name):
-        ifDebug('serverOSC::raysession_sends add Client %s' % program_name)
-        self.toDaemon('/ray/session/add_executable', program_name)
-
-    def changeClientOrder(self, client_ids_list):
-        self.toDaemon('/ray/session/reorder_clients', *client_ids_list)
-
-    def abortCopy(self):
-        self.toDaemon('/ray/server/abort_copy')

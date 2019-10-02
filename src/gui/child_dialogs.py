@@ -942,7 +942,6 @@ class StopClientDialog(ChildDialog):
 
     def saveAndStop(self):
         self.wait_for_save = True
-        # self._server.saveClient(self.client_id)
         self.toDaemon('/ray/client/save', self.client_id)
 
     def checkBoxClicked(self, state):
