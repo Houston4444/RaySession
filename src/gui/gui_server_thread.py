@@ -10,10 +10,6 @@ signaler = Signaler.instance()
 _instance = None
 
 
-def ifDebug(string):
-    if CommandLineArgs.debug:
-        sys.stderr.write(string + '\n')
-
 def ray_method(path, types):
     def decorated(func):
         @liblo.make_method(path, types)
@@ -29,6 +25,7 @@ def ray_method(path, types):
             return response
         return wrapper
     return decorated
+
 
 class GUIServerThread(liblo.ServerThread):
     def __init__(self):
@@ -237,8 +234,9 @@ class GUIServerThread(liblo.ServerThread):
         self._signaler.favorite_removed.emit(name, bool(int_factory))
     
     def send(self, *args):
-        ifDebug('\033[95mOSC::gui sends\033[0m '
-                + str(args[1:]))
+        if CommandLineArgs.debug:
+            sys.stderr.write(
+                '\033[95mOSC::gui sends\033[0m %s\n' % str(args[1:]) )
         
         liblo.ServerThread.send(self, *args)
     
