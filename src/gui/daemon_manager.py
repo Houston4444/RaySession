@@ -154,13 +154,14 @@ class DaemonManager(QObject):
         bookmark_session_folder = options & ray.Option.BOOKMARK_SESSION
 
         if self.is_nsm_locked:
-            self._signaler.daemon_nsm_locked.emit(True)
+            #self._signaler.daemon_nsm_locked.emit(True)
+            self._session._main_win.setNsmLocked(True)
         elif CommandLineArgs.under_nsm:
             server = GUIServerThread.instance()
             server.toDaemon('/ray/server/set_nsm_locked')
 
         self._signaler.daemon_announce_ok.emit()
-        self._signaler.daemon_options.emit(options)
+        self._session.setDaemonOptions(options)
 
     def disannounce(self, address=None):
         if not address:

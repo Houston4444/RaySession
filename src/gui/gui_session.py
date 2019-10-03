@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QMenu
+from PyQt5.QtCore import QObject
 import os
 import sys
 import inspect
@@ -27,7 +28,7 @@ class Session(object):
         self.is_renameable = True
         
         self._signaler = Signaler()
-
+        
         server = GUIServerThread.instance()
         server.start()
 
@@ -59,7 +60,7 @@ class Session(object):
         
         self._daemon_manager.finishInit()
         server.finishInit(self)
-
+        
         self._main_win.show()
 
         # The only way I found to not show Messages Dock by default.
@@ -109,9 +110,9 @@ class Session(object):
             raise NameError("gui_session does not contains client %s"
                                 % client_id)
 
-    def addClient(self, client_data):
-        client = Client(self, client_data)
-        self.client_list.append(client)
+    #def addClient(self, client_data):
+        #client = Client(self, client_data)
+        #self.client_list.append(client)
 
     def removeClient(self, client_id):
         client = self.getClient(client_id)
@@ -120,66 +121,13 @@ class Session(object):
             self.client_list.remove(client)
             del client
 
-    def updateClientProperties(self, client_data):
-        client = self.getClient(client_data.client_id)
-        if client:
-            client.updateClientProperties(client_data)
-
-    def updateClientStatus(self, client_id, status):
-        client = self.getClient(client_id)
-        if client:
-            client.setStatus(status)
-
-    def setClientHasGui(self, client_id):
-        client = self.getClient(client_id)
-        if client:
-            client.setGuiEnabled()
-
-    def setClientGuiState(self, client_id, state):
-        client = self.getClient(client_id)
-        if client:
-            client.setGuiState(state)
-
-    def setClientDirtyState(self, client_id, bool_dirty):
-        client = self.getClient(client_id)
-        if client:
-            client.setDirtyState(bool_dirty)
-
-    def setClientNoSaveLevel(self, client_id, no_save_level):
-        client = self.getClient(client_id)
-        if client:
-            client.setNoSaveLevel(no_save_level)
-    
-    def switchClient(self, old_client_id, new_client_id):
-        client = self.getClient(old_client_id)
-        if client:
-            client.switch(new_client_id)
-
-    def clientIsStillRunning(self, client_id):
-        client = self.getClient(client_id)
-        if client:
-            client.allowKill()
+    #def updateClientStatus(self, client_id, status):
+        #client = self.getClient(client_id)
+        #if client:
+            #client.setStatus(status)
 
     def removeAllClients(self):
         self.client_list.clear()
-
-    def reOrderClients(self, client_id_list):
-        new_client_list = []
-        for client_id in client_id_list:
-            client = self.getClient(client_id)
-
-            if not client:
-                return
-
-            new_client_list.append(client)
-
-        self.client_list.clear()
-        self._main_win.reCreateListWidget()
-
-        self.client_list = new_client_list
-        for client in self.client_list:
-            client.reCreateWidget()
-            client.widget.updateStatus(client.status)
             
     def addFavorite(self, name, icon_name, factory, from_server=False):
         for favorite in self.favorite_list:
@@ -210,3 +158,140 @@ class Session(object):
             server = GUIServerThread.instance()
             if server:
                 server.toDaemon('/ray/favorites/remove', name, int(factory))
+
+    def setDaemonOptions(self, options):
+        self._main_win.setDaemonOptions(options)
+        for client in self.client_list:
+            client.widget.setDaemonOptions(options)
+
+class SignaledSession(Session):
+    def __init__(self):
+        Session.__init__(self)
+        self._signaler.osc_receive.connect(self.oscReceive)
+        
+    def oscReceive(self, path, args, types, src_addr):
+        func_path = path
+        func_name = func_path.replace('/', '', 1).replace('/', '_')
+        
+        if func_name in self.__dir__():
+            function = self.__getattribute__(func_name)
+            function(path, args)
+    
+    def ray_gui_server_nsm_locked(self, path, args):
+        nsm_locked = bool(args[0])
+        self._main_win.setNsmLocked(nsm_locked)
+    
+    def ray_gui_server_message(self, path, args):
+        message = args[0]
+        self._main_win.printMessage(message)
+    
+    def ray_gui_server_options(self, path, args):
+        options = args[0]
+        self.setDaemonOptions(options)
+    
+    def ray_gui_session_name(self, path, args):
+        sname, spath = args
+        self.setName(sname)
+        self.setPath(spath)
+        self._main_win.renameSession(sname, spath)
+        
+    def ray_gui_session_is_nsm(self, path, args):
+        self._main_win.openingNsmSession()
+    
+    def ray_gui_session_renameable(self, path, args):
+        self.is_renameable = bool(args[0])
+        
+        bool_set_edit = bool(self.is_renameable
+                             and self.server_status == ray.ServerStatus.READY
+                             and not CommandLineArgs.out_daemon)
+        
+        self._main_win.setSessionNameEditable(bool_set_edit)
+    
+    def ray_gui_session_sort_clients(self, path, args):
+        new_client_list = []
+        for client_id in args:
+            client = self.getClient(client_id)
+
+            if not client:
+                return
+
+            new_client_list.append(client)
+
+        self.client_list.clear()
+        self._main_win.reCreateListWidget()
+
+        self.client_list = new_client_list
+        for client in self.client_list:
+            client.reCreateWidget()
+            client.widget.updateStatus(client.status)
+    
+    def ray_gui_client_new(self, path, args):
+        client = Client(self, ray.ClientData(*args))
+        self.client_list.append(client)
+    
+    def ray_gui_client_update(self, path, args):
+        client_data = ray.ClientData(*args)
+        client = self.getClient(client_data.client_id)
+        if client:
+            client.updateClientProperties(client_data)
+    
+    def ray_gui_client_status(self, path, args):
+        client_id, status = args
+        client = self.getClient(client_id)
+        if client:
+            client.setStatus(status)
+            
+            if status == ray.ClientStatus.REMOVED:
+                self._main_win.removeClient(client_id)
+                client.properties_dialog.close()
+                self.client_list.remove(client)
+                del client
+            
+        self._main_win.clientStatusChanged(client_id, status)
+    
+    def ray_gui_client_switch(self, path, args):
+        old_client_id, new_client_id = args
+        
+        client = self.getClient(old_client_id)
+        if client:
+            client.switch(new_client_id)
+    
+    def ray_gui_client_progress(self, path, args):
+        client_id, progress = args
+        
+        client = self.getClient(client_id)
+        if client:
+            client.setProgress(progress)
+    
+    def ray_gui_client_dirty(self, path, args):
+        client_id, int_dirty = args
+        client = self.getClient(client_id)
+        if client:
+            client.setDirtyState(bool(int_dirty))
+    
+    def ray_gui_client_has_optional_gui(self, path, args):
+        client_id = args[0]
+        client = self.getClient(client_id)
+        if client:
+            client.setGuiEnabled()
+    
+    def ray_gui_client_gui_visible(self, path, args):
+        client_id, int_state = args
+        client = self.getClient(client_id)
+        if client:
+            client.setGuiState(bool(int_state))
+    
+    def ray_gui_client_still_running(self, path, args):
+        client_id = args[0]
+        client = self.getClient(client_id)
+        if client:
+            client.allowKill()
+    
+    def ray_gui_client_no_save_level(self, path, args):
+        client_id, no_save_level = args
+        
+        client = self.getClient(client_id)
+        if client:
+            client.setNoSaveLevel(no_save_level)
+            
+    

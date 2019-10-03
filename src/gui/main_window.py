@@ -1,7 +1,11 @@
 import time
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QCompleter, QAction, QToolButton, QAbstractItemView, QLabel, QLineEdit
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QInputDialog,
+        QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox,
+        QFileDialog, QMessageBox, QCompleter, QAction, QToolButton,
+        QAbstractItemView, QLabel, QLineEdit)
 from PyQt5.QtGui import QIcon, QCursor, QPalette, QPixmap, QFontDatabase
-from PyQt5.QtCore import QTimer, QProcess, pyqtSignal, pyqtSlot, QObject, QSize, Qt, QSettings, qDebug, QLocale, QTranslator
+from PyQt5.QtCore import (QTimer, QProcess, pyqtSignal, pyqtSlot, QObject,
+                          QSize, Qt, QSettings, qDebug, QLocale, QTranslator)
 
 from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
                        serverStatusString)
@@ -13,7 +17,6 @@ from gui_client import TrashedClient
 
 import ray
 import list_widget_clients
-
 
 import ui_raysession
 import ui_client_slot
@@ -152,27 +155,27 @@ class MainWindow(QMainWindow):
         # connect OSC signals from daemon
         sg = self._signaler
 
-        sg.new_client_added.connect(self.serverAddsClient)
-        sg.client_removed.connect(self.serverRemovesClient)
-        sg.client_status_changed.connect(self.serverUpdatesClientStatus)
-        sg.client_has_gui.connect(self.serverSetsClientHasGui)
-        sg.client_gui_visible_sig.connect(self.serverSetsClientGuiState)
-        sg.client_dirty_sig.connect(self.serverSetsClientDirtyState)
-        sg.client_no_save_level.connect(
-            self.serverSetClientNoSaveLevel)
-        sg.client_switched.connect(self.serverSwitchesClient)
-        sg.client_progress.connect(self.serverClientProgress)
-        sg.client_still_running.connect(self.serverStillRunningClient)
-        sg.client_updated.connect(self.serverUpdatesClientProperties)
-        sg.new_message_sig.connect(self.serverPrintsMessage)
-        sg.session_name_sig.connect(self.serverRenamesSession)
-        sg.session_renameable.connect(self.serverSessionRenameable)
+        #sg.new_client_added.connect(self.serverAddsClient)
+        #sg.client_removed.connect(self.serverRemovesClient)
+        #sg.client_status_changed.connect(self.serverUpdatesClientStatus)
+        #sg.client_has_gui.connect(self.serverSetsClientHasGui)
+        #sg.client_gui_visible_sig.connect(self.serverSetsClientGuiState)
+        #sg.client_dirty_sig.connect(self.serverSetsClientDirtyState)
+        #sg.client_no_save_level.connect(
+            #self.serverSetClientNoSaveLevel)
+        #sg.client_switched.connect(self.serverSwitchesClient)
+        #sg.client_progress.connect(self.serverClientProgress)
+        #sg.client_still_running.connect(self.serverStillRunningClient)
+        #sg.client_updated.connect(self.serverUpdatesClientProperties)
+        #sg.new_message_sig.connect(self.serverPrintsMessage)
+        #sg.session_name_sig.connect(self.serverRenamesSession)
+        #sg.session_renameable.connect(self.serverSessionRenameable)
         sg.server_progress.connect(self.serverProgress)
         sg.server_status_changed.connect(self.serverChangeServerStatus)
         sg.server_copying.connect(self.serverCopying)
         sg.error_message.connect(self.serverSendsError)
-        sg.opening_session.connect(self.serverOpensNsmSession)
-        sg.clients_reordered.connect(self.serverReorderClients)
+        #sg.opening_session.connect(self.serverOpensNsmSession)
+        #sg.clients_reordered.connect(self.serverReorderClients)
         sg.trash_add.connect(self.serverTrashAdd)
         sg.trash_remove.connect(self.serverTrashRemove)
         sg.trash_clear.connect(self.serverTrashClear)
@@ -180,8 +183,8 @@ class MainWindow(QMainWindow):
         sg.favorite_added.connect(self.addFavorite)
         sg.favorite_removed.connect(self.removeFavorite)
         sg.daemon_url_request.connect(self.showDaemonUrlWindow)
-        sg.daemon_nsm_locked.connect(self.setNsmLocked)
-        sg.daemon_options.connect(self.setDaemonOptions)
+        #sg.daemon_nsm_locked.connect(self.setNsmLocked)
+        #sg.daemon_options.connect(self.setDaemonOptions)
 
         # self.connectListWidgetRequests()
 
@@ -290,8 +293,6 @@ class MainWindow(QMainWindow):
                 _translate('actions', 'Auto Snapshot at Save'))
         
         self.has_git = has_git
-        for client in self._session.client_list:
-            client.widget.setDaemonOptions(options)
 
     def toDaemon(self, *args):
         server = GUIServerThread.instance()
@@ -630,29 +631,18 @@ class MainWindow(QMainWindow):
 
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
 
-    def serverAddsClient(self, client_data):
-        self._session.addClient(client_data)
+    def removeClient(self, client_id):
+        self.ui.listWidget.removeClientWidget(client_id)
 
-    def serverRemovesClient(self, client_id):
-        client = self._session.getClient(client_id)
-        if client:
-            self.ui.listWidget.removeClientWidget(client_id)
-            self._session.removeClient(client_id)
+    #def serverClientProgress(self, client_id, progress):
+        #client = self._session.getClient(client_id)
+        #if client:
+            #client.setProgress(progress)
 
-    def serverSwitchesClient(self, old_client_id, new_client_id):
-        self._session.switchClient(old_client_id, new_client_id)
+    #def serverUpdatesClientProperties(self, client_data):
+        #self._session.updateClientProperties(client_data)
 
-    def serverClientProgress(self, client_id, progress):
-        client = self._session.getClient(client_id)
-        if client:
-            client.setProgress(progress)
-
-    def serverUpdatesClientProperties(self, client_data):
-        self._session.updateClientProperties(client_data)
-
-    def serverUpdatesClientStatus(self, client_id, status):
-        self._session.updateClientStatus(client_id, status)
-
+    def clientStatusChanged(self, client_id, status):
         # launch/stop flashing status if 'open'
         for client in self._session.client_list:
             if client.status == ray.ClientStatus.OPEN:
@@ -674,29 +664,26 @@ class MainWindow(QMainWindow):
                 if status == ray.ClientStatus.READY:
                     self.raiseWindow()
 
-    def serverSetsClientHasGui(self, client_id):
-        self._session.setClientHasGui(client_id)
+    #def serverSetsClientHasGui(self, client_id):
+        #self._session.setClientHasGui(client_id)
 
-    def serverSetsClientGuiState(self, client_id, state):
-        self._session.setClientGuiState(client_id, state)
+    #def serverSetsClientGuiState(self, client_id, state):
+        #self._session.setClientGuiState(client_id, state)
 
-    def serverSetsClientDirtyState(self, client_id, bool_dirty):
-        self._session.setClientDirtyState(client_id, bool_dirty)
+    #def serverSetsClientDirtyState(self, client_id, bool_dirty):
+        #self._session.setClientDirtyState(client_id, bool_dirty)
         
-    def serverSetClientNoSaveLevel(self, client_id, no_save_level):
-        self._session.setClientNoSaveLevel(client_id, no_save_level)
+    #def serverSetClientNoSaveLevel(self, client_id, no_save_level):
+        #self._session.setClientNoSaveLevel(client_id, no_save_level)
 
-    def serverStillRunningClient(self, client_id):
-        self._session.clientIsStillRunning(client_id)
+    #def serverStillRunningClient(self, client_id):
+        #self._session.clientIsStillRunning(client_id)
 
-    def serverPrintsMessage(self, message):
+    def printMessage(self, message):
         self.ui.textEditMessages.appendPlainText(
             time.strftime("%H:%M:%S") + '  ' + message)
 
-    def serverRenamesSession(self, session_name, session_path):
-        self._session.setName(session_name)
-        self._session.setPath(session_path)
-
+    def renameSession(self, session_name, session_path):
         if session_name:
             self.setWindowTitle('%s - %s' % (ray.APP_TITLE, session_name))
             self.ui.stackedWidgetSessionName.setText(session_name)
@@ -705,15 +692,9 @@ class MainWindow(QMainWindow):
             self.ui.stackedWidgetSessionName.setText(
                 _translate('main view', 'No Session Loaded'))
 
-    def serverSessionRenameable(self, renameable):
-        self._session.is_renameable = renameable
-        
-        bool_set_edit = bool(renameable
-                             and self._session.server_status
-                                    == ray.ServerStatus.READY
-                             and not CommandLineArgs.out_daemon)
+    def setSessionNameEditable(self, bool_set_edit):
         self.ui.stackedWidgetSessionName.setEditable(bool_set_edit)
-
+        
     def serverSendsError(self, args):
         if not len(args) >= 3:
             return
@@ -721,15 +702,15 @@ class MainWindow(QMainWindow):
         error_dialog = child_dialogs.ErrorDialog(self, args)
         error_dialog.exec()
 
-    def serverOpensNsmSession(self):
+    def openingNsmSession(self):
         if not RS.settings.value('OpenNsmSessionInfo', True, type=bool):
             return
 
         dialog = child_dialogs.OpenNsmSessionInfoDialog(self)
         dialog.exec()
 
-    def serverReorderClients(self, client_id_list):
-        self._session.reOrderClients(client_id_list)
+    #def serverReorderClients(self, client_id_list):
+        #self._session.reOrderClients(client_id_list)
 
     def serverProgress(self, progress):
         self.server_progress = progress

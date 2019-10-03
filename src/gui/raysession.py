@@ -16,7 +16,7 @@ from gui_tools import (
     ArgParser, CommandLineArgs, initGuiTools, default_session_root,
     ErrDaemon, _translate, getCodeRoot)
 from gui_server_thread import GUIServerThread
-from gui_session import Session
+from gui_session import SignaledSession
 import nsm_client
 import ray
 
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     
     #build session
     server = GUIServerThread()
-    session = Session()
+    session = SignaledSession()
         
     app.exec()
     

@@ -33,11 +33,10 @@ def ray_method(path, types):
             t_thread, t_path, t_args, t_types, src_addr, rest = args
             if CommandLineArgs.debug:
                 sys.stderr.write('\033[94mOSC::daemon_receives\033[0m %s, %s, %s, %s\n'
-                                % (t_path, t_types, t_args, src_addr.url))
+                                 % (t_path, t_types, t_args, src_addr.url))
             
             response = func(*args[:-1], **kwargs)
             if response != False:
-                #t_thread, t_path, t_args, t_types, src_addr, rest = args
                 signaler.osc_recv.emit(t_path, t_args, t_types, src_addr)
             
             return response

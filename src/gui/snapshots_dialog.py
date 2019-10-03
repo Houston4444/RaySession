@@ -350,7 +350,8 @@ class SnapshotsDialog(ChildDialog):
         self.ui = ui_list_snapshots.Ui_Dialog()
         self.ui.setupUi(self)
         
-        self._signaler.reply_auto_snapshot.connect(self.ui.checkBoxAutoSnapshot.setChecked)
+        self._signaler.reply_auto_snapshot.connect(
+            self.ui.checkBoxAutoSnapshot.setChecked)
         self._signaler.snapshots_found.connect(self.addSnapshots)
         
         self.snapshots = []

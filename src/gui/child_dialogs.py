@@ -933,12 +933,13 @@ class StopClientDialog(ChildDialog):
                                                                                                                                  minutes)
 
             self.ui.label.setText(text)
+            
+            self.client.status_changed.connect(self.serverUpdatesClientStatus)
 
         self.ui.pushButtonSaveStop.clicked.connect(self.saveAndStop)
         self.ui.checkBox.stateChanged.connect(self.checkBoxClicked)
 
-        self._signaler.client_status_changed.connect(
-            self.serverUpdatesClientStatus)
+        
 
     def saveAndStop(self):
         self.wait_for_save = True
@@ -948,10 +949,7 @@ class StopClientDialog(ChildDialog):
         self.client.check_last_save = not bool(state)
         self.client.sendPropertiesToDaemon()
 
-    def serverUpdatesClientStatus(self, client_id, status):
-        if client_id != self.client_id:
-            return
-
+    def serverUpdatesClientStatus(self, status):
         if status in (ray.ClientStatus.STOPPED, ray.ClientStatus.REMOVED):
             self.reject()
             return
@@ -973,17 +971,12 @@ class StopClientNoSaveDialog(ChildDialog):
         if self.client:
             text = self.ui.label.text() % self.client.prettierName()
             self.ui.label.setText(text)
+            self.client.status_changed.connect(self.serverUpdatesClientStatus)
         
         self.ui.checkBox.stateChanged.connect(self.checkBoxClicked)
         self.ui.pushButtonCancel.setFocus(True)
         
-        self._signaler.client_status_changed.connect(
-            self.serverUpdatesClientStatus)
-    
-    def serverUpdatesClientStatus(self, client_id, status):
-        if client_id != self.client_id:
-            return
-
+    def serverUpdatesClientStatus(self, status):
         if status in (ray.ClientStatus.STOPPED, ray.ClientStatus.REMOVED):
             self.reject()
             return

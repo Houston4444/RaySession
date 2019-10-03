@@ -1,13 +1,18 @@
 import time
 import sys
+from PyQt5.QtCore import QObject, pyqtSignal
+
 import child_dialogs
 import snapshots_dialog
 import ray
 from gui_server_thread import GUIServerThread
 
 
-class Client(object):
+class Client(QObject):
+    status_changed = pyqtSignal(int)
+    
     def __init__(self, session, client_data, trashed=False):
+        QObject.__init__(self)
         self._session = session
         self._main_win = self._session._main_win
 
@@ -39,6 +44,7 @@ class Client(object):
     def setStatus(self, status):
         self.previous_status = self.status
         self.status = status
+        self.status_changed.emit(status)
 
         if (not self.has_dirty
             and self.status == ray.ClientStatus.READY
