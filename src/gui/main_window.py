@@ -157,10 +157,7 @@ class MainWindow(QMainWindow):
         sg.server_progress.connect(self.serverProgress)
         sg.server_status_changed.connect(self.serverChangeServerStatus)
         sg.server_copying.connect(self.serverCopying)
-        sg.error_message.connect(self.serverSendsError)
         sg.daemon_url_request.connect(self.showDaemonUrlWindow)
-
-        # self.connectListWidgetRequests()
 
         if self.ui.actionAddExecutable.icon().isNull():
             self.ui.actionAddExecutable.setIcon(QIcon.fromTheme('system-run'))
@@ -221,8 +218,6 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setObjectName("listWidget")
         self.ui.listWidget.setSession(self._session)
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
-
-        # self.connectListWidgetRequests()
 
     def setNsmLocked(self, nsm_locked):
         self.ui.actionNewSession.setEnabled(not nsm_locked)
@@ -632,11 +627,8 @@ class MainWindow(QMainWindow):
     def setSessionNameEditable(self, bool_set_edit):
         self.ui.stackedWidgetSessionName.setEditable(bool_set_edit)
         
-    def serverSendsError(self, args):
-        if not len(args) >= 3:
-            return
-
-        error_dialog = child_dialogs.ErrorDialog(self, args)
+    def errorMessage(self, message):
+        error_dialog = child_dialogs.ErrorDialog(self, message)
         error_dialog.exec()
 
     def openingNsmSession(self):

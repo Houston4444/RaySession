@@ -47,11 +47,11 @@ class GUIServerThread(liblo.ServerThread):
         return _instance
 
     @ray_method('/error', 'sis')
-    def errorFromServer(self, path, args, types, src_addr):
-        self._signaler.error_message.emit(args)
+    def _error(self, path, args, types, src_addr):
+        pass
 
     @ray_method('/reply', None)
-    def receiveFromServer(self, path, args, types, src_addr):
+    def _reply(self, path, args, types, src_addr):
         if len(args) < 2:
             return
         
@@ -74,135 +74,132 @@ class GUIServerThread(liblo.ServerThread):
             self._signaler.snapshots_found.emit(args)
 
     @ray_method('/ray/gui/server/announce', 'siisi')
-    def serverAnnounce(self, path, args, types, src_addr):
+    def _server_announce(self, path, args, types, src_addr):
         if self._daemon_manager.isAnnounced():
             return
 
         version, server_status, options, session_root, is_net_free = args
 
-        self._signaler.daemon_announce.emit(src_addr,
-                                            version,
-                                            server_status,
-                                            options,
-                                            session_root,
-                                            is_net_free)
+        self._signaler.daemon_announce.emit(
+            src_addr, version, server_status,
+            options, session_root, is_net_free)
 
     @ray_method('/ray/gui/server/disannounce', '')
-    def serverDisannounce(self, path, args, types, src_addr):
+    def _server_disannounce(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/server/nsm_locked', 'i')
-    def daemonNsmLocked(self, path, args, types, src_addr):
+    def _server_nsm_locked(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/gui/server/root', 's')
-    def rayServerRootChanged(self, path, args, types, src_addr):
+    def _server_root(self, path, args, types, src_addr):
         session_root = args[0]
         CommandLineArgs.changeSessionRoot(session_root)
         self._signaler.root_changed.emit(session_root)
     
     @ray_method('/ray/gui/server/options', 'i')
-    def rayGuiServerOptions(self, path, args, types, src_addr):
+    def _server_options(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/gui/server/status', 'i')
-    def rayServerStatus(self, path, args, types, src_addr):
+    def _server_status(self, path, args, types, src_addr):
         server_status = args[0]
         self._signaler.server_status_changed.emit(server_status)
     
     @ray_method('/ray/gui/server/copying', 'i')
-    def guiServerCopying(self, path, args, types, src_addr):
+    def _server_copying(self, path, args, types, src_addr):
         copying = bool(int(args[0]))
         self._signaler.server_copying.emit(copying)
     
     @ray_method('/ray/gui/server/progress', 'f')
-    def guiServerProgress(self, path, args, types, src_addr):
+    def _server_progress(self, path, args, types, src_addr):
         progress = args[0]
         self._signaler.server_progress.emit(progress)
         
     @ray_method('/ray/gui/server/message', 's')
-    def serverMessage(self, path, args, types, src_addr):
+    def _server_message(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/session/name', 'ss')
-    def guiSessionName(self, path, args, types, src_addr):
+    def _session_name(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/gui/session/auto_snapshot', 'i')
-    def replyAutoSnapshot(self, path, args, types, src_addr):
+    def _session_auto_snapshot(self, path, args, types, src_addr):
         self._signaler.reply_auto_snapshot.emit(bool(args[0]))
     
     @ray_method('/ray/gui/session/is_nsm', '')
-    def rayOpeningNsmSession(self, path, args, types, src_addr):
+    def _session_is_nsm(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/gui/session/renameable', 'i')
-    def guiSessionRenameable(self, path, args, types, src_addr):
+    def _session_renameable(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/gui/session/sort_clients', None)
-    def rayGuiReorderClients(self, path, args, types, src_addr):
+    def _session_sort_clients(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             return False
     
     @ray_method('/ray/gui/client/new', 'ssssissssis')
-    def newClientFromServer(self, path, args, types, src_addr):
+    def _client_new(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/client/update', 'ssssissssis')
-    def updateClientProperties(self, path, args, types, src_addr):
+    def _client_update(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/client/status', 'si')
-    def guiClientStatus(self, path, args, types, src_addr):
+    def _client_status(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/client/switch', 'ss')
-    def guiClientSwitch(self, path, args, types, src_addr):
+    def _client_switch(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/client/progress', 'sf')
-    def guiClientProgress(self, path, args, types, src_addr):
+    def _client_progress(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/client/dirty', 'si')
-    def guiClientDirty(self, path, args, types, src_addr):
+    def _client_dirty(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/client/has_optional_gui', 's')
-    def guiClientHasOptionalGui(self, path, args, types, src_addr):
+    def _client_has_optional_gui(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/client/gui_visible', 'si')
-    def guiClientGuiVisible(self, path, args, types, src_addr):
+    def _client_gui_visible(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/client/still_running', 's')
-    def guiClientStillRunning(self, path, args, types, src_addr):
+    def _client_still_running(self, path, args, types, src_addr):
         pass
         
     @ray_method('/ray/gui/client/no_save_level', 'si')
-    def rayClientWarningNoSave(self, path, args, types, src_addr):
+    def _client_no_save_level(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/trash/add', 'ssssissssis')
-    def rayGuiTrashAdd(self, path, args, types, src_addr):
+    def _trash_add(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/trash/remove', 's')
-    def rayGuiTrashRemove(self, path, args, types, src_addr):
+    def _trash_remove(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/gui/trash/clear', '')
-    def rayGuiTrashClear(self, path, args, types, src_addr):
+    def _trash_clear(self, path, args, types, src_addr):
         pass
         
     @ray_method('/ray/gui/favorites/added', 'ssi')
-    def rayGuiFavoritesAdded(self, path, args, types, src_addr):
+    def _favorites_added(self, path, args, types, src_addr):
         pass
         
     @ray_method('/ray/gui/favorites/removed', 'si')
-    def rayGuiFavoritesRemoved(self, path, args, types, src_addr):
+    def _favorites_removed(self, path, args, types, src_addr):
         pass
     
     def send(self, *args):

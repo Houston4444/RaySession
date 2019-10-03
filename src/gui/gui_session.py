@@ -67,8 +67,6 @@ class Session(object):
         if not RS.settings.value('MainWindow/ShowMessages', False, type=bool):
             self._main_win.hideMessagesDock()
 
-        self._daemon_manager.start()
-
     @staticmethod
     def instance():
         global _instance
@@ -109,13 +107,6 @@ class Session(object):
         else:
             raise NameError("gui_session does not contains client %s"
                                 % client_id)
-
-    def removeClient(self, client_id):
-        client = self.getClient(client_id)
-        if client:
-            client.properties_dialog.close()
-            self.client_list.remove(client)
-            del client
 
     def removeAllClients(self):
         self.client_list.clear()
@@ -161,36 +152,42 @@ class SignaledSession(Session):
         Session.__init__(self)
         self._signaler.osc_receive.connect(self.oscReceive)
         
+        self._daemon_manager.start()
+        
     def oscReceive(self, path, args):
         func_path = path
-        func_name = func_path.replace('/', '', 1).replace('/', '_')
+        func_name = func_path.replace('/', '_')
         
         if func_name in self.__dir__():
             function = self.__getattribute__(func_name)
             function(path, args)
     
-    def ray_gui_server_nsm_locked(self, path, args):
+    def _error(self, path, args):
+        err_path, err_code, err_message = args
+        self._main_win.errorMessage(err_message)
+    
+    def _ray_gui_server_nsm_locked(self, path, args):
         nsm_locked = bool(args[0])
         self._main_win.setNsmLocked(nsm_locked)
     
-    def ray_gui_server_message(self, path, args):
+    def _ray_gui_server_message(self, path, args):
         message = args[0]
         self._main_win.printMessage(message)
     
-    def ray_gui_server_options(self, path, args):
+    def _ray_gui_server_options(self, path, args):
         options = args[0]
         self.setDaemonOptions(options)
     
-    def ray_gui_session_name(self, path, args):
+    def _ray_gui_session_name(self, path, args):
         sname, spath = args
         self.setName(sname)
         self.setPath(spath)
         self._main_win.renameSession(sname, spath)
         
-    def ray_gui_session_is_nsm(self, path, args):
+    def _ray_gui_session_is_nsm(self, path, args):
         self._main_win.openingNsmSession()
     
-    def ray_gui_session_renameable(self, path, args):
+    def _ray_gui_session_renameable(self, path, args):
         self.is_renameable = bool(args[0])
         
         bool_set_edit = bool(self.is_renameable
@@ -199,7 +196,7 @@ class SignaledSession(Session):
         
         self._main_win.setSessionNameEditable(bool_set_edit)
     
-    def ray_gui_session_sort_clients(self, path, args):
+    def _ray_gui_session_sort_clients(self, path, args):
         new_client_list = []
         for client_id in args:
             client = self.getClient(client_id)
@@ -217,17 +214,17 @@ class SignaledSession(Session):
             client.reCreateWidget()
             client.widget.updateStatus(client.status)
     
-    def ray_gui_client_new(self, path, args):
+    def _ray_gui_client_new(self, path, args):
         client = Client(self, ray.ClientData(*args))
         self.client_list.append(client)
     
-    def ray_gui_client_update(self, path, args):
+    def _ray_gui_client_update(self, path, args):
         client_data = ray.ClientData(*args)
         client = self.getClient(client_data.client_id)
         if client:
             client.updateClientProperties(client_data)
     
-    def ray_gui_client_status(self, path, args):
+    def _ray_gui_client_status(self, path, args):
         client_id, status = args
         client = self.getClient(client_id)
         if client:
@@ -241,58 +238,58 @@ class SignaledSession(Session):
             
         self._main_win.clientStatusChanged(client_id, status)
     
-    def ray_gui_client_switch(self, path, args):
+    def _ray_gui_client_switch(self, path, args):
         old_client_id, new_client_id = args
         
         client = self.getClient(old_client_id)
         if client:
             client.switch(new_client_id)
     
-    def ray_gui_client_progress(self, path, args):
+    def _ray_gui_client_progress(self, path, args):
         client_id, progress = args
         
         client = self.getClient(client_id)
         if client:
             client.setProgress(progress)
     
-    def ray_gui_client_dirty(self, path, args):
+    def _ray_gui_client_dirty(self, path, args):
         client_id, int_dirty = args
         client = self.getClient(client_id)
         if client:
             client.setDirtyState(bool(int_dirty))
     
-    def ray_gui_client_has_optional_gui(self, path, args):
+    def _ray_gui_client_has_optional_gui(self, path, args):
         client_id = args[0]
         client = self.getClient(client_id)
         if client:
             client.setGuiEnabled()
     
-    def ray_gui_client_gui_visible(self, path, args):
+    def _ray_gui_client_gui_visible(self, path, args):
         client_id, int_state = args
         client = self.getClient(client_id)
         if client:
             client.setGuiState(bool(int_state))
     
-    def ray_gui_client_still_running(self, path, args):
+    def _ray_gui_client_still_running(self, path, args):
         client_id = args[0]
         client = self.getClient(client_id)
         if client:
             client.allowKill()
     
-    def ray_gui_client_no_save_level(self, path, args):
+    def _ray_gui_client_no_save_level(self, path, args):
         client_id, no_save_level = args
         
         client = self.getClient(client_id)
         if client:
             client.setNoSaveLevel(no_save_level)
     
-    def ray_gui_trash_add(self, path, args):
+    def _ray_gui_trash_add(self, path, args):
         client_data = ray.ClientData(*args)
         trash_action = self._main_win.trashAdd(client_data)
         trashed_client = TrashedClient(client_data, trash_action)
         self.trashed_clients.append(trashed_client)
     
-    def ray_gui_trash_remove(self, path, args):
+    def _ray_gui_trash_remove(self, path, args):
         client_id = args[0]
         
         for trashed_client in self.trashed_clients:
@@ -304,15 +301,15 @@ class SignaledSession(Session):
         self.trashed_clients.remove(trashed_client)
         self._main_win.trashRemove(trashed_client.menu_action)
         
-    def ray_gui_trash_clear(self, path, args):
+    def _ray_gui_trash_clear(self, path, args):
         self.trashed_clients.clear()
         self._main_win.trashClear()
         
-    def ray_gui_favorites_added(self, path, args):
+    def _ray_gui_favorites_added(self, path, args):
         name, icon_name, int_factory = args
         self.addFavorite(name, icon_name, bool(int_factory), True)
         
-    def ray_gui_favorites_remove(self, path, args):
+    def _ray_gui_favorites_remove(self, path, args):
         name, int_factory = args
         self.removeFavorite(name, bool(int_factory), True)
         

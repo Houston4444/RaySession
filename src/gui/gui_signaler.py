@@ -11,7 +11,6 @@ class Signaler(QObject):
     daemon_announce_ok = pyqtSignal()
     daemon_nsm_locked = pyqtSignal(bool)
     server_copying = pyqtSignal(bool)
-    error_message = pyqtSignal(list)
 
     add_sessions_to_list = pyqtSignal(list)
     new_executable = pyqtSignal(list)

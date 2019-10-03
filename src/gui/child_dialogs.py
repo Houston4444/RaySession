@@ -1103,10 +1103,10 @@ class WaitingCloseUserDialog(ChildDialog):
                              bool(state), type=bool)
 
 class ErrorDialog(ChildDialog):
-    def __init__(self, parent, osc_args):
+    def __init__(self, parent, message):
         ChildDialog.__init__(self, parent)
         self.ui = ui_error_dialog.Ui_Dialog()
         self.ui.setupUi(self)
 
-        self.ui.label.setText(osc_args[2])
+        self.ui.label.setText(message)
 
