@@ -6,7 +6,7 @@ import inspect
 
 import ray
 from daemon_manager import DaemonManager
-from gui_client import Client
+from gui_client import Client, TrashedClient
 from gui_signaler import Signaler
 from gui_server_thread import GUIServerThread
 from gui_tools import initGuiTools, CommandLineArgs, RS
@@ -143,6 +143,7 @@ class Session(object):
         if not from_server:
             server = GUIServerThread.instance()
             if server:
+                print('fkeorfav')
                 server.toDaemon('/ray/favorites/add', name,
                                 icon_name, int(factory))
         
@@ -293,5 +294,34 @@ class SignaledSession(Session):
         client = self.getClient(client_id)
         if client:
             client.setNoSaveLevel(no_save_level)
-            
     
+    def ray_gui_trash_add(self, path, args):
+        client_data = ray.ClientData(*args)
+        trash_action = self._main_win.trashAdd(client_data)
+        trashed_client = TrashedClient(client_data, trash_action)
+        self.trashed_clients.append(trashed_client)
+    
+    def ray_gui_trash_remove(self, path, args):
+        client_id = args[0]
+        
+        for trashed_client in self.trashed_clients:
+            if trashed_client.data.client_id == client_id:
+                break
+        else:
+            return
+        
+        self.trashed_clients.remove(trashed_client)
+        self._main_win.trashRemove(trashed_client.menu_action)
+        
+    def ray_gui_trash_clear(self, path, args):
+        self.trashed_clients.clear()
+        self._main_win.trashClear()
+        
+    def ray_gui_favorites_added(self, path, args):
+        name, icon_name, int_factory = args
+        self.addFavorite(name, icon_name, bool(int_factory), True)
+        
+    def ray_gui_favorites_remove(self, path, args):
+        name, int_factory = args
+        self.removeFavorite(name, bool(int_factory), True)
+        

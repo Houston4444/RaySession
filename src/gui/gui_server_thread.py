@@ -219,27 +219,32 @@ class GUIServerThread(liblo.ServerThread):
 
     @ray_method('/ray/gui/trash/add', 'ssssissssis')
     def rayGuiTrashAdd(self, path, args, types, src_addr):
-        client_data = ray.ClientData(*args)
-        self._signaler.trash_add.emit(client_data)
+        pass
+        #client_data = ray.ClientData(*args)
+        #self._signaler.trash_add.emit(client_data)
 
     @ray_method('/ray/gui/trash/remove', 's')
     def rayGuiTrashRemove(self, path, args, types, src_addr):
-        client_id = args[0]
-        self._signaler.trash_remove.emit(client_id)
+        pass
+        #client_id = args[0]
+        #self._signaler.trash_remove.emit(client_id)
 
     @ray_method('/ray/gui/trash/clear', '')
     def rayGuiTrashClear(self, path, args, types, src_addr):
-        self._signaler.trash_clear.emit()
+        pass
+        #self._signaler.trash_clear.emit()
         
     @ray_method('/ray/gui/favorites/added', 'ssi')
     def rayGuiFavoritesAdded(self, path, args, types, src_addr):
-        name, icon, int_factory = args
-        self._signaler.favorite_added.emit(name, icon, bool(int_factory))
+        pass
+        #name, icon, int_factory = args
+        #self._signaler.favorite_added.emit(name, icon, bool(int_factory))
         
     @ray_method('/ray/gui/favorites/removed', 'si')
     def rayGuiFavoritesRemoved(self, path, args, types, src_addr):
-        name, int_factory = args
-        self._signaler.favorite_removed.emit(name, bool(int_factory))
+        pass
+        #name, int_factory = args
+        #self._signaler.favorite_removed.emit(name, bool(int_factory))
     
     def send(self, *args):
         if CommandLineArgs.debug:

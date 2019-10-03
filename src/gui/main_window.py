@@ -176,12 +176,12 @@ class MainWindow(QMainWindow):
         sg.error_message.connect(self.serverSendsError)
         #sg.opening_session.connect(self.serverOpensNsmSession)
         #sg.clients_reordered.connect(self.serverReorderClients)
-        sg.trash_add.connect(self.serverTrashAdd)
-        sg.trash_remove.connect(self.serverTrashRemove)
-        sg.trash_clear.connect(self.serverTrashClear)
-        sg.trash_dialog.connect(self.showClientTrashDialog)
-        sg.favorite_added.connect(self.addFavorite)
-        sg.favorite_removed.connect(self.removeFavorite)
+        #sg.trash_add.connect(self.serverTrashAdd)
+        #sg.trash_remove.connect(self.serverTrashRemove)
+        #sg.trash_clear.connect(self.serverTrashClear)
+        #sg.trash_dialog.connect(self.showClientTrashDialog)
+        #sg.favorite_added.connect(self.addFavorite)
+        #sg.favorite_removed.connect(self.removeFavorite)
         sg.daemon_url_request.connect(self.showDaemonUrlWindow)
         #sg.daemon_nsm_locked.connect(self.setNsmLocked)
         #sg.daemon_options.connect(self.setDaemonOptions)
@@ -572,20 +572,6 @@ class MainWindow(QMainWindow):
 
     def renameSession(self, new_session_name):
         self.toDaemon('/ray/session/rename', new_session_name)
-    
-    def showClientTrashDialog(self, client_id):
-        for trashed_client in self._session.trashed_clients:
-            if trashed_client.data.client_id == client_id:
-                break
-        else:
-            return
-
-        dialog = child_dialogs.ClientTrashDialog(self, trashed_client.data)
-        dialog.exec()
-        if not dialog.result():
-            return
-
-        self.toDaemon('/ray/trash/restore', client_id)
         
     def addFavorite(self, name, icon_name, factory):
         self._session.addFavorite(name, icon_name, factory, True)
@@ -814,7 +800,7 @@ class MainWindow(QMainWindow):
                 dialog.exec()
             
 
-    def serverTrashAdd(self, client_data):
+    def trashAdd(self, client_data):
         prettier_name = client_data.name
         if client_data.label:
             prettier_name = client_data.label
@@ -822,12 +808,8 @@ class MainWindow(QMainWindow):
         act_x_trashed = self.trashMenu.addAction(
             QIcon.fromTheme(client_data.icon), prettier_name)
         act_x_trashed.setData(client_data.client_id)
-        act_x_trashed.triggered.connect(self._signaler.restoreClient)
-
-        trashed_client = TrashedClient(client_data, act_x_trashed)
-
-        self._session.trashed_clients.append(trashed_client)
-        print('koff', prettier_name, self._session.server_status)
+        act_x_trashed.triggered.connect(self.showClientTrashDialog)
+        
         self.ui.trashButton.setEnabled(
             bool(not self._session.server_status in (
                         ray.ServerStatus.OFF,
@@ -835,25 +817,53 @@ class MainWindow(QMainWindow):
                         ray.ServerStatus.WAIT_USER,
                         ray.ServerStatus.OUT_SNAPSHOT,
                         ray.ServerStatus.CLOSE)))
+        
+        return act_x_trashed
+    
+    #def serverTrashRemove(self, client_id):
+        #for trashed_client in self._session.trashed_clients:
+            #if trashed_client.data.client_id == client_id:
+                #break
+        #else:
+            #return
 
-    def serverTrashRemove(self, client_id):
+        #self.trashMenu.removeAction(trashed_client.menu_action)
+        #self._session.trashed_clients.remove(trashed_client)
+
+        #if not self._session.trashed_clients:
+            #self.ui.trashButton.setEnabled(False)
+    
+    def trashRemove(self, menu_action):
+        self.trashMenu.removeAction(menu_action)
+        
+        if not self._session.trashed_clients:
+            self.ui.trashButton.setEnabled(False)
+    
+    def trashClear(self):
+        self.trashMenu.clear()
+        self.ui.trashButton.setEnabled(False)
+    
+    @pyqtSlot()
+    def showClientTrashDialog(self):
+        try:
+            client_id = str(self.sender().data())
+        except BaseException:
+            return
+
+        #self.showClientTrashDialog(client_id)
         for trashed_client in self._session.trashed_clients:
             if trashed_client.data.client_id == client_id:
                 break
         else:
             return
 
-        self.trashMenu.removeAction(trashed_client.menu_action)
-        self._session.trashed_clients.remove(trashed_client)
+        dialog = child_dialogs.ClientTrashDialog(self, trashed_client.data)
+        dialog.exec()
+        if not dialog.result():
+            return
 
-        if not self._session.trashed_clients:
-            self.ui.trashButton.setEnabled(False)
-
-    def serverTrashClear(self):
-        self._session.trashed_clients.clear()
-        self.trashMenu.clear()
-        self.ui.trashButton.setEnabled(False)
-
+        self.toDaemon('/ray/trash/restore', client_id)
+    
     @pyqtSlot()
     def launchFavorite(self):
         template_name, factory = self.sender().data()

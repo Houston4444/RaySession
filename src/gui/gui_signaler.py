@@ -25,14 +25,6 @@ class Signaler(QObject):
     server_progress = pyqtSignal(float)
     server_status_changed = pyqtSignal(int)
 
-    trash_add = pyqtSignal(object)
-    trash_remove = pyqtSignal(str)
-    trash_clear = pyqtSignal()
-    trash_dialog = pyqtSignal(str)
-    
-    favorite_added = pyqtSignal(str, str, bool)
-    favorite_removed = pyqtSignal(str, bool)
-
     daemon_url_request = pyqtSignal(int, str)
     daemon_url_changed = pyqtSignal(str)
     
@@ -49,12 +41,3 @@ class Signaler(QObject):
         if not _instance:
             _instance = Signaler()
         return _instance
-
-    @pyqtSlot()
-    def restoreClient(self):
-        try:
-            client_id = str(self.sender().data())
-        except BaseException:
-            return
-
-        self.trash_dialog.emit(client_id)
