@@ -6,15 +6,13 @@ _instance = None
 
 
 class Signaler(QObject):
-    osc_receive = pyqtSignal(str, list, str, object)
+    osc_receive = pyqtSignal(str, list)
     daemon_announce = pyqtSignal(Address, str, int, int, str, int)
     daemon_announce_ok = pyqtSignal()
     daemon_nsm_locked = pyqtSignal(bool)
     server_copying = pyqtSignal(bool)
     error_message = pyqtSignal(list)
 
-    new_client_stopped = pyqtSignal(str, str)
-    client_no_save_level = pyqtSignal(str, int)
     add_sessions_to_list = pyqtSignal(list)
     new_executable = pyqtSignal(list)
     session_template_found = pyqtSignal(list)

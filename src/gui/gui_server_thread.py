@@ -23,8 +23,7 @@ def ray_method(path, types):
                 
             response = func(*args[:-1], **kwargs)
             if response != False:
-                t_thread._signaler.osc_receive.emit(
-                    t_path, t_args, t_types, src_addr)
+                t_thread._signaler.osc_receive.emit(t_path, t_args)
                 
             return response
         return wrapper
@@ -95,10 +94,6 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/server/nsm_locked', 'i')
     def daemonNsmLocked(self, path, args, types, src_addr):
         pass
-        #nsm_locked = bool(args[0])
-
-        #self._signaler.daemon_nsm_locked.emit(nsm_locked)
-        
     
     @ray_method('/ray/gui/server/root', 's')
     def rayServerRootChanged(self, path, args, types, src_addr):
@@ -153,98 +148,62 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/client/new', 'ssssissssis')
     def newClientFromServer(self, path, args, types, src_addr):
         pass
-        #client_data = ray.ClientData(*args)
-        #self._signaler.new_client_added.emit(client_data)
 
     @ray_method('/ray/gui/client/update', 'ssssissssis')
     def updateClientProperties(self, path, args, types, src_addr):
         pass
-        #client_data = ray.ClientData(*args)
-        #self._signaler.client_updated.emit(client_data)
 
     @ray_method('/ray/gui/client/status', 'si')
     def guiClientStatus(self, path, args, types, src_addr):
         pass
-        #client_id, status = args
-
-        #if status == ray.ClientStatus.REMOVED:
-            #self._signaler.client_removed.emit(client_id)
-            #return
-
-        #self._signaler.client_status_changed.emit(client_id, status)
 
     @ray_method('/ray/gui/client/switch', 'ss')
     def guiClientSwitch(self, path, args, types, src_addr):
         pass
-        #old_client_id, new_client_id = args
-        #self._signaler.client_switched.emit(old_client_id, new_client_id)
 
     @ray_method('/ray/gui/client/progress', 'sf')
     def guiClientProgress(self, path, args, types, src_addr):
         pass
-        #client_id, progress = args
-        #self._signaler.client_progress.emit(client_id, progress)
 
     @ray_method('/ray/gui/client/dirty', 'si')
     def guiClientDirty(self, path, args, types, src_addr):
         pass
-        #client_id, dirty_num = args
-        #bool_dirty = bool(dirty_num)
-
-        #self._signaler.client_dirty_sig.emit(client_id, bool_dirty)
 
     @ray_method('/ray/gui/client/has_optional_gui', 's')
     def guiClientHasOptionalGui(self, path, args, types, src_addr):
         pass
-        #client_id = args[0]
-        #self._signaler.client_has_gui.emit(client_id)
 
     @ray_method('/ray/gui/client/gui_visible', 'si')
     def guiClientGuiVisible(self, path, args, types, src_addr):
         pass
-        #client_id, state = args
-        #self._signaler.client_gui_visible_sig.emit(client_id, bool(state))
 
     @ray_method('/ray/gui/client/still_running', 's')
     def guiClientStillRunning(self, path, args, types, src_addr):
         pass
-        #client_id = args[0]
-        #self._signaler.client_still_running.emit(client_id)
         
     @ray_method('/ray/gui/client/no_save_level', 'si')
     def rayClientWarningNoSave(self, path, args, types, src_addr):
         pass
-        #client_id, warning_no_save = args
-        #self._signaler.client_no_save_level.emit(client_id, warning_no_save)
 
     @ray_method('/ray/gui/trash/add', 'ssssissssis')
     def rayGuiTrashAdd(self, path, args, types, src_addr):
         pass
-        #client_data = ray.ClientData(*args)
-        #self._signaler.trash_add.emit(client_data)
 
     @ray_method('/ray/gui/trash/remove', 's')
     def rayGuiTrashRemove(self, path, args, types, src_addr):
         pass
-        #client_id = args[0]
-        #self._signaler.trash_remove.emit(client_id)
 
     @ray_method('/ray/gui/trash/clear', '')
     def rayGuiTrashClear(self, path, args, types, src_addr):
         pass
-        #self._signaler.trash_clear.emit()
         
     @ray_method('/ray/gui/favorites/added', 'ssi')
     def rayGuiFavoritesAdded(self, path, args, types, src_addr):
         pass
-        #name, icon, int_factory = args
-        #self._signaler.favorite_added.emit(name, icon, bool(int_factory))
         
     @ray_method('/ray/gui/favorites/removed', 'si')
     def rayGuiFavoritesRemoved(self, path, args, types, src_addr):
         pass
-        #name, int_factory = args
-        #self._signaler.favorite_removed.emit(name, bool(int_factory))
     
     def send(self, *args):
         if CommandLineArgs.debug:

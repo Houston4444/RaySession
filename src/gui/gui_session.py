@@ -110,21 +110,12 @@ class Session(object):
             raise NameError("gui_session does not contains client %s"
                                 % client_id)
 
-    #def addClient(self, client_data):
-        #client = Client(self, client_data)
-        #self.client_list.append(client)
-
     def removeClient(self, client_id):
         client = self.getClient(client_id)
         if client:
             client.properties_dialog.close()
             self.client_list.remove(client)
             del client
-
-    #def updateClientStatus(self, client_id, status):
-        #client = self.getClient(client_id)
-        #if client:
-            #client.setStatus(status)
 
     def removeAllClients(self):
         self.client_list.clear()
@@ -170,7 +161,7 @@ class SignaledSession(Session):
         Session.__init__(self)
         self._signaler.osc_receive.connect(self.oscReceive)
         
-    def oscReceive(self, path, args, types, src_addr):
+    def oscReceive(self, path, args):
         func_path = path
         func_name = func_path.replace('/', '', 1).replace('/', '_')
         

@@ -154,37 +154,11 @@ class MainWindow(QMainWindow):
 
         # connect OSC signals from daemon
         sg = self._signaler
-
-        #sg.new_client_added.connect(self.serverAddsClient)
-        #sg.client_removed.connect(self.serverRemovesClient)
-        #sg.client_status_changed.connect(self.serverUpdatesClientStatus)
-        #sg.client_has_gui.connect(self.serverSetsClientHasGui)
-        #sg.client_gui_visible_sig.connect(self.serverSetsClientGuiState)
-        #sg.client_dirty_sig.connect(self.serverSetsClientDirtyState)
-        #sg.client_no_save_level.connect(
-            #self.serverSetClientNoSaveLevel)
-        #sg.client_switched.connect(self.serverSwitchesClient)
-        #sg.client_progress.connect(self.serverClientProgress)
-        #sg.client_still_running.connect(self.serverStillRunningClient)
-        #sg.client_updated.connect(self.serverUpdatesClientProperties)
-        #sg.new_message_sig.connect(self.serverPrintsMessage)
-        #sg.session_name_sig.connect(self.serverRenamesSession)
-        #sg.session_renameable.connect(self.serverSessionRenameable)
         sg.server_progress.connect(self.serverProgress)
         sg.server_status_changed.connect(self.serverChangeServerStatus)
         sg.server_copying.connect(self.serverCopying)
         sg.error_message.connect(self.serverSendsError)
-        #sg.opening_session.connect(self.serverOpensNsmSession)
-        #sg.clients_reordered.connect(self.serverReorderClients)
-        #sg.trash_add.connect(self.serverTrashAdd)
-        #sg.trash_remove.connect(self.serverTrashRemove)
-        #sg.trash_clear.connect(self.serverTrashClear)
-        #sg.trash_dialog.connect(self.showClientTrashDialog)
-        #sg.favorite_added.connect(self.addFavorite)
-        #sg.favorite_removed.connect(self.removeFavorite)
         sg.daemon_url_request.connect(self.showDaemonUrlWindow)
-        #sg.daemon_nsm_locked.connect(self.setNsmLocked)
-        #sg.daemon_options.connect(self.setDaemonOptions)
 
         # self.connectListWidgetRequests()
 
@@ -620,14 +594,6 @@ class MainWindow(QMainWindow):
     def removeClient(self, client_id):
         self.ui.listWidget.removeClientWidget(client_id)
 
-    #def serverClientProgress(self, client_id, progress):
-        #client = self._session.getClient(client_id)
-        #if client:
-            #client.setProgress(progress)
-
-    #def serverUpdatesClientProperties(self, client_data):
-        #self._session.updateClientProperties(client_data)
-
     def clientStatusChanged(self, client_id, status):
         # launch/stop flashing status if 'open'
         for client in self._session.client_list:
@@ -649,21 +615,6 @@ class MainWindow(QMainWindow):
                 self.timer_raisewin.stop()
                 if status == ray.ClientStatus.READY:
                     self.raiseWindow()
-
-    #def serverSetsClientHasGui(self, client_id):
-        #self._session.setClientHasGui(client_id)
-
-    #def serverSetsClientGuiState(self, client_id, state):
-        #self._session.setClientGuiState(client_id, state)
-
-    #def serverSetsClientDirtyState(self, client_id, bool_dirty):
-        #self._session.setClientDirtyState(client_id, bool_dirty)
-        
-    #def serverSetClientNoSaveLevel(self, client_id, no_save_level):
-        #self._session.setClientNoSaveLevel(client_id, no_save_level)
-
-    #def serverStillRunningClient(self, client_id):
-        #self._session.clientIsStillRunning(client_id)
 
     def printMessage(self, message):
         self.ui.textEditMessages.appendPlainText(
@@ -694,9 +645,6 @@ class MainWindow(QMainWindow):
 
         dialog = child_dialogs.OpenNsmSessionInfoDialog(self)
         dialog.exec()
-
-    #def serverReorderClients(self, client_id_list):
-        #self._session.reOrderClients(client_id_list)
 
     def serverProgress(self, progress):
         self.server_progress = progress
@@ -820,19 +768,6 @@ class MainWindow(QMainWindow):
         
         return act_x_trashed
     
-    #def serverTrashRemove(self, client_id):
-        #for trashed_client in self._session.trashed_clients:
-            #if trashed_client.data.client_id == client_id:
-                #break
-        #else:
-            #return
-
-        #self.trashMenu.removeAction(trashed_client.menu_action)
-        #self._session.trashed_clients.remove(trashed_client)
-
-        #if not self._session.trashed_clients:
-            #self.ui.trashButton.setEnabled(False)
-    
     def trashRemove(self, menu_action):
         self.trashMenu.removeAction(menu_action)
         
@@ -849,8 +784,7 @@ class MainWindow(QMainWindow):
             client_id = str(self.sender().data())
         except BaseException:
             return
-
-        #self.showClientTrashDialog(client_id)
+        
         for trashed_client in self._session.trashed_clients:
             if trashed_client.data.client_id == client_id:
                 break
