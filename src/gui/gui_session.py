@@ -13,7 +13,6 @@ from gui_tools import initGuiTools, CommandLineArgs, RS
 from main_window import MainWindow
 from nsm_child import NSMChild, NSMChildOutside
 
-_instance = None
 
 class Session(object):
     def __init__(self):
@@ -66,13 +65,6 @@ class Session(object):
         # The only way I found to not show Messages Dock by default.
         if not RS.settings.value('MainWindow/ShowMessages', False, type=bool):
             self._main_win.hideMessagesDock()
-
-    @staticmethod
-    def instance():
-        global _instance
-        if not _instance:
-            _instance = Session()
-        return _instance
 
     def quit(self):
         self._main_win.hide()

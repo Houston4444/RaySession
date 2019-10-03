@@ -4,11 +4,8 @@ import liblo
 
 import ray
 from gui_tools import CommandLineArgs
-from gui_signaler import Signaler
 
-signaler = Signaler.instance()
 _instance = None
-
 
 def ray_method(path, types):
     def decorated(func):

@@ -11,9 +11,6 @@ from gui_server_thread import GUIServerThread
 from gui_tools import (CommandLineArgs, default_session_root, ErrDaemon,
                        _translate)
 
-_instance = None
-
-
 class DaemonManager(QObject):
     def __init__(self, session):
         QObject.__init__(self)
@@ -46,18 +43,8 @@ class DaemonManager(QObject):
         self._signaler.daemon_announce.connect(self.receiveAnnounce)
         self._signaler.daemon_url_changed.connect(self.changeUrl)
 
-        global _instance
-        _instance = self
-
     def finishInit(self):
         self._main_win = self._session._main_win
-
-    @staticmethod
-    def instance():
-        global _instance
-        if not _instance:
-            _instance = DaemonManager()
-        return _instance
 
     def processFinished(self, exit_code, exit_status):
         if self.stopped_yet:

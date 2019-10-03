@@ -1,9 +1,6 @@
 
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal
 from liblo import Address
-
-_instance = None
-
 
 class Signaler(QObject):
     osc_receive = pyqtSignal(str, list)
@@ -29,12 +26,3 @@ class Signaler(QObject):
 
     def __init__(self):
         QObject.__init__(self)
-        global _instance
-        _instance = self
-
-    @staticmethod
-    def instance():
-        global _instance
-        if not _instance:
-            _instance = Signaler()
-        return _instance
