@@ -83,7 +83,8 @@ class TemplateSlot(QFrame):
 class TemplateItem(QListWidgetItem):
     def __init__(self, parent, session, icon, name, factory):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
-        self.f_widget = TemplateSlot(parent, self, session, icon, name, factory)
+        self.f_widget = TemplateSlot(parent, self, session,
+                                     icon, name, factory)
         self.setData(Qt.UserRole, name)
         parent.setItemWidget(self, self.f_widget)
         self.setSizeHint(QSize(100, 28))
