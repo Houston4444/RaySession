@@ -674,7 +674,8 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
         self.ui.toolButtonIcon.setIcon(
             ray.getAppIcon(self.client.icon_name, self))
-        self.ui.lineEditIgnoredExtensions.setText(self.client.ignored_extensions)
+        self.ui.lineEditIgnoredExtensions.setText(
+            self.client.ignored_extensions)
 
     def changeIconwithText(self, text):
         self.ui.toolButtonIcon.setIcon(ray.getAppIcon(text, self))

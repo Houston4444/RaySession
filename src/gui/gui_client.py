@@ -21,7 +21,7 @@ class Client(QObject):
         self.arguments       = client_data.arguments
         self.name            = client_data.name
         self.prefix_mode     = client_data.prefix_mode
-        self.project_path    = client_data.project_path
+        self.custom_prefix   = client_data.custom_prefix
         self.label           = client_data.label
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
@@ -90,7 +90,7 @@ class Client(QObject):
         self.arguments       = client_data.arguments
         self.name            = client_data.name
         self.prefix_mode     = client_data.prefix_mode
-        self.project_path    = client_data.project_path
+        self.custom_prefix   = client_data.custom_prefix
         self.label           = client_data.label
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
@@ -121,7 +121,7 @@ class Client(QObject):
                         self.arguments,
                         self.name,
                         self.prefix_mode,
-                        self.project_path,
+                        self.custom_prefix,
                         self.label,
                         self.icon_name,
                         self.capabilities,

@@ -22,22 +22,14 @@ if QT_VERSION < (5, 6):
     sys.stderr.write(
         "WARNING: You are using a version of QT older than 5.6.\n"
         + "You won't be warned if a process can't be launch.\n")
-
-# Ray Session version
-#VERSION_TUPLE = (0, 8, 0)
-#VERSION = ""
-#for i in VERSION_TUPLE:
-    #if i != 0:
-        #VERSION += '.'
-    #VERSION += str(i)
     
 VERSION = "0.8.0"
 
 APP_TITLE = 'Ray Session'
 
 class PrefixMode:
-    UNDEF        = 0
-    CLIENT_NAME  = 1
+    CUSTOM = 0
+    CLIENT_NAME = 1
     SESSION_NAME = 2
 
 
@@ -498,7 +490,7 @@ class ClientData:
     arguments = ''
     name = ''
     prefix_mode = 2
-    project_path = ''
+    custom_prefix = ''
     label = ''
     icon = ''
     capabilities = ''
@@ -511,7 +503,7 @@ class ClientData:
                  arguments="",
                  name='',
                  prefix_mode=PrefixMode.SESSION_NAME,
-                 project_path='',
+                 custom_prefix='',
                  label='',
                  icon='',
                  capabilities='',
@@ -530,8 +522,8 @@ class ClientData:
             self.executable_path)
         self.icon = str(icon) if icon else self.name.lower().replace('_', '-')
 
-        if self.prefix_mode == 0:
-            if self.project_path:
-                self.project_path = str(project_path)
+        if self.prefix_mode == PrefixMode.CUSTOM:
+            if custom_prefix:
+                self.custom_prefix = str(custom_prefix)
             else:
                 self.prefix_mode = 2

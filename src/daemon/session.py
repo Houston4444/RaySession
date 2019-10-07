@@ -2142,13 +2142,22 @@ class SignaledSession(OperatingSession):
     
     def ray_session_add_executable(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
-        executable = args[0]
         
+        if len(args) == 4:
+            executable, prefix_mode, custom_prefix, client_id = args
+        else:
+            executable = args[0]
+            prefix_mode = ray.PrefixMode.SESSION_NAME
+            custom_prefix = ''
+            client_id = self.generateClientId(executable)
+            
         client = Client(self)
         client.executable_path = executable
-        client.name            = basename(executable)
-        client.client_id       = self.generateClientId(executable)
-        client.icon            = client.name.lower().replace('_', '-')
+        client.name = basename(executable)
+        client.client_id = client_id
+        client.prefix_mode = prefix_mode
+        client.custom_prefix = custom_prefix
+        client.icon = client.name.lower().replace('_', '-')
         client.setDefaultGitIgnored()
         
         if self.addClient(client):

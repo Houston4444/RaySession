@@ -49,7 +49,7 @@ class Client(ServerSender):
     tmp_arguments    = ''
     label            = ''
     icon             = ''
-    project_path     = ""
+    custom_prefix    = ""
     prefix_mode      = ray.PrefixMode.SESSION_NAME
     auto_start       = True
     start_gui_hidden = False
@@ -122,7 +122,6 @@ class Client(ServerSender):
         self.check_last_save  = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         
-        
         ign_exts = ctx.attribute('ignored_extensions').split(' ')
         unign_exts = ctx.attribute('unignored_extensions').split(' ')
         
@@ -137,16 +136,14 @@ class Client(ServerSender):
             if ext and not ext in global_exts:
                 self.ignored_extensions+= " %s" % ext
                 
-        
         prefix_mode = ctx.attribute('prefix_mode')
         
-        if prefix_mode and prefix_mode.isdigit():
-            if 0 <= int(prefix_mode) <= 2:
-                self.prefix_mode = int(prefix_mode)
-                if self.prefix_mode == 0:
-                    self.project_path = ctx.attribute('project-path')
+        if (prefix_mode and prefix_mode.isdigit()
+                and 0 <= int(prefix_mode) <= 2 ):
+            self.prefix_mode = int(prefix_mode)
+            if self.prefix_mode == ray.PrefixMode.CUSTOM:
+                self.custom_prefix = ctx.attribute('custom_prefix')
                     
-        
         self.net_session_template = ctx.attribute('net_session_template')
         
         if basename(self.executable_path) == 'ray-network':
@@ -196,8 +193,8 @@ class Client(ServerSender):
         if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
             ctx.setAttribute('prefix_mode', self.prefix_mode)
             
-            if self.prefix_mode == ray.PrefixMode.UNDEF:
-                ctx.setAttribute('project_path', self.project_path)
+            if self.prefix_mode == ray.PrefixMode.CUSTOM:
+                ctx.setAttribute('custom_prefix', self.custom_prefix)
                 
         if self.isCapableOf(':optional-gui:'):
             if self.executable_path != 'ray-proxy':
@@ -319,32 +316,33 @@ class Client(ServerSender):
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
             return self.session.name
         
-        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        elif self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
             return self.name
         
-        if self.prefix_mode == ray.PrefixMode.UNDEF:
-            return self.project_path
+        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+            return self.custom_prefix
         
         return ''
     
     def getProjectPath(self):
         if self.executable_path == 'ray-network':
-            #for ray-network, use project_path for template,
-            #quite ugly but simple code.
+            # for ray-network, use custom_prefix for template,
+            # quite ugly but simple code.
             return self.net_session_template
         
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
             return "%s/%s.%s" % (self.session.path, self.session.name, 
                                  self.client_id)
+        
         elif self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
             return "%s/%s.%s" % (self.session.path, self.name, self.client_id)
-        else:
-            current_dir = os.getcwd()
-            os.chdir(self.session.path)
-            project_path = os.path.realpath(self.project_path)
-            os.chdir(current_dir)
-            
-            return project_path
+        
+        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+            return "%s/%s.%s" % (self.session.path, self.custom_prefix,
+                                 self.client_id)
+        # should not happens
+        return "%s/%s.%s" % (self.session.path, self.session.name,
+                             self.client_id)
     
     def getProxyExecutable(self):
         if os.path.basename(self.executable_path) != 'ray-proxy':
@@ -576,13 +574,13 @@ class Client(ServerSender):
                          ray.ClientStatus.REMOVED)
     
     def switch(self, new_client):
-        old_client_id     = self.client_id
-        self.client_id    = new_client.client_id
-        self.name         = new_client.name
-        self.prefix_mode  = new_client.prefix_mode
-        self.project_path = new_client.project_path
-        self.label        = new_client.label
-        self.icon         = new_client.icon
+        old_client_id      = self.client_id
+        self.client_id     = new_client.client_id
+        self.name          = new_client.name
+        self.prefix_mode   = new_client.prefix_mode
+        self.custom_prefix = new_client.custom_prefix
+        self.label         = new_client.label
+        self.icon          = new_client.icon
         
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
@@ -610,7 +608,7 @@ class Client(ServerSender):
                         self.arguments,
                         self.name, 
                         self.prefix_mode, 
-                        self.project_path,
+                        self.custom_prefix,
                         self.label,
                         self.icon,
                         self.capabilities,
@@ -624,7 +622,7 @@ class Client(ServerSender):
         self.executable_path = client_data.executable_path
         self.arguments       = client_data.arguments
         self.prefix_mode     = client_data.prefix_mode
-        self.project_path    = client_data.project_path
+        self.custom_prefix   = client_data.custom_prefix
         self.label           = client_data.label
         self.icon            = client_data.icon
         self.capabilities    = client_data.capabilities
@@ -691,7 +689,7 @@ class Client(ServerSender):
             
     def saveAsTemplate(self, template_name):
         #copy files
-        if self.prefix_mode != ray.PrefixMode.UNDEF:
+        if self.prefix_mode != ray.PrefixMode.CUSTOM:
             client_files = self.getProjectFiles()
                         
             template_dir = "%s/%s" % (TemplateRoots.user_clients, 
@@ -725,7 +723,7 @@ class Client(ServerSender):
     def saveAsTemplate_step1(self, template_name):
         self.setStatus(self.status) #see setStatus to see why
         
-        if self.prefix_mode != ray.PrefixMode.UNDEF:
+        if self.prefix_mode != ray.PrefixMode.CUSTOM:
             self.adjustFilesAfterCopy(template_name, ray.Template.CLIENT_SAVE)
             
         xml_file = "%s/%s" % (TemplateRoots.user_clients,
