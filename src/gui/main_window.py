@@ -458,13 +458,18 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        command = dialog.getExecutableSelected()
-        proxy = dialog.runViaProxy()
-
-        if proxy:
-            self.toDaemon('/ray/session/add_proxy', command)
-        else:
-            self.toDaemon('/ray/session/add_executable', command)
+        #command = dialog.getExecutableSelected()
+        #proxy = dialog.runViaProxy()
+        
+        command, via_proxy, prefix_mode, prefix, client_id = dialog.getSelection()
+        
+        self.toDaemon('/ray/session/add_executable', command, int(via_proxy),
+                      prefix_mode, prefix, client_id)
+        
+        #if proxy:
+            #self.toDaemon('/ray/session/add_proxy', command)
+        #else:
+            #self.toDaemon('/ray/session/add_executable', command)
 
     def stopClient(self, client_id):
         client = self._session.getClient(client_id)

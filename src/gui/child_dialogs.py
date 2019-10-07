@@ -856,11 +856,29 @@ class NewExecutableDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_new_executable.Ui_DialogNewExecutable()
         self.ui.setupUi(self)
+        
+        self.ui.groupBoxAdvanced.setVisible(False)
+        
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
         self.ui.lineEdit.textChanged.connect(self.textChanged)
 
         self.ui.checkBoxProxy.stateChanged.connect(self.proxyStateChanged)
+        
+        self.ui.lineEditPrefix.setEnabled(False)
+        self.ui.toolButtonAdvanced.clicked.connect(self.toggleAdvanced)
+        
+        self.ui.comboBoxPrefixMode.addItem(
+            _translate('new_executable', 'Custom'))
+        self.ui.comboBoxPrefixMode.addItem(
+            _translate('new_executable', 'Client Name'))
+        self.ui.comboBoxPrefixMode.addItem(
+            _translate('new_executable', 'Session Name'))
+        self.ui.comboBoxPrefixMode.setCurrentIndex(2)
+        
+        self.ui.comboBoxPrefixMode.currentIndexChanged.connect(
+            self.prefixModeChanged)
+        
         self._signaler.new_executable.connect(self.addExecutableToCompleter)
         self.toDaemon('/ray/server/list_path')
 
@@ -870,11 +888,18 @@ class NewExecutableDialog(ChildDialog):
         self.ui.lineEdit.setCompleter(self.completer)
 
         self.ui.lineEdit.returnPressed.connect(self.closeNow)
-
+        
         self.serverStatusChanged(self._session.server_status)
-
+        
         self.text_will_accept = False
 
+    def toggleAdvanced(self):
+        self.ui.groupBoxAdvanced.setVisible(
+            not self.ui.groupBoxAdvanced.isVisible())
+    
+    def prefixModeChanged(self, index):
+        self.ui.lineEditPrefix.setEnabled(bool(index == 0))
+    
     def addExecutableToCompleter(self, executable_list):
         self.exec_list += executable_list
         self.exec_list.sort()
@@ -888,7 +913,14 @@ class NewExecutableDialog(ChildDialog):
 
     def runViaProxy(self):
         return bool(self.ui.checkBoxProxy.isChecked())
-
+    
+    def getSelection(self):
+        return (self.ui.lineEdit.text(),
+                self.ui.checkBoxProxy.isChecked(),
+                self.ui.comboBoxPrefixMode.currentIndex(),
+                self.ui.lineEditPrefix.text(),
+                self.ui.lineEditClientId.text())
+    
     def proxyStateChanged(self, state):
         self.ui.buttonBox.button(
             QDialogButtonBox.Ok).setEnabled(

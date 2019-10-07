@@ -689,36 +689,35 @@ class Client(ServerSender):
             
     def saveAsTemplate(self, template_name):
         #copy files
-        if self.prefix_mode != ray.PrefixMode.CUSTOM:
-            client_files = self.getProjectFiles()
-                        
-            template_dir = "%s/%s" % (TemplateRoots.user_clients, 
-                                      template_name)
-            
-            if os.path.exists(template_dir):
-                if os.access(template_dir, os.W_OK):
-                    shutil.rmtree(template_dir)
-                else:
-                    #TODO send error
-                    return
-                
-            os.makedirs(template_dir)
-            
-            if self.net_daemon_url:
-                self.net_session_template = template_name
-                self.send(Address(self.net_daemon_url), 
-                          '/ray/session/save_as_template', self.session.name, 
-                          template_name, self.net_session_root)
-            
-            if client_files:
-                self.setStatus(ray.ClientStatus.COPY)
-                fc = self.session.file_copier
-                fc.startClientCopy(self.client_id, client_files, template_dir,
-                                   self.saveAsTemplate_step1,
-                                   self.saveAsTemplateAborted,
-                                   [template_name])
+        client_files = self.getProjectFiles()
+                    
+        template_dir = "%s/%s" % (TemplateRoots.user_clients, 
+                                    template_name)
+        
+        if os.path.exists(template_dir):
+            if os.access(template_dir, os.W_OK):
+                shutil.rmtree(template_dir)
             else:
-                self.saveAsTemplate_step1(template_name)
+                #TODO send error
+                return
+            
+        os.makedirs(template_dir)
+        
+        if self.net_daemon_url:
+            self.net_session_template = template_name
+            self.send(Address(self.net_daemon_url), 
+                        '/ray/session/save_as_template', self.session.name, 
+                        template_name, self.net_session_root)
+        
+        if client_files:
+            self.setStatus(ray.ClientStatus.COPY)
+            fc = self.session.file_copier
+            fc.startClientCopy(self.client_id, client_files, template_dir,
+                                self.saveAsTemplate_step1,
+                                self.saveAsTemplateAborted,
+                                [template_name])
+        else:
+            self.saveAsTemplate_step1(template_name)
 
     def saveAsTemplate_step1(self, template_name):
         self.setStatus(self.status) #see setStatus to see why

@@ -2143,30 +2143,50 @@ class SignaledSession(OperatingSession):
     def ray_session_add_executable(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
         
-        if len(args) == 4:
-            executable, prefix_mode, custom_prefix, client_id = args
+        executable = args[0]
+        via_proxy = 0
+        prefix_mode = ray.PrefixMode.SESSION_NAME
+        custom_prefix = ''
+        client_id = ""
+        
+        if len(args) == 5:
+            executable, via_proxy, prefix_mode, custom_prefix, client_id = args
             
-            # Check if client_id already exists
-            for client in self.clients + self.removed_clients:
-                if client.client_id == client_id:
+            if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
+                prefix_mode = ray.PrefixMode.SESSION_NAME
+            
+            if client_id:
+                if not client_id.isalnum():
                     self.sendError(ray.Err.CREATE_FAILED,
-                        _translate("client_id %s is already used")
-                            % client_id )
+                            _translate("client_id %s is not alphanumeric")
+                                % client_id )
                     return
-        else:
-            executable = args[0]
-            prefix_mode = ray.PrefixMode.SESSION_NAME
-            custom_prefix = ''
+                
+                # Check if client_id already exists
+                for client in self.clients + self.removed_clients:
+                    if client.client_id == client_id:
+                        self.sendError(ray.Err.CREATE_FAILED,
+                            _translate("client_id %s is already used")
+                                % client_id )
+                        return
+        
+        if not client_id:
             client_id = self.generateClientId(executable)
             
         client = Client(self)
-        client.executable_path = executable
+        
+        if via_proxy:
+            client.executable_path = 'ray-proxy'
+            client.tmp_arguments = "--executable %s" % executable
+        else:
+            client.executable_path = executable
+        
         client.name = basename(executable)
         client.client_id = client_id
         client.prefix_mode = prefix_mode
         client.custom_prefix = custom_prefix
         client.icon = client.name.lower().replace('_', '-')
-        client.setDefaultGitIgnored()
+        client.setDefaultGitIgnored(executable)
         
         if self.addClient(client):
             client.start()

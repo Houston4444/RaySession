@@ -121,7 +121,6 @@ class Session(object):
         if not from_server:
             server = GUIServerThread.instance()
             if server:
-                print('fkeorfav')
                 server.toDaemon('/ray/favorites/add', name,
                                 icon_name, int(factory))
         
