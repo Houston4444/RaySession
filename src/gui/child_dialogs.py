@@ -20,6 +20,7 @@ import ui_nsm_open_info
 import ui_abort_session
 import ui_about_raysession
 import ui_add_application
+import ui_donations
 import ui_new_executable
 import ui_error_dialog
 import ui_quit_app
@@ -1101,6 +1102,20 @@ class WaitingCloseUserDialog(ChildDialog):
     def checkBoxClicked(self, state):
         RS.settings.setValue('hide_wait_close_user_dialog',
                              bool(state), type=bool)
+
+class DonationsDialog(ChildDialog):
+    def __init__(self, parent, display_no_again):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_donations.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        print('display_no_again', display_no_again)
+        self.ui.checkBox.setVisible(display_no_again)
+        self.ui.checkBox.clicked.connect(self.checkBoxClicked)
+        
+    def checkBoxClicked(self, state):
+        RS.settings.setValue('hide_donations', state)
+        
 
 class ErrorDialog(ChildDialog):
     def __init__(self, parent, message):

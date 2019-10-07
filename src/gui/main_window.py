@@ -114,6 +114,7 @@ class MainWindow(QMainWindow):
             self.autoSnapshotToggled)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
+        self.ui.actionDonate.triggered.connect(self.donate)
 
         self.ui.lineEditServerStatus.statusPressed.connect(
             self.statusBarPressed)
@@ -416,12 +417,15 @@ class MainWindow(QMainWindow):
         
         snapshot = dialog.getSelectedSnapshot()
         self.toDaemon('/ray/session/open_snapshot', snapshot)
-        
-
+    
     def aboutRaySession(self):
         dialog = child_dialogs.AboutRaySessionDialog(self)
         dialog.exec()
 
+    def donate(self, display_no_again=False):
+        dialog = child_dialogs.DonationsDialog(self, display_no_again)
+        dialog.exec()
+        
     def saveSession(self):
         self.toDaemon('/ray/session/save')
 
@@ -834,7 +838,7 @@ class MainWindow(QMainWindow):
         RS.settings.sync()
 
     # Reimplemented Functions
-
+    
     def closeEvent(self, event):
         self.saveWindowSettings()
         

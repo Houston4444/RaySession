@@ -717,6 +717,8 @@ QToolButton {border: none}</string>
     </property>
     <addaction name="actionAboutRaySession"/>
     <addaction name="actionAboutQt"/>
+    <addaction name="separator"/>
+    <addaction name="actionDonate"/>
    </widget>
    <widget class="QMenu" name="menuAdd">
     <property name="title">
@@ -1106,6 +1108,11 @@ QToolButton {border: none}</string>
    </property>
    <property name="toolTip">
     <string>Auto Snapshot at Save (requires git)</string>
+   </property>
+  </action>
+  <action name="actionDonate">
+   <property name="text">
+    <string>Donate</string>
    </property>
   </action>
  </widget>

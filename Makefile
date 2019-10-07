@@ -44,6 +44,7 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_client_properties.py \
 	    src/gui/ui_client_slot.py \
 	    src/gui/ui_client_trash.py \
+	    src/gui/ui_donations.py \
 	    src/gui/ui_edit_executable.py \
 	    src/gui/ui_daemon_url.py \
 	    src/gui/ui_error_dialog.py \

@@ -56,6 +56,15 @@ class Session(object):
         server.finishInit(self)
         
         self._main_win.show()
+        
+        # display donations dialog under conditions
+        if not RS.settings.value('hide_donations', False, type=bool):
+            coreff_counter = RS.settings.value('coreff_counter', 0, type=int)
+            coreff_counter+= 1
+            RS.settings.setValue('coreff_counter', coreff_counter)
+            
+            if coreff_counter % 44 == 29:
+                self._main_win.donate(True)
 
         # The only way I found to not show Messages Dock by default.
         if not RS.settings.value('MainWindow/ShowMessages', False, type=bool):
