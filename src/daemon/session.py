@@ -2145,6 +2145,14 @@ class SignaledSession(OperatingSession):
         
         if len(args) == 4:
             executable, prefix_mode, custom_prefix, client_id = args
+            
+            # Check if client_id already exists
+            for client in self.clients + self.removed_clients:
+                if client.client_id == client_id:
+                    self.sendError(ray.Err.CREATE_FAILED,
+                        _translate("client_id %s is already used")
+                            % client_id )
+                    return
         else:
             executable = args[0]
             prefix_mode = ray.PrefixMode.SESSION_NAME
