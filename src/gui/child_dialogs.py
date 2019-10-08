@@ -858,6 +858,10 @@ class NewExecutableDialog(ChildDialog):
         self.ui.setupUi(self)
         
         self.ui.groupBoxAdvanced.setVisible(False)
+        self.resize(0, 0)
+        self.ui.labelPrefixMode.setToolTip(
+            self.ui.comboBoxPrefixMode.toolTip())
+        self.ui.labelClientId.setToolTip(self.ui.lineEditClientId.toolTip())
         
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
@@ -866,7 +870,7 @@ class NewExecutableDialog(ChildDialog):
         self.ui.checkBoxProxy.stateChanged.connect(self.proxyStateChanged)
         
         self.ui.lineEditPrefix.setEnabled(False)
-        self.ui.toolButtonAdvanced.clicked.connect(self.toggleAdvanced)
+        self.ui.toolButtonAdvanced.clicked.connect(self.showAdvanced)
         
         self.ui.comboBoxPrefixMode.addItem(
             _translate('new_executable', 'Custom'))
@@ -893,9 +897,9 @@ class NewExecutableDialog(ChildDialog):
         
         self.text_will_accept = False
 
-    def toggleAdvanced(self):
-        self.ui.groupBoxAdvanced.setVisible(
-            not self.ui.groupBoxAdvanced.isVisible())
+    def showAdvanced(self):
+        self.ui.groupBoxAdvanced.setVisible(True)
+        self.ui.toolButtonAdvanced.setVisible(False)
     
     def prefixModeChanged(self, index):
         self.ui.lineEditPrefix.setEnabled(bool(index == 0))

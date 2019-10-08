@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>245</width>
+    <width>240</width>
     <height>310</height>
    </rect>
   </property>
@@ -44,11 +44,15 @@
      </item>
      <item>
       <widget class="QToolButton" name="toolButtonAdvanced">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show more options ...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>...</string>
        </property>
        <property name="icon">
-        <iconset theme="arrow-down"/>
+        <iconset theme="arrow-down">
+         <normaloff>.</normaloff>.</iconset>
        </property>
       </widget>
      </item>
@@ -61,7 +65,7 @@
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="1" column="0">
-       <widget class="QLabel" name="label_2">
+       <widget class="QLabel" name="labelPrefix">
         <property name="text">
          <string>Prefix :</string>
         </property>
@@ -71,7 +75,7 @@
        </widget>
       </item>
       <item row="0" column="0">
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="labelPrefixMode">
         <property name="text">
          <string>Prefix Mode :</string>
         </property>
@@ -81,7 +85,7 @@
        </widget>
       </item>
       <item row="2" column="0">
-       <widget class="QLabel" name="label_3">
+       <widget class="QLabel" name="labelClientId">
         <property name="text">
          <string>Client ID :</string>
         </property>
@@ -103,7 +107,7 @@
       <item row="2" column="1">
        <widget class="QLineEdit" name="lineEditClientId">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use it If you want to add to session a file made without a session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use it If you want to add to session a file made outside from a session.&lt;/p&gt;&lt;p&gt;If you let this line empty, the client_id will be automaticely generated.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
