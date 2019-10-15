@@ -1,10 +1,4 @@
-RaySession v1.0.0-alpha-0 release
- 
-this is a testing release, please don't use it for production.
-It works quite well, but sessions made or worked with this version could be incompatible with future versions.
- 
-The main new feature is the snapshots manager.
-The snapshot manager works with 'git', so testers are pleased to have 'git' installed.
+Snapshots Explains
  
 If git is present on system, a new button will appears on RaySession at the left of the server status bar, with a "rewind" icon.
 
@@ -20,9 +14,6 @@ For this, he will click on the "rewind" button (at the left of the server status
 If a snapshot is long to take (>2s), a dialog window with a progress bar will appears.
 User can safely abort snapshot, and then auto-snapshot will be disabled for this session.
 
-For now, it works very well for my own use, but I don't use many and many different client softwares.
-I would like the testers to try all audio softwares they use (even these ones without NSM or LASH compatibility), and see what happens.
-It would be great to test big existing sessions too (copy them and test the copy !).
 If taking a snapshot is long, there is certainly a client software which uses many files with an unignored extension.
 If this file extension is globally not used by another software, then this extension should be added to the list of extensions globally ignored.
 
@@ -30,14 +21,10 @@ There is also the possibility to manage ignored and unignored extensions per cli
 The edit line "Snapshots Ignored Extensions" contains all ignored extensions, including all globally ignored extensions.
 By default, this line will only contains globally ignored extensions.
 
-And for sure, test to return to a previous snapshot and see if the behaviour is good.
 You can also return to a previous snapshot one client only in client context menu.
 
 For your information, snapshots are saved in the session directory in the hidden folder .ray-snapshots which is the same as would be a .git folder in a git project.
 
 Obviously, duplicate or save as template a session doesn't copy session's historization. It would not make sense.
 
-In this version, auto-snapshot is enabled by default (if git is present). It would be nice if it can stay this way, results will say.
-
-This release doesn't interrupts releases in 0.x.x .
-The version v1.0.0 will not be released before an important documentation work.
+Auto-snapshot is enabled by default (if git is present).
