@@ -1,12 +1,12 @@
 # ![RaySession Logo](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/128x128/raysession.png) RaySession
 
-# ---  README for Ray Session  ---
+# ---  README for RaySession  ---
 
-Ray Session is a GNU/Linux session manager for audio programs as Ardour, Carla, QTractor, Non-Timeline, etc...<br>
-It uses the same OSC API as Non Session Manager, so programs compatible with NSM are also compatible with Ray Session.<br>
+RaySession is a GNU/Linux session manager for audio programs as Ardour, Carla, QTractor, Non-Timeline, etc...<br>
+It uses the same OSC API as Non Session Manager, so programs compatible with NSM are also compatible with RaySession.<br>
 As Non Session Manager, the principle is to load together audio programs, then be able to save or close all documents together.<br>
 
-Ray Session offers a little more:
+RaySession offers a little more:
 
 * Factory templates for NSM and LASH compatible applications
 * Possibility to save any client as template
@@ -20,4 +20,4 @@ Ray Session offers a little more:
 
 You can see documentation on NSM at: http://non.tuxfamily.org/wiki/Non%20Session%20Manager
 
-Ray Session is being developed by houston4444, using Python3 and Qt5.
+RaySession is being developed by houston4444, using Python3 and Qt5.

@@ -21,10 +21,10 @@ if QT_VERSION < (5, 6):
         "WARNING: You are using a version of QT older than 5.6.\n"
         + "You won't be able to know if a process can't be launch.\n")
 
-# Ray Session version
+# RaySession version
 VERSION = "0.6.1"
 
-APP_TITLE = 'Ray Session'
+APP_TITLE = 'RaySession'
 
 PREFIX_MODE_CUSTOM = 0
 PREFIX_MODE_CLIENT_NAME = 1

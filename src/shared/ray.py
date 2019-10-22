@@ -25,7 +25,7 @@ if QT_VERSION < (5, 6):
     
 VERSION = "0.8.0"
 
-APP_TITLE = 'Ray Session'
+APP_TITLE = 'RaySession'
 
 class PrefixMode:
     CUSTOM = 0

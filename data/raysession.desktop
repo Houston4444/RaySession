@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=Ray Session
-GenericName=Ray Session
+Name=RaySession
+GenericName=RaySession
 Comment=Audio Session Manager
 Comment[fr]=Gestionnaire de sessions audios
 Exec=raysession

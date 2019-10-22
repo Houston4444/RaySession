@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You are opening a session created by Non Session Manager.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;Ray Session will open it, but changes won't be applied to NSM file (session.nsm).&lt;/p&gt;&lt;p&gt;Also, Once you start to work with Ray Session, you have to continue with it !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You are opening a session created by Non Session Manager.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;RaySession will open it, but changes won't be applied to NSM file (session.nsm).&lt;/p&gt;&lt;p&gt;Also, Once you start to work with RaySession, you have to continue with it !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>

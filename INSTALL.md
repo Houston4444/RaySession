@@ -1,6 +1,6 @@
-# ---  INSTALL for RAY SESSION  ---
+# ---  INSTALL for RAYSESSION  ---
 
-To install Ray Session, simply run as usual: <br/>
+To install RaySession, simply run as usual: <br/>
 `$ make` <br/>
 `$ [sudo] make install`
 
@@ -9,7 +9,7 @@ If you don't have 'lrelease' executable but 'lrelease-qt5' use:
 `$ make LRELEASE=lrelease-qt5` <br/>
 `$ [sudo] make install`
 
-You can run Ray Session without install, by using instead: <br/>
+You can run RaySession without install, by using instead: <br/>
 `$ make` <br/>
 `$ ./src/bin/raysession`
 
@@ -18,7 +18,7 @@ Packagers can make use of the 'PREFIX' and 'DESTDIR' variable during install, li
 
 
 
-To uninstall Ray Session, run: <br/>
+To uninstall RaySession, run: <br/>
 `$ [sudo] make uninstall`
 <br/>
 

@@ -14,7 +14,7 @@
    <enum>Qt::CustomContextMenu</enum>
   </property>
   <property name="windowTitle">
-   <string>Ray Session</string>
+   <string>RaySession</string>
   </property>
   <property name="dockNestingEnabled">
    <bool>true</bool>

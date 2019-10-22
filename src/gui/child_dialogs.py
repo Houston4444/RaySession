@@ -1066,7 +1066,7 @@ class DaemonUrlWindow(ChildDialog):
         elif err_code == ErrDaemon.WRONG_VERSION:
             error_text = _translate(
                 "url_window",
-                "<p>daemon at<br><strong>%s</strong><br>uses an other Ray Session version.<.p>") % ex_url
+                "<p>daemon at<br><strong>%s</strong><br>uses another %s version.<.p>") % (ex_url, ray.APP_TITLE)
         else:
             error_text = _translate("url window", "<p align=\"left\">To run a network session,<br>open a terminal on another computer of this network.<br>Launch ray-daemon on port 1234 (for example)<br>by typing the command :</p><p align=\"left\"><code>ray-daemon -p 1234</code></p><p align=\"left\">Then paste below the first url<br>that ray-daemon gives you at startup.</p><p></p>")
 
