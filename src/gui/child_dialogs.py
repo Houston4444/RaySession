@@ -499,7 +499,7 @@ class NewSessionDialog(ChildDialog):
         self.setLastTemplateSelected()
 
     def getSessionName(self):
-        if self.ui.comboBoxSubFolder.currentIndex():
+        if self.ui.comboBoxSubFolder.currentIndex() > 0:
             return '%s/%s' % (self.ui.comboBoxSubFolder.currentText(),
                               self.ui.lineEdit.text())
         else:

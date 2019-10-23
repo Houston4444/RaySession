@@ -1088,7 +1088,7 @@ class OperatingSession(Session):
         
         if os.path.exists(spath):
             self.sendError(ray.Err.CREATE_FAILED, 
-                           _translate("error", "Folder \n%s \nalready exists")
+                           _translate("error", "Folder\n%s\nalready exists")
                            % spath)
             return
         
