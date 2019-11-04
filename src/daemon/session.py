@@ -1463,6 +1463,8 @@ class OperatingSession(Session):
     def exitNow(self):
         self.message("Bye Bye...")
         self.setServerStatus(ray.ServerStatus.OFF)
+        self.oscReply("/reply", self.osc_path, "Bye Bye...")
+        #QTimer.singleShot(50, QCoreApplication.quit)
         QCoreApplication.quit()
         
     def addClientTemplate(self, template_name, factory=False):
@@ -1856,6 +1858,8 @@ class SignaledSession(OperatingSession):
                     
         if session_list:
             self.send(src_addr, "/reply", path, *session_list)
+            
+        self.send(src_addr, "/reply", path)
     
     def nsm_server_list(self, path, args, src_addr):
         session_list = []
@@ -1874,7 +1878,7 @@ class SignaledSession(OperatingSession):
                         basefolder = root.replace(self.root + '/', '', 1)
                         self.send(src_addr, '/reply', '/nsm/server/list',
                                 basefolder)
-        
+                        
         self.send(src_addr, path, ray.Err.OK, "Done.")
     
     @session_operation
@@ -2016,6 +2020,7 @@ class SignaledSession(OperatingSession):
             self.nextFunction()
     
     def ray_server_quit(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.close, self.exitNow]
         
         if self.file_copier.isActive():

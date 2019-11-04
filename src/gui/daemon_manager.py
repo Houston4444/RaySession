@@ -177,7 +177,7 @@ class DaemonManager(QObject):
 
     def setOscAddressViaUrl(self, url):
         self.setOscAddress(ray.getLibloAddress(url))
-
+    
     def processIsRunning(self):
         return bool(self.process.state() == 2)
 

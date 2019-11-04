@@ -3,12 +3,22 @@ from PyQt5.QtXml import QDomDocument
 
 instance = None
 
+class Daemon:
+    net_daemon_id = 0
+    root = ""
+    session_path = ""
+    pid = 0
+    port = 0
+    user = ""
+    not_default = False
+
 class MultiDaemonFile(object):
+    file_path = '/tmp/RaySession/multi-daemon.xml'
+    
     def __init__(self, session, server):
         self.session = session
         self.server  = server
         
-        self.file_path = '/tmp/RaySession/multi-daemon.xml'
         self.xml = QDomDocument()
     
         global instance
@@ -173,3 +183,41 @@ class MultiDaemonFile(object):
                 all_session_paths.append(spath)
                 
         return all_session_paths
+    
+    def getDaemonList(self):
+        daemon_list = []
+        
+        if not self.openFile():
+            return daemon_list
+        
+        xml_content = self.xml.documentElement()
+        nodes = xml_content.childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            dxe = node.toElement()
+            
+            daemon = Daemon()
+            daemon.root = dxe.attribute('root')
+            daemon.session_path = dxe.attribute('session_path')
+            daemon.user = dxe.attribute('user')
+            daemon.not_default = bool(dxe.attribute('not_default') == 'true')
+            net_daemon_id = dxe.attribute('net_daemon_id')
+            pid = dxe.attribute('pid')
+            port = dxe.attribute('port')
+            
+            if net_daemon_id.isdigit():
+                daemon.net_daemon_id = net_daemon_id
+            if pid.isdigit():
+                daemon.pid = pid
+            if port.isdigit():
+                daemon.port = port
+            
+            if not (daemon.net_daemon_id
+                    and daemon.pid
+                    and daemon.port):
+                continue
+            
+            daemon_list.append(daemon)
+                
+        return daemon_list

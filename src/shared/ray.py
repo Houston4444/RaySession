@@ -306,6 +306,30 @@ def getLibloAddress(url):
             msg = "%r is an unknown osc url" % url
             raise argparse.ArgumentTypeError(msg)
 
+def getLibloAddressFromPort(port):
+    try:
+        port = int(port)
+    except:
+        msg = "%r port must be an int" % port
+        raise argparse.ArgumentTypeError(msg)
+    
+    valid_port = False
+    
+    try:
+        address = liblo.Address(port)
+        valid_port = True
+    except BaseException:
+        valid_port = False
+        msg = "%i is not a valid osc port" % port
+        raise argparse.ArgumentTypeError(msg)
+
+    if valid_port:
+        try:
+            liblo.send(address, '/ping')
+            return address
+        except BaseException:
+            msg = "%i is an unknown osc port" % port
+            raise argparse.ArgumentTypeError(msg)
 
 def areSameOscPort(url1, url2):
     if url1 == url2:

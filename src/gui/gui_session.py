@@ -29,6 +29,8 @@ class Session(object):
         self._daemon_manager = DaemonManager(self)
         if CommandLineArgs.daemon_url:
             self._daemon_manager.setOscAddress(CommandLineArgs.daemon_url)
+        elif CommandLineArgs.daemon_port:
+            self._daemon_manager.setOscAddress(CommandLineArgs.daemon_port)
         elif not CommandLineArgs.out_daemon:
             self._daemon_manager.setNewOscAddress()
 
