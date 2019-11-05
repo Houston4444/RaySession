@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 
 import argparse
 import liblo
@@ -6,12 +6,23 @@ import os
 import signal
 import sys
 import time
+import subprocess
 
 from PyQt5.QtCore import (QCoreApplication, QTimer, pyqtSignal,
                           QObject, QProcess, QSettings)
 
 import ray
 from multi_daemon_file import MultiDaemonFile
+
+server_operations = ('quit', 'change_root', 'list_session_templates', 
+    'list_user_client_templates', 'list_factory_client_templates', 
+    'remove_client_template', 'list_sessions', 'new_session',
+    'open_session')
+
+session_operations = ('save', 'save_as_template', 'take_snapshot',
+                      'close', 'abort', 'duplicate', 'open_snapshot',
+                      'rename', 'add_executable', 'add_proxy',
+                      'add_client_template', 'list_snapshots')
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -20,6 +31,7 @@ def signalHandler(sig, frame):
 class Signaler(QObject):
     done = pyqtSignal(int)
     daemon_started = pyqtSignal()
+    daemon_no_announce = pyqtSignal()
 
 
 class OscServerThread(liblo.ServerThread):
@@ -44,18 +56,39 @@ class OscServerThread(liblo.ServerThread):
                 return
             else:
                 signaler.done.emit(0)
+        elif reply_path in ('/ray/server/list_factory_client_templates',
+                            '/ray/server/list_user_client_templates'):
+            if len(args) >= 2:
+                templates = args[1:]
+                out_message = ""
+                for template_and_icon in templates:
+                    template, slash, icon = template_and_icon.partition('/')
+                    out_message += "%s\n" % template
+                sys.stdout.write(out_message)
+                return
+            else:
+                signaler.done.emit(0)
+        elif reply_path == '/ray/session/list_snapshots':
+            if len(args) >= 2:
+                snapshots = args[1:]
+                out_message = ""
+                for snapshot_and_info in snapshots:
+                    snapshot, slash, info = snapshot_and_info.partition(':')
+                    out_message += "%s\n" % snapshot
+                sys.stdout.write(out_message)
+                return
+            else:
+                signaler.done.emit(0)
             
-        if len(args) == 2:
+        elif len(args) == 2:
             reply_path, message = args
             sys.stdout.write("%s\n" % message)
+            signaler.done.emit(0)
+        #elif len(args) == 3:
+            #reply_path, err, message = args
+            #sys.stdout.write("%s\n" % message)
             
-            if reply_path != '/nsm/server/list':
-                signaler.done.emit(0)
-        elif len(args) == 3:
-            reply_path, err, message = args
-            sys.stdout.write("%s\n" % message)
-            
-            signaler.done.emit(- err)
+            #signaler.done.emit(- err)
     
     @liblo.make_method('/error', 'sis')
     def errorMessage(self, path, args, types, src_addr):
@@ -63,15 +96,9 @@ class OscServerThread(liblo.ServerThread):
         sys.stdout.write('%s\n' % message)
         
         signaler.done.emit(- err)
-    
-    # this is very strange
-    # nsmd sends a /nsm/server/list err Ok message when list is done.
-    @liblo.make_method('/nsm/server/list', 'is')
-    def nsmServerList(self, path, args, types, src_addr):
-        signaler.done.emit(0)
         
-    @liblo.make_method('/ray/gui/server/announce', 'siisi')
-    def rayGuiServerAnnounce(self, path, args, types, src_addr):
+    @liblo.make_method('/ray/control/server/announce', 'siisi')
+    def rayControlServerAnnounce(self, path, args, types, src_addr):
         self.m_daemon_address = src_addr
         signaler.daemon_started.emit()
         
@@ -81,36 +108,50 @@ class OscServerThread(liblo.ServerThread):
     def toDaemon(self, *args):
         self.send(self.m_daemon_address, *args)
 
-def printHelp():
-    sys.stdout.write(
-        """control NSM server,
+def printHelp(stdout=False):
+    message="""control RaySession daemons
 opions are
-    add executable_name
-        Adds a client to the current session.
-    save
-        Saves the current session.
-    open project_name
-        Saves the current session and loads a new session.
-    new project_name
-        Saves the current session and creates a new session.
-    duplicate new_project
-        Saves and closes the current session, makes a copy, and opens it.
-    close
-        Saves and closes the current session.
-    abort
-        Closes the current session *WITHOUT SAVING*  
+    new_session NEW_SESSION_NAME [SESSION_TEMPLATE]
+    open_session SESSION_NAME [SESSION_TEMPLATE]
+    list_sessions
     quit
-        Saves and closes the current session and terminates the server.
-    list 
-        Lists available projects.
-""")
-    sys.exit(0)
-
-#class finisher(QObject):
-    #def finished(self, err_code):
-        #global exit_code
-        #exit_code = err_code
-        #QCoreApplication.quit()
+        Aborts current session (if any) and stop the daemon
+    change_root
+        Changes root directory for the sessions
+    list_session_templates
+    list_user_client_templates
+    list_factory_client_templates
+    remove_client_template CLIENT_TEMPLATE
+    
+    save
+        Saves the current session
+    save_as_template SESSION_TEMPLATE_NAME
+        Saves the current session as template
+    take_snapshot SNAPSHOT_NAME
+        Takes a snapshot of the current session
+    close
+        Saves and Closes the current session
+    abort
+        Aborts current session
+    duplicate NEW_SESSION_NAME
+        Saves, duplicates the current session and load the new one
+    open_snapshot SNAPSHOT
+        Saves, close the session, back to SNAPSHOT and re-open it
+    rename NEW_SESSION_NAME
+        renames the current session to NEW_SESSION_NAME
+    add_executable EXECUTABLE
+        Adds a client to the current session
+    add_proxy
+        Adds a proxy client to the current session
+    add_client_template CLIENT_TEMPLATE
+        Adds a client to the current session from CLIENT_TEMPLATE
+    list_snapshots
+        Lists all snapshots of the current session
+"""
+    if stdout:
+        sys.stdout.write(message)
+    else:
+        sys.stderr.write(message)
         
 def finished(err_code):
     global exit_code, exit_initiated
@@ -120,10 +161,28 @@ def finished(err_code):
         QCoreApplication.quit()
 
 def daemonStarted():
-    if operation == 'list':
-        osc_server.toDaemon('/ray/server/list_sessions', 0)
-    else:
-        osc_server.toDaemon('/nsm/server/%s' % operation, *arg_list)
+    global daemon_announced
+    daemon_announced = True
+    osc_message = '/ray/'
+    if operation in server_operations:
+        osc_message += 'server/'
+    elif operation in session_operations:
+        osc_message += 'session/'
+    osc_message += operation
+    print(osc_message, *arg_list)
+    osc_server.toDaemon(osc_message, *arg_list)
+        
+    #if operation == 'list':
+        #osc_server.toDaemon('/ray/server/list_sessions', 0)
+    #else:
+        #osc_server.toDaemon('/nsm/server/%s' % operation, *arg_list)
+
+def daemonNoAnnounce():
+    if daemon_announced:
+        return
+    
+    sys.stderr.write("daemon didn't announce and will be killed\n")
+    sys.exit(1)
 
 def getDefaultPort():
     daemon_list = multi_daemon_file.getDaemonList()
@@ -142,29 +201,36 @@ if __name__ == '__main__':
         sys.exit(100)
     
     operation = sys.argv[1]
-    if not operation in ('add', 'save', 'open', 'new', 'duplicate', 
-                         'close', 'abort', 'quit', 'list'):
-        printHelp()
-        sys.exit(100)
+    #if not operation in ('add', 'save', 'open', 'new', 'duplicate', 
+                         #'close', 'abort', 'quit', 'list'):
+        #printHelp()
+        #sys.exit(100)
     
     arg_list = []
     if len(sys.argv) >= 3:
-        arg_list = sys.argv[2:]
+        for arg in sys.argv[2:]:
+            if arg.isdigit():
+                arg_list.append(int(arg))
+            elif arg.replace('.', '', 1).isdigit():
+                arg_list.append(float(arg))
+            else:
+                arg_list.append(arg)
     
-    if operation in ('add', 'open', 'new', 'duplicate'):
-        if not arg_list:
-            sys.stderr.write('missing argument after "%s"\n' % operation)
-            sys.exit(100)
+    #if operation in ('add', 'open', 'new', 'duplicate'):
+        #if not arg_list:
+            #sys.stderr.write('missing argument after "%s"\n' % operation)
+            #sys.exit(100)
     
     exit_code = 0
     exit_initiated = False
+    daemon_announced = False
     
     multi_daemon_file = MultiDaemonFile(None, None)
     daemon_list = multi_daemon_file.getDaemonList()
     
     app = QCoreApplication(sys.argv)
-    app.setApplicationName("RaySession")
-    app.setOrganizationName("RaySession")
+    app.setApplicationName(ray.APP_TITLE)
+    app.setOrganizationName(ray.APP_TITLE)
     settings = QSettings()
     
     signaler = Signaler()
@@ -176,17 +242,39 @@ if __name__ == '__main__':
     daemon_port = getDefaultPort()
     
     if daemon_port:
-        osc_server.setDaemonAddress(nsm_port)
+        if not (operation in server_operations
+                or operation in session_operations):
+            printHelp()
+            sys.exit(1)
+        
+        osc_server.setDaemonAddress(daemon_port)
         signaler.daemon_started.emit()
     else:
+        if not operation in server_operations:
+            if operation in session_operations:
+                sys.stderr.write("No server started. So no session to %s\n"
+                                 % operation)
+            else:
+                printHelp()
+            sys.exit(1)
+        
+        if operation == 'quit':
+            sys.stderr.write('No server to quit !\n')
+            sys.exit(0)
+        
         session_root = settings.value('default_session_root',
-                            '%s/Ray Sessions' % os.getenv('HOME'))
+                                      ray.DEFAULT_SESSION_ROOT)
         
         # start a daemon because no one is running
         # fake to be a gui to get daemon announce
-        QProcess.startDetached('ray-daemon',
-            ['--gui-url', str(osc_server.url),
-             '--session-root', session_root])
+        #daemon_process = subprocess.Popen(
+            #['ray-daemon', '--control-url', str(osc_server.url),
+             #'--session-root', session_root])
+        daemon_process = subprocess.Popen(
+            ['ray-daemon', '--control-url', str(osc_server.url),
+             '--session-root', session_root],
+            -1, None, None, subprocess.DEVNULL, subprocess.DEVNULL)
+        QTimer.singleShot(2000, daemonNoAnnounce)
     
     #connect SIGINT and SIGTERM
     signal.signal(signal.SIGINT,  signalHandler)
@@ -203,7 +291,8 @@ if __name__ == '__main__':
         #osc_server.toDaemon('/nsm/server/%s' % operation, *arg_list)
     
     app.exec()
-    osc_server.stop()
-        
-    sys.exit(exit_code)
+    #osc_server.stop()
+    del osc_server
+    del app
     
+    sys.exit(exit_code)

@@ -772,7 +772,8 @@ class OperatingSession(Session):
     
     def snapshotDone(self):
         self.setServerStatus(ray.ServerStatus.READY)
-    
+        self.oscReply('/reply', self.osc_path, "Snapshot taken.")
+        
     def snapshotError(self, err_snapshot, info_str=''):
         m = _translate('Snapshot Error', "Unknown error")
         if err_snapshot == ray.Err.SUBPROCESS_UNTERMINATED:
@@ -1821,7 +1822,9 @@ class SignaledSession(OperatingSession):
         self.snapshoter.abort()
     
     def ray_server_list_sessions(self, path, args, src_addr):
-        with_net = args[0]
+        with_net = False
+        if args:
+            with_net = args[0]
         
         if with_net:
             for client in self.clients:
@@ -2228,6 +2231,11 @@ class SignaledSession(OperatingSession):
         self.reOrderClients(client_ids_list)
     
     def ray_session_list_snapshots(self, path, args, src_addr, client_id=""):
+        if not self.path:
+            self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
+                      "no session to list snapshots")
+            return
+        
         auto_snapshot = not bool(
             self.snapshoter.isAutoSnapshotPrevented())
         self.sendGui('/ray/gui/session/auto_snapshot',  int(auto_snapshot))
@@ -2249,7 +2257,8 @@ class SignaledSession(OperatingSession):
         
         if snap_send:
             self.serverSend(src_addr, '/reply', path, *snap_send)
-    
+        self.send(src_addr, '/reply', path)
+        
     def ray_session_set_auto_snapshot(self, path, args, src_addr):
         self.snapshoter.setAutoSnapshot(bool(args[0]))
     

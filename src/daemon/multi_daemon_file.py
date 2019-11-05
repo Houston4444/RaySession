@@ -213,6 +213,9 @@ class MultiDaemonFile(object):
             if port.isdigit():
                 daemon.port = port
             
+            if not self.pidExists(daemon.pid):
+                continue
+            
             if not (daemon.net_daemon_id
                     and daemon.pid
                     and daemon.port):
@@ -221,3 +224,4 @@ class MultiDaemonFile(object):
             daemon_list.append(daemon)
                 
         return daemon_list
+    

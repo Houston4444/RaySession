@@ -53,6 +53,7 @@ class ClientCommunicating(liblo.ServerThread):
         self.session = session
         self.gui_list = []
         self.server_status  = ray.ServerStatus.OFF
+        self.gui_embedded = False
         self.is_nsm_locked  = False
         self.nsm_locker_url = ''
         self.net_master_daemon_addr = None
@@ -363,6 +364,7 @@ class OscServerThread(ClientCommunicating):
             return False
         
         self.gui_list.remove(addr)
+        self.gui_embedded = False
         
         if src_addr.url == self.nsm_locker_url:
             self.net_daemon_id  = random.randint(1, 999999999)
@@ -386,7 +388,7 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/server/quit', '')
     def rayServerQuit(self, path, args, types, src_addr):
-        sys.exit(0)
+        pass
     
     @ray_method('/ray/server/abort_copy', '')
     def rayServerAbortCopy(self, path, args, types, src_addr):
@@ -510,9 +512,12 @@ class OscServerThread(ClientCommunicating):
         if os.path.isdir(template_dir):
             subprocess.run(['rm', '-R', template_dir])
         
+    @ray_method('/ray/server/list_sessions', '')
+    def rayServerListSessions(self, path, args, types, src_addr):
+        self.list_asker_addr = src_addr
     
     @ray_method('/ray/server/list_sessions', 'i')
-    def rayServerListSessions(self, path, args, types, src_addr):
+    def rayServerListSessionsWithNet(self, path, args, types, src_addr):
         self.list_asker_addr = src_addr
     
     @ray_method('/ray/server/new_session', None)
@@ -997,7 +1002,10 @@ class OscServerThread(ClientCommunicating):
         
         if tmp_template_list:
             self.send(src_addr, '/reply', path, *tmp_template_list)
-            
+        
+        # send a last empty reply to say list is finished
+        self.send(src_addr, '/reply', path)
+        
         if file_rewritten:
             try:
                 file = open(templates_file, 'w')
@@ -1070,3 +1078,9 @@ class OscServerThread(ClientCommunicating):
         
         self.gui_list.append(gui_addr)
         Terminal.message("Registered with GUI")
+    
+    def announceController(self, control_address):
+        self.send(control_address, "/ray/control/server/announce",
+                  ray.VERSION, self.server_status, self.getOptions(),
+                  self.session.root, 1)
+                  

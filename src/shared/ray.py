@@ -26,6 +26,7 @@ if QT_VERSION < (5, 6):
 VERSION = "0.8.2"
 
 APP_TITLE = 'RaySession'
+DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.environ['HOME']
 
 class PrefixMode:
     CUSTOM = 0

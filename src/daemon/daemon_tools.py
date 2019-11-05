@@ -173,6 +173,8 @@ class ArgParser(argparse.ArgumentParser):
                           help='find another port if port is not free')
         self.add_argument('--gui-url', type=ray.getLibloAddress, 
                           help=argparse.SUPPRESS)
+        self.add_argument('--control-url', type=ray.getLibloAddress,
+                          help=argparse.SUPPRESS)
         self.add_argument('--config-dir', '-c', type=str, default='', 
                           help='use a custom config dir')
         self.add_argument('--debug','-d',  action='store_true', 
