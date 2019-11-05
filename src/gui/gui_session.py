@@ -161,6 +161,12 @@ class SignaledSession(Session):
     
     def _error(self, path, args):
         err_path, err_code, err_message = args
+        
+        # don't shows a window error if error is OK
+        # or if it comes from just an unknown (and untreated) message
+        if err_code in (ray.Err.OK, ray.Err.UNKNOWN_MESSAGE):
+            return
+        
         self._main_win.errorMessage(err_message)
     
     def _ray_gui_server_nsm_locked(self, path, args):

@@ -1020,7 +1020,6 @@ class OperatingSession(Session):
         if not os.path.exists(template_root):
             os.makedirs(template_root)
         
-        
         # For network sessions, 
         # save as template the network session only 
         # if there is no other server on this same machine.
@@ -1046,7 +1045,9 @@ class OperatingSession(Session):
                                           [template_name, net])
         
     def saveSessionTemplate_step_1(self, template_name, net):
-        tp_mode = ray.Template.SESSION_SAVE_NET if net else ray.Template.SESSION_SAVE
+        tp_mode = ray.Template.SESSION_SAVE
+        if net:
+            tp_mode = ray.Template.SESSION_SAVE_NET
         
         for client in self.clients + self.removed_clients:
             client.adjustFilesAfterCopy(template_name, tp_mode)
@@ -1820,6 +1821,37 @@ class SignaledSession(OperatingSession):
     
     def ray_server_abort_snapshot(self, path, args, src_addr):
         self.snapshoter.abort()
+    
+    def ray_server_change_root(self, path, args, src_addr):
+        session_root = args[0]
+        if self.path:
+            self.send(src_addr, '/error', path, ray.Err.SESSION_LOCKED,
+                      "impossible to change root. session %s is loaded"
+                        % self.path)
+            return
+        
+        if not os.path.exists(session_root):
+            try:
+                os.makedirs(session_root)
+            except:
+                self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
+                          "invalid session root !")
+                return
+        
+        if not os.access(session_root, os.W_OK):
+            self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
+                      "unwriteable session root !")
+            return
+        
+        self.root = session_root
+        
+        multi_daemon_file = MultiDaemonFile.getInstance()
+        if multi_daemon_file:
+            multi_daemon_file.update()
+            
+        self.send(src_addr, '/reply', path, 
+                  "root folder changed to %s" % self.root)
+        self.sendGui('/ray/gui/server/root', self.root)
     
     def ray_server_list_sessions(self, path, args, src_addr):
         with_net = False

@@ -5,4 +5,8 @@
     manual
     allow scripts
     ...
+    
+    review list with net and last reply
+    if client sends error, dont prevent server status to become ready
+    prevent daemonCrash window at clean daemon stop
   

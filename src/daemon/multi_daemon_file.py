@@ -90,7 +90,7 @@ class MultiDaemonFile(object):
             
         else:
             found = False
-            
+            has_dirty_pid = False
             xml_content = self.xml.documentElement()
             
             nodes = xml_content.childNodes()
@@ -102,12 +102,17 @@ class MultiDaemonFile(object):
                 if pid.isdigit() and pid == str(os.getpid()):
                     self.setAttributes(dxe)
                     found = True
+                elif not pid.isdigit() or not self.pidExists(int(pid)):
+                    has_dirty_pid = True
                 
             if not found:
                 dm_xml = self.xml.createElement('Deamon')
                 self.setAttributes(dm_xml)
                 self.xml.firstChild().appendChild(dm_xml)
-                
+        
+        if has_dirty_pid:
+            self.cleanDirtyPids()
+        
         self.writeFile()
     
     def quit(self):
@@ -184,8 +189,24 @@ class MultiDaemonFile(object):
                 
         return all_session_paths
     
+    def cleanDirtyPids(self):
+        xml_content = self.xml.documentElement()
+        nodes = xml_content.childNodes()
+        rm_nodes = []
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            dxe = node.toElement()
+            pid = dxe.attribute('pid')
+            if not pid.isdigit() or not self.pidExists(int(pid)):
+                rm_nodes.append(node)
+                
+        for node in rm_nodes:
+            xml_content.removeChild(node)
+    
     def getDaemonList(self):
         daemon_list = []
+        has_dirty_pid = False
         
         if not self.openFile():
             return daemon_list
@@ -214,6 +235,7 @@ class MultiDaemonFile(object):
                 daemon.port = port
             
             if not self.pidExists(daemon.pid):
+                has_dirty_pid = True
                 continue
             
             if not (daemon.net_daemon_id
@@ -222,6 +244,9 @@ class MultiDaemonFile(object):
                 continue
             
             daemon_list.append(daemon)
-                
+        
+        if has_dirty_pid:
+            self.cleanDirtyPids()
+        
         return daemon_list
     

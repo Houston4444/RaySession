@@ -28,8 +28,6 @@ def ray_method(path, types):
     def decorated(func):
         @liblo.make_method(path, types)
         def wrapper(*args, **kwargs):
-            #ifDebug('serverOSC::ray-daemon_receives %s, %s' 
-                    #% (path, str(args)))
             t_thread, t_path, t_args, t_types, src_addr, rest = args
             if CommandLineArgs.debug:
                 sys.stderr.write('\033[94mOSC::daemon_receives\033[0m %s, %s, %s, %s\n'
@@ -401,15 +399,10 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/change_root', 's')
     def rayServerChangeRoot(self, path, args, types, src_addr):
         if self.isOperationPending(src_addr, path):
-            self.send(src_addr, '/error', 
+            self.send(src_addr, '/error', path, ray.Err.OPERATION_PENDING,
                       "Can't change session_root. Operation pending")
             return False
         
-        session_root = args[0]
-        
-        self.session.setRoot(session_root)
-        self.sendGui('/ray/gui/server/root', session_root)
-    
     @ray_method('/ray/server/list_path', '')
     def rayServerListPath(self, path, args, types, src_addr):
         exec_list = []
@@ -454,6 +447,8 @@ class OscServerThread(ClientCommunicating):
                     
         if template_list:
             self.send(src_addr, '/reply', path, *template_list)
+        
+        self.send(src_addr, '/reply', path)
     
     @ray_method('/ray/server/list_user_client_templates', '')
     def rayServerListUserClientTemplates(self, path, args, types, src_addr):
@@ -472,10 +467,14 @@ class OscServerThread(ClientCommunicating):
         templates_file = "%s/%s" % (templates_root, 'client_templates.xml')
         
         if not os.path.isfile(templates_file):
-            return
+            self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
+                      "file %s is missing !" % templates_file)
+            return False
         
         if not os.access(templates_file, os.W_OK):
-            return
+            self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
+                      "file %s in unwriteable !" % templates_file)
+            return False
         
         file = open(templates_file, 'r')
         xml = QDomDocument()
@@ -485,7 +484,9 @@ class OscServerThread(ClientCommunicating):
         content = xml.documentElement()
         
         if content.tagName() != "RAY-CLIENT-TEMPLATES":
-            return
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                      "file %s is not write correctly !" % templates_file)
+            return False
         
         nodes = content.childNodes()
         
@@ -499,6 +500,8 @@ class OscServerThread(ClientCommunicating):
             if template_name == ct.attribute('template-name'):
                 break
         else:
+            self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
+                      "No template \"%s\" to remove !" % template_name) 
             return False
         
         content.removeChild(nodes.at(i))
@@ -511,6 +514,9 @@ class OscServerThread(ClientCommunicating):
         
         if os.path.isdir(template_dir):
             subprocess.run(['rm', '-R', template_dir])
+        
+        self.send(src_addr, '/reply', path,
+                  "template \"%s\" removed." % template_name)
         
     @ray_method('/ray/server/list_sessions', '')
     def rayServerListSessions(self, path, args, types, src_addr):
@@ -533,10 +539,13 @@ class OscServerThread(ClientCommunicating):
                       "Invalid session name.")
             return False
     
-    @ray_method('/ray/server/open_session', None)
+    @ray_method('/ray/server/open_session', 's')
     def rayServerOpenSession(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
-            return False
+        pass
+    
+    @ray_method('/ray/server/open_session', 'ss')
+    def rayServerOpenSessionWithTemplate(self, path, args, types, src_addr):
+        pass
     
     @ray_method('/ray/session/save', '')
     def raySessionSave(self, path, args, types, src_addr):
@@ -553,8 +562,8 @@ class OscServerThread(ClientCommunicating):
         if not ray.areTheyAllString(args):
             return False
         
-        session_name = args[0]
-        if not pathIsValid(session_name):
+        template_name = args[0]
+        if '/' in template_name:
             self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
@@ -845,6 +854,16 @@ class OscServerThread(ClientCommunicating):
         for gui_addr in self.gui_list:
             if not ray.areSameOscPort(gui_addr.url, src_addr.url):
                 self.send(gui_addr, '/ray/gui/favorites/removed', *args)
+    
+    @ray_method(None, None)
+    def noneMethod(self, path, args, types, src_addr):
+        types_str = ''
+        for t in types:
+            types_str += t
+            
+        self.send(src_addr, '/error', path, ray.Err.UNKNOWN_MESSAGE,
+                  "unknown osc message: %s %s" % (path, types))
+        return False
     
     def isOperationPending(self, src_addr, path):
         if self.session.file_copier.isActive():

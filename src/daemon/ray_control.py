@@ -14,6 +14,9 @@ from PyQt5.QtCore import (QCoreApplication, QTimer, pyqtSignal,
 import ray
 from multi_daemon_file import MultiDaemonFile
 
+control_operations = ('start', 'stop', 'list_daemons', 'get_root', 
+                      'get_port', 'get_pid', 'get_session_path')
+
 server_operations = ('quit', 'change_root', 'list_session_templates', 
     'list_user_client_templates', 'list_factory_client_templates', 
     'remove_client_template', 'list_sessions', 'new_session',
@@ -41,12 +44,16 @@ class OscServerThread(liblo.ServerThread):
     
     @liblo.make_method('/reply', None)
     def replyNone(self, path, args, types, src_addr):
+        if not ray.areTheyAllString(args):
+            return
+        
         if len(args) >= 1:
             reply_path = args[0]
         else:
             return
         
-        if reply_path == '/ray/server/list_sessions':
+        if reply_path in ('/ray/server/list_sessions',
+                          '/ray/server/list_session_templates'):
             if len(args) >= 2:
                 sessions = args[1:]
                 out_message = ""
@@ -84,11 +91,6 @@ class OscServerThread(liblo.ServerThread):
             reply_path, message = args
             sys.stdout.write("%s\n" % message)
             signaler.done.emit(0)
-        #elif len(args) == 3:
-            #reply_path, err, message = args
-            #sys.stdout.write("%s\n" % message)
-            
-            #signaler.done.emit(- err)
     
     @liblo.make_method('/error', 'sis')
     def errorMessage(self, path, args, types, src_addr):
@@ -101,7 +103,13 @@ class OscServerThread(liblo.ServerThread):
     def rayControlServerAnnounce(self, path, args, types, src_addr):
         self.m_daemon_address = src_addr
         signaler.daemon_started.emit()
-        
+    
+    #@liblo.make_method(None, None)
+    #def noneMethod(self, path, args, types, src_addr):
+        #types_str = ''
+        #for t in types:
+            #types_str += t
+    
     def setDaemonAddress(self, daemon_port):
         self.m_daemon_address = liblo.Address(daemon_port)
     
@@ -111,18 +119,39 @@ class OscServerThread(liblo.ServerThread):
 def printHelp(stdout=False):
     message="""control RaySession daemons
 opions are
+    start
+        starts a daemon if there is no daemon started
+    stop
+        stops the default daemon
+    list_daemons
+        list running daemon osc ports
+    get_port
+        get daemon osc port
+    get_root
+        get daemon root directory for sessions
+    get_pid
+        get deamon pid
+
     new_session NEW_SESSION_NAME [SESSION_TEMPLATE]
+        Creates and loads NEW_SESSION_NAME, optionnally with SESSION_TEMPLATE
     open_session SESSION_NAME [SESSION_TEMPLATE]
+        Loads SESSION_NAME (create it if it does not exists
+                            optionnally with SESSION_TEMPLATE)
     list_sessions
+        Lists available sessions in sessions root directory
     quit
         Aborts current session (if any) and stop the daemon
-    change_root
-        Changes root directory for the sessions
+    change_root NEW_ROOT_FOLDER
+        Changes root directory for the sessions to NEW_ROOT_FOLDER
     list_session_templates
+        Lists session templates
     list_user_client_templates
+        Lists user client templates
     list_factory_client_templates
+        Lists factory client templates
     remove_client_template CLIENT_TEMPLATE
-    
+        Removes user CLIENT_TEMPLATE
+        
     save
         Saves the current session
     save_as_template SESSION_TEMPLATE_NAME
@@ -169,13 +198,8 @@ def daemonStarted():
     elif operation in session_operations:
         osc_message += 'session/'
     osc_message += operation
-    print(osc_message, *arg_list)
+    
     osc_server.toDaemon(osc_message, *arg_list)
-        
-    #if operation == 'list':
-        #osc_server.toDaemon('/ray/server/list_sessions', 0)
-    #else:
-        #osc_server.toDaemon('/nsm/server/%s' % operation, *arg_list)
 
 def daemonNoAnnounce():
     if daemon_announced:
@@ -185,8 +209,6 @@ def daemonNoAnnounce():
     sys.exit(1)
 
 def getDefaultPort():
-    daemon_list = multi_daemon_file.getDaemonList()
-    
     for daemon in daemon_list:
         if (daemon.user == os.environ['USER']
                 and not daemon.not_default):
@@ -201,10 +223,6 @@ if __name__ == '__main__':
         sys.exit(100)
     
     operation = sys.argv[1]
-    #if not operation in ('add', 'save', 'open', 'new', 'duplicate', 
-                         #'close', 'abort', 'quit', 'list'):
-        #printHelp()
-        #sys.exit(100)
     
     arg_list = []
     if len(sys.argv) >= 3:
@@ -216,10 +234,13 @@ if __name__ == '__main__':
             else:
                 arg_list.append(arg)
     
-    #if operation in ('add', 'open', 'new', 'duplicate'):
-        #if not arg_list:
-            #sys.stderr.write('missing argument after "%s"\n' % operation)
-            #sys.exit(100)
+    if operation in ('new_session', 'open_session', 'change_root',
+                     'save_as_template', 'take_snapshot', 'duplicate',
+                     'open_snapshot', 'rename', 'add_executable',
+                     'add_client_template'):
+        if not arg_list:
+            sys.stderr.write('operation %s needs argument(s).\n' % operation)
+            sys.exit(100)
     
     exit_code = 0
     exit_initiated = False
@@ -239,9 +260,46 @@ if __name__ == '__main__':
     
     osc_server = OscServerThread()
     osc_server.start()
+    daemon_list = multi_daemon_file.getDaemonList()
+    
+    if operation == 'list_daemons':
+        for daemon in daemon_list:
+            sys.stdout.write('%s\n' % str(daemon.port))
+        sys.exit(0)
+    
     daemon_port = getDefaultPort()
     
     if daemon_port:
+        if operation in control_operations:
+            if operation == 'start':
+                sys.stderr.write('server already started.\n')
+                sys.exit(0)
+                
+            elif operation == 'stop':
+                operation = 'quit'
+                
+            elif operation == 'get_pid':
+                for daemon in daemon_list:
+                    if daemon.port == daemon_port:
+                        sys.stdout.write('%s\n' % str(daemon.pid))
+                        sys.exit(0)
+                    
+            elif operation == 'get_port':
+                sys.stdout.write("%s\n" % str(daemon_port))
+                sys.exit(0)
+                
+            elif operation == 'get_root':
+                for daemon in daemon_list:
+                    if daemon.port == daemon_port:
+                        sys.stdout.write('%s\n' % daemon.root)
+                        sys.exit(0)
+                    
+            elif operation == 'get_session_path':
+                for daemon in daemon_list:
+                    if daemon.port == daemon_port:
+                        sys.stdout.write('%s\n' % daemon.session_path)
+                        sys.exit(0)
+            
         if not (operation in server_operations
                 or operation in session_operations):
             printHelp()
@@ -250,13 +308,24 @@ if __name__ == '__main__':
         osc_server.setDaemonAddress(daemon_port)
         signaler.daemon_started.emit()
     else:
-        if not operation in server_operations:
+        if operation in control_operations:
+            if operation == 'stop':
+                sys.stderr.write('No server started.\n')
+                sys.exit(0)
+            elif operation == 'start':
+                pass
+            else:
+                sys.stderr.write(
+                    'No server started. So impossible to %s\n' % operation)
+                sys.exit(100)
+                
+        elif not operation in server_operations:
             if operation in session_operations:
                 sys.stderr.write("No server started. So no session to %s\n"
                                  % operation)
             else:
                 printHelp()
-            sys.exit(1)
+            sys.exit(100)
         
         if operation == 'quit':
             sys.stderr.write('No server to quit !\n')
@@ -289,8 +358,8 @@ if __name__ == '__main__':
     ##time.sleep(0.201)
     #if nsm_port:
         #osc_server.toDaemon('/nsm/server/%s' % operation, *arg_list)
-    
-    app.exec()
+    if operation != 'start':
+        app.exec()
     #osc_server.stop()
     del osc_server
     del app
