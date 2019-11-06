@@ -566,6 +566,7 @@ class OscServerThread(ClientCommunicating):
     def rayServerSaveSessionTemplate(self, path, args, types, src_addr):
         #save as template an not loaded session
         session_name, template_name = args
+        
         if not pathIsValid(session_name):
             self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                     "Invalid template name.")
@@ -576,10 +577,14 @@ class OscServerThread(ClientCommunicating):
                       "Invalid session name.")
             return False
         
-        if not session_name == self.session.name:
-            signaler.dummy_load_and_template.emit(session_name, template_name,
-                                                  self.session.root)
-            return False
+        #if not session_name == self.session.name:
+            #signaler.dummy_load_and_template.emit(session_name, template_name,
+                                                  #self.session.root)
+            #return False
+    
+    @ray_method('/ray/server/rename_session', 'ss')
+    def rayServerRenameSession(self, path, args, types, src_addr):
+        print('wafdofk', args)
     
     @ray_method('/ray/server/save_session_template', 'sss')
     def rayServerSaveSessionTemplateWithRoot(self, path, args, 
@@ -596,10 +601,10 @@ class OscServerThread(ClientCommunicating):
                       "Invalid session name.")
             return False
         
-        if not (sess_root == self.session.root
-                and session_name == self.session.name):
-            signaler.dummy_load_and_template.emit(*args)
-            return False
+        #if not (sess_root == self.session.root
+                #and session_name == self.session.name):
+            #signaler.dummy_load_and_template.emit(*args)
+            #return False
     
     #@ray_method('/ray/session/save_as_template', None)
     #def nsmServerSaveSessionTemplate(self, path, args, types, src_addr):

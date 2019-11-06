@@ -79,6 +79,8 @@ class MultiDaemonFile(object):
         element.setAttribute('user', os.getenv('USER'))
     
     def update(self):
+        has_dirty_pid = False
+        
         if not self.openFile():
             ds = self.xml.createElement('Deamons')
             dm_xml = self.xml.createElement('Deamon')
@@ -90,7 +92,6 @@ class MultiDaemonFile(object):
             
         else:
             found = False
-            has_dirty_pid = False
             xml_content = self.xml.documentElement()
             
             nodes = xml_content.childNodes()

@@ -20,7 +20,7 @@ control_operations = ('start', 'stop', 'list_daemons', 'get_root',
 server_operations = ('quit', 'change_root', 'list_session_templates', 
     'list_user_client_templates', 'list_factory_client_templates', 
     'remove_client_template', 'list_sessions', 'new_session',
-    'open_session', 'save_session_template')
+    'open_session', 'save_session_template', 'rename_session')
 
 session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',

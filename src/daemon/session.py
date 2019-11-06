@@ -129,12 +129,20 @@ class Session(ServerSender):
     def setName(self, session_name):
         self.name = session_name
     
-    def setPath(self, session_path):
-        if self.path:
-            self.bookmarker.removeAll(self.path)
+    def setPath(self, session_path, session_name=''):
+        if not self.is_dummy:
+            if self.path:
+                self.bookmarker.removeAll(self.path)
         
         self.path = session_path
-        self.setName(session_path.rpartition('/')[2])
+        
+        if session_name:
+            self.setName(session_name)
+        else:
+            self.setName(session_path.rpartition('/')[2])
+        
+        if self.is_dummy:
+            return
         
         multi_daemon_file = MultiDaemonFile.getInstance()
         if multi_daemon_file:
@@ -145,6 +153,12 @@ class Session(ServerSender):
             if server and server.option_bookmark_session:
                 self.bookmarker.setDaemonPort(server.port)
                 self.bookmarker.makeAll(self.path)
+    
+    def getShortPath(self):
+        if self.path.startswith("%s/" % self.root):
+            return self.path.replace("%s/" % self.root, '', 1)
+        else:
+            return self.name
     
     def getClient(self, client_id):
         for client in self.clients:
@@ -550,16 +564,18 @@ class OperatingSession(Session):
         if not (self.osc_src_addr and self.osc_path):
             return
         
-        self.send(self.osc_src_addr, '/reply', self.osc_path, *messages)
+        self.sendEvenDummy(self.osc_src_addr, '/reply',
+                           self.osc_path, *messages)
     
     def sendError(self, err, error_message):
         #clear process order to allow other new operations
         self.process_order.clear()
         
-        if not (self.osc_src_addr or self.osc_path):
+        if not (self.osc_src_addr and self.osc_path):
             return
         
-        self.oscReply("/error", self.osc_path, err, error_message)
+        self.sendEvenDummy(self.osc_src_addr, "/error",
+                           self.osc_path, err, error_message)
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_mode):
         new_session_name = basename(new_session_full_name)
@@ -625,6 +641,7 @@ class OperatingSession(Session):
     # save_step1 is launched.
         
     def save(self, from_client_id='', outing=False):
+        print('saveee')
         if not self.path:
             self.nextFunction()
             return
@@ -645,13 +662,13 @@ class OperatingSession(Session):
         self.waitAndGoTo(10000, (self.save_step1, outing), ray.WaitFor.REPLY)
             
     def save_step1(self, outing=False):
+        print('saveeedo')
         self.cleanExpected()
         
         if outing:
             for client in self.clients:
                 if client.hasError():
-                    self.oscReply('/error', self.osc_path,
-                                  ray.Err.GENERAL_ERROR,
+                    self.sendError(ray.Err.GENERAL_ERROR,
                                   "Some clients could not save")
                     break
                 
@@ -712,7 +729,6 @@ class OperatingSession(Session):
         
         xml.appendChild(p)
         
-        
         contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"
                     "<!DOCTYPE RAYSESSION>\n")
         
@@ -746,7 +762,7 @@ class OperatingSession(Session):
         
         self.message(m)
         self.sendGuiMessage(m)
-        self.oscReply("/error", self.osc_path, ray.Err.CREATE_FAILED, m)
+        self.sendError(ray.Err.CREATE_FAILED, m)
         
         self.process_order.clear()
         self.setServerStatus(ray.ServerStatus.READY)
@@ -793,7 +809,7 @@ class OperatingSession(Session):
                            "git exit with an error code.\n%s") % info_str
         self.message(m)
         self.sendGuiMessage(m)
-        self.oscReply("/error", self.osc_path, err_snapshot, m)
+        self.sendError(err_snapshot, m)
         
         self.nextFunction()
     
@@ -899,19 +915,19 @@ class OperatingSession(Session):
         try:
             os.makedirs(spath)
         except:
-            self.oscReply("/error", self.osc_path, ray.Err.CREATE_FAILED, 
-                          "Could not create the session directory")
+            self.sendError(ray.Err.CREATE_FAILED, 
+                           "Could not create the session directory")
             return
         
         self.setServerStatus(ray.ServerStatus.NEW)
         self.setPath(spath)
-        self.sendReply("Created." )
         self.sendGui("/ray/gui/session/name",
                      self.name, self.path)
         self.nextFunction()
     
     def newDone(self):
         self.sendGuiMessage(_translate('GUIMSG', 'Session is ready'))
+        self.sendReply("Created.")
         self.setServerStatus(ray.ServerStatus.READY)
     
     def initSnapshot(self, spath, snapshot):
@@ -935,7 +951,7 @@ class OperatingSession(Session):
                            "error reading file:\n%s") % info_str
         self.message(m)
         self.sendGuiMessage(m)
-        self.oscReply("/error", self.osc_path, err, m)
+        self.sendError(err, m)
         
         self.setServerStatus(ray.ServerStatus.OFF)
         self.process_order.clear()
@@ -994,8 +1010,7 @@ class OperatingSession(Session):
     def duplicateAborted(self, new_session_full_name):
         self.process_order.clear()
         if self.osc_path.startswith('/nsm/server/'):
-            self.oscReply("/error", self.osc_path,
-                          ray.Err.NO_SUCH_FILE, "No such file.")
+            self.sendError(ray.Err.NO_SUCH_FILE, "No such file.")
         else:
             self.oscReply('/ray/net_daemon/duplicate_state', 1)
         self.setServerStatus(ray.ServerStatus.READY)
@@ -1127,7 +1142,31 @@ class OperatingSession(Session):
         
             self.setPath('')
             self.sendGui('/ray/gui/session/name', '', '')
+    
+    def rename(self, new_session_name):
+        for client in self.clients + self.removed_clients:
+            client.adjustFilesAfterCopy(new_session_name, ray.Template.RENAME)
         
+        try:
+            spath = "%s/%s" % (dirname(self.path), new_session_name)
+            subprocess.run(['mv', self.path, spath])
+            self.setPath(spath)
+            
+            self.sendGuiMessage(
+                _translate('GUIMSG', 'Session directory is now: %s')
+                % self.path)
+        except:
+            pass
+        
+        self.nextFunction()
+    
+    def renameDone(self, new_session_name):
+        self.sendGuiMessage(
+            _translate('GUIMSG', 'Session %s has been renamed to %s .')
+            % (self.name, new_session_name))
+        self.sendReply('Session %s has been renamed to %s .'
+                        % (self.name, new_session_name))
+    
     def load(self, session_full_name):
         #terminate or switch clients
         spath = self.root + '/' + session_full_name
@@ -1152,7 +1191,6 @@ class OperatingSession(Session):
             Terminal.warning("Session is locked by another process")
             self.loadError(ray.Err.SESSION_LOCKED)
             return
-        
         
         self.message("Attempting to open %s" % spath)
         
@@ -1196,6 +1234,7 @@ class OperatingSession(Session):
         self.new_clients = []
         self.new_removed_clients = []
         new_client_exec_args = []
+        sess_name = ""
         
         if is_ray_file:
             xml = QDomDocument()
@@ -1213,8 +1252,6 @@ class OperatingSession(Session):
                 return
             
             sess_name = content.attribute('name')
-            if sess_name:
-                self.name = sess_name
             
             client_id_list = []
             
@@ -1279,7 +1316,14 @@ class OperatingSession(Session):
         self.sendGuiMessage(_translate('GUIMSG', "Opening session %s")
                                 % session_full_name)
         
-        self.setPath(spath)
+        self.setPath(spath, sess_name)
+        
+        if sess_name and sess_name != os.path.basename(spath):
+            # session folder has been renamed
+            # so rename session to it
+            for client in self.new_clients + self.new_removed_clients:
+                client.adjustFilesAfterCopy(spath, ray.Template.RENAME)
+            self.setPath(spath)
         
         if not is_ray_file:
             self.sendGui('/ray/gui/session/is_nsm')
@@ -1429,11 +1473,11 @@ class OperatingSession(Session):
         self.message('Loaded')
         
         self.sendGui("/ray/gui/session/name",  self.name, self.path)
-        self.sendReply("Loaded.")
         
         self.nextFunction()
     
     def loadDone(self):
+        self.sendReply("Loaded.")
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.READY)
     
@@ -1450,7 +1494,7 @@ class OperatingSession(Session):
         elif err_loading == ray.Err.BAD_PROJECT:
             m = _translate('Load Error', "Could not load session file.")
         
-        self.oscReply("/error", self.osc_path, err_loading, m)
+        self.sendError(err_loading, m)
         
         if self.path:
             self.setServerStatus(ray.ServerStatus.READY)
@@ -1640,7 +1684,7 @@ class OperatingSession(Session):
                            "error reading file:\n%s") % info_str
         self.message(m)
         self.sendGuiMessage(m)
-        self.oscReply("/error", self.osc_path, err, m)
+        self.sendError(err, m)
         
         self.setServerStatus(ray.ServerStatus.OFF)
         self.process_order.clear()
@@ -1982,7 +2026,12 @@ class SignaledSession(OperatingSession):
                               (self.snapshot, '', '', False, True),
                               (self.load, args[0]),
                               self.loadDone]
-            
+    
+    def ray_server_rename_session(self, path, args, src_addr):
+        print('troiunrf', args)
+        tmp_session = DummySession(self.root)
+        tmp_session.ray_server_rename_session(path, args, src_addr)
+    
     @session_operation
     def ray_session_save(self, path, args, src_addr):
         self.process_order = [self.save, self.snapshot, self.saveDone]
@@ -1990,24 +2039,8 @@ class SignaledSession(OperatingSession):
     @session_operation
     def ray_session_save_as_template(self, path, args, src_addr):
         template_name = args[0]
+        net = False if len(args) < 2 else args[1]
         
-        for client in self.clients:
-            if client.executable_path == 'ray-network':
-                client.net_session_template = template_name
-        
-        self.process_order = [self.save, self.snapshot,
-                              (self.saveSessionTemplate, 
-                               template_name, False)]
-                              
-    @session_operation
-    def ray_server_save_session_template(self, path, args, src_addr):
-        if len(args) == 2:
-            session_name, template_name = args
-            net=False
-        else:
-            session_name, template_name, sess_root = args
-            net=True
-            
         for client in self.clients:
             if client.executable_path == 'ray-network':
                 client.net_session_template = template_name
@@ -2015,6 +2048,42 @@ class SignaledSession(OperatingSession):
         self.process_order = [self.save, self.snapshot,
                               (self.saveSessionTemplate, 
                                template_name, net)]
+                              
+    def ray_server_save_session_template(self, path, args, src_addr):
+        if len(args) == 2:
+            session_name, template_name = args
+            sess_root = self.root
+            net=False
+        else:
+            session_name, template_name, sess_root = args
+            net=True
+        
+        tmp_session = DummySession(sess_root)
+        tmp_session.ray_server_save_session_template(path, 
+                                [session_name, template_name, net], 
+                                src_addr)
+        
+        #if (sess_root != self.root or session_name != self.name):
+            #tmp_session = DummySession(sess_root)
+            #tmp_session.ray_server_save_session_template(path, 
+                                #[session_name, template_name, net], 
+                                #src_addr)
+            #return
+        
+        #self.ray_session_save_as_template(path, [template_name, net],
+                                          #src_addr)
+                                          
+                                          
+        #print('feorkf', net)
+        #if net:
+            #for client in self.clients:
+                #if client.executable_path == 'ray-network':
+                    #client.net_session_template = template_name
+        
+        #self.rememberOscArgs()
+        #self.process_order = [self.save, self.snapshot,
+                              #(self.saveSessionTemplate, template_name, net)]
+        #self.nextFunction()
     
     @session_operation
     def ray_session_take_snapshot(self, path, args, src_addr):
@@ -2170,6 +2239,7 @@ class SignaledSession(OperatingSession):
         if not self.isNsmLocked():
             for filename in os.listdir(dirname(self.path)):
                 if filename == new_session_name:
+                    # another directory exists with new session name
                     return
         
         for client in self.clients:
@@ -2182,10 +2252,6 @@ class SignaledSession(OperatingSession):
         for client in self.clients + self.removed_clients:
             client.adjustFilesAfterCopy(new_session_name, ray.Template.RENAME)
         
-        self.sendGuiMessage(
-            _translate('GUIMSG', 'Session %s has been renamed to %s .')
-            % (self.name, new_session_name))
-        
         if not self.isNsmLocked():
             try:
                 spath = "%s/%s" % (dirname(self.path), new_session_name)
@@ -2195,10 +2261,12 @@ class SignaledSession(OperatingSession):
                 self.sendGuiMessage(
                     _translate('GUIMSG', 'Session directory is now: %s')
                     % self.path)
-                
             except:
                 pass
         
+        self.sendGuiMessage(
+            _translate('GUIMSG', 'Session %s has been renamed to %s .')
+            % (self.name, new_session_name))
         self.sendGui('/ray/gui/session/name', self.name, self.path)
     
     def ray_session_add_executable(self, path, args, src_addr):
@@ -2509,3 +2577,42 @@ class DummySession(OperatingSession):
                               (self.duplicate, new_session_full_name),
                               self.duplicateOnlyDone]
         self.nextFunction()
+        
+    def ray_server_save_session_template(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
+        session_name, template_name, net = args
+        print('in the dummy')
+        self.process_order = [(self.load, session_name),
+                              (self.saveSessionTemplate, template_name, net)]
+        self.nextFunction()
+        
+    def ray_server_rename_session(self, path, args, src_addr):
+        self.rememberOscArgs(path, args, src_addr)
+        full_session_name, new_session_name = args
+        
+        #if new_session_name == self.name:
+            #return
+        self.process_order = [(self.load, full_session_name),
+                              (self.rename, new_session_name),
+                              self.save,
+                              (self.renameDone, new_session_name)]
+        self.nextFunction()
+        #for client in self.clients + self.removed_clients:
+            #client.adjustFilesAfterCopy(new_session_name, ray.Template.RENAME)
+        
+        #try:
+            #spath = "%s/%s" % (dirname(self.path), new_session_name)
+            #subprocess.run(['mv', self.path, spath])
+            #self.setPath(spath)
+            
+            #self.sendGuiMessage(
+                #_translate('GUIMSG', 'Session directory is now: %s')
+                #% self.path)
+        #except:
+            #pass
+        
+        #self.sendGuiMessage(
+            #_translate('GUIMSG', 'Session %s has been renamed to %s .')
+            #% (self.name, new_session_name))
+        
+        

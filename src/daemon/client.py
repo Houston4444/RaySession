@@ -795,8 +795,8 @@ class Client(ServerSender):
     def saveAsTemplateAborted(self, template_name):
         self.setStatus(self.status)
     
-    def adjustFilesAfterCopy(self, new_session_full_name, 
-                             template_save=ray.Template.NONE):            
+    def adjustFilesAfterCopy(self, new_session_full_name,
+                             template_save=ray.Template.NONE):
         old_session_name = self.session.name
         new_session_name = basename(new_session_full_name)
         new_client_id    = self.client_id
@@ -814,7 +814,8 @@ class Client(ServerSender):
             spath = self.session.path
             
         elif template_save == ray.Template.SESSION_SAVE:
-            spath = "%s/%s" % (TemplateRoots.user_sessions, new_session_full_name)
+            spath = "%s/%s" % (TemplateRoots.user_sessions,
+                               new_session_full_name)
             new_session_name = xsessionx
         
         elif template_save == ray.Template.SESSION_SAVE_NET:
@@ -847,6 +848,8 @@ class Client(ServerSender):
         
         if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
             old_prefix = new_prefix = self.name
+        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+            old_prefix = new_prefix = self.custom_prefix
         
         project_path = "%s/%s.%s" % (spath, old_prefix, old_client_id)
         

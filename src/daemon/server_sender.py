@@ -21,7 +21,14 @@ class ServerSender(QObject):
             return
         
         server.send(*args)
+    
+    def sendEvenDummy(self, *args):
+        server = OscServerThread.getInstance()
+        if not server:
+            return
         
+        server.send(*args)
+    
     def sendGui(self, *args):
         if self.is_dummy:
             return
