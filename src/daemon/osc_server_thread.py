@@ -554,33 +554,80 @@ class OscServerThread(ClientCommunicating):
                       "No session to save.")
             return False
     
-    @ray_method('/ray/session/save_as_template', None)
-    def nsmServerSaveSessionTemplate(self, path, args, types, src_addr):
-        if not len(args) in (1, 3):
-            return False
-        
-        if not ray.areTheyAllString(args):
-            return False
-        
+    @ray_method('/ray/session/save_as_template', 's')
+    def raySessionSaveAsTemplate(self, path, args, types, src_addr):
         template_name = args[0]
+        if '/' in template_name:
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
+                      "Invalid session template name.")
+            return False
+    
+    @ray_method('/ray/server/save_session_template', 'ss')
+    def rayServerSaveSessionTemplate(self, path, args, types, src_addr):
+        #save as template an not loaded session
+        session_name, template_name = args
+        if not pathIsValid(session_name):
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
+                    "Invalid template name.")
+            return False
+        
         if '/' in template_name:
             self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
         
-        if len(args) == 3:
-            #save as template an not loaded session
-            session_name, template_name, sess_root = args
+        if not session_name == self.session.name:
+            signaler.dummy_load_and_template.emit(session_name, template_name,
+                                                  self.session.root)
+            return False
+    
+    @ray_method('/ray/server/save_session_template', 'sss')
+    def rayServerSaveSessionTemplateWithRoot(self, path, args, 
+                                             types, src_addr):
+        #save as template an not loaded session
+        session_name, template_name, sess_root = args
+        if not pathIsValid(session_name):
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
+                    "Invalid template name.")
+            return False
         
-            if not pathIsValid(template_name):
-                self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
-                        "Invalid session name.")
-                return False
+        if '/' in template_name:
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
+                      "Invalid session name.")
+            return False
         
-            if not (sess_root == self.session.root
-                    and session_name == self.session.name):
-                signaler.dummy_load_and_template.emit(*args)
-                return False
+        if not (sess_root == self.session.root
+                and session_name == self.session.name):
+            signaler.dummy_load_and_template.emit(*args)
+            return False
+    
+    #@ray_method('/ray/session/save_as_template', None)
+    #def nsmServerSaveSessionTemplate(self, path, args, types, src_addr):
+        #if not len(args) in (1, 3):
+            #return False
+        
+        #if not ray.areTheyAllString(args):
+            #return False
+        
+        #template_name = args[0]
+        #if '/' in template_name:
+            #self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
+                      #"Invalid session name.")
+            #return False
+        
+        #if len(args) == 3:
+            ##save as template an not loaded session
+            #session_name, template_name, sess_root = args
+        
+            #if not pathIsValid(template_name):
+                #self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
+                        #"Invalid session name.")
+                #return False
+        
+            #if not (sess_root == self.session.root
+                    #and session_name == self.session.name):
+                #signaler.dummy_load_and_template.emit(*args)
+                #return False
     
     @ray_method('/ray/session/take_snapshot', 'si')
     def raySessionTakeSnapshot(self, path, args, types, src_addr):

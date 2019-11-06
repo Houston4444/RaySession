@@ -20,7 +20,7 @@ control_operations = ('start', 'stop', 'list_daemons', 'get_root',
 server_operations = ('quit', 'change_root', 'list_session_templates', 
     'list_user_client_templates', 'list_factory_client_templates', 
     'remove_client_template', 'list_sessions', 'new_session',
-    'open_session')
+    'open_session', 'save_session_template')
 
 session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',
@@ -198,7 +198,7 @@ def daemonStarted():
     elif operation in session_operations:
         osc_message += 'session/'
     osc_message += operation
-    
+    print('zoefk', osc_message, *arg_list)
     osc_server.toDaemon(osc_message, *arg_list)
 
 def daemonNoAnnounce():

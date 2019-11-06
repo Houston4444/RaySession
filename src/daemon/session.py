@@ -546,6 +546,12 @@ class OperatingSession(Session):
         if not has_externals:
             self.externals_timer.stop()
     
+    def sendReply(self, *messages):
+        if not (self.osc_src_addr and self.osc_path):
+            return
+        
+        self.send(self.osc_src_addr, '/reply', self.osc_path, *messages)
+    
     def sendError(self, err, error_message):
         #clear process order to allow other new operations
         self.process_order.clear()
@@ -727,7 +733,7 @@ class OperatingSession(Session):
     
     def saveDone(self):
         self.message("Done.")
-        self.oscReply("/reply", self.osc_path, "Saved." )
+        self.sendReply("Saved.")
         self.setServerStatus(ray.ServerStatus.READY)
     
     def saveError(self, err_saving):
@@ -772,7 +778,7 @@ class OperatingSession(Session):
     
     def snapshotDone(self):
         self.setServerStatus(ray.ServerStatus.READY)
-        self.oscReply('/reply', self.osc_path, "Snapshot taken.")
+        self.sendReply("Snapshot taken.")
         
     def snapshotError(self, err_snapshot, info_str=''):
         m = _translate('Snapshot Error', "Unknown error")
@@ -875,12 +881,12 @@ class OperatingSession(Session):
         self.nextFunction()
     
     def closeDone(self):
-        self.oscReply("/reply", self.osc_path, "Closed.")
+        self.sendReply("Closed.")
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.OFF)
     
     def abortDone(self):
-        self.oscReply("/reply", self.osc_path, "Aborted.")
+        self.sendReply("Aborted.")
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.OFF)
         
@@ -899,7 +905,7 @@ class OperatingSession(Session):
         
         self.setServerStatus(ray.ServerStatus.NEW)
         self.setPath(spath)
-        self.oscReply("/reply", self.osc_path, "Created." )
+        self.sendReply("Created." )
         self.sendGui("/ray/gui/session/name",
                      self.name, self.path)
         self.nextFunction()
@@ -958,7 +964,7 @@ class OperatingSession(Session):
         
         self.waitAndGoTo(2000,
                          (self.duplicate_step1, new_session_full_name),
-                         ray.WaitFor.DUPLICATE_START) 
+                         ray.WaitFor.DUPLICATE_START)
         
     def duplicate_step1(self, new_session_full_name):
         spath = "%s/%s" % (self.root, new_session_full_name)
@@ -1032,9 +1038,9 @@ class OperatingSession(Session):
         for client in self.clients:
             if client.net_daemon_url:
                 self.send(Address(client.net_daemon_url), 
-                          '/ray/session/save_as_template', 
-                          self.name, 
-                          template_name, 
+                          '/ray/server/save_session_template', 
+                          self.name,
+                          template_name,
                           client.net_session_root)
         
         self.setServerStatus(ray.ServerStatus.COPY)
@@ -1057,7 +1063,7 @@ class OperatingSession(Session):
                                        "Session saved as template named %s")
                             % template_name)
         
-        self.oscReply("/reply", self.osc_path, "Saved as template.")
+        self.sendReply("Saved as template.")
         self.setServerStatus(ray.ServerStatus.READY)
     
     def saveSessionTemplateAborted(self, template_name):
@@ -1372,7 +1378,6 @@ class OperatingSession(Session):
             
         self.sendGui("/ray/gui/session/name",  self.name, self.path)
         
-        
         if has_switch:
             self.setServerStatus(ray.ServerStatus.SWITCH)
         else:
@@ -1424,7 +1429,7 @@ class OperatingSession(Session):
         self.message('Loaded')
         
         self.sendGui("/ray/gui/session/name",  self.name, self.path)
-        self.oscReply("/reply", self.osc_path, "Loaded.")
+        self.sendReply("Loaded.")
         
         self.nextFunction()
     
@@ -1459,13 +1464,13 @@ class OperatingSession(Session):
     
     def duplicateDone(self):
         self.message("Done")
-        self.oscReply("/reply", self.osc_path, "Duplicated.")
+        self.sendReply("Duplicated.")
         self.setServerStatus(ray.ServerStatus.READY)
         
     def exitNow(self):
         self.message("Bye Bye...")
         self.setServerStatus(ray.ServerStatus.OFF)
-        self.oscReply("/reply", self.osc_path, "Bye Bye...")
+        self.sendReply("Bye Bye...")
         #QTimer.singleShot(50, QCoreApplication.quit)
         QCoreApplication.quit()
         
@@ -1985,8 +1990,24 @@ class SignaledSession(OperatingSession):
     @session_operation
     def ray_session_save_as_template(self, path, args, src_addr):
         template_name = args[0]
-        net = bool(len(args) == 3)
         
+        for client in self.clients:
+            if client.executable_path == 'ray-network':
+                client.net_session_template = template_name
+        
+        self.process_order = [self.save, self.snapshot,
+                              (self.saveSessionTemplate, 
+                               template_name, False)]
+                              
+    @session_operation
+    def ray_server_save_session_template(self, path, args, src_addr):
+        if len(args) == 2:
+            session_name, template_name = args
+            net=False
+        else:
+            session_name, template_name, sess_root = args
+            net=True
+            
         for client in self.clients:
             if client.executable_path == 'ray-network':
                 client.net_session_template = template_name
@@ -2016,7 +2037,7 @@ class SignaledSession(OperatingSession):
     
     def ray_session_abort(self, path, args, src_addr):
         if not self.path:
-            self.serverSend(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to abort." )
             return
         
@@ -2279,7 +2300,7 @@ class SignaledSession(OperatingSession):
         
         for snapshot in snapshots:
             if i == 20:
-                self.serverSend(src_addr, '/reply', path, *snap_send)
+                self.send(src_addr, '/reply', path, *snap_send)
                 
                 snap_send.clear()
                 i=0
@@ -2288,7 +2309,7 @@ class SignaledSession(OperatingSession):
                 i+=1
         
         if snap_send:
-            self.serverSend(src_addr, '/reply', path, *snap_send)
+            self.send(src_addr, '/reply', path, *snap_send)
         self.send(src_addr, '/reply', path)
         
     def ray_session_set_auto_snapshot(self, path, args, src_addr):

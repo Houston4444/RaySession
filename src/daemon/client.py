@@ -284,7 +284,6 @@ class Client(ServerSender):
         if self.session.wait_for == ray.WaitFor.DUPLICATE_FINISH:
             self.session.endTimerIfLastExpected(self)
             
-    
     def setStatus(self, status):
         #ray.ClientStatus.COPY is not a status as the other ones.
         #GUI needs to know if client is started/open/stopped while files are
@@ -706,8 +705,8 @@ class Client(ServerSender):
         if self.net_daemon_url:
             self.net_session_template = template_name
             self.send(Address(self.net_daemon_url), 
-                        '/ray/session/save_as_template', self.session.name, 
-                        template_name, self.net_session_root)
+                      '/ray/server/save_session_template', self.session.name, 
+                      template_name, self.net_session_root)
         
         if client_files:
             self.setStatus(ray.ClientStatus.COPY)
