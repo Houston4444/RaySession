@@ -1995,11 +1995,21 @@ class SignaledSession(OperatingSession):
     
     @session_operation
     def ray_server_open_session(self, path, args, src_addr):
-        if len(args) == 2 and args[1]:
-            session_name, template_name = args
-            
-            if not session_name:
-                # send error TODO
+        session_name = args[0]
+        template_name = ''
+        if len(args) >= 2:
+            template_name = args[1]
+        
+        if (not session_name
+                or '//' in session_name
+                or session_name.startswith('../')
+                or session_name.startswith('.ray-')):
+            self.sendError(ray.Err.CREATE_FAILED, 'invalid session name.')
+            return
+        
+        if template_name:
+            if '/' in template_name:
+                self.sendError(ray.Err.CREATE_FAILED, 'invalid template name')
                 return
             
             spath = ''
@@ -2016,10 +2026,6 @@ class SignaledSession(OperatingSession):
                                       (self.load, session_name),
                                        self.loadDone]
                 return
-            
-        if not args[0]:
-            # send error TODO
-            return 
         
         self.process_order = [(self.save, '', True),
                               self.closeNoSaveClients,
@@ -2028,7 +2034,6 @@ class SignaledSession(OperatingSession):
                               self.loadDone]
     
     def ray_server_rename_session(self, path, args, src_addr):
-        print('troiunrf', args)
         tmp_session = DummySession(self.root)
         tmp_session.ray_server_rename_session(path, args, src_addr)
     
@@ -2581,7 +2586,6 @@ class DummySession(OperatingSession):
     def ray_server_save_session_template(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
         session_name, template_name, net = args
-        print('in the dummy')
         self.process_order = [(self.load, session_name),
                               (self.saveSessionTemplate, template_name, net)]
         self.nextFunction()

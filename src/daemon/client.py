@@ -300,6 +300,11 @@ class Client(ServerSender):
                              ray.ClientStatus.COPY)
     
     def getJackClientName(self):
+        if self.executable_path == 'ray-network':
+            # ray-network will use jack_client_name for template
+            # quite dirty, but this is the easier way
+            return self.net_session_template
+            
         jack_client_name = self.name
         
         numid = ''
@@ -325,9 +330,7 @@ class Client(ServerSender):
     
     def getProjectPath(self):
         if self.executable_path == 'ray-network':
-            # for ray-network, use custom_prefix for template,
-            # quite ugly but simple code.
-            return self.net_session_template
+            return self.session.getShortPath()
         
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
             return "%s/%s.%s" % (self.session.path, self.session.name, 
@@ -1034,8 +1037,12 @@ class Client(ServerSender):
         self.sendGuiClientProperties()
         self.setStatus(ray.ClientStatus.OPEN)
         
-        jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
+        jack_client_name    = self.getJackClientName()
+        
+        if self.isCapableOf(':ray-network:'):
+            client_project_path = self.session.getShortPath()
+            jack_client_name = self.net_session_template
         
         self.send(src_addr, "/nsm/client/open", client_project_path,
                   self.session.name, jack_client_name)

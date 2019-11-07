@@ -90,9 +90,6 @@ class NSMChildOutside(NSMChild):
         NSMChild.__init__(self, session)
         self.wait_for_close = False
         
-        self.session_name = ''
-        self.template_name = ''
-        
     def announceToParent(self):
         serverNSM = nsm_client.NSMThread.instance()
         
@@ -123,12 +120,11 @@ class NSMChildOutside(NSMChild):
         self.wait_for_open = True
         
         #Here project_path is used for template if needed
-        self.template_name = project_path
-        self.session_name  = session_name
+        template_name = jack_client_name
         
         server = GUIServerThread.instance()
         if server:
-            server.openSession(self.session_name, self.template_name)
+            server.openSession(project_path, template_name)
         
     def closeSession(self):
         self.wait_for_close = True

@@ -34,12 +34,12 @@ class Session(object):
         elif not CommandLineArgs.out_daemon:
             self._daemon_manager.setNewOscAddress()
 
-        if CommandLineArgs.under_nsm:
-            if CommandLineArgs.out_daemon:
-                self._nsm_child = NSMChildOutside(self)
-                self._daemon_manager.setExternal()
-            else:
-                self._nsm_child = NSMChild(self)
+        #if CommandLineArgs.under_nsm:
+            #if CommandLineArgs.out_daemon:
+                #self._nsm_child = NSMChildOutside(self)
+                #self._daemon_manager.setExternal()
+            #else:
+                #self._nsm_child = NSMChild(self)
         
         # build nsm_child if NSM_URL in env
         self._nsm_child = None
