@@ -569,12 +569,19 @@ class OperatingSession(Session):
     
     def sendError(self, err, error_message):
         #clear process order to allow other new operations
-        #self.process_order.clear()
+        self.process_order.clear()
         
         if not (self.osc_src_addr and self.osc_path):
             return
         
         self.sendEvenDummy(self.osc_src_addr, "/error",
+                           self.osc_path, err, error_message)
+    
+    def sendMinorError(self, err, error_message):
+        if not (self.osc_src_addr and self.osc_path):
+            return
+        
+        self.sendEvenDummy(self.osc_src_addr, "/minor_error",
                            self.osc_path, err, error_message)
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_mode):
@@ -807,8 +814,16 @@ class OperatingSession(Session):
                            "git exit with an error code.\n%s") % info_str
         self.message(m)
         self.sendGuiMessage(m)
-        self.sendError(err_snapshot, m)
         
+        # quite dirty
+        # minor error is not a fatal error
+        # it's important for ray_control to not stop
+        # if operation is close or open
+        if self.nextFunction.__name__ == 'snapshotDone':
+            self.sendError(err_snapshot, m)
+            return
+        
+        self.sendMinorError(err_snapshot, m)
         self.nextFunction()
     
     def closeNoSaveClients(self):
@@ -1102,9 +1117,10 @@ class OperatingSession(Session):
                             % (TemplateRoots.factory_sessions, template_name)
         
         if not os.path.isdir(template_path):
-            self.sendError(ray.Err.GENERAL_ERROR, 
+            self.sendMinorError(ray.Err.GENERAL_ERROR, 
                            _translate("error", "No template named %s")
                            % template_name)
+            self.nextFunction()
             return
         
         new_session_name = basename(new_session_full_name)
@@ -1998,26 +2014,24 @@ class SignaledSession(OperatingSession):
     @session_operation
     def ray_server_open_session(self, path, args, src_addr):
         session_name = args[0]
-        template_name = ''
         save_previous = True
+        template_name = ''
         
         if len(args) >= 2:
-            template_name = args[1]
+            save_previous = bool(args[1])
         if len(args) >= 3:
-            save_previous = bool(args[2])
+            template_name = args[2]
         
         if (not session_name
                 or '//' in session_name
                 or session_name.startswith('../')
                 or session_name.startswith('.ray-')):
-            self.send(src_addr, '/error', ray.Err.CREATE_FAILED,
-                      'invalid session name.')
+            self.sendError(ray.Err.CREATE_FAILED, 'invalid session name.')
             return
         
         if template_name:
             if '/' in template_name:
-                self.send(src_addr, '/error', ray.Err.CREATE_FAILED,
-                          'invalid template name')
+                self.sendError(ray.Err.CREATE_FAILED, 'invalid template name')
                 return
             
             spath = ''
@@ -2026,6 +2040,7 @@ class SignaledSession(OperatingSession):
             else:
                 spath = "%s/%s" % (self.root, session_name)
             
+            # don't use template if session folder already exists
             if os.path.exists(spath):
                 template_name = ''
         

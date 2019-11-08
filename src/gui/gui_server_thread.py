@@ -46,6 +46,10 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/error', 'sis')
     def _error(self, path, args, types, src_addr):
         pass
+    
+    @ray_method('/minor_error', 'sis')
+    def error(self, path, args, types, src_addr):
+        pass
 
     @ray_method('/reply', None)
     def _reply(self, path, args, types, src_addr):
@@ -233,14 +237,9 @@ class GUIServerThread(liblo.ServerThread):
     def disannounce(self, src_addr):
         self.send(src_addr, '/ray/server/gui_disannounce')
 
-    def openSession(self, session_name, session_template=''):
-        if session_template:
-            self.toDaemon(
-                '/ray/server/open_session',
-                session_name,
-                session_template)
-        else:
-            self.toDaemon('/ray/server/open_session', session_name)
+    def openSession(self, session_name, save_previous=1, session_template=''):
+        self.toDaemon('/ray/server/open_session', session_name,
+                      save_previous, session_template)
 
     def saveSession(self):
         self.toDaemon('/ray/session/save')

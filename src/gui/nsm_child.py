@@ -55,7 +55,7 @@ class NSMChild:
         
         server = GUIServerThread.instance()
         if server:
-            server.openSession(project_path)
+            server.openSession(project_path, 0)
     
     def save(self):
         if self._session._main_win:
@@ -124,7 +124,7 @@ class NSMChildOutside(NSMChild):
         
         server = GUIServerThread.instance()
         if server:
-            server.openSession(project_path, template_name)
+            server.openSession(project_path, 0, template_name)
         
     def closeSession(self):
         self.wait_for_close = True

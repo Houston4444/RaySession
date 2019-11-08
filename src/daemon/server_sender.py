@@ -42,6 +42,10 @@ class ServerSender(QObject):
     def sendGuiMessage(self, message):
         self.sendGui('/ray/gui/server/message', message)
         
+        server = OscServerThread.getInstance()
+        if server:
+            server.sendControllerMessage(message)
+        
     def setServerStatus(self, server_status):
         if self.is_dummy:
             return

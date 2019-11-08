@@ -544,11 +544,11 @@ class OscServerThread(ClientCommunicating):
     def rayServerOpenSession(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/server/open_session', 'ss')
+    @ray_method('/ray/server/open_session', 'si')
     def rayServerOpenSessionWithTemplate(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/server/open_session', 'ssi')
+    @ray_method('/ray/server/open_session', 'sis')
     def rayServerOpenSessionWithoutSave(self, path, args, types, src_addr):
         pass
     
@@ -919,7 +919,7 @@ class OscServerThread(ClientCommunicating):
         for t in types:
             types_str += t
             
-        self.send(src_addr, '/error', path, ray.Err.UNKNOWN_MESSAGE,
+        self.send(src_addr, '/minor_error', path, ray.Err.UNKNOWN_MESSAGE,
                   "unknown osc message: %s %s" % (path, types))
         return False
     

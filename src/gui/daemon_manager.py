@@ -113,7 +113,11 @@ class DaemonManager(QObject):
             self.disannounce(src_addr)
             return
 
-        if CommandLineArgs.net_session_root and session_root != CommandLineArgs.net_session_root:
+        if (CommandLineArgs.net_session_root
+                and session_root != CommandLineArgs.net_session_root):
+            print('armoejr')
+            print(session_root)
+            print(CommandLineArgs.net_session_root)
             self._signaler.daemon_url_request.emit(
                 ErrDaemon.WRONG_ROOT, self.url)
             self.disannounce(src_addr)
@@ -125,7 +129,8 @@ class DaemonManager(QObject):
             self.disannounce(src_addr)
             return
 
-        if CommandLineArgs.out_daemon and server_status != ray.ServerStatus.OFF:
+        if (CommandLineArgs.out_daemon
+                and server_status != ray.ServerStatus.OFF):
             self._signaler.daemon_url_request.emit(ErrDaemon.NOT_OFF, self.url)
             self.disannounce(src_addr)
             return

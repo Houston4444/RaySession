@@ -13,5 +13,7 @@
         ! self.name -> short_path
     find something better than check executable_path='ray-network'
     voir le souci git tag
-    
+    copie réseau trop longue
+    open_session charger même sans modèle (minorError)
+    minorError dans le GUI
   

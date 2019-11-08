@@ -216,7 +216,6 @@ class OpenSessionDialog(ChildDialog):
         
         self._last_mouse_click = 0
         
-
     def serverStatusChanged(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
             bool(server_status in (ray.ServerStatus.OFF,

@@ -112,7 +112,7 @@ class Snapshoter(QObject):
                 err = ray.Err.SUBPROCESS_EXITCODE
         
         if err and self.error_function:
-            self.error_function(err, str(all_args))
+            self.error_function(err, ' '.join(all_args))
             
         return not(bool(err))
     
@@ -408,10 +408,6 @@ class Snapshoter(QObject):
         if not self.isInit():
             return True
         
-        args = self.getGitCommandList('ls-files',
-                                      '--exclude-standard',
-                                      '--others',
-                                      '--modified')
         if self.changes_checker.state():
             self.changes_checker.kill()
         
@@ -419,6 +415,8 @@ class Snapshoter(QObject):
         self._n_file_treated = 0
         self._changes_counted = True
         
+        args = self.getGitCommandList('ls-files', '--exclude-standard',
+                                      '--others', '--modified')
         self.changes_checker.start(self.git_exec, args)
         self.changes_checker.waitForFinished(2000)
         
@@ -437,10 +435,15 @@ class Snapshoter(QObject):
         
         return True
     
+    def errorQuit(self, err):
+        if self.error_function:
+            self.error_function(err)
+        self.error_function = None
+    
     def save(self, name='', rewind_snapshot='',
              next_function=None, error_function=None):
         self.next_snapshot_name  = name
-        self._rw_snapshot = rewind_snapshot
+        self.next_rw_snapshot = rewind_snapshot
         self.next_function = next_function
         self.error_function = error_function
         
@@ -450,18 +453,18 @@ class Snapshoter(QObject):
         
         err = self.writeExcludeFile()
         if err:
-            if self.error_function:
-                self.error_function(err)
+            self.errorQuit(err)
             return 
-            
-        all_args = self.getGitCommandList('add', '-A', '-v')
         
         self._adder_aborted = False
         
         if not self._changes_counted:
             self.hasChanges()
-            
+        
+        self._changes_counted = False
+        
         if self._n_file_changed:
+            all_args = self.getGitCommandList('add', '-A', '-v')
             self.adder_process.start(self.git_exec, all_args)
         else:
             self.save_step_1()
@@ -478,24 +481,26 @@ class Snapshoter(QObject):
             if not self.runGitProcess('commit', '-m', 'ray'):
                 return
         
-        self._changes_counted = False
-        
         ref = self.getTagDate()
+        
+        if (self._n_file_changed
+                or self.next_snapshot_name or self.next_rw_snapshot):
+            if not self.runGitProcess('tag', '-a', ref, '-m', 'ray'):
+                return 
             
-        if not self.runGitProcess('tag', '-a', ref, '-m', 'ray'):
-            return 
-        
-        err = self.writeHistoryFile(ref, self.next_snapshot_name,
-                                    self._rw_snapshot)
-        if err:
-            if self.error_function:
-                self.error_function(err)
-        
-        # not really a reply, not strong.
-        self.session.sendGui('/reply', '/ray/session/list_snapshots',
-                             fullRefForGui(ref, self.next_snapshot_name,
-                                           self._rw_snapshot))
+            err = self.writeHistoryFile(ref, self.next_snapshot_name,
+                                        self.next_rw_snapshot)
+            if err:
+                self.errorQuit(err)
+                return
+            
+            # not really a reply, not strong.
+            self.session.sendGui('/reply', '/ray/session/list_snapshots',
+                                fullRefForGui(ref, self.next_snapshot_name,
+                                            self.next_rw_snapshot))
         self.error_function = None
+        self.next_snapshot_name = ''
+        self.next_rw_snapshot = ''
         
         if self.next_function:
             self.next_function()

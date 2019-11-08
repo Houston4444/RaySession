@@ -98,6 +98,16 @@ class OscServerThread(liblo.ServerThread):
         sys.stdout.write('%s\n' % message)
         
         signaler.done.emit(- err)
+    
+    @liblo.make_method('/minor_error', 'sis')
+    def minorErrorMessage(self, path, args, types, src_addr):
+        error_path, err, message = args
+        sys.stdout.write('\033[31m%s\033[0m\n' % message)
+    
+    @liblo.make_method('/ray/control/message', 's')
+    def rayControlMessage(self, path, args, types, src_addr):
+        message = args[0]
+        sys.stdout.write('%s\n' % message)
         
     @liblo.make_method('/ray/control/server/announce', 'siisi')
     def rayControlServerAnnounce(self, path, args, types, src_addr):
