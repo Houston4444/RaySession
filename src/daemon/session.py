@@ -664,7 +664,11 @@ class OperatingSession(Session):
             if client.canSaveNow():
                 self.expected_clients.append(client)
             client.save()
-            
+        
+        if self.expected_clients:
+            self.sendGuiMessage(_translate('GUIMSG', 
+                                           'waiting for clients to save'))
+        
         self.waitAndGoTo(10000, (self.save_step1, outing), ray.WaitFor.REPLY)
             
     def save_step1(self, outing=False):
@@ -786,14 +790,15 @@ class OperatingSession(Session):
             self.setServerStatus(ray.ServerStatus.OUT_SNAPSHOT)
         else:
             self.setServerStatus(ray.ServerStatus.SNAPSHOT)
-            
+        
+        self.sendGuiMessage(_translate('GUIMSG', "snapshot started."))
         self.snapshoter.save(snapshot_name, rewind_snapshot,
                              self.snapshot_step1, self.snapshotError)
     
     def snapshot_step1(self, aborted=False):
         if aborted:
             self.message('Snapshot aborted')
-            self.sendGuiMessage(_translate('Snapshot', 'Snapshot aborted'))
+            self.sendGuiMessage(_translate('GUIMSG', 'Snapshot aborted'))
             
         self.nextFunction()
     
@@ -818,7 +823,7 @@ class OperatingSession(Session):
         # quite dirty
         # minor error is not a fatal error
         # it's important for ray_control to not stop
-        # if operation is close or open
+        # if operation is not snapshot (ex: close or open)
         if self.nextFunction.__name__ == 'snapshotDone':
             self.sendError(err_snapshot, m)
             return
@@ -828,21 +833,21 @@ class OperatingSession(Session):
     
     def closeNoSaveClients(self):
         self.cleanExpected()
-        nosave2_clients_n = 0
         
-        for client in self.clients:
-            if client.isRunning() and client.no_save_level == 2:
-                self.expected_clients.append(client)
-                nosave2_clients_n += 1
-        
-        if nosave2_clients_n:
-            server = self.getServer()
-            if server and server.option_has_wmctrl:
-                self.desktops_memory.setActiveWindowList()
-                for client in self.expected_clients:
+        server = self.getServer()
+        if server and server.option_has_wmctrl:
+            self.desktops_memory.setActiveWindowList()
+            for client in self.clients:
+                if client.isRunning() and client.no_save_level == 2:
+                    self.expected_clients.append(client)
                     self.desktops_memory.findAndClose(client.pid)
-        
-        duration = int(1000 * math.sqrt(nosave2_clients_n))
+            
+        if self.expected_clients:
+            self.sendGuiMessage(
+              _translate('GUIMSG', 
+                'waiting for no saveable clients to be closed gracefully.'))
+            
+        duration = int(1000 * math.sqrt(len(self.expected_clients)))
         self.waitAndGoTo(duration, self.closeNoSaveClients_step1,
                          ray.WaitFor.STOP)
     
@@ -859,7 +864,9 @@ class OperatingSession(Session):
             self.setServerStatus(ray.ServerStatus.WAIT_USER)
             self.timer_wu_progress_n = 0
             self.timer_waituser_progress.start()
-        
+            self.sendGuiMessage(
+                'GUIMSG', 'waiting you to close yourself unsaveable clients!')
+            
         # Timer (2mn) is restarted if an expected client has been closed
         self.waitAndGoTo(120000, self.nextFunction, ray.WaitFor.STOP, True)
     
@@ -882,7 +889,11 @@ class OperatingSession(Session):
                 self.expected_clients.append(client)
                 self.clients_to_quit.append(client)
                 self.timer_quit.start()
-                
+        
+        if self.expected_clients:
+            self.sendGuiMessage(
+                _translate('GUIMSG', 'waiting for clients to stop...'))
+        
         self.waitAndGoTo(30000, self.close_step1, ray.WaitFor.STOP)
     
     def close_step1(self):
@@ -970,11 +981,9 @@ class OperatingSession(Session):
         self.process_order.clear()
     
     def duplicate(self, new_session_full_name):
-        print('enter in duplicate')
         if self.clientsHaveErrors():
             self.sendError(ray.Err.GENERAL_ERROR, 
                            _translate('error', "Some clients could not save"))
-            self.process_order.clear()
             return
         
         self.sendGui('/ray/gui/trash/clear')
@@ -991,16 +1000,23 @@ class OperatingSession(Session):
                               client.net_session_root)
                     
                     self.expected_clients.append(client)
-        print('dupliwait net')
+        
+        if self.expected_clients:
+            self.sendGuiMessage(
+                _translate('GUIMSG',
+                    'waiting for network daemons to start duplicate'))
+                
         self.waitAndGoTo(2000,
                          (self.duplicate_step1, new_session_full_name),
                          ray.WaitFor.DUPLICATE_START)
         
     def duplicate_step1(self, new_session_full_name):
-        print('dupliwait net finish')
         spath = "%s/%s" % (self.root, new_session_full_name)
         
         self.setServerStatus(ray.ServerStatus.COPY)
+        
+        self.sendGuiMessage(_translate('GUIMSG', 'start session copy'))
+        
         self.file_copier.startSessionCopy(self.path, 
                                           spath, 
                                           self.duplicate_step2, 
@@ -1009,10 +1025,15 @@ class OperatingSession(Session):
     
     def duplicate_step2(self, new_session_full_name):
         self.cleanExpected()
-        print('dupliwait copyed)')
+        
         for client in self.clients:
             if 0 <= client.net_duplicate_state < 1:
                 self.expected_clients.append(client)
+        
+        if self.expected_clients:
+            self.sendGuiMessage(
+                _translate('GUIMSG',
+                    'waiting for network daemons to finish duplicate'))
         
         self.waitAndGoTo(3600000,  #1Hour
                          (self.duplicate_step3, new_session_full_name),
@@ -1020,15 +1041,14 @@ class OperatingSession(Session):
         
     def duplicate_step3(self, new_session_full_name):
         self.adjustFilesAfterCopy(new_session_full_name, ray.Template.NONE)
-        print('assa end of duplicate')
         self.nextFunction()
     
     def duplicateAborted(self, new_session_full_name):
         self.process_order.clear()
-        if self.osc_path.startswith('/nsm/server/'):
-            self.sendError(ray.Err.NO_SUCH_FILE, "No such file.")
-        else:
-            self.oscReply('/ray/net_daemon/duplicate_state', 1)
+        
+        self.sendError(ray.Err.NO_SUCH_FILE, "No such file.")
+        self.send(self.osc_src_addr, '/ray/net_daemon/duplicate_state', 1)
+        
         self.setServerStatus(ray.ServerStatus.READY)
     
     def saveSessionTemplate(self, template_name, net=False):
@@ -1075,6 +1095,10 @@ class OperatingSession(Session):
                           client.net_session_root)
         
         self.setServerStatus(ray.ServerStatus.COPY)
+        
+        self.sendGuiMessage(
+            _translate('GUIMSG', 'start session copy to template.'))
+        
         self.file_copier.startSessionCopy(self.path, 
                                           spath, 
                                           self.saveSessionTemplate_step_1, 
@@ -1099,6 +1123,7 @@ class OperatingSession(Session):
     
     def saveSessionTemplateAborted(self, template_name):
         self.process_order.clear()
+        self.sendReply("Session template aborted")
         self.setServerStatus(ray.ServerStatus.READY)
     
     def prepareTemplate(self, new_session_full_name, 
@@ -1138,7 +1163,11 @@ class OperatingSession(Session):
             self.setServerStatus(ray.ServerStatus.PRECOPY)
             self.sendGui("/ray/gui/session/name",  
                          new_session_name, spath)
-            
+        
+        self.sendGuiMessage(
+            _translate('GUIMSG', 
+                       'start copy from template to session folder'))
+        
         self.file_copier.startSessionCopy(template_path, 
                                           spath, 
                                           self.prepareTemplate_step1, 
@@ -1351,7 +1380,7 @@ class OperatingSession(Session):
             self.removed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
         
-        self.message("Commanding unneeded and dumb clients to quit")
+        #self.message("Commanding unneeded and dumb clients to quit")
         
         byebye_client_list = []
         
@@ -1382,6 +1411,8 @@ class OperatingSession(Session):
         
         if self.expected_clients:
             self.setServerStatus(ray.ServerStatus.CLEAR)
+            self.sendGuiMessage(
+                _translate('GUIMSG', 'Commanding unneeded clients to quit'))
         
         self.waitAndGoTo(20000, self.load_step1, ray.WaitFor.STOP)
     
@@ -1458,11 +1489,15 @@ class OperatingSession(Session):
         self.reOrderClients(new_client_id_list)
         self.sendGui('/ray/gui/session/sort_clients', *new_client_id_list)
         
+        if self.expected_clients:
+            self.sendGuiMessage(_translate('GUIMSG',
+                                           'waiting clients announces'))
+        
         self.waitAndGoTo(5000, self.load_step2, ray.WaitFor.ANNOUNCE)
     
     def load_step2(self):
         for client in self.expected_clients:
-            if not client.executable_path in RS.non_active_clients:
+            if (not client.executable_path in RS.non_active_clients):
                 RS.non_active_clients.append(client.executable_path)
                 
         RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
@@ -1476,6 +1511,10 @@ class OperatingSession(Session):
                 self.expected_clients.append(client)
             elif client.isRunning() and client.isDumbClient():
                 client.setStatus(ray.ClientStatus.NOOP)
+                
+        if self.expected_clients:
+            self.sendGuiMessage(_translate('GUIMSG',
+                                           'waiting for clients to be ready'))
                 
         self.waitAndGoTo(10000, self.load_step3, ray.WaitFor.REPLY)
         
@@ -1521,7 +1560,6 @@ class OperatingSession(Session):
         self.process_order.clear()
     
     def duplicateOnlyDone(self):
-        print('envoi duplicat fini')
         self.oscReply('/ray/net_daemon/duplicate_state', 1)
     
     def duplicateDone(self):
@@ -2185,8 +2223,8 @@ class SignaledSession(OperatingSession):
             elif short_path == 'open':
                 self.loadError(ray.Err.SESSION_LOCKED)
             elif short_path == 'new':
-                self.oscReply("/error", self.osc_path, ray.Err.CREATE_FAILED, 
-                          "Could not create the session directory")
+                self.sendError(ray.Err.CREATE_FAILED, 
+                               "Could not create the session directory")
             elif short_path == 'duplicate':
                 self.duplicateAborted(self.osc_args[0])
             elif short_path in ('close', 'abort', 'quit'):

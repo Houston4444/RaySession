@@ -13,4 +13,5 @@ konv# RaySession TODO
     find something better than check executable_path='ray-network'
     voir le souci git tag
     copie réseau trop longue
+    voir ce qu'on fait avec les aborted
   
