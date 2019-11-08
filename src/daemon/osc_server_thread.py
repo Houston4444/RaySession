@@ -376,6 +376,10 @@ class OscServerThread(ClientCommunicating):
             self.nsm_locker_url = ''
             self.sendGui('/ray/gui/server/nsm_locked', 0)
     
+    @ray_method('/ray/server/controller_announce', '')
+    def rayServerControllerAnnounce(self, path, args, types, src_addr):
+        self.controller_addr = src_addr
+    
     @ray_method('/ray/server/set_nsm_locked', '')
     def rayServerSetNsmLocked(self, path, args, types, src_addr):
         self.is_nsm_locked = True

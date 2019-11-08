@@ -122,6 +122,7 @@ class OscServerThread(liblo.ServerThread):
     
     def setDaemonAddress(self, daemon_port):
         self.m_daemon_address = liblo.Address(daemon_port)
+        self.toDaemon('/ray/server/controller_announce')
     
     def toDaemon(self, *args):
         self.send(self.m_daemon_address, *args)

@@ -1,4 +1,4 @@
-# RaySession TODO
+konv# RaySession TODO
 
     Jack Patchbay
     drop file directly on session
@@ -7,13 +7,10 @@
     ...
     
     review list with net and last reply
-    if client sends error, dont prevent server status to become ready
+    if client sends error while loading, dont prevent server status to become ready
     prevent daemonCrash window at clean daemon stop
     
-        ! self.name -> short_path
     find something better than check executable_path='ray-network'
     voir le souci git tag
     copie réseau trop longue
-    open_session charger même sans modèle (minorError)
-    minorError dans le GUI
   
