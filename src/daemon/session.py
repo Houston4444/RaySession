@@ -569,7 +569,7 @@ class OperatingSession(Session):
     
     def sendError(self, err, error_message):
         #clear process order to allow other new operations
-        self.process_order.clear()
+        #self.process_order.clear()
         
         if not (self.osc_src_addr and self.osc_path):
             return
@@ -641,7 +641,6 @@ class OperatingSession(Session):
     # save_step1 is launched.
         
     def save(self, from_client_id='', outing=False):
-        print('saveee')
         if not self.path:
             self.nextFunction()
             return
@@ -662,7 +661,6 @@ class OperatingSession(Session):
         self.waitAndGoTo(10000, (self.save_step1, outing), ray.WaitFor.REPLY)
             
     def save_step1(self, outing=False):
-        print('saveeedo')
         self.cleanExpected()
         
         if outing:
@@ -774,7 +772,6 @@ class OperatingSession(Session):
             if not (server and server.option_snapshots
                     and not self.snapshoter.isAutoSnapshotPrevented()
                     and self.snapshoter.hasChanges()):
-                # add snapshot at the beginning of process_order
                 self.nextFunction()
                 return
         
@@ -790,6 +787,7 @@ class OperatingSession(Session):
         if aborted:
             self.message('Snapshot aborted')
             self.sendGuiMessage(_translate('Snapshot', 'Snapshot aborted'))
+            
         self.nextFunction()
     
     def snapshotDone(self):
@@ -957,6 +955,7 @@ class OperatingSession(Session):
         self.process_order.clear()
     
     def duplicate(self, new_session_full_name):
+        print('enter in duplicate')
         if self.clientsHaveErrors():
             self.sendError(ray.Err.GENERAL_ERROR, 
                            _translate('error', "Some clients could not save"))
@@ -977,12 +976,13 @@ class OperatingSession(Session):
                               client.net_session_root)
                     
                     self.expected_clients.append(client)
-        
+        print('dupliwait net')
         self.waitAndGoTo(2000,
                          (self.duplicate_step1, new_session_full_name),
                          ray.WaitFor.DUPLICATE_START)
         
     def duplicate_step1(self, new_session_full_name):
+        print('dupliwait net finish')
         spath = "%s/%s" % (self.root, new_session_full_name)
         
         self.setServerStatus(ray.ServerStatus.COPY)
@@ -994,9 +994,9 @@ class OperatingSession(Session):
     
     def duplicate_step2(self, new_session_full_name):
         self.cleanExpected()
-        
+        print('dupliwait copyed)')
         for client in self.clients:
-            if client.net_duplicate_state == 0:
+            if 0 <= client.net_duplicate_state < 1:
                 self.expected_clients.append(client)
         
         self.waitAndGoTo(3600000,  #1Hour
@@ -1005,6 +1005,7 @@ class OperatingSession(Session):
         
     def duplicate_step3(self, new_session_full_name):
         self.adjustFilesAfterCopy(new_session_full_name, ray.Template.NONE)
+        print('assa end of duplicate')
         self.nextFunction()
     
     def duplicateAborted(self, new_session_full_name):
@@ -1099,7 +1100,7 @@ class OperatingSession(Session):
             template_name = template_name.replace('///', '')
             template_path = "%s/%s" \
                             % (TemplateRoots.factory_sessions, template_name)
-            
+        
         if not os.path.isdir(template_path):
             self.sendError(ray.Err.GENERAL_ERROR, 
                            _translate("error", "No template named %s")
@@ -1135,7 +1136,7 @@ class OperatingSession(Session):
     
     def prepareTemplateAborted(self, new_session_full_name):
         self.process_order.clear()
-        if self.name:
+        if self.path:
             self.setServerStatus(ray.ServerStatus.READY)
         else:
             self.setServerStatus(ray.ServerStatus.OFF)
@@ -1504,6 +1505,7 @@ class OperatingSession(Session):
         self.process_order.clear()
     
     def duplicateOnlyDone(self):
+        print('envoi duplicat fini')
         self.oscReply('/ray/net_daemon/duplicate_state', 1)
     
     def duplicateDone(self):
@@ -1997,19 +1999,25 @@ class SignaledSession(OperatingSession):
     def ray_server_open_session(self, path, args, src_addr):
         session_name = args[0]
         template_name = ''
+        save_previous = True
+        
         if len(args) >= 2:
             template_name = args[1]
+        if len(args) >= 3:
+            save_previous = bool(args[2])
         
         if (not session_name
                 or '//' in session_name
                 or session_name.startswith('../')
                 or session_name.startswith('.ray-')):
-            self.sendError(ray.Err.CREATE_FAILED, 'invalid session name.')
+            self.send(src_addr, '/error', ray.Err.CREATE_FAILED,
+                      'invalid session name.')
             return
         
         if template_name:
             if '/' in template_name:
-                self.sendError(ray.Err.CREATE_FAILED, 'invalid template name')
+                self.send(src_addr, '/error', ray.Err.CREATE_FAILED,
+                          'invalid template name')
                 return
             
             spath = ''
@@ -2018,20 +2026,52 @@ class SignaledSession(OperatingSession):
             else:
                 spath = "%s/%s" % (self.root, session_name)
             
-            if not os.path.exists(spath):
-                self.process_order = [(self.save, '', True),
-                                      self.closeNoSaveClients,
-                                      (self.snapshot, '', '', False, True),
-                                      (self.prepareTemplate, *args, True), 
-                                      (self.load, session_name),
-                                       self.loadDone]
-                return
+            if os.path.exists(spath):
+                template_name = ''
         
-        self.process_order = [(self.save, '', True),
-                              self.closeNoSaveClients,
-                              (self.snapshot, '', '', False, True),
-                              (self.load, args[0]),
-                              self.loadDone]
+        self.process_order = []
+        
+        if save_previous:
+            self.process_order += [(self.save, '', True)]
+        
+        self.process_order += [self.closeNoSaveClients]
+        
+        if save_previous:
+            self.process_order += [(self.snapshot, '', '', False, True)]
+        
+        if template_name:
+            self.process_order += [(self.prepareTemplate, session_name, 
+                                    template_name, True)]
+        
+        self.process_order += [(self.load, session_name), self.loadDone]
+        
+        #if template_name:
+            #if '/' in template_name:
+                #self.send(src_addr, '/error', ray.Err.CREATE_FAILED,
+                          #'invalid template name')
+                #return
+            
+            #spath = ''
+            #if session_name.startswith('/'):
+                #spath = session_name
+            #else:
+                #spath = "%s/%s" % (self.root, session_name)
+            
+            #if not os.path.exists(spath):
+                #self.process_order = [
+                    #(self.save, '', True),
+                    #self.closeNoSaveClients,
+                    #(self.snapshot, '', '', False, True),
+                    #(self.prepareTemplate, session_name, template_name, True),
+                    #(self.load, session_name),
+                    #self.loadDone]
+                #return
+        
+        #self.process_order = [(self.save, '', True),
+                              #self.closeNoSaveClients,
+                              #(self.snapshot, '', '', False, True),
+                              #(self.load, session_name),
+                              #self.loadDone]
     
     def ray_server_rename_session(self, path, args, src_addr):
         tmp_session = DummySession(self.root)
@@ -2079,7 +2119,6 @@ class SignaledSession(OperatingSession):
                                           #src_addr)
                                           
                                           
-        #print('feorkf', net)
         #if net:
             #for client in self.clients:
                 #if client.executable_path == 'ray-network':
@@ -2494,7 +2533,7 @@ class SignaledSession(OperatingSession):
     
     def ray_net_daemon_duplicate_state(self, path, args, src_addr):
         state = args[0]
-        
+        print('nett ddupl receiv', state)
         for client in self.clients:
             if (client.net_daemon_url
                 and ray.areSameOscPort(client.net_daemon_url, src_addr.url)):

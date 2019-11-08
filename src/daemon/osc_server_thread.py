@@ -50,6 +50,7 @@ class ClientCommunicating(liblo.ServerThread):
         liblo.ServerThread.__init__(self, osc_num)
         self.session = session
         self.gui_list = []
+        self.controller_addr = None
         self.server_status  = ray.ServerStatus.OFF
         self.gui_embedded = False
         self.is_nsm_locked  = False
@@ -547,6 +548,10 @@ class OscServerThread(ClientCommunicating):
     def rayServerOpenSessionWithTemplate(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/server/open_session', 'ssi')
+    def rayServerOpenSessionWithoutSave(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/session/save', '')
     def raySessionSave(self, path, args, types, src_addr):
         if not self.session.path:
@@ -824,6 +829,7 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/net_daemon/duplicate_state', 'f')
     def rayDuplicateState(self, path, args, types, src_addr):
+        print('nettdeduplidcate', args[0])
         pass
     
     @ray_method('/ray/trash/restore', 's')
@@ -1151,7 +1157,11 @@ class OscServerThread(ClientCommunicating):
         Terminal.message("Registered with GUI")
     
     def announceController(self, control_address):
+        self.controller_addr = control_address
         self.send(control_address, "/ray/control/server/announce",
                   ray.VERSION, self.server_status, self.getOptions(),
                   self.session.root, 1)
-                  
+    
+    def sendControllerMessage(self, message):
+        if self.controller_addr:
+            self.send(self.controller_addr, '/ray/control/message', message)
