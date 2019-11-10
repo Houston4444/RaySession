@@ -443,12 +443,25 @@ class OperatingSession(Session):
                 follow = functools.partial(follow[0], *follow[1:])
         
         if self.expected_clients:
+            n_expected = len(self.expected_clients)
+            
             if wait_for == ray.WaitFor.ANNOUNCE:
-                self.sendGuiMessage(
-                    _translate('GUIMSG', 'waiting for clients announces...'))
+                if n_expected == 1:
+                    message = _translate('GUIMSG',
+                        'waiting announce from %s...'
+                            % self.expected_clients[0].guiMsgStyle())
+                else:
+                    message = _translate('GUIMSG',
+                        'waiting announce from %i clients...' % n_expected)
+                self.sendGuiMessage(message)
             elif wait_for == ray.WaitFor.STOP:
-                self.sendGuiMessage(
-                    _translate('GUIMSG', 'waiting for clients to die...'))
+                if n_expected == 1:
+                    message = _translate('GUIMSG',
+                        'waiting for %s to stop...'
+                            % self.expected_clients[0].guiMsgStyle())
+                else:
+                    message = _translate('GUIMSG',
+                        'waiting for %i clients to stop...' % n_expected)
             
             self.timer_redondant = redondant
             
@@ -478,30 +491,22 @@ class OperatingSession(Session):
     
     def cleanExpected(self):
         if self.expected_clients:
-            client_names = ""
+            client_names = []
             
             for client in self.expected_clients:
-                client_names += client.name + ', ' 
+                client_names.append(client.guiMsgStyle())
             
             if self.wait_for == ray.WaitFor.ANNOUNCE:
-                self.sendGuiMessage(_translate('GUIMSG', "%sdidn't announce")
-                                    % client_names)
+                self.sendGuiMessage(
+                    _translate('GUIMSG', "%s didn't announce.")
+                        % ', '.join(client_names))
                 
             elif self.wait_for == ray.WaitFor.STOP:
-                self.sendGuiMessage(_translate('GUIMSG', "%sstill alive !")
-                                    % client_names)
+                self.sendGuiMessage(_translate('GUIMSG', "%s still alive !")
+                                    % ', '.join(client_names))
                 
             self.expected_clients.clear()
-        else:
-            if self.wait_for == ray.WaitFor.ANNOUNCE:
-                self.sendGuiMessage(
-                    _translate('GUIMSG',
-                               'All expected clients are announced'))
-                
-            elif self.wait_for == ray.WaitFor.STOP:
-                self.sendGuiMessage(
-                    _translate('GUIMSG', 'All expected clients are died'))
-                
+            
         self.wait_for = ray.WaitFor.NONE
     
     def nextFunction(self):
@@ -666,8 +671,14 @@ class OperatingSession(Session):
             client.save()
         
         if self.expected_clients:
-            self.sendGuiMessage(_translate('GUIMSG', 
-                                           'waiting for clients to save'))
+            if len(self.expected_clients) == 1:
+                self.sendGuiMessage(
+                    _translate('GUIMSG', 'waiting for %s to save...')
+                        % self.expected_clients[0].guiMsgStyle())
+            else:
+                self.sendGuiMessage(
+                    _translate('GUIMSG', 'waiting for %i clients to save...')
+                        % len(self.expected_clients))
         
         self.waitAndGoTo(10000, (self.save_step1, outing), ray.WaitFor.REPLY)
             
@@ -751,8 +762,9 @@ class OperatingSession(Session):
             
         file.close()
         
-        self.sendGuiMessage(_translate('GUIMSG', "Session saved."))
-        self.message("Session saved.")
+        self.sendGuiMessage(_translate('GUIMSG', "Session '%s' saved.")
+                                % self.getShortPath())
+        self.message("Session %s saved." % self.getShortPath())
             
         self.nextFunction()
     
@@ -791,15 +803,16 @@ class OperatingSession(Session):
         else:
             self.setServerStatus(ray.ServerStatus.SNAPSHOT)
         
-        self.sendGuiMessage(_translate('GUIMSG', "snapshot started."))
+        self.sendGuiMessage(_translate('GUIMSG', "snapshot started..."))
         self.snapshoter.save(snapshot_name, rewind_snapshot,
                              self.snapshot_step1, self.snapshotError)
     
     def snapshot_step1(self, aborted=False):
         if aborted:
             self.message('Snapshot aborted')
-            self.sendGuiMessage(_translate('GUIMSG', 'Snapshot aborted'))
-            
+            self.sendGuiMessage(_translate('GUIMSG', 'Snapshot aborted!'))
+        
+        self.sendGuiMessage(_translate('GUIMSG', '...snapshot finished.'))
         self.nextFunction()
     
     def snapshotDone(self):
@@ -871,9 +884,6 @@ class OperatingSession(Session):
         self.waitAndGoTo(120000, self.nextFunction, ray.WaitFor.STOP, True)
     
     def close(self):
-        self.sendGuiMessage(
-            _translate('GUIMSG', "Commanding attached clients to quit."))
-        
         self.expected_clients.clear()
         self.removed_clients.clear()
         
@@ -884,6 +894,9 @@ class OperatingSession(Session):
         self.setServerStatus(ray.ServerStatus.CLOSE)
         self.sendGui('/ray/gui/trash/clear')
         
+        self.sendGuiMessage(_translate('GUIMSG', '-- Closing session %s --')
+                            % ray.highlightText(self.getShortPath()))
+        
         for client in self.clients.__reversed__():
             if client.isRunning():
                 self.expected_clients.append(client)
@@ -891,8 +904,15 @@ class OperatingSession(Session):
                 self.timer_quit.start()
         
         if self.expected_clients:
-            self.sendGuiMessage(
-                _translate('GUIMSG', 'waiting for clients to stop...'))
+            if len(self.expected_clients) == 1:
+                self.sendGuiMessage(
+                    _translate('GUIMSG',
+                               'waiting for %s to stop...')
+                        % self.expected_clients[0].guiMsgStyle())
+            else:
+                self.sendGuiMessage(
+                    _translate('GUIMSG', 'waiting for %i clients to stop...')
+                        % len(self.expected_clients))
         
         self.waitAndGoTo(30000, self.close_step1, ray.WaitFor.STOP)
     
@@ -914,10 +934,14 @@ class OperatingSession(Session):
             lock_file =  self.path + '/.lock'
             if os.path.isfile(lock_file):
                 os.remove(lock_file)
-                
+        
+        self.sendGuiMessage(_translate('GUIMSG', 'session %s closed.')
+                            % ray.highlightText(self.getShortPath()))
+        
         self.setPath('')
             
         self.sendGui("/ray/gui/session/name", "", "" )
+        
         self.nextFunction()
     
     def closeDone(self):
@@ -1015,7 +1039,7 @@ class OperatingSession(Session):
         
         self.setServerStatus(ray.ServerStatus.COPY)
         
-        self.sendGuiMessage(_translate('GUIMSG', 'start session copy'))
+        self.sendGuiMessage(_translate('GUIMSG', 'start session copy...'))
         
         self.file_copier.startSessionCopy(self.path, 
                                           spath, 
@@ -1025,6 +1049,8 @@ class OperatingSession(Session):
     
     def duplicate_step2(self, new_session_full_name):
         self.cleanExpected()
+        
+        self.sendGuiMessage(_translate('GUIMSG', '...session copy finished.'))
         
         for client in self.clients:
             if 0 <= client.net_duplicate_state < 1:
@@ -1097,7 +1123,7 @@ class OperatingSession(Session):
         self.setServerStatus(ray.ServerStatus.COPY)
         
         self.sendGuiMessage(
-            _translate('GUIMSG', 'start session copy to template.'))
+            _translate('GUIMSG', 'start session copy to template...'))
         
         self.file_copier.startSessionCopy(self.path, 
                                           spath, 
@@ -1114,9 +1140,9 @@ class OperatingSession(Session):
             client.adjustFilesAfterCopy(template_name, tp_mode)
         
         self.message("Done")
-        self.sendGuiMessage(_translate('GUIMSG', 
-                                       "Session saved as template named %s")
-                            % template_name)
+        self.sendGuiMessage(
+            _translate('GUIMSG', "...session saved as template named %s")
+                % ray.highlightText(template_name))
         
         self.sendReply("Saved as template.")
         self.setServerStatus(ray.ServerStatus.READY)
@@ -1210,7 +1236,7 @@ class OperatingSession(Session):
         self.sendGuiMessage(
             _translate('GUIMSG', 'Session %s has been renamed to %s .')
             % (self.name, new_session_name))
-        self.sendReply('Session %s has been renamed to %s .'
+        self.sendReply("Session '%s' has been renamed to '%s' ."
                         % (self.name, new_session_name))
     
     def load(self, session_full_name):
@@ -1218,7 +1244,11 @@ class OperatingSession(Session):
         spath = self.root + '/' + session_full_name
         if session_full_name.startswith('/'):
             spath = session_full_name
-            
+        
+        if spath == self.path:
+            self.loadError(ray.Err.SESSION_LOCKED)
+            return
+        
         if not os.path.exists(spath):
             try:
                 os.makedirs(spath)
@@ -1229,12 +1259,12 @@ class OperatingSession(Session):
         multi_daemon_file = MultiDaemonFile.getInstance()
         if (multi_daemon_file
                 and not multi_daemon_file.isFreeForSession(spath)):
-            Terminal.warning("Session is used by another daemon")
+            Terminal.warning("Session %s is used by another daemon")
             self.loadError(ray.Err.SESSION_LOCKED)
             return
         
         if os.path.isfile(spath + '/.lock'):
-            Terminal.warning("Session is locked by another process")
+            Terminal.warning("Session %s is locked by another process")
             self.loadError(ray.Err.SESSION_LOCKED)
             return
         
@@ -1359,8 +1389,8 @@ class OperatingSession(Session):
         
         # Here we are sure to have all needed
         # Load work starts here
-        self.sendGuiMessage(_translate('GUIMSG', "Opening session %s")
-                                % session_full_name)
+        self.sendGuiMessage(_translate('GUIMSG', "-- Opening session %s --")
+                                % ray.highlightText(session_full_name))
         
         self.setPath(spath, sess_name)
         
@@ -1411,8 +1441,17 @@ class OperatingSession(Session):
         
         if self.expected_clients:
             self.setServerStatus(ray.ServerStatus.CLEAR)
-            self.sendGuiMessage(
-                _translate('GUIMSG', 'Commanding unneeded clients to quit'))
+            
+            if len(self.expected_clients) == 1:
+                self.sendGuiMessage(
+                    _translate('GUIMSG',
+                            'waiting for %s to quit...')
+                        % self.expected_clients[0].guiMsgStyle())
+            else:
+                self.sendGuiMessage(
+                    _translate('GUIMSG',
+                            'waiting for %i clients to quit...')
+                        % len(self.expected_clients))
         
         self.waitAndGoTo(20000, self.load_step1, ray.WaitFor.STOP)
     
@@ -1489,11 +1528,9 @@ class OperatingSession(Session):
         self.reOrderClients(new_client_id_list)
         self.sendGui('/ray/gui/session/sort_clients', *new_client_id_list)
         
-        if self.expected_clients:
-            self.sendGuiMessage(_translate('GUIMSG',
-                                           'waiting clients announces'))
+        wait_time = 4000 + len(self.expected_clients) * 1000
         
-        self.waitAndGoTo(5000, self.load_step2, ray.WaitFor.ANNOUNCE)
+        self.waitAndGoTo(wait_time, self.load_step2, ray.WaitFor.ANNOUNCE)
     
     def load_step2(self):
         for client in self.expected_clients:
@@ -1513,9 +1550,20 @@ class OperatingSession(Session):
                 client.setStatus(ray.ClientStatus.NOOP)
                 
         if self.expected_clients:
-            self.sendGuiMessage(_translate('GUIMSG',
-                                           'waiting for clients to be ready'))
-                
+            n_expected = len(self.expected_clients)
+            if n_expected == 1:
+                self.sendGuiMessage(
+                    _translate('GUIMSG', 
+                            'waiting for %s to load its project...')
+                        % self.expected_clients[0].guiMsgStyle())
+            else:
+                self.sendGuiMessage(
+                    _translate('GUIMSG',
+                            'waiting for %s clients to load their project...')
+                        % n_expected)
+        
+        wait_time = 8000 + len(self.expected_clients) * 2000
+        
         self.waitAndGoTo(10000, self.load_step3, ray.WaitFor.REPLY)
         
     def load_step3(self):
@@ -1527,7 +1575,9 @@ class OperatingSession(Session):
         
         self.tellAllClientsSessionIsLoaded()
         self.message('Loaded')
-        
+        self.sendGuiMessage(
+            _translate('GUIMSG', 'session %s is loaded.') 
+                % ray.highlightText(self.getShortPath()))
         self.sendGui("/ray/gui/session/name",  self.name, self.path)
         
         self.nextFunction()
@@ -1861,16 +1911,7 @@ class SignaledSession(OperatingSession):
         client = self.getClientByAddress(src_addr)
         if client:
             client.setReply(ray.Err.OK, message)
-            #self.message( "Client \"%s\" replied with: %s in %fms"
-                         #% (client.name, message, 
-                            #client.milliseconds_since_last_command()))
             
-            if client.pending_command == ray.Command.SAVE:
-                client.last_save_time = time.time()
-            
-            client.pending_command = ray.Command.NONE
-            
-            client.setStatus(ray.ClientStatus.READY)
             
             server = self.getServer()
             if (server 
@@ -1882,6 +1923,18 @@ class SignaledSession(OperatingSession):
                 self.endTimerIfLastExpected(client)
         else:
             self.message("Reply from unknown client")
+    
+    def error(self, path, args, src_addr):
+        path, errcode, message = args
+        
+        client = self.getClientByAddress(src_addr)
+        if client:
+            client.setReply(errcode, message)
+            
+            if self.wait_for == ray.WaitFor.REPLY:
+                self.endTimerIfLastExpected(client)
+        else:
+            self.message("error from unknown client")
     
     def nsm_client_is_clean(self, path, args, src_addr):
         # save session from client clean (not dirty) message
@@ -2072,15 +2125,31 @@ class SignaledSession(OperatingSession):
                 self.sendError(ray.Err.CREATE_FAILED, 'invalid template name')
                 return
             
-            spath = ''
-            if session_name.startswith('/'):
-                spath = session_name
-            else:
-                spath = "%s/%s" % (self.root, session_name)
-            
-            # don't use template if session folder already exists
-            if os.path.exists(spath):
-                template_name = ''
+        spath = ''
+        if session_name.startswith('/'):
+            spath = session_name
+        else:
+            spath = "%s/%s" % (self.root, session_name)
+        
+        if spath == self.path:
+            self.sendError(ray.Err.SESSION_LOCKED,
+                _translate('GUIMSG', 'session %s is already opened !')
+                    % ray.highlightText(session_name))
+            return
+        
+        multi_daemon_file = MultiDaemonFile.getInstance()
+        if (multi_daemon_file
+                and not multi_daemon_file.isFreeForSession(spath)):
+            Terminal.warning("Session %s is used by another daemon")
+            self.sendError(ray.Err.SESSION_LOCKED,
+                _translate('GUIMSG', 
+                    'session %s is already used by this or another daemon !')
+                        % ray.highlightText(session_name))
+            return
+        
+        # don't use template if session folder already exists
+        if os.path.exists(spath):
+            template_name = ''
         
         self.process_order = []
         
@@ -2215,23 +2284,30 @@ class SignaledSession(OperatingSession):
         # So before to abort we need to send an error reply
         # to the last server control message
         # if an operation pending.
-        if self.process_order and self.osc_path.startswith('/nsm/server/'):
-            short_path = self.osc_path.rpartition('/')[2]
-            
-            if short_path == 'save':
-                self.saveError(ray.Err.CREATE_FAILED)
-            elif short_path == 'open':
-                self.loadError(ray.Err.SESSION_LOCKED)
-            elif short_path == 'new':
-                self.sendError(ray.Err.CREATE_FAILED, 
-                               "Could not create the session directory")
-            elif short_path == 'duplicate':
-                self.duplicateAborted(self.osc_args[0])
-            elif short_path in ('close', 'abort', 'quit'):
-                # let the current close works here
-                self.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
-                      "An operation pending.")
-                return 
+        
+        if self.process_order:
+            if self.osc_path.startswith('/nsm/server/'):
+                short_path = self.osc_path.rpartition('/')[2]
+                
+                if short_path == 'save':
+                    self.saveError(ray.Err.CREATE_FAILED)
+                elif short_path == 'open':
+                    self.loadError(ray.Err.SESSION_LOCKED)
+                elif short_path == 'new':
+                    self.sendError(ray.Err.CREATE_FAILED, 
+                                "Could not create the session directory")
+                elif short_path == 'duplicate':
+                    self.duplicateAborted(self.osc_args[0])
+                elif short_path in ('close', 'abort', 'quit'):
+                    # let the current close works here
+                    self.send(src_addr, "/error", path, 
+                              ray.Err.OPERATION_PENDING,
+                              "An operation pending.")
+                    return
+            else:
+                self.sendError(ray.Err.ABORT_ORDERED, 
+                               _translate('GUIMSG',
+                                    'abort ordered from elsewhere, sorry !'))
         
         self.rememberOscArgs(path, args, src_addr)
         self.process_order = [self.close, self.abortDone]
@@ -2272,6 +2348,28 @@ class SignaledSession(OperatingSession):
     @session_operation
     def ray_session_duplicate(self, path, args, src_addr):
         new_session_full_name = args[0]
+        
+        spath = ''
+        if new_session_full_name.startswith('/'):
+            spath = new_session_full_name
+        else:
+            spath = "%s/%s" % (self.root, new_session_full_name)
+        
+        if os.path.exists(spath):
+            self.sendError(ray.Err.CREATE_FAILED, 
+                _translate('GUIMSG', "%s already exists !")
+                    % ray.highlightText(spath))
+            return
+        
+        multi_daemon_file = MultiDaemonFile.getInstance()
+        if (multi_daemon_file
+                and not multi_daemon_file.isFreeForSession(spath)):
+            Terminal.warning("Session %s is used by another daemon")
+            self.sendError(ray.Err.SESSION_LOCKED,
+                _translate('GUIMSG', 
+                    'session %s is already used by this or another daemon !')
+                        % ray.highlightText(new_session_full_name))
+            return
         
         self.process_order = [self.save,
                               self.closeNoSaveClients,
@@ -2416,6 +2514,7 @@ class SignaledSession(OperatingSession):
         
         if self.addClient(client):
             client.start()
+            self.send(src_addr, '/reply', path, client.client_id)
     
     def ray_session_add_proxy(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
@@ -2435,6 +2534,7 @@ class SignaledSession(OperatingSession):
         
         if self.addClient(client):
             client.start()
+            self.send(src_addr, '/reply', client.client_id)
     
     def ray_session_add_client_template(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)

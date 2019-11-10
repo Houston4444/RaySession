@@ -85,20 +85,7 @@ class ClientCommunicating(liblo.ServerThread):
             
     @ray_method('/error', 'sis')
     def error(self, path, args, types, src_addr):
-        client = self.session.getClientByAddress(src_addr)
-        if not client:
-            Terminal.warning("Error from unknown client")
-            return False
-        
-        err_code = args[1]
-        message  = args[2]
-        client.setReply(err_code, message)
-        
-        Terminal.message("Client \"%s\" replied with error: %s (%i)"
-                         % ( client.name, message, err_code ))
-        
-        client.pending_command = ray.Command.NONE
-        client.setStatus(ray.ClientStatus.ERROR)
+        pass
     
     # SERVER_CONTROL messages
     # following messages only for :server-control: capability

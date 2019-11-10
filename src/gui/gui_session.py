@@ -163,7 +163,7 @@ class SignaledSession(Session):
         err_path, err_code, err_message = args
         
         # don't shows a window error if error is OK
-        if err_code == ray.Err.OK:
+        if err_code in (ray.Err.OK, ray.Err.ABORT_ORDERED):
             return
         
         self._main_win.errorMessage(err_message)

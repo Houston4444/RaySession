@@ -2,7 +2,7 @@ import os
 import shlex
 import shutil
 import subprocess
-
+import time
 from liblo import Address
 from PyQt5.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
@@ -233,7 +233,31 @@ class Client(ServerSender):
     def setReply(self, errcode, message):
         self._reply_message = message
         self._reply_errcode = errcode
-    
+        
+        if self._reply_errcode:
+            Terminal.message("Client \"%s\" replied with error: %s (%i)"
+                                % (self.name, message, errcode))
+            
+            self.setStatus(ray.ClientStatus.ERROR)
+        else:
+            if self.pending_command == ray.Command.SAVE:
+                self.last_save_time = time.time()
+                
+                self.sendGuiMessage(
+                    _translate('GUIMSG', '  %s: saved') 
+                        % self.guiMsgStyle())
+            elif self.pending_command == ray.Command.OPEN:
+                self.sendGuiMessage(
+                    _translate('GUIMSG', '  %s: project loaded') 
+                        % self.guiMsgStyle())
+            
+            self.setStatus(ray.ClientStatus.READY)
+            #self.message( "Client \"%s\" replied with: %s in %fms"
+                            #% (client.name, message, 
+                                #client.milliseconds_since_last_command()))
+            
+        self.pending_command = ray.Command.NONE
+        
     def setLabel(self, label):
         self.label = label
         self.sendGuiClientProperties()
@@ -261,7 +285,7 @@ class Client(ServerSender):
         return bool(capability in self.capabilities)
     
     def guiMsgStyle(self):
-        return "%s (%s):" % (self.name, self.client_id)
+        return "%s (%s)" % (self.name, self.client_id)
     
     def setNetworkProperties(self, net_daemon_url, net_session_root):
         if not self.isCapableOf(':ray-network:'):
@@ -399,7 +423,7 @@ class Client(ServerSender):
         if self.is_dummy:
             return
         
-        self.sendGuiMessage(_translate("GUIMSG", "%s launching")
+        self.sendGuiMessage(_translate("GUIMSG", "  %s: launching")
                             % self.guiMsgStyle())
         
         self.pending_command = ray.Command.START
@@ -474,11 +498,11 @@ class Client(ServerSender):
         
         if self.pending_command in (ray.Command.KILL, ray.Command.QUIT):
             self.sendGuiMessage(_translate('GUIMSG', 
-                                           "%s terminated as planned")
+                                           "  %s: terminated as planned")
                                     % self.guiMsgStyle())
         else:
             self.sendGuiMessage(_translate('GUIMSG',
-                                           "%s died unexpectedly.")
+                                           "  %s: died unexpectedly.")
                                     % self.guiMsgStyle())
         
         if self.session.wait_for:
@@ -499,8 +523,9 @@ class Client(ServerSender):
         
     def errorInProcess(self, error):
         if error == QProcess.FailedToStart:
-            self.sendGuiMessage(_translate('GUIMSG', "%s Failed to start !") 
-                                % self.guiMsgStyle())
+            self.sendGuiMessage(
+                _translate('GUIMSG', "  %s: Failed to start !")
+                    % self.guiMsgStyle())
             self.active = False
             self.pid    = 0
             self.setStatus(ray.ClientStatus.STOPPED)
@@ -549,8 +574,8 @@ class Client(ServerSender):
                 self.start_gui_hidden = not bool(self.gui_visible)
             
     def stop(self):
-        self.sendGuiMessage(_translate('GUIMSG', "%s stopping")
-                            % self.guiMsgStyle())
+        self.sendGuiMessage(_translate('GUIMSG', "  %s: stopping")
+                                % self.guiMsgStyle())
         
         #if self.is_external:
             #os.kill(self.pid, 15) # 15 means signal.SIGTERM
@@ -1019,6 +1044,9 @@ class Client(ServerSender):
         server = self.getServer()
         if not server:
             return 
+        
+        self.sendGuiMessage(
+            _translate('GUIMSG', "  %s: announced" % self.guiMsgStyle()))
         
         # if this daemon is under another NSM session
         # do not enable server-control

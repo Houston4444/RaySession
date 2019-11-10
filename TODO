@@ -14,4 +14,11 @@ konv# RaySession TODO
     voir le souci git tag
     copie réseau trop longue
     voir ce qu'on fait avec les aborted
+    enregistrer le temps de réponse du client pour l'attendre au chargement de la session
+    retirer le verrou .lock
+    nsm_locked dans le multi-daemons.xml
+    
+    option stop devrait stopper tous les démons
+    option --port
+    option --hidden
   

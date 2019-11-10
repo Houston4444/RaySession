@@ -52,6 +52,12 @@ class OscServerThread(liblo.ServerThread):
         else:
             return
         
+        if reply_path != osc_order_path:
+            sys.stdout.write('bug: reply for a wrong path:%s instead of %s\n'
+                             % (ray.highlightText(reply_path), 
+                                ray.highlightText(osc_order_path)))
+            return
+        
         if reply_path in ('/ray/server/list_sessions',
                           '/ray/server/list_session_templates'):
             if len(args) >= 2:
@@ -89,12 +95,20 @@ class OscServerThread(liblo.ServerThread):
             
         elif len(args) == 2:
             reply_path, message = args
-            sys.stdout.write("%s\n" % message)
+            if os.path.basename(path).startswith(('list_', 'add_')):
+                sys.stdout.write("%s\n" % message)
             signaler.done.emit(0)
     
     @liblo.make_method('/error', 'sis')
     def errorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
+        
+        if error_path != osc_order_path:
+            sys.stdout.write('bug: error for a wrong path:%s instead of %s\n'
+                             % (ray.highlightText(error_path), 
+                                ray.highlightText(osc_order_path)))
+            return
+        
         sys.stdout.write('%s\n' % message)
         
         signaler.done.emit(- err)
@@ -103,6 +117,9 @@ class OscServerThread(liblo.ServerThread):
     def minorErrorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
         sys.stdout.write('\033[31m%s\033[0m\n' % message)
+        
+        if err == ray.Err.UNKNOWN_MESSAGE:
+            signaler.done.emit(- err)
     
     @liblo.make_method('/ray/control/message', 's')
     def rayControlMessage(self, path, args, types, src_addr):
@@ -203,14 +220,15 @@ def finished(err_code):
 def daemonStarted():
     global daemon_announced
     daemon_announced = True
-    osc_message = '/ray/'
+    
+    osc_order_path = '/ray/'
     if operation in server_operations:
-        osc_message += 'server/'
+        osc_order_path += 'server/'
     elif operation in session_operations:
-        osc_message += 'session/'
-    osc_message += operation
-    print('zoefk', osc_message, *arg_list)
-    osc_server.toDaemon(osc_message, *arg_list)
+        osc_order_path += 'session/'
+    osc_order_path += operation
+    print('zoefk', osc_order_path, *arg_list)
+    osc_server.toDaemon(osc_order_path, *arg_list)
 
 def daemonNoAnnounce():
     if daemon_announced:
@@ -277,6 +295,16 @@ if __name__ == '__main__':
         for daemon in daemon_list:
             sys.stdout.write('%s\n' % str(daemon.port))
         sys.exit(0)
+    
+    osc_order_path = '/ray/'
+    if operation in server_operations:
+        osc_order_path += 'server/'
+    elif operation in session_operations:
+        osc_order_path += 'session/'
+    osc_order_path += operation
+    
+    if operation == 'stop':
+        osc_order_path = '/ray/server/quit'
     
     daemon_port = getDefaultPort()
     

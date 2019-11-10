@@ -105,6 +105,7 @@ class Err:
     SUBPROCESS_CRASH = -16
     SUBPROCESS_EXITCODE = -17
     UNKNOWN_MESSAGE = -18
+    ABORT_ORDERED = -19
 
 
 class Command:
@@ -249,6 +250,12 @@ def isGitTaggable(string):
         return False
     
     return True
+
+def highlightText(string):
+    if "'" in string:
+        return '"%s"' % string
+    else:
+        return "'%s'" % string
 
 def isOscPortFree(port):
     try:
