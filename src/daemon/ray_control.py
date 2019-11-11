@@ -31,11 +31,13 @@ def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         QCoreApplication.quit()
 
+
 class Signaler(QObject):
     done = pyqtSignal(int)
     daemon_started = pyqtSignal()
     daemon_no_announce = pyqtSignal()
-
+    message = pyqtSignal(str)
+    
 
 class OscServerThread(liblo.ServerThread):
     def __init__(self):
@@ -95,7 +97,7 @@ class OscServerThread(liblo.ServerThread):
             
         elif len(args) == 2:
             reply_path, message = args
-            if os.path.basename(path).startswith(('list_', 'add_')):
+            if os.path.basename(reply_path).startswith(('list_', 'add_')):
                 sys.stdout.write("%s\n" % message)
             signaler.done.emit(0)
     
@@ -124,7 +126,8 @@ class OscServerThread(liblo.ServerThread):
     @liblo.make_method('/ray/control/message', 's')
     def rayControlMessage(self, path, args, types, src_addr):
         message = args[0]
-        sys.stdout.write('%s\n' % message)
+        signaler.message.emit(message)
+        #sys.stdout.write('%s\n' % message)
         
     @liblo.make_method('/ray/control/server/announce', 'siisi')
     def rayControlServerAnnounce(self, path, args, types, src_addr):
@@ -209,12 +212,16 @@ opions are
         sys.stdout.write(message)
     else:
         sys.stderr.write(message)
-        
+
+def printMessage(message):
+    sys.stdout.write("%s\n" % message)
+
 def finished(err_code):
     global exit_code, exit_initiated
     if not exit_initiated:
         exit_initiated = True
         exit_code = err_code
+        time.sleep(0.005)
         QCoreApplication.quit()
 
 def daemonStarted():
@@ -227,7 +234,7 @@ def daemonStarted():
     elif operation in session_operations:
         osc_order_path += 'session/'
     osc_order_path += operation
-    print('zoefk', osc_order_path, *arg_list)
+    #print('zoefk', osc_order_path, *arg_list)
     osc_server.toDaemon(osc_order_path, *arg_list)
 
 def daemonNoAnnounce():
@@ -286,6 +293,7 @@ if __name__ == '__main__':
     signaler = Signaler()
     signaler.done.connect(finished)
     signaler.daemon_started.connect(daemonStarted)
+    signaler.message.connect(printMessage)
     
     osc_server = OscServerThread()
     osc_server.start()
@@ -374,7 +382,6 @@ if __name__ == '__main__':
                                       ray.DEFAULT_SESSION_ROOT)
         
         # start a daemon because no one is running
-        # fake to be a gui to get daemon announce
         #daemon_process = subprocess.Popen(
             #['ray-daemon', '--control-url', str(osc_server.url),
              #'--session-root', session_root])
@@ -394,12 +401,10 @@ if __name__ == '__main__':
     timer.timeout.connect(lambda: None)
     timer.start()
     
-    ##time.sleep(0.201)
-    #if nsm_port:
-        #osc_server.toDaemon('/nsm/server/%s' % operation, *arg_list)
     if operation != 'start':
         app.exec()
-    #osc_server.stop()
+        
+    osc_server.stop()
     del osc_server
     del app
     

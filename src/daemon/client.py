@@ -423,9 +423,6 @@ class Client(ServerSender):
         if self.is_dummy:
             return
         
-        self.sendGuiMessage(_translate("GUIMSG", "  %s: launching")
-                            % self.guiMsgStyle())
-        
         self.pending_command = ray.Command.START
         
         arguments = []
@@ -482,15 +479,13 @@ class Client(ServerSender):
     
     def processStarted(self):
         self.stopped_since_long = False
-        self.pid    = self.process.pid()
+        self.pid = self.process.pid()
         self.setStatus(ray.ClientStatus.LAUNCH)
         
         #Terminal.message("Process has pid: %i" % self.pid)
         
-        if self.session.osc_src_addr:
-            self.session.oscReply("/reply", self.session.osc_path, 
-                                  ray.Err.OK, "Launched.")
-        
+        self.sendGuiMessage(_translate("GUIMSG", "  %s: launched")
+                            % self.guiMsgStyle())
     
     def processFinished(self, exit_code, exit_status):
         self.stopped_timer.stop()

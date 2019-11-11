@@ -662,6 +662,9 @@ class OperatingSession(Session):
         else:
             self.setServerStatus(ray.ServerStatus.SAVE)
         
+        self.sendGuiMessage(_translate('GUIMSG', '-- Saving session %s --')
+                                % ray.highlightText(self.getShortPath()))
+        
         for client in self.clients:
             if from_client_id and client.client_id == from_client_id:
                 continue
@@ -877,8 +880,8 @@ class OperatingSession(Session):
             self.setServerStatus(ray.ServerStatus.WAIT_USER)
             self.timer_wu_progress_n = 0
             self.timer_waituser_progress.start()
-            self.sendGuiMessage(
-                'GUIMSG', 'waiting you to close yourself unsaveable clients!')
+            self.sendGuiMessage(_translate('GUIMSG',
+                'waiting you to close yourself unsaveable clients !'))
             
         # Timer (2mn) is restarted if an expected client has been closed
         self.waitAndGoTo(120000, self.nextFunction, ray.WaitFor.STOP, True)
@@ -929,11 +932,6 @@ class OperatingSession(Session):
             client.setStatus(ray.ClientStatus.REMOVED)
         
         self.clients.clear()
-        
-        if self.path:
-            lock_file =  self.path + '/.lock'
-            if os.path.isfile(lock_file):
-                os.remove(lock_file)
         
         self.sendGuiMessage(_translate('GUIMSG', 'session %s closed.')
                             % ray.highlightText(self.getShortPath()))
@@ -1263,11 +1261,6 @@ class OperatingSession(Session):
             self.loadError(ray.Err.SESSION_LOCKED)
             return
         
-        if os.path.isfile(spath + '/.lock'):
-            Terminal.warning("Session %s is locked by another process")
-            self.loadError(ray.Err.SESSION_LOCKED)
-            return
-        
         self.message("Attempting to open %s" % spath)
         
         session_ray_file = spath + '/raysession.xml'
@@ -1374,6 +1367,12 @@ class OperatingSession(Session):
             ray_file.close()
             
         else:
+            # prevent to load a locked NSM session 
+            if os.path.isfile(spath + '/.lock'):
+                Terminal.warning("Session %s is locked by another process")
+                self.loadError(ray.Err.SESSION_LOCKED)
+                return
+            
             for line in file.read().split('\n'):
                 elements = line.split(':')
                 if len(elements) >= 3:
@@ -1624,18 +1623,28 @@ class OperatingSession(Session):
         #QTimer.singleShot(50, QCoreApplication.quit)
         QCoreApplication.quit()
         
-    def addClientTemplate(self, template_name, factory=False):
+    def addClientTemplate(self, src_addr, src_path, 
+                          template_name, factory=False):
         templates_root = TemplateRoots.user_clients
         if factory:
             templates_root = TemplateRoots.factory_clients
             
         xml_file = "%s/%s" % (templates_root, 'client_templates.xml')
-        file = open(xml_file, 'r')
-        xml = QDomDocument()
-        xml.setContent(file.read())
-        file.close()
+        try:
+            file = open(xml_file, 'r')
+            xml = QDomDocument()
+            xml.setContent(file.read())
+            file.close()
+        except:
+            self.send(src_addr, '/error', src_path, ray.Err.NO_SUCH_FILE, 
+              _translate('GUIMSG', '%s is missing or corrupted !') % xml_file)
+            return
         
         if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
+            self.send(src_addr, src_path, ray.Err.BAD_PROJECT, 
+                _translate('GUIMSG', 
+                           '%s has no RAY-CLIENT-TEMPLATES top element !')
+                    % xml_file)
             return
         
         nodes = xml.documentElement().childNodes()
@@ -1725,9 +1734,11 @@ class OperatingSession(Session):
                         self.file_copier.startClientCopy(
                             client.client_id, full_name_files, self.path, 
                             self.addClientTemplate_step_1, 
-                            self.addClientTemplateAborted, [client])
+                            self.addClientTemplateAborted, 
+                            [src_addr, src_path, client])
                     else:
-                        self.addClientTemplate_step_1(client)
+                        self.addClientTemplate_step_1(src_addr, src_path,
+                                                      client)
                     
                 break
         else:
@@ -1740,17 +1751,25 @@ class OperatingSession(Session):
                                  int(favorite.factory))
                     RS.favorites.remove(favorite)
                     break
+            
+            self.send(src_addr, '/error', src_path, ray.Err.NO_SUCH_FILE,
+                      _translate('GUIMSG', "%s is not an existing template !")
+                        % ray.highlightText(template_name))
     
-    def addClientTemplate_step_1(self, client):
+    def addClientTemplate_step_1(self, src_addr, src_path, client):
         client.adjustFilesAfterCopy(self.name, ray.Template.CLIENT_LOAD)
         
         if client.auto_start:
             client.start()
         else:
             client.setStatus(ray.ClientStatus.STOPPED)
+            
+        self.send(src_addr, '/reply', src_path, client.client_id)
     
-    def addClientTemplateAborted(self, client):
+    def addClientTemplateAborted(self, src_addr, src_path, client):
         self.removeClient(client)
+        self.send(src_addr, '/error', src_path, ray.Err.COPY_ABORTED,
+                  _translate('GUIMSG', 'Copy has been aborted !'))
         
     def closeClient(self, client):
         self.setServerStatus(ray.ServerStatus.READY)
@@ -2465,8 +2484,6 @@ class SignaledSession(OperatingSession):
         self.sendGui('/ray/gui/session/name', self.name, self.path)
     
     def ray_session_add_executable(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
-        
         executable = args[0]
         via_proxy = 0
         prefix_mode = ray.PrefixMode.SESSION_NAME
@@ -2517,7 +2534,6 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, '/reply', path, client.client_id)
     
     def ray_session_add_proxy(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
         executable = args[0]
         
         client = Client(self)
@@ -2534,7 +2550,7 @@ class SignaledSession(OperatingSession):
         
         if self.addClient(client):
             client.start()
-            self.send(src_addr, '/reply', client.client_id)
+            self.send(src_addr, '/reply', path, client.client_id)
     
     def ray_session_add_client_template(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
@@ -2542,7 +2558,7 @@ class SignaledSession(OperatingSession):
         factory = bool(args[0])
         template_name = args[1]
         
-        self.addClientTemplate(template_name, factory)
+        self.addClientTemplate(src_addr, path, template_name, factory)
     
     def ray_session_reorder_clients(self, path, args, src_addr):
         client_ids_list = args
