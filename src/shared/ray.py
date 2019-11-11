@@ -106,6 +106,7 @@ class Err:
     SUBPROCESS_EXITCODE = -17
     UNKNOWN_MESSAGE = -18
     ABORT_ORDERED = -19
+    COPY_ABORTED = -20
 
 
 class Command:

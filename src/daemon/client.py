@@ -67,6 +67,8 @@ class Client(ServerSender):
     
     last_save_time = 0.00
     last_dirty = 0.00
+    _last_announce_time = 0.00
+    last_open_duration = 0.00
     
     def __init__(self, parent_session):
         ServerSender.__init__(self)
@@ -146,6 +148,10 @@ class Client(ServerSender):
                     
         self.net_session_template = ctx.attribute('net_session_template')
         
+        open_duration = ctx.attribute('last_open_duration')
+        if open_duration.replace('.', '', 1).isdigit():
+            self.last_open_duration = float(open_duration)
+        
         if basename(self.executable_path) == 'ray-network':
             if self.arguments:
                 eat_url  = False
@@ -176,7 +182,8 @@ class Client(ServerSender):
             
         elif ctx.attribute('client_id'):
             #template use "client_id" for wanted client_id
-            self.client_id = self.session.generateClientId(ctx.attribute('client_id'))
+            self.client_id = self.session.generateClientId(
+                                                ctx.attribute('client_id'))
         
     def writeXmlProperties(self, ctx):
         ctx.setAttribute('executable', self.executable_path)
@@ -229,7 +236,11 @@ class Client(ServerSender):
                 ctx.setAttribute('unignored_extensions', unignored)
             else:
                 ctx.removeAttribute('unignored_extensions')
-                
+        
+        if self.last_open_duration >= 5.0:
+            ctx.setAttribute('last_open_duration',
+                             str(self.last_open_duration))
+        
     def setReply(self, errcode, message):
         self._reply_message = message
         self._reply_errcode = errcode
@@ -246,10 +257,14 @@ class Client(ServerSender):
                 self.sendGuiMessage(
                     _translate('GUIMSG', '  %s: saved') 
                         % self.guiMsgStyle())
+                
             elif self.pending_command == ray.Command.OPEN:
                 self.sendGuiMessage(
                     _translate('GUIMSG', '  %s: project loaded') 
                         % self.guiMsgStyle())
+                
+                self.last_open_duration = \
+                                        time.time() - self._last_announce_time
             
             self.setStatus(ray.ClientStatus.READY)
             #self.message( "Client \"%s\" replied with: %s in %fms"
@@ -1077,3 +1092,5 @@ class Client(ServerSender):
             
             if self.start_gui_hidden:
                 self.send(src_addr, "/nsm/client/hide_optional_gui")
+                
+        self._last_announce_time = time.time()

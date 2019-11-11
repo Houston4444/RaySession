@@ -1562,8 +1562,10 @@ class OperatingSession(Session):
                         % n_expected)
         
         wait_time = 8000 + len(self.expected_clients) * 2000
-        
-        self.waitAndGoTo(10000, self.load_step3, ray.WaitFor.REPLY)
+        for client in self.expected_clients:
+            wait_time = max(2 * 1000 * client.last_open_duration, wait_time)
+            
+        self.waitAndGoTo(wait_time, self.load_step3, ray.WaitFor.REPLY)
         
     def load_step3(self):
         self.cleanExpected()
@@ -1930,7 +1932,6 @@ class SignaledSession(OperatingSession):
         client = self.getClientByAddress(src_addr)
         if client:
             client.setReply(ray.Err.OK, message)
-            
             
             server = self.getServer()
             if (server 
@@ -2684,17 +2685,17 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == client_id:
                 if client.isRunning():
-                    self.process_order = [self.save,
-                                          (self.snapshot, '', snapshot, True),
-                                          (self.closeClient, client),
-                                          (self.loadClientSnapshot, client_id,
-                                           snapshot),
-                                          (self.startClient, client)]
+                    self.process_order = [
+                        self.save,
+                        (self.snapshot, '', snapshot, True),
+                        (self.closeClient, client),
+                        (self.loadClientSnapshot, client_id, snapshot),
+                        (self.startClient, client)]
                 else:
-                    self.process_order = [self.save,
-                                          (self.snapshot, '', snapshot, True),
-                                          (self.loadClientSnapshot, client_id,
-                                           snapshot)]
+                    self.process_order = [
+                        self.save,
+                        (self.snapshot, '', snapshot, True),
+                        (self.loadClientSnapshot, client_id, snapshot)]
                 break
         else:
             self.send(src_addr, '/error', path,
@@ -2702,7 +2703,7 @@ class SignaledSession(OperatingSession):
     
     def ray_net_daemon_duplicate_state(self, path, args, src_addr):
         state = args[0]
-        print('nett ddupl receiv', state)
+        
         for client in self.clients:
             if (client.net_daemon_url
                 and ray.areSameOscPort(client.net_daemon_url, src_addr.url)):
