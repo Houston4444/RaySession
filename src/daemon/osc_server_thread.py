@@ -50,7 +50,7 @@ class ClientCommunicating(liblo.ServerThread):
         liblo.ServerThread.__init__(self, osc_num)
         self.session = session
         self.gui_list = []
-        self.controller_addr = None
+        self.controller_list = []
         self.server_status  = ray.ServerStatus.OFF
         self.gui_embedded = False
         self.is_nsm_locked  = False
@@ -75,9 +75,10 @@ class ClientCommunicating(liblo.ServerThread):
         if args[0] == '/ray/server/list_sessions':
             # this reply is only used here for reply from net_daemon
             # it directly resend its infos
-            # to the last gui that asked session list
+            # to the last addr that asked session list
+            print('repelly from net daemonnn_____')
             if self.list_asker_addr:
-                self.send(self.list_asker_addr, *args)
+                self.send(self.list_asker_addr, path, *args)
             return False
         
         if not len(args) == 2:
@@ -365,7 +366,12 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/server/controller_announce', '')
     def rayServerControllerAnnounce(self, path, args, types, src_addr):
-        self.controller_addr = src_addr
+        self.controller_list.append(src_addr)
+    
+    @ray_method('/ray/server/controller_disannounce', '')
+    def rayServerControllerDisannounce(self, path, args, types, src_addr):
+        if src_addr in self.controller_list:
+            self.controller_list.remove(src_addr)
     
     @ray_method('/ray/server/set_nsm_locked', '')
     def rayServerSetNsmLocked(self, path, args, types, src_addr):
@@ -676,6 +682,7 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/session/duplicate_only', 'sss')
     def nsmServerDuplicateOnly(self, path, args, types, src_addr):
+        print('zyefb')
         self.send(src_addr, '/ray/net_daemon/duplicate_state', 0)
     
     @ray_method('/ray/session/open_snapshot', 's')
@@ -768,6 +775,10 @@ class OscServerThread(ClientCommunicating):
         if self.session.path:
             subprocess.Popen(['xdg-open',  self.session.path])
     
+    @ray_method('/ray/session/list_clients', '')
+    def raySessionListClients(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/client/stop', 's')
     def rayGuiClientStop(self, path, args, types, src_addr):
         pass
@@ -778,6 +789,10 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/client/trash', 's')
     def rayGuiClientRemove(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/start', 's')
+    def rayGuiClientStart(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/client/resume', 's')
@@ -818,9 +833,12 @@ class OscServerThread(ClientCommunicating):
     def rayClientLoadSnapshot(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/client/is_started', 's')
+    def rayClientIsStarted(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/net_daemon/duplicate_state', 'f')
     def rayDuplicateState(self, path, args, types, src_addr):
-        print('nettdeduplidcate', args[0])
         pass
     
     @ray_method('/ray/trash/restore', 's')
@@ -1148,11 +1166,11 @@ class OscServerThread(ClientCommunicating):
         Terminal.message("Registered with GUI")
     
     def announceController(self, control_address):
-        self.controller_addr = control_address
+        self.controller_list.append(control_address)
         self.send(control_address, "/ray/control/server/announce",
                   ray.VERSION, self.server_status, self.getOptions(),
                   self.session.root, 1)
     
     def sendControllerMessage(self, message):
-        if self.controller_addr:
-            self.send(self.controller_addr, '/ray/control/message', message)
+        for ctrl_addr in self.controller_list:
+            self.send(ctrl_addr, '/ray/control/message', message)

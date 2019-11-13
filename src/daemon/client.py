@@ -15,7 +15,14 @@ from daemon_tools  import TemplateRoots, Terminal, RS
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
 
+OSC_SRC_START = 0
+OSC_SRC_SAVE = 1
+OSC_SRC_SAVE_TP = 2
+OSC_SRC_STOP = 3
+
 _translate = QCoreApplication.translate
+
+
 
 def dirname(*args):
     return os.path.dirname(*args)
@@ -99,12 +106,28 @@ class Client(ServerSender):
         self.net_daemon_copy_timer.setSingleShot(True)
         self.net_daemon_copy_timer.setInterval(3000)
         self.net_daemon_copy_timer.timeout.connect(self.netDaemonOutOfTime)
-    
+        
+        # stock osc src_addr and src_path of respectively
+        # start, save, save_tp, stop
+        self._osc_srcs = [(None, ''), (None, ''), (None, ''), (None, '')]
+        
     def sendToSelfAddress(self, *args):
         if not self.addr:
             return
         
         self.send(self.addr, *args)
+    
+    def sendReplyToCaller(self, slot, message):
+        src_addr, src_path = self._osc_srcs[slot]
+        if src_addr:
+            self.send(src_addr, '/reply', src_path, message)
+            self._osc_srcs[slot] = (None, '')
+    
+    def sendErrorToCaller(self, slot, err, message):
+        src_addr, src_path = self._osc_srcs[slot]
+        if src_addr:
+            self.send(src_addr, '/error', src_path, err, message)
+            self._osc_srcs[slot] = (None, '')
         
     def sendStatusToGui(self):
         server = self.getServer()
@@ -249,6 +272,11 @@ class Client(ServerSender):
             Terminal.message("Client \"%s\" replied with error: %s (%i)"
                                 % (self.name, message, errcode))
             
+            if self.pending_command == ray.Command.SAVE:
+                self.sendErrorToCaller(OSC_SRC_SAVE, ray.Err.GENERAL_ERROR,
+                                    _translate('GUIMSG', '%s failed to save!')
+                                            % self.guiMsgStyle())
+                
             self.setStatus(ray.ClientStatus.ERROR)
         else:
             if self.pending_command == ray.Command.SAVE:
@@ -258,6 +286,8 @@ class Client(ServerSender):
                     _translate('GUIMSG', '  %s: saved') 
                         % self.guiMsgStyle())
                 
+                self.sendReplyToCaller(OSC_SRC_SAVE, 'client saved.')
+                    
             elif self.pending_command == ray.Command.OPEN:
                 self.sendGuiMessage(
                     _translate('GUIMSG', '  %s: project loaded') 
@@ -430,12 +460,18 @@ class Client(ServerSender):
                     self.ignored_extensions = \
                         self.ignored_extensions.replace(ext, '')
     
-    def start(self):
+    def start(self, src_addr=None, src_path=''):
+        if src_addr:
+            self._osc_srcs[OSC_SRC_START] = (src_addr, src_path)
+            
         self.session.setRenameable(False)
         
         self.last_dirty = 0.00
         
         if self.is_dummy:
+            self.sendErrorToCaller(OSC_SRC_START, ray.Err.GENERAL_ERROR,
+                _translate('GUIMSG', "can't start %s, it is a dummy client !")
+                    % self.guiMsgStyle())
             return
         
         self.pending_command = ray.Command.START
@@ -501,6 +537,8 @@ class Client(ServerSender):
         
         self.sendGuiMessage(_translate("GUIMSG", "  %s: launched")
                             % self.guiMsgStyle())
+        
+        self.sendReplyToCaller(OSC_SRC_START, 'client started')
     
     def processFinished(self, exit_code, exit_status):
         self.stopped_timer.stop()
@@ -514,6 +552,8 @@ class Client(ServerSender):
             self.sendGuiMessage(_translate('GUIMSG',
                                            "  %s: died unexpectedly.")
                                     % self.guiMsgStyle())
+        
+        self.sendReplyToCaller(OSC_SRC_STOP, 'client stopped')
         
         if self.session.wait_for:
             self.session.endTimerIfLastExpected(self)
@@ -550,6 +590,10 @@ class Client(ServerSender):
                 self.session.oscReply("/error", self.session.osc_path, 
                                       ray.Err.LAUNCH_FAILED, 
                                       error_message)
+                
+            self.sendErrorToCaller(OSC_SRC_START, ray.Err.LAUNCH_FAILED,
+                _translate('GUIMSG', '%s failed to launch')
+                    % self.guiMsgStyle())
             
             if self.session.wait_for:
                 self.session.endTimerIfLastExpected(self)
@@ -568,7 +612,15 @@ class Client(ServerSender):
     def canSaveNow(self):
         return bool(self.active and not self.no_save_level) 
     
-    def save(self):
+    def save(self, src_addr=None, src_path=''):
+        if src_addr:
+            self._osc_srcs[OSC_SRC_SAVE] = (src_addr, src_path)
+        
+        if self.pending_command == ray.Command.SAVE:
+            self.sendErrorToCaller(OSC_SRC_SAVE, ray.Err.GENERAL_ERROR,
+                _translate('GUIMSG', '%s is already saving, please wait!')
+                    % self.guiMsgStyle() )
+        
         if self.isRunning():
             if self.canSaveNow():
                 Terminal.message("Telling %s to save" % self.name)
@@ -583,7 +635,10 @@ class Client(ServerSender):
             if self.isCapableOf(':optional-gui:'):
                 self.start_gui_hidden = not bool(self.gui_visible)
             
-    def stop(self):
+    def stop(self, src_addr=None, src_path=''):
+        if src_addr:
+            self._osc_srcs[OSC_SRC_STOP] = (src_addr, src_path)
+        
         self.sendGuiMessage(_translate('GUIMSG', "  %s: stopping")
                                 % self.guiMsgStyle())
         
@@ -599,6 +654,8 @@ class Client(ServerSender):
                 self.stopped_timer.start()
                 
             self.terminate()
+        else:
+            self.sendReplyToCaller(OSC_SRC_STOP, 'client stopped.')
     
     def quit(self):
         Terminal.message("Commanding %s to quit" % self.name)
@@ -724,7 +781,9 @@ class Client(ServerSender):
                     
         return client_files
             
-    def saveAsTemplate(self, template_name):
+    def saveAsTemplate(self, template_name, src_addr=None, src_path=''):
+        if src_addr:
+            self._osc_srcs[OSC_SRC_SAVE_TP] = (src_addr, src_path)
         #copy files
         client_files = self.getProjectFiles()
                     
@@ -735,9 +794,11 @@ class Client(ServerSender):
             if os.access(template_dir, os.W_OK):
                 shutil.rmtree(template_dir)
             else:
-                #TODO send error
+                self.sendErrorToCaller(OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                            _translate('GUIMSG', 'impossible to remove %s !')
+                                % ray.highlightText(template_dir))
                 return
-            
+        
         os.makedirs(template_dir)
         
         if self.net_daemon_url:
@@ -768,7 +829,9 @@ class Client(ServerSender):
         #security check
         if os.path.exists(xml_file):
             if not os.access(xml_file, os.W_OK):
-                # TODO send error
+                self.sendErrorToCaller(OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                                _translate('GUIMSG', '%s is not writeable !')
+                                    % xml_file)
                 return
             
             if os.path.isdir(xml_file):
@@ -829,9 +892,13 @@ class Client(ServerSender):
         self.sendGuiMessage(
             _translate('message', 'Client template %s created')
                 % template_name)
+        
+        self.sendReplyToCaller(OSC_SRC_SAVE_TP, 'client template created')
     
     def saveAsTemplateAborted(self, template_name):
         self.setStatus(self.status)
+        self.sendErrorToCaller(OSC_SRC_SAVE_TP, ray.Err.COPY_ABORTED,
+            _translate('GUIMSG', 'Copy has been aborted !'))
     
     def adjustFilesAfterCopy(self, new_session_full_name,
                              template_save=ray.Template.NONE):

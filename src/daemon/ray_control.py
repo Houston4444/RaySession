@@ -9,10 +9,16 @@ import time
 import subprocess
 
 from PyQt5.QtCore import (QCoreApplication, QTimer, pyqtSignal,
-                          QObject, QProcess, QSettings)
+                          QObject, QProcess, QSettings, pyqtSlot)
 
 import ray
 from multi_daemon_file import MultiDaemonFile
+
+OPERATION_TYPE_NULL = 0
+OPERATION_TYPE_CONTROL = 1
+OPERATION_TYPE_SERVER = 2
+OPERATION_TYPE_SESSION = 3
+OPERATION_TYPE_CLIENT = 4
 
 control_operations = ('start', 'stop', 'list_daemons', 'get_root', 
                       'get_port', 'get_pid', 'get_session_path')
@@ -25,7 +31,13 @@ server_operations = ('quit', 'change_root', 'list_session_templates',
 session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',
                       'rename', 'add_executable', 'add_proxy',
-                      'add_client_template', 'list_snapshots')
+                      'add_client_template', 'list_snapshots',
+                      'list_clients')
+
+client_operations = ('stop', 'kill', 'trash', 'resume', 'save',
+                     'save_as_template', 'show_optional_gui',
+                     'hide_optional_gui', 'update_properties',
+                     'list_snapshots', 'open_snapshot')
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -61,7 +73,8 @@ class OscServerThread(liblo.ServerThread):
             return
         
         if reply_path in ('/ray/server/list_sessions',
-                          '/ray/server/list_session_templates'):
+                          '/ray/server/list_session_templates',
+                          '/ray/session/list_clients'):
             if len(args) >= 2:
                 sessions = args[1:]
                 out_message = ""
@@ -71,6 +84,7 @@ class OscServerThread(liblo.ServerThread):
                 return
             else:
                 signaler.done.emit(0)
+                
         elif reply_path in ('/ray/server/list_factory_client_templates',
                             '/ray/server/list_user_client_templates'):
             if len(args) >= 2:
@@ -83,6 +97,7 @@ class OscServerThread(liblo.ServerThread):
                 return
             else:
                 signaler.done.emit(0)
+                
         elif reply_path == '/ray/session/list_snapshots':
             if len(args) >= 2:
                 snapshots = args[1:]
@@ -105,6 +120,8 @@ class OscServerThread(liblo.ServerThread):
     def errorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
         
+        print('wadsd(', error_path, message)
+        
         if error_path != osc_order_path:
             sys.stdout.write('bug: error for a wrong path:%s instead of %s\n'
                              % (ray.highlightText(error_path), 
@@ -119,7 +136,6 @@ class OscServerThread(liblo.ServerThread):
     def minorErrorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
         sys.stdout.write('\033[31m%s\033[0m\n' % message)
-        
         if err == ray.Err.UNKNOWN_MESSAGE:
             signaler.done.emit(- err)
     
@@ -216,24 +232,22 @@ opions are
 def printMessage(message):
     sys.stdout.write("%s\n" % message)
 
+@pyqtSlot()
 def finished(err_code):
     global exit_code, exit_initiated
     if not exit_initiated:
         exit_initiated = True
         exit_code = err_code
-        time.sleep(0.005)
+        
+        # prevent impossibility to stop liblo server
+        time.sleep(0.010)
+        
         QCoreApplication.quit()
 
 def daemonStarted():
     global daemon_announced
     daemon_announced = True
     
-    osc_order_path = '/ray/'
-    if operation in server_operations:
-        osc_order_path += 'server/'
-    elif operation in session_operations:
-        osc_order_path += 'session/'
-    osc_order_path += operation
     #print('zoefk', osc_order_path, *arg_list)
     osc_server.toDaemon(osc_order_path, *arg_list)
 
@@ -251,6 +265,14 @@ def getDefaultPort():
             return daemon.port
     return 0
 
+def autoTypeString(string):
+    if string.isdigit():
+        return int(string)
+    elif string.replace('.', '', 1).isdigit():
+        return float(string)
+    return string
+    
+    
 if __name__ == '__main__':
     ray.addSelfBinToPath()
     
@@ -258,17 +280,34 @@ if __name__ == '__main__':
         printHelp()
         sys.exit(100)
     
-    operation = sys.argv[1]
+    operation_type = OPERATION_TYPE_NULL
+    client_id = ''
     
-    arg_list = []
-    if len(sys.argv) >= 3:
-        for arg in sys.argv[2:]:
-            if arg.isdigit():
-                arg_list.append(int(arg))
-            elif arg.replace('.', '', 1).isdigit():
-                arg_list.append(float(arg))
-            else:
-                arg_list.append(arg)
+    args = sys.argv[1:]
+    operation = args.pop(0)
+    if operation == 'client':
+        if len(args) < 2:
+            printHelp()
+            sys.exit(100)
+        
+        operation_type = OPERATION_TYPE_CLIENT
+        client_id = args.pop(0)
+        operation = args.pop(0)
+    
+    if not operation_type:
+        if operation in control_operations:
+            operation_type = OPERATION_TYPE_CONTROL
+        elif operation in server_operations:
+            operation_type = OPERATION_TYPE_SERVER
+        elif operation in session_operations:
+            operation_type = OPERATION_TYPE_SESSION
+        else:
+            printHelp()
+            sys.exit(100)
+        
+    arg_list = [autoTypeString(s) for s in args]
+    if operation_type == OPERATION_TYPE_CLIENT:
+        arg_list.insert(0, client_id)
     
     if operation in ('new_session', 'open_session', 'change_root',
                      'save_as_template', 'take_snapshot', 'duplicate',
@@ -305,19 +344,22 @@ if __name__ == '__main__':
         sys.exit(0)
     
     osc_order_path = '/ray/'
-    if operation in server_operations:
+    if operation_type == OPERATION_TYPE_CLIENT:
+        osc_order_path += 'client/'
+    elif operation_type == OPERATION_TYPE_SERVER:
         osc_order_path += 'server/'
-    elif operation in session_operations:
+    elif operation_type == OPERATION_TYPE_SESSION:
         osc_order_path += 'session/'
+        
     osc_order_path += operation
     
-    if operation == 'stop':
+    if operation_type == OPERATION_TYPE_CONTROL and operation == 'stop':
         osc_order_path = '/ray/server/quit'
-    
+        
     daemon_port = getDefaultPort()
     
     if daemon_port:
-        if operation in control_operations:
+        if operation_type == OPERATION_TYPE_CONTROL:
             if operation == 'start':
                 sys.stderr.write('server already started.\n')
                 sys.exit(0)
@@ -346,16 +388,11 @@ if __name__ == '__main__':
                     if daemon.port == daemon_port:
                         sys.stdout.write('%s\n' % daemon.session_path)
                         sys.exit(0)
-            
-        if not (operation in server_operations
-                or operation in session_operations):
-            printHelp()
-            sys.exit(1)
         
         osc_server.setDaemonAddress(daemon_port)
         signaler.daemon_started.emit()
     else:
-        if operation in control_operations:
+        if operation_type == OPERATION_TYPE_CONTROL:
             if operation == 'stop':
                 sys.stderr.write('No server started.\n')
                 sys.exit(0)
@@ -365,18 +402,23 @@ if __name__ == '__main__':
                 sys.stderr.write(
                     'No server started. So impossible to %s\n' % operation)
                 sys.exit(100)
-                
-        elif not operation in server_operations:
-            if operation in session_operations:
-                sys.stderr.write("No server started. So no session to %s\n"
-                                 % operation)
-            else:
-                printHelp()
-            sys.exit(100)
         
-        if operation == 'quit':
-            sys.stderr.write('No server to quit !\n')
-            sys.exit(0)
+        elif operation_type == OPERATION_TYPE_SERVER:
+            if operation == 'quit':
+                sys.stderr.write('No server to quit !\n')
+                sys.exit(0)
+        
+        elif operation_type == OPERATION_TYPE_SESSION:
+            sys.stderr.write("No server started. So no session to %s\n"
+                                 % operation)
+            sys.exit(100)
+        elif operation_type == OPERATION_TYPE_CLIENT:
+            sys.stderr.write("No server started. So no client to %s\n"
+                                 % operation)
+            sys.exit(100)
+        else:
+            printHelp()
+            sys.exit(100)
         
         session_root = settings.value('default_session_root',
                                       ray.DEFAULT_SESSION_ROOT)
@@ -401,7 +443,7 @@ if __name__ == '__main__':
     timer.timeout.connect(lambda: None)
     timer.start()
     
-    if operation != 'start':
+    if not(operation_type == OPERATION_TYPE_CONTROL and operation == 'start'):
         app.exec()
         
     osc_server.stop()

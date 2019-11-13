@@ -105,7 +105,18 @@ class Terminal:
         sys.stderr.buffer.write(byte_string)
         
         cls._last_client_name = snapshoter_str
-
+    
+    @classmethod
+    def scripterMessage(cls, byte_string, command=''):
+        scripter_str = "scripter:.%s" % command
+        
+        if cls._last_client_name != scripter_str:
+            sys.stderr.write('\n[\033[90mray-daemon %s script\033[0m]\n'
+                             % command)
+        sys.stderr.buffer.write(byte_string)
+        
+        cls._last_client_name = scripter_str
+    
     @classmethod
     def clientMessage(cls, byte_string, client_name, client_id):
         client_str = "%s.%s" % (client_name, client_id)
