@@ -2258,19 +2258,6 @@ class SignaledSession(OperatingSession):
         else:
             spath = "%s/%s" % (self.root, session_name)
         
-        script_path = "%s/ray-scripts/open.sh" % spath
-        if os.access(script_path, os.X_OK):
-            server = self.getServer()
-            if server:
-                if server.controller_addr:
-                    if not ray.areSameOscPort(
-                            server.controller_addr.url, src_addr.url):
-                        subprocess.Popen(script_path)
-                        return
-                else:
-                    subprocess.Popen(script_path)
-                    return
-        
         if spath == self.path:
             self.sendError(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG', 'session %s is already opened !')
@@ -2715,6 +2702,21 @@ class SignaledSession(OperatingSession):
                       _translate('GUIMSG', 'No session to list clients !'))
             return 
         
+        c_started = 0x01
+        c_not_started = 0x02
+        c_active = 0x04
+        c_not_active = 0x08
+        c auto_start = 0x10
+        c_not_auto_start = 0x20
+        c_no_save_level = 0x40
+        c_not_no_save_level = 0x80
+        
+        filter = 0
+        values = ('started', 'active', 'auto_start', 'no_save_level')
+        for arg in args:
+            if arg in values:
+                pass
+            
         client_id_list = []
         
         for client in self.clients:
