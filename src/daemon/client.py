@@ -77,6 +77,8 @@ class Client(ServerSender):
     _last_announce_time = 0.00
     last_open_duration = 0.00
     
+    has_been_started = False
+    
     def __init__(self, parent_session):
         ServerSender.__init__(self)
         self.session = parent_session
@@ -529,6 +531,7 @@ class Client(ServerSender):
         Terminal.clientMessage(standard_output, self.name, self.client_id)
     
     def processStarted(self):
+        self.has_been_started = True
         self.stopped_since_long = False
         self.pid = self.process.pid()
         self.setStatus(ray.ClientStatus.LAUNCH)

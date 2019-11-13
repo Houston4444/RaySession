@@ -370,8 +370,13 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/server/controller_disannounce', '')
     def rayServerControllerDisannounce(self, path, args, types, src_addr):
-        if src_addr in self.controller_list:
-            self.controller_list.remove(src_addr)
+        for addr in self.controller_list:
+            if addr.url == src_addr.url:
+                break
+        else:
+            return
+            
+        self.controller_list.remove(addr)
     
     @ray_method('/ray/server/set_nsm_locked', '')
     def rayServerSetNsmLocked(self, path, args, types, src_addr):
@@ -542,11 +547,19 @@ class OscServerThread(ClientCommunicating):
         pass
     
     @ray_method('/ray/server/open_session', 'si')
-    def rayServerOpenSessionWithTemplate(self, path, args, types, src_addr):
+    def rayServerOpenSessionWithoutSave(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/server/open_session', 'sis')
-    def rayServerOpenSessionWithoutSave(self, path, args, types, src_addr):
+    def rayServerOpenSessionWithTemplate(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/server/open_session_off', 's')
+    def rayServerOpenSessionOff(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/server/open_session_off', 'si')
+    def rayServerOpenSessionWithoutSaveOff(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/session/save', '')

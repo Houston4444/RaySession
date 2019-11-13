@@ -23,10 +23,12 @@ OPERATION_TYPE_CLIENT = 4
 control_operations = ('start', 'stop', 'list_daemons', 'get_root', 
                       'get_port', 'get_pid', 'get_session_path')
 
-server_operations = ('quit', 'change_root', 'list_session_templates', 
+server_operations = (
+    'quit', 'change_root', 'list_session_templates', 
     'list_user_client_templates', 'list_factory_client_templates', 
     'remove_client_template', 'list_sessions', 'new_session',
-    'open_session', 'save_session_template', 'rename_session')
+    'open_session', 'open_session_off', 'save_session_template',
+    'rename_session')
 
 session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',
@@ -34,10 +36,10 @@ session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'add_client_template', 'list_snapshots',
                       'list_clients')
 
-client_operations = ('stop', 'kill', 'trash', 'resume', 'save',
-                     'save_as_template', 'show_optional_gui',
-                     'hide_optional_gui', 'update_properties',
-                     'list_snapshots', 'open_snapshot')
+#client_operations = ('stop', 'kill', 'trash', 'resume', 'save',
+                     #'save_as_template', 'show_optional_gui',
+                     #'hide_optional_gui', 'update_properties',
+                     #'list_snapshots', 'open_snapshot')
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -119,8 +121,6 @@ class OscServerThread(liblo.ServerThread):
     @liblo.make_method('/error', 'sis')
     def errorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
-        
-        print('wadsd(', error_path, message)
         
         if error_path != osc_order_path:
             sys.stdout.write('bug: error for a wrong path:%s instead of %s\n'
@@ -239,9 +239,8 @@ def finished(err_code):
         exit_initiated = True
         exit_code = err_code
         
-        # prevent impossibility to stop liblo server
-        time.sleep(0.010)
-        
+        osc_server.toDaemon('/ray/server/controller_disannounce')
+        time.sleep(0.010) # prevent impossibility to stop liblo server
         QCoreApplication.quit()
 
 def daemonStarted():

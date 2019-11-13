@@ -730,7 +730,12 @@ class OperatingSession(Session):
         for client in self.clients:
             cl = xml.createElement('client')
             cl.setAttribute('id', client.client_id)
-            cl.setAttribute('launched', int(bool(client.isRunning())))
+            
+            launched = int(bool(client.isRunning() or 
+                                (client.auto_start
+                                 and not client.has_been_started)))
+            
+            cl.setAttribute('launched', launched)
             
             client.writeXmlProperties(cl)
             
@@ -1254,7 +1259,8 @@ class OperatingSession(Session):
                         % (self.name, new_session_name))
         self.forgetOscArgs()
     
-    def load(self, session_full_name):
+    def load(self, session_full_name, open_off=False):
+        print('firjifjriopenoff', open_off)
         #terminate or switch clients
         spath = self.root + '/' + session_full_name
         if session_full_name.startswith('/'):
@@ -1360,7 +1366,7 @@ class OperatingSession(Session):
                             continue
                         
                         if tag_name == 'Clients':
-                            if client.auto_start:
+                            if not open_off and client.auto_start:
                                 new_client_exec_args.append(
                                     (client.executable_path, 
                                      client.arguments))
@@ -1399,7 +1405,9 @@ class OperatingSession(Session):
                     client.client_id       = elements[2]
                     client.prefix_mode     = ray.PrefixMode.CLIENT_NAME
                     self.new_clients.append(client)
-                    new_client_exec_args.append((client.executable_path, ''))
+                    if not open_off:
+                        new_client_exec_args.append(
+                            (client.executable_path, ''))
                     
             file.close()
         
@@ -1469,9 +1477,9 @@ class OperatingSession(Session):
                             'waiting for %i clients to quit...')
                         % len(self.expected_clients))
         
-        self.waitAndGoTo(20000, self.load_step1, ray.WaitFor.STOP)
+        self.waitAndGoTo(20000, (self.load_step1, open_off), ray.WaitFor.STOP)
     
-    def load_step1(self):
+    def load_step1(self, open_off=False):
         self.cleanExpected()
             
         self.message("Commanding smart clients to switch")
@@ -1514,7 +1522,7 @@ class OperatingSession(Session):
                 if not self.addClient(new_client):
                     continue
                     
-                if new_client.auto_start and not self.is_dummy:
+                if new_client.auto_start and not (self.is_dummy or open_off):
                     self.clients_to_launch.append(new_client)
                     
                     if (not new_client.executable_path
@@ -1868,21 +1876,41 @@ class SignaledSession(OperatingSession):
         if func_name in self.__dir__():
             function = self.__getattribute__(func_name)
             
-            # start custom script if any
-            if self.path and func_name.startswith('_ray_session_'):
+            if ((func_name.startswith(('_ray_session_', '_ray_client_'))
+                  and self.path)
+                or func_name == '_ray_server_open_session'):
+                # start custom script if any
                 base_script = func_name.replace('_ray_session_', '', 1)
-                script_path = "%s/%s/%s" % (self.path, ray.SCRIPTS_DIR,
-                                            base_script)
+                spath = self.path
                 
+                if func_name == '_ray_server_open_session':
+                    base_script = 'open'
+                    session_name = args[0]
+                    if session_name.startswith('/'):
+                        spath = session_name
+                    else:
+                        spath = "%s/%s" % (self.root, session_name)
+                        
+                elif func_name.startswith('_ray_client_'):
+                    client_id = args[0]
+                    base_script = "%s/%s" % (
+                        client_id, func_name.replace('_ray_client_', '', 1))
+                
+                script_path = "%s/%s/%s" % (spath, ray.SCRIPTS_DIR,
+                                            base_script)
+                print('scripttt path', script_path)
                 if os.access(script_path, os.X_OK):
                     for script in self.running_scripts:
                         if script.getPath() == script_path:
+                            # this script is already started
+                            # So, do not launch it again
+                            # and run normal function.
                             break
                     else:
                         script = Scripter(self, signaler, src_addr, path)
                         self.running_scripts.append(script)
                         self.sendGuiMessage(
-                          _translate('GUIMSG', 'custom script %s started...')
+                          _translate('GUIMSG', '--- Custom script %s started...')
                             % ray.highlightText(script_path))
                         script.start(script_path, [str(a) for a in args])
                         return
@@ -1907,7 +1935,7 @@ class SignaledSession(OperatingSession):
                               - exit_code, message)
                 else:
                     self.sendGuiMessage(
-                        _translate('GUIMSG', '...script %s finished.')
+                        _translate('GUIMSG', '...script %s finished. ---')
                             % ray.highlightText(script_path))
                     self.send(script.src_addr, '/reply', script.src_path,
                               'script finished')
@@ -2201,7 +2229,8 @@ class SignaledSession(OperatingSession):
                               self.newDone]
     
     @session_operation
-    def _ray_server_open_session(self, path, args, src_addr):
+    def _ray_server_open_session(self, path, args, src_addr, open_off=False):
+        print('opening sss with open_off')
         session_name = args[0]
         save_previous = True
         template_name = ''
@@ -2278,7 +2307,11 @@ class SignaledSession(OperatingSession):
             self.process_order += [(self.prepareTemplate, session_name, 
                                     template_name, True)]
         
-        self.process_order += [(self.load, session_name), self.loadDone]
+        self.process_order += [(self.load, session_name, open_off),
+                               self.loadDone]
+    
+    def _ray_server_open_session_off(self, path, args, src_addr):
+        self._ray_server_open_session(path, args, src_addr, True)
     
     def _ray_server_rename_session(self, path, args, src_addr):
         tmp_session = DummySession(self.root)
@@ -2449,7 +2482,8 @@ class SignaledSession(OperatingSession):
         multi_daemon_file = MultiDaemonFile.getInstance()
         if (multi_daemon_file
                 and not multi_daemon_file.isFreeForSession(spath)):
-            Terminal.warning("Session %s is used by another daemon")
+            Terminal.warning("Session %s is used by another daemon"
+                             % ray.highlightText(new_session_full_name))
             self.sendError(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG', 
                     'session %s is already used by this or another daemon !')
