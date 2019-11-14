@@ -76,7 +76,8 @@ class OscServerThread(liblo.ServerThread):
         
         if reply_path in ('/ray/server/list_sessions',
                           '/ray/server/list_session_templates',
-                          '/ray/session/list_clients'):
+                          '/ray/session/list_clients'
+                          '/ray/client/list_properties'):
             if len(args) >= 2:
                 sessions = args[1:]
                 out_message = ""

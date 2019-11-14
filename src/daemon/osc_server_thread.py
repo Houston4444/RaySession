@@ -792,6 +792,11 @@ class OscServerThread(ClientCommunicating):
     def raySessionListClients(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/session/list_clients', None)
+    def raySessionListClients(self, path, args, types, src_addr):
+        if not ray.areTheyAllString(args):
+            return False
+    
     @ray_method('/ray/client/stop', 's')
     def rayGuiClientStop(self, path, args, types, src_addr):
         pass
@@ -811,7 +816,11 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/client/resume', 's')
     def rayGuiClientResume(self, path, args, types, src_addr):
         pass
-                
+    
+    @ray_method('/ray/client/open', 's')
+    def rayClientOpen(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/client/save', 's')
     def rayGuiClientSave(self, path, args, types, src_addr):
         pass
@@ -836,6 +845,10 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/client/update_properties', 'ssssissssis')
     def rayGuiClientUpdateProperties(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/list_properties', 's')
+    def rayClientGetProperties(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/client/list_snapshots', 's')

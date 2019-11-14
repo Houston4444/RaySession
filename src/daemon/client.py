@@ -16,9 +16,10 @@ NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
 
 OSC_SRC_START = 0
-OSC_SRC_SAVE = 1
-OSC_SRC_SAVE_TP = 2
-OSC_SRC_STOP = 3
+OSC_SRC_OPEN = 1
+OSC_SRC_SAVE = 2
+OSC_SRC_SAVE_TP = 3
+OSC_SRC_STOP = 4
 
 _translate = QCoreApplication.translate
 
@@ -110,8 +111,13 @@ class Client(ServerSender):
         self.net_daemon_copy_timer.timeout.connect(self.netDaemonOutOfTime)
         
         # stock osc src_addr and src_path of respectively
-        # start, save, save_tp, stop
-        self._osc_srcs = [(None, ''), (None, ''), (None, ''), (None, '')]
+        # start, open, save, save_tp, stop
+        self._osc_srcs = [(None, ''), (None, ''), (None, ''),
+                          (None, ''), (None, '')]
+        
+        self._open_timer = QTimer()
+        self._open_timer.setSingleShot(True)
+        self._open_timer.timeout.connect(self.openTimerTimeout)
         
     def sendToSelfAddress(self, *args):
         if not self.addr:
@@ -124,6 +130,9 @@ class Client(ServerSender):
         if src_addr:
             self.send(src_addr, '/reply', src_path, message)
             self._osc_srcs[slot] = (None, '')
+            
+        if slot == OSC_SRC_OPEN:
+            self._open_timer.stop()
     
     def sendErrorToCaller(self, slot, err, message):
         src_addr, src_path = self._osc_srcs[slot]
@@ -131,6 +140,14 @@ class Client(ServerSender):
             self.send(src_addr, '/error', src_path, err, message)
             self._osc_srcs[slot] = (None, '')
         
+        if slot == OSC_SRC_OPEN:
+            self._open_timer.stop()
+    
+    def openTimerTimeout(self):
+        self.sendErrorToCaller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
+            _translate('GUIMSG', '%s is started but not active')
+                % self.guiMsgStyle())
+    
     def sendStatusToGui(self):
         server = self.getServer()
         if not server:
@@ -278,6 +295,10 @@ class Client(ServerSender):
                 self.sendErrorToCaller(OSC_SRC_SAVE, ray.Err.GENERAL_ERROR,
                                     _translate('GUIMSG', '%s failed to save!')
                                             % self.guiMsgStyle())
+            elif self.pending_command == ray.Command.OPEN:
+                self.sendErrorToCaller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
+                                    _translate('GUIMSG', '%s failed to open!')
+                                            % self.guiMsgStyle())
                 
             self.setStatus(ray.ClientStatus.ERROR)
         else:
@@ -297,6 +318,7 @@ class Client(ServerSender):
                 
                 self.last_open_duration = \
                                         time.time() - self._last_announce_time
+                self.sendReplyToCaller(OSC_SRC_OPEN, 'client opened')
             
             self.setStatus(ray.ClientStatus.READY)
             #self.message( "Client \"%s\" replied with: %s in %fms"
@@ -462,8 +484,8 @@ class Client(ServerSender):
                     self.ignored_extensions = \
                         self.ignored_extensions.replace(ext, '')
     
-    def start(self, src_addr=None, src_path=''):
-        if src_addr:
+    def start(self, src_addr=None, src_path='', wait_open_to_reply=False):
+        if src_addr and not wait_open_to_reply:
             self._osc_srcs[OSC_SRC_START] = (src_addr, src_path)
             
         self.session.setRenameable(False)
@@ -501,7 +523,40 @@ class Client(ServerSender):
             #'konsole', 
             #['--hide-tabbar', '--hide-menubar', '-e', self.executable_path]
                 #+ arguments)
-     
+    
+    def load(self, src_addr=None, src_path=''):
+        if src_addr:
+            self._osc_srcs[OSC_SRC_OPEN] = (src_addr, src_path)
+        
+        if self.active:
+            self.sendReplyToCaller(OSC_SRC_OPEN, 'client active')
+            return 
+        
+        if self.pending_command in (ray.Command.QUIT, ray.Command.KILL):
+            self.sendErrorToCaller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
+                _translate('GUIMSG', '%s is exiting.') % self.guiMsgStyle())
+        
+        if self.isRunning() and self.isDumbClient():
+            self.sendErrorToCaller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
+                _translate('GUIMSG', '%s seems to can not open')
+                    % self.guiMsgStyle())
+        
+        duration = max(8000, 2 * self.last_open_duration)
+        self._open_timer.setInterval(duration)
+        self._open_timer.start()
+        
+        if self.pending_command == ray.Command.OPEN:
+            return
+        
+        if not self.isRunning():
+            if self.executable_path in RS.non_active_clients:
+                if src_addr:
+                    self._osc_srcs[OSC_SRC_START] = (src_addr, src_path)
+                    self._osc_srcs[OSC_SRC_OPEN] = (None, '')
+            
+            self.start(src_addr, src_path, True)
+            return 
+        
     def terminate(self):
         if self.isRunning():
             if self.is_external:
@@ -557,6 +612,8 @@ class Client(ServerSender):
                                     % self.guiMsgStyle())
         
         self.sendReplyToCaller(OSC_SRC_STOP, 'client stopped')
+        self.sendErrorToCaller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
+                _translate('GUIMSG', '%s died !' % self.guiMsgStyle()))
         
         if self.session.wait_for:
             self.session.endTimerIfLastExpected(self)
@@ -593,10 +650,11 @@ class Client(ServerSender):
                 self.session.oscReply("/error", self.session.osc_path, 
                                       ray.Err.LAUNCH_FAILED, 
                                       error_message)
-                
-            self.sendErrorToCaller(OSC_SRC_START, ray.Err.LAUNCH_FAILED,
-                _translate('GUIMSG', '%s failed to launch')
-                    % self.guiMsgStyle())
+            
+            for osc_slot in (OSC_SRC_START, OSC_SRC_OPEN):
+                self.sendErrorToCaller(osc_slot, ray.Err.LAUNCH_FAILED,
+                    _translate('GUIMSG', '%s failed to launch')
+                        % self.guiMsgStyle())
             
             if self.session.wait_for:
                 self.session.endTimerIfLastExpected(self)
@@ -727,6 +785,30 @@ class Client(ServerSender):
         self.ignored_extensions = client_data.ignored_extensions
         
         self.sendGuiClientProperties()
+    
+    def getPropertiesMessage(self):
+        message = """client_id:%s
+executable:%s
+arguments:%s
+name:%s
+prefix_mode:%i
+custom_prefix:%s
+label:%s
+icon:%s
+capabilities:%s
+check_last_save:%i
+ignored_extensions:%s""" % (self.client_id, 
+                         self.executable_path,
+                         self.arguments,
+                         self.name, 
+                         self.prefix_mode, 
+                         self.custom_prefix,
+                         self.label,
+                         self.icon,
+                         self.capabilities,
+                         int(self.check_last_save),
+                         self.ignored_extensions)
+        return message
     
     def prettyClientId(self):
         wanted = self.client_id

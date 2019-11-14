@@ -2702,26 +2702,36 @@ class SignaledSession(OperatingSession):
                       _translate('GUIMSG', 'No session to list clients !'))
             return 
         
-        c_started = 0x01
-        c_not_started = 0x02
-        c_active = 0x04
-        c_not_active = 0x08
-        c auto_start = 0x10
-        c_not_auto_start = 0x20
-        c_no_save_level = 0x40
-        c_not_no_save_level = 0x80
+        f_started = -1
+        f_active = -1
+        f_auto_start = -1
+        f_no_save_level = -1
         
-        filter = 0
-        values = ('started', 'active', 'auto_start', 'no_save_level')
         for arg in args:
-            if arg in values:
-                pass
-            
+            cape = 1
+            if arg.startswith('not_'):
+                cape = 0
+                arg = arg.replace('not_', '', 1)
+                
+            if arg == 'started':
+                f_started = cape
+            elif arg == 'active':
+                f_active = cape
+            elif arg == 'auto_start':
+                f_auto_start = cape
+            elif arg == 'no_save_level':
+                f_no_save_level = cape
+                
         client_id_list = []
         
         for client in self.clients:
-            client_id_list.append(client.client_id)
-        
+            if ((f_started < 0 or f_started == client.isRunning())
+                and (f_active < 0 or f_active == client.active)
+                and (f_auto_start < 0 or f_auto_start == client.auto_start)
+                and (f_no_save_level < 0 
+                     or f_no_save_level == int(bool(client.no_save_level)))):
+                client_id_list.append(client.client_id)
+                    
         if client_id_list:
             self.send(src_addr, '/reply', path, *client_id_list)
         self.send(src_addr, '/reply', path)
@@ -2793,6 +2803,28 @@ class SignaledSession(OperatingSession):
         else:
             self.sendErrorNoClient(src_addr, path, client_id)
     
+    def _ray_client_open(self, path, args, src_addr):
+        client_id = args[0]
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                if self.file_copier.isActive(client.client_id):
+                    self.sendErrorCopyRunning(src_addr, path)
+                    return
+                
+                if client.active:
+                    self.sendGuiMessage(
+                        _translate('GUIMSG', 'client %s is already active.')
+                            % client.guiMsgStyle())
+                    
+                    # make ray_control exit code 0 in this case
+                    self.send(src_addr, '/reply', path, 'client active')
+                else:
+                    client.load(src_addr, path)
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
     def _ray_client_save(self, path, args, src_addr):
         client_id = args[0]
         
@@ -2837,6 +2869,17 @@ class SignaledSession(OperatingSession):
                 break
         else:
             self.sendErrorNoClient(src_addr, path, client_data.client_id)
+    
+    def _ray_client_list_properties(self, path, args, src_addr):
+        client_id = args[0]
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                message = client.getPropertiesMessage()
+                self.send(src_addr, '/reply', path, message)
+                break
+        else:
+            self.sendErrorNoClient(src, path, client_id)
     
     def _ray_client_list_snapshots(self, path, args, src_addr):
         self._ray_session_list_snapshots(path, [], src_addr, args[0])
