@@ -2707,13 +2707,18 @@ class SignaledSession(OperatingSession):
         f_auto_start = -1
         f_no_save_level = -1
         
+        search_properties = []
+        
         for arg in args:
             cape = 1
             if arg.startswith('not_'):
                 cape = 0
                 arg = arg.replace('not_', '', 1)
-                
-            if arg == 'started':
+            
+            if ':' in arg:
+              search_properties.append((cape, arg))
+            
+            elif arg == 'started':
                 f_started = cape
             elif arg == 'active':
                 f_active = cape
@@ -2730,7 +2735,23 @@ class SignaledSession(OperatingSession):
                 and (f_auto_start < 0 or f_auto_start == client.auto_start)
                 and (f_no_save_level < 0 
                      or f_no_save_level == int(bool(client.no_save_level)))):
-                client_id_list.append(client.client_id)
+                if search_properties:
+                    message = client.getPropertiesMessage()
+                    
+                    for cape, search_prop in search_properties:
+                        line_found = False
+                        
+                        for line in message.split('\n'):
+                            if line == search_prop:
+                                line_found = True
+                                break
+                            
+                        if cape != line_found:
+                            break
+                    else:
+                        client_id_list.append(client.client_id)
+                else:
+                    client_id_list.append(client.client_id)
                     
         if client_id_list:
             self.send(src_addr, '/reply', path, *client_id_list)
@@ -2870,7 +2891,19 @@ class SignaledSession(OperatingSession):
         else:
             self.sendErrorNoClient(src_addr, path, client_data.client_id)
     
-    def _ray_client_list_properties(self, path, args, src_addr):
+    def _ray_client_set_properties(self, path, args, src_addr):
+        client_id, message = args
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                client.setPropertiesFromMessage(message)
+                self.send(src_addr, '/reply', path,
+                          'client properties updated')
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_data.client_id)
+    
+    def _ray_client_get_properties(self, path, args, src_addr):
         client_id = args[0]
         
         for client in self.clients:
@@ -2878,6 +2911,119 @@ class SignaledSession(OperatingSession):
                 message = client.getPropertiesMessage()
                 self.send(src_addr, '/reply', path, message)
                 self.send(src_addr, '/reply', path)
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
+    def _ray_client_get_proxy_properties(self, path, args, src_addr):
+        client_id = args[0]
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                proxy_file = '%s/ray-proxy.xml' % client.getProjectPath()
+                
+                if not os.path.isfile(proxy_file):
+                    self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+                        _translate('GUIMSG',
+                                   '%s seems to not be a proxy client !')
+                            % client.guiMsgStyle())
+                    return
+                
+                try:
+                    file = open(proxy_file, 'r')
+                    xml = QDomDocument()
+                    xml.setContent(file.read())
+                    content = xml.documentElement()
+                    file.close()
+                except:
+                    self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                        _translate('GUIMSG',
+                                   "impossible to read %s correctly !")
+                            % proxy_file)
+                    return
+                    
+                if content.tagName() != "RAY-PROXY":
+                    self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                        _translate('GUIMSG',
+                                   "impossible to read %s correctly !")
+                            % proxy_file)
+                    return
+                    
+                cte = content.toElement()
+                message = ""
+                for property in ('executable', 'arguments', 'config_file',
+                                    'save_signal', 'stop_signal',
+                                    'no_save_level', 'wait_window',
+                                    'VERSION'):
+                    message += "%s:%s\n" % (property, cte.attribute(property))
+                
+                # remove last empty line
+                message = message.rpartition('\n')[0]
+                
+                self.send(src_addr, '/reply', path, message)
+                self.send(src_addr, '/reply', path)
+                    
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
+    def _ray_client_set_proxy_properties(self, path, args, src_addr):
+        client_id, message = args
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                proxy_file = '%s/ray-proxy.xml' % client.getProjectPath()
+                
+                if not os.path.isfile(proxy_file):
+                    self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+                        _translate('GUIMSG',
+                                   '%s seems to not be a proxy client !')
+                            % client.guiMsgStyle())
+                    return
+                
+                try:
+                    file = open(proxy_file, 'r')
+                    xml = QDomDocument()
+                    xml.setContent(file.read())
+                    content = xml.documentElement()
+                    file.close()
+                except:
+                    self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                        _translate('GUIMSG',
+                                   "impossible to read %s correctly !")
+                            % proxy_file)
+                    return
+                    
+                if content.tagName() != "RAY-PROXY":
+                    self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                        _translate('GUIMSG',
+                                   "impossible to read %s correctly !")
+                            % proxy_file)
+                    return
+                    
+                cte = content.toElement()
+                
+                for line in message.split('\n'):
+                    property, colon, value = line.partition(':')
+                    if property in ('executable', 'arguments', 
+                            'config_file', 'save_signal', 'stop_signal',
+                            'no_save_level', 'wait_window', 'VERSION'):
+                        cte.setAttribute(property, value)
+                
+                try:
+                    file = open(proxy_file, 'w')
+                    file.write(xml.toString())
+                    file.close()
+                except:
+                    self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                        _translate('GUIMSG',
+                                   "%s is not writeable")
+                            % proxy_file)
+                    return
+                
+                self.send(src_addr, '/reply', path, message)
+                self.send(src_addr, '/reply', path)
+                    
                 break
         else:
             self.sendErrorNoClient(src_addr, path, client_id)

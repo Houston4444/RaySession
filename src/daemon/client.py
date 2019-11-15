@@ -786,6 +786,37 @@ class Client(ServerSender):
         
         self.sendGuiClientProperties()
     
+    def setPropertiesFromMessage(self, message):
+        for line in message.split('\n'):
+            property, colon, value = line.partition(':')
+            
+            if property == 'client_id':
+                # do not change client_id !!!
+                continue
+            elif property == 'executable':
+                self.executable_path = value
+            elif property == 'arguments':
+                self.arguments = value
+            elif property == 'prefix_mode':
+                if value.isdigit() and 0 <= int(value) <= 2:
+                    self.prefix_mode = int(value)
+            elif property == 'custom_prefix':
+                self.custom_prefix = value
+            elif property == 'label':
+                self.label = value
+            elif property == 'icon':
+                self.icon = value
+            elif property == 'capabilities':
+                # do not change capabilities, no sense !
+                continue
+            elif property == 'check_last_save':
+                if value.isdigit():
+                    self.check_last_save = bool(int(value))
+            elif property == 'ignored_extensions':
+                self.ignored_extensions = value
+                
+        self.sendGuiClientProperties()
+    
     def getPropertiesMessage(self):
         message = """client_id:%s
 executable:%s
@@ -827,7 +858,6 @@ ignored_extensions:%s""" % (self.client_id,
                     executable = content.attribute('executable')
                     if executable:
                         wanted = executable
-            
             
         if '_' in wanted:
             begin, udsc, end = wanted.rpartition('_')
@@ -1164,9 +1194,8 @@ ignored_extensions:%s""" % (self.client_id,
                 False
         
         if os.access(project_path, os.W_OK):
-            subprocess.run(['mv', project_path, "%s/%s.%s"
-                                                % (spath, new_prefix, 
-                                                   new_client_id)])
+            subprocess.run(['mv', project_path, 
+                            "%s/%s.%s" % (spath, new_prefix, new_client_id)])
     
     def serverAnnounce(self, path, args, src_addr, is_new):
         client_name, capabilities, executable_path, major, minor, pid = args

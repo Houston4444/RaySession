@@ -105,7 +105,7 @@ class OscServerThread(liblo.ServerThread):
             else:
                 signaler.done.emit(0)
         
-        elif os.path.basename(reply_path).startswith('list_'):
+        elif os.path.basename(reply_path).startswith(('list_', 'get_')):
             if len(args) >= 2:
                 sessions = args[1:]
                 out_message = ""
@@ -132,7 +132,7 @@ class OscServerThread(liblo.ServerThread):
                                 ray.highlightText(osc_order_path)))
             return
         
-        sys.stdout.write('%s\n' % message)
+        sys.stderr.write('%s\n' % message)
         
         signaler.done.emit(- err)
     

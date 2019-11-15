@@ -847,8 +847,20 @@ class OscServerThread(ClientCommunicating):
     def rayGuiClientUpdateProperties(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/client/list_properties', 's')
-    def rayClientListProperties(self, path, args, types, src_addr):
+    @ray_method('/ray/client/get_properties', 's')
+    def rayClientGetProperties(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/set_properties', 'ss')
+    def rayGuiClientSetProperties(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/get_proxy_properties', 's')
+    def rayClientGetProxyProperties(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/set_proxy_properties', 'ss')
+    def rayClientSetProxyProperties(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/client/list_files', 's')
