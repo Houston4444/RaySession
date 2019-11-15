@@ -2877,9 +2877,22 @@ class SignaledSession(OperatingSession):
             if client.client_id == client_id:
                 message = client.getPropertiesMessage()
                 self.send(src_addr, '/reply', path, message)
+                self.send(src_addr, '/reply', path)
                 break
         else:
-            self.sendErrorNoClient(src, path, client_id)
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
+    def _ray_client_list_files(self, path, args, src_addr):
+        client_id = args[0]
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                client_files = client.getProjectFiles()
+                self.send(src_addr, '/reply', path, *client_files)
+                self.send(src_addr, '/reply', path)
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
     
     def _ray_client_list_snapshots(self, path, args, src_addr):
         self._ray_session_list_snapshots(path, [], src_addr, args[0])

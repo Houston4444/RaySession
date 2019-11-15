@@ -74,21 +74,13 @@ class OscServerThread(liblo.ServerThread):
                                 ray.highlightText(osc_order_path)))
             return
         
-        if reply_path in ('/ray/server/list_sessions',
-                          '/ray/server/list_session_templates',
-                          '/ray/session/list_clients'
-                          '/ray/client/list_properties'):
-            if len(args) >= 2:
-                sessions = args[1:]
-                out_message = ""
-                for session in sessions:
-                    out_message += "%s\n" % session
-                sys.stdout.write(out_message)
-                return
-            else:
-                signaler.done.emit(0)
+        #if reply_path in ('/ray/server/list_sessions',
+                          #'/ray/server/list_session_templates',
+                          #'/ray/session/list_clients'
+                          #'/ray/client/list_properties'):
+            
                 
-        elif reply_path in ('/ray/server/list_factory_client_templates',
+        if reply_path in ('/ray/server/list_factory_client_templates',
                             '/ray/server/list_user_client_templates'):
             if len(args) >= 2:
                 templates = args[1:]
@@ -112,7 +104,18 @@ class OscServerThread(liblo.ServerThread):
                 return
             else:
                 signaler.done.emit(0)
-            
+        
+        elif os.path.basename(reply_path).startswith('list_'):
+            if len(args) >= 2:
+                sessions = args[1:]
+                out_message = ""
+                for session in sessions:
+                    out_message += "%s\n" % session
+                sys.stdout.write(out_message)
+                return
+            else:
+                signaler.done.emit(0)
+        
         elif len(args) == 2:
             reply_path, message = args
             if os.path.basename(reply_path).startswith(('list_', 'add_')):

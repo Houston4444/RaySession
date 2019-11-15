@@ -848,7 +848,11 @@ class OscServerThread(ClientCommunicating):
         pass
     
     @ray_method('/ray/client/list_properties', 's')
-    def rayClientGetProperties(self, path, args, types, src_addr):
+    def rayClientListProperties(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/list_files', 's')
+    def rayClientListFiles(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/client/list_snapshots', 's')
