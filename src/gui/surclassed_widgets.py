@@ -176,9 +176,12 @@ class StatusBar(QLineEdit):
 
     def showNextText(self):
         if self.next_texts:
-            next_text = self.next_texts[0]
-            self.next_texts.__delitem__(0)
-            self.setText(next_text, True)
+            if len(self.next_texts) >= 4:
+                interval = int(1000 / len(self.next_texts))
+                self.timer.setInterval(interval)
+            elif len(self.next_texts) == 3:
+                self.timer.setInterval(350)
+            self.setText(self.next_texts.pop(0), True)
         else:
             self.timer.stop()
             
@@ -201,6 +204,7 @@ class StatusBar(QLineEdit):
             if self.timer.isActive():
                 self.next_texts.append(text)
                 return
+                
             self.timer.start()
 
         if not text:
