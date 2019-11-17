@@ -649,6 +649,17 @@ class OscServerThread(ClientCommunicating):
                 #signaler.dummy_load_and_template.emit(*args)
                 #return False
     
+    @ray_method('/ray/session/get_session_name', '')
+    def raySessionGetSessionName(self, path, args, types, src_addr):
+        if not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "No session to close.")
+            return False
+        
+        self.send(src_addr, '/reply', path, self.session.name)
+        self.send(src_addr, '/reply', path)
+        return False
+    
     @ray_method('/ray/session/take_snapshot', 'si')
     def raySessionTakeSnapshot(self, path, args, types, src_addr):
         pass

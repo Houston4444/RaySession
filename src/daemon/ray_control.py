@@ -34,7 +34,7 @@ session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',
                       'rename', 'add_executable', 'add_proxy',
                       'add_client_template', 'list_snapshots',
-                      'list_clients')
+                      'list_clients', 'get_session_name')
 
 #client_operations = ('stop', 'kill', 'trash', 'resume', 'save',
                      #'save_as_template', 'show_optional_gui',
