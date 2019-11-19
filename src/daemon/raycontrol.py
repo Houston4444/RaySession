@@ -30,4 +30,3 @@ if __name__ == "__main__":
         node_el = node.toElement()
         port = node_el.attribute('port')
         liblo.send(liblo.Address(port), '/ray/session/%s' % option)
-    
