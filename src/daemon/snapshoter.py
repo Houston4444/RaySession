@@ -1,6 +1,7 @@
 import locale
 import os
 import shutil
+import socket
 import subprocess
 import sys
 from PyQt5.QtCore import (QProcess, QProcessEnvironment, QTimer,
@@ -35,7 +36,7 @@ class Snapshoter(QObject):
         self.max_file_size = 50 #in Mb
         
         self.next_snapshot_name  = ''
-        self.next_rw_snapshot = ''
+        self._rw_snapshot = ''
         
         self.changes_checker = QProcess()
         self.changes_checker.readyReadStandardOutput.connect(
@@ -430,6 +431,25 @@ class Snapshoter(QObject):
             if not self.runGitProcess('init'):
                 return False
             
+            user_name = os.getenv('USER')
+            if not user_name:
+                user_name = 'someone'
+            
+            machine_name = socket.gethostname()
+            if not machine_name:
+                machine_name = 'somewhere'
+                
+            if not self.runGitProcess('config', 'user.email', 
+                                      '%s@%s' % (user_name, machine_name)):
+                return False
+            
+            user_name = os.getenv('USER')
+            if not user_name:
+                user_name = 'someone'
+            
+            if not self.runGitProcess('config', 'user.name', user_name):
+                return False
+            
         if not self.isInit():
             return False
         
@@ -443,7 +463,7 @@ class Snapshoter(QObject):
     def save(self, name='', rewind_snapshot='',
              next_function=None, error_function=None):
         self.next_snapshot_name  = name
-        self.next_rw_snapshot = rewind_snapshot
+        self._rw_snapshot = rewind_snapshot
         self.next_function = next_function
         self.error_function = error_function
         
@@ -481,26 +501,28 @@ class Snapshoter(QObject):
             if not self.runGitProcess('commit', '-m', 'ray'):
                 return
         
-        ref = self.getTagDate()
+        
         
         if (self._n_file_changed
-                or self.next_snapshot_name or self.next_rw_snapshot):
+                or self.next_snapshot_name or self._rw_snapshot):
+            ref = self.getTagDate()
+            
             if not self.runGitProcess('tag', '-a', ref, '-m', 'ray'):
                 return 
-            
+        
             err = self.writeHistoryFile(ref, self.next_snapshot_name,
-                                        self.next_rw_snapshot)
+                                    self._rw_snapshot)
             if err:
-                self.errorQuit(err)
-                return
-            
+                if self.error_function:
+                    self.error_function(err)
+                    
             # not really a reply, not strong.
             self.session.sendGui('/reply', '/ray/session/list_snapshots',
                                 fullRefForGui(ref, self.next_snapshot_name,
-                                            self.next_rw_snapshot))
+                                            self._rw_snapshot))
         self.error_function = None
         self.next_snapshot_name = ''
-        self.next_rw_snapshot = ''
+        self._rw_snapshot = ''
         
         if self.next_function:
             self.next_function()
