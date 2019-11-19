@@ -2589,6 +2589,10 @@ class SignaledSession(OperatingSession):
         prefix_mode = ray.PrefixMode.SESSION_NAME
         custom_prefix = ''
         client_id = ""
+        start_it = True
+        
+        if len(args) == 2 and args[1] == 'not_auto_start':
+            start_it = False
         
         if len(args) == 5:
             executable, via_proxy, prefix_mode, custom_prefix, client_id = args
@@ -2630,7 +2634,8 @@ class SignaledSession(OperatingSession):
         client.setDefaultGitIgnored(executable)
         
         if self.addClient(client):
-            client.start()
+            if start_it:
+                client.start()
             self.send(src_addr, '/reply', path, client.client_id)
     
     def _ray_session_add_proxy(self, path, args, src_addr):
