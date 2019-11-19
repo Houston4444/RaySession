@@ -1058,7 +1058,7 @@ class OscServerThread(ClientCommunicating):
                       client.arguments,
                       client.name, 
                       client.prefix_mode, 
-                      client.project_path,
+                      client.custom_prefix,
                       client.label,
                       client.icon,
                       client.capabilities,
