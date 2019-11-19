@@ -1,6 +1,7 @@
 import locale
 import os
 import shutil
+import socket
 import subprocess
 import sys
 from PyQt5.QtCore import (QProcess, QProcessEnvironment, QTimer,
@@ -112,7 +113,7 @@ class Snapshoter(QObject):
                 err = ray.Err.SUBPROCESS_EXITCODE
         
         if err and self.error_function:
-            self.error_function(err, str(all_args))
+            self.error_function(err, ' '.join(all_args))
             
         return not(bool(err))
     
@@ -430,6 +431,25 @@ class Snapshoter(QObject):
         
         if not self.isInit():
             if not self.runGitProcess('init'):
+                return False
+            
+            user_name = os.getenv('USER')
+            if not user_name:
+                user_name = 'someone'
+            
+            machine_name = socket.gethostname()
+            if not machine_name:
+                machine_name = 'somewhere'
+                
+            if not self.runGitProcess('config', 'user.email', 
+                                      '%s@%s' % (user_name, machine_name)):
+                return False
+            
+            user_name = os.getenv('USER')
+            if not user_name:
+                user_name = 'someone'
+            
+            if not self.runGitProcess('config', 'user.name', user_name):
                 return False
             
         if not self.isInit():
