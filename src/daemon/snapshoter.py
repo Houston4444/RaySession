@@ -501,9 +501,11 @@ class Snapshoter(QObject):
         self._changes_counted = False
         
         ref = self.getTagDate()
-            
-        if not self.runGitProcess('tag', '-a', ref, '-m', 'ray'):
-            return 
+        
+        if (self._n_file_changed
+                or self.next_snapshot_name or self.next_rw_snapshot):
+            if not self.runGitProcess('tag', '-a', ref, '-m', 'ray'):
+                return 
         
         err = self.writeHistoryFile(ref, self.next_snapshot_name,
                                     self._rw_snapshot)
