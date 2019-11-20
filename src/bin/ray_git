@@ -1,0 +1,2 @@
+#!/bin/sh
+exec git --work-tree "$PWD" --git-dir "$PWD/.ray-snapshots" "$@"  

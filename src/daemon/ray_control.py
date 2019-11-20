@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import liblo
+import os
 import sys
 from PyQt5.QtXml import QDomDocument
 
@@ -19,6 +20,9 @@ if __name__ == "__main__":
         noGoodArg()
         
     multi_daemon_file = '/tmp/RaySession/multi-daemon.xml'
+    if not os.path.isfile(multi_daemon_file):
+        sys.exit(0)
+        
     file = open(multi_daemon_file, 'r')
     xml = QDomDocument()
     xml.setContent(file.read())
