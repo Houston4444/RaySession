@@ -157,7 +157,6 @@ def ifDebug(string):
     if debug:
         print(string, file=sys.stderr)
 
-
 def setDebug(bool):
     global debug
     debug = bool

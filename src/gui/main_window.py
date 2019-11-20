@@ -8,7 +8,7 @@ from PyQt5.QtCore import (QTimer, QProcess, pyqtSignal, pyqtSlot, QObject,
                           QSize, Qt, QSettings, qDebug, QLocale, QTranslator)
 
 from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
-                       serverStatusString)
+                       serverStatusString, isDarkTheme)
 import add_application_dialog
 import child_dialogs
 import snapshots_dialog
@@ -84,9 +84,6 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSnapshots.setDefaultAction(
             self.ui.actionReturnToAPreviousState)
 
-        # set spare icons if system icons not avalaible
-        # TODO
-        
         # connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
         self.ui.actionOpenSession.triggered.connect(self.openSession)
@@ -162,17 +159,37 @@ class MainWindow(QMainWindow):
         sg.server_status_changed.connect(self.serverChangeServerStatus)
         sg.server_copying.connect(self.serverCopying)
         sg.daemon_url_request.connect(self.showDaemonUrlWindow)
-
-        if self.ui.actionAddExecutable.icon().isNull():
-            self.ui.actionAddExecutable.setIcon(QIcon.fromTheme('system-run'))
+        
+        # set spare icons if system icons not avalaible
+        dark = isDarkTheme(self)
+        
+        if self.ui.actionNewSession.icon().isNull():
+            self.ui.actionNewSession.setIcon(RayIcon('folder-new', dark))
+        if self.ui.actionOpenSession.icon().isNull():
+            self.ui.actionOpenSession.setIcon(RayIcon('document-open', dark))
+            
         if self.ui.actionControlMenu.icon().isNull():
             self.ui.actionControlMenu.setIcon(
                 QIcon.fromTheme('configuration_section'))
-        if self.ui.trashButton.icon().isNull():
-            self.ui.trashButton.setIcon(QIcon.fromTheme('user-trash'))
-
-        dark = bool(QApplication.palette().brush(
-            2, QPalette.WindowText).color().lightness() > 128)
+            if self.ui.actionControlMenu.icon().isNull():
+                self.ui.actionControlMenu.setIcon(RayIcon('configure', dark))
+        
+        if self.ui.actionOpenSessionFolder.icon().isNull():
+            self.ui.actionOpenSessionFolder.setIcon(
+                                        RayIcon('system-file-manager', dark))
+        
+        if self.ui.actionAddApplication.icon().isNull():
+            self.ui.actionAddApplication.setIcon(RayIcon('list-add', dark))
+        
+        if self.ui.actionAddExecutable.icon().isNull():
+            self.ui.actionAddExecutable.setIcon(QIcon.fromTheme('system-run'))
+            if self.ui.actionAddExecutable.icon().isNull():
+                self.ui.actionAddExecutable.setIcon(RayIcon('run-install'))
+            
+        self.ui.actionReturnToAPreviousState.setIcon(
+                                        RayIcon('media-seek-backward', dark))
+        
+        self.ui.trashButton.setIcon(RayIcon('trash-empty', dark))
 
         self.ui.actionDuplicateSession.setIcon(
             RayIcon('xml-node-duplicate', dark))
