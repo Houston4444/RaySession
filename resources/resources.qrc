@@ -20,14 +20,25 @@
         <file>scalable/breeze/draw-star.svg</file>
         <file>scalable/breeze/star-yellow.svg</file>
         <file>scalable/breeze/empty-icon.svg</file>
-        <file>resources/scalable/breeze/configure.svg</file>
-        <file>resources/scalable/breeze/document-open.svg</file>
-        <file>resources/scalable/breeze/folder-new.svg</file>
-        <file>resources/scalable/breeze/list-add.svg</file>
-        <file>resources/scalable/breeze/media-seek-backward.svg</file>
-        <file>resources/scalable/breeze/run-install.svg</file>
-        <file>resources/scalable/breeze/system-file-manager.svg</file>
-        <file>resources/scalable/breeze/trash-empty.svg</file>
+        
+        <file>scalable/breeze/configure.svg</file>
+        <file>scalable/breeze/document-open.svg</file>
+        <file>scalable/breeze/folder-new.svg</file>
+        <file>scalable/breeze/list-add.svg</file>
+        <file>scalable/breeze/media-seek-backward.svg</file>
+        <file>scalable/breeze/run-install.svg</file>
+        <file>scalable/breeze/system-file-manager.svg</file>
+        <file>scalable/breeze/trash-empty.svg</file>
+        
+        <file>scalable/breeze/disabled/configure.svg</file>
+        <file>scalable/breeze/disabled/document-open.svg</file>
+        <file>scalable/breeze/disabled/folder-new.svg</file>
+        <file>scalable/breeze/disabled/list-add.svg</file>
+        <file>scalable/breeze/disabled/media-seek-backward.svg</file>
+        <file>scalable/breeze/disabled/run-install.svg</file>
+        <file>scalable/breeze/disabled/system-file-manager.svg</file>
+        <file>scalable/breeze/disabled/trash-empty.svg</file>
+        
         <file>scalable/breeze/disabled/media-playback-start.svg</file>
         <file>scalable/breeze/disabled/media-playback-stop.svg</file>
         <file>scalable/breeze/disabled/document-save.svg</file>
@@ -49,14 +60,25 @@
         <file>scalable/breeze-dark/view-list-icons.svg</file>
         <file>scalable/breeze-dark/im-user.svg</file>
         <file>scalable/breeze-dark/draw-star.svg</file>
-        <file>resources/scalable/breeze-dark/configure.svg</file>
-        <file>resources/scalable/breeze-dark/document-open.svg</file>
-        <file>resources/scalable/breeze-dark/folder-new.svg</file>
-        <file>resources/scalable/breeze-dark/list-add.svg</file>
-        <file>resources/scalable/breeze-dark/media-seek-backward.svg</file>
-        <file>resources/scalable/breeze-dark/run-install.svg</file>
-        <file>resources/scalable/breeze-dark/system-file-manager.svg</file>
-        <file>resources/scalable/breeze-dark/trash-empty.svg</file>
+        
+        <file>scalable/breeze-dark/configure.svg</file>
+        <file>scalable/breeze-dark/document-open.svg</file>
+        <file>scalable/breeze-dark/folder-new.svg</file>
+        <file>scalable/breeze-dark/list-add.svg</file>
+        <file>scalable/breeze-dark/media-seek-backward.svg</file>
+        <file>scalable/breeze-dark/run-install.svg</file>
+        <file>scalable/breeze-dark/system-file-manager.svg</file>
+        <file>scalable/breeze-dark/trash-empty.svg</file>
+        
+        <file>scalable/breeze-dark/disabled/configure.svg</file>
+        <file>scalable/breeze-dark/disabled/document-open.svg</file>
+        <file>scalable/breeze-dark/disabled/folder-new.svg</file>
+        <file>scalable/breeze-dark/disabled/list-add.svg</file>
+        <file>scalable/breeze-dark/disabled/media-seek-backward.svg</file>
+        <file>scalable/breeze-dark/disabled/run-install.svg</file>
+        <file>scalable/breeze-dark/disabled/system-file-manager.svg</file>
+        <file>scalable/breeze-dark/disabled/trash-empty.svg</file>
+        
         <file>scalable/breeze-dark/disabled/media-playback-start.svg</file>
         <file>scalable/breeze-dark/disabled/media-playback-stop.svg</file>
         <file>scalable/breeze-dark/disabled/document-save.svg</file>
