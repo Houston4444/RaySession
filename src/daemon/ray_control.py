@@ -1,24 +1,22 @@
 #!/usr/bin/python3 -u
 
-import argparse
 import liblo
 import os
 import signal
 import sys
 import time
 import subprocess
-
-from PyQt5.QtCore import (QCoreApplication, QTimer, pyqtSignal,
-                          QObject, QProcess, QSettings, pyqtSlot)
-
-import ray
-from multi_daemon_file import MultiDaemonFile
+import xml.etree.ElementTree as ET
 
 OPERATION_TYPE_NULL = 0
 OPERATION_TYPE_CONTROL = 1
 OPERATION_TYPE_SERVER = 2
 OPERATION_TYPE_SESSION = 3
 OPERATION_TYPE_CLIENT = 4
+
+# !!! we don't load ray.py to win import duration
+# if change in ray.Err numbers, this has to be changed too !!!
+ERR_UNKNOWN_MESSAGE = -18
 
 control_operations = ('start', 'stop', 'list_daemons', 'get_root', 
                       'get_port', 'get_pid', 'get_session_path')
@@ -43,24 +41,116 @@ session_operations = ('save', 'save_as_template', 'take_snapshot',
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
-        QCoreApplication.quit()
+        global terminate
+        terminate = True
 
+def addSelfBinToPath():
+    # Add raysession/src/bin to $PATH to can use ray executables after make
+    # Warning, will works only if link to this file is in RaySession/*/*/*.py
+    this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
+    bin_path = "%s/bin" % os.path.dirname(this_path)
+    if not os.environ['PATH'].startswith("%s:" % bin_path):
+        os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
 
-class Signaler(QObject):
-    done = pyqtSignal(int)
-    daemon_started = pyqtSignal()
-    daemon_no_announce = pyqtSignal()
-    message = pyqtSignal(str)
+def areTheyAllString(args):
+    for arg in args:
+        if type(arg) != str:
+            return False
+    return True
+
+def highlightText(string):
+    if "'" in string:
+        return '"%s"' % string
+    else:
+        return "'%s'" % string
+
+def pidExists(pid):
+        if type(pid) == str:
+            pid = int(pid)
+        
+        try:
+            os.kill(pid, 0)
+        except OSError:
+            return False
+        else:
+            return True
+
+def getDaemonList():
+    daemon_list = []
+    has_dirty_pid = False
     
+    try:
+        tree = ET.parse('/tmp/RaySession/multi-daemon.xml')
+    except:
+        return []
+    
+    root = tree.getroot()
+    for child in root:
+        daemon_dict = child.attrib
+        keys = daemon_dict.keys()
+        
+        daemon = Daemon()
+        if 'root' in keys:
+            daemon.root = child.attrib['root']
+        if 'session_path' in keys:
+            daemon.session_path = child.attrib['session_path']
+        if 'user' in keys:
+            daemon.user = child.attrib['user']
+            
+            
+        for key in keys:
+            if key == 'root':
+                daemon.root = child.attrib[key]
+            elif key == 'session_path':
+                daemon.session_path = child.attrib[key]
+            elif key == 'user':
+                daemon.user = child.attrib[key]
+            elif key == 'not_default':
+                daemon.not_default = bool(child.attrib[key] == 'true')
+            elif key == 'net_daemon_id':
+                net_daemon_id = child.attrib[key]
+                if net_daemon_id.isdigit():
+                    daemon.net_daemon_id = net_daemon_id
+            elif key == 'pid':
+                pid = child.attrib[key]
+                if pid.isdigit():
+                    daemon.pid = pid
+            elif key == 'port':
+                port = child.attrib[key]
+                if port.isdigit():
+                    daemon.port = port
+        
+        if not (daemon.net_daemon_id
+                and daemon.pid
+                and daemon.port):
+            continue
+        
+        daemon_list.append(daemon)
+    return daemon_list
 
-class OscServerThread(liblo.ServerThread):
+class Daemon:
+    net_daemon_id = 0
+    root = ""
+    session_path = ""
+    pid = 0
+    port = 0
+    user = ""
+    not_default = False
+
+class OscServer(liblo.Server):
     def __init__(self):
-        liblo.ServerThread.__init__(self)
+        liblo.Server.__init__(self)
         self.m_daemon_address = None
-    
-    @liblo.make_method('/reply', None)
-    def replyNone(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
+        self.add_method('/reply', None, self.replyMessage)
+        self.add_method('/error', 'sis', self.errorMessage)
+        self.add_method('/minor_error', 'sis', self.minorErrorMessage)
+        self.add_method('/ray/control/message', 's', self.rayControlMessage)
+        self.add_method('/ray/control/server/announce', 'siisi',
+                        self.rayControlServerAnnounce)
+        self._final_err = -1
+
+    def replyMessage(self, path, args, types, src_addr):
+        if not areTheyAllString(args):
             return
         
         if len(args) >= 1:
@@ -70,16 +160,10 @@ class OscServerThread(liblo.ServerThread):
         
         if reply_path != osc_order_path:
             sys.stdout.write('bug: reply for a wrong path:%s instead of %s\n'
-                             % (ray.highlightText(reply_path), 
-                                ray.highlightText(osc_order_path)))
+                             % (highlightText(reply_path), 
+                                highlightText(osc_order_path)))
             return
         
-        #if reply_path in ('/ray/server/list_sessions',
-                          #'/ray/server/list_session_templates',
-                          #'/ray/session/list_clients'
-                          #'/ray/client/list_properties'):
-            
-                
         if reply_path in ('/ray/server/list_factory_client_templates',
                             '/ray/server/list_user_client_templates'):
             if len(args) >= 2:
@@ -91,7 +175,7 @@ class OscServerThread(liblo.ServerThread):
                 sys.stdout.write(out_message)
                 return
             else:
-                signaler.done.emit(0)
+                self._final_err = 0
                 
         elif reply_path == '/ray/session/list_snapshots':
             if len(args) >= 2:
@@ -103,7 +187,7 @@ class OscServerThread(liblo.ServerThread):
                 sys.stdout.write(out_message)
                 return
             else:
-                signaler.done.emit(0)
+                self._final_err = 0
         
         elif os.path.basename(reply_path).startswith(('list_', 'get_')):
             if len(args) >= 2:
@@ -114,51 +198,41 @@ class OscServerThread(liblo.ServerThread):
                 sys.stdout.write(out_message)
                 return
             else:
-                signaler.done.emit(0)
+                self._final_err = 0
         
         elif len(args) == 2:
             reply_path, message = args
             if os.path.basename(reply_path).startswith(('list_', 'add_')):
                 sys.stdout.write("%s\n" % message)
-            signaler.done.emit(0)
+            self._final_err = 0
     
-    @liblo.make_method('/error', 'sis')
     def errorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
         
         if error_path != osc_order_path:
             sys.stdout.write('bug: error for a wrong path:%s instead of %s\n'
-                             % (ray.highlightText(error_path), 
-                                ray.highlightText(osc_order_path)))
+                             % (highlightText(error_path), 
+                                highlightText(osc_order_path)))
             return
         
         sys.stderr.write('%s\n' % message)
         
-        signaler.done.emit(- err)
+        self._final_err = - err
     
-    @liblo.make_method('/minor_error', 'sis')
     def minorErrorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
         sys.stdout.write('\033[31m%s\033[0m\n' % message)
-        if err == ray.Err.UNKNOWN_MESSAGE:
-            signaler.done.emit(- err)
+        if err == ERR_UNKNOWN_MESSAGE:
+            #signaler.done.emit(- err)
+            self._final_err = -err
     
-    @liblo.make_method('/ray/control/message', 's')
     def rayControlMessage(self, path, args, types, src_addr):
         message = args[0]
-        signaler.message.emit(message)
-        #sys.stdout.write('%s\n' % message)
+        printMessage(message)
         
-    @liblo.make_method('/ray/control/server/announce', 'siisi')
     def rayControlServerAnnounce(self, path, args, types, src_addr):
         self.m_daemon_address = src_addr
-        signaler.daemon_started.emit()
-    
-    #@liblo.make_method(None, None)
-    #def noneMethod(self, path, args, types, src_addr):
-        #types_str = ''
-        #for t in types:
-            #types_str += t
+        daemonStarted()
     
     def setDaemonAddress(self, daemon_port):
         self.m_daemon_address = liblo.Address(daemon_port)
@@ -236,17 +310,6 @@ opions are
 def printMessage(message):
     sys.stdout.write("%s\n" % message)
 
-@pyqtSlot()
-def finished(err_code):
-    global exit_code, exit_initiated
-    if not exit_initiated:
-        exit_initiated = True
-        exit_code = err_code
-        
-        osc_server.toDaemon('/ray/server/controller_disannounce')
-        time.sleep(0.010) # prevent impossibility to stop liblo server
-        QCoreApplication.quit()
-
 def daemonStarted():
     global daemon_announced
     daemon_announced = True
@@ -277,12 +340,13 @@ def autoTypeString(string):
     
     
 if __name__ == '__main__':
-    ray.addSelfBinToPath()
+    addSelfBinToPath()
     
     if len(sys.argv) <= 1:
         printHelp()
         sys.exit(100)
     
+    terminate = False
     operation_type = OPERATION_TYPE_NULL
     client_id = ''
     
@@ -324,22 +388,9 @@ if __name__ == '__main__':
     exit_initiated = False
     daemon_announced = False
     
-    multi_daemon_file = MultiDaemonFile(None, None)
-    daemon_list = multi_daemon_file.getDaemonList()
+    daemon_list = getDaemonList()
     
-    app = QCoreApplication(sys.argv)
-    app.setApplicationName(ray.APP_TITLE)
-    app.setOrganizationName(ray.APP_TITLE)
-    settings = QSettings()
-    
-    signaler = Signaler()
-    signaler.done.connect(finished)
-    signaler.daemon_started.connect(daemonStarted)
-    signaler.message.connect(printMessage)
-    
-    osc_server = OscServerThread()
-    osc_server.start()
-    daemon_list = multi_daemon_file.getDaemonList()
+    osc_server = OscServer()
     
     if operation == 'list_daemons':
         for daemon in daemon_list:
@@ -393,7 +444,7 @@ if __name__ == '__main__':
                         sys.exit(0)
         
         osc_server.setDaemonAddress(daemon_port)
-        signaler.daemon_started.emit()
+        daemonStarted()
     else:
         if operation_type == OPERATION_TYPE_CONTROL:
             if operation == 'stop':
@@ -423,8 +474,17 @@ if __name__ == '__main__':
             printHelp()
             sys.exit(100)
         
-        session_root = settings.value('default_session_root',
-                                      ray.DEFAULT_SESSION_ROOT)
+        #TODO
+        session_root = "%s/Ray Sessions" % os.getenv('HOME')
+        try:
+            settings_file = open("%s/.config/RaySession/RaySession.conf", 'r')
+            contents = settings_file.read()
+            for line in contents.split('\n'):
+                if line.startswith('default_session_root='):
+                    session_root = line.replace('default_session_root', '', 1)
+                    break
+        except:
+            pass
         
         # start a daemon because no one is running
         #daemon_process = subprocess.Popen(
@@ -434,23 +494,22 @@ if __name__ == '__main__':
             ['ray-daemon', '--control-url', str(osc_server.url),
              '--session-root', session_root],
             -1, None, None, subprocess.DEVNULL, subprocess.DEVNULL)
-        QTimer.singleShot(2000, daemonNoAnnounce)
     
     #connect SIGINT and SIGTERM
     signal.signal(signal.SIGINT,  signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
     
-    #needed for SIGINT and SIGTERM
-    timer = QTimer()
-    timer.setInterval(200)
-    timer.timeout.connect(lambda: None)
-    timer.start()
+    exit_code = -1
     
     if not(operation_type == OPERATION_TYPE_CONTROL and operation == 'start'):
-        app.exec()
-        
-    osc_server.stop()
-    del osc_server
-    del app
+        while True:
+            osc_server.recv(50)
+            
+            if terminate:
+                break
+            
+            exit_code = osc_server._final_err
+            if exit_code >= 0:
+                break
     
     sys.exit(exit_code)

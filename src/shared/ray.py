@@ -149,7 +149,6 @@ class Favorite():
         self.icon = icon
         self.factory = factory
         
-
 debug = False
 
 
