@@ -35,6 +35,7 @@ class OscServer(liblo.Server):
         self._wait_for_start = False
         self._wait_for_start_only = False
         self._started_time = 0
+        self._stop_port_list = []
 
     def replyMessage(self, path, args, types, src_addr):
         if not areTheyAllString(args):
@@ -48,6 +49,19 @@ class OscServer(liblo.Server):
         if reply_path == '/ray/server/controller_announce':
             self._wait_for_announce = False
             return
+        
+        elif reply_path == '/ray/server/quit':
+            sys.stderr.write('--- Daemon at port %i stopped. ---\n'
+                             % src_addr.port)
+            if self._stop_port_list:
+                if src_addr.port == self._stop_port_list[0]:
+                    stopped_port = self._stop_port_list.pop(0)
+                    
+                    if self._stop_port_list:
+                        self.stopDaemon(self._stop_port_list[0])
+                    else:
+                        self._final_err = 0
+                    return
         
         if reply_path != self._osc_order_path:
             sys.stdout.write('bug: reply for a wrong path:%s instead of %s\n'
@@ -121,6 +135,9 @@ class OscServer(liblo.Server):
         sys.stdout.write("%s\n" % message)
         
     def rayControlServerAnnounce(self, path, args, types, src_addr):
+        sys.stderr.write('--- Daemon started at port %i ---\n'
+                         % src_addr.port)
+        
         self._wait_for_start = False
         
         if self._wait_for_start_only:
@@ -178,3 +195,14 @@ class OscServer(liblo.Server):
                 return True
         
         return False
+    
+    def stopDaemon(self, port):
+        sys.stderr.write('--- Stopping daemon at port %i ---\n' % port)
+        self.setDaemonAddress(port)
+        self.toDaemon('/ray/server/quit')
+    
+    def stopDaemons(self, stop_port_list):
+        self._stop_port_list = stop_port_list
+        if self._stop_port_list:
+            self.stopDaemon(self._stop_port_list[0])
+        

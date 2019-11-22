@@ -83,15 +83,15 @@ def getDaemonList():
             elif key == 'net_daemon_id':
                 net_daemon_id = child.attrib[key]
                 if net_daemon_id.isdigit():
-                    daemon.net_daemon_id = net_daemon_id
+                    daemon.net_daemon_id = int(net_daemon_id)
             elif key == 'pid':
                 pid = child.attrib[key]
-                if pid.isdigit():
-                    daemon.pid = pid
+                if pid.isdigit() and pidExists(pid):
+                    daemon.pid = int(pid)
             elif key == 'port':
                 port = child.attrib[key]
                 if port.isdigit():
-                    daemon.port = port
+                    daemon.port = int(port)
         
         if not (daemon.net_daemon_id
                 and daemon.pid
@@ -148,6 +148,27 @@ if __name__ == '__main__':
     client_id = ''
     
     args = sys.argv[1:]
+    
+    wanted_port = 0
+    
+    dport = os.getenv('RAY_CONTROL_PORT')
+    if dport and dport.isdigit():
+        wanted_port = dport
+    
+    while args[0].startswith('--'):
+        option = args.pop(0)
+        
+        if option == '--port':
+            if not args:
+                printHelp()
+                sys.exit(100)
+            port = args.pop(0)
+            if not port.isdigit():
+                sys.stderr.write('Invalid value for port: %s . Use digits !'
+                                 % port)
+                sys.exit(100)
+            wanted_port = int(port)
+    
     operation = args.pop(0)
     if operation == 'client':
         if len(args) < 2:
@@ -185,22 +206,26 @@ if __name__ == '__main__':
     daemon_announced = False
     
     daemon_list = getDaemonList()
-    
     daemon_port = 0
+    daemon_started = True
+    
     for daemon in daemon_list:
         if (daemon.user == os.environ['USER']
                 and not daemon.not_default):
-            daemon_port = daemon.port
-            break
+            if not wanted_port or wanted_port == daemon.port:
+                daemon_port = daemon.port
+                break
+    else:
+        daemon_started = False
     
     if operation_type == OPERATION_TYPE_CONTROL:
         if operation == 'start':
-            if daemon_port:
+            if daemon_started:
                 sys.stderr.write('server already started.\n')
                 sys.exit(0)
         
         elif operation == 'stop':
-            if not daemon_port:
+            if not daemon_started:
                 sys.stderr.write('No server started.\n')
                 sys.exit(0)
         
@@ -210,7 +235,7 @@ if __name__ == '__main__':
             sys.exit(0)
         
         else:
-            if not daemon_port:
+            if not daemon_started:
                 sys.stderr.write(
                     'No server started. So impossible to %s\n' % operation)
                 sys.exit(100)
@@ -237,19 +262,23 @@ if __name__ == '__main__':
                         sys.stdout.write('%s\n' % daemon.session_path)
                         sys.exit(0)
                         
-    elif not daemon_port:
+    elif not daemon_started:
+        at_port = ''
+        if daemon_port:
+            at_port = "at port %i" % daemon_port
+            
         if operation_type == OPERATION_TYPE_SERVER:
             if operation == 'quit':
-                sys.stderr.write('No server to quit !\n')
+                sys.stderr.write('No server %s to quit !\n' % at_port)
                 sys.exit(0)
         
         elif operation_type == OPERATION_TYPE_SESSION:
-            sys.stderr.write("No server started. So no session to %s\n"
-                                 % operation)
+            sys.stderr.write("No server started %s. So no session to %s\n"
+                                 % (at_port, operation))
             sys.exit(100)
         elif operation_type == OPERATION_TYPE_CLIENT:
-            sys.stderr.write("No server started. So no client to %s\n"
-                                 % operation)
+            sys.stderr.write("No server started %s. So no client to %s\n"
+                                 % (at_port, operation))
             sys.exit(100)
         else:
             printHelp()
@@ -271,10 +300,25 @@ if __name__ == '__main__':
     import osc_server # see top of the file
     server = osc_server.OscServer()
     server.setOrderPathArgs(osc_order_path, arg_list)
+    daemon_process = None
     
-    if daemon_port:
-        server.setDaemonAddress(daemon_port)
-        server.sendOrderMessage()
+    if daemon_started:
+        if (operation_type == OPERATION_TYPE_CONTROL
+                and operation == 'stop'):
+            daemon_port_list = []
+            
+            if wanted_port:
+                daemon_port_list.append(wanted_port)
+            else:
+                for daemon in daemon_list:
+                    if (daemon.user == os.getenv('USER')
+                            and not daemon.not_default):
+                        daemon_port_list.append(daemon.port)
+            
+            server.stopDaemons(daemon_port_list)
+        else:
+            server.setDaemonAddress(daemon_port)
+            server.sendOrderMessage()
     else:        
         session_root = "%s/Ray Sessions" % os.getenv('HOME')
         try:
@@ -289,9 +333,14 @@ if __name__ == '__main__':
         
         # start a daemon because no one is running
         import subprocess # see top of the file
-        daemon_process = subprocess.Popen(
-            ['ray-daemon', '--control-url', str(server.url),
-             '--session-root', session_root],
+        process_args = ['ray-daemon', '--control-url', str(server.url),
+                        '--session-root', session_root]
+        
+        if wanted_port:
+            process_args.append('--osc-port')
+            process_args.append(str(wanted_port))
+        
+        daemon_process = subprocess.Popen(process_args,
             -1, None, None, subprocess.DEVNULL, subprocess.DEVNULL)
         #daemon_process = subprocess.Popen(
             #['ray-daemon', '--control-url', '192.168.50.1',
@@ -322,6 +371,11 @@ if __name__ == '__main__':
         
         if server.isWaitingStartForALong():
             exit_code = 103
+            break
+        
+        if daemon_process and not daemon_process.poll() is None:
+            sys.stderr.write('daemon terminates, sorry\n')
+            exit_code = 104
             break
     
     sys.exit(exit_code)
