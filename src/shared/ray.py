@@ -108,6 +108,7 @@ class Err:
     UNKNOWN_MESSAGE = -18
     ABORT_ORDERED = -19
     COPY_ABORTED = -20
+    # check control/osc_server.py in case of changes !!!
 
 
 class Command:

@@ -367,6 +367,7 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/controller_announce', '')
     def rayServerControllerAnnounce(self, path, args, types, src_addr):
         self.controller_list.append(src_addr)
+        self.send(src_addr, '/reply', path, 'announced')
     
     @ray_method('/ray/server/controller_disannounce', '')
     def rayServerControllerDisannounce(self, path, args, types, src_addr):

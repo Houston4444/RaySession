@@ -1,0 +1,59 @@
+control RaySession daemons
+opions are
+    start
+        starts a daemon if there is no daemon started
+    stop
+        stops the default daemon
+    list_daemons
+        list running daemon osc ports
+    get_port
+        get daemon osc port
+    get_root
+        get daemon root directory for sessions
+    get_pid
+        get deamon pid
+
+    new_session NEW_SESSION_NAME [SESSION_TEMPLATE]
+        Creates and loads NEW_SESSION_NAME, optionnally with SESSION_TEMPLATE
+    open_session SESSION_NAME [SESSION_TEMPLATE]
+        Loads SESSION_NAME (create it if it does not exists
+                            optionnally with SESSION_TEMPLATE)
+    list_sessions
+        Lists available sessions in sessions root directory
+    quit
+        Aborts current session (if any) and stop the daemon
+    change_root NEW_ROOT_FOLDER
+        Changes root directory for the sessions to NEW_ROOT_FOLDER
+    list_session_templates
+        Lists session templates
+    list_user_client_templates
+        Lists user client templates
+    list_factory_client_templates
+        Lists factory client templates
+    remove_client_template CLIENT_TEMPLATE
+        Removes user CLIENT_TEMPLATE
+        
+    save
+        Saves the current session
+    save_as_template SESSION_TEMPLATE_NAME
+        Saves the current session as template
+    take_snapshot SNAPSHOT_NAME
+        Takes a snapshot of the current session
+    close
+        Saves and Closes the current session
+    abort
+        Aborts current session
+    duplicate NEW_SESSION_NAME
+        Saves, duplicates the current session and load the new one
+    open_snapshot SNAPSHOT
+        Saves, close the session, back to SNAPSHOT and re-open it
+    rename NEW_SESSION_NAME
+        renames the current session to NEW_SESSION_NAME
+    add_executable EXECUTABLE
+        Adds a client to the current session
+    add_proxy
+        Adds a proxy client to the current session
+    add_client_template CLIENT_TEMPLATE
+        Adds a client to the current session from CLIENT_TEMPLATE
+    list_snapshots
+        Lists all snapshots of the current session 
