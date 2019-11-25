@@ -23,7 +23,7 @@ if QT_VERSION < (5, 6):
         "WARNING: You are using a version of QT older than 5.6.\n"
         + "You won't be warned if a process can't be launch.\n")
     
-VERSION = "0.8.2"
+VERSION = "0.8.3"
 
 APP_TITLE = 'RaySession'
 
