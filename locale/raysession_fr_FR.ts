@@ -89,7 +89,7 @@
     <message>
         <location filename="../src/gui/ui_client_slot.py" line="188"/>
         <source>Save As Application Template</source>
-        <translation>Sauvegarder Comme Modèle d&apos;Application</translation>
+        <translation>Sauvegarder comme modèle d&apos;application</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_client_slot.py" line="189"/>
@@ -317,7 +317,7 @@
     <message>
         <location filename="../src/gui/ui_snapshot_progress.py" line="55"/>
         <source>Abort Copy ?</source>
-        <translation>Abandonner la Copie ?</translation>
+        <translation>Abandonner la copie ?</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_abort_copy.py" line="56"/>
@@ -332,7 +332,7 @@
     <message>
         <location filename="../src/gui/ui_daemon_url.py" line="44"/>
         <source>Daemon URL</source>
-        <translation>URL du Démon</translation>
+        <translation>URL du démon</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_daemon_url.py" line="45"/>
@@ -392,7 +392,7 @@
     <message>
         <location filename="../src/gui/ui_client_properties.py" line="259"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit here what types of files inside the client folders&lt;br/&gt;should be ignored in session snapshots.&lt;/p&gt;&lt;p&gt;Indexed files will remain so.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Editez ici quels types de fichiers dans les dossiers du client&lt;br/&gt;doivent être ignorés dans les clichés de la session.&lt;/p&gt;&lt;p&gt;Les fichiers déjà indexés le resteront.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Éditez ici quels types de fichiers dans les dossiers du client&lt;br/&gt;doivent être ignorés dans les clichés de la session.&lt;/p&gt;&lt;p&gt;Les fichiers déjà indexés le resteront.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_client_properties.py" line="258"/>
@@ -402,12 +402,12 @@
     <message>
         <location filename="../src/gui/ui_snapshot_name.py" line="58"/>
         <source>Name Snapshot</source>
-        <translation>Nommer le Cliché</translation>
+        <translation>Nommer le cliché</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_snapshot_name.py" line="59"/>
         <source>Snapshot Name :</source>
-        <translation>Nom du Cliché :</translation>
+        <translation>Nom du cliché :</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_snapshot_progress.py" line="56"/>
@@ -432,7 +432,7 @@
     <message>
         <location filename="../src/gui/ui_list_snapshots.py" line="63"/>
         <source>Take a snapshot now !</source>
-        <translation>Prendre un cliché Maintenant !</translation>
+        <translation>Prendre un cliché maintenant !</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_list_snapshots.py" line="64"/>
@@ -467,7 +467,7 @@
     <message>
         <location filename="../src/gui/ui_snapshot_name.py" line="61"/>
         <source>Save &amp;&amp; Snapshot</source>
-        <translation>Sauvegarde &amp;&amp; Cliché</translation>
+        <translation>Sauvegarde &amp;&amp; cliché</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_snapshot_name.py" line="62"/>
@@ -482,7 +482,7 @@
     <message>
         <location filename="../src/gui/ui_donations.py" line="41"/>
         <source>Donations</source>
-        <translation>Donations</translation>
+        <translation>Dons</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_donations.py" line="42"/>
@@ -492,7 +492,7 @@
     <message>
         <location filename="../src/gui/ui_remove_template.py" line="45"/>
         <source>Remove Template ?</source>
-        <translation>Supprimer le Modèle ?</translation>
+        <translation>Supprimer le modèle ?</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_remove_template.py" line="46"/>
@@ -517,7 +517,7 @@
     <message>
         <location filename="../src/gui/ui_waiting_close_user.py" line="71"/>
         <source>Close clients yourself !</source>
-        <translation>Fermez les client vous-même !</translation>
+        <translation>Fermez les clients vous-même !</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_waiting_close_user.py" line="72"/>
@@ -651,7 +651,7 @@
     <message>
         <location filename="../src/gui/ui_new_executable.py" line="89"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Prefix Mode determines the pattern of the client files.&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Session Name (Default) :&lt;br/&gt;The client files names start with the session name.&lt;/li&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Client Name :&lt;br/&gt;The client files names start with the client name given by the client itself&lt;br/&gt;(as in Non Session Manager).&lt;/li&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Custom :&lt;br/&gt;The client files names start with the prefix written below.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Le mode de préfixe détermine le motif des noms de fichier du client.&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Nom de La Session (Par défaut) :&lt;br/&gt;Les noms de fichier du client commencent par le nom de la session.&lt;/li&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Nom du client :&lt;br/&gt;Les noms de fichier du client commencent par le nom de client donné par le client lui même&lt;br/&gt;(comme dans Non Session Manager).&lt;/li&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Personnalisé :&lt;br/&gt;Les noms de fichier du client commencent par le préfixe écrit ci-dessous.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Le mode de préfixe détermine le motif des noms de fichier du client.&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Nom de la session (par défaut) :&lt;br/&gt;Les noms de fichier du client commencent par le nom de la session.&lt;/li&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Nom du client :&lt;br/&gt;Les noms de fichier du client commencent par le nom de client donné par le client lui même&lt;br/&gt;(comme dans Non Session Manager).&lt;/li&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Personnalisé :&lt;br/&gt;Les noms de fichier du client commencent par le préfixe écrit ci-dessous.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_new_executable.py" line="90"/>
@@ -664,7 +664,7 @@
     <message>
         <location filename="../src/gui/ui_new_session.py" line="107"/>
         <source>New Session</source>
-        <translation>Nouvelle Session</translation>
+        <translation>Nouvelle session</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_new_session.py" line="99"/>
@@ -694,12 +694,12 @@
     <message>
         <location filename="../src/gui/ui_new_session.py" line="108"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Sessions Folder :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Dossier des Sessions :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Dossier des sessions :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_new_session.py" line="112"/>
         <source>Sub Folder :</source>
-        <translation>Sous Dossier :</translation>
+        <translation>Sous-dossier :</translation>
     </message>
 </context>
 <context>
@@ -732,7 +732,7 @@
     <message>
         <location filename="../src/gui/ui_open_session.py" line="77"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Sessions Folder :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Dossier des Sessions :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Dossier des sessions :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_open_session.py" line="78"/>
@@ -775,7 +775,7 @@
     <message>
         <location filename="../resources/ui/snapshot_and_save.ui" line="38"/>
         <source>Save &amp;&amp; Snapshot</source>
-        <translation>Sauvegarde &amp;&amp; Cliché</translation>
+        <translation>Sauvegarde &amp;&amp; cliché</translation>
     </message>
     <message>
         <location filename="../resources/ui/snapshot_and_save.ui" line="49"/>
@@ -788,7 +788,7 @@
     <message>
         <location filename="../src/gui/ui_save_template_session.py" line="73"/>
         <source>New Template</source>
-        <translation>Nouveau Modèle</translation>
+        <translation>Nouveau modèle</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_save_template_session.py" line="74"/>
@@ -816,7 +816,7 @@
     <message>
         <location filename="../src/gui/child_dialogs.py" line="388"/>
         <source>Duplicate Session</source>
-        <translation>Dupliquer La Session</translation>
+        <translation>Dupliquer la session</translation>
     </message>
 </context>
 <context>
@@ -834,7 +834,7 @@
     <message>
         <location filename="../src/gui/ui_template_slot.py" line="53"/>
         <source>Template Name</source>
-        <translation>Nom du Modèle</translation>
+        <translation>Nom du modèle</translation>
     </message>
 </context>
 <context>
@@ -847,12 +847,12 @@
     <message>
         <location filename="../src/daemon/ray-daemon" line="116"/>
         <source>Good Bye ! Clients are still running.</source>
-        <translation type="obsolete">Au Revoir ! Les clients tournent encore.</translation>
+        <translation type="obsolete">Au revoir ! Les clients tournent encore.</translation>
     </message>
     <message>
         <location filename="../src/daemon/ray-daemon" line="120"/>
         <source>Good Bye !</source>
-        <translation type="obsolete">Au Revoir !</translation>
+        <translation type="obsolete">Au revoir !</translation>
     </message>
     <message>
         <location filename="../src/ray-daemon" line="533"/>
@@ -1173,7 +1173,7 @@
     <message>
         <location filename="../src/gui/ui_raysession.py" line="482"/>
         <source>Ctrl+Shift+W</source>
-        <translation>Ctrl+MàJ+W</translation>
+        <translation>Ctrl+Maj+W</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_raysession.py" line="483"/>
@@ -1223,7 +1223,7 @@
     <message>
         <location filename="../src/gui/ui_raysession.py" line="435"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save &amp;amp; Close Session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sauvegarder &amp;amp; et Fermer la Session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sauvegarder &amp;amp; et fermer la session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="14"/>
@@ -1298,12 +1298,12 @@
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="189"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some (very few) programs may respond to a specific Unix signal by somehow saving their state.&lt;/p&gt;&lt;p&gt;If &apos;Save Signal&apos; is set to something other than &apos;None&apos;, then Ray Proxy will deliver the specified signal to the proxied process upon an NSM &apos;Save&apos; event.&lt;/p&gt;&lt;p&gt;If program is compatible with LASH/LADISH, save signal is SIGUSR1.&lt;/p&gt;&lt;p&gt;Most programs will treat these signals just like SIGTERM and die.&lt;/p&gt;&lt;p&gt;You have been warned.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Quelques programmes (vraiment très peu) peuvent répondre à un signal spécifiquement Unix pour sauvegarder leur état.&lt;/p&gt;&lt;p&gt;Si le signal de sauvegarde est réglé sur autre chose que &apos;None&apos;, alors Ray-Proxy délivrera le signal choisi au processus lors de la sauvegarde du proxy.&lt;/p&gt;&lt;p&gt;Si le programme est compatible LASH/LADISH, le signal de sauvegarde est SIGUSR1&lt;/p&gt;&lt;p&gt;La plupart des programmes vont traiter ce signal comme un SIGTERM et s&apos;éteindre.&lt;/p&gt;&lt;p&gt;Vous êtes prévenus !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Quelques programmes (vraiment très peu) peuvent répondre à un signal spécifiquement Unix pour sauvegarder leur état.&lt;/p&gt;&lt;p&gt;Si le signal de sauvegarde est réglé sur autre chose que &apos;Aucun&apos;, alors Ray-Proxy délivrera le signal choisi au processus lors de la sauvegarde du proxy.&lt;/p&gt;&lt;p&gt;Si le programme est compatible LASH/LADISH, le signal de sauvegarde est SIGUSR1&lt;/p&gt;&lt;p&gt;La plupart des programmes vont traiter ce signal comme un SIGTERM et s&apos;éteindre.&lt;/p&gt;&lt;p&gt;Vous êtes prévenus !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_raysession.py" line="432"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save Session as Template&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sauvegarder la Session Comme Modèle&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sauvegarder la session comme modèle&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_raysession.py" line="443"/>
@@ -1413,7 +1413,7 @@
     <message>
         <location filename="../resources/ui/raysession.ui" line="1025"/>
         <source>Desktops Memory (requires wmctrl)</source>
-        <translation type="obsolete">Mémoire des Bureaux (requiert wmctrl)</translation>
+        <translation type="obsolete">Mémoire des bureaux (requiert wmctrl)</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_raysession.py" line="446"/>
@@ -1428,22 +1428,22 @@
     <message>
         <location filename="../src/gui/ui_raysession.py" line="503"/>
         <source>&amp;Desktops Memory (requires wmctrl)</source>
-        <translation>Mémoire des &amp;Bureaux (nécessite wmctrl)</translation>
+        <translation>Mémoire des &amp;bureaux (nécessite wmctrl)</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_raysession.py" line="504"/>
         <source>Return To A &amp;Previous State (requires git)</source>
-        <translation>Retourner à un état &amp;Précédent (nécessite git)</translation>
+        <translation>Retourner à un état &amp;précédent (nécessite git)</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_raysession.py" line="505"/>
         <source>Auto Snapshot At Save (requires git)</source>
-        <translation>Cliché Automatique à la Sauvegarde (nécessite git)</translation>
+        <translation>Cliché automatique à la sauvegarde (nécessite git)</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_raysession.py" line="506"/>
         <source>Auto Snapshot at Save (requires git)</source>
-        <translation>Cliché Automatique à la Sauvegarde (nécessite git)</translation>
+        <translation>Cliché automatique à la sauvegarde (nécessite git)</translation>
     </message>
     <message>
         <location filename="../resources/ui/proxy_gui.ui" line="208"/>
@@ -1458,7 +1458,7 @@
     <message>
         <location filename="../src/gui/ui_raysession.py" line="440"/>
         <source>Favorite Applications</source>
-        <translation>Applications Favorites</translation>
+        <translation>Applications favorites</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_raysession.py" line="507"/>
@@ -1471,7 +1471,7 @@
     <message>
         <location filename="../src/daemon/session.py" line="770"/>
         <source>Snapshot aborted</source>
-        <translation>Cliché Abandonné</translation>
+        <translation>Cliché abandonné</translation>
     </message>
 </context>
 <context>
@@ -1518,21 +1518,21 @@
         <location filename="../src/daemon/session.py" line="1624"/>
         <source>command crashes:
 %s</source>
-        <translation>la commande a planté:
+        <translation>la commande a planté :
 %s</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.py" line="1627"/>
         <source>command exit with an error code:
 %s</source>
-        <translation>la commande s&apos;est terminée avec un code d&apos;erreur:
+        <translation>la commande s&apos;est terminée avec un code d&apos;erreur :
 %s</translation>
     </message>
     <message>
         <location filename="../src/daemon/session.py" line="1630"/>
         <source>error reading file:
 %s</source>
-        <translation>erreur de lecture du fichier:
+        <translation>erreur de lecture du fichier :
 %s</translation>
     </message>
 </context>
@@ -1541,12 +1541,12 @@
     <message>
         <location filename="../src/gui/main_window.py" line="254"/>
         <source>Desktops Memory</source>
-        <translation>Mémoire des Bureaux</translation>
+        <translation>Mémoire des bureaux</translation>
     </message>
     <message>
         <location filename="../src/gui/main_window.py" line="262"/>
         <source>Auto Snapshot at Save</source>
-        <translation>Cliché Automatique à la Sauvegarde</translation>
+        <translation>Cliché automatique à la sauvegarde</translation>
     </message>
 </context>
 <context>
@@ -1562,7 +1562,7 @@
     <message>
         <location filename="../src/gui/nsm_child.py" line="34"/>
         <source>Child Session</source>
-        <translation>Sous Session</translation>
+        <translation>Session enfant</translation>
     </message>
 </context>
 <context>
@@ -1670,7 +1670,7 @@
     <message>
         <location filename="../src/daemon/ray-daemon.py" line="52"/>
         <source>Ray Network Sessions</source>
-        <translation>Ray Sessions Reseau</translation>
+        <translation>Sessions réseau Ray</translation>
     </message>
     <message>
         <location filename="../src/daemon/ray-daemon.py" line="84"/>
@@ -1812,7 +1812,7 @@ existe déjà</translation>
     <message>
         <location filename="../src/gui/nsm_child.py" line="99"/>
         <source>Network Session</source>
-        <translation>Session Réseau</translation>
+        <translation>Session réseau</translation>
     </message>
 </context>
 <context>
@@ -1833,7 +1833,7 @@ existe déjà</translation>
     <message>
         <location filename="../src/gui/child_dialogs.py" line="877"/>
         <source>Client Name</source>
-        <translation>Nom du Client</translation>
+        <translation>Nom du client</translation>
     </message>
     <message>
         <location filename="../src/gui/child_dialogs.py" line="879"/>
@@ -1862,7 +1862,7 @@ existe déjà</translation>
     <message>
         <location filename="../src/gui/main_window.py" line="381"/>
         <source>Rename Session</source>
-        <translation>Renommer la Session</translation>
+        <translation>Renommer la session</translation>
     </message>
     <message>
         <location filename="../src/gui/main_window.py" line="381"/>
@@ -2030,7 +2030,7 @@ Voulez-vous l&apos;écraser ?</translation>
     <message>
         <location filename="../src/gui/child_dialogs.py" line="1071"/>
         <source>&lt;p align=&quot;left&quot;&gt;To run a network session,&lt;br&gt;open a terminal on another computer of this network.&lt;br&gt;Launch ray-daemon on port 1234 (for example)&lt;br&gt;by typing the command :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Then paste below the first url&lt;br&gt;that ray-daemon gives you at startup.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</source>
-        <translation>&lt;p align=&quot;left&quot;&gt;Pour lancer une session réseau,&lt;br&gt;ouvrez un terminal sur un autre ordinateur de ce réseau.&lt;br&gt;Launcez ray-daemon sur le port 1234 (par exemple)&lt;br&gt;en tapant la commande suivante :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Ensuite collez ci-dessous la première url&lt;br&gt;que ray-daemon affiche au démarrage.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p align=&quot;left&quot;&gt;Pour lancer une session réseau,&lt;br&gt;ouvrez un terminal sur un autre ordinateur de ce réseau.&lt;br&gt;Lancez ray-daemon sur le port 1234 (par exemple)&lt;br&gt;en tapant la commande suivante :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Ensuite collez ci-dessous la première url&lt;br&gt;que ray-daemon affiche au démarrage.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
