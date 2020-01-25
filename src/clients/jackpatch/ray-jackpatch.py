@@ -45,9 +45,9 @@ class ConnectTimer(QObject):
     def start(self):
         self.timer.start()
         
-def portExists(name, mode, port_type):
+def portExists(name, mode):
     for port in port_list:
-        if port.name == name and port.mode == mode and port.type == port_type:
+        if port.name == name and port.mode == mode:
             return True
     return False
 
@@ -388,10 +388,8 @@ def saveFile():
     delete_list = []
     
     for i in range(len(saved_connections)):
-        if (portExists(saved_connections[i][0],
-                       PORT_MODE_OUTPUT, PORT_TYPE_AUDIO)
-                and portExists(saved_connections[i][1],
-                               PORT_MODE_INPUT, PORT_TYPE_AUDIO)):
+        if (portExists(saved_connections[i][0], PORT_MODE_OUTPUT)
+                and portExists(saved_connections[i][1], PORT_MODE_INPUT)):
             if not saved_connections[i] in connection_list:
                 delete_list.append(i)
                 
