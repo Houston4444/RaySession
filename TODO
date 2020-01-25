@@ -13,11 +13,10 @@ konv# RaySession TODO
     prevent daemonCrash window at clean daemon stop
     
     find something better than check executable_path='ray-network'
-    voir le souci git tag
+    voir le souci git tag ~ à priori c'est fait
     voir ce qu'on fait avec les aborted
     nsm_locked dans le multi-daemons.xml
     
-    option stop devrait stopper tous les démons
-    option --port
     option --hidden
-  
+    
+    proxy sans qt (pour légèreté), l'IGU totalement intégrée à RS, configurable même si proxy arrêté (si faisable).
