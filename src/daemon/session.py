@@ -2603,7 +2603,7 @@ class SignaledSession(OperatingSession):
             if client_id:
                 if not client_id.isalnum():
                     self.sendError(ray.Err.CREATE_FAILED,
-                            _translate("client_id %s is not alphanumeric")
+                            _translate("error", "client_id %s is not alphanumeric")
                                 % client_id )
                     return
                 
@@ -2611,7 +2611,7 @@ class SignaledSession(OperatingSession):
                 for client in self.clients + self.removed_clients:
                     if client.client_id == client_id:
                         self.sendError(ray.Err.CREATE_FAILED,
-                            _translate("client_id %s is already used")
+                            _translate("error", "client_id %s is already used")
                                 % client_id )
                         return
         
