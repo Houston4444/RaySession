@@ -2601,7 +2601,7 @@ class SignaledSession(OperatingSession):
                 prefix_mode = ray.PrefixMode.SESSION_NAME
             
             if client_id:
-                if not client_id.isalnum():
+                if not client_id.replace('_', '').isalnum():
                     self.sendError(ray.Err.CREATE_FAILED,
                             _translate("error", "client_id %s is not alphanumeric")
                                 % client_id )
