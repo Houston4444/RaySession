@@ -749,7 +749,8 @@ class Client(ServerSender):
         self.pending_command = ray.Command.OPEN
         self.setStatus(ray.ClientStatus.SWITCH)
             
-        self.sendGui("/ray/gui/client/switch", old_client_id, self.client_id)
+        #self.sendGui("/ray/gui/client/switch", old_client_id, self.client_id)
+        self.sendGuiClientProperties()
     
     def sendGuiClientProperties(self, removed=False):
         ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'

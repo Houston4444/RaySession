@@ -253,13 +253,6 @@ class SignaledSession(Session):
             
         self._main_win.clientStatusChanged(client_id, status)
     
-    def _ray_gui_client_switch(self, path, args):
-        old_client_id, new_client_id = args
-        
-        client = self.getClient(old_client_id)
-        if client:
-            client.switch(new_client_id)
-    
     def _ray_gui_client_progress(self, path, args):
         client_id, progress = args
         

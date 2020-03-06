@@ -74,10 +74,6 @@ class Client(QObject):
     def setProgress(self, progress):
         self.widget.setProgress(progress)
 
-    def switch(self, new_client_id):
-        self.client_id = new_client_id
-        self.widget.updateClientData()
-
     def allowKill(self):
         self.widget.allowKill()
 
