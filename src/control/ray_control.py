@@ -14,7 +14,7 @@ OPERATION_TYPE_SESSION = 3
 OPERATION_TYPE_CLIENT = 4
 
 control_operations = ('start', 'stop', 'list_daemons', 'get_root', 
-                      'get_port', 'get_pid', 'get_session_path')
+                      'get_port', 'get_port_gui_free', 'get_pid', 'get_session_path')
 
 server_operations = (
     'quit', 'change_root', 'list_session_templates', 
@@ -79,19 +79,24 @@ def getDaemonList():
             elif key == 'user':
                 daemon.user = child.attrib[key]
             elif key == 'not_default':
-                daemon.not_default = bool(child.attrib[key] == 'true')
+                daemon.not_default = bool(child.attrib[key] == '1')
             elif key == 'net_daemon_id':
                 net_daemon_id = child.attrib[key]
                 if net_daemon_id.isdigit():
                     daemon.net_daemon_id = int(net_daemon_id)
+                    
             elif key == 'pid':
                 pid = child.attrib[key]
                 if pid.isdigit() and pidExists(pid):
                     daemon.pid = int(pid)
+                    
             elif key == 'port':
                 port = child.attrib[key]
                 if port.isdigit():
                     daemon.port = int(port)
+                    
+            elif key == 'has_local_gui':
+                daemon.has_local_gui = bool(child.attrib[key] == '1')
         
         if not (daemon.net_daemon_id
                 and daemon.pid
@@ -109,6 +114,7 @@ class Daemon:
     port = 0
     user = ""
     not_default = False
+    has_local_gui = False
 
 
 def printHelp(stdout=False):
@@ -249,6 +255,16 @@ if __name__ == '__main__':
             elif operation == 'get_port':
                 sys.stdout.write("%s\n" % str(daemon_port))
                 sys.exit(0)
+            
+            elif operation == 'get_port_gui_free':
+                for daemon in daemon_list:
+                    if (daemon.user == os.environ['USER']
+                            and not daemon.not_default
+                            and not daemon.has_local_gui):
+                        sys.stdout.write('%s\n' % daemon.port)
+                        break
+                sys.exit(0)
+                    
             
             elif operation == 'get_root':
                 for daemon in daemon_list:

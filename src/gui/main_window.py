@@ -119,7 +119,7 @@ class MainWindow(QMainWindow):
         self.ui.lineEditServerStatus.statusPressed.connect(
             self.statusBarPressed)
         self.ui.stackedWidgetSessionName.name_changed.connect(
-            self.renameSession)
+            self.renameSessionConditionnaly)
         
         # set control menu
         self.controlMenu = QMenu()
@@ -568,7 +568,7 @@ class MainWindow(QMainWindow):
 
         self.toDaemon('/ray/server/abort_copy')
 
-    def renameSession(self, new_session_name):
+    def renameSessionConditionnaly(self, new_session_name):
         self.toDaemon('/ray/session/rename', new_session_name)
         
     def addFavorite(self, name, icon_name, factory):

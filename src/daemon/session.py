@@ -1260,7 +1260,6 @@ class OperatingSession(Session):
         self.forgetOscArgs()
     
     def load(self, session_full_name, open_off=False):
-        print('firjifjriopenoff', open_off)
         #terminate or switch clients
         spath = self.root + '/' + session_full_name
         if session_full_name.startswith('/'):

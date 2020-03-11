@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>376</width>
+    <width>564</width>
     <height>159</height>
    </rect>
   </property>
@@ -38,7 +38,8 @@
         <string>Save &amp;&amp; Quit</string>
        </property>
        <property name="icon">
-        <iconset theme="document-save"/>
+        <iconset theme="document-save">
+         <normaloff>.</normaloff>.</iconset>
        </property>
       </widget>
      </item>
@@ -48,7 +49,18 @@
         <string>Quit Without Saving</string>
        </property>
        <property name="icon">
-        <iconset theme="dialog-close"/>
+        <iconset theme="dialog-close">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonDaemon">
+       <property name="text">
+        <string>Keep Daemon Running</string>
+       </property>
+       <property name="icon">
+        <iconset theme="daemon"/>
        </property>
       </widget>
      </item>
@@ -58,7 +70,8 @@
         <string>Cancel</string>
        </property>
        <property name="icon">
-        <iconset theme="dialog-cancel"/>
+        <iconset theme="dialog-cancel">
+         <normaloff>.</normaloff>.</iconset>
        </property>
       </widget>
      </item>

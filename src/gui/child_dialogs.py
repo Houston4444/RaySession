@@ -4,7 +4,7 @@ import time
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QTreeWidgetItem,
     QCompleter, QMessageBox, QFileDialog, QWidget)
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
 from PyQt5.QtCore import Qt, QTimer
 
 import ray
@@ -40,8 +40,7 @@ class ChildDialog(QDialog):
         self._session = parent._session
         self._signaler = self._session._signaler
 
-        daemon_manager = self._session._daemon_manager
-        self.daemon_launched_before = daemon_manager.launched_before
+        self._daemon_manager = self._session._daemon_manager
 
         self._signaler.server_status_changed.connect(self.serverStatusChanged)
         self._signaler.server_copying.connect(self.serverCopying)
@@ -200,8 +199,8 @@ class OpenSessionDialog(ChildDialog):
         self._signaler.root_changed.connect(self.rootChanged)
 
         self.toDaemon('/ray/server/list_sessions', 0)
-
-        if self.daemon_launched_before:
+        
+        if not self._daemon_manager.is_local:
             self.ui.toolButtonFolder.setVisible(False)
             self.ui.currentSessionsFolder.setVisible(False)
             self.ui.labelSessionsFolder.setVisible(False)
@@ -388,7 +387,7 @@ class NewSessionDialog(ChildDialog):
         else:
             self.toDaemon('/ray/server/list_session_templates')
 
-        if self.daemon_launched_before:
+        if not self._daemon_manager.is_local:
             self.ui.toolButtonFolder.setVisible(False)
             self.ui.currentSessionsFolder.setVisible(False)
             self.ui.labelSessionsFolder.setVisible(False)
@@ -815,7 +814,8 @@ class QuitAppDialog(ChildDialog):
         self.ui.pushButtonCancel.setFocus(Qt.OtherFocusReason)
         self.ui.pushButtonSaveQuit.clicked.connect(self.closeSession)
         self.ui.pushButtonQuitNoSave.clicked.connect(self.abortSession)
-
+        self.ui.pushButtonDaemon.clicked.connect(self.leaveDaemonRunning)
+        
         original_text = self.ui.labelExecutable.text()
         self.ui.labelExecutable.setText(
             original_text %
@@ -839,6 +839,9 @@ class QuitAppDialog(ChildDialog):
 
     def abortSession(self):
         self.toDaemon('/ray/session/abort')
+        
+    def leaveDaemonRunning(self):
+        QGuiApplication.quit()
 
 
 class AboutRaySessionDialog(ChildDialog):

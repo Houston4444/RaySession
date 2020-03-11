@@ -76,7 +76,6 @@ class ClientCommunicating(liblo.ServerThread):
             # this reply is only used here for reply from net_daemon
             # it directly resend its infos
             # to the last addr that asked session list
-            print('repelly from net daemonnn_____')
             if self.list_asker_addr:
                 self.send(self.list_asker_addr, path, *args)
             return False
@@ -707,7 +706,6 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/session/duplicate_only', 'sss')
     def nsmServerDuplicateOnly(self, path, args, types, src_addr):
-        print('zyefb')
         self.send(src_addr, '/ray/net_daemon/duplicate_state', 0)
     
     @ray_method('/ray/session/open_snapshot', 's')
@@ -1242,3 +1240,10 @@ class OscServerThread(ClientCommunicating):
     def sendControllerMessage(self, message):
         for ctrl_addr in self.controller_list:
             self.send(ctrl_addr, '/ray/control/message', message)
+            
+    def hasLocalGui(self):
+        for gui_addr in self.gui_list:
+            if ray.areOnSameMachine(self.url, gui_addr.url):
+                return True
+            
+        return False

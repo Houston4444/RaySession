@@ -224,7 +224,7 @@ class GUIServerThread(liblo.ServerThread):
         NSM_URL = os.getenv('NSM_URL')
         if not NSM_URL:
             NSM_URL = ""
-
+        
         self.send(self._daemon_manager.address, '/ray/server/gui_announce',
                   ray.VERSION, int(CommandLineArgs.under_nsm),
                   NSM_URL, 0,

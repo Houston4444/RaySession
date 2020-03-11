@@ -77,6 +77,8 @@ class MultiDaemonFile(object):
         element.setAttribute('pid', os.getpid())
         element.setAttribute('port', self.server.port)
         element.setAttribute('user', os.getenv('USER'))
+        element.setAttribute('not_default', int(self.server.is_nsm_locked))
+        element.setAttribute('has_local_gui', int(self.server.hasLocalGui()))
     
     def update(self):
         has_dirty_pid = False

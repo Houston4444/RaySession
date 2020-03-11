@@ -115,9 +115,6 @@ class DaemonManager(QObject):
 
         if (CommandLineArgs.net_session_root
                 and session_root != CommandLineArgs.net_session_root):
-            print('armoejr')
-            print(session_root)
-            print(CommandLineArgs.net_session_root)
             self._signaler.daemon_url_request.emit(
                 ErrDaemon.WRONG_ROOT, self.url)
             self.disannounce(src_addr)
@@ -190,6 +187,23 @@ class DaemonManager(QObject):
         if self.launched_before:
             self.callDaemon()
             return
+        
+        ray_control_process = QProcess()
+        ray_control_process.start("ray_control", ['get_port_gui_free'])
+        ray_control_process.waitForFinished(500)
+        
+        if ray_control_process.exitCode() == 0:
+            port_str_lines = ray_control_process.readAllStandardOutput().data().decode('utf-8')
+            port_str = port_str_lines.partition('\n')[0]
+            
+            if port_str and port_str.isdigit():
+                self.address = Address(int(port_str))
+                self.port = self.address.port
+                self.url = self.address.url
+                self.launched_before = True
+                self.is_local = True
+                self.callDaemon()
+                return
 
         server = GUIServerThread.instance()
         if not server:
@@ -214,20 +228,24 @@ class DaemonManager(QObject):
             arguments.append('--config-dir')
             arguments.append(CommandLineArgs.config_dir)
 
-        self.process.start('ray-daemon', arguments)
+        self.process.startDetached('ray-daemon', arguments)
         #self.process.start('konsole', ['-e', 'ray-daemon'] + arguments)
 
     def stop(self):
         if self.launched_before:
             self.disannounce()
-            QApplication.quit()
+            QTimer.singleShot(10, QApplication.quit)
             return
-
-        if self.processIsRunning():
-            if not self.stopped_yet:
-                self.process.terminate()
-                self.stopped_yet = True
-                QTimer.singleShot(5000, self.notEndedAfterWait)
+        
+        server = GUIServerThread.instance()
+        server.toDaemon('/ray/server/quit')
+        QTimer.singleShot(10, QApplication.quit)
+        
+        #if self.processIsRunning():
+            #if not self.stopped_yet:
+                #self.process.terminate()
+                #self.stopped_yet = True
+                #QTimer.singleShot(5000, self.notEndedAfterWait)
 
     def notEndedAfterWait(self):
         sys.stderr.write('ray-daemon is still running, sorry !\n')
