@@ -841,7 +841,8 @@ class QuitAppDialog(ChildDialog):
         self.toDaemon('/ray/session/abort')
         
     def leaveDaemonRunning(self):
-        QGuiApplication.quit()
+        self._daemon_manager.disannounce()
+        QTimer.singleShot(10, QGuiApplication.quit)
 
 
 class AboutRaySessionDialog(ChildDialog):

@@ -344,7 +344,8 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/gui_disannounce', '')
     def rayGuiGui_disannounce(self, path, args, types, src_addr):
         for addr in self.gui_list:
-            if addr.url == src_addr.url:
+            if ray.areSameOscPort(addr.url, src_addr.url):
+            #if addr.url == src_addr.url:
                 break
         else:
             return False
@@ -355,13 +356,13 @@ class OscServerThread(ClientCommunicating):
         if src_addr.url == self.nsm_locker_url:
             self.net_daemon_id  = random.randint(1, 999999999)
             
-            multi_daemon_file = MultiDaemonFile.getInstance()
-            if multi_daemon_file:
-                multi_daemon_file.update()
-            
             self.is_nsm_locked  = False
             self.nsm_locker_url = ''
             self.sendGui('/ray/gui/server/nsm_locked', 0)
+            
+        multi_daemon_file = MultiDaemonFile.getInstance()
+        if multi_daemon_file:
+            multi_daemon_file.update()
     
     @ray_method('/ray/server/controller_announce', '')
     def rayServerControllerAnnounce(self, path, args, types, src_addr):
@@ -1229,6 +1230,11 @@ class OscServerThread(ClientCommunicating):
                       client.client_id,  client.status)
         
         self.gui_list.append(gui_addr)
+        
+        multi_daemon_file = MultiDaemonFile.getInstance()
+        if multi_daemon_file:
+            multi_daemon_file.update()
+        
         Terminal.message("Registered with GUI")
     
     def announceController(self, control_address):

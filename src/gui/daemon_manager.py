@@ -19,8 +19,7 @@ class DaemonManager(QObject):
 
         self.executable = 'ray-daemon'
         self.process = QProcess()
-
-        self.process.finished.connect(self.processFinished)
+        
         if ray.QT_VERSION >= (5, 6):
             self.process.errorOccurred.connect(self.errorInProcess)
         self.process.setProcessChannelMode(QProcess.ForwardedChannels)
@@ -46,14 +45,14 @@ class DaemonManager(QObject):
     def finishInit(self):
         self._main_win = self._session._main_win
 
-    def processFinished(self, exit_code, exit_status):
-        if self.stopped_yet:
-            QApplication.quit()
-            return
+    #def processFinished(self, exit_code, exit_status):
+        #if self.stopped_yet:
+            #QApplication.quit()
+            #return
 
-        if not self._main_win.isHidden():
-            self._main_win.daemonCrash()
-            return
+        #if not self._main_win.isHidden():
+            #self._main_win.daemonCrash()
+            #return
 
     def errorInProcess(self, error):
         self._main_win.daemonCrash()
@@ -180,9 +179,6 @@ class DaemonManager(QObject):
     def setOscAddressViaUrl(self, url):
         self.setOscAddress(ray.getLibloAddress(url))
     
-    def processIsRunning(self):
-        return bool(self.process.state() == 2)
-
     def start(self):
         if self.launched_before:
             self.callDaemon()
@@ -190,7 +186,7 @@ class DaemonManager(QObject):
         
         ray_control_process = QProcess()
         ray_control_process.start("ray_control", ['get_port_gui_free'])
-        ray_control_process.waitForFinished(500)
+        ray_control_process.waitForFinished(2000)
         
         if ray_control_process.exitCode() == 0:
             port_str_lines = ray_control_process.readAllStandardOutput().data().decode('utf-8')
@@ -240,12 +236,6 @@ class DaemonManager(QObject):
         server = GUIServerThread.instance()
         server.toDaemon('/ray/server/quit')
         QTimer.singleShot(10, QApplication.quit)
-        
-        #if self.processIsRunning():
-            #if not self.stopped_yet:
-                #self.process.terminate()
-                #self.stopped_yet = True
-                #QTimer.singleShot(5000, self.notEndedAfterWait)
 
     def notEndedAfterWait(self):
         sys.stderr.write('ray-daemon is still running, sorry !\n')
