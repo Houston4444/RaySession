@@ -25,6 +25,7 @@ import ui_new_executable
 import ui_error_dialog
 import ui_quit_app
 import ui_client_properties
+import ui_script_info
 import ui_stop_client
 import ui_stop_client_no_save
 import ui_abort_copy
@@ -1040,6 +1041,15 @@ class SnapShotProgressDialog(ChildDialog):
     def serverProgress(self, value):
         self.ui.progressBar.setValue(value * 100)
         
+
+class ScriptInfoDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_script_info.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+    def setText(self, text):
+        self.ui.label.setText(text)
 
 class DaemonUrlWindow(ChildDialog):
     def __init__(self, parent, err_code, ex_url):

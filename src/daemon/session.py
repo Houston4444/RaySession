@@ -1938,6 +1938,7 @@ class SignaledSession(OperatingSession):
                             % ray.highlightText(script_path))
                     self.send(script.src_addr, '/reply', script.src_path,
                               'script finished')
+                    self.sendGui('/ray/gui/hide_script_info')
                 break
         else:
             return

@@ -616,7 +616,17 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
-        
+    
+    @ray_method('/ray/server/script_info', 's')
+    def rayServerScriptInfo(self, path, args, types, src_addr):
+        self.sendGui('/ray/gui/script_info', args[0])
+        self.send(src_addr, "/reply", path, "Info sent")
+    
+    @ray_method('/ray/server/hide_script_info', '')
+    def rayServerHideScriptInfo(self, path, args, types, src_addr):
+        self.sendGui('/ray/gui/hide_script_info')
+        self.send(src_addr, "/reply", path, "Info hidden")
+    
         #if not (sess_root == self.session.root
                 #and session_name == self.session.name):
             #signaler.dummy_load_and_template.emit(*args)

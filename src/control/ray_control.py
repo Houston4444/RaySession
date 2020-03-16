@@ -21,7 +21,7 @@ server_operations = (
     'list_user_client_templates', 'list_factory_client_templates', 
     'remove_client_template', 'list_sessions', 'new_session',
     'open_session', 'open_session_off', 'save_session_template',
-    'rename_session')
+    'rename_session', 'script_info', 'hide_script_info')
 
 session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     if operation in ('new_session', 'open_session', 'change_root',
                      'save_as_template', 'take_snapshot', 'duplicate',
                      'open_snapshot', 'rename', 'add_executable',
-                     'add_client_template'):
+                     'add_client_template', 'script_info'):
         if not arg_list:
             sys.stderr.write('operation %s needs argument(s).\n' % operation)
             sys.exit(100)

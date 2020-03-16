@@ -33,13 +33,6 @@ class Session(object):
             self._daemon_manager.setOscAddress(CommandLineArgs.daemon_port)
         elif not CommandLineArgs.out_daemon:
             self._daemon_manager.setNewOscAddress()
-
-        #if CommandLineArgs.under_nsm:
-            #if CommandLineArgs.out_daemon:
-                #self._nsm_child = NSMChildOutside(self)
-                #self._daemon_manager.setExternal()
-            #else:
-                #self._nsm_child = NSMChild(self)
         
         # build nsm_child if NSM_URL in env
         self._nsm_child = None
@@ -321,3 +314,9 @@ class SignaledSession(Session):
         name, int_factory = args
         self.removeFavorite(name, bool(int_factory), True)
         
+    def _ray_gui_script_info(self, path, args):
+        text = args[0]
+        self._main_win.showScriptInfo(text)
+        
+    def _ray_gui_hide_script_info(self, path, args):
+        self._main_win.hideScriptInfo()

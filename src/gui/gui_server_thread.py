@@ -199,6 +199,14 @@ class GUIServerThread(liblo.ServerThread):
     def _favorites_removed(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/gui/script_info', 's')
+    def _script_info(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/hide_script_info', '')
+    def _hide_script_info(self, path, args, types, src_addr):
+        pass
+    
     def send(self, *args):
         if CommandLineArgs.debug:
             sys.stderr.write(

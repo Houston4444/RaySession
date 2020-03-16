@@ -202,7 +202,9 @@ class MainWindow(QMainWindow):
         self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
 
         self.setNsmLocked(CommandLineArgs.under_nsm)
-
+        
+        self.script_info_dialog = None
+        
         # disable "keep focus" if daemon is not on this machine (it takes no
         # sense in this case)
         if not self._daemon_manager.is_local:
@@ -843,7 +845,21 @@ class MainWindow(QMainWindow):
                         ray.getAppIcon(favorite.icon, self), favorite.name)
             act_app.setData([favorite.name, favorite.factory])
             act_app.triggered.connect(self.launchFavorite)
+    
+    def showScriptInfo(self, text):
+        if not self.script_info_dialog:
+            self.script_info_dialog = child_dialogs.ScriptInfoDialog(self)
+            
+        self.script_info_dialog.setText(text)
+        self.script_info_dialog.show()
         
+    def hideScriptInfo(self):
+        if self.script_info_dialog:
+            self.script_info_dialog.close()
+        
+        del self.script_info_dialog
+        self.script_info_dialog = None
+    
     def daemonCrash(self):
         QMessageBox.critical(
             self, _translate(
