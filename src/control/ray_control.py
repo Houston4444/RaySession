@@ -21,7 +21,7 @@ server_operations = (
     'list_user_client_templates', 'list_factory_client_templates', 
     'remove_client_template', 'list_sessions', 'new_session',
     'open_session', 'open_session_off', 'save_session_template',
-    'rename_session', 'script_info', 'hide_script_info')
+    'rename_session', 'script_info', 'script_user_action', 'hide_script_dialog')
 
 session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',

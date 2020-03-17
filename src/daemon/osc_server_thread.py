@@ -72,7 +72,9 @@ class ClientCommunicating(liblo.ServerThread):
         if not ray.areTheyAllString(args):
             return False
         
-        if args[0] == '/ray/server/list_sessions':
+        reply_path = args[0]
+        
+        if reply_path == '/ray/server/list_sessions':
             # this reply is only used here for reply from net_daemon
             # it directly resend its infos
             # to the last addr that asked session list
@@ -80,12 +82,25 @@ class ClientCommunicating(liblo.ServerThread):
                 self.send(self.list_asker_addr, path, *args)
             return False
         
+        elif reply_path == '/ray/gui/script_user_action':
+            for control_address in self.controller_list:
+                self.send(control_address, '/reply', '/ray/server/script_user_action',
+                          'User action dialog validate')
+            return False
+        
         if not len(args) == 2:
             return False
             
     @ray_method('/error', 'sis')
     def error(self, path, args, types, src_addr):
-        pass
+        error_path, error_code, error_string = args
+        print('zekofko')
+        if error_path == '/ray/gui/script_user_action':
+            print('czeccee')
+            for control_address in self.controller_list:
+                self.send(control_address, '/error', '/ray/server/script_user_action', -1,
+                          'User action dialog aborted !')
+            return False
     
     # SERVER_CONTROL messages
     # following messages only for :server-control: capability
@@ -622,11 +637,14 @@ class OscServerThread(ClientCommunicating):
         self.sendGui('/ray/gui/script_info', args[0])
         self.send(src_addr, "/reply", path, "Info sent")
     
-    @ray_method('/ray/server/hide_script_info', '')
+    @ray_method('/ray/server/hide_script_dialog', '')
     def rayServerHideScriptInfo(self, path, args, types, src_addr):
-        self.sendGui('/ray/gui/hide_script_info')
+        self.sendGui('/ray/gui/hide_script_dialog')
         self.send(src_addr, "/reply", path, "Info hidden")
     
+    @ray_method('/ray/server/script_user_action', 's')
+    def rayServerScriptUserAction(self, path, args, types, src_addr):
+        self.sendGui('/ray/gui/script_user_action', args[0])
         #if not (sess_root == self.session.root
                 #and session_name == self.session.name):
             #signaler.dummy_load_and_template.emit(*args)

@@ -203,7 +203,7 @@ class MainWindow(QMainWindow):
 
         self.setNsmLocked(CommandLineArgs.under_nsm)
         
-        self.script_info_dialog = None
+        self.script_dialog = None
         
         # disable "keep focus" if daemon is not on this machine (it takes no
         # sense in this case)
@@ -847,18 +847,27 @@ class MainWindow(QMainWindow):
             act_app.triggered.connect(self.launchFavorite)
     
     def showScriptInfo(self, text):
-        if not self.script_info_dialog:
-            self.script_info_dialog = child_dialogs.ScriptInfoDialog(self)
+        if not self.script_dialog:
+            self.script_dialog = child_dialogs.ScriptInfoDialog(self)
             
-        self.script_info_dialog.setText(text)
-        self.script_info_dialog.show()
+        self.script_dialog.setText(text)
+        self.script_dialog.show()
         
-    def hideScriptInfo(self):
-        if self.script_info_dialog:
-            self.script_info_dialog.close()
+    def hideScriptDialog(self):
+        if self.script_dialog:
+            self.script_dialog.close()
         
-        del self.script_info_dialog
-        self.script_info_dialog = None
+        del self.script_dialog
+        self.script_dialog = None
+        
+    def showScriptUserAction(self, text):
+        if self.script_dialog:
+            self.script_dialog.close()
+            del self.script_dialog
+            
+        self.script_dialog = child_dialogs.ScriptUserActionDialog(self)
+        self.script_dialog.setText(text)
+        self.script_dialog.show()
     
     def daemonCrash(self):
         QMessageBox.critical(

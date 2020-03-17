@@ -121,9 +121,9 @@ class OscServer(liblo.Server):
             return
         
         sys.stderr.write('%s\n' % message)
-        
         self._final_err = - err
-    
+        print('kofrko', self._final_err)
+        
     def minorErrorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
         sys.stdout.write('\033[31m%s\033[0m\n' % message)

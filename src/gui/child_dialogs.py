@@ -26,6 +26,7 @@ import ui_error_dialog
 import ui_quit_app
 import ui_client_properties
 import ui_script_info
+import ui_script_user_action
 import ui_stop_client
 import ui_stop_client_no_save
 import ui_abort_copy
@@ -1051,6 +1052,37 @@ class ScriptInfoDialog(ChildDialog):
     def setText(self, text):
         self.ui.label.setText(text)
 
+
+class ScriptUserActionDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_script_user_action.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self.ui.buttonBox.clicked.connect(self.buttonBoxClicked)
+        #self.ui.buttonBox.Ignore.clicked.connect(self.abort)
+        
+    def setText(self, text):
+        self.ui.label.setText(text)
+    
+    def validate(self):
+        self.toDaemon('/reply', '/ray/gui/script_user_action', 'Dialog window validated')
+        self.accept()
+        
+    def abort(self):
+        self.toDaemon('/error', '/ray/gui/script_user_action', ray.Err.ABORT_ORDERED, 'Script user action aborted!')
+        self.accept()
+    
+    #def closeEvent(self, event):
+        #self.abort()
+    
+    def buttonBoxClicked(self, button):
+        if button == self.ui.buttonBox.button(QDialogButtonBox.Yes):
+            self.validate()
+        elif button == self.ui.buttonBox.button(QDialogButtonBox.Ignore):
+            print('"kofgkrok"')
+            self.abort()
+    
 class DaemonUrlWindow(ChildDialog):
     def __init__(self, parent, err_code, ex_url):
         ChildDialog.__init__(self, parent)
