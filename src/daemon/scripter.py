@@ -18,6 +18,10 @@ class Scripter:
         if ray.QT_VERSION >= (5, 6):
             self._process.errorOccurred.connect(self.errorInProcess)
         
+        self._is_stepper = False
+        self._stepper_process = ''
+        self._stepper_has_call = False
+        
     def processStarted(self):
         pass
     
@@ -43,3 +47,21 @@ class Scripter:
     
     def getCommandName(self):
         return self.getPath().rpartition('/')[2]
+    
+    def setAsStepper(self, stepper):
+        self._is_stepper = bool(stepper)
+
+    def isStepper(self):
+        return self._is_stepper
+    
+    def setStepperProcess(self, text):
+        self._stepper_process = text
+        
+    def getStepperProcess(self):
+        return self._stepper_process
+    
+    def stepperHasCalled(self):
+        return self._stepper_has_call
+    
+    def setStepperHasCall(self, bool_call):
+        self._stepper_has_call = bool_call

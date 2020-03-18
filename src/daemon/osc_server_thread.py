@@ -584,6 +584,11 @@ class OscServerThread(ClientCommunicating):
                       "No session to save.")
             return False
     
+    @ray_method('/ray/session/process_step', None)
+    def raySessionProcessStepSave(self, path, args, types, src_addr):
+        if not ray.areTheyAllString(args):
+            return False
+    
     @ray_method('/ray/session/save_as_template', 's')
     def raySessionSaveAsTemplate(self, path, args, types, src_addr):
         template_name = args[0]
@@ -614,7 +619,7 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/server/rename_session', 'ss')
     def rayServerRenameSession(self, path, args, types, src_addr):
-        print('wafdofk', args)
+        pass
     
     @ray_method('/ray/server/save_session_template', 'sss')
     def rayServerSaveSessionTemplateWithRoot(self, path, args, 

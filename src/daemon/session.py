@@ -386,8 +386,24 @@ class Session(ServerSender):
         self.clients.clear()
         for client in client_newlist:
             self.clients.append(client)
-
-
+    
+    def getScript(self, string):
+        if not self.path:
+            return ''
+        
+        base_path = self.path
+        while not os.path.isdir("%s/%s" % (base_path, ray.SCRIPTS_DIR)):
+            base_path = os.path.dirname(base_path)
+            if base_path == "/":
+                return ''
+        
+        script_path = "%s/%s/%s" % (base_path, ray.SCRIPTS_DIR, string)
+        
+        if os.access(script_path, os.X_OK):
+            return script_path
+        
+        return ''
+    
 class OperatingSession(Session):
     def __init__(self, root):
         Session.__init__(self, root)
@@ -424,6 +440,8 @@ class OperatingSession(Session):
         self.externals_timer = QTimer()
         self.externals_timer.setInterval(100)
         self.externals_timer.timeout.connect(self.checkExternalsStates)
+        
+        self.process_step_addr = None
         
     def rememberOscArgs(self, path, args, src_addr):
         self.osc_src_addr = src_addr
@@ -517,7 +535,14 @@ class OperatingSession(Session):
             
         self.wait_for = ray.WaitFor.NONE
     
-    def nextFunction(self):
+    def nextFunction(self, from_process_step=False):
+        if self.process_step_addr and not from_process_step:
+            self.send(self.process_step_addr, '/reply',
+                      '/ray/session/process_step', 'step done')
+            del self.process_step_addr
+            self.process_step_addr = None
+            return
+        
         if len(self.process_order) > 0:
             next_item = self.process_order[0]
             next_function = next_item
@@ -531,8 +556,37 @@ class OperatingSession(Session):
                     if len(next_item) > 1:
                         arguments = next_item[1:]
             
-            
+            if self.path and not from_process_step:
+                for step_string in ('save', 'close'):
+                    if next_function == self.__getattribute__(step_string):
+                        process_step_script = "%s/%s/process_step_%s" \
+                                %  (self.path, ray.SCRIPTS_DIR, step_string)
+                                            
+                        if os.access(process_step_script, os.X_OK):
+                            script = Scripter(self, signaler, self.osc_src_addr, 
+                                                self.osc_path)
+                            script.setAsStepper(True)
+                            script.setStepperProcess(step_string)
+                            self.running_scripts.append(script)
+                            self.sendGuiMessage(
+                                _translate('GUIMSG', 
+                                    '--- Custom step script %s started...')
+                                    % ray.highlightText(process_step_script))
+                            script.start(process_step_script, 
+                                         [str(a) for a in arguments])
+                            return
+                        break
+                    
+            if from_process_step and next_function:
+                for script in self.running_scripts:
+                    if next_function == self.__getattribute__(
+                                                script.getStepperProcess()):
+                        script.setStepperHasCall(True)
+                        break
+                        
+                
             self.process_order.__delitem__(0)
+                
             next_function(*arguments)
     
     def timerLaunchTimeOut(self):
@@ -583,6 +637,10 @@ class OperatingSession(Session):
     def sendError(self, err, error_message):
         #clear process order to allow other new operations
         self.process_order.clear()
+        
+        if self.process_step_addr:
+            self.send(self.process_step_addr, '/error', 
+                      '/ray/session/process_step', err, error_message)
         
         if not (self.osc_src_addr and self.osc_path):
             return
@@ -1897,7 +1955,7 @@ class SignaledSession(OperatingSession):
                 
                 script_path = "%s/%s/%s" % (spath, ray.SCRIPTS_DIR,
                                             base_script)
-                print('scripttt path', script_path)
+                
                 if os.access(script_path, os.X_OK):
                     for script in self.running_scripts:
                         if script.getPath() == script_path:
@@ -1917,8 +1975,11 @@ class SignaledSession(OperatingSession):
             function(path, args, src_addr)
     
     def scriptFinished(self, script_path, exit_code):
+        is_stepper = False
+        
         for i in range(len(self.running_scripts)):
             script = self.running_scripts[i]
+            
             if script.getPath() == script_path:
                 if exit_code:
                     if exit_code == 101:
@@ -1938,13 +1999,22 @@ class SignaledSession(OperatingSession):
                             % ray.highlightText(script_path))
                     self.send(script.src_addr, '/reply', script.src_path,
                               'script finished')
-                    self.sendGui('/ray/gui/hide_script_info')
+                    #self.sendGui('/ray/gui/hide_script_info')
+                    
+                if script.isStepper():
+                    is_stepper = True
+                    if not script.stepperHasCalled():
+                        if self.process_order:
+                            self.process_order.__delitem__(0)
                 break
         else:
             return
         
         self.running_scripts.remove(script)
         del script
+        
+        if is_stepper:
+            self.nextFunction()
     
     def sendErrorNoClient(self, src_addr, path, client_id):
         self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
@@ -2230,7 +2300,6 @@ class SignaledSession(OperatingSession):
     
     @session_operation
     def _ray_server_open_session(self, path, args, src_addr, open_off=False):
-        print('opening sss with open_off')
         session_name = args[0]
         save_previous = True
         template_name = ''
@@ -2242,8 +2311,7 @@ class SignaledSession(OperatingSession):
             
         if (not session_name
                 or '//' in session_name
-                or session_name.startswith('../')
-                or session_name.startswith('.ray-')):
+                or session_name.startswith(('../', '.ray-', 'ray-'))):
             self.sendError(ray.Err.CREATE_FAILED, 'invalid session name.')
             return
         
@@ -2761,6 +2829,16 @@ class SignaledSession(OperatingSession):
         if client_id_list:
             self.send(src_addr, '/reply', path, *client_id_list)
         self.send(src_addr, '/reply', path)
+    
+    def _ray_session_process_step(self, path, args, src_addr):
+        if not self.process_order:
+            self.send(src_addr, '/error', ray.Err.GENERAL_ERROR,
+                      'No operation pending !')
+            return
+        
+        self.process_step_addr = src_addr
+        self.nextFunction(True)
+        #self.send(src_addr, '/reply', path, 'good') 
     
     def _ray_client_stop(self, path, args, src_addr):
         client_id = args[0]
