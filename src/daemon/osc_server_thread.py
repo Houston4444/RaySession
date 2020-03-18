@@ -94,9 +94,8 @@ class ClientCommunicating(liblo.ServerThread):
     @ray_method('/error', 'sis')
     def error(self, path, args, types, src_addr):
         error_path, error_code, error_string = args
-        print('zekofko')
+        
         if error_path == '/ray/gui/script_user_action':
-            print('czeccee')
             for control_address in self.controller_list:
                 self.send(control_address, '/error', '/ray/server/script_user_action', -1,
                           'User action dialog aborted !')
@@ -637,9 +636,9 @@ class OscServerThread(ClientCommunicating):
         self.sendGui('/ray/gui/script_info', args[0])
         self.send(src_addr, "/reply", path, "Info sent")
     
-    @ray_method('/ray/server/hide_script_dialog', '')
+    @ray_method('/ray/server/hide_script_info', '')
     def rayServerHideScriptInfo(self, path, args, types, src_addr):
-        self.sendGui('/ray/gui/hide_script_dialog')
+        self.sendGui('/ray/gui/hide_script_info')
         self.send(src_addr, "/reply", path, "Info hidden")
     
     @ray_method('/ray/server/script_user_action', 's')

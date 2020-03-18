@@ -850,7 +850,7 @@ class MainWindow(QMainWindow):
         if not self.script_dialog:
             self.script_dialog = child_dialogs.ScriptInfoDialog(self)
             
-        self.script_dialog.setText(text)
+        self.script_dialog.setInfoLabel(text)
         self.script_dialog.show()
         
     def hideScriptDialog(self):
@@ -866,7 +866,7 @@ class MainWindow(QMainWindow):
             del self.script_dialog
             
         self.script_dialog = child_dialogs.ScriptUserActionDialog(self)
-        self.script_dialog.setText(text)
+        self.script_dialog.setMainText(text)
         self.script_dialog.show()
     
     def daemonCrash(self):

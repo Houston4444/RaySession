@@ -322,5 +322,5 @@ class SignaledSession(Session):
         text = args[0]
         self._main_win.showScriptUserAction(text)
         
-    def _ray_gui_hide_script_dialog(self, path, args):
+    def _ray_gui_hide_script_info(self, path, args):
         self._main_win.hideScriptDialog()

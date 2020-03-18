@@ -1049,7 +1049,7 @@ class ScriptInfoDialog(ChildDialog):
         self.ui = ui_script_info.Ui_Dialog()
         self.ui.setupUi(self)
         
-    def setText(self, text):
+    def setInfoLabel(self, text):
         self.ui.label.setText(text)
 
 
@@ -1060,17 +1060,25 @@ class ScriptUserActionDialog(ChildDialog):
         self.ui.setupUi(self)
         
         self.ui.buttonBox.clicked.connect(self.buttonBoxClicked)
-        #self.ui.buttonBox.Ignore.clicked.connect(self.abort)
+        self.ui.infoLabel.setVisible(False)
+        self.ui.infoLine.setVisible(False)
         
-    def setText(self, text):
+    def setMainText(self, text):
         self.ui.label.setText(text)
     
+    def setInfoLabel(self, text):
+        self.ui.infoLabel.setText(text)
+        self.ui.infoLabel.setVisible(True)
+        self.ui.infoLine.setVisible(True)
+    
     def validate(self):
-        self.toDaemon('/reply', '/ray/gui/script_user_action', 'Dialog window validated')
+        self.toDaemon('/reply', '/ray/gui/script_user_action',
+                      'Dialog window validated')
         self.accept()
         
     def abort(self):
-        self.toDaemon('/error', '/ray/gui/script_user_action', ray.Err.ABORT_ORDERED, 'Script user action aborted!')
+        self.toDaemon('/error', '/ray/gui/script_user_action', 
+                      ray.Err.ABORT_ORDERED, 'Script user action aborted!')
         self.accept()
     
     #def closeEvent(self, event):
@@ -1080,7 +1088,6 @@ class ScriptUserActionDialog(ChildDialog):
         if button == self.ui.buttonBox.button(QDialogButtonBox.Yes):
             self.validate()
         elif button == self.ui.buttonBox.button(QDialogButtonBox.Ignore):
-            print('"kofgkrok"')
             self.abort()
     
 class DaemonUrlWindow(ChildDialog):
