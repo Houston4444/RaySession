@@ -847,6 +847,10 @@ class MainWindow(QMainWindow):
             act_app.triggered.connect(self.launchFavorite)
     
     def showScriptInfo(self, text):
+        if self.script_dialog and self.script_dialog.shouldBeRemoved():
+            del self.script_dialog
+            self.script_dialog = None
+        
         if not self.script_dialog:
             self.script_dialog = child_dialogs.ScriptInfoDialog(self)
             

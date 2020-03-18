@@ -1050,7 +1050,10 @@ class ScriptInfoDialog(ChildDialog):
         self.ui.setupUi(self)
         
     def setInfoLabel(self, text):
-        self.ui.label.setText(text)
+        self.ui.infoLabel.setText(text)
+        
+    def shouldBeRemoved(self):
+        return False
 
 
 class ScriptUserActionDialog(ChildDialog):
@@ -1063,6 +1066,8 @@ class ScriptUserActionDialog(ChildDialog):
         self.ui.infoLabel.setVisible(False)
         self.ui.infoLine.setVisible(False)
         
+        self._is_terminated = False
+        
     def setMainText(self, text):
         self.ui.label.setText(text)
     
@@ -1074,21 +1079,23 @@ class ScriptUserActionDialog(ChildDialog):
     def validate(self):
         self.toDaemon('/reply', '/ray/gui/script_user_action',
                       'Dialog window validated')
+        self._is_terminated = True
         self.accept()
         
     def abort(self):
         self.toDaemon('/error', '/ray/gui/script_user_action', 
                       ray.Err.ABORT_ORDERED, 'Script user action aborted!')
+        self._is_terminated = True
         self.accept()
-    
-    #def closeEvent(self, event):
-        #self.abort()
     
     def buttonBoxClicked(self, button):
         if button == self.ui.buttonBox.button(QDialogButtonBox.Yes):
             self.validate()
         elif button == self.ui.buttonBox.button(QDialogButtonBox.Ignore):
             self.abort()
+            
+    def shouldBeRemoved(self):
+        return self._is_terminated
     
 class DaemonUrlWindow(ChildDialog):
     def __init__(self, parent, err_code, ex_url):
