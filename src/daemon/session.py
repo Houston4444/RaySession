@@ -559,8 +559,16 @@ class OperatingSession(Session):
             if self.path and not from_process_step:
                 for step_string in ('save', 'close'):
                     if next_function == self.__getattribute__(step_string):
+                        base_path = self.path
+                        
+                        while not os.path.isdir(
+                                    "%s/%s" % (base_path, ray.SCRIPTS_DIR)):
+                            base_path = os.path.dirname(base_path)
+                            if base_path == '/':
+                                break
+                            
                         process_step_script = "%s/%s/process_step_%s" \
-                                %  (self.path, ray.SCRIPTS_DIR, step_string)
+                                %  (base_path, ray.SCRIPTS_DIR, step_string)
                                             
                         if os.access(process_step_script, os.X_OK):
                             script = Scripter(self, signaler, self.osc_src_addr, 
@@ -1317,6 +1325,9 @@ class OperatingSession(Session):
                         % (self.name, new_session_name))
         self.forgetOscArgs()
     
+    def replace(self, session_full_name, open_off=False):
+        pass
+    
     def load(self, session_full_name, open_off=False):
         #terminate or switch clients
         spath = self.root + '/' + session_full_name
@@ -1467,31 +1478,7 @@ class OperatingSession(Session):
                             (client.executable_path, ''))
                     
             file.close()
-        
-        # Here we are sure to have all needed
-        # Load work starts here
-        self.sendGuiMessage(_translate('GUIMSG', "-- Opening session %s --")
-                                % ray.highlightText(session_full_name))
-        
-        self.setPath(spath, sess_name)
-        
-        if sess_name and sess_name != os.path.basename(spath):
-            # session folder has been renamed
-            # so rename session to it
-            for client in self.new_clients + self.new_removed_clients:
-                client.adjustFilesAfterCopy(spath, ray.Template.RENAME)
-            self.setPath(spath)
-        
-        if not is_ray_file:
-            self.sendGui('/ray/gui/session/is_nsm')
-        
-        self.sendGui('/ray/gui/trash/clear')
-        self.removed_clients.clear()
-        for client in self.new_removed_clients:
-            self.removed_clients.append(client)
-            client.sendGuiClientProperties(removed=True)
-        
-        #self.message("Commanding unneeded and dumb clients to quit")
+        #self.llload(session_full_name, open_off=False)
         
         byebye_client_list = []
         
@@ -1533,6 +1520,30 @@ class OperatingSession(Session):
                     _translate('GUIMSG',
                             'waiting for %i clients to quit...')
                         % len(self.expected_clients))
+        
+        self.removed_clients.clear()
+        self.sendGui('/ray/gui/trash/clear')
+        
+        # Here we are sure to have all needed
+        # Load work starts here
+        self.sendGuiMessage(_translate('GUIMSG', "-- Opening session %s --")
+                                % ray.highlightText(session_full_name))
+        
+        self.setPath(spath, sess_name)
+        
+        if sess_name and sess_name != os.path.basename(spath):
+            # session folder has been renamed
+            # so rename session to it
+            for client in self.new_clients + self.new_removed_clients:
+                client.adjustFilesAfterCopy(spath, ray.Template.RENAME)
+            self.setPath(spath)
+        
+        if not is_ray_file:
+            self.sendGui('/ray/gui/session/is_nsm')
+        
+        for client in self.new_removed_clients:
+            self.removed_clients.append(client)
+            client.sendGuiClientProperties(removed=True)
         
         self.waitAndGoTo(20000, (self.load_step1, open_off), ray.WaitFor.STOP)
     
