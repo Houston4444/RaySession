@@ -41,6 +41,11 @@ def ray_method(path, types):
         return wrapper
     return decorated
 
+class Controller:
+    addr = None
+    pid = 0
+    
+    
 # Osc server thread separated in many classes for confort.
 
 # ClientCommunicating contains NSM protocol.
@@ -83,8 +88,8 @@ class ClientCommunicating(liblo.ServerThread):
             return False
         
         elif reply_path == '/ray/gui/script_user_action':
-            for control_address in self.controller_list:
-                self.send(control_address, '/reply', '/ray/server/script_user_action',
+            for controller in self.controller_list:
+                self.send(controller.addr, '/reply', '/ray/server/script_user_action',
                           'User action dialog validate')
             return False
         
@@ -96,8 +101,8 @@ class ClientCommunicating(liblo.ServerThread):
         error_path, error_code, error_string = args
         
         if error_path == '/ray/gui/script_user_action':
-            for control_address in self.controller_list:
-                self.send(control_address, '/error', '/ray/server/script_user_action', -1,
+            for controller in self.controller_list:
+                self.send(controller.addr, '/error', '/ray/server/script_user_action', -1,
                           'User action dialog aborted !')
             return False
     
@@ -378,20 +383,23 @@ class OscServerThread(ClientCommunicating):
         if multi_daemon_file:
             multi_daemon_file.update()
     
-    @ray_method('/ray/server/controller_announce', '')
+    @ray_method('/ray/server/controller_announce', 'i')
     def rayServerControllerAnnounce(self, path, args, types, src_addr):
-        self.controller_list.append(src_addr)
+        controller = Controller()
+        controller.addr = src_addr
+        controller.pid = args[0]
+        self.controller_list.append(controller)
         self.send(src_addr, '/reply', path, 'announced')
     
     @ray_method('/ray/server/controller_disannounce', '')
     def rayServerControllerDisannounce(self, path, args, types, src_addr):
-        for addr in self.controller_list:
-            if addr.url == src_addr.url:
+        for controller in self.controller_list:
+            if controller.addr.url == src_addr.url:
                 break
         else:
             return
             
-        self.controller_list.remove(addr)
+        self.controller_list.remove(controller)
     
     @ray_method('/ray/server/set_nsm_locked', '')
     def rayServerSetNsmLocked(self, path, args, types, src_addr):
@@ -1270,15 +1278,24 @@ class OscServerThread(ClientCommunicating):
         Terminal.message("Registered with GUI")
     
     def announceController(self, control_address):
-        self.controller_list.append(control_address)
+        controller = Controller()
+        controller.addr = control_address
+        self.controller_list.append(controller)
         self.send(control_address, "/ray/control/server/announce",
                   ray.VERSION, self.server_status, self.getOptions(),
                   self.session.root, 1)
     
     def sendControllerMessage(self, message):
-        for ctrl_addr in self.controller_list:
-            self.send(ctrl_addr, '/ray/control/message', message)
-            
+        for controller in self.controller_list:
+            self.send(controller.addr, '/ray/control/message', message)
+    
+    def getControllerPid(self, addr):
+        for controller in self.controller_list:
+            if controller.addr == addr:
+                return controller.pid
+        
+        return 0
+    
     def hasLocalGui(self):
         for gui_addr in self.gui_list:
             if ray.areOnSameMachine(self.url, gui_addr.url):

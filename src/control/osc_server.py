@@ -151,7 +151,7 @@ class OscServer(liblo.Server):
         self.m_daemon_address = liblo.Address(daemon_port)
         self._wait_for_announce = True
         self._announce_time = time.time()
-        self.toDaemon('/ray/server/controller_announce')
+        self.toDaemon('/ray/server/controller_announce', os.getpid())
     
     def toDaemon(self, *args):
         self.send(self.m_daemon_address, *args)

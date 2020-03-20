@@ -387,22 +387,33 @@ class Session(ServerSender):
         for client in client_newlist:
             self.clients.append(client)
     
-    def getScript(self, string):
-        if not self.path:
+    def getScriptPath(self, string):
+        script_dir = self.getScriptDir()
+        
+        if not script_dir:
             return ''
         
-        base_path = self.path
-        while not os.path.isdir("%s/%s" % (base_path, ray.SCRIPTS_DIR)):
-            base_path = os.path.dirname(base_path)
-            if base_path == "/":
-                return ''
-        
-        script_path = "%s/%s/%s" % (base_path, ray.SCRIPTS_DIR, string)
+        script_path = "%s/%s" % (script_dir, string)
         
         if os.access(script_path, os.X_OK):
             return script_path
         
         return ''
+    
+    def getScriptDir(self, spath=''):
+        if not spath:
+            spath = self.path
+        
+        if not spath:
+            return ''
+        
+        base_path = spath
+        while not os.path.isdir("%s/%s" % (base_path, ray.SCRIPTS_DIR)):
+            base_path = os.path.dirname(base_path)
+            if base_path == "/":
+                return ''
+        
+        return "%s/%s" % (base_path, ray.SCRIPTS_DIR)
     
 class OperatingSession(Session):
     def __init__(self, root):
@@ -559,18 +570,10 @@ class OperatingSession(Session):
             if self.path and not from_process_step:
                 for step_string in ('save', 'close'):
                     if next_function == self.__getattribute__(step_string):
-                        base_path = self.path
-                        
-                        while not os.path.isdir(
-                                    "%s/%s" % (base_path, ray.SCRIPTS_DIR)):
-                            base_path = os.path.dirname(base_path)
-                            if base_path == '/':
-                                break
-                            
-                        process_step_script = "%s/%s/process_step_%s" \
-                                %  (base_path, ray.SCRIPTS_DIR, step_string)
+                        process_step_script = self.getScriptPath(step_string)
                                             
-                        if os.access(process_step_script, os.X_OK):
+                        if (process_step_script 
+                                and os.access(process_step_script, os.X_OK)):
                             script = Scripter(self, signaler, self.osc_src_addr, 
                                                 self.osc_path)
                             script.setAsStepper(True)
@@ -1943,29 +1946,35 @@ class SignaledSession(OperatingSession):
         
         if func_name in self.__dir__():
             function = self.__getattribute__(func_name)
+            client_id = ''
             
-            if ((func_name.startswith(('_ray_session_', '_ray_client_'))
+            if ((func_name.startswith('ray_session_')
+            #if ((func_name.startswith(('_ray_session_', '_ray_client_'))
                   and self.path)
                 or func_name == '_ray_server_open_session'):
                 # start custom script if any
                 base_script = func_name.replace('_ray_session_', '', 1)
-                spath = self.path
+                script_dir = self.getScriptDir()
                 
                 if func_name == '_ray_server_open_session':
                     base_script = 'open'
                     session_name = args[0]
+                    
                     if session_name.startswith('/'):
                         spath = session_name
                     else:
                         spath = "%s/%s" % (self.root, session_name)
                         
+                    script_dir = self.getScriptDir(spath)
+                        
                 elif func_name.startswith('_ray_client_'):
                     client_id = args[0]
-                    base_script = "%s/%s" % (
-                        client_id, func_name.replace('_ray_client_', '', 1))
-                
-                script_path = "%s/%s/%s" % (spath, ray.SCRIPTS_DIR,
-                                            base_script)
+                    #base_script = "%s/%s" % (
+                        #client_id, func_name.replace('_ray_client_', '', 1))
+                    base_script = "client/%s" % \
+                                    func_name.replace('_ray_client_', '', 1)
+                                
+                script_path = "%s/%s" % (script_dir, base_script)
                 
                 if os.access(script_path, os.X_OK):
                     for script in self.running_scripts:
@@ -1975,23 +1984,34 @@ class SignaledSession(OperatingSession):
                             # and run normal function.
                             break
                     else:
-                        script = Scripter(self, signaler, src_addr, path)
-                        self.running_scripts.append(script)
-                        self.sendGuiMessage(
-                          _translate('GUIMSG', '--- Custom script %s started...')
-                            % ray.highlightText(script_path))
-                        script.start(script_path, [str(a) for a in args])
+                        if client_id:
+                            for client in self.clients:
+                                if client.client_id == client_id:
+                                    for script in client.running_scripts:
+                                        if script.getPath() == script_path:
+                                            function(path, args, src_addr)
+                                            return
+                                        
+                                    script = Scripter(client, src_addr, path)
+                                    client.running_scripts.append(script)
+                                    script.start(script_path, [str(a) for a in args])
+                                    break
+                        else:
+                            script = Scripter(self, src_addr, path)
+                            self.running_scripts.append(script)
+                            script.start(script_path, [str(a) for a in args])
                         return
                     
             function(path, args, src_addr)
     
-    def scriptFinished(self, script_path, exit_code):
+    def scriptFinished(self, script_path, exit_code, client_id):
         is_stepper = False
         
         for i in range(len(self.running_scripts)):
             script = self.running_scripts[i]
             
-            if script.getPath() == script_path:
+            if (script.getPath() == script_path
+                    and script.clientId() == client_id):
                 if exit_code:
                     if exit_code == 101:
                         message = _translate('GUIMSG', 
@@ -2001,22 +2021,34 @@ class SignaledSession(OperatingSession):
                         message = _translate('GUIMSG', 
                                 'script %s terminate whit exit code %i') % (
                                     ray.highlightText(script_path), exit_code)
-                                
-                    self.send(script.src_addr, '/error', script.src_path,
-                              - exit_code, message)
+                    
+                    if script.src_addr:
+                        self.send(script.src_addr, '/error', script.src_path,
+                                  - exit_code, message)
                 else:
                     self.sendGuiMessage(
                         _translate('GUIMSG', '...script %s finished. ---')
                             % ray.highlightText(script_path))
-                    self.send(script.src_addr, '/reply', script.src_path,
-                              'script finished')
+                    
+                    if script.src_addr:
+                        self.send(script.src_addr, '/reply', script.src_path,
+                                  'script finished')
                     #self.sendGui('/ray/gui/hide_script_info')
                     
                 if script.isStepper():
                     is_stepper = True
                     if not script.stepperHasCalled():
+                        # script has not call the next_function (save, close)
+                        # so skip this next_function
                         if self.process_order:
                             self.process_order.__delitem__(0)
+                
+                if script.clientId() and script.pendingCommand():
+                    for client in self.clients:
+                        if client.client_id == script.clientId():
+                            client.pending_command = ray.Command.NONE
+                            break
+                    
                 break
         else:
             return
@@ -2126,8 +2158,8 @@ class SignaledSession(OperatingSession):
                     and server.option_desktops_memory):
                 self.desktops_memory.replace()
             
-            if self.wait_for == ray.WaitFor.REPLY:
-                self.endTimerIfLastExpected(client)
+            #if self.wait_for == ray.WaitFor.REPLY:
+                #self.endTimerIfLastExpected(client)
         else:
             self.message("Reply from unknown client")
     
@@ -2857,7 +2889,6 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == client_id:
                 client.stop(src_addr, path)
-                #self.send(src_addr, "/reply", path, "Client stopped.")
                 break
         else:
             self.sendErrorNoClient(src_addr, path, client_id)

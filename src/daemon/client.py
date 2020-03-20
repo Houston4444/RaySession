@@ -11,6 +11,8 @@ from PyQt5.QtXml import QDomDocument
 import ray
 from server_sender import ServerSender
 from daemon_tools  import TemplateRoots, Terminal, RS
+from signaler import Signaler
+from scripter import Scripter
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -22,7 +24,7 @@ OSC_SRC_SAVE_TP = 3
 OSC_SRC_STOP = 4
 
 _translate = QCoreApplication.translate
-
+signaler = Signaler.instance()
 
 
 def dirname(*args):
@@ -118,6 +120,8 @@ class Client(ServerSender):
         self._open_timer = QTimer()
         self._open_timer.setSingleShot(True)
         self._open_timer.timeout.connect(self.openTimerTimeout)
+        
+        self.running_scripts = []
         
     def sendToSelfAddress(self, *args):
         if not self.addr:
@@ -310,6 +314,10 @@ class Client(ServerSender):
                         % self.guiMsgStyle())
                 
                 self.sendReplyToCaller(OSC_SRC_SAVE, 'client saved.')
+                for script in self.running_scripts:
+                    if script.pendingCommand() == self.pending_command:
+                        self._osc_srcs[OSC_SRC_SAVE] = script.initialCaller()
+                        break
                     
             elif self.pending_command == ray.Command.OPEN:
                 self.sendGuiMessage(
@@ -324,8 +332,16 @@ class Client(ServerSender):
             #self.message( "Client \"%s\" replied with: %s in %fms"
                             #% (client.name, message, 
                                 #client.milliseconds_since_last_command()))
-            
+                        
+        for script in self.running_scripts:
+            if script.pendingCommand() == self.pending_command:
+                print('nonpasla', self.pending_command)
+                return
+        
         self.pending_command = ray.Command.NONE
+        
+        if self.session.wait_for == ray.WaitFor.REPLY:
+            self.session.endTimerIfLastExpected(self)
         
     def setLabel(self, label):
         self.label = label
@@ -630,6 +646,21 @@ class Client(ServerSender):
         self.addr = None
         
         self.session.setRenameable(True)
+    
+    def scriptFinished(self, script_path, exit_code):
+        for script in self.running_scripts:
+            if script.pendingCommand() == self.pending_command:
+                if self.pending_command == ray.Command.SAVE:
+                    self.sendReplyToCaller(OSC_SRC_SAVE, 'saved')
+                self.pending_command = ray.Command.NONE
+                break
+        else:
+            return
+        
+        self.running_scripts.remove(script)
+        
+        if self.session.wait_for:
+            self.session.endTimerIfLastExpected(self)
         
     def errorInProcess(self, error):
         if error == QProcess.FailedToStart:
@@ -673,9 +704,35 @@ class Client(ServerSender):
     def canSaveNow(self):
         return bool(self.active and not self.no_save_level) 
     
+    def isScriptRunningFor(self, command):
+        for script in self.running_scripts:
+            if script.pendingCommand() == command:
+                return True
+            
+        return False
+    
+    def isScriptRunningAtPath(self, script_path):
+        for script in self.running_scripts:
+            if script.getPath() == script_path:
+                return True
+            
+        return False
+    
     def save(self, src_addr=None, src_path=''):
         if src_addr:
             self._osc_srcs[OSC_SRC_SAVE] = (src_addr, src_path)
+            
+        if self.isRunning():
+            script_path = self.session.getScriptPath('client/save')
+            
+            if script_path and not self.isScriptRunningAtPath(script_path):
+                script = Scripter(self, None, '')
+                script.setPendingCommand(ray.Command.SAVE)
+                if src_addr:
+                    script.stockInitialCaller(self._osc_srcs[OSC_SRC_SAVE])
+                self.running_scripts.append(script)
+                script.start(script_path, [self.client_id])
+                return
         
         if self.pending_command == ray.Command.SAVE:
             self.sendErrorToCaller(OSC_SRC_SAVE, ray.Err.GENERAL_ERROR,
@@ -699,6 +756,14 @@ class Client(ServerSender):
     def stop(self, src_addr=None, src_path=''):
         if src_addr:
             self._osc_srcs[OSC_SRC_STOP] = (src_addr, src_path)
+        else:
+            script_path = self.session.getScriptPath('client/stop')
+            
+            if script_path and os.access(script_path, os.X_OK):
+                script = Scripter(self.session, signaler, None, '')
+                self.session.running_scripts.append(script)
+                script.start(script_path, self.client_id)
+                return
         
         self.sendGuiMessage(_translate('GUIMSG', "  %s: stopping")
                                 % self.guiMsgStyle())
@@ -748,8 +813,6 @@ class Client(ServerSender):
         
         self.pending_command = ray.Command.OPEN
         self.setStatus(ray.ClientStatus.SWITCH)
-            
-        #self.sendGui("/ray/gui/client/switch", old_client_id, self.client_id)
         self.sendGuiClientProperties()
     
     def sendGuiClientProperties(self, removed=False):
