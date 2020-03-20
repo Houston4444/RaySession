@@ -113,19 +113,15 @@ class Err:
 
 class Command:
     NONE = 0
-    QUIT = 1
-    KILL = 2
+    START = 1
+    OPEN = 2
     SAVE = 3
-    OPEN = 4
-    START = 5
-    CLOSE = 6
-    DUPLICATE = 7
-    NEW = 8
+    STOP = 4
 
 
 class WaitFor:
     NONE = 0
-    STOP = 1
+    QUIT = 1
     STOP_ONE = 2
     ANNOUNCE = 3
     REPLY = 4
@@ -149,7 +145,8 @@ class Favorite():
         self.name = name
         self.icon = icon
         self.factory = factory
-        
+
+
 debug = False
 
 

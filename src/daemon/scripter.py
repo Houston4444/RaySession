@@ -50,7 +50,10 @@ class Scripter:
             _translate('GUIMSG', '--- Custom script %s started...%s')
                             % (ray.highlightText(executable), self.parent.client_id))
         self._process.start(executable, arguments)
-        
+    
+    def isFinished(self):
+        return not bool(self._process.state())
+    
     def getPath(self):
         return self._process.program()
     

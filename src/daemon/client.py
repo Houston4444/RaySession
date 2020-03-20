@@ -135,6 +135,11 @@ class Client(ServerSender):
             self.send(src_addr, '/reply', src_path, message)
             self._osc_srcs[slot] = (None, '')
             
+            for script in self.running_scripts:
+                if script.pendingCommand() == self.pending_command:
+                    self._osc_srcs[slot] = script.initialCaller()
+                    break
+            
         if slot == OSC_SRC_OPEN:
             self._open_timer.stop()
     
@@ -143,6 +148,11 @@ class Client(ServerSender):
         if src_addr:
             self.send(src_addr, '/error', src_path, err, message)
             self._osc_srcs[slot] = (None, '')
+            
+            for script in self.running_scripts:
+                if script.pendingCommand() == self.pending_command:
+                    self._osc_srcs[slot] = script.initialCaller()
+                    break
         
         if slot == OSC_SRC_OPEN:
             self._open_timer.stop()
@@ -314,11 +324,7 @@ class Client(ServerSender):
                         % self.guiMsgStyle())
                 
                 self.sendReplyToCaller(OSC_SRC_SAVE, 'client saved.')
-                for script in self.running_scripts:
-                    if script.pendingCommand() == self.pending_command:
-                        self._osc_srcs[OSC_SRC_SAVE] = script.initialCaller()
-                        break
-                    
+                
             elif self.pending_command == ray.Command.OPEN:
                 self.sendGuiMessage(
                     _translate('GUIMSG', '  %s: project loaded') 
@@ -335,7 +341,6 @@ class Client(ServerSender):
                         
         for script in self.running_scripts:
             if script.pendingCommand() == self.pending_command:
-                print('nonpasla', self.pending_command)
                 return
         
         self.pending_command = ray.Command.NONE
@@ -503,7 +508,7 @@ class Client(ServerSender):
     def start(self, src_addr=None, src_path='', wait_open_to_reply=False):
         if src_addr and not wait_open_to_reply:
             self._osc_srcs[OSC_SRC_START] = (src_addr, src_path)
-            
+        
         self.session.setRenameable(False)
         
         self.last_dirty = 0.00
@@ -512,6 +517,10 @@ class Client(ServerSender):
             self.sendErrorToCaller(OSC_SRC_START, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', "can't start %s, it is a dummy client !")
                     % self.guiMsgStyle())
+            return
+        
+        if self.runNewScript('client/start', ray.Command.START, 
+                             src_addr, OSC_SRC_START):
             return
         
         self.pending_command = ray.Command.START
@@ -548,7 +557,7 @@ class Client(ServerSender):
             self.sendReplyToCaller(OSC_SRC_OPEN, 'client active')
             return 
         
-        if self.pending_command in (ray.Command.QUIT, ray.Command.KILL):
+        if self.pending_command == ray.Command.STOP:
             self.sendErrorToCaller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s is exiting.') % self.guiMsgStyle())
         
@@ -618,7 +627,7 @@ class Client(ServerSender):
         self.stopped_timer.stop()
         self.is_external = False
         
-        if self.pending_command in (ray.Command.KILL, ray.Command.QUIT):
+        if self.pending_command == ray.Command.STOP:
             self.sendGuiMessage(_translate('GUIMSG', 
                                            "  %s: terminated as planned")
                                     % self.guiMsgStyle())
@@ -631,14 +640,11 @@ class Client(ServerSender):
         self.sendErrorToCaller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s died !' % self.guiMsgStyle()))
         
-        if self.session.wait_for:
-            self.session.endTimerIfLastExpected(self)
-        
-        if self.pending_command == ray.Command.QUIT:
-            self.session.removeClient(self)
-            return
-        else:
-            self.setStatus(ray.ClientStatus.STOPPED)
+        #if self.pending_command == ray.Command.STOP:
+            #self.session.removeClient(self)
+            #return
+        #else:
+        self.setStatus(ray.ClientStatus.STOPPED)
                 
         self.pending_command = ray.Command.NONE
         self.active = False
@@ -646,13 +652,45 @@ class Client(ServerSender):
         self.addr = None
         
         self.session.setRenameable(True)
+        
+        for script in self.running_scripts:
+            if script.pendingCommand() == ray.Command.STOP:
+                return
+        
+        if self.session.wait_for:
+            self.session.endTimerIfLastExpected(self)
     
     def scriptFinished(self, script_path, exit_code):
         for script in self.running_scripts:
-            if script.pendingCommand() == self.pending_command:
-                if self.pending_command == ray.Command.SAVE:
-                    self.sendReplyToCaller(OSC_SRC_SAVE, 'saved')
-                self.pending_command = ray.Command.NONE
+            if script.isFinished():
+                if exit_code:
+                    error_text = "script %s ended with an error code" \
+                                    % script.getPath()
+                    if script.pendingCommand() == ray.Command.SAVE:
+                        self.sendErrorToCaller(OSC_SRC_SAVE, - exit_code, 
+                                               error_text)
+                    elif script.pendingCommand() == ray.Command.START:
+                        self.sendErrorToCaller(OSC_SRC_START, - exit_code,
+                                               error_text)
+                    elif script.pendingCommand() == ray.Command.STOP:
+                        self.sendErrorToCaller(OSC_SRC_STOP, - exit_code,
+                                               error_text)
+                else:
+                    if script.pendingCommand() == ray.Command.SAVE:
+                        self.sendReplyToCaller(OSC_SRC_SAVE, 'saved')
+                    elif script.pendingCommand() == ray.Command.START:
+                        self.sendReplyToCaller(OSC_SRC_START, 'started')
+                    elif script.pendingCommand() == ray.Command.STOP:
+                        self.sendReplyToCaller(OSC_SRC_STOP, 'stopped')
+                
+                if script.pendingCommand() == self.pending_command:
+                    self.pending_command = ray.Command.NONE
+                    
+                if (script.pendingCommand() == ray.Command.STOP
+                        and self.isRunning()):
+                    # if stop script ends with a not stopped client
+                    # We must stop it, else it would be prevent session close
+                    self.stop()
                 break
         else:
             return
@@ -722,17 +760,10 @@ class Client(ServerSender):
         if src_addr:
             self._osc_srcs[OSC_SRC_SAVE] = (src_addr, src_path)
             
-        if self.isRunning():
-            script_path = self.session.getScriptPath('client/save')
-            
-            if script_path and not self.isScriptRunningAtPath(script_path):
-                script = Scripter(self, None, '')
-                script.setPendingCommand(ray.Command.SAVE)
-                if src_addr:
-                    script.stockInitialCaller(self._osc_srcs[OSC_SRC_SAVE])
-                self.running_scripts.append(script)
-                script.start(script_path, [self.client_id])
-                return
+        if (self.isRunning()
+                and self.runNewScript('client/save', ray.Command.SAVE, 
+                                      src_addr, OSC_SRC_SAVE)):
+            return
         
         if self.pending_command == ray.Command.SAVE:
             self.sendErrorToCaller(OSC_SRC_SAVE, ray.Err.GENERAL_ERROR,
@@ -756,42 +787,52 @@ class Client(ServerSender):
     def stop(self, src_addr=None, src_path=''):
         if src_addr:
             self._osc_srcs[OSC_SRC_STOP] = (src_addr, src_path)
-        else:
-            script_path = self.session.getScriptPath('client/stop')
-            
-            if script_path and os.access(script_path, os.X_OK):
-                script = Scripter(self.session, signaler, None, '')
-                self.session.running_scripts.append(script)
-                script.start(script_path, self.client_id)
-                return
         
         self.sendGuiMessage(_translate('GUIMSG', "  %s: stopping")
                                 % self.guiMsgStyle())
-        
-        #if self.is_external:
-            #os.kill(self.pid, 15) # 15 means signal.SIGTERM
-            #return
             
         if self.isRunning():
-            self.pending_command = ray.Command.KILL
+            if self.runNewScript('client/stop', ray.Command.STOP, 
+                                 src_addr, OSC_SRC_STOP):
+                return
+            
+            self.pending_command = ray.Command.STOP
             self.setStatus(ray.ClientStatus.QUIT)
             
             if not self.stopped_timer.isActive():
                 self.stopped_timer.start()
-                
-            self.terminate()
+            
+            if self.is_external:
+                os.kill(self.pid, 15) # 15 means signal.SIGTERM
+            else:
+                self.process.terminate()
+            #self.terminate()
         else:
             self.sendReplyToCaller(OSC_SRC_STOP, 'client stopped.')
     
     def quit(self):
         Terminal.message("Commanding %s to quit" % self.name)
         if self.isRunning():
-            self.pending_command = ray.Command.QUIT
+            self.pending_command = ray.Command.STOP
             self.terminate()
             self.setStatus(ray.ClientStatus.QUIT)
         else:
             self.sendGui("/ray/gui/client/status", self.client_id, 
                          ray.ClientStatus.REMOVED)
+    
+    def runNewScript(self, string_action, command, src_addr, slot):
+        script_path = self.session.getScriptPath(string_action)
+            
+        if script_path and not self.isScriptRunningAtPath(script_path):
+            script = Scripter(self, None, '')
+            script.setPendingCommand(command)
+            if src_addr:
+                script.stockInitialCaller(self._osc_srcs[slot])
+            self.running_scripts.append(script)
+            script.start(script_path, [self.client_id])
+            return True
+        
+        return False
     
     def switch(self, new_client):
         old_client_id      = self.client_id
@@ -1264,7 +1305,7 @@ ignored_extensions:%s""" % (self.client_id,
     def serverAnnounce(self, path, args, src_addr, is_new):
         client_name, capabilities, executable_path, major, minor, pid = args
         
-        if self.pending_command in (ray.Command.QUIT, ray.Command.KILL):
+        if self.pending_command == ray.Command.STOP:
             # assume to not answer to a dying client.
             # He will never know, or perhaps, it depends on beliefs.
             return

@@ -491,7 +491,7 @@ class OperatingSession(Session):
                     message = _translate('GUIMSG',
                         'waiting announce from %i clients...' % n_expected)
                 self.sendGuiMessage(message)
-            elif wait_for == ray.WaitFor.STOP:
+            elif wait_for == ray.WaitFor.QUIT:
                 if n_expected == 1:
                     message = _translate('GUIMSG',
                         'waiting for %s to stop...'
@@ -510,6 +510,9 @@ class OperatingSession(Session):
             follow()
     
     def endTimerIfLastExpected(self, client):
+        if self.wait_for == ray.WaitFor.QUIT and client in self.clients:
+            self.removeClient(client)
+            
         if client in self.expected_clients:
             self.expected_clients.remove(client)
             
@@ -538,7 +541,7 @@ class OperatingSession(Session):
                     _translate('GUIMSG', "%s didn't announce.")
                         % ', '.join(client_names))
                 
-            elif self.wait_for == ray.WaitFor.STOP:
+            elif self.wait_for == ray.WaitFor.QUIT:
                 self.sendGuiMessage(_translate('GUIMSG', "%s still alive !")
                                     % ', '.join(client_names))
                 
@@ -610,8 +613,8 @@ class OperatingSession(Session):
             
     def timerQuitTimeOut(self):
         if self.clients_to_quit:
-            self.clients_to_quit[0].quit()
-            self.clients_to_quit.__delitem__(0)
+            client = self.clients_to_quit.pop(0)
+            client.stop()
             
         if not self.clients_to_quit:
             self.timer_quit.stop()
@@ -949,7 +952,7 @@ class OperatingSession(Session):
             
         duration = int(1000 * math.sqrt(len(self.expected_clients)))
         self.waitAndGoTo(duration, self.closeNoSaveClients_step1,
-                         ray.WaitFor.STOP)
+                         ray.WaitFor.QUIT)
     
     def closeNoSaveClients_step1(self):
         self.cleanExpected()
@@ -968,7 +971,7 @@ class OperatingSession(Session):
                 'waiting you to close yourself unsaveable clients...'))
             
         # Timer (2mn) is restarted if an expected client has been closed
-        self.waitAndGoTo(120000, self.nextFunction, ray.WaitFor.STOP, True)
+        self.waitAndGoTo(120000, self.nextFunction, ray.WaitFor.QUIT, True)
     
     def close(self):
         self.expected_clients.clear()
@@ -1001,13 +1004,13 @@ class OperatingSession(Session):
                     _translate('GUIMSG', 'waiting for %i clients to stop...')
                         % len(self.expected_clients))
         
-        self.waitAndGoTo(30000, self.close_step1, ray.WaitFor.STOP)
+        self.waitAndGoTo(30000, self.close_step1, ray.WaitFor.QUIT)
     
     def close_step1(self):
         for client in self.expected_clients:
             client.kill()
             
-        self.waitAndGoTo(1000, self.close_step2, ray.WaitFor.STOP)
+        self.waitAndGoTo(1000, self.close_step2, ray.WaitFor.QUIT)
     
     def close_step2(self):
         self.cleanExpected()
@@ -1500,7 +1503,7 @@ class OperatingSession(Session):
                 # in the new session
                 if client.isRunning():
                     self.expected_clients.append(client)
-                    client.quit()
+                    client.stop()
                 else:
                     byebye_client_list.append(client)
         
@@ -1548,7 +1551,7 @@ class OperatingSession(Session):
             self.removed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
         
-        self.waitAndGoTo(20000, (self.load_step1, open_off), ray.WaitFor.STOP)
+        self.waitAndGoTo(20000, (self.load_step1, open_off), ray.WaitFor.QUIT)
     
     def load_step1(self, open_off=False):
         self.cleanExpected()
@@ -2073,7 +2076,7 @@ class SignaledSession(OperatingSession):
     def _nsm_server_announce(self, path, args, src_addr):
         client_name, capabilities, executable_path, major, minor, pid = args
         
-        if self.wait_for == ray.WaitFor.STOP:
+        if self.wait_for == ray.WaitFor.QUIT:
             if path.startswith('/nsm/server/'):
                 # Error is wrong but compatible with NSM API
                 self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN, 
@@ -2144,7 +2147,7 @@ class SignaledSession(OperatingSession):
             self.endTimerIfLastExpected(client)
     
     def _reply(self, path, args, src_addr):
-        if self.wait_for == ray.WaitFor.STOP:
+        if self.wait_for == ray.WaitFor.QUIT:
             return
         
         message = args[1]
@@ -2157,9 +2160,6 @@ class SignaledSession(OperatingSession):
                     and server.getServerStatus() == ray.ServerStatus.READY
                     and server.option_desktops_memory):
                 self.desktops_memory.replace()
-            
-            #if self.wait_for == ray.WaitFor.REPLY:
-                #self.endTimerIfLastExpected(client)
         else:
             self.message("Reply from unknown client")
     
