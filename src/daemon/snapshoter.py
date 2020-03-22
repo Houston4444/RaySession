@@ -254,7 +254,7 @@ class Snapshoter(QObject):
         snapshot_el.setAttribute('session_name', self.session.name)
         snapshot_el.setAttribute('VERSION', ray.VERSION)
         
-        for client in self.session.clients + self.session.removed_clients:
+        for client in self.session.clients + self.session.trashed_clients:
             client_el = xml.createElement('client')
             client.writeXmlProperties(client_el)
             client_el.setAttribute('client_id', client.client_id)

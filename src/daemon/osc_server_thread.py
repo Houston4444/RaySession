@@ -896,17 +896,11 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/client/show_optional_gui', 's')
     def nsmGuiClientShow_optional_gui(self, path, args, types, src_addr):
-        client = self.session.getClient(args[0])
-        
-        if client and client.active:
-            self.send(client.addr, "/nsm/client/show_optional_gui")
+        pass
 
     @ray_method('/ray/client/hide_optional_gui', 's')
     def nsmGuiClientHide_optional_gui(self, path, args, types, src_addr):
-        client = self.session.getClient(args[0])
-        
-        if client and client.active:
-            self.send(client.addr, "/nsm/client/hide_optional_gui")
+        pass
 
     @ray_method('/ray/client/update_properties', 'ssssissssis')
     def rayGuiClientUpdateProperties(self, path, args, types, src_addr):

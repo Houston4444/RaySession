@@ -519,8 +519,7 @@ class Client(ServerSender):
                     % self.guiMsgStyle())
             return
         
-        if self.runNewScript('client/start', ray.Command.START, 
-                             src_addr, OSC_SRC_START):
+        if self.runNewScript(ray.Command.START, src_addr, OSC_SRC_START):
             return
         
         self.pending_command = ray.Command.START
@@ -637,13 +636,11 @@ class Client(ServerSender):
                                     % self.guiMsgStyle())
         
         self.sendReplyToCaller(OSC_SRC_STOP, 'client stopped')
-        self.sendErrorToCaller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
-                _translate('GUIMSG', '%s died !' % self.guiMsgStyle()))
         
-        #if self.pending_command == ray.Command.STOP:
-            #self.session.removeClient(self)
-            #return
-        #else:
+        for osc_src in (OSC_SRC_OPEN, OSC_SRC_SAVE):
+            self.sendErrorToCaller(osc_src, ray.Err.GENERAL_ERROR,
+                    _translate('GUIMSG', '%s died !' % self.guiMsgStyle()))
+        
         self.setStatus(ray.ClientStatus.STOPPED)
                 
         self.pending_command = ray.Command.NONE
@@ -663,6 +660,11 @@ class Client(ServerSender):
     def scriptFinished(self, script_path, exit_code):
         for script in self.running_scripts:
             if script.isFinished():
+                if script.isAskedForTerminate():
+                    if self.session.wait_for == ray.WaitFor.QUIT:
+                        self.session.endTimerIfLastExpected(self)
+                    return
+                
                 if exit_code:
                     error_text = "script %s ended with an error code" \
                                     % script.getPath()
@@ -699,7 +701,11 @@ class Client(ServerSender):
         
         if self.session.wait_for:
             self.session.endTimerIfLastExpected(self)
-        
+    
+    def terminateScripts(self):
+        for script in self.running_scripts:
+            script.terminate()
+    
     def errorInProcess(self, error):
         if error == QProcess.FailedToStart:
             self.sendGuiMessage(
@@ -742,28 +748,13 @@ class Client(ServerSender):
     def canSaveNow(self):
         return bool(self.active and not self.no_save_level) 
     
-    def isScriptRunningFor(self, command):
-        for script in self.running_scripts:
-            if script.pendingCommand() == command:
-                return True
-            
-        return False
-    
-    def isScriptRunningAtPath(self, script_path):
-        for script in self.running_scripts:
-            if script.getPath() == script_path:
-                return True
-            
-        return False
-    
     def save(self, src_addr=None, src_path=''):
         if src_addr:
             self._osc_srcs[OSC_SRC_SAVE] = (src_addr, src_path)
             
-        if (self.isRunning()
-                and self.runNewScript('client/save', ray.Command.SAVE, 
-                                      src_addr, OSC_SRC_SAVE)):
-            return
+        if self.isRunning():
+            if self.runNewScript(ray.Command.SAVE, src_addr, OSC_SRC_SAVE):
+                return
         
         if self.pending_command == ray.Command.SAVE:
             self.sendErrorToCaller(OSC_SRC_SAVE, ray.Err.GENERAL_ERROR,
@@ -792,8 +783,7 @@ class Client(ServerSender):
                                 % self.guiMsgStyle())
             
         if self.isRunning():
-            if self.runNewScript('client/stop', ray.Command.STOP, 
-                                 src_addr, OSC_SRC_STOP):
+            if self.runNewScript(ray.Command.STOP, src_addr, OSC_SRC_STOP):
                 return
             
             self.pending_command = ray.Command.STOP
@@ -820,19 +810,41 @@ class Client(ServerSender):
             self.sendGui("/ray/gui/client/status", self.client_id, 
                          ray.ClientStatus.REMOVED)
     
-    def runNewScript(self, string_action, command, src_addr, slot):
-        script_path = self.session.getScriptPath(string_action)
-            
-        if script_path and not self.isScriptRunningAtPath(script_path):
-            script = Scripter(self, None, '')
-            script.setPendingCommand(command)
-            if src_addr:
-                script.stockInitialCaller(self._osc_srcs[slot])
-            self.running_scripts.append(script)
-            script.start(script_path, [self.client_id])
-            return True
+    def runNewScript(self, command, src_addr, slot):
+        script_string = ''
+        if command == ray.Command.START:
+            script_string = 'start'
+        elif command == ray.Command.SAVE:
+            script_string = 'save'
+        elif command == ray.Command.STOP:
+            script_string = 'stop'
+        else:
+            return False
         
-        return False
+        script_dir = self.session.getScriptDir()
+        if not script_dir:
+            return False
+        
+        script_path = "%s/client/%s/%s.sh" % (script_dir, self.client_id, 
+                                              script_string)
+        
+        if not os.access(script_path, os.X_OK):
+            script_path = "%s/all.clients/%s.sh" % (script_dir, script_string)
+            if not os.access(script_path, os.X_OK):
+                return False
+        
+        for script in self.running_scripts:
+            if script.getPath() == script_path:
+                # this script is already running
+                return False
+
+        script = Scripter(self, None, '')
+        script.setPendingCommand(command)
+        if src_addr:
+            script.stockInitialCaller(self._osc_srcs[slot])
+        self.running_scripts.append(script)
+        script.start(script_path, [self.client_id])
+        return True
     
     def switch(self, new_client):
         old_client_id      = self.client_id

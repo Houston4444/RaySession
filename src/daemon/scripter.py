@@ -22,9 +22,9 @@ class Scripter:
         self._is_stepper = False
         self._stepper_process = ''
         self._stepper_has_call = False
-        self._client_id = ''
         self._pending_command = ray.Command.NONE
         self._initial_caller = (None, '')
+        self._asked_for_terminate = False
         
     def processStarted(self):
         pass
@@ -54,6 +54,17 @@ class Scripter:
     def isFinished(self):
         return not bool(self._process.state())
     
+    def terminate(self):
+        print('aaazkoefok', self.getPath())
+        self._asked_for_terminate = True
+        self._process.terminate()
+    
+    def isAskedForTerminate(self):
+        return self._asked_for_terminate
+    
+    def kill(self):
+        self._process.kill()
+    
     def getPath(self):
         return self._process.program()
     
@@ -77,12 +88,6 @@ class Scripter:
     
     def setStepperHasCall(self, bool_call):
         self._stepper_has_call = bool_call
-        
-    def setClientId(self, client_id):
-        self._client_id = client_id
-        
-    def clientId(self):
-        return self._client_id
     
     def setPendingCommand(self, pending_command):
         self._pending_command = pending_command

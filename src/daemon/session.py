@@ -73,7 +73,7 @@ class Session(ServerSender):
         
         self.clients = []
         self.new_clients = []
-        self.removed_clients = []
+        self.trashed_clients = []
         self.favorites = []
         self.name = ""
         self.path = ""
@@ -191,18 +191,20 @@ class Session(ServerSender):
     
     def trashClient(self, client):
         if not client in self.clients:
-            raise NameError("No client to remove: %s" % client.client_id)
+            raise NameError("No client to trash: %s" % client.client_id)
             return
         
         client.setStatus(ray.ClientStatus.REMOVED)
         
         if client.getProjectFiles() or client.net_daemon_url:
-            self.removed_clients.append(client)
+            self.trashed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
         
         self.clients.remove(client)
     
     def removeClient(self, client):
+        client.terminateScripts()
+        
         if not client in self.clients:
             raise NameError("No client to remove: %s" % client.client_id)
             return
@@ -218,7 +220,7 @@ class Session(ServerSender):
             return
         
         self.sendGui('/ray/gui/trash/remove', client.client_id)
-        self.removed_clients.remove(client)
+        self.trashed_clients.remove(client)
         
         if client.auto_start:
             client.start()
@@ -266,7 +268,7 @@ class Session(ServerSender):
                     if not string in self.forbidden_ids_list:
                         self.forbidden_ids_list.append(string)
                         
-        for client in self.clients + self.removed_clients:
+        for client in self.clients + self.trashed_clients:
             if not client.client_id in self.forbidden_ids_list:
                 self.forbidden_ids_list.append(client.client_id)
     
@@ -813,7 +815,7 @@ class OperatingSession(Session):
             
             xml_cls.appendChild(cl)
             
-        for client in self.removed_clients:
+        for client in self.trashed_clients:
             cl = xml.createElement('client')
             cl.setAttribute('id', client.client_id)
             
@@ -975,7 +977,7 @@ class OperatingSession(Session):
     
     def close(self):
         self.expected_clients.clear()
-        self.removed_clients.clear()
+        self.trashed_clients.clear()
         
         if not self.path:
             self.nextFunction()
@@ -1227,7 +1229,7 @@ class OperatingSession(Session):
         if net:
             tp_mode = ray.Template.SESSION_SAVE_NET
         
-        for client in self.clients + self.removed_clients:
+        for client in self.clients + self.trashed_clients:
             client.adjustFilesAfterCopy(template_name, tp_mode)
         
         self.message("Done")
@@ -1307,7 +1309,7 @@ class OperatingSession(Session):
             self.sendGui('/ray/gui/session/name', '', '')
     
     def rename(self, new_session_name):
-        for client in self.clients + self.removed_clients:
+        for client in self.clients + self.trashed_clients:
             client.adjustFilesAfterCopy(new_session_name, ray.Template.RENAME)
         
         try:
@@ -1527,7 +1529,7 @@ class OperatingSession(Session):
                             'waiting for %i clients to quit...')
                         % len(self.expected_clients))
         
-        self.removed_clients.clear()
+        self.trashed_clients.clear()
         self.sendGui('/ray/gui/trash/clear')
         
         # Here we are sure to have all needed
@@ -1548,7 +1550,7 @@ class OperatingSession(Session):
             self.sendGui('/ray/gui/session/is_nsm')
         
         for client in self.new_removed_clients:
-            self.removed_clients.append(client)
+            self.trashed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
         
         self.waitAndGoTo(20000, (self.load_step1, open_off), ray.WaitFor.QUIT)
@@ -1721,6 +1723,18 @@ class OperatingSession(Session):
         self.forgetOscArgs()
         
     def exitNow(self):
+        # here we can use self.expected_clients for scripts
+        # because we are leaving
+        for script in self.running_scripts:
+            self.expected_clients.append(script)
+            script.terminate()
+                
+        self.waitAndGoTo(3000, self.exitNow_step2, ray.WaitFor.QUIT)
+    
+    def exitNow_step2(self):
+        for script in self.expected_clients:
+            script.kill()
+       
         self.message("Bye Bye...")
         self.setServerStatus(ray.ServerStatus.OFF)
         self.sendReply("Bye Bye...")
@@ -2674,7 +2688,7 @@ class SignaledSession(OperatingSession):
                                'Stop all clients before rename session !'))
                 return
         
-        for client in self.clients + self.removed_clients:
+        for client in self.clients + self.trashed_clients:
             client.adjustFilesAfterCopy(new_session_name, ray.Template.RENAME)
         
         if not self.isNsmLocked():
@@ -2719,7 +2733,7 @@ class SignaledSession(OperatingSession):
                     return
                 
                 # Check if client_id already exists
-                for client in self.clients + self.removed_clients:
+                for client in self.clients + self.trashed_clients:
                     if client.client_id == client_id:
                         self.sendError(ray.Err.CREATE_FAILED,
                             _translate("error", "client_id %s is already used")
@@ -3003,7 +3017,29 @@ class SignaledSession(OperatingSession):
                 break
         else:
             self.sendErrorNoClient(src_addr, path, client_id)
-            
+    
+    def _ray_client_show_optional_gui(self, path, args, src_addr):
+        client_id = args[0]
+        
+        for client in self.clients:
+            if client.client_id:
+                client.sendToSelfAddress("/nsm/client/show_optional_gui")
+                self.send(src_addr, '/reply', path, 'show optional GUI asked')
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
+    def _ray_client_hide_optional_gui(self, path, args, src_addr):
+        client_id = args[0]
+        
+        for client in self.clients:
+            if client.client_id:
+                client.sendToSelfAddress("/nsm/client/hide_optional_gui")
+                self.send(src_addr, '/reply', path, 'hide optional GUI asked')
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
     def _ray_client_update_properties(self, path, args, src_addr):
         client_data = ray.ClientData(*args)
         
@@ -3230,7 +3266,7 @@ class SignaledSession(OperatingSession):
         client.net_daemon_copy_timer.start()
     
     def _ray_trash_restore(self, path, args, src_addr):
-        for client in self.removed_clients:
+        for client in self.trashed_clients:
             if client.client_id == args[0]:
                 self.restoreClient(client)
                 break
@@ -3238,7 +3274,7 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, "/error", -10, "No such client.")
     
     def _ray_trash_remove_definitely(self, path, args, src_addr):
-        for client in self.removed_clients:
+        for client in self.trashed_clients:
             if client.client_id == args[0]:
                 break
         else:
@@ -3252,7 +3288,7 @@ class SignaledSession(OperatingSession):
             except:
                 continue
             
-        self.removed_clients.remove(client)
+        self.trashed_clients.remove(client)
     
     def _ray_option_bookmark_session_folder(self, path, args, src_addr):
         if self.path:
@@ -3316,7 +3352,7 @@ class DummySession(OperatingSession):
                               self.save,
                               (self.renameDone, new_session_name)]
         self.nextFunction()
-        #for client in self.clients + self.removed_clients:
+        #for client in self.clients + self.trashed_clients:
             #client.adjustFilesAfterCopy(new_session_name, ray.Template.RENAME)
         
         #try:
