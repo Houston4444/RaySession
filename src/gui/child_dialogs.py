@@ -972,8 +972,8 @@ class StopClientDialog(ChildDialog):
                 minutes = int((time.time() - self.client.last_save) / 60)
                 text = _translate(
                     'client_stop',
-                    "<strong>%s</strong> seems to has not been saved for %i minute(s).<br />Do you really want to stop it ?") % (self.client.prettierName(),
-                                                                                                                                 minutes)
+                    "<strong>%s</strong> seems to has not been saved for %i minute(s).<br />Do you really want to stop it ?") \
+                        % (self.client.prettierName(), minutes)
 
             self.ui.label.setText(text)
             
@@ -981,8 +981,6 @@ class StopClientDialog(ChildDialog):
 
         self.ui.pushButtonSaveStop.clicked.connect(self.saveAndStop)
         self.ui.checkBox.stateChanged.connect(self.checkBoxClicked)
-
-        
 
     def saveAndStop(self):
         self.wait_for_save = True
