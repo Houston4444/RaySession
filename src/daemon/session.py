@@ -221,9 +221,6 @@ class Session(ServerSender):
         
         self.sendGui('/ray/gui/trash/remove', client.client_id)
         self.trashed_clients.remove(client)
-        
-        if client.auto_start:
-            client.start()
     
     def tellAllClientsSessionIsLoaded(self):
         self.message("Telling all clients that session is loaded...")
@@ -2888,6 +2885,16 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, '/reply', path, *client_id_list)
         self.send(src_addr, '/reply', path)
     
+    def _ray_session_list_trashed_clients(self, path, args, src_addr):
+        client_id_list = []
+        
+        for trashed_client in self.trashed_clients:
+            client_id_list.append(trashed_client.client_id)
+            
+        if client_id_list:
+            self.send(src_addr, '/reply', path, *client_id_list)
+        self.send(src_addr, '/reply', path)
+    
     def _ray_session_process_step(self, path, args, src_addr):
         if not self.process_order:
             self.send(src_addr, '/error', ray.Err.GENERAL_ERROR,
@@ -2925,10 +2932,14 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == client_id:
                 if client.isRunning():
+                    self.send(src_addr, '/error', path, ray.Err.OPERATION_PENDING,
+                              "Stop client before to trash it !")
                     return
                 
                 if self.file_copier.isActive(client_id):
                     self.file_copier.abort()
+                    self.send(src_addr, '/error', path, ray.Err.COPY_RUNNING,
+                              "Files were copying for this client.")
                     return
                 
                 self.trashClient(client)
@@ -3245,6 +3256,47 @@ class SignaledSession(OperatingSession):
         else:
             self.sendErrorNoClient(src_addr, path, client_id)
     
+    def _ray_trashed_client_restore(self, path, args, src_addr):
+        if not self.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "Cannot add to session because no session is loaded.")
+            return
+        
+        for client in self.trashed_clients:
+            if client.client_id == args[0]:
+                self.restoreClient(client)
+                self.send(src_addr, '/reply', path, "client restored")
+                break
+        else:
+            self.send(src_addr, "/error", path, -10, "No such client.")
+    
+    def _ray_trashed_client_remove_definitely(self, path, args, src_addr):
+        if not self.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "Cannot add to session because no session is loaded.")
+            return
+        
+        for client in self.trashed_clients:
+            if client.client_id == args[0]:
+                break
+        else:
+            self.send(src_addr, "/error", path, -10, "No such client.")
+            return
+        
+        self.sendGui('/ray/gui/trash/remove', client.client_id)
+        
+        for file in client.getProjectFiles():
+            try:
+                subprocess.run(['rm', '-R', file])
+            except:
+                self.send(src_addr, '/minor_error', path,  -10, 
+                          "Error while removing client file %s" % file)
+                continue
+            
+        self.trashed_clients.remove(client)
+        
+        self.send(src_addr, '/reply', path, "client definitely removed") 
+    
     def _ray_net_daemon_duplicate_state(self, path, args, src_addr):
         state = args[0]
         for client in self.clients:
@@ -3265,31 +3317,6 @@ class SignaledSession(OperatingSession):
             self.endTimerIfLastExpected(client)
             
         client.net_daemon_copy_timer.start()
-    
-    def _ray_trash_restore(self, path, args, src_addr):
-        for client in self.trashed_clients:
-            if client.client_id == args[0]:
-                self.restoreClient(client)
-                break
-        else:
-            self.send(src_addr, "/error", -10, "No such client.")
-    
-    def _ray_trash_remove_definitely(self, path, args, src_addr):
-        for client in self.trashed_clients:
-            if client.client_id == args[0]:
-                break
-        else:
-            return
-        
-        self.sendGui('/ray/gui/trash/remove', client.client_id)
-        
-        for file in client.getProjectFiles():
-            try:
-                subprocess.run(['rm', '-R', file])
-            except:
-                continue
-            
-        self.trashed_clients.remove(client)
     
     def _ray_option_bookmark_session_folder(self, path, args, src_addr):
         if self.path:

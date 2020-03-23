@@ -12,6 +12,7 @@ OPERATION_TYPE_CONTROL = 1
 OPERATION_TYPE_SERVER = 2
 OPERATION_TYPE_SESSION = 3
 OPERATION_TYPE_CLIENT = 4
+OPERATION_TYPE_TRASHED_CLIENT = 5
 
 control_operations = ('start', 'stop', 'list_daemons', 'get_root', 
                       'get_port', 'get_port_gui_free', 'get_pid', 'get_session_path')
@@ -27,7 +28,8 @@ session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',
                       'rename', 'add_executable', 'add_proxy',
                       'add_client_template', 'list_snapshots',
-                      'list_clients', 'get_session_name', 'process_step')
+                      'list_clients', 'list_trashed_clients',
+                      'get_session_name', 'process_step')
 
 #client_operations = ('stop', 'kill', 'trash', 'resume', 'save',
                      #'save_as_template', 'show_optional_gui',
@@ -176,12 +178,15 @@ if __name__ == '__main__':
             wanted_port = int(port)
     
     operation = args.pop(0)
-    if operation == 'client':
+    if operation in ('client', 'trashed_client'):
         if len(args) < 2:
             printHelp()
             sys.exit(100)
         
         operation_type = OPERATION_TYPE_CLIENT
+        if operation == 'trashed_client':
+            operation_type = OPERATION_TYPE_TRASHED_CLIENT
+        
         client_id = args.pop(0)
         operation = args.pop(0)
     
@@ -197,7 +202,8 @@ if __name__ == '__main__':
             sys.exit(100)
         
     arg_list = [autoTypeString(s) for s in args]
-    if operation_type == OPERATION_TYPE_CLIENT:
+    if operation_type in (OPERATION_TYPE_CLIENT, 
+                          OPERATION_TYPE_TRASHED_CLIENT):
         arg_list.insert(0, client_id)
     
     if operation in ('new_session', 'open_session', 'change_root',
@@ -296,6 +302,11 @@ if __name__ == '__main__':
             sys.stderr.write("No server started %s. So no client to %s\n"
                                  % (at_port, operation))
             sys.exit(100)
+        elif operation_type == OPERATION_TYPE_CLIENT:
+            sys.stderr.write(
+                "No server started %s. So no trashed client to %s\n"
+                                 % (at_port, operation))
+            sys.exit(100)
         else:
             printHelp()
             sys.exit(100)
@@ -303,6 +314,8 @@ if __name__ == '__main__':
     osc_order_path = '/ray/'
     if operation_type == OPERATION_TYPE_CLIENT:
         osc_order_path += 'client/'
+    elif operation_type == OPERATION_TYPE_TRASHED_CLIENT:
+        osc_order_path += 'trashed_client/'
     elif operation_type == OPERATION_TYPE_SERVER:
         osc_order_path += 'server/'
     elif operation_type == OPERATION_TYPE_SESSION:

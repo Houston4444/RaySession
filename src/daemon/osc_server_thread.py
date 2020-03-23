@@ -853,14 +853,14 @@ class OscServerThread(ClientCommunicating):
         if self.session.path:
             subprocess.Popen(['xdg-open',  self.session.path])
     
-    @ray_method('/ray/session/list_clients', '')
-    def raySessionListClients(self, path, args, types, src_addr):
-        pass
-    
     @ray_method('/ray/session/list_clients', None)
     def raySessionListClients(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             return False
+    
+    @ray_method('/ray/session/list_trashed_clients', '')
+    def raySessionListTrashedClients(self, path, args, types, src_addr):
+        pass
     
     @ray_method('/ray/client/stop', 's')
     def rayGuiClientStop(self, path, args, types, src_addr):
@@ -938,19 +938,16 @@ class OscServerThread(ClientCommunicating):
     def rayClientIsStarted(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/net_daemon/duplicate_state', 'f')
-    def rayDuplicateState(self, path, args, types, src_addr):
+    @ray_method('/ray/trashed_client/restore', 's')
+    def rayGuiTrashRestore(self, path, args, types, src_addr):
+        pass
+        
+    @ray_method('/ray/trashed_client/remove_definitely', 's')
+    def rayGuiTrashRemoveDefinitely(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/trash/restore', 's')
-    def rayGuiTrashRestore(self, path, args, types, src_addr):
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
-            return False
-        
-    @ray_method('/ray/trash/remove_definitely', 's')
-    def rayGuiTrashRemoveDefinitely(self, path, args, types, src_addr):
+    @ray_method('/ray/net_daemon/duplicate_state', 'f')
+    def rayDuplicateState(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/option/save_from_client', 'i')

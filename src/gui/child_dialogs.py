@@ -727,7 +727,7 @@ class ClientTrashDialog(ChildDialog):
 
     def removeClient(self):
         self.toDaemon(
-            '/ray/trash/remove_definitely',
+            '/ray/trashed_client/remove_definitely',
             self.client_data.client_id)
         self.reject()
 

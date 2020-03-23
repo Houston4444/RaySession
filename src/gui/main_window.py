@@ -826,7 +826,7 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        self.toDaemon('/ray/trash/restore', client_id)
+        self.toDaemon('/ray/trashed_client/restore', client_id)
     
     @pyqtSlot()
     def launchFavorite(self):
