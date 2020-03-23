@@ -30,6 +30,7 @@ session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'rename', 'add_executable', 'add_proxy',
                       'add_client_template', 'list_snapshots',
                       'list_clients', 'list_trashed_clients',
+                      'reorder_clients',
                       'get_session_name', 'process_step')
 
 #client_operations = ('stop', 'kill', 'trash', 'resume', 'save',
@@ -159,15 +160,20 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     
     wanted_port = 0
+    detach = False
     
     dport = os.getenv('RAY_CONTROL_PORT')
     if dport and dport.isdigit():
         wanted_port = dport
     
-    while args[0].startswith('--'):
+    while args and args[0].startswith('--'):
         option = args.pop(0)
         
-        if option == '--port':
+        if option == '--help':
+            printHelp(True)
+            sys.exit(0)
+            
+        elif option == '--port':
             if not args:
                 printHelp()
                 sys.exit(100)
@@ -177,6 +183,9 @@ if __name__ == '__main__':
                                  % port)
                 sys.exit(100)
             wanted_port = int(port)
+            
+        elif option == '--detach':
+            detach = True
     
     operation = args.pop(0)
     if operation in ('client', 'trashed_client'):
@@ -328,7 +337,7 @@ if __name__ == '__main__':
         osc_order_path = '/ray/server/quit'
     
     import osc_server # see top of the file
-    server = osc_server.OscServer()
+    server = osc_server.OscServer(detach)
     server.setOrderPathArgs(osc_order_path, arg_list)
     daemon_process = None
     
@@ -349,6 +358,9 @@ if __name__ == '__main__':
         else:
             server.setDaemonAddress(daemon_port)
             server.sendOrderMessage()
+            
+        if detach:
+            sys.exit(0)
     else:        
         session_root = "%s/Ray Sessions" % os.getenv('HOME')
         try:
@@ -372,10 +384,6 @@ if __name__ == '__main__':
         
         daemon_process = subprocess.Popen(process_args,
             -1, None, None, subprocess.DEVNULL, subprocess.DEVNULL)
-        #daemon_process = subprocess.Popen(
-            #['ray-daemon', '--control-url', '192.168.50.1',
-             #'--session-root', session_root],
-            #-1, None, None, subprocess.DEVNULL, subprocess.DEVNULL)
         
         server.waitForStart()
         

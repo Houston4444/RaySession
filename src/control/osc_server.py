@@ -21,7 +21,7 @@ def highlightText(string):
         return "'%s'" % string
 
 class OscServer(liblo.Server):
-    def __init__(self):
+    def __init__(self, detach=False):
         liblo.Server.__init__(self)
         self.m_daemon_address = None
         self.add_method('/reply', None, self.replyMessage)
@@ -36,6 +36,7 @@ class OscServer(liblo.Server):
         self._wait_for_start_only = False
         self._started_time = 0
         self._stop_port_list = []
+        self._detach = detach
 
     def replyMessage(self, path, args, types, src_addr):
         if not areTheyAllString(args):
@@ -122,7 +123,6 @@ class OscServer(liblo.Server):
         
         sys.stderr.write('%s\n' % message)
         self._final_err = - err
-        print('kofrko', self._final_err)
         
     def minorErrorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
@@ -166,6 +166,9 @@ class OscServer(liblo.Server):
             sys.exit(101)
             
         self.toDaemon(self._osc_order_path, *self._osc_order_args)
+        
+        if self._detach:
+            self._final_err = 0
     
     def finalError(self):
         return self._final_err
