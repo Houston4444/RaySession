@@ -34,6 +34,9 @@ class FileCopier(ServerSender):
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.checkProgressSize)
         
+        self._abort_src_addr = None
+        self._abort_src_path = ''
+        
     def informCopytoGui(self, copy_state):
         server = OscServerThread.getInstance()
         if not server:
@@ -101,7 +104,13 @@ class FileCopier(ServerSender):
                         try:
                             subprocess.run(['rm', '-R', file_to_remove]) 
                         except:
-                            pass
+                            if self._abort_src_addr and self._abort_src_path:
+                                self.send(self._abort_src_addr,
+                                          '/error_minor',
+                                          self._abort_src_path, 
+                                          ray.Err.SUBPROCESS_CRASH,
+                                          "%s hasn't been removed !")
+                                      
                         
             self.is_active = False
             self.informCopytoGui(False)
@@ -226,7 +235,10 @@ class FileCopier(ServerSender):
         if self.process.state() == QProcess.Running:
             self.aborted = True
             self.process.terminate()
-            
+        
+    def abortFrom(self, src_addr, src_path):
+        self.abort()
+        
     def isActive(self, client_id=''):
         if client_id and client_id != self.client_id:
             return False

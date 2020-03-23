@@ -46,6 +46,10 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/error', 'sis')
     def _error(self, path, args, types, src_addr):
         pass
+    
+    @ray_method('/minor_error', 'sis')
+    def error(self, path, args, types, src_addr):
+        pass
 
     @ray_method('/reply', None)
     def _reply(self, path, args, types, src_addr):
@@ -151,10 +155,6 @@ class GUIServerThread(liblo.ServerThread):
     def _client_status(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/gui/client/switch', 'ss')
-    def _client_switch(self, path, args, types, src_addr):
-        pass
-
     @ray_method('/ray/gui/client/progress', 'sf')
     def _client_progress(self, path, args, types, src_addr):
         pass
@@ -199,6 +199,18 @@ class GUIServerThread(liblo.ServerThread):
     def _favorites_removed(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/gui/script_info', 's')
+    def _script_info(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/script_user_action', 's')
+    def _script_user_action(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/hide_script_info', '')
+    def _hide_script_info(self, path, args, types, src_addr):
+        pass
+    
     def send(self, *args):
         if CommandLineArgs.debug:
             sys.stderr.write(
@@ -224,7 +236,7 @@ class GUIServerThread(liblo.ServerThread):
         NSM_URL = os.getenv('NSM_URL')
         if not NSM_URL:
             NSM_URL = ""
-
+        
         self.send(self._daemon_manager.address, '/ray/server/gui_announce',
                   ray.VERSION, int(CommandLineArgs.under_nsm),
                   NSM_URL, 0,
@@ -233,14 +245,9 @@ class GUIServerThread(liblo.ServerThread):
     def disannounce(self, src_addr):
         self.send(src_addr, '/ray/server/gui_disannounce')
 
-    def openSession(self, session_name, session_template=''):
-        if session_template:
-            self.toDaemon(
-                '/ray/server/open_session',
-                session_name,
-                session_template)
-        else:
-            self.toDaemon('/ray/server/open_session', session_name)
+    def openSession(self, session_name, save_previous=1, session_template=''):
+        self.toDaemon('/ray/server/open_session', session_name,
+                      save_previous, session_template)
 
     def saveSession(self):
         self.toDaemon('/ray/session/save')

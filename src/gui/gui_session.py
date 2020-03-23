@@ -1,4 +1,6 @@
 
+from PyQt5.QtWidgets import QApplication
+
 import ray
 from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
@@ -29,15 +31,10 @@ class Session(object):
         self._daemon_manager = DaemonManager(self)
         if CommandLineArgs.daemon_url:
             self._daemon_manager.setOscAddress(CommandLineArgs.daemon_url)
+        elif CommandLineArgs.daemon_port:
+            self._daemon_manager.setOscAddress(CommandLineArgs.daemon_port)
         elif not CommandLineArgs.out_daemon:
             self._daemon_manager.setNewOscAddress()
-
-        if CommandLineArgs.under_nsm:
-            if CommandLineArgs.out_daemon:
-                self._nsm_child = NSMChildOutside(self)
-                self._daemon_manager.setExternal()
-            else:
-                self._nsm_child = NSMChild(self)
         
         # build nsm_child if NSM_URL in env
         self._nsm_child = None
@@ -159,7 +156,28 @@ class SignaledSession(Session):
     
     def _error(self, path, args):
         err_path, err_code, err_message = args
+        
+        # don't shows a window error if error is OK
+        # or related to an abort made by user
+        if err_code in (ray.Err.OK, ray.Err.ABORT_ORDERED, 
+                        ray.Err.COPY_ABORTED):
+            return
+        
         self._main_win.errorMessage(err_message)
+    
+    def _minor_error(self, path, args):
+        err_path, err_code, err_message = args
+        
+        # don't shows a window error if error is OK
+        # or if it comes from just an unknown (and untreated) message
+        if err_code in (ray.Err.OK, ray.Err.UNKNOWN_MESSAGE):
+            return
+        
+        self._main_win.errorMessage(err_message)
+        
+    
+    def _ray_gui_server_disannounce(self, path, args):
+        QApplication.quit()
     
     def _ray_gui_server_nsm_locked(self, path, args):
         nsm_locked = bool(args[0])
@@ -233,13 +251,6 @@ class SignaledSession(Session):
             
         self._main_win.clientStatusChanged(client_id, status)
     
-    def _ray_gui_client_switch(self, path, args):
-        old_client_id, new_client_id = args
-        
-        client = self.getClient(old_client_id)
-        if client:
-            client.switch(new_client_id)
-    
     def _ray_gui_client_progress(self, path, args):
         client_id, progress = args
         
@@ -308,3 +319,13 @@ class SignaledSession(Session):
         name, int_factory = args
         self.removeFavorite(name, bool(int_factory), True)
         
+    def _ray_gui_script_info(self, path, args):
+        text = args[0]
+        self._main_win.showScriptInfo(text)
+        
+    def _ray_gui_script_user_action(self, path, args):
+        text = args[0]
+        self._main_win.showScriptUserAction(text)
+        
+    def _ray_gui_hide_script_info(self, path, args):
+        self._main_win.hideScriptDialog()

@@ -105,7 +105,18 @@ class Terminal:
         sys.stderr.buffer.write(byte_string)
         
         cls._last_client_name = snapshoter_str
-
+    
+    @classmethod
+    def scripterMessage(cls, byte_string, command=''):
+        scripter_str = "scripter:.%s" % command
+        
+        if cls._last_client_name != scripter_str:
+            sys.stderr.write('\n[\033[90mray-daemon %s script\033[0m]\n'
+                             % command)
+        sys.stderr.buffer.write(byte_string)
+        
+        cls._last_client_name = scripter_str
+    
     @classmethod
     def clientMessage(cls, byte_string, client_name, client_id):
         client_str = "%s.%s" % (client_name, client_id)
@@ -172,6 +183,8 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument('--findfreeport', action='store_true', 
                           help='find another port if port is not free')
         self.add_argument('--gui-url', type=ray.getLibloAddress, 
+                          help=argparse.SUPPRESS)
+        self.add_argument('--control-url', type=ray.getLibloAddress,
                           help=argparse.SUPPRESS)
         self.add_argument('--config-dir', '-c', type=str, default='', 
                           help='use a custom config dir')

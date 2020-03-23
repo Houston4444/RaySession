@@ -91,6 +91,10 @@ if __name__ == '__main__':
     #announce server to GUI
     if CommandLineArgs.gui_url:
         server.announceGui(CommandLineArgs.gui_url.url)
+    
+    # announce to ray_control if launched from it.
+    if CommandLineArgs.control_url:
+        server.announceController(CommandLineArgs.control_url)
         
     #print server url
     Terminal.message('URL : %s' % ray.getNetUrl(server.port))

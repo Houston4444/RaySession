@@ -36,7 +36,7 @@ class Snapshoter(QObject):
         self.max_file_size = 50 #in Mb
         
         self.next_snapshot_name  = ''
-        self.next_rw_snapshot = ''
+        self._rw_snapshot = ''
         
         self.changes_checker = QProcess()
         self.changes_checker.readyReadStandardOutput.connect(
@@ -211,9 +211,15 @@ class Snapshoter(QObject):
                         break
             
             all_snaps.append((ref, name))
-            all_tags.append(fullRefForGui(ref, name, rw_sn, rw_name, ss_name))
+            print('fkoff', ss_name)
+            snapsss = fullRefForGui(ref, name, rw_sn, rw_name, ss_name)
+            print(snapsss)
+            all_tags.append(snapsss)
             
-        return all_tags.__reversed__()
+        all_tags.reverse()
+            
+        #return all_tags.__reversed__()
+        return all_tags
     
     def getTagDate(self):
         date_time = QDateTime.currentDateTimeUtc()
@@ -254,7 +260,7 @@ class Snapshoter(QObject):
         snapshot_el.setAttribute('session_name', self.session.name)
         snapshot_el.setAttribute('VERSION', ray.VERSION)
         
-        for client in self.session.clients + self.session.removed_clients:
+        for client in self.session.clients + self.session.trashed_clients:
             client_el = xml.createElement('client')
             client.writeXmlProperties(client_el)
             client_el.setAttribute('client_id', client.client_id)
@@ -409,10 +415,6 @@ class Snapshoter(QObject):
         if not self.isInit():
             return True
         
-        args = self.getGitCommandList('ls-files',
-                                      '--exclude-standard',
-                                      '--others',
-                                      '--modified')
         if self.changes_checker.state():
             self.changes_checker.kill()
         
@@ -420,6 +422,8 @@ class Snapshoter(QObject):
         self._n_file_treated = 0
         self._changes_counted = True
         
+        args = self.getGitCommandList('ls-files', '--exclude-standard',
+                                      '--others', '--modified')
         self.changes_checker.start(self.git_exec, args)
         self.changes_checker.waitForFinished(2000)
         
@@ -457,6 +461,11 @@ class Snapshoter(QObject):
         
         return True
     
+    def errorQuit(self, err):
+        if self.error_function:
+            self.error_function(err)
+        self.error_function = None
+    
     def save(self, name='', rewind_snapshot='',
              next_function=None, error_function=None):
         self.next_snapshot_name  = name
@@ -470,18 +479,18 @@ class Snapshoter(QObject):
         
         err = self.writeExcludeFile()
         if err:
-            if self.error_function:
-                self.error_function(err)
+            self.errorQuit(err)
             return 
-            
-        all_args = self.getGitCommandList('add', '-A', '-v')
         
         self._adder_aborted = False
         
         if not self._changes_counted:
             self.hasChanges()
-            
+        
+        self._changes_counted = False
+        
         if self._n_file_changed:
+            all_args = self.getGitCommandList('add', '-A', '-v')
             self.adder_process.start(self.git_exec, all_args)
         else:
             self.save_step_1()
@@ -498,26 +507,28 @@ class Snapshoter(QObject):
             if not self.runGitProcess('commit', '-m', 'ray'):
                 return
         
-        self._changes_counted = False
         
-        ref = self.getTagDate()
         
         if (self._n_file_changed
-                or self.next_snapshot_name or self.next_rw_snapshot):
+                or self.next_snapshot_name or self._rw_snapshot):
+            ref = self.getTagDate()
+            
             if not self.runGitProcess('tag', '-a', ref, '-m', 'ray'):
                 return 
         
-        err = self.writeHistoryFile(ref, self.next_snapshot_name,
+            err = self.writeHistoryFile(ref, self.next_snapshot_name,
                                     self._rw_snapshot)
-        if err:
-            if self.error_function:
-                self.error_function(err)
-        
-        # not really a reply, not strong.
-        self.session.sendGui('/reply', '/ray/session/list_snapshots',
-                             fullRefForGui(ref, self.next_snapshot_name,
-                                           self._rw_snapshot))
+            if err:
+                if self.error_function:
+                    self.error_function(err)
+                    
+            # not really a reply, not strong.
+            self.session.sendGui('/reply', '/ray/session/list_snapshots',
+                                fullRefForGui(ref, self.next_snapshot_name,
+                                            self._rw_snapshot))
         self.error_function = None
+        self.next_snapshot_name = ''
+        self._rw_snapshot = ''
         
         if self.next_function:
             self.next_function()

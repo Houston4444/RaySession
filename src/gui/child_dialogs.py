@@ -4,7 +4,7 @@ import time
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QTreeWidgetItem,
     QCompleter, QMessageBox, QFileDialog, QWidget)
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
 from PyQt5.QtCore import Qt, QTimer
 
 import ray
@@ -25,6 +25,8 @@ import ui_new_executable
 import ui_error_dialog
 import ui_quit_app
 import ui_client_properties
+import ui_script_info
+import ui_script_user_action
 import ui_stop_client
 import ui_stop_client_no_save
 import ui_abort_copy
@@ -40,8 +42,7 @@ class ChildDialog(QDialog):
         self._session = parent._session
         self._signaler = self._session._signaler
 
-        daemon_manager = self._session._daemon_manager
-        self.daemon_launched_before = daemon_manager.launched_before
+        self._daemon_manager = self._session._daemon_manager
 
         self._signaler.server_status_changed.connect(self.serverStatusChanged)
         self._signaler.server_copying.connect(self.serverCopying)
@@ -200,8 +201,8 @@ class OpenSessionDialog(ChildDialog):
         self._signaler.root_changed.connect(self.rootChanged)
 
         self.toDaemon('/ray/server/list_sessions', 0)
-
-        if self.daemon_launched_before:
+        
+        if not self._daemon_manager.is_local:
             self.ui.toolButtonFolder.setVisible(False)
             self.ui.currentSessionsFolder.setVisible(False)
             self.ui.labelSessionsFolder.setVisible(False)
@@ -216,7 +217,6 @@ class OpenSessionDialog(ChildDialog):
         
         self._last_mouse_click = 0
         
-
     def serverStatusChanged(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
             bool(server_status in (ray.ServerStatus.OFF,
@@ -389,7 +389,7 @@ class NewSessionDialog(ChildDialog):
         else:
             self.toDaemon('/ray/server/list_session_templates')
 
-        if self.daemon_launched_before:
+        if not self._daemon_manager.is_local:
             self.ui.toolButtonFolder.setVisible(False)
             self.ui.currentSessionsFolder.setVisible(False)
             self.ui.labelSessionsFolder.setVisible(False)
@@ -816,7 +816,8 @@ class QuitAppDialog(ChildDialog):
         self.ui.pushButtonCancel.setFocus(Qt.OtherFocusReason)
         self.ui.pushButtonSaveQuit.clicked.connect(self.closeSession)
         self.ui.pushButtonQuitNoSave.clicked.connect(self.abortSession)
-
+        self.ui.pushButtonDaemon.clicked.connect(self.leaveDaemonRunning)
+        
         original_text = self.ui.labelExecutable.text()
         self.ui.labelExecutable.setText(
             original_text %
@@ -840,6 +841,10 @@ class QuitAppDialog(ChildDialog):
 
     def abortSession(self):
         self.toDaemon('/ray/session/abort')
+        
+    def leaveDaemonRunning(self):
+        self._daemon_manager.disannounce()
+        QTimer.singleShot(10, QGuiApplication.quit)
 
 
 class AboutRaySessionDialog(ChildDialog):
@@ -1038,6 +1043,60 @@ class SnapShotProgressDialog(ChildDialog):
         self.ui.progressBar.setValue(value * 100)
         
 
+class ScriptInfoDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_script_info.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+    def setInfoLabel(self, text):
+        self.ui.infoLabel.setText(text)
+        
+    def shouldBeRemoved(self):
+        return False
+
+
+class ScriptUserActionDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_script_user_action.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self.ui.buttonBox.clicked.connect(self.buttonBoxClicked)
+        self.ui.infoLabel.setVisible(False)
+        self.ui.infoLine.setVisible(False)
+        
+        self._is_terminated = False
+        
+    def setMainText(self, text):
+        self.ui.label.setText(text)
+    
+    def setInfoLabel(self, text):
+        self.ui.infoLabel.setText(text)
+        self.ui.infoLabel.setVisible(True)
+        self.ui.infoLine.setVisible(True)
+    
+    def validate(self):
+        self.toDaemon('/reply', '/ray/gui/script_user_action',
+                      'Dialog window validated')
+        self._is_terminated = True
+        self.accept()
+        
+    def abort(self):
+        self.toDaemon('/error', '/ray/gui/script_user_action', 
+                      ray.Err.ABORT_ORDERED, 'Script user action aborted!')
+        self._is_terminated = True
+        self.accept()
+    
+    def buttonBoxClicked(self, button):
+        if button == self.ui.buttonBox.button(QDialogButtonBox.Yes):
+            self.validate()
+        elif button == self.ui.buttonBox.button(QDialogButtonBox.Ignore):
+            self.abort()
+            
+    def shouldBeRemoved(self):
+        return self._is_terminated
+    
 class DaemonUrlWindow(ChildDialog):
     def __init__(self, parent, err_code, ex_url):
         ChildDialog.__init__(self, parent)

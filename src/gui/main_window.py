@@ -119,7 +119,7 @@ class MainWindow(QMainWindow):
         self.ui.lineEditServerStatus.statusPressed.connect(
             self.statusBarPressed)
         self.ui.stackedWidgetSessionName.name_changed.connect(
-            self.renameSession)
+            self.renameSessionConditionnaly)
         
         # set control menu
         self.controlMenu = QMenu()
@@ -202,7 +202,9 @@ class MainWindow(QMainWindow):
         self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
 
         self.setNsmLocked(CommandLineArgs.under_nsm)
-
+        
+        self.script_dialog = None
+        
         # disable "keep focus" if daemon is not on this machine (it takes no
         # sense in this case)
         if not self._daemon_manager.is_local:
@@ -326,10 +328,10 @@ class MainWindow(QMainWindow):
         self.flash_open_bool = not self.flash_open_bool
 
     def quitApp(self):
-        if (self._daemon_manager.launched_before
-                and not CommandLineArgs.under_nsm):
-            self.quitAppNow()
-            return True
+        #if (self._daemon_manager.launched_before
+                #and not CommandLineArgs.under_nsm):
+            #self.quitAppNow()
+            #return True
 
         if self._session.isRunning():
             dialog = child_dialogs.QuitAppDialog(self)
@@ -568,7 +570,7 @@ class MainWindow(QMainWindow):
 
         self.toDaemon('/ray/server/abort_copy')
 
-    def renameSession(self, new_session_name):
+    def renameSessionConditionnaly(self, new_session_name):
         self.toDaemon('/ray/session/rename', new_session_name)
         
     def addFavorite(self, name, icon_name, factory):
@@ -843,7 +845,34 @@ class MainWindow(QMainWindow):
                         ray.getAppIcon(favorite.icon, self), favorite.name)
             act_app.setData([favorite.name, favorite.factory])
             act_app.triggered.connect(self.launchFavorite)
+    
+    def showScriptInfo(self, text):
+        if self.script_dialog and self.script_dialog.shouldBeRemoved():
+            del self.script_dialog
+            self.script_dialog = None
         
+        if not self.script_dialog:
+            self.script_dialog = child_dialogs.ScriptInfoDialog(self)
+            
+        self.script_dialog.setInfoLabel(text)
+        self.script_dialog.show()
+        
+    def hideScriptDialog(self):
+        if self.script_dialog:
+            self.script_dialog.close()
+        
+        del self.script_dialog
+        self.script_dialog = None
+        
+    def showScriptUserAction(self, text):
+        if self.script_dialog:
+            self.script_dialog.close()
+            del self.script_dialog
+            
+        self.script_dialog = child_dialogs.ScriptUserActionDialog(self)
+        self.script_dialog.setMainText(text)
+        self.script_dialog.show()
+    
     def daemonCrash(self):
         QMessageBox.critical(
             self, _translate(

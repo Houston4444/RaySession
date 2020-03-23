@@ -12,16 +12,6 @@ class ServerSender(QObject):
         
         return not self.is_dummy
     
-    def serverSend(self, *args):
-        if self.is_dummy:
-            return
-        
-        server = OscServerThread.getInstance()
-        if not server:
-            return
-        
-        server.send(*args)
-
     def send(self, *args):
         if self.is_dummy:
             return
@@ -31,7 +21,14 @@ class ServerSender(QObject):
             return
         
         server.send(*args)
+    
+    def sendEvenDummy(self, *args):
+        server = OscServerThread.getInstance()
+        if not server:
+            return
         
+        server.send(*args)
+    
     def sendGui(self, *args):
         if self.is_dummy:
             return
@@ -44,6 +41,10 @@ class ServerSender(QObject):
         
     def sendGuiMessage(self, message):
         self.sendGui('/ray/gui/server/message', message)
+        
+        server = OscServerThread.getInstance()
+        if server:
+            server.sendControllerMessage(message)
         
     def setServerStatus(self, server_status):
         if self.is_dummy:

@@ -26,6 +26,8 @@ if QT_VERSION < (5, 6):
 VERSION = "0.8.3"
 
 APP_TITLE = 'RaySession'
+DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.getenv('HOME')
+SCRIPTS_DIR = 'ray-scripts'
 
 class PrefixMode:
     CUSTOM = 0
@@ -103,23 +105,23 @@ class Err:
     SUBPROCESS_UNTERMINATED = -15
     SUBPROCESS_CRASH = -16
     SUBPROCESS_EXITCODE = -17
+    UNKNOWN_MESSAGE = -18
+    ABORT_ORDERED = -19
+    COPY_ABORTED = -20
+    # check control/osc_server.py in case of changes !!!
 
 
 class Command:
     NONE = 0
-    QUIT = 1
-    KILL = 2
+    START = 1
+    OPEN = 2
     SAVE = 3
-    OPEN = 4
-    START = 5
-    CLOSE = 6
-    DUPLICATE = 7
-    NEW = 8
+    STOP = 4
 
 
 class WaitFor:
     NONE = 0
-    STOP = 1
+    QUIT = 1
     STOP_ONE = 2
     ANNOUNCE = 3
     REPLY = 4
@@ -143,7 +145,7 @@ class Favorite():
         self.name = name
         self.icon = icon
         self.factory = factory
-        
+
 
 debug = False
 
@@ -247,6 +249,12 @@ def isGitTaggable(string):
     
     return True
 
+def highlightText(string):
+    if "'" in string:
+        return '"%s"' % string
+    else:
+        return "'%s'" % string
+
 def isOscPortFree(port):
     try:
         testport = Server(port)
@@ -305,6 +313,30 @@ def getLibloAddress(url):
             msg = "%r is an unknown osc url" % url
             raise argparse.ArgumentTypeError(msg)
 
+def getLibloAddressFromPort(port):
+    try:
+        port = int(port)
+    except:
+        msg = "%r port must be an int" % port
+        raise argparse.ArgumentTypeError(msg)
+    
+    valid_port = False
+    
+    try:
+        address = liblo.Address(port)
+        valid_port = True
+    except BaseException:
+        valid_port = False
+        msg = "%i is not a valid osc port" % port
+        raise argparse.ArgumentTypeError(msg)
+
+    if valid_port:
+        try:
+            liblo.send(address, '/ping')
+            return address
+        except BaseException:
+            msg = "%i is an unknown osc port" % port
+            raise argparse.ArgumentTypeError(msg)
 
 def areSameOscPort(url1, url2):
     if url1 == url2:

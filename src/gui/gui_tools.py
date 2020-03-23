@@ -188,6 +188,10 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument('--daemon-url', '-u', type=ray.getLibloAddress,
                           help=_translate('help',
                                           'connect to this daemon url'))
+        self.add_argument('--daemon-port', '-p',
+                          type=ray.getLibloAddressFromPort,
+                          help=_translate('help',
+                                          'connect to this daemon port'))
         self.add_argument('--out-daemon', action='store_true',
                           help=argparse.SUPPRESS)
         self.add_argument('--session-root', '-r', type=str,
