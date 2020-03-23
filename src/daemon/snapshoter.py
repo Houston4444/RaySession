@@ -211,9 +211,15 @@ class Snapshoter(QObject):
                         break
             
             all_snaps.append((ref, name))
-            all_tags.append(fullRefForGui(ref, name, rw_sn, rw_name, ss_name))
+            print('fkoff', ss_name)
+            snapsss = fullRefForGui(ref, name, rw_sn, rw_name, ss_name)
+            print(snapsss)
+            all_tags.append(snapsss)
             
-        return all_tags.__reversed__()
+        all_tags.reverse()
+            
+        #return all_tags.__reversed__()
+        return all_tags
     
     def getTagDate(self):
         date_time = QDateTime.currentDateTimeUtc()

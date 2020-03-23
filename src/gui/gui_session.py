@@ -1,4 +1,6 @@
 
+from PyQt5.QtWidgets import QApplication
+
 import ray
 from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
@@ -173,6 +175,9 @@ class SignaledSession(Session):
         
         self._main_win.errorMessage(err_message)
         
+    
+    def _ray_gui_server_disannounce(self, path, args):
+        QApplication.quit()
     
     def _ray_gui_server_nsm_locked(self, path, args):
         nsm_locked = bool(args[0])

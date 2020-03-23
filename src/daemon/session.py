@@ -1738,6 +1738,7 @@ class OperatingSession(Session):
         self.message("Bye Bye...")
         self.setServerStatus(ray.ServerStatus.OFF)
         self.sendReply("Bye Bye...")
+        self.sendGui('/ray/gui/server/disannounce')
         QCoreApplication.quit()
         
     def addClientTemplate(self, src_addr, src_path, 

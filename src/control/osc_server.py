@@ -82,7 +82,7 @@ class OscServer(liblo.Server):
             else:
                 self._final_err = 0
                 
-        elif reply_path == '/ray/session/list_snapshots':
+        elif reply_path.endswith('/list_snapshots'):
             if len(args) >= 2:
                 snapshots = args[1:]
                 out_message = ""
