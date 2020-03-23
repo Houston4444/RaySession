@@ -3022,7 +3022,7 @@ class SignaledSession(OperatingSession):
         client_id = args[0]
         
         for client in self.clients:
-            if client.client_id:
+            if client.client_id == client_id:
                 client.sendToSelfAddress("/nsm/client/show_optional_gui")
                 self.send(src_addr, '/reply', path, 'show optional GUI asked')
                 break
@@ -3033,7 +3033,7 @@ class SignaledSession(OperatingSession):
         client_id = args[0]
         
         for client in self.clients:
-            if client.client_id:
+            if client.client_id == client_id:
                 client.sendToSelfAddress("/nsm/client/hide_optional_gui")
                 self.send(src_addr, '/reply', path, 'hide optional GUI asked')
                 break
