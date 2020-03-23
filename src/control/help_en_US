@@ -1,12 +1,24 @@
 control RaySession daemons
     --help
-        Prints this help message
+        Prints short help message
+    --help-all
+        Prints full help message
+    --help-control
+        Prints help for control commands
+    --help-server
+        Prints help for server commands
+    --help-session
+        Prints help for running session commands
+    --help-clients
+        Prints help for clients management
     --port
-        Specify deamon OSC port
+        Specify deamon OSC port.
+        This port can also be specified
+        with RAY_CONTROL_PORT environment variable.
     --detach
         Only send OSC message and do not wait for an answer
 
-CONTROL_COMMANDS:
+* CONTROL_COMMANDS:
     start
         starts a daemon if there is no daemon started
     stop
@@ -24,10 +36,13 @@ CONTROL_COMMANDS:
         returns error code if no daemon is running
         or if no session is loaded.
 
-SERVER_COMMANDS:
+* SERVER_COMMANDS:
     new_session NEW_SESSION_NAME [SESSION_TEMPLATE]
-        Creates and loads NEW_SESSION_NAME, optionnally with SESSION_TEMPLATE
+        Saves current session (if any),
+        then creates and loads NEW_SESSION_NAME,
+        optionnally with SESSION_TEMPLATE
     open_session SESSION_NAME [SESSION_TEMPLATE]
+        Saves current session (if any),
         Loads SESSION_NAME (create it if it does not exists
                             optionnally with SESSION_TEMPLATE)
     open_session_off SESSION_NAME [SESSION_TEMPLATE]
@@ -63,9 +78,12 @@ SERVER_COMMANDS:
         Displays a question dialog on RaySession's GUI.
         Returns when user accepted or rejected it.
 
-SESSION_COMMANDS:
+* SESSION_COMMANDS:
+    All these commands work only when a session is loaded.
+    
     save
-        Saves the current session
+        Saves the current session.
+        TIP: affect 'ray_control save' command to a global keyboard shortcut
     save_as_template SESSION_TEMPLATE_NAME
         Saves the current session as template
     take_snapshot SNAPSHOT_NAME
@@ -103,7 +121,7 @@ SESSION_COMMANDS:
         example: ray_control list_clients auto_start not_started
         will display all stopped clients that should be started at session open
 
-CLIENT_COMMANDS:
+* CLIENT_COMMANDS:
     all client commands have to be written this way:
     ray_control client CLIENT_ID command [*ARGUMENTS]
     example: ray_control client carla stop
@@ -113,23 +131,24 @@ CLIENT_COMMANDS:
     kill
         Kills the client. To be used only as a last resort.
     trash
-        Send the client to trash. Client has to be stopped.
+        Sends the client to trash. Client has to be stopped.
     start
-        Starts the client.
+        Starts the client
     resume
-        Starts the client.
+        Starts the client
     open
         Starts the client,
-        returns only when client is ready, known as non active or too long to communicate. 
+        returns only when client is ready,
+        known as non active or too long to communicate. 
     save
         Saves the client
     save_as_template TEMPLATE_NAME
         Saves the client as template TEMPLATE_NAME.
         Erase existant TEMPLATE_NAME if any.
     show_optional_gui
-        shows client GUI if client is capable.
+        shows client GUI if client is capable of
     hide_optional_gui
-        Hides client GUI if client is capable.
+        Hides client GUI if client is capable of
     get_properties
         Get client properties
     set_properties PROPERTY1 [PROPERTY2] [PROPERTY3]...
@@ -143,16 +162,16 @@ CLIENT_COMMANDS:
         PROPERTY must contains property:value
         example: ray_control client lmms set_properties executable:lmms no_save_level:2 
     list_files
-        Lists directories and files used by client.
+        Lists directories and files used by client
     list_snapshots
         Lists session snapshot where this client exists
     open_snapshot SNAPSHOT
-        Stops the client if running, Loads SNAPSHOT only for client files,
+        Stops the client if running, loads SNAPSHOT only for client files,
         re-starts the client if it was started.
     is_started
         returns error code if client is not started
         
-TRASHED_CLIENT_OPTIONS:
+* TRASHED_CLIENT_OPTIONS:
     trashed client commands have to be written this way:
     ray_control trashed_client CLIENT_ID command [*ARGUMENTS]
     example: ray_control trashed_client carla restore
@@ -162,6 +181,3 @@ TRASHED_CLIENT_OPTIONS:
         client is restored stopped.
     remove_definitely
         remove all client files and directories.
-    
-
-    

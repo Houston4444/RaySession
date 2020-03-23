@@ -13,6 +13,7 @@ OPERATION_TYPE_SERVER = 2
 OPERATION_TYPE_SESSION = 3
 OPERATION_TYPE_CLIENT = 4
 OPERATION_TYPE_TRASHED_CLIENT = 5
+OPERATION_TYPE_ALL = 6 # for help message
 
 control_operations = ('start', 'stop', 'list_daemons', 'get_root', 
                       'get_port', 'get_port_gui_free', 'get_pid', 'get_session_path')
@@ -121,18 +122,35 @@ class Daemon:
     has_local_gui = False
 
 
-def printHelp(stdout=False):
+def printHelp(stdout=False, category=OPERATION_TYPE_NULL):
     script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     lang_file = "help_en_US"
     help_path = "%s/%s" % (script_dir, lang_file)
     
     try:
         help_file = open(help_path, 'r')
-        message = help_file.read()
+        full_message = help_file.read()
     except:
         sys.stderr.write('error: help_file %s is missing\n' % help_path)
         sys.exit(101)
     
+    message = ''
+    stars = 0
+    
+    if category == OPERATION_TYPE_ALL:
+        message = full_message
+    else:
+        for line in full_message.split('\n'):
+            if line.startswith('* '):
+                stars+=1
+            
+            if (stars == 0
+                    or (stars == 1 and category == OPERATION_TYPE_CONTROL)
+                    or (stars == 2 and category == OPERATION_TYPE_SERVER)
+                    or (stars == 3 and category == OPERATION_TYPE_SESSION)
+                    or (stars >= 4 and category == OPERATION_TYPE_CLIENT)):
+                message+= "%s\n" % line
+        
     if stdout:
         sys.stdout.write(message)
     else:
@@ -169,8 +187,22 @@ if __name__ == '__main__':
     while args and args[0].startswith('--'):
         option = args.pop(0)
         
-        if option == '--help':
-            printHelp(True)
+        if option.startswith('--help'):
+            if option == '--help':
+                printHelp(True, OPERATION_TYPE_NULL)
+            elif option == '--help-all':
+                printHelp(True, OPERATION_TYPE_ALL)
+            elif option == '--help-control':
+                printHelp(True, OPERATION_TYPE_CONTROL)
+            elif option == '--help-server':
+                printHelp(True, OPERATION_TYPE_SERVER)
+            elif option == '--help-session':
+                printHelp(True, OPERATION_TYPE_SESSION)
+            elif option in ('--help-client', '--help-clients'):
+                printHelp(True, OPERATION_TYPE_CLIENT)
+            else:
+                printHelp()
+                sys.exit(100)
             sys.exit(0)
             
         elif option == '--port':
