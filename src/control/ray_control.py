@@ -291,6 +291,8 @@ if __name__ == '__main__':
             elif operation == 'get_session_path':
                 for daemon in daemon_list:
                     if daemon.port == daemon_port:
+                        if not daemon.session_path:
+                            sys.exit(1)
                         sys.stdout.write('%s\n' % daemon.session_path)
                         sys.exit(0)
                         

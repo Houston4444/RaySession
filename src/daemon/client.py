@@ -914,6 +914,10 @@ class Client(ServerSender):
                 self.executable_path = value
             elif property == 'arguments':
                 self.arguments = value
+            elif property == 'name':
+                # do not change client name,
+                # It will be re-sent by client itself
+                continue
             elif property == 'prefix_mode':
                 if value.isdigit() and 0 <= int(value) <= 2:
                     self.prefix_mode = int(value)

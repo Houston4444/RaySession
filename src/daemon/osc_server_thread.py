@@ -71,10 +71,8 @@ class ClientCommunicating(liblo.ServerThread):
     
     @ray_method('/reply', None)
     def reply(self, path, args, types, src_addr):
-        if len(args) < 2:
-            return False
-        
-        if not ray.areTheyAllString(args):
+        if not (len(args) >=2 and ray.areTheyAllString(args)):
+            self.unknownMessage(path, types, src_addr)
             return False
         
         reply_path = args[0]
@@ -555,6 +553,7 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/new_session', None)
     def rayServerNewSession(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
+            self.unknownMessage(path, types, src_addr)
             return False
         
         if self.is_nsm_locked:
@@ -592,10 +591,9 @@ class OscServerThread(ClientCommunicating):
                       "No session to save.")
             return False
     
-    @ray_method('/ray/session/process_step', None)
-    def raySessionProcessStepSave(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
-            return False
+    @ray_method('/ray/session/process_step', '')
+    def raySessionProcessStep(self, path, args, types, src_addr):
+        pass
     
     @ray_method('/ray/session/save_as_template', 's')
     def raySessionSaveAsTemplate(self, path, args, types, src_addr):
@@ -661,6 +659,7 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/set_options', None)
     def rayServerSetOptions(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
+            self.unknownMessage(path, types, src_addr)
             return False
         
         for option in args:
@@ -873,9 +872,8 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/session/reorder_clients', None)
     def rayServerReorderClients(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args) or not args:
-            self.send(src_addr, '/minor_error', path, ray.Err.UNKNOWN_MESSAGE,
-                  "unknown osc message: %s %s" % (path, types))
+        if not (args and ray.areTheyAllString(args)):
+            self.unknownMessage(path, types, src_addr)
             return False
     
     @ray_method('/ray/session/list_snapshots', '')
@@ -894,6 +892,7 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/session/list_clients', None)
     def raySessionListClients(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
+            self.unknownMessage(path, types, src_addr)
             return False
     
     @ray_method('/ray/session/list_trashed_clients', '')
@@ -948,17 +947,21 @@ class OscServerThread(ClientCommunicating):
     def rayClientGetProperties(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/client/set_properties', 'ss')
+    @ray_method('/ray/client/set_properties', None)
     def rayGuiClientSetProperties(self, path, args, types, src_addr):
-        pass
+        if not (len(args) >= 2 and ray.areTheyAllString(args)):
+            self.unknownMessage(path, types, src_addr)
+            return
     
     @ray_method('/ray/client/get_proxy_properties', 's')
     def rayClientGetProxyProperties(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/client/set_proxy_properties', 'ss')
+    @ray_method('/ray/client/set_proxy_properties', None)
     def rayClientSetProxyProperties(self, path, args, types, src_addr):
-        pass
+        if not (len(args) >= 2 and ray.areTheyAllString(args)):
+            self.unknownMessage(path, types, src_addr)
+            return
     
     @ray_method('/ray/client/list_files', 's')
     def rayClientListFiles(self, path, args, types, src_addr):
@@ -1065,10 +1068,13 @@ class OscServerThread(ClientCommunicating):
         types_str = ''
         for t in types:
             types_str += t
-            
+        
+        self.unknownMessage(path, types, src_addr)
+        return False
+    
+    def unknownMessage(self, path, types, src_addr):
         self.send(src_addr, '/minor_error', path, ray.Err.UNKNOWN_MESSAGE,
                   "unknown osc message: %s %s" % (path, types))
-        return False
     
     def isOperationPending(self, src_addr, path):
         if self.session.file_copier.isActive():

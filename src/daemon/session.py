@@ -3081,7 +3081,12 @@ class SignaledSession(OperatingSession):
             self.sendErrorNoClient(src_addr, path, client_data.client_id)
     
     def _ray_client_set_properties(self, path, args, src_addr):
-        client_id, message = args
+        client_id = args.pop(0)
+        
+        message = ''
+        
+        for arg in args:
+            message+="%s\n" % arg
         
         for client in self.clients:
             if client.client_id == client_id:
@@ -3090,7 +3095,7 @@ class SignaledSession(OperatingSession):
                           'client properties updated')
                 break
         else:
-            self.sendErrorNoClient(src_addr, path, client_data.client_id)
+            self.sendErrorNoClient(src_addr, path, client_id)
     
     def _ray_client_get_properties(self, path, args, src_addr):
         client_id = args[0]
@@ -3157,8 +3162,12 @@ class SignaledSession(OperatingSession):
             self.sendErrorNoClient(src_addr, path, client_id)
     
     def _ray_client_set_proxy_properties(self, path, args, src_addr):
-        client_id, message = args
+        client_id = args.pop(0)
         
+        message=''
+        for arg in args:
+            message+= "%s\n" % arg
+            
         for client in self.clients:
             if client.client_id == client_id:
                 proxy_file = '%s/ray-proxy.xml' % client.getProjectPath()
