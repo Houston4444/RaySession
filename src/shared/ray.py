@@ -140,6 +140,12 @@ class Template:
     CLIENT_LOAD = 7
 
 
+class WindowManager:
+    NONE = 0
+    X = 1
+    WAYLAND = 2
+
+
 class Favorite():
     def __init__(self, name, icon, factory):
         self.name = name
@@ -514,6 +520,15 @@ def getAppIcon(icon_name, widget):
 
     return icon
 
+def getWindowManager():
+    if os.getenv('WAYLAND_DISPLAY'):
+        return WindowManager.WAYLAND
+    
+    if os.getenv('DISPLAY'):
+        return WindowManager.X
+    
+    return WindowManager.NONE
+    
 
 class ClientData:
     client_id = ''

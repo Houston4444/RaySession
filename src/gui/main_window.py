@@ -55,9 +55,16 @@ class MainWindow(QMainWindow):
         
 
         self.server_copying = False
-
+        
         self.keep_focus = RS.settings.value('keepfocus', True, type=bool)
         self.ui.actionKeepFocus.setChecked(self.keep_focus)
+        
+        if ray.getWindowManager() == ray.WindowManager.WAYLAND:
+            # do not enable keep focus option under Wayland
+            # because activate a window from it self on Wayland not allowed
+            self.keep_focus = False
+            self.ui.actionKeepFocus.setEnabled(False)
+        
         if RS.settings.value('MainWindow/geometry'):
             self.restoreGeometry(RS.settings.value('MainWindow/geometry'))
         if RS.settings.value('MainWindow/WindowState'):
