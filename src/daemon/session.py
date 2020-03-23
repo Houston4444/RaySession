@@ -370,7 +370,7 @@ class Session(ServerSender):
         client.sendGuiClientProperties()
         return True
         
-    def reOrderClients(self, client_ids_list):
+    def reOrderClients(self, client_ids_list, src_addr=None, src_path=''):
         client_newlist  = []
         
         for client_id in client_ids_list:
@@ -380,11 +380,18 @@ class Session(ServerSender):
                     break
         
         if len(client_ids_list) != len(self.clients):
+            if src_addr:
+                self.send(src_addr, '/error', src_path, ray.Err.GENERAL_ERROR,
+                          "%s clients are missing or incorrect" \
+                            % (len(self.clients) - len(client_ids_list)))
             return
         
         self.clients.clear()
         for client in client_newlist:
             self.clients.append(client)
+            
+        if src_addr:
+            self.send(src_addr, '/reply', src_path, "clients reordered")
     
     def getScriptPath(self, string):
         script_dir = self.getScriptDir()
@@ -2790,7 +2797,16 @@ class SignaledSession(OperatingSession):
     
     def _ray_session_reorder_clients(self, path, args, src_addr):
         client_ids_list = args
-        self.reOrderClients(client_ids_list)
+        
+        if not self.path:
+            self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
+                      "no session to reorder clients")
+        
+        if len(self.clients) < 2:
+            self.send(src_addr, '/reply', path, "clients reordered")
+            return
+        
+        self.reOrderClients(client_ids_list, src_addr, path)
     
     def _ray_session_list_snapshots(self, path, args, src_addr, client_id=""):
         if not self.path:
