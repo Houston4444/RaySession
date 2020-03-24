@@ -125,6 +125,10 @@ class Daemon:
 def printHelp(stdout=False, category=OPERATION_TYPE_NULL):
     script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     lang_file = "help_en_US"
+    
+    if os.getenv('LANG').startswith('fr_'):
+        lang_file = "help_fr_FR"
+        
     help_path = "%s/%s" % (script_dir, lang_file)
     
     try:

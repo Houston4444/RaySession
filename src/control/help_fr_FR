@@ -1,0 +1,186 @@
+contrôle les démons de RaySession
+    --help
+        Afficher un court message d'aide
+    --help-all
+        Afficher toute l'aide
+    --help-control
+        Afficher l'aide des commandes de contrôle
+    --help-server
+        Afficher l'aide des commandes du serveur
+    --help-session
+        Afficher l'aide des commandes sur la session en cours
+    --help-clients
+        Afficher l'aide des commandes sur les clients 
+    --port
+        Specifier le port OSC du démon.
+        Ce port peut également être spécifié
+        avec la variable d'environnement RAY_CONTROL_PORT
+    --detach
+        Envoyer seulement le message OSC et ne pas attendre de réponse
+
+* COMMANDES DE CONTRÔLE:
+    start
+        Démarre un démon si aucun n'est déjà démarré
+    stop
+        Arrête tous les démons tournant
+    list_daemons
+        Liste les ports OSC des démons tournant
+    get_port
+        Renvoie le port OSC du démon par défaut
+    get_root
+        Renvoie le dossier racine des sessions
+    get_pid
+        Renvoie le PID du démon par défaut
+    get_session_path
+        Renvoie l'emplacement du dossier de la session en cours,
+        retourne un code d'erreur si aucun démon ne tourne
+        ou qu'aucune session n'est chargée.
+
+* COMMANDES DU SERVEUR:
+    new_session NOUVELLE_SESSION [MODÈLE_DE_SESSION]
+        Sauvegarde la session en cours (s'il y en a une)
+        ensuite crée et charge NOUVELLE_SESSION,
+        éventuellement à partir du modèle MODÈLE_DE_SESSION
+    open_session NOM_DE_LA_SESSION [MODÈLE_DE_SESSION]
+        Sauvegarde la session en cours (s'il y en a une)
+        charge NOM_DE_LA_SESSION (en la créant si elle n'existe pas,
+        éventuellement à partir du modèle MODÈLE_DE_SESSION.
+    open_session_off NOM_DE_LA_SESSION [MODÈLE_DE_SESSION]
+        Fait la même chose que open_session
+        mais ne démarre aucun client.
+    list_sessions
+        Liste les sessions disponibles dans le dossier racine des sessions
+    quit
+        Abandonne la session en cours (si présente)
+        puis arrête le démon
+    change_root NOUVEAU_DOSSIER_RACINE
+        Change le dossier racine des session en NOUVEAU_DOSSIER_RACINE
+    list_session_templates
+        Liste les modèles de session
+    list_user_client_templates
+        Liste les modèles de client de l'utilisateur
+    list_factory_client_templates
+        Liste les modèles de client d'usine
+    remove_client_template MODÈLE_DE_CLIENT
+        Supprime le modèle de client de l'utilisateur MODÈLE_DE_CLIENT
+    set_options OPTION1 [OPTION2] [OPTION3]...
+        Configure les options du démon.
+        Les options disponibles sont:
+            save_from_client
+            bookmark_session_folder
+            desktops_memory
+            snapshots
+        Précédez l'option de 'not_' pour désactiver cette option
+        Exemple: ray_control set_options bookmark_session_folder not_snapshots
+    script_info TEXTE
+        Affiche une fenêtre de dialogue d'information sur l'IGU de RaySession
+    hide_script_info
+        Cache la fenêtre de dialogue d'information de l'IGU de RaySession
+    script_user_action TEXTE
+        Affiche une fenêtre de dialogue de question sur l'IGU de RaySession
+        Retourne quand l'utilisateur l'a acceptée ou refusée.
+
+* COMMANDES DE LA SESSION:
+    Toutes ces commandes fonctionne uniquement quand une session est chargée.
+    
+    save
+        Sauvegarde la session en cours.
+        ASTUCE: affectez la commande 'ray_control save' à un raccourci clavier global
+    save_as_template NOM_DU_MODÈLE_DE_SESSION
+        Sauvegarde la session en cours comme modèle de session
+    take_snapshot NOM_DU_CLICHÉ
+        Prend un cliché de la session en cours
+    close
+        Sauvegarde et ferme la session en cours
+    abort
+        Abandonne la session en cours
+    duplicate NOUVELLE_SESSION
+        Sauvegarde et duplique la session en cours et charge NOUVELLE_SESSION  
+    process_step
+        Procède à la prochaine étape du processus.
+        Utile uniquement dans process_step_save.sh et process_step_close.sh
+        dans les scripts de session.
+    open_snapshot CLICHÉ
+        Sauvegarde et ferme la session, retourne au cliché CLICHÉ et ré-ouvre la session 
+    rename NOUVEAU_NOM_DE_LA_SESSION
+        renomme la session en cours en NOUVEAU_NOM_DE_LA_SESSION
+    add_executable EXÉCUTABLE
+        Ajouter EXÉCUTABLE à la session en cours
+    add_proxy
+        Ajouter un proxy à la session en cours
+    add_client_template MODÈLE_DE_CLIENT
+        Ajoute un client à la session selon MODÈLE_DE_CLIENT
+    list_snapshots
+        Lister les clichés de la session
+    list_clients [FILTER1] [FILTER2] [FILTER3]...
+        Lister les clients de la session par leur client_id
+        Les filtres disponibles sont:
+            started
+            active
+            auto_start
+            no_save_level
+        Précédez le filtre avec 'not_' pour inverser le filtre
+        Exemple: ray_control list_clients auto_start not_started
+        Affichera tous les clients arrêtés qui doivent être démarrés à l'ouverture de la session
+
+* COMMANDES DE CLIENT:
+    Les commandes de client doivent être écrites de cette manière:
+    ray_control client CLIENT_ID commande [*ARGUMENTS]
+    example: ray_control client carla stop
+
+    stop
+        Arrête le client poliment.
+    kill
+        Tue le client. À n'utiliser qu'en dernier recours
+    trash
+        Envoyer le client à la corbeille. Le client doit être arrêté.
+    start
+        Démarre le client
+    resume
+        Démarre le client
+    open
+        Démarre le client,
+        ne retourne la commande qu'une fois que le client est prêt,
+        connu comme étant non actif, ou trop long à communiquer. 
+    save
+        Sauvegarde le client
+    save_as_template NOM_DU_MODÈLE
+        Sauvegarde le client comme modèle NOM_DU_MODÈLE.
+        Écrase le modèle NOM_DU_MODÈLE s'il existe déjà.
+    show_optional_gui
+        Affiche l'IGU du client s'il en est capable
+    hide_optional_gui
+        Cache l'IGU du client s'il en est capable
+    get_properties
+        Renvoie les propriétés du client
+    set_properties PROPRIÉTÉ1 [PROPRIÉTÉ2] [PROPRIÉTÉ3]...
+        Définit les les propriétés du client.
+        PROPRIÉTÉ doit contenir propriété:valeur
+        exemple: client carla set_properties icon:carla "label:Mon rack Carla"
+    get_proxy_properties
+        Renvoie les propriétés du proxy du client si son exécutable est ray-proxy
+    set_proxy_properties PROPRIÉTÉ1 [PROPRIÉTÉ2] [PROPRIÉTÉ3]...
+        Définit les les propriétés du proxy du client si son exécutable est ray-proxy.
+        PROPRIÉTÉ doit contenir propriété:valeur
+        example: ray_control client lmms set_properties executable:lmms no_save_level:2 
+    list_files
+        Liste les fichiers et dossiers du client
+    list_snapshots
+        Liste les clichés de la session où le client existe
+    open_snapshot CLICHÉ
+        Arrête le client s'il est démarré,
+        charge le CLICHÉ seulement pour les fichiers du client,
+        redémarre le client s'il était démarré.
+    is_started
+        Retourne un code d'erreur si le client n'est pas démarré
+        
+* COMMANDES DE CLIENT MIS À LA CORBEILLE:
+    Les commandes de client mis à la corbeille doivent être écrites de cette manière:
+    ray_control trashed_client CLIENT_ID command [*ARGUMENTS]
+    exemple: ray_control trashed_client carla restore
+
+    restore
+        Restaure le client dans la session.
+        Le client est restauré arrêté.
+    remove_definitely
+        Supprime définitivement le client et tous ses fichiers et dossiers

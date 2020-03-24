@@ -1,0 +1,183 @@
+control RaySession daemons
+    --help
+        Prints short help message
+    --help-all
+        Prints full help message
+    --help-control
+        Prints help for control commands
+    --help-server
+        Prints help for server commands
+    --help-session
+        Prints help for running session commands
+    --help-clients
+        Prints help for clients management
+    --port
+        Specify deamon OSC port.
+        This port can also be specified
+        with RAY_CONTROL_PORT environment variable.
+    --detach
+        Only send OSC message and do not wait for an answer
+
+* CONTROL_COMMANDS:
+    start
+        starts a daemon if there is no daemon started
+    stop
+        stops all running daemons
+    list_daemons
+        lists running daemons OSC ports
+    get_port
+        get default daemon OSC port
+    get_root
+        get daemon root directory for sessions
+    get_pid
+        get default deamon pid
+    get_session_path
+        get path of the running session,
+        returns error code if no daemon is running
+        or if no session is loaded.
+
+* SERVER_COMMANDS:
+    new_session NEW_SESSION_NAME [SESSION_TEMPLATE]
+        Saves current session (if any),
+        then creates and loads NEW_SESSION_NAME,
+        optionnally with SESSION_TEMPLATE
+    open_session SESSION_NAME [SESSION_TEMPLATE]
+        Saves current session (if any),
+        Loads SESSION_NAME (create it if it does not exists
+                            optionnally with SESSION_TEMPLATE)
+    open_session_off SESSION_NAME [SESSION_TEMPLATE]
+        Same as 'open_session' but doesn't starts any client.
+    list_sessions
+        Lists available sessions in sessions root directory
+    quit
+        Aborts current session (if any) and stop the daemon
+    change_root NEW_ROOT_FOLDER
+        Changes root directory for the sessions to NEW_ROOT_FOLDER
+    list_session_templates
+        Lists session templates
+    list_user_client_templates
+        Lists user client templates
+    list_factory_client_templates
+        Lists factory client templates
+    remove_client_template CLIENT_TEMPLATE
+        Removes user CLIENT_TEMPLATE
+    set_options OPTION1 [OPTION2] [OPTION3]... 
+        Set daemon options.
+        Available options are:
+            save_from_client
+            bookmark_session_folder
+            desktops_memory
+            snapshots
+        precede the option with 'not_' to disable this option
+        example: ray_control set_options bookmark_session_folder not_snapshots
+    script_info TEXT
+        Displays an info dialog on RaySession's GUI.
+    hide_script_info
+        Hides the script info dialog on RaySession's GUI.
+    script_user_action TEXT
+        Displays a question dialog on RaySession's GUI.
+        Returns when user accepted or rejected it.
+
+* SESSION_COMMANDS:
+    All these commands work only when a session is loaded.
+    
+    save
+        Saves the current session.
+        TIP: affect 'ray_control save' command to a global keyboard shortcut
+    save_as_template SESSION_TEMPLATE_NAME
+        Saves the current session as template
+    take_snapshot SNAPSHOT_NAME
+        Takes a snapshot of the current session
+    close
+        Saves and Closes the current session
+    abort
+        Aborts current session
+    duplicate NEW_SESSION_NAME
+        Saves, duplicates the current session and load the new one
+    process_step
+        Runs the next process step. 
+        Useful only in process_step_save.sh and process_step_close.sh
+        in session scripts.
+    open_snapshot SNAPSHOT
+        Saves, closes the session, back to SNAPSHOT and re-open it
+    rename NEW_SESSION_NAME
+        renames the current session to NEW_SESSION_NAME
+    add_executable EXECUTABLE
+        Adds a client to the current session
+    add_proxy
+        Adds a proxy client to the current session
+    add_client_template CLIENT_TEMPLATE
+        Adds a client to the current session from CLIENT_TEMPLATE
+    list_snapshots
+        Lists all snapshots of the current session
+    list_clients [FILTER1] [FILTER2] [FILTER3]...
+        Lists clients with their client_id.
+        Available filters are:
+            started
+            active
+            auto_start
+            no_save_level
+        precede the filter with 'not_' to revert the filter
+        example: ray_control list_clients auto_start not_started
+        will display all stopped clients that should be started at session open
+
+* CLIENT_COMMANDS:
+    all client commands have to be written this way:
+    ray_control client CLIENT_ID command [*ARGUMENTS]
+    example: ray_control client carla stop
+
+    stop
+        Stops the client
+    kill
+        Kills the client. To be used only as a last resort.
+    trash
+        Sends the client to trash. Client has to be stopped.
+    start
+        Starts the client
+    resume
+        Starts the client
+    open
+        Starts the client,
+        returns only when client is ready,
+        known as non active or too long to communicate. 
+    save
+        Saves the client
+    save_as_template TEMPLATE_NAME
+        Saves the client as template TEMPLATE_NAME.
+        Erase existant TEMPLATE_NAME if any.
+    show_optional_gui
+        shows client GUI if client is capable of
+    hide_optional_gui
+        Hides client GUI if client is capable of
+    get_properties
+        Get client properties
+    set_properties PROPERTY1 [PROPERTY2] [PROPERTY3]...
+        Set client properties.
+        PROPERTY must contains property:value
+        example: ray_control client carla set_properties icon:carla "label:My Carla Rack"
+    get_proxy_properties
+        Get client proxy properties only if client executable is ray-proxy
+    set_proxy_properties PROPERTY1 [PROPERTY2] [PROPERTY3]...
+        Set client proxy properties only if client executable is ray-proxy
+        PROPERTY must contains property:value
+        example: ray_control client lmms set_properties executable:lmms no_save_level:2 
+    list_files
+        Lists directories and files used by client
+    list_snapshots
+        Lists session snapshot where this client exists
+    open_snapshot SNAPSHOT
+        Stops the client if running, loads SNAPSHOT only for client files,
+        re-starts the client if it was started.
+    is_started
+        returns error code if client is not started
+        
+* TRASHED_CLIENT_OPTIONS:
+    trashed client commands have to be written this way:
+    ray_control trashed_client CLIENT_ID command [*ARGUMENTS]
+    example: ray_control trashed_client carla restore
+
+    restore
+        restore the client in the session.
+        client is restored stopped.
+    remove_definitely
+        remove all client files and directories.
