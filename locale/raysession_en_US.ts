@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="2.0">
+<!DOCTYPE TS>
+<TS version="2.1" language="en_US">
 <context>
     <name>AbortSession</name>
     <message>
@@ -1577,6 +1578,7 @@
     <message>
         <location filename="../src/daemon/ray-daemon.py" line="52"/>
         <source>Ray Network Sessions</source>
+        <translatorcomment>No accents or special character here please. This is a folder name !!!</translatorcomment>
         <translation type="unfinished"></translation>
     </message>
     <message>

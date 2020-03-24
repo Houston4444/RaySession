@@ -1670,6 +1670,7 @@
     <message>
         <location filename="../src/daemon/ray-daemon.py" line="52"/>
         <source>Ray Network Sessions</source>
+        <translatorcomment>Pas d&apos;accent ici, c&apos;est un nom de dossier !!!</translatorcomment>
         <translation>Ray Sessions reseau</translation>
     </message>
     <message>
