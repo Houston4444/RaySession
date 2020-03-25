@@ -41,18 +41,21 @@ contrôle les démons de RaySession
         Sauvegarde la session en cours (s'il y en a une)
         ensuite crée et charge NOUVELLE_SESSION,
         éventuellement à partir du modèle MODÈLE_DE_SESSION
+        
     open_session NOM_DE_LA_SESSION [MODÈLE_DE_SESSION]
         Sauvegarde la session en cours (s'il y en a une)
         charge NOM_DE_LA_SESSION (en la créant si elle n'existe pas,
         éventuellement à partir du modèle MODÈLE_DE_SESSION.
+        
     open_session_off NOM_DE_LA_SESSION [MODÈLE_DE_SESSION]
         Fait la même chose que open_session
         mais ne démarre aucun client.
+        
     list_sessions
         Liste les sessions disponibles dans le dossier racine des sessions
     quit
         Abandonne la session en cours (si présente)
-        puis arrête le démon
+        puis arrête le démon.
     change_root NOUVEAU_DOSSIER_RACINE
         Change le dossier racine des session en NOUVEAU_DOSSIER_RACINE
     list_session_templates

@@ -41,12 +41,15 @@ control RaySession daemons
         Saves current session (if any),
         then creates and loads NEW_SESSION_NAME,
         optionnally with SESSION_TEMPLATE
+        
     open_session SESSION_NAME [SESSION_TEMPLATE]
         Saves current session (if any),
         Loads SESSION_NAME (create it if it does not exists
                             optionnally with SESSION_TEMPLATE)
+                            
     open_session_off SESSION_NAME [SESSION_TEMPLATE]
         Same as 'open_session' but doesn't starts any client.
+        
     list_sessions
         Lists available sessions in sessions root directory
     quit
