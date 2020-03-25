@@ -21,6 +21,8 @@ contrôle les démons de RaySession
 * COMMANDES DE CONTRÔLE:
     start
         Démarre un démon si aucun n'est déjà démarré
+    start_new
+        Démarre un nouveau démon, retourne son numéro de port OSC
     stop
         Arrête tous les démons tournant
     list_daemons

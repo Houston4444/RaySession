@@ -139,12 +139,12 @@ class OscServer(liblo.Server):
                          % src_addr.port)
         
         self._wait_for_start = False
+        self.m_daemon_address = src_addr
         
         if self._wait_for_start_only:
             self._final_err = 0
             return
         
-        self.m_daemon_address = src_addr
         self.sendOrderMessage()
     
     def setDaemonAddress(self, daemon_port):
@@ -152,6 +152,11 @@ class OscServer(liblo.Server):
         self._wait_for_announce = True
         self._announce_time = time.time()
         self.toDaemon('/ray/server/controller_announce', os.getpid())
+    
+    def getDaemonPort(self):
+        if self.m_daemon_address:
+            return self.m_daemon_address.port
+        return None
     
     def toDaemon(self, *args):
         self.send(self.m_daemon_address, *args)

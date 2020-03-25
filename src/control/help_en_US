@@ -21,6 +21,8 @@ control RaySession daemons
 * CONTROL_COMMANDS:
     start
         starts a daemon if there is no daemon started
+    start_new
+        starts a new daemon, returns its OSC port number
     stop
         stops all running daemons
     list_daemons

@@ -15,7 +15,7 @@ OPERATION_TYPE_CLIENT = 4
 OPERATION_TYPE_TRASHED_CLIENT = 5
 OPERATION_TYPE_ALL = 6 # for help message
 
-control_operations = ('start', 'stop', 'list_daemons', 'get_root', 
+control_operations = ('start', 'start_new', 'stop', 'list_daemons', 'get_root', 
                       'get_port', 'get_port_gui_free', 'get_pid', 'get_session_path')
 
 server_operations = (
@@ -226,7 +226,7 @@ if __name__ == '__main__':
     operation = args.pop(0)
     if operation in ('client', 'trashed_client'):
         if len(args) < 2:
-            printHelp()
+            printHelp(False, OPERATION_TYPE_CLIENT)
             sys.exit(100)
         
         operation_type = OPERATION_TYPE_CLIENT
@@ -281,6 +281,9 @@ if __name__ == '__main__':
             if daemon_started:
                 sys.stderr.write('server already started.\n')
                 sys.exit(0)
+        
+        elif operation == 'start_new':
+            pass
         
         elif operation == 'stop':
             if not daemon_started:
@@ -379,7 +382,8 @@ if __name__ == '__main__':
     server.setOrderPathArgs(osc_order_path, arg_list)
     daemon_process = None
     
-    if daemon_started:
+    if daemon_started and not (operation_type == OPERATION_TYPE_CONTROL
+                               and operation == 'start_new'):
         if (operation_type == OPERATION_TYPE_CONTROL
                 and operation == 'stop'):
             daemon_port_list = []
@@ -426,7 +430,7 @@ if __name__ == '__main__':
         server.waitForStart()
         
         if (operation_type == OPERATION_TYPE_CONTROL
-                and operation == 'start'):
+                and operation in ('start', 'start_new')):
             server.waitForStartOnly()
     
     #connect SIGINT and SIGTERM
@@ -453,5 +457,12 @@ if __name__ == '__main__':
             sys.stderr.write('daemon terminates, sorry\n')
             exit_code = 104
             break
+    
+    if (operation_type == OPERATION_TYPE_CONTROL
+            and operation == 'start_new'
+            and exit_code == 0):
+        daemon_port = server.getDaemonPort()
+        if daemon_port:
+            sys.stdout.write("%i\n" % daemon_port)
     
     sys.exit(exit_code)
