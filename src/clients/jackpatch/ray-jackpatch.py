@@ -1,8 +1,12 @@
 #!/usr/bin/python3 -u
 
+import os
+import signal
+import signal
+import time
+
 from PyQt5.QtCore import QCoreApplication, QObject, QTimer, pyqtSignal
 from PyQt5.QtXml import QDomDocument
-import sys, signal, os, time
 
 #from shared import *
 import jacklib
@@ -341,7 +345,7 @@ def openFile(project_path, session_name, full_client_id):
         try:
             file = open(file_path, 'r')
         except:
-            print('unable to read file %s' % file_path, file=sys.stderr)
+            sys.stderr.write('unable to read file %s\n' % file_path)
             app.quit()
             return
             
@@ -400,7 +404,7 @@ def saveFile():
     try:
         file = open(file_path, 'w')
     except:
-        print('unable to write file %s' % file_path, file=sys.stderr)
+        sys.stderr.write('unable to write file %s\n' % file_path)
         app.quit()
         return
         
@@ -425,7 +429,7 @@ def saveFile():
 if __name__ == '__main__':
     NSM_URL = os.getenv('NSM_URL')
     if not NSM_URL:
-        print('Could not register as NSM client.', file=sys.stderr)
+        sys.stderr.write('Could not register as NSM client.\n')
         sys.exit()
     
     daemon_address = ray.getLibloAddress(NSM_URL)
@@ -436,7 +440,7 @@ if __name__ == '__main__':
         None)
     
     if not jack_client:
-        print('Unable to make a jack client !', file=sys.stderr)
+        sys.stderr.write('Unable to make a jack client !\n')
         sys.exit()
         
         

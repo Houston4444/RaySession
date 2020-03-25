@@ -55,7 +55,6 @@ class Scripter:
         return not bool(self._process.state())
     
     def terminate(self):
-        print('aaazkoefok', self.getPath())
         self._asked_for_terminate = True
         self._process.terminate()
     

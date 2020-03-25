@@ -211,9 +211,7 @@ class Snapshoter(QObject):
                         break
             
             all_snaps.append((ref, name))
-            print('fkoff', ss_name)
             snapsss = fullRefForGui(ref, name, rw_sn, rw_name, ss_name)
-            print(snapsss)
             all_tags.append(snapsss)
             
         all_tags.reverse()

@@ -1203,7 +1203,6 @@ class DonationsDialog(ChildDialog):
         self.ui = ui_donations.Ui_Dialog()
         self.ui.setupUi(self)
         
-        print('display_no_again', display_no_again)
         self.ui.checkBox.setVisible(display_no_again)
         self.ui.checkBox.clicked.connect(self.checkBoxClicked)
         

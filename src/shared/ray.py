@@ -158,7 +158,7 @@ debug = False
 
 def ifDebug(string):
     if debug:
-        print(string, file=sys.stderr)
+        sys.stderr.write("%s\n" % string)
 
 def setDebug(bool):
     global debug
