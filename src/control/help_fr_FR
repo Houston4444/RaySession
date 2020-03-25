@@ -84,6 +84,8 @@ contrôle les démons de RaySession
     script_user_action TEXTE
         Affiche une fenêtre de dialogue de question sur l'IGU de RaySession
         Retourne quand l'utilisateur l'a acceptée ou refusée.
+    has_attached_gui
+        Retourne un code d'erreur si aucune IGU n'est attachée à ce démon
 
 * COMMANDES DE LA SESSION:
     Toutes ces commandes fonctionne uniquement quand une session est chargée.

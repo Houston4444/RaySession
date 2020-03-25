@@ -86,6 +86,7 @@ class ClientCommunicating(liblo.ServerThread):
             return False
         
         elif reply_path == '/ray/gui/script_user_action':
+            self.sendGui('/ray/gui/hide_script_user_action')
             for controller in self.controller_list:
                 self.send(controller.addr, '/reply', '/ray/server/script_user_action',
                           'User action dialog validate')
@@ -99,8 +100,11 @@ class ClientCommunicating(liblo.ServerThread):
         error_path, error_code, error_string = args
         
         if error_path == '/ray/gui/script_user_action':
+            self.sendGui('/ray/gui/hide_script_user_action')
+            
             for controller in self.controller_list:
-                self.send(controller.addr, '/error', '/ray/server/script_user_action', -1,
+                self.send(controller.addr, '/error', 
+                          '/ray/server/script_user_action', -1,
                           'User action dialog aborted !')
             return False
     
@@ -654,6 +658,10 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/server/script_user_action', 's')
     def rayServerScriptUserAction(self, path, args, types, src_addr):
+        if not self.gui_list:
+            self.send(src_addr, '/error', path, ray.Err.LAUNCH_FAILED,
+                      "This server has no attached GUI")
+            return
         self.sendGui('/ray/gui/script_user_action', args[0])
         
     @ray_method('/ray/server/set_options', None)
@@ -725,11 +733,21 @@ class OscServerThread(ClientCommunicating):
                 #signaler.dummy_load_and_template.emit(*args)
                 #return False
     
+    @ray_method('/ray/server/has_attached_gui', '')
+    def rayServerHasGui(self, path, args, types, src_addr):
+        print('eodododo')
+        if self.gui_list:
+            self.send(src_addr, '/reply', path, 'Yes it has GUI')
+        else:
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR, 
+                      'This daemon has no attached GUI')
+        return False
+    
     @ray_method('/ray/session/get_session_name', '')
     def raySessionGetSessionName(self, path, args, types, src_addr):
         if not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "No session to close.")
+                      "No session loaded.")
             return False
         
         self.send(src_addr, '/reply', path, self.session.name)

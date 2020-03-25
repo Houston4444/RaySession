@@ -82,6 +82,8 @@ control RaySession daemons
     script_user_action TEXT
         Displays a question dialog on RaySession's GUI.
         Returns when user accepted or rejected it.
+    has_attached_gui
+        Returns error code if no GUI is attached to this daemon
 
 * SESSION_COMMANDS:
     All these commands work only when a session is loaded.

@@ -203,12 +203,16 @@ class GUIServerThread(liblo.ServerThread):
     def _script_info(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/gui/hide_script_info', '')
+    def _hide_script_info(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/gui/script_user_action', 's')
     def _script_user_action(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/gui/hide_script_info', '')
-    def _hide_script_info(self, path, args, types, src_addr):
+    @ray_method('/ray/gui/hide_script_user_action', '')
+    def _hide_script_user_action(self, path, args, types, src_addr):
         pass
     
     def send(self, *args):

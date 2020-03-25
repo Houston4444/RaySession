@@ -323,9 +323,12 @@ class SignaledSession(Session):
         text = args[0]
         self._main_win.showScriptInfo(text)
         
+    def _ray_gui_hide_script_info(self, path, args):
+        self._main_win.hideScriptInfoDialog()
+    
     def _ray_gui_script_user_action(self, path, args):
         text = args[0]
-        self._main_win.showScriptUserAction(text)
+        self._main_win.showScriptUserActionDialog(text)
         
-    def _ray_gui_hide_script_info(self, path, args):
-        self._main_win.hideScriptDialog()
+    def _ray_gui_hide_script_user_action(self, path, args):
+        self._main_win.hideScriptUserActionDialog()

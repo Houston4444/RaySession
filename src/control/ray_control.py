@@ -24,7 +24,8 @@ server_operations = (
     'remove_client_template', 'list_sessions', 'new_session',
     'open_session', 'open_session_off', 'save_session_template',
     'rename_session', 'set_options',
-    'script_info', 'script_user_action', 'hide_script_info')
+    'script_info', 'script_user_action', 'hide_script_info',
+    'has_attached_gui')
 
 session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',
@@ -244,6 +245,7 @@ if __name__ == '__main__':
         elif operation in session_operations:
             operation_type = OPERATION_TYPE_SESSION
         else:
+            print('grkoto', operation)
             printHelp()
             sys.exit(100)
         

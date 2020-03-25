@@ -210,7 +210,8 @@ class MainWindow(QMainWindow):
 
         self.setNsmLocked(CommandLineArgs.under_nsm)
         
-        self.script_dialog = None
+        self.script_info_dialog = None
+        self.script_action_dialog = None
         
         # disable "keep focus" if daemon is not on this machine (it takes no
         # sense in this case)
@@ -846,31 +847,40 @@ class MainWindow(QMainWindow):
             act_app.triggered.connect(self.launchFavorite)
     
     def showScriptInfo(self, text):
-        if self.script_dialog and self.script_dialog.shouldBeRemoved():
-            del self.script_dialog
-            self.script_dialog = None
+        if self.script_info_dialog and self.script_info_dialog.shouldBeRemoved():
+            del self.script_info_dialog
+            self.script_info_dialog = None
         
-        if not self.script_dialog:
-            self.script_dialog = child_dialogs.ScriptInfoDialog(self)
+        if not self.script_info_dialog:
+            self.script_info_dialog = child_dialogs.ScriptInfoDialog(self)
             
-        self.script_dialog.setInfoLabel(text)
-        self.script_dialog.show()
+        self.script_info_dialog.setInfoLabel(text)
+        self.script_info_dialog.show()
         
-    def hideScriptDialog(self):
-        if self.script_dialog:
-            self.script_dialog.close()
+    def hideScriptInfoDialog(self):
+        if self.script_info_dialog:
+            self.script_info_dialog.close()
         
-        del self.script_dialog
-        self.script_dialog = None
+        del self.script_info_dialog
+        self.script_info_dialog = None
         
-    def showScriptUserAction(self, text):
-        if self.script_dialog:
-            self.script_dialog.close()
-            del self.script_dialog
+    def showScriptUserActionDialog(self, text):
+        if self.script_action_dialog:
+            self.script_action_dialog.close()
+            del self.script_action_dialog
+            self.toDaemon('/error', '/ray/gui/script_user_action',
+                    ray.Err.NOT_NOW, 'another script_user_action take place')
             
-        self.script_dialog = child_dialogs.ScriptUserActionDialog(self)
-        self.script_dialog.setMainText(text)
-        self.script_dialog.show()
+        self.script_action_dialog = child_dialogs.ScriptUserActionDialog(self)
+        self.script_action_dialog.setMainText(text)
+        self.script_action_dialog.show()
+        
+        
+    def hideScriptUserActionDialog(self):
+        if self.script_action_dialog:
+            self.script_action_dialog.close()
+            del self.script_action_dialog
+            self.script_action_dialog = None
     
     def daemonCrash(self):
         QMessageBox.critical(
