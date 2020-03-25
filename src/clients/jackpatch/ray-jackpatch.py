@@ -466,7 +466,7 @@ if __name__ == '__main__':
     NSMServer = nsm_client.NSMThread('ray-jackpatch', signaler,
                                      daemon_address, False)
     NSMServer.start()
-    NSMServer.announce('JACK Connexions', ':dirty:switch:', 'ray-jackpatch')
+    NSMServer.announce('JACK Connections', ':dirty:switch:', 'ray-jackpatch')
     
     #connect signals
     signal.signal(signal.SIGINT , signalHandler)
