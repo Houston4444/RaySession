@@ -366,7 +366,6 @@ class OscServerThread(ClientCommunicating):
     def rayGuiGui_disannounce(self, path, args, types, src_addr):
         for addr in self.gui_list:
             if ray.areSameOscPort(addr.url, src_addr.url):
-            #if addr.url == src_addr.url:
                 break
         else:
             return False
@@ -732,16 +731,6 @@ class OscServerThread(ClientCommunicating):
                     #and session_name == self.session.name):
                 #signaler.dummy_load_and_template.emit(*args)
                 #return False
-    
-    @ray_method('/ray/server/has_attached_gui', '')
-    def rayServerHasGui(self, path, args, types, src_addr):
-        print('eodododo')
-        if self.gui_list:
-            self.send(src_addr, '/reply', path, 'Yes it has GUI')
-        else:
-            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR, 
-                      'This daemon has no attached GUI')
-        return False
     
     @ray_method('/ray/session/get_session_name', '')
     def raySessionGetSessionName(self, path, args, types, src_addr):
@@ -1351,9 +1340,17 @@ class OscServerThread(ClientCommunicating):
         
         return 0
     
-    def hasLocalGui(self):
+    def hasGui(self):
+        has_gui = False
+        
         for gui_addr in self.gui_list:
             if ray.areOnSameMachine(self.url, gui_addr.url):
-                return True
-            
-        return False
+                # we've got a local GUI
+                return 3
+            else:
+                has_gui = True
+                
+        if has_gui:
+            return 1
+        
+        return 0

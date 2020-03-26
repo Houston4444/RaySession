@@ -15,8 +15,10 @@ OPERATION_TYPE_CLIENT = 4
 OPERATION_TYPE_TRASHED_CLIENT = 5
 OPERATION_TYPE_ALL = 6 # for help message
 
-control_operations = ('start', 'start_new', 'stop', 'list_daemons', 'get_root', 
-                      'get_port', 'get_port_gui_free', 'get_pid', 'get_session_path')
+control_operations = ('start', 'start_new', 'stop', 'list_daemons',
+                      'get_root', 'get_port', 'get_port_gui_free',
+                      'get_pid', 'get_session_path',
+                      'has_local_gui', 'has_gui')
 
 server_operations = (
     'quit', 'change_root', 'list_session_templates', 
@@ -24,8 +26,7 @@ server_operations = (
     'remove_client_template', 'list_sessions', 'new_session',
     'open_session', 'open_session_off', 'save_session_template',
     'rename_session', 'set_options',
-    'script_info', 'script_user_action', 'hide_script_info',
-    'has_attached_gui')
+    'script_info', 'hide_script_info', 'script_user_action')
 
 session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',
@@ -101,8 +102,9 @@ def getDaemonList():
                 if port.isdigit():
                     daemon.port = int(port)
                     
-            elif key == 'has_local_gui':
-                daemon.has_local_gui = bool(child.attrib[key] == '1')
+            elif key == 'has_gui':
+                daemon.has_local_gui = bool(child.attrib[key] == '3')
+                daemon.has_gui = bool(child.attrib[key] == '1')
         
         if not (daemon.net_daemon_id
                 and daemon.pid
@@ -120,7 +122,8 @@ class Daemon:
     port = 0
     user = ""
     not_default = False
-    has_local_gui = False
+    has_gui = 0
+    has_local_gui = 0
 
 
 def printHelp(stdout=False, category=OPERATION_TYPE_NULL):
@@ -245,7 +248,6 @@ if __name__ == '__main__':
         elif operation in session_operations:
             operation_type = OPERATION_TYPE_SESSION
         else:
-            print('grkoto', operation)
             printHelp()
             sys.exit(100)
         
@@ -336,6 +338,22 @@ if __name__ == '__main__':
                             sys.exit(1)
                         sys.stdout.write('%s\n' % daemon.session_path)
                         sys.exit(0)
+                        
+            elif operation == 'has_local_gui':
+                for daemon in daemon_list:
+                    if daemon.port == daemon_port:
+                        if daemon.has_local_gui:
+                            sys.exit(0)
+                else:
+                    sys.exit(1)
+                    
+            elif operation == 'has_gui':
+                for daemon in daemon_list:
+                    if daemon.port == daemon_port:
+                        if daemon.has_gui:
+                            sys.exit(0)
+                else:
+                    sys.exit(1)
                         
     elif not daemon_started:
         at_port = ''
