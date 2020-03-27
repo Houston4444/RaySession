@@ -2,7 +2,7 @@
 
 import os
 import signal
-import signal
+import sys
 import time
 
 from PyQt5.QtCore import QCoreApplication, QObject, QTimer, pyqtSignal

@@ -1024,8 +1024,8 @@ class OperatingSession(Session):
     def close_step2(self):
         self.cleanExpected()
         
-        for client in self.clients:
-            client.setStatus(ray.ClientStatus.REMOVED)
+        #for client in self.clients:
+            #client.setStatus(ray.ClientStatus.REMOVED)
         
         self.clients.clear()
         
@@ -1039,6 +1039,10 @@ class OperatingSession(Session):
         self.nextFunction()
     
     def closeDone(self):
+        #self.cleanExpected()
+        #self.clients.clear()
+        #self.setPath('')
+        #self.sendGui("/ray/gui/session/name", "", "" )
         self.sendReply("Closed.")
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.OFF)
@@ -1500,6 +1504,8 @@ class OperatingSession(Session):
         self.nextFunction()
             
     def clear(self, clear_all_clients=False):
+        self.expected_clients.clear()
+        
         byebye_client_list = []
         future_clients_exec_args = []
         
@@ -1523,7 +1529,7 @@ class OperatingSession(Session):
                 # in the new session
                 if client.isRunning():
                     self.expected_clients.append(client)
-                    client.stop()
+                    #client.stop()
                 else:
                     byebye_client_list.append(client)
         
@@ -1546,7 +1552,11 @@ class OperatingSession(Session):
                     _translate('GUIMSG',
                             'waiting for %i clients to quit...')
                         % len(self.expected_clients))
-        
+            
+            for client in self.expected_clients.__reversed__():
+                self.clients_to_quit.append(client)
+                self.timer_quit.start()
+            
         self.trashed_clients.clear()
         self.sendGui('/ray/gui/trash/clear')
     
@@ -1571,9 +1581,9 @@ class OperatingSession(Session):
                                             ray.Template.RENAME)
             self.setPath(self.future_session_path)
         
-        for client in self.future_trashed_clients:
-            self.trashed_clients.append(client)
-            client.sendGuiClientProperties(removed=True)
+        for trashed_client in self.future_trashed_clients:
+            self.trashed_clients.append(trashed_client)
+            trashed_client.sendGuiClientProperties(removed=True)
         
         self.waitAndGoTo(20000, (self.load_step1, open_off), ray.WaitFor.QUIT)
     
