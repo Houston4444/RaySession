@@ -1425,11 +1425,10 @@ class OperatingSession(Session):
                         % (self.name, new_session_name))
         self.forgetOscArgs()
     
-    def replace(self, session_full_name, open_off=False):
-        pass
-    
-    def preload(self, session_full_name, open_off=False):
-        #terminate or switch clients
+    def preload(self, session_full_name):
+        # load session data in self.future* (clients, trashed_clients, 
+        #                                    session_path, session_name)
+        
         spath = "%s/%s" % (self.root, session_full_name)
         if session_full_name.startswith('/'):
             spath = session_full_name
@@ -1574,7 +1573,9 @@ class OperatingSession(Session):
         
         self.nextFunction()
     
-    def real_load(self):
+    def load(self, open_off=False):
+        self.cleanExpected()
+        
         future_session_short_path = self.future_session_path
         if future_session_short_path.startswith("%s/" % self.root):
             future_session_short_path = \
@@ -1599,249 +1600,26 @@ class OperatingSession(Session):
             self.trashed_clients.append(trashed_client)
             trashed_client.sendGuiClientProperties(removed=True)
         
-        self.waitAndGoTo(20000, (self.load_step1, open_off), ray.WaitFor.QUIT)
-    
-    def load(self, session_full_name, open_off=False):
-        #terminate or switch clients
-        spath = self.root + '/' + session_full_name
-        if session_full_name.startswith('/'):
-            spath = session_full_name
-        
-        if spath == self.path:
-            self.loadError(ray.Err.SESSION_LOCKED)
-            return
-        
-        if not os.path.exists(spath):
-            try:
-                os.makedirs(spath)
-            except:
-                self.loadError(ray.Err.CREATE_FAILED)
-                return
-        
-        multi_daemon_file = MultiDaemonFile.getInstance()
-        if (multi_daemon_file
-                and not multi_daemon_file.isFreeForSession(spath)):
-            Terminal.warning("Session %s is used by another daemon")
-            self.loadError(ray.Err.SESSION_LOCKED)
-            return
-        
-        self.message("Attempting to open %s" % spath)
-        
-        session_ray_file = spath + '/raysession.xml'
-        session_nsm_file = spath + '/session.nsm'
-        
-        is_ray_file = True
-        
-        try:
-            ray_file = open(session_ray_file, 'r')
-        except:
-            is_ray_file = False
-            
-        if not is_ray_file:
-            try:
-                file = open(session_nsm_file, 'r')
-            except:
-                try:
-                    ray_file = open(session_ray_file, 'w')
-                    xml = QDomDocument()
-                    p = xml.createElement('RAYSESSION')
-                    p.setAttribute('VERSION', ray.VERSION)
-                    
-                    if self.isNsmLocked():
-                        name = basename(session_full_name).rpartition('.')[0]
-                        p.setAttribute('name', name)
-                    
-                    xml.appendChild(p)
-                    
-                    ray_file.write(xml.toString())
-                    ray_file.close()
-                    
-                    ray_file = open(session_ray_file, 'r')
-                    
-                    is_ray_file = True
-                    
-                except:
-                    self.loadError(ray.Err.CREATE_FAILED)
-                    return
-                
-        self.future_clients = []
-        self.future_trashed_clients = []
-        new_client_exec_args = []
-        sess_name = ""
-        
-        if is_ray_file:
-            xml = QDomDocument()
-            try:
-                xml.setContent(ray_file.read())
-            except:
-                self.loadError(ray.Err.BAD_PROJECT)
-                return
-            
-            content = xml.documentElement()
-            
-            if content.tagName() != "RAYSESSION":
-                ray_file.close()
-                self.loadError(ray.Err.BAD_PROJECT)
-                return
-            
-            sess_name = content.attribute('name')
-            
-            client_id_list = []
-            
-            nodes = content.childNodes()
-            
-            for i in range(nodes.count()):
-                node = nodes.at(i)
-                tag_name = node.toElement().tagName()
-                if tag_name in ('Clients', 'RemovedClients'):
-                    clients_xml = node.toElement().childNodes()
-                    
-                    for j in range(clients_xml.count()):
-                        client_xml = clients_xml.at(j)
-                        client = Client(self)
-                        cx = client_xml.toElement()
-                        client.readXmlProperties(cx)
-                        
-                        if client.client_id in client_id_list:
-                            # prevent double same id
-                            continue
-                        
-                        if tag_name == 'Clients':
-                            if not open_off and client.auto_start:
-                                new_client_exec_args.append(
-                                    (client.executable_path, 
-                                     client.arguments))
-                            
-                            self.future_clients.append(client)
-                            
-                        elif tag_name == 'RemovedClients':
-                            self.future_trashed_clients.append(client)
-                            #client.sendGuiClientProperties(removed=True)
-                        
-                        else:
-                            continue
-                        
-                        client_id_list.append(client.client_id)
-                        
-                elif tag_name == "Windows":
-                    server = self.getServer()
-                    if server and server.option_desktops_memory:
-                        self.desktops_memory.readXml(node.toElement())
-            
-            ray_file.close()
-            
-        else:
-            # prevent to load a locked NSM session 
-            if os.path.isfile(spath + '/.lock'):
-                Terminal.warning("Session %s is locked by another process")
-                self.loadError(ray.Err.SESSION_LOCKED)
-                return
-            
-            for line in file.read().split('\n'):
-                elements = line.split(':')
-                if len(elements) >= 3:
-                    client = Client(self)
-                    client.name            = elements[0]
-                    client.executable_path = elements[1]
-                    client.client_id       = elements[2]
-                    client.prefix_mode     = ray.PrefixMode.CLIENT_NAME
-                    self.future_clients.append(client)
-                    if not open_off:
-                        new_client_exec_args.append(
-                            (client.executable_path, ''))
-                    
-            file.close()
-        
-        byebye_client_list = []
-        
-        for client in self.clients:
-            if ((client.active and client.isCapableOf(':switch:')
-                    or (client.isDumbClient() and client.isRunning()))
-                and ((client.running_executable, client.running_arguments)
-                     in new_client_exec_args)):
-                # client will switch
-                # or keep alive if non active and running
-                new_client_exec_args.remove(
-                    (client.running_executable, client.running_arguments))
-                
-            else:
-                # client is not capable of switch, or is not wanted 
-                # in the new session
-                if client.isRunning():
-                    self.expected_clients.append(client)
-                    client.stop()
-                else:
-                    byebye_client_list.append(client)
-        
-        for client in byebye_client_list:
-            if client in self.clients:
-                self.removeClient(client)
-            else:
-                raise NameError('no client %s to remove' % client.client_id)
-        
-        if self.expected_clients:
-            self.setServerStatus(ray.ServerStatus.CLEAR)
-            
-            if len(self.expected_clients) == 1:
-                self.sendGuiMessage(
-                    _translate('GUIMSG',
-                            'waiting for %s to quit...')
-                        % self.expected_clients[0].guiMsgStyle())
-            else:
-                self.sendGuiMessage(
-                    _translate('GUIMSG',
-                            'waiting for %i clients to quit...')
-                        % len(self.expected_clients))
-        
-        self.trashed_clients.clear()
-        self.sendGui('/ray/gui/trash/clear')
-        
-        # Here we are sure to have all needed
-        # Load work starts here
-        self.sendGuiMessage(_translate('GUIMSG', "-- Opening session %s --")
-                                % ray.highlightText(session_full_name))
-        
-        self.setPath(spath, sess_name)
-        
-        if sess_name and sess_name != os.path.basename(spath):
-            # session folder has been renamed
-            # so rename session to it
-            for client in self.future_clients + self.future_trashed_clients:
-                client.adjustFilesAfterCopy(spath, ray.Template.RENAME)
-            self.setPath(spath)
-        
-        if not is_ray_file:
-            self.sendGui('/ray/gui/session/is_nsm')
-        
-        for client in self.future_trashed_clients:
-            self.trashed_clients.append(client)
-            client.sendGuiClientProperties(removed=True)
-        
-        self.waitAndGoTo(20000, (self.load_step1, open_off), ray.WaitFor.QUIT)
-    
-    def load_step1(self, open_off=False):
-        self.cleanExpected()
-            
         self.message("Commanding smart clients to switch")
         
         has_switch = False
         
         new_client_id_list = []
         
-        for new_client in self.future_clients:
+        for future_client in self.future_clients:
             #/* in a duplicated session, clients will have the same
             #* IDs, so be sure to pick the right one to avoid race
             #* conditions in JACK name registration. */
             for client in self.clients:
-                if (client.client_id == new_client.client_id
-                    and client.running_executable == new_client.executable_path
-                    and client.running_arguments == new_client.arguments):
+                if (client.client_id == future_client.client_id
+                    and client.running_executable == future_client.executable_path
+                    and client.running_arguments == future_client.arguments):
                     #we found the good existing client
                     break
             else:
                 for client in self.clients:
-                    if (client.running_executable == new_client.executable_path
-                        and client.running_arguments == new_client.arguments):
+                    if (client.running_executable == future_client.executable_path
+                        and client.running_arguments == future_client.arguments):
                         #we found a switchable client
                         break
                 else:
@@ -1852,24 +1630,24 @@ class OperatingSession(Session):
                 if client.active and not client.isReplyPending():
                     #since we already shutdown clients not capable of 
                     #'switch', we can assume that these are.
-                    client.switch(new_client)
+                    client.switch(future_client)
                     has_switch = True
             else:
                 #* sleep a little bit because liblo derives its sequence
                 #* of port numbers from the system time (second
                 #* resolution) and if too many clients start at once they
                 #* won't be able to find a free port. */
-                if not self.addClient(new_client):
+                if not self.addClient(future_client):
                     continue
                     
-                if new_client.auto_start and not (self.is_dummy or open_off):
-                    self.clients_to_launch.append(new_client)
+                if future_client.auto_start and not (self.is_dummy or open_off):
+                    self.clients_to_launch.append(future_client)
                     
-                    if (not new_client.executable_path
+                    if (not future_client.executable_path
                             in RS.non_active_clients):
-                        self.expected_clients.append(new_client)
+                        self.expected_clients.append(future_client)
             
-            new_client_id_list.append(new_client.client_id)
+            new_client_id_list.append(future_client.client_id)
             
         self.sendGui("/ray/gui/session/name",  self.name, self.path)
         self.noFuture()
@@ -2685,7 +2463,9 @@ class SignaledSession(OperatingSession):
             self.process_order += [(self.prepareTemplate, session_name, 
                                     template_name, True)]
         
-        self.process_order += [(self.load, session_name, open_off),
+        self.process_order += [(self.preload, session_name),
+                               (self.close, open_off),
+                               (self.load, open_off),
                                self.loadDone]
     
     def _ray_server_open_session_off(self, path, args, src_addr):
@@ -2871,8 +2651,10 @@ class SignaledSession(OperatingSession):
         self.process_order = [self.save,
                               self.closeNoSaveClients,
                               self.snapshot,
-                              (self.duplicate, new_session_full_name), 
-                              (self.load, new_session_full_name), 
+                              (self.duplicate, new_session_full_name),
+                              (self.preload, new_session_full_name),
+                              self.close,
+                              self.load, 
                               self.duplicateDone]
         
     def _ray_session_duplicate_only(self, path, args, src_addr):
@@ -2921,9 +2703,10 @@ class SignaledSession(OperatingSession):
         self.process_order = [self.save,
                               self.closeNoSaveClients,
                               (self.snapshot, '', snapshot, True),
-                              self.close, 
+                              (self.close, True)
                               (self.initSnapshot, self.path, snapshot),
-                              (self.load, self.path), 
+                              (self.preload, self.path),
+                              self.load,
                               self.loadDone]
     
     def _ray_session_rename(self, path, args, src_addr):
@@ -3612,7 +3395,8 @@ class SignaledSession(OperatingSession):
                 self.bookmarker.removeAll(self.path)
     
     def serverOpenSessionAtStart(self, session_name):
-        self.process_order = [self.save, (self.load, session_name),
+        self.process_order = [(self.preload, session_name),
+                              self.load,
                               self.loadDone]
         self.nextFunction()
     
@@ -3638,12 +3422,14 @@ class DummySession(OperatingSession):
         self.is_dummy = True
         
     def dummyLoadAndTemplate(self, session_full_name, template_name):
-        self.process_order = [(self.load, session_full_name),
+        self.process_order = [(self.preload, session_full_name),
+                              self.load,
                               (self.saveSessionTemplate, template_name, True)]
         self.nextFunction()
         
     def dummyDuplicate(self, session_to_load, new_session_full_name):
-        self.process_order = [(self.load, session_to_load),
+        self.process_order = [(self.preload, session_to_load),
+                              self.load,
                               (self.duplicate, new_session_full_name),
                               self.duplicateOnlyDone]
         self.nextFunction()
@@ -3651,7 +3437,8 @@ class DummySession(OperatingSession):
     def ray_server_save_session_template(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
         session_name, template_name, net = args
-        self.process_order = [(self.load, session_name),
+        self.process_order = [(self.preload, session_name),
+                              self.load,
                               (self.saveSessionTemplate, template_name, net)]
         self.nextFunction()
         
@@ -3659,29 +3446,11 @@ class DummySession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         full_session_name, new_session_name = args
         
-        #if new_session_name == self.name:
-            #return
-        self.process_order = [(self.load, full_session_name),
+        self.process_order = [(self.preload, full_session_name),
+                              self.load,
                               (self.rename, new_session_name),
                               self.save,
                               (self.renameDone, new_session_name)]
         self.nextFunction()
-        #for client in self.clients + self.trashed_clients:
-            #client.adjustFilesAfterCopy(new_session_name, ray.Template.RENAME)
-        
-        #try:
-            #spath = "%s/%s" % (dirname(self.path), new_session_name)
-            #subprocess.run(['mv', self.path, spath])
-            #self.setPath(spath)
-            
-            #self.sendGuiMessage(
-                #_translate('GUIMSG', 'Session directory is now: %s')
-                #% self.path)
-        #except:
-            #pass
-        
-        #self.sendGuiMessage(
-            #_translate('GUIMSG', 'Session %s has been renamed to %s .')
-            #% (self.name, new_session_name))
         
         
