@@ -74,6 +74,7 @@ class Session(ServerSender):
         self.clients = []
         self.future_clients = []
         self.trashed_clients = []
+        self.future_trashed_clients = []
         self.new_client_exec_args = []
         self.favorites = []
         self.name = ""
@@ -159,6 +160,12 @@ class Session(ServerSender):
             if server and server.option_bookmark_session:
                 self.bookmarker.setDaemonPort(server.port)
                 self.bookmarker.makeAll(self.path)
+    
+    def noFuture(self):
+        self.future_clients.clear()
+        self.future_session_path = ''
+        self.future_session_name = ''
+        self.future_trashed_clients.clear()
     
     def getShortPath(self):
         if self.path.startswith("%s/" % self.root):
@@ -982,38 +989,108 @@ class OperatingSession(Session):
         # Timer (2mn) is restarted if an expected client has been closed
         self.waitAndGoTo(120000, self.nextFunction, ray.WaitFor.QUIT, True)
     
-    def close(self):
+    def close(self, clear_all_clients=False):
         self.expected_clients.clear()
-        self.trashed_clients.clear()
         
         if not self.path:
             self.nextFunction()
             return
         
-        self.setServerStatus(ray.ServerStatus.CLOSE)
-        self.sendGui('/ray/gui/trash/clear')
+        byebye_client_list = []
+        future_clients_exec_args = []
         
-        self.sendGuiMessage(_translate('GUIMSG', '-- Closing session %s --')
-                            % ray.highlightText(self.getShortPath()))
+        if not clear_all_clients:
+            for future_client in self.future_clients:
+                if future_client.auto_start:
+                    future_clients_exec_args.append(
+                        (future_client.executable_path, future_client.arguments))
         
-        for client in self.clients.__reversed__():
-            if client.isRunning():
-                self.expected_clients.append(client)
-                self.clients_to_quit.append(client)
-                self.timer_quit.start()
+        has_keep_alive = False
+        
+        for client in self.clients:
+            if (not clear_all_clients
+                and (client.active and client.isCapableOf(':switch:')
+                     or (client.isDumbClient() and client.isRunning()))
+                and ((client.running_executable, client.running_arguments)
+                     in future_clients_exec_args)):
+                # client will switch
+                # or keep alive if non active and running
+                has_keep_alive = True
+                future_clients_exec_args.remove(
+                    (client.running_executable, client.running_arguments))
+            else:
+                # client is not capable of switch, or is not wanted 
+                # in the new session
+                if client.isRunning():
+                    self.expected_clients.append(client)
+                    #client.stop()
+                else:
+                    byebye_client_list.append(client)
+        
+        if has_keep_alive:
+            self.setServerStatus(ray.ServerStatus.CLEAR)
+        else:
+            self.setServerStatus(ray.ServerStatus.CLOSE)
+        
+        for client in byebye_client_list:
+            if client in self.clients:
+                self.removeClient(client)
+            else:
+                raise NameError('no client %s to remove' % client.client_id)
         
         if self.expected_clients:
             if len(self.expected_clients) == 1:
                 self.sendGuiMessage(
                     _translate('GUIMSG',
-                               'waiting for %s to stop...')
+                            'waiting for %s to quit...')
                         % self.expected_clients[0].guiMsgStyle())
             else:
                 self.sendGuiMessage(
-                    _translate('GUIMSG', 'waiting for %i clients to stop...')
+                    _translate('GUIMSG',
+                            'waiting for %i clients to quit...')
                         % len(self.expected_clients))
+            
+            for client in self.expected_clients.__reversed__():
+                self.clients_to_quit.append(client)
+                self.timer_quit.start()
+            
+        self.trashed_clients.clear()
+        self.sendGui('/ray/gui/trash/clear')
         
         self.waitAndGoTo(30000, self.close_step1, ray.WaitFor.QUIT)
+    
+    #def close(self):
+        #self.expected_clients.clear()
+        #self.trashed_clients.clear()
+        
+        #if not self.path:
+            #self.nextFunction()
+            #return
+        
+        #self.setServerStatus(ray.ServerStatus.CLOSE)
+        #self.sendGui('/ray/gui/trash/clear')
+        
+        #self.sendGuiMessage(_translate('GUIMSG', '-- Closing session %s --')
+                            #% ray.highlightText(self.getShortPath()))
+        
+        #for client in self.clients.__reversed__():
+            #if client.isRunning():
+                #self.expected_clients.append(client)
+                #self.clients_to_quit.append(client)
+                #self.timer_quit.start()
+        
+        #if self.expected_clients:
+            #if len(self.expected_clients) == 1:
+                #self.sendGuiMessage(
+                    #_translate('GUIMSG',
+                               #'waiting for %s to stop...')
+                        #% self.expected_clients[0].guiMsgStyle())
+            #else:
+                #self.sendGuiMessage(
+                    #_translate('GUIMSG', 'waiting for %i clients to stop...')
+                        #% len(self.expected_clients))
+        
+        #self.waitAndGoTo(30000, self.close_step1, ray.WaitFor.QUIT)
     
     def close_step1(self):
         for client in self.expected_clients:
@@ -1039,16 +1116,20 @@ class OperatingSession(Session):
         self.nextFunction()
     
     def closeDone(self):
-        #self.cleanExpected()
-        #self.clients.clear()
-        #self.setPath('')
-        #self.sendGui("/ray/gui/session/name", "", "" )
+        self.cleanExpected()
+        self.clients.clear()
+        self.setPath('')
+        self.sendGui("/ray/gui/session/name", "", "" )
         self.sendReply("Closed.")
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.OFF)
         self.forgetOscArgs()
     
     def abortDone(self):
+        self.cleanExpected()
+        self.clients.clear()
+        self.setPath('')
+        self.sendGui("/ray/gui/session/name", "", "" )
         self.sendReply("Aborted.")
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.OFF)
@@ -1410,9 +1491,7 @@ class OperatingSession(Session):
                     self.loadError(ray.Err.CREATE_FAILED)
                     return
                 
-        self.future_clients.clear()
-        self.future_trashed_clients.clear()
-        self.new_client_exec_args.clear()
+        self.noFuture()
         sess_name = ""
         
         if is_ray_file:
@@ -1453,11 +1532,6 @@ class OperatingSession(Session):
                             continue
                         
                         if tag_name == 'Clients':
-                            if not open_off and client.auto_start:
-                                self.new_client_exec_args.append(
-                                    (client.executable_path, 
-                                     client.arguments))
-                            
                             self.future_clients.append(client)
                             
                         elif tag_name == 'RemovedClients':
@@ -1491,9 +1565,6 @@ class OperatingSession(Session):
                     client.prefix_mode = ray.PrefixMode.CLIENT_NAME
                     client.auto_start = True
                     self.future_clients.append(client)
-                    if not open_off:
-                        self.new_client_exec_args.append(
-                            (client.executable_path, ''))
                     
             file.close()
             self.sendGui('/ray/gui/session/is_nsm')
@@ -1502,63 +1573,6 @@ class OperatingSession(Session):
         self.future_session_name = sess_name
         
         self.nextFunction()
-            
-    def clear(self, clear_all_clients=False):
-        self.expected_clients.clear()
-        
-        byebye_client_list = []
-        future_clients_exec_args = []
-        
-        if not clear_all_clients:
-            for future_client in self.future_clients:
-                if future_client.auto_start:
-                    future_clients_exec_args.append(
-                        (future_client.executable_path, future_client.arguments))
-        
-        for client in self.clients:
-            if ((client.active and client.isCapableOf(':switch:')
-                    or (client.isDumbClient() and client.isRunning()))
-                and ((client.running_executable, client.running_arguments)
-                     in future_clients_exec_args)):
-                # client will switch
-                # or keep alive if non active and running
-                future_clients_exec_args.remove(
-                    (client.running_executable, client.running_arguments))
-            else:
-                # client is not capable of switch, or is not wanted 
-                # in the new session
-                if client.isRunning():
-                    self.expected_clients.append(client)
-                    #client.stop()
-                else:
-                    byebye_client_list.append(client)
-        
-        for client in byebye_client_list:
-            if client in self.clients:
-                self.removeClient(client)
-            else:
-                raise NameError('no client %s to remove' % client.client_id)
-        
-        if self.expected_clients:
-            self.setServerStatus(ray.ServerStatus.CLEAR)
-            
-            if len(self.expected_clients) == 1:
-                self.sendGuiMessage(
-                    _translate('GUIMSG',
-                            'waiting for %s to quit...')
-                        % self.expected_clients[0].guiMsgStyle())
-            else:
-                self.sendGuiMessage(
-                    _translate('GUIMSG',
-                            'waiting for %i clients to quit...')
-                        % len(self.expected_clients))
-            
-            for client in self.expected_clients.__reversed__():
-                self.clients_to_quit.append(client)
-                self.timer_quit.start()
-            
-        self.trashed_clients.clear()
-        self.sendGui('/ray/gui/trash/clear')
     
     def real_load(self):
         future_session_short_path = self.future_session_path
@@ -1858,6 +1872,7 @@ class OperatingSession(Session):
             new_client_id_list.append(new_client.client_id)
             
         self.sendGui("/ray/gui/session/name",  self.name, self.path)
+        self.noFuture()
         
         if has_switch:
             self.setServerStatus(ray.ServerStatus.SWITCH)
