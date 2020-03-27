@@ -72,11 +72,14 @@ class Session(ServerSender):
         self.is_dummy = False
         
         self.clients = []
-        self.new_clients = []
+        self.future_clients = []
         self.trashed_clients = []
+        self.new_client_exec_args = []
         self.favorites = []
         self.name = ""
         self.path = ""
+        self.future_session_path = ""
+        self.future_session_name = ""
         
         self.is_renameable = True
         self.forbidden_ids_list = []
@@ -1340,6 +1343,240 @@ class OperatingSession(Session):
     def replace(self, session_full_name, open_off=False):
         pass
     
+    def preload(self, session_full_name, open_off=False):
+        #terminate or switch clients
+        spath = "%s/%s" % (self.root, session_full_name)
+        if session_full_name.startswith('/'):
+            spath = session_full_name
+        
+        if spath == self.path:
+            self.loadError(ray.Err.SESSION_LOCKED)
+            return
+        
+        if not os.path.exists(spath):
+            try:
+                os.makedirs(spath)
+            except:
+                self.loadError(ray.Err.CREATE_FAILED)
+                return
+        
+        multi_daemon_file = MultiDaemonFile.getInstance()
+        if (multi_daemon_file
+                and not multi_daemon_file.isFreeForSession(spath)):
+            Terminal.warning("Session %s is used by another daemon")
+            self.loadError(ray.Err.SESSION_LOCKED)
+            return
+        
+        self.message("Attempting to open %s" % spath)
+        
+        session_ray_file = "%s/raysession.xml" % spath
+        session_nsm_file = "%s/session.nsm" % spath
+        
+        is_ray_file = True
+        
+        try:
+            ray_file = open(session_ray_file, 'r')
+        except:
+            is_ray_file = False
+            
+        if not is_ray_file:
+            try:
+                file = open(session_nsm_file, 'r')
+            except:
+                try:
+                    ray_file = open(session_ray_file, 'w')
+                    xml = QDomDocument()
+                    p = xml.createElement('RAYSESSION')
+                    p.setAttribute('VERSION', ray.VERSION)
+                    
+                    if self.isNsmLocked():
+                        name = basename(session_full_name).rpartition('.')[0]
+                        p.setAttribute('name', name)
+                    
+                    xml.appendChild(p)
+                    
+                    ray_file.write(xml.toString())
+                    ray_file.close()
+                    
+                    ray_file = open(session_ray_file, 'r')
+                    
+                    is_ray_file = True
+                    
+                except:
+                    self.loadError(ray.Err.CREATE_FAILED)
+                    return
+                
+        self.future_clients.clear()
+        self.future_trashed_clients.clear()
+        self.new_client_exec_args.clear()
+        sess_name = ""
+        
+        if is_ray_file:
+            xml = QDomDocument()
+            try:
+                xml.setContent(ray_file.read())
+            except:
+                self.loadError(ray.Err.BAD_PROJECT)
+                return
+            
+            content = xml.documentElement()
+            
+            if content.tagName() != "RAYSESSION":
+                ray_file.close()
+                self.loadError(ray.Err.BAD_PROJECT)
+                return
+            
+            sess_name = content.attribute('name')
+            
+            client_id_list = []
+            
+            nodes = content.childNodes()
+            
+            for i in range(nodes.count()):
+                node = nodes.at(i)
+                tag_name = node.toElement().tagName()
+                if tag_name in ('Clients', 'RemovedClients'):
+                    clients_xml = node.toElement().childNodes()
+                    
+                    for j in range(clients_xml.count()):
+                        client_xml = clients_xml.at(j)
+                        client = Client(self)
+                        cx = client_xml.toElement()
+                        client.readXmlProperties(cx)
+                        
+                        if client.client_id in client_id_list:
+                            # prevent double same id
+                            continue
+                        
+                        if tag_name == 'Clients':
+                            if not open_off and client.auto_start:
+                                self.new_client_exec_args.append(
+                                    (client.executable_path, 
+                                     client.arguments))
+                            
+                            self.future_clients.append(client)
+                            
+                        elif tag_name == 'RemovedClients':
+                            self.future_trashed_clients.append(client)
+                        else:
+                            continue
+                        
+                        client_id_list.append(client.client_id)
+                        
+                elif tag_name == "Windows":
+                    server = self.getServer()
+                    if server and server.option_desktops_memory:
+                        self.desktops_memory.readXml(node.toElement())
+            
+            ray_file.close()
+            
+        else:
+            # prevent to load a locked NSM session 
+            if os.path.isfile(spath + '/.lock'):
+                Terminal.warning("Session %s is locked by another process")
+                self.loadError(ray.Err.SESSION_LOCKED)
+                return
+            
+            for line in file.read().split('\n'):
+                elements = line.split(':')
+                if len(elements) >= 3:
+                    client = Client(self)
+                    client.name = elements[0]
+                    client.executable_path = elements[1]
+                    client.client_id = elements[2]
+                    client.prefix_mode = ray.PrefixMode.CLIENT_NAME
+                    client.auto_start = True
+                    self.future_clients.append(client)
+                    if not open_off:
+                        self.new_client_exec_args.append(
+                            (client.executable_path, ''))
+                    
+            file.close()
+            self.sendGui('/ray/gui/session/is_nsm')
+            
+        self.future_session_path = spath
+        self.future_session_name = sess_name
+        
+        self.nextFunction()
+            
+    def clear(self, clear_all_clients=False):
+        byebye_client_list = []
+        future_clients_exec_args = []
+        
+        if not clear_all_clients:
+            for future_client in self.future_clients:
+                if future_client.auto_start:
+                    future_clients_exec_args.append(
+                        (future_client.executable_path, future_client.arguments))
+        
+        for client in self.clients:
+            if ((client.active and client.isCapableOf(':switch:')
+                    or (client.isDumbClient() and client.isRunning()))
+                and ((client.running_executable, client.running_arguments)
+                     in future_clients_exec_args)):
+                # client will switch
+                # or keep alive if non active and running
+                future_clients_exec_args.remove(
+                    (client.running_executable, client.running_arguments))
+            else:
+                # client is not capable of switch, or is not wanted 
+                # in the new session
+                if client.isRunning():
+                    self.expected_clients.append(client)
+                    client.stop()
+                else:
+                    byebye_client_list.append(client)
+        
+        for client in byebye_client_list:
+            if client in self.clients:
+                self.removeClient(client)
+            else:
+                raise NameError('no client %s to remove' % client.client_id)
+        
+        if self.expected_clients:
+            self.setServerStatus(ray.ServerStatus.CLEAR)
+            
+            if len(self.expected_clients) == 1:
+                self.sendGuiMessage(
+                    _translate('GUIMSG',
+                            'waiting for %s to quit...')
+                        % self.expected_clients[0].guiMsgStyle())
+            else:
+                self.sendGuiMessage(
+                    _translate('GUIMSG',
+                            'waiting for %i clients to quit...')
+                        % len(self.expected_clients))
+        
+        self.trashed_clients.clear()
+        self.sendGui('/ray/gui/trash/clear')
+    
+    def real_load(self):
+        future_session_short_path = self.future_session_path
+        if future_session_short_path.startswith("%s/" % self.root):
+            future_session_short_path = \
+                future_session_short_path.replace("%s/" % self.root, '', 1)
+            
+        self.sendGuiMessage(_translate('GUIMSG', "-- Opening session %s --")
+                                % ray.highlightText(future_session_short_path))
+        
+        self.setPath(self.future_session_path, self.future_session_name)
+        
+        if (self.future_session_name
+                and self.future_session_name != os.path.basename(
+                                                  self.future_session_path)):
+            # session folder has been renamed
+            # so rename session to it
+            for client in self.future_clients + self.future_trashed_clients:
+                client.adjustFilesAfterCopy(self.future_session_path,
+                                            ray.Template.RENAME)
+            self.setPath(self.future_session_path)
+        
+        for client in self.future_trashed_clients:
+            self.trashed_clients.append(client)
+            client.sendGuiClientProperties(removed=True)
+        
+        self.waitAndGoTo(20000, (self.load_step1, open_off), ray.WaitFor.QUIT)
+    
     def load(self, session_full_name, open_off=False):
         #terminate or switch clients
         spath = self.root + '/' + session_full_name
@@ -1403,8 +1640,8 @@ class OperatingSession(Session):
                     self.loadError(ray.Err.CREATE_FAILED)
                     return
                 
-        self.new_clients = []
-        self.new_removed_clients = []
+        self.future_clients = []
+        self.future_trashed_clients = []
         new_client_exec_args = []
         sess_name = ""
         
@@ -1451,10 +1688,10 @@ class OperatingSession(Session):
                                     (client.executable_path, 
                                      client.arguments))
                             
-                            self.new_clients.append(client)
+                            self.future_clients.append(client)
                             
                         elif tag_name == 'RemovedClients':
-                            self.new_removed_clients.append(client)
+                            self.future_trashed_clients.append(client)
                             #client.sendGuiClientProperties(removed=True)
                         
                         else:
@@ -1484,13 +1721,12 @@ class OperatingSession(Session):
                     client.executable_path = elements[1]
                     client.client_id       = elements[2]
                     client.prefix_mode     = ray.PrefixMode.CLIENT_NAME
-                    self.new_clients.append(client)
+                    self.future_clients.append(client)
                     if not open_off:
                         new_client_exec_args.append(
                             (client.executable_path, ''))
                     
             file.close()
-        #self.llload(session_full_name, open_off=False)
         
         byebye_client_list = []
         
@@ -1546,14 +1782,14 @@ class OperatingSession(Session):
         if sess_name and sess_name != os.path.basename(spath):
             # session folder has been renamed
             # so rename session to it
-            for client in self.new_clients + self.new_removed_clients:
+            for client in self.future_clients + self.future_trashed_clients:
                 client.adjustFilesAfterCopy(spath, ray.Template.RENAME)
             self.setPath(spath)
         
         if not is_ray_file:
             self.sendGui('/ray/gui/session/is_nsm')
         
-        for client in self.new_removed_clients:
+        for client in self.future_trashed_clients:
             self.trashed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
         
@@ -1568,7 +1804,7 @@ class OperatingSession(Session):
         
         new_client_id_list = []
         
-        for new_client in self.new_clients:
+        for new_client in self.future_clients:
             #/* in a duplicated session, clients will have the same
             #* IDs, so be sure to pick the right one to avoid race
             #* conditions in JACK name registration. */
