@@ -22,7 +22,7 @@ contrôle les démons de RaySession
     start
         Démarre un démon si aucun n'est déjà démarré
     start_new
-        Démarre un nouveau démon, retourne son numéro de port OSC
+        Démarre un nouveau démon, renvoie son numéro de port OSC
     stop
         Arrête tous les démons tournant
     list_daemons
@@ -37,6 +37,11 @@ contrôle les démons de RaySession
         Renvoie l'emplacement du dossier de la session en cours,
         retourne un code d'erreur si aucun démon ne tourne
         ou qu'aucune session n'est chargée.
+    has_gui
+        Retourne un code d'erreur si aucune IGU n'est attachée à ce démon
+    has_local_gui
+        Retourne un code d'erreur si aucune IGU sur cette machine
+        n'est attachée à ce démon
 
 * COMMANDES DU SERVEUR:
     new_session NOUVELLE_SESSION [MODÈLE_DE_SESSION]
