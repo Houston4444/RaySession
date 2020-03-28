@@ -1015,12 +1015,14 @@ class OperatingSession(Session):
                      in future_clients_exec_args)):
                 # client will switch
                 # or keep alive if non active and running
+                print('cccalive', client.client_id)
                 has_keep_alive = True
                 future_clients_exec_args.remove(
                     (client.running_executable, client.running_arguments))
             else:
                 # client is not capable of switch, or is not wanted 
                 # in the new session
+                print('ccclosee', client.client_id)
                 if client.isRunning():
                     self.expected_clients.append(client)
                     #client.stop()
@@ -1093,6 +1095,7 @@ class OperatingSession(Session):
         #self.waitAndGoTo(30000, self.close_step1, ray.WaitFor.QUIT)
     
     def close_step1(self):
+        print('close_step1', len(self.expected_clients), len(self.clients))
         for client in self.expected_clients:
             client.kill()
             
@@ -1100,19 +1103,6 @@ class OperatingSession(Session):
     
     def close_step2(self):
         self.cleanExpected()
-        
-        #for client in self.clients:
-            #client.setStatus(ray.ClientStatus.REMOVED)
-        
-        self.clients.clear()
-        
-        self.sendGuiMessage(_translate('GUIMSG', 'session %s closed.')
-                            % ray.highlightText(self.getShortPath()))
-        
-        self.setPath('')
-            
-        self.sendGui("/ray/gui/session/name", "", "" )
-        
         self.nextFunction()
     
     def closeDone(self):
@@ -1601,7 +1591,6 @@ class OperatingSession(Session):
             trashed_client.sendGuiClientProperties(removed=True)
         
         self.message("Commanding smart clients to switch")
-        
         has_switch = False
         
         new_client_id_list = []
