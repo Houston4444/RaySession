@@ -746,7 +746,7 @@ class OperatingSession(Session):
     # for something (announce, reply, quit).
     # For example, at the end of save(), timer is launched, 
     # then, when timer is timeout or when all client replied, 
-    # save_step1 is launched.
+    # save_substep1 is launched.
         
     def save(self, from_client_id='', outing=False):
         if not self.path:
@@ -779,9 +779,9 @@ class OperatingSession(Session):
                     _translate('GUIMSG', 'waiting for %i clients to save...')
                         % len(self.expected_clients))
         
-        self.waitAndGoTo(10000, (self.save_step1, outing), ray.WaitFor.REPLY)
+        self.waitAndGoTo(10000, (self.save_substep1, outing), ray.WaitFor.REPLY)
             
-    def save_step1(self, outing=False):
+    def save_substep1(self, outing=False):
         self.cleanExpected()
         
         if outing:
@@ -910,9 +910,9 @@ class OperatingSession(Session):
         
         self.sendGuiMessage(_translate('GUIMSG', "snapshot started..."))
         self.snapshoter.save(snapshot_name, rewind_snapshot,
-                             self.snapshot_step1, self.snapshotError)
+                             self.snapshot_substep1, self.snapshotError)
     
-    def snapshot_step1(self, aborted=False):
+    def snapshot_substep1(self, aborted=False):
         if aborted:
             self.message('Snapshot aborted')
             self.sendGuiMessage(_translate('GUIMSG', 'Snapshot aborted!'))
@@ -967,10 +967,10 @@ class OperatingSession(Session):
                 'waiting for no saveable clients to be closed gracefully...'))
             
         duration = int(1000 * math.sqrt(len(self.expected_clients)))
-        self.waitAndGoTo(duration, self.closeNoSaveClients_step1,
+        self.waitAndGoTo(duration, self.closeNoSaveClients_substep1,
                          ray.WaitFor.QUIT)
     
-    def closeNoSaveClients_step1(self):
+    def closeNoSaveClients_substep1(self):
         self.cleanExpected()
         has_nosave_clients = False
         
@@ -1059,49 +1059,15 @@ class OperatingSession(Session):
         self.trashed_clients.clear()
         self.sendGui('/ray/gui/trash/clear')
         
-        self.waitAndGoTo(30000, self.close_step1, ray.WaitFor.QUIT)
+        self.waitAndGoTo(30000, self.close_substep1, ray.WaitFor.QUIT)
     
-    #def close(self):
-        #self.expected_clients.clear()
-        #self.trashed_clients.clear()
-        
-        #if not self.path:
-            #self.nextFunction()
-            #return
-        
-        #self.setServerStatus(ray.ServerStatus.CLOSE)
-        #self.sendGui('/ray/gui/trash/clear')
-        
-        #self.sendGuiMessage(_translate('GUIMSG', '-- Closing session %s --')
-                            #% ray.highlightText(self.getShortPath()))
-        
-        #for client in self.clients.__reversed__():
-            #if client.isRunning():
-                #self.expected_clients.append(client)
-                #self.clients_to_quit.append(client)
-                #self.timer_quit.start()
-        
-        #if self.expected_clients:
-            #if len(self.expected_clients) == 1:
-                #self.sendGuiMessage(
-                    #_translate('GUIMSG',
-                               #'waiting for %s to stop...')
-                        #% self.expected_clients[0].guiMsgStyle())
-            #else:
-                #self.sendGuiMessage(
-                    #_translate('GUIMSG', 'waiting for %i clients to stop...')
-                        #% len(self.expected_clients))
-        
-        #self.waitAndGoTo(30000, self.close_step1, ray.WaitFor.QUIT)
-    
-    def close_step1(self):
-        print('close_step1', len(self.expected_clients), len(self.clients))
+    def close_substep1(self):
         for client in self.expected_clients:
             client.kill()
             
-        self.waitAndGoTo(1000, self.close_step2, ray.WaitFor.QUIT)
+        self.waitAndGoTo(1000, self.close_substep2, ray.WaitFor.QUIT)
     
-    def close_step2(self):
+    def close_substep2(self):
         self.cleanExpected()
         self.nextFunction()
     
@@ -1207,10 +1173,10 @@ class OperatingSession(Session):
                     'waiting for network daemons to start duplicate...'))
                 
         self.waitAndGoTo(2000,
-                         (self.duplicate_step1, new_session_full_name),
+                         (self.duplicate_substep1, new_session_full_name),
                          ray.WaitFor.DUPLICATE_START)
         
-    def duplicate_step1(self, new_session_full_name):
+    def duplicate_substep1(self, new_session_full_name):
         spath = "%s/%s" % (self.root, new_session_full_name)
         self.setServerStatus(ray.ServerStatus.COPY)
         
@@ -1218,11 +1184,11 @@ class OperatingSession(Session):
         
         self.file_copier.startSessionCopy(self.path, 
                                           spath, 
-                                          self.duplicate_step2, 
+                                          self.duplicate_substep2, 
                                           self.duplicateAborted, 
                                           [new_session_full_name])
     
-    def duplicate_step2(self, new_session_full_name):
+    def duplicate_substep2(self, new_session_full_name):
         self.cleanExpected()
         
         self.sendGuiMessage(_translate('GUIMSG', '...session copy finished.'))
@@ -1236,10 +1202,10 @@ class OperatingSession(Session):
                     'waiting for network daemons to finish duplicate'))
         
         self.waitAndGoTo(3600000,  #1Hour
-                         (self.duplicate_step3, new_session_full_name),
+                         (self.duplicate_substep3, new_session_full_name),
                          ray.WaitFor.DUPLICATE_FINISH)
         
-    def duplicate_step3(self, new_session_full_name):
+    def duplicate_substep3(self, new_session_full_name):
         self.adjustFilesAfterCopy(new_session_full_name, ray.Template.NONE)
         self.nextFunction()
     
@@ -1302,11 +1268,11 @@ class OperatingSession(Session):
         
         self.file_copier.startSessionCopy(self.path, 
                                           spath, 
-                                          self.saveSessionTemplate_step_1, 
+                                          self.saveSessionTemplate_substep_1, 
                                           self.saveSessionTemplateAborted, 
                                           [template_name, net])
         
-    def saveSessionTemplate_step_1(self, template_name, net):
+    def saveSessionTemplate_substep_1(self, template_name, net):
         tp_mode = ray.Template.SESSION_SAVE
         if net:
             tp_mode = ray.Template.SESSION_SAVE_NET
@@ -1371,11 +1337,11 @@ class OperatingSession(Session):
         
         self.file_copier.startSessionCopy(template_path, 
                                           spath, 
-                                          self.prepareTemplate_step1, 
+                                          self.prepareTemplate_substep1, 
                                           self.prepareTemplateAborted, 
                                           [new_session_full_name])
         
-    def prepareTemplate_step1(self, new_session_full_name):
+    def prepareTemplate_substep1(self, new_session_full_name):
         self.adjustFilesAfterCopy(new_session_full_name,
                                   ray.Template.SESSION_LOAD)
         self.nextFunction()
@@ -1662,9 +1628,9 @@ class OperatingSession(Session):
         
         wait_time = 4000 + len(self.expected_clients) * 1000
         
-        self.waitAndGoTo(wait_time, self.load_step2, ray.WaitFor.ANNOUNCE)
+        self.waitAndGoTo(wait_time, self.load_substep2, ray.WaitFor.ANNOUNCE)
     
-    def load_step2(self):
+    def load_substep2(self):
         for client in self.expected_clients:
             if (not client.executable_path in RS.non_active_clients):
                 RS.non_active_clients.append(client.executable_path)
@@ -1698,9 +1664,9 @@ class OperatingSession(Session):
         for client in self.expected_clients:
             wait_time = max(2 * 1000 * client.last_open_duration, wait_time)
             
-        self.waitAndGoTo(wait_time, self.load_step3, ray.WaitFor.REPLY)
+        self.waitAndGoTo(wait_time, self.load_substep3, ray.WaitFor.REPLY)
         
-    def load_step3(self):
+    def load_substep3(self):
         self.cleanExpected()
         
         server = self.getServer()
@@ -1927,10 +1893,10 @@ class OperatingSession(Session):
         self.expected_clients.append(client)
         client.stop()
         
-        self.waitAndGoTo(30000, (self.closeClient_step1, client),
+        self.waitAndGoTo(30000, (self.closeClient_substep1, client),
                          ray.WaitFor.STOP_ONE)
         
-    def closeClient_step1(self, client):
+    def closeClient_substep1(self, client):
         if client in self.expected_clients:
             client.kill()
             

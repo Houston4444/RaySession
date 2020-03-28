@@ -1047,13 +1047,13 @@ ignored_extensions:%s""" % (self.client_id,
             self.setStatus(ray.ClientStatus.COPY)
             fc = self.session.file_copier
             fc.startClientCopy(self.client_id, client_files, template_dir,
-                                self.saveAsTemplate_step1,
+                                self.saveAsTemplate_substep1,
                                 self.saveAsTemplateAborted,
                                 [template_name])
         else:
-            self.saveAsTemplate_step1(template_name)
+            self.saveAsTemplate_substep1(template_name)
 
-    def saveAsTemplate_step1(self, template_name):
+    def saveAsTemplate_substep1(self, template_name):
         self.setStatus(self.status) #see setStatus to see why
         
         if self.prefix_mode != ray.PrefixMode.CUSTOM:
