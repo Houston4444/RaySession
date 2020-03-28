@@ -594,7 +594,7 @@ class OscServerThread(ClientCommunicating):
                       "No session to save.")
             return False
     
-    @ray_method('/ray/session/process_step', '')
+    @ray_method('/ray/session/run_step', '')
     def raySessionProcessStep(self, path, args, types, src_addr):
         pass
     
@@ -1091,7 +1091,7 @@ class OscServerThread(ClientCommunicating):
                         + "and restart operation !")
             return True
         
-        if self.session.process_order:
+        if self.session.steps_order:
             self.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
                       "An operation pending.")
             return True

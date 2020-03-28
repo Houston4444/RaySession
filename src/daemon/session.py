@@ -40,7 +40,7 @@ def session_operation(func):
         
         sess, path, osc_args, src_addr, *rest = args
         
-        if sess.process_order:
+        if sess.steps_order:
             sess.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
                       "An operation pending.")
             return
@@ -460,7 +460,7 @@ class OperatingSession(Session):
         self.osc_path     = ''
         self.osc_args     = []
         
-        self.process_order = []
+        self.steps_order = []
         
         self.terminated_yet = False
         
@@ -468,7 +468,7 @@ class OperatingSession(Session):
         self.externals_timer.setInterval(100)
         self.externals_timer.timeout.connect(self.checkExternalsStates)
         
-        self.process_step_addr = None
+        self.run_step_addr = None
         
     def rememberOscArgs(self, path, args, src_addr):
         self.osc_src_addr = src_addr
@@ -565,16 +565,16 @@ class OperatingSession(Session):
             
         self.wait_for = ray.WaitFor.NONE
     
-    def nextFunction(self, from_process_step=False):
-        if self.process_step_addr and not from_process_step:
-            self.send(self.process_step_addr, '/reply',
-                      '/ray/session/process_step', 'step done')
-            del self.process_step_addr
-            self.process_step_addr = None
+    def nextFunction(self, from_run_step=False):
+        if self.run_step_addr and not from_run_step:
+            self.send(self.run_step_addr, '/reply',
+                      '/ray/session/run_step', 'step done')
+            del self.run_step_addr
+            self.run_step_addr = None
             return
         
-        if len(self.process_order) > 0:
-            next_item = self.process_order[0]
+        if len(self.steps_order) > 0:
+            next_item = self.steps_order[0]
             next_function = next_item
             arguments = []
             
@@ -586,13 +586,13 @@ class OperatingSession(Session):
                     if len(next_item) > 1:
                         arguments = next_item[1:]
             
-            if self.path and not from_process_step:
+            if self.path and not from_run_step:
                 for step_string in ('save', 'close'):
                     if next_function == self.__getattribute__(step_string):
-                        process_step_script = self.getScriptPath(step_string)
+                        run_step_script = self.getScriptPath(step_string)
                                             
-                        if (process_step_script 
-                                and os.access(process_step_script, os.X_OK)):
+                        if (run_step_script 
+                                and os.access(run_step_script, os.X_OK)):
                             script = Scripter(self, signaler, self.osc_src_addr, 
                                                 self.osc_path)
                             script.setAsStepper(True)
@@ -601,13 +601,13 @@ class OperatingSession(Session):
                             self.sendGuiMessage(
                                 _translate('GUIMSG', 
                                     '--- Custom step script %s started...')
-                                    % ray.highlightText(process_step_script))
-                            script.start(process_step_script, 
+                                    % ray.highlightText(run_step_script))
+                            script.start(run_step_script, 
                                          [str(a) for a in arguments])
                             return
                         break
                     
-            if from_process_step and next_function:
+            if from_run_step and next_function:
                 for script in self.running_scripts:
                     if next_function == self.__getattribute__(
                                                 script.getStepperProcess()):
@@ -615,7 +615,7 @@ class OperatingSession(Session):
                         break
                         
                 
-            self.process_order.__delitem__(0)
+            self.steps_order.__delitem__(0)
                 
             next_function(*arguments)
     
@@ -666,11 +666,11 @@ class OperatingSession(Session):
     
     def sendError(self, err, error_message):
         #clear process order to allow other new operations
-        self.process_order.clear()
+        self.steps_order.clear()
         
-        if self.process_step_addr:
-            self.send(self.process_step_addr, '/error', 
-                      '/ray/session/process_step', err, error_message)
+        if self.run_step_addr:
+            self.send(self.run_step_addr, '/error', 
+                      '/ray/session/run_step', err, error_message)
         
         if not (self.osc_src_addr and self.osc_path):
             return
@@ -890,7 +890,7 @@ class OperatingSession(Session):
         self.sendError(ray.Err.CREATE_FAILED, m)
         
         self.setServerStatus(ray.ServerStatus.READY)
-        self.process_order.clear()
+        self.steps_order.clear()
         self.forgetOscArgs()
     
     def snapshot(self, snapshot_name='', rewind_snapshot='',
@@ -1174,7 +1174,7 @@ class OperatingSession(Session):
         self.sendError(err, m)
         
         self.setServerStatus(ray.ServerStatus.OFF)
-        self.process_order.clear()
+        self.steps_order.clear()
     
     def duplicate(self, new_session_full_name):
         if self.clientsHaveErrors():
@@ -1244,7 +1244,7 @@ class OperatingSession(Session):
         self.nextFunction()
     
     def duplicateAborted(self, new_session_full_name):
-        self.process_order.clear()
+        self.steps_order.clear()
         
         self.sendError(ray.Err.NO_SUCH_FILE, "No such file.")
         self.send(self.osc_src_addr, '/ray/net_daemon/duplicate_state', 1)
@@ -1323,7 +1323,7 @@ class OperatingSession(Session):
         self.setServerStatus(ray.ServerStatus.READY)
     
     def saveSessionTemplateAborted(self, template_name):
-        self.process_order.clear()
+        self.steps_order.clear()
         self.sendReply("Session template aborted")
         self.setServerStatus(ray.ServerStatus.READY)
     
@@ -1381,7 +1381,7 @@ class OperatingSession(Session):
         self.nextFunction()
     
     def prepareTemplateAborted(self, new_session_full_name):
-        self.process_order.clear()
+        self.steps_order.clear()
         if self.path:
             self.setServerStatus(ray.ServerStatus.READY)
         else:
@@ -1742,7 +1742,7 @@ class OperatingSession(Session):
         else:
             self.setServerStatus(ray.ServerStatus.OFF)
             
-        self.process_order.clear()
+        self.steps_order.clear()
     
     def duplicateOnlyDone(self):
         self.send(self.osc_src_addr, '/ray/net_daemon/duplicate_state', 1)
@@ -1962,7 +1962,7 @@ class OperatingSession(Session):
         self.sendError(err, m)
         
         self.setServerStatus(ray.ServerStatus.OFF)
-        self.process_order.clear()
+        self.steps_order.clear()
     
     def startClient(self, client):
         client.start()
@@ -2090,8 +2090,8 @@ class SignaledSession(OperatingSession):
                     if not script.stepperHasCalled():
                         # script has not call the next_function (save, close)
                         # so skip this next_function
-                        if self.process_order:
-                            self.process_order.__delitem__(0)
+                        if self.steps_order:
+                            self.steps_order.__delitem__(0)
                 
                 if script.clientId() and script.pendingCommand():
                     for client in self.clients:
@@ -2224,7 +2224,7 @@ class SignaledSession(OperatingSession):
     
     def _nsm_client_is_clean(self, path, args, src_addr):
         # save session from client clean (not dirty) message
-        if self.process_order:
+        if self.steps_order:
             return 
         
         if self.file_copier.isActive():
@@ -2236,7 +2236,7 @@ class SignaledSession(OperatingSession):
         if not client:
             return
         
-        self.process_order = [(self.save, client.client_id),
+        self.steps_order = [(self.save, client.client_id),
                               self.snapshot,
                               self.saveDone]
         self.nextFunction()
@@ -2372,7 +2372,7 @@ class SignaledSession(OperatingSession):
                 spath = "%s/%s" % (self.root, session_name)
             
             if not os.path.exists(spath):
-                self.process_order = [self.save,
+                self.steps_order = [self.save,
                                       self.closeNoSaveClients,
                                       self.snapshot,
                                       (self.prepareTemplate, *args, False), 
@@ -2380,7 +2380,7 @@ class SignaledSession(OperatingSession):
                                        self.newDone]
                 return
         
-        self.process_order = [self.save,
+        self.steps_order = [self.save,
                               self.closeNoSaveClients,
                               self.snapshot,
                               self.close,
@@ -2438,21 +2438,21 @@ class SignaledSession(OperatingSession):
         if os.path.exists(spath):
             template_name = ''
         
-        self.process_order = []
+        self.steps_order = []
         
         if save_previous:
-            self.process_order += [(self.save, '', True)]
+            self.steps_order += [(self.save, '', True)]
         
-        self.process_order += [self.closeNoSaveClients]
+        self.steps_order += [self.closeNoSaveClients]
         
         if save_previous:
-            self.process_order += [(self.snapshot, '', '', False, True)]
+            self.steps_order += [(self.snapshot, '', '', False, True)]
         
         if template_name:
-            self.process_order += [(self.prepareTemplate, session_name, 
+            self.steps_order += [(self.prepareTemplate, session_name, 
                                     template_name, True)]
         
-        self.process_order += [(self.preload, session_name),
+        self.steps_order += [(self.preload, session_name),
                                (self.close, open_off),
                                (self.load, open_off),
                                self.loadDone]
@@ -2466,7 +2466,7 @@ class SignaledSession(OperatingSession):
     
     @session_operation
     def _ray_session_save(self, path, args, src_addr):
-        self.process_order = [self.save, self.snapshot, self.saveDone]
+        self.steps_order = [self.save, self.snapshot, self.saveDone]
     
     @session_operation
     def _ray_session_save_as_template(self, path, args, src_addr):
@@ -2477,7 +2477,7 @@ class SignaledSession(OperatingSession):
             if client.executable_path == 'ray-network':
                 client.net_session_template = template_name
         
-        self.process_order = [self.save, self.snapshot,
+        self.steps_order = [self.save, self.snapshot,
                               (self.saveSessionTemplate, 
                                template_name, net)]
                               
@@ -2512,7 +2512,7 @@ class SignaledSession(OperatingSession):
                     #client.net_session_template = template_name
         
         #self.rememberOscArgs()
-        #self.process_order = [self.save, self.snapshot,
+        #self.steps_order = [self.save, self.snapshot,
                               #(self.saveSessionTemplate, template_name, net)]
         #self.nextFunction()
     
@@ -2520,16 +2520,16 @@ class SignaledSession(OperatingSession):
     def _ray_session_take_snapshot(self, path, args, src_addr):
         snapshot_name, with_save = args
             
-        self.process_order.clear()
+        self.steps_order.clear()
         
         if with_save:
-            self.process_order.append(self.save)
-        self.process_order += [(self.snapshot, snapshot_name, '', True),
+            self.steps_order.append(self.save)
+        self.steps_order += [(self.snapshot, snapshot_name, '', True),
                                self.snapshotDone]
     
     @session_operation
     def _ray_session_close(self, path, args, src_addr):
-        self.process_order = [(self.save, '', True),
+        self.steps_order = [(self.save, '', True),
                               self.closeNoSaveClients,
                               self.snapshot,
                               self.close,
@@ -2550,7 +2550,7 @@ class SignaledSession(OperatingSession):
         # to the last server control message
         # if an operation pending.
         
-        if self.process_order:
+        if self.steps_order:
             if self.osc_path.startswith('/nsm/server/'):
                 short_path = self.osc_path.rpartition('/')[2]
                 
@@ -2575,7 +2575,7 @@ class SignaledSession(OperatingSession):
                                     'abort ordered from elsewhere, sorry !'))
         
         self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [self.close, self.abortDone]
+        self.steps_order = [self.close, self.abortDone]
         
         if self.file_copier.isActive():
             self.file_copier.abort(self.nextFunction, [])
@@ -2584,7 +2584,7 @@ class SignaledSession(OperatingSession):
     
     def _ray_server_quit(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
-        self.process_order = [self.close, self.exitNow]
+        self.steps_order = [self.close, self.exitNow]
         
         if self.file_copier.isActive():
             self.file_copier.abort(self.nextFunction, [])
@@ -2592,17 +2592,17 @@ class SignaledSession(OperatingSession):
             self.nextFunction()
     
     def _ray_session_cancel_close(self, path, args, src_addr):
-        if not self.process_order:
+        if not self.steps_order:
             return 
         
         self.timer.stop()
         self.timer_waituser_progress.stop()
-        self.process_order.clear()
+        self.steps_order.clear()
         self.cleanExpected()
         self.setServerStatus(ray.ServerStatus.READY)
         
     def _ray_session_skip_wait_user(self, path, args, src_addr):
-        if not self.process_order:
+        if not self.steps_order:
             return 
         
         self.timer.stop()
@@ -2637,7 +2637,7 @@ class SignaledSession(OperatingSession):
                         % ray.highlightText(new_session_full_name))
             return
         
-        self.process_order = [self.save,
+        self.steps_order = [self.save,
                               self.closeNoSaveClients,
                               self.snapshot,
                               (self.duplicate, new_session_full_name),
@@ -2663,14 +2663,14 @@ class SignaledSession(OperatingSession):
             return
         
         if sess_root == self.root and session_to_load == self.getShortPath():
-            if (self.process_order
+            if (self.steps_order
                 or self.file_copier.isActive()):
                     self.send(src_addr, '/ray/net_daemon/duplicate_state', 1)
                     return
             
             self.rememberOscArgs(path, args, src_addr)
             
-            self.process_order = [self.save,
+            self.steps_order = [self.save,
                                   self.snapshot,
                                   (self.duplicate, new_session),
                                   self.duplicateOnlyDone]
@@ -2689,7 +2689,7 @@ class SignaledSession(OperatingSession):
         
         snapshot = args[0]
         
-        self.process_order = [self.save,
+        self.steps_order = [self.save,
                               self.closeNoSaveClients,
                               (self.snapshot, '', snapshot, True),
                               (self.close, True)
@@ -2701,7 +2701,7 @@ class SignaledSession(OperatingSession):
     def _ray_session_rename(self, path, args, src_addr):
         new_session_name = args[0]
         
-        if self.process_order:
+        if self.steps_order:
             return
         
         if not self.path:
@@ -2944,13 +2944,13 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, '/reply', path, *client_id_list)
         self.send(src_addr, '/reply', path)
     
-    def _ray_session_process_step(self, path, args, src_addr):
-        if not self.process_order:
+    def _ray_session_run_step(self, path, args, src_addr):
+        if not self.steps_order:
             self.send(src_addr, '/error', ray.Err.GENERAL_ERROR,
                       'No operation pending !')
             return
         
-        self.process_step_addr = src_addr
+        self.run_step_addr = src_addr
         self.nextFunction(True)
         #self.send(src_addr, '/reply', path, 'good') 
     
@@ -3281,14 +3281,14 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == client_id:
                 if client.isRunning():
-                    self.process_order = [
+                    self.steps_order = [
                         self.save,
                         (self.snapshot, '', snapshot, True),
                         (self.closeClient, client),
                         (self.loadClientSnapshot, client_id, snapshot),
                         (self.startClient, client)]
                 else:
-                    self.process_order = [
+                    self.steps_order = [
                         self.save,
                         (self.snapshot, '', snapshot, True),
                         (self.loadClientSnapshot, client_id, snapshot)]
@@ -3384,7 +3384,7 @@ class SignaledSession(OperatingSession):
                 self.bookmarker.removeAll(self.path)
     
     def serverOpenSessionAtStart(self, session_name):
-        self.process_order = [(self.preload, session_name),
+        self.steps_order = [(self.preload, session_name),
                               self.load,
                               self.loadDone]
         self.nextFunction()
@@ -3401,7 +3401,7 @@ class SignaledSession(OperatingSession):
             self.file_copier.abort()
         
         self.terminated_yet = True
-        self.process_order = [self.close, self.exitNow]
+        self.steps_order = [self.close, self.exitNow]
         self.nextFunction()
 
 
@@ -3411,13 +3411,13 @@ class DummySession(OperatingSession):
         self.is_dummy = True
         
     def dummyLoadAndTemplate(self, session_full_name, template_name):
-        self.process_order = [(self.preload, session_full_name),
+        self.steps_order = [(self.preload, session_full_name),
                               self.load,
                               (self.saveSessionTemplate, template_name, True)]
         self.nextFunction()
         
     def dummyDuplicate(self, session_to_load, new_session_full_name):
-        self.process_order = [(self.preload, session_to_load),
+        self.steps_order = [(self.preload, session_to_load),
                               self.load,
                               (self.duplicate, new_session_full_name),
                               self.duplicateOnlyDone]
@@ -3426,7 +3426,7 @@ class DummySession(OperatingSession):
     def ray_server_save_session_template(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
         session_name, template_name, net = args
-        self.process_order = [(self.preload, session_name),
+        self.steps_order = [(self.preload, session_name),
                               self.load,
                               (self.saveSessionTemplate, template_name, net)]
         self.nextFunction()
@@ -3435,7 +3435,7 @@ class DummySession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         full_session_name, new_session_name = args
         
-        self.process_order = [(self.preload, full_session_name),
+        self.steps_order = [(self.preload, full_session_name),
                               self.load,
                               (self.rename, new_session_name),
                               self.save,
