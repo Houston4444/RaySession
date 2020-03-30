@@ -233,8 +233,8 @@ class SignaledSession(OperatingSession):
             
             #n = 0
             #for client in self.clients:
-                #if (basename(client.executable_path) \
-                        #== basename(executable_path)
+                #if (os.path.basename(client.executable_path) \
+                        #== os.path.basename(executable_path)
                     #and not client.active
                     #and client.pending_command == ray.Command.START):
                         #n+=1
@@ -252,8 +252,8 @@ class SignaledSession(OperatingSession):
                 
             #elif n == 1:
                 #for client in self.clients:
-                    #if (basename(client.executable_path) \
-                            #== basename(executable_path)
+                    #if (os.path.basename(client.executable_path) \
+                            #== os.path.basename(executable_path)
                         #and not client.active
                         #and client.pending_command == ray.Command.START):
                             #client.serverAnnounce(path, args, src_addr, False)
@@ -796,7 +796,7 @@ class SignaledSession(OperatingSession):
             return
         
         if not self.isNsmLocked():
-            for filename in os.listdir(dirname(self.path)):
+            for filename in os.listdir(os.path.dirname(self.path)):
                 if filename == new_session_name:
                     # another directory exists with new session name
                     return
@@ -813,7 +813,7 @@ class SignaledSession(OperatingSession):
         
         if not self.isNsmLocked():
             try:
-                spath = "%s/%s" % (dirname(self.path), new_session_name)
+                spath = "%s/%s" % (os.path.dirname(self.path), new_session_name)
                 subprocess.run(['mv', self.path, spath])
                 self.setPath(spath)
                 
@@ -871,7 +871,7 @@ class SignaledSession(OperatingSession):
         else:
             client.executable_path = executable
         
-        client.name = basename(executable)
+        client.name = os.path.basename(executable)
         client.client_id = client_id
         client.prefix_mode = prefix_mode
         client.custom_prefix = custom_prefix
@@ -893,9 +893,9 @@ class SignaledSession(OperatingSession):
         if CommandLineArgs.debug:
             client.tmp_arguments += " --debug"
             
-        client.name      = basename(executable)
+        client.name = os.path.basename(executable)
         client.client_id = self.generateClientId(client.name)
-        client.icon      = client.name.lower().replace('_', '-')
+        client.icon = client.name.lower().replace('_', '-')
         client.setDefaultGitIgnored(executable)
         
         if self.addClient(client):

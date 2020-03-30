@@ -6,7 +6,6 @@ import shutil
 import string
 import subprocess
 import sys
-import time
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QTimer, QProcess
 from PyQt5.QtXml  import QDomDocument
