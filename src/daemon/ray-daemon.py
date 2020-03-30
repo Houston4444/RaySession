@@ -15,7 +15,7 @@ from daemon_tools import (initDaemonTools, RS, getCodeRoot,
 from osc_server_thread import OscServerThread
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
-from session  import SignaledSession
+from session_signaled import SignaledSession
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
