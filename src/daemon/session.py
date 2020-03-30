@@ -587,7 +587,7 @@ class OperatingSession(Session):
                         arguments = next_item[1:]
             
             if self.path and not from_run_step:
-                for step_string in ('save', 'close'):
+                for step_string in ('load', 'save', 'close'):
                     if next_function == self.__getattribute__(step_string):
                         run_step_script = self.getScriptPath(step_string)
                                             
@@ -1003,7 +1003,7 @@ class OperatingSession(Session):
             for future_client in self.future_clients:
                 if future_client.auto_start:
                     future_clients_exec_args.append(
-                        (future_client.executable_path, future_client.arguments))
+                     (future_client.executable_path, future_client.arguments))
         
         has_keep_alive = False
         
@@ -1015,14 +1015,12 @@ class OperatingSession(Session):
                      in future_clients_exec_args)):
                 # client will switch
                 # or keep alive if non active and running
-                print('cccalive', client.client_id)
                 has_keep_alive = True
                 future_clients_exec_args.remove(
                     (client.running_executable, client.running_arguments))
             else:
                 # client is not capable of switch, or is not wanted 
                 # in the new session
-                print('ccclosee', client.client_id)
                 if client.isRunning():
                     self.expected_clients.append(client)
                     #client.stop()
@@ -1529,28 +1527,63 @@ class OperatingSession(Session):
         
         self.nextFunction()
     
-    def load(self, open_off=False):
-        self.cleanExpected()
-        
-        future_session_short_path = self.future_session_path
-        if future_session_short_path.startswith("%s/" % self.root):
-            future_session_short_path = \
-                future_session_short_path.replace("%s/" % self.root, '', 1)
-            
-        self.sendGuiMessage(_translate('GUIMSG', "-- Opening session %s --")
-                                % ray.highlightText(future_session_short_path))
-        
+    def takePlace(self):
         self.setPath(self.future_session_path, self.future_session_name)
         
-        if (self.future_session_name
-                and self.future_session_name != os.path.basename(
-                                                  self.future_session_path)):
+        if (self.name and self.name != os.path.basename(self.path)):
             # session folder has been renamed
             # so rename session to it
             for client in self.future_clients + self.future_trashed_clients:
-                client.adjustFilesAfterCopy(self.future_session_path,
-                                            ray.Template.RENAME)
+                client.adjustFilesAfterCopy(self.path, ray.Template.RENAME)
             self.setPath(self.future_session_path)
+        
+        self.trashed_clients.clear()
+            
+        self.nextFunction()
+    
+    def load(self, open_off=False):
+        if open_off and self.clients:
+            # At this point some clients could be there
+            # because they have been kept to switch
+            # or they are dumb clients still is the loaded session
+            # with open_off we needs these clients to not be there
+            self.steps_order.insert(0, (self.close, open_off), (self.load, open_off))
+            self.nextFunction()
+            return
+        
+        #self.cleanExpected()
+        
+        #future_client_exec_args = []
+        #for future_client in self.future_clients:
+            #if future_client.auto_start and not open_off:
+                #future_client_exec_args.append(future_client.executable_path,
+                                               #future_client.arguments)
+                
+        #for client in self.clients:
+            #if (not open_off
+                    #and client.isRunning()
+                    #and (client.isCapableOf(':switch:')
+                         #or client.isDumbClient())
+                    #and (client.executable_path, client.arguments)
+                        #in future_client_exec_args):
+                #pass
+            #else:
+                #if client.isRunning():
+                    #self.expected_clients.append(client)
+                #else:
+                    #self.removeClient(client)
+                    
+        #if self.expected_clients:
+            #for client in self.expected_clients.__reversed__():
+                #self.clients_to_quit.append(client)
+            #self.timer_quit.start()
+            
+        
+                    
+            
+        
+        self.sendGuiMessage(_translate('GUIMSG', "-- Opening session %s --")
+                                % ray.highlightText(self.getShortPath()))
         
         for trashed_client in self.future_trashed_clients:
             self.trashed_clients.append(trashed_client)
@@ -1558,7 +1591,6 @@ class OperatingSession(Session):
         
         self.message("Commanding smart clients to switch")
         has_switch = False
-        
         new_client_id_list = []
         
         for future_client in self.future_clients:
@@ -1727,14 +1759,14 @@ class OperatingSession(Session):
             self.expected_clients.append(script)
             script.terminate()
                 
-        self.waitAndGoTo(3000, self.exitNow_step2, ray.WaitFor.QUIT)
+        self.waitAndGoTo(3000, self.exitNow_substep2, ray.WaitFor.QUIT)
     
-    def exitNow_step2(self):
+    def exitNow_substep2(self):
         for script in self.expected_clients:
             script.kill()
        
-        self.message("Bye Bye...")
         self.setServerStatus(ray.ServerStatus.OFF)
+        self.message("Bye Bye...")
         self.sendReply("Bye Bye...")
         self.sendGui('/ray/gui/server/disannounce')
         QCoreApplication.quit()
@@ -2113,12 +2145,9 @@ class SignaledSession(OperatingSession):
             else:
                 # Client launched externally from daemon
                 # by command : $:NSM_URL=url executable
-                client = self.newClient(args[2])
+                client = self.newClient(executable_path)
                 self.externals_timer.start()
                 client.serverAnnounce(path, args, src_addr, True)
-            
-            
-            
             
             #n = 0
             #for client in self.clients:
@@ -2341,8 +2370,10 @@ class SignaledSession(OperatingSession):
                 self.steps_order = [self.save,
                                       self.closeNoSaveClients,
                                       self.snapshot,
-                                      (self.prepareTemplate, *args, False), 
-                                      (self.load, session_name),
+                                      (self.prepareTemplate, *args, False),
+                                      (self.preload, session_name),
+                                       self.takePlace,
+                                       self.load,
                                        self.newDone]
                 return
         
@@ -2419,9 +2450,10 @@ class SignaledSession(OperatingSession):
                                     template_name, True)]
         
         self.steps_order += [(self.preload, session_name),
-                               (self.close, open_off),
-                               (self.load, open_off),
-                               self.loadDone]
+                             (self.close, open_off),
+                             self.takePlace,
+                             (self.load, open_off),
+                             self.loadDone]
     
     def _ray_server_open_session_off(self, path, args, src_addr):
         self._ray_server_open_session(path, args, src_addr, True)
@@ -2609,6 +2641,7 @@ class SignaledSession(OperatingSession):
                               (self.duplicate, new_session_full_name),
                               (self.preload, new_session_full_name),
                               self.close,
+                              self.takePlace,
                               self.load, 
                               self.duplicateDone]
         
@@ -2661,6 +2694,7 @@ class SignaledSession(OperatingSession):
                               (self.close, True)
                               (self.initSnapshot, self.path, snapshot),
                               (self.preload, self.path),
+                              self.takePlace,
                               self.load,
                               self.loadDone]
     
@@ -2806,6 +2840,9 @@ class SignaledSession(OperatingSession):
             return
         
         self.reOrderClients(client_ids_list, src_addr, path)
+    
+    def _ray_session_stop_clients(self, path, args, src_addr):
+        pass
     
     def _ray_session_list_snapshots(self, path, args, src_addr, client_id=""):
         if not self.path:
@@ -3351,8 +3388,9 @@ class SignaledSession(OperatingSession):
     
     def serverOpenSessionAtStart(self, session_name):
         self.steps_order = [(self.preload, session_name),
-                              self.load,
-                              self.loadDone]
+                            self.takePlace,
+                            self.load,
+                            self.loadDone]
         self.nextFunction()
     
     def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
@@ -3378,23 +3416,26 @@ class DummySession(OperatingSession):
         
     def dummyLoadAndTemplate(self, session_full_name, template_name):
         self.steps_order = [(self.preload, session_full_name),
-                              self.load,
-                              (self.saveSessionTemplate, template_name, True)]
+                            self.takePlace,
+                            self.load,
+                            (self.saveSessionTemplate, template_name, True)]
         self.nextFunction()
         
     def dummyDuplicate(self, session_to_load, new_session_full_name):
         self.steps_order = [(self.preload, session_to_load),
-                              self.load,
-                              (self.duplicate, new_session_full_name),
-                              self.duplicateOnlyDone]
+                            self.takePlace,
+                            self.load,
+                            (self.duplicate, new_session_full_name),
+                            self.duplicateOnlyDone]
         self.nextFunction()
         
     def ray_server_save_session_template(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
         session_name, template_name, net = args
         self.steps_order = [(self.preload, session_name),
-                              self.load,
-                              (self.saveSessionTemplate, template_name, net)]
+                            self.takePlace,
+                            self.load,
+                            (self.saveSessionTemplate, template_name, net)]
         self.nextFunction()
         
     def ray_server_rename_session(self, path, args, src_addr):
@@ -3402,10 +3443,11 @@ class DummySession(OperatingSession):
         full_session_name, new_session_name = args
         
         self.steps_order = [(self.preload, full_session_name),
-                              self.load,
-                              (self.rename, new_session_name),
-                              self.save,
-                              (self.renameDone, new_session_name)]
+                            self.takePlace,
+                            self.load,
+                            (self.rename, new_session_name),
+                            self.save,
+                            (self.renameDone, new_session_name)]
         self.nextFunction()
         
         
