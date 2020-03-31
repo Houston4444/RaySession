@@ -49,6 +49,7 @@ class Session(ServerSender):
         self.path = ""
         self.future_session_path = ""
         self.future_session_name = ""
+        self.load_locked = False
         
         self.is_renameable = True
         self.forbidden_ids_list = []
@@ -182,6 +183,7 @@ class Session(ServerSender):
     
     def removeClient(self, client):
         client.terminateScripts()
+        client.terminate()
         
         if not client in self.clients:
             raise NameError("No client to remove: %s" % client.client_id)
@@ -342,10 +344,13 @@ class Session(ServerSender):
             elif os.path.isfile(file) and file.contains('.'):
                 file_without_extension = file.rpartition('.')[0]
                 
-    
     def addClient(self, client):
+        if self.load_locked or not self.path:
+            return False
+        
         self.clients.append(client)
         client.sendGuiClientProperties()
+        
         return True
         
     def reOrderClients(self, client_ids_list, src_addr=None, src_path=''):
@@ -377,7 +382,7 @@ class Session(ServerSender):
         if not script_dir:
             return ''
         
-        script_path = "%s/%s" % (script_dir, string)
+        script_path = "%s/%s.sh" % (script_dir, string)
         
         if os.access(script_path, os.X_OK):
             return script_path
@@ -462,6 +467,19 @@ class OperatingSession(Session):
                 follow = follow[0]
             else:
                 follow = functools.partial(follow[0], *follow[1:])
+        
+        if wait_for == ray.WaitFor.SCRIPT_QUIT:
+            if self.running_scripts:
+                print('eoeoeoeoeo')
+                self.wait_for = wait_for
+                self.timer.setSingleShot(True)
+                self.timer.timeout.connect(follow)
+                self.timer.start(duration)
+                print("zoozd", follow)
+            else:
+                print('eoeodkkdo')
+                follow()
+            return
         
         if self.expected_clients:
             n_expected = len(self.expected_clients)
@@ -561,8 +579,8 @@ class OperatingSession(Session):
                                             
                         if (run_step_script 
                                 and os.access(run_step_script, os.X_OK)):
-                            script = Scripter(self, signaler, self.osc_src_addr, 
-                                                self.osc_path)
+                            script = Scripter(self, self.osc_src_addr,
+                                              self.osc_path)
                             script.setAsStepper(True)
                             script.setStepperProcess(step_string)
                             self.running_scripts.append(script)
@@ -652,6 +670,61 @@ class OperatingSession(Session):
         
         self.sendEvenDummy(self.osc_src_addr, "/minor_error",
                            self.osc_path, err, error_message)
+    
+    def scriptFinished(self, script_path, exit_code):
+        is_stepper = False
+        
+        for i in range(len(self.running_scripts)):
+            scripter = self.running_scripts[i]
+            
+            if scripter.getPath() == script_path:
+                if exit_code:
+                    if exit_code == 101:
+                        message = _translate('GUIMSG', 
+                                    'script %s failed to start !') % (
+                                        ray.highlightText(script_path))
+                    else:
+                        message = _translate('GUIMSG', 
+                                'script %s terminate whit exit code %i') % (
+                                    ray.highlightText(script_path), exit_code)
+                    
+                    if scripter.src_addr:
+                        self.send(scripter.src_addr, '/error', scripter.src_path,
+                                  - exit_code, message)
+                else:
+                    self.sendGuiMessage(
+                        _translate('GUIMSG', '...script %s finished. ---')
+                            % ray.highlightText(script_path))
+                    
+                    if scripter.src_addr:
+                        self.send(scripter.src_addr, '/reply', scripter.src_path,
+                                  'script finished')
+                    #self.sendGui('/ray/gui/hide_script_info')
+                    
+                if scripter.isStepper():
+                    is_stepper = True
+                    if self.wait_for != ray.WaitFor.SCRIPT_QUIT:
+                        if not scripter.stepperHasCalled():
+                            # script has not call the next_function (save, close)
+                            # so skip this next_function
+                            if self.steps_order:
+                                self.steps_order.__delitem__(0)
+                break
+        else:
+            return
+        
+        self.running_scripts.remove(scripter)
+        del scripter
+        
+        if (self.wait_for == ray.WaitFor.SCRIPT_QUIT
+                and not self.running_scripts):
+            self.timer.setSingleShot(True)
+            self.timer.stop()
+            self.timer.start(0)
+            return
+        
+        if is_stepper:
+            self.nextFunction()
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_mode):
         new_session_name = basename(new_session_full_name)
@@ -984,6 +1057,7 @@ class OperatingSession(Session):
                 # client will switch
                 # or keep alive if non active and running
                 has_keep_alive = True
+                client.switch_state = ray.SwitchState.RESERVED
                 future_clients_exec_args.remove(
                     (client.running_executable, client.running_arguments))
             else:
@@ -991,7 +1065,6 @@ class OperatingSession(Session):
                 # in the new session
                 if client.isRunning():
                     self.expected_clients.append(client)
-                    #client.stop()
                 else:
                     byebye_client_list.append(client)
         
@@ -1506,18 +1579,19 @@ class OperatingSession(Session):
             self.setPath(self.future_session_path)
         
         self.trashed_clients.clear()
-            
+        self.load_locked = True
+        
         self.nextFunction()
     
     def load(self, open_off=False):
-        if open_off and self.clients:
-            # At this point some clients could be there
-            # because they have been kept to switch
-            # or they are dumb clients still is the loaded session
-            # with open_off we needs these clients to not be there
-            self.steps_order.insert(0, (self.close, open_off), (self.load, open_off))
-            self.nextFunction()
-            return
+        #if open_off and self.clients:
+            ## At this point some clients could be there
+            ## because they have been kept to switch
+            ## or they are dumb clients still is the loaded session
+            ## with open_off we needs these clients to not be there
+            #self.steps_order.insert(0, (self.close, open_off), (self.load, open_off))
+            #self.nextFunction()
+            #return
         
         #self.cleanExpected()
         
@@ -1545,11 +1619,9 @@ class OperatingSession(Session):
             #for client in self.expected_clients.__reversed__():
                 #self.clients_to_quit.append(client)
             #self.timer_quit.start()
-            
         
-                    
-            
         
+        self.load_locked = False
         self.sendGuiMessage(_translate('GUIMSG', "-- Opening session %s --")
                                 % ray.highlightText(self.getShortPath()))
         
@@ -1582,6 +1654,7 @@ class OperatingSession(Session):
             
             
             if client and client.isRunning():
+                client.switch_state = ray.SwitchState.DONE
                 if client.active and not client.isReplyPending():
                     #since we already shutdown clients not capable of 
                     #'switch', we can assume that these are.
@@ -1603,7 +1676,13 @@ class OperatingSession(Session):
                         self.expected_clients.append(future_client)
             
             new_client_id_list.append(future_client.client_id)
-            
+        
+        for client in self.clients:
+            if client.switch_state == ray.SwitchState.RESERVED:
+                self.removeClient(client)
+            else:
+                client.switch_state = ray.SwitchState.NONE
+        
         self.sendGui("/ray/gui/session/name",  self.name, self.path)
         self.noFuture()
         
@@ -1721,18 +1800,6 @@ class OperatingSession(Session):
         self.forgetOscArgs()
         
     def exitNow(self):
-        # here we can use self.expected_clients for scripts
-        # because we are leaving
-        for script in self.running_scripts:
-            self.expected_clients.append(script)
-            script.terminate()
-                
-        self.waitAndGoTo(3000, self.exitNow_substep2, ray.WaitFor.QUIT)
-    
-    def exitNow_substep2(self):
-        for script in self.expected_clients:
-            script.kill()
-       
         self.setServerStatus(ray.ServerStatus.OFF)
         self.message("Bye Bye...")
         self.sendReply("Bye Bye...")
@@ -1757,7 +1824,7 @@ class OperatingSession(Session):
             return
         
         if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
-            self.send(src_addr, src_path, ray.Err.BAD_PROJECT, 
+            self.send(src_addr, '/error', src_path, ray.Err.BAD_PROJECT, 
                 _translate('GUIMSG', 
                            '%s has no RAY-CLIENT-TEMPLATES top element !')
                     % xml_file)
@@ -1844,17 +1911,21 @@ class OperatingSession(Session):
                             full_name_files.append("%s/%s"
                                                    % (template_path, file))
                             
-                if self.addClient(client):
-                    if full_name_files:
-                        client.setStatus(ray.ClientStatus.PRECOPY)
-                        self.file_copier.startClientCopy(
-                            client.client_id, full_name_files, self.path, 
-                            self.addClientTemplate_step_1, 
-                            self.addClientTemplateAborted, 
-                            [src_addr, src_path, client])
-                    else:
-                        self.addClientTemplate_step_1(src_addr, src_path,
-                                                      client)
+                if not self.addClient(client):
+                    self.send(src_addr, '/error', src_path, ray.Err.NOT_NOW,
+                              "Session does not accept any new client now")
+                    return
+                    
+                if full_name_files:
+                    client.setStatus(ray.ClientStatus.PRECOPY)
+                    self.file_copier.startClientCopy(
+                        client.client_id, full_name_files, self.path, 
+                        self.addClientTemplate_step_1, 
+                        self.addClientTemplateAborted, 
+                        [src_addr, src_path, client])
+                else:
+                    self.addClientTemplate_step_1(src_addr, src_path,
+                                                    client)
                     
                 break
         else:
@@ -1933,3 +2004,26 @@ class OperatingSession(Session):
     def startClient(self, client):
         client.start()
         self.nextFunction()
+        
+    def terminateStepperScripts(self):
+        print('terminatescripts1')
+        for script in self.running_scripts:
+            if script.isStepper():
+                script.terminate()
+                
+        self.waitAndGoTo(5000, self.terminateStepperScripts_substep2,
+                         ray.WaitFor.SCRIPT_QUIT)
+        
+    def terminateStepperScripts_substep2(self):
+        print('terminatescripts2')
+        for script in self.running_scripts:
+            if script.isStepper():
+                script.kill()
+          
+        self.waitAndGoTo(1000, self.terminateStepperScripts_substep3,
+                         ray.WaitFor.SCRIPT_QUIT)
+        
+    def terminateStepperScripts_substep3(self):
+        print('terminatescripts3')
+        self.nextFunction()
+        

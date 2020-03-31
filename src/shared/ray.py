@@ -127,6 +127,7 @@ class WaitFor:
     REPLY = 4
     DUPLICATE_START = 5
     DUPLICATE_FINISH = 6
+    SCRIPT_QUIT = 7
 
 
 class Template:
@@ -139,6 +140,10 @@ class Template:
     CLIENT_SAVE = 6
     CLIENT_LOAD = 7
 
+class SwitchState:
+    NONE = 0
+    RESERVED = 1
+    DONE = 2
 
 class WindowManager:
     NONE = 0

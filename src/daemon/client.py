@@ -67,6 +67,7 @@ class Client(ServerSender):
     no_save_level    = 0
     is_external      = False
     sent_to_gui      = False
+    switch_state = ray.SwitchState.NONE
     
     net_session_template = ''
     net_session_root     = ''

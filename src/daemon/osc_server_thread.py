@@ -872,10 +872,15 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/add_client_template', 'is')
     def rayServerAddClientTemplate(self, path, args, types, src_addr):
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
-            return False
+        pass
+    
+    @ray_method('/ray/session/add_factory_client_template', 's')
+    def raySessionAddFactoryClientTemplate(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/session/add_user_client_template', 's')
+    def raySessionAddUserClientTemplate(self, path, args, types, src_addr):
+        pass
     
     @ray_method('/ray/session/reorder_clients', None)
     def rayServerReorderClients(self, path, args, types, src_addr):

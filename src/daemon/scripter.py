@@ -30,11 +30,11 @@ class Scripter:
         pass
     
     def processFinished(self, exit_code, exit_status):
-        #self.signaler.script_finished.emit(self.getPath(), exit_code, self._client_id)
         self.parent.scriptFinished(self.getPath(), exit_code)
     
-    def errorInProcess(self):
-        #self.signaler.script_finished.emit(self.getPath(), 101)
+    def errorInProcess(self, error):
+        if error == QProcess.Crashed and self._asked_for_terminate:
+            return
         self.parent.scriptFinished(self.getPath(), 101)
     
     def standardError(self):
@@ -46,9 +46,9 @@ class Scripter:
         Terminal.scripterMessage(standard_output, self.getCommandName())
     
     def start(self, executable, arguments):
-        self.parent.sendGuiMessage(
-            _translate('GUIMSG', '--- Custom script %s started...%s')
-                            % (ray.highlightText(executable), self.parent.client_id))
+        #self.parent.sendGuiMessage(
+            #_translate('GUIMSG', '--- Custom script %s started...%s')
+                            #% (ray.highlightText(executable), self.parent.client_id))
         self._process.start(executable, arguments)
     
     def isFinished(self):

@@ -115,8 +115,10 @@ control RaySession daemons
         Adds a client to the current session
     add_proxy
         Adds a proxy client to the current session
-    add_client_template CLIENT_TEMPLATE
-        Adds a client to the current session from CLIENT_TEMPLATE
+    add_factory_client_template CLIENT_TEMPLATE
+        Adds a client to the current session from factory CLIENT_TEMPLATE
+    add_user_client_template CLIENT_TEMPLATE
+        Adds a client to the current session from user CLIENT_TEMPLATE
     list_snapshots
         Lists all snapshots of the current session
     list_clients [FILTER1] [FILTER2] [FILTER3]...

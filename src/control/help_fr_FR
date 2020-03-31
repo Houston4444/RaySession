@@ -120,8 +120,10 @@ contrôle les démons de RaySession
         Ajouter EXÉCUTABLE à la session en cours
     add_proxy
         Ajouter un proxy à la session en cours
-    add_client_template MODÈLE_DE_CLIENT
-        Ajoute un client à la session selon MODÈLE_DE_CLIENT
+    add_factory_client_template MODÈLE_DE_CLIENT
+        Ajoute un client à la session selon MODÈLE_DE_CLIENT d'usine
+    add_user_client_template MODÈLE_DE_CLIENT
+        Ajoute un client à la session selon MODÈLE_DE_CLIENT utilisateur
     list_snapshots
         Lister les clichés de la session
     list_clients [FILTER1] [FILTER2] [FILTER3]...

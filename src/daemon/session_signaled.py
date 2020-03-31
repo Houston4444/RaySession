@@ -8,9 +8,10 @@ from PyQt5.QtXml  import QDomDocument
 
 import ray
 
+from client import Client
 from multi_daemon_file import MultiDaemonFile
-from signaler          import Signaler
-from scripter          import Scripter
+from signaler import Signaler
+from scripter import Scripter
 from daemon_tools import Terminal, CommandLineArgs
 from session import OperatingSession
 
@@ -133,61 +134,6 @@ class SignaledSession(OperatingSession):
                         return
                     
             function(path, args, src_addr)
-    
-    def scriptFinished(self, script_path, exit_code, client_id):
-        is_stepper = False
-        
-        for i in range(len(self.running_scripts)):
-            script = self.running_scripts[i]
-            
-            if (script.getPath() == script_path
-                    and script.clientId() == client_id):
-                if exit_code:
-                    if exit_code == 101:
-                        message = _translate('GUIMSG', 
-                                    'script %s failed to start !') % (
-                                        ray.highlightText(script_path))
-                    else:
-                        message = _translate('GUIMSG', 
-                                'script %s terminate whit exit code %i') % (
-                                    ray.highlightText(script_path), exit_code)
-                    
-                    if script.src_addr:
-                        self.send(script.src_addr, '/error', script.src_path,
-                                  - exit_code, message)
-                else:
-                    self.sendGuiMessage(
-                        _translate('GUIMSG', '...script %s finished. ---')
-                            % ray.highlightText(script_path))
-                    
-                    if script.src_addr:
-                        self.send(script.src_addr, '/reply', script.src_path,
-                                  'script finished')
-                    #self.sendGui('/ray/gui/hide_script_info')
-                    
-                if script.isStepper():
-                    is_stepper = True
-                    if not script.stepperHasCalled():
-                        # script has not call the next_function (save, close)
-                        # so skip this next_function
-                        if self.steps_order:
-                            self.steps_order.__delitem__(0)
-                
-                if script.clientId() and script.pendingCommand():
-                    for client in self.clients:
-                        if client.client_id == script.clientId():
-                            client.pending_command = ray.Command.NONE
-                            break
-                    
-                break
-        else:
-            return
-        
-        self.running_scripts.remove(script)
-        del script
-        
-        if is_stepper:
-            self.nextFunction()
     
     def sendErrorNoClient(self, src_addr, path, client_id):
         self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
@@ -664,7 +610,8 @@ class SignaledSession(OperatingSession):
     
     def _ray_server_quit(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
-        self.steps_order = [self.close, self.exitNow]
+        self.steps_order = [self.terminateStepperScripts,
+                            self.close, self.exitNow]
         
         if self.file_copier.isActive():
             self.file_copier.abort(self.nextFunction, [])
@@ -882,6 +829,9 @@ class SignaledSession(OperatingSession):
             if start_it:
                 client.start()
             self.send(src_addr, '/reply', path, client.client_id)
+        else:
+            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                      "Impossible to add client now")
     
     def _ray_session_add_proxy(self, path, args, src_addr):
         executable = args[0]
@@ -901,14 +851,26 @@ class SignaledSession(OperatingSession):
         if self.addClient(client):
             client.start()
             self.send(src_addr, '/reply', path, client.client_id)
+        else:
+            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                      "Impossible to add client now")
     
     def _ray_session_add_client_template(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
+        if not self.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "Cannot add to session because no session is loaded.")
+            return
         
         factory = bool(args[0])
         template_name = args[1]
         
         self.addClientTemplate(src_addr, path, template_name, factory)
+    
+    def _ray_session_add_factory_client_template(self, path, args, src_addr):
+        self._ray_session_add_client_template(path, [1, args[0]], src_addr)
+    
+    def _ray_session_add_user_client_template(self, path, args, src_addr):
+        self._ray_session_add_client_template(path, [0, args[0]], src_addr)
     
     def _ray_session_reorder_clients(self, path, args, src_addr):
         client_ids_list = args
@@ -1037,7 +999,6 @@ class SignaledSession(OperatingSession):
         
         self.run_step_addr = src_addr
         self.nextFunction(True)
-        #self.send(src_addr, '/reply', path, 'good') 
     
     def _ray_client_stop(self, path, args, src_addr):
         client_id = args[0]
@@ -1387,9 +1348,6 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if client.client_id == client_id:
                 if client.isRunning():
-                    self.sendGuiMessage(
-                        _translate('GUIMSG', '%s is running.')
-                            % client.guiMsgStyle())
                     self.send(src_addr, '/reply', path, 'client running')
                 else:
                     self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
@@ -1407,8 +1365,11 @@ class SignaledSession(OperatingSession):
         
         for client in self.trashed_clients:
             if client.client_id == args[0]:
-                self.restoreClient(client)
-                self.send(src_addr, '/reply', path, "client restored")
+                if self.restoreClient(client):
+                    self.send(src_addr, '/reply', path, "client restored")
+                else:
+                    self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                              "Session is in a loading locked state")
                 break
         else:
             self.send(src_addr, "/error", path, -10, "No such client.")
@@ -1487,7 +1448,8 @@ class SignaledSession(OperatingSession):
             self.file_copier.abort()
         
         self.terminated_yet = True
-        self.steps_order = [self.close, self.exitNow]
+        self.steps_order = [self.terminateStepperScripts,
+                            self.close, self.exitNow]
         self.nextFunction()
         
 
