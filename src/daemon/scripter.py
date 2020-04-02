@@ -1,5 +1,5 @@
-
-from PyQt5.QtCore import QProcess, QCoreApplication
+import os
+from PyQt5.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 import ray
 from daemon_tools import Terminal
@@ -46,9 +46,13 @@ class Scripter:
         Terminal.scripterMessage(standard_output, self.getCommandName())
     
     def start(self, executable, arguments):
+        process_env = QProcessEnvironment.systemEnvironment()
+        process_env.insert('RAY_SCRIPTS_DIR', os.path.dirname(executable))
+        self._process.setProcessEnvironment(process_env)
         #self.parent.sendGuiMessage(
             #_translate('GUIMSG', '--- Custom script %s started...%s')
                             #% (ray.highlightText(executable), self.parent.client_id))
+        #self._process.setProcessEnvironment('RAY_SCRIPTS_DIR', os.path.dirname(executable))
         self._process.start(executable, arguments)
     
     def isFinished(self):

@@ -885,8 +885,15 @@ class SignaledSession(OperatingSession):
         
         self.reOrderClients(client_ids_list, src_addr, path)
     
-    def _ray_session_stop_clients(self, path, args, src_addr):
-        pass
+    def _ray_session_clear_clients(self, path, args, src_addr):
+        if not self.load_locked:
+            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                "clear_clients has to be used only during the load script !")
+            return
+        
+        print('okcfkoclerar', args)
+        
+        self.clearClients(src_addr, path, *args)
     
     def _ray_session_list_snapshots(self, path, args, src_addr, client_id=""):
         if not self.path:

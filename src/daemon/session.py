@@ -206,21 +206,6 @@ class Session(ServerSender):
         self.message("Telling all clients that session is loaded...")
         for client in self.clients:
             client.tellClientSessionIsLoaded()
-    
-    def purgeInactiveClients(self):
-        remove_item_list = []
-        for i in range(len(self.clients)):
-            if not self.clients[i].active:
-                self.sendGui("/ray/gui/client/status", self.clients[i].client_id,
-                             ray.ClientStatus.REMOVED)
-                remove_item_list.append(i)
-        
-        remove_item_list.reverse()
-        
-        for i in remove_item_list:
-            self.clients.__delitem__(i)
-            
-        del remove_item_list
             
     def clientsHaveErrors(self):
         for client in self.clients:
@@ -1093,7 +1078,7 @@ class OperatingSession(Session):
             
             for client in self.expected_clients.__reversed__():
                 self.clients_to_quit.append(client)
-                self.timer_quit.start()
+            self.timer_quit.start()
             
         self.trashed_clients.clear()
         self.sendGui('/ray/gui/trash/clear')
@@ -1578,6 +1563,7 @@ class OperatingSession(Session):
                 client.adjustFilesAfterCopy(self.path, ray.Template.RENAME)
             self.setPath(self.future_session_path)
         
+        self.sendGui("/ray/gui/session/name",  self.name, self.path)
         self.trashed_clients.clear()
         self.load_locked = True
         
@@ -1683,7 +1669,6 @@ class OperatingSession(Session):
             else:
                 client.switch_state = ray.SwitchState.NONE
         
-        self.sendGui("/ray/gui/session/name",  self.name, self.path)
         self.noFuture()
         
         if has_switch:
@@ -2006,7 +1991,6 @@ class OperatingSession(Session):
         self.nextFunction()
         
     def terminateStepperScripts(self):
-        print('terminatescripts1')
         for script in self.running_scripts:
             if script.isStepper():
                 script.terminate()
@@ -2015,7 +1999,6 @@ class OperatingSession(Session):
                          ray.WaitFor.SCRIPT_QUIT)
         
     def terminateStepperScripts_substep2(self):
-        print('terminatescripts2')
         for script in self.running_scripts:
             if script.isStepper():
                 script.kill()
@@ -2024,6 +2007,31 @@ class OperatingSession(Session):
                          ray.WaitFor.SCRIPT_QUIT)
         
     def terminateStepperScripts_substep3(self):
-        print('terminatescripts3')
         self.nextFunction()
         
+    def clearClients(self, src_addr, src_path, *client_ids):
+        self.clients_to_quit.clear()
+        self.expected_clients.clear()
+        
+        for client in self.clients:
+            if client.client_id in client_ids or not client_ids:
+                print('rafijjia', client.client_id, client_ids)
+                self.clients_to_quit.append(client)
+                self.expected_clients.append(client)
+        
+        self.timer_quit.start()
+        
+        self.waitAndGoTo(5000,
+                         (self.clearClients_substep2, src_addr, src_path),
+                         ray.WaitFor.QUIT)
+        
+    def clearClients_substep2(self, src_addr, src_path):
+        for client in self.expected_clients:
+            client.kill()
+            
+        self.waitAndGoTo(1000, 
+                         (self.clearClients_substep3, src_addr, src_path),
+                         ray.WaitFor.QUIT)
+        
+    def clearClients_substep3(self, src_addr, src_path):
+        self.send(src_addr, '/reply', src_path, 'Clients cleared')

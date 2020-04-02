@@ -34,7 +34,7 @@ session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'add_client_template', 'list_snapshots',
                       'list_clients', 'list_trashed_clients',
                       'reorder_clients',
-                      'get_session_name', 'run_step')
+                      'get_session_name', 'run_step', 'clear_clients')
 
 #client_operations = ('stop', 'kill', 'trash', 'resume', 'save',
                      #'save_as_template', 'show_optional_gui',
@@ -248,6 +248,7 @@ if __name__ == '__main__':
         elif operation in session_operations:
             operation_type = OPERATION_TYPE_SESSION
         else:
+            sys.stderr.write("Unknown operation: %s\n" % operation)
             printHelp()
             sys.exit(100)
         

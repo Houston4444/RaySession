@@ -901,11 +901,13 @@ class OscServerThread(ClientCommunicating):
         if self.session.path:
             subprocess.Popen(['xdg-open',  self.session.path])
     
-    @ray_method('/ray/session/stop_clients', None)
+    @ray_method('/ray/session/clear_clients', None)
     def raySessionStopClients(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             self.unknownMessage(path, types, src_addr)
             return False
+        
+        print('xlxlxl', args)
     
     @ray_method('/ray/session/list_clients', None)
     def raySessionListClients(self, path, args, types, src_addr):
