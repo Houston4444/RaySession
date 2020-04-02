@@ -23,3 +23,6 @@ konv# RaySession TODO
     arguments open_off et close_all pour run_step
     Option 'Mute clients' par ce que c'est pénible pour débugger
     check double message dans ray_control
+    variables d'environnement dans les scripts de session
+    Empêcher/prévoir absence/doublon run_step
+    !!!! empêcher switch sur un client_id déjà existant !!!

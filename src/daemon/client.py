@@ -861,13 +861,16 @@ class Client(ServerSender):
         return True
     
     def switch(self, new_client):
-        old_client_id      = self.client_id
-        self.client_id     = new_client.client_id
-        self.name          = new_client.name
-        self.prefix_mode   = new_client.prefix_mode
+        old_client_id = self.client_id
+        self.client_id = new_client.client_id
+        self.executable_path = new_client.executable_path
+        self.arguments = new_client.arguments
+        self.name = new_client.name
+        self.prefix_mode = new_client.prefix_mode
         self.custom_prefix = new_client.custom_prefix
-        self.label         = new_client.label
-        self.icon          = new_client.icon
+        self.label = new_client.label
+        self.icon = new_client.icon
+        self.auto_start = new_client.auto_start
         
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
@@ -879,6 +882,7 @@ class Client(ServerSender):
                                self.session.name, jack_client_name)
         
         self.pending_command = ray.Command.OPEN
+        self.sendGui('/ray/gui/client/switch', old_client_id, self.client_id)
         self.setStatus(ray.ClientStatus.SWITCH)
         self.sendGuiClientProperties()
     

@@ -1582,6 +1582,15 @@ class OperatingSession(Session):
         self.cleanExpected()
         self.clients_to_quit.clear()
         
+        # first quit unneeded clients
+        # It has probably been done but we can't know if during the load script
+        # some clients could have been stopped.
+        # Because adding client is not allowed
+        # during the load script before run_step,
+        # we can assume all these clients are needed if they are running.
+        # 'open_off' decided during the load script
+        # is a good reason to stop all clients.
+        
         for client in self.clients.__reversed__():
             if (open_off
                     or not client.isRunning()
@@ -1630,6 +1639,7 @@ class OperatingSession(Session):
             #* IDs, so be sure to pick the right one to avoid race
             #* conditions in JACK name registration. */
             client = None
+            
             if future_client.auto_start:
                 for client in self.clients:
                     if (client.client_id == future_client.client_id
@@ -1641,43 +1651,14 @@ class OperatingSession(Session):
                         break
                 else:
                     for client in self.clients:
-                        if (client.running_executable == future_client.executable_path
-                            and client.running_arguments == future_client.arguments):
+                        if (client.running_executable
+                                    == future_client.executable_path
+                            and client.running_arguments
+                                    == future_client.arguments):
                             #we found a switchable client
                             break
                     else:
                         client = None
-                
-                #if client:
-                    #if (not open_off
-                            #and client.isRunning()
-                            #and not client.isReplyPending()):
-                        #client.switch_state = ray.SwitchState.DONE
-                        #if client.active:
-                            #client.switch(future_client)
-                            #has_switch = True
-                #else:
-                    
-            
-            #if (not open_off
-                    #and client and client.isRunning()
-                    #and not client.isReplyPending()):
-                #client.switch_state = ray.SwitchState.DONE
-                #if client.active:
-                    ## since we already shutdown clients not capable of 
-                    ## ':switch:', we can assume that these are.
-                    #client.switch(future_client)
-                    #has_switch = True
-            #else:
-                #if not self.addClient(future_client):
-                    #continue
-                    
-                #if future_client.auto_start and not (self.is_dummy or open_off):
-                    #self.clients_to_launch.append(future_client)
-                    
-                    #if (not future_client.executable_path
-                            #in RS.non_active_clients):
-                        #self.expected_clients.append(future_client)
             
             if client:
                 client.switch_reserved = False

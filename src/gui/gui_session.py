@@ -237,6 +237,13 @@ class SignaledSession(Session):
         if client:
             client.updateClientProperties(client_data)
     
+    def  _ray_gui_client_switch(self, path, args):
+        old_id, new_id = args
+        for client in self.client_list:
+            if client.client_id == old_id:
+                client.client_id = new_id
+                break
+    
     def _ray_gui_client_status(self, path, args):
         client_id, status = args
         client = self.getClient(client_id)

@@ -150,6 +150,10 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/client/update', 'ssssissssis')
     def _client_update(self, path, args, types, src_addr):
         pass
+    
+    @ray_method('/ray/gui/client/switch', 'ss')
+    def _client_switch(self, path, args, types, src_addr):
+        pass
 
     @ray_method('/ray/gui/client/status', 'si')
     def _client_status(self, path, args, types, src_addr):
