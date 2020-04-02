@@ -1579,42 +1579,29 @@ class OperatingSession(Session):
         self.nextFunction()
     
     def load(self, open_off=False):
-        #if open_off and self.clients:
-            ## At this point some clients could be there
-            ## because they have been kept to switch
-            ## or they are dumb clients still is the loaded session
-            ## with open_off we needs these clients to not be there
-            #self.steps_order.insert(0, (self.close, open_off), (self.load, open_off))
-            #self.nextFunction()
-            #return
+        self.cleanExpected()
+        self.clients_to_quit.clear()
         
-        #self.cleanExpected()
-        
-        #future_client_exec_args = []
-        #for future_client in self.future_clients:
-            #if future_client.auto_start and not open_off:
-                #future_client_exec_args.append(future_client.executable_path,
-                                               #future_client.arguments)
+        for client in self.clients.__reversed__():
+            if (open_off
+                    or not client.isRunning()
+                    or client.isReplyPending()):
+                self.clients_to_quit.append(client)
+                self.expected_clients.append(client)
+            else:
+                client.switch_reserved = True
                 
-        #for client in self.clients:
-            #if (not open_off
-                    #and client.isRunning()
-                    #and (client.isCapableOf(':switch:')
-                         #or client.isDumbClient())
-                    #and (client.executable_path, client.arguments)
-                        #in future_client_exec_args):
-                #pass
-            #else:
-                #if client.isRunning():
-                    #self.expected_clients.append(client)
-                #else:
-                    #self.removeClient(client)
-                    
-        #if self.expected_clients:
-            #for client in self.expected_clients.__reversed__():
-                #self.clients_to_quit.append(client)
-            #self.timer_quit.start()
+        self.timer_quit.start()
+        self.waitAndGoTo(5000, (self.load_substep2, open_off), ray.WaitFor.QUIT)
         
+    def load_substep2(self, open_off):
+        for client in self.expected_clients:
+            client.kill()
+        
+        self.waitAndGoTo(1000, (self.load_substep3, open_off), ray.WaitFor.QUIT)
+        
+    def load_substep3(self, open_off):
+        self.cleanExpected()
         
         self.load_locked = False
         self.sendGuiMessage(_translate('GUIMSG', "-- Opening session %s --")
@@ -1628,38 +1615,79 @@ class OperatingSession(Session):
         has_switch = False
         new_client_id_list = []
         
+        rm_indexes = []
+        for i in range(len(self.clients)):
+            client = self.clients[i]
+            if not client.isRunning():
+                rm_indexes.append(i)
+                
+        rm_indexes.reverse()
+        for i in rm_indexes:
+            self.removeClient(self.clients[i])
+        
         for future_client in self.future_clients:
             #/* in a duplicated session, clients will have the same
             #* IDs, so be sure to pick the right one to avoid race
             #* conditions in JACK name registration. */
-            for client in self.clients:
-                if (client.client_id == future_client.client_id
-                    and client.running_executable == future_client.executable_path
-                    and client.running_arguments == future_client.arguments):
-                    #we found the good existing client
-                    break
-            else:
+            client = None
+            if future_client.auto_start:
                 for client in self.clients:
-                    if (client.running_executable == future_client.executable_path
-                        and client.running_arguments == future_client.arguments):
-                        #we found a switchable client
+                    if (client.client_id == future_client.client_id
+                            and client.running_executable
+                                    == future_client.executable_path
+                            and client.running_arguments
+                                    == future_client.arguments):
+                        #we found the good existing client
                         break
                 else:
-                    client = None
+                    for client in self.clients:
+                        if (client.running_executable == future_client.executable_path
+                            and client.running_arguments == future_client.arguments):
+                            #we found a switchable client
+                            break
+                    else:
+                        client = None
+                
+                #if client:
+                    #if (not open_off
+                            #and client.isRunning()
+                            #and not client.isReplyPending()):
+                        #client.switch_state = ray.SwitchState.DONE
+                        #if client.active:
+                            #client.switch(future_client)
+                            #has_switch = True
+                #else:
+                    
             
+            #if (not open_off
+                    #and client and client.isRunning()
+                    #and not client.isReplyPending()):
+                #client.switch_state = ray.SwitchState.DONE
+                #if client.active:
+                    ## since we already shutdown clients not capable of 
+                    ## ':switch:', we can assume that these are.
+                    #client.switch(future_client)
+                    #has_switch = True
+            #else:
+                #if not self.addClient(future_client):
+                    #continue
+                    
+                #if future_client.auto_start and not (self.is_dummy or open_off):
+                    #self.clients_to_launch.append(future_client)
+                    
+                    #if (not future_client.executable_path
+                            #in RS.non_active_clients):
+                        #self.expected_clients.append(future_client)
             
-            if client and client.isRunning():
+            if client:
+                client.switch_reserved = False
                 client.switch_state = ray.SwitchState.DONE
-                if client.active and not client.isReplyPending():
-                    #since we already shutdown clients not capable of 
-                    #'switch', we can assume that these are.
+                if client.active:
+                    # since we already shutdown clients not capable of 
+                    # ':switch:', we can assume that these are.
                     client.switch(future_client)
                     has_switch = True
             else:
-                #* sleep a little bit because liblo derives its sequence
-                #* of port numbers from the system time (second
-                #* resolution) and if too many clients start at once they
-                #* won't be able to find a free port. */
                 if not self.addClient(future_client):
                     continue
                     
@@ -1672,11 +1700,11 @@ class OperatingSession(Session):
             
             new_client_id_list.append(future_client.client_id)
         
-        for client in self.clients:
-            if client.switch_state == ray.SwitchState.RESERVED:
-                self.removeClient(client)
-            else:
-                client.switch_state = ray.SwitchState.NONE
+        #for client in self.clients:
+            #if client.switch_state == ray.SwitchState.RESERVED:
+                #self.removeClient(client)
+            #else:
+                #client.switch_state = ray.SwitchState.NONE
         
         self.noFuture()
         
@@ -1701,9 +1729,9 @@ class OperatingSession(Session):
         
         wait_time = 4000 + len(self.expected_clients) * 1000
         
-        self.waitAndGoTo(wait_time, self.load_substep2, ray.WaitFor.ANNOUNCE)
+        self.waitAndGoTo(wait_time, self.load_substep4, ray.WaitFor.ANNOUNCE)
     
-    def load_substep2(self):
+    def load_substep4(self):
         for client in self.expected_clients:
             if (not client.executable_path in RS.non_active_clients):
                 RS.non_active_clients.append(client.executable_path)
@@ -1737,9 +1765,9 @@ class OperatingSession(Session):
         for client in self.expected_clients:
             wait_time = max(2 * 1000 * client.last_open_duration, wait_time)
             
-        self.waitAndGoTo(wait_time, self.load_substep3, ray.WaitFor.REPLY)
+        self.waitAndGoTo(wait_time, self.load_substep5, ray.WaitFor.REPLY)
         
-    def load_substep3(self):
+    def load_substep5(self):
         self.cleanExpected()
         
         server = self.getServer()

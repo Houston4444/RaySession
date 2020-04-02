@@ -22,3 +22,4 @@ konv# RaySession TODO
     pas de session script en open_off
     arguments open_off et close_all pour run_step
     Option 'Mute clients' par ce que c'est pénible pour débugger
+    check double message dans ray_control

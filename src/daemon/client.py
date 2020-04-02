@@ -68,6 +68,7 @@ class Client(ServerSender):
     is_external      = False
     sent_to_gui      = False
     switch_state = ray.SwitchState.NONE
+    switch_reserved = False
     
     net_session_template = ''
     net_session_root     = ''
@@ -750,6 +751,12 @@ class Client(ServerSender):
         return bool(self.active and not self.no_save_level) 
     
     def save(self, src_addr=None, src_path=''):
+        if self.switch_reserved:
+            if src_addr:
+                self.send(src_addr, '/error', src_path, ray.Err.NOT_NOW,
+                "Save cancelled because client has not switch yet !")
+            return
+        
         if src_addr:
             self._osc_srcs[OSC_SRC_SAVE] = (src_addr, src_path)
             
@@ -777,6 +784,12 @@ class Client(ServerSender):
                 self.start_gui_hidden = not bool(self.gui_visible)
             
     def stop(self, src_addr=None, src_path=''):
+        if self.switch_reserved:
+            if src_addr:
+                self.send(src_addr, '/error', src_path, ray.Err.NOT_NOW,
+                "Stop cancelled because client is needed for opening session")
+            return
+        
         if src_addr:
             self._osc_srcs[OSC_SRC_STOP] = (src_addr, src_path)
         
