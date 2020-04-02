@@ -533,11 +533,10 @@ class OperatingSession(Session):
             
         self.wait_for = ray.WaitFor.NONE
     
-    def nextFunction(self, from_run_step=False):
+    def nextFunction(self, from_run_step=False, run_step_args=[]):
         if self.run_step_addr and not from_run_step:
             self.send(self.run_step_addr, '/reply',
                       '/ray/session/run_step', 'step done')
-            del self.run_step_addr
             self.run_step_addr = None
             return
         
@@ -553,10 +552,16 @@ class OperatingSession(Session):
                     next_function = next_item[0]
                     if len(next_item) > 1:
                         arguments = next_item[1:]
-            
-            if self.path and not from_run_step:
+
+            server = self.getServer()
+            if (server and server.option_session_scripts
+                    and self.path and not from_run_step):
                 for step_string in ('load', 'save', 'close'):
                     if next_function == self.__getattribute__(step_string):
+                        if step_string == 'load' and arguments == [True]:
+                            # prevent use of load session script with open_off
+                            continue
+                        
                         run_step_script = self.getScriptPath(step_string)
                                             
                         if (run_step_script 
@@ -581,6 +586,13 @@ class OperatingSession(Session):
                                                 script.getStepperProcess()):
                         script.setStepperHasCall(True)
                         break
+                    
+                if next_function == self.load:
+                    if 'open_off' in run_step_args:
+                        arguments = [True]
+                elif next_function == self.close:
+                    if 'close_all' in run_step_args:
+                        arguments = [True]
                         
                 
             self.steps_order.__delitem__(0)

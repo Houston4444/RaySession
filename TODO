@@ -3,7 +3,6 @@ konv# RaySession TODO
     Jack Patchbay
     drop file directly on session
     manual
-    allow scripts
     ...
     
     review list with net and last reply -> trop compliqué pour pas gd chose
@@ -20,3 +19,6 @@ konv# RaySession TODO
     option --hidden
     
     proxy sans qt (pour légèreté), l'IGU totalement intégrée à RS, configurable même si proxy arrêté (si faisable).
+    pas de session script en open_off
+    arguments open_off et close_all pour run_step
+    Option 'Mute clients' par ce que c'est pénible pour débugger

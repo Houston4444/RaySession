@@ -596,9 +596,11 @@ class OscServerThread(ClientCommunicating):
                       "No session to save.")
             return False
     
-    @ray_method('/ray/session/run_step', '')
+    @ray_method('/ray/session/run_step', None)
     def raySessionProcessStep(self, path, args, types, src_addr):
-        pass
+        if not ray.areTheyAllString(args):
+            self.unknownMessage(path, types, src_addr)
+            return False
     
     @ray_method('/ray/session/save_as_template', 's')
     def raySessionSaveAsTemplate(self, path, args, types, src_addr):

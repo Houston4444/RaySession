@@ -119,6 +119,8 @@ class MainWindow(QMainWindow):
             self.desktopsMemoryToggled)
         self.ui.actionAutoSnapshot.triggered.connect(
             self.autoSnapshotToggled)
+        self.ui.actionSessionScripts.triggered.connect(
+            self.sessionScriptsToggled)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
         self.ui.actionDonate.triggered.connect(self.donate)

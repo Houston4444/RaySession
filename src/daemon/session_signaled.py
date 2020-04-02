@@ -1005,7 +1005,7 @@ class SignaledSession(OperatingSession):
             return
         
         self.run_step_addr = src_addr
-        self.nextFunction(True)
+        self.nextFunction(True, args)
     
     def _ray_client_stop(self, path, args, src_addr):
         client_id = args[0]
