@@ -317,10 +317,12 @@ class OscServerThread(ClientCommunicating):
             'daemon/save_all_from_saved_client', True, type=bool)
         self.option_bookmark_session = RS.settings.value(
             'daemon/bookmark_session_folder', True, type=bool)
-        self.option_desktops_memory  = RS.settings.value(
+        self.option_desktops_memory = RS.settings.value(
             'daemon/desktops_memory', False, type=bool)
-        self.option_snapshots        = RS.settings.value(
+        self.option_snapshots = RS.settings.value(
             'daemon/auto_snapshot', True, type=bool)
+        self.option_session_scripts = RS.settings.value(
+            'deamon/session_scripts', True, type=bool)
         
         self.option_has_wmctrl = bool(shutil.which('wmctrl'))
         if not self.option_has_wmctrl:
@@ -691,6 +693,8 @@ class OscServerThread(ClientCommunicating):
                         "git is not present. Impossible to activate 'snapshots' option")
                     continue
                 self.option_snapshots = option_value
+            elif option == 'session_scripts':
+                self.option_session_scripts = option_value
                 
         options = self.getOptions()
         
@@ -699,10 +703,32 @@ class OscServerThread(ClientCommunicating):
                 self.send(gui_addr, '/ray/gui/server/options', options)
                 
         self.send(src_addr, '/reply', path, 'Options set')
-        #if not (sess_root == self.session.root
-                #and session_name == self.session.name):
-            #signaler.dummy_load_and_template.emit(*args)
-            #return False
+        
+    @ray_method('/ray/server/has_option', 's')
+    def rayServerHasOption(self, path, args, types, src_addr):
+        option = args[0]
+        option_value = False
+        
+        if option == 'save_from_client':
+            option_value = self.option_save_from_client
+        elif option == 'bookmark_session_folder':
+            option_value = self.option_bookmark_session
+        elif option == 'desktops_memory':
+            option_value = self.option_desktops_memory
+        elif option == 'snapshots':
+            option_value = self.option_snapshots
+        elif option == 'session_scripts':
+            option_value = self.option_session_scripts
+        else:
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+                      "option \"%s\" doesn't exists" % option)
+            return
+        
+        if option_value:
+            self.send(src_addr, '/reply', path, 'Has option')
+        else:
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+                      "Option %s is not currently used" % option)
     
     #@ray_method('/ray/session/save_as_template', None)
     #def nsmServerSaveSessionTemplate(self, path, args, types, src_addr):
@@ -1053,6 +1079,16 @@ class OscServerThread(ClientCommunicating):
             if not ray.areSameOscPort(gui_addr.url, src_addr.url):
                 self.send(gui_addr, '/ray/gui/server/options', options)
     
+    @ray_method('/ray/option/session_scripts', 'i')
+    def rayOptionSessionScripts(self, path, args, types, src_addr):
+        self.option_session_scripts = bool(args[0])
+        
+        options = self.getOptions()
+        
+        for gui_addr in self.gui_list:
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                self.send(gui_addr, '/ray/gui/server/options', options)
+    
     @ray_method('/ray/favorites/add', 'ssi')
     def rayFavoriteAdd(self, path, args, types, src_addr):
         name, icon, int_factory = args
@@ -1287,7 +1323,8 @@ class OscServerThread(ClientCommunicating):
             + ray.Option.HAS_WMCTRL * self.option_has_wmctrl
             + ray.Option.DESKTOPS_MEMORY * self.option_desktops_memory
             + ray.Option.HAS_GIT * self.option_has_git
-            + ray.Option.SNAPSHOTS * self.option_snapshots)
+            + ray.Option.SNAPSHOTS * self.option_snapshots
+            + ray.Option.SESSION_SCRIPTS * self.option_session_scripts)
         
         return options
     

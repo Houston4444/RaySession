@@ -84,6 +84,7 @@ class Option:
     DESKTOPS_MEMORY  = 0x010
     HAS_GIT          = 0x020
     SNAPSHOTS        = 0x040
+    SESSION_SCRIPTS  = 0x080
 
 
 class Err:

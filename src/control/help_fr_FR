@@ -80,8 +80,11 @@ contrôle les démons de RaySession
             bookmark_session_folder
             desktops_memory
             snapshots
+            session_scripts
         Précédez l'option de 'not_' pour désactiver cette option
         Exemple: ray_control set_options bookmark_session_folder not_snapshots
+    has option OPTION
+        Retourne un code d'erreur si OPTION n'est pas enclenchée
     script_info TEXTE
         Affiche une fenêtre de dialogue d'information sur l'IGU de RaySession
     hide_script_info
@@ -136,6 +139,11 @@ contrôle les démons de RaySession
         Précédez le filtre avec 'not_' pour inverser le filtre
         Exemple: ray_control list_clients auto_start not_started
         Affichera tous les clients arrêtés qui doivent être démarrés à l'ouverture de la session
+    clear_clients [CLIENT_ID1] [CLIENT_ID2]...
+        Utilisable seulement dans le script de session load.sh, avant run_step.
+        Utilisé pour supprimer les clients qui peuvent avoir été gardés de la session précédente.
+        Sans arguments, supprime tous les clients tournants,
+        sinon supprime les clients donnés par leur CLIENT_ID.
 
 * COMMANDES DE CLIENT:
     Les commandes de client doivent être écrites de cette manière:

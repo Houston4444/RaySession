@@ -735,6 +735,7 @@ QToolButton {border: none}</string>
     <addaction name="actionBookmarkSessionFolder"/>
     <addaction name="actionAutoSnapshot"/>
     <addaction name="actionDesktopsMemory"/>
+    <addaction name="actionSessionScripts"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSession"/>
@@ -1111,8 +1112,25 @@ QToolButton {border: none}</string>
    </property>
   </action>
   <action name="actionDonate">
+   <property name="icon">
+    <iconset theme="help-donate"/>
+   </property>
    <property name="text">
     <string>Donate</string>
+   </property>
+  </action>
+  <action name="actionSessionScripts">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="application-x-shellscript"/>
+   </property>
+   <property name="text">
+    <string>Session Scripts</string>
+   </property>
+   <property name="toolTip">
+    <string>Run the session scripts inside the directory kray-scripts</string>
    </property>
   </action>
  </widget>

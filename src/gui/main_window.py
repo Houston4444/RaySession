@@ -139,6 +139,7 @@ class MainWindow(QMainWindow):
         self.controlMenu.addAction(self.ui.actionBookmarkSessionFolder)
         self.controlMenu.addAction(self.ui.actionAutoSnapshot)
         self.controlMenu.addAction(self.ui.actionDesktopsMemory)
+        self.controlMenu.addAction(self.ui.actionSessionScripts)
 
         self.controlToolButton = self.ui.toolBar.widgetForAction(
             self.ui.actionControlMenu)
@@ -277,6 +278,8 @@ class MainWindow(QMainWindow):
             bool(options & ray.Option.DESKTOPS_MEMORY))
         self.ui.actionAutoSnapshot.setChecked(
             bool(options & ray.Option.SNAPSHOTS))
+        self.ui.actionSessionScripts.setChecked(
+            bool(options & ray.Option.SESSION_SCRIPTS))
 
         has_wmctrl = bool(options & ray.Option.HAS_WMCTRL)
         self.ui.actionDesktopsMemory.setEnabled(has_wmctrl)
@@ -328,6 +331,9 @@ class MainWindow(QMainWindow):
     def autoSnapshotToggled(self, state):
         self.toDaemon('/ray/option/snapshots', int(state))
         
+    def sessionScriptsToggled(self, state):
+        self.toDaemon('/ray/option/session_scripts', int(state))
+    
     def flashOpen(self):
         for client in self._session.client_list:
             if client.status == ray.ClientStatus.OPEN:

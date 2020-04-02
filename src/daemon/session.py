@@ -455,14 +455,11 @@ class OperatingSession(Session):
         
         if wait_for == ray.WaitFor.SCRIPT_QUIT:
             if self.running_scripts:
-                print('eoeoeoeoeo')
                 self.wait_for = wait_for
                 self.timer.setSingleShot(True)
                 self.timer.timeout.connect(follow)
                 self.timer.start(duration)
-                print("zoozd", follow)
             else:
-                print('eoeodkkdo')
                 follow()
             return
         
@@ -2015,7 +2012,6 @@ class OperatingSession(Session):
         
         for client in self.clients:
             if client.client_id in client_ids or not client_ids:
-                print('rafijjia', client.client_id, client_ids)
                 self.clients_to_quit.append(client)
                 self.expected_clients.append(client)
         
