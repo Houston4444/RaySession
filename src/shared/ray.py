@@ -144,7 +144,8 @@ class Template:
 class SwitchState:
     NONE = 0
     RESERVED = 1
-    DONE = 2
+    NEEDED = 2
+    DONE = 3
 
 class WindowManager:
     NONE = 0

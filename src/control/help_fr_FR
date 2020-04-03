@@ -142,8 +142,8 @@ contrôle les démons de RaySession
     clear_clients [CLIENT_ID1] [CLIENT_ID2]...
         Utilisable seulement dans le script de session load.sh, avant run_step.
         Utilisé pour supprimer les clients qui peuvent avoir été gardés de la session précédente.
-        Sans arguments, supprime tous les clients tournants,
-        sinon supprime les clients donnés par leur CLIENT_ID.
+        Sans arguments, ça supprime tous les clients tournants,
+        sinon ça supprime les clients donnés par leur CLIENT_ID.
 
 * COMMANDES DE CLIENT:
     Les commandes de client doivent être écrites de cette manière:

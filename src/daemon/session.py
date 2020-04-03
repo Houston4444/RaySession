@@ -1594,11 +1594,13 @@ class OperatingSession(Session):
         for client in self.clients.__reversed__():
             if (open_off
                     or not client.isRunning()
-                    or client.isReplyPending()):
+                    or client.isReplyPending()
+                    or client.switch_state != ray.SwitchState.RESERVED):
                 self.clients_to_quit.append(client)
                 self.expected_clients.append(client)
             else:
                 client.switch_reserved = True
+                client.switch_state = ray.SwitchState.NEEDED
                 
         self.timer_quit.start()
         self.waitAndGoTo(5000, (self.load_substep2, open_off), ray.WaitFor.QUIT)
@@ -1624,6 +1626,7 @@ class OperatingSession(Session):
         has_switch = False
         new_client_id_list = []
         
+        # remove stopped clients
         rm_indexes = []
         for i in range(len(self.clients)):
             client = self.clients[i]
@@ -1634,15 +1637,29 @@ class OperatingSession(Session):
         for i in rm_indexes:
             self.removeClient(self.clients[i])
         
+        # Lie to the GUI saying all clients are removed.
+        # Clients will reappear just in a few time
+        # It prevents GUI to have 2 clients with the same client_id
+        # in the same time
+        for client in self.clients:
+            client.setStatus(ray.ClientStatus.REMOVED)
+            client.sent_to_gui = False
+        
         for future_client in self.future_clients:
-            #/* in a duplicated session, clients will have the same
-            #* IDs, so be sure to pick the right one to avoid race
-            #* conditions in JACK name registration. */
             client = None
+            
+            # This part needs care
+            # we add future_clients to clients.
+            # At this point,
+            # running clients waiting for switch have SwitchState NEEDED
+            # running clients already choosen for switch have SwitchState DONE
+            # clients just added from future clients without switch
+            #    have SwitchState NONE.
             
             if future_client.auto_start:
                 for client in self.clients:
-                    if (client.client_id == future_client.client_id
+                    if (client.switch_state == ray.SwitchState.NEEDED
+                            and client.client_id == future_client.client_id
                             and client.running_executable
                                     == future_client.executable_path
                             and client.running_arguments
@@ -1651,9 +1668,10 @@ class OperatingSession(Session):
                         break
                 else:
                     for client in self.clients:
-                        if (client.running_executable
+                        if (client.switch_state == ray.SwitchState.NEEDED
+                                and client.running_executable
                                     == future_client.executable_path
-                            and client.running_arguments
+                                and client.running_arguments
                                     == future_client.arguments):
                             #we found a switchable client
                             break
@@ -1663,11 +1681,12 @@ class OperatingSession(Session):
             if client:
                 client.switch_reserved = False
                 client.switch_state = ray.SwitchState.DONE
-                if client.active:
-                    # since we already shutdown clients not capable of 
-                    # ':switch:', we can assume that these are.
-                    client.switch(future_client)
-                    has_switch = True
+                client.eatAttributes(future_client)
+                #if client.active:
+                    ## since we already shutdown clients not capable of 
+                    ## ':switch:', we can assume that these are.
+                    #client.switch(future_client)
+                has_switch = True
             else:
                 if not self.addClient(future_client):
                     continue
@@ -1681,11 +1700,12 @@ class OperatingSession(Session):
             
             new_client_id_list.append(future_client.client_id)
         
-        #for client in self.clients:
-            #if client.switch_state == ray.SwitchState.RESERVED:
-                #self.removeClient(client)
-            #else:
-                #client.switch_state = ray.SwitchState.NONE
+        for client in self.clients:
+            if client.switch_state == ray.SwitchState.DONE:
+                client.switch()
+        
+        self.reOrderClients(new_client_id_list)
+        self.sendGui('/ray/gui/session/sort_clients', *new_client_id_list)
         
         self.noFuture()
         
@@ -1704,9 +1724,6 @@ class OperatingSession(Session):
         #* to give up waiting on them fairly soon. */
         
         self.timer_launch.start()
-        
-        self.reOrderClients(new_client_id_list)
-        self.sendGui('/ray/gui/session/sort_clients', *new_client_id_list)
         
         wait_time = 4000 + len(self.expected_clients) * 1000
         

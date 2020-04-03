@@ -69,6 +69,7 @@ class Client(ServerSender):
     sent_to_gui      = False
     switch_state = ray.SwitchState.NONE
     switch_reserved = False
+    switch_client_id = ''
     
     net_session_template = ''
     net_session_root     = ''
@@ -860,9 +861,10 @@ class Client(ServerSender):
         script.start(script_path, [self.client_id])
         return True
     
-    def switch(self, new_client):
-        old_client_id = self.client_id
+    def eatAttributes(self, new_client):
+        #old_client_id = self.client_id
         self.client_id = new_client.client_id
+        #self.switch_client_id = new_client.client_id
         self.executable_path = new_client.executable_path
         self.arguments = new_client.arguments
         self.name = new_client.name
@@ -873,7 +875,8 @@ class Client(ServerSender):
         self.auto_start = new_client.auto_start
         self.check_last_save = new_client.check_last_save
         self.ignored_extensions = new_client.ignored_extensions
-        
+    
+    def switch(self):
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()
         
@@ -884,9 +887,8 @@ class Client(ServerSender):
                                self.session.name, jack_client_name)
         
         self.pending_command = ray.Command.OPEN
-        self.sendGui('/ray/gui/client/switch', old_client_id, self.client_id)
-        self.setStatus(ray.ClientStatus.SWITCH)
         self.sendGuiClientProperties()
+        self.setStatus(ray.ClientStatus.SWITCH)
     
     def sendGuiClientProperties(self, removed=False):
         ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
