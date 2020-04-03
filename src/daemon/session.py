@@ -558,9 +558,12 @@ class OperatingSession(Session):
                     and self.path and not from_run_step):
                 for step_string in ('load', 'save', 'close'):
                     if next_function == self.__getattribute__(step_string):
-                        if step_string == 'load' and arguments == [True]:
-                            # prevent use of load session script with open_off
-                            continue
+                        if (step_string == 'load'
+                                and arguments
+                                and arguments[0] == True):
+                            # prevent use of load session script
+                            # with open_session_off
+                            break
                         
                         run_step_script = self.getScriptPath(step_string)
                                             

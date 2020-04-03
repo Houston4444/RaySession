@@ -138,6 +138,7 @@ if __name__ == '__main__':
                       server.option_bookmark_session)
     RS.settings.setValue('daemon/auto_snapshot', server.option_snapshots)
     RS.settings.setValue('daemon/desktops_memory', server.option_desktops_memory)
+    RS.settings.setValue('daemon/session_scripts', server.option_session_scripts)
     RS.settings.sync()
     
     #stop the server

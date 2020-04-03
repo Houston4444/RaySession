@@ -322,7 +322,7 @@ class OscServerThread(ClientCommunicating):
         self.option_snapshots = RS.settings.value(
             'daemon/auto_snapshot', True, type=bool)
         self.option_session_scripts = RS.settings.value(
-            'deamon/session_scripts', True, type=bool)
+            'daemon/session_scripts', True, type=bool)
         
         self.option_has_wmctrl = bool(shutil.which('wmctrl'))
         if not self.option_has_wmctrl:

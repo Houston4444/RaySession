@@ -24,4 +24,4 @@ konv# RaySession TODO
     check double message dans ray_control
     variables d'environnement dans les scripts de session
     Empêcher/prévoir absence/doublon run_step
-    !!!! empêcher switch sur un client_id déjà existant !!!
+    démarrer daemon sans option (et ne pas sauver les options)
