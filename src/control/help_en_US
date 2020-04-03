@@ -133,6 +133,12 @@ control RaySession daemons
         precede the filter with 'not_' to revert the filter
         example: ray_control list_clients auto_start not_started
         will display all stopped clients that should be started at session open
+    clear_clients [CLIENT_ID1] [CLIENT_ID2]...
+        Usable only in the load.sh session script, before the run_step.
+        Used to remove clients that could have been kept from the previous session.
+        whitout arguments, removes all running clients,
+        else removes clients given by their CLIENT_ID.
+        
 
 * CLIENT_COMMANDS:
     all client commands have to be written this way:

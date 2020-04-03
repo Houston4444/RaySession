@@ -871,6 +871,8 @@ class Client(ServerSender):
         self.label = new_client.label
         self.icon = new_client.icon
         self.auto_start = new_client.auto_start
+        self.check_last_save = new_client.check_last_save
+        self.ignored_extensions = new_client.ignored_extensions
         
         jack_client_name    = self.getJackClientName()
         client_project_path = self.getProjectPath()

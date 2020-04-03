@@ -20,7 +20,6 @@ konv# RaySession TODO
     
     proxy sans qt (pour légèreté), l'IGU totalement intégrée à RS, configurable même si proxy arrêté (si faisable).
     pas de session script en open_off
-    arguments open_off et close_all pour run_step
     Option 'Mute clients' par ce que c'est pénible pour débugger
     check double message dans ray_control
     variables d'environnement dans les scripts de session
