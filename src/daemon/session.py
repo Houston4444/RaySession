@@ -696,16 +696,23 @@ class OperatingSession(Session):
                     if scripter.src_addr:
                         self.send(scripter.src_addr, '/reply', scripter.src_path,
                                   'script finished')
-                    #self.sendGui('/ray/gui/hide_script_info')
                     
                 if scripter.isStepper():
                     is_stepper = True
                     if self.wait_for != ray.WaitFor.SCRIPT_QUIT:
                         if not scripter.stepperHasCalled():
-                            # script has not call the next_function (save, close)
-                            # so skip this next_function
-                            if self.steps_order:
-                                self.steps_order.__delitem__(0)
+                            # script has not call
+                            # the next_function (save, close, load)
+                            stepper_process = scripter.getStepperProcess()
+                            
+                            if stepper_process in ('load', 'close'):
+                                self.steps_order.clear()
+                                self.steps_order = [(self.close, True),
+                                                    self.abortDone]
+                                self.nextFunction()
+                            elif stepper_process == 'save':
+                                if self.steps_order:
+                                    self.steps_order.__delitem__(0)
                 break
         else:
             return
