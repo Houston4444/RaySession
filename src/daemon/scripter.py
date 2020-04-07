@@ -56,9 +56,6 @@ class Scripter(ServerSender):
             
         if self._step_str:
             self.parent.stepperScriptFinished()
-            
-        
-        #self.parent.scriptFinished(self.getPath(), exit_code)
     
     def errorInProcess(self, error):
         if error == QProcess.Crashed and self._asked_for_terminate:
@@ -84,8 +81,10 @@ class Scripter(ServerSender):
         
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('RAY_SCRIPTS_DIR', os.path.dirname(executable))
+        if self.isStepper():
+            self.parent.setScriptEnvironment(process_env)
+            
         self._process.setProcessEnvironment(process_env)
-        print('oeofffooffoepprprprpp', executable)
         #self.parent.sendGuiMessage(
             #_translate('GUIMSG', '--- Custom script %s started...%s')
                             #% (ray.highlightText(executable), self.parent.client_id))

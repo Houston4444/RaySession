@@ -562,6 +562,7 @@ class OperatingSession(Session):
         server = self.getServer()
         if (server and server.option_session_scripts
                 and not self.stepper_script.isRunning()
+                and not self.stepper_script.stepperHasCalled()
                 and self.path and not from_run_step):
             for step_string in ('load', 'save', 'close'):
                 if next_function == self.__getattribute__(step_string):
@@ -672,6 +673,7 @@ class OperatingSession(Session):
     
     def stepperScriptFinished(self):
         if self.wait_for == ray.WaitFor.SCRIPT_QUIT:
+            self.stepper_script.setStepperHasCall(False)
             self.timer.setSingleShot(True)
             self.timer.stop()
             self.timer.start(0)
@@ -694,71 +696,13 @@ class OperatingSession(Session):
                 if self.steps_order:
                     self.steps_order.__delitem__(0)
         
+        self.stepper_script.setStepperHasCall(False)
         self.nextFunction()
         
-    
-    #def scriptFinished(self, script_path, exit_code):
-        #is_stepper = False
-        
-        ##for i in range(len(self.running_scripts)):
-        ##scripter = self.running_scripts[i]
-        
-        ##if self.stepper_script.getPath() == script_path:
-        #if exit_code:
-            #if exit_code == 101:
-                #message = _translate('GUIMSG', 
-                            #'script %s failed to start !') % (
-                                #ray.highlightText(script_path))
-            #else:
-                #message = _translate('GUIMSG', 
-                        #'script %s terminate whit exit code %i') % (
-                            #ray.highlightText(script_path), exit_code)
-            
-            #if self.stepper_script.src_addr:
-                #self.send(self.stepper_script.src_addr, '/error',
-                          #self.stepper_script.src_path,
-                            #- exit_code, message)
-        #else:
-            #self.sendGuiMessage(
-                #_translate('GUIMSG', '...script %s finished. ---')
-                    #% ray.highlightText(script_path))
-            
-            #if self.stepper_script.src_addr:
-                #self.send(self.stepper_script.src_addr, '/reply',
-                          #self.stepper_script.src_path,
-                          #'script finished')
-            
-        #if self.stepper_script.isStepper():
-            #is_stepper = True
-            #if self.wait_for != ray.WaitFor.SCRIPT_QUIT:
-                #if not self.stepper_script.stepperHasCalled():
-                    ## script has not call
-                    ## the next_function (save, close, load)
-                    #stepper_process = self.stepper_script.getStepperProcess()
-                    
-                    #if stepper_process in ('load', 'close'):
-                        #self.steps_order.clear()
-                        #self.steps_order = [(self.close, True),
-                                            #self.abortDone]
-                        #self.nextFunction()
-                    #elif stepper_process == 'save':
-                        #if self.steps_order:
-                            #self.steps_order.__delitem__(0)
-                ##break
-        ##else:
-            ##return
-        ##self.stepper_script = Scripter(self)
-        ##self.running_scripts.remove(scripter)
-        ##del scripter
-        
-        #if self.wait_for == ray.WaitFor.SCRIPT_QUIT:
-            #self.timer.setSingleShot(True)
-            #self.timer.stop()
-            #self.timer.start(0)
-            #return
-        
-        #if is_stepper:
-            #self.nextFunction()
+    def setScriptEnvironment(self, process_env):
+       process_env.insert('RAY_FUTURE_SESSION_PATH',
+                          self.future_session_path)
+       process_env.insert('RAY_SESSION_PATH', self.path)
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_mode):
         new_session_name = basename(new_session_full_name)

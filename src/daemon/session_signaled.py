@@ -999,8 +999,18 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
     
     def _ray_session_run_step(self, path, args, src_addr):
+        if not self.stepper_script.isRunning():
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+              'No stepper script running, run run_step from session scripts')
+            return 
+        
+        if self.stepper_script.stepperHasCalled():
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+             'step already done. Run run_step only one time in the script')
+            return
+        
         if not self.steps_order:
-            self.send(src_addr, '/error', ray.Err.GENERAL_ERROR,
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                       'No operation pending !')
             return
         
