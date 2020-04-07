@@ -83,7 +83,7 @@ class DesktopsMemory(object):
             wmctrl_all = subprocess.check_output(['wmctrl', '-l',
                                                   '-p', '-x']).decode()
         except:
-            sys.stderr.write('unable to use wmctrl')
+            sys.stderr.write('unable to use wmctrl\n')
             return
         
         self.active_window_list.clear()

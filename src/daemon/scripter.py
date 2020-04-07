@@ -3,24 +3,26 @@ from PyQt5.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 import ray
 from daemon_tools import Terminal
+from server_sender import ServerSender
 
 _translate = QCoreApplication.translate
 
-class Scripter:
-    def __init__(self, parent, src_addr, src_path):
+class Scripter(ServerSender):
+    def __init__(self, parent):
+        ServerSender.__init__(self)
         self.parent = parent
-        self.src_addr = src_addr
-        self.src_path = src_path
+        self.src_addr = None
+        self.src_path = ''
         self._process = QProcess()
         self._process.started.connect(self.processStarted)
         self._process.finished.connect(self.processFinished)
         self._process.readyReadStandardError.connect(self.standardError)
         self._process.readyReadStandardOutput.connect(self.standardOutput)
-        if ray.QT_VERSION >= (5, 6):
-            self._process.errorOccurred.connect(self.errorInProcess)
+        #if ray.QT_VERSION >= (5, 6):
+            #self._process.errorOccurred.connect(self.errorInProcess)
         
         self._is_stepper = False
-        self._stepper_process = ''
+        self._step_str = ''
         self._stepper_has_call = False
         self._pending_command = ray.Command.NONE
         self._initial_caller = (None, '')
@@ -30,7 +32,33 @@ class Scripter:
         pass
     
     def processFinished(self, exit_code, exit_status):
-        self.parent.scriptFinished(self.getPath(), exit_code)
+        if exit_code:
+            if exit_code == 101:
+                message = _translate('GUIMSG', 
+                            'script %s failed to start !') % (
+                                ray.highlightText(self.getPath()))
+            else:
+                message = _translate('GUIMSG', 
+                        'script %s terminate whit exit code %i') % (
+                            ray.highlightText(self.getPath()), exit_code)
+            
+            if self.src_addr:
+                self.send(self.src_addr, '/error', self.src_path,
+                          - exit_code, message)
+        else:
+            self.sendGuiMessage(
+                _translate('GUIMSG', '...script %s finished. ---')
+                    % ray.highlightText(self.getPath()))
+            
+            if self.src_addr:
+                self.send(self.src_addr, '/reply',
+                          self.src_path, 'script finished')
+            
+        if self._step_str:
+            self.parent.stepperScriptFinished()
+            
+        
+        #self.parent.scriptFinished(self.getPath(), exit_code)
     
     def errorInProcess(self, error):
         if error == QProcess.Crashed and self._asked_for_terminate:
@@ -45,15 +73,27 @@ class Scripter:
         standard_output = self._process.readAllStandardOutput().data()
         Terminal.scripterMessage(standard_output, self.getCommandName())
     
-    def start(self, executable, arguments):
+    def start(self, executable, arguments, src_addr=None, src_path=''):
+        if self.isRunning():
+            return
+        
+        self.src_addr = src_addr
+        self.src_path = src_path
+        
+        self._stepper_has_call = False
+        
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('RAY_SCRIPTS_DIR', os.path.dirname(executable))
         self._process.setProcessEnvironment(process_env)
+        print('oeofffooffoepprprprpp', executable)
         #self.parent.sendGuiMessage(
             #_translate('GUIMSG', '--- Custom script %s started...%s')
                             #% (ray.highlightText(executable), self.parent.client_id))
         #self._process.setProcessEnvironment('RAY_SCRIPTS_DIR', os.path.dirname(executable))
         self._process.start(executable, arguments)
+    
+    def isRunning(self):
+        return bool(self._process.state())
     
     def isFinished(self):
         return not bool(self._process.state())
@@ -73,18 +113,15 @@ class Scripter:
     
     def getCommandName(self):
         return self.getPath().rpartition('/')[2]
-    
-    def setAsStepper(self, stepper):
-        self._is_stepper = bool(stepper)
 
     def isStepper(self):
-        return self._is_stepper
+        return bool(self._step_str)
     
-    def setStepperProcess(self, text):
-        self._stepper_process = text
+    def setStep(self, text):
+        self._step_str = text
         
-    def getStepperProcess(self):
-        return self._stepper_process
+    def getStep(self):
+        return self._step_str
     
     def stepperHasCalled(self):
         return self._stepper_has_call

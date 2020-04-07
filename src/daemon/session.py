@@ -59,7 +59,8 @@ class Session(ServerSender):
         self.bookmarker = BookMarker()
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
-        self.running_scripts = []
+        #self.running_scripts = []
+        self.stepper_script = Scripter(self)
     
     #############
     def oscReply(self, *args):
@@ -422,6 +423,8 @@ class OperatingSession(Session):
         
         self.terminated_yet = False
         
+        # externals are clients not launched from the daemon
+        # with NSM_URL=...
         self.externals_timer = QTimer()
         self.externals_timer.setInterval(100)
         self.externals_timer.timeout.connect(self.checkExternalsStates)
@@ -454,7 +457,8 @@ class OperatingSession(Session):
                 follow = functools.partial(follow[0], *follow[1:])
         
         if wait_for == ray.WaitFor.SCRIPT_QUIT:
-            if self.running_scripts:
+            if self.stepper_script:
+            #if self.running_scripts:
                 self.wait_for = wait_for
                 self.timer.setSingleShot(True)
                 self.timer.timeout.connect(follow)
@@ -540,67 +544,65 @@ class OperatingSession(Session):
             self.run_step_addr = None
             return
         
-        if len(self.steps_order) > 0:
-            next_item = self.steps_order[0]
-            next_function = next_item
-            arguments = []
+        if len(self.steps_order) == 0:
+            return
+        
+        next_item = self.steps_order[0]
+        next_function = next_item
+        arguments = []
+        
+        if type(next_item) in (tuple, list):
+            if len(next_item) == 0:
+                return
+            else:
+                next_function = next_item[0]
+                if len(next_item) > 1:
+                    arguments = next_item[1:]
+        
+        server = self.getServer()
+        if (server and server.option_session_scripts
+                and not self.stepper_script.isRunning()
+                and self.path and not from_run_step):
+            for step_string in ('load', 'save', 'close'):
+                if next_function == self.__getattribute__(step_string):
+                    if (step_string == 'load'
+                            and arguments
+                            and arguments[0] == True):
+                        # prevent use of load session script
+                        # with open_session_off
+                        break
+                    
+                    run_step_script = self.getScriptPath(step_string)
+                    
+                    if (run_step_script 
+                            and os.access(run_step_script, os.X_OK)):
+                        self.stepper_script.setStep(step_string)
+                        self.sendGuiMessage(
+                            _translate('GUIMSG', 
+                                '--- Custom step script %s started...')
+                                % ray.highlightText(run_step_script))
+                        self.stepper_script.start(run_step_script,
+                                        [str(a) for a in arguments],
+                                        self.osc_src_addr, self.osc_path)
+                        return
+                    break
+                
+        if (from_run_step and next_function
+                and self.stepper_script.isRunning()):
+            if (next_function
+                    == self.__getattribute__(
+                                self.stepper_script.getStep())):
+                self.stepper_script.setStepperHasCall(True)
             
-            if type(next_item) in (tuple, list):
-                if len(next_item) == 0:
-                    return
-                else:
-                    next_function = next_item[0]
-                    if len(next_item) > 1:
-                        arguments = next_item[1:]
-
-            server = self.getServer()
-            if (server and server.option_session_scripts
-                    and self.path and not from_run_step):
-                for step_string in ('load', 'save', 'close'):
-                    if next_function == self.__getattribute__(step_string):
-                        if (step_string == 'load'
-                                and arguments
-                                and arguments[0] == True):
-                            # prevent use of load session script
-                            # with open_session_off
-                            break
-                        
-                        run_step_script = self.getScriptPath(step_string)
-                                            
-                        if (run_step_script 
-                                and os.access(run_step_script, os.X_OK)):
-                            script = Scripter(self, self.osc_src_addr,
-                                              self.osc_path)
-                            script.setAsStepper(True)
-                            script.setStepperProcess(step_string)
-                            self.running_scripts.append(script)
-                            self.sendGuiMessage(
-                                _translate('GUIMSG', 
-                                    '--- Custom step script %s started...')
-                                    % ray.highlightText(run_step_script))
-                            script.start(run_step_script, 
-                                         [str(a) for a in arguments])
-                            return
-                        break
+            if next_function == self.load:
+                if 'open_off' in run_step_args:
+                    arguments = [True]
+            elif next_function == self.close:
+                if 'close_all' in run_step_args:
+                    arguments = [True]
                     
-            if from_run_step and next_function:
-                for script in self.running_scripts:
-                    if next_function == self.__getattribute__(
-                                                script.getStepperProcess()):
-                        script.setStepperHasCall(True)
-                        break
-                    
-                if next_function == self.load:
-                    if 'open_off' in run_step_args:
-                        arguments = [True]
-                elif next_function == self.close:
-                    if 'close_all' in run_step_args:
-                        arguments = [True]
-                        
-                
-            self.steps_order.__delitem__(0)
-                
-            next_function(*arguments)
+        self.steps_order.__delitem__(0)
+        next_function(*arguments)
     
     def timerLaunchTimeOut(self):
         if self.clients_to_launch:
@@ -668,67 +670,95 @@ class OperatingSession(Session):
         self.sendEvenDummy(self.osc_src_addr, "/minor_error",
                            self.osc_path, err, error_message)
     
-    def scriptFinished(self, script_path, exit_code):
-        is_stepper = False
-        
-        for i in range(len(self.running_scripts)):
-            scripter = self.running_scripts[i]
-            
-            if scripter.getPath() == script_path:
-                if exit_code:
-                    if exit_code == 101:
-                        message = _translate('GUIMSG', 
-                                    'script %s failed to start !') % (
-                                        ray.highlightText(script_path))
-                    else:
-                        message = _translate('GUIMSG', 
-                                'script %s terminate whit exit code %i') % (
-                                    ray.highlightText(script_path), exit_code)
-                    
-                    if scripter.src_addr:
-                        self.send(scripter.src_addr, '/error', scripter.src_path,
-                                  - exit_code, message)
-                else:
-                    self.sendGuiMessage(
-                        _translate('GUIMSG', '...script %s finished. ---')
-                            % ray.highlightText(script_path))
-                    
-                    if scripter.src_addr:
-                        self.send(scripter.src_addr, '/reply', scripter.src_path,
-                                  'script finished')
-                    
-                if scripter.isStepper():
-                    is_stepper = True
-                    if self.wait_for != ray.WaitFor.SCRIPT_QUIT:
-                        if not scripter.stepperHasCalled():
-                            # script has not call
-                            # the next_function (save, close, load)
-                            stepper_process = scripter.getStepperProcess()
-                            
-                            if stepper_process in ('load', 'close'):
-                                self.steps_order.clear()
-                                self.steps_order = [(self.close, True),
-                                                    self.abortDone]
-                                self.nextFunction()
-                            elif stepper_process == 'save':
-                                if self.steps_order:
-                                    self.steps_order.__delitem__(0)
-                break
-        else:
-            return
-        
-        self.running_scripts.remove(scripter)
-        del scripter
-        
-        if (self.wait_for == ray.WaitFor.SCRIPT_QUIT
-                and not self.running_scripts):
+    def stepperScriptFinished(self):
+        if self.wait_for == ray.WaitFor.SCRIPT_QUIT:
             self.timer.setSingleShot(True)
             self.timer.stop()
             self.timer.start(0)
             return
         
-        if is_stepper:
-            self.nextFunction()
+        if not self.stepper_script.stepperHasCalled():
+            # script has not call
+            # the next_function (save, close, load)
+            if self.stepper_script.getStep() in ('load', 'close'):
+                self.steps_order.clear()
+                self.steps_order = [(self.close, True),
+                                    self.abortDone]
+                
+                # Fake the nextFunction to come from run_step message
+                # This way, we are sure the close step
+                # is not runned with a script.
+                self.nextFunction(True)
+                return
+            else:
+                if self.steps_order:
+                    self.steps_order.__delitem__(0)
+        
+        self.nextFunction()
+        
+    
+    #def scriptFinished(self, script_path, exit_code):
+        #is_stepper = False
+        
+        ##for i in range(len(self.running_scripts)):
+        ##scripter = self.running_scripts[i]
+        
+        ##if self.stepper_script.getPath() == script_path:
+        #if exit_code:
+            #if exit_code == 101:
+                #message = _translate('GUIMSG', 
+                            #'script %s failed to start !') % (
+                                #ray.highlightText(script_path))
+            #else:
+                #message = _translate('GUIMSG', 
+                        #'script %s terminate whit exit code %i') % (
+                            #ray.highlightText(script_path), exit_code)
+            
+            #if self.stepper_script.src_addr:
+                #self.send(self.stepper_script.src_addr, '/error',
+                          #self.stepper_script.src_path,
+                            #- exit_code, message)
+        #else:
+            #self.sendGuiMessage(
+                #_translate('GUIMSG', '...script %s finished. ---')
+                    #% ray.highlightText(script_path))
+            
+            #if self.stepper_script.src_addr:
+                #self.send(self.stepper_script.src_addr, '/reply',
+                          #self.stepper_script.src_path,
+                          #'script finished')
+            
+        #if self.stepper_script.isStepper():
+            #is_stepper = True
+            #if self.wait_for != ray.WaitFor.SCRIPT_QUIT:
+                #if not self.stepper_script.stepperHasCalled():
+                    ## script has not call
+                    ## the next_function (save, close, load)
+                    #stepper_process = self.stepper_script.getStepperProcess()
+                    
+                    #if stepper_process in ('load', 'close'):
+                        #self.steps_order.clear()
+                        #self.steps_order = [(self.close, True),
+                                            #self.abortDone]
+                        #self.nextFunction()
+                    #elif stepper_process == 'save':
+                        #if self.steps_order:
+                            #self.steps_order.__delitem__(0)
+                ##break
+        ##else:
+            ##return
+        ##self.stepper_script = Scripter(self)
+        ##self.running_scripts.remove(scripter)
+        ##del scripter
+        
+        #if self.wait_for == ray.WaitFor.SCRIPT_QUIT:
+            #self.timer.setSingleShot(True)
+            #self.timer.stop()
+            #self.timer.start(0)
+            #return
+        
+        #if is_stepper:
+            #self.nextFunction()
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_mode):
         new_session_name = basename(new_session_full_name)
@@ -1119,6 +1149,7 @@ class OperatingSession(Session):
         self.clients.clear()
         self.setPath('')
         self.sendGui("/ray/gui/session/name", "", "" )
+        self.noFuture()
         self.sendReply("Closed.")
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.OFF)
@@ -1129,6 +1160,7 @@ class OperatingSession(Session):
         self.clients.clear()
         self.setPath('')
         self.sendGui("/ray/gui/session/name", "", "" )
+        self.noFuture()
         self.sendReply("Aborted.")
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.OFF)
@@ -1609,7 +1641,6 @@ class OperatingSession(Session):
                 self.clients_to_quit.append(client)
                 self.expected_clients.append(client)
             else:
-                client.switch_reserved = True
                 client.switch_state = ray.SwitchState.NEEDED
                 
         self.timer_quit.start()
@@ -1689,13 +1720,8 @@ class OperatingSession(Session):
                         client = None
             
             if client:
-                client.switch_reserved = False
                 client.switch_state = ray.SwitchState.DONE
                 client.eatAttributes(future_client)
-                #if client.active:
-                    ## since we already shutdown clients not capable of 
-                    ## ':switch:', we can assume that these are.
-                    #client.switch(future_client)
                 has_switch = True
             else:
                 if not self.addClient(future_client):
@@ -2036,17 +2062,24 @@ class OperatingSession(Session):
         self.nextFunction()
         
     def terminateStepperScripts(self):
-        for script in self.running_scripts:
-            if script.isStepper():
-                script.terminate()
+        if True:
+            self.nextFunction()
+            return
+        #for script in self.running_scripts:
+            #if script.isStepper():
+                #script.terminate()
+        if self.stepper_script:
+            self.stepper_script.terminate()
                 
         self.waitAndGoTo(5000, self.terminateStepperScripts_substep2,
                          ray.WaitFor.SCRIPT_QUIT)
         
     def terminateStepperScripts_substep2(self):
-        for script in self.running_scripts:
-            if script.isStepper():
-                script.kill()
+        #for script in self.running_scripts:
+            #if script.isStepper():
+                #script.kill()
+        if self.stepper_script:
+            self.stepper_script.kill()
           
         self.waitAndGoTo(1000, self.terminateStepperScripts_substep3,
                          ray.WaitFor.SCRIPT_QUIT)

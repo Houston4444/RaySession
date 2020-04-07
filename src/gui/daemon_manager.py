@@ -219,6 +219,8 @@ class DaemonManager(QObject):
             arguments.append('--debug-only')
         elif CommandLineArgs.debug:
             arguments.append('--debug')
+        elif CommandLineArgs.no_client_messages:
+            arguments.append('--no-client-messages')
 
         if CommandLineArgs.config_dir:
             arguments.append('--config-dir')

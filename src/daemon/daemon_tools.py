@@ -121,7 +121,8 @@ class Terminal:
     def clientMessage(cls, byte_string, client_name, client_id):
         client_str = "%s.%s" % (client_name, client_id)
         
-        if not CommandLineArgs.debug_only:
+        if (not CommandLineArgs.debug_only
+                and not CommandLineArgs.no_client_messages):
             if cls._last_client_name != client_str:
                 sys.stderr.write('\n[\033[90m%s-%s\033[0m]\n'
                                     % (client_name, client_id))
@@ -137,13 +138,14 @@ class Terminal:
 
 class CommandLineArgs(argparse.Namespace):
     session_root = ''
-    osc_port     = 0
+    osc_port = 0
     findfreeport = True
-    gui_url      = None
-    config_dir   = ''
-    debug        = False
-    debug_only   = False
-    session      = ''
+    gui_url = None
+    config_dir = ''
+    debug = False
+    debug_only = False
+    no_client_messages = False
+    session = ''
     
     @classmethod
     def eatAttributes(cls, parsed_args):
@@ -192,6 +194,8 @@ class ArgParser(argparse.ArgumentParser):
                           help='see all OSC messages')
         self.add_argument('--debug-only', '-do', action='store_true', 
                           help='debug without client messages')
+        self.add_argument('--no-client-messages', '-nco', action='store_true',
+                          help='do not print client messages')
         
         self.add_argument('-v', '--version', action='version',
                           version=ray.VERSION)

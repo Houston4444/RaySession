@@ -55,7 +55,7 @@ class SignaledSession(OperatingSession):
         OperatingSession.__init__(self, root)
         
         signaler.osc_recv.connect(self.oscReceive)
-        signaler.script_finished.connect(self.scriptFinished)
+        #signaler.script_finished.connect(self.scriptFinished)
         signaler.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
         
     def oscReceive(self, path, args, types, src_addr):
@@ -79,59 +79,59 @@ class SignaledSession(OperatingSession):
             function = self.__getattribute__(func_name)
             client_id = ''
             
-            if ((func_name.startswith('ray_session_')
-            #if ((func_name.startswith(('_ray_session_', '_ray_client_'))
-                  and self.path)
-                or func_name == '_ray_server_open_session'):
-                # start custom script if any
-                base_script = func_name.replace('_ray_session_', '', 1)
-                script_dir = self.getScriptDir()
+            #if ((func_name.startswith('ray_session_')
+            ##if ((func_name.startswith(('_ray_session_', '_ray_client_'))
+                  #and self.path)
+                #or func_name == '_ray_server_open_session'):
+                ## start custom script if any
+                #base_script = func_name.replace('_ray_session_', '', 1)
+                #script_dir = self.getScriptDir()
                 
-                if func_name == '_ray_server_open_session':
-                    base_script = 'open'
-                    session_name = args[0]
+                #if func_name == '_ray_server_open_session':
+                    #base_script = 'open'
+                    #session_name = args[0]
                     
-                    if session_name.startswith('/'):
-                        spath = session_name
-                    else:
-                        spath = "%s/%s" % (self.root, session_name)
+                    #if session_name.startswith('/'):
+                        #spath = session_name
+                    #else:
+                        #spath = "%s/%s" % (self.root, session_name)
                         
-                    script_dir = self.getScriptDir(spath)
+                    #script_dir = self.getScriptDir(spath)
                         
-                elif func_name.startswith('_ray_client_'):
-                    client_id = args[0]
-                    #base_script = "%s/%s" % (
-                        #client_id, func_name.replace('_ray_client_', '', 1))
-                    base_script = "client/%s" % \
-                                    func_name.replace('_ray_client_', '', 1)
+                #elif func_name.startswith('_ray_client_'):
+                    #client_id = args[0]
+                    ##base_script = "%s/%s" % (
+                        ##client_id, func_name.replace('_ray_client_', '', 1))
+                    #base_script = "client/%s" % \
+                                    #func_name.replace('_ray_client_', '', 1)
                                 
-                script_path = "%s/%s" % (script_dir, base_script)
+                #script_path = "%s/%s" % (script_dir, base_script)
                 
-                if os.access(script_path, os.X_OK):
-                    for script in self.running_scripts:
-                        if script.getPath() == script_path:
-                            # this script is already started
-                            # So, do not launch it again
-                            # and run normal function.
-                            break
-                    else:
-                        if client_id:
-                            for client in self.clients:
-                                if client.client_id == client_id:
-                                    for script in client.running_scripts:
-                                        if script.getPath() == script_path:
-                                            function(path, args, src_addr)
-                                            return
+                #if os.access(script_path, os.X_OK):
+                    #for script in self.running_scripts:
+                        #if script.getPath() == script_path:
+                            ## this script is already started
+                            ## So, do not launch it again
+                            ## and run normal function.
+                            #break
+                    #else:
+                        #if client_id:
+                            #for client in self.clients:
+                                #if client.client_id == client_id:
+                                    #for script in client.running_scripts:
+                                        #if script.getPath() == script_path:
+                                            #function(path, args, src_addr)
+                                            #return
                                         
-                                    script = Scripter(client, src_addr, path)
-                                    client.running_scripts.append(script)
-                                    script.start(script_path, [str(a) for a in args])
-                                    break
-                        else:
-                            script = Scripter(self, src_addr, path)
-                            self.running_scripts.append(script)
-                            script.start(script_path, [str(a) for a in args])
-                        return
+                                    #script = Scripter(client, src_addr, path)
+                                    #client.running_scripts.append(script)
+                                    #script.start(script_path, [str(a) for a in args])
+                                    #break
+                        #else:
+                            #script = Scripter(self, src_addr, path)
+                            #self.running_scripts.append(script)
+                            #script.start(script_path, [str(a) for a in args])
+                        #return
                     
             function(path, args, src_addr)
     
@@ -558,7 +558,7 @@ class SignaledSession(OperatingSession):
         self.steps_order = [(self.save, '', True),
                               self.closeNoSaveClients,
                               self.snapshot,
-                              self.close,
+                              (self.close, True),
                               self.closeDone]
     
     def _ray_session_abort(self, path, args, src_addr):
@@ -601,7 +601,7 @@ class SignaledSession(OperatingSession):
                                     'abort ordered from elsewhere, sorry !'))
         
         self.rememberOscArgs(path, args, src_addr)
-        self.steps_order = [self.close, self.abortDone]
+        self.steps_order = [(self.close, True), self.abortDone]
         
         if self.file_copier.isActive():
             self.file_copier.abort(self.nextFunction, [])

@@ -132,6 +132,7 @@ class CommandLineArgs(argparse.Namespace):
     config_dir = ''
     debug = False
     debug_only = False
+    no_client_messages = False
     net_session_root = ''
     net_daemon_id = 0
     under_nsm = False
@@ -207,6 +208,9 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument('--debug-only', '-do', action='store_true',
                           help=_translate('help',
                                           'debug without client messages'))
+        self.add_argument('---no-client-messages', '-nco', action='store_true',
+                          help=_translate('help',
+                                          'do not print client messages'))
         self.add_argument('--net-session-root', type=str, default='',
                           help=argparse.SUPPRESS)
         self.add_argument('--net-daemon-id', type=int, default=0,
