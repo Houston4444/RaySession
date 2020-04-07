@@ -159,7 +159,8 @@ class OscServer(liblo.Server):
         return None
     
     def toDaemon(self, *args):
-        self.send(self.m_daemon_address, *args)
+        if self.m_daemon_address:
+            self.send(self.m_daemon_address, *args)
     
     def setOrderPathArgs(self, path, args):
         self._osc_order_path = path
@@ -213,4 +214,6 @@ class OscServer(liblo.Server):
         self._stop_port_list = stop_port_list
         if self._stop_port_list:
             self.stopDaemon(self._stop_port_list[0])
-        
+    
+    def disannounceToDaemon(self):
+        self.toDaemon('/ray/server/controller_disannounce')

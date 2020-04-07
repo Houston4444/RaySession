@@ -891,8 +891,6 @@ class SignaledSession(OperatingSession):
                 "clear_clients has to be used only during the load script !")
             return
         
-        print('okcfkoclerar', args)
-        
         self.clearClients(src_addr, path, *args)
     
     def _ray_session_list_snapshots(self, path, args, src_addr, client_id=""):

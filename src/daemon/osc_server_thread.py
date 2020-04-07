@@ -934,8 +934,6 @@ class OscServerThread(ClientCommunicating):
         if not ray.areTheyAllString(args):
             self.unknownMessage(path, types, src_addr)
             return False
-        
-        print('xlxlxl', args)
     
     @ray_method('/ray/session/list_clients', None)
     def raySessionListClients(self, path, args, types, src_addr):

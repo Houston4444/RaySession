@@ -486,4 +486,6 @@ if __name__ == '__main__':
         if daemon_port:
             sys.stdout.write("%i\n" % daemon_port)
     
+    server.disannounceToDaemon()
+    
     sys.exit(exit_code)
