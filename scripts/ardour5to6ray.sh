@@ -5,10 +5,6 @@
 # If you want to use it for other executables,
 # just change old_executable and new_executable values
 
-# Note for your scripts that ray_control is slow (rarely faster than 150ms)
-# So think to this and avoid its use when not needed
-# if you want your script to be fast !
-
 old_executable=ardour5
 new_executable=ardour6
 
@@ -47,6 +43,3 @@ for ((i=1; i<=$ns; i++));do
         fi
     done
 done
-        
-        
-        
