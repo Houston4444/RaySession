@@ -66,8 +66,9 @@ class ServerStatus:
     SNAPSHOT = 11
     REWIND   = 12
     WAIT_USER = 13
-    OUT_SAVE = 14
+    OUT_SAVE  = 14
     OUT_SNAPSHOT = 15
+    SCRIPT = 16
 
 
 class NSMMode:

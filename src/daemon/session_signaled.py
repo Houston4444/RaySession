@@ -78,60 +78,6 @@ class SignaledSession(OperatingSession):
         if func_name in self.__dir__():
             function = self.__getattribute__(func_name)
             client_id = ''
-            
-            #if ((func_name.startswith('ray_session_')
-            ##if ((func_name.startswith(('_ray_session_', '_ray_client_'))
-                  #and self.path)
-                #or func_name == '_ray_server_open_session'):
-                ## start custom script if any
-                #base_script = func_name.replace('_ray_session_', '', 1)
-                #script_dir = self.getScriptDir()
-                
-                #if func_name == '_ray_server_open_session':
-                    #base_script = 'open'
-                    #session_name = args[0]
-                    
-                    #if session_name.startswith('/'):
-                        #spath = session_name
-                    #else:
-                        #spath = "%s/%s" % (self.root, session_name)
-                        
-                    #script_dir = self.getScriptDir(spath)
-                        
-                #elif func_name.startswith('_ray_client_'):
-                    #client_id = args[0]
-                    ##base_script = "%s/%s" % (
-                        ##client_id, func_name.replace('_ray_client_', '', 1))
-                    #base_script = "client/%s" % \
-                                    #func_name.replace('_ray_client_', '', 1)
-                                
-                #script_path = "%s/%s" % (script_dir, base_script)
-                
-                #if os.access(script_path, os.X_OK):
-                    #for script in self.running_scripts:
-                        #if script.getPath() == script_path:
-                            ## this script is already started
-                            ## So, do not launch it again
-                            ## and run normal function.
-                            #break
-                    #else:
-                        #if client_id:
-                            #for client in self.clients:
-                                #if client.client_id == client_id:
-                                    #for script in client.running_scripts:
-                                        #if script.getPath() == script_path:
-                                            #function(path, args, src_addr)
-                                            #return
-                                        
-                                    #script = Scripter(client, src_addr, path)
-                                    #client.running_scripts.append(script)
-                                    #script.start(script_path, [str(a) for a in args])
-                                    #break
-                        #else:
-                            #script = Scripter(self, src_addr, path)
-                            #self.running_scripts.append(script)
-                            #script.start(script_path, [str(a) for a in args])
-                        #return
                     
             function(path, args, src_addr)
     
@@ -610,7 +556,7 @@ class SignaledSession(OperatingSession):
     
     def _ray_server_quit(self, path, args, src_addr):
         self.rememberOscArgs(path, args, src_addr)
-        self.steps_order = [self.terminateStepperScripts,
+        self.steps_order = [self.terminateStepScripter,
                             self.close, self.exitNow]
         
         if self.file_copier.isActive():
@@ -997,12 +943,12 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
     
     def _ray_session_run_step(self, path, args, src_addr):
-        if not self.stepper_script.isRunning():
+        if not self.step_scripter.isRunning():
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
               'No stepper script running, run run_step from session scripts')
             return 
         
-        if self.stepper_script.stepperHasCalled():
+        if self.step_scripter.stepperHasCalled():
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
              'step already done. Run run_step only one time in the script')
             return
@@ -1463,7 +1409,7 @@ class SignaledSession(OperatingSession):
             self.file_copier.abort()
         
         self.terminated_yet = True
-        self.steps_order = [self.terminateStepperScripts,
+        self.steps_order = [self.terminateStepScripter,
                             self.close, self.exitNow]
         self.nextFunction()
         

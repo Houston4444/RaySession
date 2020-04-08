@@ -20,7 +20,7 @@ from signaler          import Signaler
 from server_sender     import ServerSender
 from file_copier       import FileCopier
 from client            import Client
-from scripter          import Scripter
+from scripter          import StepScripter
 from daemon_tools import TemplateRoots, RS, Terminal, CommandLineArgs
 
 _translate = QCoreApplication.translate
@@ -55,12 +55,10 @@ class Session(ServerSender):
         self.forbidden_ids_list = []
         
         self.file_copier = FileCopier(self)
-        
         self.bookmarker = BookMarker()
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
-        #self.running_scripts = []
-        self.stepper_script = Scripter(self)
+        self.step_scripter = StepScripter(self)
     
     #############
     def oscReply(self, *args):
@@ -457,8 +455,7 @@ class OperatingSession(Session):
                 follow = functools.partial(follow[0], *follow[1:])
         
         if wait_for == ray.WaitFor.SCRIPT_QUIT:
-            if self.stepper_script:
-            #if self.running_scripts:
+            if self.step_scripter.isRunning():
                 self.wait_for = wait_for
                 self.timer.setSingleShot(True)
                 self.timer.timeout.connect(follow)
@@ -517,6 +514,13 @@ class OperatingSession(Session):
             
             self.timer_waituser_progress.stop()
     
+    def endTimerIfScriptFinished(self):
+        if (self.wait_for == ray.WaitFor.SCRIPT_QUIT
+                and not self.step_scripter.isRunning()):
+            self.timer.setSingleShot(True)
+            self.timer.stop()
+            self.timer.start(0)
+    
     def cleanExpected(self):
         if self.expected_clients:
             client_names = []
@@ -536,7 +540,7 @@ class OperatingSession(Session):
             self.expected_clients.clear()
             
         self.wait_for = ray.WaitFor.NONE
-    
+        
     def nextFunction(self, from_run_step=False, run_step_args=[]):
         if self.run_step_addr and not from_run_step:
             self.send(self.run_step_addr, '/reply',
@@ -561,8 +565,7 @@ class OperatingSession(Session):
         
         server = self.getServer()
         if (server and server.option_session_scripts
-                and not self.stepper_script.isRunning()
-                and not self.stepper_script.stepperHasCalled()
+                and not self.step_scripter.isRunning()
                 and self.path and not from_run_step):
             for step_string in ('load', 'save', 'close'):
                 if next_function == self.__getattribute__(step_string):
@@ -573,27 +576,18 @@ class OperatingSession(Session):
                         # with open_session_off
                         break
                     
-                    run_step_script = self.getScriptPath(step_string)
-                    
-                    if (run_step_script 
-                            and os.access(run_step_script, os.X_OK)):
-                        self.stepper_script.setStep(step_string)
-                        self.sendGuiMessage(
-                            _translate('GUIMSG', 
-                                '--- Custom step script %s started...')
-                                % ray.highlightText(run_step_script))
-                        self.stepper_script.start(run_step_script,
-                                        [str(a) for a in arguments],
-                                        self.osc_src_addr, self.osc_path)
+                    if self.step_scripter.start(step_string, arguments,
+                                    self.osc_src_addr, self.osc_path):
+                        self.setServerStatus(ray.ServerStatus.SCRIPT)
                         return
                     break
                 
         if (from_run_step and next_function
-                and self.stepper_script.isRunning()):
+                and self.step_scripter.isRunning()):
             if (next_function
                     == self.__getattribute__(
-                                self.stepper_script.getStep())):
-                self.stepper_script.setStepperHasCall(True)
+                                self.step_scripter.getStep())):
+                self.step_scripter.setStepperHasCall(True)
             
             if next_function == self.load:
                 if 'open_off' in run_step_args:
@@ -671,18 +665,17 @@ class OperatingSession(Session):
         self.sendEvenDummy(self.osc_src_addr, "/minor_error",
                            self.osc_path, err, error_message)
     
-    def stepperScriptFinished(self):
+    def stepScripterFinished(self):
         if self.wait_for == ray.WaitFor.SCRIPT_QUIT:
-            self.stepper_script.setStepperHasCall(False)
             self.timer.setSingleShot(True)
             self.timer.stop()
             self.timer.start(0)
             return
         
-        if not self.stepper_script.stepperHasCalled():
+        if not self.step_scripter.stepperHasCalled():
             # script has not call
             # the next_function (save, close, load)
-            if self.stepper_script.getStep() in ('load', 'close'):
+            if self.step_scripter.getStep() in ('load', 'close'):
                 self.steps_order.clear()
                 self.steps_order = [(self.close, True),
                                     self.abortDone]
@@ -696,13 +689,7 @@ class OperatingSession(Session):
                 if self.steps_order:
                     self.steps_order.__delitem__(0)
         
-        self.stepper_script.setStepperHasCall(False)
         self.nextFunction()
-        
-    def setScriptEnvironment(self, process_env):
-       process_env.insert('RAY_FUTURE_SESSION_PATH',
-                          self.future_session_path)
-       process_env.insert('RAY_SESSION_PATH', self.path)
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_mode):
         new_session_name = basename(new_session_full_name)
@@ -2005,30 +1992,21 @@ class OperatingSession(Session):
         client.start()
         self.nextFunction()
         
-    def terminateStepperScripts(self):
-        if True:
-            self.nextFunction()
-            return
-        #for script in self.running_scripts:
-            #if script.isStepper():
-                #script.terminate()
-        if self.stepper_script:
-            self.stepper_script.terminate()
+    def terminateStepScripter(self):
+        if self.step_scripter.isRunning():
+            self.step_scripter.terminate()
                 
-        self.waitAndGoTo(5000, self.terminateStepperScripts_substep2,
+        self.waitAndGoTo(5000, self.terminateStepScripter_substep2,
                          ray.WaitFor.SCRIPT_QUIT)
         
-    def terminateStepperScripts_substep2(self):
-        #for script in self.running_scripts:
-            #if script.isStepper():
-                #script.kill()
-        if self.stepper_script:
-            self.stepper_script.kill()
+    def terminateStepScripter_substep2(self):
+        if self.step_scripter.isRunning():
+            self.step_scripter.kill()
           
-        self.waitAndGoTo(1000, self.terminateStepperScripts_substep3,
+        self.waitAndGoTo(1000, self.terminateStepScripter_substep3,
                          ray.WaitFor.SCRIPT_QUIT)
         
-    def terminateStepperScripts_substep3(self):
+    def terminateStepScripter_substep3(self):
         self.nextFunction()
         
     def clearClients(self, src_addr, src_path, *client_ids):

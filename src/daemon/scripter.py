@@ -8,24 +8,17 @@ from server_sender import ServerSender
 _translate = QCoreApplication.translate
 
 class Scripter(ServerSender):
-    def __init__(self, parent):
+    def __init__(self):
         ServerSender.__init__(self)
-        self.parent = parent
-        self.src_addr = None
+        self.src_adrr = None
         self.src_path = ''
+        
         self._process = QProcess()
         self._process.started.connect(self.processStarted)
         self._process.finished.connect(self.processFinished)
         self._process.readyReadStandardError.connect(self.standardError)
         self._process.readyReadStandardOutput.connect(self.standardOutput)
-        #if ray.QT_VERSION >= (5, 6):
-            #self._process.errorOccurred.connect(self.errorInProcess)
         
-        self._is_stepper = False
-        self._step_str = ''
-        self._stepper_has_call = False
-        self._pending_command = ray.Command.NONE
-        self._initial_caller = (None, '')
         self._asked_for_terminate = False
         
     def processStarted(self):
@@ -53,14 +46,6 @@ class Scripter(ServerSender):
             if self.src_addr:
                 self.send(self.src_addr, '/reply',
                           self.src_path, 'script finished')
-            
-        if self._step_str:
-            self.parent.stepperScriptFinished()
-    
-    def errorInProcess(self, error):
-        if error == QProcess.Crashed and self._asked_for_terminate:
-            return
-        self.parent.scriptFinished(self.getPath(), 101)
     
     def standardError(self):
         standard_error = self._process.readAllStandardError().data()
@@ -77,18 +62,9 @@ class Scripter(ServerSender):
         self.src_addr = src_addr
         self.src_path = src_path
         
-        self._stepper_has_call = False
-        
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('RAY_SCRIPTS_DIR', os.path.dirname(executable))
-        if self.isStepper():
-            self.parent.setScriptEnvironment(process_env)
-            
         self._process.setProcessEnvironment(process_env)
-        #self.parent.sendGuiMessage(
-            #_translate('GUIMSG', '--- Custom script %s started...%s')
-                            #% (ray.highlightText(executable), self.parent.client_id))
-        #self._process.setProcessEnvironment('RAY_SCRIPTS_DIR', os.path.dirname(executable))
         self._process.start(executable, arguments)
     
     def isRunning(self):
@@ -112,9 +88,72 @@ class Scripter(ServerSender):
     
     def getCommandName(self):
         return self.getPath().rpartition('/')[2]
+    
+    def getPid(self):
+        if self._process.state():
+            return self._process.pid()
+        return 0
+    
+    def getScriptsDir(self, spath):
+        if not spath:
+            return ''
+        
+        base_path = spath
+        while not os.path.isdir("%s/%s" % (base_path, ray.SCRIPTS_DIR)):
+            base_path = os.path.dirname(base_path)
+            if base_path == "/":
+                return ''
+        
+        return "%s/%s" % (base_path, ray.SCRIPTS_DIR)
+    
 
-    def isStepper(self):
-        return bool(self._step_str)
+class StepScripter(Scripter):
+    def __init__(self, session):
+        Scripter.__init__(self)
+        self.session = session
+        self._step_str = ''
+        self._stepper_has_call = False
+        
+    def processStarted(self):
+        pass
+    
+    def processFinished(self, exit_code, exit_status):
+        Scripter.processFinished(self, exit_code, exit_status)
+        #self.session.endTimerIfScriptFinished()
+        self.session.stepScripterFinished()
+        self._stepper_has_call = False
+    
+    def start(self, step_str, arguments, src_addr=None, src_path=''):
+        if self.isRunning():
+            return False
+        
+        scripts_dir = self.getScriptsDir(self.session.path)
+        if not scripts_dir:
+            return False
+        
+        script_path = "%s/%s.sh" % (scripts_dir, step_str)        
+        if not os.access(script_path, os.X_OK):
+            return False
+        
+        self.src_addr = src_addr
+        self.src_path = src_path
+        
+        self._stepper_has_call = False
+        self._step_str = step_str
+        
+        self.sendGuiMessage(_translate('GUIMSG',
+                            '--- Custom step script %s started...')
+                            % ray.highlightText(script_path))
+        
+        process_env = QProcessEnvironment.systemEnvironment()
+        process_env.insert('RAY_SCRIPTS_DIR', scripts_dir)
+        process_env.insert('RAY_FUTURE_SESSION_PATH',
+                           self.session.future_session_path)
+        process_env.insert('RAY_SESSION_PATH', self.session.path)
+            
+        self._process.setProcessEnvironment(process_env)
+        self._process.start(script_path, [str(a) for a in arguments])
+        return True
     
     def setStep(self, text):
         self._step_str = text
@@ -127,20 +166,43 @@ class Scripter(ServerSender):
     
     def setStepperHasCall(self, bool_call):
         self._stepper_has_call = bool_call
+
+
+class ClientScripter(Scripter):
+    def __init__(self, client):
+        Scripter.__init__(self)
+        self.client = client
+        self._pending_command = ray.Command.NONE
+        self._initial_caller = (None, '')
     
+    def start(self, executable, arguments, src_addr=None, src_path=''):
+        if self.isRunning():
+            return
+        
+        self.src_addr = src_addr
+        self.src_path = src_path
+        
+        process_env = QProcessEnvironment.systemEnvironment()
+        process_env.insert('RAY_SCRIPTS_DIR', os.path.dirname(executable))
+        
+        # TODO set client env vars
+        #self.client.setScriptEnvironment(process_env)
+            
+        self._process.setProcessEnvironment(process_env)
+        self.client.sendGuiMessage(
+            _translate('GUIMSG', '--- Custom script %s started...%s')
+                            % (ray.highlightText(executable), self.parent.client_id))
+        self._process.start(executable, arguments)
+        
     def setPendingCommand(self, pending_command):
         self._pending_command = pending_command
         
     def pendingCommand(self):
         return self._pending_command
     
-    def getPid(self):
-        if self._process.state():
-            return self._process.pid()
-        return 0
-    
     def stockInitialCaller(self, slot):
         self._initial_caller = slot
         
     def initialCaller(self):
         return self._initial_caller
+    
