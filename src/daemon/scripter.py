@@ -22,7 +22,7 @@ class Scripter(ServerSender):
         self._asked_for_terminate = False
         
     def processStarted(self):
-        print('proocesss started', self._process.program())
+        pass
     
     def processFinished(self, exit_code, exit_status):
         if exit_code:
@@ -55,18 +55,6 @@ class Scripter(ServerSender):
         standard_output = self._process.readAllStandardOutput().data()
         Terminal.scripterMessage(standard_output, self.getCommandName())
     
-    def start(self, executable, arguments, src_addr=None, src_path=''):
-        if self.isRunning():
-            return
-        
-        self.src_addr = src_addr
-        self.src_path = src_path
-        
-        process_env = QProcessEnvironment.systemEnvironment()
-        process_env.insert('RAY_SCRIPTS_DIR', os.path.dirname(executable))
-        self._process.setProcessEnvironment(process_env)
-        self._process.start(executable, arguments)
-    
     def isRunning(self):
         return bool(self._process.state())
     
@@ -94,18 +82,6 @@ class Scripter(ServerSender):
             return self._process.pid()
         return 0
     
-    def getScriptsDir(self, spath):
-        if not spath:
-            return ''
-        
-        base_path = spath
-        while not os.path.isdir("%s/%s" % (base_path, ray.SCRIPTS_DIR)):
-            base_path = os.path.dirname(base_path)
-            if base_path == "/":
-                return ''
-        
-        return "%s/%s" % (base_path, ray.SCRIPTS_DIR)
-    
 
 class StepScripter(Scripter):
     def __init__(self, session):
@@ -127,9 +103,23 @@ class StepScripter(Scripter):
         if self.isRunning():
             return False
         
-        scripts_dir = self.getScriptsDir(self.session.path)
-        if not scripts_dir:
+        if not self.session.path:
             return False
+        
+        base_path = self.session.path
+        scripts_dir = ''
+        parent_scripts_dir = ''
+        
+        while not base_path in ('/', ''):
+            tmp_scripts_dir = "%s/%s" % (base_path, ray.SCRIPTS_DIR)
+            if os.path.isdir(tmp_scripts_dir):
+                if not scripts_dir:
+                    scripts_dir = tmp_scripts_dir
+                else:
+                    parent_scripts_dir = tmp_scripts_dir
+                    break
+                
+            base_path = os.path.dirname(base_path)
         
         script_path = "%s/%s.sh" % (scripts_dir, step_str)        
         if not os.access(script_path, os.X_OK):
@@ -146,7 +136,9 @@ class StepScripter(Scripter):
                             % ray.highlightText(script_path))
         
         process_env = QProcessEnvironment.systemEnvironment()
+        process_env.insert('RAY_CONTROL_PORT', str(self.getServerPort()))
         process_env.insert('RAY_SCRIPTS_DIR', scripts_dir)
+        process_env.insert('RAY_PARENT_SCRIPTS_DIR', parent_scripts_dir)
         process_env.insert('RAY_FUTURE_SESSION_PATH',
                            self.session.future_session_path)
         process_env.insert('RAY_SESSION_PATH', self.session.path)
@@ -214,6 +206,7 @@ class ClientScripter(Scripter):
         self.src_addr = src_addr
         
         process_env = QProcessEnvironment.systemEnvironment()
+        process_env.insert('RAY_CONTROL_PORT', str(self.getServerPort()))
         process_env.insert('RAY_CLIENT_SCRIPTS_DIR', scripts_dir)
         process_env.insert('RAY_CLIENT_ID', self.client.client_id)
         process_env.insert('RAY_CLIENT_EXECUTABLE',

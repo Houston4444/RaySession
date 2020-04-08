@@ -190,7 +190,7 @@ if __name__ == '__main__':
     
     dport = os.getenv('RAY_CONTROL_PORT')
     if dport and dport.isdigit():
-        wanted_port = dport
+        wanted_port = int(dport)
     
     while args and args[0].startswith('--'):
         option = args.pop(0)
