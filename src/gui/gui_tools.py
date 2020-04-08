@@ -97,7 +97,8 @@ def clientStatusString(client_status):
         ray.ClientStatus.NOOP   : _translate('client status', "noop"),
         ray.ClientStatus.ERROR  : _translate('client status', "error"),
         ray.ClientStatus.REMOVED: _translate('client status', "removed"),
-        ray.ClientStatus.UNDEF  : _translate('client_status', "")}
+        ray.ClientStatus.UNDEF  : _translate('client_status', ""),
+        ray.ClientStatus.SCRIPT : _translate('client_status', 'script')}
 
     if not 0 <= client_status < len(client_status_strings):
         return _translate('client_status', 'invalid')
@@ -209,7 +210,7 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument('--debug-only', '-do', action='store_true',
                           help=_translate('help',
                                           'debug without client messages'))
-        self.add_argument('---no-client-messages', '-nco', action='store_true',
+        self.add_argument('---no-client-messages', '-ncm', action='store_true',
                           help=_translate('help',
                                           'do not print client messages'))
         self.add_argument('--net-session-root', type=str, default='',

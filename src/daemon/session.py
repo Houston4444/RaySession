@@ -358,35 +358,8 @@ class Session(ServerSender):
             self.clients.append(client)
             
         if src_addr:
-            self.send(src_addr, '/reply', src_path, "clients reordered")
-    
-    def getScriptPath(self, string):
-        script_dir = self.getScriptDir()
-        
-        if not script_dir:
-            return ''
-        
-        script_path = "%s/%s.sh" % (script_dir, string)
-        
-        if os.access(script_path, os.X_OK):
-            return script_path
-        
-        return ''
-    
-    def getScriptDir(self, spath=''):
-        if not spath:
-            spath = self.path
-        
-        if not spath:
-            return ''
-        
-        base_path = spath
-        while not os.path.isdir("%s/%s" % (base_path, ray.SCRIPTS_DIR)):
-            base_path = os.path.dirname(base_path)
-            if base_path == "/":
-                return ''
-        
-        return "%s/%s" % (base_path, ray.SCRIPTS_DIR)
+            self.answer(src_addr, src_path, "clients reordered")
+            
     
 class OperatingSession(Session):
     def __init__(self, root):
@@ -543,8 +516,8 @@ class OperatingSession(Session):
         
     def nextFunction(self, from_run_step=False, run_step_args=[]):
         if self.run_step_addr and not from_run_step:
-            self.send(self.run_step_addr, '/reply',
-                      '/ray/session/run_step', 'step done')
+            self.answer(self.run_step_addr, '/ray/session/run_step',
+                         'step done')
             self.run_step_addr = None
             return
         
@@ -649,8 +622,8 @@ class OperatingSession(Session):
         self.steps_order.clear()
         
         if self.run_step_addr:
-            self.send(self.run_step_addr, '/error', 
-                      '/ray/session/run_step', err, error_message)
+            self.answer(self.run_step_addr, '/ray/session/run_step',
+                         error_message, err)
         
         if not (self.osc_src_addr and self.osc_path):
             return
@@ -695,7 +668,7 @@ class OperatingSession(Session):
         new_session_name = basename(new_session_full_name)
         spath = "%s/%s" % (self.root, new_session_full_name)
         
-        #create temp clients from raysession.xml to adjust Files after copy
+        # create tmp clients from raysession.xml to adjust Files after copy
         session_file = "%s/%s" % (spath, "raysession.xml")
         
         try:
@@ -947,7 +920,7 @@ class OperatingSession(Session):
         # quite dirty
         # minor error is not a fatal error
         # it's important for ray_control to not stop
-        # if operation is not snapshot (ex: close or open)
+        # if operation is not snapshot (ex: close or save)
         if self.nextFunction.__name__ == 'snapshotDone':
             self.sendError(err_snapshot, m)
             self.forgetOscArgs()
@@ -1806,15 +1779,18 @@ class OperatingSession(Session):
             xml.setContent(file.read())
             file.close()
         except:
-            self.send(src_addr, '/error', src_path, ray.Err.NO_SUCH_FILE, 
-              _translate('GUIMSG', '%s is missing or corrupted !') % xml_file)
+            self.answer(src_addr, src_path,
+                         _translate('GUIMSG', '%s is missing or corrupted !')
+                            % xml_file,
+                         ray.Err.NO_SUCH_FILE)
             return
         
         if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
-            self.send(src_addr, '/error', src_path, ray.Err.BAD_PROJECT, 
-                _translate('GUIMSG', 
-                           '%s has no RAY-CLIENT-TEMPLATES top element !')
-                    % xml_file)
+            self.answer(src_addr, src_path,
+                        _translate('GUIMSG',
+                            '%s has no RAY-CLIENT-TEMPLATES top element !')
+                                % xml_file,
+                        ray.Err.BAD_PROJECT)
             return
         
         nodes = xml.documentElement().childNodes()
@@ -1899,8 +1875,9 @@ class OperatingSession(Session):
                                                    % (template_path, file))
                             
                 if not self.addClient(client):
-                    self.send(src_addr, '/error', src_path, ray.Err.NOT_NOW,
-                              "Session does not accept any new client now")
+                    self.answer(src_addr, src_path,
+                                "Session does not accept any new client now",
+                                ray.Err.NOT_NOW)
                     return
                     
                 if full_name_files:
@@ -1937,8 +1914,8 @@ class OperatingSession(Session):
             client.start()
         else:
             client.setStatus(ray.ClientStatus.STOPPED)
-            
-        self.send(src_addr, '/reply', src_path, client.client_id)
+        
+        self.answer(src_addr, src_path, client.client_id)
     
     def addClientTemplateAborted(self, src_addr, src_path, client):
         self.removeClient(client)
@@ -2033,4 +2010,4 @@ class OperatingSession(Session):
                          ray.WaitFor.QUIT)
         
     def clearClients_substep3(self, src_addr, src_path):
-        self.send(src_addr, '/reply', src_path, 'Clients cleared')
+        self.answer(src_addr, src_path, 'Clients cleared')

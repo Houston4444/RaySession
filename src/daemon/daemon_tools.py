@@ -194,7 +194,7 @@ class ArgParser(argparse.ArgumentParser):
                           help='see all OSC messages')
         self.add_argument('--debug-only', '-do', action='store_true', 
                           help='debug without client messages')
-        self.add_argument('--no-client-messages', '-nco', action='store_true',
+        self.add_argument('--no-client-messages', '-ncm', action='store_true',
                           help='do not print client messages')
         
         self.add_argument('-v', '--version', action='version',

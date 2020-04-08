@@ -10,7 +10,7 @@ _translate = QCoreApplication.translate
 class Scripter(ServerSender):
     def __init__(self):
         ServerSender.__init__(self)
-        self.src_adrr = None
+        self.src_addr = None
         self.src_path = ''
         
         self._process = QProcess()
@@ -22,7 +22,7 @@ class Scripter(ServerSender):
         self._asked_for_terminate = False
         
     def processStarted(self):
-        pass
+        print('proocesss started', self._process.program())
     
     def processFinished(self, exit_code, exit_status):
         if exit_code:
@@ -175,33 +175,61 @@ class ClientScripter(Scripter):
         self._pending_command = ray.Command.NONE
         self._initial_caller = (None, '')
     
-    def start(self, executable, arguments, src_addr=None, src_path=''):
+    def processFinished(self, exit_code, exit_status):
+        Scripter.processFinished(self, exit_code, exit_status)
+        self.client.scriptFinished(exit_code)
+        self._pending_command = ray.Command.NONE
+        self._initial_caller = (None, '')
+        self.src_addr = None
+    
+    def start(self, command, src_addr=None, previous_slot=(None, '')):
         if self.isRunning():
-            return
+            return False
+        
+        command_string = ''
+        if command == ray.Command.START:
+            command_string = 'start'
+        elif command == ray.Command.SAVE:
+            command_string = 'save'
+        elif command == ray.Command.STOP:
+            command_string = 'stop'
+        else:
+            return False
+        
+        scripts_dir = "%s/%s.%s" % \
+            (self.client.session.path, ray.SCRIPTS_DIR, self.client.client_id)
+        script_path = "%s/%s.sh" % (scripts_dir, command_string)
+        
+        if not os.access(script_path, os.X_OK):
+            return False
+        
+        self._pending_command = command
+        
+        if src_addr:
+            # Remember the caller of the function calling the script
+            # Then, when script is finished
+            # We could reply to this (address, path)
+            self._initial_caller = previous_slot
         
         self.src_addr = src_addr
-        self.src_path = src_path
         
         process_env = QProcessEnvironment.systemEnvironment()
-        process_env.insert('RAY_SCRIPTS_DIR', os.path.dirname(executable))
-        
-        # TODO set client env vars
-        #self.client.setScriptEnvironment(process_env)
-            
+        process_env.insert('RAY_CLIENT_SCRIPTS_DIR', scripts_dir)
+        process_env.insert('RAY_CLIENT_ID', self.client.client_id)
+        process_env.insert('RAY_CLIENT_EXECUTABLE',
+                           self.client.executable_path)
+        process_env.insert('RAY_CLIENT_ARGUMENTS', self.client.arguments)
         self._process.setProcessEnvironment(process_env)
+        
         self.client.sendGuiMessage(
             _translate('GUIMSG', '--- Custom script %s started...%s')
-                            % (ray.highlightText(executable), self.parent.client_id))
-        self._process.start(executable, arguments)
+                    % (ray.highlightText(script_path), self.client.client_id))
         
-    def setPendingCommand(self, pending_command):
-        self._pending_command = pending_command
+        self._process.start(script_path, [])
+        return True
         
     def pendingCommand(self):
         return self._pending_command
-    
-    def stockInitialCaller(self, slot):
-        self._initial_caller = slot
         
     def initialCaller(self):
         return self._initial_caller

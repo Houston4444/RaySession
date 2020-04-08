@@ -1,4 +1,8 @@
+
 from PyQt5.QtCore import QObject
+
+import ray
+
 from osc_server_thread import OscServerThread
 
 class ServerSender(QObject):
@@ -85,3 +89,9 @@ class ServerSender(QObject):
             return server.url
         else:
             return ''
+        
+    def answer(self, src_addr, src_path, message, err=ray.Err.OK):
+        if err == ray.Err.OK:
+            self.send(src_addr, '/reply', src_path, message)
+        else:
+            self.send(src_addr, '/error', src_path, err, message)

@@ -49,6 +49,7 @@ class ClientStatus:
     ERROR   = 10
     REMOVED = 11
     UNDEF   = 12
+    SCRIPT  = 13
 
 
 class ServerStatus:

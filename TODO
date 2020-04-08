@@ -23,4 +23,4 @@ konv# RaySession TODO
     
     proxy sans qt (pour légèreté), l'IGU totalement intégrée à RS, configurable même si proxy arrêté (si faisable).
     démarrer daemon sans option (et ne pas sauver les options)
-    Variables d'environnement pour scripts de client
+    Jack Connections typo
