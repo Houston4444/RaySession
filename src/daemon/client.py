@@ -519,6 +519,7 @@ class Client(ServerSender):
         
         if self.scripter.start(ray.Command.START, src_addr,
                                self._osc_srcs[OSC_SRC_START]):
+            self.setStatus(ray.ClientStatus.SCRIPT)
             return
         
         self.pending_command = ray.Command.START
@@ -792,6 +793,7 @@ class Client(ServerSender):
         if self.isRunning():
             if self.scripter.start(ray.Command.STOP, src_addr,
                                    self._osc_srcs[OSC_SRC_STOP]):
+                self.setStatus(ray.ClientStatus.SCRIPT)
                 return
             
             self.pending_command = ray.Command.STOP
@@ -990,6 +992,12 @@ ignored_extensions:%s""" % (self.client_id,
                 elif filename.startswith('%s.' % base_project):
                     client_files.append('%s/%s'
                                         % (self.session.path, filename))
+        
+        scripts_dir = "%s/%s.%s" % (self.session.path, ray.SCRIPTS_DIR,
+                                    self.client_id)
+        
+        if os.path.exists(scripts_dir):
+            client_files.append(scripts_dir)
                     
         return client_files
             
@@ -1030,7 +1038,7 @@ ignored_extensions:%s""" % (self.client_id,
             self.saveAsTemplate_substep1(template_name)
 
     def saveAsTemplate_substep1(self, template_name):
-        self.setStatus(self.status) #see setStatus to see why
+        self.setStatus(self.status) # see setStatus to see why
         
         if self.prefix_mode != ray.PrefixMode.CUSTOM:
             self.adjustFilesAfterCopy(template_name, ray.Template.CLIENT_SAVE)
@@ -1116,9 +1124,9 @@ ignored_extensions:%s""" % (self.client_id,
                              template_save=ray.Template.NONE):
         old_session_name = self.session.name
         new_session_name = basename(new_session_full_name)
-        new_client_id    = self.client_id
-        old_client_id    = self.client_id
-        xsessionx   = "XXX_SESSION_NAME_XXX"
+        new_client_id = self.client_id
+        old_client_id = self.client_id
+        xsessionx = "XXX_SESSION_NAME_XXX"
         xclient_idx = "XXX_CLIENT_ID_XXX"
         
         if template_save == ray.Template.NONE:
@@ -1168,6 +1176,11 @@ ignored_extensions:%s""" % (self.client_id,
         elif self.prefix_mode == ray.PrefixMode.CUSTOM:
             old_prefix = new_prefix = self.custom_prefix
         
+        scripts_dir = "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, old_client_id)
+        if os.path.exists(scripts_dir):
+            os.rename(scripts_dir,
+                      "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, new_client_id))
+        
         project_path = "%s/%s.%s" % (spath, old_prefix, old_client_id)
         
         if not os.path.exists(project_path):
@@ -1182,7 +1195,7 @@ ignored_extensions:%s""" % (self.client_id,
                                            % (old_prefix, old_client_id),
                                            '', 1)
                     
-                    os.rename('%s/%s' %(spath, file),
+                    os.rename('%s/%s' % (spath, file),
                               "%s/%s.%s.%s"
                               % (spath, new_prefix, new_client_id, endfile))
             return
