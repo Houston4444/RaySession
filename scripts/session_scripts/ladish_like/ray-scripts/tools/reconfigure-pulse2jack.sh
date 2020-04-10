@@ -1,0 +1,245 @@
+#!/bin/bash
+# Script to bridge/start pulseaudio into JACK mode
+# highly inspired (plagiarism) from cadence-pulse2jack from falktx
+
+INSTALL_PREFIX="X-PREFIX-X"
+
+# ----------------------------------------------
+
+if [ ! -d ~/.pulse ]; then
+    mkdir -p ~/.pulse
+fi
+
+if [ ! -f ~/.pulse/client.conf ]; then
+    echo "autospawn = no" > ~/.pulse/client.conf
+else
+    if (! cat ~/.pulse/client.conf | grep "autospawn = no" > /dev/null); then
+        sed -i '/autospawn =/d' ~/.pulse/client.conf
+        echo "autospawn = no" >> ~/.pulse/client.conf
+    fi
+fi
+
+if [ ! -f ~/.pulse/daemon.conf ]; then
+    echo "default-sample-format = float32le" > ~/.pulse/daemon.conf
+    echo "realtime-scheduling = yes" >> ~/.pulse/daemon.conf
+    echo "rlimit-rttime = -1" >> ~/.pulse/daemon.conf
+    echo "exit-idle-time = -1" >> ~/.pulse/daemon.conf
+else
+    if (! cat ~/.pulse/daemon.conf | grep "default-sample-format = float32le" > /dev/null); then
+        sed -i '/default-sample-format = /d' ~/.pulse/daemon.conf
+        echo "default-sample-format = float32le" >> ~/.pulse/daemon.conf
+    fi
+    if (! cat ~/.pulse/daemon.conf | grep "realtime-scheduling = yes" > /dev/null); then
+        sed -i '/realtime-scheduling = /d' ~/.pulse/daemon.conf
+        echo "realtime-scheduling = yes" >> ~/.pulse/daemon.conf
+    fi
+    if (! cat ~/.pulse/daemon.conf | grep "rlimit-rttime = -1" > /dev/null); then
+        sed -i '/rlimit-rttime =/d' ~/.pulse/daemon.conf
+        echo "rlimit-rttime = -1" >> ~/.pulse/daemon.conf
+    fi
+    if (! cat ~/.pulse/daemon.conf | grep "exit-idle-time = -1" > /dev/null); then
+        sed -i '/exit-idle-time =/d' ~/.pulse/daemon.conf
+        echo "exit-idle-time = -1" >> ~/.pulse/daemon.conf
+    fi
+fi
+
+# ----------------------------------------------
+wanted_capture_ports=0   # -1 means default
+wanted_playback_ports=0  # -1 means default
+
+arg_is_for=""
+
+for arg in "$@";do
+    case "$arg" in
+        -h|--h|--help)
+    echo "usage: $0 [command]
+    
+    -p           Playback only with default number of channels
+    -p <NUMBER>  Number of playback channels
+    -c           Capture only with default number of channels
+    -c <NUMBER>  Number of capture channels
+
+    -h, --help   Show this help menu
+        --dummy  Don't do anything, just create the needed files
+
+    NOTE:
+    When runned with no arguments, $(basename "$0") will
+    activate PulseAudio with both playback and record modes with default number of channels.
+    "
+    exit
+        ;;
+        --dummy)
+    exit
+        ;;
+        -c|--capture)
+            arg_is_for="capture"
+            wanted_capture_ports=-1 # -1 means default, if no (correct) argument is given.
+        ;;
+        -p|--play|--playback)
+            arg_is_for="playback"
+            wanted_playback_ports=-1
+        ;;
+        * )
+            case "$arg_is_for" in
+                "capture")
+                    [ "$arg" -ge 0 ] 2>/dev/null && wanted_capture_ports="$arg"
+                ;;
+                "playback")
+                    [ "$arg" -ge 0 ] 2>/dev/null && wanted_playback_ports="$arg"
+                ;;
+            esac
+        ;;
+    esac
+done
+
+
+if [ $wanted_capture_ports == 0 ] && [ $wanted_playback_ports == 0 ];then
+    #no sense to want to start/bridge pulseaudio without ports, set as default
+    capture_ports=-1  # -1 means default
+    playback_ports=-1 # -1 means default
+fi
+
+str_capture="channels=$wanted_capture_ports"   #used for pulseaudio commands
+str_playback="channels=$wanted_playback_ports" ##
+
+[ $wanted_capture_ports  == -1 ] && str_capture=""  # -1 means default, no command channels=n
+[ $wanted_playback_ports == -1 ] && str_playback="" ##
+
+# ----------------------------------------------
+
+IsPulseAudioRunning()
+{
+    PROCESS=`ps -u $USER | grep pulseaudio`
+    if [ "$PROCESS" == "" ]; then
+        false
+    else
+        true
+    fi
+}
+
+StartBridged()
+{
+    #write pulseaudio config file in a tmp file
+    pa_file=$(mktemp --suffix .pa)
+    echo .fail > $pa_file
+    
+    ### Automatically restore the volume of streams and devices
+    echo load-module module-device-restore  >> $pa_file
+    echo load-module module-stream-restore  >> $pa_file
+    echo load-module module-card-restore    >> $pa_file
+    
+    ### Load Jack modules
+    [ $wanted_capture_ports  != 0 ] && echo load-module module-jack-source $str_capture  >> $pa_file
+    [ $wanted_playback_ports != 0 ] && echo load-module module-jack-sink   $str_playback >> $pa_file
+    
+    ### Load unix protocol
+    echo load-module module-native-protocol-unix >> $pa_file
+    
+    ### Automatically restore the default sink/source when changed by the user
+    ### during runtime
+    ### NOTE: This should be loaded as early as possible so that subsequent modules
+    ### that look up the default sink/source get the right value
+    echo load-module module-default-device-restore >> $pa_file
+    
+    ### Automatically move streams to the default sink if the sink they are
+    ### connected to dies, similar for sources
+    echo load-module module-rescue-streams >> $pa_file
+    
+    ### Make sure we always have a sink around, even if it is a null sink.
+    echo load-module module-always-sink >> $pa_file
+    
+    ### Make Jack default
+    [ $wanted_capture_ports  != 0 ] && echo set-default-source jack_in >> $pa_file
+    [ $wanted_playback_ports != 0 ] && echo set-default-sink jack_out  >> $pa_file
+    
+    if (`pulseaudio --daemonize --high-priority --realtime --exit-idle-time=-1 --file=$pa_file -n`); then
+        echo "Initiated PulseAudio successfully!"
+    else
+        echo "Failed to initialize PulseAudio!"
+    fi
+}
+
+killReStart()
+{
+    pulseaudio -k && StartBridged
+    exit
+}
+
+JackNotRunning()
+{ 
+    echo "JACK seems not running, start JACK before bridge PulseAudio"
+    exit 1
+}
+
+if (IsPulseAudioRunning); then
+{   
+    #count all Jack Audio Physical ports
+    all_jack_lsp=$(jack_lsp -p -t) || JackNotRunning
+    output_physical_lines=$(echo "$all_jack_lsp"|grep -n "output,physical,"|cut -d':' -f1)
+    input_physical_lines=$( echo "$all_jack_lsp"|grep -n "input,physical," |cut -d':' -f1)
+    audio_lines=$(echo "$all_jack_lsp" |grep -n " audio"|cut -d':' -f1)
+    
+    capture_physical_ports=0
+    playback_physical_ports=0
+    
+    for out_phy_line in $output_physical_lines;do
+        if echo "$audio_lines"|grep -q $(($out_phy_line + 1));then
+            ((capture_physical_ports++))
+        fi
+    done
+    
+    for in_phy_line in $input_physical_lines;do
+        if echo "$audio_lines"|grep -q $(($in_phy_line + 1));then
+            ((playback_physical_ports++))
+        fi
+    done
+    
+    #count PulseAudio jack ports
+    current_playback_ports=$(echo "$all_jack_lsp"|grep ^"PulseAudio JACK Sink:"  |wc -l)
+    current_capture_ports=$( echo "$all_jack_lsp"|grep ^"PulseAudio JACK Source:"|wc -l)
+    
+    #if number of pulseaudio ports equal to physical ports, consider pulseaudio module is running the default mode (no channels=n)
+    [ $current_capture_ports  == $capture_physical_ports  ] && current_capture_ports=-1
+    [ $current_playback_ports == $playback_physical_ports ] && current_playback_ports=-1
+    [ $wanted_capture_ports   == $capture_physical_ports  ] && wanted_capture_ports=-1
+    [ $wanted_playback_ports  == $playback_physical_ports ] && wanted_playback_ports=-1
+    
+    if [ $wanted_capture_ports == $current_capture_ports ] && [ $wanted_playback_ports == $current_playback_ports ];then
+        echo "PulseAudio is already started and bridged to Jack with $current_capture_ports inputs and $current_playback_ports outputs, nothing to do !"
+        exit
+    fi
+    
+    if [ $current_capture_ports != $wanted_capture_ports ];then
+        if [ $current_capture_ports != 0 ];then
+            echo "unload PulseAudio JACK Source"
+            pactl unload-module module-jack-source > /dev/null || killReStart
+        fi
+        
+        if [ $wanted_capture_ports != 0 ];then
+            echo "load PulseAudio JACK Source $str_capture"
+            
+            pactl load-module module-jack-source $str_capture > /dev/null
+            pacmd set-default-source jack_in > /dev/null
+        fi
+    fi
+    
+    if [ $current_playback_ports != $wanted_playback_ports ];then
+        if [ $current_playback_ports != 0 ];then
+            echo "unload PulseAudio JACK Sink"
+            pactl unload-module module-jack-sink > /dev/null || killReStart
+        fi
+        
+        if [ $wanted_playback_ports != 0 ];then
+            echo "load PulseAudio JACK Sink $str_playback"
+            
+            pactl load-module module-jack-sink $str_playback > /dev/null
+            pactl set-default-sink jack_out > /dev/null
+        fi
+    fi
+}
+else
+{     
+    StartBridged
+}
+fi
+ 
