@@ -111,8 +111,6 @@ class MainWindow(QMainWindow):
         self.ui.actionAddApplication.triggered.connect(self.addApplication)
         self.ui.actionAddExecutable.triggered.connect(self.addExecutable)
         self.ui.actionKeepFocus.toggled.connect(self.toggleKeepFocus)
-        self.ui.actionSaveAllFromSavedClient.triggered.connect(
-            self.saveAllFromClientToggled)
         self.ui.actionBookmarkSessionFolder.triggered.connect(
             self.bookmarkSessionFolderToggled)
         self.ui.actionDesktopsMemory.triggered.connect(
@@ -137,7 +135,6 @@ class MainWindow(QMainWindow):
         self.controlMenu.addSeparator()
         self.controlMenu.addAction(self.ui.actionKeepFocus)
         self.controlMenu.addSeparator()
-        self.controlMenu.addAction(self.ui.actionSaveAllFromSavedClient)
         self.controlMenu.addAction(self.ui.actionBookmarkSessionFolder)
         self.controlMenu.addAction(self.ui.actionAutoSnapshot)
         self.controlMenu.addAction(self.ui.actionDesktopsMemory)
@@ -272,8 +269,6 @@ class MainWindow(QMainWindow):
             nsm_locked and not CommandLineArgs.out_daemon)
 
     def setDaemonOptions(self, options):
-        self.ui.actionSaveAllFromSavedClient.setChecked(
-            bool(options & ray.Option.SAVE_FROM_CLIENT))
         self.ui.actionBookmarkSessionFolder.setChecked(
             bool(options & ray.Option.BOOKMARK_SESSION))
         self.ui.actionDesktopsMemory.setChecked(
@@ -320,9 +315,6 @@ class MainWindow(QMainWindow):
             RS.settings.setValue('keepfocus', self.keep_focus)
         if not bool:
             self.timer_raisewin.stop()
-
-    def saveAllFromClientToggled(self, state):
-        self.toDaemon('/ray/option/save_from_client', int(state))
 
     def bookmarkSessionFolderToggled(self, state):
         self.toDaemon('/ray/option/bookmark_session_folder', int(state))

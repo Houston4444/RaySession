@@ -775,6 +775,8 @@ class OperatingSession(Session):
             return
         
         session_file = self.path + '/raysession.xml'
+        if self.isNsmLocked() and os.getenv('NSM_URL'):
+            session_file = self.path + '/raysubsession.xml'
         
         if (os.path.isfile(session_file)
             and not os.access(session_file, os.W_OK)):
@@ -1391,6 +1393,13 @@ class OperatingSession(Session):
         session_ray_file = "%s/raysession.xml" % spath
         session_nsm_file = "%s/session.nsm" % spath
         
+        # change session file only for raysession launched with NSM_URL env
+        # Not sure that this feature is really useful.
+        # Any cases, It's important to rename it
+        # because we want to prevent session creation in a session folder
+        if self.isNsmLocked() and os.getenv('NSM_URL'):
+            session_ray_file = "%s/raysubsession.xml" % spath
+        
         is_ray_file = True
         
         try:
@@ -1761,6 +1770,7 @@ class OperatingSession(Session):
         
     def exitNow(self):
         self.setServerStatus(ray.ServerStatus.OFF)
+        self.setPath('')
         self.message("Bye Bye...")
         self.sendReply("Bye Bye...")
         self.sendGui('/ray/gui/server/disannounce')

@@ -509,6 +509,7 @@ class SignaledSession(OperatingSession):
     
     def _ray_session_abort(self, path, args, src_addr):
         if not self.path:
+            self.file_copier.abort()
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to abort." )
             return

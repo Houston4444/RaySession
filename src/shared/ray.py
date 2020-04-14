@@ -80,7 +80,7 @@ class NSMMode:
 
 class Option:
     NSM_LOCKED       = 0x001
-    SAVE_FROM_CLIENT = 0x002
+    SAVE_FROM_CLIENT = 0x002 #DEPRECATED
     BOOKMARK_SESSION = 0x004
     HAS_WMCTRL       = 0x008
     DESKTOPS_MEMORY  = 0x010

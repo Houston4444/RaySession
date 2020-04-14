@@ -169,10 +169,6 @@ class ClientCommunicating(liblo.ServerThread):
         if not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to abort." )
-            
-            if self.server_status == ray.ServerStatus.PRECOPY:
-                # normally no session path if PRECOPY status
-                signaler.copy_aborted.emit()
             return False
     
     @ray_method('/nsm/server/quit', '')
@@ -249,16 +245,6 @@ class ClientCommunicating(liblo.ServerThread):
         client.dirty = 0
         
         self.sendGui("/ray/gui/client/dirty", client.client_id, client.dirty)
-        
-        if self.option_save_from_client:
-            if (client.pending_command != ray.Command.SAVE
-                and client.last_dirty 
-                and time.time() - client.last_dirty > 0.20
-                and time.time() - client.last_save_time > 1.00):
-                    signaler.server_save_from_client.emit(path, args,
-                                                          src_addr,
-                                                          client.client_id)
-                    return True
         return False
     
     @ray_method('/nsm/client/message', 'is')
@@ -624,11 +610,6 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
-        
-        #if not session_name == self.session.name:
-            #signaler.dummy_load_and_template.emit(session_name, template_name,
-                                                  #self.session.root)
-            #return False
     
     @ray_method('/ray/server/rename_session', 'ss')
     def rayServerRenameSession(self, path, args, types, src_addr):
@@ -732,34 +713,6 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                       "Option %s is not currently used" % option)
     
-    #@ray_method('/ray/session/save_as_template', None)
-    #def nsmServerSaveSessionTemplate(self, path, args, types, src_addr):
-        #if not len(args) in (1, 3):
-            #return False
-        
-        #if not ray.areTheyAllString(args):
-            #return False
-        
-        #template_name = args[0]
-        #if '/' in template_name:
-            #self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
-                      #"Invalid session name.")
-            #return False
-        
-        #if len(args) == 3:
-            ##save as template an not loaded session
-            #session_name, template_name, sess_root = args
-        
-            #if not pathIsValid(template_name):
-                #self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
-                        #"Invalid session name.")
-                #return False
-        
-            #if not (sess_root == self.session.root
-                    #and session_name == self.session.name):
-                #signaler.dummy_load_and_template.emit(*args)
-                #return False
-    
     @ray_method('/ray/session/get_session_name', '')
     def raySessionGetSessionName(self, path, args, types, src_addr):
         if not self.session.path:
@@ -784,9 +737,7 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/session/abort', '')
     def raySessionAbort(self, path, args, types, src_addr):
-        if self.server_status == ray.ServerStatus.PRECOPY:
-            signaler.copy_aborted.emit()
-            return False
+        pass
     
     @ray_method('/ray/session/cancel_close', '')
     def raySessionCancelClose(self, path, args, types, src_addr):
