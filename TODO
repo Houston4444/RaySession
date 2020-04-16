@@ -27,7 +27,11 @@ konv# RaySession TODO
     
     unable to use wmctrl #check
     
+    session rename: force custom prefix for client if mv impossible
+    
     import warnings
     warnings.filterwarnings("ignore", category=DeprecationWarning)
+    
+    Tuer le script de session si user decheck l'option
     
 

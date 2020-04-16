@@ -1184,21 +1184,58 @@ ignored_extensions:%s""" % (self.client_id,
         project_path = "%s/%s.%s" % (spath, old_prefix, old_client_id)
         
         if not os.path.exists(project_path):
+            files_to_rename = []
+            do_rename = True
+            
             for file in os.listdir(spath):
                 if (file.startswith("%s.%s." % (old_prefix, old_client_id))
                     or file == "%s.%s" % (old_prefix, old_client_id)):
                     
                     if not os.access("%s/%s" % (spath, file), os.W_OK):
-                        continue
+                        do_rename = False
+                        break
                     
                     endfile = file.replace("%s.%s."
                                            % (old_prefix, old_client_id),
                                            '', 1)
                     
-                    os.rename('%s/%s' % (spath, file),
-                              "%s/%s.%s.%s"
-                              % (spath, new_prefix, new_client_id, endfile))
+                    next_path = "%s/%s.%s.%s" % (spath, new_prefix, 
+                                                 new_client_id, endfile)
+                    if os.path.exists(next_path):
+                        do_rename = False
+                        break
+                    
+                    files_to_rename.append(("%s/%s" % (spath, file),
+                                            next_path))
+            
+            if not do_rename:
+                self.prefix_mode = ray.PrefixMode.CUSTOM
+                self.custom_prefix = old_prefix
+                # it should not be a client_id problem here
+                return
+                
+            for now_path, next_path in files_to_rename:
+                os.rename(now_path, next_path)
+                
             return
+            
+            #for file in os.listdir(spath):
+                #if (file.startswith("%s.%s." % (old_prefix, old_client_id))
+                    #or file == "%s.%s" % (old_prefix, old_client_id)):
+                    
+                    #if not os.access("%s/%s" % (spath, file), os.W_OK):
+                        #continue
+                    
+                    #endfile = file.replace("%s.%s."
+                                           #% (old_prefix, old_client_id),
+                                           #'', 1)
+                    
+                    
+                    
+                    #os.rename('%s/%s' % (spath, file),
+                              #"%s/%s.%s.%s"
+                              #% (spath, new_prefix, new_client_id, endfile))
+            #return
         
         if not os.path.isdir(project_path):
             if not os.access(project_path, os.W_OK):
