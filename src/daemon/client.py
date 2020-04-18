@@ -1238,13 +1238,19 @@ ignored_extensions:%s""" % (self.client_id,
                         break
                     
                     files_to_rename.append((ardour_bak, new_ardour_bak))
-                    
-                if os.path.isdir(ardour_audio and os.access(ardour_audio, os.W_OK)):
+                
+                print("d,oed")
+                print(ardour_audio)
+                print(os.path.isdir(ardour_audio))
+                print(os.access(ardour_audio, os.W_OK))
+                if os.path.isdir(ardour_audio) and os.access(ardour_audio, os.W_OK):
                     new_ardour_audio = "%s/interchange/%s.%s" % (project_path,
                                                      new_prefix, new_client_id)
                     if os.path.exists(new_ardour_audio):
                         do_rename = False
                         break
+                    
+                    files_to_rename.append((ardour_audio, new_ardour_audio))
                 
                 #for Vee One Suite
                 for extfile in ('samplv1', 'synthv1', 'padthv1', 'drumkv1'):
