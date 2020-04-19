@@ -837,7 +837,7 @@ class OscServerThread(ClientCommunicating):
                       "Cannot add to session because no session is loaded.")
             return False
         
-        if '/' in executable_path:
+        if '/' in executable_path and not via_proxy:
             self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
