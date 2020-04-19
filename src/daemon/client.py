@@ -1239,10 +1239,6 @@ ignored_extensions:%s""" % (self.client_id,
                     
                     files_to_rename.append((ardour_bak, new_ardour_bak))
                 
-                print("d,oed")
-                print(ardour_audio)
-                print(os.path.isdir(ardour_audio))
-                print(os.access(ardour_audio, os.W_OK))
                 if os.path.isdir(ardour_audio) and os.access(ardour_audio, os.W_OK):
                     new_ardour_audio = "%s/interchange/%s.%s" % (project_path,
                                                      new_prefix, new_client_id)

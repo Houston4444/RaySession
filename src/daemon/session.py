@@ -359,8 +359,20 @@ class Session(ServerSender):
             
         if src_addr:
             self.answer(src_addr, src_path, "clients reordered")
-            
     
+    def isPathInASessionDir(self, spath):
+        if self.isNsmLocked() and os.getenv('NSM_URL'):
+            return False
+        
+        base_path = spath
+        while not base_path in ('/', ''):
+            base_path = os.path.dirname(base_path)
+            if os.path.isfile("%s/raysession.xml" % base_path):
+                return True
+            
+        return False
+
+
 class OperatingSession(Session):
     def __init__(self, root):
         Session.__init__(self, root)
@@ -1078,6 +1090,12 @@ class OperatingSession(Session):
             % new_session_name)
         spath = self.root + '/' + new_session_name
         
+        if self.isPathInASessionDir(spath):
+            self.sendError(ray.Err.SESSION_IN_SESSION_DIR,
+                           """Can't create session in a dir containing a session
+for better organization.""")
+            return
+        
         try:
             os.makedirs(spath)
         except:
@@ -1305,6 +1323,13 @@ class OperatingSession(Session):
                            % spath)
             return
         
+        if self.isPathInASessionDir(spath):
+            self.sendError(ray.Err.SESSION_IN_SESSION_DIR,
+                           _translate("error", 
+                """Can't create session in a dir containing a session
+for better organization."""))
+            return
+        
         if self.path:
             self.setServerStatus(ray.ServerStatus.COPY)
         else:
@@ -1375,6 +1400,12 @@ class OperatingSession(Session):
             return
         
         if not os.path.exists(spath):
+            if self.isPathInASessionDir(spath):
+                # prevent to create a session in a session directory
+                # for better user organization
+                self.loadError(ray.Err.SESSION_IN_SESSION_DIR)
+                return
+            
             try:
                 os.makedirs(spath)
             except:
@@ -1748,6 +1779,10 @@ class OperatingSession(Session):
             m = _translate('Load Error', "The named session does not exist.")
         elif err_loading == ray.Err.BAD_PROJECT:
             m = _translate('Load Error', "Could not load session file.")
+        elif err_loading == ray.Err.SESSION_IN_SESSION_DIR:
+            m = _translate('Load Error',
+                """Can't create session in a dir containing a session
+for better organization.""")
         
         self.sendError(err_loading, m)
         

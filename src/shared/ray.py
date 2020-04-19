@@ -111,6 +111,7 @@ class Err:
     UNKNOWN_MESSAGE = -18
     ABORT_ORDERED = -19
     COPY_ABORTED = -20
+    SESSION_IN_SESSION_DIR = -21
     # check control/osc_server.py in case of changes !!!
 
 
