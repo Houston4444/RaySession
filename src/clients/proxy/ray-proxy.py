@@ -673,7 +673,10 @@ class Proxy(QObject):
         # enable environment vars in config_file
         config_file = os.path.expandvars(self.config_file)
         os.environ['CONFIG_FILE'] = config_file
-
+        
+        # because that is not done by python itself
+        os.environ['PWD'] = os.getcwd()
+        
         # Useful for launching NSM compatible clients with specifics arguments
         os.unsetenv('NSM_URL')
 
