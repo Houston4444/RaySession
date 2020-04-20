@@ -988,8 +988,6 @@ class OscServerThread(ClientCommunicating):
     def rayDuplicateState(self, path, args, types, src_addr):
         pass
     
-    
-    
     @ray_method('/ray/option/save_from_client', 'i')
     def rayOptionSaveFromClient(self, path, args, types, src_addr):
         self.option_save_from_client = bool(args[0])

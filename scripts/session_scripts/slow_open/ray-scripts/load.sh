@@ -3,14 +3,15 @@
 #########################################################################
 #                                                                       #
 #  Here you can edit the script runned                                  #
-#  each time daemon order this session to be closed                     #
+#  each time daemon order this session to be loaded                     #
 #  WARNING: You can be here in a switch situation,                      #
-#           a session can be opened just after.                         #
+#           some clients may be still alive                             #
+#           if they are NSM compatible and capable of switch            #
+#           or if they are not NSM compatible at all                    #
+#                 and launched directly (not via proxy)                 #
 #                                                                       #
 #  You have access the following environment variables                  #
 #  RAY_SESSION_PATH : Folder of the current session                     #
-#  RAY_FUTURE_SESSION_PATH: Folder of the session that will be opened   #
-#     just after current session close.                                 #
 #  RAY_SCRIPTS_DIR  : Folder containing this script                     #
 #     ray-scripts folder can be directly in current session             #
 #     or in a parent folder.                                            #
@@ -21,29 +22,11 @@
 #########################################################################
 
 
-# script here some actions to run before closing the session.
+# Load the session without start any client
+ray_control run_step open_off
 
-
-# some clients may keep alive because
-# they are needed by the session to open just after.
-# if for some reasons you want all clients to stop
-# set this variable true !
-close_all_clients=false
-
-
-
-if $close_all_clients;then
-    # This command orders to ray-daemon to close the session closing all clients
-    # even if a session has to be opened just after.
-    ray_control run_step close_all
-else
-    # This command orders to ray-daemon to close the session
-    # If you don't run it, session will be closed after running the script
-    ray_control run_step
-fi
-
-
-
-# script here some actions to run once the session is closed
-
-
+# Start all clients supposed to be started at session load
+# But each time, wait the client to be ready to start the next
+for client_id in ray_control list_clients auto_start;do
+    ray_control client "$client_id" open
+done
