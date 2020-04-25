@@ -739,7 +739,7 @@ class OperatingSession(Session):
     # then, when timer is timeout or when all client replied, 
     # save_substep1 is launched.
         
-    def save(self, from_client_id='', outing=False):
+    def save(self, outing=False):
         if not self.path:
             self.nextFunction()
             return
@@ -753,9 +753,6 @@ class OperatingSession(Session):
                                 % ray.highlightText(self.getShortPath()))
         
         for client in self.clients:
-            if from_client_id and client.client_id == from_client_id:
-                continue
-            
             if client.canSaveNow():
                 self.expected_clients.append(client)
             client.save()

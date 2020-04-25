@@ -191,25 +191,6 @@ class SignaledSession(OperatingSession):
         else:
             self.message("error from unknown client")
     
-    def _nsm_client_is_clean(self, path, args, src_addr):
-        # save session from client clean (not dirty) message
-        if self.steps_order:
-            return 
-        
-        if self.file_copier.isActive():
-            return 
-        
-        self.rememberOscArgs(path, args, None)
-        
-        client = self.getClientByAddress(src_addr)
-        if not client:
-            return
-        
-        self.steps_order = [(self.save, client.client_id),
-                              self.snapshot,
-                              self.saveDone]
-        self.nextFunction()
-    
     def _nsm_client_label(self, path, args, src_addr):
         client = self.getClientByAddress(src_addr)
         if client:
@@ -412,7 +393,7 @@ class SignaledSession(OperatingSession):
         self.steps_order = []
         
         if save_previous:
-            self.steps_order += [(self.save, '', True)]
+            self.steps_order += [(self.save, True)]
         
         self.steps_order += [self.closeNoSaveClients]
         
@@ -501,7 +482,7 @@ class SignaledSession(OperatingSession):
     
     @session_operation
     def _ray_session_close(self, path, args, src_addr):
-        self.steps_order = [(self.save, '', True),
+        self.steps_order = [(self.save, True),
                               self.closeNoSaveClients,
                               self.snapshot,
                               (self.close, True),
