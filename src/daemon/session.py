@@ -1047,16 +1047,20 @@ class OperatingSession(Session):
         self.trashed_clients.clear()
         self.sendGui('/ray/gui/trash/clear')
         
-        self.waitAndGoTo(30000, self.close_substep1, ray.WaitFor.QUIT)
+        self.waitAndGoTo(30000, (self.close_substep1, clear_all_clients),
+                         ray.WaitFor.QUIT)
     
-    def close_substep1(self):
+    def close_substep1(self, clear_all_clients=False):
         for client in self.expected_clients:
             client.kill()
             
-        self.waitAndGoTo(1000, self.close_substep2, ray.WaitFor.QUIT)
+        self.waitAndGoTo(1000, (self.close_substep2, clear_all_clients),
+                         ray.WaitFor.QUIT)
     
-    def close_substep2(self):
+    def close_substep2(self, clear_all_clients=False):
         self.cleanExpected()
+        if clear_all_clients:
+            self.setPath('')
         self.nextFunction()
     
     def closeDone(self):
