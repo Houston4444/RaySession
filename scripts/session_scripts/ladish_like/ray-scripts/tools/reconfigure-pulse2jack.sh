@@ -2,13 +2,7 @@
 # Script to bridge/start pulseaudio into JACK mode
 # highly inspired (plagiarism) from cadence-pulse2jack from falktx
 
-INSTALL_PREFIX="X-PREFIX-X"
-
-# ----------------------------------------------
-
-if [ ! -d ~/.pulse ]; then
-    mkdir -p ~/.pulse
-fi
+[ ! -d ~/.pulse ] && mkdir -p ~/.pulse
 
 if [ ! -f ~/.pulse/client.conf ]; then
     echo "autospawn = no" > ~/.pulse/client.conf
@@ -242,4 +236,3 @@ else
     StartBridged
 }
 fi
- 

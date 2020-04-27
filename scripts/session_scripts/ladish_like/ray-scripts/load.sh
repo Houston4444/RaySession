@@ -6,28 +6,37 @@ finished(){
     exit 0
 }
 
+
 wanted_value_of(){
     line=$(echo "$wanted_parameters"|grep ^"$1:"|head -n 1)
     echo "${line#*:}"
 }
+
 
 current_value_of(){
     line=$(echo "$current_parameters"|grep ^"$1:"|head -n 1)
     echo "${line#*:}"
 }
 
+
 has_different_value(){
     [[ `wanted_value_of "$1"` != `current_value_of "$1"` ]] \
         && return 0 || return 1
 }
 
+
 set_samplerate(){
     jack_control dps rate "$(current_value_of /driver/rate)"
 }
 
+
 set_jack_parameters(){
-    "$jack_parameters_py" "$wanted_parameters"
+    parameters_files=$(mktemp)
+    echo "$wanted_parameters" > "$parameters_files"
+    "$jack_parameters_py" "$parameters_files"
+    rm "$parameters_files"
 }
+
 
 start_jack(){
     ray_control script_info "Starting JACK"
@@ -40,6 +49,7 @@ start_jack(){
     fi
 }
 
+
 stop_jack(){
     ray_control script_info "Stopping clients"
     ray_control clear_clients
@@ -49,6 +59,7 @@ stop_jack(){
     jack_control stop
 }
 
+
 reconfigure_pulseaudio(){
     if has_different_value pulseaudio_sinks || has_different_value pulseaudio_sources;then
         ray_control script_info "Reconfigure PulseAudio with $(wanted_value_of pulseaudio_sources) inputs"
@@ -56,20 +67,20 @@ reconfigure_pulseaudio(){
     fi
 }
 
+
 ############ SCRIPT START #############
+source "$RAY_SCRIPTS_DIR/shared.sh" || finished
 
 jack_parameters_py="$RAY_SCRIPTS_DIR/tools/jack_parameters.py"
 reconfigure_pa_script="$RAY_SCRIPTS_DIR/tools/reconfigure-pulse2jack.sh"
 
 # read current and session parameters
-current_parameters="hostname:$(hostname)
-"
-current_parameters+=$("$jack_parameters_py") || finished
+current_parameters=$(get_current_parameters)
 wanted_parameters=$(cat "$RAY_SESSION_PATH/jack_parameters") || finished
-echo zefi
+
 # JACK should not be started, continue normal way even if JACK is started
 [[ "$(wanted_value_of jack_started)" == 0 ]] && finished
-echo ezfi2
+
 # Session uses another samplerate than the current one, re-start JACK and go
 if has_different_value /driver/rate;then
     stop_jack
@@ -85,10 +96,10 @@ if has_different_value /driver/rate;then
     
     finished
 fi
-echo ezfi3
+
 # Session last open was on another machine, continue normal way
 has_different_value hostname && finished
-echo ezfi4
+
 same_setup=true
 
 for parameter in /engine/driver /engine/realtime /engine/realtime-priority \

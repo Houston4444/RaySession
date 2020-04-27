@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -u
 
 import sys
-sys.stderr.write('efzkoefkefkofko\n')
+
 try:
     import dbus
 except:
@@ -13,25 +13,116 @@ control_interface_name = name_base + '.JackControl'
 configure_interface_name = name_base + '.Configure'
 patchbay_interface_name = name_base + '.JackPatchbay'
 service_name = name_base + '.service'
+state_file_path='/tmp/jack_current_parameters'
 
-all_parameters = {
-    '/engine/driver': '',
-    '/engine/realtime': '',
-    '/engine/realtime-priority': '',
-    '/engine/self-connect-mode': '',
-    '/engine/slave-drivers': '',
-    '/driver/period': '',
-    '/driver/nperiods': '',
-    '/driver/rate': '',
-    '/driver/inchannels': '',
-    '/driver/outchannels': '',
-    '/internals/audioadapter/device': ''}
+def convert_str_to_dbustype(value, dbus_type):
+    try:
+        dbus_type = str(dbus_type)
+        
+        if dbus_type == 'b':
+            return bool(value == '1')
+        elif dbus_type in ('i', 'u'):
+            return int(value)
+        elif dbus_type == 'y':
+            return value.encode()
+        elif dbus_type == 's':
+            return value
+        else:
+            return None
+        
+    except:
+        return None
+
+def get_jack_parameters():
+    # Check if JACK is started, start output_string store
+    jack_started = control_iface.IsStarted()        
+    output_string = "jack_started:%s\n" % str(jack_started)
+    
+    params = configure_iface.GetParametersInfo(['engine'])
+    for param in params:
+        isset, default, value = configure_iface.GetParameterValue(
+            ['engine', param[1]])
+        if isset:
+            output_string += '/engine/%s:%s\n' % (param[1], value)
+        
+    params = configure_iface.GetParametersInfo(['driver'])
+    for param in params:
+        isset, default, value = configure_iface.GetParameterValue(
+                                                        ['driver', param[1]])
+        if isset:
+            output_string += '/driver/%s:%s\n' % (param[1], value)
+            
+    is_leaf, internals = configure_iface.ReadContainer(['internals'])
+    for internal in internals:
+        params = configure_iface.GetParametersInfo(['internals', internal])
+        for param in params:
+            isset, default, value = configure_iface.GetParameterValue(
+                                            ['internals', internal, param[1]])
+            if isset:
+                output_string += '/internals/%s/%s:%s\n' % (
+                                                    internal, param[1], value)
+                
+    if output_string:
+        return output_string[:-1]
+    else:
+        return ''
+
+def set_jack_parameters(contents):
+    all_input_parameters = {}
+    for line in contents.split('\n'):
+        if line.startswith(('/engine/', '/driver/', '/internals')):
+            param, colon, value = line.partition(':')
+            all_input_parameters[param] = value
+            
+    params = configure_iface.GetParametersInfo(['engine'])
+    for param in params:
+        isset, default, value = configure_iface.GetParameterValue(
+                                                        ['engine', param[1]])
+        full_param = '/engine/%s' % param[1]
+        if full_param in all_input_parameters:
+            if str(value) != all_input_parameters[full_param]:
+                dbus_value = convert_str_to_dbustype(
+                                all_input_parameters[full_param], param[0])
+                if dbus_value is not None:
+                    configure_iface.SetParameterValue(
+                                            ['engine', param[1]], dbus_value)
+    
+    params = configure_iface.GetParametersInfo(['driver'])
+    for param in params:
+        isset, default, value = configure_iface.GetParameterValue(
+                                                        ['driver', param[1]])
+        
+        full_param = '/driver/%s' % param[1]
+        if full_param in all_input_parameters:
+            if str(value) != all_input_parameters[full_param]:
+                dbus_value = convert_str_to_dbustype(
+                                all_input_parameters[full_param], param[0])
+                if dbus_value is not None:
+                    configure_iface.SetParameterValue(
+                                            ['driver', param[1]], dbus_value)
+    
+    
+    is_leaf, internals = configure_iface.ReadContainer(['internals'])
+    for internal in internals:
+        params = configure_iface.GetParametersInfo(['internals', internal])
+        for param in params:
+            isset, default, value = configure_iface.GetParameterValue(
+                                            ['internals', internal, param[1]])
+            
+            full_param = '/internals/%s/%s' % (internal, param[1])
+            if full_param in all_input_parameters:
+                if str(value) != all_input_parameters[full_param]:
+                    dbus_value = convert_str_to_dbustype(
+                                all_input_parameters[full_param], param[0])
+                    if dbus_value is not None:
+                        configure_iface.SetParameterValue(
+                                ['internals', internal, param[1]], dbus_value)
 
 def get_parameters():
     # Check if JACK is started, start output_string store
-    sys.stderr.write('refkoorkok\n')
     jack_started = control_iface.IsStarted()        
     output_string = "jack_started:%s\n" % str(jack_started)
+    
 
     # Check JACK configuration
     for key in all_parameters:
@@ -99,10 +190,7 @@ def set_parameters(stdin):
     
     return set_error
 
-sys.stderr.write('fzrfzokfokk\n')
-
 if __name__ == '__main__':
-    sys.stderr.write('ezeff214\n')
     try:
         bus = dbus.SessionBus()
         controller = bus.get_object(service_name, "/org/jackaudio/Controller")
@@ -114,9 +202,18 @@ if __name__ == '__main__':
         sys.exit(1)
     
     if len(sys.argv) >= 2:
-        sys.exit(set_parameters(sys.argv[1]))
+        try:
+            file = open(sys.argv[1], 'r')
+            contents = file.read()
+            file.close()
+        except:
+            sys.stderr.write("unable to read file %s\n" % sys.argv[1])
+            sys.exit(1)
+        
+        sys.exit(set_jack_parameters(contents))
     else:
-        sys.stderr.write('fzeplf145\n')
-        output_string = get_parameters()
-        sys.stdout.write(output_string)
+        #output_string = get_parameters()
+        #sys.stdout.write(output_string)
+        output_string = get_jack_parameters()
+        print(output_string)
     

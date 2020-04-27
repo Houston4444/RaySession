@@ -1,0 +1,16 @@
+hostname:houston-MS-75922
+pulseaudio_sinks:2
+pulseaudio_sources:2
+daemon_pid:27549
+jack_started:1
+/engine/driver:firewire
+/engine/realtime:1
+/engine/realtime-priority:70
+/engine/self-connect-mode: 
+/engine/slave-drivers:
+/driver/period:256
+/driver/nperiods:3
+/driver/rate:44100
+/driver/inchannels:4
+/driver/outchannels:4
+/internals/audioadapter/device:hw:K6,0
