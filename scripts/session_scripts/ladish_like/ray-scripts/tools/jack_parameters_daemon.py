@@ -22,19 +22,6 @@ patchbay_interface_name = name_base + '.JackPatchbay'
 service_name = name_base + '.service'
 last_file_write = 0.0
 
-all_parameters = {
-    '/engine/driver': '',
-    '/engine/realtime': '',
-    '/engine/realtime-priority': '',
-    '/engine/self-connect-mode': '',
-    '/engine/slave-drivers': '',
-    '/driver/period': '',
-    '/driver/nperiods': '',
-    '/driver/rate': '',
-    '/driver/inchannels': '',
-    '/driver/outchannels': '',
-    '/internals/audioadapter/device': ''}
-
 def dbus_signal_receiver(*args, **kwds):
     global last_file_write
     
@@ -46,44 +33,57 @@ def dbus_signal_receiver(*args, **kwds):
                               'PortAppeared'):
         return
     
-    if kwds['member']  == 'PortAppeared':
-        # file already saved in last 10s 
-        if time.time() - last_file_write < 10:
+    if kwds['member'] == 'PortAppeared':
+        # file already saved in last 3s 
+        if time.time() - last_file_write < 3:
             return
         
         # PortAppeared doesn't concerns a physical port, do nothing
         if not args[5] & 0x4:
             return
     
-    write_the_file()
+    jack_status = 1
+    if kwds['member'] == 'ServerStopped':
+        jack_status = 0
+        
+    write_the_file(jack_started=jack_status)
     
-def write_the_file(at_start=False):
+def write_the_file(at_start=False, jack_started=-1):
     output_string = "daemon_pid:%i\n" % os.getpid()
     
     # Check if JACK is started, start output_string store
-    jack_started = control_iface.IsStarted()
+    if jack_started == -1:
+        jack_started = control_iface.IsStarted()
     output_string += "jack_started:%s\n" % str(jack_started)
     
-    if not (at_start and jack_started):
-        # Check JACK configuration
-        for key in all_parameters:
-            isset, default, value = configure_iface.GetParameterValue(
-                                                        key.split('/')[1:])
-            all_parameters[key] = str(value)
-
-        # Because buffersize is switchable without restarting JACK
-        # the buffersize in configuration may differs from the real buffersize
-        # So, check real buffersize
-        try:
-            buffersize = control_iface.GetBufferSize()
-            if buffersize:
-                all_parameters['/driver/period'] = str(buffersize)
-        except:
-            pass
+    output_string += "reliable_infos:%i\n" \
+                        % int(not bool(at_start and jack_started))
+                    
+    params = configure_iface.GetParametersInfo(['engine'])
+    for param in params:
+        isset, default, value = configure_iface.GetParameterValue(
+            ['engine', param[1]])
+        if isset:
+            output_string += '/engine/%s:%s\n' % (param[1], value)
         
-        for key in all_parameters:
-            output_string += "%s:%s\n" % (key, all_parameters[key])
+    params = configure_iface.GetParametersInfo(['driver'])
+    for param in params:
+        isset, default, value = configure_iface.GetParameterValue(
+                                                    ['driver', param[1]])
+        if isset:
+            output_string += '/driver/%s:%s\n' % (param[1], value)
             
+    is_leaf, internals = configure_iface.ReadContainer(['internals'])
+    for internal in internals:
+        params = configure_iface.GetParametersInfo(
+                                                ['internals', internal])
+        for param in params:
+            isset, default, value = configure_iface.GetParameterValue(
+                                        ['internals', internal, param[1]])
+            if isset:
+                output_string += '/internals/%s/%s:%s\n' % (
+                                                internal, param[1], value)
+    
     if not os.path.exists(os.path.dirname(state_file_path)):
         os.makedirs(os.path.dirname(state_file_path))
         
@@ -131,7 +131,11 @@ if __name__ == '__main__':
                             interface_keyword="interface",
                             sender_keyword="sender")
     
-    write_the_file(True)
+    if len(sys.argv) > 0 and sys.argv[1] in ('-f', '--force-reliable'):
+        write_the_file()
+    else:
+        write_the_file(at_start=True)
+    
     loop.run()
     sys.exit()
     

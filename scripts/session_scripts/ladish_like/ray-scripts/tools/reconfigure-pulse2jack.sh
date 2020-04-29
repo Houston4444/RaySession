@@ -103,12 +103,14 @@ str_playback="channels=$wanted_playback_ports" ##
 
 IsPulseAudioRunning()
 {
-    PROCESS=`ps -u $USER | grep pulseaudio`
-    if [ "$PROCESS" == "" ]; then
-        false
-    else
-        true
-    fi
+    PROCESS=`ps -u "$USER" | grep " pulseaudio"$`
+    [ -n "$PROCESS" ]
+#     
+#     if [ "$PROCESS" == "" ]; then
+#         false
+#     else
+#         true
+#     fi
 }
 
 StartBridged()

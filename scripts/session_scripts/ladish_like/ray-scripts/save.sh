@@ -1,11 +1,5 @@
 #!/bin/bash
 
-finished(){
-    ray_control run_step
-    exit 0
-}
-
-source "$RAY_SCRIPTS_DIR/shared.sh" || finished
-contents=$(get_current_parameters) || finished
-echo "$contents" > "$RAY_SESSION_PATH/jack_parameters"
-finished
+"$RAY_SCRIPTS_DIR/save_jack_setup.sh"
+ray_control run_step
+exit 0

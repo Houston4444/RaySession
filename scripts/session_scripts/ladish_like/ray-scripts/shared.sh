@@ -2,11 +2,11 @@
 
 get_current_parameters(){
     echo "hostname:$(hostname)"
-
+    
     all_jack_ports=$(jack_lsp)
     echo "pulseaudio_sinks:$(echo "$all_jack_ports"|grep ^"PulseAudio JACK Sink:"|wc -l)"
     echo "pulseaudio_sources:$(echo "$all_jack_ports"|grep ^"PulseAudio JACK Source:"|wc -l)"
-
+    
     parameters_path="/tmp/RaySession/jack_current_parameters"
 
     if [ -f "$parameters_path" ];then
@@ -14,8 +14,8 @@ get_current_parameters(){
         daemon_pid=$(echo "$current_parameters"|grep ^daemon_pid:|cut -d':' -f2)
         
         if [ -d "/proc/$daemon_pid" ];then
-            echo "$current_parameters"
-            return 0
+            echo "$current_parameters" | grep -v ^"daemon_pid:"|grep -v ^"reliable_infos:"
+            return
         fi
         
         rm "$parameters_path"
@@ -33,5 +33,5 @@ get_current_parameters(){
     ray_control hide_script_info >/dev/null
 
     [ -f "$parameters_path" ] && cat "$parameters_path"
-    return 0
+    return
 }
