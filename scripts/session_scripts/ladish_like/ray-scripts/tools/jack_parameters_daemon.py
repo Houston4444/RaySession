@@ -131,7 +131,7 @@ if __name__ == '__main__':
                             interface_keyword="interface",
                             sender_keyword="sender")
     
-    if len(sys.argv) > 0 and sys.argv[1] in ('-f', '--force-reliable'):
+    if len(sys.argv) >= 2 and sys.argv[1] in ('-f', '--force-reliable'):
         write_the_file()
     else:
         write_the_file(at_start=True)

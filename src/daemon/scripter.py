@@ -141,6 +141,8 @@ class StepScripter(Scripter):
         process_env.insert('RAY_PARENT_SCRIPTS_DIR', parent_scripts_dir)
         process_env.insert('RAY_FUTURE_SESSION_PATH',
                            self.session.future_session_path)
+        process_env.insert('RAY_SWITCHING_SESSION',
+                           str(self.session.switching_session).lower())
         process_env.insert('RAY_SESSION_PATH', self.session.path)
             
         self._process.setProcessEnvironment(process_env)

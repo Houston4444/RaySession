@@ -37,80 +37,11 @@ else
     fi
 fi
 
-# ----------------------------------------------
-wanted_capture_ports=0   # -1 means default
-wanted_playback_ports=0  # -1 means default
-
-arg_is_for=""
-
-for arg in "$@";do
-    case "$arg" in
-        -h|--h|--help)
-    echo "usage: $0 [command]
-    
-    -p           Playback only with default number of channels
-    -p <NUMBER>  Number of playback channels
-    -c           Capture only with default number of channels
-    -c <NUMBER>  Number of capture channels
-
-    -h, --help   Show this help menu
-        --dummy  Don't do anything, just create the needed files
-
-    NOTE:
-    When runned with no arguments, $(basename "$0") will
-    activate PulseAudio with both playback and record modes with default number of channels.
-    "
-    exit
-        ;;
-        --dummy)
-    exit
-        ;;
-        -c|--capture)
-            arg_is_for="capture"
-            wanted_capture_ports=-1 # -1 means default, if no (correct) argument is given.
-        ;;
-        -p|--play|--playback)
-            arg_is_for="playback"
-            wanted_playback_ports=-1
-        ;;
-        * )
-            case "$arg_is_for" in
-                "capture")
-                    [ "$arg" -ge 0 ] 2>/dev/null && wanted_capture_ports="$arg"
-                ;;
-                "playback")
-                    [ "$arg" -ge 0 ] 2>/dev/null && wanted_playback_ports="$arg"
-                ;;
-            esac
-        ;;
-    esac
-done
-
-
-if [ $wanted_capture_ports == 0 ] && [ $wanted_playback_ports == 0 ];then
-    #no sense to want to start/bridge pulseaudio without ports, set as default
-    capture_ports=-1  # -1 means default
-    playback_ports=-1 # -1 means default
-fi
-
-str_capture="channels=$wanted_capture_ports"   #used for pulseaudio commands
-str_playback="channels=$wanted_playback_ports" ##
-
-[ $wanted_capture_ports  == -1 ] && str_capture=""  # -1 means default, no command channels=n
-[ $wanted_playback_ports == -1 ] && str_playback="" ##
-
-# ----------------------------------------------
 
 IsPulseAudioRunning()
 {
     PROCESS=`ps -u "$USER" | grep " pulseaudio"$`
     [ -n "$PROCESS" ]
-#     
-#     if [ "$PROCESS" == "" ]; then
-#         false
-#     else
-#         true
-#     fi
 }
 
 StartBridged()
@@ -166,6 +97,71 @@ JackNotRunning()
     echo "JACK seems not running, start JACK before bridge PulseAudio"
     exit 1
 }
+
+
+# ----------------------------------------------
+wanted_capture_ports=0   # -1 means default
+wanted_playback_ports=0  # -1 means default
+
+arg_is_for=""
+
+for arg in "$@";do
+    case "$arg" in
+        -h|--h|--help)
+    echo "usage: $0 [command]
+    
+    -p           Playback only with default number of channels
+    -p <NUMBER>  Number of playback channels
+    -c           Capture only with default number of channels
+    -c <NUMBER>  Number of capture channels
+
+    -h, --help   Show this help menu
+        --dummy  Don't do anything, just create the needed files
+
+    NOTE:
+    When runned with no arguments, $(basename "$0") will
+    activate PulseAudio with both playback and record modes with default number of channels.
+    "
+    exit
+        ;;
+        --dummy)
+    exit
+        ;;
+        -c|--capture)
+            arg_is_for="capture"
+            wanted_capture_ports=-1 # -1 means default, if no (correct) argument is given.
+        ;;
+        -p|--play|--playback)
+            arg_is_for="playback"
+            wanted_playback_ports=-1
+        ;;
+        * )
+            case "$arg_is_for" in
+                "capture")
+                    [ "$arg" -ge 0 ] 2>/dev/null && wanted_capture_ports="$arg"
+                ;;
+                "playback")
+                    [ "$arg" -ge 0 ] 2>/dev/null && wanted_playback_ports="$arg"
+                ;;
+            esac
+        ;;
+    esac
+done
+
+
+if [ $wanted_capture_ports == 0 ] && [ $wanted_playback_ports == 0 ];then
+    IsPulseAudioRunning || exit 0
+fi
+
+str_capture="channels=$wanted_capture_ports"   #used for pulseaudio commands
+str_playback="channels=$wanted_playback_ports" ##
+
+[ $wanted_capture_ports  == -1 ] && str_capture=""  # -1 means default, no command channels=n
+[ $wanted_playback_ports == -1 ] && str_playback="" ##
+
+# ----------------------------------------------
+
+
 
 if (IsPulseAudioRunning); then
 {   

@@ -414,6 +414,8 @@ class OperatingSession(Session):
         
         self.run_step_addr = None
         
+        self.switching_session = False
+        
     def rememberOscArgs(self, path, args, src_addr):
         self.osc_src_addr = src_addr
         self.osc_path = path
@@ -1546,6 +1548,7 @@ for better organization."""))
             
         self.future_session_path = spath
         self.future_session_name = sess_name
+        self.switching_session = bool(self.path)
         
         self.nextFunction()
     
@@ -1759,6 +1762,8 @@ for better organization."""))
             _translate('GUIMSG', 'session %s is loaded.') 
                 % ray.highlightText(self.getShortPath()))
         self.sendGui("/ray/gui/session/name",  self.name, self.path)
+        
+        self.switching_session = False
         
         self.nextFunction()
     
