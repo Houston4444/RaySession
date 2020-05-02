@@ -1,15 +1,24 @@
 #!/bin/bash
 
 has_pulse_jack(){
-    which pactl >/dev/null || return 1
-    pactl list 2>/dev/null|grep -q " module-jack-sink.c"$
+    # check if pulseaudio-module-jack is quite long (> 100ms on a correct machine)
+    # So this state is stored in a tmp file. 
+    
+    if [ -f "$tmp_pulse_file" ];then
+        [[ "$(cat "$tmp_pulse_file")" == 0 ]] && return 0 || return 1
+    fi
+    
+    which pulseaudio && pulseaudio --dump-modules|grep -q ^module-jack-
+    return_code=$?
+    echo $return_code > "$tmp_pulse_file"
+    return $return_code
 }
 
 
 get_current_parameters(){
     echo "hostname:$(hostname)"
     
-    parameters_path="/tmp/RaySession/jack_current_parameters"
+    parameters_path="$tmp_dir/jack_current_parameters"
 
     if [ -f "$parameters_path" ];then
         daemon_pid=$(cat "$parameters_path"|grep ^daemon_pid:|cut -d':' -f2)
@@ -23,7 +32,7 @@ get_current_parameters(){
         for ((i=0; i<=50; i++));do
             sleep 0.1
             [ -f "$parameters_path" ] && break
-            [ "$i" == 2 ] && ray_control script_info "Waiting for JACK infos..." >/dev/null
+            [ "$i" == 2 ] && ray_control script_info "$tr_waiting_jack_infos" >/dev/null
         done
         
         ray_control hide_script_info >/dev/null
@@ -69,11 +78,11 @@ set_jack_parameters(){
 
 
 start_jack(){
-    ray_control script_info "Starting JACK"
+    ray_control script_info "$tr_starting_jack"
     jack_control start
     if ! jack_control status;then
-        ray_control script_info "Failed to start JACK.
-Session open cancelled !"
+        ray_control script_info "$tr_start_jack_failed"
+        # session load is aborted, and script_info dialog will not be hidden
         exit 1
     fi
 }
@@ -81,11 +90,11 @@ Session open cancelled !"
 
 stop_jack(){
     if $RAY_SWITCHING_SESSION;then
-        ray_control script_info "Stopping clients"
+        ray_control script_info "$tr_stopping_clients"
         ray_control clear_clients
     fi
     
-    ray_control script_info "Stopping JACK"
+    ray_control script_info "$tr_stopping_jack"
     jack_control stop
 }
 
@@ -108,8 +117,7 @@ reconfigure_pulseaudio(){
     
     if [[ "$1" == "as_it_just_was" ]] || (
             has_different_value pulseaudio_sinks || has_different_value pulseaudio_sources);then
-        ray_control script_info "Reconfigure PulseAudio
-with $sources_channels inputs / $sinks_channels outputs."
+        ray_control script_info "$(tr_reconfigure_pulseaudio "$sources_channels" "$sinks_channels")"
         "$reconfigure_pa_script" -c "$sources_channels" -p "$sinks_channels"
     fi
 }
@@ -132,7 +140,13 @@ has_different_value(){
 }
 
 
+source "$RAY_SCRIPTS_DIR/locale.sh" || exit 0
+
 session_jack_file="$RAY_SESSION_PATH/jack_parameters"
 jack_parameters_py="$RAY_SCRIPTS_DIR/tools/jack_parameters.py"
 reconfigure_pa_script="$RAY_SCRIPTS_DIR/tools/reconfigure-pulse2jack.sh"
-backup_jack_conf="/tmp/RaySession/jack_backup_parameters"
+
+tmp_dir=/tmp/RaySession
+[ -d "$tmp_dir" ] || mkdir -p "$tmp_dir"
+backup_jack_conf="$tmp_dir/jack_backup_parameters"
+tmp_pulse_file="$tmp_dir/has_pulse_jack"

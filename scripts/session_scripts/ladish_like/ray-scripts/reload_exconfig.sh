@@ -5,6 +5,7 @@ source "$RAY_SCRIPTS_DIR/shared.sh" || exit 0
 current_parameters=$(get_current_parameters)
 wanted_parameters=$(cat "$backup_jack_conf")
 rm "$backup_jack_conf"
+rm "$tmp_pulse_file"
 
 make_diff_parameters
 

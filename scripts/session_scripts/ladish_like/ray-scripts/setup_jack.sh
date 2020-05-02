@@ -8,7 +8,8 @@
 source "$RAY_SCRIPTS_DIR/shared.sh" || exit 0
 
 # read current and session parameters, and diff between them
-current_parameters=$(get_current_parameters)  # see shared.sh
+current_parameters=$(get_current_parameters)
+
 [ -f "$session_jack_file" ] && wanted_parameters=$(cat "$session_jack_file")
 make_diff_parameters
 
