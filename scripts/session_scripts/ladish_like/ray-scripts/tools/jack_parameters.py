@@ -19,7 +19,7 @@ def convert_str_to_dbustype(value, dbus_type):
         dbus_type = str(dbus_type)
         
         if dbus_type == 'b':
-            return bool(value == '1')
+            return bool(value in ('1', 'true', 'True'))
         elif dbus_type == 'u':
             return dbus.UInt32(value)
         elif dbus_type == 'i':
@@ -82,7 +82,6 @@ def set_jack_parameters(contents):
         full_param = '/engine/%s' % param[1]
         if full_param in all_input_parameters:
             if str(value) != all_input_parameters[full_param]:
-                print('settttinng %s to %s rgrpp' % (full_param, str(value)))
                 dbus_value = convert_str_to_dbustype(
                                 all_input_parameters[full_param], param[0])
                 if dbus_value is not None:

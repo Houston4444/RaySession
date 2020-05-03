@@ -2,6 +2,9 @@
 
 source "$RAY_SCRIPTS_DIR/shared.sh" || exit 0
 [ -f "$backup_jack_conf" ] || exit 0
+
+ray_operation=close
+
 current_parameters=$(get_current_parameters)
 wanted_parameters=$(cat "$backup_jack_conf")
 rm "$backup_jack_conf"
@@ -12,6 +15,7 @@ make_diff_parameters
 [[ "$(current_value_of jack_started)" == 1 ]] && jack_was_started=true || jack_was_started=false
 
 # reset the backup jack parameters in all cases
+check_device
 set_jack_parameters
 
 if has_different_value jack_started;then

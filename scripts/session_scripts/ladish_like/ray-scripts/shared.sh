@@ -8,7 +8,7 @@ has_pulse_jack(){
         [[ "$(cat "$tmp_pulse_file")" == 0 ]] && return 0 || return 1
     fi
     
-    which pulseaudio && pulseaudio --dump-modules|grep -q ^module-jack-
+    which pulseaudio >/dev/null && pulseaudio --dump-modules|grep -q ^module-jack-
     return_code=$?
     echo $return_code > "$tmp_pulse_file"
     return $return_code
@@ -81,7 +81,7 @@ start_jack(){
     ray_control script_info "$tr_starting_jack"
     jack_control start
     if ! jack_control status;then
-        ray_control script_info "$tr_start_jack_failed"
+        ray_control script_info "$(tr_start_jack_failed_${ray_operation})"
         # session load is aborted, and script_info dialog will not be hidden
         exit 1
     fi
@@ -103,6 +103,52 @@ set_samplerate(){
     jack_control dps rate "$(current_value_of /driver/rate)"
 }
 
+
+check_alsa_device(){
+    full_device="$1"
+    [ -z "$full_device" ] && return 0 # device is not set, should work in most cases
+    
+    device_and_index=${full_device#*:}
+    device=${device_and_index%,*}
+    index=${device_and_index##*,}
+    
+    command=aplay
+    [[ "$2" == capture ]] && command=arecord
+    
+    LANG=C LC_ALL=C $command -l|grep -q ^"card .: ${device} \[.*\], device ${index}: "
+}
+
+
+check_device(){
+    case "$(wanted_value_of /engine/driver)" in
+        alsa )
+            if [[ "$(wanted_value_of /driver/duplex)" == "1" ]];then
+                pb_device=$(wanted_value_of /driver/playback)
+                
+                if ! check_alsa_device "$pb_device";then
+                    ray_control script_info "$(tr_device_not_connected_${ray_operation} "$pb_device")"
+                    exit 1
+                fi
+                
+                cp_device="$(wanted_value_of /driver/capture)"
+                if ! check_alsa_device "$cp_device" capture;then
+                    ray_control script_info "$(tr_device_not_connected_${ray_operation} "$cp_device")"
+                    exit 1
+                fi
+            else
+                device="$(wanted_value_of /driver/device)"
+                if ! check_alsa_device "$device";then
+                    ray_control script_info "$(tr_device_not_connected_${ray_operation} "$device")"
+                    exit 1
+                fi
+            fi
+            ;;
+        * )
+            true
+            ;;
+    esac
+}
+            
 
 reconfigure_pulseaudio(){
     has_pulse_jack || return
