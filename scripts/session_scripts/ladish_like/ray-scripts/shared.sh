@@ -79,8 +79,8 @@ set_jack_parameters(){
 
 start_jack(){
     ray_control script_info "$tr_starting_jack"
-    jack_control start
-    if ! jack_control status;then
+    jack_control start &>/dev/null
+    if ! jack_control status &>/dev/null;then
         ray_control script_info "$(tr_start_jack_failed_${ray_operation})"
         # session load is aborted, and script_info dialog will not be hidden
         exit 1
@@ -95,7 +95,7 @@ stop_jack(){
     fi
     
     ray_control script_info "$tr_stopping_jack"
-    jack_control stop
+    jack_control stop &>/dev/null
 }
 
 
@@ -141,6 +141,13 @@ check_device(){
                     ray_control script_info "$(tr_device_not_connected_${ray_operation} "$device")"
                     exit 1
                 fi
+            fi
+            ;;
+        net )
+            check_url=$(wanted_value_of /driver/multicast-ip)
+            if [[ -n "$check_url" ]] && ! ping -c 1 "$check_url" &>/dev/null;then
+                ray_control script_info "$(tr_device_not_connected_${ray_operation} "$check_url")"
+                exit 1
             fi
             ;;
         * )
