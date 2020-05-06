@@ -1,0 +1,8 @@
+[Dolphin]
+GroupedSorting=true
+SortRole=modificationtime
+Timestamp=2020,5,6,16,33,50
+Version=4
+
+[Settings]
+HiddenFilesShown=true

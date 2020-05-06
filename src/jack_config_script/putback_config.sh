@@ -1,7 +1,13 @@
 #!/bin/bash
 
-source "$RAY_SCRIPTS_DIR/shared.sh" || exit 0
-[ -f "$backup_jack_conf" ] || exit 0
+# cd "$(dirname "`readlink -f "$(realpath "$0")"`")"
+
+source shared.sh
+
+if ! [ -f "$backup_jack_conf" ];then
+    echo "No backup jack config file '$backup_jack_conf'" >/dev/stderr
+    exit 0
+fi
 
 ray_operation=close
 

@@ -4,10 +4,6 @@
 # to clients launching directly hydrogen
 # it applies this change to all sessions.
 
-# Note for your scripts that ray_control is slow (rarely faster than 150ms)
-# So think to this and avoid its use when not needed
-# if you want your script to be fast !
-
 # This script works for Hydrogen but could not works for any client
 # It depends on the way the client saves its files under NSM (in a folder..)
 executable=hydrogen

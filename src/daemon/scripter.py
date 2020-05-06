@@ -89,7 +89,25 @@ class StepScripter(Scripter):
         self.session = session
         self._step_str = ''
         self._stepper_has_call = False
+    
+    def getScriptDirs(self, spath):
+        base_path = spath
+        scripts_dir = ''
+        parent_scripts_dir = ''
         
+        while base_path not in ('/', ''):
+            tmp_scripts_dir = "%s/%s" % (base_path, ray.SCRIPTS_DIR)
+            if os.path.isdir(tmp_scripts_dir):
+                if not scripts_dir:
+                    scripts_dir = tmp_scripts_dir
+                else:
+                    parent_scripts_dir = tmp_scripts_dir
+                    break
+                
+            base_path = os.path.dirname(base_path)
+        
+        return (scripts_dir, parent_scripts_dir)
+    
     def processStarted(self):
         pass
     
@@ -106,20 +124,24 @@ class StepScripter(Scripter):
         if not self.session.path:
             return False
         
-        base_path = self.session.path
-        scripts_dir = ''
-        parent_scripts_dir = ''
+        scripts_dir, parent_scripts_dir = self.getScriptDirs(
+                                                            self.session.path)
+        future_scripts_dir, future_parent_scripts_dir = self.getScriptDirs(
+                                            self.session.future_session_path)
+        #base_path = self.session.path
+        #scripts_dir = ''
+        #parent_scripts_dir = ''
         
-        while not base_path in ('/', ''):
-            tmp_scripts_dir = "%s/%s" % (base_path, ray.SCRIPTS_DIR)
-            if os.path.isdir(tmp_scripts_dir):
-                if not scripts_dir:
-                    scripts_dir = tmp_scripts_dir
-                else:
-                    parent_scripts_dir = tmp_scripts_dir
-                    break
+        #while not base_path in ('/', ''):
+            #tmp_scripts_dir = "%s/%s" % (base_path, ray.SCRIPTS_DIR)
+            #if os.path.isdir(tmp_scripts_dir):
+                #if not scripts_dir:
+                    #scripts_dir = tmp_scripts_dir
+                #else:
+                    #parent_scripts_dir = tmp_scripts_dir
+                    #break
                 
-            base_path = os.path.dirname(base_path)
+            #base_path = os.path.dirname(base_path)
         
         script_path = "%s/%s.sh" % (scripts_dir, step_str)        
         if not os.access(script_path, os.X_OK):
@@ -141,6 +163,7 @@ class StepScripter(Scripter):
         process_env.insert('RAY_PARENT_SCRIPTS_DIR', parent_scripts_dir)
         process_env.insert('RAY_FUTURE_SESSION_PATH',
                            self.session.future_session_path)
+        process_env.insert('RAY_FUTURE_SCRIPTS_DIR', future_scripts_dir)
         process_env.insert('RAY_SWITCHING_SESSION',
                            str(self.session.switching_session).lower())
         process_env.insert('RAY_SESSION_PATH', self.session.path)

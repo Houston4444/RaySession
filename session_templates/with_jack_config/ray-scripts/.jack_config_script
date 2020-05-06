@@ -1,0 +1,2 @@
+# This file is used by the script only to know if the session should be managed by the script
+# Do not remove it, else "switch" from one session to another could result in stop and start jack when it's not needed.

@@ -27,7 +27,7 @@ get_current_parameters(){
     
     if [ ! -f "$parameters_path" ];then
         # start the jack parameters checker daemon
-        "$RAY_SCRIPTS_DIR/tools/jack_parameters_daemon.py" &>/dev/null &
+        ./jack_checker_daemon.py &>/dev/null &
         
         for ((i=0; i<=50; i++));do
             sleep 0.1
@@ -72,7 +72,7 @@ make_diff_parameters(){
 set_jack_parameters(){
     parameters_files=$(mktemp)
     echo "$wanted_parameters" > "$parameters_files"
-    "$jack_parameters_py" "$parameters_files"
+    ./jack_parameters.py "$parameters_files"
     rm "$parameters_files"
 }
 
@@ -171,7 +171,7 @@ reconfigure_pulseaudio(){
     if [[ "$1" == "as_it_just_was" ]] || (
             has_different_value pulseaudio_sinks || has_different_value pulseaudio_sources);then
         ray_control script_info "$(tr_reconfigure_pulseaudio "$sources_channels" "$sinks_channels")"
-        "$reconfigure_pa_script" -c "$sources_channels" -p "$sinks_channels"
+        ./reconfigure-pulse2jack.sh -c "$sources_channels" -p "$sinks_channels"
     fi
 }
 
@@ -193,11 +193,9 @@ has_different_value(){
 }
 
 
-source "$RAY_SCRIPTS_DIR/locale.sh" || exit 0
+source locale.sh
 
 session_jack_file="$RAY_SESSION_PATH/jack_parameters"
-jack_parameters_py="$RAY_SCRIPTS_DIR/tools/jack_parameters.py"
-reconfigure_pa_script="$RAY_SCRIPTS_DIR/tools/reconfigure-pulse2jack.sh"
 
 tmp_dir=/tmp/RaySession
 [ -d "$tmp_dir" ] || mkdir -p "$tmp_dir"

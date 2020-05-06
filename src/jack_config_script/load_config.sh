@@ -5,7 +5,8 @@
 # exit 0 means load session after script
 # else the session open will be cancelled
 
-source "$RAY_SCRIPTS_DIR/shared.sh" || exit 0
+cd "$(dirname "`readlink -f "$(realpath "$0")"`")"
+source shared.sh || exit 0
 
 ray_operation=load
 
@@ -17,11 +18,8 @@ make_diff_parameters
 
 [[ "$(current_value_of jack_started)" == 1 ]] && jack_was_started=true || jack_was_started=false
 
-if ! $RAY_SWITCHING_SESSION;then
-    # Very strange if this dir does not already exists
-    mkdir -p /tmp/RaySession
-    echo "$current_parameters" > /tmp/RaySession/jack_backup_parameters
-fi
+# save the current configuration to can restore it (only if we are not in a switch situation)
+$RAY_SWITCHING_SESSION || echo "$current_parameters" > "$backup_jack_conf"
 
 
 # no reliable JACK infos because JACK was started before the checker script
