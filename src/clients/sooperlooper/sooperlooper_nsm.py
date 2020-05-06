@@ -5,6 +5,8 @@ import os
 import signal
 import sys
 import time
+import threading
+
 from liblo import ServerThread, Address, make_method, Message
 from PyQt5.QtCore import (QCoreApplication, pyqtSignal, QObject, QTimer,
                           QProcess, QSettings, QLocale, QTranslator, QFile)
@@ -13,7 +15,6 @@ from PyQt5.QtXml import QDomDocument
 import ray
 import nsm_client
 import jacklib
-import threading
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):

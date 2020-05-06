@@ -150,16 +150,23 @@ install:
 	# Install main code
 	cp -r src $(DEST_RAY)/
 	
+	$(LINK) $(DEST_RAY)/src/bin/ray-jack_checker_daemon $(DESTDIR)$(PREFIX)/bin/
+	$(LINK) $(DEST_RAY)/src/bin/ray-jack_config_script  $(DESTDIR)$(PREFIX)/bin/
+	$(LINK) $(DEST_RAY)/src/bin/ray-pulse2jack          $(DESTDIR)$(PREFIX)/bin/
+	$(LINK) $(DEST_RAY)/src/bin/ray_git                 $(DESTDIR)$(PREFIX)/bin/
+	
 	# install main bash scripts to bin
 	install -m 755 data/raysession  $(DESTDIR)$(PREFIX)/bin/
 	install -m 755 data/ray-daemon  $(DESTDIR)$(PREFIX)/bin/
 	install -m 755 data/ray_control $(DESTDIR)$(PREFIX)/bin/
+	install -m 755 data/ray-proxy   $(DESTDIR)$(PREFIX)/bin/
 	
 	# modify PREFIX in main bash scripts
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
 		$(DESTDIR)$(PREFIX)/bin/raysession \
 		$(DESTDIR)$(PREFIX)/bin/ray-daemon \
-		$(DESTDIR)$(PREFIX)/bin/ray_control
+		$(DESTDIR)$(PREFIX)/bin/ray_control \
+		$(DESTDIR)$(PREFIX)/bin/ray-proxy
 	
 	# Install Translations
 	install -m 644 locale/*.qm $(DEST_RAY)/locale/
@@ -168,6 +175,13 @@ install:
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/raysession
 	rm -f $(DESTDIR)$(PREFIX)/bin/ray-daemon
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray_control
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray-proxy
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray-jack_checker_daemon
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray-jack_config_script
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray-pulse2jack
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray_git
+	
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/raysession.desktop
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/raysession.png
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/raysession.svg

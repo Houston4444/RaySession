@@ -128,20 +128,6 @@ class StepScripter(Scripter):
                                                             self.session.path)
         future_scripts_dir, future_parent_scripts_dir = self.getScriptDirs(
                                             self.session.future_session_path)
-        #base_path = self.session.path
-        #scripts_dir = ''
-        #parent_scripts_dir = ''
-        
-        #while not base_path in ('/', ''):
-            #tmp_scripts_dir = "%s/%s" % (base_path, ray.SCRIPTS_DIR)
-            #if os.path.isdir(tmp_scripts_dir):
-                #if not scripts_dir:
-                    #scripts_dir = tmp_scripts_dir
-                #else:
-                    #parent_scripts_dir = tmp_scripts_dir
-                    #break
-                
-            #base_path = os.path.dirname(base_path)
         
         script_path = "%s/%s.sh" % (scripts_dir, step_str)        
         if not os.access(script_path, os.X_OK):
