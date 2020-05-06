@@ -15,7 +15,8 @@ OPERATION_TYPE_CLIENT = 4
 OPERATION_TYPE_TRASHED_CLIENT = 5
 OPERATION_TYPE_ALL = 6 # for help message
 
-control_operations = ('start', 'start_new', 'stop', 'list_daemons',
+control_operations = ('start', 'start_new', 'start_new_hidden', 'stop',
+                      'list_daemons',
                       'get_root', 'get_port', 'get_port_gui_free',
                       'get_pid', 'get_session_path',
                       'has_local_gui', 'has_gui')
@@ -273,9 +274,9 @@ if __name__ == '__main__':
     daemon_started = True
     
     for daemon in daemon_list:
-        if (daemon.user == os.environ['USER']
-                and not daemon.not_default):
-            if not wanted_port or wanted_port == daemon.port:
+        if ((daemon.user == os.environ['USER']
+             and not wanted_port and not daemon.not_default)
+            or (wanted_port == daemon.port)):
                 daemon_port = daemon.port
                 break
     else:
@@ -287,7 +288,7 @@ if __name__ == '__main__':
                 sys.stderr.write('server already started.\n')
                 sys.exit(0)
         
-        elif operation == 'start_new':
+        elif operation in ('start_new', 'start_new_hidden'):
             pass
         
         elif operation == 'stop':
@@ -297,6 +298,8 @@ if __name__ == '__main__':
         
         elif operation == 'list_daemons':
             for daemon in daemon_list:
+                if daemon.not_default:
+                    continue
                 sys.stdout.write('%s\n' % str(daemon.port))
             sys.exit(0)
         
@@ -398,13 +401,14 @@ if __name__ == '__main__':
     if operation_type == OPERATION_TYPE_CONTROL and operation == 'stop':
         osc_order_path = '/ray/server/quit'
     
-    import osc_server # see top of the file
+    import osc_server  # see top of the file
     server = osc_server.OscServer(detach)
     server.setOrderPathArgs(osc_order_path, arg_list)
     daemon_process = None
     
-    if daemon_started and not (operation_type == OPERATION_TYPE_CONTROL
-                               and operation == 'start_new'):
+    if (daemon_started
+            and not (operation_type == OPERATION_TYPE_CONTROL
+                     and operation in ('start_new', 'start_new_hidden'))):
         if (operation_type == OPERATION_TYPE_CONTROL
                 and operation == 'stop'):
             daemon_port_list = []
@@ -445,13 +449,19 @@ if __name__ == '__main__':
             process_args.append('--osc-port')
             process_args.append(str(wanted_port))
         
-        daemon_process = subprocess.Popen(process_args,
-            -1, None, None, subprocess.DEVNULL, subprocess.DEVNULL)
+        if (operation_type == OPERATION_TYPE_CONTROL
+                and operation == 'start_new_hidden'):
+            process_args.append('--hidden')
+            process_args.append('--no-options')
+        
+        daemon_process = subprocess.Popen(process_args, -1, None, None,
+                                          subprocess.DEVNULL,
+                                          subprocess.DEVNULL)
         
         server.waitForStart()
         
         if (operation_type == OPERATION_TYPE_CONTROL
-                and operation in ('start', 'start_new')):
+                and operation in ('start', 'start_new', 'start_new_hidden')):
             server.waitForStartOnly()
     
     #connect SIGINT and SIGTERM
@@ -480,7 +490,7 @@ if __name__ == '__main__':
             break
     
     if (operation_type == OPERATION_TYPE_CONTROL
-            and operation == 'start_new'
+            and operation in ('start_new', 'start_new_hidden')
             and exit_code == 0):
         daemon_port = server.getDaemonPort()
         if daemon_port:

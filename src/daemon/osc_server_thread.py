@@ -59,6 +59,7 @@ class ClientCommunicating(liblo.ServerThread):
         self.server_status  = ray.ServerStatus.OFF
         self.gui_embedded = False
         self.is_nsm_locked  = False
+        self.not_default = False
         self.nsm_locker_url = ''
         self.net_master_daemon_addr = None
         self.net_master_daemon_url = ''
@@ -317,7 +318,14 @@ class OscServerThread(ClientCommunicating):
         self.option_has_git = bool(shutil.which('git'))
         if not self.option_has_git:
             self.option_snapshots = False
-            
+        
+        if CommandLineArgs.no_options:
+            self.option_save_from_client = False
+            self.option_bookmark_session = False
+            self.option_desktops_memory = False
+            self.option_snapshots = False
+            self.option_session_scripts = False
+        
         global instance
         instance = self
         
@@ -1338,6 +1346,9 @@ class OscServerThread(ClientCommunicating):
                 return controller.pid
         
         return 0
+    
+    def setAsNotDefault(self):
+        self.not_default = True
     
     def hasGui(self):
         has_gui = False

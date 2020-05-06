@@ -175,24 +175,29 @@ class ArgParser(argparse.ArgumentParser):
                                   _translate('daemon', 
                                              'Ray Network Sessions'))
         
-        self.add_argument('--session-root', '-r', type=str, default=default_root,
+        self.add_argument('--session-root', '-r', type=str,
+                          default=default_root,
                           help='set root folder for sessions')
         self.add_argument('--session', '-s', type=str, default='',
                           help='session to load at startup')
-        self.add_argument('--osc-port', '-p', 
-                          type=int, default=0, 
+        self.add_argument('--osc-port', '-p',
+                          type=int, default=0,
                           help='select OSC port for the daemon')
-        self.add_argument('--findfreeport', action='store_true', 
+        self.add_argument('--findfreeport', action='store_true',
                           help='find another port if port is not free')
-        self.add_argument('--gui-url', type=ray.getLibloAddress, 
+        self.add_argument('--gui-url', type=ray.getLibloAddress,
                           help=argparse.SUPPRESS)
         self.add_argument('--control-url', type=ray.getLibloAddress,
                           help=argparse.SUPPRESS)
-        self.add_argument('--config-dir', '-c', type=str, default='', 
+        self.add_argument('--no-options', action='store_true',
+            help='start without any option and do not save options at quit')
+        self.add_argument('--hidden', action='store_true',
+            help='hide for ray_control')
+        self.add_argument('--config-dir', '-c', type=str, default='',
                           help='use a custom config dir')
-        self.add_argument('--debug','-d',  action='store_true', 
+        self.add_argument('--debug','-d',  action='store_true',
                           help='see all OSC messages')
-        self.add_argument('--debug-only', '-do', action='store_true', 
+        self.add_argument('--debug-only', '-do', action='store_true',
                           help='debug without client messages')
         self.add_argument('--no-client-messages', '-ncm', action='store_true',
                           help='do not print client messages')

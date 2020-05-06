@@ -77,7 +77,8 @@ class MultiDaemonFile(object):
         element.setAttribute('pid', os.getpid())
         element.setAttribute('port', self.server.port)
         element.setAttribute('user', os.getenv('USER'))
-        element.setAttribute('not_default', int(self.server.is_nsm_locked))
+        element.setAttribute('not_default',
+            int(bool(self.server.is_nsm_locked or self.server.not_default)))
         element.setAttribute('has_gui', int(self.server.hasGui()))
     
     def update(self):

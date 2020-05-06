@@ -23,6 +23,12 @@ control RaySession daemons
         starts a daemon if there is no daemon started
     start_new
         starts a new daemon, returns its OSC port number
+    start_new_hidden
+        starts a new daemon, returns its OSC port number.
+        This daemon will not be seen by ray_control
+        unless its port is specified.
+        This new daemon will be started without any option,
+        and options states won't be saved when it ends.
     stop
         stops all running daemons
     list_daemons

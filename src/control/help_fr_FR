@@ -23,6 +23,12 @@ contrôle les démons de RaySession
         Démarre un démon si aucun n'est déjà démarré
     start_new
         Démarre un nouveau démon, renvoie son numéro de port OSC
+    start_new_hidden
+        Démarre un nouveau démon, renvoie son numéro de port OSC.
+        Ce démon ne sera pas vu par ray_control
+        sauf si son port est spécifié.
+        Ce démon sera démarré sans aucune option,
+        et l'état des options ne sera pas sauvegardé quand il s'arrêtera.
     stop
         Arrête tous les démons tournant
     list_daemons
