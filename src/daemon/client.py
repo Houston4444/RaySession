@@ -1298,11 +1298,6 @@ ignored_extensions:%s""" % (self.client_id,
                                         config_file.replace(old_session_name,
                                                             new_session_name))
                                     
-                                    print('foofofe', config_file_path, new_config_file_path)
-                                    print(bool(os.path.exists(config_file_path)))
-                                    print(bool(os.access(config_file_path, os.W_OK)))
-                                    print(bool(os.path.exists(new_config_file_path)))
-                                    
                                     if (os.path.exists(new_config_file_path)):
                                         # replace config_file attribute
                                         # with variable replaced
@@ -1319,38 +1314,17 @@ ignored_extensions:%s""" % (self.client_id,
                                         files_to_rename.append(
                                             (config_file_path, 
                                              new_config_file_path))
-                                    
-                                    
-                                    #if (os.path.exists(config_file_path)
-                                            #and os.access(config_file_path,
-                                                          #os.W_OK)
-                                            #and not os.path.exists(
-                                                       #new_config_file_path)):
-                                        #files_to_rename.append(
-                                            #(config_file_path, 
-                                             #new_config_file_path))
-                                    #else:
-                                        ## replace config_file attribute
-                                        ## with variable replaced
-                                        #cte.setAttribute('config_file',
-                                                         #config_file)
-                                        #try:
-                                            #file = open(proxy_file, 'w')
-                                            #file.write(xml.toString())
-                                        #except:
-                                            #False
                     except:
                         False
-                print('fokfo70')
                 files_to_rename.append(("%s/%s" % (spath, file_path),
                                         next_path))
-        print('fofoodd80')
+                
         if not do_rename:
             self.prefix_mode = ray.PrefixMode.CUSTOM
             self.custom_prefix = old_prefix
             # it should not be a client_id problem here
             return
-        print('fofoodd90')
+        
         # change last_used snapshot of ardour
         instant_file = "%s/instant.xml" % project_path
         if os.path.isfile(instant_file) and os.access(instant_file, os.W_OK):
@@ -1377,7 +1351,6 @@ ignored_extensions:%s""" % (self.client_id,
                 False
         
         for now_path, next_path in files_to_rename:
-            print('foooep95', now_path, next_path)
             os.rename(now_path, next_path)
     
     def serverAnnounce(self, path, args, src_addr, is_new):

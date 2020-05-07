@@ -15,7 +15,6 @@ konv# RaySession TODO
     Session sous NSM non renommable
     
     send session is loaded when program ready
-    prevent new session in a session folder (but it breaks raysession under NSM)
     
     proxy sans qt (pour légèreté), l'IGU totalement intégrée à RS, configurable même si proxy arrêté (si faisable).
     proxy manage himself variables changes concerning files
