@@ -21,6 +21,7 @@ import ui_abort_session
 import ui_about_raysession
 import ui_add_application
 import ui_donations
+import ui_jack_config_info
 import ui_new_executable
 import ui_error_dialog
 import ui_quit_app
@@ -431,10 +432,20 @@ class NewSessionDialog(ChildDialog):
         self.ui.comboBoxTemplate.addItem(
             _translate('session_template', "empty"))
         self.ui.comboBoxTemplate.addItem(
-            _translate(
-                'session_template',
-                "with JACK patch memory"))
-        self.ui.comboBoxTemplate.insertSeparator(2)
+            _translate('session_template', "with JACK patch memory"))
+        self.ui.comboBoxTemplate.addItem(
+            _translate('session_template', "with JACK config memory"))
+        self.ui.comboBoxTemplate.addItem(
+            _translate('session_template', "with basic scripts"))
+        
+        misscount = self.ui.comboBoxTemplate.count()  - 1 - len(
+                                                ray.factory_session_templates)
+        for i in range(misscount):
+            self.ui.comboBoxTemplate.addItem(
+                ray.factory_session_templates[-i])
+            
+        self.ui.comboBoxTemplate.insertSeparator(
+                                    len(ray.factory_session_templates) + 1)
 
     def initSubFolderCombobox(self):
         self.ui.comboBoxSubFolder.clear()
@@ -451,8 +462,13 @@ class NewSessionDialog(ChildDialog):
         last_used_template = RS.settings.value('last_used_template', type=str)
 
         if last_used_template.startswith('///'):
-            if last_used_template == '///withJACKPATCH':
-                self.ui.comboBoxTemplate.setCurrentIndex(1)
+            last_factory_template = last_used_template.replace('///', '', 1)
+            
+            for i in range(len(ray.factory_session_templates)):
+                factory_template = ray.factory_session_templates[i]
+                if factory_template == last_factory_template:
+                    self.ui.comboBoxTemplate.setCurrentIndex(i+1)
+                    break
         else:
             if last_used_template in self.template_list:
                 self.ui.comboBoxTemplate.setCurrentText(last_used_template)
@@ -506,11 +522,13 @@ class NewSessionDialog(ChildDialog):
             return self.ui.lineEdit.text()
 
     def getTemplateName(self):
-        if self.ui.comboBoxTemplate.currentIndex() == 0:
+        index = self.ui.comboBoxTemplate.currentIndex()
+        
+        if index == 0:
             return ""
 
-        if self.ui.comboBoxTemplate.currentIndex() == 1:
-            return '///withJACKPATCH'
+        if index <= len(ray.factory_session_templates):
+            return '///' + ray.factory_session_templates[index-1]
 
         return self.ui.comboBoxTemplate.currentText()
     
@@ -1094,7 +1112,23 @@ class ScriptUserActionDialog(ChildDialog):
             
     def shouldBeRemoved(self):
         return self._is_terminated
+
+class JackConfigInfoDialog(ChildDialog):
+    def __init__(self, parent, session_path):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_jack_config_info.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        scripts_dir = "%s/%s" % (session_path, ray.SCRIPTS_DIR)
+        parent_path = os.path.dirname(session_path)
+        parent_scripts = "%s/%s" % (parent_path, ray.SCRIPTS_DIR)
+        
+        tooltip_text = self.ui.label.toolTip().text()
+        
+        self.ui.label.toolTip().setText(
+            tooltip_text % (scripts_dir, parent_scripts, parent_path))
     
+
 class DaemonUrlWindow(ChildDialog):
     def __init__(self, parent, err_code, ex_url):
         ChildDialog.__init__(self, parent)

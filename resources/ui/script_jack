@@ -1,0 +1,24 @@
+Vous créez une session à partir du modèle de rappel de la configuration de JACK.
+Celà veut dire que lorsque vous ré-ouvrirez cette session, JACK sera possiblement arrêté et redémarré avec la configuration utilisée par cette session.
+
+Ce rappel de session est fait à partir des scripts de session, ces scripts se trouvent dans le dossier ray-scripts dans le dossier de la session, mais ils pourraient tout à fait se situer dans un dossier ray-scripts dans un dossier parent de celui de la session.
+
+Par exemple :
+le dossier des scripts de cette nouvelle session sera:
+%s
+
+Mais pourrait tout aussi être :
+%s
+et ainsi s'appliquer à toutes les sessions contenues dans %s.
+
+Le principe est le suivant:
+À chaque sauvegarde de la session, la configuration de JACK est sauvegardée dans la session.
+Àvant l'ouverture, JACK est arrêté puis redémarré si la configuration requise est différente de celle qui est en cours.
+Àprès la fermeture, JACK est arrêté puis redémarré tel qu'il était configuré avant l'ouverture.
+
+Hélas, actuellement il n'est pas possible d'obtenir avec certitude la configuration de JACK en cours, c'est pourquoi JACK sera forcément redémarré à l'ouverture de la première session. Vous pouvez contournez ce problème en démarrant automatiquement un démon léger au démarrage de votre session de bureau.
+
+x Démarrer automatiquement ray-jack_checker
+
+Si vous ouvrez cette session sur un autre ordinateur, la configuration de JACK ne sera pas rappelée mais sera écrasée à la sauvegarde.
+Si vous souhaitez ouvrir cette session sans recharger la configuration de JACK, il suffit de désactiver les scripts de session.

@@ -28,6 +28,8 @@ VERSION = "0.9.0"
 APP_TITLE = 'RaySession'
 DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.getenv('HOME')
 SCRIPTS_DIR = 'ray-scripts'
+factory_session_templates = (
+    'with_jack_patch', 'with_jack_config', 'scripted')
 
 class PrefixMode:
     CUSTOM = 0
