@@ -810,7 +810,9 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/session/set_notes', 's')
     def raySessionSetNotes(self, path, args, types, src_addr):
-        pass
+        for gui_addr in self.gui_list:
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                self.send(gui_addr, '/ray/gui/session/notes', args[0])
     
     @ray_method('/ray/session/get_notes', '')
     def raySessionGetNotes(self, path, args, types, src_addr):
@@ -952,7 +954,7 @@ class OscServerThread(ClientCommunicating):
     def nsmGuiClientHide_optional_gui(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/client/update_properties', 'ssssissssis')
+    @ray_method('/ray/client/update_properties', 'ssssisssssis')
     def rayGuiClientUpdateProperties(self, path, args, types, src_addr):
         pass
     
@@ -975,6 +977,14 @@ class OscServerThread(ClientCommunicating):
         if not (len(args) >= 2 and ray.areTheyAllString(args)):
             self.unknownMessage(path, types, src_addr)
             return
+    
+    @ray_method('/ray/client/set_description', 'ss')
+    def rayClientSetDescription(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/get_description', 's')
+    def rayClientGetDescription(self, path, args, types, src_addr):
+        pass
     
     @ray_method('/ray/client/list_files', 's')
     def rayClientListFiles(self, path, args, types, src_addr):
@@ -1219,7 +1229,7 @@ class OscServerThread(ClientCommunicating):
             if not template_name or template_name in template_list:
                 continue
             
-            executable = ct.attribute('executable') 
+            executable = ct.attribute('executable')
             
             if not executable:
                 continue
@@ -1305,21 +1315,23 @@ class OscServerThread(ClientCommunicating):
         self.send(gui_addr, "/ray/gui/server/status", self.server_status)
         self.send(gui_addr, "/ray/gui/session/name",
                   self.session.name, self.session.path)
+        self.send(gui_addr, '/ray/gui/session/notes', self.session.notes)
         
         for favorite in RS.favorites:
             self.send(gui_addr, "/ray/gui/favorites/added",
                       favorite.name, favorite.icon, int(favorite.factory))
         
         for client in self.session.clients:
-            self.send(gui_addr, 
+            self.send(gui_addr,
                       '/ray/gui/client/new',
-                      client.client_id, 
+                      client.client_id,
                       client.executable_path,
                       client.arguments,
-                      client.name, 
-                      client.prefix_mode, 
+                      client.name,
+                      client.prefix_mode,
                       client.custom_prefix,
                       client.label,
+                      client.description,
                       client.icon,
                       client.capabilities,
                       int(client.check_last_save),
@@ -1334,7 +1346,7 @@ class OscServerThread(ClientCommunicating):
         if multi_daemon_file:
             multi_daemon_file.update()
         
-        Terminal.message("Registered with GUI")
+        Terminal.message("GUI connected at %s" % gui_addr.url)
     
     def announceController(self, control_address):
         controller = Controller()

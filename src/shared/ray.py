@@ -551,6 +551,7 @@ class ClientData:
     prefix_mode = 2
     custom_prefix = ''
     label = ''
+    description = ''
     icon = ''
     capabilities = ''
     check_last_save = True
@@ -564,6 +565,7 @@ class ClientData:
                  prefix_mode=PrefixMode.SESSION_NAME,
                  custom_prefix='',
                  label='',
+                 description='',
                  icon='',
                  capabilities='',
                  check_last_save=True,
@@ -573,6 +575,7 @@ class ClientData:
         self.arguments = str(arguments)
         self.prefix_mode = int(prefix_mode)
         self.label = str(label)
+        self.description = str(description)
         self.capabilities = str(capabilities)
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)

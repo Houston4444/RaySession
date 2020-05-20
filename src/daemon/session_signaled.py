@@ -1256,6 +1256,28 @@ class SignaledSession(OperatingSession):
         else:
             self.sendErrorNoClient(src_addr, path, client_id)
     
+    def _ray_client_get_description(self, path, args, src_addr):
+        client_id = args[0]
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                self.send(src_addr, '/reply', path, client.description)
+                self.send(src_addr, '/reply', path)
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+            
+    def _ray_client_set_description(self, path, args, src_addr):
+        client_id, description = args
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                client.description = description
+                self.send(src_addr, '/reply', path, 'Description updated')
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
     def _ray_client_list_files(self, path, args, src_addr):
         client_id = args[0]
         

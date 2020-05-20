@@ -126,6 +126,10 @@ class GUIServerThread(liblo.ServerThread):
     def _session_name(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/gui/session/notes', 's')
+    def _session_notes(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/gui/session/auto_snapshot', 'i')
     def _session_auto_snapshot(self, path, args, types, src_addr):
         self._signaler.reply_auto_snapshot.emit(bool(args[0]))
@@ -143,11 +147,11 @@ class GUIServerThread(liblo.ServerThread):
         if not ray.areTheyAllString(args):
             return False
     
-    @ray_method('/ray/gui/client/new', 'ssssissssis')
+    @ray_method('/ray/gui/client/new', 'ssssisssssis')
     def _client_new(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/gui/client/update', 'ssssissssis')
+    @ray_method('/ray/gui/client/update', 'ssssisssssis')
     def _client_update(self, path, args, types, src_addr):
         pass
     
@@ -183,7 +187,7 @@ class GUIServerThread(liblo.ServerThread):
     def _client_no_save_level(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/gui/trash/add', 'ssssissssis')
+    @ray_method('/ray/gui/trash/add', 'ssssisssssis')
     def _trash_add(self, path, args, types, src_addr):
         pass
 

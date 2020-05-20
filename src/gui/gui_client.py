@@ -23,6 +23,7 @@ class Client(QObject):
         self.prefix_mode     = client_data.prefix_mode
         self.custom_prefix   = client_data.custom_prefix
         self.label           = client_data.label
+        self.description     = client_data.description
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
@@ -88,6 +89,7 @@ class Client(QObject):
         self.prefix_mode     = client_data.prefix_mode
         self.custom_prefix   = client_data.custom_prefix
         self.label           = client_data.label
+        self.description     = client_data.description
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
@@ -110,7 +112,8 @@ class Client(QObject):
                 'Server not found. Client %s can not send its properties\n'
                     % self.client_id)
             return
-
+        print('rokkff', self.description)
+        
         server.toDaemon('/ray/client/update_properties',
                         self.client_id,
                         self.executable_path,
@@ -119,6 +122,7 @@ class Client(QObject):
                         self.prefix_mode,
                         self.custom_prefix,
                         self.label,
+                        self.description,
                         self.icon_name,
                         self.capabilities,
                         int(self.check_last_save),

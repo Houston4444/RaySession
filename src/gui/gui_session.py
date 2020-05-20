@@ -18,6 +18,7 @@ class Session(object):
         self.favorite_list = []
         self.name = ''
         self.path = ''
+        self.notes = ''
         self.is_running = False
         self.server_status = ray.ServerStatus.OFF
 
@@ -208,6 +209,10 @@ class SignaledSession(Session):
                              and not CommandLineArgs.out_daemon)
         
         self._main_win.setSessionNameEditable(bool_set_edit)
+    
+    def _ray_gui_session_notes(self, path, args):
+        self.notes = args[0]
+        # TODO write the notes GUI
     
     def _ray_gui_session_sort_clients(self, path, args):
         new_client_list = []

@@ -689,6 +689,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.labelClientName.setText(self.client.name)
         self.ui.lineEditIcon.setText(self.client.icon_name)
         self.ui.lineEditLabel.setText(self.client.label)
+        self.ui.plainTextEditDescription.setPlainText(self.client.description)
         self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
         self.ui.toolButtonIcon.setIcon(
             ray.getAppIcon(self.client.icon_name, self))
@@ -709,9 +710,12 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.executable_path = self.ui.labelExecutable.text()
         self.client.arguments = self.ui.labelArguments.text()
         self.client.label = self.ui.lineEditLabel.text()
+        self.client.description = \
+                                self.ui.plainTextEditDescription.toPlainText()
         self.client.icon_name = self.ui.lineEditIcon.text()
         self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
-        self.client.ignored_extensions = self.ui.lineEditIgnoredExtensions.text()
+        self.client.ignored_extensions = \
+                                    self.ui.lineEditIgnoredExtensions.text()
         self.client.sendPropertiesToDaemon()
         # better for user to wait a little before close the window
         QTimer.singleShot(150, self.accept)

@@ -58,8 +58,9 @@ class Client(ServerSender):
     running_arguments  = ''
     tmp_arguments    = ''
     label            = ''
+    description      = ''
     icon             = ''
-    custom_prefix    = ""
+    custom_prefix    = ''
     prefix_mode      = ray.PrefixMode.SESSION_NAME
     auto_start       = True
     start_gui_hidden = False
@@ -174,6 +175,7 @@ class Client(ServerSender):
         self.arguments        = ctx.attribute('arguments')
         self.name             = ctx.attribute('name')
         self.label            = ctx.attribute('label')
+        self.description      = ctx.attribute('description')
         self.icon             = ctx.attribute('icon')
         self.auto_start       = bool(ctx.attribute('launched') != '0')
         self.check_last_save  = bool(ctx.attribute('check_last_save') != '0')
@@ -245,6 +247,8 @@ class Client(ServerSender):
         ctx.setAttribute('name', self.name)
         if self.label:
             ctx.setAttribute('label', self.label)
+        if self.description:
+            ctx.setAttribute('description', self.description)
         if self.icon:
             ctx.setAttribute('icon', self.icon)
         if not self.check_last_save:
@@ -827,6 +831,7 @@ class Client(ServerSender):
         self.prefix_mode = new_client.prefix_mode
         self.custom_prefix = new_client.custom_prefix
         self.label = new_client.label
+        self.description = new_client.description
         self.icon = new_client.icon
         self.auto_start = new_client.auto_start
         self.check_last_save = new_client.check_last_save
@@ -860,6 +865,7 @@ class Client(ServerSender):
                         self.prefix_mode, 
                         self.custom_prefix,
                         self.label,
+                        self.description,
                         self.icon,
                         self.capabilities,
                         int(self.check_last_save),
@@ -868,12 +874,14 @@ class Client(ServerSender):
         self.sent_to_gui = True
     
     def updateClientProperties(self, client_data):
+        print('zfokffkkkk', client_data.description, client_data.icon)
         self.client_id       = client_data.client_id
         self.executable_path = client_data.executable_path
         self.arguments       = client_data.arguments
         self.prefix_mode     = client_data.prefix_mode
         self.custom_prefix   = client_data.custom_prefix
         self.label           = client_data.label
+        self.description     = client_data.description
         self.icon            = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
@@ -903,6 +911,9 @@ class Client(ServerSender):
                 self.custom_prefix = value
             elif property == 'label':
                 self.label = value
+            elif property == 'description':
+                # description could contains many lines
+                continue
             elif property == 'icon':
                 self.icon = value
             elif property == 'capabilities':
@@ -1390,7 +1401,7 @@ ignored_extensions:%s""" % (self.client_id,
         
         server = self.getServer()
         if not server:
-            return 
+            return
         
         self.sendGuiMessage(
             _translate('GUIMSG', "  %s: announced" % self.guiMsgStyle()))
