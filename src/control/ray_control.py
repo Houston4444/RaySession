@@ -31,7 +31,8 @@ server_operations = (
 
 session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'close', 'abort', 'duplicate', 'open_snapshot',
-                      'rename', 'add_executable', 'add_proxy',
+                      'rename', 'set_notes', 'get_notes', 
+                      'add_executable', 'add_proxy',
                       'add_client_template', 'list_snapshots',
                       'list_clients', 'list_trashed_clients',
                       'reorder_clients',

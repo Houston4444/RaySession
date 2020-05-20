@@ -49,6 +49,8 @@ class Session(ServerSender):
         self.path = ""
         self.future_session_path = ""
         self.future_session_name = ""
+        self.notes = ""
+        self.future_notes = ""
         self.load_locked = False
         
         self.is_renameable = True
@@ -134,6 +136,7 @@ class Session(ServerSender):
         self.future_session_path = ''
         self.future_session_name = ''
         self.future_trashed_clients.clear()
+        self.future_notes = ""
     
     def getShortPath(self):
         if self.path.startswith("%s/" % self.root):
@@ -858,6 +861,22 @@ class OperatingSession(Session):
             
         file.close()
         
+        full_notes_path = "%s/%s" % (self.path, ray.NOTES_PATH)
+        
+        if self.notes:
+            try:
+                notes_file = open(full_notes_path, 'w')
+                notes_file.write(self.notes)
+                notes_file.close()
+            except:
+                Terminal.message("unable to save notes in %s"
+                                 % full_notes_path)
+        elif os.path.isfile(full_notes_path):
+            try:
+                os.remove(full_notes_path)
+            except:
+                Terminal.message("unable to remove %s" % full_notes_path)
+            
         self.sendGuiMessage(_translate('GUIMSG', "Session '%s' saved.")
                                 % self.getShortPath())
         self.message("Session %s saved." % self.getShortPath())
@@ -1546,6 +1565,15 @@ for better organization."""))
                     
             file.close()
             self.sendGui('/ray/gui/session/is_nsm')
+        
+        full_notes_path = "%s/%s" % (spath, ray.NOTES_PATH)
+        
+        if (os.path.isfile(full_notes_path)
+                and os.access(full_notes_path, os.R_OK)):
+            notes_file = open(full_notes_path)
+            # limit notes characters to 65000 to prevent OSC message accidents
+            self.future_notes = notes_file.read(65000)
+            notes_file.close()
             
         self.future_session_path = spath
         self.future_session_name = sess_name
@@ -1565,6 +1593,10 @@ for better organization."""))
         
         self.sendGui("/ray/gui/session/name",  self.name, self.path)
         self.trashed_clients.clear()
+        
+        self.notes = self.future_notes
+        self.sendGui('/ray/gui/session/notes', self.notes)
+        
         self.load_locked = True
         
         self.nextFunction()

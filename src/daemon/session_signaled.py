@@ -703,6 +703,14 @@ class SignaledSession(OperatingSession):
             % (self.name, new_session_name))
         self.sendGui('/ray/gui/session/name', self.name, self.path)
     
+    def _ray_session_set_notes(self, path, args, src_addr):
+        self.notes = args[0]
+        self.send(src_addr, '/reply', path, 'Notes has been set')
+        
+    def _ray_session_get_notes(self, path, args, src_addr):
+        self.send(src_addr, '/reply', path, self.notes)
+        self.send(src_addr, '/reply', path)
+    
     def _ray_session_add_executable(self, path, args, src_addr):
         executable = args[0]
         via_proxy = 0

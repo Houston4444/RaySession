@@ -807,7 +807,15 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to rename.")
             return False
-      
+    
+    @ray_method('/ray/session/set_notes', 's')
+    def raySessionSetNotes(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/session/get_notes', '')
+    def raySessionGetNotes(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/session/add_executable', 's')
     def raySessionAddExecutable(self, path, args, types, src_addr):
         executable_path = args[0]
