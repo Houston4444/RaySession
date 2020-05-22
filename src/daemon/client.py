@@ -181,6 +181,9 @@ class Client(ServerSender):
         self.check_last_save  = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         
+        if not self.description:
+            self.description = self.get_description_from_desktop_file()
+        
         ign_exts = ctx.attribute('ignored_extensions').split(' ')
         unign_exts = ctx.attribute('unignored_extensions').split(' ')
         
@@ -874,7 +877,6 @@ class Client(ServerSender):
         self.sent_to_gui = True
     
     def updateClientProperties(self, client_data):
-        print('zfokffkkkk', client_data.description, client_data.icon)
         self.client_id       = client_data.client_id
         self.executable_path = client_data.executable_path
         self.arguments       = client_data.arguments
@@ -1011,7 +1013,75 @@ ignored_extensions:%s""" % (self.client_id,
             client_files.append(scripts_dir)
                     
         return client_files
+    
+    def get_description_from_desktop_file(self)->str:
+        desk_path_list = ("%s/.local" % os.getenv('HOME'),
+                          '/usr/local', '/usr')
+        
+        executable = self.executable_path
+        if executable == 'ray-proxy':
+            executable = self.getProxyExecutable()
+        
+        for desk_path in desk_path_list:
+            desk_file = "%s/share/applications/%s.desktop" \
+                        % (desk_path, executable)
             
+            if not os.path.isfile(desk_file):
+                continue
+            
+            try:
+                file = open(desk_file, 'r')
+                contents = file.read()
+            except:
+                continue
+                
+            comment_found = False
+            tr_comment_found = False
+            exec_found = False
+            
+            lang = os.getenv('LANG')
+            
+            comment_tr_5 = ""
+            comment_tr_2 = ""
+            comment = ""
+            
+            for line in contents.split('\n'):
+                if line.startswith('[') and line != "[Desktop Entry]":
+                    break
+                
+                if line.startswith("Comment[%s]=" % lang[0:2]):
+                    comment_tr_2 = line.partition('=')[2]
+                elif line.startswith("Comment[%s]=" % lang[0:5]):
+                    comment_tr_5 = line.partition('=')[2]
+                elif line.startswith("Comment="):
+                    comment = line.partition('=')[2]
+                elif line.startswith('Exec='):
+                    exe_line = line.partition('=')[2]
+                    
+                    if executable in exe_line:
+                    #if (executable == self.executable_path
+                        #or executable.startswith("%s " % self.executable_path)
+                        #or executable.endswith(" %s" % self.executable_path)
+                        #or " %s " % self.executable_path in executable)
+                        #or executable.endswith("/%s" % self.executable_path)
+                        #or :
+                            # Exec entry executes executable_path
+                            exec_found = True
+                        
+            if not exec_found:
+                continue
+            
+            if comment_tr_5:
+                return comment_tr_5
+            elif comment_tr_2:
+                return comment_tr_2
+            elif comment:
+                return comment
+            else:
+                return ""
+            
+        return ""
+
     def saveAsTemplate(self, template_name, src_addr=None, src_path=''):
         if src_addr:
             self._osc_srcs[OSC_SRC_SAVE_TP] = (src_addr, src_path)

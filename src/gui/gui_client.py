@@ -112,7 +112,6 @@ class Client(QObject):
                 'Server not found. Client %s can not send its properties\n'
                     % self.client_id)
             return
-        print('rokkff', self.description)
         
         server.toDaemon('/ray/client/update_properties',
                         self.client_id,

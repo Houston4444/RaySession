@@ -366,8 +366,7 @@
         <item row="3" column="3" colspan="2">
          <widget class="QPlainTextEdit" name="plainTextEditDescription">
           <property name="plainText">
-           <string>tralllrr
-fre</string>
+           <string/>
           </property>
          </widget>
         </item>
