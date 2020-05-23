@@ -717,30 +717,66 @@ class SignaledSession(OperatingSession):
         prefix_mode = ray.PrefixMode.SESSION_NAME
         custom_prefix = ''
         client_id = ""
-        start_it = True
+        start_it = 1
         
-        if len(args) == 2 and args[1] == 'not_auto_start':
-            start_it = False
+        if len(args) == 1:
+            pass
         
-        if len(args) == 5:
-            executable, via_proxy, prefix_mode, custom_prefix, client_id = args
+        elif ray.areTheyAllString(args):
+            via_proxy = int(bool('via_proxy' in args[1:]))
+            start_it = int(bool('not_start' not in args[1:]))
+            
+            for arg in args[1:]:
+                if arg == 'prefix_mode:client_name':
+                    prefix_mode = ray.PrefixMode.CLIENT_NAME
+                    
+                elif arg.startswith('prefix:'):
+                    custom_prefix = arg.partition(':')[2]
+                    if not custom_prefix or '/' in custom_prefix:
+                        self.send(src_addr, '/error', path,
+                                  ray.Err.CREATE_FAILED,
+                                  "wrong custom prefix !")
+                        return
+                    
+                    prefix_mode = ray.PrefixMode.CUSTOM
+                
+                elif arg.startswith('client_id:'):
+                    client_id = arg.partition(':')[2]
+                    if not client_id.replace('_', '').isalnum():
+                        self.send(src_addr, '/error', path,
+                                  ray.Err.CREATE_FAILED,
+                                  "client_id %s is not alphanumeric")
+                        return
+                    
+                    # Check if client_id already exists
+                    for client in self.clients + self.trashed_clients:
+                        if client.client_id == client_id:
+                            self.send(src_addr, '/error', path,
+                                ray.Err.CREATE_FAILED,
+                                "client_id %s is already used" % client_id)
+                            return
+        
+        else:
+            executable, start_it, via_proxy, \
+                prefix_mode, custom_prefix, client_id = args
             
             if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
                 prefix_mode = ray.PrefixMode.SESSION_NAME
             
             if client_id:
                 if not client_id.replace('_', '').isalnum():
-                    self.sendError(ray.Err.CREATE_FAILED,
-                            _translate("error", "client_id %s is not alphanumeric")
-                                % client_id )
+                    self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
+                      _translate("error", "client_id %s is not alphanumeric")
+                        % client_id)
                     return
                 
                 # Check if client_id already exists
                 for client in self.clients + self.trashed_clients:
                     if client.client_id == client_id:
-                        self.sendError(ray.Err.CREATE_FAILED,
-                            _translate("error", "client_id %s is already used")
-                                % client_id )
+                        self.send(src_addr, '/error', path,
+                          ray.Err.CREATE_FAILED,
+                          _translate("error", "client_id %s is already used")
+                            % client_id)
                         return
         
         if not client_id:

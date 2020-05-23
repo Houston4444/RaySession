@@ -488,10 +488,11 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
         
-        command, via_proxy, prefix_mode, prefix, client_id = dialog.getSelection()
+        command, auto_start, via_proxy, \
+            prefix_mode, prefix, client_id = dialog.getSelection()
         
-        self.toDaemon('/ray/session/add_executable', command, int(via_proxy),
-                      prefix_mode, prefix, client_id)
+        self.toDaemon('/ray/session/add_executable', command, int(auto_start),
+                      int(via_proxy), prefix_mode, prefix, client_id)
 
     def stopClient(self, client_id):
         client = self._session.getClient(client_id)

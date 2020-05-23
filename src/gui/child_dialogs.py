@@ -947,6 +947,7 @@ class NewExecutableDialog(ChildDialog):
     
     def getSelection(self):
         return (self.ui.lineEdit.text(),
+                self.ui.checkBoxStartClient.isChecked(),
                 self.ui.checkBoxProxy.isChecked(),
                 self.ui.comboBoxPrefixMode.currentIndex(),
                 self.ui.lineEditPrefix.text(),

@@ -846,14 +846,34 @@ class OscServerThread(ClientCommunicating):
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
     
-    @ray_method('/ray/session/add_executable', 'siiss')
+    @ray_method('/ray/session/add_executable', 'siiiss')
     def raySessionAddExecutableAdvanced(self, path, args, types, src_addr):
-        executable_path, via_proxy, prefix_mode, prefix_pattern, client_id = args
+        executable_path, auto_start, via_proxy, \
+            prefix_mode, prefix_pattern, client_id = args
         
         if not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return False
+        
+        if '/' in executable_path and not via_proxy:
+            self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
+                "Absolute paths are not permitted. Clients must be in $PATH")
+            return False
+    
+    @ray_method('/ray/session/add_executable', None)
+    def raySessionAddExecutableStrings(self, path, args, types, src_addr):
+        if not (args and ray.areTheyAllString(args)):
+            self.unknownMessage(path, types, src_addr)
+            return False
+        
+        if not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "Cannot add to session because no session is loaded.")
+            return False
+        
+        executable_path = args[0]
+        via_proxy = bool(len(args) > 1 and 'via_proxy' in args[1:])
         
         if '/' in executable_path and not via_proxy:
             self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
