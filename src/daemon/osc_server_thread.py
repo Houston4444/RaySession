@@ -963,14 +963,6 @@ class OscServerThread(ClientCommunicating):
             self.unknownMessage(path, types, src_addr)
             return
     
-    @ray_method('/ray/client/set_description', 'ss')
-    def rayClientSetDescription(self, path, args, types, src_addr):
-        pass
-    
-    @ray_method('/ray/client/get_description', 's')
-    def rayClientGetDescription(self, path, args, types, src_addr):
-        pass
-    
     @ray_method('/ray/client/list_files', 's')
     def rayClientListFiles(self, path, args, types, src_addr):
         pass
