@@ -119,10 +119,21 @@ control RaySession daemons
         Saves, closes the session, back to SNAPSHOT and re-open it
     rename NEW_SESSION_NAME
         renames the current session to NEW_SESSION_NAME
-    add_executable EXECUTABLE
+    add_executable EXECUTABLE [OPTION1] [OPTION2]...
         Adds a client to the current session
-    add_proxy
-        Adds a proxy client to the current session
+        Available options are 
+            via_proxy   runs the executable into ray-proxy
+            not_start   prepare the client but not start it
+            prefix_mode:client_name
+                        Set the prefix mode to client_name
+            prefix_mode:session_name
+                        Set the prefix mode to session name
+            prefix:$PREFIX
+                        Set the prefix mode to custom prefix
+                        and the prefix to $PREFIX
+            client_id:$NEW_CLIENT_ID
+                        Try to use this client_id.
+                        Useful for use files copied to the session dir.
     add_factory_client_template CLIENT_TEMPLATE
         Adds a client to the current session from factory CLIENT_TEMPLATE
     add_user_client_template CLIENT_TEMPLATE

@@ -729,7 +729,10 @@ class SignaledSession(OperatingSession):
             for arg in args[1:]:
                 if arg == 'prefix_mode:client_name':
                     prefix_mode = ray.PrefixMode.CLIENT_NAME
-                    
+                
+                elif arg == 'prefix_mode:session_name':
+                    prefix_mode = ray.PrefixMode.SESSION_NAME
+                
                 elif arg.startswith('prefix:'):
                     custom_prefix = arg.partition(':')[2]
                     if not custom_prefix or '/' in custom_prefix:
@@ -800,28 +803,6 @@ class SignaledSession(OperatingSession):
         if self.addClient(client):
             if start_it:
                 client.start()
-            self.send(src_addr, '/reply', path, client.client_id)
-        else:
-            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
-                      "Impossible to add client now")
-    
-    def _ray_session_add_proxy(self, path, args, src_addr):
-        executable = args[0]
-        
-        client = Client(self)
-        client.executable_path = 'ray-proxy'
-        
-        client.tmp_arguments  = "--executable %s" % executable
-        if CommandLineArgs.debug:
-            client.tmp_arguments += " --debug"
-            
-        client.name = os.path.basename(executable)
-        client.client_id = self.generateClientId(client.name)
-        client.icon = client.name.lower().replace('_', '-')
-        client.setDefaultGitIgnored(executable)
-        
-        if self.addClient(client):
-            client.start()
             self.send(src_addr, '/reply', path, client.client_id)
         else:
             self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
@@ -1230,33 +1211,56 @@ class SignaledSession(OperatingSession):
     def _ray_client_set_proxy_properties(self, path, args, src_addr):
         client_id = args.pop(0)
         
-        message=''
+        message = ''
         for arg in args:
-            message+= "%s\n" % arg
+            message += "%s\n" % arg
             
         for client in self.clients:
             if client.client_id == client_id:
+                if client.isRunning():
+                    self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+                        _translate('GUIMSG',
+                            'Impossible to set proxy properties while client is running.'))
+                    return
+                
                 proxy_file = '%s/ray-proxy.xml' % client.getProjectPath()
                 
-                if not os.path.isfile(proxy_file):
+                if (not os.path.isfile(proxy_file)
+                        and client.executable_path != 'ray-proxy'):
                     self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                         _translate('GUIMSG',
                                    '%s seems to not be a proxy client !')
                             % client.guiMsgStyle())
                     return
                 
-                try:
-                    file = open(proxy_file, 'r')
+                if os.path.isfile(proxy_file):
+                    try:
+                        file = open(proxy_file, 'r')
+                        xml = QDomDocument()
+                        xml.setContent(file.read())
+                        content = xml.documentElement()
+                        file.close()
+                    except:
+                        self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                            _translate('GUIMSG',
+                                    "impossible to read %s correctly !")
+                                % proxy_file)
+                        return
+                else:
                     xml = QDomDocument()
-                    xml.setContent(file.read())
+                    p = xml.createElement('RAY-PROXY')
+                    p.setAttribute('VERSION', ray.VERSION)
+                    xml.appendChild(p)
                     content = xml.documentElement()
-                    file.close()
-                except:
-                    self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
-                        _translate('GUIMSG',
-                                   "impossible to read %s correctly !")
-                            % proxy_file)
-                    return
+                    
+                    if not os.path.isdir(client.getProjectPath()):
+                        try:
+                            os.makedirs(client.getProjectPath())
+                        except:
+                            self.send(src_addr, '/error', path,
+                                      ray.Err.CREATE_FAILED,
+                                      "Impossible to create proxy directory")
+                            return
                     
                 if content.tagName() != "RAY-PROXY":
                     self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
@@ -1269,10 +1273,11 @@ class SignaledSession(OperatingSession):
                 
                 for line in message.split('\n'):
                     property, colon, value = line.partition(':')
-                    if property in ('executable', 'arguments', 
-                            'config_file', 'save_signal', 'stop_signal',
-                            'no_save_level', 'wait_window', 'VERSION'):
-                        cte.setAttribute(property, value)
+                    if property in (
+                        'executable', 'arguments',
+                        'config_file', 'save_signal', 'stop_signal',
+                        'no_save_level', 'wait_window', 'VERSION'):
+                            cte.setAttribute(property, value)
                 
                 try:
                     file = open(proxy_file, 'w')

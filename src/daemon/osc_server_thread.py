@@ -818,34 +818,6 @@ class OscServerThread(ClientCommunicating):
     def raySessionGetNotes(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/session/add_executable', 's')
-    def raySessionAddExecutable(self, path, args, types, src_addr):
-        executable_path = args[0]
-        
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
-            return False
-        
-        if '/' in executable_path:
-            self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
-                "Absolute paths are not permitted. Clients must be in $PATH")
-            return False
-    
-    @ray_method('/ray/session/add_executable', 'ss')
-    def raySessionAddExecutableNoStart(self, path, args, types, src_addr):
-        executable_path, auto_start = args
-        
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
-            return False
-        
-        if '/' in executable_path:
-            self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
-                "Absolute paths are not permitted. Clients must be in $PATH")
-            return False
-    
     @ray_method('/ray/session/add_executable', 'siiiss')
     def raySessionAddExecutableAdvanced(self, path, args, types, src_addr):
         executable_path, auto_start, via_proxy, \
@@ -878,13 +850,6 @@ class OscServerThread(ClientCommunicating):
         if '/' in executable_path and not via_proxy:
             self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
-            return False
-    
-    @ray_method('/ray/session/add_proxy', 's')
-    def rayServerAddProxy(self, path, args, types, src_addr):
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
             return False
 
     @ray_method('/ray/session/add_client_template', 'is')

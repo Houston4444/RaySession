@@ -125,10 +125,22 @@ contrôle les démons de RaySession
         Sauvegarde et ferme la session, retourne au cliché CLICHÉ et ré-ouvre la session 
     rename NOUVEAU_NOM_DE_LA_SESSION
         renomme la session en cours en NOUVEAU_NOM_DE_LA_SESSION
-    add_executable EXÉCUTABLE
-        Ajouter EXÉCUTABLE à la session en cours
-    add_proxy
-        Ajouter un proxy à la session en cours
+    add_executable EXÉCUTABLE [OPTION1] [OPTION2]...
+        Ajoute EXÉCUTABLE à la session en cours.
+        Les options disponibles sont
+            via_proxy   lancer l'exécutable via un proxy
+            not_start   preparer le client mais ne pas le démarrer
+            prefix_mode:client_name
+                        Mettre le mode de préfixe sur "Nom du client"
+            prefix_mode:session_name
+                        Mettre le mode de préfixe sur "Nom de la session"
+            prefix:$PREFIXE
+                        Mettre le mode de préfixe sur "Personnalisé"
+                        et le préfixe sur $PREFIXE
+            client_id:$NOUVEAU_CLIENT_ID
+                        Essayer d'utiliser $NOUVEAU_CLIENT_ID.
+                        Très utile pour utiliser des fichiers préalablement
+                        copiés dans le repertoire de la session.
     add_factory_client_template MODÈLE_DE_CLIENT
         Ajoute un client à la session selon MODÈLE_DE_CLIENT d'usine
     add_user_client_template MODÈLE_DE_CLIENT
