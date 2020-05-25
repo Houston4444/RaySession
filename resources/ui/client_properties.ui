@@ -349,7 +349,7 @@
            <string>Description</string>
           </property>
           <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
           </property>
          </widget>
         </item>
@@ -359,12 +359,16 @@
            <string>:</string>
           </property>
           <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
           </property>
          </widget>
         </item>
         <item row="3" column="3" colspan="2">
-         <widget class="QLineEdit" name="lineEditDescription"/>
+         <widget class="QPlainTextEdit" name="plainTextEditDescription">
+          <property name="plainText">
+           <string/>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>

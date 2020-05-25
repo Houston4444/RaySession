@@ -914,7 +914,8 @@ class Client(ServerSender):
             elif property == 'label':
                 self.label = value
             elif property == 'description':
-                self.description = value
+                # description could contains many lines
+                continue
             elif property == 'icon':
                 self.icon = value
             elif property == 'capabilities':
@@ -936,18 +937,16 @@ name:%s
 prefix_mode:%i
 custom_prefix:%s
 label:%s
-description:%s
 icon:%s
 capabilities:%s
 check_last_save:%i
-ignored_extensions:%s""" % (self.client_id,
+ignored_extensions:%s""" % (self.client_id, 
                          self.executable_path,
                          self.arguments,
-                         self.name,
-                         self.prefix_mode,
+                         self.name, 
+                         self.prefix_mode, 
                          self.custom_prefix,
                          self.label,
-                         self.description,
                          self.icon,
                          self.capabilities,
                          int(self.check_last_save),
