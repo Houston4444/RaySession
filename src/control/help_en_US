@@ -188,7 +188,7 @@ control RaySession daemons
     get_properties
         Get client properties
     set_properties PROPERTY1 [PROPERTY2] [PROPERTY3]...
-        Set client properties.
+        Set client properties. Client must be a Ray Proxy, and not started.
         PROPERTY must contains property:value
         example: ray_control client carla set_properties icon:carla "label:My Carla Rack"
     get_proxy_properties

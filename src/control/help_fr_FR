@@ -195,6 +195,7 @@ contrôle les démons de RaySession
         Renvoie les propriétés du client
     set_properties PROPRIÉTÉ1 [PROPRIÉTÉ2] [PROPRIÉTÉ3]...
         Définit les les propriétés du client.
+        Le client doit être Ray Proxy et non démarré.
         PROPRIÉTÉ doit contenir propriété:valeur
         exemple: client carla set_properties icon:carla "label:Mon rack Carla"
     get_proxy_properties
