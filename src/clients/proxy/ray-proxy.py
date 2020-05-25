@@ -309,11 +309,11 @@ class ProxyDialog(QMainWindow):
         server.sendToDaemon('/nsm/client/gui_is_hidden')
         settings.setValue(
             'ProxyGui%s/geometry' %
-            self.proxy.full_client_id,
+            self.proxy.client_id,
             self.saveGeometry())
         settings.setValue(
             'ProxyGui%s/WindowState' %
-            self.proxy.full_client_id, self.saveState())
+            self.proxy.client_id, self.saveState())
         settings.sync()
 
         if self.fields_allow_start:
@@ -328,16 +328,16 @@ class ProxyDialog(QMainWindow):
     def showEvent(self, event):
         self.server.sendToDaemon('/nsm/client/gui_is_shown')
 
-        if settings.value('ProxyGui%s/geometry' % self.proxy.full_client_id):
+        if settings.value('ProxyGui%s/geometry' % self.proxy.client_id):
             self.restoreGeometry(
                 settings.value(
                     'ProxyGui%s/geometry' %
-                    self.proxy.full_client_id))
-        if settings.value('ProxyGui%s/WindowState' % self.proxy.full_client_id):
+                    self.proxy.client_id))
+        if settings.value('ProxyGui%s/WindowState' % self.proxy.client_id):
             self.restoreState(
                 settings.value(
                     'ProxyGui%s/WindowState' %
-                    self.proxy.full_client_id))
+                    self.proxy.client_id))
 
         self.updateValuesFromProxyFile()
 
@@ -357,7 +357,7 @@ class Proxy(QObject):
         self.project_path = ""
         self.path = ""
         self.session_name = ""
-        self.full_client_id = ""
+        self.client_id = ""
 
         self.executable = executable
         self.arguments = []
@@ -633,10 +633,10 @@ class Proxy(QObject):
         self.timer_window.stop()
         server.openReply()
 
-    def initialize(self, project_path, session_name, full_client_id):
+    def initialize(self, project_path, session_name, jack_client_name):
         self.project_path = project_path
         self.session_name = session_name
-        self.full_client_id = full_client_id
+        self.client_id = project_path.rpartition('.')[2]
 
         server.sendGuiState(False)
 
@@ -645,7 +645,7 @@ class Proxy(QObject):
 
         os.chdir(project_path)
 
-        #proxy_dialog.setWindowTitle(self.full_client_id)
+        proxy_dialog.setWindowTitle("Ray Proxy - %s" % self.client_id)
         
         self.path = os.path.join(project_path, "ray-proxy.xml")
         self.readFile()
@@ -667,7 +667,7 @@ class Proxy(QObject):
             server.sendToDaemon('/nsm/client/no_save_level', nsl)
     
     def startProcess(self):
-        os.environ['NSM_CLIENT_ID'] = self.full_client_id
+        os.environ['NSM_CLIENT_ID'] = self.client_id
         os.environ['RAY_SESSION_NAME'] = self.session_name
 
         # enable environment vars in config_file
