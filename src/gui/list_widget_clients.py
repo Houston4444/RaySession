@@ -224,10 +224,20 @@ class ClientSlot(QFrame):
         self.ui.ClientName.setText(label)
 
         # set tool tip
-        self.ui.ClientName.setToolTip(
-            'Executable : '
-                + self.client.executable_path + '\n'
-                + 'Client id : ' + self.clientId())
+        tool_tip = "<html><head/><body>"
+        tool_tip += "<p><span style=\" font-weight:600;\">%s<br></span>" \
+            % self.client.name
+        tool_tip += "<span style=\" font-style:italic;\">%s</span></p>" \
+            % self.client.description
+        tool_tip += "<p></p>"
+        tool_tip += "<p>%s : %s<br>" \
+            % (_translate('client_slot', 'Executable'),
+               self.client.executable_path)
+        tool_tip += "%s : %s</p>" \
+            % (_translate('client_slot', 'client id'), self.client.client_id)
+        tool_tip += "</body></html>"
+        
+        self.ui.ClientName.setToolTip(tool_tip)
 
         # set icon
         self.icon_on = ray.getAppIcon(self.client.icon_name, self)
