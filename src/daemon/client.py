@@ -418,12 +418,25 @@ class Client(ServerSender):
                 self.sendGui("/ray/gui/client/status", self.client_id, 
                              ray.ClientStatus.COPY)
     
+    def hasNSMClientId(self)->bool:
+        return bool(len(self.client_id) == 5
+                    and self.client_id[0] == 'n'
+                    and self.client_id[1:4].isalpha()
+                    and self.client_id[1:4].isupper())
+    
     def getJackClientName(self):
         if self.executable_path == 'ray-network':
             # ray-network will use jack_client_name for template
             # quite dirty, but this is the easier way
             return self.net_session_template
-            
+        
+        # return same jack_client_name as NSM does
+        # if client seems to have been made by NSM itself
+        # else, jack connections could be lose
+        # at NSM session import
+        if self.hasNSMClientId():
+            return "%s.%s" % (self.name, self.client_id)
+        
         jack_client_name = self.name
         
         numid = ''
