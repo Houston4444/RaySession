@@ -195,14 +195,15 @@ class Session(ServerSender):
         
         self.clients.remove(client)
     
-    def restoreClient(self, client):
+    def restoreClient(self, client)->bool:
         client.sent_to_gui = False
         
         if not self.addClient(client):
-            return
+            return False
         
         self.sendGui('/ray/gui/trash/remove', client.client_id)
         self.trashed_clients.remove(client)
+        return True
     
     def tellAllClientsSessionIsLoaded(self):
         self.message("Telling all clients that session is loaded...")
