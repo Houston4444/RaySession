@@ -171,14 +171,14 @@ class Client(ServerSender):
     
     def readXmlProperties(self, ctx):
         #ctx is an xml sibling for client
-        self.executable_path  = ctx.attribute('executable')
-        self.arguments        = ctx.attribute('arguments')
-        self.name             = ctx.attribute('name')
-        self.label            = ctx.attribute('label')
-        self.description      = ctx.attribute('description')
-        self.icon             = ctx.attribute('icon')
-        self.auto_start       = bool(ctx.attribute('launched') != '0')
-        self.check_last_save  = bool(ctx.attribute('check_last_save') != '0')
+        self.executable_path = ctx.attribute('executable')
+        self.arguments = ctx.attribute('arguments')
+        self.name = ctx.attribute('name')
+        self.label = ctx.attribute('label')
+        self.description = ctx.attribute('description')
+        self.icon = ctx.attribute('icon')
+        self.auto_start = bool(ctx.attribute('launched') != '0')
+        self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         
         if not self.description:
@@ -481,7 +481,6 @@ class Client(ServerSender):
     def getProxyExecutable(self):
         if os.path.basename(self.executable_path) != 'ray-proxy':
             return ""
-        
         xml_file = "%s/ray-proxy.xml" % self.getProjectPath()
         xml = QDomDocument()
         try:
@@ -494,10 +493,9 @@ class Client(ServerSender):
         if content.tagName() != "RAY-PROXY":
             file.close()
             return ""
-            
+        
         executable = content.attribute('executable')
         file.close()
-        
         return executable
     
     def setDefaultGitIgnored(self, executable=""):
@@ -1072,15 +1070,8 @@ ignored_extensions:%s""" % (self.client_id,
                     exe_line = line.partition('=')[2]
                     
                     if executable in exe_line:
-                    #if (executable == self.executable_path
-                        #or executable.startswith("%s " % self.executable_path)
-                        #or executable.endswith(" %s" % self.executable_path)
-                        #or " %s " % self.executable_path in executable)
-                        #or executable.endswith("/%s" % self.executable_path)
-                        #or :
-                            # Exec entry executes executable_path
-                            exec_found = True
-                        
+                        exec_found = True
+            
             if not exec_found:
                 continue
             
