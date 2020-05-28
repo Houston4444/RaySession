@@ -67,6 +67,19 @@ class MainWindow(QMainWindow):
         
         if RS.settings.value('MainWindow/geometry'):
             self.restoreGeometry(RS.settings.value('MainWindow/geometry'))
+        else:
+            # first start (or start without config)
+            # set window as little as possible
+            rect = self.geometry()
+            x = rect.x()
+            y = rect.y()
+            height = rect.height()
+            #mini_frame = self.ui.frameCurrentSession.minimumWidth()
+            #print('okfok', x, y, mini_frame, height)
+            self.setMinimumWidth(450)
+            self.setGeometry(x, y, 460, height)
+            #self.setMinimumWidth(0)
+            
         if RS.settings.value('MainWindow/WindowState'):
             self.restoreState(RS.settings.value('MainWindow/WindowState'))
         self.ui.actionShowMenuBar.activate(RS.settings.value(
@@ -91,6 +104,8 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSnapshots.setDefaultAction(
             self.ui.actionReturnToAPreviousState)
 
+        self.ui.dockWidgetMessages.visibilityChanged.connect(self.resizeWinWithMessages)
+        
         # connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
         self.ui.actionOpenSession.triggered.connect(self.openSession)
@@ -883,6 +898,16 @@ class MainWindow(QMainWindow):
             del self.script_action_dialog
             self.script_action_dialog = None
     
+    def resizeWinWithMessages(self, messages_visible):
+        if messages_visible:
+            pass
+        else:
+            next_width = self.ui.frameCurrentSession.width()
+            next_height = self.height()
+            self.resize(next_width, next_height)
+            self.resizeEvent(None)
+            #self.setMaximumWidth(16777215)
+    
     def daemonCrash(self):
         QMessageBox.critical(
             self, _translate(
@@ -900,7 +925,7 @@ class MainWindow(QMainWindow):
             'MainWindow/ShowMessages',
             self.ui.dockWidgetMessages.isVisible())
         RS.settings.sync()
-
+    
     # Reimplemented Functions
     
     def closeEvent(self, event):
