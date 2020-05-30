@@ -70,6 +70,12 @@ class Client(ServerSender):
     sent_to_gui      = False
     switch_state = ray.SwitchState.NONE
     
+    non_nsm = False
+    non_nsm_config_file = ""
+    non_nsm_save_sig = 0
+    non_nsm_stop_sig = 15
+    
+    
     net_session_template = ''
     net_session_root     = ''
     net_daemon_url       = ''
@@ -205,7 +211,18 @@ class Client(ServerSender):
             self.prefix_mode = int(prefix_mode)
             if self.prefix_mode == ray.PrefixMode.CUSTOM:
                 self.custom_prefix = ctx.attribute('custom_prefix')
-                    
+        
+        self.non_nsm = bool(ctx.attribute('non_nsm') == '1')
+        if self.non_nsm:
+            self.non_nsm_config_file = ctx.attribute('config_file')
+            non_nsm_save_sig = ctx.attribute('save_signal')
+            if non_nsm_save_sig.isdigit():
+                self.non_nsm_save_sig = int(non_nsm_save_sig)
+            
+            non_nsm_stop_sig = ctx.attribute('stop_signal')
+            if non_nsm_stop_sig.isdigit():
+                self.non_nsm_stop_sig = int(non_nsm_stop_sig)
+        
         self.net_session_template = ctx.attribute('net_session_template')
         
         open_duration = ctx.attribute('last_open_duration')
@@ -269,7 +286,13 @@ class Client(ServerSender):
             if self.executable_path != 'ray-proxy':
                 if self.start_gui_hidden:
                     ctx.setAttribute('gui_visible', '0')
-                    
+        
+        if self.non_nsm:
+            ctx.setAttribute('non_nsm', 1)
+            ctx.setAttribute('config_file', self.non_nsm_config_file)
+            ctx.setAttribute('save_signal', self.non_nsm_save_sig)
+            ctx.setAttribute('stop_signal', self.non_nsm_stop_sig)
+        
         if self.net_session_template:
             ctx.setAttribute('net_session_template',
                              self.net_session_template)
@@ -289,7 +312,7 @@ class Client(ServerSender):
                 if not gext in client_exts:
                     unignored += " %s" % gext
                     
-            if ignored:        
+            if ignored:
                 ctx.setAttribute('ignored_extensions', ignored)
             else:
                 ctx.removeAttribute('ignored_extensions')
@@ -370,16 +393,19 @@ class Client(ServerSender):
     def getMessage(self):
         return self._reply_message
     
-    def isReplyPending(self):
+    def isReplyPending(self)->bool:
         return bool(self.pending_command)
         
-    def isDumbClient(self):
+    def isDumbClient(self)->bool:
+        if self.non_nsm:
+            return False
+        
         return bool(not self.did_announce)
     
-    def isCapableOf(self, capability):
+    def isCapableOf(self, capability)->bool:
         return bool(capability in self.capabilities)
     
-    def guiMsgStyle(self):
+    def guiMsgStyle(self)->str:
         return "%s (%s)" % (self.name, self.client_id)
     
     def setNetworkProperties(self, net_daemon_url, net_session_root):
@@ -546,16 +572,63 @@ class Client(ServerSender):
         
         if self.tmp_arguments:
             arguments += shlex.split(self.tmp_arguments)
+        
+        arguments_line = self.arguments
+        
+        if self.non_nsm:
+            all_envs = {'CONFIG_FILE': ('', ''),
+                        'RAY_SESSION_NAME': ('', ''),
+                        'NSM_CLIENT_ID': ('', '')}
+            
+            all_envs['RAY_SESSION_NAME'] = (os.getenv('RAY_SESSION_NAME'),
+                                            self.session.name)
+            all_envs['RAY_CLIENT_ID'] = (os.getenv('RAY_CLIENT_ID'),
+                                         self.client_id)
+            #all_envs['CONFIG_FILE'] = (os.getenv('CONFIG_FILE'),
+                                       #self.non_nsm_config_file)
+            
+            for env in all_envs:
+                os.environ[env] = all_envs[env][1]
+            
+            os.environ['CONFIG_FILE'] = os.path.expandvars(
+                                                    self.non_nsm_config_file)
+            
+            back_pwd = os.getenv('PWD')
+            non_nsm_pwd = self.getProjectPath()
+            os.environ['PWD'] = non_nsm_pwd
+            
+            if not os.path.exists(non_nsm_pwd):
+                try:
+                    os.makedirs(non_nsm_pwd)
+                except:
+                    # TODO
+                    return
+                    
+            arguments_line = os.path.expandvars(self.arguments)
+            
+            if back_pwd is None:
+                os.unsetenv('PWD')
+            else:
+                os.environ['PWD'] = back_pwd
+            
+            for env in all_envs:
+                if all_envs[env][0] is None:
+                    os.unsetenv(env)
+                else:
+                    os.environ[env] = all_envs[env][0]
             
         if self.arguments:
-            arguments += shlex.split(self.arguments)
+            arguments += shlex.split(arguments_line)
         
         if self.hasServer() and self.executable_path == 'ray-network':
             arguments.append('--net-daemon-id')
             arguments.append(str(self.getServer().net_daemon_id))
             
         self.running_executable = self.executable_path
-        self.running_arguments  = self.arguments
+        self.running_arguments = self.arguments
+        
+        if self.non_nsm:
+            self.process.setWorkingDirectory(non_nsm_pwd)
         
         self.process.start(self.executable_path, arguments)
         
@@ -639,6 +712,11 @@ class Client(ServerSender):
                             % self.guiMsgStyle())
         
         self.sendReplyToCaller(OSC_SRC_START, 'client started')
+        
+        if self.non_nsm:
+            self.pending_command = ray.Command.OPEN
+            self.setStatus(ray.ClientStatus.OPEN)
+            QTimer.singleShot(500, self.nonNsmReady)
     
     def processFinished(self, exit_code, exit_status):
         self.stopped_timer.stop()
@@ -714,6 +792,22 @@ class Client(ServerSender):
         if self.session.wait_for:
             self.session.endTimerIfLastExpected(self)
     
+    def nonNsmReady(self):
+        if not self.non_nsm:
+            return
+        if not self.isRunning():
+            # TODO send to GUI to show exproxy dialog
+            return
+        
+        self.sendGuiMessage(
+            _translate('GUIMSG', '  %s: project probably loaded')
+                % self.guiMsgStyle())
+                
+        self.sendReplyToCaller(OSC_SRC_OPEN, 'client opened')
+        
+        self.pending_command = ray.Command.NONE
+        self.setStatus(ray.ClientStatus.READY)
+    
     def terminateScripts(self):
         self.scripter.terminate()
     
@@ -757,7 +851,12 @@ class Client(ServerSender):
             self.sendToSelfAddress("/nsm/client/session_is_loaded")
     
     def canSaveNow(self):
-        return bool(self.active and not self.no_save_level) 
+        if self.non_nsm:
+            print('zoefof', self.isRunning(), self.pending_command)
+            return bool(self.isRunning()
+                        and self.pending_command == ray.Command.NONE)
+        
+        return bool(self.active and not self.no_save_level)
     
     def save(self, src_addr=None, src_path=''):
         if self.switch_state in (ray.SwitchState.RESERVED,
@@ -779,10 +878,17 @@ class Client(ServerSender):
         if self.pending_command == ray.Command.SAVE:
             self.sendErrorToCaller(OSC_SRC_SAVE, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s is already saving, please wait!')
-                    % self.guiMsgStyle() )
+                    % self.guiMsgStyle())
         
         if self.isRunning():
-            if self.canSaveNow():
+            if self.non_nsm:
+                if self.non_nsm_save_sig > 0:
+                    self.pending_command = ray.Command.SAVE
+                    self.setStatus(ray.ClientStatus.SAVE)
+                    os.kill(self.process.processId(), self.non_nsm_save_sig)
+                    QTimer.singleShot(300, self.nonNsmSaved)
+                
+            elif self.canSaveNow():
                 Terminal.message("Telling %s to save" % self.name)
                 self.sendToSelfAddress("/nsm/client/save")
                 
@@ -794,6 +900,22 @@ class Client(ServerSender):
                 
             if self.isCapableOf(':optional-gui:'):
                 self.start_gui_hidden = not bool(self.gui_visible)
+    
+    def nonNsmSaved(self):
+        if not self.non_nsm:
+            return
+        
+        if self.pending_command == ray.Command.SAVE:
+            self.pending_command = ray.Command.NONE
+            self.setStatus(ray.ClientStatus.READY)
+            
+            self.last_save_time = time.time()
+                
+            self.sendGuiMessage(
+                _translate('GUIMSG', '  %s: saved') 
+                    % self.guiMsgStyle())
+            
+            self.sendReplyToCaller(OSC_SRC_SAVE, 'client saved.')
             
     def stop(self, src_addr=None, src_path=''):
         if self.switch_state == ray.SwitchState.NEEDED:
@@ -883,7 +1005,8 @@ class Client(ServerSender):
                         self.icon,
                         self.capabilities,
                         int(self.check_last_save),
-                        self.ignored_extensions)
+                        self.ignored_extensions,
+                        int(self.non_nsm))
         
         self.sent_to_gui = True
     
@@ -899,6 +1022,7 @@ class Client(ServerSender):
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         self.ignored_extensions = client_data.ignored_extensions
+        self.non_nsm = client_data.non_nsm
         
         self.sendGuiClientProperties()
     
@@ -937,6 +1061,9 @@ class Client(ServerSender):
                     self.check_last_save = bool(int(value))
             elif property == 'ignored_extensions':
                 self.ignored_extensions = value
+            elif property == 'non_nsm':
+                # do not change non_nsm value
+                continue
                 
         self.sendGuiClientProperties()
     
@@ -951,7 +1078,8 @@ label:%s
 icon:%s
 capabilities:%s
 check_last_save:%i
-ignored_extensions:%s""" % (self.client_id, 
+ignored_extensions:%s
+non_nsm:%i""" % (self.client_id, 
                          self.executable_path,
                          self.arguments,
                          self.name, 
@@ -961,7 +1089,8 @@ ignored_extensions:%s""" % (self.client_id,
                          self.icon,
                          self.capabilities,
                          int(self.check_last_save),
-                         self.ignored_extensions)
+                         self.ignored_extensions,
+                         int(self.non_nsm))
         return message
     
     def prettyClientId(self):
@@ -1272,6 +1401,16 @@ ignored_extensions:%s""" % (self.client_id,
         files_to_rename = []
         do_rename = True
         
+        #if self.non_nsm:
+            #if os.path.isdir(project_path):
+                #if not os.access(project_path, os.W_OK):
+                    #do_rename = False
+                #else:
+                    #files_to_rename.append(project_path, 
+                        #"%s/%s.%s" % (spath, new_prefix, new_client_id))
+                    
+                    
+        
         for file_path in os.listdir(spath):
             if file_path.startswith("%s.%s." % (old_prefix, old_client_id)):
                 if not os.access("%s/%s" % (spath, file_path), os.W_OK):
@@ -1282,7 +1421,7 @@ ignored_extensions:%s""" % (self.client_id,
                                         % (old_prefix, old_client_id),
                                         '', 1)
                 
-                next_path = "%s/%s.%s.%s" % (spath, new_prefix, 
+                next_path = "%s/%s.%s.%s" % (spath, new_prefix,
                                                 new_client_id, endfile)
                 if os.path.exists(next_path):
                     do_rename = False
@@ -1348,7 +1487,7 @@ ignored_extensions:%s""" % (self.client_id,
                         files_to_rename.append((old_veeone_file,
                                                 new_veeone_file))
                 
-                #for ray-proxy, change config_file name
+                # for ray-proxy, change config_file name
                 proxy_file = "%s/ray-proxy.xml" % project_path
                 if os.path.isfile(proxy_file):
                     try:
@@ -1401,6 +1540,7 @@ ignored_extensions:%s""" % (self.client_id,
                                              new_config_file_path))
                     except:
                         False
+                
                 files_to_rename.append(("%s/%s" % (spath, file_path),
                                         next_path))
                 

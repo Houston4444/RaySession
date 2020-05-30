@@ -1065,7 +1065,7 @@ class SignaledSession(OperatingSession):
         
         for client in self.clients:
             if client.client_id == client_id:
-                if client.active and not client.no_save_level:
+                if client.canSaveNow():
                     if self.file_copier.isActive(client.client_id):
                         self.sendErrorCopyRunning(src_addr, path)
                         return

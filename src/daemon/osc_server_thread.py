@@ -939,7 +939,7 @@ class OscServerThread(ClientCommunicating):
     def nsmGuiClientHide_optional_gui(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/client/update_properties', 'ssssisssssis')
+    @ray_method('/ray/client/update_properties', 'ssssisssssisi')
     def rayGuiClientUpdateProperties(self, path, args, types, src_addr):
         pass
     

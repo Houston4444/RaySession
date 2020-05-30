@@ -557,7 +557,7 @@ class Proxy(QObject):
         self.timer_window_n += 1
 
         if self.timer_window_n > 600:
-            # 600 x 50ms = 30s max until ray-proxy 
+            # 600 x 50ms = 30s max until ray-proxy
             # replyOpen to Session Manager
             self.checkWindowEnded()
             return
