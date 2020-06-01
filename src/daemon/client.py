@@ -547,6 +547,20 @@ class Client(ServerSender):
                     self.ignored_extensions = \
                         self.ignored_extensions.replace(ext, '')
     
+    def nonNsmGetExpandedConfigFile(self)->str:
+        if not self.non_nsm:
+            return ''
+        
+        os.environ['RAY_SESSION_NAME'] = self.session.name
+        os.environ['RAY_CLIENT_ID'] = self.client_id
+        
+        expanded_config_file = os.path.expandvars(self.non_nsm_config_file)
+        
+        os.unsetenv('RAY_SESSION_NAME')
+        os.unsetenv('RAY_CLIENT_ID')
+        
+        return expanded_config_file
+    
     def start(self, src_addr=None, src_path='', wait_open_to_reply=False):
         if src_addr and not wait_open_to_reply:
             self._osc_srcs[OSC_SRC_START] = (src_addr, src_path)
@@ -578,7 +592,7 @@ class Client(ServerSender):
         if self.non_nsm:
             all_envs = {'CONFIG_FILE': ('', ''),
                         'RAY_SESSION_NAME': ('', ''),
-                        'NSM_CLIENT_ID': ('', '')}
+                        'RAY_CLIENT_ID': ('', '')}
             
             all_envs['RAY_SESSION_NAME'] = (os.getenv('RAY_SESSION_NAME'),
                                             self.session.name)
@@ -629,6 +643,10 @@ class Client(ServerSender):
         
         if self.non_nsm:
             self.process.setWorkingDirectory(non_nsm_pwd)
+            process_env = QProcessEnvironment.systemEnvironment()
+            process_env.insert('RAY_SESSION_NAME', self.session.name)
+            process_env.insert('RAY_CLIENT_ID', self.client_id)
+            self.process.setProcessEnvironment(process_env)
         
         self.process.start(self.executable_path, arguments)
         
@@ -795,6 +813,7 @@ class Client(ServerSender):
     def nonNsmReady(self):
         if not self.non_nsm:
             return
+        
         if not self.isRunning():
             # TODO send to GUI to show exproxy dialog
             return
@@ -807,6 +826,9 @@ class Client(ServerSender):
         
         self.pending_command = ray.Command.NONE
         self.setStatus(ray.ClientStatus.READY)
+        
+        if self.session.wait_for == ray.WaitFor.REPLY:
+            self.session.endTimerIfLastExpected(self)
     
     def terminateScripts(self):
         self.scripter.terminate()
@@ -916,6 +938,9 @@ class Client(ServerSender):
                     % self.guiMsgStyle())
             
             self.sendReplyToCaller(OSC_SRC_SAVE, 'client saved.')
+        
+        if self.session.wait_for == ray.WaitFor.REPLY:
+            self.session.endTimerIfLastExpected(self)
             
     def stop(self, src_addr=None, src_path=''):
         if self.switch_state == ray.SwitchState.NEEDED:
@@ -1401,148 +1426,168 @@ non_nsm:%i""" % (self.client_id,
         files_to_rename = []
         do_rename = True
         
-        #if self.non_nsm:
-            #if os.path.isdir(project_path):
-                #if not os.access(project_path, os.W_OK):
-                    #do_rename = False
-                #else:
-                    #files_to_rename.append(project_path, 
-                        #"%s/%s.%s" % (spath, new_prefix, new_client_id))
+        if self.non_nsm:
+            if os.path.isdir(project_path):
+                if not os.access(project_path, os.W_OK):
+                    do_rename = False
+                else:
+                    os.environ['RAY_SESSION_NAME'] = old_session_name
+                    os.environ['RAY_CLIENT_ID'] = old_client_id
+                    pre_config_file = os.path.expandvars(
+                                                    self.non_nsm_config_file)
                     
+                    os.environ['RAY_SESSION_NAME'] = new_session_name
+                    os.environ['RAY_CLIENT_ID'] = new_client_id
+                    post_config_file = os.path.expandvars(
+                                                    self.non_nsm_config_file)
                     
-        
-        for file_path in os.listdir(spath):
-            if file_path.startswith("%s.%s." % (old_prefix, old_client_id)):
-                if not os.access("%s/%s" % (spath, file_path), os.W_OK):
-                    do_rename = False
-                    break
-                
-                endfile = file_path.replace("%s.%s."
-                                        % (old_prefix, old_client_id),
-                                        '', 1)
-                
-                next_path = "%s/%s.%s.%s" % (spath, new_prefix,
-                                                new_client_id, endfile)
-                if os.path.exists(next_path):
-                    do_rename = False
-                    break
-                
-                files_to_rename.append(("%s/%s" % (spath, file_path),
-                                        next_path))
-                
-            elif file_path == "%s.%s" % (old_prefix, old_client_id):
-                if not os.access("%s/%s" % (spath, file_path), os.W_OK):
-                    do_rename = False
-                    break
-                
-                next_path = "%s/%s.%s" % (spath, new_prefix, new_client_id)
-                
-                if os.path.exists(next_path):
-                    do_rename = False
-                    break
-                
-                # only for ardour
-                ardour_file  = "%s/%s.ardour"     % (project_path, old_prefix)
-                ardour_bak   = "%s/%s.ardour.bak" % (project_path, old_prefix)
-                ardour_audio = "%s/interchange/%s.%s" % (project_path, 
-                                             old_prefix, old_client_id)
-                
-                if os.path.isfile(ardour_file) and os.access(ardour_file, os.W_OK):
-                    new_ardour_file = "%s/%s.ardour" % (project_path, new_prefix)
-                    if os.path.exists(new_ardour_file):
+                    os.unsetenv('RAY_SESSION_NAME')
+                    os.unsetenv('RAY_CLIENT_ID')
+                    
+                    full_pre_config_file = "%s/%s" % (project_path,
+                                                 pre_config_file)
+                    full_post_config_file = "%s/%s" % (project_path,
+                                                 post_config_file)
+                    
+                    if os.path.exists(full_pre_config_file):
+                        files_to_rename.append((full_pre_config_file,
+                                                full_post_config_file))
+                    
+                    files_to_rename.append((project_path,
+                        "%s/%s.%s" % (spath, new_prefix, new_client_id)))
+        else:
+            for file_path in os.listdir(spath):
+                if file_path.startswith("%s.%s." % (old_prefix, old_client_id)):
+                    if not os.access("%s/%s" % (spath, file_path), os.W_OK):
                         do_rename = False
                         break
                     
-                    files_to_rename.append((ardour_file, new_ardour_file))
+                    endfile = file_path.replace("%s.%s."
+                                            % (old_prefix, old_client_id),
+                                            '', 1)
                     
-                if os.path.isfile(ardour_bak) and os.access(ardour_bak, os.W_OK):
-                    new_ardour_bak = "%s/%s.ardour.bak" % (project_path, new_prefix)
-                    if os.path.exists(new_ardour_bak):
+                    next_path = "%s/%s.%s.%s" % (spath, new_prefix,
+                                                    new_client_id, endfile)
+                    if os.path.exists(next_path):
                         do_rename = False
                         break
                     
-                    files_to_rename.append((ardour_bak, new_ardour_bak))
-                
-                if os.path.isdir(ardour_audio) and os.access(ardour_audio, os.W_OK):
-                    new_ardour_audio = "%s/interchange/%s.%s" % (project_path,
-                                                     new_prefix, new_client_id)
-                    if os.path.exists(new_ardour_audio):
+                    files_to_rename.append(("%s/%s" % (spath, file_path),
+                                            next_path))
+                    
+                elif file_path == "%s.%s" % (old_prefix, old_client_id):
+                    if not os.access("%s/%s" % (spath, file_path), os.W_OK):
                         do_rename = False
                         break
                     
-                    files_to_rename.append((ardour_audio, new_ardour_audio))
-                
-                #for Vee One Suite
-                for extfile in ('samplv1', 'synthv1', 'padthv1', 'drumkv1'):
-                    old_veeone_file = "%s/%s.%s" % (project_path,
-                                        old_session_name, extfile)
-                    new_veeone_file = "%s/%s.%s" % (project_path,
-                                        new_session_name, extfile)
-                    if (os.path.isfile(old_veeone_file)
-                            and os.access(old_veeone_file, os.W_OK)):
-                        if os.path.exists(new_veeone_file):
+                    next_path = "%s/%s.%s" % (spath, new_prefix, new_client_id)
+                    
+                    if os.path.exists(next_path):
+                        do_rename = False
+                        break
+                    
+                    # only for ardour
+                    ardour_file  = "%s/%s.ardour"     % (project_path, old_prefix)
+                    ardour_bak   = "%s/%s.ardour.bak" % (project_path, old_prefix)
+                    ardour_audio = "%s/interchange/%s.%s" % (project_path, 
+                                                old_prefix, old_client_id)
+                    
+                    if os.path.isfile(ardour_file) and os.access(ardour_file, os.W_OK):
+                        new_ardour_file = "%s/%s.ardour" % (project_path, new_prefix)
+                        if os.path.exists(new_ardour_file):
                             do_rename = False
                             break
                         
-                        files_to_rename.append((old_veeone_file,
-                                                new_veeone_file))
-                
-                # for ray-proxy, change config_file name
-                proxy_file = "%s/ray-proxy.xml" % project_path
-                if os.path.isfile(proxy_file):
-                    try:
-                        file = open(proxy_file, 'r')
-                        xml = QDomDocument()
-                        xml.setContent(file.read())
-                        file.close()
-                        content = xml.documentElement()
+                        files_to_rename.append((ardour_file, new_ardour_file))
                         
-                        if content.tagName() == "RAY-PROXY":
-                            cte = content.toElement()
-                            config_file = cte.attribute('config_file')
+                    if os.path.isfile(ardour_bak) and os.access(ardour_bak, os.W_OK):
+                        new_ardour_bak = "%s/%s.ardour.bak" % (project_path, new_prefix)
+                        if os.path.exists(new_ardour_bak):
+                            do_rename = False
+                            break
+                        
+                        files_to_rename.append((ardour_bak, new_ardour_bak))
+                    
+                    if os.path.isdir(ardour_audio) and os.access(ardour_audio, os.W_OK):
+                        new_ardour_audio = "%s/interchange/%s.%s" % (project_path,
+                                                        new_prefix, new_client_id)
+                        if os.path.exists(new_ardour_audio):
+                            do_rename = False
+                            break
+                        
+                        files_to_rename.append((ardour_audio, new_ardour_audio))
+                    
+                    #for Vee One Suite
+                    for extfile in ('samplv1', 'synthv1', 'padthv1', 'drumkv1'):
+                        old_veeone_file = "%s/%s.%s" % (project_path,
+                                            old_session_name, extfile)
+                        new_veeone_file = "%s/%s.%s" % (project_path,
+                                            new_session_name, extfile)
+                        if (os.path.isfile(old_veeone_file)
+                                and os.access(old_veeone_file, os.W_OK)):
+                            if os.path.exists(new_veeone_file):
+                                do_rename = False
+                                break
                             
-                            if (('$RAY_SESSION_NAME' or '${RAY_SESSION_NAME}')
-                                    in config_file):
-                                for env in ('"$RAY_SESSION_NAME"',
-                                            '"${RAY_SESSION_NAME}"',
-                                            "$RAY_SESSION_NAME",
-                                            "${RAY_SESSION_NAME}"):
-                                    config_file = \
-                                        config_file.replace(env,
-                                                            old_session_name)
+                            files_to_rename.append((old_veeone_file,
+                                                    new_veeone_file))
+                    
+                    # for ray-proxy, change config_file name
+                    proxy_file = "%s/ray-proxy.xml" % project_path
+                    if os.path.isfile(proxy_file):
+                        try:
+                            file = open(proxy_file, 'r')
+                            xml = QDomDocument()
+                            xml.setContent(file.read())
+                            file.close()
+                            content = xml.documentElement()
+                            
+                            if content.tagName() == "RAY-PROXY":
+                                cte = content.toElement()
+                                config_file = cte.attribute('config_file')
                                 
-                                if (config_file
-                                        and (config_file.split('.')[0]
-                                                == old_session_name)):
-                                    config_file_path = "%s/%s" % (
-                                                    project_path, config_file)
+                                if (('$RAY_SESSION_NAME' or '${RAY_SESSION_NAME}')
+                                        in config_file):
+                                    for env in ('"$RAY_SESSION_NAME"',
+                                                '"${RAY_SESSION_NAME}"',
+                                                "$RAY_SESSION_NAME",
+                                                "${RAY_SESSION_NAME}"):
+                                        config_file = \
+                                            config_file.replace(env,
+                                                                old_session_name)
                                     
-                                    new_config_file_path = "%s/%s" % (
-                                        project_path,
-                                        config_file.replace(old_session_name,
-                                                            new_session_name))
-                                    
-                                    if (os.path.exists(new_config_file_path)):
-                                        # replace config_file attribute
-                                        # with variable replaced
-                                        cte.setAttribute('config_file',
-                                                         config_file)
-                                        try:
-                                            file = open(proxy_file, 'w')
-                                            file.write(xml.toString())
-                                        except:
-                                            False
-                                    elif (os.path.exists(config_file_path)
-                                          and os.access(config_file_path,
-                                                        os.W_OK)):
-                                        files_to_rename.append(
-                                            (config_file_path, 
-                                             new_config_file_path))
-                    except:
-                        False
-                
-                files_to_rename.append(("%s/%s" % (spath, file_path),
-                                        next_path))
+                                    if (config_file
+                                            and (config_file.split('.')[0]
+                                                    == old_session_name)):
+                                        config_file_path = "%s/%s" % (
+                                                        project_path, config_file)
+                                        
+                                        new_config_file_path = "%s/%s" % (
+                                            project_path,
+                                            config_file.replace(old_session_name,
+                                                                new_session_name))
+                                        
+                                        if (os.path.exists(new_config_file_path)):
+                                            # replace config_file attribute
+                                            # with variable replaced
+                                            cte.setAttribute('config_file',
+                                                            config_file)
+                                            try:
+                                                file = open(proxy_file, 'w')
+                                                file.write(xml.toString())
+                                            except:
+                                                False
+                                        elif (os.path.exists(config_file_path)
+                                            and os.access(config_file_path,
+                                                            os.W_OK)):
+                                            files_to_rename.append(
+                                                (config_file_path, 
+                                                new_config_file_path))
+                        except:
+                            False
+                    
+                    files_to_rename.append(("%s/%s" % (spath, file_path),
+                                            next_path))
                 
         if not do_rename:
             self.prefix_mode = ray.PrefixMode.CUSTOM
