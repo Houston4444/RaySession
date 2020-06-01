@@ -58,6 +58,7 @@ class Client(ServerSender):
     running_arguments  = ''
     tmp_arguments    = ''
     label            = ''
+    desktop_file     = ''
     description      = ''
     icon             = ''
     custom_prefix    = ''
@@ -74,7 +75,8 @@ class Client(ServerSender):
     non_nsm_config_file = ""
     non_nsm_save_sig = 0
     non_nsm_stop_sig = 15
-    
+    non_nsm_wait_win = False
+    non_nsm_no_save_level = 0
     
     net_session_template = ''
     net_session_root     = ''
@@ -1019,19 +1021,25 @@ class Client(ServerSender):
             ad = '/ray/gui/trash/add'
             
         self.sendGui(ad,
-                        self.client_id, 
+                        self.client_id,
                         self.executable_path,
                         self.arguments,
-                        self.name, 
-                        self.prefix_mode, 
+                        self.name,
+                        self.prefix_mode,
                         self.custom_prefix,
                         self.label,
+                        self.desktop_file,
                         self.description,
                         self.icon,
                         self.capabilities,
                         int(self.check_last_save),
                         self.ignored_extensions,
-                        int(self.non_nsm))
+                        int(self.non_nsm),
+                        self.non_nsm_config_file,
+                        self.non_nsm_save_sig,
+                        self.non_nsm_stop_sig,
+                        int(self.non_nsm_wait_win),
+                        self.non_nsm_no_save_level)
         
         self.sent_to_gui = True
     
@@ -1042,12 +1050,18 @@ class Client(ServerSender):
         self.prefix_mode     = client_data.prefix_mode
         self.custom_prefix   = client_data.custom_prefix
         self.label           = client_data.label
+        self.desktop_file    = client_data.desktop_file
         self.description     = client_data.description
         self.icon            = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         self.ignored_extensions = client_data.ignored_extensions
         self.non_nsm = client_data.non_nsm
+        self.non_nsm_config_file = client_data.non_nsm_config_file
+        self.non_nsm_save_sig = client_data.non_nsm_save_sig
+        self.non_nsm_stop_sig = client_data.non_nsm_stop_sig
+        self.non_nsm_wait_win = client_data.non_nsm_wait_win
+        self.non_nsm_no_save_level = client_data.non_nsm_no_save_level
         
         self.sendGuiClientProperties()
     
@@ -1073,6 +1087,8 @@ class Client(ServerSender):
                 self.custom_prefix = value
             elif property == 'label':
                 self.label = value
+            elif property == 'desktop_file':
+                self.desktop_file = value
             elif property == 'description':
                 # description could contains many lines
                 continue

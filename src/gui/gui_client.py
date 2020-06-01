@@ -23,11 +23,18 @@ class Client(QObject):
         self.prefix_mode     = client_data.prefix_mode
         self.custom_prefix   = client_data.custom_prefix
         self.label           = client_data.label
+        self.desktop_file    = client_data.desktop_file
         self.description     = client_data.description
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         self.ignored_extensions = client_data.ignored_extensions
+        self.non_nsm = client_data.non_nsm
+        self.non_nsm_config_file = client_data.non_nsm_config_file
+        self.non_nsm_save_sig = client_data.non_nsm_save_sig
+        self.non_nsm_stop_sig = client_data.non_nsm_stop_sig
+        self.non_nsm_wait_win = client_data.non_nsm_wait_win
+        self.non_nsm_no_save_level = client_data.non_nsm_no_save_level
 
         self.status = ray.ClientStatus.STOPPED
         self.previous_status = ray.ClientStatus.STOPPED
@@ -40,6 +47,8 @@ class Client(QObject):
 
         self.widget = self._main_win.createClientWidget(self)
         self.properties_dialog = child_dialogs.ClientPropertiesDialog(
+            self._main_win, self)
+        self.non_nsm_dialog = child_dialogs.clientNonNsmDialog(
             self._main_win, self)
 
     def setStatus(self, status):
@@ -89,10 +98,17 @@ class Client(QObject):
         self.prefix_mode     = client_data.prefix_mode
         self.custom_prefix   = client_data.custom_prefix
         self.label           = client_data.label
+        self.desktop_file    = client_data.desktop_file
         self.description     = client_data.description
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
+        self.non_nsm         = client_data.non_nsm
+        self.non_nsm_config_file = client_data.non_nsm_config_file
+        self.non_nsm_save_sig = client_data.non_nsm_save_sig
+        self.non_nsm_stop_sig = client_data.non_nsm_stop_sig
+        self.non_nsm_wait_win = client_data.non_nsm_wait_win
+        self.non_nsm_no_save_level = client_data.non_nsm_no_save_level
         
         self.widget.updateClientData()
 
@@ -121,17 +137,30 @@ class Client(QObject):
                         self.prefix_mode,
                         self.custom_prefix,
                         self.label,
+                        self.desktop_file,
                         self.description,
                         self.icon_name,
                         self.capabilities,
                         int(self.check_last_save),
-                        self.ignored_extensions)
+                        self.ignored_extensions,
+                        int(self.non_nsm),
+                        self.non_nsm_config_file,
+                        self.non_nsm_save_sig,
+                        self.non_nsm_stop_sig,
+                        int(self.non_nsm_wait_win),
+                        self.non_nsm_no_save_level)
 
     def showPropertiesDialog(self):
         self.properties_dialog.updateContents()
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()
 
+    def showNonNsmDialog(self):
+        print('rooovvo(')
+        self.non_nsm_dialog.updateContents()
+        self.non_nsm_dialog.show()
+        self.non_nsm_dialog.activateWindow()
+    
     def reCreateWidget(self):
         del self.widget
         self.widget = self._main_win.createClientWidget(self)

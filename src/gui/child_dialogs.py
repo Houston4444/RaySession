@@ -23,6 +23,7 @@ import ui_add_application
 import ui_donations
 import ui_jack_config_info
 import ui_new_executable
+import ui_non_nsm
 import ui_error_dialog
 import ui_quit_app
 import ui_client_properties
@@ -721,6 +722,19 @@ class ClientPropertiesDialog(ChildDialog):
         QTimer.singleShot(150, self.accept)
 
 
+class clientNonNsmDialog(ChildDialog):
+    def __init__(self, parent, client):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_non_nsm.Ui_Dialog()
+        self.ui.setupUi(self)
+
+        self.client = client
+    
+    def updateContents(self):
+        self.ui.lineEditExecutable.setText(self.client.executable_path)
+        self.ui.lineEditConfigFile.setText(self.client.non_nsm_config_file)
+        self.ui.lineEditArguments.setText(self.client.arguments)
+    
 class ClientTrashDialog(ChildDialog):
     def __init__(self, parent, client_data):
         ChildDialog.__init__(self, parent)

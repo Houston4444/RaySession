@@ -550,6 +550,7 @@ class ClientData:
     name = ''
     prefix_mode = 2
     custom_prefix = ''
+    desktop_file = ''
     label = ''
     description = ''
     icon = ''
@@ -557,6 +558,11 @@ class ClientData:
     check_last_save = True
     ignored_extensions = getGitIgnoredExtensions()
     non_nsm = False
+    non_nsm_config_file = ""
+    non_nsm_save_sig = 0
+    non_nsm_stop_sig = 15
+    non_nsm_wait_win = False
+    non_nsm_no_save_level = 0
 
     def __init__(self,
                  client_id,
@@ -566,22 +572,37 @@ class ClientData:
                  prefix_mode=PrefixMode.SESSION_NAME,
                  custom_prefix='',
                  label='',
+                 desktop_file='',
                  description='',
                  icon='',
                  capabilities='',
                  check_last_save=True,
                  ignored_extensions=getGitIgnoredExtensions(),
-                 non_nsm=False):
+                 non_nsm=False,
+                 non_nsm_config_file="",
+                 non_nsm_save_sig=0,
+                 non_nsm_stop_sig=15,
+                 non_nsm_wait_win=False,
+                 non_nsm_no_save_level=0
+                 ):
         self.client_id = str(client_id)
         self.executable_path = str(executable)
         self.arguments = str(arguments)
         self.prefix_mode = int(prefix_mode)
+        self.desktop_file = str(desktop_file)
         self.label = str(label)
         self.description = str(description)
         self.capabilities = str(capabilities)
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
-        self.non_nsm = non_nsm
+        self.non_nsm = bool(non_nsm)
+        
+        if self.non_nsm:
+            self.non_nsm_config_file = str(non_nsm_config_file)
+            self.non_nsm_save_sig = int(non_nsm_save_sig)
+            self.non_nsm_stop_sig = int(non_nsm_stop_sig)
+            self.non_nsm_wait_win = bool(non_nsm_wait_win)
+            self.non_nsm_no_save_level = int(non_nsm_no_save_level)
 
         self.name = str(name) if name else os.path.basename(
             self.executable_path)

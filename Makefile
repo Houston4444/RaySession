@@ -52,6 +52,7 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_list_snapshots.py \
 	    src/gui/ui_new_executable.py \
 	    src/gui/ui_new_session.py \
+	    src/gui/ui_non_nsm.py \
 	    src/gui/ui_nsm_open_info.py \
 	    src/gui/ui_open_session.py \
 	    src/gui/ui_quit_app.py \
