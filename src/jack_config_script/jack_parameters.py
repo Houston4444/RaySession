@@ -96,7 +96,6 @@ def set_jack_parameters(contents):
         full_param = '/driver/%s' % param[1]
         if full_param in all_input_parameters:
             if str(value) != all_input_parameters[full_param]:
-                print('settttinng %s to %s rgrpp' % (full_param, str(value)))
                 dbus_value = convert_str_to_dbustype(
                                 all_input_parameters[full_param], param[0])
                 if dbus_value is not None:

@@ -2,7 +2,7 @@
 
 has_pulse_jack(){
     # check if pulseaudio-module-jack is quite long (> 100ms on a correct machine)
-    # So this state is stored in a tmp file. 
+    # So this state is stored in a tmp file.
     
     if [ -f "$tmp_pulse_file" ];then
         [[ "$(cat "$tmp_pulse_file")" == 0 ]] && return 0 || return 1
@@ -40,7 +40,11 @@ get_current_parameters(){
 
     if [ -f "$parameters_path" ];then
         jack_parameters=$(cat "$parameters_path")
-        echo "$jack_parameters"|grep -v -e ^"daemon_pid:" -e ^"reliable_infos:"
+        if [[ "$1" == for_load ]];then
+            echo "$jack_parameters"|grep -v ^"daemon_pid:"
+        else
+            echo "$jack_parameters"|grep -v -e ^"daemon_pid:" -e ^"reliable_infos:"
+        fi
     fi
     
     if echo "$jack_parameters"|grep -q ^jack_started:1$ && has_pulse_jack && which jack_lsp >/dev/null;then
@@ -115,7 +119,11 @@ check_alsa_device(){
     command=aplay
     [[ "$2" == capture ]] && command=arecord
     
-    LANG=C LC_ALL=C $command -l|grep -q ^"card .: ${device} \[.*\], device ${index}: "
+    if [[ "$device_and_index" =~ ',' ]];then
+        LANG=C LC_ALL=C $command -l|grep -q ^"card .: ${device} \[.*\], device ${index}: "
+    else
+        LANG=C LC_ALL=C $command -l|grep -q ^"card .: .* \[.*\], device ${index}: "
+    fi
 }
 
 
@@ -124,7 +132,6 @@ check_device(){
         alsa )
             if [[ "$(wanted_value_of /driver/duplex)" == "1" ]];then
                 pb_device=$(wanted_value_of /driver/playback)
-                
                 if ! check_alsa_device "$pb_device";then
                     ray_control script_info "$(tr_device_not_connected_${ray_operation} "$pb_device")"
                     exit 1

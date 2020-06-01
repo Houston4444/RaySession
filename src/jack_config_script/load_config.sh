@@ -11,7 +11,7 @@ source shared.sh || exit 0
 ray_operation=load
 
 # read current and session parameters, and diff between them
-current_parameters=$(get_current_parameters)
+current_parameters=$(get_current_parameters for_load)
 
 [ -f "$session_jack_file" ] && wanted_parameters=$(cat "$session_jack_file")
 make_diff_parameters
@@ -20,7 +20,6 @@ make_diff_parameters
 
 # save the current configuration to can restore it (only if we are not in a switch situation)
 $RAY_SWITCHING_SESSION || echo "$current_parameters" > "$backup_jack_conf"
-
 
 # no reliable JACK infos because JACK was started before the checker script
 if [[ "$(current_value_of reliable_infos)" == 0 ]];then
