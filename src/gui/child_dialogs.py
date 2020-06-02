@@ -655,22 +655,6 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
             self.template_list.append(template.split('/')[0])
 
 
-class EditExecutableDialog(ChildDialog):
-    def __init__(self, parent, client):
-        ChildDialog.__init__(self, parent)
-        self.ui = ui_edit_executable.Ui_Dialog()
-        self.ui.setupUi(self)
-
-        self.ui.lineEditExecutable.setText(client.executable_path)
-        self.ui.lineEditArguments.setText(client.arguments)
-
-    def getExecutable(self):
-        return self.ui.lineEditExecutable.text()
-
-    def getArguments(self):
-        return self.ui.lineEditArguments.text()
-
-
 class ClientPropertiesDialog(ChildDialog):
     def __init__(self, parent, client):
         ChildDialog.__init__(self, parent)
@@ -681,11 +665,13 @@ class ClientPropertiesDialog(ChildDialog):
 
         self.ui.lineEditIcon.textEdited.connect(self.changeIconwithText)
         self.ui.pushButtonSaveChanges.clicked.connect(self.saveChanges)
-        self.ui.toolButtonEditExecutable.clicked.connect(self.editExecutable)
+        
+        if self.client.non_nsm:
+            self.ui.tabWidget.removeTab(1)
+        else:
+            self.ui.tabWidget.removeTab(2)
 
     def updateContents(self):
-        self.ui.labelExecutable.setText(self.client.executable_path)
-        self.ui.labelArguments.setText(self.client.arguments)
         self.ui.labelId.setText(self.client.client_id)
         self.ui.labelClientName.setText(self.client.name)
         self.ui.lineEditIcon.setText(self.client.icon_name)
@@ -696,20 +682,27 @@ class ClientPropertiesDialog(ChildDialog):
             ray.getAppIcon(self.client.icon_name, self))
         self.ui.lineEditIgnoredExtensions.setText(
             self.client.ignored_extensions)
-
+        
+        if self.client.non_nsm:
+            self.ui.lineEditExecutable.setText(self.client.executable_path)
+            self.ui.lineEditArguments.setText(self.client.arguments)
+            self.ui.lineEditConfigFile.setText(self.client.non_nsm_config_file)
+        else:
+            self.ui.lineEditExecutableNSM.setText(self.client.executable_path)
+            self.ui.lineEditArgumentsNSM.setText(self.client.arguments)
+            
     def changeIconwithText(self, text):
         self.ui.toolButtonIcon.setIcon(ray.getAppIcon(text, self))
 
-    def editExecutable(self):
-        dialog = EditExecutableDialog(self, self.client)
-        dialog.exec()
-        if dialog.result():
-            self.ui.labelExecutable.setText(dialog.getExecutable())
-            self.ui.labelArguments.setText(dialog.getArguments())
-
     def saveChanges(self):
-        self.client.executable_path = self.ui.labelExecutable.text()
-        self.client.arguments = self.ui.labelArguments.text()
+        if self.client.non_nsm:
+            self.client.executable_path = self.ui.lineEditExecutable.text()
+            self.client.arguments = self.ui.lineEditArguments.text()
+            self.client.non_nsm_config_file = self.ui.lineEditConfigFile.text()
+        else:
+            self.client.executable_path = self.ui.lineEditExecutableNSM.text()
+            self.client.arguments = self.ui.lineEditArgumentsNSM.text()
+            
         self.client.label = self.ui.lineEditLabel.text()
         self.client.description = \
                                 self.ui.plainTextEditDescription.toPlainText()
@@ -729,6 +722,13 @@ class clientNonNsmDialog(ChildDialog):
         self.ui.setupUi(self)
 
         self.client = client
+        
+        self.ui.comboSaveSig.addItem(_translate('non_nsm', 'None'), 0)
+        #self.ui.comboSaveSig.addItem('SIGUSR1', int(signal.SIGUSR1))
+        #self.ui.comboSaveSig.addItem('SIGUSR2', int(signal.SIGUSR2))
+        #self.ui.comboSaveSig.addItem('SIGINT',  int(signal.SIGINT))
+        #self.ui.comboSaveSig.activated.connect(self.comboSaveSigChanged)
+        self.ui.comboSaveSig.setCurrentIndex(0)
     
     def updateContents(self):
         self.ui.lineEditExecutable.setText(self.client.executable_path)
