@@ -28,7 +28,6 @@ class ClientSlot(QFrame):
         self.is_dirty_able = False
         self.gui_visible = True
         self.ui.toolButtonGUI.setVisible(False)
-        self.ui.toolButtonNonNsm.setVisible(client.non_nsm)
 
         # connect buttons to functions
         self.ui.toolButtonGUI.toggleGui.connect(self.toggleGui)
@@ -53,8 +52,6 @@ class ClientSlot(QFrame):
             self.saveAsApplicationTemplate)
         self.ui.actionProperties.triggered.connect(
             self.client.showPropertiesDialog)
-        self.ui.toolButtonNonNsm.toggleGui.connect(
-            self.client.showNonNsmDialog)
         self.ui.actionReturnToAPreviousState.triggered.connect(
             self.openSnapshotsDialog)
 

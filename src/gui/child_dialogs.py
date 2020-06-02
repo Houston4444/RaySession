@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import signal
+
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QTreeWidgetItem,
     QCompleter, QMessageBox, QFileDialog, QWidget)
@@ -23,7 +25,6 @@ import ui_add_application
 import ui_donations
 import ui_jack_config_info
 import ui_new_executable
-import ui_non_nsm
 import ui_error_dialog
 import ui_quit_app
 import ui_client_properties
@@ -34,7 +35,6 @@ import ui_stop_client_no_save
 import ui_abort_copy
 import ui_client_trash
 import ui_daemon_url
-import ui_edit_executable
 import ui_snapshot_progress
 import ui_waiting_close_user
 
@@ -668,6 +668,14 @@ class ClientPropertiesDialog(ChildDialog):
         
         if self.client.non_nsm:
             self.ui.tabWidget.removeTab(1)
+            
+            self.ui.comboSaveSig.addItem(_translate('non_nsm', 'None'), 0)
+            self.ui.comboSaveSig.addItem('SIGUSR1', 10)
+            self.ui.comboSaveSig.addItem('SIGUSR2', 12)
+            
+            self.ui.comboStopSig.addItem('SIGTERM', 15)
+            self.ui.comboStopSig.addItem('SIGINT', 2)
+            self.ui.comboStopSig.addItem('SIGHUP', 1)
         else:
             self.ui.tabWidget.removeTab(2)
 
@@ -678,27 +686,64 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.lineEditLabel.setText(self.client.label)
         self.ui.plainTextEditDescription.setPlainText(self.client.description)
         self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
-        self.ui.toolButtonIcon.setIcon(
-            ray.getAppIcon(self.client.icon_name, self))
         self.ui.lineEditIgnoredExtensions.setText(
             self.client.ignored_extensions)
+        
+        self.changeIconwithText(self.client.icon_name)
         
         if self.client.non_nsm:
             self.ui.lineEditExecutable.setText(self.client.executable_path)
             self.ui.lineEditArguments.setText(self.client.arguments)
             self.ui.lineEditConfigFile.setText(self.client.non_nsm_config_file)
+            
+            save_sig = self.client.non_nsm_save_sig
+            
+            for i in range(self.ui.comboSaveSig.count()):
+                if self.ui.comboSaveSig.itemData(i) == save_sig:
+                    self.ui.comboSaveSig.setCurrentIndex(i)
+                    break
+            else:
+                try:
+                    signal_text = str(
+                        signal.Signals(save_sig)).rpartition('.')[2]
+                    self.ui.comboSaveSig.addItem(signal_text, save_sig)
+                    self.ui.comboSaveSig.setCurrentIndex(i+1)
+                except:
+                    self.ui.comboSaveSig.setCurrentIndex(0)
+            
+            stop_sig = self.client.non_nsm_stop_sig
+            
+            for i in range(self.ui.comboStopSig.count()):
+                if self.ui.comboStopSig.itemData(i) == stop_sig:
+                    self.ui.comboStopSig.setCurrentIndex(i)
+                    break
+            else:
+                try:
+                    signal_text = str(signal.Signals(
+                        stop_sig)).rpartition('.')[2]
+                    self.ui.comboStopSig.addItem(signal_text, stop_sig)
+                    self.ui.comboStopSig.setCurrentIndex(i+1)
+                except:
+                    self.ui.comboStopSig.setCurrentIndex(0)
+                
         else:
             self.ui.lineEditExecutableNSM.setText(self.client.executable_path)
             self.ui.lineEditArgumentsNSM.setText(self.client.arguments)
             
     def changeIconwithText(self, text):
-        self.ui.toolButtonIcon.setIcon(ray.getAppIcon(text, self))
+        icon = ray.getAppIcon(text, self)
+        self.ui.toolButtonIcon.setIcon(icon)
+        self.ui.toolButtonIconNsm.setIcon(icon)
+        self.ui.toolButtonIconNonNsm.setIcon(icon)
 
     def saveChanges(self):
         if self.client.non_nsm:
             self.client.executable_path = self.ui.lineEditExecutable.text()
             self.client.arguments = self.ui.lineEditArguments.text()
             self.client.non_nsm_config_file = self.ui.lineEditConfigFile.text()
+            self.client.non_nsm_save_sig = self.ui.comboSaveSig.currentData()
+            self.client.non_nsm_stop_sig = self.ui.comboStopSig.currentData()
+            self.client.non_nsm_wait_win = self.ui.checkBoxWaitWindow.isChecked()
         else:
             self.client.executable_path = self.ui.lineEditExecutableNSM.text()
             self.client.arguments = self.ui.lineEditArgumentsNSM.text()
@@ -713,27 +758,6 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.sendPropertiesToDaemon()
         # better for user to wait a little before close the window
         QTimer.singleShot(150, self.accept)
-
-
-class clientNonNsmDialog(ChildDialog):
-    def __init__(self, parent, client):
-        ChildDialog.__init__(self, parent)
-        self.ui = ui_non_nsm.Ui_Dialog()
-        self.ui.setupUi(self)
-
-        self.client = client
-        
-        self.ui.comboSaveSig.addItem(_translate('non_nsm', 'None'), 0)
-        #self.ui.comboSaveSig.addItem('SIGUSR1', int(signal.SIGUSR1))
-        #self.ui.comboSaveSig.addItem('SIGUSR2', int(signal.SIGUSR2))
-        #self.ui.comboSaveSig.addItem('SIGINT',  int(signal.SIGINT))
-        #self.ui.comboSaveSig.activated.connect(self.comboSaveSigChanged)
-        self.ui.comboSaveSig.setCurrentIndex(0)
-    
-    def updateContents(self):
-        self.ui.lineEditExecutable.setText(self.client.executable_path)
-        self.ui.lineEditConfigFile.setText(self.client.non_nsm_config_file)
-        self.ui.lineEditArguments.setText(self.client.arguments)
     
 class ClientTrashDialog(ChildDialog):
     def __init__(self, parent, client_data):

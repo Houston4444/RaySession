@@ -48,8 +48,6 @@ class Client(QObject):
         self.widget = self._main_win.createClientWidget(self)
         self.properties_dialog = child_dialogs.ClientPropertiesDialog(
             self._main_win, self)
-        self.non_nsm_dialog = child_dialogs.clientNonNsmDialog(
-            self._main_win, self)
 
     def setStatus(self, status):
         self.previous_status = self.status
@@ -154,12 +152,6 @@ class Client(QObject):
         self.properties_dialog.updateContents()
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()
-
-    def showNonNsmDialog(self):
-        print('rooovvo(')
-        self.non_nsm_dialog.updateContents()
-        self.non_nsm_dialog.show()
-        self.non_nsm_dialog.activateWindow()
     
     def reCreateWidget(self):
         del self.widget
