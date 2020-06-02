@@ -121,9 +121,15 @@ check_alsa_device(){
     
     if [[ "$device_and_index" =~ ',' ]];then
         LANG=C LC_ALL=C $command -l|grep -q ^"card .: ${device} \[.*\], device ${index}: "
+    elif [[ "$device_and_index" =~ ^[0-9]+$ ]];then
+        LANG=C LC_ALL=C $command -l|grep -q ^"card ${index}: "
     else
-        LANG=C LC_ALL=C $command -l|grep -q ^"card .: .* \[.*\], device ${index}: "
+        LANG=C LC_ALL=C $command -l|grep -q ^"card .: ${device} \["
     fi
+    
+    return_code=$?
+    unset full_device device_and_index device index command
+    return $return_code
 }
 
 
@@ -143,9 +149,9 @@ check_device(){
                     exit 1
                 fi
             else
-                device="$(wanted_value_of /driver/device)"
-                if ! check_alsa_device "$device";then
-                    ray_control script_info "$(tr_device_not_connected_${ray_operation} "$device")"
+                pb_device="$(wanted_value_of /driver/device)"
+                if ! check_alsa_device "$pb_device";then
+                    ray_control script_info "$(tr_device_not_connected_${ray_operation} "$pb_device")"
                     exit 1
                 fi
             fi
