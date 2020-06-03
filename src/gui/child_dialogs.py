@@ -703,6 +703,7 @@ class ClientPropertiesDialog(ChildDialog):
             self.ui.comboStopSig.addItem('SIGTERM', 15)
             self.ui.comboStopSig.addItem('SIGINT', 2)
             self.ui.comboStopSig.addItem('SIGHUP', 1)
+            self.ui.comboStopSig.addItem('SIGKILL', 9)
         else:
             self.ui.tabWidget.removeTab(2)
             

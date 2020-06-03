@@ -971,6 +971,8 @@ class Client(ServerSender):
             
             if self.is_external:
                 os.kill(self.pid, 15) # 15 means signal.SIGTERM
+            elif self.non_nsm and self.non_nsm_stop_sig != 15:
+                os.kill(self.process.pid(), self.non_nsm_stop_sig)
             else:
                 self.process.terminate()
         else:
