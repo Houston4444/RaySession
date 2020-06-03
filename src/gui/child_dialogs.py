@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QTreeWidgetItem,
     QCompleter, QMessageBox, QFileDialog, QWidget)
 from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QFile
 
 import ray
 from gui_server_thread import GUIServerThread
@@ -37,6 +37,7 @@ import ui_client_trash
 import ui_daemon_url
 import ui_snapshot_progress
 import ui_waiting_close_user
+import ui_non_nsm_copy
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -655,6 +656,25 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
             self.template_list.append(template.split('/')[0])
 
 
+class NonNsmCopyDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_non_nsm_copy.Ui_Dialog()
+        self.ui.setupUi(self)
+
+        self.rename_file = False
+        self.ui.pushButtonCopyRename.clicked.connect(self.setRenameFile)
+
+    def setRenameFile(self):
+        self.rename_file = True
+        self.accept()
+
+    def setFile(self, path):
+        self.ui.labelFileNotInFolder.setText(
+            _translate(
+                'Dialog', '%s is not in client working directory')
+            % ('<strong>' + os.path.basename(path) + '</strong>'))
+
 class ClientPropertiesDialog(ChildDialog):
     def __init__(self, parent, client):
         ChildDialog.__init__(self, parent)
@@ -662,12 +682,19 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.setupUi(self)
 
         self.client = client
+        
+        self.setWindowTitle(
+            _translate('client_properties', "Properties of client %s")
+            % client.client_id)
 
         self.ui.lineEditIcon.textEdited.connect(self.changeIconwithText)
         self.ui.pushButtonSaveChanges.clicked.connect(self.saveChanges)
         
         if self.client.non_nsm:
             self.ui.tabWidget.removeTab(1)
+            
+            self.ui.toolButtonBrowse.setEnabled(self._daemon_manager.is_local)
+            self.ui.toolButtonBrowse.clicked.connect(self.browseConfigFile)
             
             self.ui.comboSaveSig.addItem(_translate('non_nsm', 'None'), 0)
             self.ui.comboSaveSig.addItem('SIGUSR1', 10)
@@ -678,6 +705,8 @@ class ClientPropertiesDialog(ChildDialog):
             self.ui.comboStopSig.addItem('SIGHUP', 1)
         else:
             self.ui.tabWidget.removeTab(2)
+            
+        self.ui.tabWidget.setCurrentIndex(0)
 
     def updateContents(self):
         self.ui.labelId.setText(self.client.client_id)
@@ -729,7 +758,54 @@ class ClientPropertiesDialog(ChildDialog):
         else:
             self.ui.lineEditExecutableNSM.setText(self.client.executable_path)
             self.ui.lineEditArgumentsNSM.setText(self.client.arguments)
-            
+    
+    def browseConfigFile(self):
+        prefix = self._session.name
+        if self.client.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+            prefix = self.client.name
+        elif self.client.prefix_mode == ray.PrefixMode.CUSTOM:
+            prefix = self.client.custom_prefix
+        
+        work_dir = "%s/%s.%s" % (self._session.path, prefix,
+                                 self.client.client_id)
+        
+        config_file, ok = QFileDialog.getOpenFileName(
+            self,
+            _translate('Dialog', 'Select File to use as CONFIG_FILE'),
+            work_dir)
+        
+        if not ok:
+            return
+
+        if not config_file.startswith(work_dir + '/'):
+            qfile = QFile(config_file)
+            if qfile.size() < 20971520:  # if file < 20Mb
+                copy_dialog = NonNsmCopyDialog(self)
+                copy_dialog.setFile(config_file)
+                copy_dialog.exec()
+
+                if copy_dialog.result():
+                    if copy_dialog.rename_file:
+                        base, pt, extension = os.path.basename(
+                            config_file).rpartition('.')
+
+                        config_file = "%s.%s" % (self._session.name, extension)
+                        if not base:
+                            config_file = self._session.name
+                    else:
+                        config_file = os.path.basename(config_file)
+
+                    qfile.copy(config_file)
+
+        self.config_file = os.path.relpath(config_file, work_dir)
+        
+        if (self._session.name
+            and (self.config_file == self._session.name
+                 or self.config_file.startswith("%s." % self._session.name))):
+            self.config_file = self.config_file.replace(self._session.name,
+                                                        "$RAY_SESSION_NAME")
+        self.ui.lineEditConfigFile.setText(self.config_file)
+
     def changeIconwithText(self, text):
         icon = ray.getAppIcon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)
@@ -758,7 +834,8 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.sendPropertiesToDaemon()
         # better for user to wait a little before close the window
         QTimer.singleShot(150, self.accept)
-    
+
+
 class ClientTrashDialog(ChildDialog):
     def __init__(self, parent, client_data):
         ChildDialog.__init__(self, parent)
