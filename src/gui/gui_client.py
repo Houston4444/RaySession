@@ -30,12 +30,12 @@ class Client(QObject):
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         self.ignored_extensions = client_data.ignored_extensions
-        self.non_nsm = client_data.non_nsm
-        self.non_nsm_config_file = client_data.non_nsm_config_file
-        self.non_nsm_save_sig = client_data.non_nsm_save_sig
-        self.non_nsm_stop_sig = client_data.non_nsm_stop_sig
-        self.non_nsm_wait_win = client_data.non_nsm_wait_win
-        self.non_nsm_no_save_level = client_data.non_nsm_no_save_level
+        self.ray_hack = client_data.ray_hack
+        self.ray_hack_config_file = client_data.ray_hack_config_file
+        self.ray_hack_save_sig = client_data.ray_hack_save_sig
+        self.ray_hack_stop_sig = client_data.ray_hack_stop_sig
+        self.ray_hack_wait_win = client_data.ray_hack_wait_win
+        self.ray_hack_no_save_level = client_data.ray_hack_no_save_level
 
         self.status = ray.ClientStatus.STOPPED
         self.previous_status = ray.ClientStatus.STOPPED
@@ -102,12 +102,12 @@ class Client(QObject):
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
-        self.non_nsm         = client_data.non_nsm
-        self.non_nsm_config_file = client_data.non_nsm_config_file
-        self.non_nsm_save_sig = client_data.non_nsm_save_sig
-        self.non_nsm_stop_sig = client_data.non_nsm_stop_sig
-        self.non_nsm_wait_win = client_data.non_nsm_wait_win
-        self.non_nsm_no_save_level = client_data.non_nsm_no_save_level
+        self.ray_hack         = client_data.ray_hack
+        self.ray_hack_config_file = client_data.ray_hack_config_file
+        self.ray_hack_save_sig = client_data.ray_hack_save_sig
+        self.ray_hack_stop_sig = client_data.ray_hack_stop_sig
+        self.ray_hack_wait_win = client_data.ray_hack_wait_win
+        self.ray_hack_no_save_level = client_data.ray_hack_no_save_level
         
         self.widget.updateClientData()
 
@@ -142,12 +142,12 @@ class Client(QObject):
                         self.capabilities,
                         int(self.check_last_save),
                         self.ignored_extensions,
-                        int(self.non_nsm),
-                        self.non_nsm_config_file,
-                        self.non_nsm_save_sig,
-                        self.non_nsm_stop_sig,
-                        int(self.non_nsm_wait_win),
-                        self.non_nsm_no_save_level)
+                        int(self.ray_hack),
+                        self.ray_hack_config_file,
+                        self.ray_hack_save_sig,
+                        self.ray_hack_stop_sig,
+                        int(self.ray_hack_wait_win),
+                        self.ray_hack_no_save_level)
 
     def showPropertiesDialog(self, second_tab=False):
         self.properties_dialog.updateContents()

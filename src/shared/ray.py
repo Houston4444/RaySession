@@ -81,6 +81,12 @@ class NSMMode:
     NETWORK = 2
 
 
+class Protocol:
+    NSM = 0
+    RAY_HACK = 1
+    NET_SESSION = 2
+
+
 class Option:
     NSM_LOCKED       = 0x001
     SAVE_FROM_CLIENT = 0x002 #DEPRECATED
@@ -557,12 +563,12 @@ class ClientData:
     capabilities = ''
     check_last_save = True
     ignored_extensions = getGitIgnoredExtensions()
-    non_nsm = False
-    non_nsm_config_file = ""
-    non_nsm_save_sig = 0
-    non_nsm_stop_sig = 15
-    non_nsm_wait_win = False
-    non_nsm_no_save_level = 0
+    ray_hack = False
+    ray_hack_config_file = ""
+    ray_hack_save_sig = 0
+    ray_hack_stop_sig = 15
+    ray_hack_wait_win = False
+    ray_hack_no_save_level = 0
 
     def __init__(self,
                  client_id,
@@ -578,12 +584,12 @@ class ClientData:
                  capabilities='',
                  check_last_save=True,
                  ignored_extensions=getGitIgnoredExtensions(),
-                 non_nsm=False,
-                 non_nsm_config_file="",
-                 non_nsm_save_sig=0,
-                 non_nsm_stop_sig=15,
-                 non_nsm_wait_win=False,
-                 non_nsm_no_save_level=0
+                 ray_hack=False,
+                 ray_hack_config_file="",
+                 ray_hack_save_sig=0,
+                 ray_hack_stop_sig=15,
+                 ray_hack_wait_win=False,
+                 ray_hack_no_save_level=0
                  ):
         self.client_id = str(client_id)
         self.executable_path = str(executable)
@@ -595,14 +601,14 @@ class ClientData:
         self.capabilities = str(capabilities)
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
-        self.non_nsm = bool(non_nsm)
+        self.ray_hack = bool(ray_hack)
         
-        if self.non_nsm:
-            self.non_nsm_config_file = str(non_nsm_config_file)
-            self.non_nsm_save_sig = int(non_nsm_save_sig)
-            self.non_nsm_stop_sig = int(non_nsm_stop_sig)
-            self.non_nsm_wait_win = bool(non_nsm_wait_win)
-            self.non_nsm_no_save_level = int(non_nsm_no_save_level)
+        if self.ray_hack:
+            self.ray_hack_config_file = str(ray_hack_config_file)
+            self.ray_hack_save_sig = int(ray_hack_save_sig)
+            self.ray_hack_stop_sig = int(ray_hack_stop_sig)
+            self.ray_hack_wait_win = bool(ray_hack_wait_win)
+            self.ray_hack_no_save_level = int(ray_hack_no_save_level)
 
         self.name = str(name) if name else os.path.basename(
             self.executable_path)

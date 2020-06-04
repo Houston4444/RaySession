@@ -71,12 +71,14 @@ class Client(ServerSender):
     sent_to_gui      = False
     switch_state = ray.SwitchState.NONE
     
-    non_nsm = False
-    non_nsm_config_file = ""
-    non_nsm_save_sig = 0
-    non_nsm_stop_sig = 15
-    non_nsm_wait_win = False
-    non_nsm_no_save_level = 0
+    protocol = ray.Protocol.NSM
+    
+    ray_hack = False
+    ray_hack_config_file = ""
+    ray_hack_save_sig = 0
+    ray_hack_stop_sig = 15
+    ray_hack_wait_win = False
+    ray_hack_no_save_level = 0
     
     net_session_template = ''
     net_session_root     = ''
@@ -214,16 +216,16 @@ class Client(ServerSender):
             if self.prefix_mode == ray.PrefixMode.CUSTOM:
                 self.custom_prefix = ctx.attribute('custom_prefix')
         
-        self.non_nsm = bool(ctx.attribute('non_nsm') == '1')
-        if self.non_nsm:
-            self.non_nsm_config_file = ctx.attribute('config_file')
-            non_nsm_save_sig = ctx.attribute('save_signal')
-            if non_nsm_save_sig.isdigit():
-                self.non_nsm_save_sig = int(non_nsm_save_sig)
+        self.ray_hack = bool(ctx.attribute('ray_hack') == '1')
+        if self.ray_hack:
+            self.ray_hack_config_file = ctx.attribute('config_file')
+            ray_hack_save_sig = ctx.attribute('save_signal')
+            if ray_hack_save_sig.isdigit():
+                self.ray_hack_save_sig = int(ray_hack_save_sig)
             
-            non_nsm_stop_sig = ctx.attribute('stop_signal')
-            if non_nsm_stop_sig.isdigit():
-                self.non_nsm_stop_sig = int(non_nsm_stop_sig)
+            ray_hack_stop_sig = ctx.attribute('stop_signal')
+            if ray_hack_stop_sig.isdigit():
+                self.ray_hack_stop_sig = int(ray_hack_stop_sig)
         
         self.net_session_template = ctx.attribute('net_session_template')
         
@@ -289,11 +291,11 @@ class Client(ServerSender):
                 if self.start_gui_hidden:
                     ctx.setAttribute('gui_visible', '0')
         
-        if self.non_nsm:
-            ctx.setAttribute('non_nsm', 1)
-            ctx.setAttribute('config_file', self.non_nsm_config_file)
-            ctx.setAttribute('save_signal', self.non_nsm_save_sig)
-            ctx.setAttribute('stop_signal', self.non_nsm_stop_sig)
+        if self.ray_hack:
+            ctx.setAttribute('ray_hack', 1)
+            ctx.setAttribute('config_file', self.ray_hack_config_file)
+            ctx.setAttribute('save_signal', self.ray_hack_save_sig)
+            ctx.setAttribute('stop_signal', self.ray_hack_stop_sig)
         
         if self.net_session_template:
             ctx.setAttribute('net_session_template',
@@ -399,7 +401,7 @@ class Client(ServerSender):
         return bool(self.pending_command)
         
     def isDumbClient(self)->bool:
-        if self.non_nsm:
+        if self.ray_hack:
             return False
         
         return bool(not self.did_announce)
@@ -550,13 +552,13 @@ class Client(ServerSender):
                         self.ignored_extensions.replace(ext, '')
     
     def nonNsmGetExpandedConfigFile(self)->str:
-        if not self.non_nsm:
+        if not self.ray_hack:
             return ''
         
         os.environ['RAY_SESSION_NAME'] = self.session.name
         os.environ['RAY_CLIENT_ID'] = self.client_id
         
-        expanded_config_file = os.path.expandvars(self.non_nsm_config_file)
+        expanded_config_file = os.path.expandvars(self.ray_hack_config_file)
         
         os.unsetenv('RAY_SESSION_NAME')
         os.unsetenv('RAY_CLIENT_ID')
@@ -591,7 +593,7 @@ class Client(ServerSender):
         
         arguments_line = self.arguments
         
-        if self.non_nsm:
+        if self.ray_hack:
             all_envs = {'CONFIG_FILE': ('', ''),
                         'RAY_SESSION_NAME': ('', ''),
                         'RAY_CLIENT_ID': ('', '')}
@@ -601,21 +603,21 @@ class Client(ServerSender):
             all_envs['RAY_CLIENT_ID'] = (os.getenv('RAY_CLIENT_ID'),
                                          self.client_id)
             #all_envs['CONFIG_FILE'] = (os.getenv('CONFIG_FILE'),
-                                       #self.non_nsm_config_file)
+                                       #self.ray_hack_config_file)
             
             for env in all_envs:
                 os.environ[env] = all_envs[env][1]
             
             os.environ['CONFIG_FILE'] = os.path.expandvars(
-                                                    self.non_nsm_config_file)
+                                                    self.ray_hack_config_file)
             
             back_pwd = os.getenv('PWD')
-            non_nsm_pwd = self.getProjectPath()
-            os.environ['PWD'] = non_nsm_pwd
+            ray_hack_pwd = self.getProjectPath()
+            os.environ['PWD'] = ray_hack_pwd
             
-            if not os.path.exists(non_nsm_pwd):
+            if not os.path.exists(ray_hack_pwd):
                 try:
-                    os.makedirs(non_nsm_pwd)
+                    os.makedirs(ray_hack_pwd)
                 except:
                     # TODO
                     return
@@ -643,8 +645,8 @@ class Client(ServerSender):
         self.running_executable = self.executable_path
         self.running_arguments = self.arguments
         
-        if self.non_nsm:
-            self.process.setWorkingDirectory(non_nsm_pwd)
+        if self.ray_hack:
+            self.process.setWorkingDirectory(ray_hack_pwd)
             process_env = QProcessEnvironment.systemEnvironment()
             process_env.insert('RAY_SESSION_NAME', self.session.name)
             process_env.insert('RAY_CLIENT_ID', self.client_id)
@@ -733,7 +735,7 @@ class Client(ServerSender):
         
         self.sendReplyToCaller(OSC_SRC_START, 'client started')
         
-        if self.non_nsm:
+        if self.ray_hack:
             self.pending_command = ray.Command.OPEN
             self.setStatus(ray.ClientStatus.OPEN)
             QTimer.singleShot(500, self.nonNsmReady)
@@ -813,7 +815,7 @@ class Client(ServerSender):
             self.session.endTimerIfLastExpected(self)
     
     def nonNsmReady(self):
-        if not self.non_nsm:
+        if not self.ray_hack:
             return
         
         if not self.isRunning():
@@ -875,7 +877,7 @@ class Client(ServerSender):
             self.sendToSelfAddress("/nsm/client/session_is_loaded")
     
     def canSaveNow(self):
-        if self.non_nsm:
+        if self.ray_hack:
             print('zoefof', self.isRunning(), self.pending_command)
             return bool(self.isRunning()
                         and self.pending_command == ray.Command.NONE)
@@ -905,11 +907,11 @@ class Client(ServerSender):
                     % self.guiMsgStyle())
         
         if self.isRunning():
-            if self.non_nsm:
-                if self.non_nsm_save_sig > 0:
+            if self.ray_hack:
+                if self.ray_hack_save_sig > 0:
                     self.pending_command = ray.Command.SAVE
                     self.setStatus(ray.ClientStatus.SAVE)
-                    os.kill(self.process.processId(), self.non_nsm_save_sig)
+                    os.kill(self.process.processId(), self.ray_hack_save_sig)
                     QTimer.singleShot(300, self.nonNsmSaved)
                 
             elif self.canSaveNow():
@@ -926,7 +928,7 @@ class Client(ServerSender):
                 self.start_gui_hidden = not bool(self.gui_visible)
     
     def nonNsmSaved(self):
-        if not self.non_nsm:
+        if not self.ray_hack:
             return
         
         if self.pending_command == ray.Command.SAVE:
@@ -971,8 +973,8 @@ class Client(ServerSender):
             
             if self.is_external:
                 os.kill(self.pid, 15) # 15 means signal.SIGTERM
-            elif self.non_nsm and self.non_nsm_stop_sig != 15:
-                os.kill(self.process.pid(), self.non_nsm_stop_sig)
+            elif self.ray_hack and self.ray_hack_stop_sig != 15:
+                os.kill(self.process.pid(), self.ray_hack_stop_sig)
             else:
                 self.process.terminate()
         else:
@@ -1036,12 +1038,12 @@ class Client(ServerSender):
                         self.capabilities,
                         int(self.check_last_save),
                         self.ignored_extensions,
-                        int(self.non_nsm),
-                        self.non_nsm_config_file,
-                        self.non_nsm_save_sig,
-                        self.non_nsm_stop_sig,
-                        int(self.non_nsm_wait_win),
-                        self.non_nsm_no_save_level)
+                        int(self.ray_hack),
+                        self.ray_hack_config_file,
+                        self.ray_hack_save_sig,
+                        self.ray_hack_stop_sig,
+                        int(self.ray_hack_wait_win),
+                        self.ray_hack_no_save_level)
         
         self.sent_to_gui = True
     
@@ -1058,12 +1060,12 @@ class Client(ServerSender):
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         self.ignored_extensions = client_data.ignored_extensions
-        self.non_nsm = client_data.non_nsm
-        self.non_nsm_config_file = client_data.non_nsm_config_file
-        self.non_nsm_save_sig = client_data.non_nsm_save_sig
-        self.non_nsm_stop_sig = client_data.non_nsm_stop_sig
-        self.non_nsm_wait_win = client_data.non_nsm_wait_win
-        self.non_nsm_no_save_level = client_data.non_nsm_no_save_level
+        self.ray_hack = client_data.ray_hack
+        self.ray_hack_config_file = client_data.ray_hack_config_file
+        self.ray_hack_save_sig = client_data.ray_hack_save_sig
+        self.ray_hack_stop_sig = client_data.ray_hack_stop_sig
+        self.ray_hack_wait_win = client_data.ray_hack_wait_win
+        self.ray_hack_no_save_level = client_data.ray_hack_no_save_level
         
         self.sendGuiClientProperties()
     
@@ -1104,8 +1106,8 @@ class Client(ServerSender):
                     self.check_last_save = bool(int(value))
             elif property == 'ignored_extensions':
                 self.ignored_extensions = value
-            elif property == 'non_nsm':
-                # do not change non_nsm value
+            elif property == 'ray_hack':
+                # do not change ray_hack value
                 continue
                 
         self.sendGuiClientProperties()
@@ -1122,7 +1124,7 @@ icon:%s
 capabilities:%s
 check_last_save:%i
 ignored_extensions:%s
-non_nsm:%i""" % (self.client_id, 
+ray_hack:%i""" % (self.client_id, 
                          self.executable_path,
                          self.arguments,
                          self.name, 
@@ -1133,7 +1135,7 @@ non_nsm:%i""" % (self.client_id,
                          self.capabilities,
                          int(self.check_last_save),
                          self.ignored_extensions,
-                         int(self.non_nsm))
+                         int(self.ray_hack))
         return message
     
     def prettyClientId(self):
@@ -1444,7 +1446,7 @@ non_nsm:%i""" % (self.client_id,
         files_to_rename = []
         do_rename = True
         
-        if self.non_nsm:
+        if self.ray_hack:
             if os.path.isdir(project_path):
                 if not os.access(project_path, os.W_OK):
                     do_rename = False
@@ -1452,12 +1454,12 @@ non_nsm:%i""" % (self.client_id,
                     os.environ['RAY_SESSION_NAME'] = old_session_name
                     os.environ['RAY_CLIENT_ID'] = old_client_id
                     pre_config_file = os.path.expandvars(
-                                                    self.non_nsm_config_file)
+                                                    self.ray_hack_config_file)
                     
                     os.environ['RAY_SESSION_NAME'] = new_session_name
                     os.environ['RAY_CLIENT_ID'] = new_client_id
                     post_config_file = os.path.expandvars(
-                                                    self.non_nsm_config_file)
+                                                    self.ray_hack_config_file)
                     
                     os.unsetenv('RAY_SESSION_NAME')
                     os.unsetenv('RAY_CLIENT_ID')

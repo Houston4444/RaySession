@@ -10,13 +10,13 @@ import ray
 from gui_tools import RS, _translate, clientStatusString
 from child_dialogs import ChildDialog
 
-import ui_non_nsm_copy
+import ui_ray_hack_copy
 import ui_client_properties
 
 class NonNsmCopyDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_non_nsm_copy.Ui_Dialog()
+        self.ui = ui_ray_hack_copy.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.rename_file = False
@@ -49,7 +49,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.lineEditIcon.textEdited.connect(self.changeIconwithText)
         self.ui.pushButtonSaveChanges.clicked.connect(self.saveChanges)
         
-        if self.client.non_nsm:
+        if self.client.ray_hack:
             self.ui.tabWidget.removeTab(1)
             
             self.ui.labelWorkingDir.setText(self.getWorkDirBase())
@@ -64,7 +64,7 @@ class ClientPropertiesDialog(ChildDialog):
                 self.lineEditConfigFileChanged)
             self.ui.pushButtonStart.clicked.connect(self.startClient)
             self.ui.pushButtonStop.clicked.connect(self.stopClient)
-            self.ui.comboSaveSig.addItem(_translate('non_nsm', 'None'), 0)
+            self.ui.comboSaveSig.addItem(_translate('ray_hack', 'None'), 0)
             self.ui.comboSaveSig.addItem('SIGUSR1', 10)
             self.ui.comboSaveSig.addItem('SIGUSR2', 12)
             
@@ -115,12 +115,12 @@ class ClientPropertiesDialog(ChildDialog):
         
         self.changeIconwithText(self.client.icon_name)
         
-        if self.client.non_nsm:
+        if self.client.ray_hack:
             self.ui.lineEditExecutable.setText(self.client.executable_path)
             self.ui.lineEditArguments.setText(self.client.arguments)
-            self.ui.lineEditConfigFile.setText(self.client.non_nsm_config_file)
+            self.ui.lineEditConfigFile.setText(self.client.ray_hack_config_file)
             
-            save_sig = self.client.non_nsm_save_sig
+            save_sig = self.client.ray_hack_save_sig
             
             for i in range(self.ui.comboSaveSig.count()):
                 if self.ui.comboSaveSig.itemData(i) == save_sig:
@@ -135,7 +135,7 @@ class ClientPropertiesDialog(ChildDialog):
                 except:
                     self.ui.comboSaveSig.setCurrentIndex(0)
             
-            stop_sig = self.client.non_nsm_stop_sig
+            stop_sig = self.client.ray_hack_stop_sig
             
             for i in range(self.ui.comboStopSig.count()):
                 if self.ui.comboStopSig.itemData(i) == stop_sig:
@@ -236,23 +236,23 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.toolButtonIconNonNsm.setIcon(icon)
 
     def hasNonNsmChanges(self)->bool:
-        if not self.client.non_nsm:
+        if not self.client.ray_hack:
             return False
         
         if self.ui.lineEditExecutable.text() != self.client.executable_path:
             return True
         
         if (self.ui.lineEditConfigFile.text()
-                != self.client.non_nsm_config_file):
+                != self.client.ray_hack_config_file):
             return True
         
         if self.ui.lineEditArguments.text() != self.client.arguments:
             return True
         
-        if self.ui.comboSaveSig.currentData() != self.client.non_nsm_save_sig:
+        if self.ui.comboSaveSig.currentData() != self.client.ray_hack_save_sig:
             return True
         
-        if self.ui.comboStopSig.currentData() != self.client.non_nsm_stop_sig:
+        if self.ui.comboStopSig.currentData() != self.client.ray_hack_stop_sig:
             return True
         
         return False
@@ -266,16 +266,16 @@ class ClientPropertiesDialog(ChildDialog):
         self._session._main_win.stopClient(self.client.client_id)
     
     def saveChanges(self):
-        has_non_nsm_changes = False
+        has_ray_hack_changes = False
         
-        if self.client.non_nsm:
-            has_non_nsm_changes = self.hasNonNsmChanges()
+        if self.client.ray_hack:
+            has_ray_hack_changes = self.hasNonNsmChanges()
             self.client.executable_path = self.ui.lineEditExecutable.text()
             self.client.arguments = self.ui.lineEditArguments.text()
-            self.client.non_nsm_config_file = self.ui.lineEditConfigFile.text()
-            self.client.non_nsm_save_sig = self.ui.comboSaveSig.currentData()
-            self.client.non_nsm_stop_sig = self.ui.comboStopSig.currentData()
-            self.client.non_nsm_wait_win = self.ui.checkBoxWaitWindow.isChecked()
+            self.client.ray_hack_config_file = self.ui.lineEditConfigFile.text()
+            self.client.ray_hack_save_sig = self.ui.comboSaveSig.currentData()
+            self.client.ray_hack_stop_sig = self.ui.comboStopSig.currentData()
+            self.client.ray_hack_wait_win = self.ui.checkBoxWaitWindow.isChecked()
         else:
             self.client.executable_path = self.ui.lineEditExecutableNSM.text()
             self.client.arguments = self.ui.lineEditArgumentsNSM.text()
@@ -290,7 +290,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.sendPropertiesToDaemon()
         
         # do not close window editing non nsm tab
-        if has_non_nsm_changes and self.ui.tabWidget.currentIndex() == 1:
+        if has_ray_hack_changes and self.ui.tabWidget.currentIndex() == 1:
             return
         
         # better for user to wait a little before close the window

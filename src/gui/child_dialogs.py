@@ -37,7 +37,7 @@ import ui_client_trash
 import ui_daemon_url
 import ui_snapshot_progress
 import ui_waiting_close_user
-import ui_non_nsm_copy
+import ui_ray_hack_copy
 
 class ChildDialog(QDialog):
     def __init__(self, parent):

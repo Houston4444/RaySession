@@ -760,7 +760,7 @@ class SignaledSession(OperatingSession):
                             return
         
         else:
-            executable, start_it, non_nsm, \
+            executable, start_it, ray_hack, \
                 prefix_mode, custom_prefix, client_id = args
             
             if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
@@ -787,7 +787,7 @@ class SignaledSession(OperatingSession):
             
         client = Client(self)
         
-        client.non_nsm = bool(non_nsm)
+        client.ray_hack = bool(ray_hack)
         client.executable_path = executable
         client.name = os.path.basename(executable)
         client.client_id = client_id
