@@ -7,7 +7,7 @@ from PyQt5.QtGui import QIcon, QPalette
 
 import ray
 
-from gui_tools import RS, _translate
+from gui_tools import RS, _translate, clientStatusString
 from child_dialogs import ChildDialog
 
 import ui_non_nsm_copy
@@ -43,12 +43,16 @@ class ClientPropertiesDialog(ChildDialog):
         self.setWindowTitle(
             _translate('client_properties', "Properties of client %s")
             % client.client_id)
-
+        
+        self._acceptable_arguments = True
+        
         self.ui.lineEditIcon.textEdited.connect(self.changeIconwithText)
         self.ui.pushButtonSaveChanges.clicked.connect(self.saveChanges)
         
         if self.client.non_nsm:
             self.ui.tabWidget.removeTab(1)
+            
+            self.ui.labelWorkingDir.setText(self.getWorkDirBase())
             
             self.ui.toolButtonBrowse.setEnabled(self._daemon_manager.is_local)
             self.ui.toolButtonBrowse.clicked.connect(self.browseConfigFile)
@@ -58,7 +62,8 @@ class ClientPropertiesDialog(ChildDialog):
                 self.lineEditArgumentsChanged)
             self.ui.lineEditConfigFile.textChanged.connect(
                 self.lineEditConfigFileChanged)
-            
+            self.ui.pushButtonStart.clicked.connect(self.startClient)
+            self.ui.pushButtonStop.clicked.connect(self.stopClient)
             self.ui.comboSaveSig.addItem(_translate('non_nsm', 'None'), 0)
             self.ui.comboSaveSig.addItem('SIGUSR1', 10)
             self.ui.comboSaveSig.addItem('SIGUSR2', 12)
@@ -67,13 +72,36 @@ class ClientPropertiesDialog(ChildDialog):
             self.ui.comboStopSig.addItem('SIGINT', 2)
             self.ui.comboStopSig.addItem('SIGHUP', 1)
             self.ui.comboStopSig.addItem('SIGKILL', 9)
+            
+            self.ui.labelError.setVisible(False)
         else:
             self.ui.tabWidget.removeTab(2)
-            
+        
+        self.ui.pushButtonStart.setEnabled(True)
+        self.ui.pushButtonStop.setEnabled(False)
+        
+        
         self.ui.tabWidget.setCurrentIndex(0)
     
     def setOnSecondTab(self):
         self.ui.tabWidget.setCurrentIndex(1)
+    
+    def updateStatus(self, status):
+        self.ui.lineEditClientStatus.setText(clientStatusString(status))
+        
+        if status in (ray.ClientStatus.LAUNCH,
+                      ray.ClientStatus.OPEN,
+                      ray.ClientStatus.SWITCH,
+                      ray.ClientStatus.NOOP,
+                      ray.ClientStatus.READY):
+            self.ui.pushButtonStart.setEnabled(False)
+            self.ui.pushButtonStop.setEnabled(True)
+        elif status == ray.ClientStatus.STOPPED:
+            self.ui.pushButtonStart.setEnabled(True)
+            self.ui.pushButtonStop.setEnabled(False)
+        elif status == ray.ClientStatus.PRECOPY:
+            self.ui.pushButtonStart.setEnabled(False)
+            self.ui.pushButtonStart.setEnabled(False)
     
     def updateContents(self):
         self.ui.labelId.setText(self.client.client_id)
@@ -126,15 +154,18 @@ class ClientPropertiesDialog(ChildDialog):
             self.ui.lineEditExecutableNSM.setText(self.client.executable_path)
             self.ui.lineEditArgumentsNSM.setText(self.client.arguments)
     
-    def browseConfigFile(self):
+    def getWorkDirBase(self)->str:
         prefix = self._session.name
         if self.client.prefix_mode == ray.PrefixMode.CLIENT_NAME:
             prefix = self.client.name
         elif self.client.prefix_mode == ray.PrefixMode.CUSTOM:
             prefix = self.client.custom_prefix
         
-        work_dir = "%s/%s.%s" % (self._session.path, prefix,
-                                 self.client.client_id)
+        return "%s.%s" % (prefix, self.client.client_id)
+    
+    def browseConfigFile(self):
+        work_dir_base = self.getWorkDirBase()
+        work_dir = "%s/%s" % (self._session.path, work_dir_base)
         
         config_file, ok = QFileDialog.getOpenFileName(
             self,
@@ -174,18 +205,22 @@ class ClientPropertiesDialog(ChildDialog):
                                                         "$RAY_SESSION_NAME")
         self.ui.lineEditConfigFile.setText(self.config_file)
     
+    def isAllowed(self):
+        return self._acceptable_arguments
+    
     def lineEditExecutableEdited(self, text):
-        #self.checkAllowStart()
         pass
 
     def lineEditArgumentsChanged(self, text):
-        #self.checkAllowStart()
         if ray.shellLineToArgs(text) is not None:
+            self._acceptable_arguments = True
             self.ui.lineEditArguments.setStyleSheet('')
         else:
+            self._acceptable_arguments = False
             self.ui.lineEditArguments.setStyleSheet(
                 'QLineEdit{background: red}')
-            #self.ui.pushButtonStart.setEnabled(False)
+            
+        self.ui.pushButtonSaveChanges.setEnabled(self.isAllowed())
 
     def lineEditConfigFileChanged(self, text):
         if text and not self.ui.lineEditArguments.text():
@@ -200,8 +235,41 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.toolButtonIconNsm.setIcon(icon)
         self.ui.toolButtonIconNonNsm.setIcon(icon)
 
+    def hasNonNsmChanges(self)->bool:
+        if not self.client.non_nsm:
+            return False
+        
+        if self.ui.lineEditExecutable.text() != self.client.executable_path:
+            return True
+        
+        if (self.ui.lineEditConfigFile.text()
+                != self.client.non_nsm_config_file):
+            return True
+        
+        if self.ui.lineEditArguments.text() != self.client.arguments:
+            return True
+        
+        if self.ui.comboSaveSig.currentData() != self.client.non_nsm_save_sig:
+            return True
+        
+        if self.ui.comboStopSig.currentData() != self.client.non_nsm_stop_sig:
+            return True
+        
+        return False
+    
+    def startClient(self):
+        self.toDaemon('/ray/client/resume', self.client.client_id)
+
+    def stopClient(self):
+        # we need to prevent accidental stop with a window confirmation
+        # under conditions
+        self._session._main_win.stopClient(self.client.client_id)
+    
     def saveChanges(self):
+        has_non_nsm_changes = False
+        
         if self.client.non_nsm:
+            has_non_nsm_changes = self.hasNonNsmChanges()
             self.client.executable_path = self.ui.lineEditExecutable.text()
             self.client.arguments = self.ui.lineEditArguments.text()
             self.client.non_nsm_config_file = self.ui.lineEditConfigFile.text()
@@ -220,5 +288,10 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.ignored_extensions = \
                                     self.ui.lineEditIgnoredExtensions.text()
         self.client.sendPropertiesToDaemon()
+        
+        # do not close window editing non nsm tab
+        if has_non_nsm_changes and self.ui.tabWidget.currentIndex() == 1:
+            return
+        
         # better for user to wait a little before close the window
         QTimer.singleShot(150, self.accept)

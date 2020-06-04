@@ -61,6 +61,7 @@ class Client(QObject):
             self.last_save = time.time()
 
         self.widget.updateStatus(status)
+        self.properties_dialog.updateStatus(status)
 
     def setGuiEnabled(self):
         self.hasGui = True
