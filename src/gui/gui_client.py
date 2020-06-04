@@ -7,8 +7,6 @@ import ray
 from gui_server_thread import GUIServerThread
 from client_properties_dialog import ClientPropertiesDialog
 
-tralala = "pdpdp"
-
 class Client(QObject):
     status_changed = pyqtSignal(int)
     
@@ -30,7 +28,7 @@ class Client(QObject):
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         self.ignored_extensions = client_data.ignored_extensions
-        self.ray_hack = client_data.ray_hack
+        self.protocol = client_data.protocol
         self.ray_hack_config_file = client_data.ray_hack_config_file
         self.ray_hack_save_sig = client_data.ray_hack_save_sig
         self.ray_hack_stop_sig = client_data.ray_hack_stop_sig
@@ -102,7 +100,7 @@ class Client(QObject):
         self.icon_name       = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
-        self.ray_hack         = client_data.ray_hack
+        self.protocol        = client_data.protocol
         self.ray_hack_config_file = client_data.ray_hack_config_file
         self.ray_hack_save_sig = client_data.ray_hack_save_sig
         self.ray_hack_stop_sig = client_data.ray_hack_stop_sig
@@ -142,7 +140,7 @@ class Client(QObject):
                         self.capabilities,
                         int(self.check_last_save),
                         self.ignored_extensions,
-                        int(self.ray_hack),
+                        self.protocol,
                         self.ray_hack_config_file,
                         self.ray_hack_save_sig,
                         self.ray_hack_stop_sig,

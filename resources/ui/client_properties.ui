@@ -23,7 +23,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>2</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -599,7 +599,7 @@
              </widget>
             </item>
             <item row="1" column="3" rowspan="2">
-             <widget class="QToolButton" name="toolButtonIconNonNsm">
+             <widget class="QToolButton" name="toolButtonIconRayHack">
               <property name="baseSize">
                <size>
                 <width>48</width>

@@ -134,7 +134,10 @@ class Client(ServerSender):
         self._open_timer.timeout.connect(self.openTimerTimeout)
         
         self.scripter = ClientScripter(self)
-        
+    
+    def isRayHack(self)->bool:
+        return bool(self.protocol == ray.Protocol.RAY_HACK)
+    
     def sendToSelfAddress(self, *args):
         if not self.addr:
             return
@@ -216,8 +219,13 @@ class Client(ServerSender):
             if self.prefix_mode == ray.PrefixMode.CUSTOM:
                 self.custom_prefix = ctx.attribute('custom_prefix')
         
-        self.ray_hack = bool(ctx.attribute('ray_hack') == '1')
-        if self.ray_hack:
+        protocol = ctx.attribute('protocol')
+        if protocol.lower() in ('ray_hack', 'ray-hack'):
+            self.protocol = ray.Protocol.RAY_HACK
+        elif protocol == 'net_session':
+            self.protocol = ray.Protocol.NET_SESSION
+        
+        if self.protocol == ray.Protocol.RAY_HACK:
             self.ray_hack_config_file = ctx.attribute('config_file')
             ray_hack_save_sig = ctx.attribute('save_signal')
             if ray_hack_save_sig.isdigit():
@@ -291,8 +299,10 @@ class Client(ServerSender):
                 if self.start_gui_hidden:
                     ctx.setAttribute('gui_visible', '0')
         
-        if self.ray_hack:
-            ctx.setAttribute('ray_hack', 1)
+        if self.protocol != ray.Protocol.NSM:
+            ctx.setAttribute('protocol', ray.protocolToStr(self.protocol))
+        
+        if self.isRayHack():
             ctx.setAttribute('config_file', self.ray_hack_config_file)
             ctx.setAttribute('save_signal', self.ray_hack_save_sig)
             ctx.setAttribute('stop_signal', self.ray_hack_stop_sig)
@@ -401,7 +411,7 @@ class Client(ServerSender):
         return bool(self.pending_command)
         
     def isDumbClient(self)->bool:
-        if self.ray_hack:
+        if self.isRayHack():
             return False
         
         return bool(not self.did_announce)
@@ -552,7 +562,7 @@ class Client(ServerSender):
                         self.ignored_extensions.replace(ext, '')
     
     def nonNsmGetExpandedConfigFile(self)->str:
-        if not self.ray_hack:
+        if self.isRayHack():
             return ''
         
         os.environ['RAY_SESSION_NAME'] = self.session.name
@@ -593,7 +603,7 @@ class Client(ServerSender):
         
         arguments_line = self.arguments
         
-        if self.ray_hack:
+        if self.isRayHack():
             all_envs = {'CONFIG_FILE': ('', ''),
                         'RAY_SESSION_NAME': ('', ''),
                         'RAY_CLIENT_ID': ('', '')}
@@ -645,7 +655,7 @@ class Client(ServerSender):
         self.running_executable = self.executable_path
         self.running_arguments = self.arguments
         
-        if self.ray_hack:
+        if self.isRayHack():
             self.process.setWorkingDirectory(ray_hack_pwd)
             process_env = QProcessEnvironment.systemEnvironment()
             process_env.insert('RAY_SESSION_NAME', self.session.name)
@@ -735,7 +745,7 @@ class Client(ServerSender):
         
         self.sendReplyToCaller(OSC_SRC_START, 'client started')
         
-        if self.ray_hack:
+        if self.isRayHack():
             self.pending_command = ray.Command.OPEN
             self.setStatus(ray.ClientStatus.OPEN)
             QTimer.singleShot(500, self.nonNsmReady)
@@ -815,7 +825,7 @@ class Client(ServerSender):
             self.session.endTimerIfLastExpected(self)
     
     def nonNsmReady(self):
-        if not self.ray_hack:
+        if not self.isRayHack():
             return
         
         if not self.isRunning():
@@ -877,8 +887,7 @@ class Client(ServerSender):
             self.sendToSelfAddress("/nsm/client/session_is_loaded")
     
     def canSaveNow(self):
-        if self.ray_hack:
-            print('zoefof', self.isRunning(), self.pending_command)
+        if self.isRayHack():
             return bool(self.isRunning()
                         and self.pending_command == ray.Command.NONE)
         
@@ -907,7 +916,7 @@ class Client(ServerSender):
                     % self.guiMsgStyle())
         
         if self.isRunning():
-            if self.ray_hack:
+            if self.isRayHack():
                 if self.ray_hack_save_sig > 0:
                     self.pending_command = ray.Command.SAVE
                     self.setStatus(ray.ClientStatus.SAVE)
@@ -928,7 +937,7 @@ class Client(ServerSender):
                 self.start_gui_hidden = not bool(self.gui_visible)
     
     def nonNsmSaved(self):
-        if not self.ray_hack:
+        if not self.isRayHack():
             return
         
         if self.pending_command == ray.Command.SAVE:
@@ -973,7 +982,7 @@ class Client(ServerSender):
             
             if self.is_external:
                 os.kill(self.pid, 15) # 15 means signal.SIGTERM
-            elif self.ray_hack and self.ray_hack_stop_sig != 15:
+            elif self.isRayHack() and self.ray_hack_stop_sig != 15:
                 os.kill(self.process.pid(), self.ray_hack_stop_sig)
             else:
                 self.process.terminate()
@@ -1038,7 +1047,7 @@ class Client(ServerSender):
                         self.capabilities,
                         int(self.check_last_save),
                         self.ignored_extensions,
-                        int(self.ray_hack),
+                        self.protocol,
                         self.ray_hack_config_file,
                         self.ray_hack_save_sig,
                         self.ray_hack_stop_sig,
@@ -1060,7 +1069,7 @@ class Client(ServerSender):
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         self.ignored_extensions = client_data.ignored_extensions
-        self.ray_hack = client_data.ray_hack
+        self.protocol = client_data.protocol
         self.ray_hack_config_file = client_data.ray_hack_config_file
         self.ray_hack_save_sig = client_data.ray_hack_save_sig
         self.ray_hack_stop_sig = client_data.ray_hack_stop_sig
@@ -1113,6 +1122,12 @@ class Client(ServerSender):
         self.sendGuiClientProperties()
     
     def getPropertiesMessage(self):
+        protocol_str = 'NSM'
+        if self.protocol == ray.Protocol.RAY_HACK:
+            protocol_str = 'Ray-Hack'
+        elif self.protocol == ray.Protocol.NET_SESSION:
+            protocol_str = 'Net Session'
+        
         message = """client_id:%s
 executable:%s
 arguments:%s
@@ -1135,7 +1150,7 @@ ray_hack:%i""" % (self.client_id,
                          self.capabilities,
                          int(self.check_last_save),
                          self.ignored_extensions,
-                         int(self.ray_hack))
+                         protocol_str)
         return message
     
     def prettyClientId(self):
@@ -1446,7 +1461,7 @@ ray_hack:%i""" % (self.client_id,
         files_to_rename = []
         do_rename = True
         
-        if self.ray_hack:
+        if self.isRayHack():
             if os.path.isdir(project_path):
                 if not os.access(project_path, os.W_OK):
                     do_rename = False

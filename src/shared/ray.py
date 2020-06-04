@@ -549,6 +549,13 @@ def getWindowManager():
     return WindowManager.NONE
     
 
+def protocolToStr(protocol:int)->str:
+    if protocol == Protocol.RAY_HACK:
+        return "Ray-Hack"
+    elif protocol == Protocol.NET_SESSION:
+        return "Net-Session"
+    return "NSM"
+
 class ClientData:
     client_id = ''
     executable_path = ''
@@ -563,7 +570,7 @@ class ClientData:
     capabilities = ''
     check_last_save = True
     ignored_extensions = getGitIgnoredExtensions()
-    ray_hack = False
+    protocol = Protocol.NSM
     ray_hack_config_file = ""
     ray_hack_save_sig = 0
     ray_hack_stop_sig = 15
@@ -584,7 +591,7 @@ class ClientData:
                  capabilities='',
                  check_last_save=True,
                  ignored_extensions=getGitIgnoredExtensions(),
-                 ray_hack=False,
+                 protocol=Protocol.NSM,
                  ray_hack_config_file="",
                  ray_hack_save_sig=0,
                  ray_hack_stop_sig=15,
@@ -601,9 +608,9 @@ class ClientData:
         self.capabilities = str(capabilities)
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
-        self.ray_hack = bool(ray_hack)
+        self.protocol = int(protocol)
         
-        if self.ray_hack:
+        if self.protocol == Protocol.RAY_HACK:
             self.ray_hack_config_file = str(ray_hack_config_file)
             self.ray_hack_save_sig = int(ray_hack_save_sig)
             self.ray_hack_stop_sig = int(ray_hack_stop_sig)
@@ -618,4 +625,4 @@ class ClientData:
             if custom_prefix:
                 self.custom_prefix = str(custom_prefix)
             else:
-                self.prefix_mode = 2
+                self.prefix_mode = PrefixMode.SESSION_NAME

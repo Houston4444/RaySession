@@ -712,6 +712,7 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
     
     def _ray_session_add_executable(self, path, args, src_addr):
+        protocol = ray.Protocol.NSM
         executable = args[0]
         via_proxy = 0
         prefix_mode = ray.PrefixMode.SESSION_NAME
@@ -760,7 +761,7 @@ class SignaledSession(OperatingSession):
                             return
         
         else:
-            executable, start_it, ray_hack, \
+            executable, start_it, protocol, \
                 prefix_mode, custom_prefix, client_id = args
             
             if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
@@ -787,7 +788,7 @@ class SignaledSession(OperatingSession):
             
         client = Client(self)
         
-        client.ray_hack = bool(ray_hack)
+        client.protocol = protocol
         client.executable_path = executable
         client.name = os.path.basename(executable)
         client.client_id = client_id

@@ -13,7 +13,7 @@ from child_dialogs import ChildDialog
 import ui_ray_hack_copy
 import ui_client_properties
 
-class NonNsmCopyDialog(ChildDialog):
+class RayHackCopyDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
         self.ui = ui_ray_hack_copy.Ui_Dialog()
@@ -49,7 +49,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.lineEditIcon.textEdited.connect(self.changeIconwithText)
         self.ui.pushButtonSaveChanges.clicked.connect(self.saveChanges)
         
-        if self.client.ray_hack:
+        if self.client.protocol == ray.Protocol.RAY_HACK:
             self.ui.tabWidget.removeTab(1)
             
             self.ui.labelWorkingDir.setText(self.getWorkDirBase())
@@ -115,7 +115,7 @@ class ClientPropertiesDialog(ChildDialog):
         
         self.changeIconwithText(self.client.icon_name)
         
-        if self.client.ray_hack:
+        if self.client.protocol == ray.Protocol.RAY_HACK:
             self.ui.lineEditExecutable.setText(self.client.executable_path)
             self.ui.lineEditArguments.setText(self.client.arguments)
             self.ui.lineEditConfigFile.setText(self.client.ray_hack_config_file)
@@ -178,7 +178,7 @@ class ClientPropertiesDialog(ChildDialog):
         if not config_file.startswith(work_dir + '/'):
             qfile = QFile(config_file)
             if qfile.size() < 20971520:  # if file < 20Mb
-                copy_dialog = NonNsmCopyDialog(self)
+                copy_dialog = RayHackCopyDialog(self)
                 copy_dialog.setFile(config_file)
                 copy_dialog.exec()
 
@@ -233,10 +233,10 @@ class ClientPropertiesDialog(ChildDialog):
         icon = ray.getAppIcon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)
         self.ui.toolButtonIconNsm.setIcon(icon)
-        self.ui.toolButtonIconNonNsm.setIcon(icon)
+        self.ui.toolButtonIconRayHack.setIcon(icon)
 
-    def hasNonNsmChanges(self)->bool:
-        if not self.client.ray_hack:
+    def hasRayHackChanges(self)->bool:
+        if self.client.protocol == ray.Protocol.NSM:
             return False
         
         if self.ui.lineEditExecutable.text() != self.client.executable_path:
@@ -268,8 +268,8 @@ class ClientPropertiesDialog(ChildDialog):
     def saveChanges(self):
         has_ray_hack_changes = False
         
-        if self.client.ray_hack:
-            has_ray_hack_changes = self.hasNonNsmChanges()
+        if self.client.protocol == ray.Protocol.RAY_HACK:
+            has_ray_hack_changes = self.hasRayHackChanges()
             self.client.executable_path = self.ui.lineEditExecutable.text()
             self.client.arguments = self.ui.lineEditArguments.text()
             self.client.ray_hack_config_file = self.ui.lineEditConfigFile.text()

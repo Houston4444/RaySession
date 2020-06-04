@@ -177,7 +177,7 @@ class Session(ServerSender):
         
         client.setStatus(ray.ClientStatus.REMOVED)
         
-        if client.ray_hack:
+        if client.isRayHack():
             client_dir = client.getProjectPath()
             if os.path.isdir(client_dir):
                 if len(os.listdir(client_dir)) > 0:
@@ -349,7 +349,7 @@ class Session(ServerSender):
         if self.load_locked or not self.path:
             return False
         
-        if client.ray_hack:
+        if client.isRayHack():
             project_path = client.getProjectPath()
             if not os.path.isdir(project_path):
                 try:

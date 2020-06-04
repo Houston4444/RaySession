@@ -162,7 +162,7 @@ class SignaledSession(Session):
                 
                 for client in self.client_list:
                     if (client.client_id == client_id
-                            and client.ray_hack):
+                            and client.protocol == ray.Protocol.RAY_HACK):
                         client.showPropertiesDialog(second_tab=True)
                         break
                     
