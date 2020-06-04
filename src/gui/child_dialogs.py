@@ -826,10 +826,10 @@ class NewExecutableDialog(ChildDialog):
         self.ui.labelClientId.setToolTip(self.ui.lineEditClientId.toolTip())
         
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
-        self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
-        self.ui.lineEdit.textChanged.connect(self.textChanged)
 
-        self.ui.checkBoxNsm.stateChanged.connect(self.NsmStateChanged)
+        self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
+        self.ui.lineEdit.textChanged.connect(self.checkAllow)
+        self.ui.checkBoxNsm.stateChanged.connect(self.checkAllow)
         
         self.ui.lineEditPrefix.setEnabled(False)
         self.ui.toolButtonAdvanced.clicked.connect(self.showAdvanced)
@@ -876,9 +876,6 @@ class NewExecutableDialog(ChildDialog):
 
     def getExecutableSelected(self):
         return self.ui.lineEdit.text()
-
-    def runViaProxy(self):
-        return bool(self.ui.checkBoxProxy.isChecked())
     
     def getSelection(self):
         return (self.ui.lineEdit.text(),
@@ -888,19 +885,19 @@ class NewExecutableDialog(ChildDialog):
                 self.ui.lineEditPrefix.text(),
                 self.ui.lineEditClientId.text())
     
-    def NsmStateChanged(self, state):
-        self.ui.buttonBox.button(
-            QDialogButtonBox.Ok).setEnabled(
-            not state or self.text_will_accept)
-            
-    def textChanged(self, text):
-        self.text_will_accept = bool(text)
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
-            self.ui.checkBoxNsm.isChecked() or self.text_will_accept)
-
+    def isAllowed(self):
+        nsm = self.ui.checkBoxNsm.isChecked()
+        text = self.ui.lineEdit.text()
+        allow = bool(bool(text) and (not nsm
+                                     or text in self.exec_list))        
+        return allow
+    
+    def checkAllow(self):
+        allow = self.isAllowed()
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(allow)
+        
     def closeNow(self):
-        if (self.ui.lineEdit.text() in self.exec_list
-                or not self.ui.checkBoxNsm.isChecked()):
+        if self.isAllowed():
             self.accept()
 
     def serverStatusChanged(self, server_status):

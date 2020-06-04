@@ -71,7 +71,10 @@ class ClientPropertiesDialog(ChildDialog):
             self.ui.tabWidget.removeTab(2)
             
         self.ui.tabWidget.setCurrentIndex(0)
-
+    
+    def setOnSecondTab(self):
+        self.ui.tabWidget.setCurrentIndex(1)
+    
     def updateContents(self):
         self.ui.labelId.setText(self.client.client_id)
         self.ui.labelClientName.setText(self.client.name)

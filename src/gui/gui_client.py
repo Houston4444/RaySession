@@ -148,8 +148,10 @@ class Client(QObject):
                         int(self.non_nsm_wait_win),
                         self.non_nsm_no_save_level)
 
-    def showPropertiesDialog(self):
+    def showPropertiesDialog(self, second_tab=False):
         self.properties_dialog.updateContents()
+        if second_tab:
+            self.properties_dialog.setOnSecondTab()
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()
     

@@ -163,7 +163,7 @@ class SignaledSession(Session):
                 for client in self.client_list:
                     if (client.client_id == client_id
                             and client.non_nsm):
-                        client.showPropertiesDialog()
+                        client.showPropertiesDialog(second_tab=True)
                         break
                     
     
