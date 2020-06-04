@@ -32,7 +32,7 @@ class Scripter(ServerSender):
                                 ray.highlightText(self.getPath()))
             else:
                 message = _translate('GUIMSG', 
-                        'script %s terminate whit exit code %i') % (
+                        'script %s terminated with exit code %i') % (
                             ray.highlightText(self.getPath()), exit_code)
             
             if self.src_addr:
