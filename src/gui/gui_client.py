@@ -2,11 +2,12 @@ import time
 import sys
 from PyQt5.QtCore import QObject, pyqtSignal
 
-import child_dialogs
 import snapshots_dialog
 import ray
 from gui_server_thread import GUIServerThread
+from client_properties_dialog import ClientPropertiesDialog
 
+tralala = "pdpdp"
 
 class Client(QObject):
     status_changed = pyqtSignal(int)
@@ -46,8 +47,7 @@ class Client(QObject):
         self.last_save = time.time()
 
         self.widget = self._main_win.createClientWidget(self)
-        self.properties_dialog = child_dialogs.ClientPropertiesDialog(
-            self._main_win, self)
+        self.properties_dialog = ClientPropertiesDialog(self._main_win, self)
 
     def setStatus(self, status):
         self.previous_status = self.status

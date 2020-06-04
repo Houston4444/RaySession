@@ -23,6 +23,8 @@ class Signaler(QObject):
     daemon_url_changed = pyqtSignal(str)
     
     root_changed = pyqtSignal(str)
+    
+    client_added_reply = pyqtSignal(str)
 
     def __init__(self):
         QObject.__init__(self)

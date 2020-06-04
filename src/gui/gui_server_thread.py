@@ -12,7 +12,7 @@ def ray_method(path, types):
         @liblo.make_method(path, types)
         def wrapper(*args, **kwargs):
             t_thread, t_path, t_args, t_types, src_addr, rest = args
-            
+            print('ofofofos', t_path, t_args, t_types, src_addr, rest)
             if CommandLineArgs.debug:
                 sys.stderr.write(
                     '\033[93mOSC::gui_receives\033[0m %s, %s, %s, %s\n'
@@ -20,6 +20,9 @@ def ray_method(path, types):
                 
             response = func(*args[:-1], **kwargs)
             if response != False:
+                if t_path == '/reply':
+                    #print('ozoerfo', args)
+                    print('zfooofx', t_path, t_args)
                 t_thread._signaler.osc_receive.emit(t_path, t_args)
                 
             return response
@@ -53,11 +56,14 @@ class GUIServerThread(liblo.ServerThread):
 
     @ray_method('/reply', None)
     def _reply(self, path, args, types, src_addr):
+        if len(args) >= 1 and args[0].startswith('/ray/session/'):
+            print('zirifi', args)
+            
         if len(args) < 2:
-            return
+            return False
         
         if not ray.areTheyAllString(args):
-            return
+            return False
         
         reply_path = args.pop(0)
         

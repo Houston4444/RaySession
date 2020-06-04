@@ -820,7 +820,7 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/session/add_executable', 'siiiss')
     def raySessionAddExecutableAdvanced(self, path, args, types, src_addr):
-        executable_path, auto_start, via_proxy, \
+        executable_path, auto_start, non_nsm, \
             prefix_mode, prefix_pattern, client_id = args
         
         if not self.session.path:
@@ -828,7 +828,7 @@ class OscServerThread(ClientCommunicating):
                       "Cannot add to session because no session is loaded.")
             return False
         
-        if '/' in executable_path and not via_proxy:
+        if '/' in executable_path and not non_nsm:
             self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False

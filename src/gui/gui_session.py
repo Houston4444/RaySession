@@ -155,6 +155,18 @@ class SignaledSession(Session):
             function = self.__getattribute__(func_name)
             function(path, args)
     
+    def _reply(self, path, args):
+        if len(args) == 2:
+            if args[0] == '/ray/session/add_executable':
+                client_id = args[1]
+                
+                for client in self.client_list:
+                    if (client.client_id == client_id
+                            and client.non_nsm):
+                        client.showPropertiesDialog()
+                        break
+                    
+    
     def _error(self, path, args):
         err_path, err_code, err_message = args
         

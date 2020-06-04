@@ -332,9 +332,18 @@ class Session(ServerSender):
             elif os.path.isfile(file) and file.contains('.'):
                 file_without_extension = file.rpartition('.')[0]
                 
-    def addClient(self, client):
+    def addClient(self, client)->bool:
         if self.load_locked or not self.path:
             return False
+        
+        if client.non_nsm:
+            project_path = client.getProjectPath()
+            if not os.path.isdir(project_path):
+                try:
+                    os.makedirs(project_path)
+                except:
+                    return False
+                
         
         self.clients.append(client)
         client.sendGuiClientProperties()
