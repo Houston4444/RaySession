@@ -177,7 +177,20 @@ class Session(ServerSender):
         
         client.setStatus(ray.ClientStatus.REMOVED)
         
-        if client.getProjectFiles() or client.net_daemon_url:
+        if client.non_nsm:
+            client_dir = client.getProjectPath()
+            if os.path.isdir(client_dir):
+                if len(os.listdir(client_dir)) > 0:
+                    self.trashed_clients.append(client)
+                    client.sendGuiClientProperties(removed=True)
+                else:
+                    try:
+                        os.removedirs(client_dir)
+                    except:
+                        self.trashed_clients.append(client)
+                        client.sendGuiClientProperties(removed=True)
+                        
+        elif client.getProjectFiles() or client.net_daemon_url:
             self.trashed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
         
