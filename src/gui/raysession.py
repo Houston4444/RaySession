@@ -53,6 +53,7 @@ if __name__ == '__main__':
     app.setOrganizationName("RaySession")
     app.setWindowIcon(QIcon(':/scalable/raysession.svg'))
     app.setQuitOnLastWindowClosed(False)
+    app.setDesktopFileName('raysession')
     
     ### Translation process
     locale = QLocale.system().name()

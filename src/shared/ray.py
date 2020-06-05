@@ -639,7 +639,7 @@ class RayHack():
                  config_file='',
                  save_sig=0,
                  stop_sig=15,
-                 wait_win=False
+                 wait_win=False,
                  no_save_level=0):
         pass
         

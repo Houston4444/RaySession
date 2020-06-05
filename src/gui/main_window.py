@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.ui = ui_raysession.Ui_MainWindow()
         self.ui.setupUi(self)
-
+        
         self._session = session
         self._signaler = self._session._signaler
         self._daemon_manager = self._session._daemon_manager
