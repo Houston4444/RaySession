@@ -1,5 +1,6 @@
-#ignore hidden files except git
+#ignore hidden files except git and github
 /.*
+!/.github
 !/.git
 
 #UI builds
