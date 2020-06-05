@@ -626,3 +626,20 @@ class ClientData:
                 self.custom_prefix = str(custom_prefix)
             else:
                 self.prefix_mode = PrefixMode.SESSION_NAME
+                
+                
+class RayHack():
+    config_file = ""
+    save_sig = 0
+    stop_sig = 15
+    wait_win = False
+    no_save_level = 0
+    
+    def __init__(self,
+                 config_file='',
+                 save_sig=0,
+                 stop_sig=15,
+                 wait_win=False
+                 no_save_level=0):
+        pass
+        
