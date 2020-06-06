@@ -106,21 +106,21 @@ class ClientPropertiesDialog(ChildDialog):
     def updateContents(self):
         self.ui.labelId.setText(self.client.client_id)
         self.ui.labelClientName.setText(self.client.name)
-        self.ui.lineEditIcon.setText(self.client.icon_name)
+        self.ui.lineEditIcon.setText(self.client.icon)
         self.ui.lineEditLabel.setText(self.client.label)
         self.ui.plainTextEditDescription.setPlainText(self.client.description)
         self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
         self.ui.lineEditIgnoredExtensions.setText(
             self.client.ignored_extensions)
         
-        self.changeIconwithText(self.client.icon_name)
+        self.changeIconwithText(self.client.icon)
         
         if self.client.protocol == ray.Protocol.RAY_HACK:
             self.ui.lineEditExecutable.setText(self.client.executable_path)
             self.ui.lineEditArguments.setText(self.client.arguments)
-            self.ui.lineEditConfigFile.setText(self.client.ray_hack_config_file)
+            self.ui.lineEditConfigFile.setText(self.client.ray_hack.config_file)
             
-            save_sig = self.client.ray_hack_save_sig
+            save_sig = self.client.ray_hack.save_sig
             
             for i in range(self.ui.comboSaveSig.count()):
                 if self.ui.comboSaveSig.itemData(i) == save_sig:
@@ -135,7 +135,7 @@ class ClientPropertiesDialog(ChildDialog):
                 except:
                     self.ui.comboSaveSig.setCurrentIndex(0)
             
-            stop_sig = self.client.ray_hack_stop_sig
+            stop_sig = self.client.ray_hack.stop_sig
             
             for i in range(self.ui.comboStopSig.count()):
                 if self.ui.comboStopSig.itemData(i) == stop_sig:
@@ -236,23 +236,23 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.toolButtonIconRayHack.setIcon(icon)
 
     def hasRayHackChanges(self)->bool:
-        if self.client.protocol == ray.Protocol.NSM:
+        if self.client.protocol != ray.Protocol.RAY_HACK:
             return False
         
         if self.ui.lineEditExecutable.text() != self.client.executable_path:
             return True
         
         if (self.ui.lineEditConfigFile.text()
-                != self.client.ray_hack_config_file):
+                != self.client.ray_hack.config_file):
             return True
         
         if self.ui.lineEditArguments.text() != self.client.arguments:
             return True
         
-        if self.ui.comboSaveSig.currentData() != self.client.ray_hack_save_sig:
+        if self.ui.comboSaveSig.currentData() != self.client.ray_hack.save_sig:
             return True
         
-        if self.ui.comboStopSig.currentData() != self.client.ray_hack_stop_sig:
+        if self.ui.comboStopSig.currentData() != self.client.ray_hack.stop_sig:
             return True
         
         return False
@@ -272,10 +272,10 @@ class ClientPropertiesDialog(ChildDialog):
             has_ray_hack_changes = self.hasRayHackChanges()
             self.client.executable_path = self.ui.lineEditExecutable.text()
             self.client.arguments = self.ui.lineEditArguments.text()
-            self.client.ray_hack_config_file = self.ui.lineEditConfigFile.text()
-            self.client.ray_hack_save_sig = self.ui.comboSaveSig.currentData()
-            self.client.ray_hack_stop_sig = self.ui.comboStopSig.currentData()
-            self.client.ray_hack_wait_win = self.ui.checkBoxWaitWindow.isChecked()
+            self.client.ray_hack.config_file = self.ui.lineEditConfigFile.text()
+            self.client.ray_hack.save_sig = self.ui.comboSaveSig.currentData()
+            self.client.ray_hack.stop_sig = self.ui.comboStopSig.currentData()
+            self.client.ray_hack.wait_win = self.ui.checkBoxWaitWindow.isChecked()
         else:
             self.client.executable_path = self.ui.lineEditExecutableNSM.text()
             self.client.arguments = self.ui.lineEditArgumentsNSM.text()
@@ -283,7 +283,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.label = self.ui.lineEditLabel.text()
         self.client.description = \
                                 self.ui.plainTextEditDescription.toPlainText()
-        self.client.icon_name = self.ui.lineEditIcon.text()
+        self.client.icon = self.ui.lineEditIcon.text()
         self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
         self.client.ignored_extensions = \
                                     self.ui.lineEditIgnoredExtensions.text()

@@ -7,7 +7,7 @@ import ray
 from gui_server_thread import GUIServerThread
 from client_properties_dialog import ClientPropertiesDialog
 
-class Client(QObject):
+class Client(QObject, ray.ClientData):
     status_changed = pyqtSignal(int)
     
     def __init__(self, session, client_data, trashed=False):
@@ -15,25 +15,24 @@ class Client(QObject):
         self._session = session
         self._main_win = self._session._main_win
 
-        self.client_id       = client_data.client_id
+        self.client_id = client_data.client_id
+        self.protocol = client_data.protocol
         self.executable_path = client_data.executable_path
-        self.arguments       = client_data.arguments
-        self.name            = client_data.name
-        self.prefix_mode     = client_data.prefix_mode
-        self.custom_prefix   = client_data.custom_prefix
-        self.label           = client_data.label
-        self.desktop_file    = client_data.desktop_file
-        self.description     = client_data.description
-        self.icon_name       = client_data.icon
-        self.capabilities    = client_data.capabilities
+        self.arguments = client_data.arguments
+        self.pre_env = client_data.pre_env
+        self.name = client_data.name
+        self.prefix_mode = client_data.prefix_mode
+        self.custom_prefix = client_data.custom_prefix
+        self.label = client_data.label
+        self.desktop_file = client_data.desktop_file
+        self.description = client_data.description
+        self.icon = client_data.icon
+        self.capabilities = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         self.ignored_extensions = client_data.ignored_extensions
-        self.protocol = client_data.protocol
-        self.ray_hack_config_file = client_data.ray_hack_config_file
-        self.ray_hack_save_sig = client_data.ray_hack_save_sig
-        self.ray_hack_stop_sig = client_data.ray_hack_stop_sig
-        self.ray_hack_wait_win = client_data.ray_hack_wait_win
-        self.ray_hack_no_save_level = client_data.ray_hack_no_save_level
+        self.useless_str = ''
+        self.useless_int = 0
+        self.ray_hack = ray.RayHack()
 
         self.status = ray.ClientStatus.STOPPED
         self.previous_status = ray.ClientStatus.STOPPED
@@ -97,15 +96,20 @@ class Client(QObject):
         self.label           = client_data.label
         self.desktop_file    = client_data.desktop_file
         self.description     = client_data.description
-        self.icon_name       = client_data.icon
+        self.icon     = client_data.icon
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         self.protocol        = client_data.protocol
-        self.ray_hack_config_file = client_data.ray_hack_config_file
-        self.ray_hack_save_sig = client_data.ray_hack_save_sig
-        self.ray_hack_stop_sig = client_data.ray_hack_stop_sig
-        self.ray_hack_wait_win = client_data.ray_hack_wait_win
-        self.ray_hack_no_save_level = client_data.ray_hack_no_save_level
+        #self.ray_hack.config_file = client_data.ray_hack_config_file
+        #self.ray_hack.save_sig = client_data.ray_hack_save_sig
+        #self.ray_hack.stop_sig = client_data.ray_hack_stop_sig
+        #self.ray_hack.wait_win = client_data.ray_hack_wait_win
+        #self.ray_hack.no_save_level = client_data.ray_hack_no_save_level
+        
+        self.widget.updateClientData()
+
+    def updateRayHack(self, ray_hack):
+        self.ray_hack = ray_hack
         
         self.widget.updateClientData()
 
@@ -127,25 +131,12 @@ class Client(QObject):
             return
         
         server.toDaemon('/ray/client/update_properties',
-                        self.client_id,
-                        self.executable_path,
-                        self.arguments,
-                        self.name,
-                        self.prefix_mode,
-                        self.custom_prefix,
-                        self.label,
-                        self.desktop_file,
-                        self.description,
-                        self.icon_name,
-                        self.capabilities,
-                        int(self.check_last_save),
-                        self.ignored_extensions,
-                        self.protocol,
-                        self.ray_hack_config_file,
-                        self.ray_hack_save_sig,
-                        self.ray_hack_stop_sig,
-                        int(self.ray_hack_wait_win),
-                        self.ray_hack_no_save_level)
+                        *ray.ClientData.spreadClient(self))
+        
+        if self.protocol == ray.Protocol.RAY_HACK:
+            server.toDaemon('/ray/client/update_ray_hack_properties',
+                            self.client_id,
+                            *self.ray_hack.spread())
 
     def showPropertiesDialog(self, second_tab=False):
         self.properties_dialog.updateContents()

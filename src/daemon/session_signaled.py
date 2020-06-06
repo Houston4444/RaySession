@@ -1113,7 +1113,7 @@ class SignaledSession(OperatingSession):
             self.sendErrorNoClient(src_addr, path, client_id)
     
     def _ray_client_update_properties(self, path, args, src_addr):
-        client_data = ray.ClientData(*args)
+        client_data = ray.ClientData.newFrom(*args)
         
         for client in self.clients:
             if client.client_id == client_data.client_id:
@@ -1123,6 +1123,18 @@ class SignaledSession(OperatingSession):
                 break
         else:
             self.sendErrorNoClient(src_addr, path, client_data.client_id)
+    
+    def _ray_client_update_ray_hack_properties(self, path, args, src_addr):
+        client_id = args.pop(0)
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                if client.isRayHack():
+                    client.ray_hack.update(*args)
+                self.send(src_addr, '/reply', path, 'ray_hack updated')
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
     
     def _ray_client_set_properties(self, path, args, src_addr):
         client_id = args.pop(0)

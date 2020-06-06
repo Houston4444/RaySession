@@ -245,15 +245,22 @@ class SignaledSession(Session):
             client.widget.updateStatus(client.status)
     
     def _ray_gui_client_new(self, path, args):
-        client = Client(self, ray.ClientData(*args))
+        client = Client(self, ray.ClientData.newFrom(*args))
         self.client_list.append(client)
     
     def _ray_gui_client_update(self, path, args):
-        client_data = ray.ClientData(*args)
+        client_data = ray.ClientData.newFrom(*args)
         client = self.getClient(client_data.client_id)
         if client:
             client.updateClientProperties(client_data)
     
+    def _ray_gui_client_ray_hack_update(self, path, args):
+        client_id = args.pop(0)
+        client = self.getClient(client_id)
+        if client and client.protocol == ray.Protocol.RAY_HACK:
+            ray_hack = ray.RayHack(*args)
+            client.updateRayHack(ray_hack)
+        
     def  _ray_gui_client_switch(self, path, args):
         old_id, new_id = args
         for client in self.client_list:
@@ -314,7 +321,7 @@ class SignaledSession(Session):
             client.setNoSaveLevel(no_save_level)
     
     def _ray_gui_trash_add(self, path, args):
-        client_data = ray.ClientData(*args)
+        client_data = ray.ClientData.newFrom(*args)
         trash_action = self._main_win.trashAdd(client_data)
         trashed_client = TrashedClient(client_data, trash_action)
         self.trashed_clients.append(trashed_client)

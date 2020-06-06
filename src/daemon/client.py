@@ -33,7 +33,7 @@ def dirname(*args):
 def basename(*args):
     return os.path.basename(*args)
 
-class Client(ServerSender):
+class Client(ServerSender, ray.ClientData):
     _reply_errcode   = 0
     _reply_message   = None
     
@@ -46,39 +46,20 @@ class Client(ServerSender):
     pid              = 0
     pending_command  = ray.Command.NONE
     active           = False
-    client_id        = ''
-    capabilities     = ''
     did_announce     = False
     
     status           = ray.ClientStatus.STOPPED
-    name             = ''
-    executable_path  = ''
-    arguments        = ''
+    
     running_executable = ''
     running_arguments  = ''
     tmp_arguments    = ''
-    label            = ''
-    desktop_file     = ''
-    description      = ''
-    icon             = ''
-    custom_prefix    = ''
-    prefix_mode      = ray.PrefixMode.SESSION_NAME
+    
     auto_start       = True
     start_gui_hidden = False
-    check_last_save  = True
     no_save_level    = 0
     is_external      = False
     sent_to_gui      = False
     switch_state = ray.SwitchState.NONE
-    
-    protocol = ray.Protocol.NSM
-    
-    ray_hack = False
-    ray_hack_config_file = ""
-    ray_hack_save_sig = 0
-    ray_hack_stop_sig = 15
-    ray_hack_wait_win = False
-    ray_hack_no_save_level = 0
     
     net_session_template = ''
     net_session_root     = ''
@@ -133,6 +114,7 @@ class Client(ServerSender):
         self._open_timer.setSingleShot(True)
         self._open_timer.timeout.connect(self.openTimerTimeout)
         
+        self.ray_hack = ray.RayHack()
         self.scripter = ClientScripter(self)
     
     def isRayHack(self)->bool:
@@ -222,18 +204,18 @@ class Client(ServerSender):
         protocol = ctx.attribute('protocol')
         if protocol.lower() in ('ray_hack', 'ray-hack'):
             self.protocol = ray.Protocol.RAY_HACK
-        elif protocol == 'net_session':
+        elif protocol.lower in ('net_session', 'net-session'):
             self.protocol = ray.Protocol.NET_SESSION
         
         if self.protocol == ray.Protocol.RAY_HACK:
-            self.ray_hack_config_file = ctx.attribute('config_file')
+            self.ray_hack.config_file = ctx.attribute('config_file')
             ray_hack_save_sig = ctx.attribute('save_signal')
             if ray_hack_save_sig.isdigit():
-                self.ray_hack_save_sig = int(ray_hack_save_sig)
+                self.ray_hack.save_sig = int(ray_hack_save_sig)
             
             ray_hack_stop_sig = ctx.attribute('stop_signal')
             if ray_hack_stop_sig.isdigit():
-                self.ray_hack_stop_sig = int(ray_hack_stop_sig)
+                self.ray_hack.stop_sig = int(ray_hack_stop_sig)
         
         self.net_session_template = ctx.attribute('net_session_template')
         
@@ -303,9 +285,11 @@ class Client(ServerSender):
             ctx.setAttribute('protocol', ray.protocolToStr(self.protocol))
         
         if self.isRayHack():
-            ctx.setAttribute('config_file', self.ray_hack_config_file)
-            ctx.setAttribute('save_signal', self.ray_hack_save_sig)
-            ctx.setAttribute('stop_signal', self.ray_hack_stop_sig)
+            ctx.setAttribute('config_file', self.ray_hack.config_file)
+            ctx.setAttribute('save_signal', self.ray_hack.save_sig)
+            ctx.setAttribute('stop_signal', self.ray_hack.stop_sig)
+            ctx.setAttribute('wait_win', int(self.ray_hack.wait_win))
+            ctx.setAttribute('no_save_level', self.ray_hack.no_save_level)
         
         if self.net_session_template:
             ctx.setAttribute('net_session_template',
@@ -568,7 +552,7 @@ class Client(ServerSender):
         os.environ['RAY_SESSION_NAME'] = self.session.name
         os.environ['RAY_CLIENT_ID'] = self.client_id
         
-        expanded_config_file = os.path.expandvars(self.ray_hack_config_file)
+        expanded_config_file = os.path.expandvars(self.ray_hack.config_file)
         
         os.unsetenv('RAY_SESSION_NAME')
         os.unsetenv('RAY_CLIENT_ID')
@@ -612,14 +596,12 @@ class Client(ServerSender):
                                             self.session.name)
             all_envs['RAY_CLIENT_ID'] = (os.getenv('RAY_CLIENT_ID'),
                                          self.client_id)
-            #all_envs['CONFIG_FILE'] = (os.getenv('CONFIG_FILE'),
-                                       #self.ray_hack_config_file)
             
             for env in all_envs:
                 os.environ[env] = all_envs[env][1]
             
             os.environ['CONFIG_FILE'] = os.path.expandvars(
-                                                    self.ray_hack_config_file)
+                                                    self.ray_hack.config_file)
             
             back_pwd = os.getenv('PWD')
             ray_hack_pwd = self.getProjectPath()
@@ -917,10 +899,10 @@ class Client(ServerSender):
         
         if self.isRunning():
             if self.isRayHack():
-                if self.ray_hack_save_sig > 0:
+                if self.ray_hack.save_sig > 0:
                     self.pending_command = ray.Command.SAVE
                     self.setStatus(ray.ClientStatus.SAVE)
-                    os.kill(self.process.processId(), self.ray_hack_save_sig)
+                    os.kill(self.process.processId(), self.ray_hack.save_sig)
                     QTimer.singleShot(300, self.nonNsmSaved)
                 
             elif self.canSaveNow():
@@ -982,8 +964,8 @@ class Client(ServerSender):
             
             if self.is_external:
                 os.kill(self.pid, 15) # 15 means signal.SIGTERM
-            elif self.isRayHack() and self.ray_hack_stop_sig != 15:
-                os.kill(self.process.pid(), self.ray_hack_stop_sig)
+            elif self.isRayHack() and self.ray_hack.stop_sig != 15:
+                os.kill(self.process.pid(), self.ray_hack.stop_sig)
             else:
                 self.process.terminate()
         else:
@@ -1033,48 +1015,29 @@ class Client(ServerSender):
         if removed:
             ad = '/ray/gui/trash/add'
             
-        self.sendGui(ad,
-                        self.client_id,
-                        self.executable_path,
-                        self.arguments,
-                        self.name,
-                        self.prefix_mode,
-                        self.custom_prefix,
-                        self.label,
-                        self.desktop_file,
-                        self.description,
-                        self.icon,
-                        self.capabilities,
-                        int(self.check_last_save),
-                        self.ignored_extensions,
-                        self.protocol,
-                        self.ray_hack_config_file,
-                        self.ray_hack_save_sig,
-                        self.ray_hack_stop_sig,
-                        int(self.ray_hack_wait_win),
-                        self.ray_hack_no_save_level)
+        self.sendGui(ad, *ray.ClientData.spreadClient(self))
+        
+        if self.protocol == ray.Protocol.RAY_HACK:
+            self.sendGui('/ray/gui/client/ray_hack_update',
+                         self.client_id,
+                         self.ray_hack.config_file,
+                         self.ray_hack.save_sig,
+                         self.ray_hack.stop_sig,
+                         int(self.ray_hack.wait_win),
+                         self.ray_hack.no_save_level,
+                         '', 0)
         
         self.sent_to_gui = True
     
     def updateClientProperties(self, client_data):
-        self.client_id       = client_data.client_id
         self.executable_path = client_data.executable_path
-        self.arguments       = client_data.arguments
-        self.prefix_mode     = client_data.prefix_mode
-        self.custom_prefix   = client_data.custom_prefix
-        self.label           = client_data.label
-        self.desktop_file    = client_data.desktop_file
-        self.description     = client_data.description
-        self.icon            = client_data.icon
-        self.capabilities    = client_data.capabilities
+        self.arguments = client_data.arguments
+        self.label = client_data.label
+        self.desktop_file = client_data.desktop_file
+        self.description = client_data.description
+        self.icon = client_data.icon
         self.check_last_save = client_data.check_last_save
         self.ignored_extensions = client_data.ignored_extensions
-        self.protocol = client_data.protocol
-        self.ray_hack_config_file = client_data.ray_hack_config_file
-        self.ray_hack_save_sig = client_data.ray_hack_save_sig
-        self.ray_hack_stop_sig = client_data.ray_hack_stop_sig
-        self.ray_hack_wait_win = client_data.ray_hack_wait_win
-        self.ray_hack_no_save_level = client_data.ray_hack_no_save_level
         
         self.sendGuiClientProperties()
     
@@ -1115,8 +1078,8 @@ class Client(ServerSender):
                     self.check_last_save = bool(int(value))
             elif property == 'ignored_extensions':
                 self.ignored_extensions = value
-            elif property == 'ray_hack':
-                # do not change ray_hack value
+            elif property == 'protocol':
+                # do not change protocol value
                 continue
                 
         self.sendGuiClientProperties()
@@ -1129,6 +1092,7 @@ class Client(ServerSender):
             protocol_str = 'Net Session'
         
         message = """client_id:%s
+protocol:%s
 executable:%s
 arguments:%s
 name:%s
@@ -1138,19 +1102,18 @@ label:%s
 icon:%s
 capabilities:%s
 check_last_save:%i
-ignored_extensions:%s
-ray_hack:%i""" % (self.client_id, 
-                         self.executable_path,
-                         self.arguments,
-                         self.name, 
-                         self.prefix_mode, 
-                         self.custom_prefix,
-                         self.label,
-                         self.icon,
-                         self.capabilities,
-                         int(self.check_last_save),
-                         self.ignored_extensions,
-                         protocol_str)
+ignored_extensions:%s""" % (self.client_id,
+                            protocol_str,
+                            self.executable_path,
+                            self.arguments,
+                            self.name, 
+                            self.prefix_mode, 
+                            self.custom_prefix,
+                            self.label,
+                            self.icon,
+                            self.capabilities,
+                            int(self.check_last_save),
+                            self.ignored_extensions)
         return message
     
     def prettyClientId(self):
@@ -1469,12 +1432,12 @@ ray_hack:%i""" % (self.client_id,
                     os.environ['RAY_SESSION_NAME'] = old_session_name
                     os.environ['RAY_CLIENT_ID'] = old_client_id
                     pre_config_file = os.path.expandvars(
-                                                    self.ray_hack_config_file)
+                                                    self.ray_hack.config_file)
                     
                     os.environ['RAY_SESSION_NAME'] = new_session_name
                     os.environ['RAY_CLIENT_ID'] = new_client_id
                     post_config_file = os.path.expandvars(
-                                                    self.ray_hack_config_file)
+                                                    self.ray_hack.config_file)
                     
                     os.unsetenv('RAY_SESSION_NAME')
                     os.unsetenv('RAY_CLIENT_ID')

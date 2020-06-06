@@ -149,12 +149,16 @@ class GUIServerThread(liblo.ServerThread):
         if not ray.areTheyAllString(args):
             return False
     
-    @ray_method('/ray/gui/client/new', 'ssssissssssisisiiii')
+    @ray_method('/ray/gui/client/new', ray.ClientData.sisi())
     def _client_new(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/gui/client/update', 'ssssissssssisisiiii')
+    @ray_method('/ray/gui/client/update', ray.ClientData.sisi())
     def _client_update(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/client/ray_hack_update', 'ssiiiisi')
+    def _client_ray_hack_update(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/gui/client/switch', 'ss')
@@ -189,7 +193,7 @@ class GUIServerThread(liblo.ServerThread):
     def _client_no_save_level(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/gui/trash/add', 'ssssissssssisisiiii')
+    @ray_method('/ray/gui/trash/add', ray.ClientData.sisi())
     def _trash_add(self, path, args, types, src_addr):
         pass
 
