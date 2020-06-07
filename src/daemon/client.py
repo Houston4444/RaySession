@@ -1016,16 +1016,11 @@ class Client(ServerSender, ray.ClientData):
             ad = '/ray/gui/trash/add'
             
         self.sendGui(ad, *ray.ClientData.spreadClient(self))
-        
-        if self.protocol == ray.Protocol.RAY_HACK:
-            self.sendGui('/ray/gui/client/ray_hack_update',
-                         self.client_id,
-                         self.ray_hack.config_file,
-                         self.ray_hack.save_sig,
-                         self.ray_hack.stop_sig,
-                         int(self.ray_hack.wait_win),
-                         self.ray_hack.no_save_level,
-                         '', 0)
+        if not removed:
+            if self.protocol == ray.Protocol.RAY_HACK:
+                self.sendGui('/ray/gui/client/ray_hack_update',
+                             self.client_id,
+                             *self.ray_hack.spread())
         
         self.sent_to_gui = True
     

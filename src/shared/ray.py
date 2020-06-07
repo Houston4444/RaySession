@@ -575,6 +575,31 @@ class ClientData:
     useless_str = ''
     useless_int = 0
     
+    @staticmethod
+    def sisi():
+        return 'sissssissssssissi'
+    
+    @staticmethod
+    def newFrom(*args):
+        client_data = ClientData()
+        client_data.update(*args)
+        return client_data
+    
+    @staticmethod
+    def spreadClient(client):
+        return (client.client_id, client.protocol,
+                client.executable_path, client.arguments, client.pre_env,
+                client.name, client.prefix_mode, client.custom_prefix,
+                client.desktop_file, client.label, client.description,
+                client.icon,
+                client.capabilities, int(client.check_last_save),
+                client.ignored_extensions,
+                client.useless_str, client.useless_int)
+    
+    def gui_init(self, client_id, protocol):
+        self.client_id = client_id
+        self.protocol = protocol
+    
     def update(self, client_id, protocol,
                executable, arguments, pre_env,
                name, prefix_mode, custom_prefix,
@@ -608,36 +633,6 @@ class ClientData:
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
     
-    @staticmethod
-    def sisi():
-        return 'sissssissssssissi'
-    
-    @staticmethod
-    def newFrom(*args):
-        clda = ClientData()
-        clda.update(*args)
-        return clda
-    
-    @staticmethod
-    def spreadClient(client):
-        return (client.client_id,
-                client.protocol,
-                client.executable_path,
-                client.arguments,
-                client.pre_env,
-                client.name,
-                client.prefix_mode,
-                client.custom_prefix,
-                client.desktop_file,
-                client.label,
-                client.description,
-                client.icon,
-                client.capabilities,
-                int(client.check_last_save),
-                client.ignored_extensions,
-                client.useless_str,
-                client.useless_int)
-    
     def spread(self):
         ClientData.spreadClient(self)
                 
@@ -650,23 +645,26 @@ class RayHack():
     useless_str = ''
     useless_int = 0
     
-    def __init__(self,
-                 config_file='',
-                 save_sig=0,
-                 stop_sig=15,
-                 wait_win=False,
-                 no_save_level=0,
-                 useless_str='',
-                 useless_int=0):
+    @staticmethod
+    def sisi():
+        return 'siiiisi'
+    
+    @staticmethod
+    def newFrom(*args):
+        ray_hack = RayHack()
+        ray_hack.update(*args)
+        return ray_hack
+    
+    def update(self, config_file,
+               save_sig, stop_sig,
+               wait_win, no_save_level,
+               useless_str, useless_int):
         self.config_file = str(config_file)
         self.save_sig = int(save_sig)
         self.stop_sig = int(stop_sig)
         self.wait_win = bool(wait_win)
         self.no_save_level = int(no_save_level)
-        
-    def update(self, *args):
-        self.__init__(*args)
-        
+    
     def spread(self):
         return (self.config_file, self.save_sig, self.stop_sig,
                 int(self.wait_win), self.no_save_level,

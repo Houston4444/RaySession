@@ -10,28 +10,13 @@ from client_properties_dialog import ClientPropertiesDialog
 class Client(QObject, ray.ClientData):
     status_changed = pyqtSignal(int)
     
-    def __init__(self, session, client_data, trashed=False):
+    def __init__(self, session, client_id, protocol, trashed=False):
         QObject.__init__(self)
+        ray.ClientData.gui_init(self, client_id, protocol)
+        
         self._session = session
         self._main_win = self._session._main_win
-
-        self.client_id = client_data.client_id
-        self.protocol = client_data.protocol
-        self.executable_path = client_data.executable_path
-        self.arguments = client_data.arguments
-        self.pre_env = client_data.pre_env
-        self.name = client_data.name
-        self.prefix_mode = client_data.prefix_mode
-        self.custom_prefix = client_data.custom_prefix
-        self.label = client_data.label
-        self.desktop_file = client_data.desktop_file
-        self.description = client_data.description
-        self.icon = client_data.icon
-        self.capabilities = client_data.capabilities
-        self.check_last_save = client_data.check_last_save
-        self.ignored_extensions = client_data.ignored_extensions
-        self.useless_str = ''
-        self.useless_int = 0
+        
         self.ray_hack = ray.RayHack()
 
         self.status = ray.ClientStatus.STOPPED
@@ -87,30 +72,12 @@ class Client(QObject, ray.ClientData):
         self.label = label
         self.sendPropertiesToDaemon()
 
-    def updateClientProperties(self, client_data):
-        self.executable_path = client_data.executable_path
-        self.arguments       = client_data.arguments
-        self.name            = client_data.name
-        self.prefix_mode     = client_data.prefix_mode
-        self.custom_prefix   = client_data.custom_prefix
-        self.label           = client_data.label
-        self.desktop_file    = client_data.desktop_file
-        self.description     = client_data.description
-        self.icon     = client_data.icon
-        self.capabilities    = client_data.capabilities
-        self.check_last_save = client_data.check_last_save
-        self.protocol        = client_data.protocol
-        #self.ray_hack.config_file = client_data.ray_hack_config_file
-        #self.ray_hack.save_sig = client_data.ray_hack_save_sig
-        #self.ray_hack.stop_sig = client_data.ray_hack_stop_sig
-        #self.ray_hack.wait_win = client_data.ray_hack_wait_win
-        #self.ray_hack.no_save_level = client_data.ray_hack_no_save_level
-        
+    def updateClientProperties(self, *args):
+        self.update(*args)
         self.widget.updateClientData()
 
-    def updateRayHack(self, ray_hack):
-        self.ray_hack = ray_hack
-        
+    def updateRayHack(self, *args):
+        self.ray_hack.update(*args)
         self.widget.updateClientData()
 
     def prettierName(self):

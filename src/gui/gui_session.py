@@ -245,21 +245,24 @@ class SignaledSession(Session):
             client.widget.updateStatus(client.status)
     
     def _ray_gui_client_new(self, path, args):
-        client = Client(self, ray.ClientData.newFrom(*args))
+        client = Client(self, *args[:2])
+        client.updateClientProperties(*args)
         self.client_list.append(client)
+        
+        #client = Client(self, ray.ClientData.newFrom(*args))
+        #self.client_list.append(client)
     
     def _ray_gui_client_update(self, path, args):
-        client_data = ray.ClientData.newFrom(*args)
-        client = self.getClient(client_data.client_id)
+        client_id = args[0]
+        client = self.getClient(client_id)
         if client:
-            client.updateClientProperties(client_data)
+            client.updateClientProperties(*args)
     
     def _ray_gui_client_ray_hack_update(self, path, args):
         client_id = args.pop(0)
         client = self.getClient(client_id)
         if client and client.protocol == ray.Protocol.RAY_HACK:
-            ray_hack = ray.RayHack(*args)
-            client.updateRayHack(ray_hack)
+            client.updateRayHack(*args)
         
     def  _ray_gui_client_switch(self, path, args):
         old_id, new_id = args

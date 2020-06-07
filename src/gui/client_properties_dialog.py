@@ -51,7 +51,6 @@ class ClientPropertiesDialog(ChildDialog):
         
         if self.client.protocol == ray.Protocol.RAY_HACK:
             self.ui.tabWidget.removeTab(1)
-            
             self.ui.labelWorkingDir.setText(self.getWorkDirBase())
             
             self.ui.toolButtonBrowse.setEnabled(self._daemon_manager.is_local)
@@ -76,7 +75,7 @@ class ClientPropertiesDialog(ChildDialog):
             self.ui.labelError.setVisible(False)
         else:
             self.ui.tabWidget.removeTab(2)
-        
+            
         self.ui.pushButtonStart.setEnabled(True)
         self.ui.pushButtonStop.setEnabled(False)
         
