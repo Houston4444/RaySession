@@ -116,6 +116,8 @@ class Client(ServerSender, ray.ClientData):
         
         self.ray_hack = ray.RayHack()
         self.scripter = ClientScripter(self)
+        
+        self.ray_hack_waiting_win = False
     
     def isRayHack(self)->bool:
         return bool(self.protocol == ray.Protocol.RAY_HACK)
@@ -611,6 +613,7 @@ class Client(ServerSender, ray.ClientData):
                 try:
                     os.makedirs(ray_hack_pwd)
                 except:
+                    os.environ['PWD'] = back_pwd
                     # TODO
                     return
                     
@@ -730,7 +733,7 @@ class Client(ServerSender, ray.ClientData):
         if self.isRayHack():
             self.pending_command = ray.Command.OPEN
             self.setStatus(ray.ClientStatus.OPEN)
-            QTimer.singleShot(500, self.nonNsmReady)
+            QTimer.singleShot(500, self.rayHackNearReady)
     
     def processFinished(self, exit_code, exit_status):
         self.stopped_timer.stop()
@@ -806,7 +809,7 @@ class Client(ServerSender, ray.ClientData):
         if self.session.wait_for:
             self.session.endTimerIfLastExpected(self)
     
-    def nonNsmReady(self):
+    def rayHackNearReady(self):
         if not self.isRayHack():
             return
         
@@ -814,6 +817,14 @@ class Client(ServerSender, ray.ClientData):
             # TODO send to GUI to show exproxy dialog
             return
         
+        if self.ray_hack.wait_win:
+            self.ray_hack_waiting_win = True
+            if not self.session.window_waiter.isActive():
+                self.session.window_waiter.start()
+        else:
+            self.rayHackReady()
+        
+    def rayHackReady(self):
         self.sendGuiMessage(
             _translate('GUIMSG', '  %s: project probably loaded')
                 % self.guiMsgStyle())
@@ -899,11 +910,11 @@ class Client(ServerSender, ray.ClientData):
         
         if self.isRunning():
             if self.isRayHack():
+                self.pending_command = ray.Command.SAVE
+                self.setStatus(ray.ClientStatus.SAVE)
                 if self.ray_hack.save_sig > 0:
-                    self.pending_command = ray.Command.SAVE
-                    self.setStatus(ray.ClientStatus.SAVE)
                     os.kill(self.process.processId(), self.ray_hack.save_sig)
-                    QTimer.singleShot(300, self.nonNsmSaved)
+                QTimer.singleShot(300, self.rayHackSaved)
                 
             elif self.canSaveNow():
                 Terminal.message("Telling %s to save" % self.name)
@@ -918,7 +929,7 @@ class Client(ServerSender, ray.ClientData):
             if self.isCapableOf(':optional-gui:'):
                 self.start_gui_hidden = not bool(self.gui_visible)
     
-    def nonNsmSaved(self):
+    def rayHackSaved(self):
         if not self.isRayHack():
             return
         

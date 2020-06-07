@@ -441,6 +441,7 @@ class OperatingSession(Session):
         self.window_waiter = QTimer()
         self.window_waiter.setInterval(200)
         self.window_waiter.timeout.connect(self.checkWindowsAppears)
+        #self.window_waiter_clients = []
         
         self.run_step_addr = None
         
@@ -655,7 +656,21 @@ class OperatingSession(Session):
             self.externals_timer.stop()
     
     def checkWindowsAppears(self):
-        pass
+        for client in self.clients:
+            if client.isRunning() and client.ray_hack_waiting_win:
+                break
+        else:
+            self.window_waiter.stop()
+            return
+        
+        server = self.getServer()
+        if server and server.option_has_wmctrl:
+            self.desktops_memory.setActiveWindowList()
+            for client in self.clients:
+                if client.ray_hack_waiting_win:
+                    if self.desktops_memory.hasWindow(client.pid):
+                        client.ray_hack_waiting_win = False
+                        client.rayHackReady()
     
     def sendReply(self, *messages):
         if not (self.osc_src_addr and self.osc_path):
