@@ -762,7 +762,7 @@
        <item>
         <widget class="QGroupBox" name="groupBox_7">
          <property name="title">
-          <string/>
+          <string>Test Zone</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_12">
           <item>
@@ -841,6 +841,16 @@
               </property>
               <property name="readOnly">
                <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButtonSave">
+              <property name="text">
+               <string>Save</string>
+              </property>
+              <property name="icon">
+               <iconset theme="document-save"/>
               </property>
              </widget>
             </item>

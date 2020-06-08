@@ -101,10 +101,20 @@ class Client(QObject, ray.ClientData):
                         *ray.ClientData.spreadClient(self))
         
         if self.protocol == ray.Protocol.RAY_HACK:
-            server.toDaemon('/ray/client/update_ray_hack_properties',
-                            self.client_id,
-                            *self.ray_hack.spread())
+            self.sendRayHack()
 
+    def sendRayHack(self):
+        if not self.protocol == ray.Protocol.RAY_HACK:
+            return
+        
+        server = GUIServerThread.instance()
+        if not server:
+            return
+        
+        server.toDaemon('/ray/client/update_ray_hack_properties',
+                        self.client_id,
+                        *self.ray_hack.spread())
+        
     def showPropertiesDialog(self, second_tab=False):
         self.properties_dialog.updateContents()
         if second_tab:

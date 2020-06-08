@@ -45,6 +45,7 @@ class ClientPropertiesDialog(ChildDialog):
             % client.client_id)
         
         self._acceptable_arguments = True
+        self._current_status = ray.ClientStatus.STOPPED
         
         self.ui.lineEditIcon.textEdited.connect(self.changeIconwithText)
         self.ui.pushButtonSaveChanges.clicked.connect(self.saveChanges)
@@ -61,8 +62,16 @@ class ClientPropertiesDialog(ChildDialog):
                 self.lineEditArgumentsChanged)
             self.ui.lineEditConfigFile.textChanged.connect(
                 self.lineEditConfigFileChanged)
+            #self.ui.comboSaveSig.currentIndexChanged.connect(
+                #self.changeHotly)
+            #self.ui.comboStopSig.currentIndexChanged.connect(
+                #self.changeHotly)
+            #self.ui.comboNoSave.currentIndexChanged.connect(
+                #self.changeHotly)
+            
             self.ui.pushButtonStart.clicked.connect(self.startClient)
             self.ui.pushButtonStop.clicked.connect(self.stopClient)
+            self.ui.pushButtonSave.clicked.connect(self.saveClient)
             self.ui.comboSaveSig.addItem(_translate('ray_hack', 'None'), 0)
             self.ui.comboSaveSig.addItem('SIGUSR1', 10)
             self.ui.comboSaveSig.addItem('SIGUSR2', 12)
@@ -78,7 +87,7 @@ class ClientPropertiesDialog(ChildDialog):
             
         self.ui.pushButtonStart.setEnabled(True)
         self.ui.pushButtonStop.setEnabled(False)
-        
+        self.ui.pushButtonSave.setEnabled(False)
         
         self.ui.tabWidget.setCurrentIndex(0)
     
@@ -86,21 +95,41 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.tabWidget.setCurrentIndex(1)
     
     def updateStatus(self, status):
+        self._current_status = status
         self.ui.lineEditClientStatus.setText(clientStatusString(status))
         
         if status in (ray.ClientStatus.LAUNCH,
                       ray.ClientStatus.OPEN,
                       ray.ClientStatus.SWITCH,
-                      ray.ClientStatus.NOOP,
-                      ray.ClientStatus.READY):
+                      ray.ClientStatus.NOOP):
             self.ui.pushButtonStart.setEnabled(False)
             self.ui.pushButtonStop.setEnabled(True)
+            self.ui.pushButtonSave.setEnabled(False)
+        elif status == ray.ClientStatus.READY:
+            self.ui.pushButtonStart.setEnabled(False)
+            self.ui.pushButtonStop.setEnabled(True)
+            self.ui.pushButtonSave.setEnabled(True)
         elif status == ray.ClientStatus.STOPPED:
-            self.ui.pushButtonStart.setEnabled(True)
+            self.ui.pushButtonStart.setEnabled(self.isAllowed())
             self.ui.pushButtonStop.setEnabled(False)
+            self.ui.pushButtonSave.setEnabled(False)
         elif status == ray.ClientStatus.PRECOPY:
             self.ui.pushButtonStart.setEnabled(False)
             self.ui.pushButtonStart.setEnabled(False)
+            self.ui.pushButtonSave.setEnabled(False)
+    
+    #def changeHotly(self, *args):
+        #self.sendRayHack()
+    
+    #def sendRayHack(self):
+        #if not self.client.protocol == ray.Protocol.RAY_HACK:
+            #return
+        
+        #self.client.ray_hack.save_sig = self.ui.comboSaveSig.currentData()
+        #self.client.ray_hack.stop_sig = self.ui.comboStopSig.currentData()
+        #self.client.ray_hack.wait_win = self.ui.checkBoxWaitWindow.isChecked()
+        
+        #self.client.sendRayHack()
     
     def updateContents(self):
         self.ui.labelId.setText(self.client.client_id)
@@ -218,7 +247,10 @@ class ClientPropertiesDialog(ChildDialog):
             self._acceptable_arguments = False
             self.ui.lineEditArguments.setStyleSheet(
                 'QLineEdit{background: red}')
-            
+        
+        self.ui.pushButtonStart.setEnabled(
+            bool(self._acceptable_arguments
+                 and self._current_status == ray.ClientStatus.STOPPED))
         self.ui.pushButtonSaveChanges.setEnabled(self.isAllowed())
 
     def lineEditConfigFileChanged(self, text):
@@ -257,18 +289,49 @@ class ClientPropertiesDialog(ChildDialog):
         return False
     
     def startClient(self):
+        executable = self.client.executable_path
+        arguments = self.client.arguments
+        config_file = self.client.ray_hack.config_file
+        
+        self.client.executable_path = self.ui.lineEditExecutable.text()
+        self.client.arguments = self.ui.lineEditArguments.text()
+        self.client.ray_hack.config_file = self.ui.lineEditConfigFile.text()
+        
+        self.client.sendPropertiesToDaemon()
         self.toDaemon('/ray/client/resume', self.client.client_id)
+        
+        self.client.executable_path = executable
+        self.client.arguments = arguments
+        self.client.ray_hack.config_file = config_file
+        
+        self.client.sendPropertiesToDaemon()
 
     def stopClient(self):
-        # we need to prevent accidental stop with a window confirmation
-        # under conditions
-        self._session._main_win.stopClient(self.client.client_id)
+        ## we need to prevent accidental stop with a window confirmation
+        ## under conditions
+        #self._session._main_win.stopClient(self.client.client_id)
+        
+        stop_sig = self.client.ray_hack.stop_sig
+        self.client.ray_hack.stop_sig = self.ui.comboSaveSig.currentData()
+        self.client.sendRayHack()
+        
+        self.toDaemon('/ray/client/stop', self.client.client_id)
+        
+        self.client.ray_hack.stop_sig = stop_sig
+        self.client.sendRayHack()
+        
+    def saveClient(self):
+        save_sig = self.client.ray_hack.save_sig
+        self.client.ray_hack.save_sig = self.ui.comboSaveSig.currentData()
+        self.client.sendRayHack()
+        
+        self.toDaemon('/ray/client/save', self.client.client_id)
+        
+        self.client.ray_hack.save_sig = save_sig
+        self.client.sendRayHack()
     
     def saveChanges(self):
-        has_ray_hack_changes = False
-        
         if self.client.protocol == ray.Protocol.RAY_HACK:
-            has_ray_hack_changes = self.hasRayHackChanges()
             self.client.executable_path = self.ui.lineEditExecutable.text()
             self.client.arguments = self.ui.lineEditArguments.text()
             self.client.ray_hack.config_file = self.ui.lineEditConfigFile.text()
@@ -287,10 +350,6 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.ignored_extensions = \
                                     self.ui.lineEditIgnoredExtensions.text()
         self.client.sendPropertiesToDaemon()
-        
-        # do not close window editing non nsm tab
-        if has_ray_hack_changes and self.ui.tabWidget.currentIndex() == 1:
-            return
         
         # better for user to wait a little before close the window
         QTimer.singleShot(150, self.accept)
