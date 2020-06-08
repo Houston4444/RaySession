@@ -62,12 +62,6 @@ class ClientPropertiesDialog(ChildDialog):
                 self.lineEditArgumentsChanged)
             self.ui.lineEditConfigFile.textChanged.connect(
                 self.lineEditConfigFileChanged)
-            #self.ui.comboSaveSig.currentIndexChanged.connect(
-                #self.changeHotly)
-            #self.ui.comboStopSig.currentIndexChanged.connect(
-                #self.changeHotly)
-            #self.ui.comboNoSave.currentIndexChanged.connect(
-                #self.changeHotly)
             
             self.ui.pushButtonStart.clicked.connect(self.startClient)
             self.ui.pushButtonStop.clicked.connect(self.stopClient)
@@ -118,19 +112,6 @@ class ClientPropertiesDialog(ChildDialog):
             self.ui.pushButtonStart.setEnabled(False)
             self.ui.pushButtonSave.setEnabled(False)
     
-    #def changeHotly(self, *args):
-        #self.sendRayHack()
-    
-    #def sendRayHack(self):
-        #if not self.client.protocol == ray.Protocol.RAY_HACK:
-            #return
-        
-        #self.client.ray_hack.save_sig = self.ui.comboSaveSig.currentData()
-        #self.client.ray_hack.stop_sig = self.ui.comboStopSig.currentData()
-        #self.client.ray_hack.wait_win = self.ui.checkBoxWaitWindow.isChecked()
-        
-        #self.client.sendRayHack()
-    
     def updateContents(self):
         self.ui.labelId.setText(self.client.client_id)
         self.ui.labelClientName.setText(self.client.name)
@@ -143,7 +124,11 @@ class ClientPropertiesDialog(ChildDialog):
         
         self.changeIconwithText(self.client.icon)
         
-        if self.client.protocol == ray.Protocol.RAY_HACK:
+        if self.client.protocol == ray.Protocol.NSM:
+            self.ui.lineEditExecutableNSM.setText(self.client.executable_path)
+            self.ui.lineEditArgumentsNSM.setText(self.client.arguments)
+        
+        elif self.client.protocol == ray.Protocol.RAY_HACK:
             self.ui.lineEditExecutable.setText(self.client.executable_path)
             self.ui.lineEditArguments.setText(self.client.arguments)
             self.ui.lineEditConfigFile.setText(self.client.ray_hack.config_file)
@@ -177,10 +162,6 @@ class ClientPropertiesDialog(ChildDialog):
                     self.ui.comboStopSig.setCurrentIndex(i+1)
                 except:
                     self.ui.comboStopSig.setCurrentIndex(0)
-                
-        else:
-            self.ui.lineEditExecutableNSM.setText(self.client.executable_path)
-            self.ui.lineEditArgumentsNSM.setText(self.client.arguments)
     
     def getWorkDirBase(self)->str:
         prefix = self._session.name
@@ -265,28 +246,6 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.toolButtonIcon.setIcon(icon)
         self.ui.toolButtonIconNsm.setIcon(icon)
         self.ui.toolButtonIconRayHack.setIcon(icon)
-
-    def hasRayHackChanges(self)->bool:
-        if self.client.protocol != ray.Protocol.RAY_HACK:
-            return False
-        
-        if self.ui.lineEditExecutable.text() != self.client.executable_path:
-            return True
-        
-        if (self.ui.lineEditConfigFile.text()
-                != self.client.ray_hack.config_file):
-            return True
-        
-        if self.ui.lineEditArguments.text() != self.client.arguments:
-            return True
-        
-        if self.ui.comboSaveSig.currentData() != self.client.ray_hack.save_sig:
-            return True
-        
-        if self.ui.comboStopSig.currentData() != self.client.ray_hack.stop_sig:
-            return True
-        
-        return False
     
     def startClient(self):
         executable = self.client.executable_path
@@ -349,6 +308,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
         self.client.ignored_extensions = \
                                     self.ui.lineEditIgnoredExtensions.text()
+                                
         self.client.sendPropertiesToDaemon()
         
         # better for user to wait a little before close the window
