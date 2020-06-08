@@ -74,6 +74,9 @@ class Client(QObject, ray.ClientData):
 
     def updateClientProperties(self, *args):
         self.update(*args)
+        print('okeorldl')
+        print(args)
+        print('eokkllxlx', self.client_id, self.label, self.icon)
         self.widget.updateClientData()
 
     def updateRayHack(self, *args):

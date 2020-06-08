@@ -603,8 +603,10 @@ class ClientData:
     def update(self, client_id, protocol,
                executable, arguments, pre_env,
                name, prefix_mode, custom_prefix,
-               label, desktop_file, description, icon,
-               capabilities, check_last_save, ignored_extensions,
+               desktop_file, label, description,
+               icon,
+               capabilities, check_last_save,
+               ignored_extensions,
                useless_str, useless_int):
         self.client_id = str(client_id)
         self.protocol = int(protocol)
@@ -627,11 +629,13 @@ class ClientData:
         self.label = str(label)
         self.description = str(description)
         
-        self.icon = str(icon) if icon else self.name.lower().replace('_', '-')
-        
+        self.icon = str(icon)
         self.capabilities = str(capabilities)
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
+        
+        if self.client_id.startswith('mixer'):
+            print('zopfklss', self.client_id, icon, self.icon, label, self.label)
     
     def spread(self):
         ClientData.spreadClient(self)

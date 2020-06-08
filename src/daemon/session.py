@@ -356,8 +356,10 @@ class Session(ServerSender):
                     os.makedirs(project_path)
                 except:
                     return False
-                
         
+        print('zodeofpqlicon', client.icon)
+        client.updateInfosFromDesktopFile()
+        print('zoefkkficon', client.icon)
         self.clients.append(client)
         client.sendGuiClientProperties()
         

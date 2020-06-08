@@ -171,6 +171,7 @@ class Client(ServerSender, ray.ClientData):
         self.executable_path = ctx.attribute('executable')
         self.arguments = ctx.attribute('arguments')
         self.name = ctx.attribute('name')
+        self.desktop_file = ctx.attribute('desktop_file')
         self.label = ctx.attribute('label')
         self.description = ctx.attribute('description')
         self.icon = ctx.attribute('icon')
@@ -178,8 +179,7 @@ class Client(ServerSender, ray.ClientData):
         self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         
-        if not self.description:
-            self.description = self.get_description_from_desktop_file()
+        self.updateInfosFromDesktopFile()
         
         ign_exts = ctx.attribute('ignored_extensions').split(' ')
         unign_exts = ctx.attribute('unignored_extensions').split(' ')
@@ -1182,6 +1182,81 @@ ignored_extensions:%s""" % (self.client_id,
             client_files.append(scripts_dir)
                     
         return client_files
+    
+    def updateInfosFromDesktopFile(self):
+        desk_path_list = ("%s/.local" % os.getenv('HOME'),
+                          '/usr/local', '/usr')
+        
+        desktop_file = self.desktop_file
+        if not desktop_file:
+            desktop_file = os.path.basename(self.executable_path)
+            
+        if not desktop_file.endswith('.desktop'):
+            desktop_file += ".desktop"
+            
+        for desk_path in desk_path_list:
+            org_prefixs = ('', 'org.gnome.', 'org.kde.')
+            desk_file = ''
+            
+            for org_prefix in org_prefixs:
+                desk_file = "%s/share/applications/%s%s" % (
+                    desk_path, org_prefix, desktop_file)
+                
+                if os.path.isfile(desk_file):
+                    break
+            else:
+                continue
+            
+            try:
+                file = open(desk_file, 'r')
+                contents = file.read()
+            except:
+                continue
+            
+            exec_found = False
+            
+            lang = os.getenv('LANG')
+            lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
+            all_data = {"Comment": ['', '', ''],
+                        "Name":    ['', '', ''],
+                        "Icon":    ['', '', '']}
+            
+            for line in contents.split('\n'):
+                if line.startswith('[') and line != "[Desktop Entry]":
+                    break
+                
+                if '=' not in line:
+                    continue
+                
+                var, egal, value = line.partition('=')
+                found = False
+                
+                for searched in all_data:
+                    for i in range(len(lang_strs)):
+                        lang_str = lang_strs[i]
+                        if var == searched + lang_str:
+                            all_data[searched][i] = value
+                            found = True
+                            break
+                        
+                    if found:
+                        break
+                    
+            for data in all_data:
+                for str_value in all_data[data]:
+                    if data == "Comment":
+                        if str_value and not self.description:
+                            self.description = str_value
+                            break
+                    elif data == "Name":
+                        if str_value and not self.label:
+                            self.label = str_value
+                            break
+                    elif data == "Icon":
+                        if str_value and not self.icon:
+                            self.icon = str_value
+                            break
+            break
     
     def get_description_from_desktop_file(self)->str:
         desk_path_list = ("%s/.local" % os.getenv('HOME'),

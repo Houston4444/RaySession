@@ -246,6 +246,8 @@ class SignaledSession(Session):
     
     def _ray_gui_client_new(self, path, args):
         client = Client(self, *args[:2])
+        print('eorkgkol pzefroperties')
+        print(args)
         client.updateClientProperties(*args)
         self.client_list.append(client)
         
@@ -256,6 +258,8 @@ class SignaledSession(Session):
         client_id = args[0]
         client = self.getClient(client_id)
         if client:
+            print('eorkgkol properties')
+            print(args)
             client.updateClientProperties(*args)
     
     def _ray_gui_client_ray_hack_update(self, path, args):

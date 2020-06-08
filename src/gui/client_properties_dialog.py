@@ -271,7 +271,7 @@ class ClientPropertiesDialog(ChildDialog):
         #self._session._main_win.stopClient(self.client.client_id)
         
         stop_sig = self.client.ray_hack.stop_sig
-        self.client.ray_hack.stop_sig = self.ui.comboSaveSig.currentData()
+        self.client.ray_hack.stop_sig = self.ui.comboStopSig.currentData()
         self.client.sendRayHack()
         
         self.toDaemon('/ray/client/stop', self.client.client_id)

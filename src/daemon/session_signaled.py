@@ -794,7 +794,6 @@ class SignaledSession(OperatingSession):
         client.client_id = client_id
         client.prefix_mode = prefix_mode
         client.custom_prefix = custom_prefix
-        client.icon = client.name.lower().replace('_', '-')
         client.setDefaultGitIgnored(executable)
         
         if self.addClient(client):
