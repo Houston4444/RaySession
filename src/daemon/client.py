@@ -1188,13 +1188,11 @@ ignored_extensions:%s""" % (self.client_id,
                           '/usr/local', '/usr')
         
         executable = self.executable_path
-        if executable == 'ray-proxy':
-            executable = self.getProxyExecutable()
         
         for desk_path in desk_path_list:
             desk_file = "%s/share/applications/%s.desktop" \
                         % (desk_path, executable)
-            
+                    
             if not os.path.isfile(desk_file):
                 continue
             
@@ -1203,7 +1201,7 @@ ignored_extensions:%s""" % (self.client_id,
                 contents = file.read()
             except:
                 continue
-                
+            
             comment_found = False
             tr_comment_found = False
             exec_found = False
