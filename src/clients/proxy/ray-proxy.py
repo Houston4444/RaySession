@@ -679,7 +679,7 @@ class Proxy(QObject):
         
         # Useful for launching NSM compatible clients with specifics arguments
         nsm_url = os.getenv('NSM_URL')
-        ray_port_str = nsm_url.repartition(':')[2]
+        ray_port_str = nsm_url.rpartition(':')[2]
         if ray_port_str.endswith('/'):
             ray_port_str = ray_port_str[:-1]
         if ray_port_str.isdigit():    
