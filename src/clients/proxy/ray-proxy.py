@@ -678,6 +678,13 @@ class Proxy(QObject):
         os.environ['PWD'] = os.getcwd()
         
         # Useful for launching NSM compatible clients with specifics arguments
+        nsm_url = os.getenv('NSM_URL')
+        ray_port_str = nsm_url.repartition(':')[2]
+        if ray_port_str.endswith('/'):
+            ray_port_str = ray_port_str[:-1]
+        if ray_port_str.isdigit():    
+            os.environ['RAY_CONTROL_PORT'] = ray_port_str
+        
         os.unsetenv('NSM_URL')
 
         arguments_line = os.path.expandvars(self.arguments_line)
