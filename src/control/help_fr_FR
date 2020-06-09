@@ -214,6 +214,8 @@ contrôle les démons de RaySession
         redémarre le client s'il était démarré.
     is_started
         Retourne un code d'erreur si le client n'est pas démarré
+    get_pid
+        Retourne le pid du processus du client si il est démarré
         
 * COMMANDES DE CLIENT MIS À LA CORBEILLE:
     Les commandes de client mis à la corbeille doivent être écrites de cette manière:

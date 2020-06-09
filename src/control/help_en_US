@@ -188,7 +188,7 @@ control RaySession daemons
     get_properties
         Get client properties
     set_properties PROPERTY1 [PROPERTY2] [PROPERTY3]...
-        Set client properties. Client must be a Ray Proxy, and not started.
+        Set client properties.
         PROPERTY must contains property:value
         example: ray_control client carla set_properties icon:carla "label:My Carla Rack"
     get_proxy_properties
@@ -206,6 +206,8 @@ control RaySession daemons
         re-starts the client if it was started.
     is_started
         returns error code if client is not started
+    get_pid
+        returns the pid of the client process if it is running
         
 * TRASHED_CLIENT_OPTIONS:
     trashed client commands have to be written this way:

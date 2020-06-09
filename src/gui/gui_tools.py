@@ -48,7 +48,7 @@ def initGuiTools():
 
 def isDarkTheme(widget):
     return bool(
-        widget.palette().brush(2, QPalette.WindowText).color().lightness()
+        widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
         > 128)
 
 def dirname(*args):
