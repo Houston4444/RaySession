@@ -1331,6 +1331,21 @@ class SignaledSession(OperatingSession):
         else:
             self.sendErrorNoClient(src_addr, path, client_id)
     
+    def _ray_client_get_pid(self, path, args, src_addr):
+        client_id = args[0]
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                if client.isRunning():
+                    self.send(src_addr, '/reply', path, str(client.pid))
+                    self.send(src_addr, '/reply', path)
+                else:
+                    self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                        "client is not running, impossible to get its pid")
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
     def _ray_client_list_snapshots(self, path, args, src_addr):
         self._ray_session_list_snapshots(path, [], src_addr, args[0])
     
