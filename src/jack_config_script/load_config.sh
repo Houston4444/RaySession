@@ -15,6 +15,7 @@ current_parameters=$(get_current_parameters for_load)
 
 [ -f "$session_jack_file" ] && wanted_parameters=$(cat "$session_jack_file")
 make_diff_parameters
+$RAY_FAIL_IF_JACK_DIFF && [ -n "$diff_parameters" ] && exit 29
 
 [[ "$(current_value_of jack_started)" == 1 ]] && jack_was_started=true || jack_was_started=false
 
@@ -22,7 +23,7 @@ make_diff_parameters
 $RAY_SWITCHING_SESSION || echo "$current_parameters" > "$backup_jack_conf"
 
 # no reliable JACK infos because JACK was started before the checker script
-if [[ "$(current_value_of reliable_infos)" == 0 ]];then
+if $RAY_JACK_RELIABILITY_CHECK && [[ "$(current_value_of reliable_infos)" == 0 ]];then
     if has_different_value hostname;then
         $jack_was_started && stop_jack
         has_different_value /driver/rate && set_samplerate

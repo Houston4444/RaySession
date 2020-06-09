@@ -17,6 +17,7 @@ rm "$backup_jack_conf"
 rm "$tmp_pulse_file"
 
 make_diff_parameters
+$RAY_FAIL_IF_JACK_DIFF && [ -n "$diff_parameters" ] && exit 29
 
 [[ "$(current_value_of jack_started)" == 1 ]] && jack_was_started=true || jack_was_started=false
 

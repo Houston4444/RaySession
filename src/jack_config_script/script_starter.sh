@@ -1,5 +1,15 @@
 #!/bin/bash
 
+true_or_false(){
+    if [ -n "$1" ];then
+        [[ "${1,,}" != false ]] && echo true || echo false
+    elif [ -n "$2" ];then
+        echo "$2"
+    else
+        echo false
+    fi
+}
+
 operation="$1"
 shift
 
@@ -18,6 +28,12 @@ where operation can be 'load', 'save' or 'putback'" >/dev/stderr
 fi
 
 [ -z "$RAY_SWITCHING_SESSION" ] && RAY_SWITCHING_SESSION=false
+
+RAY_MANAGE_PULSEAUDIO=$(true_or_false "$RAY_MANAGE_PULSEAUDIO", true)
+RAY_JACK_RELIABILITY_CHECK=$(true_or_false "$RAY_JACK_RELIABILITY_CHECK", true)
+RAY_HOSTNAME_SENSIBLE=$(true_or_false "$RAY_HOSTNAME_SENSIBLE", true)
+RAY_FAIL_IF_JACK_DIFF=$(true_or_false "$RAY_FAIL_IF_JACK_DIFF", false)
+
 
 cd "$(dirname "`readlink -f "$(realpath "$0")"`")"
 

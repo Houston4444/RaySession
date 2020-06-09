@@ -16,7 +16,7 @@ has_pulse_jack(){
 
 
 get_current_parameters(){
-    echo "hostname:$(hostname)"
+    $RAY_HOSTNAME_SENSIBLE && echo "hostname:$(hostname)"
     
     parameters_path="$tmp_dir/jack_current_parameters"
 
@@ -171,6 +171,7 @@ check_device(){
             
 
 reconfigure_pulseaudio(){
+    $RAY_MANAGE_PULSEAUDIO || return
     has_pulse_jack || return
     
     if [[ "$1" == "as_it_just_was" ]];then
@@ -202,6 +203,9 @@ current_value_of(){
 
 
 has_different_value(){
+    if ! $RAY_HOSTNAME_SENSIBLE;then
+        [[ "$1" == hostname ]] && return 1
+    fi
     echo "$diff_parameters"|grep -q ^"$1"$
 }
 
