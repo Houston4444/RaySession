@@ -1183,7 +1183,55 @@ ignored_extensions:%s""" % (self.client_id,
                     
         return client_files
     
+    def setInfosFromDesktopContents(self, contents:str):
+        exec_found = False
+            
+        lang = os.getenv('LANG')
+        lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
+        all_data = {"Comment": ['', '', ''],
+                    "Name":    ['', '', ''],
+                    "Icon":    ['', '', '']}
+        
+        for line in contents.split('\n'):
+            if line.startswith('[') and line != "[Desktop Entry]":
+                break
+            
+            if '=' not in line:
+                continue
+            
+            var, egal, value = line.partition('=')
+            found = False
+            
+            for searched in all_data:
+                for i in range(len(lang_strs)):
+                    lang_str = lang_strs[i]
+                    if var == searched + lang_str:
+                        all_data[searched][i] = value
+                        found = True
+                        break
+                    
+                if found:
+                    break
+                
+        for data in all_data:
+            for str_value in all_data[data]:
+                if data == "Comment":
+                    if str_value and not self.description:
+                        self.description = str_value
+                        break
+                elif data == "Name":
+                    if str_value and not self.label:
+                        self.label = str_value
+                        break
+                elif data == "Icon":
+                    if str_value and not self.icon:
+                        self.icon = str_value
+                        break
+    
     def updateInfosFromDesktopFile(self):
+        if self.icon and self.description and self.label:
+            return
+        
         desk_path_list = ("%s/.local" % os.getenv('HOME'),
                           '/usr/local', '/usr')
         
@@ -1213,110 +1261,48 @@ ignored_extensions:%s""" % (self.client_id,
             except:
                 continue
             
-            exec_found = False
-            
-            lang = os.getenv('LANG')
-            lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
-            all_data = {"Comment": ['', '', ''],
-                        "Name":    ['', '', ''],
-                        "Icon":    ['', '', '']}
-            
-            for line in contents.split('\n'):
-                if line.startswith('[') and line != "[Desktop Entry]":
-                    break
-                
-                if '=' not in line:
-                    continue
-                
-                var, egal, value = line.partition('=')
-                found = False
-                
-                for searched in all_data:
-                    for i in range(len(lang_strs)):
-                        lang_str = lang_strs[i]
-                        if var == searched + lang_str:
-                            all_data[searched][i] = value
-                            found = True
-                            break
-                        
-                    if found:
-                        break
-                    
-            for data in all_data:
-                for str_value in all_data[data]:
-                    if data == "Comment":
-                        if str_value and not self.description:
-                            self.description = str_value
-                            break
-                    elif data == "Name":
-                        if str_value and not self.label:
-                            self.label = str_value
-                            break
-                    elif data == "Icon":
-                        if str_value and not self.icon:
-                            self.icon = str_value
-                            break
+            self.setInfosFromDesktopContents(contents)
             break
-    
-    def get_description_from_desktop_file(self)->str:
-        desk_path_list = ("%s/.local" % os.getenv('HOME'),
-                          '/usr/local', '/usr')
         
-        executable = self.executable_path
-        
-        for desk_path in desk_path_list:
-            desk_file = "%s/share/applications/%s.desktop" \
-                        % (desk_path, executable)
+        else:
+            desk_file_found = False
+            for desk_path in desk_path_list:
+                for desk_file in os.listdir("%s/share/applications/" % desk_path):
+                    if not desk_file.endswith('.desktop'):
+                        continue
                     
-            if not os.path.isfile(desk_file):
-                continue
-            
-            try:
-                file = open(desk_file, 'r')
-                contents = file.read()
-            except:
-                continue
-            
-            comment_found = False
-            tr_comment_found = False
-            exec_found = False
-            
-            lang = os.getenv('LANG')
-            
-            comment_tr_5 = ""
-            comment_tr_2 = ""
-            comment = ""
-            
-            for line in contents.split('\n'):
-                if line.startswith('[') and line != "[Desktop Entry]":
+                    full_desk_file = "%s/share/applications/%s" % (desk_path, desk_file)
+                    
+                    if os.path.isdir(full_desk_file):
+                        continue
+                    
+                    try:
+                        file = open(full_desk_file, 'r')
+                        contents = file.read()
+                    except:
+                        continue
+                    
+                    for line in contents.split('\n'):
+                        if line.startswith('Exec='):
+                            value = line.partition('=')[2]
+                            if (value == self.executable_path
+                                    or value.startswith(
+                                        "%s " % self.executable_path)
+                                    or value.endswith(
+                                        " %s" % self.executable_path)
+                                    or " %s " in value):
+                            #if self.executable_path in value:
+                                desk_file_found = True
+                                
+                                self.desktop_file = desk_file
+                                self.setInfosFromDesktopContents(contents)
+                                break
+                    
+                    if desk_file_found:
+                        break
+                if desk_file_found:
                     break
-                
-                if line.startswith("Comment[%s]=" % lang[0:2]):
-                    comment_tr_2 = line.partition('=')[2]
-                elif line.startswith("Comment[%s]=" % lang[0:5]):
-                    comment_tr_5 = line.partition('=')[2]
-                elif line.startswith("Comment="):
-                    comment = line.partition('=')[2]
-                elif line.startswith('Exec='):
-                    exe_line = line.partition('=')[2]
-                    
-                    if executable in exe_line:
-                        exec_found = True
-            
-            if not exec_found:
-                continue
-            
-            if comment_tr_5:
-                return comment_tr_5
-            elif comment_tr_2:
-                return comment_tr_2
-            elif comment:
-                return comment
-            else:
-                return ""
-            
-        return ""
-
+    
     def saveAsTemplate(self, template_name, src_addr=None, src_path=''):
         if src_addr:
             self._osc_srcs[OSC_SRC_SAVE_TP] = (src_addr, src_path)
