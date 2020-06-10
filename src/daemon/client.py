@@ -1316,6 +1316,22 @@ ignored_extensions:%s""" % (self.client_id,
                     
                     files_to_rename.append((ardour_file, new_ardour_file))
                     
+                     # change Session name
+                    try:
+                        file = open(ardour_file, 'r')
+                        xml = QDomDocument()
+                        xml.setContent(file.read())
+                        file.close()
+                        root = xml.documentElement()
+
+                        if root.tagName() == 'Session':
+                            root.setAttribute('name', new_prefix)
+                            file = open(ardour_file, 'w')
+                            file.write(xml.toString())
+                
+                    except:
+                        False
+                   
                 if os.path.isfile(ardour_bak) and os.access(ardour_bak, os.W_OK):
                     new_ardour_bak = "%s/%s.ardour.bak" % (project_path, new_prefix)
                     if os.path.exists(new_ardour_bak):
