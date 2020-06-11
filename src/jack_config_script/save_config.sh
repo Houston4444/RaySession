@@ -1,6 +1,5 @@
 #!/bin/bash
 
-cd "$(dirname "`readlink -f "$(realpath "$0")"`")"
 source shared.sh || exit 0
 contents=$(get_current_parameters)
 

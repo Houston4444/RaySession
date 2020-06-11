@@ -5,7 +5,6 @@
 # exit 0 means load session after script
 # else the session open will be cancelled
 
-cd "$(dirname "`readlink -f "$(realpath "$0")"`")"
 source shared.sh || exit 0
 
 ray_operation=load
@@ -15,6 +14,7 @@ current_parameters=$(get_current_parameters for_load)
 
 [ -f "$session_jack_file" ] && wanted_parameters=$(cat "$session_jack_file")
 make_diff_parameters
+
 $RAY_FAIL_IF_JACK_DIFF && [ -n "$diff_parameters" ] && exit 29
 
 [[ "$(current_value_of jack_started)" == 1 ]] && jack_was_started=true || jack_was_started=false

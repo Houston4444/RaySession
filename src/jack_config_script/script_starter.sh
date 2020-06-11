@@ -20,20 +20,23 @@ if [ -z "$RAY_SESSION_PATH" ];then
     fi
 fi
 
-if [ -z "$RAY_SESSION_PATH" ] && [[ "$operation" != putback ]];then
-    echo "this script has to be used by ray session scripts or this way :
+if [ -z "$RAY_SESSION_PATH" ];then
+    case "$operation" in 
+        load|save)
+            echo "this script has to be used by ray session scripts or this way :
 $0 operation [SESSION_PATH]
-where operation can be 'load', 'save' or 'putback'" >/dev/stderr
-    exit 1
+where operation can be 'load', 'save', 'putback','get_diff' or 'set_jack_parameters'" >/dev/stderr
+            exit 1
+            ;;
+    esac
 fi
 
 [ -z "$RAY_SWITCHING_SESSION" ] && RAY_SWITCHING_SESSION=false
 
-RAY_MANAGE_PULSEAUDIO=$(true_or_false "$RAY_MANAGE_PULSEAUDIO", true)
-RAY_JACK_RELIABILITY_CHECK=$(true_or_false "$RAY_JACK_RELIABILITY_CHECK", true)
-RAY_HOSTNAME_SENSIBLE=$(true_or_false "$RAY_HOSTNAME_SENSIBLE", true)
-RAY_FAIL_IF_JACK_DIFF=$(true_or_false "$RAY_FAIL_IF_JACK_DIFF", false)
-
+RAY_MANAGE_PULSEAUDIO=$(true_or_false "$RAY_MANAGE_PULSEAUDIO" true)
+RAY_JACK_RELIABILITY_CHECK=$(true_or_false "$RAY_JACK_RELIABILITY_CHECK" true)
+RAY_HOSTNAME_SENSIBLE=$(true_or_false "$RAY_HOSTNAME_SENSIBLE" true)
+RAY_FAIL_IF_JACK_DIFF=$(true_or_false "$RAY_FAIL_IF_JACK_DIFF" false)
 
 cd "$(dirname "`readlink -f "$(realpath "$0")"`")"
 
@@ -46,6 +49,12 @@ case "$operation" in
         ;;
     putback )
         source ./putback_config.sh
+        ;;
+    get_diff )
+        source ./get_diff.sh
+        ;;
+    set_jack_parameters )
+        source ./set_jack_parameters.sh
         ;;
 esac
 
