@@ -196,7 +196,18 @@ control RaySession daemons
     set_proxy_properties PROPERTY1 [PROPERTY2] [PROPERTY3]...
         Set client proxy properties only if client executable is ray-proxy
         PROPERTY must contains property:value
-        example: ray_control client lmms set_properties executable:lmms no_save_level:2 
+        example: ray_control client lmms set_properties executable:lmms no_save_level:2
+    set_custom_data PROPERTY VALUE
+        set a custom data to the client.
+        This will not be used by the daemon.
+    get_custom_data PROPERTY
+        returns the value of custom_data property if it exists
+    set_tmp_data PROPERTY VALUE
+        set a tmp data to the client.
+        This will not be used by the daemon.
+        This data will not be saved at session save.
+    get_tmp_data PROPERTY
+        returns the value of tmp_data property if it exists
     list_files
         Lists directories and files used by client
     list_snapshots
