@@ -203,7 +203,18 @@ contrôle les démons de RaySession
     set_proxy_properties PROPRIÉTÉ1 [PROPRIÉTÉ2] [PROPRIÉTÉ3]...
         Définit les les propriétés du proxy du client si son exécutable est ray-proxy.
         PROPRIÉTÉ doit contenir propriété:valeur
-        example: ray_control client lmms set_properties executable:lmms no_save_level:2 
+        example: ray_control client lmms set_properties executable:lmms no_save_level:2
+    set_custom_data PROPERTY VALUE
+        Définir une propriété personnalisée pour le client.
+        Elle ne sera pas utilisée par le démon.
+    get_custom_data PROPERTY
+        retourne la valeur de la propriété personnalisée.
+    set_tmp_data PROPERTY VALUE
+        Définir un propriété personnalisée temporaire pour le client.
+        Elle ne sera pas utilisée par le démon.
+        Cette propriété ne sera pas sauvegardée avec la session.
+    get_tmp_data PROPERTY
+        retourne la valeur de la propriété personnalisée temporaire.
     list_files
         Liste les fichiers et dossiers du client
     list_snapshots
