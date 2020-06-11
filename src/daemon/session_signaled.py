@@ -1403,6 +1403,63 @@ class SignaledSession(OperatingSession):
         else:
             self.send(src_addr, "/error", path, -10, "No such client.")
     
+    def _ray_client_set_custom_data(self, path, args, src_addr):
+        client_id, data, value = args
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                client.custom_data[data] = value
+                self.send(src_addr, '/reply', path, 'custom data set')
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
+    def _ray_client_get_custom_data(self, path, args, src_addr):
+        client_id, data = args
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                if data not in client.custom_data:
+                    self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
+                              "client %s has no custom_data key '%s'"
+                              % (client.client_id, data))
+                    return
+                
+                self.send(src_addr, '/reply', path, client.custom_data[data])
+                self.send(src_addr, '/reply', path)
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
+    def _ray_client_set_tmp_data(self, path, args, src_addr):
+        client_id, data, value = args
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                client.custom_tmp_data[data] = value
+                self.send(src_addr, '/reply', path, 'custom tmp data set')
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
+    def _ray_client_get_tmp_data(self, path, args, src_addr):
+        client_id, data = args
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                if data not in client.custom_tmp_data:
+                    self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
+                              "client %s has no tmp_custom_data key '%s'"
+                              % (client.client_id, data))
+                    return
+                
+                self.send(src_addr, '/reply', path, client.custom_tmp_data[data])
+                self.send(src_addr, '/reply', path)
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
+    
     def _ray_trashed_client_remove_definitely(self, path, args, src_addr):
         if not self.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,

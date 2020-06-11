@@ -991,6 +991,22 @@ class OscServerThread(ClientCommunicating):
     def rayClientIsStarted(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/client/set_custom_data', 'sss')
+    def rayClientSetCustomData(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/get_custom_data', 'ss')
+    def rayClientGetCustomData(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/set_tmp_data', 'sss')
+    def rayClientSetTmpData(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/get_tmp_data', 'ss')
+    def rayClientGetTmpData(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/trashed_client/restore', 's')
     def rayTrashedClientRestore(self, path, args, types, src_addr):
         pass

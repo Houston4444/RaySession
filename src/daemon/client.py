@@ -92,6 +92,9 @@ class Client(ServerSender):
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('NSM_URL', self.getServerUrl())
         
+        self.custom_data = {}
+        self.custom_tmp_data = {}
+        
         self.process = QProcess()
         self.process.started.connect(self.processStarted)
         if ray.QT_VERSION >= (5, 6):
@@ -245,6 +248,21 @@ class Client(ServerSender):
             self.client_id = self.session.generateClientId(
                                                 ctx.attribute('client_id'))
         
+        nodes = ctx.childNodes()
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            el = node.toElement()
+            if el.tagName() == 'custom_data':
+                attributes = el.attributes()
+                for i in range(attributes.count()):
+                    attribute = attributes.item(i)
+                    print('eorfkf', attribute, type(attribute))
+                    attribute_str = attribute.toAttr().name()
+                    print('oekrofk', attribute_str)
+                    value = el.attribute(attribute_str)
+                    print('ozkfkfk', value)
+                    self.custom_data[attribute_str] = value
+        
     def writeXmlProperties(self, ctx):
         ctx.setAttribute('executable', self.executable_path)
         ctx.setAttribute('name', self.name)
@@ -302,6 +320,14 @@ class Client(ServerSender):
         if self.last_open_duration >= 5.0:
             ctx.setAttribute('last_open_duration',
                              str(self.last_open_duration))
+        
+        if self.custom_data:
+            xml = QDomDocument()
+            cdt_xml = xml.createElement('custom_data')
+            for data in self.custom_data:
+                cdt_xml.setAttribute(data, self.custom_data[data])
+            ctx.appendChild(cdt_xml)
+            
         
     def setReply(self, errcode, message):
         self._reply_message = message
@@ -850,6 +876,7 @@ class Client(ServerSender):
         self.auto_start = new_client.auto_start
         self.check_last_save = new_client.check_last_save
         self.ignored_extensions = new_client.ignored_extensions
+        self.custom_data = new_client.custom_data
     
     def switch(self):
         jack_client_name    = self.getJackClientName()
