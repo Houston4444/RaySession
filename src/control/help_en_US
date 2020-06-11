@@ -12,7 +12,7 @@ control RaySession daemons
     --help-clients
         Prints help for clients management
     --port
-        Specify deamon OSC port.
+        Specify daemon OSC port.
         This port can also be specified
         with RAY_CONTROL_PORT environment variable.
     --detach
@@ -38,7 +38,7 @@ control RaySession daemons
     get_root
         get daemon root directory for sessions
     get_pid
-        get default deamon pid
+        get default daemon pid
     get_session_path
         get path of the running session,
         returns error code if no daemon is running

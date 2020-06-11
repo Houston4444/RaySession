@@ -85,8 +85,8 @@ class MultiDaemonFile(object):
         has_dirty_pid = False
         
         if not self.openFile():
-            ds = self.xml.createElement('Deamons')
-            dm_xml = self.xml.createElement('Deamon')
+            ds = self.xml.createElement('Daemons')
+            dm_xml = self.xml.createElement('Daemon')
             
             self.setAttributes(dm_xml)
             
@@ -110,7 +110,7 @@ class MultiDaemonFile(object):
                     has_dirty_pid = True
                 
             if not found:
-                dm_xml = self.xml.createElement('Deamon')
+                dm_xml = self.xml.createElement('Daemon')
                 self.setAttributes(dm_xml)
                 self.xml.firstChild().appendChild(dm_xml)
         
