@@ -12,6 +12,7 @@ from child_dialogs import ChildDialog
 
 import ui_ray_hack_copy
 import ui_client_properties
+import ui_ray_hack_properties
 
 class RayHackCopyDialog(ChildDialog):
     def __init__(self, parent):
@@ -37,6 +38,11 @@ class ClientPropertiesDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_client_properties.Ui_Dialog()
         self.ui.setupUi(self)
+        
+        uihack = ui_ray_hack_properties.Ui_Frame()
+        self.ui.tabWidget.setCurrentIndex(2)
+        self.ui.tabWidget.addWidget(uihack)
+        #self.ui.verticalLayout7.addWidget(uihack)
 
         self.client = client
         
