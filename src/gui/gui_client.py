@@ -146,6 +146,36 @@ class Client(QObject):
             return False
 
         return True
+    
+    def getProjectPath(self)->str:
+        if not self._session.path:
+            return ''
+        
+        prefix = self.session.name
+        
+        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+            prefix = self.name
+        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+            prefix = self.custom_prefix
+            
+        return "%s/%s.%s" % (self._session.path, prefix, self.client_id)
+    
+    def getIconSearchPath(self)->list:
+        if not self._session._daemon_manager.is_local:
+            return []
+        
+        project_path = self.getProjectPath()
+        if not project_path:
+            return []
+        
+        search_list = []
+        main_icon_path = '.local/share/icons'
+        search_list.append("%s/%s" % (search_list, main_icon_path))
+        
+        for path in ('16x16', '24x24', '32x32', '64x64', 'scalable'):
+            search_list.append("%s/%s/%s" % (project_path,
+                                             main_icon_path, path))
+        return search_list
 
 
 class TrashedClient(object):
