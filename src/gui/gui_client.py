@@ -28,6 +28,8 @@ class Client(QObject):
         self.capabilities    = client_data.capabilities
         self.check_last_save = client_data.check_last_save
         self.ignored_extensions = client_data.ignored_extensions
+        self.icon_search_paths = [session.path + '/.local/share/icons', session.path + '/.local/share/icons/32x32']
+
 
         self.status = ray.ClientStatus.STOPPED
         self.previous_status = ray.ClientStatus.STOPPED
