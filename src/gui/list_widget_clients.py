@@ -240,7 +240,7 @@ class ClientSlot(QFrame):
         self.ui.ClientName.setToolTip(tool_tip)
 
         # set icon
-        self.icon_on = ray.getAppIcon(self.client.icon_name, self)
+        self.icon_on = ray.getAppIcon(self.client.icon_name, self, addSearchPaths=self.client.icon_search_paths)
         self.icon_off = QIcon(self.icon_on.pixmap(32, 32, QIcon.Disabled))
 
         self.grayIcon(

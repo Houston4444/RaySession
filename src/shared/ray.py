@@ -510,7 +510,7 @@ def areTheyAllString(args):
     return True
 
 
-def getAppIcon(icon_name, widget):
+def getAppIcon(icon_name, widget, addSearchPaths=[]):
     dark = bool(
         widget.palette().brush(
             2, QPalette.WindowText).color().lightness() > 128)
@@ -530,7 +530,20 @@ def getAppIcon(icon_name, widget):
                 icon = QIcon()
                 icon.addFile(filename)
                 break
+            else:
+                for path in addSearchPaths:
+                    for ext in ('svg', 'svgz', 'png'):
+                        filename = "%s/%s.%s" % (path, icon_name, ext)
+                        darkname = "%s/dark/%s.%s" % (path, icon_name, ext)
 
+                        if dark and QFile.exists(darkname):
+                            filename = darkname
+
+                        if QFile.exists(filename):
+                            del icon
+                            icon = QIcon()
+                            icon.addFile(filename)
+                            break
     return icon
 
 def getWindowManager():
@@ -556,6 +569,7 @@ class ClientData:
     capabilities = ''
     check_last_save = True
     ignored_extensions = getGitIgnoredExtensions()
+    icon_search_paths=[]
 
     def __init__(self,
                  client_id,
@@ -569,7 +583,8 @@ class ClientData:
                  icon='',
                  capabilities='',
                  check_last_save=True,
-                 ignored_extensions=getGitIgnoredExtensions()):
+                 ignored_extensions=getGitIgnoredExtensions(),
+                 icon_search_paths=[]):
         self.client_id = str(client_id)
         self.executable_path = str(executable)
         self.arguments = str(arguments)
@@ -579,6 +594,7 @@ class ClientData:
         self.capabilities = str(capabilities)
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
+        self.icon_search_paths = icon_search_paths
 
         self.name = str(name) if name else os.path.basename(
             self.executable_path)

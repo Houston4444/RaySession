@@ -692,7 +692,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.plainTextEditDescription.setPlainText(self.client.description)
         self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
         self.ui.toolButtonIcon.setIcon(
-            ray.getAppIcon(self.client.icon_name, self))
+            ray.getAppIcon(self.client.icon_name, self, addSearchPaths=self.client.icon_search_paths))
         self.ui.lineEditIgnoredExtensions.setText(
             self.client.ignored_extensions)
 
