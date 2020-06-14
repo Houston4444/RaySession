@@ -237,6 +237,9 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
                 self.rhack.comboStopSig.setCurrentIndex(i+1)
             except:
                 self.rhack.comboStopSig.setCurrentIndex(0)
+        
+        self.rhack.checkBoxWaitWindow.setChecked(
+            bool(self.client.ray_hack.wait_win))
     
     def saveChanges(self):
         self.client.executable_path = self.rhack.lineEditExecutable.text()

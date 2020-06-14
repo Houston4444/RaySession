@@ -218,6 +218,8 @@ class Client(ServerSender, ray.ClientData):
             ray_hack_stop_sig = ctx.attribute('stop_signal')
             if ray_hack_stop_sig.isdigit():
                 self.ray_hack.stop_sig = int(ray_hack_stop_sig)
+                
+            self.ray_hack.wait_win = bool(ctx.attribute('wait_win') == "1")
         
         self.net_session_template = ctx.attribute('net_session_template')
         
@@ -830,7 +832,6 @@ class Client(ServerSender, ray.ClientData):
                 % self.guiMsgStyle())
                 
         self.sendReplyToCaller(OSC_SRC_OPEN, 'client opened')
-        
         self.pending_command = ray.Command.NONE
         self.setStatus(ray.ClientStatus.READY)
         
@@ -1104,9 +1105,9 @@ arguments:%s
 name:%s
 prefix_mode:%i
 custom_prefix:%s
+desktop_file:%s
 label:%s
 icon:%s
-capabilities:%s
 check_last_save:%i
 ignored_extensions:%s""" % (self.client_id,
                             protocol_str,
@@ -1115,11 +1116,25 @@ ignored_extensions:%s""" % (self.client_id,
                             self.name, 
                             self.prefix_mode, 
                             self.custom_prefix,
+                            self.desktop_file,
                             self.label,
                             self.icon,
-                            self.capabilities,
                             int(self.check_last_save),
                             self.ignored_extensions)
+        
+        if self.protocol == ray.Protocol.NSM:
+            message += "\ncapabilities:%s" % self.capabilities
+        elif self.protocol == ray.Protocol.RAY_HACK:
+            message += """\nconfig_file:%s
+save_sig:%i
+stop_sig:%i
+wait_win:%i
+no_save_level:%i""" % (self.ray_hack.config_file,
+                       self.ray_hack.save_sig,
+                       self.ray_hack.stop_sig,
+                       self.ray_hack.wait_win,
+                       self.ray_hack.no_save_level)
+        
         return message
     
     def prettyClientId(self):
