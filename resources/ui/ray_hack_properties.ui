@@ -24,7 +24,7 @@
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="1" column="3" rowspan="2">
-       <widget class="QToolButton" name="toolButtonIconRayHack">
+       <widget class="QToolButton" name="toolButtonIcon">
         <property name="baseSize">
          <size>
           <width>48</width>
@@ -274,6 +274,12 @@
      <property name="title">
       <string>Test Zone</string>
      </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
      <layout class="QVBoxLayout" name="verticalLayout_13">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -291,7 +297,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButtonStart_2">
+         <widget class="QPushButton" name="pushButtonStart">
           <property name="text">
            <string>Launch</string>
           </property>
@@ -302,7 +308,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButtonStop_2">
+         <widget class="QPushButton" name="pushButtonStop">
           <property name="text">
            <string>Stop</string>
           </property>
@@ -313,9 +319,9 @@
          </widget>
         </item>
         <item>
-         <widget class="StatusBar" name="lineEditClientStatus_2">
+         <widget class="StatusBar" name="lineEditClientStatus">
           <property name="enabled">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -355,7 +361,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButtonSave_2">
+         <widget class="QPushButton" name="pushButtonSave">
           <property name="text">
            <string>Save</string>
           </property>
@@ -381,7 +387,7 @@
        </layout>
       </item>
       <item>
-       <widget class="QLabel" name="labelError_2">
+       <widget class="QLabel" name="labelError">
         <property name="styleSheet">
          <string notr="true">color: red</string>
         </property>
