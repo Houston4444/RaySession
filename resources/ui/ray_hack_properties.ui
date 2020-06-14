@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>413</width>
-    <height>440</height>
+    <height>442</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -270,7 +270,7 @@
     </spacer>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_7">
+    <widget class="QGroupBox" name="groupBoxTestZone">
      <property name="title">
       <string>Test Zone</string>
      </property>

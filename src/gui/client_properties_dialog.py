@@ -169,6 +169,9 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.pushButtonStop.setEnabled(False)
         self.rhack.pushButtonSave.setEnabled(False)
         
+        self.rhack.groupBoxTestZone.setChecked(False)
+        #self.rhack.groupBoxTestZone.setEnabled(False)
+        
     def updateStatus(self, status):
         self._current_status = status
         self.rhack.lineEditClientStatus.setText(clientStatusString(status))
@@ -314,7 +317,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.pushButtonStart.setEnabled(
             bool(self._acceptable_arguments
                  and self._current_status == ray.ClientStatus.STOPPED))
-        self.rhack.pushButtonSaveChanges.setEnabled(self.isAllowed())
+        self.ui.pushButtonSaveChanges.setEnabled(self.isAllowed())
 
     def lineEditConfigFileChanged(self, text):
         if text and not self.rhack.lineEditArguments.text():
@@ -328,9 +331,9 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         arguments = self.client.arguments
         config_file = self.client.ray_hack.config_file
         
-        self.client.executable_path = self.ui.lineEditExecutable.text()
-        self.client.arguments = self.ui.lineEditArguments.text()
-        self.client.ray_hack.config_file = self.ui.lineEditConfigFile.text()
+        self.client.executable_path = self.rhack.lineEditExecutable.text()
+        self.client.arguments = self.rhack.lineEditArguments.text()
+        self.client.ray_hack.config_file = self.rhack.lineEditConfigFile.text()
         
         self.client.sendPropertiesToDaemon()
         self.toDaemon('/ray/client/resume', self.client.client_id)
@@ -343,7 +346,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
     def stopClient(self):
         stop_sig = self.client.ray_hack.stop_sig
-        self.client.ray_hack.stop_sig = self.ui.comboStopSig.currentData()
+        self.client.ray_hack.stop_sig = self.rhack.comboStopSig.currentData()
         self.client.sendRayHack()
         
         self.toDaemon('/ray/client/stop', self.client.client_id)
@@ -353,7 +356,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         
     def saveClient(self):
         save_sig = self.client.ray_hack.save_sig
-        self.client.ray_hack.save_sig = self.ui.comboSaveSig.currentData()
+        self.client.ray_hack.save_sig = self.rhack.comboSaveSig.currentData()
         self.client.sendRayHack()
         
         self.toDaemon('/ray/client/save', self.client.client_id)
