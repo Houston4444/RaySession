@@ -84,19 +84,23 @@ class NSMMode:
 class Protocol:
     NSM = 0
     RAY_HACK = 1
-    NET_SESSION = 2
+    RAY_NET = 2
 
 
 class Option:
-    NSM_LOCKED       = 0x001
+    NSM_LOCKED = 0x001
     SAVE_FROM_CLIENT = 0x002 #DEPRECATED
     BOOKMARK_SESSION = 0x004
-    HAS_WMCTRL       = 0x008
-    DESKTOPS_MEMORY  = 0x010
-    HAS_GIT          = 0x020
-    SNAPSHOTS        = 0x040
-    SESSION_SCRIPTS  = 0x080
+    HAS_WMCTRL = 0x008
+    DESKTOPS_MEMORY = 0x010
+    HAS_GIT = 0x020
+    SNAPSHOTS = 0x040
+    SESSION_SCRIPTS = 0x080
 
+
+class HackWinOption:
+    WAIT_WINDOW_FOR_READY = 0x001
+    CLOSE_WINDOW_GRACEFULLY = 0x002
 
 class Err:
     OK = 0
@@ -552,7 +556,7 @@ def getWindowManager():
 def protocolToStr(protocol:int)->str:
     if protocol == Protocol.RAY_HACK:
         return "Ray-Hack"
-    elif protocol == Protocol.NET_SESSION:
+    elif protocol == Protocol.RAY_NET:
         return "Net-Session"
     return "NSM"
 
@@ -633,9 +637,6 @@ class ClientData:
         self.capabilities = str(capabilities)
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
-        
-        if self.client_id.startswith('mixer'):
-            print('zopfklss', self.client_id, icon, self.icon, label, self.label)
     
     def spread(self):
         ClientData.spreadClient(self)
@@ -645,6 +646,7 @@ class RayHack():
     save_sig = 0
     stop_sig = 15
     wait_win = False
+    close_gracefully = False
     no_save_level = 0
     useless_str = ''
     useless_int = 0
@@ -661,15 +663,22 @@ class RayHack():
     
     def update(self, config_file,
                save_sig, stop_sig,
-               wait_win, no_save_level,
+               win_options, no_save_level,
                useless_str, useless_int):
         self.config_file = str(config_file)
         self.save_sig = int(save_sig)
         self.stop_sig = int(stop_sig)
-        self.wait_win = bool(wait_win)
+        self.wait_win = bool(win_options & HackWinOption.WAIT_WINDOW_FOR_READY)
+        self.close_gracefully = bool(
+            win_options & HackWinOption.CLOSE_WINDOW_GRACEFULLY)
         self.no_save_level = int(no_save_level)
     
     def spread(self):
+        win_options = int(HackWinOption.WAIT_WINDOW_FOR_READY
+                            * int(self.wait_win)
+                          + HackWinOption.CLOSE_WINDOW_GRACEFULLY
+                            * int(self.close_gracefully))
+        
         return (self.config_file, self.save_sig, self.stop_sig,
-                int(self.wait_win), self.no_save_level,
+                win_options, self.no_save_level,
                 self.useless_str, self.useless_int)

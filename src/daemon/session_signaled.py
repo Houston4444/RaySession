@@ -1131,6 +1131,10 @@ class SignaledSession(OperatingSession):
                 if client.isRayHack():
                     client.ray_hack.update(*args)
                 self.send(src_addr, '/reply', path, 'ray_hack updated')
+                no_save_level = client.getRayHackNoSaveLevel()
+                client.no_save_level = no_save_level
+                self.sendGui('/ray/gui/client/no_save_level',
+                             client.client_id, no_save_level)
                 break
         else:
             self.sendErrorNoClient(src_addr, path, client_id)

@@ -74,11 +74,8 @@ class MainWindow(QMainWindow):
             x = rect.x()
             y = rect.y()
             height = rect.height()
-            #mini_frame = self.ui.frameCurrentSession.minimumWidth()
-            #print('okfok', x, y, mini_frame, height)
             self.setMinimumWidth(450)
             self.setGeometry(x, y, 460, height)
-            #self.setMinimumWidth(0)
             
         if RS.settings.value('MainWindow/WindowState'):
             self.restoreState(RS.settings.value('MainWindow/WindowState'))

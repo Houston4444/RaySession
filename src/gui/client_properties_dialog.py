@@ -138,12 +138,9 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.ui.verticalLayoutProtocol.addWidget(self.ray_hack_frame)
         
         self.ui.tabWidget.setTabText(1, 'Ray-Hack')
-        #self.ui.tabWidget.setCurrentIndex(1)
-        #widget = self.ui.tabWidget.
-        
         self.rhack.labelWorkingDir.setText(self.getWorkDirBase())
-            
         self.rhack.toolButtonBrowse.setEnabled(self._daemon_manager.is_local)
+        
         self.rhack.toolButtonBrowse.clicked.connect(self.browseConfigFile)
         self.rhack.lineEditExecutable.textEdited.connect(
             self.lineEditExecutableEdited)
@@ -155,6 +152,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.pushButtonStart.clicked.connect(self.startClient)
         self.rhack.pushButtonStop.clicked.connect(self.stopClient)
         self.rhack.pushButtonSave.clicked.connect(self.saveClient)
+        
         self.rhack.comboSaveSig.addItem(_translate('ray_hack', 'None'), 0)
         self.rhack.comboSaveSig.addItem('SIGUSR1', 10)
         self.rhack.comboSaveSig.addItem('SIGUSR2', 12)
@@ -165,37 +163,45 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.comboStopSig.addItem('SIGKILL', 9)
         
         self.rhack.labelError.setVisible(False)
-        self.rhack.pushButtonStart.setEnabled(True)
+        self.rhack.pushButtonStart.setEnabled(False)
         self.rhack.pushButtonStop.setEnabled(False)
         self.rhack.pushButtonSave.setEnabled(False)
         
-        self.rhack.groupBoxTestZone.setChecked(False)
-        #self.rhack.groupBoxTestZone.setEnabled(False)
+        self.rhack.groupBoxTestZone.toggled.connect(
+            self.updateStatusZoneChecked)
         
     def updateStatus(self, status):
         self._current_status = status
         self.rhack.lineEditClientStatus.setText(clientStatusString(status))
+        
+        zone_checked = self.rhack.groupBoxTestZone.isChecked()
         
         if status in (ray.ClientStatus.LAUNCH,
                       ray.ClientStatus.OPEN,
                       ray.ClientStatus.SWITCH,
                       ray.ClientStatus.NOOP):
             self.rhack.pushButtonStart.setEnabled(False)
-            self.rhack.pushButtonStop.setEnabled(True)
+            self.rhack.pushButtonStop.setEnabled(zone_checked)
             self.rhack.pushButtonSave.setEnabled(False)
         elif status == ray.ClientStatus.READY:
             self.rhack.pushButtonStart.setEnabled(False)
-            self.rhack.pushButtonStop.setEnabled(True)
-            self.rhack.pushButtonSave.setEnabled(True)
+            self.rhack.pushButtonStop.setEnabled(zone_checked)
+            self.rhack.pushButtonSave.setEnabled(zone_checked)
         elif status == ray.ClientStatus.STOPPED:
-            self.rhack.pushButtonStart.setEnabled(self.isAllowed())
+            self.rhack.pushButtonStart.setEnabled(zone_checked
+                                                  and self.isAllowed())
             self.rhack.pushButtonStop.setEnabled(False)
             self.rhack.pushButtonSave.setEnabled(False)
         elif status == ray.ClientStatus.PRECOPY:
-            self.ui.pushButtonStart.setEnabled(False)
-            self.ui.pushButtonStart.setEnabled(False)
-            self.ui.pushButtonSave.setEnabled(False)
+            self.rhack.pushButtonStart.setEnabled(False)
+            self.rhack.pushButtonStart.setEnabled(False)
+            self.rhack.pushButtonSave.setEnabled(False)
             
+        self.rhack.lineEditClientStatus.setEnabled(zone_checked)
+    
+    def updateStatusZoneChecked(self, bool_checked):
+        self.updateStatus(self._current_status)
+    
     def changeIconwithText(self, text):
         icon = ray.getAppIcon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)
@@ -240,6 +246,8 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         
         self.rhack.checkBoxWaitWindow.setChecked(
             bool(self.client.ray_hack.wait_win))
+        self.rhack.checkBoxCloseGracefully.setChecked(
+            bool(self.client.ray_hack.close_gracefully))
     
     def saveChanges(self):
         self.client.executable_path = self.rhack.lineEditExecutable.text()
@@ -247,8 +255,10 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.client.ray_hack.config_file = self.rhack.lineEditConfigFile.text()
         self.client.ray_hack.save_sig = self.rhack.comboSaveSig.currentData()
         self.client.ray_hack.stop_sig = self.rhack.comboStopSig.currentData()
-        self.client.ray_hack.wait_win = self.rhack.checkBoxWaitWindow.isChecked()
-        
+        self.client.ray_hack.wait_win = \
+            self.rhack.checkBoxWaitWindow.isChecked()
+        self.client.ray_hack.close_gracefully = \
+            self.rhack.checkBoxCloseGracefully.isChecked()
         ClientPropertiesDialog.saveChanges(self)
     
     def getWorkDirBase(self)->str:

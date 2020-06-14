@@ -357,9 +357,7 @@ class Session(ServerSender):
                 except:
                     return False
         
-        print('zodeofpqlicon', client.icon)
         client.updateInfosFromDesktopFile()
-        print('zoefkkficon', client.icon)
         self.clients.append(client)
         client.sendGuiClientProperties()
         
@@ -1384,7 +1382,6 @@ for better organization.""")
                             % (TemplateRoots.factory_sessions, template_name)
         
         if not os.path.isdir(template_path):
-            print('fokok', template_path)
             self.sendMinorError(ray.Err.GENERAL_ERROR, 
                            _translate("error", "No template named %s")
                            % template_name)

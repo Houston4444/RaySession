@@ -206,8 +206,8 @@ class Client(ServerSender, ray.ClientData):
         protocol = ctx.attribute('protocol')
         if protocol.lower() in ('ray_hack', 'ray-hack'):
             self.protocol = ray.Protocol.RAY_HACK
-        elif protocol.lower in ('net_session', 'net-session'):
-            self.protocol = ray.Protocol.NET_SESSION
+        elif protocol.lower() in ('ray_net', 'ray-net'):
+            self.protocol = ray.Protocol.RAY_NET
         
         if self.protocol == ray.Protocol.RAY_HACK:
             self.ray_hack.config_file = ctx.attribute('config_file')
@@ -220,6 +220,8 @@ class Client(ServerSender, ray.ClientData):
                 self.ray_hack.stop_sig = int(ray_hack_stop_sig)
                 
             self.ray_hack.wait_win = bool(ctx.attribute('wait_win') == "1")
+            self.ray_hack.close_gracefully = bool(
+                ctx.attribute('close_gracefully') == "1")
         
         self.net_session_template = ctx.attribute('net_session_template')
         
@@ -293,6 +295,8 @@ class Client(ServerSender, ray.ClientData):
             ctx.setAttribute('save_signal', self.ray_hack.save_sig)
             ctx.setAttribute('stop_signal', self.ray_hack.stop_sig)
             ctx.setAttribute('wait_win', int(self.ray_hack.wait_win))
+            ctx.setAttribute('close_gracefully',
+                             int(self.ray_hack.close_gracefully))
             ctx.setAttribute('no_save_level', self.ray_hack.no_save_level)
         
         if self.net_session_template:
@@ -424,6 +428,21 @@ class Client(ServerSender, ray.ClientData):
         self.arguments = '--daemon-url %s --net-session-root "%s"' % (
                             self.net_daemon_url,
                             self.net_session_root.replace('"', '\\"'))
+    
+    def getRayHackNoSaveLevel(self)->int:
+        if not self.isRayHack():
+            return 0
+        
+        if self.ray_hack.save_sig:
+            return 0
+        
+        if not self.ray_hack.config_file:
+            return 0
+        
+        if self.ray_hack.close_gracefully:
+            return 2
+        
+        return 1
     
     def netDaemonOutOfTime(self):
         self.net_duplicate_state = -1
@@ -735,6 +754,10 @@ class Client(ServerSender, ray.ClientData):
         if self.isRayHack():
             self.pending_command = ray.Command.OPEN
             self.setStatus(ray.ClientStatus.OPEN)
+            
+            self.no_save_level = self.getRayHackNoSaveLevel()
+            self.sendGui('/ray/gui/client/no_save_level',
+                         self.client_id, self.no_save_level)
             QTimer.singleShot(500, self.rayHackNearReady)
     
     def processFinished(self, exit_code, exit_status):
@@ -1129,10 +1152,12 @@ ignored_extensions:%s""" % (self.client_id,
 save_sig:%i
 stop_sig:%i
 wait_win:%i
+close_gracefully:%i
 no_save_level:%i""" % (self.ray_hack.config_file,
                        self.ray_hack.save_sig,
                        self.ray_hack.stop_sig,
                        self.ray_hack.wait_win,
+                       self.ray_hack.close_gracefully,
                        self.ray_hack.no_save_level)
         
         return message
