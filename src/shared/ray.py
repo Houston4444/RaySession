@@ -590,7 +590,7 @@ class ClientData:
         return client_data
     
     @staticmethod
-    def spreadClient(client):
+    def spreadClient(client)->tuple:
         return (client.client_id, client.protocol,
                 client.executable_path, client.arguments, client.pre_env,
                 client.name, client.prefix_mode, client.custom_prefix,
@@ -638,8 +638,8 @@ class ClientData:
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
     
-    def spread(self):
-        ClientData.spreadClient(self)
+    def spread(self)->tuple:
+        return ClientData.spreadClient(self)
                 
 class RayHack():
     config_file = ""
@@ -653,6 +653,7 @@ class RayHack():
     
     @staticmethod
     def sisi():
+        # the first 's' is for client_id, not stocked in RayHack
         return 'siiiisi'
     
     @staticmethod
@@ -660,6 +661,9 @@ class RayHack():
         ray_hack = RayHack()
         ray_hack.update(*args)
         return ray_hack
+    
+    def saveable(self)->bool:
+        return bool(self.config_file and self.save_sig)
     
     def update(self, config_file,
                save_sig, stop_sig,

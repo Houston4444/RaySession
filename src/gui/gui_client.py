@@ -100,9 +100,6 @@ class Client(QObject, ray.ClientData):
         
         server.toDaemon('/ray/client/update_properties',
                         *ray.ClientData.spreadClient(self))
-        
-        if self.protocol == ray.Protocol.RAY_HACK:
-            self.sendRayHack()
 
     def sendRayHack(self):
         if not self.protocol == ray.Protocol.RAY_HACK:

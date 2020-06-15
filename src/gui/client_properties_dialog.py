@@ -215,6 +215,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             self.client.ray_hack.config_file)
         
         save_sig = self.client.ray_hack.save_sig
+        print('froam', self.client.client_id, save_sig)
         
         for i in range(self.rhack.comboSaveSig.count()):
             if self.rhack.comboSaveSig.itemData(i) == save_sig:
@@ -250,8 +251,6 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             bool(self.client.ray_hack.close_gracefully))
     
     def saveChanges(self):
-        self.client.executable_path = self.rhack.lineEditExecutable.text()
-        self.client.arguments = self.rhack.lineEditArguments.text()
         self.client.ray_hack.config_file = self.rhack.lineEditConfigFile.text()
         self.client.ray_hack.save_sig = self.rhack.comboSaveSig.currentData()
         self.client.ray_hack.stop_sig = self.rhack.comboStopSig.currentData()
@@ -259,6 +258,11 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             self.rhack.checkBoxWaitWindow.isChecked()
         self.client.ray_hack.close_gracefully = \
             self.rhack.checkBoxCloseGracefully.isChecked()
+        
+        self.client.sendRayHack()
+        
+        self.client.executable_path = self.rhack.lineEditExecutable.text()
+        self.client.arguments = self.rhack.lineEditArguments.text()
         ClientPropertiesDialog.saveChanges(self)
     
     def getWorkDirBase(self)->str:

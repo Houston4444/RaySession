@@ -754,10 +754,6 @@ class Client(ServerSender, ray.ClientData):
         if self.isRayHack():
             self.pending_command = ray.Command.OPEN
             self.setStatus(ray.ClientStatus.OPEN)
-            
-            self.no_save_level = self.getRayHackNoSaveLevel()
-            self.sendGui('/ray/gui/client/no_save_level',
-                         self.client_id, self.no_save_level)
             QTimer.singleShot(500, self.rayHackNearReady)
     
     def processFinished(self, exit_code, exit_status):
@@ -905,6 +901,9 @@ class Client(ServerSender, ray.ClientData):
     
     def canSaveNow(self):
         if self.isRayHack():
+            if not self.ray_hack.saveable():
+                return False
+            
             return bool(self.isRunning()
                         and self.pending_command == ray.Command.NONE)
         

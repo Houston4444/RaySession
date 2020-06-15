@@ -1311,20 +1311,16 @@ class OscServerThread(ClientCommunicating):
                       favorite.name, favorite.icon, int(favorite.factory))
         
         for client in self.session.clients:
+            print("ddssd", client.client_id, client.spread())
             self.send(gui_addr,
                       '/ray/gui/client/new',
-                      client.client_id,
-                      client.executable_path,
-                      client.arguments,
-                      client.name,
-                      client.prefix_mode,
-                      client.custom_prefix,
-                      client.label,
-                      client.description,
-                      client.icon,
-                      client.capabilities,
-                      int(client.check_last_save),
-                      client.ignored_extensions)
+                      *client.spread())
+            
+            if client.protocol == ray.Protocol.RAY_HACK:
+                self.send(gui_addr,
+                          '/ray/gui/client/ray_hack_update',
+                          client.client_id,
+                          *client.ray_hack.spread())
             
             self.send(gui_addr, "/ray/gui/client/status",
                       client.client_id,  client.status)

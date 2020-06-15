@@ -279,7 +279,9 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
             self.ui.ClientName.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
-            self.ui.saveButton.setEnabled(True)
+            self.ui.saveButton.setEnabled(
+                bool(self.client.protocol != ray.Protocol.RAY_HACK
+                     or self.client.ray_hack.saveable()))
             self.grayIcon(False)
 
         elif status == ray.ClientStatus.STOPPED:
