@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import signal
+
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QTreeWidgetItem,
     QCompleter, QMessageBox, QFileDialog, QWidget)
@@ -33,9 +35,9 @@ import ui_stop_client_no_save
 import ui_abort_copy
 import ui_client_trash
 import ui_daemon_url
-import ui_edit_executable
 import ui_snapshot_progress
 import ui_waiting_close_user
+import ui_ray_hack_copy
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -654,73 +656,6 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
             self.template_list.append(template.split('/')[0])
 
 
-class EditExecutableDialog(ChildDialog):
-    def __init__(self, parent, client):
-        ChildDialog.__init__(self, parent)
-        self.ui = ui_edit_executable.Ui_Dialog()
-        self.ui.setupUi(self)
-
-        self.ui.lineEditExecutable.setText(client.executable_path)
-        self.ui.lineEditArguments.setText(client.arguments)
-
-    def getExecutable(self):
-        return self.ui.lineEditExecutable.text()
-
-    def getArguments(self):
-        return self.ui.lineEditArguments.text()
-
-
-class ClientPropertiesDialog(ChildDialog):
-    def __init__(self, parent, client):
-        ChildDialog.__init__(self, parent)
-        self.ui = ui_client_properties.Ui_Dialog()
-        self.ui.setupUi(self)
-
-        self.client = client
-
-        self.ui.lineEditIcon.textEdited.connect(self.changeIconwithText)
-        self.ui.pushButtonSaveChanges.clicked.connect(self.saveChanges)
-        self.ui.toolButtonEditExecutable.clicked.connect(self.editExecutable)
-
-    def updateContents(self):
-        self.ui.labelExecutable.setText(self.client.executable_path)
-        self.ui.labelArguments.setText(self.client.arguments)
-        self.ui.labelId.setText(self.client.client_id)
-        self.ui.labelClientName.setText(self.client.name)
-        self.ui.lineEditIcon.setText(self.client.icon_name)
-        self.ui.lineEditLabel.setText(self.client.label)
-        self.ui.plainTextEditDescription.setPlainText(self.client.description)
-        self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
-        self.ui.toolButtonIcon.setIcon(
-            ray.getAppIcon(self.client.icon_name, self))
-        self.ui.lineEditIgnoredExtensions.setText(
-            self.client.ignored_extensions)
-
-    def changeIconwithText(self, text):
-        self.ui.toolButtonIcon.setIcon(ray.getAppIcon(text, self))
-
-    def editExecutable(self):
-        dialog = EditExecutableDialog(self, self.client)
-        dialog.exec()
-        if dialog.result():
-            self.ui.labelExecutable.setText(dialog.getExecutable())
-            self.ui.labelArguments.setText(dialog.getArguments())
-
-    def saveChanges(self):
-        self.client.executable_path = self.ui.labelExecutable.text()
-        self.client.arguments = self.ui.labelArguments.text()
-        self.client.label = self.ui.lineEditLabel.text()
-        self.client.description = \
-                                self.ui.plainTextEditDescription.toPlainText()
-        self.client.icon_name = self.ui.lineEditIcon.text()
-        self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
-        self.client.ignored_extensions = \
-                                    self.ui.lineEditIgnoredExtensions.text()
-        self.client.sendPropertiesToDaemon()
-        # better for user to wait a little before close the window
-        QTimer.singleShot(150, self.accept)
-
-
 class ClientTrashDialog(ChildDialog):
     def __init__(self, parent, client_data):
         ChildDialog.__init__(self, parent)
@@ -891,10 +826,10 @@ class NewExecutableDialog(ChildDialog):
         self.ui.labelClientId.setToolTip(self.ui.lineEditClientId.toolTip())
         
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
-        self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
-        self.ui.lineEdit.textChanged.connect(self.textChanged)
 
-        self.ui.checkBoxProxy.stateChanged.connect(self.proxyStateChanged)
+        self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
+        self.ui.lineEdit.textChanged.connect(self.checkAllow)
+        self.ui.checkBoxNsm.stateChanged.connect(self.checkAllow)
         
         self.ui.lineEditPrefix.setEnabled(False)
         self.ui.toolButtonAdvanced.clicked.connect(self.showAdvanced)
@@ -941,31 +876,28 @@ class NewExecutableDialog(ChildDialog):
 
     def getExecutableSelected(self):
         return self.ui.lineEdit.text()
-
-    def runViaProxy(self):
-        return bool(self.ui.checkBoxProxy.isChecked())
     
     def getSelection(self):
         return (self.ui.lineEdit.text(),
                 self.ui.checkBoxStartClient.isChecked(),
-                self.ui.checkBoxProxy.isChecked(),
+                not self.ui.checkBoxNsm.isChecked(),
                 self.ui.comboBoxPrefixMode.currentIndex(),
                 self.ui.lineEditPrefix.text(),
                 self.ui.lineEditClientId.text())
     
-    def proxyStateChanged(self, state):
-        self.ui.buttonBox.button(
-            QDialogButtonBox.Ok).setEnabled(
-            state or self.text_will_accept)
-
-    def textChanged(self, text):
-        self.text_will_accept = bool(text)
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
-            self.ui.checkBoxProxy.isChecked() or self.text_will_accept)
-
+    def isAllowed(self):
+        nsm = self.ui.checkBoxNsm.isChecked()
+        text = self.ui.lineEdit.text()
+        allow = bool(bool(text) and (not nsm
+                                     or text in self.exec_list))        
+        return allow
+    
+    def checkAllow(self):
+        allow = self.isAllowed()
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(allow)
+        
     def closeNow(self):
-        if (self.ui.lineEdit.text() in self.exec_list
-                or self.ui.checkBoxProxy.isChecked()):
+        if self.isAllowed():
             self.accept()
 
     def serverStatusChanged(self, server_status):

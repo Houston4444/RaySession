@@ -820,7 +820,7 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/session/add_executable', 'siiiss')
     def raySessionAddExecutableAdvanced(self, path, args, types, src_addr):
-        executable_path, auto_start, via_proxy, \
+        executable_path, auto_start, protocol, \
             prefix_mode, prefix_pattern, client_id = args
         
         if not self.session.path:
@@ -828,7 +828,7 @@ class OscServerThread(ClientCommunicating):
                       "Cannot add to session because no session is loaded.")
             return False
         
-        if '/' in executable_path and not via_proxy:
+        if protocol == ray.Protocol.NSM and '/' in executable_path:
             self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
@@ -939,8 +939,12 @@ class OscServerThread(ClientCommunicating):
     def nsmGuiClientHide_optional_gui(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/client/update_properties', 'ssssisssssis')
+    @ray_method('/ray/client/update_properties', ray.ClientData.sisi())
     def rayGuiClientUpdateProperties(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/update_ray_hack_properties', 'ssiiiisi')
+    def rayClientUpdateRayHackProperties(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/client/get_properties', 's')
@@ -1005,6 +1009,10 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/client/get_tmp_data', 'ss')
     def rayClientGetTmpData(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/send_signal', 'si')
+    def rayClientSendSignal(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/trashed_client/restore', 's')
@@ -1327,20 +1335,16 @@ class OscServerThread(ClientCommunicating):
                       favorite.name, favorite.icon, int(favorite.factory))
         
         for client in self.session.clients:
+            print("ddssd", client.client_id, client.spread())
             self.send(gui_addr,
                       '/ray/gui/client/new',
-                      client.client_id,
-                      client.executable_path,
-                      client.arguments,
-                      client.name,
-                      client.prefix_mode,
-                      client.custom_prefix,
-                      client.label,
-                      client.description,
-                      client.icon,
-                      client.capabilities,
-                      int(client.check_last_save),
-                      client.ignored_extensions)
+                      *client.spread())
+            
+            if client.protocol == ray.Protocol.RAY_HACK:
+                self.send(gui_addr,
+                          '/ray/gui/client/ray_hack_update',
+                          client.client_id,
+                          *client.ray_hack.spread())
             
             self.send(gui_addr, "/ray/gui/client/status",
                       client.client_id,  client.status)

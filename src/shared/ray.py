@@ -81,16 +81,21 @@ class NSMMode:
     NETWORK = 2
 
 
+class Protocol:
+    NSM = 0
+    RAY_HACK = 1
+    RAY_NET = 2
+
+
 class Option:
-    NSM_LOCKED       = 0x001
+    NSM_LOCKED = 0x001
     SAVE_FROM_CLIENT = 0x002 #DEPRECATED
     BOOKMARK_SESSION = 0x004
-    HAS_WMCTRL       = 0x008
-    DESKTOPS_MEMORY  = 0x010
-    HAS_GIT          = 0x020
-    SNAPSHOTS        = 0x040
-    SESSION_SCRIPTS  = 0x080
-
+    HAS_WMCTRL = 0x008
+    DESKTOPS_MEMORY = 0x010
+    HAS_GIT = 0x020
+    SNAPSHOTS = 0x040
+    SESSION_SCRIPTS = 0x080
 
 class Err:
     OK = 0
@@ -543,49 +548,135 @@ def getWindowManager():
     return WindowManager.NONE
     
 
+def protocolToStr(protocol:int)->str:
+    if protocol == Protocol.RAY_HACK:
+        return "Ray-Hack"
+    elif protocol == Protocol.RAY_NET:
+        return "Net-Session"
+    return "NSM"
+
 class ClientData:
     client_id = ''
+    protocol = Protocol.NSM
     executable_path = ''
     arguments = ''
+    pre_env = ''
     name = ''
-    prefix_mode = 2
+    prefix_mode = PrefixMode.SESSION_NAME
     custom_prefix = ''
+    desktop_file = ''
     label = ''
     description = ''
     icon = ''
     capabilities = ''
     check_last_save = True
     ignored_extensions = getGitIgnoredExtensions()
-
-    def __init__(self,
-                 client_id,
-                 executable,
-                 arguments="",
-                 name='',
-                 prefix_mode=PrefixMode.SESSION_NAME,
-                 custom_prefix='',
-                 label='',
-                 description='',
-                 icon='',
-                 capabilities='',
-                 check_last_save=True,
-                 ignored_extensions=getGitIgnoredExtensions()):
+    useless_str = ''
+    useless_int = 0
+    
+    @staticmethod
+    def sisi():
+        return 'sissssissssssissi'
+    
+    @staticmethod
+    def newFrom(*args):
+        client_data = ClientData()
+        client_data.update(*args)
+        return client_data
+    
+    @staticmethod
+    def spreadClient(client)->tuple:
+        return (client.client_id, client.protocol,
+                client.executable_path, client.arguments, client.pre_env,
+                client.name, client.prefix_mode, client.custom_prefix,
+                client.desktop_file, client.label, client.description,
+                client.icon,
+                client.capabilities, int(client.check_last_save),
+                client.ignored_extensions,
+                client.useless_str, client.useless_int)
+    
+    def gui_init(self, client_id, protocol):
+        self.client_id = client_id
+        self.protocol = protocol
+    
+    def update(self, client_id, protocol,
+               executable, arguments, pre_env,
+               name, prefix_mode, custom_prefix,
+               desktop_file, label, description,
+               icon,
+               capabilities, check_last_save,
+               ignored_extensions,
+               useless_str, useless_int):
         self.client_id = str(client_id)
+        self.protocol = int(protocol)
         self.executable_path = str(executable)
         self.arguments = str(arguments)
-        self.prefix_mode = int(prefix_mode)
-        self.label = str(label)
-        self.description = str(description)
-        self.capabilities = str(capabilities)
-        self.check_last_save = bool(check_last_save)
-        self.ignored_extensions = str(ignored_extensions)
-
+        self.pre_env = str(pre_env)
+        
         self.name = str(name) if name else os.path.basename(
             self.executable_path)
-        self.icon = str(icon) if icon else self.name.lower().replace('_', '-')
-
+        
+        self.prefix_mode = int(prefix_mode)
+        
         if self.prefix_mode == PrefixMode.CUSTOM:
             if custom_prefix:
                 self.custom_prefix = str(custom_prefix)
             else:
-                self.prefix_mode = 2
+                self.prefix_mode = PrefixMode.SESSION_NAME
+        
+        self.desktop_file = str(desktop_file)
+        self.label = str(label)
+        self.description = str(description)
+        
+        self.icon = str(icon)
+        self.capabilities = str(capabilities)
+        self.check_last_save = bool(check_last_save)
+        self.ignored_extensions = str(ignored_extensions)
+    
+    def spread(self)->tuple:
+        return ClientData.spreadClient(self)
+                
+class RayHack():
+    config_file = ""
+    save_sig = 0
+    stop_sig = 15
+    wait_win = False
+    close_gracefully = False
+    no_save_level = 0
+    useless_str = ''
+    useless_int = 0
+    
+    @staticmethod
+    def sisi():
+        # the first 's' is for client_id, not stocked in RayHack
+        return 'siiiisi'
+    
+    @staticmethod
+    def newFrom(*args):
+        ray_hack = RayHack()
+        ray_hack.update(*args)
+        return ray_hack
+    
+    def saveable(self)->bool:
+        return bool(self.config_file and self.save_sig)
+    
+    def noSaveLevel(self)->int:
+        if self.config_file and self.save_sig == 0:
+            return self.no_save_level
+        
+        return 0
+    
+    def update(self, config_file,
+               save_sig, stop_sig,
+               wait_win, no_save_level,
+               useless_str, useless_int):
+        self.config_file = str(config_file)
+        self.save_sig = int(save_sig)
+        self.stop_sig = int(stop_sig)
+        self.wait_win = bool(wait_win)
+        self.no_save_level = int(no_save_level)
+    
+    def spread(self)->tuple:
+        return (self.config_file, self.save_sig, self.stop_sig,
+                int(self.wait_win), self.no_save_level,
+                self.useless_str, self.useless_int)

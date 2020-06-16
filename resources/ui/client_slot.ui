@@ -454,7 +454,8 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionReturnToAPreviousState">
    <property name="icon">
-    <iconset theme="media-seek-backward"/>
+    <iconset theme="media-seek-backward">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Return To A Previous State</string>

@@ -712,6 +712,7 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
     
     def _ray_session_add_executable(self, path, args, src_addr):
+        protocol = ray.Protocol.NSM
         executable = args[0]
         via_proxy = 0
         prefix_mode = ray.PrefixMode.SESSION_NAME
@@ -760,7 +761,7 @@ class SignaledSession(OperatingSession):
                             return
         
         else:
-            executable, start_it, via_proxy, \
+            executable, start_it, protocol, \
                 prefix_mode, custom_prefix, client_id = args
             
             if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
@@ -787,17 +788,12 @@ class SignaledSession(OperatingSession):
             
         client = Client(self)
         
-        if via_proxy:
-            client.executable_path = 'ray-proxy'
-            client.tmp_arguments = "--executable %s" % executable
-        else:
-            client.executable_path = executable
-        
+        client.protocol = protocol
+        client.executable_path = executable
         client.name = os.path.basename(executable)
         client.client_id = client_id
         client.prefix_mode = prefix_mode
         client.custom_prefix = custom_prefix
-        client.icon = client.name.lower().replace('_', '-')
         client.setDefaultGitIgnored(executable)
         
         if self.addClient(client):
@@ -916,7 +912,7 @@ class SignaledSession(OperatingSession):
                 and (f_active < 0 or f_active == client.active)
                 and (f_auto_start < 0 or f_auto_start == client.auto_start)
                 and (f_no_save_level < 0 
-                     or f_no_save_level == int(bool(client.no_save_level)))):
+                     or f_no_save_level == int(bool(client.noSaveLevel)))):
                 if search_properties:
                     message = client.getPropertiesMessage()
                     
@@ -1065,7 +1061,7 @@ class SignaledSession(OperatingSession):
         
         for client in self.clients:
             if client.client_id == client_id:
-                if client.active and not client.no_save_level:
+                if client.canSaveNow():
                     if self.file_copier.isActive(client.client_id):
                         self.sendErrorCopyRunning(src_addr, path)
                         return
@@ -1116,7 +1112,7 @@ class SignaledSession(OperatingSession):
             self.sendErrorNoClient(src_addr, path, client_id)
     
     def _ray_client_update_properties(self, path, args, src_addr):
-        client_data = ray.ClientData(*args)
+        client_data = ray.ClientData.newFrom(*args)
         
         for client in self.clients:
             if client.client_id == client_data.client_id:
@@ -1126,6 +1122,28 @@ class SignaledSession(OperatingSession):
                 break
         else:
             self.sendErrorNoClient(src_addr, path, client_data.client_id)
+    
+    def _ray_client_update_ray_hack_properties(self, path, args, src_addr):
+        client_id = args.pop(0)
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                ex_no_save_level = client.noSaveLevel()
+                
+                if client.isRayHack():
+                    client.ray_hack.update(*args)
+                
+                no_save_level = client.noSaveLevel()
+                
+                if no_save_level != ex_no_save_level:
+                    self.sendGui('/ray/gui/client/no_save_level',
+                                 client.client_id,
+                                 no_save_level)
+                        
+                self.send(src_addr, '/reply', path, 'ray_hack updated')
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
     
     def _ray_client_set_properties(self, path, args, src_addr):
         client_id = args.pop(0)
@@ -1382,6 +1400,16 @@ class SignaledSession(OperatingSession):
                     self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                               _translate('GUIMSG', '%s is not running.')
                                 % client.guiMsgStyle())
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
+    def _ray_client_send_signal(self, path, args, src_addr):
+        client_id, sig = args
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                client.send_signal(sig, src_addr, path)
                 break
         else:
             self.sendErrorNoClient(src_addr, path, client_id)

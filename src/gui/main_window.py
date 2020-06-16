@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.ui = ui_raysession.Ui_MainWindow()
         self.ui.setupUi(self)
-
+        
         self._session = session
         self._signaler = self._session._signaler
         self._daemon_manager = self._session._daemon_manager
@@ -74,11 +74,8 @@ class MainWindow(QMainWindow):
             x = rect.x()
             y = rect.y()
             height = rect.height()
-            #mini_frame = self.ui.frameCurrentSession.minimumWidth()
-            #print('okfok', x, y, mini_frame, height)
             self.setMinimumWidth(450)
             self.setGeometry(x, y, 460, height)
-            #self.setMinimumWidth(0)
             
         if RS.settings.value('MainWindow/WindowState'):
             self.restoreState(RS.settings.value('MainWindow/WindowState'))
@@ -514,27 +511,29 @@ class MainWindow(QMainWindow):
         if not client:
             return
         
-        if client.no_save_level and client.check_last_save:
-            dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
-            dialog.exec()
-            if not dialog.result():
-                return
+        if client.check_last_save:
+            if (client.no_save_level
+                    or (client.protocol == ray.Protocol.RAY_HACK
+                        and not client.ray_hack.saveable())):
+                dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
+                dialog.exec()
+                if not dialog.result():
+                    return
 
-        elif (client.status == ray.ClientStatus.READY
-              and client.check_last_save):
-            if client.has_dirty:
-                if client.dirty_state:
+            elif client.status == ray.ClientStatus.READY:
+                if client.has_dirty:
+                    if client.dirty_state:
+                        dialog = child_dialogs.StopClientDialog(self, client_id)
+                        dialog.exec()
+                        if not dialog.result():
+                            return
+
+                # last save (or start) more than 60 seconds ago
+                elif (time.time() - client.last_save) >= 60:
                     dialog = child_dialogs.StopClientDialog(self, client_id)
                     dialog.exec()
                     if not dialog.result():
                         return
-
-            # last save (or start) more than 60 seconds ago
-            elif (time.time() - client.last_save) >= 60:
-                dialog = child_dialogs.StopClientDialog(self, client_id)
-                dialog.exec()
-                if not dialog.result():
-                    return
 
         self.toDaemon('/ray/client/stop', client_id)
 

@@ -177,7 +177,20 @@ class Session(ServerSender):
         
         client.setStatus(ray.ClientStatus.REMOVED)
         
-        if client.getProjectFiles() or client.net_daemon_url:
+        if client.isRayHack():
+            client_dir = client.getProjectPath()
+            if os.path.isdir(client_dir):
+                if len(os.listdir(client_dir)) > 0:
+                    self.trashed_clients.append(client)
+                    client.sendGuiClientProperties(removed=True)
+                else:
+                    try:
+                        os.removedirs(client_dir)
+                    except:
+                        self.trashed_clients.append(client)
+                        client.sendGuiClientProperties(removed=True)
+                        
+        elif client.getProjectFiles() or client.net_daemon_url:
             self.trashed_clients.append(client)
             client.sendGuiClientProperties(removed=True)
         
@@ -336,6 +349,15 @@ class Session(ServerSender):
         if self.load_locked or not self.path:
             return False
         
+        if client.isRayHack():
+            project_path = client.getProjectPath()
+            if not os.path.isdir(project_path):
+                try:
+                    os.makedirs(project_path)
+                except:
+                    return False
+        
+        client.updateInfosFromDesktopFile()
         self.clients.append(client)
         client.sendGuiClientProperties()
         
@@ -411,10 +433,15 @@ class OperatingSession(Session):
         self.terminated_yet = False
         
         # externals are clients not launched from the daemon
-        # with NSM_URL=...
+        # but with NSM_URL=...
         self.externals_timer = QTimer()
         self.externals_timer.setInterval(100)
         self.externals_timer.timeout.connect(self.checkExternalsStates)
+        
+        self.window_waiter = QTimer()
+        self.window_waiter.setInterval(200)
+        self.window_waiter.timeout.connect(self.checkWindowsAppears)
+        #self.window_waiter_clients = []
         
         self.run_step_addr = None
         
@@ -627,6 +654,23 @@ class OperatingSession(Session):
                     
         if not has_externals:
             self.externals_timer.stop()
+    
+    def checkWindowsAppears(self):
+        for client in self.clients:
+            if client.isRunning() and client.ray_hack_waiting_win:
+                break
+        else:
+            self.window_waiter.stop()
+            return
+        
+        server = self.getServer()
+        if server and server.option_has_wmctrl:
+            self.desktops_memory.setActiveWindowList()
+            for client in self.clients:
+                if client.ray_hack_waiting_win:
+                    if self.desktops_memory.hasWindow(client.pid):
+                        client.ray_hack_waiting_win = False
+                        client.rayHackReady()
     
     def sendReply(self, *messages):
         if not (self.osc_src_addr and self.osc_path):
@@ -967,11 +1011,18 @@ class OperatingSession(Session):
         
         server = self.getServer()
         if server and server.option_has_wmctrl:
-            self.desktops_memory.setActiveWindowList()
+            has_nosave_clients = False
             for client in self.clients:
-                if client.isRunning() and client.no_save_level == 2:
-                    self.expected_clients.append(client)
-                    self.desktops_memory.findAndClose(client.pid)
+                if client.isRunning() and client.noSaveLevel() == 2:
+                    has_nosave_clients = True
+                    break
+            
+            if has_nosave_clients:
+                self.desktops_memory.setActiveWindowList()
+                for client in self.clients:
+                    if client.isRunning() and client.noSaveLevel() == 2:
+                        self.expected_clients.append(client)
+                        self.desktops_memory.findAndClose(client.pid)
             
         if self.expected_clients:
             self.sendGuiMessage(
@@ -987,7 +1038,7 @@ class OperatingSession(Session):
         has_nosave_clients = False
         
         for client in self.clients:
-            if client.isRunning() and client.no_save_level:
+            if (client.isRunning() and client.noSaveLevel()):
                 self.expected_clients.append(client)
                 has_nosave_clients = True
         
@@ -1331,7 +1382,6 @@ for better organization.""")
                             % (TemplateRoots.factory_sessions, template_name)
         
         if not os.path.isdir(template_path):
-            print('fokok', template_path)
             self.sendMinorError(ray.Err.GENERAL_ERROR, 
                            _translate("error", "No template named %s")
                            % template_name)

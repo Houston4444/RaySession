@@ -45,16 +45,18 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_client_slot.py \
 	    src/gui/ui_client_trash.py \
 	    src/gui/ui_donations.py \
-	    src/gui/ui_edit_executable.py \
 	    src/gui/ui_daemon_url.py \
 	    src/gui/ui_error_dialog.py \
 	    src/gui/ui_jack_config_info.py \
 	    src/gui/ui_list_snapshots.py \
 	    src/gui/ui_new_executable.py \
 	    src/gui/ui_new_session.py \
+	    src/gui/ui_nsm_properties.py \
+	    src/gui/ui_ray_hack_copy.py \
 	    src/gui/ui_nsm_open_info.py \
 	    src/gui/ui_open_session.py \
 	    src/gui/ui_quit_app.py \
+	    src/gui/ui_ray_hack_properties.py \
 	    src/gui/ui_raysession.py \
 	    src/gui/ui_remove_template.py \
 	    src/gui/ui_save_template_session.py \

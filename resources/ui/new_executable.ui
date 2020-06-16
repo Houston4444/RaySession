@@ -33,12 +33,15 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QCheckBox" name="checkBoxProxy">
+      <widget class="QCheckBox" name="checkBoxNsm">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If program is not compatible with the NSM API, &lt;/p&gt;&lt;p&gt;you should launch it in proxy to define a config file !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
-        <string>Run via Proxy</string>
+        <string>NSM Protocol</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

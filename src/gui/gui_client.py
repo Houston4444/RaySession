@@ -2,32 +2,22 @@ import time
 import sys
 from PyQt5.QtCore import QObject, pyqtSignal
 
-import child_dialogs
 import snapshots_dialog
 import ray
 from gui_server_thread import GUIServerThread
+from client_properties_dialog import ClientPropertiesDialog
 
-
-class Client(QObject):
+class Client(QObject, ray.ClientData):
     status_changed = pyqtSignal(int)
     
-    def __init__(self, session, client_data, trashed=False):
+    def __init__(self, session, client_id, protocol, trashed=False):
         QObject.__init__(self)
+        ray.ClientData.gui_init(self, client_id, protocol)
+        
         self._session = session
         self._main_win = self._session._main_win
-
-        self.client_id       = client_data.client_id
-        self.executable_path = client_data.executable_path
-        self.arguments       = client_data.arguments
-        self.name            = client_data.name
-        self.prefix_mode     = client_data.prefix_mode
-        self.custom_prefix   = client_data.custom_prefix
-        self.label           = client_data.label
-        self.description     = client_data.description
-        self.icon_name       = client_data.icon
-        self.capabilities    = client_data.capabilities
-        self.check_last_save = client_data.check_last_save
-        self.ignored_extensions = client_data.ignored_extensions
+        
+        self.ray_hack = ray.RayHack()
 
         self.status = ray.ClientStatus.STOPPED
         self.previous_status = ray.ClientStatus.STOPPED
@@ -39,8 +29,8 @@ class Client(QObject):
         self.last_save = time.time()
 
         self.widget = self._main_win.createClientWidget(self)
-        self.properties_dialog = child_dialogs.ClientPropertiesDialog(
-            self._main_win, self)
+        self.properties_dialog = ClientPropertiesDialog.create(self._main_win,
+                                                               self)
 
     def setStatus(self, status):
         self.previous_status = self.status
@@ -54,6 +44,7 @@ class Client(QObject):
             self.last_save = time.time()
 
         self.widget.updateStatus(status)
+        self.properties_dialog.updateStatus(status)
 
     def setGuiEnabled(self):
         self.hasGui = True
@@ -82,18 +73,12 @@ class Client(QObject):
         self.label = label
         self.sendPropertiesToDaemon()
 
-    def updateClientProperties(self, client_data):
-        self.executable_path = client_data.executable_path
-        self.arguments       = client_data.arguments
-        self.name            = client_data.name
-        self.prefix_mode     = client_data.prefix_mode
-        self.custom_prefix   = client_data.custom_prefix
-        self.label           = client_data.label
-        self.description     = client_data.description
-        self.icon_name       = client_data.icon
-        self.capabilities    = client_data.capabilities
-        self.check_last_save = client_data.check_last_save
-        
+    def updateClientProperties(self, *args):
+        self.update(*args)
+        self.widget.updateClientData()
+
+    def updateRayHack(self, *args):
+        self.ray_hack.update(*args)
         self.widget.updateClientData()
 
     def prettierName(self):
@@ -114,24 +99,29 @@ class Client(QObject):
             return
         
         server.toDaemon('/ray/client/update_properties',
-                        self.client_id,
-                        self.executable_path,
-                        self.arguments,
-                        self.name,
-                        self.prefix_mode,
-                        self.custom_prefix,
-                        self.label,
-                        self.description,
-                        self.icon_name,
-                        self.capabilities,
-                        int(self.check_last_save),
-                        self.ignored_extensions)
+                        *ray.ClientData.spreadClient(self))
 
-    def showPropertiesDialog(self):
+    def sendRayHack(self):
+        if not self.protocol == ray.Protocol.RAY_HACK:
+            return
+        
+        server = GUIServerThread.instance()
+        if not server:
+            return
+        
+        server.toDaemon('/ray/client/update_ray_hack_properties',
+                        self.client_id,
+                        *self.ray_hack.spread())
+        
+    def showPropertiesDialog(self, second_tab=False):
         self.properties_dialog.updateContents()
+        if second_tab:
+            if self.protocol == ray.Protocol.RAY_HACK:
+                self.properties_dialog.enableTestZone(True)
+            self.properties_dialog.setOnSecondTab()
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()
-
+    
     def reCreateWidget(self):
         del self.widget
         self.widget = self._main_win.createClientWidget(self)

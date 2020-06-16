@@ -17,8 +17,9 @@ def ray_method(path, types):
                 sys.stderr.write(
                     '\033[93mOSC::gui_receives\033[0m %s, %s, %s, %s\n'
                     % (t_path, t_types, t_args, src_addr.url))
-                
+            
             response = func(*args[:-1], **kwargs)
+            
             if response != False:
                 t_thread._signaler.osc_receive.emit(t_path, t_args)
                 
@@ -54,25 +55,26 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/reply', None)
     def _reply(self, path, args, types, src_addr):
         if len(args) < 2:
-            return
+            return False
         
         if not ray.areTheyAllString(args):
-            return
+            return False
         
-        reply_path = args.pop(0)
+        new_args = args.copy()
+        reply_path = new_args.pop(0)
         
         if reply_path == '/ray/server/list_sessions':
-            self._signaler.add_sessions_to_list.emit(args)
+            self._signaler.add_sessions_to_list.emit(new_args)
         elif reply_path == '/ray/server/list_path':
-            self._signaler.new_executable.emit(args)
+            self._signaler.new_executable.emit(new_args)
         elif reply_path == '/ray/server/list_session_templates':
-            self._signaler.session_template_found.emit(args)
+            self._signaler.session_template_found.emit(new_args)
         elif reply_path == '/ray/server/list_user_client_templates':
-            self._signaler.user_client_template_found.emit(args)
+            self._signaler.user_client_template_found.emit(new_args)
         elif reply_path == '/ray/server/list_factory_client_templates':
-            self._signaler.factory_client_template_found.emit(args)
+            self._signaler.factory_client_template_found.emit(new_args)
         elif reply_path == '/ray/session/list_snapshots':
-            self._signaler.snapshots_found.emit(args)
+            self._signaler.snapshots_found.emit(new_args)
 
     @ray_method('/ray/gui/server/announce', 'siisi')
     def _server_announce(self, path, args, types, src_addr):
@@ -147,12 +149,16 @@ class GUIServerThread(liblo.ServerThread):
         if not ray.areTheyAllString(args):
             return False
     
-    @ray_method('/ray/gui/client/new', 'ssssisssssis')
+    @ray_method('/ray/gui/client/new', ray.ClientData.sisi())
     def _client_new(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/gui/client/update', 'ssssisssssis')
+    @ray_method('/ray/gui/client/update', ray.ClientData.sisi())
     def _client_update(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/client/ray_hack_update', 'ssiiiisi')
+    def _client_ray_hack_update(self, path, args, types, src_addr):
         pass
     
     @ray_method('/ray/gui/client/switch', 'ss')
@@ -187,7 +193,7 @@ class GUIServerThread(liblo.ServerThread):
     def _client_no_save_level(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/gui/trash/add', 'ssssisssssis')
+    @ray_method('/ray/gui/trash/add', ray.ClientData.sisi())
     def _trash_add(self, path, args, types, src_addr):
         pass
 

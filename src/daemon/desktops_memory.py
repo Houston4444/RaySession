@@ -71,7 +71,7 @@ class DesktopsMemory(object):
         self.non_daemon_pids.append(pid)
         return False
         
-    def isNameInSession(self, name):
+    def isNameInSession(self, name:str)->bool:
         for client in self.session.clients:
             if client.name == name and client.active:
                 return True
@@ -209,7 +209,19 @@ class DesktopsMemory(object):
                 win.desktop = int(desktop)
             
             self.saved_windows.append(win)
-            
+    
+    def hasWindow(self, pid)->bool:
+        if not self.active_window_list:
+            # here fo ray_hack check window
+            # if window manager doesn't supports wmctrl
+            # lie saying there is a window
+            return True
+        
+        for awin in self.active_window_list:
+            if ray.isPidChildOf(awin.pid, pid):
+                return True
+        return False
+    
     def findAndClose(self, pid):
         for awin in self.active_window_list:
             if ray.isPidChildOf(awin.pid, pid):

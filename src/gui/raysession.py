@@ -53,6 +53,7 @@ if __name__ == '__main__':
     app.setOrganizationName("RaySession")
     app.setWindowIcon(QIcon(':/scalable/raysession.svg'))
     app.setQuitOnLastWindowClosed(False)
+    app.setDesktopFileName('raysession')
     
     ### Translation process
     locale = QLocale.system().name()
@@ -85,9 +86,12 @@ if __name__ == '__main__':
     session = SignaledSession()
         
     app.exec()
-    
+    print('rayapp finished')
     server.stop()
+    print('rayappserrver stopped')
     session.quit()
-    
+    print('rayapp session quitted')
     del session
+    print('rayapp session deleted')
     del app
+    print('rayapp deleted')

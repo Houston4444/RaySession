@@ -155,6 +155,18 @@ class SignaledSession(Session):
             function = self.__getattribute__(func_name)
             function(path, args)
     
+    def _reply(self, path, args):
+        if len(args) == 2:
+            if args[0] == '/ray/session/add_executable':
+                client_id = args[1]
+                
+                for client in self.client_list:
+                    if (client.client_id == client_id
+                            and client.protocol == ray.Protocol.RAY_HACK):
+                        client.showPropertiesDialog(second_tab=True)
+                        break
+                    
+    
     def _error(self, path, args):
         err_path, err_code, err_message = args
         
@@ -233,15 +245,25 @@ class SignaledSession(Session):
             client.widget.updateStatus(client.status)
     
     def _ray_gui_client_new(self, path, args):
-        client = Client(self, ray.ClientData(*args))
+        client = Client(self, *args[:2])
+        client.updateClientProperties(*args)
         self.client_list.append(client)
+        
+        #client = Client(self, ray.ClientData.newFrom(*args))
+        #self.client_list.append(client)
     
     def _ray_gui_client_update(self, path, args):
-        client_data = ray.ClientData(*args)
-        client = self.getClient(client_data.client_id)
+        client_id = args[0]
+        client = self.getClient(client_id)
         if client:
-            client.updateClientProperties(client_data)
+            client.updateClientProperties(*args)
     
+    def _ray_gui_client_ray_hack_update(self, path, args):
+        client_id = args.pop(0)
+        client = self.getClient(client_id)
+        if client and client.protocol == ray.Protocol.RAY_HACK:
+            client.updateRayHack(*args)
+        
     def  _ray_gui_client_switch(self, path, args):
         old_id, new_id = args
         for client in self.client_list:
@@ -302,7 +324,7 @@ class SignaledSession(Session):
             client.setNoSaveLevel(no_save_level)
     
     def _ray_gui_trash_add(self, path, args):
-        client_data = ray.ClientData(*args)
+        client_data = ray.ClientData.newFrom(*args)
         trash_action = self._main_win.trashAdd(client_data)
         trashed_client = TrashedClient(client_data, trash_action)
         self.trashed_clients.append(trashed_client)
