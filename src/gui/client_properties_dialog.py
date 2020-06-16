@@ -172,6 +172,8 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.pushButtonStop.setEnabled(False)
         self.rhack.pushButtonSave.setEnabled(False)
         
+        self.rhack.groupBoxNoSave.setEnabled(False)
+        
         self.rhack.groupBoxTestZone.setChecked(False)
         self.rhack.groupBoxTestZone.toggled.connect(
             self.rhack.frameTestZone.setEnabled)
