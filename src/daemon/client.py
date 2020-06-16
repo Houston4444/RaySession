@@ -1627,32 +1627,10 @@ no_save_level:%i""" % (self.ray_hack.config_file,
                     endfile = file_path.replace("%s.%s."
                                             % (old_prefix, old_client_id),
                                             '', 1)
-                    
-<<<<<<< HEAD
-                     # change Session name
-                    try:
-                        file = open(ardour_file, 'r')
-                        xml = QDomDocument()
-                        xml.setContent(file.read())
-                        file.close()
-                        root = xml.documentElement()
-
-                        if root.tagName() == 'Session':
-                            root.setAttribute('name', new_prefix)
-                            file = open(ardour_file, 'w')
-                            file.write(xml.toString())
-                
-                    except:
-                        False
                    
-                if os.path.isfile(ardour_bak) and os.access(ardour_bak, os.W_OK):
-                    new_ardour_bak = "%s/%s.ardour.bak" % (project_path, new_prefix)
-                    if os.path.exists(new_ardour_bak):
-=======
                     next_path = "%s/%s.%s.%s" % (spath, new_prefix,
                                                     new_client_id, endfile)
                     if os.path.exists(next_path):
->>>>>>> so_boring_proxy
                         do_rename = False
                         break
                     
@@ -1683,7 +1661,23 @@ no_save_level:%i""" % (self.ray_hack.config_file,
                             break
                         
                         files_to_rename.append((ardour_file, new_ardour_file))
-                        
+                    
+                     # change Session name
+                    try:
+                        file = open(ardour_file, 'r')
+                        xml = QDomDocument()
+                        xml.setContent(file.read())
+                        file.close()
+                        root = xml.documentElement()
+
+                        if root.tagName() == 'Session':
+                            root.setAttribute('name', new_prefix)
+                            file = open(ardour_file, 'w')
+                            file.write(xml.toString())
+                
+                    except:
+                        False
+                    
                     if os.path.isfile(ardour_bak) and os.access(ardour_bak, os.W_OK):
                         new_ardour_bak = "%s/%s.ardour.bak" % (project_path, new_prefix)
                         if os.path.exists(new_ardour_bak):
