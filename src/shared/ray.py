@@ -665,6 +665,12 @@ class RayHack():
     def saveable(self)->bool:
         return bool(self.config_file and self.save_sig)
     
+    def noSaveLevel(self):
+        if self.save_sig:
+            return 0
+        
+        
+    
     def update(self, config_file,
                save_sig, stop_sig,
                win_options, no_save_level,
@@ -677,7 +683,7 @@ class RayHack():
             win_options & HackWinOption.CLOSE_WINDOW_GRACEFULLY)
         self.no_save_level = int(no_save_level)
     
-    def spread(self):
+    def spread(self)->tuple:
         win_options = int(HackWinOption.WAIT_WINDOW_FOR_READY
                             * int(self.wait_win)
                           + HackWinOption.CLOSE_WINDOW_GRACEFULLY

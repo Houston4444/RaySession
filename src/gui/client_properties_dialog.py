@@ -156,51 +156,61 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.comboSaveSig.addItem(_translate('ray_hack', 'None'), 0)
         self.rhack.comboSaveSig.addItem('SIGUSR1', 10)
         self.rhack.comboSaveSig.addItem('SIGUSR2', 12)
+        self.rhack.comboSaveSig.currentIndexChanged.connect(
+            self.currentSaveSigChanged)
         
         self.rhack.comboStopSig.addItem('SIGTERM', 15)
         self.rhack.comboStopSig.addItem('SIGINT', 2)
         self.rhack.comboStopSig.addItem('SIGHUP', 1)
         self.rhack.comboStopSig.addItem('SIGKILL', 9)
         
+        self.rhack.checkBoxTellUser.stateChanged.connect(
+            self.rhack.checkBoxCloseGracefully.setEnabled)
+        
         self.rhack.labelError.setVisible(False)
         self.rhack.pushButtonStart.setEnabled(False)
         self.rhack.pushButtonStop.setEnabled(False)
         self.rhack.pushButtonSave.setEnabled(False)
         
+        self.rhack.groupBoxTestZone.setChecked(False)
         self.rhack.groupBoxTestZone.toggled.connect(
-            self.updateStatusZoneChecked)
+            self.rhack.frameTestZone.setEnabled)
         
     def updateStatus(self, status):
         self._current_status = status
         self.rhack.lineEditClientStatus.setText(clientStatusString(status))
-        
-        zone_checked = self.rhack.groupBoxTestZone.isChecked()
         
         if status in (ray.ClientStatus.LAUNCH,
                       ray.ClientStatus.OPEN,
                       ray.ClientStatus.SWITCH,
                       ray.ClientStatus.NOOP):
             self.rhack.pushButtonStart.setEnabled(False)
-            self.rhack.pushButtonStop.setEnabled(zone_checked)
+            self.rhack.pushButtonStop.setEnabled(True)
             self.rhack.pushButtonSave.setEnabled(False)
         elif status == ray.ClientStatus.READY:
             self.rhack.pushButtonStart.setEnabled(False)
-            self.rhack.pushButtonStop.setEnabled(zone_checked)
-            self.rhack.pushButtonSave.setEnabled(zone_checked)
+            self.rhack.pushButtonStop.setEnabled(True)
+            self.rhack.pushButtonSave.setEnabled(
+                bool(self.rhack.comboSaveSig.currentData() != 0))
         elif status == ray.ClientStatus.STOPPED:
-            self.rhack.pushButtonStart.setEnabled(zone_checked
-                                                  and self.isAllowed())
+            self.rhack.pushButtonStart.setEnabled(self.isAllowed())
             self.rhack.pushButtonStop.setEnabled(False)
             self.rhack.pushButtonSave.setEnabled(False)
         elif status == ray.ClientStatus.PRECOPY:
             self.rhack.pushButtonStart.setEnabled(False)
             self.rhack.pushButtonStart.setEnabled(False)
             self.rhack.pushButtonSave.setEnabled(False)
-            
-        self.rhack.lineEditClientStatus.setEnabled(zone_checked)
     
-    def updateStatusZoneChecked(self, bool_checked):
+    #def updateStatusZoneChecked(self, bool_checked):
+        #self.rhack.frameTestZone.setEnabled(bool_checked)
+    
+    def currentSaveSigChanged(self, index):
+        self.rhack.groupBoxNoSave.setEnabled(
+            bool(self.rhack.comboSaveSig.currentData() == 0))
         self.updateStatus(self._current_status)
+    
+    #def checkBoxTellUserChecked(self, bool_checked):
+        #self.rhack.checkBoxCloseGracefully.setEnabled(bool_checked)
     
     def changeIconwithText(self, text):
         icon = ray.getAppIcon(text, self)
@@ -215,7 +225,6 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             self.client.ray_hack.config_file)
         
         save_sig = self.client.ray_hack.save_sig
-        print('froam', self.client.client_id, save_sig)
         
         for i in range(self.rhack.comboSaveSig.count()):
             if self.rhack.comboSaveSig.itemData(i) == save_sig:
@@ -247,8 +256,10 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         
         self.rhack.checkBoxWaitWindow.setChecked(
             bool(self.client.ray_hack.wait_win))
+        self.rhack.checkBoxTellUser.setChecked(
+            bool(self.client.ray_hack.no_save_level >= 1))
         self.rhack.checkBoxCloseGracefully.setChecked(
-            bool(self.client.ray_hack.close_gracefully))
+            bool(self.client.ray_hack.no_save_level == 2))
     
     def saveChanges(self):
         self.client.ray_hack.config_file = self.rhack.lineEditConfigFile.text()
@@ -256,8 +267,16 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.client.ray_hack.stop_sig = self.rhack.comboStopSig.currentData()
         self.client.ray_hack.wait_win = \
             self.rhack.checkBoxWaitWindow.isChecked()
-        self.client.ray_hack.close_gracefully = \
-            self.rhack.checkBoxCloseGracefully.isChecked()
+        
+        no_save_level = 0
+        if self.rhack.checkBoxCloseGracefully.isChecked():
+            no_save_level = 2
+        elif self.rhack.checkBoxTellUser.isChecked():
+            no_save_level = 1
+        
+        self.client.ray_hack.no_save_level = no_save_level
+        #self.client.ray_hack.close_gracefully = \
+            #self.rhack.checkBoxCloseGracefully.isChecked()
         
         self.client.sendRayHack()
         
@@ -362,21 +381,9 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.client.sendPropertiesToDaemon()
 
     def stopClient(self):
-        stop_sig = self.client.ray_hack.stop_sig
-        self.client.ray_hack.stop_sig = self.rhack.comboStopSig.currentData()
-        self.client.sendRayHack()
-        
-        self.toDaemon('/ray/client/stop', self.client.client_id)
-        
-        self.client.ray_hack.stop_sig = stop_sig
-        self.client.sendRayHack()
+        self.toDaemon('/ray/client/send_signal', self.client.client_id,
+                      self.rhack.comboStopSig.currentData())
         
     def saveClient(self):
-        save_sig = self.client.ray_hack.save_sig
-        self.client.ray_hack.save_sig = self.rhack.comboSaveSig.currentData()
-        self.client.sendRayHack()
-        
-        self.toDaemon('/ray/client/save', self.client.client_id)
-        
-        self.client.ray_hack.save_sig = save_sig
-        self.client.sendRayHack()
+        self.toDaemon('/ray/client/send_signal', self.client.client_id,
+                      self.rhack.comboSaveSig.currentData())

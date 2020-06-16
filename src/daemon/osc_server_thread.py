@@ -991,6 +991,10 @@ class OscServerThread(ClientCommunicating):
     def rayClientIsStarted(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/client/send_signal', 'si')
+    def rayClientSendSignal(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/trashed_client/restore', 's')
     def rayTrashedClientRestore(self, path, args, types, src_addr):
         pass

@@ -1,6 +1,7 @@
 import os
 import shlex
 import shutil
+import signal
 import subprocess
 import time
 from liblo import Address
@@ -222,6 +223,10 @@ class Client(ServerSender, ray.ClientData):
             self.ray_hack.wait_win = bool(ctx.attribute('wait_win') == "1")
             self.ray_hack.close_gracefully = bool(
                 ctx.attribute('close_gracefully') == "1")
+            
+            no_save_level = ctx.attribute('no_save_level')
+            if no_save_level.isdigit() and 0 <= int(no_save_level) <= 2:
+                self.ray_hack.no_save_level = int(no_save_level)
         
         self.net_session_template = ctx.attribute('net_session_template')
         
@@ -724,7 +729,26 @@ class Client(ServerSender, ray.ClientData):
             
         if self.isRunning():
             self.process.kill()
-            
+    
+    def send_signal(self, sig:int, src_addr=None, src_path=""):
+        try:
+            tru_sig = signal.Signals(sig)
+        except:
+            if src_addr:
+                self.send(src_addr, '/error', src_path,
+                          ray.Err.GENERAL_ERROR, 'invalid signal %i' % sig)
+            return 
+        
+        if not self.isRunning():
+            if src_addr:
+                self.send(src_addr, '/error', src_path,
+                          ray.Err.GENERAL_ERROR,
+                          'client %s is not running' % self.client_id)
+            return
+        
+        os.kill(self.pid, sig)
+        self.send(src_addr, '/reply', src_path, 'signal sent')
+        
     def isRunning(self):
         if self.is_external:
             return True
@@ -1191,6 +1215,15 @@ no_save_level:%i""" % (self.ray_hack.config_file,
             return begin
         
         return wanted
+    
+    def noSaveLevel(self)->int:
+        if self.isRayHack():
+            if self.ray_hack.save_sig:
+                return 0
+            
+            return self.ray_hack.no_save_level
+        
+        return self.no_save_level
     
     def getProjectFiles(self):
         # returns a list of full filenames

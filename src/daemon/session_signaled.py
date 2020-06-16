@@ -1379,6 +1379,16 @@ class SignaledSession(OperatingSession):
         else:
             self.sendErrorNoClient(src_addr, path, client_id)
     
+    def _ray_client_send_signal(self, path, args, src_addr):
+        client_id, sig = args
+        
+        for client in self.clients:
+            if client.client_id == client_id:
+                client.send_signal(sig, src_addr, path)
+                break
+        else:
+            self.sendErrorNoClient(src_addr, path, client_id)
+    
     def _ray_trashed_client_restore(self, path, args, src_addr):
         if not self.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,

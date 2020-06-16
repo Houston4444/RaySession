@@ -1013,14 +1013,14 @@ class OperatingSession(Session):
         if server and server.option_has_wmctrl:
             has_nosave_clients = False
             for client in self.clients:
-                if client.isRunning() and client.no_save_level == 2:
+                if client.isRunning() and client.noSaveLevel() == 2:
                     has_nosave_clients = True
                     break
             
             if has_nosave_clients:
                 self.desktops_memory.setActiveWindowList()
                 for client in self.clients:
-                    if client.isRunning() and client.no_save_level == 2:
+                    if client.isRunning() and client.noSaveLevel() == 2:
                         self.expected_clients.append(client)
                         self.desktops_memory.findAndClose(client.pid)
             
@@ -1038,7 +1038,7 @@ class OperatingSession(Session):
         has_nosave_clients = False
         
         for client in self.clients:
-            if client.isRunning() and client.no_save_level:
+            if (client.isRunning() and client.noSaveLevel()):
                 self.expected_clients.append(client)
                 has_nosave_clients = True
         

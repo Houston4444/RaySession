@@ -511,27 +511,29 @@ class MainWindow(QMainWindow):
         if not client:
             return
         
-        if client.no_save_level and client.check_last_save:
-            dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
-            dialog.exec()
-            if not dialog.result():
-                return
+        if client.check_last_save:
+            if (client.no_save_level
+                    or (client.protocol == ray.Protocol.RAY_HACK
+                        and not client.ray_hack.saveable())):
+                dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
+                dialog.exec()
+                if not dialog.result():
+                    return
 
-        elif (client.status == ray.ClientStatus.READY
-              and client.check_last_save):
-            if client.has_dirty:
-                if client.dirty_state:
+            elif client.status == ray.ClientStatus.READY:
+                if client.has_dirty:
+                    if client.dirty_state:
+                        dialog = child_dialogs.StopClientDialog(self, client_id)
+                        dialog.exec()
+                        if not dialog.result():
+                            return
+
+                # last save (or start) more than 60 seconds ago
+                elif (time.time() - client.last_save) >= 60:
                     dialog = child_dialogs.StopClientDialog(self, client_id)
                     dialog.exec()
                     if not dialog.result():
                         return
-
-            # last save (or start) more than 60 seconds ago
-            elif (time.time() - client.last_save) >= 60:
-                dialog = child_dialogs.StopClientDialog(self, client_id)
-                dialog.exec()
-                if not dialog.result():
-                    return
 
         self.toDaemon('/ray/client/stop', client_id)
 
