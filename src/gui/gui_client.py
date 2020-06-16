@@ -116,6 +116,8 @@ class Client(QObject, ray.ClientData):
     def showPropertiesDialog(self, second_tab=False):
         self.properties_dialog.updateContents()
         if second_tab:
+            if self.protocol == ray.Protocol.RAY_HACK:
+                self.properties_dialog.enableTestZone(True)
             self.properties_dialog.setOnSecondTab()
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()

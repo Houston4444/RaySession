@@ -395,3 +395,6 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
     def saveClient(self):
         self.toDaemon('/ray/client/send_signal', self.client.client_id,
                       self.rhack.comboSaveSig.currentData())
+        
+    def enableTestZone(self, bool_enable):
+        self.rhack.groupBoxTestZone.setChecked(bool_enable)
