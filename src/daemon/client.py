@@ -776,6 +776,9 @@ class Client(ServerSender, ray.ClientData):
         self.sendReplyToCaller(OSC_SRC_START, 'client started')
         
         if self.isRayHack():
+            if self.noSaveLevel():
+                self.sendGui('/ray/gui/client/no_save_level',
+                             self.client_id, self.noSaveLevel())
             self.pending_command = ray.Command.OPEN
             self.setStatus(ray.ClientStatus.OPEN)
             QTimer.singleShot(500, self.rayHackNearReady)
@@ -1218,10 +1221,7 @@ no_save_level:%i""" % (self.ray_hack.config_file,
     
     def noSaveLevel(self)->int:
         if self.isRayHack():
-            if self.ray_hack.save_sig:
-                return 0
-            
-            return self.ray_hack.no_save_level
+            return self.ray_hack.noSaveLevel()
         
         return self.no_save_level
     

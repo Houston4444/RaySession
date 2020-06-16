@@ -912,7 +912,7 @@ class SignaledSession(OperatingSession):
                 and (f_active < 0 or f_active == client.active)
                 and (f_auto_start < 0 or f_auto_start == client.auto_start)
                 and (f_no_save_level < 0 
-                     or f_no_save_level == int(bool(client.no_save_level)))):
+                     or f_no_save_level == int(bool(client.noSaveLevel)))):
                 if search_properties:
                     message = client.getPropertiesMessage()
                     
@@ -1130,6 +1130,7 @@ class SignaledSession(OperatingSession):
             if client.client_id == client_id:
                 if client.isRayHack():
                     client.ray_hack.update(*args)
+                        
                 self.send(src_addr, '/reply', path, 'ray_hack updated')
                 break
         else:

@@ -97,11 +97,6 @@ class Option:
     SNAPSHOTS = 0x040
     SESSION_SCRIPTS = 0x080
 
-
-class HackWinOption:
-    WAIT_WINDOW_FOR_READY = 0x001
-    CLOSE_WINDOW_GRACEFULLY = 0x002
-
 class Err:
     OK = 0
     GENERAL_ERROR = -1
@@ -665,30 +660,23 @@ class RayHack():
     def saveable(self)->bool:
         return bool(self.config_file and self.save_sig)
     
-    def noSaveLevel(self):
-        if self.save_sig:
-            return 0
+    def noSaveLevel(self)->int:
+        if self.config_file and self.save_sig == 0:
+            return self.no_save_level
         
-        
+        return 0
     
     def update(self, config_file,
                save_sig, stop_sig,
-               win_options, no_save_level,
+               wait_win, no_save_level,
                useless_str, useless_int):
         self.config_file = str(config_file)
         self.save_sig = int(save_sig)
         self.stop_sig = int(stop_sig)
-        self.wait_win = bool(win_options & HackWinOption.WAIT_WINDOW_FOR_READY)
-        self.close_gracefully = bool(
-            win_options & HackWinOption.CLOSE_WINDOW_GRACEFULLY)
+        self.wait_win = bool(wait_win)
         self.no_save_level = int(no_save_level)
     
     def spread(self)->tuple:
-        win_options = int(HackWinOption.WAIT_WINDOW_FOR_READY
-                            * int(self.wait_win)
-                          + HackWinOption.CLOSE_WINDOW_GRACEFULLY
-                            * int(self.close_gracefully))
-        
         return (self.config_file, self.save_sig, self.stop_sig,
-                win_options, self.no_save_level,
+                int(self.wait_win), self.no_save_level,
                 self.useless_str, self.useless_int)

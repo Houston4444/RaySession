@@ -46,8 +46,6 @@ class ClientSlot(QFrame):
         self.icon_on = QIcon()
         self.icon_off = QIcon()
 
-        self.updateClientData()
-
         self.ui.actionSaveAsApplicationTemplate.triggered.connect(
             self.saveAsApplicationTemplate)
         self.ui.actionProperties.triggered.connect(
@@ -167,6 +165,8 @@ class ClientSlot(QFrame):
         self.ubuntu_font_cond.setBold(True)
 
         self.ui.killButton.setVisible(False)
+        
+        self.updateClientData()
 
     def clientId(self):
         return self.client.client_id
@@ -231,6 +231,9 @@ class ClientSlot(QFrame):
             % self.client.description
         tool_tip += "<p></p>"
         tool_tip += "<p>%s : %s<br>" \
+            % (_translate('client_slot', 'Protocol'),
+               ray.protocolToStr(self.client.protocol))
+        tool_tip += "%s : %s<br>" \
             % (_translate('client_slot', 'Executable'),
                self.client.executable_path)
         tool_tip += "%s : %s</p>" \
@@ -279,9 +282,7 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
             self.ui.ClientName.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
-            self.ui.saveButton.setEnabled(
-                bool(self.client.protocol != ray.Protocol.RAY_HACK
-                     or self.client.ray_hack.saveable()))
+            self.ui.saveButton.setEnabled(True)
             self.grayIcon(False)
 
         elif status == ray.ClientStatus.STOPPED:

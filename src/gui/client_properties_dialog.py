@@ -206,8 +206,11 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
     
     def currentSaveSigChanged(self, index):
         self.rhack.groupBoxNoSave.setEnabled(
-            bool(self.rhack.comboSaveSig.currentData() == 0))
+            bool(self.rhack.lineEditConfigFile.text()
+                 and self.rhack.comboSaveSig.currentData() == 0))
         self.updateStatus(self._current_status)
+        
+        
     
     #def checkBoxTellUserChecked(self, bool_checked):
         #self.rhack.checkBoxCloseGracefully.setEnabled(bool_checked)
@@ -361,6 +364,9 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         elif (not text 
               and self.rhack.lineEditArguments.text() == '"$CONFIG_FILE"'):
             self.rhack.lineEditArguments.setText('')
+            
+        self.rhack.groupBoxNoSave.setEnabled(
+            bool(text and self.rhack.comboSaveSig.currentData() == 0))
     
     def startClient(self):
         executable = self.client.executable_path
