@@ -1,6 +1,8 @@
 import os
 from PyQt5.QtXml import QDomDocument
 
+import ray
+
 instance = None
 
 class Daemon:
@@ -80,6 +82,7 @@ class MultiDaemonFile(object):
         element.setAttribute('not_default',
             int(bool(self.server.is_nsm_locked or self.server.not_default)))
         element.setAttribute('has_gui', int(self.server.hasGui()))
+        element.setAttribute('version', ray.VERSION)
     
     def update(self):
         has_dirty_pid = False

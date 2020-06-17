@@ -49,6 +49,28 @@ def session_operation(func):
         return response
     return wrapper
 
+def client_action(func):
+    def wrapper(*args, **kwargs):
+        if len(args) < 4:
+            return
+        
+        sess, path, osc_args, src_addr, *rest = args
+        
+        client_id = osc_args.pop(0)
+        
+        for client in sess.clients:
+            if client.client_id == client_id:
+                response = func(*args, client)
+                break
+        else:
+            sess.sendErrorNoClient(src_addr, path, client_id)
+            return 
+        
+        return response
+    return wrapper
+        
+        
+
 
 class SignaledSession(OperatingSession):
     def __init__(self, root):
@@ -77,8 +99,6 @@ class SignaledSession(OperatingSession):
         
         if func_name in self.__dir__():
             function = self.__getattribute__(func_name)
-            client_id = ''
-                    
             function(path, args, src_addr)
     
     def sendErrorNoClient(self, src_addr, path, client_id):
@@ -964,152 +984,99 @@ class SignaledSession(OperatingSession):
         self.run_step_addr = src_addr
         self.nextFunction(True, args)
     
-    def _ray_client_stop(self, path, args, src_addr):
-        client_id = args[0]
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.stop(src_addr, path)
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+    @client_action
+    def _ray_client_stop(self, path, args, src_addr, client):
+        client.stop(src_addr, path)
     
-    def _ray_client_kill(self, path, args, src_addr):
-        client_id = args[0]
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.kill()
-                self.send(src_addr, "/reply", path, "Client killed." )
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+    @client_action
+    def _ray_client_kill(self, path, args, src_addr, client):
+        client.kill()
+        self.send(src_addr, "/reply", path, "Client killed." )
     
-    def _ray_client_trash(self, path, args, src_addr):
-        client_id = args[0]
+    @client_action
+    def _ray_client_trash(self, path, args, src_addr, client):
+        if client.isRunning():
+            self.send(src_addr, '/error', path, ray.Err.OPERATION_PENDING,
+                        "Stop client before to trash it !")
+            return
         
-        for client in self.clients:
-            if client.client_id == client_id:
-                if client.isRunning():
-                    self.send(src_addr, '/error', path, ray.Err.OPERATION_PENDING,
-                              "Stop client before to trash it !")
-                    return
-                
-                if self.file_copier.isActive(client_id):
-                    self.file_copier.abort()
-                    self.send(src_addr, '/error', path, ray.Err.COPY_RUNNING,
-                              "Files were copying for this client.")
-                    return
-                
-                self.trashClient(client)
-                
-                self.send(src_addr, "/reply", path, "Client removed.")
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+        if self.file_copier.isActive(client.client_id):
+            self.file_copier.abort()
+            self.send(src_addr, '/error', path, ray.Err.COPY_RUNNING,
+                        "Files were copying for this client.")
+            return
+        
+        self.trashClient(client)
+        
+        self.send(src_addr, "/reply", path, "Client removed.")
     
     def _ray_client_start(self, path, args, src_addr):
         self._ray_client_resume(path, args, src_addr)
     
-    def _ray_client_resume(self, path, args, src_addr):
-        client_id = args[0]
+    @client_action
+    def _ray_client_resume(self, path, args, src_addr, client):
+        if client.isRunning():
+            self.sendGuiMessage(
+                _translate('GUIMSG', 'client %s is already running.')
+                    % client.guiMsgStyle())
+            
+            # make ray_control exit code 0 in this case
+            self.send(src_addr, '/reply', path, 'client running')
+            return
+            
+        if self.file_copier.isActive(client.client_id):
+            self.sendErrorCopyRunning(src_addr, path)
+            return
         
-        for client in self.clients:
-            if client.client_id == client_id:
-                if client.isRunning():
-                    self.sendGuiMessage(
-                        _translate('GUIMSG', 'client %s is already running.')
-                            % client.guiMsgStyle())
-                    
-                    # make ray_control exit code 0 in this case
-                    self.send(src_addr, '/reply', path, 'client running')
-                    return
-                    
-                if self.file_copier.isActive(client.client_id):
-                    self.sendErrorCopyRunning(src_addr, path)
-                    return
-                
-                client.start(src_addr, path)
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+        client.start(src_addr, path)
     
-    def _ray_client_open(self, path, args, src_addr):
-        client_id = args[0]
+    @client_action
+    def _ray_client_open(self, path, args, src_addr, client):
+        if self.file_copier.isActive(client.client_id):
+            self.sendErrorCopyRunning(src_addr, path)
+            return
         
-        for client in self.clients:
-            if client.client_id == client_id:
-                if self.file_copier.isActive(client.client_id):
-                    self.sendErrorCopyRunning(src_addr, path)
-                    return
-                
-                if client.active:
-                    self.sendGuiMessage(
-                        _translate('GUIMSG', 'client %s is already active.')
-                            % client.guiMsgStyle())
-                    
-                    # make ray_control exit code 0 in this case
-                    self.send(src_addr, '/reply', path, 'client active')
-                else:
-                    client.load(src_addr, path)
-                break
+        if client.active:
+            self.sendGuiMessage(
+                _translate('GUIMSG', 'client %s is already active.')
+                    % client.guiMsgStyle())
+            
+            # make ray_control exit code 0 in this case
+            self.send(src_addr, '/reply', path, 'client active')
         else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+            client.load(src_addr, path)
     
-    def _ray_client_save(self, path, args, src_addr):
-        client_id = args[0]
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                if client.canSaveNow():
-                    if self.file_copier.isActive(client.client_id):
-                        self.sendErrorCopyRunning(src_addr, path)
-                        return
-                    client.save(src_addr, path)
-                else:
-                    self.sendGuiMessage(_translate('GUIMSG',
-                                                   "%s is not saveable.")
-                                            % client.guiMsgStyle())
-                    self.send(src_addr, '/reply', path, 'client saved')
-                break
+    @client_action
+    def _ray_client_save(self, path, args, src_addr, client):
+        if client.canSaveNow():
+            if self.file_copier.isActive(client.client_id):
+                self.sendErrorCopyRunning(src_addr, path)
+                return
+            client.save(src_addr, path)
         else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+            self.sendGuiMessage(_translate('GUIMSG', "%s is not saveable.")
+                                    % client.guiMsgStyle())
+            self.send(src_addr, '/reply', path, 'client saved')
     
-    def _ray_client_save_as_template(self, path, args, src_addr):
-        client_id, template_name = args
+    @client_action
+    def _ray_client_save_as_template(self, path, args, src_addr, client):
+        template_name = args[0]
         
         if self.file_copier.isActive():
             self.sendErrorCopyRunning(src_addr, path)
             return
         
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.saveAsTemplate(template_name, src_addr, path)
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+        client.saveAsTemplate(template_name, src_addr, path)
     
-    def _ray_client_show_optional_gui(self, path, args, src_addr):
-        client_id = args[0]
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.sendToSelfAddress("/nsm/client/show_optional_gui")
-                self.send(src_addr, '/reply', path, 'show optional GUI asked')
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+    @client_action
+    def _ray_client_show_optional_gui(self, path, args, src_addr, client):
+        client.sendToSelfAddress("/nsm/client/show_optional_gui")
+        self.send(src_addr, '/reply', path, 'show optional GUI asked')
     
-    def _ray_client_hide_optional_gui(self, path, args, src_addr):
-        client_id = args[0]
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.sendToSelfAddress("/nsm/client/hide_optional_gui")
-                self.send(src_addr, '/reply', path, 'hide optional GUI asked')
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+    @client_action
+    def _ray_client_hide_optional_gui(self, path, args, src_addr, client):
+        client.sendToSelfAddress("/nsm/client/hide_optional_gui")
+        self.send(src_addr, '/reply', path, 'hide optional GUI asked')
     
     def _ray_client_update_properties(self, path, args, src_addr):
         client_data = ray.ClientData.newFrom(*args)
@@ -1123,246 +1090,182 @@ class SignaledSession(OperatingSession):
         else:
             self.sendErrorNoClient(src_addr, path, client_data.client_id)
     
-    def _ray_client_update_ray_hack_properties(self, path, args, src_addr):
-        client_id = args.pop(0)
+    @client_action
+    def _ray_client_update_ray_hack_properties(self, path, args, 
+                                               src_addr, client):
+        ex_no_save_level = client.noSaveLevel()
         
-        for client in self.clients:
-            if client.client_id == client_id:
-                ex_no_save_level = client.noSaveLevel()
+        if client.isRayHack():
+            client.ray_hack.update(*args)
+        
+        no_save_level = client.noSaveLevel()
+        
+        if no_save_level != ex_no_save_level:
+            self.sendGui('/ray/gui/client/no_save_level',
+                            client.client_id,
+                            no_save_level)
                 
-                if client.isRayHack():
-                    client.ray_hack.update(*args)
-                
-                no_save_level = client.noSaveLevel()
-                
-                if no_save_level != ex_no_save_level:
-                    self.sendGui('/ray/gui/client/no_save_level',
-                                 client.client_id,
-                                 no_save_level)
-                        
-                self.send(src_addr, '/reply', path, 'ray_hack updated')
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+        self.send(src_addr, '/reply', path, 'ray_hack updated')
     
-    def _ray_client_set_properties(self, path, args, src_addr):
-        client_id = args.pop(0)
-        
+    @client_action
+    def _ray_client_set_properties(self, path, args, src_addr, client):
         message = ''
-        
         for arg in args:
             message+="%s\n" % arg
         
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.setPropertiesFromMessage(message)
-                self.send(src_addr, '/reply', path,
-                          'client properties updated')
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+        client.setPropertiesFromMessage(message)
+        self.send(src_addr, '/reply', path,
+                    'client properties updated')
     
-    def _ray_client_get_properties(self, path, args, src_addr):
-        client_id = args[0]
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                message = client.getPropertiesMessage()
-                self.send(src_addr, '/reply', path, message)
-                self.send(src_addr, '/reply', path)
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+    @client_action
+    def _ray_client_get_properties(self, path, args, src_addr, client):
+        message = client.getPropertiesMessage()
+        self.send(src_addr, '/reply', path, message)
+        self.send(src_addr, '/reply', path)
     
-    def _ray_client_get_proxy_properties(self, path, args, src_addr):
-        client_id = args[0]
+    @client_action
+    def _ray_client_get_proxy_properties(self, path, args, src_addr, client):
+        proxy_file = '%s/ray-proxy.xml' % client.getProjectPath()
         
-        for client in self.clients:
-            if client.client_id == client_id:
-                proxy_file = '%s/ray-proxy.xml' % client.getProjectPath()
-                
-                if not os.path.isfile(proxy_file):
-                    self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
-                        _translate('GUIMSG',
-                                   '%s seems to not be a proxy client !')
-                            % client.guiMsgStyle())
-                    return
-                
-                try:
-                    file = open(proxy_file, 'r')
-                    xml = QDomDocument()
-                    xml.setContent(file.read())
-                    content = xml.documentElement()
-                    file.close()
-                except:
-                    self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
-                        _translate('GUIMSG',
-                                   "impossible to read %s correctly !")
-                            % proxy_file)
-                    return
-                    
-                if content.tagName() != "RAY-PROXY":
-                    self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
-                        _translate('GUIMSG',
-                                   "impossible to read %s correctly !")
-                            % proxy_file)
-                    return
-                    
-                cte = content.toElement()
-                message = ""
-                for property in ('executable', 'arguments', 'config_file',
-                                    'save_signal', 'stop_signal',
-                                    'no_save_level', 'wait_window',
-                                    'VERSION'):
-                    message += "%s:%s\n" % (property, cte.attribute(property))
-                
-                # remove last empty line
-                message = message.rpartition('\n')[0]
-                
-                self.send(src_addr, '/reply', path, message)
-                self.send(src_addr, '/reply', path)
-                    
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+        if not os.path.isfile(proxy_file):
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+                _translate('GUIMSG', '%s seems to not be a proxy client !')
+                    % client.guiMsgStyle())
+            return
+        
+        try:
+            file = open(proxy_file, 'r')
+            xml = QDomDocument()
+            xml.setContent(file.read())
+            content = xml.documentElement()
+            file.close()
+        except:
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                _translate('GUIMSG', "impossible to read %s correctly !")
+                    % proxy_file)
+            return
+            
+        if content.tagName() != "RAY-PROXY":
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                _translate('GUIMSG', "impossible to read %s correctly !")
+                    % proxy_file)
+            return
+            
+        cte = content.toElement()
+        message = ""
+        for property in ('executable', 'arguments', 'config_file',
+                         'save_signal', 'stop_signal',
+                         'no_save_level', 'wait_window',
+                         'VERSION'):
+            message += "%s:%s\n" % (property, cte.attribute(property))
+        
+        # remove last empty line
+        message = message.rpartition('\n')[0]
+        
+        self.send(src_addr, '/reply', path, message)
+        self.send(src_addr, '/reply', path)
     
-    def _ray_client_set_proxy_properties(self, path, args, src_addr):
-        client_id = args.pop(0)
-        
+    @client_action
+    def _ray_client_set_proxy_properties(self, path, args, src_addr, client):
         message = ''
         for arg in args:
             message += "%s\n" % arg
             
-        for client in self.clients:
-            if client.client_id == client_id:
-                if client.isRunning():
-                    self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
-                        _translate('GUIMSG',
-                            'Impossible to set proxy properties while client is running.'))
-                    return
-                
-                proxy_file = '%s/ray-proxy.xml' % client.getProjectPath()
-                
-                if (not os.path.isfile(proxy_file)
-                        and client.executable_path != 'ray-proxy'):
-                    self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
-                        _translate('GUIMSG',
-                                   '%s seems to not be a proxy client !')
-                            % client.guiMsgStyle())
-                    return
-                
-                if os.path.isfile(proxy_file):
-                    try:
-                        file = open(proxy_file, 'r')
-                        xml = QDomDocument()
-                        xml.setContent(file.read())
-                        content = xml.documentElement()
-                        file.close()
-                    except:
-                        self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
-                            _translate('GUIMSG',
-                                    "impossible to read %s correctly !")
-                                % proxy_file)
-                        return
-                else:
-                    xml = QDomDocument()
-                    p = xml.createElement('RAY-PROXY')
-                    p.setAttribute('VERSION', ray.VERSION)
-                    xml.appendChild(p)
-                    content = xml.documentElement()
-                    
-                    if not os.path.isdir(client.getProjectPath()):
-                        try:
-                            os.makedirs(client.getProjectPath())
-                        except:
-                            self.send(src_addr, '/error', path,
-                                      ray.Err.CREATE_FAILED,
-                                      "Impossible to create proxy directory")
-                            return
-                    
-                if content.tagName() != "RAY-PROXY":
-                    self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
-                        _translate('GUIMSG',
-                                   "impossible to read %s correctly !")
-                            % proxy_file)
-                    return
-                    
-                cte = content.toElement()
-                
-                for line in message.split('\n'):
-                    property, colon, value = line.partition(':')
-                    if property in (
-                        'executable', 'arguments',
-                        'config_file', 'save_signal', 'stop_signal',
-                        'no_save_level', 'wait_window', 'VERSION'):
-                            cte.setAttribute(property, value)
-                
-                try:
-                    file = open(proxy_file, 'w')
-                    file.write(xml.toString())
-                    file.close()
-                except:
-                    self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
-                        _translate('GUIMSG',
-                                   "%s is not writeable")
-                            % proxy_file)
-                    return
-                
-                self.send(src_addr, '/reply', path, message)
-                self.send(src_addr, '/reply', path)
-                    
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
-    
-    def _ray_client_get_description(self, path, args, src_addr):
-        client_id = args[0]
+        if client.isRunning():
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+              _translate('GUIMSG',
+               'Impossible to set proxy properties while client is running.'))
+            return
         
-        for client in self.clients:
-            if client.client_id == client_id:
-                self.send(src_addr, '/reply', path, client.description)
-                self.send(src_addr, '/reply', path)
-                break
+        proxy_file = '%s/ray-proxy.xml' % client.getProjectPath()
+        
+        if (not os.path.isfile(proxy_file)
+                and client.executable_path != 'ray-proxy'):
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+                _translate('GUIMSG', '%s seems to not be a proxy client !')
+                    % client.guiMsgStyle())
+            return
+        
+        if os.path.isfile(proxy_file):
+            try:
+                file = open(proxy_file, 'r')
+                xml = QDomDocument()
+                xml.setContent(file.read())
+                content = xml.documentElement()
+                file.close()
+            except:
+                self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                    _translate('GUIMSG', "impossible to read %s correctly !")
+                        % proxy_file)
+                return
         else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+            xml = QDomDocument()
+            p = xml.createElement('RAY-PROXY')
+            p.setAttribute('VERSION', ray.VERSION)
+            xml.appendChild(p)
+            content = xml.documentElement()
             
-    def _ray_client_set_description(self, path, args, src_addr):
-        client_id, description = args
+            if not os.path.isdir(client.getProjectPath()):
+                try:
+                    os.makedirs(client.getProjectPath())
+                except:
+                    self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
+                              "Impossible to create proxy directory")
+                    return
+            
+        if content.tagName() != "RAY-PROXY":
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                _translate('GUIMSG', "impossible to read %s correctly !")
+                    % proxy_file)
+            return
+            
+        cte = content.toElement()
         
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.description = description
-                self.send(src_addr, '/reply', path, 'Description updated')
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+        for line in message.split('\n'):
+            property, colon, value = line.partition(':')
+            if property in (
+                'executable', 'arguments',
+                'config_file', 'save_signal', 'stop_signal',
+                'no_save_level', 'wait_window', 'VERSION'):
+                    cte.setAttribute(property, value)
+        
+        try:
+            file = open(proxy_file, 'w')
+            file.write(xml.toString())
+            file.close()
+        except:
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                _translate('GUIMSG', "%s is not writeable")
+                    % proxy_file)
+            return
+        
+        self.send(src_addr, '/reply', path, message)
+        self.send(src_addr, '/reply', path)
     
-    def _ray_client_list_files(self, path, args, src_addr):
-        client_id = args[0]
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                client_files = client.getProjectFiles()
-                self.send(src_addr, '/reply', path, *client_files)
-                self.send(src_addr, '/reply', path)
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+    @client_action
+    def _ray_client_get_description(self, path, args, src_addr, client):
+        self.send(src_addr, '/reply', path, client.description)
+        self.send(src_addr, '/reply', path)
     
-    def _ray_client_get_pid(self, path, args, src_addr):
-        client_id = args[0]
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                if client.isRunning():
-                    self.send(src_addr, '/reply', path, str(client.pid))
-                    self.send(src_addr, '/reply', path)
-                else:
-                    self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
-                        "client is not running, impossible to get its pid")
-                break
+    @client_action
+    def _ray_client_set_description(self, path, args, src_addr, client):
+        client.description = args[0]
+        self.send(src_addr, '/reply', path, 'Description updated')
+    
+    @client_action
+    def _ray_client_list_files(self, path, args, src_addr, client):
+        client_files = client.getProjectFiles()
+        self.send(src_addr, '/reply', path, *client_files)
+        self.send(src_addr, '/reply', path)
+    
+    @client_action
+    def _ray_client_get_pid(self, path, args, src_addr, client):
+        if client.isRunning():
+            self.send(src_addr, '/reply', path, str(client.pid))
+            self.send(src_addr, '/reply', path)
         else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                "client is not running, impossible to get its pid")
     
     def _ray_client_list_snapshots(self, path, args, src_addr):
         self._ray_session_list_snapshots(path, [], src_addr, args[0])
@@ -1389,30 +1292,58 @@ class SignaledSession(OperatingSession):
         else:
             self.sendErrorNoClient(src_addr, path, client_id)
     
-    def _ray_client_is_started(self, path, args, src_addr):
-        client_id = args[0]
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                if client.isRunning():
-                    self.send(src_addr, '/reply', path, 'client running')
-                else:
-                    self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
-                              _translate('GUIMSG', '%s is not running.')
-                                % client.guiMsgStyle())
-                break
+    @client_action
+    def _ray_client_is_started(self, path, args, src_addr, client):
+        if client.isRunning():
+            self.send(src_addr, '/reply', path, 'client running')
         else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+                        _translate('GUIMSG', '%s is not running.')
+                        % client.guiMsgStyle())
+            
+    @client_action
+    def _ray_client_send_signal(self, path, args, src_addr, client):
+        sig = args[0]
+        client.send_signal(sig, src_addr, path)
     
-    def _ray_client_send_signal(self, path, args, src_addr):
-        client_id, sig = args
+    @client_action
+    def _ray_client_set_custom_data(self, path, args, src_addr, client):
+        data, value = args
+        client.custom_data[data] = value
+        self.send(src_addr, '/reply', path, 'custom data set')
+    
+    @client_action
+    def _ray_client_get_custom_data(self, path, args, src_addr, client):
+        data = args[0]
         
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.send_signal(sig, src_addr, path)
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
+        if data not in client.custom_data:
+            self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
+                        "client %s has no custom_data key '%s'"
+                        % (client.client_id, data))
+            return
+        
+        self.send(src_addr, '/reply', path, client.custom_data[data])
+        self.send(src_addr, '/reply', path)
+    
+    @client_action
+    def _ray_client_set_tmp_data(self, path, args, src_addr, client):
+        data, value = args
+        client.custom_tmp_data[data] = value
+        self.send(src_addr, '/reply', path, 'custom tmp data set')
+    
+    @client_action
+    def _ray_client_get_tmp_data(self, path, args, src_addr, client):
+        data = args[0]
+        
+        if data not in client.custom_tmp_data:
+            self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
+                      "client %s has no tmp_custom_data key '%s'"
+                        % (client.client_id, data))
+            return
+        
+        self.send(src_addr, '/reply', path, client.custom_tmp_data[data])
+        self.send(src_addr, '/reply', path)
+    
     
     def _ray_trashed_client_restore(self, path, args, src_addr):
         if not self.path:
@@ -1430,63 +1361,6 @@ class SignaledSession(OperatingSession):
                 break
         else:
             self.send(src_addr, "/error", path, -10, "No such client.")
-    
-    def _ray_client_set_custom_data(self, path, args, src_addr):
-        client_id, data, value = args
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.custom_data[data] = value
-                self.send(src_addr, '/reply', path, 'custom data set')
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
-    
-    def _ray_client_get_custom_data(self, path, args, src_addr):
-        client_id, data = args
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                if data not in client.custom_data:
-                    self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
-                              "client %s has no custom_data key '%s'"
-                              % (client.client_id, data))
-                    return
-                
-                self.send(src_addr, '/reply', path, client.custom_data[data])
-                self.send(src_addr, '/reply', path)
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
-    
-    def _ray_client_set_tmp_data(self, path, args, src_addr):
-        client_id, data, value = args
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                client.custom_tmp_data[data] = value
-                self.send(src_addr, '/reply', path, 'custom tmp data set')
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
-    
-    def _ray_client_get_tmp_data(self, path, args, src_addr):
-        client_id, data = args
-        
-        for client in self.clients:
-            if client.client_id == client_id:
-                if data not in client.custom_tmp_data:
-                    self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
-                              "client %s has no tmp_custom_data key '%s'"
-                              % (client.client_id, data))
-                    return
-                
-                self.send(src_addr, '/reply', path, client.custom_tmp_data[data])
-                self.send(src_addr, '/reply', path)
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_id)
-    
     
     def _ray_trashed_client_remove_definitely(self, path, args, src_addr):
         if not self.path:
