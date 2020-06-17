@@ -76,6 +76,10 @@ class Client(ServerSender, ray.ClientData):
     
     has_been_started = False
     
+    description_from_desktop = False
+    label_from_desktop = False
+    icon_from_desktop = False
+    
     def __init__(self, parent_session):
         ServerSender.__init__(self)
         self.session = parent_session
@@ -288,11 +292,13 @@ class Client(ServerSender, ray.ClientData):
     def writeXmlProperties(self, ctx):
         ctx.setAttribute('executable', self.executable_path)
         ctx.setAttribute('name', self.name)
-        if self.label:
+        if self.desktop_file:
+            ctx.setAttribute('desktop_file', self.desktop_file)
+        if self.label and not self.label_from_desktop:
             ctx.setAttribute('label', self.label)
-        if self.description:
+        if self.description and not self.description_from_desktop:
             ctx.setAttribute('description', self.description)
-        if self.icon:
+        if self.icon and not self.icon_from_desktop:
             ctx.setAttribute('icon', self.icon)
         if not self.check_last_save:
             ctx.setAttribute('check_last_save', 0)
@@ -1075,6 +1081,7 @@ class Client(ServerSender, ray.ClientData):
         self.name = new_client.name
         self.prefix_mode = new_client.prefix_mode
         self.custom_prefix = new_client.custom_prefix
+        self.desktop_file = new_client.desktop_file
         self.label = new_client.label
         self.description = new_client.description
         self.icon = new_client.icon
@@ -1082,6 +1089,10 @@ class Client(ServerSender, ray.ClientData):
         self.check_last_save = new_client.check_last_save
         self.ignored_extensions = new_client.ignored_extensions
         self.custom_data = new_client.custom_data
+        
+        self.label_from_desktop = new_client.label_from_desktop
+        self.description = new_client.description_from_desktop
+        self.icon_from_desktop = new_client.icon_from_desktop
     
     def switch(self):
         jack_client_name    = self.getJackClientName()
@@ -1316,14 +1327,17 @@ no_save_level:%i""" % (self.ray_hack.config_file,
             for str_value in all_data[data]:
                 if data == "Comment":
                     if str_value and not self.description:
+                        self.description_from_desktop = True
                         self.description = str_value
                         break
                 elif data == "Name":
                     if str_value and not self.label:
+                        self.label_from_desktop = True
                         self.label = str_value
                         break
                 elif data == "Icon":
                     if str_value and not self.icon:
+                        self.icon_from_desktop = True
                         self.icon = str_value
                         break
     
@@ -1335,6 +1349,9 @@ no_save_level:%i""" % (self.ray_hack.config_file,
                           '/usr/local', '/usr')
         
         desktop_file = self.desktop_file
+        if desktop_file == '//not_found':
+            return
+        
         if not desktop_file:
             desktop_file = os.path.basename(self.executable_path)
             
@@ -1366,11 +1383,13 @@ no_save_level:%i""" % (self.ray_hack.config_file,
         else:
             desk_file_found = False
             for desk_path in desk_path_list:
-                for desk_file in os.listdir("%s/share/applications/" % desk_path):
+                for desk_file in os.listdir("%s/share/applications/"
+                                            % desk_path):
                     if not desk_file.endswith('.desktop'):
                         continue
                     
-                    full_desk_file = "%s/share/applications/%s" % (desk_path, desk_file)
+                    full_desk_file = "%s/share/applications/%s" \
+                                        % (desk_path, desk_file)
                     
                     if os.path.isdir(full_desk_file):
                         continue
@@ -1401,6 +1420,8 @@ no_save_level:%i""" % (self.ray_hack.config_file,
                         break
                 if desk_file_found:
                     break
+            else:
+                self.desktop_file = '//not_found'
     
     def saveAsTemplate(self, template_name, src_addr=None, src_path=''):
         if src_addr:

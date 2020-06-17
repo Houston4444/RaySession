@@ -387,12 +387,36 @@ class MainWindow(QMainWindow):
         RS.settings.setValue('last_subfolder', subfolder)
         if self._session.isRunning():
             RS.settings.setValue('last_session', self._session.getShortPath())
-
-        if template_name:
-            self.toDaemon('/ray/server/new_session', session_name,
-                          template_name)
-        else:
+            
+        if not template_name:
             self.toDaemon('/ray/server/new_session', session_name)
+            return
+
+        if template_name.startswith('///'):
+            if template_name == '///' + ray.factory_session_templates[1]:
+                if not RS.settings.value('hide_jack_config_script_dialog',
+                                        False, type=bool):
+                    session_path = CommandLineArgs.session_root + '/'
+                    if subfolder:
+                        session_path += subfolder + '/'
+                    session_path += session_name
+                    
+                    dialog = child_dialogs.JackConfigInfoDialog(
+                                                        self, session_path)
+                    dialog.exec()
+                    
+                    RS.settings.setValue('hide_jack_config_script_dialog',
+                                         dialog.notAgainValue())
+                    
+                    autostart_jack_checker = dialog.autostartValue()
+                    action = 'set_jack_checker_autostart'
+                    if not autostart_jack_checker:
+                        action = 'unset_jack_checker_autostart'
+                        
+                    self.toDaemon('/ray/server/exotic_action', action)
+        
+        self.toDaemon('/ray/server/new_session', session_name,
+                        template_name)
 
     def openSession(self, action):
         dialog = child_dialogs.OpenSessionDialog(self)

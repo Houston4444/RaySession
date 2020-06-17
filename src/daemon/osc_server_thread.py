@@ -430,6 +430,7 @@ class OscServerThread(ClientCommunicating):
     def rayServerListPath(self, path, args, types, src_addr):
         exec_list = []
         tmp_exec_list = []
+        n = 0
         
         pathlist = os.getenv('PATH').split(':')
         for pathdir in pathlist:
@@ -443,11 +444,13 @@ class OscServerThread(ClientCommunicating):
                             and not exe in exec_list):
                         exec_list.append(exe)
                         tmp_exec_list.append(exe)
+                        n += len(exe)
                         
-                        if len(tmp_exec_list) == 100:
+                        if n >= 20000:
                             self.send(src_addr, '/reply',
                                       path, *tmp_exec_list)
                             tmp_exec_list.clear()
+                            n = 0
         
         if tmp_exec_list:
             self.send(src_addr, '/reply', path, *tmp_exec_list)
@@ -720,6 +723,32 @@ class OscServerThread(ClientCommunicating):
         else:
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                       "Option %s is not currently used" % option)
+    
+    @ray_method('/ray/server/exotic_action', 's')
+    def rayServerExoticAction(self, path, args, types, src_addr):
+        action = args[0]
+        autostart_dir = "%s/.config/autostart-scripts" % os.getenv('HOME')
+        script_path = "ray-jack_checker.sh"
+        
+        if action == 'set_jack_checker_autostart':
+            if not os.path.exists(autostart_dir):
+                os.makedirs(autostart_dir)
+            
+            contents = "#!/bin/bash\n"
+            contents += "exec ray-jack_checker_daemon --force-reliable\n"
+            
+            full_script_path = "%s/%s" % (autostart_dir, script_path)
+            
+            file = open(full_script_path, 'w')
+            file.write(contents)
+            file.close()
+            
+            import stat
+            st = os.stat(full_script_path)
+            os.chmod(full_script_path, st.st_mode | stat.S_IEXEC)
+            
+        elif action == 'unset_jack_checker_autostart':
+            os.remove("%s/%s" % (autostart_dir, script_path))
     
     @ray_method('/ray/session/get_session_name', '')
     def raySessionGetSessionName(self, path, args, types, src_addr):

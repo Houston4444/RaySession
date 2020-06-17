@@ -5,6 +5,7 @@ import argparse
 import os
 import signal
 import sys
+import time
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon, QFontDatabase
 from PyQt5.QtCore import QLocale, QTranslator, QTimer
@@ -86,12 +87,11 @@ if __name__ == '__main__':
     session = SignaledSession()
         
     app.exec()
-    print('rayapp finished')
+    
+    # TODO find something better, sometimes program never ends without.
+    time.sleep(0.002)
+    
     server.stop()
-    print('rayappserrver stopped')
     session.quit()
-    print('rayapp session quitted')
     del session
-    print('rayapp session deleted')
     del app
-    print('rayapp deleted')

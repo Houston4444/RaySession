@@ -282,6 +282,7 @@ class SignaledSession(OperatingSession):
             return
         
         session_list = []
+        n = 0
         
         for root, dirs, files in os.walk(self.root):
             #exclude hidden files and dirs
@@ -298,11 +299,13 @@ class SignaledSession(OperatingSession):
                     if not already_sent:
                         basefolder = root.replace(self.root + '/', '', 1)
                         session_list.append(basefolder)
-                        if len(session_list) == 20:
+                        
+                        if n >= 32000:
                             self.send(src_addr, "/reply", path,
                                       *session_list)
                             
                             session_list.clear()
+                            n = 0
                         already_sent = True
                     
         if session_list:

@@ -1050,6 +1050,7 @@ class ScriptUserActionDialog(ChildDialog):
     def shouldBeRemoved(self):
         return self._is_terminated
 
+
 class JackConfigInfoDialog(ChildDialog):
     def __init__(self, parent, session_path):
         ChildDialog.__init__(self, parent)
@@ -1060,11 +1061,30 @@ class JackConfigInfoDialog(ChildDialog):
         parent_path = os.path.dirname(session_path)
         parent_scripts = "%s/%s" % (parent_path, ray.SCRIPTS_DIR)
         
-        tooltip_text = self.ui.label.toolTip().text()
+        tooltip_text = self.ui.label.toolTip()
         
-        self.ui.label.toolTip().setText(
+        self.ui.label.setToolTip(
             tooltip_text % (scripts_dir, parent_scripts, parent_path))
+        
+        #self.ui.checkBoxNotAgain.stateChanged.connect(self.setNotAgain)
+        #self.ui.checkBoxAutoStart.stateChanged.connect(
+                                            #self.setJackCheckerAutoStart)
+    def notAgainValue(self)->bool:
+        return self.ui.checkBoxNotAgain.isChecked()
     
+    def autostartValue(self)->bool:
+        return self.ui.checkBoxAutoStart.isChecked()
+    
+    #def setNotAgain(self, bool_checked):
+        #RS.settings.setValue('hide_jack_config_script_dialog',
+                             #True, type=bool)
+    
+    #def setJackCheckerAutoStart(self, bool_checked):
+        #action = 'set_jack_checker_autostart'
+        #if not bool_checked:
+            #action = 'un' + action
+        #self.toDaemon('/ray/server/exotic_action', action)
+
 
 class DaemonUrlWindow(ChildDialog):
     def __init__(self, parent, err_code, ex_url):
