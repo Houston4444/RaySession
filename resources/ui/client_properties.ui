@@ -23,7 +23,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -132,7 +132,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>Name</string>
+               <string>Protocol</string>
               </property>
              </widget>
             </item>
@@ -192,7 +192,7 @@
              </widget>
             </item>
             <item row="2" column="3">
-             <widget class="QLabel" name="labelClientName">
+             <widget class="QLabel" name="labelProtocol">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -200,7 +200,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>client_name</string>
+               <string>client_protocol</string>
               </property>
              </widget>
             </item>

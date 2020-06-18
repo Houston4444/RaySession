@@ -71,7 +71,7 @@ class ClientPropertiesDialog(ChildDialog):
     
     def updateContents(self):
         self.ui.labelId.setText(self.client.client_id)
-        self.ui.labelClientName.setText(self.client.name)
+        self.ui.labelProtocol.setText(ray.protocolToStr(self.client.protocol))
         self.ui.lineEditIcon.setText(self.client.icon)
         self.ui.lineEditLabel.setText(self.client.label)
         self.ui.plainTextEditDescription.setPlainText(self.client.description)
@@ -114,8 +114,27 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
     
     def updateContents(self):
         ClientPropertiesDialog.updateContents(self)
+        self.nsmui.labelClientName.setText(self.client.name)
         self.nsmui.lineEditExecutable.setText(self.client.executable_path)
         self.nsmui.lineEditArguments.setText(self.client.arguments)
+        
+        capas_en = [ c for c in self.client.capabilities.split(':') if c ]
+        capas_tr = []
+        for capa in capas_en:
+            if capa == 'switch':
+                capa_tr = _translate('capabilities', 'switch')
+            elif capa == 'dirty':
+                capa_tr = _translate('capabilities', 'dirty')
+            elif capa == 'optional-gui':
+                capa_tr = _translate('capabilities', 'optional-gui')
+            else:
+                capa_tr = capa
+                
+                
+            capas_tr.append(capa_tr)
+        
+        capa_line = '\n'.join(capas_tr)
+        self.nsmui.labelCapabilities.setText(capa_line)
         
     def saveChanges(self):
         self.client.executable_path = self.nsmui.lineEditExecutable.text()
