@@ -4,6 +4,7 @@ import os
 import signal
 import sys
 import xml.etree.ElementTree as ET
+import warnings
 # import subprocess and osc_server (local file) conditionnally
 # in order to answer faster in many cases.
 
@@ -175,6 +176,7 @@ def autoTypeString(string):
     
     
 if __name__ == '__main__':
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     addSelfBinToPath()
     
     if len(sys.argv) <= 1:
