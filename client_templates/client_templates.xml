@@ -1,17 +1,17 @@
 <RAY-CLIENT-TEMPLATES>
 <!--  <Client-Template template-name="Hydrogen" executable="hydrogen" label="Hydrogen"  name="Hydrogen" icon="h2-icon" client_id="hydrogen" needed-version="1.0.0"/> -->
  <Client-Template template-name="Hydrogen" executable="ray-proxy" label="Hydrogen"  name="Ray Proxy" icon="h2-icon" client_id="hydrogen"/>
- <Client-Template template-name="Ardour" executable="ardour"  name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="Ardour6" executable="Ardour6"  name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="ardour6" executable="ardour6"  name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="Ardour5" executable="Ardour5"  name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="ardour5" executable="ardour5"  name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="Ardour4" executable="Ardour4"  name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="ardour4" executable="ardour4"  name="Ardour" icon="ardour" client_id="ardour"/>
+ <Client-Template template-name="Ardour" executable="ardour" name="Ardour" icon="ardour" client_id="ardour"/>
+ <Client-Template template-name="Ardour6" executable="Ardour6" name="Ardour" icon="ardour" client_id="ardour"/>
+ <Client-Template template-name="ardour6" executable="ardour6" name="Ardour" icon="ardour" client_id="ardour"/>
+ <Client-Template template-name="Ardour5" executable="Ardour5" name="Ardour" icon="ardour" client_id="ardour"/>
+ <Client-Template template-name="ardour5" executable="ardour5" name="Ardour" icon="ardour" client_id="ardour"/>
+ <Client-Template template-name="Ardour4" executable="Ardour4" name="Ardour" icon="ardour" client_id="ardour"/>
+ <Client-Template template-name="ardour4" executable="ardour4" name="Ardour" icon="ardour" client_id="ardour"/>
  <Client-Template template-name="amsynth" executable="amsynth" name="amsynth" icon="amsynth" client_id="amsynth" needed-version="1.9.0"/>
  <Client-Template template-name="amsynth" executable="ray-proxy" name="Ray Proxy" icon="amsynth" label="amsynth" client_id="amsynth"/>
- <Client-Template template-name="Carla" executable="carla"  name="Carla" icon="carla" client_id="carla"/>
- <Client-Template template-name="Carla-Rack" executable="carla-rack"  name="Carla-Rack" icon="carla-rack" client_id="rack"/>
+ <Client-Template template-name="Carla" executable="carla-jack-multi" name="Carla" desktop_file="carla" client_id="carla"/>
+ <Client-Template template-name="Carla-Rack" executable="carla-rack" name="Carla-Rack" icon="carla-rack" client_id="rack"/>
  <Client-Template template-name="Carla-Patchbay" executable="carla-patchbay"  name="Carla-Patchbay" icon="carla-patchbay" client_id="patchbay"/>
  <Client-Template template-name="Rosegarden" executable="ray-proxy" try-exec="rosegarden" label="Rosegarden" name="Ray Proxy" icon="rosegarden" client_id="rosegarden"/>
  <Client-Template template-name="Non-Mixer" executable="non-mixer" name="Non-Mixer" icon="non-mixer" client_id="mixer"/>

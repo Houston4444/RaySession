@@ -606,32 +606,41 @@ class ClientData:
                icon,
                capabilities, check_last_save,
                ignored_extensions,
-               useless_str, useless_int):
-        self.client_id = str(client_id)
-        self.protocol = int(protocol)
+               useless_str, useless_int,
+               secure=False):
         self.executable_path = str(executable)
         self.arguments = str(arguments)
         self.pre_env = str(pre_env)
         
-        self.name = str(name) if name else os.path.basename(
-            self.executable_path)
+        self.desktop_file = str(desktop_file)
+        self.label = str(label)
+        self.description = str(description)
+        self.icon = str(icon)
         
+        self.check_last_save = bool(check_last_save)
+        self.ignored_extensions = str(ignored_extensions)
+        
+        if secure:
+            return
+        
+        self.client_id = str(client_id)
+        self.protocol = int(protocol)
+        if name:
+            self.name = str(name)
+        else:
+            self.name = os.path.basename(self.executable_path)
         self.prefix_mode = int(prefix_mode)
-        
+    
         if self.prefix_mode == PrefixMode.CUSTOM:
             if custom_prefix:
                 self.custom_prefix = str(custom_prefix)
             else:
                 self.prefix_mode = PrefixMode.SESSION_NAME
         
-        self.desktop_file = str(desktop_file)
-        self.label = str(label)
-        self.description = str(description)
-        
-        self.icon = str(icon)
         self.capabilities = str(capabilities)
-        self.check_last_save = bool(check_last_save)
-        self.ignored_extensions = str(ignored_extensions)
+    
+    def updateSecure(self, *args):
+        self.update(*args, secure=True)
     
     def spread(self)->tuple:
         return ClientData.spreadClient(self)

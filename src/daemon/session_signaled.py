@@ -1081,17 +1081,12 @@ class SignaledSession(OperatingSession):
         client.sendToSelfAddress("/nsm/client/hide_optional_gui")
         self.send(src_addr, '/reply', path, 'hide optional GUI asked')
     
-    def _ray_client_update_properties(self, path, args, src_addr):
-        client_data = ray.ClientData.newFrom(*args)
-        
-        for client in self.clients:
-            if client.client_id == client_data.client_id:
-                client.updateClientProperties(client_data)
-                self.send(src_addr, '/reply', path,
+    @client_action
+    def _ray_client_update_properties(self, path, args, src_addr, client):
+        client.updateSecure(client.client_id, *args)
+        client.sendGuiClientProperties()
+        self.send(src_addr, '/reply', path,
                           'client properties updated')
-                break
-        else:
-            self.sendErrorNoClient(src_addr, path, client_data.client_id)
     
     @client_action
     def _ray_client_update_ray_hack_properties(self, path, args, 
