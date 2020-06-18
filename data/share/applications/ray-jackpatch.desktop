@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Jack Connections
+Name[fr]=Connexions JACK
+Comment=Stores and reconnects JACK patch connections
+Comment[fr]=Mémorise et reconnecte les connexions de la baie de brassage de JACK
+Exec=ray-jackpatch
+Terminal=false
+Type=Application
+Icon=curve-connector
+StartupNotify=false
+NoDisplay=true
+Hidden=true
+Categories=System;

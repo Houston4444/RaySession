@@ -11,7 +11,7 @@ from PyQt5.QtXml import QDomDocument
 
 import ray
 from server_sender import ServerSender
-from daemon_tools  import TemplateRoots, Terminal, RS
+from daemon_tools  import TemplateRoots, Terminal, RS, getCodeRoot
 from signaler import Signaler
 from scripter import ClientScripter
 
@@ -1345,8 +1345,11 @@ no_save_level:%i""" % (self.ray_hack.config_file,
         if self.icon and self.description and self.label:
             return
         
-        desk_path_list = ("%s/.local" % os.getenv('HOME'),
-                          '/usr/local', '/usr')
+        desk_path_list = (
+            '%s/data' % getCodeRoot(),
+            '%s/.local' % os.getenv('HOME'),
+            '/usr/local',
+            '/usr')
         
         desktop_file = self.desktop_file
         if desktop_file == '//not_found':

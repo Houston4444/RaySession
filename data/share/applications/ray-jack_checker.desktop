@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Ray Jack Checker
+Name[fr]=Contremaître de JACK
+Comment=Daemon that monitors JACK configuration
+Comment[fr]=Démon qui surveille de la configuration de JACK
+Exec=ray-jack_checker_daemon --force-reliable
+Terminal=false
+Type=Application
+Icon=raysession
+StartupNotify=false
+NoDisplay=true
+Hidden=true
+Categories=System;

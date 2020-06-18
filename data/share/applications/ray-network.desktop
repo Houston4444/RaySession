@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Network Session
+Name[fr]=Session réseau
+Comment=Manage a ray session working on another machine
+Comment[fr]=Gère une session ray fonctionnant sur une autre machine
+Exec=ray-network
+Terminal=false
+Type=Application
+Icon=network-wired
+StartupNotify=false
+NoDisplay=true
+Hidden=true
+Categories=System;

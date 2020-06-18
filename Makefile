@@ -122,9 +122,11 @@ install:
 	# Copy Client Templates Factory
 	cp -r client_templates  $(DEST_RAY)/
 	cp -r session_templates $(DEST_RAY)/
+	cp -r session_scripts   $(DEST_RAY)/
 	
 	# Copy Desktop Files
-	install -m 644 data/*.desktop $(DESTDIR)$(PREFIX)/share/applications/
+	install -m 644 data/share/applications/*.desktop \
+		$(DESTDIR)$(PREFIX)/share/applications/
 
 	# Install icons
 	install -m 644 resources/16x16/raysession.png   \

@@ -11,7 +11,7 @@ import ray
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
 from daemon_tools import (TemplateRoots, CommandLineArgs, Terminal, RS,
-                          getGitDefaultUnAndIgnored)
+                          getGitDefaultUnAndIgnored, getCodeRoot)
 
 instance = None
 signaler = Signaler.instance()
@@ -727,28 +727,21 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/exotic_action', 's')
     def rayServerExoticAction(self, path, args, types, src_addr):
         action = args[0]
-        autostart_dir = "%s/.config/autostart-scripts" % os.getenv('HOME')
-        script_path = "ray-jack_checker.sh"
+        autostart_dir = "%s/.config/autostart" % os.getenv('HOME')
+        desk_file = "ray-jack_checker.desktop"
         
         if action == 'set_jack_checker_autostart':
             if not os.path.exists(autostart_dir):
                 os.makedirs(autostart_dir)
             
-            contents = "#!/bin/bash\n"
-            contents += "exec ray-jack_checker_daemon --force-reliable\n"
+            src_full_file = "%s/data/share/applications/%s" % (getCodeRoot(),
+                                                               desk_file)
+            dest_full_path = "%s/%s" % (autostart_dir, desk_file)
             
-            full_script_path = "%s/%s" % (autostart_dir, script_path)
-            
-            file = open(full_script_path, 'w')
-            file.write(contents)
-            file.close()
-            
-            import stat
-            st = os.stat(full_script_path)
-            os.chmod(full_script_path, st.st_mode | stat.S_IEXEC)
+            shutil.copyfile(src_full_file, dest_full_path)
             
         elif action == 'unset_jack_checker_autostart':
-            os.remove("%s/%s" % (autostart_dir, script_path))
+            os.remove("%s/%s" % (autostart_dir, desk_file))
     
     @ray_method('/ray/session/get_session_name', '')
     def raySessionGetSessionName(self, path, args, types, src_addr):
