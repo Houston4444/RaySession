@@ -76,9 +76,9 @@ class Client(ServerSender, ray.ClientData):
     
     has_been_started = False
     
-    description_from_desktop = False
-    label_from_desktop = False
-    icon_from_desktop = False
+    _desktop_label = ""
+    _desktop_icon = ""
+    _desktop_description = ""
     
     def __init__(self, parent_session):
         ServerSender.__init__(self)
@@ -282,11 +282,8 @@ class Client(ServerSender, ray.ClientData):
                 attributes = el.attributes()
                 for i in range(attributes.count()):
                     attribute = attributes.item(i)
-                    print('eorfkf', attribute, type(attribute))
                     attribute_str = attribute.toAttr().name()
-                    print('oekrofk', attribute_str)
                     value = el.attribute(attribute_str)
-                    print('ozkfkfk', value)
                     self.custom_data[attribute_str] = value
         
     def writeXmlProperties(self, ctx):
@@ -294,11 +291,11 @@ class Client(ServerSender, ray.ClientData):
         ctx.setAttribute('name', self.name)
         if self.desktop_file:
             ctx.setAttribute('desktop_file', self.desktop_file)
-        if self.label and not self.label_from_desktop:
+        if self.label != self._desktop_label:
             ctx.setAttribute('label', self.label)
-        if self.description and not self.description_from_desktop:
+        if self.description != self._desktop_description:
             ctx.setAttribute('description', self.description)
-        if self.icon and not self.icon_from_desktop:
+        if self.icon != self._desktop_icon:
             ctx.setAttribute('icon', self.icon)
         if not self.check_last_save:
             ctx.setAttribute('check_last_save', 0)
@@ -1089,10 +1086,7 @@ class Client(ServerSender, ray.ClientData):
         self.check_last_save = new_client.check_last_save
         self.ignored_extensions = new_client.ignored_extensions
         self.custom_data = new_client.custom_data
-        
-        self.label_from_desktop = new_client.label_from_desktop
-        self.description = new_client.description_from_desktop
-        self.icon_from_desktop = new_client.icon_from_desktop
+        self.description = new_client.description
     
     def switch(self):
         jack_client_name    = self.getJackClientName()
@@ -1122,18 +1116,6 @@ class Client(ServerSender, ray.ClientData):
                              *self.ray_hack.spread())
         
         self.sent_to_gui = True
-    
-    def updateClientProperties(self, client_data):
-        self.executable_path = client_data.executable_path
-        self.arguments = client_data.arguments
-        self.label = client_data.label
-        self.desktop_file = client_data.desktop_file
-        self.description = client_data.description
-        self.icon = client_data.icon
-        self.check_last_save = client_data.check_last_save
-        self.ignored_extensions = client_data.ignored_extensions
-        
-        self.sendGuiClientProperties()
     
     def setPropertiesFromMessage(self, message):
         for line in message.split('\n'):
@@ -1327,17 +1309,17 @@ no_save_level:%i""" % (self.ray_hack.config_file,
             for str_value in all_data[data]:
                 if data == "Comment":
                     if str_value and not self.description:
-                        self.description_from_desktop = True
+                        self._desktop_description = str_value
                         self.description = str_value
                         break
                 elif data == "Name":
                     if str_value and not self.label:
-                        self.label_from_desktop = True
+                        self._desktop_label = str_value
                         self.label = str_value
                         break
                 elif data == "Icon":
                     if str_value and not self.icon:
-                        self.icon_from_desktop = True
+                        self._desktop_icon = str_value
                         self.icon = str_value
                         break
     

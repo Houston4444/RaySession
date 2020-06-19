@@ -123,6 +123,7 @@ install:
 	cp -r client_templates  $(DEST_RAY)/
 	cp -r session_templates $(DEST_RAY)/
 	cp -r session_scripts   $(DEST_RAY)/
+	cp -r data              $(DEST_RAY)/
 	
 	# Copy Desktop Files
 	install -m 644 data/share/applications/*.desktop \
