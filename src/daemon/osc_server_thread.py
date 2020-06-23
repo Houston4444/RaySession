@@ -868,8 +868,9 @@ class OscServerThread(ClientCommunicating):
         
         executable_path = args[0]
         via_proxy = bool(len(args) > 1 and 'via_proxy' in args[1:])
+        ray_hack = bool(len(args) > 1 and 'ray_hack' in args[1:])
         
-        if '/' in executable_path and not via_proxy:
+        if '/' in executable_path and not (via_proxy or ray_hack):
             self.send(src_addr, "/error", path, ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
