@@ -650,7 +650,6 @@ class RayHack():
     save_sig = 0
     stop_sig = 15
     wait_win = False
-    close_gracefully = False
     no_save_level = 0
     useless_str = ''
     useless_int = 0

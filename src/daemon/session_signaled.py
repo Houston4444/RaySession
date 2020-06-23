@@ -749,6 +749,8 @@ class SignaledSession(OperatingSession):
         elif ray.areTheyAllString(args):
             via_proxy = int(bool('via_proxy' in args[1:]))
             start_it = int(bool('not_start' not in args[1:]))
+            if 'ray_hack' in args[1:]:
+                protocol = ray.Protocol.RAY_HACK
             
             for arg in args[1:]:
                 if arg == 'prefix_mode:client_name':

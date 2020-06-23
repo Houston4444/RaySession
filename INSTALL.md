@@ -1,5 +1,8 @@
 # ---  INSTALL for RAYSESSION  ---
 
+Before installing, please uninstall any existing RaySession installation: <br/>
+`$ [sudo] make uninstall`
+
 To install RaySession, simply run as usual: <br/>
 `$ make` <br/>
 `$ [sudo] make install`

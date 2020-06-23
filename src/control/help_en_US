@@ -122,6 +122,7 @@ control RaySession daemons
     add_executable EXECUTABLE [OPTION1] [OPTION2]...
         Adds a client to the current session
         Available options are 
+            ray_hack    runs the executable with Ray-Hack protocol (not NSM)
             via_proxy   runs the executable into ray-proxy
             not_start   prepare the client but not start it
             prefix_mode:client_name

@@ -228,8 +228,6 @@ class Client(ServerSender, ray.ClientData):
                 self.ray_hack.stop_sig = int(ray_hack_stop_sig)
                 
             self.ray_hack.wait_win = bool(ctx.attribute('wait_win') == "1")
-            self.ray_hack.close_gracefully = bool(
-                ctx.attribute('close_gracefully') == "1")
             
             no_save_level = ctx.attribute('no_save_level')
             if no_save_level.isdigit() and 0 <= int(no_save_level) <= 2:
@@ -304,7 +302,7 @@ class Client(ServerSender, ray.ClientData):
             
         if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
             ctx.setAttribute('prefix_mode', self.prefix_mode)
-            
+
             if self.prefix_mode == ray.PrefixMode.CUSTOM:
                 ctx.setAttribute('custom_prefix', self.custom_prefix)
                 
@@ -321,8 +319,6 @@ class Client(ServerSender, ray.ClientData):
             ctx.setAttribute('save_signal', self.ray_hack.save_sig)
             ctx.setAttribute('stop_signal', self.ray_hack.stop_sig)
             ctx.setAttribute('wait_win', int(self.ray_hack.wait_win))
-            ctx.setAttribute('close_gracefully',
-                             int(self.ray_hack.close_gracefully))
             ctx.setAttribute('no_save_level', self.ray_hack.no_save_level)
         
         if self.net_session_template:
@@ -1157,6 +1153,29 @@ class Client(ServerSender, ray.ClientData):
             elif property == 'protocol':
                 # do not change protocol value
                 continue
+            
+            if self.protocol == ray.Protocol.RAY_HACK:
+                if property == 'config_file':
+                    self.ray_hack.config_file = value
+                elif property == 'save_sig':
+                    try:
+                        sig = signal.Signals(int(value))
+                        self.ray_hack.save_sig = int(value)
+                    except:
+                        continue
+                elif property == 'stop_sig':
+                    try:
+                        sig = signal.Signals(int(value))
+                        self.ray_hack.stop_sig = int(value)
+                    except:
+                        continue
+                elif property == 'wait_win':
+                    self.ray_hack.wait_win = bool(
+                        value.lower() in ('1', 'true'))
+                elif property == 'no_save_level':
+                    if value.isdigit() and 0 <= int(value) <= 2:
+                        self.ray_hack.no_save_level = int(value)
+                
                 
         self.sendGuiClientProperties()
     
@@ -1198,12 +1217,10 @@ ignored_extensions:%s""" % (self.client_id,
 save_sig:%i
 stop_sig:%i
 wait_win:%i
-close_gracefully:%i
 no_save_level:%i""" % (self.ray_hack.config_file,
                        self.ray_hack.save_sig,
                        self.ray_hack.stop_sig,
-                       self.ray_hack.wait_win,
-                       self.ray_hack.close_gracefully,
+                       int(self.ray_hack.wait_win),
                        self.ray_hack.no_save_level)
         
         return message

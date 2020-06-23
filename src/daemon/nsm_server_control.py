@@ -42,7 +42,7 @@ class OscServerThread(liblo.ServerThread):
     
     @liblo.make_method('/reply', None)
     def replyNone(self, path, args, types, src_addr):
-        #print('fkorf', args)
+        print('fkorf', args)
         
         if len(args) == 2:
             reply_path, message = args
@@ -129,7 +129,7 @@ if __name__ == '__main__':
             sys.stderr.write('missing argument after "%s"\n' % operation)
             sys.exit(100)
     
-    nsm_port = 13555
+    nsm_port = 16878
     
     if ray.isOscPortFree(nsm_port):
         sys.stderr.write("No server at port %i\n" % nsm_port)

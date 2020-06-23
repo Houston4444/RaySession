@@ -128,6 +128,7 @@ contrôle les démons de RaySession
     add_executable EXÉCUTABLE [OPTION1] [OPTION2]...
         Ajoute EXÉCUTABLE à la session en cours.
         Les options disponibles sont
+            ray_hack    lancer l'exécutable avec le protocole Ray-Hack (pas NSM) 
             via_proxy   lancer l'exécutable via un proxy
             not_start   preparer le client mais ne pas le démarrer
             prefix_mode:client_name
