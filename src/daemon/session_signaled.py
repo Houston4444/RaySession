@@ -814,7 +814,10 @@ class SignaledSession(OperatingSession):
         client = Client(self)
         
         client.protocol = protocol
-        client.executable_path = executable
+        if client.protocol == ray.Protocol.NSM and via_proxy:
+            client.executable_path = 'ray-proxy'
+        else:
+            client.executable_path = executable
         client.name = os.path.basename(executable)
         client.client_id = client_id
         client.prefix_mode = prefix_mode

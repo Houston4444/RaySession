@@ -1183,8 +1183,8 @@ class Client(ServerSender, ray.ClientData):
         protocol_str = 'NSM'
         if self.protocol == ray.Protocol.RAY_HACK:
             protocol_str = 'Ray-Hack'
-        elif self.protocol == ray.Protocol.NET_SESSION:
-            protocol_str = 'Net Session'
+        elif self.protocol == ray.Protocol.RAY_NET:
+            protocol_str = 'Ray-Net'
         
         message = """client_id:%s
 protocol:%s
