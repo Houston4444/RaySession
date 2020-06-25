@@ -830,7 +830,8 @@ class SignaledSession(OperatingSession):
             reply_str = client.client_id
             if path.startswith('/nsm/server/'):
                 reply_str = "Launched."
-            self.send(src_addr, '/reply', path, client.client_id)
+                
+            self.send(src_addr, '/reply', path, reply_str)
         else:
             self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
                       "Impossible to add client now")
