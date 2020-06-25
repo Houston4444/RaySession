@@ -328,10 +328,9 @@ class SignaledSession(OperatingSession):
                 for file in files:
                     if file in ('raysession.xml', 'session.nsm'):
                         basefolder = root.replace(self.root + '/', '', 1)
-                        self.send(src_addr, '/reply', '/nsm/server/list',
-                                basefolder)
+                        self.send(src_addr, '/reply', path, basefolder)
                         
-        self.send(src_addr, path, ray.Err.OK, "Done.")
+        self.send(src_addr, '/reply', path, "")
     
     @session_operation
     def _ray_server_new_session(self, path, args, src_addr):
@@ -827,6 +826,10 @@ class SignaledSession(OperatingSession):
         if self.addClient(client):
             if start_it:
                 client.start()
+            
+            reply_str = client.client_id
+            if path.startswith('/nsm/server/'):
+                reply_str = "Launched."
             self.send(src_addr, '/reply', path, client.client_id)
         else:
             self.send(src_addr, '/error', path, ray.Err.NOT_NOW,

@@ -481,10 +481,10 @@ class Client(ServerSender, ray.ClientData):
             self.session.endTimerIfLastExpected(self)
             
     def setStatus(self, status):
-        #ray.ClientStatus.COPY is not a status as the other ones.
-        #GUI needs to know if client is started/open/stopped while files are
-        #copied, so self.status doesn't remember ray.ClientStatus.COPY, 
-        #although it is sent to GUI
+        # ray.ClientStatus.COPY is not a status as the other ones.
+        # GUI needs to know if client is started/open/stopped while files are
+        # copied, so self.status doesn't remember ray.ClientStatus.COPY, 
+        # although it is sent to GUI
         
         if status != ray.ClientStatus.COPY:
             self.status = status
