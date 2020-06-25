@@ -20,7 +20,5 @@ konv# RaySession TODO
     
     Tuer le script de session si user decheck l'option
     
-    fenêtre de dialogue pour jack_script et basic scripts
-    
     templates in /etc/xdg
     templates list with all properties (ClientData)
