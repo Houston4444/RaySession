@@ -26,9 +26,13 @@ class ClientSlot(QFrame):
         self._main_win = self.client._session._main_win
 
         self.is_dirty_able = False
-        self.gui_visible = True
+        self.gui_visible = False
+        
         self.ui.toolButtonGUI.setVisible(False)
-
+        
+        if self.client.protocol == ray.Protocol.RAY_HACK:
+            self.showGuiButton()
+            
         # connect buttons to functions
         self.ui.toolButtonGUI.toggleGui.connect(self.toggleGui)
         self.ui.startButton.clicked.connect(self.startClient)
@@ -261,6 +265,8 @@ class ClientSlot(QFrame):
     def updateStatus(self, status):
         self.ui.lineEditClientStatus.setText(clientStatusString(status))
         
+        ray_hack = bool(self.client.protocol == ray.Protocol.RAY_HACK)
+        
         if status in (
                 ray.ClientStatus.LAUNCH,
                 ray.ClientStatus.OPEN,
@@ -292,7 +298,7 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(True)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
-            self.ui.toolButtonGUI.setEnabled(False)
+            self.ui.toolButtonGUI.setEnabled(ray_hack)
             self.grayIcon(True)
 
             self.ui.stopButton.setVisible(True)
@@ -307,7 +313,7 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(True)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
-            self.ui.toolButtonGUI.setEnabled(False)
+            self.ui.toolButtonGUI.setEnabled(ray_hack)
             self.grayIcon(True)
 
             self.ui.stopButton.setVisible(True)
@@ -331,7 +337,14 @@ class ClientSlot(QFrame):
 
     def showGuiButton(self):
         self.ui.toolButtonGUI.setVisible(True)
-        if self.client.executable_path in ('nsm-proxy', 'ray-proxy'):
+        if self.client.protocol == ray.Protocol.RAY_HACK:
+            self.ui.toolButtonGUI.setText(
+                _translate('client_slot', 'Hack'))
+            self.ui.toolButtonGUI.setToolTip(
+                _translate('client_slot',
+                           'Display client Ray-Hack properties'))
+        
+        elif self.client.executable_path in ('nsm-proxy', 'ray-proxy'):
             self.ui.toolButtonGUI.setText(_translate('client_slot', 'proxy'))
             self.ui.toolButtonGUI.setToolTip(
                 _translate('client_slot', 'Display proxy window'))
@@ -341,10 +354,19 @@ class ClientSlot(QFrame):
         self.ui.toolButtonGUI.setChecked(state)
 
     def toggleGui(self):
-        if not self.gui_visible:
-            self.toDaemon('/ray/client/show_optional_gui', self.clientId())
+        if self.client.protocol == ray.Protocol.RAY_HACK:
+            if self.gui_visible:
+                self.client.properties_dialog.hide()
+            else:
+                self.client.showPropertiesDialog(second_tab=True)
+        
         else:
-            self.toDaemon('/ray/client/hide_optional_gui', self.clientId())
+            if not self.gui_visible:
+                self.toDaemon('/ray/client/show_optional_gui',
+                              self.clientId())
+            else:
+                self.toDaemon('/ray/client/hide_optional_gui',
+                              self.clientId())
 
     def setDirtyState(self, bool_dirty):
         self.is_dirty_able = True
@@ -439,6 +461,14 @@ class ListWidgetClients(QListWidget):
             n += 1
 
         self.sortItems()
+    
+    def clientPropertiesStateChanged(self, client_id, bool_visible):
+        for i in range(self.count()):
+            item = self.item(i)
+            if item.getClientId() == client_id:
+                widget = item.f_widget
+                widget.setGuiState(bool_visible)
+                break
     
     def setSession(self, session):
         self._session = session

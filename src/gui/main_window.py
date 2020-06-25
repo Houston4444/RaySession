@@ -101,7 +101,8 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSnapshots.setDefaultAction(
             self.ui.actionReturnToAPreviousState)
 
-        self.ui.dockWidgetMessages.visibilityChanged.connect(self.resizeWinWithMessages)
+        self.ui.dockWidgetMessages.visibilityChanged.connect(
+            self.resizeWinWithMessages)
         
         # connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
@@ -178,6 +179,8 @@ class MainWindow(QMainWindow):
         sg.server_status_changed.connect(self.serverChangeServerStatus)
         sg.server_copying.connect(self.serverCopying)
         sg.daemon_url_request.connect(self.showDaemonUrlWindow)
+        sg.client_properties_state_changed.connect(
+            self.clientPropertiesStateChanged)
         
         # set spare icons if system icons not avalaible
         dark = isDarkTheme(self)
@@ -654,6 +657,10 @@ class MainWindow(QMainWindow):
 
         self._signaler.daemon_url_changed.emit(new_url)
 
+    def clientPropertiesStateChanged(self, client_id, bool_visible):
+        self.ui.listWidget.clientPropertiesStateChanged(client_id,
+                                                        bool_visible)
+    
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
 
     def removeClient(self, client_id):

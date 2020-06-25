@@ -804,9 +804,10 @@ class Client(ServerSender, ray.ClientData):
             if self.noSaveLevel():
                 self.sendGui('/ray/gui/client/no_save_level',
                              self.client_id, self.noSaveLevel())
-            self.pending_command = ray.Command.OPEN
-            self.setStatus(ray.ClientStatus.OPEN)
-            QTimer.singleShot(500, self.rayHackNearReady)
+            if self.ray_hack.config_file:
+                self.pending_command = ray.Command.OPEN
+                self.setStatus(ray.ClientStatus.OPEN)
+                QTimer.singleShot(500, self.rayHackNearReady)
     
     def processFinished(self, exit_code, exit_status):
         self.stopped_timer.stop()

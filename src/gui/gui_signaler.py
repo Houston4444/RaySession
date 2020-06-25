@@ -25,6 +25,9 @@ class Signaler(QObject):
     root_changed = pyqtSignal(str)
     
     client_added_reply = pyqtSignal(str)
+    
+    client_properties_state_changed = pyqtSignal(str, bool)
+    
 
     def __init__(self):
         QObject.__init__(self)

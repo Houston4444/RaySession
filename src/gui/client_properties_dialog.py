@@ -417,3 +417,13 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         
     def enableTestZone(self, bool_enable):
         self.rhack.groupBoxTestZone.setChecked(bool_enable)
+        
+    def hideEvent(self, event):
+        ClientPropertiesDialog.hideEvent(self, event)
+        self._signaler.client_properties_state_changed.emit(
+            self.client.client_id, False)
+        
+    def showEvent(self, event):
+        ClientPropertiesDialog.showEvent(self, event)
+        self._signaler.client_properties_state_changed.emit(
+            self.client.client_id, True)
