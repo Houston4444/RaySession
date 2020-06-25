@@ -60,6 +60,7 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_raysession.py \
 	    src/gui/ui_remove_template.py \
 	    src/gui/ui_save_template_session.py \
+	    src/gui/ui_session_scripts_info.py \
 	    src/gui/ui_script_info.py \
 	    src/gui/ui_script_user_action.py \
 	    src/gui/ui_snapshot_name.py \

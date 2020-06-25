@@ -30,6 +30,7 @@ import ui_quit_app
 import ui_client_properties
 import ui_script_info
 import ui_script_user_action
+import ui_session_scripts_info
 import ui_stop_client
 import ui_stop_client_no_save
 import ui_abort_copy
@@ -516,14 +517,17 @@ class NewSessionDialog(ChildDialog):
 
         self.setLastTemplateSelected()
 
-    def getSessionName(self):
+    def getSessionShortPath(self)->str:
         if self.ui.comboBoxSubFolder.currentIndex() > 0:
             return '%s/%s' % (self.ui.comboBoxSubFolder.currentText(),
                               self.ui.lineEdit.text())
         else:
             return self.ui.lineEdit.text()
-
-    def getTemplateName(self):
+    
+    def getSessionName(self)->str:
+        return self.ui.lineEdit.text()
+    
+    def getTemplateName(self)->str:
         index = self.ui.comboBoxTemplate.currentIndex()
         
         if index == 0:
@@ -534,7 +538,7 @@ class NewSessionDialog(ChildDialog):
 
         return self.ui.comboBoxTemplate.currentText()
     
-    def getSubFolder(self):
+    def getSubFolder(self)->str:
         if self.ui.comboBoxSubFolder.currentIndex() == 0:
             return ""
         
@@ -1051,6 +1055,24 @@ class ScriptUserActionDialog(ChildDialog):
         return self._is_terminated
 
 
+class SessionScriptsInfoDialog(ChildDialog):
+    def __init__(self, parent, session_path):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_session_scripts_info.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        scripts_dir = "%s/%s" % (session_path, ray.SCRIPTS_DIR)
+        parent_path = os.path.dirname(session_path)
+        parent_scripts = "%s/%s" % (parent_path, ray.SCRIPTS_DIR)
+        
+        session_scripts_text = self.ui.textSessionScripts.toHtml()
+        
+        self.ui.textSessionScripts.setHtml(
+            session_scripts_text % (scripts_dir, parent_scripts, parent_path))
+        
+    def notAgainValue(self)->bool:
+        return self.ui.checkBoxNotAgain.isChecked()
+
 class JackConfigInfoDialog(ChildDialog):
     def __init__(self, parent, session_path):
         ChildDialog.__init__(self, parent)
@@ -1061,29 +1083,16 @@ class JackConfigInfoDialog(ChildDialog):
         parent_path = os.path.dirname(session_path)
         parent_scripts = "%s/%s" % (parent_path, ray.SCRIPTS_DIR)
         
-        tooltip_text = self.ui.label.toolTip()
+        session_scripts_text = self.ui.textSessionScripts.toHtml()
         
-        self.ui.label.setToolTip(
-            tooltip_text % (scripts_dir, parent_scripts, parent_path))
+        self.ui.textSessionScripts.setHtml(
+            session_scripts_text % (scripts_dir, parent_scripts, parent_path))
         
-        #self.ui.checkBoxNotAgain.stateChanged.connect(self.setNotAgain)
-        #self.ui.checkBoxAutoStart.stateChanged.connect(
-                                            #self.setJackCheckerAutoStart)
     def notAgainValue(self)->bool:
         return self.ui.checkBoxNotAgain.isChecked()
     
     def autostartValue(self)->bool:
         return self.ui.checkBoxAutoStart.isChecked()
-    
-    #def setNotAgain(self, bool_checked):
-        #RS.settings.setValue('hide_jack_config_script_dialog',
-                             #True, type=bool)
-    
-    #def setJackCheckerAutoStart(self, bool_checked):
-        #action = 'set_jack_checker_autostart'
-        #if not bool_checked:
-            #action = 'un' + action
-        #self.toDaemon('/ray/server/exotic_action', action)
 
 
 class DaemonUrlWindow(ChildDialog):

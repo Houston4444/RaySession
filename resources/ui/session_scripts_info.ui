@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>502</width>
-    <height>575</height>
+    <height>565</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Jack Configuration Infos</string>
+   <string>Session Scripts Infos</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -20,7 +20,7 @@
       <string/>
      </property>
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You create a session from the JACK configuration reminder template.&lt;/p&gt;&lt;p&gt;This means that when you re-open this session, JACK may be restarted with the configuration used by that session.&lt;/p&gt;&lt;p&gt;This session callback is made from the session scripts.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You create a session with the basic session scripts.&lt;br/&gt;If you don't know what a script is, or you have absolutely no knowledge in shell scripting, you don't belong here, get out of here right now.&lt;/p&gt;&lt;p&gt;While you've not edited the scripts, session will behave as a normal session.&lt;/p&gt;&lt;p&gt;You will find in the session folder a &lt;span style=&quot; font-style:italic;&quot;&gt;ray-scripts&lt;/span&gt; folder.&lt;br/&gt;In the &lt;span style=&quot; font-style:italic;&quot;&gt;ray-scripts &lt;/span&gt;folder you will find 3 files:&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;load.sh&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;save.sh&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;close.sh&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;In theses 3 scripts you can edit some actions to do before or after load, save, or close the session.&lt;br/&gt;If you don't need custom actions at one of theses 3 steps, you can safely remove its file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -80,77 +80,6 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="groupBox_2">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="title">
-      <string>Jack Config Script Infos</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_4">
-      <item>
-       <widget class="QTextEdit" name="textJackConfig">
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-        <property name="html">
-         <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Noto Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;The principle is as follows:&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Each time the session is saved, the JACK configuration is saved in the session.&lt;br /&gt;Before opening, JACK is restarted if the session configuration is different from the current one.&lt;br /&gt;After closing, JACK is restarted as it was configured before opening if needed.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If you open this session on another computer, the JACK configuration will not be recalled but will be overwritten when you save.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If you wish to open this session without reloading the JACK configuration, simply disable the session scripts.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
-    <widget class="QCheckBox" name="checkBoxAutoStart">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Unfortunately, at the moment it is not possible to get the current JACK configuration with certainty, so JACK will be restarted at the first session opening.&lt;br/&gt;You can work around this problem by automatically starting a light daemon at your desktop session startup.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Automatically start ray-jack_checker daemon at startup</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QCheckBox" name="checkBoxNotAgain">
      <property name="text">
       <string>Do not show this message again</string>
@@ -166,14 +95,13 @@ p, li { white-space: pre-wrap; }
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::Abort|QDialogButtonBox::Ok</set>
      </property>
     </widget>
    </item>
   </layout>
  </widget>
  <tabstops>
-  <tabstop>checkBoxAutoStart</tabstop>
   <tabstop>checkBoxNotAgain</tabstop>
  </tabstops>
  <resources/>
