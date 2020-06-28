@@ -1386,8 +1386,16 @@ no_save_level:%i""" % (self.ray_hack.config_file,
         else:
             desk_file_found = False
             for desk_path in desk_path_list:
-                for desk_file in os.listdir("%s/share/applications/"
-                                            % desk_path):
+                full_desk_path = "%s/share/applications" % desk_path
+                if not os.path.isdir(full_desk_path):
+                    # applications folder doesn't exists
+                    continue
+                
+                if not os.access(full_desk_path, os.R_OK):
+                    # no permission to read this applications folder
+                    continue
+                
+                for desk_file in os.listdir(full_desk_path):
                     if not desk_file.endswith('.desktop'):
                         continue
                     
