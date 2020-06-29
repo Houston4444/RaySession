@@ -107,7 +107,7 @@ def signalHandler(sig, frame):
 try:
     filename = sys.argv[1]
 except:
-    print('need file as argument, exit', file=sys.stderr)
+    sys.stderr.write('need file as argument, exit\n')
     sys.exit(0)
 
 

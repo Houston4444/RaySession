@@ -20,4 +20,4 @@ for line in all_lines:
             args = qargs[2:-2]
         output += "%s %s\n" % (mess, args)
 
-print(output)
+sys.stdout.write(output)

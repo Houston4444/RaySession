@@ -1358,7 +1358,6 @@ class OscServerThread(ClientCommunicating):
                       favorite.name, favorite.icon, int(favorite.factory))
         
         for client in self.session.clients:
-            print("ddssd", client.client_id, client.spread())
             self.send(gui_addr,
                       '/ray/gui/client/new',
                       *client.spread())

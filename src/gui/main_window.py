@@ -396,9 +396,6 @@ class MainWindow(QMainWindow):
             self.toDaemon('/ray/server/new_session', session_short_path)
             return
         
-        print('temmmplate name', template_name)
-        print(ray.factory_session_templates[0])
-        
         if template_name.startswith('///'):
             if template_name == '///' + ray.factory_session_templates[1]:
                 if not RS.settings.value('hide_jack_config_script_dialog',

@@ -28,12 +28,6 @@ def dbus_signal_receiver(*args, **kwds):
     # dbus signal for something else than JACK, do nothing
     if not kwds['interface'].startswith('org.jackaudio.'):
         return
-    
-    #if kwds['member'] == 'ClientAppeared':
-        #print('eirjgckck')
-        #print(args[:1])
-        #koko = patchbay_iface.GetClientPID(args[1])
-        #print(koko)
         
     if not kwds['member'] in ('ServerStarted', 'ServerStopped',
                               'PortAppeared'):

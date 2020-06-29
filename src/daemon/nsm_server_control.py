@@ -27,7 +27,6 @@ class OscServerThread(liblo.ServerThread):
     #@liblo.make_method('/reply', 'ss')
     #def replyMessage(self, path, args, types, src_addr):
         #reply_path, message = args
-        #print('fko', reply_path, message)
         #sys.stdout.write("%s\n" % message)
         
         #if reply_path != '/nsm/server/list':
@@ -42,11 +41,8 @@ class OscServerThread(liblo.ServerThread):
     
     @liblo.make_method('/reply', None)
     def replyNone(self, path, args, types, src_addr):
-        print('fkorf', args)
-        
         if len(args) == 2:
             reply_path, message = args
-            #print('fko', reply_path, message)
             sys.stdout.write("%s\n" % message)
             
             if reply_path != '/nsm/server/list':
