@@ -1371,6 +1371,13 @@ class OscServerThread(ClientCommunicating):
             
             self.send(gui_addr, "/ray/gui/client/status",
                       client.client_id,  client.status)
+            
+            if client.isCapableOf(':optional-gui:'):
+                self.send(gui_addr, '/ray/gui/client/has_optional_gui',
+                          client.client_id)
+                
+                self.send(gui_addr, '/ray/gui/client/gui_visible',
+                          client.client_id, client.gui_visible)
         
         self.gui_list.append(gui_addr)
         
