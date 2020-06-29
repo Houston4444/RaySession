@@ -391,6 +391,8 @@ def saveFile():
     
     delete_list = []
     
+    # delete connection of the saved_connections
+    # if its two ports are still presents and not connected
     for i in range(len(saved_connections)):
         if (portExists(saved_connections[i][0], PORT_MODE_OUTPUT)
                 and portExists(saved_connections[i][1], PORT_MODE_INPUT)):
@@ -475,7 +477,6 @@ if __name__ == '__main__':
     #connect signals
     signal.signal(signal.SIGINT , signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
-    
     
     #get all currents Jack ports and connections
     portNameList = c_char_p_p_to_list(jacklib.get_ports(jack_client,
