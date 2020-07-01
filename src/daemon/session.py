@@ -1911,7 +1911,7 @@ for better organization.""")
             if (os.path.isdir(templates_root)
                     and os.access(templates_root, os.R_OK)):
                 search_paths = [ "%s/%s" % (templates_root, f)
-                                  for f in os.listdir(templates_root)]
+                                  for f in sorted(os.listdir(templates_root))]
         
         for search_path in search_paths:
             xml_file = "%s/%s" % (search_path, 'client_templates.xml')

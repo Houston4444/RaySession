@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import sys
 from liblo import Address
-from PyQt5.QtCore import QCoreApplication
+from PyQt5.QtCore import QCoreApplication, QProcess
 from PyQt5.QtXml  import QDomDocument
 
 import ray
@@ -293,7 +293,7 @@ class SignaledSession(OperatingSession):
             if (os.path.isdir(templates_root)
                     and os.access(templates_root, os.R_OK)):
                 search_paths = [ "%s/%s" % (templates_root, f)
-                                  for f in os.listdir(templates_root)]
+                                for f in sorted(os.listdir(templates_root)) ]
         
         for search_path in search_paths:
             templates_file = "%s/%s" % (search_path, 'client_templates.xml')
@@ -335,6 +335,7 @@ class SignaledSession(OperatingSession):
                 if not template_name or template_name in template_list:
                     continue
                 
+                # check if needed executables are present 
                 executable = ct.attribute('executable')
                 
                 if not executable:
@@ -358,9 +359,22 @@ class SignaledSession(OperatingSession):
                 if not try_exec_ok:
                     continue
                 
-                template_client = Client(self)
-                template_client.readXmlProperties(ct)
-                template_client.client_id = ct.attribute('client_id')
+                # search for '/nsm/server/announce' in executable binary
+                # if it is asked by "check_nsm_bin" key
+                if ct.attribute('check_nsm_bin') in  ("1", "true"):
+                    result = QProcess.execute(
+                        'grep', [ '-q', '/nsm/server/announce',
+                                 shutil.which(executable)])
+                    if result:
+                        continue
+                    
+                # save template client properties only for GUI call
+                # to optimize ray_control answer speed
+                template_client = None
+                if src_addr_is_gui:
+                    template_client = Client(self)
+                    template_client.readXmlProperties(ct)
+                    template_client.client_id = ct.attribute('client_id')
                 
                 template_list.append(template_name)
                 tmp_template_list.append((template_name, template_client))
@@ -377,15 +391,15 @@ class SignaledSession(OperatingSession):
                     
                     tmp_template_list.clear()
                 
-            if tmp_template_list:
-                self.send(src_addr, '/reply', path,
-                        *[t[0] for t in tmp_template_list])
-                
-                if src_addr_is_gui:
-                    for template_name, template_client in tmp_template_list:
-                        self.sendGui('/ray/gui/client_template_update',
-                                    int(factory), template_name,
-                                    *template_client.spread())
+        if tmp_template_list:
+            self.send(src_addr, '/reply', path,
+                    *[t[0] for t in tmp_template_list])
+            
+            if src_addr_is_gui:
+                for template_name, template_client in tmp_template_list:
+                    self.sendGui('/ray/gui/client_template_update',
+                                int(factory), template_name,
+                                *template_client.spread())
         
         # send a last empty reply to say list is finished
         self.send(src_addr, '/reply', path)
