@@ -1903,155 +1903,167 @@ for better organization.""")
     def addClientTemplate(self, src_addr, src_path, 
                           template_name, factory=False):
         templates_root = TemplateRoots.user_clients
+        search_paths = [templates_root]
+        
         if factory:
             templates_root = TemplateRoots.factory_clients
-            
-        xml_file = "%s/%s" % (templates_root, 'client_templates.xml')
-        try:
-            file = open(xml_file, 'r')
-            xml = QDomDocument()
-            xml.setContent(file.read())
-            file.close()
-        except:
-            self.answer(src_addr, src_path,
-                         _translate('GUIMSG', '%s is missing or corrupted !')
-                            % xml_file,
-                         ray.Err.NO_SUCH_FILE)
-            return
+            search_paths.clear()
+            if (os.path.isdir(templates_root)
+                    and os.access(templates_root, os.R_OK)):
+                search_paths = [ "%s/%s" % (templates_root, f)
+                                  for f in os.listdir(templates_root)]
         
-        if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
-            self.answer(src_addr, src_path,
-                        _translate('GUIMSG',
-                            '%s has no RAY-CLIENT-TEMPLATES top element !')
-                                % xml_file,
-                        ray.Err.BAD_PROJECT)
-            return
-        
-        nodes = xml.documentElement().childNodes()
-        
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            ct = node.toElement()
+        for search_path in search_paths:
+            xml_file = "%s/%s" % (search_path, 'client_templates.xml')
             
-            if ct.tagName() != 'Client-Template':
-                continue
-            
-            if ct.attribute('template-name') != template_name:
-                continue
-            
-            client = Client(self)
-            client.readXmlProperties(ct)
-            
-            if ct.attribute('check_nsm_bin') in  ("1", "true"):
-                if not client.executable_path:
-                    continue
-                
-                result = QProcess.execute(
-                    'grep', [ '-q', '/nsm/server/announce',
-                             shutil.which(client.executable_path)])
-                if result:
-                    continue
-                
-            needed_version = ct.attribute('needed-version')
-            
-            if (needed_version.startswith('.')
-                    or needed_version.endswith('.')
-                    or not needed_version.replace('.', '').isdigit()):
-                #needed-version not writed correctly, ignores it
-                needed_version = ''
-            
-            if factory and needed_version:
-                version_process = QProcess()
-                version_process.start(client.executable_path, ['--version'])
-                version_process.waitForFinished(500)
-                
-                if version_process.state():
-                    version_process.terminate()
-                    version_process.waitForFinished(500)
-                    continue
-                
-                full_program_version = str(
-                    version_process.readAllStandardOutput(),
-                    encoding='utf-8')
-                
-                previous_is_digit = False
-                program_version = ''
-                
-                for character in full_program_version:
-                    if character.isdigit():
-                        program_version+=character
-                        previous_is_digit = True
-                    elif character == '.':
-                        if previous_is_digit:
-                            program_version+=character
-                        previous_is_digit = False
-                    else:
-                        if program_version:
-                            break
-                        
-                if not program_version:
-                    continue
-                
-                
-                neededs = []
-                progvss = []
-                
-                for n in needed_version.split('.'):
-                    neededs.append(int(n))
-                    
-                for n in program_version.split('.'):
-                    progvss.append(int(n))
-                
-                if neededs > progvss:
-                    node = node.nextSibling()
-                    continue
-            
-            full_name_files = []
-            
-            if not needed_version: 
-                # if there is a needed version, 
-                # then files are ignored because factory templates with
-                # version must be NSM compatible
-                # and dont need files (factory)
-                template_path = "%s/%s" % (templates_root, template_name)
-                
-                if os.path.isdir(template_path):
-                    for file in os.listdir(template_path):
-                        full_name_files.append("%s/%s"
-                                                % (template_path, file))
-                        
-            if not self.addClient(client):
+            try:
+                file = open(xml_file, 'r')
+                xml = QDomDocument()
+                xml.setContent(file.read())
+                file.close()
+            except:
                 self.answer(src_addr, src_path,
-                            "Session does not accept any new client now",
-                            ray.Err.NOT_NOW)
+                            _translate('GUIMSG', '%s is missing or corrupted !')
+                                % xml_file,
+                            ray.Err.NO_SUCH_FILE)
                 return
-                
-            if full_name_files:
-                client.setStatus(ray.ClientStatus.PRECOPY)
-                self.file_copier.startClientCopy(
-                    client.client_id, full_name_files, self.path, 
-                    self.addClientTemplate_step_1, 
-                    self.addClientTemplateAborted, 
-                    [src_addr, src_path, client])
-            else:
-                self.addClientTemplate_step_1(src_addr, src_path,
-                                                client)
-                
-            break
-        else:
-            # no template found with that name
-            for favorite in RS.favorites:
-                if (favorite.name == template_name
-                        and favorite.factory == factory):
-                    self.sendGui('/ray/gui/favorites/removed',
-                                 favorite.name,
-                                 int(favorite.factory))
-                    RS.favorites.remove(favorite)
-                    break
             
-            self.send(src_addr, '/error', src_path, ray.Err.NO_SUCH_FILE,
-                      _translate('GUIMSG', "%s is not an existing template !")
-                        % ray.highlightText(template_name))
+            if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
+                self.answer(src_addr, src_path,
+                            _translate('GUIMSG',
+                                '%s has no RAY-CLIENT-TEMPLATES top element !')
+                                    % xml_file,
+                            ray.Err.BAD_PROJECT)
+                return
+            
+            nodes = xml.documentElement().childNodes()
+            
+            for i in range(nodes.count()):
+                node = nodes.at(i)
+                ct = node.toElement()
+                
+                if ct.tagName() != 'Client-Template':
+                    continue
+                
+                if ct.attribute('template-name') != template_name:
+                    continue
+                
+                client = Client(self)
+                client.readXmlProperties(ct)
+                
+                # search for '/nsm/server/announce' in executable binary
+                # if it is asked by "check_nsm_bin" key
+                if ct.attribute('check_nsm_bin') in  ("1", "true"):
+                    if not client.executable_path:
+                        continue
+                    
+                    result = QProcess.execute(
+                        'grep', [ '-q', '/nsm/server/announce',
+                                shutil.which(client.executable_path)])
+                    if result:
+                        continue
+                    
+                needed_version = ct.attribute('needed-version')
+                
+                if (needed_version.startswith('.')
+                        or needed_version.endswith('.')
+                        or not needed_version.replace('.', '').isdigit()):
+                    #needed-version not writed correctly, ignores it
+                    needed_version = ''
+                
+                if factory and needed_version:
+                    version_process = QProcess()
+                    version_process.start(client.executable_path,
+                                          ['--version'])
+                    version_process.waitForFinished(500)
+                    
+                    if version_process.state():
+                        version_process.terminate()
+                        version_process.waitForFinished(500)
+                        continue
+                    
+                    full_program_version = str(
+                        version_process.readAllStandardOutput(),
+                        encoding='utf-8')
+                    
+                    previous_is_digit = False
+                    program_version = ''
+                    
+                    for character in full_program_version:
+                        if character.isdigit():
+                            program_version+=character
+                            previous_is_digit = True
+                        elif character == '.':
+                            if previous_is_digit:
+                                program_version+=character
+                            previous_is_digit = False
+                        else:
+                            if program_version:
+                                break
+                            
+                    if not program_version:
+                        continue
+                    
+                    
+                    neededs = []
+                    progvss = []
+                    
+                    for n in needed_version.split('.'):
+                        neededs.append(int(n))
+                        
+                    for n in program_version.split('.'):
+                        progvss.append(int(n))
+                    
+                    if neededs > progvss:
+                        node = node.nextSibling()
+                        continue
+                
+                full_name_files = []
+                
+                if not needed_version: 
+                    # if there is a needed version, 
+                    # then files are ignored because factory templates with
+                    # version must be NSM compatible
+                    # and dont need files (factory)
+                    template_path = "%s/%s" % (search_path, template_name)
+                    
+                    if os.path.isdir(template_path):
+                        for file in os.listdir(template_path):
+                            full_name_files.append("%s/%s"
+                                                    % (template_path, file))
+                            
+                if not self.addClient(client):
+                    self.answer(src_addr, src_path,
+                                "Session does not accept any new client now",
+                                ray.Err.NOT_NOW)
+                    return
+                    
+                if full_name_files:
+                    client.setStatus(ray.ClientStatus.PRECOPY)
+                    self.file_copier.startClientCopy(
+                        client.client_id, full_name_files, self.path, 
+                        self.addClientTemplate_step_1, 
+                        self.addClientTemplateAborted, 
+                        [src_addr, src_path, client])
+                else:
+                    self.addClientTemplate_step_1(src_addr, src_path,
+                                                    client)
+                    
+                return
+            
+        # no template found with that name
+        for favorite in RS.favorites:
+            if (favorite.name == template_name
+                    and favorite.factory == factory):
+                self.sendGui('/ray/gui/favorites/removed',
+                                favorite.name,
+                                int(favorite.factory))
+                RS.favorites.remove(favorite)
+                break
+        
+        self.send(src_addr, '/error', src_path, ray.Err.NO_SUCH_FILE,
+                    _translate('GUIMSG', "%s is not an existing template !")
+                    % ray.highlightText(template_name))
     
     def addClientTemplate_step_1(self, src_addr, src_path, client):
         client.adjustFilesAfterCopy(self.name, ray.Template.CLIENT_LOAD)

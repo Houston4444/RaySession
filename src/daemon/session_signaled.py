@@ -269,110 +269,123 @@ class SignaledSession(OperatingSession):
         self.sendGui('/ray/gui/server/root', self.root)
     
     def _ray_server_list_client_templates(self, path, args, src_addr):
-        template_list = []
-        tmp_template_list = []
-        
-        templates_root = TemplateRoots.user_clients
-        
-        factory = bool('factory' in path)
-        if factory:
-            templates_root = TemplateRoots.factory_clients
-        
+        # if src_addr is an announced ray GUI
+        # server will send it all templates properties
+        # else, server replies only templates names
         src_addr_is_gui = False
         server = self.getServer()
         if server:
             src_addr_is_gui = bool(server.isGuiAddress(src_addr))
         
-        templates_file = "%s/%s" % (templates_root, 'client_templates.xml')
+        template_list = [] # list of template names
         
-        if not os.path.isfile(templates_file):
-            return
+        # list of (template_name, client_template)
+        # where client_template is a fake client with all template properties
+        tmp_template_list = []
         
-        if not os.access(templates_file, os.R_OK):
-            return
+        templates_root = TemplateRoots.user_clients
+        search_paths = [templates_root]
         
-        file = open(templates_file, 'r')
-        xml = QDomDocument()
-        xml.setContent(file.read())
-        file.close()
+        factory = bool('factory' in path)
+        if factory:
+            templates_root = TemplateRoots.factory_clients
+            search_paths.clear()
+            if (os.path.isdir(templates_root)
+                    and os.access(templates_root, os.R_OK)):
+                search_paths = [ "%s/%s" % (templates_root, f)
+                                  for f in os.listdir(templates_root)]
         
-        content = xml.documentElement()
-        
-        if content.tagName() != "RAY-CLIENT-TEMPLATES":
-            return
-        
-        file_rewritten = False
-        
-        if not factory:
-            if content.attribute('VERSION') != ray.VERSION:
-                file_rewritten = self.rewriteUserTemplatesFile(
-                                    content, templates_file)
-        
-        nodes = content.childNodes()
-        
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            ct = node.toElement()
-            tag_name = ct.tagName()
-            if tag_name != 'Client-Template':
+        for search_path in search_paths:
+            templates_file = "%s/%s" % (search_path, 'client_templates.xml')
+            
+            if not os.path.isfile(templates_file):
                 continue
             
-            template_name = ct.attribute('template-name')
-            
-            if not template_name or template_name in template_list:
+            if not os.access(templates_file, os.R_OK):
                 continue
             
-            executable = ct.attribute('executable')
+            file = open(templates_file, 'r')
+            xml = QDomDocument()
+            xml.setContent(file.read())
+            file.close()
             
-            if not executable:
+            content = xml.documentElement()
+            
+            if content.tagName() != "RAY-CLIENT-TEMPLATES":
                 continue
             
-            try_exec_line = ct.attribute('try-exec')
+            file_rewritten = False
             
-            try_exec_list = []
-            if try_exec_line:
-                try_exec_list = ct.attribute('try-exec').split(';')
+            if not factory:
+                if content.attribute('VERSION') != ray.VERSION:
+                    file_rewritten = self.rewriteUserTemplatesFile(
+                                        content, templates_file)
+            
+            nodes = content.childNodes()
+            
+            for i in range(nodes.count()):
+                node = nodes.at(i)
+                ct = node.toElement()
+                tag_name = ct.tagName()
+                if tag_name != 'Client-Template':
+                    continue
                 
-            try_exec_list.append(executable)
-            try_exec_ok = True
-            
-            for try_exec in try_exec_list:
-                exec_path = shutil.which(try_exec)
-                if not exec_path:
-                    try_exec_ok = False
-                    break
-            
-            if not try_exec_ok:
-                continue
-            
-            template_client = Client(self)
-            template_client.readXmlProperties(ct)
-            template_client.client_id = ct.attribute('client_id')
-            
-            template_list.append(template_name)
-            tmp_template_list.append((template_name, template_client))
-            
-            if len(tmp_template_list) == 20:
+                template_name = ct.attribute('template-name')
+                
+                if not template_name or template_name in template_list:
+                    continue
+                
+                executable = ct.attribute('executable')
+                
+                if not executable:
+                    continue
+                
+                try_exec_line = ct.attribute('try-exec')
+                
+                try_exec_list = []
+                if try_exec_line:
+                    try_exec_list = ct.attribute('try-exec').split(';')
+                    
+                try_exec_list.append(executable)
+                try_exec_ok = True
+                
+                for try_exec in try_exec_list:
+                    exec_path = shutil.which(try_exec)
+                    if not exec_path:
+                        try_exec_ok = False
+                        break
+                
+                if not try_exec_ok:
+                    continue
+                
+                template_client = Client(self)
+                template_client.readXmlProperties(ct)
+                template_client.client_id = ct.attribute('client_id')
+                
+                template_list.append(template_name)
+                tmp_template_list.append((template_name, template_client))
+                
+                if len(tmp_template_list) == 20:
+                    self.send(src_addr, '/reply', path,
+                            *[t[0] for t in tmp_template_list])
+                    
+                    if src_addr_is_gui:
+                        for template_name, template_client in tmp_template_list:
+                            self.sendGui('/ray/gui/client_template_update',
+                                        int(factory), template_name,
+                                        *template_client.spread())
+                    
+                    tmp_template_list.clear()
+                
+            if tmp_template_list:
                 self.send(src_addr, '/reply', path,
-                          *[t[0] for t in tmp_template_list])
+                        *[t[0] for t in tmp_template_list])
                 
                 if src_addr_is_gui:
                     for template_name, template_client in tmp_template_list:
                         self.sendGui('/ray/gui/client_template_update',
                                     int(factory), template_name,
                                     *template_client.spread())
-                
-                tmp_template_list.clear()
-            
-        if tmp_template_list:
-            self.send(src_addr, '/reply', path,
-                      *[t[0] for t in tmp_template_list])
-            
-            if src_addr_is_gui:
-                for template_name, template_client in tmp_template_list:
-                    self.sendGui('/ray/gui/client_template_update',
-                                int(factory), template_name,
-                                *template_client.spread())
         
         # send a last empty reply to say list is finished
         self.send(src_addr, '/reply', path)
