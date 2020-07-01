@@ -149,6 +149,10 @@ class GUIServerThread(liblo.ServerThread):
         if not ray.areTheyAllString(args):
             return False
     
+    @ray_method('/ray/gui/client_template_update', 'is' + ray.ClientData.sisi())
+    def _client_template_update(self, path, args, types, src_addr):
+        self._signaler.client_template_update.emit(args)
+    
     @ray_method('/ray/gui/client/new', ray.ClientData.sisi())
     def _client_new(self, path, args, types, src_addr):
         pass

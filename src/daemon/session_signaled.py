@@ -1,5 +1,6 @@
 
 import os
+import shutil
 import subprocess
 import sys
 from liblo import Address
@@ -12,7 +13,7 @@ from client import Client
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
 from scripter import Scripter
-from daemon_tools import Terminal, CommandLineArgs
+from daemon_tools import Terminal, CommandLineArgs, TemplateRoots
 from session import OperatingSession
 
 _translate = QCoreApplication.translate
@@ -266,6 +267,130 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path, 
                   "root folder changed to %s" % self.root)
         self.sendGui('/ray/gui/server/root', self.root)
+    
+    def _ray_server_list_client_templates(self, path, args, src_addr):
+        template_list = []
+        tmp_template_list = []
+        
+        templates_root = TemplateRoots.user_clients
+        
+        factory = bool('factory' in path)
+        if factory:
+            templates_root = TemplateRoots.factory_clients
+        
+        src_addr_is_gui = False
+        server = self.getServer()
+        if server:
+            src_addr_is_gui = bool(server.isGuiAddress(src_addr))
+        
+        templates_file = "%s/%s" % (templates_root, 'client_templates.xml')
+        
+        if not os.path.isfile(templates_file):
+            return
+        
+        if not os.access(templates_file, os.R_OK):
+            return
+        
+        file = open(templates_file, 'r')
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        file.close()
+        
+        content = xml.documentElement()
+        
+        if content.tagName() != "RAY-CLIENT-TEMPLATES":
+            return
+        
+        file_rewritten = False
+        
+        if not factory:
+            if content.attribute('VERSION') != ray.VERSION:
+                file_rewritten = self.rewriteUserTemplatesFile(
+                                    content, templates_file)
+        
+        nodes = content.childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            ct = node.toElement()
+            tag_name = ct.tagName()
+            if tag_name != 'Client-Template':
+                continue
+            
+            template_name = ct.attribute('template-name')
+            
+            if not template_name or template_name in template_list:
+                continue
+            
+            executable = ct.attribute('executable')
+            
+            if not executable:
+                continue
+            
+            try_exec_line = ct.attribute('try-exec')
+            
+            try_exec_list = []
+            if try_exec_line:
+                try_exec_list = ct.attribute('try-exec').split(';')
+                
+            try_exec_list.append(executable)
+            try_exec_ok = True
+            
+            for try_exec in try_exec_list:
+                exec_path = shutil.which(try_exec)
+                if not exec_path:
+                    try_exec_ok = False
+                    break
+            
+            if not try_exec_ok:
+                continue
+            
+            template_client = Client(self)
+            template_client.readXmlProperties(ct)
+            template_client.client_id = ct.attribute('client_id')
+            
+            template_list.append(template_name)
+            tmp_template_list.append((template_name, template_client))
+            
+            if len(tmp_template_list) == 20:
+                self.send(src_addr, '/reply', path,
+                          *[t[0] for t in tmp_template_list])
+                
+                if src_addr_is_gui:
+                    for template_name, template_client in tmp_template_list:
+                        self.sendGui('/ray/gui/client_template_update',
+                                    int(factory), template_name,
+                                    *template_client.spread())
+                
+                tmp_template_list.clear()
+            
+        if tmp_template_list:
+            self.send(src_addr, '/reply', path,
+                      *[t[0] for t in tmp_template_list])
+            
+            if src_addr_is_gui:
+                for template_name, template_client in tmp_template_list:
+                    self.sendGui('/ray/gui/client_template_update',
+                                int(factory), template_name,
+                                *template_client.spread())
+        
+        # send a last empty reply to say list is finished
+        self.send(src_addr, '/reply', path)
+        
+        if file_rewritten:
+            try:
+                file = open(templates_file, 'w')
+                file.write(xml.toString())
+                file.close()
+            except:
+                sys.stderr.write(
+                    'unable to rewrite User Client Templates XML File\n')
+    
+    def _ray_server_list_factory_client_templates(self, path, args, src_addr):
+        self._ray_server_list_client_templates(path, args, src_addr)
+    
+    def _ray_server_list_user_client_templates(self, path, args, src_addr):
+        self._ray_server_list_client_templates(path, args, src_addr)
     
     def _ray_server_list_sessions(self, path, args, src_addr):
         with_net = False

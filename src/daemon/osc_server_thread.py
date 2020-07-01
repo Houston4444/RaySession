@@ -478,12 +478,12 @@ class OscServerThread(ClientCommunicating):
     
     @ray_method('/ray/server/list_user_client_templates', '')
     def rayServerListUserClientTemplates(self, path, args, types, src_addr):
-        self.listClientTemplates(src_addr, path)
+        pass
     
     @ray_method('/ray/server/list_factory_client_templates', '')
     def rayServerListFactoryClientTemplates(self, path, args, types,
                                             src_addr):
-        self.listClientTemplates(src_addr, path)
+        pass
     
     @ray_method('/ray/server/remove_client_template', 's')
     def rayServerRemoveClientTemplate(self, path, args, types, src_addr):
@@ -1216,102 +1216,6 @@ class OscServerThread(ClientCommunicating):
         
         return True
     
-    def listClientTemplates(self, src_addr, path):
-        template_list = []
-        tmp_template_list = []
-        
-        templates_root = TemplateRoots.user_clients
-        
-        factory = bool('factory' in path)
-        if factory:
-            templates_root = TemplateRoots.factory_clients
-        
-        templates_file = "%s/%s" % (templates_root, 'client_templates.xml')
-        
-        if not os.path.isfile(templates_file):
-            return
-        
-        if not os.access(templates_file, os.R_OK):
-            return
-        
-        file = open(templates_file, 'r')
-        xml = QDomDocument()
-        xml.setContent(file.read())
-        file.close()
-        
-        content = xml.documentElement()
-        
-        if content.tagName() != "RAY-CLIENT-TEMPLATES":
-            return
-        
-        file_rewritten = False
-        
-        if not factory:
-            if content.attribute('VERSION') != ray.VERSION:
-                file_rewritten = self.rewriteUserTemplatesFile(
-                                    content, templates_file)
-        
-        nodes = content.childNodes()
-        
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            ct = node.toElement()
-            tag_name = ct.tagName()
-            if tag_name != 'Client-Template':
-                continue
-            
-            template_name = ct.attribute('template-name')
-            
-            if not template_name or template_name in template_list:
-                continue
-            
-            executable = ct.attribute('executable')
-            
-            if not executable:
-                continue
-            
-            try_exec_line = ct.attribute('try-exec')
-            
-            try_exec_list = []
-            if try_exec_line:
-                try_exec_list = ct.attribute('try-exec').split(';')
-                
-            try_exec_list.append(executable)
-            try_exec_ok = True
-            
-            for try_exec in try_exec_list:
-                exec_path = shutil.which(try_exec)
-                if not exec_path:
-                    try_exec_ok = False
-                    break
-            
-            if not try_exec_ok:
-                continue
-            
-            template_list.append("%s/%s" % (template_name,
-                                            ct.attribute('icon')))
-            tmp_template_list.append("%s/%s" % (template_name,
-                                                ct.attribute('icon')))
-            
-            if len(tmp_template_list) == 20:
-                self.send(src_addr, '/reply', path, *tmp_template_list)
-                template_list.clear()
-        
-        if tmp_template_list:
-            self.send(src_addr, '/reply', path, *tmp_template_list)
-        
-        # send a last empty reply to say list is finished
-        self.send(src_addr, '/reply', path)
-        
-        if file_rewritten:
-            try:
-                file = open(templates_file, 'w')
-                file.write(xml.toString())
-                file.close()
-            except:
-                sys.stderr.write(
-                    'unable to rewrite User Client Templates XML File\n')
-    
     def sendRenameable(self, renameable):
         if not renameable:
             self.sendGui('/ray/gui/session/renameable', 0)
@@ -1422,3 +1326,9 @@ class OscServerThread(ClientCommunicating):
             return 1
         
         return 0
+    
+    def isGuiAddress(self, addr):
+        for gui_addr in self.gui_list:
+            if ray.areSameOscPort(gui_addr.url, addr.url):
+                return True
+        return False

@@ -18,9 +18,11 @@ class Signaler(QObject):
     reply_auto_snapshot = pyqtSignal(bool)
     server_progress = pyqtSignal(float)
     server_status_changed = pyqtSignal(int)
-
+    
     daemon_url_request = pyqtSignal(int, str)
     daemon_url_changed = pyqtSignal(str)
+    
+    client_template_update = pyqtSignal(list)
     
     root_changed = pyqtSignal(str)
     

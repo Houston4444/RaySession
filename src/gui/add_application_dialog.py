@@ -12,7 +12,8 @@ import ui_template_slot
 import ui_remove_template
 
 class TemplateSlot(QFrame):
-    def __init__(self, list_widget, item, session, icon, name, factory):
+    def __init__(self, list_widget, item, session,
+                 name, factory, client_data):
         QFrame.__init__(self)
         self.ui = ui_template_slot.Ui_Frame()
         self.ui.setupUi(self)
@@ -21,10 +22,11 @@ class TemplateSlot(QFrame):
         self.item = item
         self._session = session
         self.name = name
-        self.icon_name = icon
         self.factory = factory
+        self.client_data = client_data
         
-        self.ui.toolButtonIcon.setIcon(ray.getAppIcon(icon, self))
+        self.ui.toolButtonIcon.setIcon(
+            ray.getAppIcon(self.client_data.icon, self))
         self.ui.label.setText(name)
         self.ui.toolButtonUser.setVisible(not factory)
         
@@ -59,13 +61,19 @@ class TemplateSlot(QFrame):
         
         self.ui.toolButtonFavorite.clicked.connect(self.favoriteClicked)
     
+    def updateClientData(self, *args):
+        self.client_data.update(*args)
+        self.ui.toolButtonIcon.setIcon(
+            ray.getAppIcon(self.client_data.icon, self))
+    
     def favoriteClicked(self):
         self.is_favorite = not self.is_favorite
         
         if self.is_favorite:
             self.ui.toolButtonFavorite.setIcon(
                 QIcon(':scalable/breeze/star-yellow.svg'))
-            self._session.addFavorite(self.name, self.icon_name, self.factory)
+            self._session.addFavorite(self.name, self.client_data.icon,
+                                      self.factory)
         else:
             self.ui.toolButtonFavorite.setIcon(self.favicon_not)
             self._session.removeFavorite(self.name, self.factory)
@@ -83,8 +91,10 @@ class TemplateSlot(QFrame):
 class TemplateItem(QListWidgetItem):
     def __init__(self, parent, session, icon, name, factory):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
+        
+        self.client_data = ray.ClientData()
         self.f_widget = TemplateSlot(parent, self, session,
-                                     icon, name, factory)
+                                     name, factory, self.client_data)
         self.setData(Qt.UserRole, name)
         parent.setItemWidget(self, self.f_widget)
         self.setSizeHint(QSize(100, 28))
@@ -103,7 +113,14 @@ class TemplateItem(QListWidgetItem):
             return not self.f_factory
             
         return bool(self.data(Qt.UserRole).lower() < other.data(Qt.UserRole).lower())
-
+    
+    def matchesWith(self, factory, name):
+        return bool(bool(factory) == bool(self.f_factory)
+                    and name == self.data(Qt.UserRole))
+    
+    def updateClientData(self, *args):
+        self.f_widget.updateClientData(*args)
+        
 
 class RemoveTemplateDialog(ChildDialog):
     def __init__(self, parent, template_name):
@@ -145,6 +162,8 @@ class AddApplicationDialog(ChildDialog):
             self.addUserTemplates)
         self._signaler.factory_client_template_found.connect(
             self.addFactoryTemplates)
+        self._signaler.client_template_update.connect(
+            self.updateClientTemplate)
         self.toDaemon('/ray/server/list_user_client_templates')
         self.toDaemon('/ray/server/list_factory_client_templates')
 
@@ -223,7 +242,18 @@ class AddApplicationDialog(ChildDialog):
             self.ui.templateList.sortItems()
 
         self.updateFilteredList()
-
+    
+    def updateClientTemplate(self, args):
+        factory = bool(args[0])
+        template_name = args[1]
+        
+        for i in range(self.ui.templateList.count()):
+            item = self.ui.templateList.item(i)
+            
+            if item.matchesWith(factory, template_name):
+                item.updateClientData(*args[2:])
+                break
+    
     def updateFilteredList(self, filt=''):
         filter_text = self.ui.filterBar.displayText()
 

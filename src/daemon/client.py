@@ -227,7 +227,7 @@ class Client(ServerSender, ray.ClientData):
             if ray_hack_stop_sig.isdigit():
                 self.ray_hack.stop_sig = int(ray_hack_stop_sig)
                 
-            self.ray_hack.wait_win = bool(ctx.attribute('wait_win') == "1")
+            self.ray_hack.wait_win = bool(ctx.attribute('wait_window') == "1")
             
             no_save_level = ctx.attribute('no_save_level')
             if no_save_level.isdigit() and 0 <= int(no_save_level) <= 2:
@@ -266,8 +266,7 @@ class Client(ServerSender, ray.ClientData):
         if ctx.attribute('id'):
             #session use "id" for absolutely needed client_id
             self.client_id = ctx.attribute('id')
-            
-        elif ctx.attribute('client_id'):
+        else:
             #template use "client_id" for wanted client_id
             self.client_id = self.session.generateClientId(
                                                 ctx.attribute('client_id'))
@@ -815,11 +814,11 @@ class Client(ServerSender, ray.ClientData):
         
         if self.pending_command == ray.Command.STOP:
             self.sendGuiMessage(_translate('GUIMSG', 
-                                           "  %s: terminated as planned")
+                                    "  %s: terminated by server instruction")
                                     % self.guiMsgStyle())
         else:
             self.sendGuiMessage(_translate('GUIMSG',
-                                           "  %s: died unexpectedly.")
+                                           "  %s: terminated itself.")
                                     % self.guiMsgStyle())
         
         self.sendReplyToCaller(OSC_SRC_STOP, 'client stopped')
