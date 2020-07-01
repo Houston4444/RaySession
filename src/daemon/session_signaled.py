@@ -283,17 +283,7 @@ class SignaledSession(OperatingSession):
         # where client_template is a fake client with all template properties
         tmp_template_list = []
         
-        templates_root = TemplateRoots.user_clients
-        search_paths = [templates_root]
-        
-        factory = bool('factory' in path)
-        if factory:
-            templates_root = TemplateRoots.factory_clients
-            search_paths.clear()
-            if (os.path.isdir(templates_root)
-                    and os.access(templates_root, os.R_OK)):
-                search_paths = [ "%s/%s" % (templates_root, f)
-                                for f in sorted(os.listdir(templates_root)) ]
+        search_paths = self.getSearchTemplateDirs(bool('factory' in path))
         
         for search_path in search_paths:
             templates_file = "%s/%s" % (search_path, 'client_templates.xml')

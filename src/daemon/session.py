@@ -250,6 +250,25 @@ class Session(ServerSender):
             if not client.client_id in self.forbidden_ids_list:
                 self.forbidden_ids_list.append(client.client_id)
     
+    def getSearchTemplateDirs(self, factory)->list:
+        if factory:
+            # search templates in /etc/xdg (RaySession installed)
+            templates_root = TemplateRoots.factory_clients_xdg
+            
+            # search templates in source code
+            if not os.path.isdir(templates_root):
+                templates_root = TemplateRoots.factory_clients
+                
+            search_paths.clear()
+            if (os.path.isdir(templates_root)
+                    and os.access(templates_root, os.R_OK)):
+                search_paths = [ "%s/%s" % (templates_root, f)
+                                for f in sorted(os.listdir(templates_root)) ]
+            
+            return search_paths
+        else:
+            return [TemplateRoots.user_clients]
+    
     def generateClientIdAsNsm(self):
         client_id = 'n'
         for l in range(4):
@@ -1902,16 +1921,7 @@ for better organization.""")
         
     def addClientTemplate(self, src_addr, src_path, 
                           template_name, factory=False):
-        templates_root = TemplateRoots.user_clients
-        search_paths = [templates_root]
-        
-        if factory:
-            templates_root = TemplateRoots.factory_clients
-            search_paths.clear()
-            if (os.path.isdir(templates_root)
-                    and os.access(templates_root, os.R_OK)):
-                search_paths = [ "%s/%s" % (templates_root, f)
-                                  for f in sorted(os.listdir(templates_root))]
+        search_paths = self.getSearchTemplateDirs(bool('factory' in path))
         
         for search_path in search_paths:
             xml_file = "%s/%s" % (search_path, 'client_templates.xml')
@@ -1957,9 +1967,12 @@ for better organization.""")
                     if not client.executable_path:
                         continue
                     
+                    which_exec = shutil.which(client.executable_path)
+                    if not which_exec:
+                        continue
+                    
                     result = QProcess.execute(
-                        'grep', [ '-q', '/nsm/server/announce',
-                                shutil.which(client.executable_path)])
+                        'grep', [ '-q', '/nsm/server/announce', which_exec])
                     if result:
                         continue
                     

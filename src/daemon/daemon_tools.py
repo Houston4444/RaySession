@@ -69,7 +69,8 @@ class RS:
 class TemplateRoots:
     net_session_name = ".ray-net-session-templates"
     factory_sessions = "%s/session_templates" % getCodeRoot()
-    factory_clients  = "%s/client_templates"  % getCodeRoot()
+    factory_clients = "%s/client_templates"  % getCodeRoot()
+    factory_clients_xdg = "/etc/xdg/raysession/client_templates"
     
     @classmethod
     def initConfig(cls):
