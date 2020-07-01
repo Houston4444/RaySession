@@ -421,17 +421,19 @@ class SignaledSession(OperatingSession):
             
             for file in files:
                 if file in ('raysession.xml', 'session.nsm'):
-                    if not already_sent:
-                        basefolder = root.replace(self.root + '/', '', 1)
-                        session_list.append(basefolder)
+                    if already_sent:
+                        continue
+                    
+                    basefolder = root.replace(self.root + '/', '', 1)
+                    session_list.append(basefolder)
+                    
+                    if n >= 16000:
+                        self.send(src_addr, "/reply", path,
+                                    *session_list)
                         
-                        if n >= 32000:
-                            self.send(src_addr, "/reply", path,
-                                      *session_list)
-                            
-                            session_list.clear()
-                            n = 0
-                        already_sent = True
+                        session_list.clear()
+                        n = 0
+                    already_sent = True
                     
         if session_list:
             self.send(src_addr, "/reply", path, *session_list)
