@@ -144,6 +144,17 @@ class Session(ServerSender):
         else:
             return self.name
     
+    def getFullPath(self, session_name:str)->str:
+        spath = "%s%s%s" % (self.root, os.sep, session_name)
+        
+        if session_name.startswith(os.sep):
+            spath = session_name
+        
+        if spath.endswith(os.sep):
+            spath = spath[:-1]
+            
+        return spath
+    
     def getClient(self, client_id):
         for client in self.clients:
             if client.client_id == client_id:
@@ -336,7 +347,7 @@ class Session(ServerSender):
             
             self.forbidden_ids_list.append(wanted_id)
             return "%s_%i" % (wanted_id, n)
-        print('eorgokkkckkcck')
+        
         client_id = 'n'
         for l in range(4):
             client_id += random.choice(string.ascii_uppercase)
@@ -347,7 +358,6 @@ class Session(ServerSender):
                 client_id += random.choice(string.ascii_uppercase)
         
         self.forbidden_ids_list.append(client_id)
-        print('oofkko', client_id)
         return client_id
     
     def getListOfExistingClientIds(self):
@@ -756,7 +766,6 @@ class OperatingSession(Session):
         try:
             ray_file = open(session_file, 'r')
         except:
-            print('kckd,sck,kc,kd,k', session_file)
             self.sendError(ray.Err.BAD_PROJECT, 
                            _translate("error", "impossible to read %s")
                            % session_file)
@@ -1183,7 +1192,7 @@ class OperatingSession(Session):
         self.sendGuiMessage(
             _translate('GUIMSG', "Creating new session \"%s\"")
             % new_session_name)
-        spath = self.root + '/' + new_session_name
+        spath = self.getFullPath(new_session_name)
         
         if self.isPathInASessionDir(spath):
             self.sendError(ray.Err.SESSION_IN_SESSION_DIR,
@@ -1194,7 +1203,6 @@ for better organization.""")
         try:
             os.makedirs(spath)
         except:
-            print('orekfkofokfokfokfok', spath)
             self.sendError(ray.Err.CREATE_FAILED, 
                            "Could not create the session directory")
             return
@@ -1412,9 +1420,7 @@ for better organization.""")
         
         new_session_name = basename(new_session_full_name)
         
-        spath = "%s/%s" % (self.root, new_session_full_name)
-        if new_session_full_name.startswith('/'):
-            spath = new_session_full_name
+        spath = self.getFullPath(new_session_full_name)
         
         if os.path.exists(spath):
             self.sendError(ray.Err.CREATE_FAILED, 
@@ -1488,9 +1494,7 @@ for better organization."""))
         # load session data in self.future* (clients, trashed_clients, 
         #                                    session_path, session_name)
         
-        spath = "%s/%s" % (self.root, session_full_name)
-        if session_full_name.startswith('/'):
-            spath = session_full_name
+        spath = self.getFullPath(session_full_name)
         
         if spath == self.path:
             self.loadError(ray.Err.SESSION_LOCKED)
@@ -1559,7 +1563,6 @@ for better organization."""))
                     is_ray_file = True
                     
                 except:
-                    print('sisisiisckd')
                     self.loadError(ray.Err.CREATE_FAILED)
                     return
                 
