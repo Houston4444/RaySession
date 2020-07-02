@@ -283,7 +283,8 @@ class SignaledSession(OperatingSession):
         # where client_template is a fake client with all template properties
         tmp_template_list = []
         
-        search_paths = self.getSearchTemplateDirs(bool('factory' in path))
+        factory = bool('factory' in path)
+        search_paths = self.getSearchTemplateDirs(factory)
         
         for search_path in search_paths:
             templates_file = "%s/%s" % (search_path, 'client_templates.xml')
@@ -365,6 +366,7 @@ class SignaledSession(OperatingSession):
                     template_client = Client(self)
                     template_client.readXmlProperties(ct)
                     template_client.client_id = ct.attribute('client_id')
+                    template_client.updateInfosFromDesktopFile()
                 
                 template_list.append(template_name)
                 tmp_template_list.append((template_name, template_client))

@@ -69,21 +69,8 @@ class OscServer(liblo.Server):
                              % (highlightText(reply_path), 
                                 highlightText(self._osc_order_path)))
             return
-        
-        if reply_path in ('/ray/server/list_factory_client_templates',
-                            '/ray/server/list_user_client_templates'):
-            if len(args) >= 2:
-                templates = args[1:]
-                out_message = ""
-                for template_and_icon in templates:
-                    template, slash, icon = template_and_icon.partition('/')
-                    out_message += "%s\n" % template
-                sys.stdout.write(out_message)
-                return
-            else:
-                self._final_err = 0
                 
-        elif reply_path.endswith('/list_snapshots'):
+        if reply_path.endswith('/list_snapshots'):
             if len(args) >= 2:
                 snapshots = args[1:]
                 out_message = ""

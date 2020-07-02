@@ -20,9 +20,6 @@ konv# RaySession TODO
     
     Tuer le script de session si user decheck l'option
     
-    templates in /etc/xdg
-    client_templates et Makefile
-    virer icon dans template list ray_control
     virer icon au profit du desktop file
     
     open absolute path session from GUI

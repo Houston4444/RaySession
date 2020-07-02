@@ -259,13 +259,12 @@ class Session(ServerSender):
             if not os.path.isdir(templates_root):
                 templates_root = TemplateRoots.factory_clients
                 
-            search_paths.clear()
             if (os.path.isdir(templates_root)
                     and os.access(templates_root, os.R_OK)):
-                search_paths = [ "%s/%s" % (templates_root, f)
-                                for f in sorted(os.listdir(templates_root)) ]
+                return [ "%s/%s" % (templates_root, f) 
+                        for f in sorted(os.listdir(templates_root)) ]
             
-            return search_paths
+            return []
         else:
             return [TemplateRoots.user_clients]
     
@@ -1921,7 +1920,7 @@ for better organization.""")
         
     def addClientTemplate(self, src_addr, src_path, 
                           template_name, factory=False):
-        search_paths = self.getSearchTemplateDirs(bool('factory' in path))
+        search_paths = self.getSearchTemplateDirs(factory)
         
         for search_path in search_paths:
             xml_file = "%s/%s" % (search_path, 'client_templates.xml')
