@@ -1565,14 +1565,14 @@ no_save_level:%i""" % (self.ray_hack.config_file,
             if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
                 return
             
-            spath = "%s/%s" % (self.session.root, new_session_full_name)
+            spath = ray.getFullPath(self.session.root, new_session_full_name)
         
         elif template_save == ray.Template.RENAME:
             spath = self.session.path
             
         elif template_save == ray.Template.SESSION_SAVE:
-            spath = "%s/%s" % (TemplateRoots.user_sessions,
-                               new_session_full_name)
+            spath = ray.getFullPath(TemplateRoots.user_sessions,
+                                    new_session_full_name)
             new_session_name = xsessionx
         
         elif template_save == ray.Template.SESSION_SAVE_NET:
@@ -1582,11 +1582,11 @@ no_save_level:%i""" % (self.ray_hack.config_file,
             new_session_name = xsessionx
         
         elif template_save == ray.Template.SESSION_LOAD:
-            spath = "%s/%s" % (self.session.root, new_session_full_name)
+            spath = ray.getFullPath(self.session.root, new_session_full_name)
             old_session_name = xsessionx
         
         elif template_save == ray.Template.SESSION_LOAD_NET:
-            spath = "%s/%s" % (self.session.root, new_session_full_name)
+            spath = ray.getFullPath(self.session.root, new_session_full_name)
             old_session_name = xsessionx
         
         elif template_save == ray.Template.CLIENT_SAVE:

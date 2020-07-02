@@ -406,6 +406,10 @@ class NewSessionDialog(ChildDialog):
 
         self.server_will_accept = False
         self.text_is_valid = False
+        
+        self.completer = QCompleter(self.sub_folders)
+        #self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+        self.ui.lineEdit.setCompleter(self.completer)
 
         self.serverStatusChanged(self._session.server_status)
 
@@ -497,6 +501,15 @@ class NewSessionDialog(ChildDialog):
                     self.sub_folders.append(new_dir)
         
         self.sub_folders.sort()
+        del self.completer
+        self.completer = QCompleter([ f + '/' for f in self.sub_folders])
+        #self.completer.setCompletionMode(QCompleter.InlineCompletion)
+        self.ui.lineEdit.setCompleter(self.completer)
+        if not self.ui.lineEdit.text():
+            print('should complete2')
+            #self.completer.popup().show()
+            #self.ui.lineEdit.completer().complete()
+        
         self.initSubFolderCombobox()
         self.setLastSubFolderSelected()
 
@@ -546,15 +559,23 @@ class NewSessionDialog(ChildDialog):
     
     def textChanged(self, text):
         full_session_text = text
+            
         if self.ui.comboBoxSubFolder.currentIndex():
             full_session_text = "%s/%s" % (
                                     self.ui.comboBoxSubFolder.currentText(),
                                     text)
             
         self.text_is_valid = bool(text
+                                  and not text.endswith('/')
                                   and full_session_text 
                                         not in self.session_list)
         self.preventOk()
+        #if not text:
+            #print('should complete')
+            #self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+            #self.completer.complete()
+        #else:
+            #self.completer.setCompletionMode(QCompleter.PopupCompletion)
 
     def preventOk(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(

@@ -547,6 +547,16 @@ def getWindowManager():
     
     return WindowManager.NONE
     
+def getFullPath(root, session_name):
+    spath = "%s%s%s" % (root, os.sep, session_name)
+        
+    if session_name.startswith(os.sep):
+        spath = session_name
+    
+    if spath.endswith(os.sep):
+        spath = spath[:-1]
+        
+    return spath
 
 def protocolToStr(protocol:int)->str:
     if protocol == Protocol.RAY_HACK:
