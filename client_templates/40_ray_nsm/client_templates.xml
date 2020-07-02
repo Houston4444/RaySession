@@ -5,7 +5,7 @@
       In all cases, template will be available only if the executable value is in PATH
       and if the template-name has not already been added -->
 <RAY-CLIENT-TEMPLATES>
- <Client-Template template-name="Hydrogen" icon="h2-icon" client_id="hydrogen" executable="hydrogen" check_nsm_bin="1"/>
+ <Client-Template template-name="Hydrogen" client_id="hydrogen" executable="hydrogen" check_nsm_bin="1"/>
  <Client-Template template-name="Ardour" executable="ardour" name="Ardour" icon="ardour" client_id="ardour"/>
  <Client-Template template-name="Ardour6" executable="Ardour6" name="Ardour" icon="ardour" client_id="ardour"/>
  <Client-Template template-name="ardour6" executable="ardour6" name="Ardour" icon="ardour" client_id="ardour"/>
@@ -13,38 +13,38 @@
  <Client-Template template-name="ardour5" executable="ardour5" name="Ardour" icon="ardour" client_id="ardour"/>
  <Client-Template template-name="Ardour4" executable="Ardour4" name="Ardour" icon="ardour" client_id="ardour"/>
  <Client-Template template-name="ardour4" executable="ardour4" name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="amsynth" executable="amsynth" name="amsynth" icon="amsynth" client_id="amsynth" check_nsm_bin="1"/>
+ <Client-Template template-name="amsynth" executable="amsynth" name="amsynth" client_id="amsynth" check_nsm_bin="1"/>
  <Client-Template template-name="Carla" executable="carla-jack-multi" name="Carla" desktop_file="carla" client_id="carla"/>
  <Client-Template template-name="Carla-Rack" executable="carla-rack" name="Carla-Rack" icon="carla-rack" client_id="rack"/>
- <Client-Template template-name="Carla-Patchbay" executable="carla-patchbay"  name="Carla-Patchbay" icon="carla-patchbay" client_id="patchbay"/>
+ <Client-Template template-name="Carla-Patchbay" executable="carla-patchbay" icon="carla-patchbay" client_id="patchbay"/>
  <Client-Template template-name="Rosegarden" executable="rosegarden" client_id="rosegarden" check_nsm_bin="1"/>
- <Client-Template template-name="Non-Mixer" executable="non-mixer" name="Non-Mixer" icon="non-mixer" client_id="mixer"/>
- <Client-Template template-name="Qtractor" executable="qtractor" name="Qtractor" icon="qtractor" client_id="qtractor"/>
- <Client-Template template-name="Guitarix" icon="gx_head" client_id="guitarix" executable="guitarix" check_nsm_bin="1"/>
- <Client-Template template-name="Non-Timeline" executable="non-timeline" name="Non-Timeline" icon="non-timeline" client_id="timeline"/>
+ <Client-Template template-name="Non-Mixer" executable="non-mixer" client_id="mixer"/>
+ <Client-Template template-name="Qtractor" executable="qtractor" client_id="qtractor"/>
+ <Client-Template template-name="Guitarix" client_id="guitarix" executable="guitarix" label="Guitarix" check_nsm_bin="1"/>
+ <Client-Template template-name="Non-Timeline" executable="non-timeline" client_id="timeline"/>
  <Client-Template template-name="Qsampler" client_id="qsampler" executable="qsampler" check_nsm_bin="1"/>
- <Client-Template template-name="Luppp" executable="luppp" name="Luppp" icon="luppp" client_id="luppp" unignored_extensions=".wav"/>
- <Client-Template template-name="Calf JACK Host" executable="calfjackhost" label="CalfJackHost" client_id="calf" icon="calf" check_nsm_bin="1"/>
- <Client-Template template-name="ZynAddSubFX" name="ZynAddSubFX" client_id="zynaddsub" icon="zynaddsubfx" executable="zynaddsubfx"/>
- <Client-Template template-name="synthv1" name="synthv1" client_id="synthv1" icon="synthv1-jack" executable="synthv1_jack"/>
- <Client-Template template-name="samplv1" name="samplv1" client_id="samplv1" icon="samplv1-jack" executable="samplv1_jack" unignored_extensions=".wav .flac .ogg .mp3"/>
+ <Client-Template template-name="Luppp" executable="luppp" client_id="luppp" unignored_extensions=".wav"/>
+ <Client-Template template-name="Calf JACK Host" executable="calfjackhost" desktop_file="calf" label="CalfJackHost" client_id="calf" check_nsm_bin="1"/>
+ <Client-Template template-name="ZynAddSubFX" client_id="zynaddsub" desktop_file="zynaddsubfx-jack" executable="zynaddsubfx"/>
+ <Client-Template template-name="synthv1" client_id="synthv1" icon="synthv1-jack" executable="synthv1_jack"/>
+ <Client-Template template-name="samplv1" client_id="samplv1" icon="samplv1-jack" executable="samplv1_jack" unignored_extensions=".wav .flac .ogg .mp3"/>
  <Client-Template template-name="drumkv1" name="drumkv1" client_id="drumkv1" icon="drumkv1-jack" executable="drumkv1_jack"/>
  <Client-Template template-name="padthv1" name="padthv1" client_id="padthv1" icon="padthv1-jack" executable="padthv1_jack"/>
- <Client-Template template-name="ams" name="ams" client_id="ams" icon="ams_32" executable="ams"/>
- <Client-Template template-name="Seq24" client_id="seq24" icon="seq24" executable="seq24" check_nsm_bin="1"/>
- <Client-Template template-name="Sequencer64" icon="sequencer64" client_id="seq64" executable="seq64" check_nsm_bin="1"/>
- <Client-Template template-name="SooperLooper" icon="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" name="SooperLooper" try-exec="sooperlooper;slgui" unignored_extensions=".wav"/>
- <Client-Template template-name="SooperLooper +Transport" icon="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" name="SooperLooper" try-exec="sooperlooper;slgui" arguments="--transport_workaround" unignored_extensions=".wav"/>
- <Client-Template template-name="Jack Mixer" icon="jack_mixer" client_id="jack_mixer" executable="jack_mixer" check_nsm_bin="1"/>
- <Client-Template template-name="Non-Sequencer" executable="non-sequencer" name="Non-Sequencer" icon="non-sequencer" client_id="sequencer"/>
- <Client-Template template-name="JACK Connections" icon="curve-connector" client_id="patch" executable="ray-jackpatch" name="Jack Connections"/>
- <Client-Template name="ray-network" template-name="Network Session" icon="network-wired" executable="ray-network" client_id="network"/>
- <Client-Template icon="adljack" template-name="ADLjack" executable="adljack" client_id="adl" name="ADLjack"/>
- <Client-Template icon="ADLplug" template-name="ADLplug" executable="ADLplug" client_id="adlplug" name="ADLplug"/>
- <Client-Template icon="OPNplug" template-name="OPNplug" executable="OPNplug" client_id="opnplug" name="OPNplug"/>
- <Client-Template icon="petri-foo" template-name="Petri-Foo" executable="petri-foo" client_id="petrifoo" name="Petri-Foo"/>
- <Client-Template name="Shuriken" template-name="Shuriken" executable="shuriken" icon="shuriken" client_id="shuriken"/>
- <Client-Template name="Patroneo" icon="patroneo" executable="patroneo" template-name="Patroneo" client_id="patroneo"/>
- <Client-Template name="Fluajho" icon="fluajho" executable="fluajho" template-name="Fluajho" client_id="fluajho"/>
- <Client-Template name="Vico" icon="vico" executable="vico" template-name="Vico" client_id="vico"/>
+ <Client-Template template-name="ams" client_id="ams" executable="ams"/>
+ <Client-Template template-name="Seq24" client_id="seq24" executable="seq24" check_nsm_bin="1"/>
+ <Client-Template template-name="Sequencer64" desktop_file="sequencer64" client_id="seq64" executable="seq64" check_nsm_bin="1"/>
+ <Client-Template template-name="SooperLooper" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" unignored_extensions=".wav"/>
+ <Client-Template template-name="SooperLooper +Transport" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" arguments="--transport_workaround" unignored_extensions=".wav"/>
+ <Client-Template template-name="Jack Mixer" client_id="jack_mixer" executable="jack_mixer" check_nsm_bin="1"/>
+ <Client-Template template-name="Non-Sequencer" executable="non-sequencer" client_id="sequencer"/>
+ <Client-Template template-name="JACK Connections" client_id="patch" executable="ray-jackpatch" name="Jack Connections"/>
+ <Client-Template template-name="Network Session" executable="ray-network" client_id="network"/>
+ <Client-Template template-name="ADLjack" executable="adljack" client_id="adl"/>
+ <Client-Template template-name="ADLplug" executable="ADLplug" client_id="adlplug"/>
+ <Client-Template template-name="OPNplug" executable="OPNplug" client_id="opnplug"/>
+ <Client-Template template-name="Petri-Foo" executable="petri-foo" client_id="petrifoo"/>
+ <Client-Template template-name="Shuriken" executable="shuriken" icon="shuriken" client_id="shuriken"/>
+ <Client-Template template-name="Patroneo" executable="patroneo"  client_id="patroneo"/>
+ <Client-Template template-name="Fluajho" executable="fluajho"  client_id="fluajho"/>
+ <Client-Template template-name="Vico" executable="vico"  client_id="vico"/>
 </RAY-CLIENT-TEMPLATES>
