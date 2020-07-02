@@ -188,7 +188,11 @@ class FileCopier(ServerSender):
                 src_list.append(full_path)
             
             if not dest_path_exists:
-                os.makedirs(dest_dir)
+                try:
+                    os.makedirs(dest_dir)
+                except:
+                    self.abort_function(*self.next_args)
+                    return
         
         for orig_path in src_list:
             copy_file = CopyFile()

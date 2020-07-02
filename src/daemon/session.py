@@ -745,7 +745,10 @@ class OperatingSession(Session):
     
     def adjustFilesAfterCopy(self, new_session_full_name, template_mode):
         new_session_name = basename(new_session_full_name)
+        
         spath = "%s/%s" % (self.root, new_session_full_name)
+        if new_session_full_name.startswith('/'):
+            spath = new_session_full_name
         
         # create tmp clients from raysession.xml to adjust Files after copy
         session_file = "%s/%s" % (spath, "raysession.xml")
@@ -753,6 +756,7 @@ class OperatingSession(Session):
         try:
             ray_file = open(session_file, 'r')
         except:
+            print('kckd,sck,kc,kd,k', session_file)
             self.sendError(ray.Err.BAD_PROJECT, 
                            _translate("error", "impossible to read %s")
                            % session_file)
@@ -1190,6 +1194,7 @@ for better organization.""")
         try:
             os.makedirs(spath)
         except:
+            print('orekfkofokfokfokfok', spath)
             self.sendError(ray.Err.CREATE_FAILED, 
                            "Could not create the session directory")
             return
@@ -1406,7 +1411,10 @@ for better organization.""")
             return
         
         new_session_name = basename(new_session_full_name)
+        
         spath = "%s/%s" % (self.root, new_session_full_name)
+        if new_session_full_name.startswith('/'):
+            spath = new_session_full_name
         
         if os.path.exists(spath):
             self.sendError(ray.Err.CREATE_FAILED, 
@@ -1425,8 +1433,6 @@ for better organization."""))
             self.setServerStatus(ray.ServerStatus.COPY)
         else:
             self.setServerStatus(ray.ServerStatus.PRECOPY)
-            self.sendGui("/ray/gui/session/name",  
-                         new_session_name, spath)
         
         self.sendGuiMessage(
             _translate('GUIMSG', 
@@ -1553,6 +1559,7 @@ for better organization."""))
                     is_ray_file = True
                     
                 except:
+                    print('sisisiisckd')
                     self.loadError(ray.Err.CREATE_FAILED)
                     return
                 

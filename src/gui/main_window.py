@@ -390,7 +390,9 @@ class MainWindow(QMainWindow):
         RS.settings.setValue('last_subfolder', subfolder)
         if self._session.isRunning():
             # remember the running session as last session (if any)
-            RS.settings.setValue('last_session', self._session.getShortPath())
+            short_path = self._session.getShortPath()
+            if not short_path.startswith('/'):
+                RS.settings.setValue('last_session', short_path)
             
         if not template_name:
             self.toDaemon('/ray/server/new_session', session_short_path)
@@ -439,6 +441,7 @@ class MainWindow(QMainWindow):
                     RS.settings.setValue('hide_session_scripts_dialog',
                                          dialog.notAgainValue())
         
+        print('ofkofk', session_short_path)
         self.toDaemon('/ray/server/new_session', session_short_path,
                       template_name)
 
@@ -484,8 +487,12 @@ class MainWindow(QMainWindow):
         dialog.exec()
         if not dialog.result():
             return
-
-        RS.settings.setValue('last_session', self._session.name)
+        
+        if self._session.isRunning():
+            # remember the running session as last session (if any)
+            short_path = self._session.getShortPath()
+            if not short_path.startswith('/'):
+                RS.settings.setValue('last_session', short_path)
 
         session_name = dialog.getSessionName()
         self.toDaemon('/ray/session/duplicate', session_name)
