@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>228</width>
-    <height>279</height>
+    <height>207</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -97,26 +97,6 @@
    </item>
    <item>
     <widget class="QLineEdit" name="lineEdit"/>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QLabel" name="labelSubFolder">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Sub Folder :</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="comboBoxSubFolder"/>
-     </item>
-    </layout>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayoutTemplate">

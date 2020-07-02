@@ -400,15 +400,11 @@ class NewSessionDialog(ChildDialog):
 
         self.initTemplatesComboBox()
         self.setLastTemplateSelected()
-        
-        self.ui.labelSubFolder.setVisible(False)
-        self.ui.comboBoxSubFolder.setVisible(False)
 
         self.server_will_accept = False
         self.text_is_valid = False
         
         self.completer = QCompleter(self.sub_folders)
-        #self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
         self.ui.lineEdit.setCompleter(self.completer)
 
         self.serverStatusChanged(self._session.server_status)
@@ -431,7 +427,6 @@ class NewSessionDialog(ChildDialog):
         self.ui.currentSessionsFolder.setText(session_root)
         self.session_list.clear()
         self.sub_folders.clear()
-        self.initSubFolderCombobox()
         self.toDaemon('/ray/server/list_sessions', 1)
     
     def initTemplatesComboBox(self):
@@ -453,17 +448,6 @@ class NewSessionDialog(ChildDialog):
             
         self.ui.comboBoxTemplate.insertSeparator(
                                     len(ray.factory_session_templates) + 1)
-
-    def initSubFolderCombobox(self):
-        self.ui.comboBoxSubFolder.clear()
-        self.ui.comboBoxSubFolder.addItem(_translate('new_session', 'none'))
-        
-        for sub_folder in self.sub_folders:
-            self.ui.comboBoxSubFolder.addItem(QIcon.fromTheme('folder'), 
-                                              sub_folder)
-        
-        self.ui.labelSubFolder.setVisible(bool(self.sub_folders))
-        self.ui.comboBoxSubFolder.setVisible(bool(self.sub_folders))
         
     def setLastTemplateSelected(self):
         last_used_template = RS.settings.value('last_used_template', type=str)
@@ -485,11 +469,8 @@ class NewSessionDialog(ChildDialog):
 
     def setLastSubFolderSelected(self):
         last_subfolder = RS.settings.value('last_subfolder', type=str)
-        
-        if last_subfolder:
-            self.ui.comboBoxSubFolder.setCurrentText(last_subfolder)
-        else:
-            self.ui.comboBoxSubFolder.setCurrentIndex(0)
+        if last_subfolder and not self.ui.lineEdit.text():
+            self.ui.lineEdit.setText(last_subfolder + '/')
     
     def addSessionsToList(self, session_names):
         self.session_list += session_names
@@ -503,14 +484,8 @@ class NewSessionDialog(ChildDialog):
         self.sub_folders.sort()
         del self.completer
         self.completer = QCompleter([ f + '/' for f in self.sub_folders])
-        #self.completer.setCompletionMode(QCompleter.InlineCompletion)
         self.ui.lineEdit.setCompleter(self.completer)
-        if not self.ui.lineEdit.text():
-            print('should complete2')
-            #self.completer.popup().show()
-            #self.ui.lineEdit.completer().complete()
         
-        self.initSubFolderCombobox()
         self.setLastSubFolderSelected()
 
     def addTemplatesToList(self, template_list):
@@ -531,13 +506,6 @@ class NewSessionDialog(ChildDialog):
         self.setLastTemplateSelected()
 
     def getSessionShortPath(self)->str:
-        if self.ui.comboBoxSubFolder.currentIndex() > 0:
-            return '%s/%s' % (self.ui.comboBoxSubFolder.currentText(),
-                              self.ui.lineEdit.text())
-        else:
-            return self.ui.lineEdit.text()
-    
-    def getSessionName(self)->str:
         return self.ui.lineEdit.text()
     
     def getTemplateName(self)->str:
@@ -551,31 +519,13 @@ class NewSessionDialog(ChildDialog):
 
         return self.ui.comboBoxTemplate.currentText()
     
-    def getSubFolder(self)->str:
-        if self.ui.comboBoxSubFolder.currentIndex() == 0:
-            return ""
-        
-        return  self.ui.comboBoxSubFolder.currentText()
-    
     def textChanged(self, text):
         full_session_text = text
-            
-        if self.ui.comboBoxSubFolder.currentIndex():
-            full_session_text = "%s/%s" % (
-                                    self.ui.comboBoxSubFolder.currentText(),
-                                    text)
-            
+        
         self.text_is_valid = bool(text
                                   and not text.endswith('/')
-                                  and full_session_text 
-                                        not in self.session_list)
+                                  and text not in self.session_list)
         self.preventOk()
-        #if not text:
-            #print('should complete')
-            #self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
-            #self.completer.complete()
-        #else:
-            #self.completer.setCompletionMode(QCompleter.PopupCompletion)
 
     def preventOk(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(

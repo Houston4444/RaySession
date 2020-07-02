@@ -384,7 +384,7 @@ class MainWindow(QMainWindow):
 
         session_short_path = dialog.getSessionShortPath()
         template_name = dialog.getTemplateName()
-        subfolder = dialog.getSubFolder()
+        subfolder = session_short_path.rpartition('/')[0]
 
         RS.settings.setValue('last_used_template', template_name)
         RS.settings.setValue('last_subfolder', subfolder)
@@ -441,7 +441,6 @@ class MainWindow(QMainWindow):
                     RS.settings.setValue('hide_session_scripts_dialog',
                                          dialog.notAgainValue())
         
-        print('ofkofk', session_short_path)
         self.toDaemon('/ray/server/new_session', session_short_path,
                       template_name)
 
@@ -494,7 +493,7 @@ class MainWindow(QMainWindow):
             if not short_path.startswith('/'):
                 RS.settings.setValue('last_session', short_path)
 
-        session_name = dialog.getSessionName()
+        session_name = dialog.getSessionShortPath()
         self.toDaemon('/ray/session/duplicate', session_name)
 
     def saveTemplateSession(self):
