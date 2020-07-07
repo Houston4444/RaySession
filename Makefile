@@ -119,9 +119,12 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 	install -d $(DEST_RAY)/
 	install -d $(DEST_RAY)/locale/
+	install -d $(DESTDIR)/etc/xdg/
+	install -d $(DESTDIR)/etc/xdg/raysession/
 	
 	
-	# Copy Client Templates Factory
+	# Copy Templates Factory
+	cp -r client_templates  $(DESTDIR)/etc/xdg/raysession/
 	cp -r client_templates  $(DEST_RAY)/
 	cp -r session_templates $(DEST_RAY)/
 	cp -r session_scripts   $(DEST_RAY)/
@@ -183,15 +186,15 @@ install:
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/raysession
 	rm -f $(DESTDIR)$(PREFIX)/bin/ray-daemon
-	rm -f $(DESTDIR)$(PREFIX)/bin/ray_control
 	rm -f $(DESTDIR)$(PREFIX)/bin/ray-proxy
 	rm -f $(DESTDIR)$(PREFIX)/bin/ray-jack_checker_daemon
 	rm -f $(DESTDIR)$(PREFIX)/bin/ray-jack_config_script
 	rm -f $(DESTDIR)$(PREFIX)/bin/ray-pulse2jack
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray_control
 	rm -f $(DESTDIR)$(PREFIX)/bin/ray_git
 	
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/raysession.desktop
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/raysession.png
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/raysession.svg
-	rm -rf /etc/xdg/raysession/client_templates
+	rm -rf $(DESTDIR)/etc/xdg/raysession/client_templates
 	rm -rf $(DEST_RAY)
