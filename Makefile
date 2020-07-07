@@ -119,12 +119,10 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 	install -d $(DEST_RAY)/
 	install -d $(DEST_RAY)/locale/
-	install -d /etc/xdg/
-	install -d /etc/xdg/raysession/
 	
 	
 	# Copy Client Templates Factory
-	cp -r client_templates  /etc/xdg/raysession/
+	cp -r client_templates  $(DEST_RAY)/
 	cp -r session_templates $(DEST_RAY)/
 	cp -r session_scripts   $(DEST_RAY)/
 	cp -r data              $(DEST_RAY)/
