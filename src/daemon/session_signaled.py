@@ -16,6 +16,8 @@ from scripter import Scripter
 from daemon_tools import Terminal, CommandLineArgs, TemplateRoots
 from session import OperatingSession
 
+import time
+
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
 
@@ -362,11 +364,15 @@ class SignaledSession(OperatingSession):
                 # save template client properties only for GUI call
                 # to optimize ray_control answer speed
                 template_client = None
-                if src_addr_is_gui:
+                if src_addr_is_gui or True:
+                    print('precaaaaaa', time.time(), template_name)
                     template_client = Client(self)
+                    print('prexmlaaaa', time.time())
                     template_client.readXmlProperties(ct)
+                    print('predesktop', time.time())
                     template_client.client_id = ct.attribute('client_id')
                     template_client.updateInfosFromDesktopFile()
+                    print('postdepkaa', time.time())
                 
                 template_list.append(template_name)
                 tmp_template_list.append((template_name, template_client))
@@ -423,6 +429,8 @@ class SignaledSession(OperatingSession):
                               '/ray/server/list_sessions', 1)
         
         if not self.root:
+            self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
+                      "no session root, so no sessions to list")
             return
         
         session_list = []

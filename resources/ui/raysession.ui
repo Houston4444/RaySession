@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>721</width>
+    <width>722</width>
     <height>541</height>
    </rect>
   </property>
@@ -693,7 +693,7 @@ QToolButton {border: none}</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>721</width>
+     <width>722</width>
      <height>30</height>
     </rect>
    </property>
@@ -1132,7 +1132,7 @@ QToolButton {border: none}</string>
     <string>Session Scripts</string>
    </property>
    <property name="toolTip">
-    <string>Run the session scripts inside the directory kray-scripts</string>
+    <string>Run the session scripts inside the directory ray-scripts</string>
    </property>
   </action>
  </widget>
