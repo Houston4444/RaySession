@@ -1,3 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE RAY-PROXY>
-<RAY-PROXY executable="guitarix" label="Guitarix" VERSION="0.3.0" save_signal="10" stop_signal="10" icon="gx_head" arguments="-f &quot;$CONFIG_FILE&quot;" config_file="$RAY_SESSION_NAME.conf"  wait_window="1"/>

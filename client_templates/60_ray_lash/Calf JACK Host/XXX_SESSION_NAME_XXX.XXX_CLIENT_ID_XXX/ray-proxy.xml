@@ -1,3 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE RAY-PROXY>
-<RAY-PROXY arguments="--load &quot;$CONFIG_FILE&quot;" save_signal="10" stop_signal="10" VERSION="0.3.0" executable="calfjackhost" config_file="$RAY_SESSION_NAME.calf" wait_window="1"/>

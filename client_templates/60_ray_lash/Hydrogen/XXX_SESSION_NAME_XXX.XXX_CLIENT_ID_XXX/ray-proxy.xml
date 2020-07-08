@@ -1,3 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE RAY-PROXY>
-<RAY-PROXY stop_signal="10" label="Hydrogen" config_file="$RAY_SESSION_NAME.h2song" VERSION="0.3.0" executable="hydrogen" arguments="-n -s &quot;$CONFIG_FILE&quot;" icon="h2-icon" save_signal="10" wait_window="1"/>
