@@ -515,6 +515,11 @@ class Client(ServerSender, ray.ClientData):
         
         jack_client_name = self.name
         
+        # Mostly for ray_hack
+        if not jack_client_name:
+            jack_client_name = os.path.basename(self.executable_path)
+            jack_client_name.capitalize()
+        
         numid = ''
         if '_' in self.client_id:
             numid = self.client_id.rpartition('_')[2]
@@ -642,12 +647,16 @@ class Client(ServerSender, ray.ClientData):
         if self.isRayHack():
             all_envs = {'CONFIG_FILE': ('', ''),
                         'RAY_SESSION_NAME': ('', ''),
-                        'RAY_CLIENT_ID': ('', '')}
+                        'RAY_CLIENT_ID': ('', ''),
+                        'RAY_JACK_CLIENT_NAME': ('', '')}
             
             all_envs['RAY_SESSION_NAME'] = (os.getenv('RAY_SESSION_NAME'),
                                             self.session.name)
             all_envs['RAY_CLIENT_ID'] = (os.getenv('RAY_CLIENT_ID'),
                                          self.client_id)
+            all_envs['RAY_JACK_CLIENT_NAME'] = (
+                os.getenv('RAY_JACK_CLIENT_NAME'),
+                self.getJackClientName())
             
             for env in all_envs:
                 os.environ[env] = all_envs[env][1]

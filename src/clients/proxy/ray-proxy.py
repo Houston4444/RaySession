@@ -358,6 +358,7 @@ class Proxy(QObject):
         self.path = ""
         self.session_name = ""
         self.client_id = ""
+        self.jack_client_name = ""
 
         self.executable = executable
         self.arguments = []
@@ -637,6 +638,7 @@ class Proxy(QObject):
         self.project_path = project_path
         self.session_name = session_name
         self.client_id = project_path.rpartition('.')[2]
+        self.jack_client_name = jack_client_name
 
         server.sendGuiState(False)
 
@@ -667,7 +669,8 @@ class Proxy(QObject):
             server.sendToDaemon('/nsm/client/no_save_level', nsl)
     
     def startProcess(self):
-        os.environ['NSM_CLIENT_ID'] = self.client_id
+        os.environ['NSM_CLIENT_ID'] = self.jack_client_name
+        os.environ['RAY_CLIENT_ID'] = self.client_id
         os.environ['RAY_SESSION_NAME'] = self.session_name
 
         # enable environment vars in config_file
