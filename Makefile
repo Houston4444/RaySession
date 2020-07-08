@@ -121,10 +121,12 @@ install:
 	install -d $(DEST_RAY)/locale/
 	install -d $(DESTDIR)/etc/xdg/
 	install -d $(DESTDIR)/etc/xdg/raysession/
+	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
 	
 	
 	# Copy Templates Factory
-	cp -r client_templates  $(DESTDIR)/etc/xdg/raysession/
+	cp -r client_templates/40_ray_nsm  $(DESTDIR)/etc/xdg/raysession/client_templates/
+	cp -r client_templates/60_ray_lash $(DESTDIR)/etc/xdg/raysession/client_templates/
 	cp -r client_templates  $(DEST_RAY)/
 	cp -r session_templates $(DEST_RAY)/
 	cp -r session_scripts   $(DEST_RAY)/
@@ -196,5 +198,6 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/raysession.desktop
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/raysession.png
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/raysession.svg
-	rm -rf $(DESTDIR)/etc/xdg/raysession/client_templates
+	rm -rf $(DESTDIR)/etc/xdg/raysession/client_templates/40_ray_nsm
+	rm -rf $(DESTDIR)/etc/xdg/raysession/client_templates/60_ray_lash
 	rm -rf $(DEST_RAY)
