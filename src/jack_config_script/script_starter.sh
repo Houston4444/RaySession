@@ -36,7 +36,6 @@ fi
 RAY_MANAGE_PULSEAUDIO=$(true_or_false "$RAY_MANAGE_PULSEAUDIO" true)
 RAY_JACK_RELIABILITY_CHECK=$(true_or_false "$RAY_JACK_RELIABILITY_CHECK" true)
 RAY_HOSTNAME_SENSIBLE=$(true_or_false "$RAY_HOSTNAME_SENSIBLE" true)
-RAY_FAIL_IF_JACK_DIFF=$(true_or_false "$RAY_FAIL_IF_JACK_DIFF" false)
 
 cd "$(dirname "`readlink -f "$(realpath "$0")"`")"
 

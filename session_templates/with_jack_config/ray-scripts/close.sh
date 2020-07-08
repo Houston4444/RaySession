@@ -25,6 +25,20 @@
 #                                                                      #
 ########################################################################
 
+# set it to 'false' if you want the script
+# not to handle the ports of the PulseAudio -> JACK bridge
+export RAY_MANAGE_PULSEAUDIO=true
+
+# set it to 'false' if you want the script
+# if you want the script to trust the parameters of JACK
+export RAY_JACK_RELIABILITY_CHECK=true
+
+# set it to 'false' if you want the script to not consider hostname
+# then, a session can not be open on another machine
+# if it doesn't have the same sound interface
+export RAY_HOSTNAME_SENSIBLE=true
+
+
 close_all_if_needed=''
 
 if [[ "$RAY_FUTURE_SCRIPTS_DIR" != "$RAY_SCRIPTS_DIR" ]] &&\
