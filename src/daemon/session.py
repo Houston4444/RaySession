@@ -1639,6 +1639,7 @@ for better organization."""))
                     client.client_id = elements[2]
                     client.prefix_mode = ray.PrefixMode.CLIENT_NAME
                     client.auto_start = True
+                    client._from_nsm_file = True
                     self.future_clients.append(client)
                     
             file.close()

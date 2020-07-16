@@ -80,6 +80,8 @@ class Client(ServerSender, ray.ClientData):
     _desktop_icon = ""
     _desktop_description = ""
     
+    _from_nsm_file = False
+    
     def __init__(self, parent_session):
         ServerSender.__init__(self)
         self.session = parent_session
@@ -186,6 +188,7 @@ class Client(ServerSender, ray.ClientData):
         self.auto_start = bool(ctx.attribute('launched') != '0')
         self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
+        self._from_nsm_file = bool(ctx.attribute('from_nsm_file') == '1')
         
         self.updateInfosFromDesktopFile()
         
@@ -309,6 +312,9 @@ class Client(ServerSender, ray.ClientData):
             if self.executable_path != 'ray-proxy':
                 if self.start_gui_hidden:
                     ctx.setAttribute('gui_visible', '0')
+        
+        if self._from_nsm_file:
+            ctx.setAttribute('from_nsm_file', 1)
         
         if self.protocol != ray.Protocol.NSM:
             ctx.setAttribute('protocol', ray.protocolToStr(self.protocol))
@@ -510,7 +516,7 @@ class Client(ServerSender, ray.ClientData):
         # if client seems to have been made by NSM itself
         # else, jack connections could be lose
         # at NSM session import
-        if self.hasNSMClientId():
+        if self._from_nsm_file:
             return "%s.%s" % (self.name, self.client_id)
         
         jack_client_name = self.name
@@ -1092,6 +1098,7 @@ class Client(ServerSender, ray.ClientData):
         self.ignored_extensions = new_client.ignored_extensions
         self.custom_data = new_client.custom_data
         self.description = new_client.description
+        self._from_nsm_file = new_client._from_nsm_file
     
     def switch(self):
         jack_client_name    = self.getJackClientName()
