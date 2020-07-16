@@ -21,7 +21,8 @@ from server_sender     import ServerSender
 from file_copier       import FileCopier
 from client            import Client
 from scripter          import StepScripter
-from daemon_tools import TemplateRoots, RS, Terminal, CommandLineArgs
+from daemon_tools import (TemplateRoots, RS, Terminal, CommandLineArgs,
+                          getGitDefaultUnAndIgnored)
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -424,6 +425,40 @@ class Session(ServerSender):
                 return True
             
         return False
+    
+    def rewriteUserTemplatesFile(self, content, templates_file)->bool:
+        if not os.access(templates_file, os.W_OK):
+            return False
+        
+        file_version = content.attribute('VERSION')
+        
+        if ray.versionToTuple(file_version) >= ray.versionToTuple(ray.VERSION):
+            return False
+        
+        content.setAttribute('VERSION', ray.VERSION)
+        if ray.versionToTuple(file_version) >= (0, 8, 0):
+            return True
+        
+        nodes = content.childNodes()
+        
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            ct = node.toElement()
+            tag_name = ct.tagName()
+            if tag_name != 'Client-Template':
+                continue
+            
+            executable = ct.attribute('executable') 
+            if not executable:
+                continue
+            
+            ign_list, unign_list = getGitDefaultUnAndIgnored(executable)
+            if ign_list:
+                ct.setAttribute('ignored_extensions', " ".join(ign_list))
+            if unign_list:
+                ct.setAttribute('unignored_extensions', " ".join(unign_list))
+        
+        return True
 
 
 class OperatingSession(Session):
