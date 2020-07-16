@@ -1774,7 +1774,7 @@ for better organization."""))
                                     == future_client.executable_path
                                 and client.running_arguments
                                     == future_client.arguments):
-                            #we found a switchable client
+                            # we found a switchable client
                             break
                     else:
                         client = None

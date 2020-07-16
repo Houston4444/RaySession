@@ -1,4 +1,20 @@
 
+0.9.0 / 2020-07-16
+New Features:
+    CLI: Control allmost all GUI actions and more with the CLI ray_control.
+    Session scripts: allow user to edit shell scripts at session load, save and close.
+    JACK config session script: script that saves and recalls the JACK configuration for the session.
+        Add this from session templates in "New Session" window.
+    RayHack: New client protocol which is an alternative to ray-proxy.
+        This allows to launch directly the process and to edit its properties even if process is stopped.
+        I know this feature will be considered as heretic by someones, this is not strong, I know it doesn't changes things too much.
+    Factory client templates are installed in /etc/xdg/raysession to allow packagers to add some templates.
+    Get client label, icon and description from their .desktop file.
+    
+Subfolder combobox removed in New Session Dialog
+Daemon option "Save from client" has been removed. Please affect a global keyboard shortcut (Meta+Ctrl+S) to ray_control save instead.
+
+
 0.8.3 / 2019-11-25
 This release fixes the link for src/bin/ray_control from absolute to relative path.
 Sorry for the inconvenience.
