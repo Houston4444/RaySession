@@ -1,0 +1,60 @@
+
+0.8.3 / 2019-11-25
+This release fixes the link for src/bin/ray_control from absolute to relative path.
+Sorry for the inconvenience.
+
+0.8.2 / 2019-11-20
+this new version is here to fix a big bug with snapshots.
+If user name and user email were not mentioned to git, snapshot always failed with some versions of git.
+
+Fix snapshot/git bug
+Fix network session not working
+Provide fallback icons for allmost all system icons
+add little script 'ray_control', this way you can use 'ray_control save' to save your running session (and affect this to a global keyboard shortcut (eg, Meta+Ctrl+S)).
+
+0.8.1 / 2019-10-23
+Just a bug fix release. In v0.8.0 , first session creation failed (first session of the directory (e.g. ~/Ray Sessions/first session).
+Ray Session has also been renamed to RaySession everywhere it was.
+
+0.8.0 / 2019-10-15 Autumn Release.
+This release contains many new features. Mainly the snapshot manager.
+
+Snapshot manager (requires git): Take a snapshot at each session save. User can go back to a previous snapshot with the "rewind" button at the right of "executable" button. See "snapshots explain" file in code root for more info.
+Proxy: Improve integration of non savable clients. Possibility to display a special save icon and prevent accidental close on RaySession in this case. Try to close gracefully client window is possible (requires wmctrl).
+Favorites: User can quickly add a favorite template with "Favorites" button or with a right click below clients.
+Add Application dialog: Now shows an "User" icon at right of each user template, click on it to remove this template. Click on favorite icon to add the template to favorites. Double click on template to launch it.
+Open Session dialog: Now shows all session in a tree-view (if some sessions are under a sub-folder). Double-click on session to open it.
+New Session Dialog: If some sessions are in a sub-folder, shows a sub-folder combo box for the new session.
+Add Executable Dialog: Click on "Show More Options" to change Prefix or client_id. Useful to integrate in the session files made outside (for advanced users).
+Client Properties Dialog: global re-design, edit line added to edit extensions ignored for snapshots.
+add a donations Dialog
+NSM Compatibility review: Possibility to launch a client externally with the environment variable NSM_URL, Absolute PATH are not allowed anymore when adding an executable. Integration of server-control NSM OSC messages which try to reproduce exact NSM behavior.
+Bug Fix: fix prevent desktop session disconnection (on KDE and maybe other ones desktops).
+
+
+0.7.2 / 2019-07-15
+New Application Templates for OPNplug* and amsynth.
+fix unsaved stop signal in ray-proxy
+faster pid check for desktops memory
+Thanks to jpcima for the OPNplug template pull request.
+
+0.7.1 / 2019-01-16
+Bug Fixes:
+    Fix bug with drag and drop client items. Clients order wasn't saved.
+    Fix untranslated proxy window.
+    Fix non removed stopped clients at session close.
+    Fix search of switchable clients if client executable or arguments have been recently modified
+    Now send hide_optional_gui to client only once "open" has been sent. This can now makes some window flashes but it did make crash some softwares as Patroneo and Fluajho.
+New Templates:
+    Add Patroneo and Fluajho templates to Factory
+
+0.7.0 / 2019-01-07
+New features:
+
+New Option (activated by default): provide bookmark (shortcut) of the session folder for gtk2, gtk3, qt4, qt5, fltk and kde5 file pickers.
+New Option: Desktops Memory (requires wmctrl). If activated, clients windows will be moved to the given desktop when session is ready, or when a client is ready. It may not works depending on your D.E.
+Edit executable and arguments in client properties window. Arguments are supposed to be not supported by NSM. Sometimes it works and it can be useful.
+option -s to load session at startup
+ray-proxy: new option "wait window for reply" (requires wmctrl)
+sooperlooper_nsm: option to pause and trig with jack_transport events (play/pause)
+new factory templates for ADLplug, Petri-Foo, Shuriken, Sequencer64 and SooperLooper +Transport
