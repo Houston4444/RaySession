@@ -1568,8 +1568,34 @@ no_save_level:%i""" % (self.ray_hack.config_file,
         self.sendErrorToCaller(OSC_SRC_SAVE_TP, ray.Err.COPY_ABORTED,
             _translate('GUIMSG', 'Copy has been aborted !'))
     
+    def changePrefix(self, prefix_mode:int, custom_prefix:str):
+        if self.isRunning():
+            return
+        
+        old_prefix = self.session.name
+        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+            old_prefix = self.name
+        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+            old_prefix = self.custom_prefix
+            
+        new_prefix = self.session.name
+        if prefix_mode == ray.PrefixMode.CLIENT_NAME:
+            new_prefix = self.name
+        elif prefix_mode == ray.PrefixMode.CUSTOM:
+            new_prefix = custom_prefix
+        
+        self.renameFiles(self.session.path,
+                         self.session.name, self.session.name,
+                         old_prefix, new_prefix,
+                         self.client_id, self.client_id)
+        
+        self.prefix_mode = prefix_mode
+        self.custom_prefix = custom_prefix
+        self.sendGuiClientProperties()
+    
     def adjustFilesAfterCopy(self, new_session_full_name,
                              template_save=ray.Template.NONE):
+        spath = self.session.path
         old_session_name = self.session.name
         new_session_name = basename(new_session_full_name)
         new_client_id = self.client_id
@@ -1609,12 +1635,12 @@ no_save_level:%i""" % (self.ray_hack.config_file,
             spath = "%s/%s" % (TemplateRoots.user_clients,
                                new_session_full_name)
             new_session_name = xsessionx
-            new_client_id    = xclient_idx
+            new_client_id = xclient_idx
            
         elif template_save == ray.Template.CLIENT_LOAD:
             spath = self.session.path
             old_session_name = xsessionx
-            old_client_id    = xclient_idx
+            old_client_id = xclient_idx
         
         old_prefix = old_session_name
         new_prefix = new_session_name
@@ -1623,12 +1649,19 @@ no_save_level:%i""" % (self.ray_hack.config_file,
             old_prefix = new_prefix = self.name
         elif self.prefix_mode == ray.PrefixMode.CUSTOM:
             old_prefix = new_prefix = self.custom_prefix
+            
+        self.renameFiles(spath, old_session_name, new_session_name,
+                         old_prefix, new_prefix,
+                         old_client_id, new_client_id)
         
+    def renameFiles(self, spath,
+                    old_session_name, new_session_name,
+                    old_prefix, new_prefix,
+                    old_client_id, new_client_id):
         scripts_dir = "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, old_client_id)
         if os.access(scripts_dir, os.W_OK):
             os.rename(scripts_dir,
                       "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, new_client_id))
-        
         
         project_path = "%s/%s.%s" % (spath, old_prefix, old_client_id)
         

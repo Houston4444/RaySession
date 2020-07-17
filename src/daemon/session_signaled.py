@@ -1499,6 +1499,28 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path, client.custom_tmp_data[data])
         self.send(src_addr, '/reply', path)
     
+    @client_action
+    def _ray_client_change_prefix(self, path, args, src_addr, client):
+        if client.isRunning():
+            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                      "impossible to change prefix while client is running")
+            return
+        
+        prefix_mode = args[0]
+        custom_prefix = ''
+        
+        if prefix_mode in (ray.PrefixMode.SESSION_NAME, 'session_name'):
+            prefix_mode = ray.PrefixMode.SESSION_NAME
+        elif prefix_mode in (ray.PrefixMode.CLIENT_NAME, 'client_name'):
+            prefix_mode = ray.PrefixMode.CLIENT_NAME
+        else:
+            prefix_mode = ray.PrefixMode.CUSTOM
+        
+        if prefix_mode == ray.PrefixMode.CUSTOM:
+            custom_prefix = args[1]
+        
+        client.changePrefix(prefix_mode, custom_prefix)
+        self.send(src_addr, '/reply', path, 'prefix changed')
     
     def _ray_trashed_client_restore(self, path, args, src_addr):
         if not self.path:

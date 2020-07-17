@@ -990,6 +990,22 @@ class OscServerThread(ClientCommunicating):
             self.unknownMessage(path, types, src_addr)
             return
     
+    @ray_method('/ray/client/change_prefix', None)
+    def rayClientChangePrefix(self, path, args, types, src_addr):
+        # here message can be si, ss, sis, sss
+        invalid = False
+        
+        if len(args) < 2:
+            invalid = True
+            
+        elif args[1] in (ray.PrefixMode.CUSTOM, 'custom'):
+            if len(args) < 3:
+                invalid = True
+        
+        if invalid:
+            self.unknownMessage(path, types, src_addr)
+            return False
+            
     @ray_method('/ray/client/set_description', 'ss')
     def rayClientSetDescription(self, path, args, types, src_addr):
         pass
