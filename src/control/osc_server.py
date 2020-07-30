@@ -41,35 +41,35 @@ class OscServer(liblo.Server):
     def replyMessage(self, path, args, types, src_addr):
         if not areTheyAllString(args):
             return
-        
+
         if len(args) >= 1:
             reply_path = args[0]
         else:
             return
-        
+
         if reply_path == '/ray/server/controller_announce':
             self._wait_for_announce = False
             return
-        
+
         elif reply_path == '/ray/server/quit':
             sys.stderr.write('--- Daemon at port %i stopped. ---\n'
                              % src_addr.port)
             if self._stop_port_list:
                 if src_addr.port == self._stop_port_list[0]:
                     stopped_port = self._stop_port_list.pop(0)
-                    
+
                     if self._stop_port_list:
                         self.stopDaemon(self._stop_port_list[0])
                     else:
                         self._final_err = 0
                     return
-        
+
         if reply_path != self._osc_order_path:
             sys.stdout.write('bug: reply for a wrong path:%s instead of %s\n'
-                             % (highlightText(reply_path), 
+                             % (highlightText(reply_path),
                                 highlightText(self._osc_order_path)))
             return
-                
+
         if reply_path.endswith('/list_snapshots'):
             if len(args) >= 2:
                 snapshots = args[1:]
@@ -81,7 +81,7 @@ class OscServer(liblo.Server):
                 return
             else:
                 self._final_err = 0
-        
+
         elif os.path.basename(reply_path).startswith(('list_', 'get_')):
             if len(args) >= 2:
                 sessions = args[1:]
@@ -92,94 +92,94 @@ class OscServer(liblo.Server):
                 return
             else:
                 self._final_err = 0
-        
+
         elif len(args) == 2:
             reply_path, message = args
             if os.path.basename(reply_path).startswith('add_'):
                 sys.stdout.write("%s\n" % message)
             self._final_err = 0
-    
+
     def errorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
-        
+
         if error_path != self._osc_order_path:
             sys.stdout.write('bug: error for a wrong path:%s instead of %s\n'
-                             % (highlightText(error_path), 
+                             % (highlightText(error_path),
                                 highlightText(self._osc_order_path)))
             return
-        
+
         sys.stderr.write('%s\n' % message)
         self._final_err = - err
-        
+
     def minorErrorMessage(self, path, args, types, src_addr):
         error_path, err, message = args
         sys.stdout.write('\033[31m%s\033[0m\n' % message)
         if err == ERR_UNKNOWN_MESSAGE:
             self._final_err = -err
-    
+
     def rayControlMessage(self, path, args, types, src_addr):
         message = args[0]
         sys.stdout.write("%s\n" % message)
-        
+
     def rayControlServerAnnounce(self, path, args, types, src_addr):
         sys.stderr.write('--- Daemon started at port %i ---\n'
                          % src_addr.port)
-        
+
         self._wait_for_start = False
         self.m_daemon_address = src_addr
-        
+
         if self._wait_for_start_only:
             self._final_err = 0
             return
-        
+
         self.sendOrderMessage()
-    
+
     def setDaemonAddress(self, daemon_port):
         self.m_daemon_address = liblo.Address(daemon_port)
         self._wait_for_announce = True
         self._announce_time = time.time()
         self.toDaemon('/ray/server/controller_announce', os.getpid())
-    
+
     def getDaemonPort(self):
         if self.m_daemon_address:
             return self.m_daemon_address.port
         return None
-    
+
     def toDaemon(self, *args):
         if self.m_daemon_address:
             self.send(self.m_daemon_address, *args)
-    
+
     def setOrderPathArgs(self, path, args):
         self._osc_order_path = path
         self._osc_order_args = args
-    
+
     def sendOrderMessage(self):
         if not self._osc_order_path:
             sys.stderr.write('error: order path was not set\n')
             sys.exit(101)
-            
+
         self.toDaemon(self._osc_order_path, *self._osc_order_args)
-        
+
         if self._detach:
             self._final_err = 0
-    
+
     def finalError(self):
         return self._final_err
-    
+
     def waitForStart(self):
         self._wait_for_start = True
         self._started_time = time.time()
-    
+
     def waitForStartOnly(self):
         self._wait_for_start_only = True
-        
+
     def setStartedTime(self, started_time):
         self._started_time = started_time
-        
+
     def isWaitingStartForALong(self):
         if not (self._wait_for_start or self._wait_for_announce):
             return False
-        
+
         if self._wait_for_start:
             if time.time() - self._started_time > 3.00:
                 sys.stderr.write("server didn't announce, sorry !\n")
@@ -189,18 +189,18 @@ class OscServer(liblo.Server):
                 sys.stderr.write(
                     'Error: server did not reply, it may be busy !\n')
                 return True
-        
+
         return False
-    
+
     def stopDaemon(self, port):
         sys.stderr.write('--- Stopping daemon at port %i ---\n' % port)
         self.setDaemonAddress(port)
         self.toDaemon('/ray/server/quit')
-    
+
     def stopDaemons(self, stop_port_list):
         self._stop_port_list = stop_port_list
         if self._stop_port_list:
             self.stopDaemon(self._stop_port_list[0])
-    
+
     def disannounceToDaemon(self):
         self.toDaemon('/ray/server/controller_disannounce')

@@ -12,17 +12,17 @@ def ray_method(path, types):
         @liblo.make_method(path, types)
         def wrapper(*args, **kwargs):
             t_thread, t_path, t_args, t_types, src_addr, rest = args
-            
+
             if CommandLineArgs.debug:
                 sys.stderr.write(
                     '\033[93mOSC::gui_receives\033[0m %s, %s, %s, %s\n'
                     % (t_path, t_types, t_args, src_addr.url))
-            
+
             response = func(*args[:-1], **kwargs)
-            
+
             if response != False:
                 t_thread._signaler.osc_receive.emit(t_path, t_args)
-                
+
             return response
         return wrapper
     return decorated
@@ -47,7 +47,7 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/error', 'sis')
     def _error(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/minor_error', 'sis')
     def error(self, path, args, types, src_addr):
         pass
@@ -56,13 +56,13 @@ class GUIServerThread(liblo.ServerThread):
     def _reply(self, path, args, types, src_addr):
         if len(args) < 2:
             return False
-        
+
         if not ray.areTheyAllString(args):
             return False
-        
+
         new_args = args.copy()
         reply_path = new_args.pop(0)
-        
+
         if reply_path == '/ray/server/list_sessions':
             self._signaler.add_sessions_to_list.emit(new_args)
         elif reply_path == '/ray/server/list_path':
@@ -94,32 +94,32 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/server/nsm_locked', 'i')
     def _server_nsm_locked(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/server/root', 's')
     def _server_root(self, path, args, types, src_addr):
         session_root = args[0]
         CommandLineArgs.changeSessionRoot(session_root)
         self._signaler.root_changed.emit(session_root)
-    
+
     @ray_method('/ray/gui/server/options', 'i')
     def _server_options(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/server/status', 'i')
     def _server_status(self, path, args, types, src_addr):
         server_status = args[0]
         self._signaler.server_status_changed.emit(server_status)
-    
+
     @ray_method('/ray/gui/server/copying', 'i')
     def _server_copying(self, path, args, types, src_addr):
         copying = bool(int(args[0]))
         self._signaler.server_copying.emit(copying)
-    
+
     @ray_method('/ray/gui/server/progress', 'f')
     def _server_progress(self, path, args, types, src_addr):
         progress = args[0]
         self._signaler.server_progress.emit(progress)
-        
+
     @ray_method('/ray/gui/server/message', 's')
     def _server_message(self, path, args, types, src_addr):
         pass
@@ -127,32 +127,32 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/session/name', 'ss')
     def _session_name(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/session/notes', 's')
     def _session_notes(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/session/auto_snapshot', 'i')
     def _session_auto_snapshot(self, path, args, types, src_addr):
         self._signaler.reply_auto_snapshot.emit(bool(args[0]))
-    
+
     @ray_method('/ray/gui/session/is_nsm', '')
     def _session_is_nsm(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/session/renameable', 'i')
     def _session_renameable(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/session/sort_clients', None)
     def _session_sort_clients(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             return False
-    
+
     @ray_method('/ray/gui/client_template_update', 'is' + ray.ClientData.sisi())
     def _client_template_update(self, path, args, types, src_addr):
         self._signaler.client_template_update.emit(args)
-    
+
     @ray_method('/ray/gui/client/new', ray.ClientData.sisi())
     def _client_new(self, path, args, types, src_addr):
         pass
@@ -160,11 +160,11 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/client/update', ray.ClientData.sisi())
     def _client_update(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/client/ray_hack_update', 'ssiiiisi')
     def _client_ray_hack_update(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/client/switch', 'ss')
     def _client_switch(self, path, args, types, src_addr):
         pass
@@ -192,7 +192,7 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/client/still_running', 's')
     def _client_still_running(self, path, args, types, src_addr):
         pass
-        
+
     @ray_method('/ray/gui/client/no_save_level', 'si')
     def _client_no_save_level(self, path, args, types, src_addr):
         pass
@@ -208,38 +208,38 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/trash/clear', '')
     def _trash_clear(self, path, args, types, src_addr):
         pass
-        
+
     @ray_method('/ray/gui/favorites/added', 'ssi')
     def _favorites_added(self, path, args, types, src_addr):
         pass
-        
+
     @ray_method('/ray/gui/favorites/removed', 'si')
     def _favorites_removed(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/script_info', 's')
     def _script_info(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/hide_script_info', '')
     def _hide_script_info(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/script_user_action', 's')
     def _script_user_action(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/hide_script_user_action', '')
     def _hide_script_user_action(self, path, args, types, src_addr):
         pass
-    
+
     def send(self, *args):
         if CommandLineArgs.debug:
             sys.stderr.write(
                 '\033[95mOSC::gui sends\033[0m %s\n' % str(args[1:]) )
-        
+
         liblo.ServerThread.send(self, *args)
-    
+
     def toDaemon(self, *args):
         self.send(self._daemon_manager.address, *args)
 
@@ -258,7 +258,7 @@ class GUIServerThread(liblo.ServerThread):
         NSM_URL = os.getenv('NSM_URL')
         if not NSM_URL:
             NSM_URL = ""
-        
+
         self.send(self._daemon_manager.address, '/ray/server/gui_announce',
                   ray.VERSION, int(CommandLineArgs.under_nsm),
                   NSM_URL, 0,

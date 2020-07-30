@@ -9,14 +9,14 @@ from client_properties_dialog import ClientPropertiesDialog
 
 class Client(QObject, ray.ClientData):
     status_changed = pyqtSignal(int)
-    
+
     def __init__(self, session, client_id, protocol, trashed=False):
         QObject.__init__(self)
         ray.ClientData.gui_init(self, client_id, protocol)
-        
+
         self._session = session
         self._main_win = self._session._main_win
-        
+
         self.ray_hack = ray.RayHack()
 
         self.status = ray.ClientStatus.STOPPED
@@ -62,7 +62,7 @@ class Client(QObject, ray.ClientData):
     def setNoSaveLevel(self, no_save_level):
         self.no_save_level = no_save_level
         self.widget.setNoSaveLevel(no_save_level)
-    
+
     def setProgress(self, progress):
         self.widget.setProgress(progress)
 
@@ -97,22 +97,22 @@ class Client(QObject, ray.ClientData):
                 'Server not found. Client %s can not send its properties\n'
                     % self.client_id)
             return
-        
+
         server.toDaemon('/ray/client/update_properties',
                         *ray.ClientData.spreadClient(self))
 
     def sendRayHack(self):
         if not self.protocol == ray.Protocol.RAY_HACK:
             return
-        
+
         server = GUIServerThread.instance()
         if not server:
             return
-        
+
         server.toDaemon('/ray/client/update_ray_hack_properties',
                         self.client_id,
                         *self.ray_hack.spread())
-        
+
     def showPropertiesDialog(self, second_tab=False):
         self.properties_dialog.updateContents()
         if second_tab:
@@ -121,7 +121,7 @@ class Client(QObject, ray.ClientData):
             self.properties_dialog.setOnSecondTab()
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()
-    
+
     def reCreateWidget(self):
         del self.widget
         self.widget = self._main_win.createClientWidget(self)
@@ -131,37 +131,37 @@ class Client(QObject, ray.ClientData):
             self.setGuiEnabled()
 
     def hasBeenRecentlySaved(self):
-        if (time.time() - self.last_save) >= 60:  
+        if (time.time() - self.last_save) >= 60:
             # last save more than 60 seconds ago
             return False
 
         return True
-    
+
     def getProjectPath(self)->str:
         if not self._session.path:
             return ''
-        
+
         prefix = self.session.name
-        
+
         if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
             prefix = self.name
         elif self.prefix_mode == ray.PrefixMode.CUSTOM:
             prefix = self.custom_prefix
-            
+
         return "%s/%s.%s" % (self._session.path, prefix, self.client_id)
-    
+
     def getIconSearchPath(self)->list:
         if not self._session._daemon_manager.is_local:
             return []
-        
+
         project_path = self.getProjectPath()
         if not project_path:
             return []
-        
+
         search_list = []
         main_icon_path = '.local/share/icons'
         search_list.append("%s/%s" % (search_list, main_icon_path))
-        
+
         for path in ('16x16', '24x24', '32x32', '64x64', 'scalable'):
             search_list.append("%s/%s/%s" % (project_path,
                                              main_icon_path, path))

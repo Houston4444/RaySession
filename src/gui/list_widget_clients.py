@@ -1,5 +1,5 @@
 import time
-from PyQt5.QtWidgets import (QListWidget, QListWidgetItem, QFrame, QMenu, 
+from PyQt5.QtWidgets import (QListWidget, QListWidgetItem, QFrame, QMenu,
                              QLineEdit, QAction)
 from PyQt5.QtGui import QIcon, QPalette, QPixmap, QFontMetrics, QFont, QFontDatabase
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QSize, QFile
@@ -27,12 +27,12 @@ class ClientSlot(QFrame):
 
         self.is_dirty_able = False
         self.gui_visible = False
-        
+
         self.ui.toolButtonGUI.setVisible(False)
-        
+
         if self.client.protocol == ray.Protocol.RAY_HACK:
             self.showGuiButton()
-            
+
         # connect buttons to functions
         self.ui.toolButtonGUI.toggleGui.connect(self.toggleGui)
         self.ui.startButton.clicked.connect(self.startClient)
@@ -42,7 +42,7 @@ class ClientSlot(QFrame):
         self.ui.closeButton.clicked.connect(self.trashClient)
         self.ui.lineEditClientStatus.statusPressed.connect(self.abortCopy)
         # self.ui.ClientName.name_changed.connect(self.updateLabel)
-        
+
         # prevent "stopped" status displayed at client switch
         #self.ui.lineEditClientStatus,.setTextNow(
                           #clientStatusString(self.client.status))
@@ -62,7 +62,7 @@ class ClientSlot(QFrame):
         self.menu.addAction(self.ui.actionSaveAsApplicationTemplate)
         self.menu.addAction(self.ui.actionReturnToAPreviousState)
         self.menu.addAction(self.ui.actionProperties)
-        
+
         self.ui.actionReturnToAPreviousState.setVisible(
             self._main_win.has_git)
 
@@ -90,7 +90,7 @@ class ClientSlot(QFrame):
             QPixmap(':scalable/breeze/document-unsaved'),
             QIcon.Normal,
             QIcon.Off)
-        
+
         self.noSaveIcon = QIcon()
         self.noSaveIcon.addPixmap(
             QPixmap(':scalable/breeze/document-nosave'),
@@ -143,7 +143,7 @@ class ClientSlot(QFrame):
                 QPixmap(':scalable/breeze-dark/document-unsaved'),
                 QIcon.Normal,
                 QIcon.Off)
-            
+
             self.noSaveIcon = QIcon()
             self.noSaveIcon.addPixmap(
                 QPixmap(':scalable/breeze-dark/document-nosave'),
@@ -169,7 +169,7 @@ class ClientSlot(QFrame):
         self.ubuntu_font_cond.setBold(True)
 
         self.ui.killButton.setVisible(False)
-        
+
         self.updateClientData()
 
     def clientId(self):
@@ -209,7 +209,7 @@ class ClientSlot(QFrame):
         template_name = dialog.getTemplateName()
         self.toDaemon('/ray/client/save_as_template', self.clientId(),
                       template_name)
-        
+
     def openSnapshotsDialog(self):
         dialog = snapshots_dialog.ClientSnapshotsDialog(self._main_win,
                                                         self.client)
@@ -243,7 +243,7 @@ class ClientSlot(QFrame):
         tool_tip += "%s : %s</p>" \
             % (_translate('client_slot', 'client id'), self.client.client_id)
         tool_tip += "</body></html>"
-        
+
         self.ui.ClientName.setToolTip(tool_tip)
 
         # set icon
@@ -264,9 +264,9 @@ class ClientSlot(QFrame):
 
     def updateStatus(self, status):
         self.ui.lineEditClientStatus.setText(clientStatusString(status))
-        
+
         ray_hack = bool(self.client.protocol == ray.Protocol.RAY_HACK)
-        
+
         if status in (
                 ray.ClientStatus.LAUNCH,
                 ray.ClientStatus.OPEN,
@@ -343,7 +343,7 @@ class ClientSlot(QFrame):
             self.ui.toolButtonGUI.setToolTip(
                 _translate('client_slot',
                            'Display client Ray-Hack properties'))
-        
+
         elif self.client.executable_path in ('nsm-proxy', 'ray-proxy'):
             self.ui.toolButtonGUI.setText(_translate('client_slot', 'proxy'))
             self.ui.toolButtonGUI.setToolTip(
@@ -359,7 +359,7 @@ class ClientSlot(QFrame):
                 self.client.properties_dialog.hide()
             else:
                 self.client.showPropertiesDialog(second_tab=True)
-        
+
         else:
             if not self.gui_visible:
                 self.toDaemon('/ray/client/show_optional_gui',
@@ -381,10 +381,10 @@ class ClientSlot(QFrame):
             self.ui.saveButton.setIcon(self.noSaveIcon)
         else:
             self.ui.saveButton.setIcon(self.saveIcon)
-    
+
     def setProgress(self, progress):
         self.ui.lineEditClientStatus.setProgress(progress)
-        
+
     def setDaemonOptions(self, options):
         has_git = bool(options & ray.Option.HAS_GIT)
         self.ui.actionReturnToAPreviousState.setVisible(has_git)
@@ -421,7 +421,7 @@ class ListWidgetClients(QListWidget):
         QListWidget.__init__(self, parent)
         self.last_n = 0
         self._session = None
-        
+
     def createClientWidget(self, client_data):
         item = ClientItem(self, client_data)
         item.setSortNumber(self.last_n)
@@ -461,7 +461,7 @@ class ListWidgetClients(QListWidget):
             n += 1
 
         self.sortItems()
-    
+
     def clientPropertiesStateChanged(self, client_id, bool_visible):
         for i in range(self.count()):
             item = self.item(i)
@@ -469,15 +469,15 @@ class ListWidgetClients(QListWidget):
                 widget = item.f_widget
                 widget.setGuiState(bool_visible)
                 break
-    
+
     def setSession(self, session):
         self._session = session
-    
+
     def toDaemon(self, *args):
         server = GUIServerThread.instance()
         if server:
             server.toDaemon(*args)
-    
+
     @pyqtSlot()
     def launchFavorite(self):
         template_name, factory = self.sender().data()
@@ -503,13 +503,13 @@ class ListWidgetClients(QListWidget):
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
-            
+
         QListWidget.mousePressEvent(self, event)
-    
+
     def contextMenuEvent(self, event):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
-            
+
             if (self._session
                     and not self._session.server_status in (
                         ray.ServerStatus.OFF,
@@ -520,21 +520,21 @@ class ListWidgetClients(QListWidget):
                 menu = QMenu()
                 fav_menu = QMenu(_translate('menu', 'Favorites'), menu)
                 fav_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
-                
+
                 for favorite in self._session.favorite_list:
                     act_app = fav_menu.addAction(
                         ray.getAppIcon(favorite.icon, self), favorite.name)
                     act_app.setData([favorite.name, favorite.factory])
                     act_app.triggered.connect(self.launchFavorite)
-            
+
                 menu.addMenu(fav_menu)
-                
+
                 menu.addAction(
                     self._session._main_win.ui.actionAddApplication)
                 menu.addAction(self._session._main_win.ui.actionAddExecutable)
-            
+
                 act_selected = menu.exec(self.mapToGlobal(event.pos()))
             event.accept()
             return
-        
-        
+
+

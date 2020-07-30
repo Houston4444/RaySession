@@ -18,13 +18,13 @@ def _translate(*args):
 def setDefaultSessionRoot(path):
     global default_session_root
     default_session_root = path
-    
+
 def getDefaultSessionRoot():
     return default_session_root
 
 class RS:
     settings = QSettings()
-    
+
     @classmethod
     def setSettings(cls, settings):
         del cls.settings
@@ -38,9 +38,9 @@ def initGuiTools():
         settings = QSettings(CommandLineArgs.config_dir)
     else:
         settings = QSettings()
-       
+
     RS.setSettings(settings)
-    
+
     CommandLineArgs.changeSessionRoot(
         settings.value('default_session_root',
                        "%s/Ray Sessions" % (os.getenv('HOME')),
@@ -126,7 +126,7 @@ class RayIcon(QIcon):
             QPixmap(
                 ':scalable/%s/disabled/%s' %
                 (breeze, icon_name)), QIcon.Disabled, QIcon.Off)
-    
+
 
 class CommandLineArgs(argparse.Namespace):
     daemon_url = None
@@ -166,15 +166,15 @@ class CommandLineArgs(argparse.Namespace):
                 sys.exit(1)
 
             cls.under_nsm = True
-        
+
         if not cls.session_root:
             cls.session_root = RS.settings.value(
                                     'default_session_root',
                                     '%s/Ray Sessions' % os.getenv('HOME'))
-        
+
         if cls.session_root.endswith('/'):
             cls.session_root = cls.session_root[:-1]
-            
+
     @classmethod
     def changeSessionRoot(cls, path):
         cls.session_root = path
@@ -201,7 +201,7 @@ class ArgParser(argparse.ArgumentParser):
                           help=_translate(
                               'help', 'Use this folder as root for sessions'))
         self.add_argument('--session', '-s', type=str,
-                          help=_translate('help', 
+                          help=_translate('help',
                                           'Open this session at startup'))
         self.add_argument('--config-dir', '-c', type=str, default='',
                           help=_translate('help', 'use a custom config dir'))

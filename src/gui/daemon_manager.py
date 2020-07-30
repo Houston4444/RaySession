@@ -19,7 +19,7 @@ class DaemonManager(QObject):
 
         self.executable = 'ray-daemon'
         self.process = QProcess()
-        
+
         if ray.QT_VERSION >= (5, 6):
             self.process.errorOccurred.connect(self.errorInProcess)
         self.process.setProcessChannelMode(QProcess.ForwardedChannels)
@@ -178,20 +178,20 @@ class DaemonManager(QObject):
 
     def setOscAddressViaUrl(self, url):
         self.setOscAddress(ray.getLibloAddress(url))
-    
+
     def start(self):
         if self.launched_before:
             self.callDaemon()
             return
-        
+
         ray_control_process = QProcess()
         ray_control_process.start("ray_control", ['get_port_gui_free'])
         ray_control_process.waitForFinished(2000)
-        
+
         if ray_control_process.exitCode() == 0:
             port_str_lines = ray_control_process.readAllStandardOutput().data().decode('utf-8')
             port_str = port_str_lines.partition('\n')[0]
-            
+
             if port_str and port_str.isdigit():
                 self.address = Address(int(port_str))
                 self.port = self.address.port
@@ -210,7 +210,7 @@ class DaemonManager(QObject):
         arguments = ['--gui-url', str(server.url),
                      '--osc-port', str(self.port),
                      '--session-root', CommandLineArgs.session_root]
-        
+
         if CommandLineArgs.session:
             arguments.append('--session')
             arguments.append(CommandLineArgs.session)
@@ -234,7 +234,7 @@ class DaemonManager(QObject):
             self.disannounce()
             QTimer.singleShot(10, QApplication.quit)
             return
-        
+
         server = GUIServerThread.instance()
         server.toDaemon('/ray/server/quit')
         QTimer.singleShot(10, QApplication.quit)

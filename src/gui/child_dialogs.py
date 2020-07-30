@@ -67,42 +67,42 @@ class ChildDialog(QDialog):
     def serverCopying(self, bool_copying):
         self.server_copying = bool_copying
         self.serverStatusChanged(self._session.server_status)
-        
+
     def changeRootFolder(self):
         root_folder = QFileDialog.getExistingDirectory(
-            self, 
+            self,
             _translate("root_folder_dialogs",
-                       "Choose root folder for sessions"), 
-            CommandLineArgs.session_root, 
+                       "Choose root folder for sessions"),
+            CommandLineArgs.session_root,
             QFileDialog.ShowDirsOnly)
-        
+
         if not root_folder:
             return
-        
+
         # Security, kde dialogs sends $HOME if user type a folder path
         # that doesn't already exists.
         if os.getenv('HOME') and root_folder == os.getenv('HOME'):
             return
-        
+
         errorDialog = QMessageBox(
-            QMessageBox.Critical, 
-            _translate('root_folder_dialogs', 'unwritable dir'), 
+            QMessageBox.Critical,
+            _translate('root_folder_dialogs', 'unwritable dir'),
             _translate(
                 'root_folder_dialogs',
                 '<p>You have no permissions for %s,<br>' % root_folder \
                     + 'choose another directory !</p>'))
-        
+
         if not os.path.exists(root_folder):
             try:
                 os.makedirs(root_folder)
             except:
                 errorDialog.exec()
                 return
-        
+
         if not os.access(root_folder, os.W_OK):
             errorDialog.exec()
             return
-        
+
         RS.settings.setValue('default_session_root', root_folder)
         self.toDaemon('/ray/server/change_root', root_folder)
 
@@ -119,71 +119,71 @@ class ChildDialog(QDialog):
 class SessionItem(QTreeWidgetItem):
     def __init__(self, list):
         QTreeWidgetItem.__init__(self, list)
-        
+
     def showConditionnaly(self, string):
         show = bool(string.lower() in self.data(0, Qt.UserRole).lower())
-        
+
         n=0
         for i in range(self.childCount()):
             if self.child(i).showConditionnaly(string.lower()):
                 n+=1
         if n:
             show = True
-            
+
         self.setExpanded(bool(n and string))
         self.setHidden(not show)
         return show
-    
+
     def findItemWith(self, string):
         if self.data(0, Qt.UserRole) == string:
             return self
-        
+
         item = None
-        
+
         for i in range(self.childCount()):
             item = self.child(i).findItemWith(string)
             if item:
                 break
-            
+
         return item
-        
+
     def __lt__(self, other):
         if self.childCount() and not other.childCount():
             return True
-        
+
         if other.childCount() and not self.childCount():
             return False
-        
+
         return bool(self.text(0).lower() < other.text(0).lower())
 
 class SessionFolder:
     name = ""
     has_session = True
     path = ""
-    
+
     def __init__(self, name):
         self.name = name
         self.subfolders = []
-    
+
     def setPath(self, path):
         self.path = path
-    
+
     def makeItem(self):
         item = SessionItem([self.name])
-        
+
         item.setData(0, Qt.UserRole, self.path)
         if self.subfolders:
             item.setIcon(0, QIcon.fromTheme('folder'))
-        
+
         if not self.path:
             item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
-        
+
         for folder in self.subfolders:
             sub_item = folder.makeItem()
             item.addChild(sub_item)
-            
+
         return item
-    
+
 class OpenSessionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
@@ -200,12 +200,12 @@ class OpenSessionDialog(ChildDialog):
         self.ui.filterBar.updownpressed.connect(self.updownPressed)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
-        
+
         self._signaler.add_sessions_to_list.connect(self.addSessions)
         self._signaler.root_changed.connect(self.rootChanged)
 
         self.toDaemon('/ray/server/list_sessions', 0)
-        
+
         if not self._daemon_manager.is_local:
             self.ui.toolButtonFolder.setVisible(False)
             self.ui.currentSessionsFolder.setVisible(False)
@@ -215,12 +215,12 @@ class OpenSessionDialog(ChildDialog):
         self.has_selection = False
 
         self.serverStatusChanged(self._session.server_status)
-        
+
         self.folders = []
         self.all_items = []
-        
+
         self._last_mouse_click = 0
-        
+
     def serverStatusChanged(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
             bool(server_status in (ray.ServerStatus.OFF,
@@ -232,7 +232,7 @@ class OpenSessionDialog(ChildDialog):
                 ray.ServerStatus.OFF,
                 ray.ServerStatus.READY) and not self.server_copying)
         self.preventOk()
-        
+
     def rootChanged(self, session_root):
         self.ui.currentSessionsFolder.setText(session_root)
         self.ui.sessionList.clear()
@@ -243,14 +243,14 @@ class OpenSessionDialog(ChildDialog):
         for session_name in session_names:
             folder_div = session_name.split('/')
             folders = self.folders
-            
+
             for i in range(len(folder_div)):
                 f = folder_div[i]
                 for g in folders:
                     if g.name == f:
                         if i+1 == len(folder_div):
                             g.setPath(session_name)
-                            
+
                         folders = g.subfolders
                         break
                 else:
@@ -259,22 +259,22 @@ class OpenSessionDialog(ChildDialog):
                         new_folder.setPath(session_name)
                     folders.append(new_folder)
                     folders = new_folder.subfolders
-                        
+
         self.ui.sessionList.clear()
-        
+
         for folder in self.folders:
             item = folder.makeItem()
             self.ui.sessionList.addTopLevelItem(item)
-        
+
         self.ui.sessionList.sortByColumn(0, Qt.AscendingOrder)
-        
+
         # Try to select last used session
         root_item = self.ui.sessionList.invisibleRootItem()
         for i in range(root_item.childCount()):
             item = root_item.child(i)
             last_session_item = item.findItemWith(
                 RS.settings.value('last_session', type=str))
-            
+
             if last_session_item:
                 self.ui.sessionList.setCurrentItem(last_session_item)
                 self.ui.sessionList.scrollToItem(last_session_item)
@@ -309,7 +309,7 @@ class OpenSessionDialog(ChildDialog):
     def updownPressed(self, key):
         root_item = self.ui.sessionList.invisibleRootItem()
         row = self.ui.sessionList.currentIndex().row()
-        
+
         if key == Qt.Key_Up:
             if row == 0:
                 return
@@ -326,7 +326,7 @@ class OpenSessionDialog(ChildDialog):
                 if row == root_item.childCount() - 1:
                     return
                 row += 1
-                
+
         self.ui.sessionList.setCurrentItem(root_item.child(row))
 
     def currentItemChanged(self, item, previous_item):
@@ -340,24 +340,24 @@ class OpenSessionDialog(ChildDialog):
     def getSelectedSession(self):
         if self.ui.sessionList.currentItem():
             return self.ui.sessionList.currentItem().data(0, Qt.UserRole)
-    
+
     def deployItem(self, item, column):
         if not item.childCount():
-            return 
-        
+            return
+
         if time.time() - self._last_mouse_click > 0.35:
             item.setExpanded(not item.isExpanded())
-            
+
         self._last_mouse_click = time.time()
-        
+
     def goIfAny(self, item, column):
         if item.childCount():
-            return 
-        
+            return
+
         if (self.server_will_accept and self.has_selection
             and self.ui.sessionList.currentItem().data(0, Qt.UserRole)):
                 self.accept()
-            
+
 
 class NewSessionDialog(ChildDialog):
     def __init__(self, parent, duplicate_window=False):
@@ -381,9 +381,9 @@ class NewSessionDialog(ChildDialog):
         self._signaler.add_sessions_to_list.connect(self.addSessionsToList)
         self._signaler.session_template_found.connect(self.addTemplatesToList)
         self._signaler.root_changed.connect(self.rootChanged)
-        
+
         self.toDaemon('/ray/server/list_sessions', 1)
-        
+
         if self.is_duplicate:
             self.ui.labelTemplate.setVisible(False)
             self.ui.comboBoxTemplate.setVisible(False)
@@ -403,7 +403,7 @@ class NewSessionDialog(ChildDialog):
 
         self.server_will_accept = False
         self.text_is_valid = False
-        
+
         self.completer = QCompleter(self.sub_folders)
         self.ui.lineEdit.setCompleter(self.completer)
 
@@ -422,13 +422,13 @@ class NewSessionDialog(ChildDialog):
                 server_status == ray.ServerStatus.READY and not self.server_copying)
 
         self.preventOk()
-    
+
     def rootChanged(self, session_root):
         self.ui.currentSessionsFolder.setText(session_root)
         self.session_list.clear()
         self.sub_folders.clear()
         self.toDaemon('/ray/server/list_sessions', 1)
-    
+
     def initTemplatesComboBox(self):
         self.ui.comboBoxTemplate.clear()
         self.ui.comboBoxTemplate.addItem(
@@ -439,22 +439,22 @@ class NewSessionDialog(ChildDialog):
             _translate('session_template', "with JACK config memory"))
         self.ui.comboBoxTemplate.addItem(
             _translate('session_template', "with basic scripts"))
-        
+
         misscount = self.ui.comboBoxTemplate.count()  - 1 - len(
                                                 ray.factory_session_templates)
         for i in range(misscount):
             self.ui.comboBoxTemplate.addItem(
                 ray.factory_session_templates[-i])
-            
+
         self.ui.comboBoxTemplate.insertSeparator(
                                     len(ray.factory_session_templates) + 1)
-        
+
     def setLastTemplateSelected(self):
         last_used_template = RS.settings.value('last_used_template', type=str)
 
         if last_used_template.startswith('///'):
             last_factory_template = last_used_template.replace('///', '', 1)
-            
+
             for i in range(len(ray.factory_session_templates)):
                 factory_template = ray.factory_session_templates[i]
                 if factory_template == last_factory_template:
@@ -471,21 +471,21 @@ class NewSessionDialog(ChildDialog):
         last_subfolder = RS.settings.value('last_subfolder', type=str)
         if last_subfolder and not self.ui.lineEdit.text():
             self.ui.lineEdit.setText(last_subfolder + '/')
-    
+
     def addSessionsToList(self, session_names):
         self.session_list += session_names
-        
+
         for session_name in session_names:
             if '/' in session_name:
                 new_dir = os.path.dirname(session_name)
                 if not new_dir in self.sub_folders:
                     self.sub_folders.append(new_dir)
-        
+
         self.sub_folders.sort()
         del self.completer
         self.completer = QCompleter([ f + '/' for f in self.sub_folders])
         self.ui.lineEdit.setCompleter(self.completer)
-        
+
         self.setLastSubFolderSelected()
 
     def addTemplatesToList(self, template_list):
@@ -507,10 +507,10 @@ class NewSessionDialog(ChildDialog):
 
     def getSessionShortPath(self)->str:
         return self.ui.lineEdit.text()
-    
+
     def getTemplateName(self)->str:
         index = self.ui.comboBoxTemplate.currentIndex()
-        
+
         if index == 0:
             return ""
 
@@ -518,10 +518,10 @@ class NewSessionDialog(ChildDialog):
             return '///' + ray.factory_session_templates[index-1]
 
         return self.ui.comboBoxTemplate.currentText()
-    
+
     def textChanged(self, text):
         full_session_text = text
-        
+
         self.text_is_valid = bool(text
                                   and not text.endswith('/')
                                   and text not in self.session_list)
@@ -749,7 +749,7 @@ class QuitAppDialog(ChildDialog):
         self.ui.pushButtonSaveQuit.clicked.connect(self.closeSession)
         self.ui.pushButtonQuitNoSave.clicked.connect(self.abortSession)
         self.ui.pushButtonDaemon.clicked.connect(self.leaveDaemonRunning)
-        
+
         original_text = self.ui.labelExecutable.text()
         self.ui.labelExecutable.setText(
             original_text %
@@ -773,7 +773,7 @@ class QuitAppDialog(ChildDialog):
 
     def abortSession(self):
         self.toDaemon('/ray/session/abort')
-        
+
     def leaveDaemonRunning(self):
         self._daemon_manager.disannounce()
         QTimer.singleShot(10, QGuiApplication.quit)
@@ -793,22 +793,22 @@ class NewExecutableDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_new_executable.Ui_DialogNewExecutable()
         self.ui.setupUi(self)
-        
+
         self.ui.groupBoxAdvanced.setVisible(False)
         self.resize(0, 0)
         self.ui.labelPrefixMode.setToolTip(
             self.ui.comboBoxPrefixMode.toolTip())
         self.ui.labelClientId.setToolTip(self.ui.lineEditClientId.toolTip())
-        
+
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
         self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
         self.ui.lineEdit.textChanged.connect(self.checkAllow)
         self.ui.checkBoxNsm.stateChanged.connect(self.checkAllow)
-        
+
         self.ui.lineEditPrefix.setEnabled(False)
         self.ui.toolButtonAdvanced.clicked.connect(self.showAdvanced)
-        
+
         self.ui.comboBoxPrefixMode.addItem(
             _translate('new_executable', 'Custom'))
         self.ui.comboBoxPrefixMode.addItem(
@@ -816,10 +816,10 @@ class NewExecutableDialog(ChildDialog):
         self.ui.comboBoxPrefixMode.addItem(
             _translate('new_executable', 'Session Name'))
         self.ui.comboBoxPrefixMode.setCurrentIndex(2)
-        
+
         self.ui.comboBoxPrefixMode.currentIndexChanged.connect(
             self.prefixModeChanged)
-        
+
         self._signaler.new_executable.connect(self.addExecutableToCompleter)
         self.toDaemon('/ray/server/list_path')
 
@@ -829,18 +829,18 @@ class NewExecutableDialog(ChildDialog):
         self.ui.lineEdit.setCompleter(self.completer)
 
         self.ui.lineEdit.returnPressed.connect(self.closeNow)
-        
+
         self.serverStatusChanged(self._session.server_status)
-        
+
         self.text_will_accept = False
 
     def showAdvanced(self):
         self.ui.groupBoxAdvanced.setVisible(True)
         self.ui.toolButtonAdvanced.setVisible(False)
-    
+
     def prefixModeChanged(self, index):
         self.ui.lineEditPrefix.setEnabled(bool(index == 0))
-    
+
     def addExecutableToCompleter(self, executable_list):
         self.exec_list += executable_list
         self.exec_list.sort()
@@ -851,7 +851,7 @@ class NewExecutableDialog(ChildDialog):
 
     def getExecutableSelected(self):
         return self.ui.lineEdit.text()
-    
+
     def getSelection(self):
         return (self.ui.lineEdit.text(),
                 self.ui.checkBoxStartClient.isChecked(),
@@ -859,18 +859,18 @@ class NewExecutableDialog(ChildDialog):
                 self.ui.comboBoxPrefixMode.currentIndex(),
                 self.ui.lineEditPrefix.text(),
                 self.ui.lineEditClientId.text())
-    
+
     def isAllowed(self):
         nsm = self.ui.checkBoxNsm.isChecked()
         text = self.ui.lineEdit.text()
         allow = bool(bool(text) and (not nsm
-                                     or text in self.exec_list))        
+                                     or text in self.exec_list))
         return allow
-    
+
     def checkAllow(self):
         allow = self.isAllowed()
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(allow)
-        
+
     def closeNow(self):
         if self.isAllowed():
             self.accept()
@@ -906,7 +906,7 @@ class StopClientDialog(ChildDialog):
                         % (self.client.prettierName(), minutes)
 
             self.ui.label.setText(text)
-            
+
             self.client.status_changed.connect(self.serverUpdatesClientStatus)
 
         self.ui.pushButtonSaveStop.clicked.connect(self.saveAndStop)
@@ -935,7 +935,7 @@ class StopClientNoSaveDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_stop_client_no_save.Ui_Dialog()
         self.ui.setupUi(self)
-        
+
         self.client_id = client_id
         self.client = self._session.getClient(client_id)
 
@@ -943,15 +943,15 @@ class StopClientNoSaveDialog(ChildDialog):
             text = self.ui.label.text() % self.client.prettierName()
             self.ui.label.setText(text)
             self.client.status_changed.connect(self.serverUpdatesClientStatus)
-        
+
         self.ui.checkBox.stateChanged.connect(self.checkBoxClicked)
         self.ui.pushButtonCancel.setFocus(True)
-        
+
     def serverUpdatesClientStatus(self, status):
         if status in (ray.ClientStatus.STOPPED, ray.ClientStatus.REMOVED):
             self.reject()
             return
-        
+
     def checkBoxClicked(self, state):
         self.client.check_last_save = not bool(state)
         self.client.sendPropertiesToDaemon()
@@ -963,23 +963,23 @@ class SnapShotProgressDialog(ChildDialog):
         self.ui = ui_snapshot_progress.Ui_Dialog()
         self.ui.setupUi(self)
         self._signaler.server_progress.connect(self.serverProgress)
-        
+
     def serverStatusChanged(self, server_status):
         self.close()
-        
+
     def serverProgress(self, value):
         self.ui.progressBar.setValue(value * 100)
-        
+
 
 class ScriptInfoDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
         self.ui = ui_script_info.Ui_Dialog()
         self.ui.setupUi(self)
-        
+
     def setInfoLabel(self, text):
         self.ui.infoLabel.setText(text)
-        
+
     def shouldBeRemoved(self):
         return False
 
@@ -989,39 +989,39 @@ class ScriptUserActionDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_script_user_action.Ui_Dialog()
         self.ui.setupUi(self)
-        
+
         self.ui.buttonBox.clicked.connect(self.buttonBoxClicked)
         self.ui.infoLabel.setVisible(False)
         self.ui.infoLine.setVisible(False)
-        
+
         self._is_terminated = False
-        
+
     def setMainText(self, text):
         self.ui.label.setText(text)
-    
+
     def setInfoLabel(self, text):
         self.ui.infoLabel.setText(text)
         self.ui.infoLabel.setVisible(True)
         self.ui.infoLine.setVisible(True)
-    
+
     def validate(self):
         self.toDaemon('/reply', '/ray/gui/script_user_action',
                       'Dialog window validated')
         self._is_terminated = True
         self.accept()
-        
+
     def abort(self):
-        self.toDaemon('/error', '/ray/gui/script_user_action', 
+        self.toDaemon('/error', '/ray/gui/script_user_action',
                       ray.Err.ABORT_ORDERED, 'Script user action aborted!')
         self._is_terminated = True
         self.accept()
-    
+
     def buttonBoxClicked(self, button):
         if button == self.ui.buttonBox.button(QDialogButtonBox.Yes):
             self.validate()
         elif button == self.ui.buttonBox.button(QDialogButtonBox.Ignore):
             self.abort()
-            
+
     def shouldBeRemoved(self):
         return self._is_terminated
 
@@ -1031,16 +1031,16 @@ class SessionScriptsInfoDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_session_scripts_info.Ui_Dialog()
         self.ui.setupUi(self)
-        
+
         scripts_dir = "%s/%s" % (session_path, ray.SCRIPTS_DIR)
         parent_path = os.path.dirname(session_path)
         parent_scripts = "%s/%s" % (parent_path, ray.SCRIPTS_DIR)
-        
+
         session_scripts_text = self.ui.textSessionScripts.toHtml()
-        
+
         self.ui.textSessionScripts.setHtml(
             session_scripts_text % (scripts_dir, parent_scripts, parent_path))
-        
+
     def notAgainValue(self)->bool:
         return self.ui.checkBoxNotAgain.isChecked()
 
@@ -1049,19 +1049,19 @@ class JackConfigInfoDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_jack_config_info.Ui_Dialog()
         self.ui.setupUi(self)
-        
+
         scripts_dir = "%s/%s" % (session_path, ray.SCRIPTS_DIR)
         parent_path = os.path.dirname(session_path)
         parent_scripts = "%s/%s" % (parent_path, ray.SCRIPTS_DIR)
-        
+
         session_scripts_text = self.ui.textSessionScripts.toHtml()
-        
+
         self.ui.textSessionScripts.setHtml(
             session_scripts_text % (scripts_dir, parent_scripts, parent_path))
-        
+
     def notAgainValue(self)->bool:
         return self.ui.checkBoxNotAgain.isChecked()
-    
+
     def autostartValue(self)->bool:
         return self.ui.checkBoxAutoStart.isChecked()
 
@@ -1140,30 +1140,30 @@ class WaitingCloseUserDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_waiting_close_user.Ui_Dialog()
         self.ui.setupUi(self)
-        
+
         if isDarkTheme(self):
             self.ui.labelSaveIcon.setPixmap(
                 QPixmap(':scalable/breeze-dark/document-nosave.svg'))
-        
+
         self.ui.pushButtonOk.setFocus(True)
         self.ui.pushButtonUndo.clicked.connect(self.undoClose)
         self.ui.pushButtonSkip.clicked.connect(self.skip)
         self.ui.checkBox.setChecked(
             bool(RS.settings.value(
                 'hide_wait_close_user_dialog', False, type=bool)))
-        
+
         self.ui.checkBox.clicked.connect(self.checkBoxClicked)
-        
+
     def serverStatusChanged(self, server_status):
         if server_status != ray.ServerStatus.WAIT_USER:
             self.accept()
-    
+
     def undoClose(self):
         self.toDaemon('/ray/session/cancel_close')
-    
+
     def skip(self):
         self.toDaemon('/ray/session/skip_wait_user')
-        
+
     def checkBoxClicked(self, state):
         RS.settings.setValue('hide_wait_close_user_dialog',
                              bool(state), type=bool)
@@ -1173,13 +1173,13 @@ class DonationsDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_donations.Ui_Dialog()
         self.ui.setupUi(self)
-        
+
         self.ui.checkBox.setVisible(display_no_again)
         self.ui.checkBox.clicked.connect(self.checkBoxClicked)
-        
+
     def checkBoxClicked(self, state):
         RS.settings.setValue('hide_donations', state)
-        
+
 
 class ErrorDialog(ChildDialog):
     def __init__(self, parent, message):

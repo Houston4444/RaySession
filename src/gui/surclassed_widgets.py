@@ -62,8 +62,8 @@ class OpenSessionFilterBar(QLineEdit):
         if event.key() in (Qt.Key_Up, Qt.Key_Down):
             self.updownpressed.emit(event.key())
         QLineEdit.keyPressEvent(self, event)
-        
-        
+
+
 class CustomLineEdit(QLineEdit):
     def __init__(self, parent):
         QLineEdit.__init__(self)
@@ -84,7 +84,7 @@ class CustomLineEdit(QLineEdit):
 class SessionFrame(QFrame):
     def __init__(self, parent):
         QFrame.__init__(self)
-        
+
 
 class StackedSessionName(QStackedWidget):
     name_changed = pyqtSignal(str)
@@ -145,7 +145,7 @@ class StackedSessionName(QStackedWidget):
             return
 
         self.setCurrentIndex(1)
-        
+
 
 class StatusBar(QLineEdit):
     statusPressed = pyqtSignal()
@@ -166,9 +166,9 @@ class StatusBar(QLineEdit):
 
         self.basecolor = self.palette().base().color().name()
         self.bluecolor = self.palette().highlight().color().name()
-        
+
         self.last_status_time = 0.0
-        
+
         # ui_client_slot.py will display "stopped" status.
         # we need to not stay on this status text
         # especially at client switch because widget is recreated.
@@ -184,7 +184,7 @@ class StatusBar(QLineEdit):
             self.setText(self.next_texts.pop(0), True)
         else:
             self.timer.stop()
-            
+
     def setFontForText(self, text):
         if QFontMetrics(self.ubuntu_font).width(text) > (self.width() - 10):
             self.setFont(self.ubuntu_font_cond)
@@ -193,18 +193,18 @@ class StatusBar(QLineEdit):
 
     def setText(self, text, from_timer=False):
         self.last_status_time = time.time()
-        
+
         if not self._first_text_done:
             self.setFontForText(text)
             QLineEdit.setText(self, text)
             self._first_text_done = True
             return
-        
+
         if text and not from_timer:
             if self.timer.isActive():
                 self.next_texts.append(text)
                 return
-                
+
             self.timer.start()
 
         if not text:
@@ -219,7 +219,7 @@ class StatusBar(QLineEdit):
     def setProgress(self, progress):
         if not 0.0 <= progress <= 1.0:
             return
-        
+
         # no progress display in the first second
         if time.time() - self.last_status_time < 1.0:
             return
