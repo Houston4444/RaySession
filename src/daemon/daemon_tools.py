@@ -22,15 +22,15 @@ def getCodeRoot():
 def initDaemonTools():
     #global non_active_clients
     #del non_active_clients
-    
+
     if CommandLineArgs.config_dir:
         settings = QSettings(CommandLineArgs.config_dir)
     else:
         settings = QSettings()
-        
+
     RS.setSettings(settings)
-    
-    RS.setNonActiveClients(ray.getListInSettings(settings, 
+
+    RS.setNonActiveClients(ray.getListInSettings(settings,
                                                  'daemon/non_active_list'))
     RS.setFavorites(ray.getListInSettings(settings, 'daemon/favorites'))
     TemplateRoots.initConfig()
@@ -38,30 +38,30 @@ def initDaemonTools():
 def getGitDefaultUnAndIgnored(executable):
     ignored = []
     unignored = []
-        
+
     if executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
         unignored.append('.wav')
-            
+
     elif executable == 'samplv1_jack':
         unignored = ['.wav', '.flac', '.ogg', '.mp3']
-        
+
     return (ignored, unignored)
-    
+
 class RS:
     settings = QSettings()
     non_active_clients = []
     favorites = []
-    
+
     @classmethod
     def setSettings(cls, settings):
         del cls.settings
         cls.settings = settings
-        
+
     @classmethod
     def setNonActiveClients(cls, nalist):
         del cls.non_active_clients
         cls.non_active_clients = nalist
-        
+
     @classmethod
     def setFavorites(cls, favorites):
         cls.favorites = favorites
@@ -71,66 +71,66 @@ class TemplateRoots:
     factory_sessions = "%s/session_templates" % getCodeRoot()
     factory_clients = "%s/client_templates"  % getCodeRoot()
     factory_clients_xdg = "/etc/xdg/raysession/client_templates"
-    
+
     @classmethod
     def initConfig(cls):
         if CommandLineArgs.config_dir:
             app_config_path = CommandLineArgs.config_dir
         else:
             app_config_path = getAppConfigPath()
-            
+
         cls.user_sessions = "%s/session_templates" % app_config_path
         cls.user_clients  = "%s/client_templates"  % app_config_path
 
 
 class Terminal:
     _last_client_name = ''
-    
+
     @classmethod
     def message(cls, string):
         if cls._last_client_name and cls._last_client_name != 'daemon':
             sys.stderr.write('\n')
-        
+
         sys.stderr.write('[\033[90mray-daemon\033[0m]\033[92m%s\033[0m\n'
                             % string)
-        
+
         cls._last_client_name = 'daemon'
-        
+
     @classmethod
     def snapshoterMessage(cls, byte_string, command=''):
         snapshoter_str = "snapshoter:.%s" % command
-        
+
         if cls._last_client_name != snapshoter_str:
             sys.stderr.write('\n[\033[90mray-daemon-git%s\033[0m]\n'
                              % command)
         sys.stderr.buffer.write(byte_string)
-        
+
         cls._last_client_name = snapshoter_str
-    
+
     @classmethod
     def scripterMessage(cls, byte_string, command=''):
         scripter_str = "scripter:.%s" % command
-        
+
         if cls._last_client_name != scripter_str:
             sys.stderr.write('\n[\033[90mray-daemon %s script\033[0m]\n'
                              % command)
         sys.stderr.buffer.write(byte_string)
-        
+
         cls._last_client_name = scripter_str
-    
+
     @classmethod
     def clientMessage(cls, byte_string, client_name, client_id):
         client_str = "%s.%s" % (client_name, client_id)
-        
+
         if (not CommandLineArgs.debug_only
                 and not CommandLineArgs.no_client_messages):
             if cls._last_client_name != client_str:
                 sys.stderr.write('\n[\033[90m%s-%s\033[0m]\n'
                                     % (client_name, client_id))
             sys.stderr.buffer.write(byte_string)
-            
+
         cls._last_client_name = client_str
-        
+
     @classmethod
     def warning(cls, string):
         sys.stderr.write('[\033[90mray-daemon\033[0m]%s\033[0m\n' % string)
@@ -147,20 +147,20 @@ class CommandLineArgs(argparse.Namespace):
     debug_only = False
     no_client_messages = False
     session = ''
-    
+
     @classmethod
     def eatAttributes(cls, parsed_args):
         for attr_name in dir(parsed_args):
             if not attr_name.startswith('_'):
                 setattr(cls, attr_name, getattr(parsed_args, attr_name))
-                
+
         if cls.debug_only:
             cls.debug = True
-            
+
         if cls.osc_port == 0:
             cls.osc_port = 16187
             cls.findfreeport = True
-            
+
         if cls.config_dir and not os.access(cls.config_dir, os.W_OK):
             sys.stderr.write(
                 '%s is not a writable config dir, try another one\n'
@@ -171,11 +171,11 @@ class ArgParser(argparse.ArgumentParser):
     def __init__(self):
         argparse.ArgumentParser.__init__(self)
         _translate = QCoreApplication.translate
-        
-        default_root = "%s/%s" % (os.getenv('HOME'), 
-                                  _translate('daemon', 
+
+        default_root = "%s/%s" % (os.getenv('HOME'),
+                                  _translate('daemon',
                                              'Ray Network Sessions'))
-        
+
         self.add_argument('--session-root', '-r', type=str,
                           default=default_root,
                           help='set root folder for sessions')
@@ -202,11 +202,11 @@ class ArgParser(argparse.ArgumentParser):
                           help='debug without client messages')
         self.add_argument('--no-client-messages', '-ncm', action='store_true',
                           help='do not print client messages')
-        
+
         self.add_argument('-v', '--version', action='version',
                           version=ray.VERSION)
-        
+
         parsed_args = argparse.ArgumentParser.parse_args(self)
         CommandLineArgs.eatAttributes(parsed_args)
-        
-        
+
+

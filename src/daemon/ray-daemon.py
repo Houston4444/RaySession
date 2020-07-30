@@ -1,20 +1,17 @@
 #!/usr/bin/python3 -u
 
-import argparse
 import os
 import signal
 import sys
-import unicodedata
 
-from PyQt5.QtCore import (QCoreApplication, QTimer, QSettings, 
-                          QStandardPaths, QLocale, QTranslator)
+from PyQt5.QtCore import (QCoreApplication, QTimer,
+                          QLocale, QTranslator)
 
 import ray
 from daemon_tools import (initDaemonTools, RS, getCodeRoot,
                           CommandLineArgs, ArgParser, Terminal)
 from osc_server_thread import OscServerThread
 from multi_daemon_file import MultiDaemonFile
-from signaler import Signaler
 from session_signaled import SignaledSession
 
 def signalHandler(sig, frame):
@@ -25,27 +22,27 @@ def signalHandler(sig, frame):
 if __name__ == '__main__':
     #add RaySession/src/bin to $PATH
     ray.addSelfBinToPath()
-    
+
     #create app
     app = QCoreApplication(sys.argv)
     app.setApplicationName("RaySession")
     app.setOrganizationName("RaySession")
-    
+
     initDaemonTools()
-    
+
     ### Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
-    
+
     if appTranslator.load("%s/locale/raysession_%s"
-                            % (getCodeRoot(), locale)):
+                          % (getCodeRoot(), locale)):
         app.installTranslator(appTranslator)
-        
+
     _translate = app.translate
-    
+
     #check arguments
     parser = ArgParser()
-    
+
     #manage session_root
     session_root = CommandLineArgs.session_root
     if not session_root:
@@ -58,7 +55,7 @@ if __name__ == '__main__':
         if os.path.exists(session_root):
             sys.stderr.write(
                 "%s exists and is not a dir, please choose another path !\n"
-                    % session_root)
+                % session_root)
             sys.exit(1)
 
         try:
@@ -70,27 +67,27 @@ if __name__ == '__main__':
 
 
     #create session
-    session  = SignaledSession(session_root)
+    session = SignaledSession(session_root)
 
     #create and start server
     if CommandLineArgs.findfreeport:
-        server = OscServerThread(
-                    session,
-                    ray.getFreeOscPort(CommandLineArgs.osc_port))
+        server = OscServerThread(session,
+                                 ray.getFreeOscPort(
+                                     CommandLineArgs.osc_port))
     else:
         if ray.isOscPortFree(CommandLineArgs.osc_port):
             server = OscServerThread(session, CommandLineArgs.osc_port)
         else:
             sys.stderr.write(
-                _translate('daemon', 
+                _translate('daemon',
                            'port %i is not free, try another one\n')
-                    % CommandLineArgs.osc_port)
+                % CommandLineArgs.osc_port)
             sys.exit()
     server.start()
-    
+
     if CommandLineArgs.hidden:
         server.setAsNotDefault()
-    
+
     #announce server to GUI
     if CommandLineArgs.gui_url:
         server.announceGui(CommandLineArgs.gui_url.url)
@@ -116,7 +113,7 @@ if __name__ == '__main__':
         session.serverOpenSessionAtStart(CommandLineArgs.session)
 
     #connect SIGINT and SIGTERM
-    signal.signal(signal.SIGINT,  signalHandler)
+    signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
 
     #needed for SIGINT and SIGTERM
@@ -136,11 +133,13 @@ if __name__ == '__main__':
     RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
     RS.settings.setValue('daemon/favorites', RS.favorites)
     if not CommandLineArgs.no_options:
-        RS.settings.setValue('daemon/bookmark_session_folder', 
-                        server.option_bookmark_session)
+        RS.settings.setValue('daemon/bookmark_session_folder',
+                             server.option_bookmark_session)
         RS.settings.setValue('daemon/auto_snapshot', server.option_snapshots)
-        RS.settings.setValue('daemon/desktops_memory', server.option_desktops_memory)
-        RS.settings.setValue('daemon/session_scripts', server.option_session_scripts)
+        RS.settings.setValue('daemon/desktops_memory',
+                             server.option_desktops_memory)
+        RS.settings.setValue('daemon/session_scripts',
+                             server.option_session_scripts)
 
     RS.settings.sync()
 
