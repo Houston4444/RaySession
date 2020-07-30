@@ -285,6 +285,7 @@ class SignaledSession(OperatingSession):
         
         factory = bool('factory' in path)
         search_paths = self.getSearchTemplateDirs(factory)
+        file_rewritten = False
         
         for search_path in search_paths:
             templates_file = "%s/%s" % (search_path, 'client_templates.xml')
@@ -304,8 +305,6 @@ class SignaledSession(OperatingSession):
             
             if content.tagName() != "RAY-CLIENT-TEMPLATES":
                 continue
-            
-            file_rewritten = False
             
             if not factory:
                 if content.attribute('VERSION') != ray.VERSION:
