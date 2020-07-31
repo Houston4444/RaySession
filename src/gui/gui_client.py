@@ -2,7 +2,6 @@ import time
 import sys
 from PyQt5.QtCore import QObject, pyqtSignal
 
-import snapshots_dialog
 import ray
 from gui_server_thread import GUIServerThread
 from client_properties_dialog import ClientPropertiesDialog
@@ -22,6 +21,7 @@ class Client(QObject, ray.ClientData):
         self.status = ray.ClientStatus.STOPPED
         self.previous_status = ray.ClientStatus.STOPPED
         self.hasGui = False
+        self.gui_state = False
         self.gui_visible = False
         self.has_dirty = False
         self.dirty_state = True
@@ -50,14 +50,14 @@ class Client(QObject, ray.ClientData):
         self.hasGui = True
         self.widget.showGuiButton()
 
-    def setGuiState(self, state):
+    def setGuiState(self, state: bool):
         self.gui_state = state
         self.widget.setGuiState(state)
 
-    def setDirtyState(self, bool_dirty):
+    def setDirtyState(self, dirty: bool):
         self.has_dirty = True
-        self.dirty_state = bool_dirty
-        self.widget.setDirtyState(bool_dirty)
+        self.dirty_state = dirty
+        self.widget.setDirtyState(dirty)
 
     def setNoSaveLevel(self, no_save_level):
         self.no_save_level = no_save_level
@@ -102,7 +102,7 @@ class Client(QObject, ray.ClientData):
                         *ray.ClientData.spreadClient(self))
 
     def sendRayHack(self):
-        if not self.protocol == ray.Protocol.RAY_HACK:
+        if self.protocol != ray.Protocol.RAY_HACK:
             return
 
         server = GUIServerThread.instance()
@@ -168,7 +168,7 @@ class Client(QObject, ray.ClientData):
         return search_list
 
 
-class TrashedClient(object):
+class TrashedClient:
     def __init__(self, client_data, menu_action):
         self.data = client_data
         self.menu_action = menu_action

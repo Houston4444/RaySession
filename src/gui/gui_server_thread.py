@@ -20,7 +20,7 @@ def ray_method(path, types):
 
             response = func(*args[:-1], **kwargs)
 
-            if response != False:
+            if not response is False:
                 t_thread._signaler.osc_receive.emit(t_path, t_args)
 
             return response
@@ -236,7 +236,7 @@ class GUIServerThread(liblo.ServerThread):
     def send(self, *args):
         if CommandLineArgs.debug:
             sys.stderr.write(
-                '\033[95mOSC::gui sends\033[0m %s\n' % str(args[1:]) )
+                '\033[95mOSC::gui sends\033[0m %s\n' % str(args[1:]))
 
         liblo.ServerThread.send(self, *args)
 
@@ -246,14 +246,6 @@ class GUIServerThread(liblo.ServerThread):
     def announce(self):
         if CommandLineArgs.debug:
             sys.stderr.write('serverOSC::raysession_sends announce\n')
-
-        nsm_mode = ray.NSMMode.NO_NSM
-
-        if CommandLineArgs.under_nsm:
-            if CommandLineArgs.out_daemon:
-                nsm_mode = ray.NSMMode.NETWORK
-            else:
-                nsm_mode = ray.NSMMode.CHILD
 
         NSM_URL = os.getenv('NSM_URL')
         if not NSM_URL:

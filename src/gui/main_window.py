@@ -1,11 +1,8 @@
 import time
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QInputDialog,
-        QBoxLayout, QListWidgetItem, QFrame, QDialog, QDialogButtonBox,
-        QFileDialog, QMessageBox, QCompleter, QAction, QToolButton,
-        QAbstractItemView, QLabel, QLineEdit)
-from PyQt5.QtGui import QIcon, QCursor, QPalette, QPixmap, QFontDatabase
-from PyQt5.QtCore import (QTimer, QProcess, pyqtSignal, pyqtSlot, QObject,
-                          QSize, Qt, QSettings, qDebug, QLocale, QTranslator)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
+                             QMessageBox, QToolButton, QAbstractItemView)
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QTimer, pyqtSlot
 
 from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
                        serverStatusString, isDarkTheme)
@@ -13,16 +10,20 @@ import add_application_dialog
 import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GUIServerThread
-from gui_client import TrashedClient
 
 import ray
 import list_widget_clients
 
 import ui_raysession
-import ui_client_slot
 
 
 class MainWindow(QMainWindow):
+    @classmethod
+    def toDaemon(cls, *args):
+        server = GUIServerThread.instance()
+        if server:
+            server.toDaemon(*args)
+    
     def __init__(self, session):
         QMainWindow.__init__(self)
         self.ui = ui_raysession.Ui_MainWindow()
@@ -309,11 +310,6 @@ class MainWindow(QMainWindow):
 
         self.has_git = has_git
 
-    def toDaemon(self, *args):
-        server = GUIServerThread.instance()
-        if server:
-            server.toDaemon(*args)
-
     def hideMessagesDock(self):
         self.ui.dockWidgetMessages.setVisible(False)
 
@@ -324,11 +320,11 @@ class MainWindow(QMainWindow):
         if self.mouse_is_inside:
             self.activateWindow()
 
-    def toggleKeepFocus(self, bool):
-        self.keep_focus = bool
+    def toggleKeepFocus(self, keep_focus: bool):
+        self.keep_focus = keep_focus
         if self._daemon_manager.is_local:
             RS.settings.setValue('keepfocus', self.keep_focus)
-        if not bool:
+        if not keep_focus:
             self.timer_raisewin.stop()
 
     def bookmarkSessionFolderToggled(self, state):

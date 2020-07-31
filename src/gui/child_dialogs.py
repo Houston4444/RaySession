@@ -48,7 +48,7 @@ class ChildDialog(QDialog):
 
         self.server_copying = parent.server_copying
     
-    #@classmethod
+    @classmethod
     def toDaemon(cls, *args):
         server = GUIServerThread.instance()
         if server:
@@ -58,7 +58,7 @@ class ChildDialog(QDialog):
                              % args)
 
     def serverStatusChanged(self, server_status):
-        return
+        pass
 
     def serverCopying(self, bool_copying):
         self.server_copying = bool_copying
@@ -729,8 +729,9 @@ class OpenNsmSessionInfoDialog(ChildDialog):
         self.ui.setupUi(self)
 
         self.ui.checkBox.stateChanged.connect(self.showThis)
-
-    def showThis(self, state):
+    
+    @classmethod
+    def showThis(cls, state):
         RS.settings.setValue('OpenNsmSessionInfo', not bool(state))
 
 

@@ -111,7 +111,7 @@ class StackedSessionName(QStackedWidget):
             self.name_changed.emit(self.line_edit_widget.text())
             return
 
-        elif self.currentIndex() == 0 and self.is_editable:
+        if self.currentIndex() == 0 and self.is_editable:
             self.setCurrentIndex(1)
             return
 

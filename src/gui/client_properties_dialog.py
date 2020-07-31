@@ -1,13 +1,12 @@
 import os
 import signal
 
-from PyQt5.QtCore import Qt, QTimer, QFile
+from PyQt5.QtCore import QTimer, QFile
 from PyQt5.QtWidgets import QFileDialog, QFrame
-from PyQt5.QtGui import QIcon, QPalette
 
 import ray
 
-from gui_tools import RS, _translate, clientStatusString
+from gui_tools import _translate, clientStatusString
 from child_dialogs import ChildDialog
 
 import ui_ray_hack_copy
@@ -58,10 +57,10 @@ class ClientPropertiesDialog(ChildDialog):
     def create(window, client):
         if client.protocol == ray.Protocol.NSM:
             return NsmClientPropertiesDialog(window, client)
-        elif client.protocol == ray.Protocol.RAY_HACK:
+        if client.protocol == ray.Protocol.RAY_HACK:
             return RayHackClientPropertiesDialog(window, client)
-        else:
-            return ClientPropertiesDialog(window, client)
+
+        return ClientPropertiesDialog(window, client)
 
     def setOnSecondTab(self):
         self.ui.tabWidget.setCurrentIndex(1)
@@ -118,7 +117,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         self.nsmui.lineEditExecutable.setText(self.client.executable_path)
         self.nsmui.lineEditArguments.setText(self.client.arguments)
 
-        capas_en = [ c for c in self.client.capabilities.split(':') if c ]
+        capas_en = [c for c in self.client.capabilities.split(':') if c]
         capas_tr = []
         for capa in capas_en:
             if capa == 'switch':
@@ -153,6 +152,8 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.ray_hack_frame = QFrame()
         self.rhack = ui_ray_hack_properties.Ui_Frame()
         self.rhack.setupUi(self.ray_hack_frame)
+
+        self.config_file = ""
 
         self.ui.verticalLayoutProtocol.addWidget(self.ray_hack_frame)
 

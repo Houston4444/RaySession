@@ -1,7 +1,5 @@
-from PyQt5.QtCore import Qt, QDateTime, QDate, QTime
+from PyQt5.QtCore import Qt, QDateTime, QDate
 from PyQt5.QtWidgets import QDialogButtonBox, QTreeWidgetItem
-
-import ray
 
 from child_dialogs import ChildDialog
 from gui_tools import _translate, RS
@@ -11,14 +9,14 @@ import ui_snapshot_name
 import ui_snapshots_info
 
 GROUP_ELEMENT = 0
-GROUP_DAY     = 1
-GROUP_MONTH   = 2
-GROUP_YEAR    = 3
-GROUP_MAIN    = 4
+GROUP_DAY = 1
+GROUP_MONTH = 2
+GROUP_YEAR = 3
+GROUP_MAIN = 4
 
 class Snapshot:
     valid = False
-    text  = ''
+    text = ''
     sub_type = GROUP_ELEMENT
     item = None
     before_rewind_to = ''
@@ -382,7 +380,7 @@ class SnapshotsDialog(ChildDialog):
                     time_str += "%s_" % stri
                 else:
                     label += "%s_" % stri
-                i+=1
+                i += 1
 
             time_str = time_str[:-1]
             label = label[:-1]
@@ -498,4 +496,3 @@ class ClientSnapshotsDialog(SnapshotsDialog):
         self.client = client
 
         self.toDaemon('/ray/client/list_snapshots', client.client_id)
-

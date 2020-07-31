@@ -8,7 +8,7 @@ import socket
 import subprocess
 import sys
 from liblo import Server, Address
-from PyQt5.QtCore import QLocale, QTranslator, QT_VERSION_STR, QFile
+from PyQt5.QtCore import QT_VERSION_STR, QFile
 from PyQt5.QtGui import QIcon, QPalette
 
 # get qt version in list of ints
@@ -39,45 +39,45 @@ class PrefixMode:
 
 
 class ClientStatus:
-    STOPPED =  0
-    LAUNCH  =  1
-    OPEN    =  2
-    READY   =  3
-    PRECOPY =  4
-    COPY    =  5
-    SAVE    =  6
-    SWITCH  =  7
-    QUIT    =  8
-    NOOP    =  9
-    ERROR   = 10
+    STOPPED = 0
+    LAUNCH = 1
+    OPEN = 2
+    READY = 3
+    PRECOPY = 4
+    COPY = 5
+    SAVE = 6
+    SWITCH = 7
+    QUIT = 8
+    NOOP = 9
+    ERROR = 10
     REMOVED = 11
-    UNDEF   = 12
-    SCRIPT  = 13
+    UNDEF = 12
+    SCRIPT = 13
 
 
 class ServerStatus:
-    OFF      =  0
-    NEW      =  1
-    OPEN     =  2
-    CLEAR    =  3
-    SWITCH   =  4
-    LAUNCH   =  5
-    PRECOPY  =  6
-    COPY     =  7
-    READY    =  8
-    SAVE     =  9
-    CLOSE    = 10
+    OFF = 0
+    NEW = 1
+    OPEN = 2
+    CLEAR = 3
+    SWITCH = 4
+    LAUNCH = 5
+    PRECOPY = 6
+    COPY = 7
+    READY = 8
+    SAVE = 9
+    CLOSE = 10
     SNAPSHOT = 11
-    REWIND   = 12
+    REWIND = 12
     WAIT_USER = 13
-    OUT_SAVE  = 14
+    OUT_SAVE = 14
     OUT_SNAPSHOT = 15
     SCRIPT = 16
 
 
 class NSMMode:
-    NO_NSM  = 0
-    CHILD   = 1
+    NO_NSM = 0
+    CHILD = 1
     NETWORK = 2
 
 
@@ -178,9 +178,9 @@ def ifDebug(string):
     if debug:
         sys.stderr.write("%s\n" % string)
 
-def setDebug(bool):
+def setDebug(bool_debug: bool):
     global debug
-    debug = bool
+    debug = bool_debug
 
 def versionToTuple(version_str):
     version_list = []
@@ -276,8 +276,7 @@ def isGitTaggable(string):
 def highlightText(string):
     if "'" in string:
         return '"%s"' % string
-    else:
-        return "'%s'" % string
+    return "'%s'" % string
 
 def isOscPortFree(port):
     try:
@@ -464,16 +463,14 @@ def getThis192():
     except BaseException:
         return ''
 
-
 def getMachine192(hostname=None):
     if hostname is None:
         return getThis192()
-    else:
-        if hostname in ('localhost', socket.gethostname()):
-            return getThis192()
 
-        return socket.gethostbyname(hostname)
+    if hostname in ('localhost', socket.gethostname()):
+        return getThis192()
 
+    return socket.gethostbyname(hostname)
 
 def getMachine192ByUrl(url):
     try:
@@ -485,7 +482,6 @@ def getMachine192ByUrl(url):
     del addr
 
     return getMachine192(hostname)
-
 
 def getNetUrl(port):
     try:
@@ -499,7 +495,6 @@ def getNetUrl(port):
 
     return "osc.udp://%s:%i/" % (ip, port)
 
-
 def shellLineToArgs(string):
     try:
         args = shlex.split(string)
@@ -510,10 +505,9 @@ def shellLineToArgs(string):
 
 def areTheyAllString(args):
     for arg in args:
-        if type(arg) != str:
+        if not isinstance(arg, str):
             return False
     return True
-
 
 def getAppIcon(icon_name, widget):
     dark = bool(
@@ -558,12 +552,13 @@ def getFullPath(root, session_name):
 
     return spath
 
-def protocolToStr(protocol:int)->str:
+def protocolToStr(protocol: int)->str:
     if protocol == Protocol.RAY_HACK:
         return "Ray-Hack"
-    elif protocol == Protocol.RAY_NET:
+    if protocol == Protocol.RAY_NET:
         return "Net-Session"
     return "NSM"
+
 
 class ClientData:
     client_id = ''
@@ -654,6 +649,7 @@ class ClientData:
 
     def spread(self)->tuple:
         return ClientData.spreadClient(self)
+
 
 class RayHack():
     config_file = ""

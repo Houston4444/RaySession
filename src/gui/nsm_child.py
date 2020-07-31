@@ -5,6 +5,14 @@ from gui_tools import CommandLineArgs, _translate
 from gui_server_thread import GUIServerThread
 
 class NSMChild:
+    @classmethod
+    def announceToParent(cls):
+        serverNSM = nsm_client.NSMThread.instance()
+
+        if serverNSM:
+            serverNSM.announce(_translate('child_session', 'Child Session'),
+                               ':switch:optional-gui:', 'raysession')
+
     def __init__(self, session):
         self._session = session
         self.nsm_signaler = nsm_client.NSMSignaler()
@@ -15,7 +23,7 @@ class NSMChild:
 
         self.wait_for_open = False
         self.wait_for_save = False
-        self.project_path  = ''
+        self.project_path = ''
 
         serverNSM = nsm_client.NSMThread('raysession_child',
                                          self.nsm_signaler,
@@ -27,13 +35,6 @@ class NSMChild:
             self.announceToParent)
         self._session._signaler.server_status_changed.connect(
             self.serverStatusChanged)
-
-    def announceToParent(self):
-        serverNSM = nsm_client.NSMThread.instance()
-
-        if serverNSM:
-            serverNSM.announce(_translate('child_session', 'Child Session'),
-                               ':switch:optional-gui:', 'raysession')
 
     def serverStatusChanged(self, server_status):
         if server_status == ray.ServerStatus.READY:
@@ -51,7 +52,7 @@ class NSMChild:
 
     def open(self, project_path, session_name, jack_client_name):
         self.wait_for_open = True
-        self.project_path  = project_path
+        self.project_path = project_path
 
         server = GUIServerThread.instance()
         if server:

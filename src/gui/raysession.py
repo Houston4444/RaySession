@@ -1,8 +1,6 @@
 #!/usr/bin/python3 -u
 
 #libs
-import argparse
-import os
 import signal
 import sys
 import time
@@ -11,22 +9,10 @@ from PyQt5.QtGui import QIcon, QFontDatabase
 from PyQt5.QtCore import QLocale, QTranslator, QTimer
 
 #local imports
-from gui_signaler import Signaler
-from daemon_manager import DaemonManager
-from gui_tools import (
-    ArgParser, CommandLineArgs, initGuiTools, default_session_root,
-    ErrDaemon, _translate, getCodeRoot)
+from gui_tools import ArgParser, CommandLineArgs, initGuiTools, getCodeRoot
 from gui_server_thread import GUIServerThread
 from gui_session import SignaledSession
-import nsm_client
 import ray
-
-#import UIs
-import ui_raysession
-import ui_client_slot
-
-#import Qt resources
-import resources_rc
 
 
 def signalHandler(sig, frame):
@@ -36,9 +22,9 @@ def signalHandler(sig, frame):
                     and session.server_status != ray.ServerStatus.OFF):
                 session._main_win.terminate_request = True
 
-                server = GUIServerThread.instance()
-                if server:
-                    server.abortSession()
+                l_server = GUIServerThread.instance()
+                if l_server:
+                    l_server.abortSession()
             else:
                 session._daemon_manager.stop()
             return
@@ -74,7 +60,7 @@ if __name__ == '__main__':
     parser = ArgParser()
 
     #connect signals
-    signal.signal(signal.SIGINT , signalHandler)
+    signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
 
     #needed for signals SIGINT, SIGTERM

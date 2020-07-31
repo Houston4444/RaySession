@@ -1,4 +1,3 @@
-import os
 import socket
 import sys
 from liblo import Address
@@ -6,10 +5,8 @@ from PyQt5.QtCore import QObject, QProcess, QTimer
 from PyQt5.QtWidgets import QApplication
 
 import ray
-from gui_signaler import Signaler
 from gui_server_thread import GUIServerThread
-from gui_tools import (CommandLineArgs, default_session_root, ErrDaemon,
-                       _translate)
+from gui_tools import CommandLineArgs, ErrDaemon, _translate
 
 class DaemonManager(QObject):
     def __init__(self, session):
@@ -39,20 +36,13 @@ class DaemonManager(QObject):
         self.is_announced = False
         self.is_nsm_locked = False
 
+        self.session_root = ""
+
         self._signaler.daemon_announce.connect(self.receiveAnnounce)
         self._signaler.daemon_url_changed.connect(self.changeUrl)
 
     def finishInit(self):
         self._main_win = self._session._main_win
-
-    #def processFinished(self, exit_code, exit_status):
-        #if self.stopped_yet:
-            #QApplication.quit()
-            #return
-
-        #if not self._main_win.isHidden():
-            #self._main_win.daemonCrash()
-            #return
 
     def errorInProcess(self, error):
         self._main_win.daemonCrash()
@@ -138,8 +128,6 @@ class DaemonManager(QObject):
         self.session_root = session_root
 
         self.is_nsm_locked = options & ray.Option.NSM_LOCKED
-        save_all_from_saved_client = options & ray.Option.SAVE_FROM_CLIENT
-        bookmark_session_folder = options & ray.Option.BOOKMARK_SESSION
 
         if self.is_nsm_locked:
             #self._signaler.daemon_nsm_locked.emit(True)

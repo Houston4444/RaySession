@@ -1,8 +1,6 @@
-import time
-from PyQt5.QtWidgets import (QListWidget, QListWidgetItem, QFrame, QMenu,
-                             QLineEdit, QAction)
-from PyQt5.QtGui import QIcon, QPalette, QPixmap, QFontMetrics, QFont, QFontDatabase
-from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QSize, QFile
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu
+from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase
+from PyQt5.QtCore import pyqtSlot, QSize
 
 import ray
 from gui_server_thread import GUIServerThread
@@ -15,6 +13,12 @@ import ui_client_slot
 
 
 class ClientSlot(QFrame):
+    @classmethod
+    def toDaemon(cls, *args):
+        server = GUIServerThread.instance()
+        if server:
+            server.toDaemon(*args)
+    
     def __init__(self, list_widget, client):
         QFrame.__init__(self)
         self.ui = ui_client_slot.Ui_ClientSlotWidget()
@@ -175,10 +179,6 @@ class ClientSlot(QFrame):
     def clientId(self):
         return self.client.client_id
 
-    def toDaemon(self, *args):
-        server = GUIServerThread.instance()
-        if server:
-            server.toDaemon(*args)
 
     def startClient(self):
         self.toDaemon('/ray/client/resume', self.clientId())
@@ -417,6 +417,12 @@ class ClientItem(QListWidgetItem):
 
 
 class ListWidgetClients(QListWidget):
+    @classmethod
+    def toDaemon(self, *args):
+        server = GUIServerThread.instance()
+        if server:
+            server.toDaemon(*args)
+    
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
         self.last_n = 0
@@ -449,8 +455,6 @@ class ListWidgetClients(QListWidget):
             else:
                 return
 
-        next_item_list = []
-
         n = 0
 
         for client_id in client_id_list:
@@ -472,11 +476,6 @@ class ListWidgetClients(QListWidget):
 
     def setSession(self, session):
         self._session = session
-
-    def toDaemon(self, *args):
-        server = GUIServerThread.instance()
-        if server:
-            server.toDaemon(*args)
 
     @pyqtSlot()
     def launchFavorite(self):
@@ -536,5 +535,3 @@ class ListWidgetClients(QListWidget):
                 act_selected = menu.exec(self.mapToGlobal(event.pos()))
             event.accept()
             return
-
-

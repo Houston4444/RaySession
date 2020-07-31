@@ -6,12 +6,12 @@ from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
 from gui_signaler import Signaler
 from gui_server_thread import GUIServerThread
-from gui_tools import initGuiTools, CommandLineArgs, RS
+from gui_tools import CommandLineArgs, RS
 from main_window import MainWindow
 from nsm_child import NSMChild, NSMChildOutside
 
 
-class Session(object):
+class Session:
     def __init__(self):
         self.client_list = []
         self.trashed_clients = []
@@ -58,7 +58,7 @@ class Session(object):
         # display donations dialog under conditions
         if not RS.settings.value('hide_donations', False, type=bool):
             coreff_counter = RS.settings.value('coreff_counter', 0, type=int)
-            coreff_counter+= 1
+            coreff_counter += 1
             RS.settings.setValue('coreff_counter', coreff_counter)
 
             if coreff_counter % 44 == 29:
@@ -72,8 +72,8 @@ class Session(object):
         self._main_win.hide()
         del self._main_win
 
-    def setRunning(self, bool):
-        self.is_running = bool
+    def setRunning(self, running: bool):
+        self.is_running = running
 
     def isRunning(self):
         return bool(self.server_status != ray.ServerStatus.OFF)
@@ -98,9 +98,9 @@ class Session(object):
         for client in self.client_list:
             if client.client_id == client_id:
                 return client
-        else:
-            raise NameError("gui_session does not contains client %s"
-                                % client_id)
+
+        raise NameError("gui_session does not contains client %s"
+                        % client_id)
 
     def removeAllClients(self):
         self.client_list.clear()
