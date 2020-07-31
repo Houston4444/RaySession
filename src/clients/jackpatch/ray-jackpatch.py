@@ -3,7 +3,6 @@
 import os
 import signal
 import sys
-import time
 
 from PyQt5.QtCore import QCoreApplication, QObject, QTimer, pyqtSignal
 from PyQt5.QtXml import QDomDocument
@@ -18,12 +17,12 @@ saved_connections = []
 port_list = []
 
 PORT_MODE_OUTPUT = 0
-PORT_MODE_INPUT  = 1
-PORT_MODE_NULL   = 2
+PORT_MODE_INPUT = 1
+PORT_MODE_NULL = 2
 
 PORT_TYPE_AUDIO = 0
-PORT_TYPE_MIDI  = 1
-PORT_TYPE_NULL  = 2
+PORT_TYPE_MIDI = 1
+PORT_TYPE_NULL = 2
 
 file_path = ""
 
@@ -35,9 +34,14 @@ def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         app.quit()
 
-class JackPort(object):
-    #is_new is used to prevent reconnections when a disconnection has not been saved and one new port append.
-    slots = ['id', 'name', 'mode', 'type', 'is_new']
+class JackPort:
+    #is_new is used to prevent reconnections
+    # when a disconnection has not been saved and one new port append.
+    id = 0
+    name = ''
+    mode = PORT_MODE_NULL
+    type = PORT_TYPE_NULL
+    is_new = False
 
 class ConnectTimer(QObject):
     def __init__(self):
@@ -76,7 +80,7 @@ def isDirtyNow():
             return True
 
     output_ports = []
-    input_ports  = []
+    input_ports = []
 
     for port in port_list:
         if port.mode == PORT_MODE_OUTPUT:
@@ -108,10 +112,10 @@ def readyToConnect():
     pass
 
 class Signaler(nsm_client.NSMSignaler):
-    port_added   = pyqtSignal(str, int, int)
+    port_added = pyqtSignal(str, int, int)
     port_removed = pyqtSignal(str, int, int)
     port_renamed = pyqtSignal(str, str, int, int)
-    connection_added   = pyqtSignal(str, str)
+    connection_added = pyqtSignal(str, str)
     connection_removed = pyqtSignal(str, str)
 
 def JackShutdownCallback(arg=None):
@@ -188,9 +192,9 @@ def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
 
 def portAdded(port_name, port_mode, port_type):
     port = JackPort()
-    port.name   = port_name
-    port.mode   = port_mode
-    port.type   = port_type
+    port.name = port_name
+    port.mode = port_mode
+    port.type = port_type
     port.is_new = True
 
     port_list.append(port)
@@ -214,7 +218,7 @@ def portRenamed(old_name, new_name, port_mode, port_type):
         if (port.name == old_name
                 and port.mode == port_mode
                 and port.type == port_type):
-            port.name   = new_name
+            port.name = new_name
             port.is_new = True
             connect_timer.start()
             break
@@ -225,7 +229,7 @@ def connectionAdded(port_str_A, port_str_B):
     if pending_connection:
         makeMayConnections()
 
-    if not (port_str_A, port_str_B) in saved_connections:
+    if (port_str_A, port_str_B) not in saved_connections:
         dirty_checker.start()
 
 def connectionRemoved(port_str_A, port_str_B):
@@ -247,7 +251,7 @@ def connectAllInputs(port):
     if port.mode != PORT_MODE_OUTPUT:
         return
 
-    input_ports  = []
+    input_ports = []
 
     for jack_port in port_list:
         if jack_port.mode == PORT_MODE_INPUT:
@@ -264,7 +268,7 @@ def connectAllOutputs(port):
     if port.mode != PORT_MODE_INPUT:
         return
 
-    output_ports  = []
+    output_ports = []
 
     for jack_port in port_list:
         if jack_port.mode == PORT_MODE_OUTPUT:
@@ -279,9 +283,9 @@ def connectAllOutputs(port):
 
 def makeMayConnections():
     output_ports = []
-    input_ports  = []
+    input_ports = []
     new_output_ports = []
-    new_input_ports  = []
+    new_input_ports = []
 
     for port in port_list:
         if port.mode == PORT_MODE_OUTPUT:
@@ -368,7 +372,7 @@ def openFile(project_path, session_name, full_client_id):
                 continue
 
             port_from = el.attribute('from')
-            port_to   = el.attribute('to')
+            port_to = el.attribute('to')
 
             saved_connections.append((port_from, port_to))
 
@@ -416,7 +420,7 @@ def saveFile():
     for con in saved_connections:
         ct = xml.createElement('connection')
         ct.setAttribute('from', con[0])
-        ct.setAttribute('to'  , con[1])
+        ct.setAttribute('to', con[1])
         p.appendChild(ct)
 
     xml.appendChild(p)
@@ -475,7 +479,7 @@ if __name__ == '__main__':
     NSMServer.announce('JACK Connections', ':dirty:switch:', 'ray-jackpatch')
 
     #connect signals
-    signal.signal(signal.SIGINT , signalHandler)
+    signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
 
     #get all currents Jack ports and connections

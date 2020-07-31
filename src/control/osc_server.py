@@ -1,8 +1,9 @@
 
-import liblo
 import os
 import sys
 import time
+
+import liblo
 
 # !!! we don't load ray.py to win import duration
 # if change in ray.Err numbers, this has to be changed too !!!
@@ -10,15 +11,14 @@ ERR_UNKNOWN_MESSAGE = -18
 
 def areTheyAllString(args):
     for arg in args:
-        if type(arg) != str:
+        if not isinstance(arg, str):
             return False
     return True
 
 def highlightText(string):
     if "'" in string:
         return '"%s"' % string
-    else:
-        return "'%s'" % string
+    return "'%s'" % string
 
 class OscServer(liblo.Server):
     def __init__(self, detach=False):
@@ -37,6 +37,9 @@ class OscServer(liblo.Server):
         self._started_time = 0
         self._stop_port_list = []
         self._detach = detach
+        self._announce_time = 0
+        self._osc_order_path = ''
+        self._osc_order_args = []
 
     def replyMessage(self, path, args, types, src_addr):
         if not areTheyAllString(args):

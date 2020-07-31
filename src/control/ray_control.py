@@ -41,10 +41,6 @@ session_operations = ('save', 'save_as_template', 'take_snapshot',
                       'reorder_clients',
                       'get_session_name', 'run_step', 'clear_clients')
 
-#client_operations = ('stop', 'kill', 'trash', 'resume', 'save',
-                     #'save_as_template', 'show_optional_gui',
-                     #'hide_optional_gui', 'update_properties',
-                     #'list_snapshots', 'open_snapshot')
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -60,15 +56,15 @@ def addSelfBinToPath():
         os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
 
 def pidExists(pid):
-        if type(pid) == str:
-            pid = int(pid)
+    if isinstance(pid, str):
+        pid = int(pid)
 
-        try:
-            os.kill(pid, 0)
-        except OSError:
-            return False
-        else:
-            return True
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    else:
+        return True
 
 def getDaemonList():
     try:
@@ -76,48 +72,47 @@ def getDaemonList():
     except:
         return []
 
-    daemon_list = []
-    has_dirty_pid = False
+    l_daemon_list = []
 
     root = tree.getroot()
     for child in root:
-        daemon = Daemon()
+        l_daemon = Daemon()
 
         for key in child.attrib.keys():
             if key == 'root':
-                daemon.root = child.attrib[key]
+                l_daemon.root = child.attrib[key]
             elif key == 'session_path':
-                daemon.session_path = child.attrib[key]
+                l_daemon.session_path = child.attrib[key]
             elif key == 'user':
-                daemon.user = child.attrib[key]
+                l_daemon.user = child.attrib[key]
             elif key == 'not_default':
-                daemon.not_default = bool(child.attrib[key] == '1')
+                l_daemon.not_default = bool(child.attrib[key] == '1')
             elif key == 'net_daemon_id':
                 net_daemon_id = child.attrib[key]
                 if net_daemon_id.isdigit():
-                    daemon.net_daemon_id = int(net_daemon_id)
+                   l_daemon.net_daemon_id = int(net_daemon_id)
 
             elif key == 'pid':
                 pid = child.attrib[key]
                 if pid.isdigit() and pidExists(pid):
-                    daemon.pid = int(pid)
+                    l_daemon.pid = int(pid)
 
             elif key == 'port':
-                port = child.attrib[key]
-                if port.isdigit():
-                    daemon.port = int(port)
+                l_port = child.attrib[key]
+                if l_port.isdigit():
+                    l_daemon.port = int(l_port)
 
             elif key == 'has_gui':
-                daemon.has_local_gui = bool(child.attrib[key] == '3')
-                daemon.has_gui = bool(child.attrib[key] == '1')
+                l_daemon.has_local_gui = bool(child.attrib[key] == '3')
+                l_daemon.has_gui = bool(child.attrib[key] == '1')
 
-        if not (daemon.net_daemon_id
-                and daemon.pid
-                and daemon.port):
+        if not (l_daemon.net_daemon_id
+                and l_daemon.pid
+                and l_daemon.port):
             continue
 
-        daemon_list.append(daemon)
-    return daemon_list
+        l_daemon_list.append(l_daemon)
+    return l_daemon_list
 
 class Daemon:
     net_daemon_id = 0
@@ -155,14 +150,14 @@ def printHelp(stdout=False, category=OPERATION_TYPE_NULL):
     else:
         for line in full_message.split('\n'):
             if line.startswith('* '):
-                stars+=1
+                stars += 1
 
             if (stars == 0
                     or (stars == 1 and category == OPERATION_TYPE_CONTROL)
                     or (stars == 2 and category == OPERATION_TYPE_SERVER)
                     or (stars == 3 and category == OPERATION_TYPE_SESSION)
                     or (stars >= 4 and category == OPERATION_TYPE_CLIENT)):
-                message+= "%s\n" % line
+                message += "%s\n" % line
 
     if stdout:
         sys.stdout.write(message)
@@ -172,8 +167,9 @@ def printHelp(stdout=False, category=OPERATION_TYPE_NULL):
 def autoTypeString(string):
     if string.isdigit():
         return int(string)
-    elif string.replace('.', '', 1).isdigit():
+    if string.replace('.', '', 1).isdigit():
         return float(string)
+
     return string
 
 
@@ -280,10 +276,10 @@ if __name__ == '__main__':
 
     for daemon in daemon_list:
         if ((daemon.user == os.environ['USER']
-             and not wanted_port and not daemon.not_default)
-            or (wanted_port == daemon.port)):
-                daemon_port = daemon.port
-                break
+                    and not wanted_port and not daemon.not_default)
+                or (wanted_port == daemon.port)):
+            daemon_port = daemon.port
+            break
     else:
         daemon_started = False
 
@@ -353,16 +349,14 @@ if __name__ == '__main__':
                     if daemon.port == daemon_port:
                         if daemon.has_local_gui:
                             sys.exit(0)
-                else:
-                    sys.exit(1)
+                sys.exit(1)
 
             elif operation == 'has_gui':
                 for daemon in daemon_list:
                     if daemon.port == daemon_port:
                         if daemon.has_gui:
                             sys.exit(0)
-                else:
-                    sys.exit(1)
+                sys.exit(1)
 
     elif not daemon_started:
         at_port = ''
@@ -470,7 +464,7 @@ if __name__ == '__main__':
             server.waitForStartOnly()
 
     #connect SIGINT and SIGTERM
-    signal.signal(signal.SIGINT,  signalHandler)
+    signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
 
     exit_code = -1

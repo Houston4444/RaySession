@@ -4,12 +4,10 @@
 import os
 import signal
 import sys
-import time
-import threading
 
-from liblo import ServerThread, Address, make_method, Message
+from liblo import Address, make_method
 from PyQt5.QtCore import (QCoreApplication, pyqtSignal, QObject, QTimer,
-                          QProcess, QSettings, QLocale, QTranslator, QFile)
+                          QProcess)
 from PyQt5.QtXml import QDomDocument
 
 import ray
@@ -19,6 +17,7 @@ import jacklib
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         general_object.leave()
+
 
 class SlOSCThread(nsm_client.NSMThread):
     def __init__(self, name, signaler, daemon_address, debug):
@@ -35,13 +34,14 @@ class SlOSCThread(nsm_client.NSMThread):
         if general_object.wait_for_load:
             general_object.sl_ready.emit()
 
+
 class GeneralObject(QObject):
     sl_ready = pyqtSignal()
 
     def __init__(self):
         QObject.__init__(self)
 
-        self.sl_process  = QProcess()
+        self.sl_process = QProcess()
         self.sl_process.setProcessChannelMode(QProcess.ForwardedChannels)
         self.sl_process.finished.connect(self.slProcessFinished)
 
@@ -56,17 +56,18 @@ class GeneralObject(QObject):
         self.gui_process.started.connect(self.guiProcessStarted)
         self.gui_process.finished.connect(self.guiProcessFinished)
 
-        self.project_path   = ''
-        self.session_path   = ''
-        self.session_name   = ''
+        self.project_path = ''
+        self.session_path = ''
+        self.session_name = ''
         self.full_client_id = ''
         self.session_file = ''
-        self.session_bak  = ''
+        self.session_bak = ''
+        self.midi_bindings_file = ''
 
         self.file_timer = QTimer()
         self.file_timer.setInterval(100)
         self.file_timer.timeout.connect(self.checkFile)
-        self.n_file_timer  = 0
+        self.n_file_timer = 0
 
         signaler.server_sends_open.connect(self.initialize)
         signaler.server_sends_save.connect(self.saveSlSession)
@@ -191,7 +192,7 @@ class GeneralObject(QObject):
             self.stopFileChecker()
             return
 
-        self.n_file_timer+=1
+        self.n_file_timer += 1
 
     def xmlCorrection(self):
         try:
@@ -240,13 +241,13 @@ class GeneralObject(QObject):
 
 
     def initialize(self, project_path, session_name, full_client_id):
-        self.project_path   = project_path
-        self.session_name   = session_name
+        self.project_path = project_path
+        self.session_name = session_name
         self.full_client_id = full_client_id
         self.session_file = "%s/session.slsess" % self.project_path
-        self.session_bak  = "%s/session.slsess.bak" % self.project_path
+        self.session_bak = "%s/session.slsess.bak" % self.project_path
         self.midi_bindings_file = "%s/session.slb" % self.project_path
-        #self.midi_bindings_bak  = "%s/session.slb.bak" % self.project_path
+        #self.midi_bindings_bak = "%s/session.slb.bak" % self.project_path
 
         if not os.path.exists(self.project_path):
             os.makedirs(self.project_path)
@@ -301,7 +302,7 @@ if __name__ == '__main__':
 
     daemon_address = ray.getLibloAddress(NSM_URL)
 
-    signal.signal(signal.SIGINT,  signalHandler)
+    signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
 
     app = QCoreApplication(sys.argv)

@@ -5,12 +5,10 @@ import os
 import sys
 import time
 import signal
-import shutil
 import subprocess
-from liblo import ServerThread, Address, make_method, Message
-from PyQt5.QtCore import (pyqtSignal, QObject, QTimer, QProcess, QSettings,
+from PyQt5.QtCore import (QObject, QTimer, QProcess, QSettings,
                           QLocale, QTranslator, QFile)
-from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog, QMessageBox,
+from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog,
                              QMainWindow)
 from PyQt5.QtXml import QDomDocument
 
@@ -92,7 +90,7 @@ class ProxyDialog(QMainWindow):
         self.ui.comboSaveSig.addItem(_translate('proxy', 'None'), 0)
         self.ui.comboSaveSig.addItem('SIGUSR1', int(signal.SIGUSR1))
         self.ui.comboSaveSig.addItem('SIGUSR2', int(signal.SIGUSR2))
-        self.ui.comboSaveSig.addItem('SIGINT',  int(signal.SIGINT))
+        self.ui.comboSaveSig.addItem('SIGINT', int(signal.SIGINT))
         self.ui.comboSaveSig.activated.connect(self.comboSaveSigChanged)
         self.ui.comboSaveSig.setCurrentIndex(0)
 
@@ -745,7 +743,7 @@ class Proxy(QObject):
             proxy_dialog.close()
 
 
-class ProxyFile(object):
+class ProxyFile:
     def __init__(self, project_path, executable=''):
 
 
