@@ -87,15 +87,15 @@ class ServerSender(QObject):
         server = OscServerThread.getInstance()
         if server:
             return server.url
-        else:
-            return ''
+
+        return ''
 
     def getServerPort(self):
         server = OscServerThread.getInstance()
         if server:
             return server.port
-        else:
-            return 0
+
+        return 0
 
     def answer(self, src_addr, src_path, message, err=ray.Err.OK):
         if err == ray.Err.OK:

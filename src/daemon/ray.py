@@ -8,7 +8,7 @@ import socket
 import subprocess
 import sys
 from liblo import Server, Address
-from PyQt5.QtCore import QLocale, QTranslator, QT_VERSION_STR, QFile
+from PyQt5.QtCore import QT_VERSION_STR, QFile
 from PyQt5.QtGui import QIcon, QPalette
 
 # get qt version in list of ints
@@ -32,6 +32,7 @@ NOTES_PATH = 'ray-notes'
 factory_session_templates = (
     'with_jack_patch', 'with_jack_config', 'scripted')
 
+
 class PrefixMode:
     CUSTOM = 0
     CLIENT_NAME = 1
@@ -39,45 +40,45 @@ class PrefixMode:
 
 
 class ClientStatus:
-    STOPPED =  0
-    LAUNCH  =  1
-    OPEN    =  2
-    READY   =  3
-    PRECOPY =  4
-    COPY    =  5
-    SAVE    =  6
-    SWITCH  =  7
-    QUIT    =  8
-    NOOP    =  9
-    ERROR   = 10
+    STOPPED = 0
+    LAUNCH = 1
+    OPEN = 2
+    READY = 3
+    PRECOPY = 4
+    COPY = 5
+    SAVE = 6
+    SWITCH = 7
+    QUIT = 8
+    NOOP = 9
+    ERROR = 10
     REMOVED = 11
-    UNDEF   = 12
-    SCRIPT  = 13
+    UNDEF = 12
+    SCRIPT = 13
 
 
 class ServerStatus:
-    OFF      =  0
-    NEW      =  1
-    OPEN     =  2
-    CLEAR    =  3
-    SWITCH   =  4
-    LAUNCH   =  5
-    PRECOPY  =  6
-    COPY     =  7
-    READY    =  8
-    SAVE     =  9
-    CLOSE    = 10
+    OFF = 0
+    NEW = 1
+    OPEN = 2
+    CLEAR = 3
+    SWITCH = 4
+    LAUNCH = 5
+    PRECOPY = 6
+    COPY = 7
+    READY = 8
+    SAVE = 9
+    CLOSE = 10
     SNAPSHOT = 11
-    REWIND   = 12
+    REWIND = 12
     WAIT_USER = 13
-    OUT_SAVE  = 14
+    OUT_SAVE = 14
     OUT_SNAPSHOT = 15
     SCRIPT = 16
 
 
 class NSMMode:
-    NO_NSM  = 0
-    CHILD   = 1
+    NO_NSM = 0
+    CHILD = 1
     NETWORK = 2
 
 
@@ -96,6 +97,7 @@ class Option:
     HAS_GIT = 0x020
     SNAPSHOTS = 0x040
     SESSION_SCRIPTS = 0x080
+
 
 class Err:
     OK = 0
@@ -152,11 +154,13 @@ class Template:
     CLIENT_SAVE = 6
     CLIENT_LOAD = 7
 
+
 class SwitchState:
     NONE = 0
     RESERVED = 1
     NEEDED = 2
     DONE = 3
+
 
 class WindowManager:
     NONE = 0
@@ -164,7 +168,7 @@ class WindowManager:
     WAYLAND = 2
 
 
-class Favorite():
+class Favorite:
     def __init__(self, name, icon, factory):
         self.name = name
         self.icon = icon
@@ -178,9 +182,9 @@ def ifDebug(string):
     if debug:
         sys.stderr.write("%s\n" % string)
 
-def setDebug(bool):
+def setDebug(bool_debug):
     global debug
-    debug = bool
+    debug = bool_debug
 
 def versionToTuple(version_str):
     version_list = []
@@ -198,7 +202,6 @@ def addSelfBinToPath():
     bin_path = "%s/bin" % os.path.dirname(this_path)
     if not os.environ['PATH'].startswith("%s:" % bin_path):
         os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
-
 
 def getListInSettings(settings, path):
     # getting a QSettings value of list type seems to not works the same way
@@ -276,8 +279,8 @@ def isGitTaggable(string):
 def highlightText(string):
     if "'" in string:
         return '"%s"' % string
-    else:
-        return "'%s'" % string
+    
+    return "'%s'" % string
 
 def isOscPortFree(port):
     try:
@@ -287,7 +290,6 @@ def isOscPortFree(port):
 
     del testport
     return True
-
 
 def getFreeOscPort(default=16187):
     # get a free OSC port for daemon, start from default
@@ -310,14 +312,12 @@ def getFreeOscPort(default=16187):
     del testport
     return daemon_port
 
-
 def isValidOscUrl(url):
     try:
         address = liblo.Address(url)
         return True
     except BaseException:
         return False
-
 
 def getLibloAddress(url):
     valid_url = False
@@ -379,7 +379,6 @@ def areSameOscPort(url1, url2):
 
     return False
 
-
 def areOnSameMachine(url1, url2):
     if url1 == url2:
         return True
@@ -435,7 +434,6 @@ def areOnSameMachine(url1, url2):
 
     return False
 
-
 def getUrl192(url):
     try:
         ips = subprocess.check_output(['hostname', '-I']).decode()
@@ -448,7 +446,6 @@ def getUrl192(url):
 
     suffix_port = url.rpartition(':')[2]
     return "osc.udp://%s:%s" % (ip, suffix_port)
-
 
 def getThis192():
     global machine192
@@ -464,16 +461,14 @@ def getThis192():
     except BaseException:
         return ''
 
-
 def getMachine192(hostname=None):
     if hostname is None:
         return getThis192()
-    else:
-        if hostname in ('localhost', socket.gethostname()):
-            return getThis192()
+    
+    if hostname in ('localhost', socket.gethostname()):
+        return getThis192()
 
-        return socket.gethostbyname(hostname)
-
+    return socket.gethostbyname(hostname)
 
 def getMachine192ByUrl(url):
     try:
@@ -485,7 +480,6 @@ def getMachine192ByUrl(url):
     del addr
 
     return getMachine192(hostname)
-
 
 def getNetUrl(port):
     try:
@@ -499,7 +493,6 @@ def getNetUrl(port):
 
     return "osc.udp://%s:%i/" % (ip, port)
 
-
 def shellLineToArgs(string):
     try:
         args = shlex.split(string)
@@ -510,10 +503,9 @@ def shellLineToArgs(string):
 
 def areTheyAllString(args):
     for arg in args:
-        if type(arg) != str:
+        if not isinstance(arg, str):
             return False
     return True
-
 
 def getAppIcon(icon_name, widget):
     dark = bool(
@@ -558,10 +550,10 @@ def getFullPath(root, session_name):
 
     return spath
 
-def protocolToStr(protocol:int)->str:
+def protocolToStr(protocol: int)->str:
     if protocol == Protocol.RAY_HACK:
         return "Ray-Hack"
-    elif protocol == Protocol.RAY_NET:
+    if protocol == Protocol.RAY_NET:
         return "Net-Session"
     return "NSM"
 

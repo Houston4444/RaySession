@@ -1,12 +1,9 @@
-import locale
+
 import os
-import shutil
 import socket
-import subprocess
-import sys
-from PyQt5.QtCore import (QProcess, QProcessEnvironment, QTimer,
-                          QObject, pyqtSignal, QDateTime)
+from PyQt5.QtCore import QProcess, QObject, QDateTime
 from PyQt5.QtXml import QDomDocument
+
 import ray
 from daemon_tools import Terminal
 
@@ -35,7 +32,7 @@ class Snapshoter(QObject):
         self.history_path = "session_history.xml"
         self.max_file_size = 50 #in Mb
 
-        self.next_snapshot_name  = ''
+        self.next_snapshot_name = ''
         self._rw_snapshot = ''
 
         self.changes_checker = QProcess()
@@ -58,7 +55,7 @@ class Snapshoter(QObject):
         self._n_file_treated = 0
         self._changes_counted = False
 
-        self.next_function  = None
+        self.next_function = None
         self.error_function = None
 
     def changesCheckerStandardOutput(self):
@@ -115,7 +112,7 @@ class Snapshoter(QObject):
         if err and self.error_function:
             self.error_function(err, ' '.join(all_args))
 
-        return not(bool(err))
+        return not bool(err)
 
     def getGitCommandList(self, *args):
         return self.getGitCommandListAt(self.session.path, *args)
@@ -176,8 +173,8 @@ class Snapshoter(QObject):
                 else:
                     continue
 
-            ref   = el.attribute('ref')
-            name  = el.attribute('name')
+            ref = el.attribute('ref')
+            name = el.attribute('name')
             rw_sn = el.attribute('rewind_snapshot')
             rw_name = ""
             session_name = el.attribute('session_name')
@@ -186,8 +183,9 @@ class Snapshoter(QObject):
             if client_id and session_name != self.session.name:
                 client = self.session.getClient(client_id)
                 if (client
-                    and client.prefix_mode == ray.PrefixMode.SESSION_NAME):
-                        continue
+                        and (client.prefix_mode
+                             == ray.PrefixMode.SESSION_NAME)):
+                    continue
 
             ss_name = ""
             if session_name != prv_session_name:
@@ -311,7 +309,7 @@ class Snapshoter(QObject):
 
         # write global ignored extensions
         for extension in session_ign_list:
-            contents+= "*%s\n" % extension
+            contents += "*%s\n" % extension
 
             for client in self.session.clients:
                 cext_list = client.ignored_extensions.split(' ')
@@ -466,7 +464,7 @@ class Snapshoter(QObject):
 
     def save(self, name='', rewind_snapshot='',
              next_function=None, error_function=None):
-        self.next_snapshot_name  = name
+        self.next_snapshot_name = name
         self._rw_snapshot = rewind_snapshot
         self.next_function = next_function
         self.error_function = error_function

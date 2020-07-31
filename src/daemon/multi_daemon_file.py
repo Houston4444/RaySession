@@ -14,12 +14,12 @@ class Daemon:
     user = ""
     not_default = False
 
-class MultiDaemonFile(object):
+class MultiDaemonFile:
     file_path = '/tmp/RaySession/multi-daemon.xml'
 
     def __init__(self, session, server):
         self.session = session
-        self.server  = server
+        self.server = server
 
         self.xml = QDomDocument()
 
@@ -31,7 +31,7 @@ class MultiDaemonFile(object):
         return instance
 
     def pidExists(self, pid):
-        if type(pid) == str:
+        if isinstance(pid, str):
             pid = int(pid)
 
         try:
@@ -104,7 +104,7 @@ class MultiDaemonFile(object):
             for i in range(nodes.count()):
                 node = nodes.at(i)
                 dxe = node.toElement()
-                pid  = dxe.attribute('pid')
+                pid = dxe.attribute('pid')
 
                 if pid.isdigit() and pid == str(os.getpid()):
                     self.setAttributes(dxe)
@@ -190,7 +190,7 @@ class MultiDaemonFile(object):
             node = nodes.at(i)
             dxe = node.toElement()
             spath = dxe.attribute('session_path')
-            pid   = dxe.attribute('pid')
+            pid = dxe.attribute('pid')
             if spath and pid.isdigit() and self.pidExists(int(pid)):
                 all_session_paths.append(spath)
 
@@ -256,4 +256,3 @@ class MultiDaemonFile(object):
             self.cleanDirtyPids()
 
         return daemon_list
-

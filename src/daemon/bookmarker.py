@@ -5,7 +5,7 @@ import pathlib
 import sys
 
 from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
-from PyQt5.QtXml  import QDomDocument, QDomText
+from PyQt5.QtXml  import QDomDocument
 import ray
 from daemon_tools import getAppConfigPath
 
@@ -61,7 +61,7 @@ class PickerTypeGtk(PickerType):
                 return
 
         contents = self.getContents()
-        if contents == None:
+        if contents is None:
             return
 
         bookmarks = contents.split('\n')
@@ -135,10 +135,10 @@ class PickerTypeFltk(PickerType):
                         empty_fav = True
 
             if line or not fav0_found:
-                contents+= "%s\n" % line
+                contents += "%s\n" % line
 
         if not empty_fav:
-            num+=1
+            num += 1
             contents += "favorite%.2d:%s" % (num, spath)
 
         if self.printContents(contents):
@@ -175,10 +175,10 @@ class PickerTypeFltk(PickerType):
                 if num < len(favorites):
                     fav = favorites[num]
 
-                contents+= "favorite%.2d:%s\n" % (num, fav)
-                num+=1
+                contents += "favorite%.2d:%s\n" % (num, fav)
+                num += 1
             else:
-                contents+= "%s\n" % line
+                contents += "%s\n" % line
 
         self.printContents(contents)
         self.written = False
@@ -201,7 +201,7 @@ class PickerTypeQt4(PickerType):
         data = settings_qt4.value('Qt/filedialog')
         stream = QDataStream(data, QIODevice.ReadOnly)
 
-        magic   = stream.readUInt32()
+        magic = stream.readUInt32()
         version = stream.readUInt32()
         if not (magic == QFileDialogMagic and version == 3):
             return
@@ -220,7 +220,6 @@ class PickerTypeQt4(PickerType):
 
             bookmarks.append(qUrl)
 
-
         history_len = stream.readUInt32()
         history = []
         for h in range(history_len):
@@ -229,7 +228,7 @@ class PickerTypeQt4(PickerType):
 
         current_dir = stream.readQString()
         header_data = stream.readBytes()
-        view_mode   = stream.readUInt32()
+        view_mode = stream.readUInt32()
 
 
         #now rewrite bytes
@@ -275,7 +274,7 @@ class PickerTypeQt4(PickerType):
         data = settings_qt4.value('Qt/filedialog')
         stream = QDataStream(data, QIODevice.ReadOnly)
 
-        magic   = stream.readUInt32()
+        magic = stream.readUInt32()
         version = stream.readUInt32()
         if not (magic == QFileDialogMagic and version == 3):
             self.written = False
@@ -307,7 +306,7 @@ class PickerTypeQt4(PickerType):
 
         current_dir = stream.readQString()
         header_data = stream.readBytes()
-        view_mode   = stream.readUInt32()
+        view_mode = stream.readUInt32()
 
         #now rewrite bytes
 
@@ -370,10 +369,9 @@ class PickerTypeQt5(PickerType):
             self.written = False
             return
 
-        url = pathlib.Path(spath).as_uri()
-
         settings_qt5 = QSettings(self.config_path, QSettings.IniFormat)
-        shortcuts = ray.getListInSettings(settings_qt5, 'FileDialog/shortcuts')
+        shortcuts = ray.getListInSettings(settings_qt5,
+                                          'FileDialog/shortcuts')
 
         for sc in shortcuts:
             sc_url = QUrl(sc)
@@ -466,17 +464,17 @@ class PickerTypeKde5(PickerType):
 class BookMarker:
     def __init__(self):
         self.bookmarks_memory = "%s/bookmarks.xml" % getAppConfigPath()
-        self.daemon_port      = 0
+        self.daemon_port = 0
 
         HOME = os.getenv('HOME')
 
         self.gtk2 = PickerTypeGtk("%s/.gtk-bookmarks" % HOME)
         self.gtk3 = PickerTypeGtk("%s/.config/gtk-3.0/bookmarks" % HOME)
         self.fltk = PickerTypeFltk("%s/.fltk/fltk.org/filechooser.prefs"
-                                    % HOME)
+                                   % HOME)
         self.kde5 = PickerTypeKde5("%s/.local/share/user-places.xbel" % HOME)
-        self.qt4  = PickerTypeQt4("%s/.config/Trolltech.conf" % HOME)
-        self.qt5  = PickerTypeQt5("%s/.config/QtProject.conf" % HOME)
+        self.qt4 = PickerTypeQt4("%s/.config/Trolltech.conf" % HOME)
+        self.qt5 = PickerTypeQt5("%s/.config/QtProject.conf" % HOME)
 
     def setDaemonPort(self, port):
         self.daemon_port = port
@@ -536,13 +534,12 @@ class BookMarker:
             return
 
         xml_content = xml.documentElement()
-        node = xml_content.firstChild()
 
         bke = xml.createElement('bookmarker')
         bke.setAttribute('port', self.daemon_port)
         bke.setAttribute('session_path', spath)
         bke.setAttribute('pickers', self.getPickersForXml())
-        node = xml_content.firstChild()
+
         xml_content.appendChild(bke)
 
         self.writeXmlFile(xml)
@@ -586,7 +583,7 @@ class BookMarker:
         for i in range(nodes.count()):
             node = nodes.at(i)
             bke = node.toElement()
-            spath   = bke.attribute('session_path')
+            spath = bke.attribute('session_path')
             pickers = bke.attribute('pickers')
 
             if not spath:
@@ -623,6 +620,3 @@ class BookMarker:
 if __name__ == '__main__':
     bm_maker = BookMarker()
     bm_maker.makeAll(sys.argv[1])
-
-
-

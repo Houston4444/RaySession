@@ -19,5 +19,3 @@ class Signaler(QObject):
         QObject.__init__(self)
         global instance
         instance = self
-
-

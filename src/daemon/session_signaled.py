@@ -12,8 +12,7 @@ import ray
 from client import Client
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
-from scripter import Scripter
-from daemon_tools import Terminal, CommandLineArgs, TemplateRoots
+from daemon_tools import Terminal
 from session import OperatingSession
 
 _translate = QCoreApplication.translate
@@ -134,9 +133,9 @@ class SignaledSession(OperatingSession):
         else:
             for client in self.clients:
                 if (not client.active and client.isRunning()
-                    and ray.isPidChildOf(pid, client.pid)):
-                        client.serverAnnounce(path, args, src_addr, False)
-                        break
+                        and ray.isPidChildOf(pid, client.pid)):
+                    client.serverAnnounce(path, args, src_addr, False)
+                    break
             else:
                 # Client launched externally from daemon
                 # by command : $:NSM_URL=url executable
@@ -353,7 +352,7 @@ class SignaledSession(OperatingSession):
                 # if it is asked by "check_nsm_bin" key
                 if ct.attribute('check_nsm_bin') in  ("1", "true"):
                     result = QProcess.execute(
-                        'grep', [ '-q', '/nsm/server/announce',
+                        'grep', ['-q', '/nsm/server/announce',
                                  shutil.which(executable)])
                     if result:
                         continue
@@ -431,7 +430,7 @@ class SignaledSession(OperatingSession):
 
         for root, dirs, files in os.walk(self.root):
             #exclude hidden files and dirs
-            files   = [f for f in files if not f.startswith('.')]
+            files = [f for f in files if not f.startswith('.')]
             dirs[:] = [d for d in dirs  if not d.startswith('.')]
 
             if root == self.root:
@@ -461,12 +460,10 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, "/reply", path)
 
     def _nsm_server_list(self, path, args, src_addr):
-        session_list = []
-
         if self.root:
             for root, dirs, files in os.walk(self.root):
                 #exclude hidden files and dirs
-                files   = [f for f in files if not f.startswith('.')]
+                files = [f for f in files if not f.startswith('.')]
                 dirs[:] = [d for d in dirs  if not d.startswith('.')]
 
                 if root == self.root:
@@ -607,10 +604,10 @@ class SignaledSession(OperatingSession):
         if len(args) == 2:
             session_name, template_name = args
             sess_root = self.root
-            net=False
+            net = False
         else:
             session_name, template_name, sess_root = args
-            net=True
+            net = True
 
         tmp_session = DummySession(sess_root)
         tmp_session.ray_server_save_session_template(path,
@@ -661,7 +658,7 @@ class SignaledSession(OperatingSession):
         if not self.path:
             self.file_copier.abort()
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "No session to abort." )
+                      "No session to abort.")
             return
 
         self.wait_for = ray.WaitFor.NONE
@@ -789,9 +786,9 @@ class SignaledSession(OperatingSession):
 
         if sess_root == self.root and session_to_load == self.getShortPath():
             if (self.steps_order
-                or self.file_copier.isActive()):
-                    self.send(src_addr, '/ray/net_daemon/duplicate_state', 1)
-                    return
+                    or self.file_copier.isActive()):
+                self.send(src_addr, '/ray/net_daemon/duplicate_state', 1)
+                return
 
             self.rememberOscArgs(path, args, src_addr)
 
@@ -1029,11 +1026,11 @@ class SignaledSession(OperatingSession):
 
         auto_snapshot = not bool(
             self.snapshoter.isAutoSnapshotPrevented())
-        self.sendGui('/ray/gui/session/auto_snapshot',  int(auto_snapshot))
+        self.sendGui('/ray/gui/session/auto_snapshot', int(auto_snapshot))
 
         snapshots = self.snapshoter.list(client_id)
 
-        i=0
+        i = 0
         snap_send = []
 
         for snapshot in snapshots:
@@ -1041,10 +1038,10 @@ class SignaledSession(OperatingSession):
                 self.send(src_addr, '/reply', path, *snap_send)
 
                 snap_send.clear()
-                i=0
+                i = 0
             else:
                 snap_send.append(snapshot)
-                i+=1
+                i += 1
 
         if snap_send:
             self.send(src_addr, '/reply', path, *snap_send)
@@ -1073,7 +1070,7 @@ class SignaledSession(OperatingSession):
                 arg = arg.replace('not_', '', 1)
 
             if ':' in arg:
-              search_properties.append((cape, arg))
+                search_properties.append((cape, arg))
 
             elif arg == 'started':
                 f_started = cape
@@ -1150,7 +1147,7 @@ class SignaledSession(OperatingSession):
     @client_action
     def _ray_client_kill(self, path, args, src_addr, client):
         client.kill()
-        self.send(src_addr, "/reply", path, "Client killed." )
+        self.send(src_addr, "/reply", path, "Client killed.")
 
     @client_action
     def _ray_client_trash(self, path, args, src_addr, client):
@@ -1265,7 +1262,7 @@ class SignaledSession(OperatingSession):
     def _ray_client_set_properties(self, path, args, src_addr, client):
         message = ''
         for arg in args:
-            message+="%s\n" % arg
+            message += "%s\n" % arg
 
         client.setPropertiesFromMessage(message)
         self.send(src_addr, '/reply', path,
@@ -1307,11 +1304,11 @@ class SignaledSession(OperatingSession):
 
         cte = content.toElement()
         message = ""
-        for property in ('executable', 'arguments', 'config_file',
-                         'save_signal', 'stop_signal',
-                         'no_save_level', 'wait_window',
-                         'VERSION'):
-            message += "%s:%s\n" % (property, cte.attribute(property))
+        for prop in ('executable', 'arguments', 'config_file',
+                     'save_signal', 'stop_signal',
+                     'no_save_level', 'wait_window',
+                     'VERSION'):
+            message += "%s:%s\n" % (prop, cte.attribute(property))
 
         # remove last empty line
         message = message.rpartition('\n')[0]
@@ -1376,12 +1373,12 @@ class SignaledSession(OperatingSession):
         cte = content.toElement()
 
         for line in message.split('\n'):
-            property, colon, value = line.partition(':')
-            if property in (
-                'executable', 'arguments',
-                'config_file', 'save_signal', 'stop_signal',
-                'no_save_level', 'wait_window', 'VERSION'):
-                    cte.setAttribute(property, value)
+            prop, colon, value = line.partition(':')
+            if prop in (
+                    'executable', 'arguments',
+                    'config_file', 'save_signal', 'stop_signal',
+                    'no_save_level', 'wait_window', 'VERSION'):
+                cte.setAttribute(prop, value)
 
         try:
             file = open(proxy_file, 'w')
@@ -1557,7 +1554,7 @@ class SignaledSession(OperatingSession):
             try:
                 subprocess.run(['rm', '-R', file])
             except:
-                self.send(src_addr, '/minor_error', path,  -10,
+                self.send(src_addr, '/minor_error', path, -10,
                           "Error while removing client file %s" % file)
                 continue
 
@@ -1569,10 +1566,11 @@ class SignaledSession(OperatingSession):
         state = args[0]
         for client in self.clients:
             if (client.net_daemon_url
-                and ray.areSameOscPort(client.net_daemon_url, src_addr.url)):
-                    client.net_duplicate_state = state
-                    client.net_daemon_copy_timer.stop()
-                    break
+                    and ray.areSameOscPort(client.net_daemon_url,
+                                           src_addr.url)):
+                client.net_duplicate_state = state
+                client.net_daemon_copy_timer.stop()
+                break
         else:
             return
 
@@ -1657,5 +1655,3 @@ class DummySession(OperatingSession):
                             self.save,
                             (self.renameDone, new_session_name)]
         self.nextFunction()
-
-

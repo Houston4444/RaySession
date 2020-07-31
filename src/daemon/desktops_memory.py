@@ -8,14 +8,6 @@ from PyQt5.QtCore import QProcess
 
 import ray
 
-
-class WindowProperties(object):
-    id      = ""
-    desktop = 0
-    pid     = 0
-    wclass  = ""
-    name    = ""
-
 def moveWin(win_id, desktop_from, desktop_to):
     if desktop_from == desktop_to:
         return
@@ -29,12 +21,21 @@ def moveWin(win_id, desktop_from, desktop_to):
 
     subprocess.run(['wmctrl', '-i', '-r', win_id, '-t', str(desktop_to)])
 
-class DesktopsMemory(object):
+
+class WindowProperties:
+    id = ""
+    desktop = 0
+    pid = 0
+    wclass = ""
+    name = ""
+
+
+class DesktopsMemory:
     def __init__(self, session):
         self.session = session
-        self.saved_windows      = []
+        self.saved_windows = []
         self.active_window_list = []
-        self.daemon_pids     = []
+        self.daemon_pids = []
         self.non_daemon_pids = []
 
     def isChildOfDaemon(self, pid):
@@ -50,28 +51,14 @@ class DesktopsMemory(object):
             self.non_daemon_pids.append(pid)
             return False
 
-        ppid = pid
-
         if ray.isPidChildOf(pid, daemon_pid):
             self.daemon_pids.append(pid)
             return True
 
-        #while ppid > daemon_pid and ppid > 1:
-            #try:
-                #ppid = int(subprocess.check_output(['ps', '-o', 'ppid=',
-                                                    #'-p', str(ppid)]))
-            #except:
-                #self.non_daemon_pids.append(pid)
-                #return False
-
-        #if ppid == daemon_pid:
-            #self.daemon_pids.append(pid)
-            #return True
-
         self.non_daemon_pids.append(pid)
         return False
 
-    def isNameInSession(self, name:str)->bool:
+    def isNameInSession(self, name: str)->bool:
         for client in self.session.clients:
             if client.name == name and client.active:
                 return True
@@ -103,10 +90,10 @@ class DesktopsMemory(object):
             if (len(properties) >= 6
                     and properties[1].lstrip('-').isdigit()
                     and properties[2].isdigit()):
-                wid     = properties[0]
+                wid = properties[0]
                 desktop = int(properties[1])
-                pid     = int(properties[2])
-                wclass  = properties[3]
+                pid = int(properties[2])
+                wclass = properties[3]
 
                 ignore_pid = False
 
@@ -131,16 +118,16 @@ class DesktopsMemory(object):
 
                 name = ""
                 for prop in properties[5:]:
-                    name+=prop
-                    name+=" "
+                    name += prop
+                    name += " "
                 name = name[:-1] #remove last space
 
                 awin = WindowProperties()
-                awin.id      = wid
-                awin.pid     = pid
+                awin.id = wid
+                awin.pid = pid
                 awin.desktop = desktop
-                awin.wclass  = wclass
-                awin.name    = name
+                awin.wclass = wclass
+                awin.name = name
 
                 self.active_window_list.append(awin)
 
@@ -156,10 +143,10 @@ class DesktopsMemory(object):
                     break
             else:
                 win = WindowProperties()
-                win.id      = awin.id
+                win.id = awin.id
                 win.desktop = awin.desktop
-                win.wclass  = awin.wclass
-                win.name    = awin.name
+                win.wclass = awin.wclass
+                win.name = awin.name
 
                 self.saved_windows.append(win)
 
@@ -201,8 +188,8 @@ class DesktopsMemory(object):
 
             win = WindowProperties()
 
-            win.wclass  = el.attribute('class')
-            win.name    = el.attribute('name')
+            win.wclass = el.attribute('class')
+            win.name = el.attribute('name')
 
             desktop = el.attribute('desktop')
             if desktop.lstrip('-').isdigit():

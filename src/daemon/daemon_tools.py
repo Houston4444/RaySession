@@ -20,19 +20,16 @@ def getCodeRoot():
     return dirname(dirname(dirname(os.path.realpath(__file__))))
 
 def initDaemonTools():
-    #global non_active_clients
-    #del non_active_clients
-
     if CommandLineArgs.config_dir:
-        settings = QSettings(CommandLineArgs.config_dir)
+        l_settings = QSettings(CommandLineArgs.config_dir)
     else:
-        settings = QSettings()
+        l_settings = QSettings()
 
-    RS.setSettings(settings)
+    RS.setSettings(l_settings)
 
-    RS.setNonActiveClients(ray.getListInSettings(settings,
+    RS.setNonActiveClients(ray.getListInSettings(l_settings,
                                                  'daemon/non_active_list'))
-    RS.setFavorites(ray.getListInSettings(settings, 'daemon/favorites'))
+    RS.setFavorites(ray.getListInSettings(l_settings, 'daemon/favorites'))
     TemplateRoots.initConfig()
 
 def getGitDefaultUnAndIgnored(executable):
@@ -80,7 +77,7 @@ class TemplateRoots:
             app_config_path = getAppConfigPath()
 
         cls.user_sessions = "%s/session_templates" % app_config_path
-        cls.user_clients  = "%s/client_templates"  % app_config_path
+        cls.user_clients = "%s/client_templates"  % app_config_path
 
 
 class Terminal:
@@ -196,7 +193,7 @@ class ArgParser(argparse.ArgumentParser):
             help='hide for ray_control')
         self.add_argument('--config-dir', '-c', type=str, default='',
                           help='use a custom config dir')
-        self.add_argument('--debug','-d',  action='store_true',
+        self.add_argument('--debug', '-d', action='store_true',
                           help='see all OSC messages')
         self.add_argument('--debug-only', '-do', action='store_true',
                           help='debug without client messages')
@@ -208,5 +205,3 @@ class ArgParser(argparse.ArgumentParser):
 
         parsed_args = argparse.ArgumentParser.parse_args(self)
         CommandLineArgs.eatAttributes(parsed_args)
-
-

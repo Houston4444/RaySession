@@ -56,9 +56,9 @@ class ClientCommunicating(liblo.ServerThread):
         self.session = session
         self.gui_list = []
         self.controller_list = []
-        self.server_status  = ray.ServerStatus.OFF
+        self.server_status = ray.ServerStatus.OFF
         self.gui_embedded = False
-        self.is_nsm_locked  = False
+        self.is_nsm_locked = False
         self.not_default = False
         self.nsm_locker_url = ''
         self.net_master_daemon_addr = None
@@ -72,7 +72,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/reply', None)
     def reply(self, path, args, types, src_addr):
-        if not (len(args) >=2 and ray.areTheyAllString(args)):
+        if not (len(args) >= 2 and ray.areTheyAllString(args)):
             self.unknownMessage(path, types, src_addr)
             return False
 
@@ -86,10 +86,11 @@ class ClientCommunicating(liblo.ServerThread):
                 self.send(self.list_asker_addr, path, *args)
             return False
 
-        elif reply_path == '/ray/gui/script_user_action':
+        if reply_path == '/ray/gui/script_user_action':
             self.sendGui('/ray/gui/hide_script_user_action')
             for controller in self.controller_list:
-                self.send(controller.addr, '/reply', '/ray/server/script_user_action',
+                self.send(controller.addr, '/reply',
+                          '/ray/server/script_user_action',
                           'User action dialog validate')
             return False
 
@@ -169,7 +170,7 @@ class ClientCommunicating(liblo.ServerThread):
     def nsmServerAbort(self, path, args, types, src_addr):
         if not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "No session to abort." )
+                      "No session to abort.")
             return False
 
     @ray_method('/nsm/server/quit', '')
@@ -335,7 +336,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/gui_announce', 'sisii')
     def rayGuiGui_announce(self, path, args, types, src_addr):
-        version    = args[0]
+        version = args[0]
         nsm_locked = bool(args[1])
         is_net_free = True
 
@@ -370,9 +371,9 @@ class OscServerThread(ClientCommunicating):
         self.gui_embedded = False
 
         if src_addr.url == self.nsm_locker_url:
-            self.net_daemon_id  = random.randint(1, 999999999)
+            self.net_daemon_id = random.randint(1, 999999999)
 
-            self.is_nsm_locked  = False
+            self.is_nsm_locked = False
             self.nsm_locker_url = ''
             self.sendGui('/ray/gui/server/nsm_locked', 0)
 
@@ -489,7 +490,7 @@ class OscServerThread(ClientCommunicating):
     def rayServerRemoveClientTemplate(self, path, args, types, src_addr):
         template_name = args[0]
 
-        templates_root    = TemplateRoots.user_clients
+        templates_root = TemplateRoots.user_clients
         templates_file = "%s/%s" % (templates_root, 'client_templates.xml')
 
         if not os.path.isfile(templates_file):
@@ -778,7 +779,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/skip_wait_user', '')
     def raySessionSkipWaitUser(self, path, args, types, src_addr):
-        if not self.server_status == ray.ServerStatus.WAIT_USER:
+        if self.server_status != ray.ServerStatus.WAIT_USER:
             return False
 
     @ray_method('/ray/session/duplicate', 's')
@@ -904,7 +905,7 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/session/open_folder', '')
     def rayServerOpenFolder(self, path, args, types, src_addr):
         if self.session.path:
-            subprocess.Popen(['xdg-open',  self.session.path])
+            subprocess.Popen(['xdg-open', self.session.path])
 
     @ray_method('/ray/session/clear_clients', None)
     def raySessionStopClients(self, path, args, types, src_addr):
@@ -1256,7 +1257,7 @@ class OscServerThread(ClientCommunicating):
                           *client.ray_hack.spread())
 
             self.send(gui_addr, "/ray/gui/client/status",
-                      client.client_id,  client.status)
+                      client.client_id, client.status)
 
             if client.isCapableOf(':optional-gui:'):
                 self.send(gui_addr, '/ray/gui/client/has_optional_gui',
@@ -1295,15 +1296,15 @@ class OscServerThread(ClientCommunicating):
     def setAsNotDefault(self):
         self.not_default = True
 
-    def hasGui(self):
+    def hasGui(self)->int:
         has_gui = False
 
         for gui_addr in self.gui_list:
             if ray.areOnSameMachine(self.url, gui_addr.url):
                 # we've got a local GUI
                 return 3
-            else:
-                has_gui = True
+            
+            has_gui = True
 
         if has_gui:
             return 1

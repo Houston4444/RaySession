@@ -237,4 +237,3 @@ class ClientScripter(Scripter):
 
     def initialCaller(self):
         return self._initial_caller
-

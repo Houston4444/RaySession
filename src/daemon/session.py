@@ -21,7 +21,7 @@ from server_sender     import ServerSender
 from file_copier       import FileCopier
 from client            import Client
 from scripter          import StepScripter
-from daemon_tools import (TemplateRoots, RS, Terminal, CommandLineArgs,
+from daemon_tools import (TemplateRoots, RS, Terminal,
                           getGitDefaultUnAndIgnored)
 
 _translate = QCoreApplication.translate
@@ -142,10 +142,10 @@ class Session(ServerSender):
     def getShortPath(self):
         if self.path.startswith("%s/" % self.root):
             return self.path.replace("%s/" % self.root, '', 1)
-        else:
-            return self.name
 
-    def getFullPath(self, session_name:str)->str:
+        return self.name
+
+    def getFullPath(self, session_name: str)->str:
         spath = "%s%s%s" % (self.root, os.sep, session_name)
 
         if session_name.startswith(os.sep):
@@ -160,8 +160,8 @@ class Session(ServerSender):
         for client in self.clients:
             if client.client_id == client_id:
                 return client
-        else:
-            sys.stderr.write("client_id %s is not in ray-daemon session\n")
+
+        sys.stderr.write("client_id %s is not in ray-daemon session\n")
 
     def getClientByAddress(self, addr):
         if not addr:
@@ -192,7 +192,7 @@ class Session(ServerSender):
         if client.isRayHack():
             client_dir = client.getProjectPath()
             if os.path.isdir(client_dir):
-                if len(os.listdir(client_dir)) > 0:
+                if os.listdir(client_dir):
                     self.trashed_clients.append(client)
                     client.sendGuiClientProperties(removed=True)
                 else:
@@ -273,16 +273,16 @@ class Session(ServerSender):
 
             if (os.path.isdir(templates_root)
                     and os.access(templates_root, os.R_OK)):
-                return [ "%s/%s" % (templates_root, f)
-                        for f in sorted(os.listdir(templates_root)) ]
+                return ["%s/%s" % (templates_root, f)
+                        for f in sorted(os.listdir(templates_root))]
 
             return []
-        else:
-            return [TemplateRoots.user_clients]
+
+        return [TemplateRoots.user_clients]
 
     def generateClientIdAsNsm(self):
         client_id = 'n'
-        for l in range(4):
+        for i in range(4):
             client_id += random.choice(string.ascii_uppercase)
 
         return client_id
@@ -342,9 +342,9 @@ class Session(ServerSender):
                 self.forbidden_ids_list.append(wanted_id)
                 return wanted_id
 
-            n=2
+            n = 2
             while "%s_%i" % (wanted_id, n) in self.forbidden_ids_list:
-                n+=1
+                n += 1
 
             self.forbidden_ids_list.append(wanted_id)
             return "%s_%i" % (wanted_id, n)
@@ -392,7 +392,7 @@ class Session(ServerSender):
         return True
 
     def reOrderClients(self, client_ids_list, src_addr=None, src_path=''):
-        client_newlist  = []
+        client_newlist = []
 
         for client_id in client_ids_list:
             for client in self.clients:
@@ -487,8 +487,8 @@ class OperatingSession(Session):
         self.timer_wu_progress_n = 0
 
         self.osc_src_addr = None
-        self.osc_path     = ''
-        self.osc_args     = []
+        self.osc_path = ''
+        self.osc_args = []
 
         self.steps_order = []
 
@@ -635,13 +635,13 @@ class OperatingSession(Session):
         next_function = next_item
         arguments = []
 
-        if type(next_item) in (tuple, list):
-            if len(next_item) == 0:
+        if isinstance(next_item, (tuple, list)):
+            if not next_item:
                 return
-            else:
-                next_function = next_item[0]
-                if len(next_item) > 1:
-                    arguments = next_item[1:]
+
+            next_function = next_item[0]
+            if len(next_item) > 1:
+                arguments = next_item[1:]
 
         server = self.getServer()
         if (server and server.option_session_scripts
@@ -782,9 +782,9 @@ class OperatingSession(Session):
                 # is not runned with a script.
                 self.nextFunction(True)
                 return
-            else:
-                if self.steps_order:
-                    self.steps_order.__delitem__(0)
+
+            if self.steps_order:
+                self.steps_order.__delitem__(0)
 
         self.nextFunction()
 
@@ -903,9 +903,10 @@ class OperatingSession(Session):
             session_file = self.path + '/raysubsession.xml'
 
         if (os.path.isfile(session_file)
-            and not os.access(session_file, os.W_OK)):
-                self.saveError(ray.Err.CREATE_FAILED)
-                return
+                and not os.access(session_file, os.W_OK)):
+            self.saveError(ray.Err.CREATE_FAILED)
+            return
+
         try:
             file = open(session_file, 'w')
         except:
@@ -917,9 +918,9 @@ class OperatingSession(Session):
         p.setAttribute('VERSION', ray.VERSION)
         p.setAttribute('name', self.name)
 
-        xml_cls   = xml.createElement('Clients')
+        xml_cls = xml.createElement('Clients')
         xml_rmcls = xml.createElement('RemovedClients')
-        xml_wins  = xml.createElement('Windows')
+        xml_wins = xml.createElement('Windows')
         for client in self.clients:
             cl = xml.createElement('client')
             cl.setAttribute('id', client.client_id)
@@ -1205,7 +1206,7 @@ class OperatingSession(Session):
         self.cleanExpected()
         self.clients.clear()
         self.setPath('')
-        self.sendGui("/ray/gui/session/name", "", "" )
+        self.sendGui("/ray/gui/session/name", "", "")
         self.noFuture()
         self.sendReply("Closed.")
         self.message("Done")
@@ -1216,7 +1217,7 @@ class OperatingSession(Session):
         self.cleanExpected()
         self.clients.clear()
         self.setPath('')
-        self.sendGui("/ray/gui/session/name", "", "" )
+        self.sendGui("/ray/gui/session/name", "", "")
         self.noFuture()
         self.sendReply("Aborted.")
         self.message("Done")
@@ -1296,14 +1297,14 @@ for better organization.""")
             client.net_duplicate_state = -1
 
             if (client.net_daemon_url
-                and ray.isValidOscUrl(client.net_daemon_url)):
-                    self.send(Address(client.net_daemon_url),
-                              '/ray/session/duplicate_only',
-                              self.getShortPath(),
-                              new_session_full_name,
-                              client.net_session_root)
+                    and ray.isValidOscUrl(client.net_daemon_url)):
+                self.send(Address(client.net_daemon_url),
+                          '/ray/session/duplicate_only',
+                          self.getShortPath(),
+                          new_session_full_name,
+                          client.net_session_root)
 
-                    self.expected_clients.append(client)
+                self.expected_clients.append(client)
 
         if self.expected_clients:
             self.sendGuiMessage(
@@ -1452,8 +1453,6 @@ for better organization.""")
                            % template_name)
             self.nextFunction()
             return
-
-        new_session_name = basename(new_session_full_name)
 
         spath = self.getFullPath(new_session_full_name)
 
@@ -1705,7 +1704,7 @@ for better organization."""))
                 client.adjustFilesAfterCopy(self.path, ray.Template.RENAME)
             self.setPath(self.future_session_path)
 
-        self.sendGui("/ray/gui/session/name",  self.name, self.path)
+        self.sendGui("/ray/gui/session/name", self.name, self.path)
         self.trashed_clients.clear()
 
         self.notes = self.future_notes
@@ -1862,7 +1861,7 @@ for better organization."""))
 
     def load_substep4(self):
         for client in self.expected_clients:
-            if (not client.executable_path in RS.non_active_clients):
+            if not client.executable_path in RS.non_active_clients:
                 RS.non_active_clients.append(client.executable_path)
 
         RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
@@ -1908,7 +1907,7 @@ for better organization."""))
         self.sendGuiMessage(
             _translate('GUIMSG', 'session %s is loaded.')
                 % ray.highlightText(self.getShortPath()))
-        self.sendGui("/ray/gui/session/name",  self.name, self.path)
+        self.sendGui("/ray/gui/session/name", self.name, self.path)
 
         self.switching_session = False
 
@@ -2017,7 +2016,7 @@ for better organization.""")
                         continue
 
                     result = QProcess.execute(
-                        'grep', [ '-q', '/nsm/server/announce', which_exec])
+                        'grep', ['-q', '/nsm/server/announce', which_exec])
                     if result:
                         continue
 
@@ -2049,11 +2048,11 @@ for better organization.""")
 
                     for character in full_program_version:
                         if character.isdigit():
-                            program_version+=character
+                            program_version += character
                             previous_is_digit = True
                         elif character == '.':
                             if previous_is_digit:
-                                program_version+=character
+                                program_version += character
                             previous_is_digit = False
                         else:
                             if program_version:

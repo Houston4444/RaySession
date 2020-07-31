@@ -35,37 +35,37 @@ def basename(*args):
     return os.path.basename(*args)
 
 class Client(ServerSender, ray.ClientData):
-    _reply_errcode   = 0
-    _reply_message   = None
+    _reply_errcode = 0
+    _reply_message = None
 
     #can be directly changed by OSC thread
-    gui_visible      = True
-    progress         = 0
+    gui_visible = True
+    progress = 0
 
     #have to be modified by main thread for security
-    addr             = None
-    pid              = 0
-    pending_command  = ray.Command.NONE
-    active           = False
-    did_announce     = False
+    addr = None
+    pid = 0
+    pending_command = ray.Command.NONE
+    active = False
+    did_announce = False
 
-    status           = ray.ClientStatus.STOPPED
+    status = ray.ClientStatus.STOPPED
 
     running_executable = ''
-    running_arguments  = ''
-    tmp_arguments    = ''
+    running_arguments = ''
+    tmp_arguments = ''
 
-    auto_start       = True
+    auto_start = True
     start_gui_hidden = False
-    no_save_level    = 0
-    is_external      = False
-    sent_to_gui      = False
+    no_save_level = 0
+    is_external = False
+    sent_to_gui = False
     switch_state = ray.SwitchState.NONE
 
     net_session_template = ''
-    net_session_root     = ''
-    net_daemon_url       = ''
-    net_duplicate_state  = -1
+    net_session_root = ''
+    net_daemon_url = ''
+    net_duplicate_state = -1
 
     ignored_extensions = ray.getGitIgnoredExtensions()
 
@@ -165,7 +165,8 @@ class Client(ServerSender, ray.ClientData):
             self._open_timer.stop()
 
     def openTimerTimeout(self):
-        self.sendErrorToCaller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
+        self.sendErrorToCaller(OSC_SRC_OPEN,
+            ray.Err.GENERAL_ERROR,
             _translate('GUIMSG', '%s is started but not active')
                 % self.guiMsgStyle())
 
@@ -200,16 +201,16 @@ class Client(ServerSender, ray.ClientData):
 
         for ext in global_exts:
             if ext and not ext in unign_exts:
-                self.ignored_extensions+= " %s" % ext
+                self.ignored_extensions += " %s" % ext
 
         for ext in ign_exts:
             if ext and not ext in global_exts:
-                self.ignored_extensions+= " %s" % ext
+                self.ignored_extensions += " %s" % ext
 
         prefix_mode = ctx.attribute('prefix_mode')
 
         if (prefix_mode and prefix_mode.isdigit()
-                and 0 <= int(prefix_mode) <= 2 ):
+                and 0 <= int(prefix_mode) <= 2):
             self.prefix_mode = int(prefix_mode)
             if self.prefix_mode == ray.PrefixMode.CUSTOM:
                 self.custom_prefix = ctx.attribute('custom_prefix')
@@ -244,18 +245,18 @@ class Client(ServerSender, ray.ClientData):
 
         if basename(self.executable_path) == 'ray-network':
             if self.arguments:
-                eat_url  = False
+                eat_url = False
                 eat_root = False
 
                 for arg in shlex.split(self.arguments):
                     if arg in ('--daemon-url', '-u'):
-                        eat_url  = True
+                        eat_url = True
                         continue
                     elif arg in ('--session-root', '-r'):
                         eat_root = True
                         continue
                     elif not (eat_url or eat_root):
-                        eat_url  = False
+                        eat_url = False
                         eat_root = False
                         continue
 
@@ -280,8 +281,8 @@ class Client(ServerSender, ray.ClientData):
             el = node.toElement()
             if el.tagName() == 'custom_data':
                 attributes = el.attributes()
-                for i in range(attributes.count()):
-                    attribute = attributes.item(i)
+                for j in range(attributes.count()):
+                    attribute = attributes.item(j)
                     attribute_str = attribute.toAttr().name()
                     value = el.attribute(attribute_str)
                     self.custom_data[attribute_str] = value
@@ -457,27 +458,12 @@ class Client(ServerSender, ray.ClientData):
                 and net_session_root == self.net_session_root):
             return
 
-        self.net_daemon_url   = net_daemon_url
+        self.net_daemon_url = net_daemon_url
         self.net_session_root = net_session_root
 
         self.arguments = '--daemon-url %s --net-session-root "%s"' % (
                             self.net_daemon_url,
                             self.net_session_root.replace('"', '\\"'))
-
-    def getRayHackNoSaveLevel(self)->int:
-        if not self.isRayHack():
-            return 0
-
-        if self.ray_hack.save_sig:
-            return 0
-
-        if not self.ray_hack.config_file:
-            return 0
-
-        if self.ray_hack.close_gracefully:
-            return 2
-
-        return 1
 
     def netDaemonOutOfTime(self):
         self.net_duplicate_state = -1
@@ -496,9 +482,9 @@ class Client(ServerSender, ray.ClientData):
             self.sendStatusToGui()
 
         if (status == ray.ClientStatus.COPY
-            or self.session.file_copier.isActive(self.client_id)):
-                self.sendGui("/ray/gui/client/status", self.client_id,
-                             ray.ClientStatus.COPY)
+                or self.session.file_copier.isActive(self.client_id)):
+            self.sendGui("/ray/gui/client/status", self.client_id,
+                         ray.ClientStatus.COPY)
 
     def hasNSMClientId(self)->bool:
         return bool(len(self.client_id) == 5
@@ -539,10 +525,10 @@ class Client(ServerSender, ray.ClientData):
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
             return self.session.name
 
-        elif self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
             return self.name
 
-        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+        if self.prefix_mode == ray.PrefixMode.CUSTOM:
             return self.custom_prefix
 
         return ''
@@ -555,10 +541,10 @@ class Client(ServerSender, ray.ClientData):
             return "%s/%s.%s" % (self.session.path, self.session.name,
                                  self.client_id)
 
-        elif self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
             return "%s/%s.%s" % (self.session.path, self.name, self.client_id)
 
-        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+        if self.prefix_mode == ray.PrefixMode.CUSTOM:
             return "%s/%s.%s" % (self.session.path, self.custom_prefix,
                                  self.client_id)
         # should not happens
@@ -769,7 +755,7 @@ class Client(ServerSender, ray.ClientData):
         if self.isRunning():
             self.process.kill()
 
-    def send_signal(self, sig:int, src_addr=None, src_path=""):
+    def send_signal(self, sig: int, src_addr=None, src_path=""):
         try:
             tru_sig = signal.Signals(sig)
         except:
@@ -878,7 +864,7 @@ class Client(ServerSender, ray.ClientData):
                 self.sendErrorToCaller(OSC_SRC_STOP, - exit_code,
                                         error_text)
         else:
-            if scripter_pending_command== ray.Command.SAVE:
+            if scripter_pending_command == ray.Command.SAVE:
                 self.sendReplyToCaller(OSC_SRC_SAVE, 'saved')
             elif scripter_pending_command == ray.Command.START:
                 self.sendReplyToCaller(OSC_SRC_START, 'started')
@@ -933,7 +919,7 @@ class Client(ServerSender, ray.ClientData):
                 _translate('GUIMSG', "  %s: Failed to start !")
                     % self.guiMsgStyle())
             self.active = False
-            self.pid    = 0
+            self.pid = 0
             self.setStatus(ray.ClientStatus.STOPPED)
             self.pending_command = ray.Command.NONE
 
@@ -1101,7 +1087,7 @@ class Client(ServerSender, ray.ClientData):
         self._from_nsm_file = new_client._from_nsm_file
 
     def switch(self):
-        jack_client_name    = self.getJackClientName()
+        jack_client_name = self.getJackClientName()
         client_project_path = self.getProjectPath()
 
         Terminal.message("Commanding %s to switch \"%s\""
@@ -1131,64 +1117,64 @@ class Client(ServerSender, ray.ClientData):
 
     def setPropertiesFromMessage(self, message):
         for line in message.split('\n'):
-            property, colon, value = line.partition(':')
+            prop, colon, value = line.partition(':')
 
-            if property == 'client_id':
+            if prop == 'client_id':
                 # do not change client_id !!!
                 continue
-            elif property == 'executable':
+            elif prop == 'executable':
                 self.executable_path = value
-            elif property == 'arguments':
+            elif prop == 'arguments':
                 self.arguments = value
-            elif property == 'name':
+            elif prop == 'name':
                 # do not change client name,
                 # It will be re-sent by client itself
                 continue
-            elif property == 'prefix_mode':
+            elif prop == 'prefix_mode':
                 if value.isdigit() and 0 <= int(value) <= 2:
                     self.prefix_mode = int(value)
-            elif property == 'custom_prefix':
+            elif prop == 'custom_prefix':
                 self.custom_prefix = value
-            elif property == 'label':
+            elif prop == 'label':
                 self.label = value
-            elif property == 'desktop_file':
+            elif prop == 'desktop_file':
                 self.desktop_file = value
-            elif property == 'description':
+            elif prop == 'description':
                 # description could contains many lines
                 continue
-            elif property == 'icon':
+            elif prop == 'icon':
                 self.icon = value
-            elif property == 'capabilities':
+            elif prop == 'capabilities':
                 # do not change capabilities, no sense !
                 continue
-            elif property == 'check_last_save':
+            elif prop == 'check_last_save':
                 if value.isdigit():
                     self.check_last_save = bool(int(value))
-            elif property == 'ignored_extensions':
+            elif prop == 'ignored_extensions':
                 self.ignored_extensions = value
-            elif property == 'protocol':
+            elif prop == 'protocol':
                 # do not change protocol value
                 continue
 
             if self.protocol == ray.Protocol.RAY_HACK:
-                if property == 'config_file':
+                if prop == 'config_file':
                     self.ray_hack.config_file = value
-                elif property == 'save_sig':
+                elif prop == 'save_sig':
                     try:
                         sig = signal.Signals(int(value))
                         self.ray_hack.save_sig = int(value)
                     except:
                         continue
-                elif property == 'stop_sig':
+                elif prop == 'stop_sig':
                     try:
                         sig = signal.Signals(int(value))
                         self.ray_hack.stop_sig = int(value)
                     except:
                         continue
-                elif property == 'wait_win':
+                elif prop == 'wait_win':
                     self.ray_hack.wait_win = bool(
                         value.lower() in ('1', 'true'))
-                elif property == 'no_save_level':
+                elif prop == 'no_save_level':
                     if value.isdigit() and 0 <= int(value) <= 2:
                         self.ray_hack.no_save_level = int(value)
 
@@ -1292,7 +1278,7 @@ no_save_level:%i""" % (self.ray_hack.config_file,
 
             for filename in os.listdir(self.session.path):
                 if filename == base_project:
-                    full_file_name =  "%s/%s" % (self.session.path, filename)
+                    full_file_name = "%s/%s" % (self.session.path, filename)
                     if not full_file_name in client_files:
                         client_files.append(full_file_name)
 
@@ -1308,9 +1294,7 @@ no_save_level:%i""" % (self.ray_hack.config_file,
 
         return client_files
 
-    def setInfosFromDesktopContents(self, contents:str):
-        exec_found = False
-
+    def setInfosFromDesktopContents(self, contents: str):
         lang = os.getenv('LANG')
         lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
         all_data = {"Comment": ['', '', ''],
@@ -1568,7 +1552,7 @@ no_save_level:%i""" % (self.ray_hack.config_file,
         self.sendErrorToCaller(OSC_SRC_SAVE_TP, ray.Err.COPY_ABORTED,
             _translate('GUIMSG', 'Copy has been aborted !'))
 
-    def changePrefix(self, prefix_mode:int, custom_prefix:str):
+    def changePrefix(self, prefix_mode: int, custom_prefix: str):
         if self.isRunning():
             return
 
@@ -1729,8 +1713,8 @@ no_save_level:%i""" % (self.ray_hack.config_file,
                         break
 
                     # only for ardour
-                    ardour_file  = "%s/%s.ardour"     % (project_path, old_prefix)
-                    ardour_bak   = "%s/%s.ardour.bak" % (project_path, old_prefix)
+                    ardour_file = "%s/%s.ardour" % (project_path, old_prefix)
+                    ardour_bak = "%s/%s.ardour.bak" % (project_path, old_prefix)
                     ardour_audio = "%s/interchange/%s.%s" % (project_path,
                                                 old_prefix, old_client_id)
 
@@ -1825,7 +1809,7 @@ no_save_level:%i""" % (self.ray_hack.config_file,
                                             config_file.replace(old_session_name,
                                                                 new_session_name))
 
-                                        if (os.path.exists(new_config_file_path)):
+                                        if os.path.exists(new_config_file_path):
                                             # replace config_file attribute
                                             # with variable replaced
                                             cte.setAttribute('config_file',
@@ -1898,9 +1882,9 @@ no_save_level:%i""" % (self.ray_hack.config_file,
             return
 
         self.capabilities = capabilities
-        self.addr         = src_addr
-        self.name         = client_name
-        self.active       = True
+        self.addr = src_addr
+        self.name = client_name
+        self.active = True
         self.did_announce = True
 
         if is_new:
@@ -1911,7 +1895,7 @@ no_save_level:%i""" % (self.ray_hack.config_file,
         if self.executable_path in RS.non_active_clients:
             RS.non_active_clients.remove(self.executable_path)
 
-        Terminal.message("Process has pid: %i" % pid )
+        Terminal.message("Process has pid: %i" % pid)
         Terminal.message(
             "The client \"%s\" at \"%s\" " % (self.name, self.addr.url)
             + "informs us it's ready to receive commands.")
@@ -1941,7 +1925,7 @@ no_save_level:%i""" % (self.ray_hack.config_file,
         self.setStatus(ray.ClientStatus.OPEN)
 
         client_project_path = self.getProjectPath()
-        jack_client_name    = self.getJackClientName()
+        jack_client_name = self.getJackClientName()
 
         if self.isCapableOf(':ray-network:'):
             client_project_path = self.session.getShortPath()

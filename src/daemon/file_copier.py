@@ -5,24 +5,24 @@ from osc_server_thread import OscServerThread
 from server_sender import ServerSender
 import ray
 
-class CopyFile(object):
-    slots = ['orig_path',
-             'dest_path',
-             'state',
-             'size']
+class CopyFile:
+    orig_path = ""
+    dest_path = ""
+    state = 0
+    size = 0
 
 class FileCopier(ServerSender):
     def __init__(self, session):
         ServerSender.__init__(self)
-        self.session        = session
-        self.client_id      = ''
-        self.next_function  = None
+        self.session = session
+        self.client_id = ''
+        self.next_function = None
         self.abort_function = None
-        self.next_args      = []
-        self.copy_files     = []
-        self.copy_size      = 0
-        self.aborted        = False
-        self.is_active      = False
+        self.next_args = []
+        self.copy_files = []
+        self.copy_size = 0
+        self.aborted = False
+        self.is_active = False
 
         self.process = QProcess()
         self.process.finished.connect(self.processFinished)
@@ -142,7 +142,7 @@ class FileCopier(ServerSender):
         for copy_file in self.copy_files:
             if copy_file.state == 0:
                 copy_file.state = 1
-                self.process.start('nice' ,
+                self.process.start('nice',
                                    ['-n', '+15', 'cp', '-R',
                                     copy_file.orig_path, copy_file.dest_path])
                 break
@@ -152,8 +152,8 @@ class FileCopier(ServerSender):
     def start(self, src_list, dest_dir, next_function,
               abort_function, next_args=[]):
         self.abort_function = abort_function
-        self.next_function  = next_function
-        self.next_args      = next_args
+        self.next_function = next_function
+        self.next_args = next_args
 
         self.aborted = False
         self.copy_size = 0
@@ -166,7 +166,7 @@ class FileCopier(ServerSender):
                 self.abort_function(*self.next_args)
                 return
 
-        if type(src_list) == str:
+        if isinstance(src_list, str):
             src_dir = src_list
             src_list = []
 
@@ -196,11 +196,11 @@ class FileCopier(ServerSender):
 
         for orig_path in src_list:
             copy_file = CopyFile()
-            copy_file.state     = 0
+            copy_file.state = 0
             copy_file.orig_path = orig_path
-            copy_file.size      = self.getFileSize(orig_path)
+            copy_file.size = self.getFileSize(orig_path)
 
-            self.copy_size+=copy_file.size
+            self.copy_size += copy_file.size
 
             if dest_path_exists:
                 copy_file.dest_path = "%s/%s" % (dest_dir,
@@ -248,4 +248,3 @@ class FileCopier(ServerSender):
             return False
 
         return self.is_active
-
