@@ -1,33 +1,29 @@
 import os
 import sys
 import time
-import signal
 
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QTreeWidgetItem,
-    QCompleter, QMessageBox, QFileDialog, QWidget)
+    QCompleter, QMessageBox, QFileDialog)
 from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
 from PyQt5.QtCore import Qt, QTimer
 
 import ray
 from gui_server_thread import GUIServerThread
-from gui_tools import (default_session_root, ErrDaemon, _translate,
+from gui_tools import (ErrDaemon, _translate,
                        CommandLineArgs, RS, isDarkTheme)
 
 import ui_open_session
 import ui_new_session
-import ui_list_snapshots
 import ui_save_template_session
 import ui_nsm_open_info
 import ui_abort_session
 import ui_about_raysession
-import ui_add_application
 import ui_donations
 import ui_jack_config_info
 import ui_new_executable
 import ui_error_dialog
 import ui_quit_app
-import ui_client_properties
 import ui_script_info
 import ui_script_user_action
 import ui_session_scripts_info
@@ -38,7 +34,6 @@ import ui_client_trash
 import ui_daemon_url
 import ui_snapshot_progress
 import ui_waiting_close_user
-import ui_ray_hack_copy
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -52,8 +47,9 @@ class ChildDialog(QDialog):
         self._signaler.server_copying.connect(self.serverCopying)
 
         self.server_copying = parent.server_copying
-
-    def toDaemon(self, *args):
+    
+    #@classmethod
+    def toDaemon(cls, *args):
         server = GUIServerThread.instance()
         if server:
             server.toDaemon(*args)
@@ -117,16 +113,16 @@ class ChildDialog(QDialog):
 
 
 class SessionItem(QTreeWidgetItem):
-    def __init__(self, list):
-        QTreeWidgetItem.__init__(self, list)
+    def __init__(self, l_list):
+        QTreeWidgetItem.__init__(self, l_list)
 
     def showConditionnaly(self, string):
         show = bool(string.lower() in self.data(0, Qt.UserRole).lower())
 
-        n=0
+        n = 0
         for i in range(self.childCount()):
             if self.child(i).showConditionnaly(string.lower()):
-                n+=1
+                n += 1
         if n:
             show = True
 
@@ -355,8 +351,8 @@ class OpenSessionDialog(ChildDialog):
             return
 
         if (self.server_will_accept and self.has_selection
-            and self.ui.sessionList.currentItem().data(0, Qt.UserRole)):
-                self.accept()
+                and self.ui.sessionList.currentItem().data(0, Qt.UserRole)):
+            self.accept()
 
 
 class NewSessionDialog(ChildDialog):
@@ -483,7 +479,7 @@ class NewSessionDialog(ChildDialog):
 
         self.sub_folders.sort()
         del self.completer
-        self.completer = QCompleter([ f + '/' for f in self.sub_folders])
+        self.completer = QCompleter([f + '/' for f in self.sub_folders])
         self.ui.lineEdit.setCompleter(self.completer)
 
         self.setLastSubFolderSelected()
@@ -520,8 +516,6 @@ class NewSessionDialog(ChildDialog):
         return self.ui.comboBoxTemplate.currentText()
 
     def textChanged(self, text):
-        full_session_text = text
-
         self.text_is_valid = bool(text
                                   and not text.endswith('/')
                                   and text not in self.session_list)
@@ -1188,4 +1182,3 @@ class ErrorDialog(ChildDialog):
         self.ui.setupUi(self)
 
         self.ui.label.setText(message)
-

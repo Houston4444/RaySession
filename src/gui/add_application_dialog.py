@@ -1,5 +1,6 @@
-from PyQt5.QtCore import Qt, QTimer, QSize
-from PyQt5.QtWidgets import QDialogButtonBox, QListWidgetItem, QFrame, QMenu, QAction
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtWidgets import (QDialogButtonBox, QListWidgetItem, QFrame,
+                             QMenu, QAction)
 from PyQt5.QtGui import QIcon, QPalette
 
 import ray
@@ -105,7 +106,7 @@ class TemplateItem(QListWidgetItem):
         self_name = self.data(Qt.UserRole)
         other_name = other.data(Qt.UserRole)
 
-        if other_name == None:
+        if other_name is None:
             return False
 
         if self_name == other_name:
