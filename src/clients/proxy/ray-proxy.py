@@ -670,6 +670,7 @@ class Proxy(QObject):
         os.environ['NSM_CLIENT_ID'] = self.jack_client_name
         os.environ['RAY_CLIENT_ID'] = self.client_id
         os.environ['RAY_SESSION_NAME'] = self.session_name
+        os.environ['RAY_PROJECT_PATH'] = self.project_path
 
         # enable environment vars in config_file
         config_file = os.path.expandvars(self.config_file)
