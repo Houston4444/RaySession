@@ -8,7 +8,7 @@ import socket
 import subprocess
 import sys
 from liblo import Server, Address
-from PyQt5.QtCore import QLocale, QTranslator, QT_VERSION_STR, QFile
+from PyQt5.QtCore import QT_VERSION_STR, QFile
 from PyQt5.QtGui import QIcon, QPalette
 
 # get qt version in list of ints
@@ -22,8 +22,8 @@ if QT_VERSION < (5, 6):
     sys.stderr.write(
         "WARNING: You are using a version of QT older than 5.6.\n"
         + "You won't be warned if a process can't be launch.\n")
-    
-VERSION = "0.9.1"
+
+VERSION = "0.9.3"
 
 APP_TITLE = 'RaySession'
 DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.getenv('HOME')
@@ -39,45 +39,45 @@ class PrefixMode:
 
 
 class ClientStatus:
-    STOPPED =  0
-    LAUNCH  =  1
-    OPEN    =  2
-    READY   =  3
-    PRECOPY =  4
-    COPY    =  5
-    SAVE    =  6
-    SWITCH  =  7
-    QUIT    =  8
-    NOOP    =  9
-    ERROR   = 10
+    STOPPED = 0
+    LAUNCH = 1
+    OPEN = 2
+    READY = 3
+    PRECOPY = 4
+    COPY = 5
+    SAVE = 6
+    SWITCH = 7
+    QUIT = 8
+    NOOP = 9
+    ERROR = 10
     REMOVED = 11
-    UNDEF   = 12
-    SCRIPT  = 13
+    UNDEF = 12
+    SCRIPT = 13
 
 
 class ServerStatus:
-    OFF      =  0
-    NEW      =  1
-    OPEN     =  2
-    CLEAR    =  3
-    SWITCH   =  4
-    LAUNCH   =  5
-    PRECOPY  =  6
-    COPY     =  7
-    READY    =  8
-    SAVE     =  9
-    CLOSE    = 10
+    OFF = 0
+    NEW = 1
+    OPEN = 2
+    CLEAR = 3
+    SWITCH = 4
+    LAUNCH = 5
+    PRECOPY = 6
+    COPY = 7
+    READY = 8
+    SAVE = 9
+    CLOSE = 10
     SNAPSHOT = 11
-    REWIND   = 12
+    REWIND = 12
     WAIT_USER = 13
-    OUT_SAVE  = 14
+    OUT_SAVE = 14
     OUT_SNAPSHOT = 15
     SCRIPT = 16
 
 
 class NSMMode:
-    NO_NSM  = 0
-    CHILD   = 1
+    NO_NSM = 0
+    CHILD = 1
     NETWORK = 2
 
 
@@ -178,9 +178,9 @@ def ifDebug(string):
     if debug:
         sys.stderr.write("%s\n" % string)
 
-def setDebug(bool):
+def setDebug(bool_debug: bool):
     global debug
-    debug = bool
+    debug = bool_debug
 
 def versionToTuple(version_str):
     version_list = []
@@ -188,7 +188,7 @@ def versionToTuple(version_str):
         if not c.isdigit():
             return ()
         version_list.append(int(c))
-        
+
     return tuple(version_list)
 
 def addSelfBinToPath():
@@ -221,14 +221,14 @@ def isPidChildOf(child_pid, parent_pid):
         return False
 
     ppid = child_pid
-    
+
     while ppid > parent_pid:
         try:
             proc_file = open('/proc/%i/status' % ppid, 'r')
             proc_contents = proc_file.read()
         except BaseException:
             return False
-        
+
         for line in proc_contents.split('\n'):
             if line.startswith('PPid:'):
                 ppid_str = line.rpartition('\t')[2]
@@ -253,31 +253,30 @@ def isPidChildOf(child_pid, parent_pid):
 def isGitTaggable(string):
     if not string:
         return False
-    
+
     if string.startswith('/'):
         return False
-    
+
     if string.endswith('/'):
         return False
-    
+
     if string.endswith('.'):
         return False
-    
+
     for forbidden in (' ', '~', '^', ':', '?', '*',
                       '[', '..', '@{', '\\', '//', ','):
         if forbidden in string:
             return False
-    
+
     if string == "@":
         return False
-    
+
     return True
 
 def highlightText(string):
     if "'" in string:
         return '"%s"' % string
-    else:
-        return "'%s'" % string
+    return "'%s'" % string
 
 def isOscPortFree(port):
     try:
@@ -343,9 +342,9 @@ def getLibloAddressFromPort(port):
     except:
         msg = "%r port must be an int" % port
         raise argparse.ArgumentTypeError(msg)
-    
+
     valid_port = False
-    
+
     try:
         address = liblo.Address(port)
         valid_port = True
@@ -464,16 +463,14 @@ def getThis192():
     except BaseException:
         return ''
 
-
 def getMachine192(hostname=None):
     if hostname is None:
         return getThis192()
-    else:
-        if hostname in ('localhost', socket.gethostname()):
-            return getThis192()
 
-        return socket.gethostbyname(hostname)
+    if hostname in ('localhost', socket.gethostname()):
+        return getThis192()
 
+    return socket.gethostbyname(hostname)
 
 def getMachine192ByUrl(url):
     try:
@@ -485,7 +482,6 @@ def getMachine192ByUrl(url):
     del addr
 
     return getMachine192(hostname)
-
 
 def getNetUrl(port):
     try:
@@ -499,7 +495,6 @@ def getNetUrl(port):
 
     return "osc.udp://%s:%i/" % (ip, port)
 
-
 def shellLineToArgs(string):
     try:
         args = shlex.split(string)
@@ -510,10 +505,9 @@ def shellLineToArgs(string):
 
 def areTheyAllString(args):
     for arg in args:
-        if type(arg) != str:
+        if not isinstance(arg, str):
             return False
     return True
-
 
 def getAppIcon(icon_name, widget):
     dark = bool(
@@ -541,29 +535,30 @@ def getAppIcon(icon_name, widget):
 def getWindowManager():
     if os.getenv('WAYLAND_DISPLAY'):
         return WindowManager.WAYLAND
-    
+
     if os.getenv('DISPLAY'):
         return WindowManager.X
-    
+
     return WindowManager.NONE
-    
+
 def getFullPath(root, session_name):
     spath = "%s%s%s" % (root, os.sep, session_name)
-        
+
     if session_name.startswith(os.sep):
         spath = session_name
-    
+
     if spath.endswith(os.sep):
         spath = spath[:-1]
-        
+
     return spath
 
-def protocolToStr(protocol:int)->str:
+def protocolToStr(protocol: int)->str:
     if protocol == Protocol.RAY_HACK:
         return "Ray-Hack"
-    elif protocol == Protocol.RAY_NET:
+    if protocol == Protocol.RAY_NET:
         return "Net-Session"
     return "NSM"
+
 
 class ClientData:
     client_id = ''
@@ -583,17 +578,17 @@ class ClientData:
     ignored_extensions = getGitIgnoredExtensions()
     useless_str = ''
     useless_int = 0
-    
+
     @staticmethod
     def sisi():
         return 'sissssissssssissi'
-    
+
     @staticmethod
     def newFrom(*args):
         client_data = ClientData()
         client_data.update(*args)
         return client_data
-    
+
     @staticmethod
     def spreadClient(client)->tuple:
         return (client.client_id, client.protocol,
@@ -604,11 +599,11 @@ class ClientData:
                 client.capabilities, int(client.check_last_save),
                 client.ignored_extensions,
                 client.useless_str, client.useless_int)
-    
+
     def gui_init(self, client_id, protocol):
         self.client_id = client_id
         self.protocol = protocol
-    
+
     def update(self, client_id, protocol,
                executable, arguments, pre_env,
                name, prefix_mode, custom_prefix,
@@ -621,18 +616,18 @@ class ClientData:
         self.executable_path = str(executable)
         self.arguments = str(arguments)
         self.pre_env = str(pre_env)
-        
+
         self.desktop_file = str(desktop_file)
         self.label = str(label)
         self.description = str(description)
         self.icon = str(icon)
-        
+
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
-        
+
         if secure:
             return
-        
+
         self.client_id = str(client_id)
         self.protocol = int(protocol)
         if name:
@@ -640,21 +635,22 @@ class ClientData:
         else:
             self.name = os.path.basename(self.executable_path)
         self.prefix_mode = int(prefix_mode)
-    
+
         if self.prefix_mode == PrefixMode.CUSTOM:
             if custom_prefix:
                 self.custom_prefix = str(custom_prefix)
             else:
                 self.prefix_mode = PrefixMode.SESSION_NAME
-        
+
         self.capabilities = str(capabilities)
-    
+
     def updateSecure(self, *args):
         self.update(*args, secure=True)
-    
+
     def spread(self)->tuple:
         return ClientData.spreadClient(self)
-                
+
+
 class RayHack():
     config_file = ""
     save_sig = 0
@@ -663,27 +659,27 @@ class RayHack():
     no_save_level = 0
     useless_str = ''
     useless_int = 0
-    
+
     @staticmethod
     def sisi():
         # the first 's' is for client_id, not stocked in RayHack
         return 'siiiisi'
-    
+
     @staticmethod
     def newFrom(*args):
         ray_hack = RayHack()
         ray_hack.update(*args)
         return ray_hack
-    
+
     def saveable(self)->bool:
         return bool(self.config_file and self.save_sig)
-    
+
     def noSaveLevel(self)->int:
         if self.config_file and self.save_sig == 0:
             return self.no_save_level
-        
+
         return 0
-    
+
     def update(self, config_file,
                save_sig, stop_sig,
                wait_win, no_save_level,
@@ -693,7 +689,7 @@ class RayHack():
         self.stop_sig = int(stop_sig)
         self.wait_win = bool(wait_win)
         self.no_save_level = int(no_save_level)
-    
+
     def spread(self)->tuple:
         return (self.config_file, self.save_sig, self.stop_sig,
                 int(self.wait_win), self.no_save_level,
