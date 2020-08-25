@@ -186,7 +186,7 @@ class StatusBar(QLineEdit):
             self.timer.stop()
 
     def setFontForText(self, text):
-        if QFontMetrics(self.ubuntu_font).width(text) > (self.width() - 10):
+        if QFontMetrics(self.ubuntu_font).width(text) >= (self.width() - 16):
             self.setFont(self.ubuntu_font_cond)
         else:
             self.setFont(self.ubuntu_font)
