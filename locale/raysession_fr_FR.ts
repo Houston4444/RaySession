@@ -2759,7 +2759,7 @@ pour une meilleure organisation.</translation>
     <message>
         <location filename="../src/gui/main_window.py" line="473"/>
         <source>&lt;p&gt;In order to rename current session,&lt;br&gt;please first stop all clients.&lt;br&gt;then, double click on session name.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Pour renommer la session en cours,&lt;br&gt;Arrêtez d&apos;abord tous les clients.&lt;br&gt;ensuite, double-cliquez sur le nom de la session.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Pour renommer la session en cours,&lt;br&gt;Arrêtez d&apos;abord tous les clients.&lt;br&gt;Ensuite, double-cliquez sur le nom de la session.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
