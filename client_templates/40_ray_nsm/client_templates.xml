@@ -34,7 +34,7 @@
  <Client-Template template-name="Seq24" client_id="seq24" executable="seq24" check_nsm_bin="1"/>
  <Client-Template template-name="Sequencer64" desktop_file="sequencer64" client_id="seq64" executable="seq64" check_nsm_bin="1"/>
  <Client-Template template-name="SooperLooper" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" unignored_extensions=".wav"/>
- <Client-Template template-name="SooperLooper +Transport" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" arguments="--transport_workaround" unignored_extensions=".wav"/>
+ <Client-Template template-name="SooperLooper + Transport" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" arguments="--transport_workaround" unignored_extensions=".wav"/>
  <Client-Template template-name="Jack Mixer" client_id="jack_mixer" executable="jack_mixer" check_nsm_bin="1"/>
  <Client-Template template-name="Non-Sequencer" executable="non-sequencer" client_id="sequencer"/>
  <Client-Template template-name="JACK Connections" client_id="patch" executable="ray-jackpatch" name="Jack Connections"/>
