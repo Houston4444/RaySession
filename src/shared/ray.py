@@ -529,6 +529,16 @@ def getAppIcon(icon_name, widget):
                 icon = QIcon()
                 icon.addFile(filename)
                 break
+            
+    if icon.isNull():
+        for path in ('/usr/local', '/usr', '%s/.local' % os.getenv('HOME')):
+            for ext in ('png', 'svg', 'svgz', 'xpm'):
+                filename = "%s/share/pixmaps/%s.%s" % (path, icon_name, ext)
+                if QFile.exists(filename):
+                    del icon
+                    icon = QIcon()
+                    icon.addFile(filename)
+                    break
 
     return icon
 
