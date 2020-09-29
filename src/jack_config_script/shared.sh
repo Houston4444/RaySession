@@ -47,11 +47,7 @@ get_current_parameters(){
         fi
     fi
     
-    if echo "$jack_parameters"|grep -q ^jack_started:1$ && has_pulse_jack && which jack_lsp >/dev/null;then
-        all_jack_ports=$(jack_lsp)
-        echo "pulseaudio_sinks:$(echo "$all_jack_ports"|grep ^"PulseAudio JACK Sink:"|wc -l)"
-        echo "pulseaudio_sources:$(echo "$all_jack_ports"|grep ^"PulseAudio JACK Source:"|wc -l)"
-    fi
+    has_pulse_jack && ./pulse2jack_tool.py --save
 }
 
 
@@ -173,20 +169,24 @@ check_device(){
 reconfigure_pulseaudio(){
     $RAY_MANAGE_PULSEAUDIO || return
     has_pulse_jack || return
+    current_pulse_vars=$(echo "$current_parameters"|grep ^pulseaudio_)
+    wanted_pulse_vars=$(echo "$wanted_parameters"|grep ^pulseaudio_)
     
-    if [[ "$1" == "as_it_just_was" ]];then
-        sources_channels=$(current_value_of pulseaudio_sources)
-        sinks_channels=$(current_value_of pulseaudio_sinks)
-    else
-        sources_channels=$(wanted_value_of pulseaudio_sources)
-        sinks_channels=$(wanted_value_of pulseaudio_sinks)
+    [[ "$1" == "as_it_just_was" ]] && as_it_just_was=true || as_it_just_was=false
+    
+    if ! $as_it_just_was && [[ "$wanted_pulse_vars" == "$current_pulse_vars" ]];then
+        unset wanted_pulse_vars
+        unset current_pulse_vars
+        return
     fi
     
-    if [[ "$1" == "as_it_just_was" ]] || (
-            has_different_value pulseaudio_sinks || has_different_value pulseaudio_sources);then
-        ray_control script_info "$(tr_reconfigure_pulseaudio "$sources_channels" "$sinks_channels")"
-        ./reconfigure-pulse2jack.sh -c "$sources_channels" -p "$sinks_channels"
-    fi
+    ray_control script_info "$tr_reconfigure_pulseaudio"
+    
+    $as_it_just_was && pulse_vars="$current_pulse_vars" || pulse_vars="$wanted_pulse_vars"
+    ./pulse2jack_tool.py "$pulse_vars"
+    unset wanted_pulse_vars
+    unset current_pulse_vars
+    unset pulse_vars
 }
 
 

@@ -7,11 +7,6 @@ case "$LANG" in
             echo "de-activate session scripts.</em></p>"
         }
         
-        tr_reconfigure_pulseaudio(){
-            echo "Reconfigure PulseAudio"
-            echo "with $1 inputs / $2 outputs."
-        }
-        
         tr_start_jack_failed_load(){
             echo "<p>Failed to start JACK."
             echo "Session open cancelled !</p>"
@@ -38,17 +33,13 @@ case "$LANG" in
         tr_starting_jack="Starting JACK"
         tr_stopping_clients="Stopping clients"
         tr_stopping_jack="Stopping JACK"
+        tr_reconfigure_pulseaudio="Reconfigure PulseAudio"
         ;;
         
     fr_*)
         tr_script_info_loadanyway(){
             echo "<p><em>Pour ouvrir cette session malgré tout,<br>"
             echo "désactivez les scripts de session.</em></p>"
-        }
-        
-        tr_reconfigure_pulseaudio(){
-            echo "Reconfiguration de PulseAudio"
-            echo "avec $1 entrées / $2 sorties."
         }
         
         tr_start_jack_failed_load(){
@@ -76,18 +67,14 @@ case "$LANG" in
         tr_waiting_jack_infos="Attente des infos de JACK..."
         tr_starting_jack="Démarrage de JACK"
         tr_stopping_clients="Arrêt des clients"
-        tr_stopping_jack="Arrêt de JACK" 
+        tr_stopping_jack="Arrêt de JACK"
+        tr_reconfigure_pulseaudio="Reconfiguration de PulseAudio"
         ;;
         
     * )
         tr_script_info_loadanyway(){
             echo "<p><em>To open this session anyway,<br>"
             echo "de-activate session scripts.</em></p>"
-        }
-        
-        tr_reconfigure_pulseaudio(){
-            echo "Reconfigure PulseAudio"
-            echo "with $1 inputs / $2 outputs."
         }
         
         tr_start_jack_failed_load(){
@@ -116,5 +103,6 @@ case "$LANG" in
         tr_starting_jack="Starting JACK"
         tr_stopping_clients="Stopping clients"
         tr_stopping_jack="Stopping JACK"
+        tr_reconfigure_pulseaudio="Reconfigure PulseAudio"
         ;;
 esac
