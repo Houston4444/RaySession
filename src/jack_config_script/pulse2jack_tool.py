@@ -89,11 +89,11 @@ class Bridge:
         str_base = "pulseaudio_%s%s" % (self.type, self.number_in_file)
         save_list = []
         if self.name:
-            save_list.append("%s_name=%s" % (str_base, self.name))
+            save_list.append("%s_name:%s" % (str_base, self.name))
         if self.channels:
-            save_list.append("%s_channels=%s" % (str_base, self.channels))
+            save_list.append("%s_channels:%s" % (str_base, self.channels))
         if self.connected:
-            save_list.append("%s_connect=%s" % (str_base, self.connected))
+            save_list.append("%s_connect:%s" % (str_base, self.connected))
         return '\n'.join(save_list)
         
 
@@ -154,7 +154,7 @@ def get_wanted_bridges_from_str(input_parameters: str)->list:
     bridges = []
 
     for line in input_parameters.split('\n'):
-        key, egal, value = line.partition('=')
+        key, colon, value = line.partition(':')
         if not key.startswith('pulseaudio_'):
             continue
 
@@ -176,6 +176,7 @@ def get_wanted_bridges_from_str(input_parameters: str)->list:
             # ensure backward compatibility with pulse_audio_sinks
             # and pulse_audio_sources keys
             subkey = 'channels'
+            number_in_file = '0'
             if value == '0':
                 continue
         if not number_in_file.isdigit():
