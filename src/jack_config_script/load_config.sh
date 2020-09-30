@@ -32,7 +32,11 @@ if $RAY_JACK_RELIABILITY_CHECK && [[ "$(current_value_of reliable_infos)" == 0 ]
         $jack_was_started && stop_jack
         set_jack_parameters
         start_jack
-        reconfigure_pulseaudio
+        if [ -f "$session_jack_file" ];then
+            reconfigure_pulseaudio
+        else
+            reconfigure_pulseaudio as_it_just_was
+        fi
     fi
     
     exit 0
