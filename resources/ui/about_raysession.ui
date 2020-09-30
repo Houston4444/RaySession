@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>813</width>
-    <height>284</height>
+    <width>550</width>
+    <height>310</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,6 +18,12 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLabel" name="label_2">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="text">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/128x128/raysession.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
@@ -42,6 +48,9 @@
         <widget class="QLabel" name="labelAllText">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ray Session is a Qt interface for the ray-daemon.&lt;/p&gt;&lt;p&gt;Its goal is to manage together audio programs as Ardour, Carla, Qtractor, Non-Timeline in an unique session.&lt;/p&gt;&lt;p&gt;Programs just have to be compatible with the &lt;a href=&quot;http://non.tuxfamily.org/wiki/Non%20Session%20Manager&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;NSM&lt;/span&gt;&lt;/a&gt; API to work with Ray Session.&lt;br/&gt;&lt;/p&gt;&lt;p align=&quot;right&quot;&gt;Copyright (C) 2016-2020 houston4444&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
          </property>
          <property name="openExternalLinks">
           <bool>true</bool>

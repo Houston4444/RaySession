@@ -148,7 +148,9 @@ class AddApplicationDialog(ChildDialog):
             'AddApplication/factory_box', True, type=bool))
         self.ui.checkBoxUser.setChecked(RS.settings.value(
             'AddApplication/user_box', True, type=bool))
-
+        
+        self.ui.widgetTemplateInfos.setVisible(False)
+        
         self.ui.checkBoxFactory.stateChanged.connect(self.factoryBoxChanged)
         self.ui.checkBoxUser.stateChanged.connect(self.userBoxChanged)
 
@@ -253,6 +255,8 @@ class AddApplicationDialog(ChildDialog):
 
             if item.matchesWith(factory, template_name):
                 item.updateClientData(*args[2:])
+                if self.ui.templateList.currentItem() == item:
+                    self.updateTemplateInfos(item)
                 break
 
     def updateFilteredList(self, filt=''):
@@ -313,8 +317,21 @@ class AddApplicationDialog(ChildDialog):
                 row += 1
         self.ui.templateList.setCurrentRow(row)
 
+    def updateTemplateInfos(self, item):
+        if self.has_selection:
+            self.ui.toolButtonIcon.setIcon(
+                ray.getAppIcon(item.client_data.icon, self))
+            self.ui.labelTemplateName.setText(item.data(Qt.UserRole))
+            self.ui.labelDescription.setText(item.client_data.description)
+            self.ui.labelProtocol.setText(ray.protocolToStr(item.client_data.protocol))
+            self.ui.labelExecutable.setText(item.client_data.executable_path)
+            
+        self.ui.widgetTemplateInfos.setVisible(self.has_selection)
+        self.ui.widgetNoTemplate.setVisible(not self.has_selection)
+    
     def currentItemChanged(self, item, previous_item):
         self.has_selection = bool(item)
+        self.updateTemplateInfos(item)
         self.preventOk()
 
     def preventOk(self):
