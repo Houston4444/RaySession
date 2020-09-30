@@ -49,8 +49,11 @@ class MultiDaemonFile:
 
     def openFile(self):
         if not os.path.exists(self.file_path):
-            if not os.path.exists(os.path.dirname(self.file_path)):
-                os.makedirs(os.path.dirname(self.file_path))
+            dir_path = os.path.dirname(self.file_path)
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+                # give read/write access for all users
+                os.chmod(dir_path, 0o777)
 
             return False
 

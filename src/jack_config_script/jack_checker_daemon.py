@@ -85,8 +85,11 @@ def write_the_file(at_start=False, jack_started=-1):
                 output_string += '/internals/%s/%s:%s\n' % (
                                                 internal, param[1], value)
 
-    if not os.path.exists(os.path.dirname(state_file_path)):
-        os.makedirs(os.path.dirname(state_file_path))
+    state_dir = os.path.dirname(state_file_path)
+    if not os.path.exists(state_dir):
+        os.makedirs(state_dir)
+        # give read/write access to all users
+        os.chmod(state_dir, 0o777)
 
     file = open(state_file_path, 'w')
     file.write(output_string)
