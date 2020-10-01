@@ -1128,10 +1128,11 @@ class OscServerThread(ClientCommunicating):
                 break
         else:
             RS.favorites.append(ray.Favorite(name, icon, bool(int_factory)))
-
-        for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/favorites/added', *args)
+        
+        self.sendGui('/ray/gui/favorites/added', *args)
+        #for gui_addr in self.gui_list:
+            #if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                #self.send(gui_addr, '/ray/gui/favorites/added', *args)
 
     @ray_method('/ray/favorites/remove', 'si')
     def rayFavoriteRemove(self, path, args, types, src_addr):
@@ -1142,10 +1143,11 @@ class OscServerThread(ClientCommunicating):
                     and bool(int_factory) == favorite.factory):
                 RS.favorites.remove(favorite)
                 break
-
-        for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/favorites/removed', *args)
+        
+        self.sendGui('/ray/gui/favorites/removed', *args)
+        #for gui_addr in self.gui_list:
+            #if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                #self.send(gui_addr, '/ray/gui/favorites/removed', *args)
 
     @ray_method(None, None)
     def noneMethod(self, path, args, types, src_addr):

@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>704</width>
-    <height>396</height>
+    <height>444</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -149,6 +149,83 @@
                  </property>
                 </widget>
                </item>
+               <item>
+                <spacer name="horizontalSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_8">
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_5">
+                   <item>
+                    <widget class="QToolButton" name="toolButtonUser">
+                     <property name="styleSheet">
+                      <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}\nQToolButton {border: none}</string>
+                     </property>
+                     <property name="text">
+                      <string>...</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="../resources.qrc">
+                       <normaloff>:/scalable/breeze/im-user.svg</normaloff>:/scalable/breeze/im-user.svg</iconset>
+                     </property>
+                     <property name="iconSize">
+                      <size>
+                       <width>22</width>
+                       <height>22</height>
+                      </size>
+                     </property>
+                     <property name="popupMode">
+                      <enum>QToolButton::InstantPopup</enum>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="favoriteToolButton" name="toolButtonFavorite">
+                     <property name="styleSheet">
+                      <string notr="true">QToolButton {border: none}</string>
+                     </property>
+                     <property name="text">
+                      <string>...</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="../resources.qrc">
+                       <normaloff>:/scalable/breeze/draw-star.svg</normaloff>:/scalable/breeze/draw-star.svg</iconset>
+                     </property>
+                     <property name="iconSize">
+                      <size>
+                       <width>22</width>
+                       <height>22</height>
+                      </size>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_3">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
               </layout>
              </item>
              <item>
@@ -204,7 +281,7 @@
                   </sizepolicy>
                  </property>
                  <property name="text">
-                  <string>Exécutable</string>
+                  <string>Executable</string>
                  </property>
                 </widget>
                </item>
@@ -221,22 +298,22 @@
                  </property>
                 </widget>
                </item>
-               <item row="5" column="2" colspan="2">
+               <item row="6" column="2" colspan="2">
                 <widget class="QLabel" name="labelLabel">
                  <property name="text">
                   <string>label</string>
                  </property>
                 </widget>
                </item>
-               <item row="5" column="0">
-                <widget class="QLabel" name="label_14">
+               <item row="6" column="0">
+                <widget class="QLabel" name="labelLabelTitle">
                  <property name="text">
                   <string>Label</string>
                  </property>
                 </widget>
                </item>
-               <item row="5" column="1">
-                <widget class="QLabel" name="label_15">
+               <item row="6" column="1">
+                <widget class="QLabel" name="labelLabelColon">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
                    <horstretch>0</horstretch>
@@ -259,6 +336,51 @@
                 <widget class="QLabel" name="labelProtocol">
                  <property name="text">
                   <string>NLP</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="1">
+                <widget class="QLabel" name="labelArgumentsColon">
+                 <property name="text">
+                  <string>:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="2" colspan="2">
+                <widget class="QLabel" name="labelArguments">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="wordWrap">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="5" column="0">
+                <widget class="QLabel" name="labelArgumentsTitle">
+                 <property name="text">
+                  <string>Arguments</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="7" column="0">
+                <widget class="QLabel" name="labelNameTitle">
+                 <property name="text">
+                  <string>Name</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="7" column="1">
+                <widget class="QLabel" name="labelNameColon">
+                 <property name="text">
+                  <string>:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="7" column="2" colspan="2">
+                <widget class="QLabel" name="labelName">
+                 <property name="text">
+                  <string>Program Name</string>
                  </property>
                 </widget>
                </item>
@@ -373,8 +495,15 @@
    <extends>QLineEdit</extends>
    <header>surclassed_widgets</header>
   </customwidget>
+  <customwidget>
+   <class>favoriteToolButton</class>
+   <extends>QToolButton</extends>
+   <header>surclassed_widgets</header>
+  </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>

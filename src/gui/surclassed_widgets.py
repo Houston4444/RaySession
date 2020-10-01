@@ -1,9 +1,12 @@
 from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
                              QFrame)
-from PyQt5.QtGui import QFont, QFontDatabase, QFontMetrics, QPalette
+from PyQt5.QtGui import QFont, QFontDatabase, QFontMetrics, QPalette, QIcon
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
 import time
+
+from gui_tools import isDarkTheme
+from gui_signaler import Signaler
 
 class HideGuiButton(QToolButton):
     toggleGui = pyqtSignal()
@@ -243,3 +246,50 @@ class StatusBar(QLineEdit):
 class StatusBarNegativ(StatusBar):
     def __init__(self, parent):
         StatusBar.__init__(self, parent)
+
+
+class favoriteToolButton(QToolButton):
+    def __init__(self, parent):
+        QToolButton.__init__(self, parent)
+        self.favorite_list = []
+        self.template_name = ""
+        self.template_icon = ""
+        self.factory = True
+        self.session = None
+
+        self.m_state = False
+        self.favicon_not = QIcon(':scalable/breeze/draw-star.svg')
+        self.favicon_yes = QIcon(':scalable/breeze/star-yellow.svg')
+        self.setIcon(self.favicon_not)
+    
+    def setDarkTheme(self):
+        self.favicon_not = QIcon(':scalable/breeze-dark/draw-star.svg')
+        if not self.m_state:
+            self.setIcon(self.favicon_not)
+
+    def setSession(self, session):
+        self.session = session
+    
+    def setTemplate(self, template_name: str,
+                    template_icon: str, factory: bool):
+        self.template_name = template_name
+        self.template_icon = template_icon
+        self.factory = factory
+    
+    def setAsFavorite(self, bool_favorite: bool):
+        self.m_state = bool_favorite
+        if bool_favorite:
+            self.setIcon(self.favicon_yes)
+        else:
+            self.setIcon(self.favicon_not)
+    
+    def mouseReleaseEvent(self, event):
+        QToolButton.mouseReleaseEvent(self, event)
+        if self.session is None:
+            return
+
+        if self.m_state:
+            self.session.removeFavorite(self.template_name, self.factory)
+        else:
+            self.session.addFavorite(self.template_name, self.template_icon,
+                                     self.factory)

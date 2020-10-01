@@ -104,36 +104,27 @@ class Session:
 
     def removeAllClients(self):
         self.client_list.clear()
-
-    def addFavorite(self, name, icon_name, factory, from_server=False):
+        
+    def addFavorite(self, template_name: str, icon_name: str, factory: bool):
+        server = GUIServerThread.instance()
+        if server:
+            server.toDaemon('/ray/favorites/add', template_name,
+                            icon_name, int(factory))
+            
+    def removeFavorite(self, template_name: str, factory: bool):
         for favorite in self.favorite_list:
-            if favorite.name == name and favorite.factory == factory:
-                favorite.icon = icon_name
-                return
-
-        fav = ray.Favorite(name, icon_name, factory)
-        self.favorite_list.append(fav)
-
-        self._main_win.updateFavoritesMenu()
-
-        if not from_server:
-            server = GUIServerThread.instance()
-            if server:
-                server.toDaemon('/ray/favorites/add', name,
-                                icon_name, int(factory))
-
-    def removeFavorite(self, name, factory, from_server=False):
-        for favorite in self.favorite_list:
-            if favorite.name == name and favorite.factory == factory:
-                self.favorite_list.remove(favorite)
+            if favorite.name == template_name and favorite.factory == factory:
                 break
-
-        self._main_win.updateFavoritesMenu()
-
-        if not from_server:
-            server = GUIServerThread.instance()
-            if server:
-                server.toDaemon('/ray/favorites/remove', name, int(factory))
+        
+        server = GUIServerThread.instance()
+        if server:
+            server.toDaemon('/ray/favorites/remove', template_name, int(factory))
+    
+    def isFavorite(self, template_name: str, factory: bool):
+        for favorite in self.favorite_list:
+            if favorite.name == template_name and favorite.factory == factory:
+                return True
+        return False
 
     def setDaemonOptions(self, options):
         self._main_win.setDaemonOptions(options)
@@ -346,12 +337,34 @@ class SignaledSession(Session):
         self._main_win.trashClear()
 
     def _ray_gui_favorites_added(self, path, args):
-        name, icon_name, int_factory = args
-        self.addFavorite(name, icon_name, bool(int_factory), True)
+        template_name, icon_name, int_factory = args
 
-    def _ray_gui_favorites_remove(self, path, args):
-        name, int_factory = args
-        self.removeFavorite(name, bool(int_factory), True)
+        for favorite in self.favorite_list:
+            if (favorite.name == template_name 
+                    and favorite.factory == bool(int_factory)):
+                # favorite already exists, update the icon
+                favorite.icon = icon_name
+                break
+        else:
+            fav = ray.Favorite(template_name, icon_name, bool(int_factory))
+            self.favorite_list.append(fav)
+            self._signaler.favorite_added.emit(
+                template_name, icon_name, bool(int_factory))
+        self._main_win.updateFavoritesMenu()
+
+    def _ray_gui_favorites_removed(self, path, args):
+        template_name, int_factory = args
+        
+        for favorite in self.favorite_list:
+            if (favorite.name == template_name
+                    and favorite.factory == bool(int_factory)):
+                break
+        else:
+            return
+
+        self.favorite_list.remove(favorite)
+        self._signaler.favorite_removed.emit(template_name, bool(int_factory))
+        self._main_win.updateFavoritesMenu()
 
     def _ray_gui_script_info(self, path, args):
         text = args[0]

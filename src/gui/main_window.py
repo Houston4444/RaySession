@@ -638,12 +638,6 @@ class MainWindow(QMainWindow):
     def renameSessionConditionnaly(self, new_session_name):
         self.toDaemon('/ray/session/rename', new_session_name)
 
-    def addFavorite(self, name, icon_name, factory):
-        self._session.addFavorite(name, icon_name, factory, True)
-
-    def removeFavorite(self, name, factory):
-        self._session.removeFavorite(name, factory, True)
-
     def showSnapshotProgressDialog(self):
         if self.progress_dialog_visible:
             return

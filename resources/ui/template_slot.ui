@@ -81,7 +81,7 @@ QToolButton {border: none}</string>
     </widget>
    </item>
    <item>
-    <widget class="QToolButton" name="toolButtonFavorite">
+    <widget class="favoriteToolButton" name="toolButtonFavorite">
      <property name="styleSheet">
       <string notr="true">QToolButton {border: none}</string>
      </property>
@@ -96,6 +96,13 @@ QToolButton {border: none}</string>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>favoriteToolButton</class>
+   <extends>QToolButton</extends>
+   <header>surclassed_widgets</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
  </resources>
