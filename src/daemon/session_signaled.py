@@ -378,6 +378,10 @@ class SignaledSession(OperatingSession):
                             self.sendGui('/ray/gui/client_template_update',
                                         int(factory), template_name,
                                         *template_client.spread())
+                            if template_client.protocol == ray.Protocol.RAY_HACK:
+                                self.sendGui('/ray/gui/client_template_ray_hack_update',
+                                             int(factory), template_name,
+                                             *template_client.ray_hack.spread())
 
                     tmp_template_list.clear()
 
@@ -390,6 +394,11 @@ class SignaledSession(OperatingSession):
                     self.sendGui('/ray/gui/client_template_update',
                                 int(factory), template_name,
                                 *template_client.spread())
+                    if template_client.protocol == ray.Protocol.RAY_HACK:
+                        self.sendGui('/ray/gui/client_template_ray_hack_update',
+                                        int(factory), template_name,
+                                        *template_client.ray_hack.spread())
+
 
         # send a last empty reply to say list is finished
         self.send(src_addr, '/reply', path)

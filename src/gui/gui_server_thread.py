@@ -153,6 +153,10 @@ class GUIServerThread(liblo.ServerThread):
     def _client_template_update(self, path, args, types, src_addr):
         self._signaler.client_template_update.emit(args)
 
+    @ray_method('/ray/gui/client_template_ray_hack_update', 'is' + ray.RayHack.sisi())
+    def _client_template_ray_hack_update(self, path, args, types, src_addr):
+        self._signaler.client_template_ray_hack_update.emit(args)
+    
     @ray_method('/ray/gui/client/new', ray.ClientData.sisi())
     def _client_new(self, path, args, types, src_addr):
         pass

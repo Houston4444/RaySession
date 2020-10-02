@@ -247,6 +247,13 @@ class StatusBarNegativ(StatusBar):
     def __init__(self, parent):
         StatusBar.__init__(self, parent)
 
+class fakeToolButton(QToolButton):
+    def __init__(self, parent):
+        QToolButton.__init__(self, parent)
+    
+    def mousePressEvent(self, event):
+        pass
+
 
 class favoriteToolButton(QToolButton):
     def __init__(self, parent):

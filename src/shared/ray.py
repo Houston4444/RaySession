@@ -588,6 +588,7 @@ class ClientData:
     ignored_extensions = getGitIgnoredExtensions()
     useless_str = ''
     useless_int = 0
+    ray_hack = None
 
     @staticmethod
     def sisi():
@@ -613,7 +614,10 @@ class ClientData:
     def gui_init(self, client_id, protocol):
         self.client_id = client_id
         self.protocol = protocol
-
+    
+    def set_ray_hack(self, ray_hack):
+        self.ray_hack = ray_hack
+    
     def update(self, client_id, protocol,
                executable, arguments, pre_env,
                name, prefix_mode, custom_prefix,

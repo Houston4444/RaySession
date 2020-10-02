@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QDialogButtonBox, QListWidgetItem, QFrame,
                              QMenu, QAction)
 from PyQt5.QtGui import QIcon, QPalette
 
+import client_properties_dialog
 import ray
 
 from gui_tools import RS, _translate, isDarkTheme
@@ -59,6 +60,11 @@ class TemplateSlot(QFrame):
         self.ui.toolButtonFavorite.setTemplate(
             self.name, self.client_data.icon, self.factory)
 
+    def updateRayHackData(self, *args):
+        if self.client_data.ray_hack is None:
+            self.client_data.ray_hack = ray.RayHack.newFrom(*args)
+        self.client_data.ray_hack.update(*args)
+
     def removeTemplate(self):
         add_app_dialog = self.list_widget.parent()
         add_app_dialog.removeTemplate(self.name, self.factory)
@@ -102,7 +108,10 @@ class TemplateItem(QListWidgetItem):
 
     def updateClientData(self, *args):
         self.f_widget.updateClientData(*args)
-        
+    
+    def updateRayHackData(self, *args):
+        self.f_widget.updateRayHackData(*args)
+    
     def setAsFavorite(self, bool_favorite: bool):
         self.f_widget.setAsFavorite(bool_favorite)
 
@@ -152,13 +161,16 @@ class AddApplicationDialog(ChildDialog):
         act_remove_template.triggered.connect(self.removeCurrentTemplate)
         self.user_menu.addAction(act_remove_template)
         self.ui.toolButtonUser.setMenu(self.user_menu)
-        
         self.ui.toolButtonFavorite.setSession(self._session)
+        self.ui.widgetNonSaveable.setVisible(False)
+        self.ui.toolButtonAdvanced.clicked.connect(self.toolButtonAdvancedClicked)
         
         if isDarkTheme(self):
             self.ui.toolButtonUser.setIcon(
                 QIcon(':scalable/breeze-dark/im-user.svg'))
             self.ui.toolButtonFavorite.setDarkTheme()
+            self.ui.toolButtonNoSave.setIcon(
+                QIcon(':scalable/breeze-dark/document-nosave.svg'))
         
         self._signaler.user_client_template_found.connect(
             self.addUserTemplates)
@@ -166,6 +178,8 @@ class AddApplicationDialog(ChildDialog):
             self.addFactoryTemplates)
         self._signaler.client_template_update.connect(
             self.updateClientTemplate)
+        self._signaler.client_template_ray_hack_update.connect(
+            self.updateClientTemplateRayHack)
         self._signaler.favorite_added.connect(self.favoriteAdded)
         self._signaler.favorite_removed.connect(self.favoriteRemoved)
         
@@ -290,6 +304,19 @@ class AddApplicationDialog(ChildDialog):
                     self.updateTemplateInfos(item)
                 break
     
+    def updateClientTemplateRayHack(self, args):
+        factory = bool(args[0])
+        template_name = args[1]
+
+        for i in range(self.ui.templateList.count()):
+            item = self.ui.templateList.item(i)
+
+            if item.matchesWith(factory, template_name):
+                item.updateRayHackData(*args[2:])
+                if self.ui.templateList.currentItem() == item:
+                    self.updateTemplateInfos(item)
+                break
+    
     def updateFilteredList(self, filt=''):
         filter_text = self.ui.filterBar.displayText()
 
@@ -363,14 +390,13 @@ class AddApplicationDialog(ChildDialog):
         self.ui.labelDescription.setText(cdata.description)
         self.ui.labelProtocol.setText(ray.protocolToStr(cdata.protocol))
         self.ui.labelExecutable.setText(cdata.executable_path)
-        self.ui.labelArguments.setText(cdata.arguments)
         self.ui.labelLabel.setText(cdata.label)
         self.ui.labelName.setText(cdata.name)
         
-        for widget in (self.ui.labelArgumentsTitle,
-                        self.ui.labelArgumentsColon,
-                        self.ui.labelArguments):
-            widget.setVisible(bool(cdata.arguments))
+        for widget in (self.ui.labelProtocolTitle,
+                       self.ui.labelProtocolColon,
+                       self.ui.labelProtocol):
+            widget.setVisible(bool(cdata.protocol != ray.Protocol.NSM))
         
         for widget in (self.ui.labelLabelTitle,
                         self.ui.labelLabelColon,
@@ -387,11 +413,39 @@ class AddApplicationDialog(ChildDialog):
             item.data(Qt.UserRole), cdata.icon, item.f_factory)
         self.ui.toolButtonFavorite.setAsFavorite(self._session.isFavorite(
             item.data(Qt.UserRole), item.f_factory))
-    
+        
+        self.ui.widgetNonSaveable.setVisible(bool(
+            cdata.ray_hack is not None
+            and cdata.protocol == ray.Protocol.RAY_HACK
+            and cdata.ray_hack.no_save_level > 0))
+        
+        # little security
+        # client_properties_dialog could crash if ray_hack has not been updated yet
+        # (never seen this appears, but it could with slow systems)
+        self.ui.toolButtonAdvanced.setEnabled(
+            bool(cdata.protocol != ray.Protocol.RAY_HACK
+                 or cdata.ray_hack is not None))
+
     def currentItemChanged(self, item, previous_item):
         self.has_selection = bool(item)
         self.updateTemplateInfos(item)
         self.preventOk()
+    
+    def toolButtonAdvancedClicked(self):
+        item = self.ui.templateList.currentItem()
+        if item is None:
+            return
+        
+        if item.client_data.protocol == ray.Protocol.NSM:
+            properties_dialog = client_properties_dialog.NsmClientPropertiesDialog(
+                self, item.client_data)
+        elif item.client_data.protocol == ray.Protocol.RAY_HACK:
+            properties_dialog = client_properties_dialog.RayHackClientPropertiesDialog(
+                self, item.client_data)
+        
+        properties_dialog.updateContents()
+        properties_dialog.setForTemplate(item.data(Qt.UserRole))
+        properties_dialog.show()
 
     def preventOk(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
