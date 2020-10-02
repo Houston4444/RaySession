@@ -146,6 +146,8 @@ class AddApplicationDialog(ChildDialog):
         
         self.ui.checkBoxFactory.stateChanged.connect(self.factoryBoxChanged)
         self.ui.checkBoxUser.stateChanged.connect(self.userBoxChanged)
+        self.ui.checkBoxNsm.stateChanged.connect(self.nsmBoxChanged)
+        self.ui.checkBoxRayHack.stateChanged.connect(self.rayHackBoxChanged)
 
         self.ui.templateList.currentItemChanged.connect(
             self.currentItemChanged)
@@ -231,6 +233,18 @@ class AddApplicationDialog(ChildDialog):
         if not state:
             self.ui.checkBoxFactory.setChecked(True)
 
+        self.updateFilteredList()
+
+    def nsmBoxChanged(self, state):
+        if not state:
+            self.ui.checkBoxRayHack.setChecked(True)
+            
+        self.updateFilteredList()
+
+    def rayHackBoxChanged(self, state):
+        if not state:
+            self.ui.checkBoxNsm.setChecked(True)
+        
         self.updateFilteredList()
 
     def serverStatusChanged(self, server_status):
@@ -337,6 +351,15 @@ class AddApplicationDialog(ChildDialog):
 
             if not item.f_factory and not self.ui.checkBoxUser.isChecked():
                 item.setHidden(True)
+                
+            if item.client_data is not None:
+                if (item.client_data.protocol == ray.Protocol.RAY_HACK
+                        and not self.ui.checkBoxRayHack.isChecked()):
+                    item.setHidden(True)
+                
+                if (item.client_data.protocol != ray.Protocol.RAY_HACK
+                        and not self.ui.checkBoxNsm.isChecked()):
+                    item.setHidden(True)
 
         # if selected item not in list, then select the first visible
         if (not self.ui.templateList.currentItem()

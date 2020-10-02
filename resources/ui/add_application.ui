@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>731</width>
-    <height>542</height>
+    <height>566</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -52,29 +52,6 @@
           </item>
           <item>
            <layout class="QGridLayout" name="gridLayout">
-            <item row="0" column="2">
-             <widget class="QCheckBox" name="checkBoxUser">
-              <property name="text">
-               <string>User</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="2">
-             <widget class="QCheckBox" name="checkBox_2">
-              <property name="text">
-               <string>Ray-Hack</string>
-              </property>
-              <property name="checkable">
-               <bool>true</bool>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="0">
              <spacer name="horizontalSpacer_3">
               <property name="orientation">
@@ -88,13 +65,10 @@
               </property>
              </spacer>
             </item>
-            <item row="2" column="1">
-             <widget class="QCheckBox" name="checkBox">
-              <property name="text">
-               <string>NSM</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
+            <item row="0" column="2" rowspan="2">
+             <widget class="Line" name="line_6">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
               </property>
              </widget>
             </item>
@@ -111,10 +85,42 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="1" colspan="2">
-             <widget class="Line" name="line_4">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+            <item row="0" column="3">
+             <widget class="QCheckBox" name="checkBoxNsm">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;NSM is the protocol used by modern audio programs to ensure a good session management.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>NSM</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QCheckBox" name="checkBoxUser">
+              <property name="text">
+               <string>User</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="3">
+             <widget class="QCheckBox" name="checkBoxRayHack">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Ray-Hack&lt;/span&gt; is a fake protocol that tries to manage non NSM compatible programs as it can.&lt;/p&gt;&lt;p&gt;It can be useful :&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;for audio programs that don't have NSM implementation yet&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;for non-audio programs&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Ray-Hack</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
