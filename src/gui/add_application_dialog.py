@@ -195,6 +195,8 @@ class AddApplicationDialog(ChildDialog):
         self.has_selection = False
 
         self.serverStatusChanged(self._session.server_status)
+        
+        self.ui.filterBar.setFocus()
 
     def favoriteAdded(self, template_name: str,
                       template_icon: str, factory: bool):
