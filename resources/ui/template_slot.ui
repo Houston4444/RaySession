@@ -27,7 +27,7 @@
     <number>2</number>
    </property>
    <item>
-    <widget class="QToolButton" name="toolButtonIcon">
+    <widget class="fakeToolButton" name="toolButtonIcon">
      <property name="styleSheet">
       <string notr="true">QToolButton {border: none}</string>
      </property>
@@ -99,6 +99,11 @@ QToolButton {border: none}</string>
  <customwidgets>
   <customwidget>
    <class>favoriteToolButton</class>
+   <extends>QToolButton</extends>
+   <header>surclassed_widgets</header>
+  </customwidget>
+  <customwidget>
+   <class>fakeToolButton</class>
    <extends>QToolButton</extends>
    <header>surclassed_widgets</header>
   </customwidget>

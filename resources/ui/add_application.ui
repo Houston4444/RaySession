@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>731</width>
-    <height>495</height>
+    <height>505</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -113,7 +113,7 @@
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_4">
                <item>
-                <widget class="QToolButton" name="toolButtonIcon">
+                <widget class="fakeToolButton" name="toolButtonIcon">
                  <property name="styleSheet">
                   <string notr="true">QToolButton{border:none}</string>
                  </property>
@@ -264,7 +264,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QToolButton" name="toolButtonNoSave">
+                 <widget class="fakeToolButton" name="toolButtonNoSave">
                   <property name="styleSheet">
                    <string notr="true">QToolButton{border:none}</string>
                   </property>
@@ -468,7 +468,8 @@
                   <string>...</string>
                  </property>
                  <property name="icon">
-                  <iconset theme="dialog-information"/>
+                  <iconset theme="dialog-information">
+                   <normaloff>.</normaloff>.</iconset>
                  </property>
                 </widget>
                </item>
@@ -572,6 +573,11 @@
   </customwidget>
   <customwidget>
    <class>favoriteToolButton</class>
+   <extends>QToolButton</extends>
+   <header>surclassed_widgets</header>
+  </customwidget>
+  <customwidget>
+   <class>fakeToolButton</class>
    <extends>QToolButton</extends>
    <header>surclassed_widgets</header>
   </customwidget>

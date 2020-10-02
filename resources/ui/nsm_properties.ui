@@ -98,7 +98,7 @@
       <item row="2" column="3" rowspan="2">
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
-         <widget class="QToolButton" name="toolButtonIcon">
+         <widget class="fakeToolButton" name="toolButtonIcon">
           <property name="baseSize">
            <size>
             <width>48</width>
@@ -250,6 +250,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>fakeToolButton</class>
+   <extends>QToolButton</extends>
+   <header>surclassed_widgets</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

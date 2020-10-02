@@ -252,7 +252,7 @@ class fakeToolButton(QToolButton):
         QToolButton.__init__(self, parent)
     
     def mousePressEvent(self, event):
-        pass
+        self.parent().mousePressEvent(event)
 
 
 class favoriteToolButton(QToolButton):
