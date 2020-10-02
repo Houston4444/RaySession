@@ -47,5 +47,6 @@
  <Client-Template template-name="Patroneo" executable="patroneo"  client_id="patroneo"/>
  <Client-Template template-name="Fluajho" executable="fluajho"  client_id="fluajho"/>
  <Client-Template template-name="Vico" executable="vico"  client_id="vico"/>
- <Client-Template executable="mamba" client_id="mamba" name="Mamba" template-name="Mamba"/>
+ <Client-Template template-name="Mamba" executable="mamba" client_id="mamba" name="Mamba"/>
+ <Client-Template template-name="XTuner" executable="xtuner" client_id="xtuner" name="XTuner"/>
 </RAY-CLIENT-TEMPLATES>
