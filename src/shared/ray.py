@@ -663,6 +663,14 @@ class ClientData:
 
     def spread(self)->tuple:
         return ClientData.spreadClient(self)
+    
+    def prettier_name(self)->str:
+        if self.label:
+            return self.label
+        if (self.protocol != Protocol.RAY_HACK
+                and self.name):
+            return self.name
+        return self.executable_path
 
 
 class RayHack():

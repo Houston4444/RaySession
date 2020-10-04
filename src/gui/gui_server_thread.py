@@ -54,7 +54,7 @@ class GUIServerThread(liblo.ServerThread):
 
     @ray_method('/reply', None)
     def _reply(self, path, args, types, src_addr):
-        if len(args) < 2:
+        if len(args) == 0:
             return False
 
         if not ray.areTheyAllString(args):
@@ -205,6 +205,10 @@ class GUIServerThread(liblo.ServerThread):
     def _trash_add(self, path, args, types, src_addr):
         pass
 
+    @ray_method('/ray/gui/trash/ray_hack_update', 's' + ray.RayHack.sisi())
+    def _trash_update_ray_hack(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/gui/trash/remove', 's')
     def _trash_remove(self, path, args, types, src_addr):
         pass

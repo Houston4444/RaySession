@@ -141,7 +141,8 @@ class AddApplicationDialog(ChildDialog):
             'AddApplication/factory_box', True, type=bool))
         self.ui.checkBoxUser.setChecked(RS.settings.value(
             'AddApplication/user_box', True, type=bool))
-        
+        self.ui.checkBoxRayHack.setChecked(RS.settings.value(
+            'AddApplication/ray_hack_box', True, type=bool))
         self.ui.widgetTemplateInfos.setVisible(False)
         
         self.ui.checkBoxFactory.stateChanged.connect(self.factoryBoxChanged)
@@ -187,7 +188,8 @@ class AddApplicationDialog(ChildDialog):
         
         self.toDaemon('/ray/server/list_user_client_templates')
         self.toDaemon('/ray/server/list_factory_client_templates')
-
+        self.listing_finished = 0
+        
         self.user_template_list = []
         self.factory_template_list = []
 
@@ -461,13 +463,8 @@ class AddApplicationDialog(ChildDialog):
         if item is None:
             return
         
-        if item.client_data.protocol == ray.Protocol.NSM:
-            properties_dialog = client_properties_dialog.NsmClientPropertiesDialog(
-                self, item.client_data)
-        elif item.client_data.protocol == ray.Protocol.RAY_HACK:
-            properties_dialog = client_properties_dialog.RayHackClientPropertiesDialog(
-                self, item.client_data)
-        
+        properties_dialog = client_properties_dialog.ClientPropertiesDialog.create(
+            self, item.client_data)
         properties_dialog.updateContents()
         properties_dialog.setForTemplate(item.data(Qt.UserRole))
         properties_dialog.show()
@@ -513,4 +510,7 @@ class AddApplicationDialog(ChildDialog):
         RS.settings.setValue(
             'AddApplication/user_box',
             self.ui.checkBoxUser.isChecked())
+        RS.settings.setValue(
+            'AddApplication/ray_hack_box',
+            self.ui.checkBoxRayHack.isChecked())
         RS.settings.sync()

@@ -218,7 +218,7 @@
              </widget>
             </item>
             <item row="0" column="4" rowspan="3">
-             <widget class="fakeToolButton" name="toolButtonIcon">
+             <widget class="FakeToolButton" name="toolButtonIcon">
               <property name="baseSize">
                <size>
                 <width>48</width>
@@ -400,7 +400,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>fakeToolButton</class>
+   <class>FakeToolButton</class>
    <extends>QToolButton</extends>
    <header>surclassed_widgets</header>
   </customwidget>

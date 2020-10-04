@@ -169,7 +169,7 @@
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_4">
                <item>
-                <widget class="fakeToolButton" name="toolButtonIcon">
+                <widget class="FakeToolButton" name="toolButtonIcon">
                  <property name="styleSheet">
                   <string notr="true">QToolButton{border:none}</string>
                  </property>
@@ -320,7 +320,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="fakeToolButton" name="toolButtonNoSave">
+                 <widget class="FakeToolButton" name="toolButtonNoSave">
                   <property name="styleSheet">
                    <string notr="true">QToolButton{border:none}</string>
                   </property>
@@ -633,7 +633,7 @@
    <header>surclassed_widgets</header>
   </customwidget>
   <customwidget>
-   <class>fakeToolButton</class>
+   <class>FakeToolButton</class>
    <extends>QToolButton</extends>
    <header>surclassed_widgets</header>
   </customwidget>

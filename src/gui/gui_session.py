@@ -315,16 +315,24 @@ class SignaledSession(Session):
             client.setNoSaveLevel(no_save_level)
 
     def _ray_gui_trash_add(self, path, args):
-        client_data = ray.ClientData.newFrom(*args)
-        trash_action = self._main_win.trashAdd(client_data)
-        trashed_client = TrashedClient(client_data, trash_action)
+        trashed_client = TrashedClient()
+        trashed_client.update(*args)
+        trash_action = self._main_win.trashAdd(trashed_client)
+        trashed_client.setMenuAction(trash_action)
         self.trashed_clients.append(trashed_client)
+
+    def _ray_gui_trash_ray_hack_update(self, path, args):
+        client_id = args.pop(0)
+        for trashed_client in self.trashed_clients:
+            if trashed_client.client_id == client_id:
+                trashed_client.ray_hack = ray.RayHack.newFrom(*args)
+                break
 
     def _ray_gui_trash_remove(self, path, args):
         client_id = args[0]
 
         for trashed_client in self.trashed_clients:
-            if trashed_client.data.client_id == client_id:
+            if trashed_client.client_id == client_id:
                 break
         else:
             return

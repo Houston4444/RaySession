@@ -16,9 +16,6 @@ konv# RaySession TODO
     
     MEGA DOC scripts
     
-    import warnings
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    
     Tuer le script de session si user decheck l'option
     
     passer les fonctions list dans GUI si local

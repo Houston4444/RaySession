@@ -62,15 +62,18 @@ class ClientPropertiesDialog(ChildDialog):
 
         return ClientPropertiesDialog(window, client)
     
-    def setForTemplate(self, template_name):
-        self.setWindowTitle(
-            _translate('client_properties', "Properties of template %s")
-            % template_name)
+    def lockWidgets(self):
         self.ui.lineEditIcon.setReadOnly(True)
         self.ui.lineEditLabel.setReadOnly(True)
         self.ui.lineEditIgnoredExtensions.setReadOnly(True)
         self.ui.checkBoxSaveStop.setEnabled(False)
         self.ui.pushButtonSaveChanges.setVisible(False)
+    
+    def setForTemplate(self, template_name):
+        self.lockWidgets()
+        self.setWindowTitle(
+            _translate('client_properties', "Properties of template %s")
+            % template_name)
     
     def setOnSecondTab(self):
         self.ui.tabWidget.setCurrentIndex(1)
@@ -121,8 +124,8 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
 
         self.ui.tabWidget.setTabText(1, 'NSM')
 
-    def setForTemplate(self, template_name):
-        ClientPropertiesDialog.setForTemplate(self, template_name)
+    def lockWidgets(self):
+        ClientPropertiesDialog.lockWidgets(self)
         self.nsmui.lineEditExecutable.setReadOnly(True)
         self.nsmui.lineEditArguments.setReadOnly(True)
         for widget in (self.nsmui.labelCapabilitiesTitle,
@@ -218,8 +221,8 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.groupBoxTestZone.toggled.connect(
             self.rhack.frameTestZone.setEnabled)
 
-    def setForTemplate(self, template_name):
-        ClientPropertiesDialog.setForTemplate(self, template_name)
+    def lockWidgets(self):
+        ClientPropertiesDialog.lockWidgets(self)
         self.rhack.lineEditExecutable.setReadOnly(True)
         self.rhack.lineEditArguments.setReadOnly(True)
         self.rhack.lineEditConfigFile.setReadOnly(True)
@@ -229,9 +232,13 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.comboSaveSig.setEnabled(False)
         self.rhack.comboStopSig.setEnabled(False)
         self.rhack.groupBoxTestZone.setVisible(False)
+        self.rhack.toolButtonBrowse.setVisible(False)
+    
+    def setForTemplate(self, template_name):
+        ClientPropertiesDialog.setForTemplate(self, template_name)
         self.rhack.labelWorkingDirTitle.setVisible(False)
         self.rhack.labelWorkingDir.setVisible(False)
-        self.rhack.toolButtonBrowse.setVisible(False)
+        
     
     def updateStatus(self, status):
         self._current_status = status

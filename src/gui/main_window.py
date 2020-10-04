@@ -833,15 +833,11 @@ class MainWindow(QMainWindow):
                 dialog = child_dialogs.WaitingCloseUserDialog(self)
                 dialog.exec()
 
-
-    def trashAdd(self, client_data):
-        prettier_name = client_data.name
-        if client_data.label:
-            prettier_name = client_data.label
-
+    def trashAdd(self, trashed_client):
         act_x_trashed = self.trashMenu.addAction(
-            QIcon.fromTheme(client_data.icon), prettier_name)
-        act_x_trashed.setData(client_data.client_id)
+            ray.getAppIcon(trashed_client.icon, self),
+            trashed_client.prettier_name())
+        act_x_trashed.setData(trashed_client.client_id)
         act_x_trashed.triggered.connect(self.showClientTrashDialog)
 
         self.ui.trashButton.setEnabled(
@@ -872,12 +868,12 @@ class MainWindow(QMainWindow):
             return
 
         for trashed_client in self._session.trashed_clients:
-            if trashed_client.data.client_id == client_id:
+            if trashed_client.client_id == client_id:
                 break
         else:
             return
 
-        dialog = child_dialogs.ClientTrashDialog(self, trashed_client.data)
+        dialog = child_dialogs.ClientTrashDialog(self, trashed_client)
         dialog.exec()
         if not dialog.result():
             return

@@ -247,7 +247,7 @@ class StatusBarNegativ(StatusBar):
     def __init__(self, parent):
         StatusBar.__init__(self, parent)
 
-class fakeToolButton(QToolButton):
+class FakeToolButton(QToolButton):
     def __init__(self, parent):
         QToolButton.__init__(self, parent)
     

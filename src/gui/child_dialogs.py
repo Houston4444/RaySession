@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
 from PyQt5.QtCore import Qt, QTimer
 
+import client_properties_dialog
 import ray
 from gui_server_thread import GUIServerThread
 from gui_tools import (ErrDaemon, _translate,
@@ -633,15 +634,15 @@ class ClientTrashDialog(ChildDialog):
 
         self.client_data = client_data
 
+        self.ui.labelPrettierName.setText(self.client_data.prettier_name())
+        self.ui.labelDescription.setText(self.client_data.description)
         self.ui.labelExecutable.setText(self.client_data.executable_path)
         self.ui.labelId.setText(self.client_data.client_id)
-        self.ui.labelClientName.setText(self.client_data.name)
-        self.ui.labelClientIcon.setText(self.client_data.icon)
-        self.ui.labelClientLabel.setText(self.client_data.label)
-        self.ui.checkBoxSaveStop.setChecked(self.client_data.check_last_save)
         self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(self.client_data.icon))
-
+        
+        self.ui.toolButtonAdvanced.clicked.connect(self.showProperties)
         self.ui.pushButtonRemove.clicked.connect(self.removeClient)
+        self.ui.pushButtonCancel.setFocus()
 
     def serverStatusChanged(self, server_status):
         if server_status in (ray.ServerStatus.CLOSE,
@@ -657,6 +658,12 @@ class ClientTrashDialog(ChildDialog):
             self.client_data.client_id)
         self.reject()
 
+    def showProperties(self):
+        properties_dialog = client_properties_dialog.ClientPropertiesDialog.create(
+            self, self.client_data)
+        properties_dialog.updateContents()
+        properties_dialog.lockWidgets()
+        properties_dialog.show()
 
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):

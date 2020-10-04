@@ -168,7 +168,9 @@ class Client(QObject, ray.ClientData):
         return search_list
 
 
-class TrashedClient:
-    def __init__(self, client_data, menu_action):
-        self.data = client_data
+class TrashedClient(ray.ClientData):
+    def __init__(self):
+        self.menu_action = None
+    
+    def setMenuAction(self, menu_action):
         self.menu_action = menu_action
