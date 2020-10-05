@@ -2184,6 +2184,10 @@ for better organization.""")
         client.start()
         self.nextFunction()
 
+    def loadClientSnapshotDone(self):
+        self.send(self.osc_src_addr, '/reply', self.osc_path,
+                  'Client snapshot loaded')
+        
     def terminateStepScripter(self):
         if self.step_scripter.isRunning():
             self.step_scripter.terminate()

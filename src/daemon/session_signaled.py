@@ -1442,12 +1442,14 @@ class SignaledSession(OperatingSession):
                         (self.snapshot, '', snapshot, True),
                         (self.closeClient, client),
                         (self.loadClientSnapshot, client_id, snapshot),
-                        (self.startClient, client)]
+                        (self.startClient, client),
+                        self.loadClientSnapshotDone]
                 else:
                     self.steps_order = [
                         self.save,
                         (self.snapshot, '', snapshot, True),
-                        (self.loadClientSnapshot, client_id, snapshot)]
+                        (self.loadClientSnapshot, client_id, snapshot),
+                        self.loadClientSnapshotDone]
                 break
         else:
             self.sendErrorNoClient(src_addr, path, client_id)

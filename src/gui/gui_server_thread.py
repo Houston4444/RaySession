@@ -73,7 +73,8 @@ class GUIServerThread(liblo.ServerThread):
             self._signaler.user_client_template_found.emit(new_args)
         elif reply_path == '/ray/server/list_factory_client_templates':
             self._signaler.factory_client_template_found.emit(new_args)
-        elif reply_path == '/ray/session/list_snapshots':
+        elif reply_path in ('/ray/session/list_snapshots',
+                            '/ray/client/list_snapshots'):
             self._signaler.snapshots_found.emit(new_args)
 
     @ray_method('/ray/gui/server/announce', 'siisi')
