@@ -536,6 +536,9 @@ class AbstractSaveTemplateDialog(ChildDialog):
 
         self.server_will_accept = False
 
+        self.update_template_text = _translate(
+            "session template", "Update the template")
+        self.create_template_text = self.ui.pushButtonAccept.text()
         self.ui.lineEdit.textEdited.connect(self.textEdited)
         self.ui.pushButtonAccept.clicked.connect(self.verifyAndAccept)
         self.ui.pushButtonAccept.setEnabled(False)
@@ -543,6 +546,10 @@ class AbstractSaveTemplateDialog(ChildDialog):
     def textEdited(self, text):
         if '/' in text:
             self.ui.lineEdit.setText(text.replace('/', '⁄'))
+        if self.ui.lineEdit.text() in self.template_list:
+            self.ui.pushButtonAccept.setText(self.update_template_text)
+        else:
+            self.ui.pushButtonAccept.setText(self.create_template_text)
         self.allowOkButton()
 
     def getTemplateName(self):
@@ -568,11 +575,19 @@ class AbstractSaveTemplateDialog(ChildDialog):
                 return
         self.accept()
 
+    def addTemplatesToList(self, template_list):
+        self.template_list += template_list
+
+        for template in template_list:
+            if template == self.ui.lineEdit.text():
+                self.ui.pushButtonAccept.setText(self.update_template_text)
+                break
 
 class SaveTemplateSessionDialog(AbstractSaveTemplateDialog):
     def __init__(self, parent):
         AbstractSaveTemplateDialog.__init__(self, parent)
-
+        self.ui.toolButtonClientIcon.setVisible(False)
+        self.ui.labelLabel.setText(self._session.path)
         self.template_list = []
 
         self._signaler.session_template_found.connect(self.addTemplatesToList)
@@ -588,14 +603,15 @@ class SaveTemplateSessionDialog(AbstractSaveTemplateDialog):
 
         self.allowOkButton()
 
-    def addTemplatesToList(self, template_list):
-        self.template_list += template_list
-
 
 class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
     def __init__(self, parent, client):
         AbstractSaveTemplateDialog.__init__(self, parent)
-
+        self.ui.labelSessionTitle.setVisible(False)
+        self.ui.toolButtonClientIcon.setIcon(
+            ray.getAppIcon(client.icon, self))
+        self.ui.labelLabel.setText(client.prettier_name())
+        
         self.template_list = []
         self.ui.pushButtonAccept.setEnabled(False)
 
@@ -609,6 +625,8 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
 
         self.toDaemon('/ray/server/list_user_client_templates')
         self.ui.lineEdit.setText(client.template_origin)
+        self.ui.lineEdit.selectAll()
+        self.ui.lineEdit.setFocus()
         self.serverStatusChanged(self._session.server_status)
 
     def serverStatusChanged(self, server_status):
@@ -621,10 +639,6 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
             self.reject()
 
         self.allowOkButton()
-
-    def addTemplatesToList(self, template_list):
-        for template in template_list:
-            self.template_list.append(template.split('/')[0])
 
 
 class ClientTrashDialog(ChildDialog):

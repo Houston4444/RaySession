@@ -22,11 +22,8 @@ konv# RaySession TODO
     
     ---
     
-    fenêtre plantée = pas d'igu
-    
     Icônes partout
     protocole ray-net
-    
-    renommer client (direct) depuis IGU
+    Pas de QMessageBox, tout doit être child_dialog
     
     favoris depuis ray_control
