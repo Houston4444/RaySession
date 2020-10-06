@@ -55,7 +55,7 @@ def addSelfBinToPath():
     if not os.environ['PATH'].startswith("%s:" % bin_path):
         os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
 
-def pidExists(pid):
+def pidExists(pid: int)->bool:
     if isinstance(pid, str):
         pid = int(pid)
 
@@ -65,6 +65,18 @@ def pidExists(pid):
         return False
     else:
         return True
+
+def pidIsStopped(pid: int)->bool:
+    proc_file_path = '/proc/%i/status' % pid
+    if os.path.exists(proc_file_path):
+        proc_file = open(proc_file_path)
+        for line in proc_file.readlines():
+            if line.startswith('State:	'):
+                value = line.replace('State:	', '', 1)
+                if value and value[0] == 'T':
+                    return True
+        return False
+    return True
 
 def getDaemonList():
     try:
@@ -105,6 +117,12 @@ def getDaemonList():
             elif key == 'has_gui':
                 l_daemon.has_local_gui = bool(child.attrib[key] == '3')
                 l_daemon.has_gui = bool(child.attrib[key] == '1')
+                
+            elif key == 'local_gui_pids':
+                gui_pids_str = child.attrib[key]
+                for pid_str in gui_pids_str.split(':'):
+                    if pid_str.isdigit():
+                        l_daemon.local_gui_pids.append(int(pid_str))
 
         if not (l_daemon.net_daemon_id
                 and l_daemon.pid
@@ -124,6 +142,9 @@ class Daemon:
     not_default = False
     has_gui = 0
     has_local_gui = 0
+    
+    def __init__(self):
+        self.local_gui_pids = []
 
 
 def printHelp(stdout=False, category=OPERATION_TYPE_NULL):
@@ -323,12 +344,20 @@ if __name__ == '__main__':
             elif operation == 'get_port_gui_free':
                 for daemon in daemon_list:
                     if (daemon.user == os.environ['USER']
-                            and not daemon.not_default
-                            and not daemon.has_local_gui):
-                        sys.stdout.write('%s\n' % daemon.port)
-                        break
-                sys.exit(0)
+                            and not daemon.not_default):
 
+                        if not daemon.has_local_gui:
+                            sys.stdout.write('%s\n' % daemon.port)
+                            break
+
+                        for pid in daemon.local_gui_pids:
+                            if pidExists(pid) and not pidIsStopped(pid):
+                                break
+                        else:
+                            sys.stdout.write('%s\n' % daemon.port)
+                            break
+
+                sys.exit(0)
 
             elif operation == 'get_root':
                 for daemon in daemon_list:
