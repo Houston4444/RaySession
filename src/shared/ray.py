@@ -586,7 +586,7 @@ class ClientData:
     capabilities = ''
     check_last_save = True
     ignored_extensions = getGitIgnoredExtensions()
-    useless_str = ''
+    template_origin = ''
     useless_int = 0
     ray_hack = None
 
@@ -609,7 +609,7 @@ class ClientData:
                 client.icon,
                 client.capabilities, int(client.check_last_save),
                 client.ignored_extensions,
-                client.useless_str, client.useless_int)
+                client.template_origin, client.useless_int)
 
     def gui_init(self, client_id, protocol):
         self.client_id = client_id
@@ -625,7 +625,7 @@ class ClientData:
                icon,
                capabilities, check_last_save,
                ignored_extensions,
-               useless_str, useless_int,
+               template_origin, useless_int,
                secure=False):
         self.executable_path = str(executable)
         self.arguments = str(arguments)
@@ -638,6 +638,7 @@ class ClientData:
 
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
+        self.template_origin = template_origin
 
         if secure:
             return

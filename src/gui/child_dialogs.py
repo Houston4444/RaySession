@@ -592,7 +592,7 @@ class SaveTemplateSessionDialog(AbstractSaveTemplateDialog):
 
 
 class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, client):
         AbstractSaveTemplateDialog.__init__(self, parent)
 
         self.template_list = []
@@ -607,7 +607,7 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
             self.addTemplatesToList)
 
         self.toDaemon('/ray/server/list_user_client_templates')
-
+        self.ui.lineEdit.setText(client.template_origin)
         self.serverStatusChanged(self._session.server_status)
 
     def serverStatusChanged(self, server_status):
@@ -653,6 +653,17 @@ class ClientTrashDialog(ChildDialog):
             self.reject()
 
     def removeClient(self):
+        button = QMessageBox.warning(
+            self,
+            _translate('trashed_client', 'Remove definitely'),
+            _translate('trashed_client',
+                "Are you sure to want to remove definitely this client and all its files ?"),
+            QMessageBox.Ok | QMessageBox.Cancel,
+            QMessageBox.Cancel)
+
+        if button != QMessageBox.Ok:
+            return
+
         self.toDaemon(
             '/ray/trashed_client/remove_definitely',
             self.client_data.client_id)

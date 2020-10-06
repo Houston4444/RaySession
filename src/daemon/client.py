@@ -189,6 +189,7 @@ class Client(ServerSender, ray.ClientData):
         self.auto_start = bool(ctx.attribute('launched') != '0')
         self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
+        self.template_origin = ctx.attribute('template_origin')
         self._from_nsm_file = bool(ctx.attribute('from_nsm_file') == '1')
 
         self.updateInfosFromDesktopFile()
@@ -319,6 +320,9 @@ class Client(ServerSender, ray.ClientData):
 
         if self.protocol != ray.Protocol.NSM:
             ctx.setAttribute('protocol', ray.protocolToStr(self.protocol))
+
+        if self.template_origin:
+            ctx.setAttribute('template_origin', self.template_origin)
 
         if self.isRayHack():
             ctx.setAttribute('config_file', self.ray_hack.config_file)
@@ -1541,6 +1545,9 @@ no_save_level:%i""" % (self.ray_hack.config_file,
         file = open(xml_file, 'w')
         file.write(xml.toString())
         file.close()
+
+        self.template_origin = template_name
+        self.sendGuiClientProperties()
 
         self.sendGuiMessage(
             _translate('message', 'Client template %s created')

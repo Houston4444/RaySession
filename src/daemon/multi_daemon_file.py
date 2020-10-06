@@ -86,6 +86,7 @@ class MultiDaemonFile:
             int(bool(self.server.is_nsm_locked or self.server.not_default)))
         element.setAttribute('has_gui', int(self.server.hasGui()))
         element.setAttribute('version', ray.VERSION)
+        element.setAttribute('local_gui_pids', self.server.getLocalGuiPidList())
 
     def update(self):
         has_dirty_pid = False

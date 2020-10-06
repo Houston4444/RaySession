@@ -201,7 +201,8 @@ class ClientSlot(QFrame):
         self._main_win.abortCopyClient(self.clientId())
 
     def saveAsApplicationTemplate(self):
-        dialog = child_dialogs.SaveTemplateClientDialog(self._main_win)
+        dialog = child_dialogs.SaveTemplateClientDialog(
+            self._main_win, self.client)
         dialog.exec()
         if not dialog.result():
             return

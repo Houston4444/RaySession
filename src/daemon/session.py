@@ -189,23 +189,28 @@ class Session(ServerSender):
 
         client.setStatus(ray.ClientStatus.REMOVED)
 
-        if client.isRayHack():
-            client_dir = client.getProjectPath()
-            if os.path.isdir(client_dir):
-                if os.listdir(client_dir):
-                    self.trashed_clients.append(client)
-                    client.sendGuiClientProperties(removed=True)
-                else:
-                    try:
-                        os.removedirs(client_dir)
-                    except:
-                        self.trashed_clients.append(client)
-                        client.sendGuiClientProperties(removed=True)
+        ## Theses lines are commented because finally choice is to
+        ## always send client to trash
+        ## comment self.trashed_client.append(client) if choice is reversed !!!
+        #if client.isRayHack():
+            #client_dir = client.getProjectPath()
+            #if os.path.isdir(client_dir):
+                #if os.listdir(client_dir):
+                    #self.trashed_clients.append(client)
+                    #client.sendGuiClientProperties(removed=True)
+                #else:
+                    #try:
+                        #os.removedirs(client_dir)
+                    #except:
+                        #self.trashed_clients.append(client)
+                        #client.sendGuiClientProperties(removed=True)
 
-        elif client.getProjectFiles() or client.net_daemon_url:
-            self.trashed_clients.append(client)
-            client.sendGuiClientProperties(removed=True)
+        #elif client.getProjectFiles() or client.net_daemon_url:
+            #self.trashed_clients.append(client)
+            #client.sendGuiClientProperties(removed=True)
 
+        self.trashed_clients.append(client)
+        client.sendGuiClientProperties(removed=True)
         self.clients.remove(client)
 
     def removeClient(self, client):
@@ -2094,6 +2099,8 @@ for better organization.""")
                                 "Session does not accept any new client now",
                                 ray.Err.NOT_NOW)
                     return
+
+                client.template_origin = template_name
 
                 if full_name_files:
                     client.setStatus(ray.ClientStatus.PRECOPY)

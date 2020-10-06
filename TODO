@@ -20,14 +20,13 @@ konv# RaySession TODO
     
     passer les fonctions list dans GUI si local
     
+    ---
+    
     fenêtre plantée = pas d'igu
     
     Icônes partout
-    Modèle d'origine dans le client ?
-    confirmation à la suppression définitive du client
-    envoi à la corbeille systématique
     protocole ray-net
     
-    liste snapshots dialog: message d'erreur pas de modèle client = fenêtre d'erreur
-    pas de modèle session = pas de message, pas de liste
+    renommer client (direct) depuis IGU
     
+    favoris depuis ray_control

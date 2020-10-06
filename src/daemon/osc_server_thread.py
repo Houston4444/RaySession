@@ -46,6 +46,9 @@ class Controller:
     pid = 0
 
 
+class GuiAdress(liblo.Address):
+    gui_pid = 0
+
 # Osc server thread separated in many classes for confort.
 
 # ClientCommunicating contains NSM protocol.
@@ -336,12 +339,14 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/gui_announce', 'sisii')
     def rayGuiGui_announce(self, path, args, types, src_addr):
-        version = args[0]
-        nsm_locked = bool(args[1])
+        (version, int_nsm_locked, net_master_daemon_url,
+         gui_pid, net_daemon_id) = args
+
+        nsm_locked = bool(int_nsm_locked)
         is_net_free = True
 
         if nsm_locked:
-            self.net_master_daemon_url = args[2]
+            self.net_master_daemon_url = net_master_daemon_url
             self.is_nsm_locked = True
             self.nsm_locker_url = src_addr.url
 
@@ -349,7 +354,7 @@ class OscServerThread(ClientCommunicating):
                 if not ray.areSameOscPort(gui_addr.url, src_addr.url):
                     self.send(gui_addr, '/ray/gui/server/nsm_locked', 1)
 
-            self.net_daemon_id = args[4]
+            self.net_daemon_id = net_daemon_id
 
             multi_daemon_file = MultiDaemonFile.getInstance()
 
@@ -357,7 +362,7 @@ class OscServerThread(ClientCommunicating):
                 is_net_free = multi_daemon_file.isFreeForRoot(
                     self.net_daemon_id, self.session.root)
 
-        self.announceGui(src_addr.url, nsm_locked, is_net_free)
+        self.announceGui(src_addr.url, nsm_locked, is_net_free, gui_pid)
 
     @ray_method('/ray/server/gui_disannounce', '')
     def rayGuiGui_disannounce(self, path, args, types, src_addr):
@@ -1223,8 +1228,9 @@ class OscServerThread(ClientCommunicating):
 
         return options
 
-    def announceGui(self, url, nsm_locked=False, is_net_free=True):
-        gui_addr = liblo.Address(url)
+    def announceGui(self, url, nsm_locked=False, is_net_free=True, gui_pid=0):
+        gui_addr = GuiAdress(url)
+        gui_addr.gui_pid = gui_pid
 
         options = self.getOptions()
 
@@ -1307,6 +1313,13 @@ class OscServerThread(ClientCommunicating):
 
         return 0
 
+    def getLocalGuiPidList(self)->str:
+        pid_list = []
+        for gui_addr in self.gui_list:
+            if ray.areOnSameMachine(gui_addr.url, self.url):
+                pid_list.append(str(gui_addr.gui_pid))
+        return ':'.join(pid_list)
+        
     def isGuiAddress(self, addr):
         for gui_addr in self.gui_list:
             if ray.areSameOscPort(gui_addr.url, addr.url):

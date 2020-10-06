@@ -262,7 +262,7 @@ class GUIServerThread(liblo.ServerThread):
 
         self.send(self._daemon_manager.address, '/ray/server/gui_announce',
                   ray.VERSION, int(CommandLineArgs.under_nsm),
-                  NSM_URL, 0,
+                  NSM_URL, os.getpid(),
                   CommandLineArgs.net_daemon_id)
 
     def disannounce(self, src_addr):

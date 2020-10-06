@@ -348,6 +348,7 @@ class SnapshotsDialog(ChildDialog):
         self.ui = ui_list_snapshots.Ui_Dialog()
         self.ui.setupUi(self)
 
+        self._original_label = self.ui.label.text()
         self._signaler.reply_auto_snapshot.connect(
             self.ui.checkBoxAutoSnapshot.setChecked)
         self._signaler.snapshots_found.connect(self.addSnapshots)
@@ -388,6 +389,11 @@ class SnapshotsDialog(ChildDialog):
         return (time_str, label)
 
     def addSnapshots(self, snaptexts):
+        if not snaptexts and not self.main_snap_group.snapshots:
+            # Snapshot list finished without any snapshot
+            self.noSnapshotFound()
+            return
+        
         for snaptext in snaptexts:
             if not snaptext:
                 continue
@@ -442,6 +448,9 @@ class SnapshotsDialog(ChildDialog):
 
         return snapshot_ref
 
+    def noSnapshotFound(self):
+        pass
+
     def showEvent(self, event):
         ChildDialog.showEvent(self, event)
 
@@ -483,9 +492,17 @@ class SessionSnapshotsDialog(SnapshotsDialog):
             with_save = dialog.saveAsked()
             self.toDaemon('/ray/session/take_snapshot', snapshot_label,
                           int(with_save))
+            self.ui.snapshotsList.setVisible(True)
+            self.ui.label.setText(self._original_label)
 
     def setAutoSnapshot(self, bool_snapshot):
         self.toDaemon('/ray/session/set_auto_snapshot', int(bool_snapshot))
+        
+    def noSnapshotFound(self):
+        self.ui.label.setText(
+            _translate('snapshots',
+                       "This session does not contains any snapshot."))
+        self.ui.snapshotsList.setVisible(False)
 
 class ClientSnapshotsDialog(SnapshotsDialog):
     def __init__(self, parent, client):
@@ -496,3 +513,10 @@ class ClientSnapshotsDialog(SnapshotsDialog):
         self.client = client
 
         self.toDaemon('/ray/client/list_snapshots', client.client_id)
+        self.resize(0, 0)
+    
+    def noSnapshotFound(self):
+        self.ui.label.setText(
+            _translate('snapshots',
+                       'There is no existing snapshot for this client.'))
+        self.ui.snapshotsList.setVisible(False)
