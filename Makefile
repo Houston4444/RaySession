@@ -42,6 +42,7 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_about_raysession.py \
 	    src/gui/ui_add_application.py \
 	    src/gui/ui_client_properties.py \
+	    src/gui/ui_client_rename.py \
 	    src/gui/ui_client_slot.py \
 	    src/gui/ui_client_trash.py \
 	    src/gui/ui_donations.py \

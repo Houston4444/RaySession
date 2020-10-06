@@ -250,6 +250,7 @@ class StatusBarNegativ(StatusBar):
 class FakeToolButton(QToolButton):
     def __init__(self, parent):
         QToolButton.__init__(self, parent)
+        self.setStyleSheet("QToolButton{border:none}")
     
     def mousePressEvent(self, event):
         self.parent().mousePressEvent(event)

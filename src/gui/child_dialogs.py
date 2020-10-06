@@ -35,6 +35,7 @@ import ui_client_trash
 import ui_daemon_url
 import ui_snapshot_progress
 import ui_waiting_close_user
+import ui_client_rename
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -968,6 +969,23 @@ class StopClientNoSaveDialog(ChildDialog):
     def checkBoxClicked(self, state):
         self.client.check_last_save = not bool(state)
         self.client.sendPropertiesToDaemon()
+
+
+class ClientRenameDialog(ChildDialog):
+    def __init__(self, parent, client):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_client_rename.Ui_Dialog()
+        self.ui.setupUi(self)
+
+        self.client = client
+        self.ui.toolButtonIcon.setIcon(ray.getAppIcon(client.icon, self))
+        self.ui.labelClientLabel.setText(client.prettier_name())
+        self.ui.lineEdit.setText(client.prettier_name())
+        self.ui.lineEdit.selectAll()
+        self.ui.lineEdit.setFocus()
+
+    def getNewLabel(self)->str:
+        return self.ui.lineEdit.text()
 
 
 class SnapShotProgressDialog(ChildDialog):

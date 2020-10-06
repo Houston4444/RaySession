@@ -56,16 +56,19 @@ class ClientSlot(QFrame):
 
         self.ui.actionSaveAsApplicationTemplate.triggered.connect(
             self.saveAsApplicationTemplate)
-        self.ui.actionProperties.triggered.connect(
-            self.client.showPropertiesDialog)
+        self.ui.actionRename.triggered.connect(self.renameDialog)
         self.ui.actionReturnToAPreviousState.triggered.connect(
             self.openSnapshotsDialog)
+        self.ui.actionProperties.triggered.connect(
+            self.client.showPropertiesDialog)
 
         self.menu = QMenu(self)
 
         self.menu.addAction(self.ui.actionSaveAsApplicationTemplate)
+        self.menu.addAction(self.ui.actionRename)
         self.menu.addAction(self.ui.actionReturnToAPreviousState)
         self.menu.addAction(self.ui.actionProperties)
+        
 
         self.ui.actionReturnToAPreviousState.setVisible(
             self._main_win.has_git)
@@ -220,6 +223,14 @@ class ClientSlot(QFrame):
             self.toDaemon('/ray/client/open_snapshot',
                           self.clientId(), snapshot)
 
+    def renameDialog(self):
+        dialog = child_dialogs.ClientRenameDialog(self._main_win,
+                                                  self.client)
+        dialog.exec()
+        if dialog.result():
+            self.client.label = dialog.getNewLabel()
+            self.client.sendPropertiesToDaemon()
+    
     def updateLabel(self, label):
         self._main_win.updateClientLabel(self.clientId(), label)
 

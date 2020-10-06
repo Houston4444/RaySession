@@ -461,6 +461,14 @@ QToolButton {border: none}</string>
     <string>Return To A Previous State</string>
    </property>
   </action>
+  <action name="actionRename">
+   <property name="icon">
+    <iconset theme="edit-rename"/>
+   </property>
+   <property name="text">
+    <string>Rename</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
