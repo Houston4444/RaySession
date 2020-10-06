@@ -28,7 +28,7 @@ class Session:
 
         server = GUIServerThread.instance()
         server.start()
-        print('serverport', server.port)
+
         self._daemon_manager = DaemonManager(self)
         if CommandLineArgs.daemon_url:
             self._daemon_manager.setOscAddress(CommandLineArgs.daemon_url)
