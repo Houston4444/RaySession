@@ -468,7 +468,10 @@ class Client(ServerSender, ray.ClientData):
             return
 
         self.ray_net.daemon_url = net_daemon_url
+        self.ray_net.running_daemon_url = net_daemon_url
         self.ray_net.session_root = net_session_root
+        self.ray_net.running_session_root = net_session_root
+        self.sendGuiClientProperties()
 
     def getRayNetArgumentsLine(self)->str:
         if self.protocol != ray.Protocol.RAY_NET:
@@ -649,13 +652,26 @@ class Client(ServerSender, ray.ClientData):
         self.pending_command = ray.Command.START
 
         arguments = []
+        
+        if self.protocol == ray.Protocol.RAY_NET:
+            server = self.getServer()
+            if not server:
+                return
 
+            arguments += ['--net-daemon-id', str(server.net_daemon_id)]
+            if self.ray_net.daemon_url:
+                arguments += ['--daemon-url', self.ray_net.daemon_url]
+                if self.ray_net.session_root:
+                    arguments += ['--session-root', self.ray_net.session_root]
+            self.ray_net.running_daemon_url = self.ray_net.daemon_url
+            self.ray_net.running_session_root = self.ray_net.session_root
+            self.process.start(ray.RAYNET_BIN, arguments)
+            return
+        
         if self.tmp_arguments:
             arguments += shlex.split(self.tmp_arguments)
 
         arguments_line = self.arguments
-        if self.protocol == ray.Protocol.RAY_NET:
-            arguments_line = self.getRayNetArgumentsLine()
 
         if self.isRayHack():
             all_envs = {'CONFIG_FILE': ('', ''),
@@ -704,10 +720,6 @@ class Client(ServerSender, ray.ClientData):
 
         if self.arguments:
             arguments += shlex.split(arguments_line)
-
-        if self.hasServer() and self.protocol == ray.Protocol.RAY_NET:
-            arguments.append('--net-daemon-id')
-            arguments.append(str(self.getServer().net_daemon_id))
         
         self.running_executable = self.executable_path
         self.running_arguments = self.arguments
@@ -1120,6 +1132,27 @@ class Client(ServerSender, ray.ClientData):
         self.pending_command = ray.Command.OPEN
         self.sendGuiClientProperties()
         self.setStatus(ray.ClientStatus.SWITCH)
+
+    def canSwitchWith(self, other_client)->bool:
+        if self.protocol == ray.Protocol.RAY_HACK:
+            return False
+
+        if self.protocol != other_client.protocol:
+            return False
+
+        if not (self.active and self.isCapableOf(':switch:')
+                or (self.isDumbClient() and self.isRunning())):
+            return False
+
+        if self.protocol == ray.Protocol.RAY_NET:
+            return bool(self.ray_net.running_daemon_url
+                            == other_client.ray_net.daemon_url
+                        and self.ray_net.running_session_root
+                            == other_client.ray_net.session_root)
+
+        return bool(self.running_executable == other_client.executable_path
+                    and self.running_arguments 
+                        == other_client.running_arguments)
 
     def sendGuiClientProperties(self, removed=False):
         ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'

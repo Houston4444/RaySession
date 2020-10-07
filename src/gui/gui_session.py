@@ -334,6 +334,13 @@ class SignaledSession(Session):
                 trashed_client.ray_hack = ray.RayHack.newFrom(*args)
                 break
 
+    def _ray_gui_trash_ray_net_update(self, path, args):
+        client_id = args.pop(0)
+        for trashed_client in self.trashed_clients:
+            if trashed_client.client_id == client_id:
+                trashed_client.ray_net = ray.RayNet.newFrom(*args)
+                break
+
     def _ray_gui_trash_remove(self, path, args):
         client_id = args[0]
 

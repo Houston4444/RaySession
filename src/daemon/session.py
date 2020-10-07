@@ -1130,30 +1130,30 @@ class OperatingSession(Session):
             self.nextFunction()
             return
 
-        byebye_client_list = []
-        future_clients_exec_args = []
+        #byebye_client_list = []
+        #future_clients_exec_args = []
+
+
+
+        keep_client_list = [] # clients we will keep alive
+        byebye_client_list = [] # stopped clients we will remove immediately
 
         if not clear_all_clients:
             for future_client in self.future_clients:
-                if future_client.auto_start:
-                    future_clients_exec_args.append(
-                     (future_client.executable_path, future_client.arguments))
+                if not future_client.auto_start:
+                    continue
 
-        has_keep_alive = False
+                for client in self.clients:
+                    if client in keep_client_list:
+                        continue
 
+                    if client.canSwitchWith(future_client):
+                        client.switch_state = ray.SwitchState.RESERVED
+                        keep_client_list.append(client)
+                        break
+        
         for client in self.clients:
-            if (not clear_all_clients
-                and (client.active and client.isCapableOf(':switch:')
-                     or (client.isDumbClient() and client.isRunning()))
-                and ((client.running_executable, client.running_arguments)
-                     in future_clients_exec_args)):
-                # client will switch
-                # or keep alive if non active and running
-                has_keep_alive = True
-                client.switch_state = ray.SwitchState.RESERVED
-                future_clients_exec_args.remove(
-                    (client.running_executable, client.running_arguments))
-            else:
+            if client not in keep_client_list:
                 # client is not capable of switch, or is not wanted
                 # in the new session
                 if client.isRunning():
@@ -1161,10 +1161,46 @@ class OperatingSession(Session):
                 else:
                     byebye_client_list.append(client)
 
-        if has_keep_alive:
+        if keep_client_list:
             self.setServerStatus(ray.ServerStatus.CLEAR)
         else:
             self.setServerStatus(ray.ServerStatus.CLOSE)
+        
+
+
+
+        #if not clear_all_clients:
+            #for future_client in self.future_clients:
+                #if future_client.auto_start:
+                    #future_clients_exec_args.append(
+                     #(future_client.executable_path, future_client.arguments))
+
+        #has_keep_alive = False
+
+        #for client in self.clients:
+            #if (not clear_all_clients
+                #and (client.active and client.isCapableOf(':switch:')
+                     #or (client.isDumbClient() and client.isRunning()))
+                #and ((client.running_executable, client.running_arguments)
+                     #in future_clients_exec_args)):
+                ## client will switch
+                ## or keep alive if non active and running
+                #has_keep_alive = True
+                #client.switch_state = ray.SwitchState.RESERVED
+                #future_clients_exec_args.remove(
+                    #(client.running_executable, client.running_arguments))
+            #else:
+                ## client is not capable of switch, or is not wanted
+                ## in the new session
+                #if client.isRunning():
+                    #self.expected_clients.append(client)
+                #else:
+                    #byebye_client_list.append(client)
+
+        #if has_keep_alive:
+            #self.setServerStatus(ray.ServerStatus.CLEAR)
+        #else:
+            #self.setServerStatus(ray.ServerStatus.CLOSE)
 
         for client in byebye_client_list:
             if client in self.clients:
@@ -1811,19 +1847,13 @@ for better organization."""))
                 for client in self.clients:
                     if (client.switch_state == ray.SwitchState.NEEDED
                             and client.client_id == future_client.client_id
-                            and client.running_executable
-                                    == future_client.executable_path
-                            and client.running_arguments
-                                    == future_client.arguments):
+                            and client.canSwitchWith(future_client)):
                         #we found the good existing client
                         break
                 else:
                     for client in self.clients:
                         if (client.switch_state == ray.SwitchState.NEEDED
-                                and client.running_executable
-                                    == future_client.executable_path
-                                and client.running_arguments
-                                    == future_client.arguments):
+                                and client.canSwitchWith(future_client)):
                             # we found a switchable client
                             break
                     else:

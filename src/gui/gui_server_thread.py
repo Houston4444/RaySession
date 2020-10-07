@@ -217,7 +217,11 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/trash/ray_hack_update', 's' + ray.RayHack.sisi())
     def _trash_update_ray_hack(self, path, args, types, src_addr):
         pass
-    
+
+    @ray_method('/ray/gui/trash/ray_net_update', 's' + ray.RayNet.sisi())
+    def _trash_update_ray_net(self, path, args, types, src_addr):
+        pass
+
     @ray_method('/ray/gui/trash/remove', 's')
     def _trash_remove(self, path, args, types, src_addr):
         pass

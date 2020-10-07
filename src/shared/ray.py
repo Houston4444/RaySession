@@ -734,6 +734,8 @@ class RayNet():
     session_root = ''
     session_template = ''
     duplicate_state = -1
+    running_daemon_url = ''
+    running_session_root =''
 
     @staticmethod
     def sisi():

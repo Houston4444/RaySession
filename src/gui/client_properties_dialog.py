@@ -236,12 +236,11 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.comboStopSig.setEnabled(False)
         self.rhack.groupBoxTestZone.setVisible(False)
         self.rhack.toolButtonBrowse.setVisible(False)
-    
+
     def setForTemplate(self, template_name):
         ClientPropertiesDialog.setForTemplate(self, template_name)
         self.rhack.labelWorkingDirTitle.setVisible(False)
         self.rhack.labelWorkingDir.setVisible(False)
-        
     
     def updateStatus(self, status):
         self._current_status = status
@@ -482,13 +481,15 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         self.rnet = ui_ray_net_properties.Ui_Frame()
         self.rnet.setupUi(self.ray_net_frame)
         
+        self.ui.groupBoxSnapshots.setVisible(False)
+        
         self.ui.verticalLayoutProtocol.addWidget(self.ray_net_frame)
         self.ui.tabWidget.setTabText(1, 'Ray-Net')
     
     def lockWidgets(self):
         ClientPropertiesDialog.lockWidgets(self)
-        self.rnet.lineEditDaemonUrl.setEditable(False)
-        self.rnet.lineEditSessionRoot.setEditable(False)
+        self.rnet.lineEditDaemonUrl.setReadOnly(True)
+        self.rnet.lineEditSessionRoot.setReadOnly(True)
         
     def updateContents(self):
         ClientPropertiesDialog.updateContents(self)
