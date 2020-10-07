@@ -324,29 +324,32 @@ class SignaledSession(OperatingSession):
                 if not template_name or template_name in template_list:
                     continue
 
-                # check if needed executables are present
-                executable = ct.attribute('executable')
+                protocol = ray.protocolFromStr(ct.attribute('protocol'))
+                
+                if protocol != ray.Protocol.RAY_NET:
+                    # check if needed executables are present
+                    executable = ct.attribute('executable')
 
-                if not executable:
-                    continue
+                    if not executable:
+                        continue
 
-                try_exec_line = ct.attribute('try-exec')
+                    try_exec_line = ct.attribute('try-exec')
 
-                try_exec_list = []
-                if try_exec_line:
-                    try_exec_list = ct.attribute('try-exec').split(';')
+                    try_exec_list = []
+                    if try_exec_line:
+                        try_exec_list = ct.attribute('try-exec').split(';')
 
-                try_exec_list.append(executable)
-                try_exec_ok = True
+                    try_exec_list.append(executable)
+                    try_exec_ok = True
 
-                for try_exec in try_exec_list:
-                    exec_path = shutil.which(try_exec)
-                    if not exec_path:
-                        try_exec_ok = False
-                        break
+                    for try_exec in try_exec_list:
+                        exec_path = shutil.which(try_exec)
+                        if not exec_path:
+                            try_exec_ok = False
+                            break
 
-                if not try_exec_ok:
-                    continue
+                    if not try_exec_ok:
+                        continue
 
                 # search for '/nsm/server/announce' in executable binary
                 # if it is asked by "check_nsm_bin" key
@@ -425,8 +428,9 @@ class SignaledSession(OperatingSession):
 
         if with_net:
             for client in self.clients:
-                if client.net_daemon_url:
-                    self.send(Address(client.net_daemon_url),
+                if (client.protocol == ray.Protocol.RAY_NET
+                        and self.ray_net.daemon_url):
+                    self.send(Address(client.ray_net.daemon_url),
                               '/ray/server/list_sessions', 1)
 
         if not self.root:
@@ -602,12 +606,12 @@ class SignaledSession(OperatingSession):
         net = False if len(args) < 2 else args[1]
 
         for client in self.clients:
-            if client.executable_path == 'ray-network':
-                client.net_session_template = template_name
+            if client.protocol == ray.Protocol.RAY_NET:
+                client.ray_net.session_template = template_name
 
         self.steps_order = [self.save, self.snapshot,
-                              (self.saveSessionTemplate,
-                               template_name, net)]
+                            (self.saveSessionTemplate,
+                             template_name, net)]
 
     def _ray_server_save_session_template(self, path, args, src_addr):
         if len(args) == 2:
@@ -1576,10 +1580,11 @@ class SignaledSession(OperatingSession):
     def _ray_net_daemon_duplicate_state(self, path, args, src_addr):
         state = args[0]
         for client in self.clients:
-            if (client.net_daemon_url
-                    and ray.areSameOscPort(client.net_daemon_url,
+            if (client.protocol == ray.Protocol.RAY_NET
+                    and client.ray_net.daemon_url
+                    and ray.areSameOscPort(client.ray_net.daemon_url,
                                            src_addr.url)):
-                client.net_duplicate_state = state
+                client.ray_net.duplicate_state = state
                 client.net_daemon_copy_timer.stop()
                 break
         else:

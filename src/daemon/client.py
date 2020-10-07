@@ -62,11 +62,6 @@ class Client(ServerSender, ray.ClientData):
     sent_to_gui = False
     switch_state = ray.SwitchState.NONE
 
-    net_session_template = ''
-    net_session_root = ''
-    net_daemon_url = ''
-    net_duplicate_state = -1
-
     ignored_extensions = ray.getGitIgnoredExtensions()
 
     last_save_time = 0.00
@@ -125,6 +120,7 @@ class Client(ServerSender, ray.ClientData):
         self._open_timer.timeout.connect(self.openTimerTimeout)
 
         self.ray_hack = ray.RayHack()
+        self.ray_net = ray.RayNet()
         self.scripter = ClientScripter(self)
 
         self.ray_hack_waiting_win = False
@@ -207,7 +203,11 @@ class Client(ServerSender, ray.ClientData):
         for ext in ign_exts:
             if ext and not ext in global_exts:
                 self.ignored_extensions += " %s" % ext
-
+        
+        open_duration = ctx.attribute('last_open_duration')
+        if open_duration.replace('.', '', 1).isdigit():
+            self.last_open_duration = float(open_duration)
+        
         prefix_mode = ctx.attribute('prefix_mode')
 
         if (prefix_mode and prefix_mode.isdigit()
@@ -216,11 +216,7 @@ class Client(ServerSender, ray.ClientData):
             if self.prefix_mode == ray.PrefixMode.CUSTOM:
                 self.custom_prefix = ctx.attribute('custom_prefix')
 
-        protocol = ctx.attribute('protocol')
-        if protocol.lower() in ('ray_hack', 'ray-hack'):
-            self.protocol = ray.Protocol.RAY_HACK
-        elif protocol.lower() in ('ray_net', 'ray-net'):
-            self.protocol = ray.Protocol.RAY_NET
+        self.protocol = ray.protocolFromStr(ctx.attribute('protocol'))
 
         if self.protocol == ray.Protocol.RAY_HACK:
             self.ray_hack.config_file = ctx.attribute('config_file')
@@ -238,16 +234,13 @@ class Client(ServerSender, ray.ClientData):
             if no_save_level.isdigit() and 0 <= int(no_save_level) <= 2:
                 self.ray_hack.no_save_level = int(no_save_level)
 
-        self.net_session_template = ctx.attribute('net_session_template')
+        # backward compatibility with network session
+        if (self.protocol == ray.Protocol.NSM 
+                and basename(self.executable_path) == 'ray-network'):
+            self.protocol = ray.Protocol.RAY_NET
 
-        open_duration = ctx.attribute('last_open_duration')
-        if open_duration.replace('.', '', 1).isdigit():
-            self.last_open_duration = float(open_duration)
-
-        if basename(self.executable_path) == 'ray-network':
             if self.arguments:
-                eat_url = False
-                eat_root = False
+                eat_url = eat_root = False
 
                 for arg in shlex.split(self.arguments):
                     if arg in ('--daemon-url', '-u'):
@@ -262,11 +255,17 @@ class Client(ServerSender, ray.ClientData):
                         continue
 
                     if eat_url:
-                        self.net_daemon_url = arg
+                        self.ray_net.daemon_url = arg
                         eat_url = False
                     elif eat_root:
-                        self.net_session_root = arg
+                        self.ray_net.session_root = arg
                         eat_root = False
+            self.ray_net.session_template = ctx.attribute('net_session_template')
+
+        elif self.protocol == ray.Protocol.RAY_NET:
+            self.ray_net.daemon_url = ctx.attribute('net_daemon_url')
+            self.ray_net.session_root = ctx.attribute('net_session_root')
+            self.ray_net.session_template = ctx.attribute('net_session_template')
 
         if ctx.attribute('id'):
             #session use "id" for absolutely needed client_id
@@ -306,7 +305,6 @@ class Client(ServerSender, ray.ClientData):
 
         if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
             ctx.setAttribute('prefix_mode', self.prefix_mode)
-
             if self.prefix_mode == ray.PrefixMode.CUSTOM:
                 ctx.setAttribute('custom_prefix', self.custom_prefix)
 
@@ -318,22 +316,25 @@ class Client(ServerSender, ray.ClientData):
         if self._from_nsm_file:
             ctx.setAttribute('from_nsm_file', 1)
 
-        if self.protocol != ray.Protocol.NSM:
-            ctx.setAttribute('protocol', ray.protocolToStr(self.protocol))
-
         if self.template_origin:
             ctx.setAttribute('template_origin', self.template_origin)
 
-        if self.isRayHack():
-            ctx.setAttribute('config_file', self.ray_hack.config_file)
-            ctx.setAttribute('save_signal', self.ray_hack.save_sig)
-            ctx.setAttribute('stop_signal', self.ray_hack.stop_sig)
-            ctx.setAttribute('wait_win', int(self.ray_hack.wait_win))
-            ctx.setAttribute('no_save_level', self.ray_hack.no_save_level)
+        if self.protocol != ray.Protocol.NSM:
+            ctx.setAttribute('protocol', ray.protocolToStr(self.protocol))
 
-        if self.net_session_template:
-            ctx.setAttribute('net_session_template',
-                             self.net_session_template)
+            if self.protocol == ray.Protocol.RAY_HACK:
+                ctx.setAttribute('config_file', self.ray_hack.config_file)
+                ctx.setAttribute('save_signal', self.ray_hack.save_sig)
+                ctx.setAttribute('stop_signal', self.ray_hack.stop_sig)
+                ctx.setAttribute('wait_win', int(self.ray_hack.wait_win))
+                ctx.setAttribute('no_save_level', self.ray_hack.no_save_level)
+
+            elif self.protocol == ray.Protocol.RAY_NET:
+                ctx.setAttribute('net_daemon_url', self.ray_net.daemon_url)
+                ctx.setAttribute('net_session_root',
+                                 self.ray_net.session_root)
+                ctx.setAttribute('net_session_template',
+                                 self.ray_net.session_template)
 
         if self.ignored_extensions != ray.getGitIgnoredExtensions():
             ignored = ""
@@ -455,19 +456,11 @@ class Client(ServerSender, ray.ClientData):
         return "%s (%s)" % (self.name, self.client_id)
 
     def setNetworkProperties(self, net_daemon_url, net_session_root):
-        if not self.isCapableOf(':ray-network:'):
+        if self.protocol != ray.Protocol.RAY_NET:
             return
 
-        if (net_daemon_url == self.net_daemon_url
-                and net_session_root == self.net_session_root):
-            return
-
-        self.net_daemon_url = net_daemon_url
-        self.net_session_root = net_session_root
-
-        self.arguments = '--daemon-url %s --net-session-root "%s"' % (
-                            self.net_daemon_url,
-                            self.net_session_root.replace('"', '\\"'))
+        self.ray_net.daemon_url = net_daemon_url
+        self.ray_net.session_root = net_session_root
 
     def netDaemonOutOfTime(self):
         self.net_duplicate_state = -1
@@ -497,10 +490,10 @@ class Client(ServerSender, ray.ClientData):
                     and self.client_id[1:4].isupper())
 
     def getJackClientName(self):
-        if self.executable_path == 'ray-network':
-            # ray-network will use jack_client_name for template
+        if self.protocol == ray.Protocol.RAY_NET:
+            # ray-net will use jack_client_name for template
             # quite dirty, but this is the easier way
-            return self.net_session_template
+            return self.ray_net.session_template
 
         # return same jack_client_name as NSM does
         # if client seems to have been made by NSM itself
@@ -538,7 +531,7 @@ class Client(ServerSender, ray.ClientData):
         return ''
 
     def getProjectPath(self):
-        if self.executable_path == 'ray-network':
+        if self.protocol == ray.Protocol.RAY_NET:
             return self.session.getShortPath()
 
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
@@ -633,6 +626,20 @@ class Client(ServerSender, ray.ClientData):
 
         self.pending_command = ray.Command.START
 
+        if self.protocol == ray.Protocol.RAY_NET:
+            server = self.getServer()
+            if not server:
+                return
+
+            arguments = []
+            if self.ray_net.daemon_url and self.ray_net.session_root:
+                arguments += ['--daemon-url', self.ray_net.daemon_url,
+                              '--net-session-root', self.ray_net.session_root]
+            arguments += ['--net-daemon-id', str(server.net_daemon_id)]
+
+            self.process.start('ray-network', arguments)
+            return
+
         arguments = []
 
         if self.tmp_arguments:
@@ -688,7 +695,7 @@ class Client(ServerSender, ray.ClientData):
         if self.arguments:
             arguments += shlex.split(arguments_line)
 
-        if self.hasServer() and self.executable_path == 'ray-network':
+        if self.hasServer() and self.protocol == ray.Protocol.RAY_NET:
             arguments.append('--net-daemon-id')
             arguments.append(str(self.getServer().net_daemon_id))
 
@@ -1187,12 +1194,6 @@ class Client(ServerSender, ray.ClientData):
         self.sendGuiClientProperties()
 
     def getPropertiesMessage(self):
-        protocol_str = 'NSM'
-        if self.protocol == ray.Protocol.RAY_HACK:
-            protocol_str = 'Ray-Hack'
-        elif self.protocol == ray.Protocol.RAY_NET:
-            protocol_str = 'Ray-Net'
-
         message = """client_id:%s
 protocol:%s
 executable:%s
@@ -1205,7 +1206,7 @@ label:%s
 icon:%s
 check_last_save:%i
 ignored_extensions:%s""" % (self.client_id,
-                            protocol_str,
+                            ray.protocolToStr(self.protocol),
                             self.executable_path,
                             self.arguments,
                             self.name,
@@ -1229,7 +1230,12 @@ no_save_level:%i""" % (self.ray_hack.config_file,
                        self.ray_hack.stop_sig,
                        int(self.ray_hack.wait_win),
                        self.ray_hack.no_save_level)
-
+        elif self.protocol == ray.Protocol.RAY_NET:
+            message += """\nnet_daemon_url:%s
+net_session_root:%s
+net_session_template:%s""" % (self.ray_net.daemon_url,
+                              self.ray_net.session_root,
+                              self.ray_net.session_template)
         return message
 
     def prettyClientId(self):
@@ -1458,11 +1464,14 @@ no_save_level:%i""" % (self.ray_hack.config_file,
 
         os.makedirs(template_dir)
 
-        if self.net_daemon_url:
-            self.net_session_template = template_name
-            self.send(Address(self.net_daemon_url),
-                      '/ray/server/save_session_template', self.session.name,
-                      template_name, self.net_session_root)
+        if self.protocol == ray.Protocol.RAY_NET:
+            if self.ray_net.daemon_url:
+                self.ray_net.session_template = template_name
+                self.send(Address(self.ray_net.daemon_url),
+                          '/ray/server/save_session_template',
+                          self.session.name,
+                          template_name,
+                          self.net_session_root)
 
         if client_files:
             self.setStatus(ray.ClientStatus.COPY)
@@ -1935,9 +1944,9 @@ no_save_level:%i""" % (self.ray_hack.config_file,
         client_project_path = self.getProjectPath()
         jack_client_name = self.getJackClientName()
 
-        if self.isCapableOf(':ray-network:'):
+        if self.protocol == ray.Protocol.RAY_NET:
             client_project_path = self.session.getShortPath()
-            jack_client_name = self.net_session_template
+            jack_client_name = self.ray_net.session_template
 
         self.send(src_addr, "/nsm/client/open", client_project_path,
                   self.session.name, jack_client_name)

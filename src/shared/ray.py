@@ -566,9 +566,15 @@ def protocolToStr(protocol: int)->str:
     if protocol == Protocol.RAY_HACK:
         return "Ray-Hack"
     if protocol == Protocol.RAY_NET:
-        return "Net-Session"
+        return "Ray-Net"
     return "NSM"
 
+def protocolFromStr(protocol_str: str)->int:
+    if protocol_str.lower() in ('ray_hack', 'ray-hack'):
+        return Protocol.RAY_HACK
+    elif protocol_str.lower() in ('ray_net', 'ray-net'):
+        return Protocol.RAY_NET
+    return Protocol.NSM
 
 class ClientData:
     client_id = ''
@@ -589,6 +595,7 @@ class ClientData:
     template_origin = ''
     useless_int = 0
     ray_hack = None
+    ray_net = None
 
     @staticmethod
     def sisi():
@@ -617,6 +624,9 @@ class ClientData:
     
     def set_ray_hack(self, ray_hack):
         self.ray_hack = ray_hack
+    
+    def set_ray_net(self, ray_net):
+        self.ray_net = ray_net
     
     def update(self, client_id, protocol,
                executable, arguments, pre_env,
@@ -717,3 +727,27 @@ class RayHack():
         return (self.config_file, self.save_sig, self.stop_sig,
                 int(self.wait_win), self.no_save_level,
                 self.useless_str, self.useless_int)
+
+class RayNet():
+    daemon_url = ''
+    session_root = ''
+    session_template = ''
+    duplicate_state = -1
+
+    @staticmethod
+    def sisi():
+        return 'sss'
+
+    @staticmethod
+    def newFrom(*args):
+        ray_net = RayNet()
+        ray_net.update(*args)
+        return ray_net
+
+    def update(self, daemon_url, session_root, session_template):
+        self.daemon_url = daemon_url
+        self.session_root = session_root
+        self.session_template = session_template
+
+    def spread(self)->tuple:
+        return (self.daemon_url, self.session_root, self.session_template)
