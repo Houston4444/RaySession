@@ -266,6 +266,12 @@ class Client(ServerSender, ray.ClientData):
             self.ray_net.daemon_url = ctx.attribute('net_daemon_url')
             self.ray_net.session_root = ctx.attribute('net_session_root')
             self.ray_net.session_template = ctx.attribute('net_session_template')
+        
+        if self.protocol == ray.Protocol.RAY_NET:
+            # neeeded only to know if RAY_NET client is capable of switch
+            self.executable_path = ray.RAYNET_BIN
+            if self.ray_net.daemon_url and self.ray_net.session_root:
+                self.arguments = self.getRayNetArgumentsLine()
 
         if ctx.attribute('id'):
             #session use "id" for absolutely needed client_id
@@ -288,7 +294,11 @@ class Client(ServerSender, ray.ClientData):
                     self.custom_data[attribute_str] = value
 
     def writeXmlProperties(self, ctx):
-        ctx.setAttribute('executable', self.executable_path)
+        if self.protocol != ray.Protocol.RAY_NET:
+            ctx.setAttribute('executable', self.executable_path)
+            if self.arguments:
+                ctx.setAttribute('arguments', self.arguments)
+
         ctx.setAttribute('name', self.name)
         if self.desktop_file:
             ctx.setAttribute('desktop_file', self.desktop_file)
@@ -300,8 +310,6 @@ class Client(ServerSender, ray.ClientData):
             ctx.setAttribute('icon', self.icon)
         if not self.check_last_save:
             ctx.setAttribute('check_last_save', 0)
-        if self.arguments:
-            ctx.setAttribute('arguments', self.arguments)
 
         if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
             ctx.setAttribute('prefix_mode', self.prefix_mode)
@@ -462,8 +470,15 @@ class Client(ServerSender, ray.ClientData):
         self.ray_net.daemon_url = net_daemon_url
         self.ray_net.session_root = net_session_root
 
+    def getRayNetArgumentsLine(self)->str:
+        if self.protocol != ray.Protocol.RAY_NET:
+            return ''
+        return '--daemon-url %s --net-session-root "%s"' % (
+                self.ray_net.daemon_url,
+                self.ray_net.session_root.replace('"', '\\"'))
+
     def netDaemonOutOfTime(self):
-        self.net_duplicate_state = -1
+        self.ray_net.duplicate_state = -1
 
         if self.session.wait_for == ray.WaitFor.DUPLICATE_FINISH:
             self.session.endTimerIfLastExpected(self)
@@ -619,6 +634,13 @@ class Client(ServerSender, ray.ClientData):
                     % self.guiMsgStyle())
             return
 
+        if (self.protocol == ray.Protocol.RAY_NET
+                and not self.session.path.startswith(self.session.root + '/')):
+            self.sendErrorToCaller(OSC_SRC_START, ray.Err.GENERAL_ERROR,
+                _translate('GUIMSG',
+                    "Impossible to run Ray-Net client when session is not in root folder"))
+            return
+
         if self.scripter.start(ray.Command.START, src_addr,
                                self._osc_srcs[OSC_SRC_START]):
             self.setStatus(ray.ClientStatus.SCRIPT)
@@ -626,26 +648,14 @@ class Client(ServerSender, ray.ClientData):
 
         self.pending_command = ray.Command.START
 
-        if self.protocol == ray.Protocol.RAY_NET:
-            server = self.getServer()
-            if not server:
-                return
-
-            arguments = []
-            if self.ray_net.daemon_url and self.ray_net.session_root:
-                arguments += ['--daemon-url', self.ray_net.daemon_url,
-                              '--net-session-root', self.ray_net.session_root]
-            arguments += ['--net-daemon-id', str(server.net_daemon_id)]
-
-            self.process.start('ray-network', arguments)
-            return
-
         arguments = []
 
         if self.tmp_arguments:
             arguments += shlex.split(self.tmp_arguments)
 
         arguments_line = self.arguments
+        if self.protocol == ray.Protocol.RAY_NET:
+            arguments_line = self.getRayNetArgumentsLine()
 
         if self.isRayHack():
             all_envs = {'CONFIG_FILE': ('', ''),
@@ -698,7 +708,7 @@ class Client(ServerSender, ray.ClientData):
         if self.hasServer() and self.protocol == ray.Protocol.RAY_NET:
             arguments.append('--net-daemon-id')
             arguments.append(str(self.getServer().net_daemon_id))
-
+        
         self.running_executable = self.executable_path
         self.running_arguments = self.arguments
 
@@ -1114,16 +1124,22 @@ class Client(ServerSender, ray.ClientData):
     def sendGuiClientProperties(self, removed=False):
         ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
         hack_ad = '/ray/gui/client/ray_hack_update'
+        net_ad = '/ray/gui/client/ray_net_update'
 
         if removed:
             ad = '/ray/gui/trash/add'
             hack_ad = '/ray/gui/trash/ray_hack_update'
+            net_ad = '/ray/gui/trash/ray_net_update'
 
         self.sendGui(ad, *ray.ClientData.spreadClient(self))
         if self.protocol == ray.Protocol.RAY_HACK:
             self.sendGui(hack_ad,
-                            self.client_id,
-                            *self.ray_hack.spread())
+                         self.client_id,
+                         *self.ray_hack.spread())
+        elif self.protocol == ray.Protocol.RAY_NET:
+            self.sendGui(net_ad,
+                         self.client_id,
+                         *self.ray_net.spread())
 
         self.sent_to_gui = True
 
@@ -1189,7 +1205,6 @@ class Client(ServerSender, ray.ClientData):
                 elif prop == 'no_save_level':
                     if value.isdigit() and 0 <= int(value) <= 2:
                         self.ray_hack.no_save_level = int(value)
-
 
         self.sendGuiClientProperties()
 

@@ -13,6 +13,7 @@ import ui_ray_hack_copy
 import ui_client_properties
 import ui_nsm_properties
 import ui_ray_hack_properties
+import ui_ray_net_properties
 
 class RayHackCopyDialog(ChildDialog):
     def __init__(self, parent):
@@ -59,6 +60,8 @@ class ClientPropertiesDialog(ChildDialog):
             return NsmClientPropertiesDialog(window, client)
         if client.protocol == ray.Protocol.RAY_HACK:
             return RayHackClientPropertiesDialog(window, client)
+        if client.protocol == ray.Protocol.RAY_NET:
+            return RayNetClientPropertiesDialog(window, client)
 
         return ClientPropertiesDialog(window, client)
     
@@ -96,6 +99,23 @@ class ClientPropertiesDialog(ChildDialog):
     def changeIconwithText(self, text):
         icon = ray.getAppIcon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)
+
+    def getCapacitiesLine(self):
+        capas_en = [c for c in self.client.capabilities.split(':') if c]
+        capas_tr = []
+        for capa in capas_en:
+            if capa == 'switch':
+                capa_tr = _translate('capabilities', 'switch')
+            elif capa == 'dirty':
+                capa_tr = _translate('capabilities', 'dirty')
+            elif capa == 'optional-gui':
+                capa_tr = _translate('capabilities', 'optional-gui')
+            else:
+                capa_tr = capa
+
+            capas_tr.append(capa_tr)
+
+        return '\n'.join(capas_tr)
 
     def saveChanges(self):
         self.client.label = self.ui.lineEditLabel.text()
@@ -137,27 +157,10 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
     def updateContents(self):
         ClientPropertiesDialog.updateContents(self)
         self.nsmui.labelClientName.setText(self.client.name)
+        self.nsmui.labelCapabilities.setText(self.getCapacitiesLine())
         self.nsmui.lineEditExecutable.setText(self.client.executable_path)
         self.nsmui.lineEditArguments.setText(self.client.arguments)
-
-        capas_en = [c for c in self.client.capabilities.split(':') if c]
-        capas_tr = []
-        for capa in capas_en:
-            if capa == 'switch':
-                capa_tr = _translate('capabilities', 'switch')
-            elif capa == 'dirty':
-                capa_tr = _translate('capabilities', 'dirty')
-            elif capa == 'optional-gui':
-                capa_tr = _translate('capabilities', 'optional-gui')
-            else:
-                capa_tr = capa
-
-
-            capas_tr.append(capa_tr)
-
-        capa_line = '\n'.join(capas_tr)
-        self.nsmui.labelCapabilities.setText(capa_line)
-
+        
     def saveChanges(self):
         self.client.executable_path = self.nsmui.lineEditExecutable.text()
         self.client.arguments = self.nsmui.lineEditArguments.text()
@@ -470,3 +473,37 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.showEvent(self, event)
         self._signaler.client_properties_state_changed.emit(
             self.client.client_id, True)
+
+class RayNetClientPropertiesDialog(ClientPropertiesDialog):
+    def __init__(self, parent, client):
+        ClientPropertiesDialog.__init__(self, parent, client)
+        
+        self.ray_net_frame = QFrame()
+        self.rnet = ui_ray_net_properties.Ui_Frame()
+        self.rnet.setupUi(self.ray_net_frame)
+        
+        self.ui.verticalLayoutProtocol.addWidget(self.ray_net_frame)
+        self.ui.tabWidget.setTabText(1, 'Ray-Net')
+    
+    def lockWidgets(self):
+        ClientPropertiesDialog.lockWidgets(self)
+        self.rnet.lineEditDaemonUrl.setEditable(False)
+        self.rnet.lineEditSessionRoot.setEditable(False)
+        
+    def updateContents(self):
+        ClientPropertiesDialog.updateContents(self)
+        self.rnet.labelClientName.setText(self.client.name)
+        self.rnet.labelCapabilities.setText(self.getCapacitiesLine())
+        self.rnet.lineEditDaemonUrl.setText(self.client.ray_net.daemon_url)
+        self.rnet.lineEditSessionRoot.setText(self.client.ray_net.session_root)
+    
+    def saveChanges(self):
+        self.client.ray_net.daemon_url = self.rnet.lineEditDaemonUrl.text()
+        self.client.ray_net.session_root = self.rnet.lineEditSessionRoot.text()
+        self.client.sendRayNet()
+        ClientPropertiesDialog.saveChanges(self)
+    
+    def changeIconwithText(self, text):
+        icon = ray.getAppIcon(text, self)
+        self.ui.toolButtonIcon.setIcon(icon)
+        self.rnet.toolButtonIcon.setIcon(icon)

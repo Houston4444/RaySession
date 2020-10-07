@@ -65,6 +65,11 @@ class TemplateSlot(QFrame):
             self.client_data.ray_hack = ray.RayHack.newFrom(*args)
         self.client_data.ray_hack.update(*args)
 
+    def updateRayNetData(self, *args):
+        if self.client_data.ray_net is None:
+            self.client_data.ray_net = ray.RayNet.newFrom(*args)
+        self.client_data.ray_net.update(*args)
+
     def removeTemplate(self):
         add_app_dialog = self.list_widget.parent()
         add_app_dialog.removeTemplate(self.name, self.factory)
@@ -183,6 +188,8 @@ class AddApplicationDialog(ChildDialog):
             self.updateClientTemplate)
         self._signaler.client_template_ray_hack_update.connect(
             self.updateClientTemplateRayHack)
+        self._signaler.client_template_ray_net_update.connect(
+            self.updateClientTemplateRayNet)
         self._signaler.favorite_added.connect(self.favoriteAdded)
         self._signaler.favorite_removed.connect(self.favoriteRemoved)
         
@@ -331,6 +338,19 @@ class AddApplicationDialog(ChildDialog):
 
             if item.matchesWith(factory, template_name):
                 item.updateRayHackData(*args[2:])
+                if self.ui.templateList.currentItem() == item:
+                    self.updateTemplateInfos(item)
+                break
+    
+    def updateClientTemplateRayNet(self, args):
+        factory = bool(args[0])
+        template_name = args[1]
+
+        for i in range(self.ui.templateList.count()):
+            item = self.ui.templateList.item(i)
+
+            if item.matchesWith(factory, template_name):
+                item.updateRayNetData(*args[2:])
                 if self.ui.templateList.currentItem() == item:
                     self.updateTemplateInfos(item)
                 break

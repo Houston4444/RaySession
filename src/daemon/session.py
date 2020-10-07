@@ -1299,15 +1299,24 @@ for better organization.""")
                    ray.highlightText(new_session_full_name)))
 
         for client in self.clients:
-            client.net_duplicate_state = -1
+            if client.protocol == ray.Protocol.RAY_NET:
+                client.ray_net.duplicate_state = -1
+                if (client.ray_net.daemon_url
+                        and ray.isValidOscUrl(client.ray_net.daemon_url)):
+                    self.send(Address(client.ray_net.daemon_url),
+                              '/ray/session/duplicate_only',
+                              self.getShortPath(),
+                              new_session_full_name,
+                              client.ray_net.session_root)
+            #client.net_duplicate_state = -1
 
-            if (client.net_daemon_url
-                    and ray.isValidOscUrl(client.net_daemon_url)):
-                self.send(Address(client.net_daemon_url),
-                          '/ray/session/duplicate_only',
-                          self.getShortPath(),
-                          new_session_full_name,
-                          client.net_session_root)
+            #if (client.net_daemon_url
+                    #and ray.isValidOscUrl(client.net_daemon_url)):
+                #self.send(Address(client.net_daemon_url),
+                          #'/ray/session/duplicate_only',
+                          #self.getShortPath(),
+                          #new_session_full_name,
+                          #client.net_session_root)
 
                 self.expected_clients.append(client)
 
@@ -1337,7 +1346,8 @@ for better organization.""")
 
         self.sendGuiMessage(_translate('GUIMSG', '...session copy finished.'))
         for client in self.clients:
-            if 0 <= client.net_duplicate_state < 1:
+            if (client.protocol == ray.Protocol.RAY_NET
+                    and 0 <= client.ray_net.duplicate_state < 1):
                 self.expected_clients.append(client)
 
         if self.expected_clients:
@@ -1398,12 +1408,13 @@ for better organization.""")
         # on the machine where is the master daemon, for example).
 
         for client in self.clients:
-            if client.net_daemon_url:
-                self.send(Address(client.net_daemon_url),
+            if (client.protocol == ray.Protocol.RAY_NET
+                    and client.ray_net.daemon_url):
+                self.send(Address(client.ray_net.daemon_url),
                           '/ray/server/save_session_template',
                           self.name,
                           template_name,
-                          client.net_session_root)
+                          client.ray_net.session_root)
 
         self.setServerStatus(ray.ServerStatus.COPY)
 

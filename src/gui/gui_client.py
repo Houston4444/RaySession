@@ -17,6 +17,7 @@ class Client(QObject, ray.ClientData):
         self._main_win = self._session._main_win
 
         self.ray_hack = ray.RayHack()
+        self.ray_net = ray.RayNet()
 
         self.status = ray.ClientStatus.STOPPED
         self.previous_status = ray.ClientStatus.STOPPED
@@ -81,6 +82,10 @@ class Client(QObject, ray.ClientData):
         self.ray_hack.update(*args)
         self.widget.updateClientData()
 
+    def updateRayNet(self, *args):
+        self.ray_net.update(*args)
+        self.widget.updateClientData()
+
     def prettierName(self):
         if self.label:
             return self.label
@@ -112,6 +117,18 @@ class Client(QObject, ray.ClientData):
         server.toDaemon('/ray/client/update_ray_hack_properties',
                         self.client_id,
                         *self.ray_hack.spread())
+
+    def sendRayNet(self):
+        if self.protocol != ray.Protocol.RAY_NET:
+            return
+        
+        server = GUIServerThread.instance()
+        if not server:
+            return
+        
+        server.toDaemon('/ray/client/update_ray_net_properties',
+                        self.client_id,
+                        *self.ray_net.spread())
 
     def showPropertiesDialog(self, second_tab=False):
         self.properties_dialog.updateContents()

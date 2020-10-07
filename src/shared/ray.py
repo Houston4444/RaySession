@@ -31,6 +31,7 @@ SCRIPTS_DIR = 'ray-scripts'
 NOTES_PATH = 'ray-notes'
 factory_session_templates = (
     'with_jack_patch', 'with_jack_config', 'scripted')
+RAYNET_BIN = 'ray-network'
 
 class PrefixMode:
     CUSTOM = 0

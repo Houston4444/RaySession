@@ -58,6 +58,7 @@ raysession: src/gui/ui_abort_copy.py \
 	    src/gui/ui_open_session.py \
 	    src/gui/ui_quit_app.py \
 	    src/gui/ui_ray_hack_properties.py \
+	    src/gui/ui_ray_net_properties.py \
 	    src/gui/ui_raysession.py \
 	    src/gui/ui_remove_template.py \
 	    src/gui/ui_save_template_session.py \

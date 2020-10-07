@@ -255,6 +255,12 @@ class SignaledSession(Session):
         if client and client.protocol == ray.Protocol.RAY_HACK:
             client.updateRayHack(*args)
 
+    def _ray_gui_client_ray_net_update(self, path, args):
+        client_id = args.pop(0)
+        client = self.getClient(client_id)
+        if client and client.protocol == ray.Protocol.RAY_NET:
+            client.updateRayNet(*args)
+
     def  _ray_gui_client_switch(self, path, args):
         old_id, new_id = args
         for client in self.client_list:

@@ -972,8 +972,12 @@ class OscServerThread(ClientCommunicating):
     def rayGuiClientUpdateProperties(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/client/update_ray_hack_properties', 'ssiiiisi')
+    @ray_method('/ray/client/update_ray_hack_properties', 's' + ray.RayHack.sisi())
     def rayClientUpdateRayHackProperties(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/update_ray_net_properties', 's' + ray.RayNet.sisi())
+    def rayClientUpdateRayNetProperties(self, path, args, types, src_addr):
         pass
 
     @ray_method('/ray/client/get_properties', 's')

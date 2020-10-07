@@ -429,7 +429,7 @@ class SignaledSession(OperatingSession):
         if with_net:
             for client in self.clients:
                 if (client.protocol == ray.Protocol.RAY_NET
-                        and self.ray_net.daemon_url):
+                        and client.ray_net.daemon_url):
                     self.send(Address(client.ray_net.daemon_url),
                               '/ray/server/list_sessions', 1)
 
@@ -1271,6 +1271,13 @@ class SignaledSession(OperatingSession):
 
         self.send(src_addr, '/reply', path, 'ray_hack updated')
 
+    @client_action
+    def _ray_client_update_ray_net_properties(self, path, args,
+                                              src_addr, client):
+        if client.protocol == ray.Protocol.RAY_NET:
+            client.ray_net.update(*args)
+        self.send(src_addr, '/reply', path, 'ray_net updated')
+    
     @client_action
     def _ray_client_set_properties(self, path, args, src_addr, client):
         message = ''

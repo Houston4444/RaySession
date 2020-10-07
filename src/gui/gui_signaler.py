@@ -24,6 +24,7 @@ class Signaler(QObject):
 
     client_template_update = pyqtSignal(list)
     client_template_ray_hack_update = pyqtSignal(list)
+    client_template_ray_net_update = pyqtSignal(list)
 
     root_changed = pyqtSignal(str)
 

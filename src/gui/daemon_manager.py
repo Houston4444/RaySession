@@ -126,6 +126,7 @@ class DaemonManager(QObject):
         self.port = src_addr.port
         self.url = src_addr.url
         self.session_root = session_root
+        CommandLineArgs.changeSessionRoot(self.session_root)
 
         self.is_nsm_locked = options & ray.Option.NSM_LOCKED
 

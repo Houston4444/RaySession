@@ -38,7 +38,7 @@
  <Client-Template template-name="Jack Mixer" client_id="jack_mixer" executable="jack_mixer" check_nsm_bin="1"/>
  <Client-Template template-name="Non-Sequencer" executable="non-sequencer" client_id="sequencer"/>
  <Client-Template template-name="JACK Connections" client_id="patch" executable="ray-jackpatch" name="Jack Connections"/>
- <Client-Template template-name="Network Session" protocol="ray_net" client_id="network"/>
+ <Client-Template template-name="Network Session" protocol="ray_net" client_id="network" desktop_file="ray-network"/>
  <Client-Template template-name="ADLjack" executable="adljack" client_id="adl"/>
  <Client-Template template-name="ADLplug" executable="ADLplug" client_id="adlplug"/>
  <Client-Template template-name="OPNplug" executable="OPNplug" client_id="opnplug"/>
