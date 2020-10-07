@@ -1412,7 +1412,7 @@ for better organization.""")
                     and client.ray_net.daemon_url):
                 self.send(Address(client.ray_net.daemon_url),
                           '/ray/server/save_session_template',
-                          self.name,
+                          self.getShortPath(),
                           template_name,
                           client.ray_net.session_root)
 

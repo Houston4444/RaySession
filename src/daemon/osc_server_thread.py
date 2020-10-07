@@ -75,7 +75,10 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/reply', None)
     def reply(self, path, args, types, src_addr):
-        if not (len(args) >= 2 and ray.areTheyAllString(args)):
+        if not ray.areTheyAllString(args):
+            self.unknownMessage(path, types, src_addr)
+        
+        if not len(args) >= 1:
             self.unknownMessage(path, types, src_addr)
             return False
 
@@ -98,6 +101,8 @@ class ClientCommunicating(liblo.ServerThread):
             return False
 
         if not len(args) == 2:
+            # assume this is a normal client, not a net_daemon
+            self.unknownMessage(path, types, src_addr)
             return False
 
     @ray_method('/error', 'sis')
@@ -112,6 +117,11 @@ class ClientCommunicating(liblo.ServerThread):
                           '/ray/server/script_user_action', -1,
                           'User action dialog aborted !')
             return False
+
+    @ray_method('/minor_error', 'sis')
+    def minor_error(self, path, args, types, src_addr):
+        # prevent minor_error to minor_error loop in daemon <-> daemon communication
+        pass
 
     # SERVER_CONTROL messages
     # following messages only for :server-control: capability
@@ -620,12 +630,12 @@ class OscServerThread(ClientCommunicating):
 
         if not pathIsValid(session_name):
             self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
-                    "Invalid template name.")
+                    "Invalid session name.")
             return False
 
         if '/' in template_name:
             self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
-                      "Invalid session name.")
+                      "Invalid template name.")
             return False
 
     @ray_method('/ray/server/rename_session', 'ss')

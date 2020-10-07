@@ -596,6 +596,26 @@ class SignaledSession(OperatingSession):
         tmp_session = DummySession(self.root)
         tmp_session.ray_server_rename_session(path, args, src_addr)
 
+    def _ray_server_save_session_template(self, path, args, src_addr):
+        if len(args) == 2:
+            session_name, template_name = args
+            sess_root = self.root
+            net = False
+        else:
+            session_name, template_name, sess_root = args
+            net = True
+
+        if (sess_root != self.root
+                or session_name != self.getShortPath()):
+            tmp_session = DummySession(sess_root)
+            tmp_session.ray_server_save_session_template(path,
+                                [session_name, template_name, net],
+                                src_addr)
+            return
+
+        self._ray_session_save_as_template(
+            path, [template_name, net], src_addr)
+
     @session_operation
     def _ray_session_save(self, path, args, src_addr):
         self.steps_order = [self.save, self.snapshot, self.saveDone]
@@ -612,41 +632,6 @@ class SignaledSession(OperatingSession):
         self.steps_order = [self.save, self.snapshot,
                             (self.saveSessionTemplate,
                              template_name, net)]
-
-    def _ray_server_save_session_template(self, path, args, src_addr):
-        if len(args) == 2:
-            session_name, template_name = args
-            sess_root = self.root
-            net = False
-        else:
-            session_name, template_name, sess_root = args
-            net = True
-
-        tmp_session = DummySession(sess_root)
-        tmp_session.ray_server_save_session_template(path,
-                                [session_name, template_name, net],
-                                src_addr)
-
-        #if (sess_root != self.root or session_name != self.name):
-            #tmp_session = DummySession(sess_root)
-            #tmp_session.ray_server_save_session_template(path,
-                                #[session_name, template_name, net],
-                                #src_addr)
-            #return
-
-        #self.ray_session_save_as_template(path, [template_name, net],
-                                          #src_addr)
-
-
-        #if net:
-            #for client in self.clients:
-                #if client.executable_path == 'ray-network':
-                    #client.net_session_template = template_name
-
-        #self.rememberOscArgs()
-        #self.steps_order = [self.save, self.snapshot,
-                              #(self.saveSessionTemplate, template_name, net)]
-        #self.nextFunction()
 
     @session_operation
     def _ray_session_take_snapshot(self, path, args, src_addr):
