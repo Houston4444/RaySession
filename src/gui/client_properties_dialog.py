@@ -501,9 +501,17 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         self.rnet.lineEditTemplate.setText(self.client.ray_net.session_template)
     
     def saveChanges(self):
-        self.client.ray_net.daemon_url = self.rnet.lineEditDaemonUrl.text()
-        self.client.ray_net.session_root = self.rnet.lineEditSessionRoot.text()
-        self.client.ray_net.session_template = self.rnet.lineEditTemplate.text()
+        new_url = self.rnet.lineEditDaemonUrl.text()
+        new_root = self.rnet.lineEditSessionRoot.text()
+        new_template = self.rnet.lineEditTemplate.text()
+
+        if ray.isValidOscUrl(new_url):
+            self.client.ray_net.daemon_url = new_url
+        if ray.isValidFullPath(new_root):
+            self.client.ray_net.session_root = new_root
+        if '/' not in new_template:
+            self.client.ray_net.session_template = new_template
+
         self.client.sendRayNet()
         ClientPropertiesDialog.saveChanges(self)
     

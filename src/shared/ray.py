@@ -279,6 +279,18 @@ def highlightText(string):
         return '"%s"' % string
     return "'%s'" % string
 
+def isValidFullPath(path: str)->bool:
+    if not path.startswith('/'):
+        return False
+
+    for forbidden in ('//', '/./'):
+        if forbidden in path:
+            return False
+
+    if path.endswith('/.'):
+        return False
+    return True
+
 def isOscPortFree(port):
     try:
         testport = Server(port)
