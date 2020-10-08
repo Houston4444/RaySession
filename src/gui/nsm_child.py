@@ -58,6 +58,8 @@ class NSMChild:
         if server:
             server.openSession(project_path, 0)
 
+        self.sendGuiState(self._session._main_win.isVisible())
+
     def save(self):
         if self._session._main_win:
             self._session._main_win.saveWindowSettings()
@@ -72,19 +74,19 @@ class NSMChild:
         if self._session._main_win:
             self._session._main_win.show()
 
-        serverNSM = nsm_client.NSMThread.instance()
-        if serverNSM:
-            serverNSM.sendGuiState(True)
+        #self.sendGuiState(True)
 
     def hideOptionalGui(self):
         if self._session._main_win:
             self._session._main_win.hide()
 
+        #self.sendGuiState(False)
+    
+    def sendGuiState(self, state: bool):
         serverNSM = nsm_client.NSMThread.instance()
 
         if serverNSM:
-            serverNSM.sendGuiState(False)
-
+            serverNSM.sendGuiState(state)
 
 class NSMChildOutside(NSMChild):
     def __init__(self, session):
@@ -98,8 +100,7 @@ class NSMChildOutside(NSMChild):
             serverNSM.announce(_translate('network_session',
                                            'Network Session'),
                                 ':switch:optional-gui:ray-network:',
-                                'ray-network')
-
+                                ray.RAYNET_BIN)
 
             serverNSM.sendToDaemon(
                 '/nsm/client/network_properties',
@@ -126,6 +127,9 @@ class NSMChildOutside(NSMChild):
         server = GUIServerThread.instance()
         if server:
             server.openSession(project_path, 0, template_name)
+
+        self._session._main_win.hide()
+        self.sendGuiState(self._session._main_win.isVisible())
 
     def closeSession(self):
         self.wait_for_close = True

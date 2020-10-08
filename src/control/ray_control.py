@@ -249,6 +249,9 @@ if __name__ == '__main__':
 
         elif option == '--detach':
             detach = True
+        else:
+            printHelp()
+            sys.exit(100)
 
     operation = args.pop(0)
     if operation in ('client', 'trashed_client'):

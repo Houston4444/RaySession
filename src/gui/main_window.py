@@ -13,6 +13,7 @@ from gui_server_thread import GUIServerThread
 
 import ray
 import list_widget_clients
+import nsm_child
 
 import ui_raysession
 
@@ -987,3 +988,15 @@ class MainWindow(QMainWindow):
     def enterEvent(self, event):
         self.mouse_is_inside = True
         QDialog.enterEvent(self, event)
+        
+    def showEvent(self, event):
+        if CommandLineArgs.under_nsm:
+            if self._session._nsm_child is not None:
+                self._session._nsm_child.sendGuiState(True)
+        QMainWindow.showEvent(self, event)
+
+    def hideEvent(self, event):
+        if CommandLineArgs.under_nsm:
+            if self._session._nsm_child is not None:
+                self._session._nsm_child.sendGuiState(False)
+        QMainWindow.hideEvent(self, event)
