@@ -51,13 +51,13 @@ if __name__ == '__main__':
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
 
+    #get arguments
+    parser = ArgParser()
+
     initGuiTools()
 
     #Add raysession/src/bin to $PATH to can use raysession after make, whitout install
     ray.addSelfBinToPath()
-
-    #get arguments
-    parser = ArgParser()
 
     #connect signals
     signal.signal(signal.SIGINT, signalHandler)

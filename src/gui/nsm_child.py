@@ -106,6 +106,7 @@ class NSMChildOutside(NSMChild):
                 '/nsm/client/network_properties',
                 self._session._daemon_manager.url,
                 self._session._daemon_manager.session_root)
+        self._session._main_win.hide()
 
     def save(self):
         serverNSM = nsm_client.NSMThread.instance()
@@ -128,7 +129,7 @@ class NSMChildOutside(NSMChild):
         if server:
             server.openSession(project_path, 0, template_name)
 
-        self._session._main_win.hide()
+        #self._session._main_win.hide()
         self.sendGuiState(self._session._main_win.isVisible())
 
     def closeSession(self):

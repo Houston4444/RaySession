@@ -784,6 +784,8 @@ class QuitAppDialog(ChildDialog):
             ('<strong>%s</strong>' %
              self._session.name))
 
+        if CommandLineArgs.under_nsm:
+            self.ui.pushButtonDaemon.setVisible(False)
         self.serverStatusChanged(self._session.server_status)
 
     def serverStatusChanged(self, server_status):
@@ -803,6 +805,9 @@ class QuitAppDialog(ChildDialog):
         self.toDaemon('/ray/session/abort')
 
     def leaveDaemonRunning(self):
+        if CommandLineArgs.under_nsm:
+            return
+
         self._daemon_manager.disannounce()
         QTimer.singleShot(10, QGuiApplication.quit)
 
