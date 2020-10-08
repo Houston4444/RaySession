@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>452</width>
-    <height>408</height>
+    <width>510</width>
+    <height>437</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -148,10 +148,13 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_8">
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout"/>
-      </item>
-      <item>
        <widget class="QLabel" name="labelDaemonUrlWarning">
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+          <italic>true</italic>
+         </font>
+        </property>
         <property name="text">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit the daemon URL only if you meet troubles !!!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -178,7 +181,11 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="lineEditDaemonUrl"/>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLineEdit" name="lineEditDaemonUrl"/>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
@@ -204,8 +211,14 @@
      <layout class="QVBoxLayout" name="verticalLayout_9">
       <item>
        <widget class="QLabel" name="label_11">
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+          <italic>true</italic>
+         </font>
+        </property>
         <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Here, session root is the session root used by the slave daemon.&lt;br/&gt;Edit it only if you changed the session root used by the slave daemon.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Here, sessions root folder is the sessions root folder used by the slave daemon.&lt;br/&gt;Edit it only if you have changed the sessions root folder&lt;br/&gt;used by the slave daemon.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -225,7 +238,7 @@
       <item>
        <widget class="QLabel" name="label_12">
         <property name="text">
-         <string>Session root :</string>
+         <string>Sessions root folder :</string>
         </property>
        </widget>
       </item>
@@ -244,6 +257,28 @@
          </size>
         </property>
        </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Template session that will be used on the slave daemon if there is no existing session at the same path than the master one (relatively to their sessions root folder).&lt;/p&gt;&lt;p&gt;The templates used in network sessions are in a hidden folder of the sessions root folder.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
+      <string/>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Template :</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEditTemplate"/>
       </item>
      </layout>
     </widget>

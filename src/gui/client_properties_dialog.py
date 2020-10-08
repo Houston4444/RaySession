@@ -490,6 +490,7 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.lockWidgets(self)
         self.rnet.lineEditDaemonUrl.setReadOnly(True)
         self.rnet.lineEditSessionRoot.setReadOnly(True)
+        self.rnet.lineEditTemplate.setReadOnly(True)
         
     def updateContents(self):
         ClientPropertiesDialog.updateContents(self)
@@ -497,10 +498,12 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         self.rnet.labelCapabilities.setText(self.getCapacitiesLine())
         self.rnet.lineEditDaemonUrl.setText(self.client.ray_net.daemon_url)
         self.rnet.lineEditSessionRoot.setText(self.client.ray_net.session_root)
+        self.rnet.lineEditTemplate.setText(self.client.ray_net.session_template)
     
     def saveChanges(self):
         self.client.ray_net.daemon_url = self.rnet.lineEditDaemonUrl.text()
         self.client.ray_net.session_root = self.rnet.lineEditSessionRoot.text()
+        self.client.ray_net.session_template = self.rnet.lineEditTemplate.text()
         self.client.sendRayNet()
         ClientPropertiesDialog.saveChanges(self)
     

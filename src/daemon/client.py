@@ -1136,20 +1136,20 @@ class Client(ServerSender, ray.ClientData):
     def canSwitchWith(self, other_client)->bool:
         if self.protocol == ray.Protocol.RAY_HACK:
             return False
-
+        print('rokogo', self.client_id, other_client.client_id)
         if self.protocol != other_client.protocol:
             return False
-
+        print('zamo')
         if not (self.active and self.isCapableOf(':switch:')
                 or (self.isDumbClient() and self.isRunning())):
             return False
-
+        print('dama')
         if self.protocol == ray.Protocol.RAY_NET:
             return bool(self.ray_net.running_daemon_url
                             == other_client.ray_net.daemon_url
                         and self.ray_net.running_session_root
                             == other_client.ray_net.session_root)
-
+        print('mmma')
         return bool(self.running_executable == other_client.executable_path
                     and self.running_arguments 
                         == other_client.running_arguments)
@@ -1238,6 +1238,14 @@ class Client(ServerSender, ray.ClientData):
                 elif prop == 'no_save_level':
                     if value.isdigit() and 0 <= int(value) <= 2:
                         self.ray_hack.no_save_level = int(value)
+
+            elif self.protocol == ray.Protocol.RAY_NET:
+                if prop == 'net_daemon_url':
+                    self.ray_net.daemon_url = value
+                elif prop == 'net_session_root':
+                    self.ray_net.session_root = value
+                elif prop == 'net_session_template':
+                    self.ray_net.session_template = value
 
         self.sendGuiClientProperties()
 

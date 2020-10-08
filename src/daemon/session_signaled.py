@@ -502,22 +502,23 @@ class SignaledSession(OperatingSession):
 
             if not os.path.exists(spath):
                 self.steps_order = [self.save,
-                                      self.closeNoSaveClients,
-                                      self.snapshot,
-                                      (self.prepareTemplate, *args, False),
-                                      (self.preload, session_name),
-                                       self.takePlace,
-                                       self.load,
-                                       self.newDone]
+                                    self.closeNoSaveClients,
+                                    self.snapshot,
+                                    (self.prepareTemplate, *args, False),
+                                    (self.preload, session_name),
+                                    self.close,
+                                    self.takePlace,
+                                    self.load,
+                                    self.newDone]
                 return
 
         self.steps_order = [self.save,
-                              self.closeNoSaveClients,
-                              self.snapshot,
-                              self.close,
-                              (self.new, args[0]),
-                              self.save,
-                              self.newDone]
+                            self.closeNoSaveClients,
+                            self.snapshot,
+                            self.close,
+                            (self.new, args[0]),
+                            self.save,
+                            self.newDone]
 
     @session_operation
     def _ray_server_open_session(self, path, args, src_addr, open_off=False):
