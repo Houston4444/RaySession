@@ -17,8 +17,17 @@ instance = None
 signaler = Signaler.instance()
 
 
-def pathIsValid(path):
-    return not bool('../' in path)
+def pathIsValid(path: str)->bool:
+    if path.startswith(('./', '../')):
+        return False
+
+    for forbidden in ('//', '/./', '/../'):
+        if forbidden in path:
+            return False
+
+    if path.endswith(('/.', '/..')):
+        return False
+    return True
 
 def ifDebug(string):
     if CommandLineArgs.debug:
@@ -293,6 +302,7 @@ class ClientCommunicating(liblo.ServerThread):
         Terminal.message("Client '%s' sends gui shown" % client.client_id)
 
         client.gui_visible = True
+        client.gui_has_been_visible = True
 
         self.sendGui("/ray/gui/client/gui_visible", client.client_id,
                      int(client.gui_visible))
@@ -314,31 +324,34 @@ class OscServerThread(ClientCommunicating):
     def __init__(self, session, osc_num=0):
         ClientCommunicating.__init__(self, session, osc_num)
 
-        self.option_save_from_client = RS.settings.value(
-            'daemon/save_all_from_saved_client', True, type=bool)
-        self.option_bookmark_session = RS.settings.value(
-            'daemon/bookmark_session_folder', True, type=bool)
-        self.option_desktops_memory = RS.settings.value(
-            'daemon/desktops_memory', False, type=bool)
-        self.option_snapshots = RS.settings.value(
-            'daemon/auto_snapshot', True, type=bool)
-        self.option_session_scripts = RS.settings.value(
-            'daemon/session_scripts', True, type=bool)
+        self.options_dict = {
+            'save_from_client': ray.Option.SAVE_FROM_CLIENT,
+            'bookmark_session_folder': ray.Option.BOOKMARK_SESSION,
+            'desktops_memory': ray.Option.DESKTOPS_MEMORY,
+            'snapshots': ray.Option.SNAPSHOTS,
+            'session_scripts': ray.Option.SESSION_SCRIPTS,
+            'gui_states': ray.Option.GUI_STATES}
 
-        self.option_has_wmctrl = bool(shutil.which('wmctrl'))
-        if not self.option_has_wmctrl:
-            self.option_desktops_memory = False
-
-        self.option_has_git = bool(shutil.which('git'))
-        if not self.option_has_git:
-            self.option_snapshots = False
+        self.options = RS.settings.value(
+            'daemon/options',
+            ray.Option.BOOKMARK_SESSION
+                + ray.Option.SNAPSHOTS
+                + ray.Option.SESSION_SCRIPTS
+                + ray.Option.GUI_STATES,
+            type=int)
 
         if CommandLineArgs.no_options:
-            self.option_save_from_client = False
-            self.option_bookmark_session = False
-            self.option_desktops_memory = False
-            self.option_snapshots = False
-            self.option_session_scripts = False
+            self.options = 0
+
+        if shutil.which('wmctrl'):
+            self.options |= ray.Option.HAS_WMCTRL
+        elif self.options & ray.Option.HAS_WMCTRL:
+            self.options -= ray.Option.HAS_WMCTRL
+
+        if shutil.which('git'):
+            self.options |= ray.Option.HAS_GIT
+        elif self.options & ray.Option.HAS_GIT:
+            self.options -= ray.Option.HAS_GIT
 
         global instance
         instance = self
@@ -675,70 +688,68 @@ class OscServerThread(ClientCommunicating):
             return
         self.sendGui('/ray/gui/script_user_action', args[0])
 
+    # set option from GUI
+    @ray_method('/ray/server/set_option', 'i')
+    def rayServerSetOption(self, path, args, types, src_addr):
+        option = args[0]
+        self.setOption(option)
+        
+        for gui_addr in self.gui_list:
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                self.send(gui_addr, '/ray/gui/server/options', self.options)
+
+    # set options from ray_control
     @ray_method('/ray/server/set_options', None)
     def rayServerSetOptions(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             self.unknownMessage(path, types, src_addr)
             return False
-
-        for option in args:
+        
+        for option_str in args:
             option_value = True
-            if option.startswith('not_'):
+            if option_str.startswith('not_'):
                 option_value = False
-                option = option.replace('not_', '', 1)
+                option_str = option_str.replace('not_', '', 1)
 
-            if option == 'save_from_client':
-                self.option_save_from_client = option_value
-            elif option == 'bookmark_session_folder':
-                self.option_bookmark_session = option_value
-            elif option == 'desktops_memory':
-                if option_value and not self.option_has_wmctrl:
-                    self.send(src_addr, '/minor_error', path,
-                        "wmctrl is not present. Impossible to activate 'desktops_memory' option")
-                    continue
-                self.option_desktops_memory = option_value
-            elif option == 'snapshots':
-                if option_value and not self.option_has_git:
-                    self.send(src_addr, '/minor_error', path,
-                        "git is not present. Impossible to activate 'snapshots' option")
-                    continue
-                self.option_snapshots = option_value
-            elif option == 'session_scripts':
-                self.option_session_scripts = option_value
-
-        options = self.getOptions()
+            if option_str in self.options_dict:
+                option = self.options_dict[option_str]
+                if option_value:
+                    if (option == ray.Option.DESKTOPS_MEMORY
+                            and not self.options & ray.Option.HAS_WMCTRL):
+                        self.send(src_addr, '/minor_error', path,
+                            "wmctrl is not present. Impossible to activate 'desktops_memory' option")
+                        continue
+                    if (option == ray.Option.SNAPSHOTS
+                            and not self.options & ray.Option.HAS_GIT):
+                        self.send(src_addr, '/minor_error', path,
+                            "git is not present. Impossible to activate 'snapshots' option")
+                        continue
+                    
+                if not option_value:
+                    option = -option
+                self.setOption(option)
 
         for gui_addr in self.gui_list:
             if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/server/options', options)
+                self.send(gui_addr, '/ray/gui/server/options', self.options)
 
         self.send(src_addr, '/reply', path, 'Options set')
 
     @ray_method('/ray/server/has_option', 's')
     def rayServerHasOption(self, path, args, types, src_addr):
-        option = args[0]
+        option_str = args[0]
         option_value = False
 
-        if option == 'save_from_client':
-            option_value = self.option_save_from_client
-        elif option == 'bookmark_session_folder':
-            option_value = self.option_bookmark_session
-        elif option == 'desktops_memory':
-            option_value = self.option_desktops_memory
-        elif option == 'snapshots':
-            option_value = self.option_snapshots
-        elif option == 'session_scripts':
-            option_value = self.option_session_scripts
-        else:
+        if option_str not in self.options_dict:
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
-                      "option \"%s\" doesn't exists" % option)
+                      "option \"%s\" doesn't exists" % option_str)
             return
 
-        if option_value:
+        if self.options & self.options_dict[option_str]:
             self.send(src_addr, '/reply', path, 'Has option')
         else:
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
-                      "Option %s is not currently used" % option)
+                      "Option %s is not currently used" % option_str)
 
     @ray_method('/ray/server/exotic_action', 's')
     def rayServerExoticAction(self, path, args, types, src_addr):
@@ -1086,56 +1097,6 @@ class OscServerThread(ClientCommunicating):
     def rayDuplicateState(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/option/save_from_client', 'i')
-    def rayOptionSaveFromClient(self, path, args, types, src_addr):
-        self.option_save_from_client = bool(args[0])
-
-        options = self.getOptions()
-
-        for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/server/options', options)
-
-    @ray_method('/ray/option/bookmark_session_folder', 'i')
-    def rayOptionBookmarkSessionFolder(self, path, args, types, src_addr):
-        self.option_bookmark_session = bool(args[0])
-
-        options = self.getOptions()
-
-        for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/server/options', options)
-
-    @ray_method('/ray/option/desktops_memory', 'i')
-    def rayOptionDesktopsMemory(self, path, args, types, src_addr):
-        self.option_desktops_memory = bool(args[0])
-
-        options = self.getOptions()
-
-        for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/server/options', options)
-
-    @ray_method('/ray/option/snapshots', 'i')
-    def rayOptionSnapshots(self, path, args, types, src_addr):
-        self.option_snapshots = bool(args[0])
-
-        options = self.getOptions()
-
-        for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/server/options', options)
-
-    @ray_method('/ray/option/session_scripts', 'i')
-    def rayOptionSessionScripts(self, path, args, types, src_addr):
-        self.option_session_scripts = bool(args[0])
-
-        options = self.getOptions()
-
-        for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/server/options', options)
-
     @ray_method('/ray/favorites/add', 'ssi')
     def rayFavoriteAdd(self, path, args, types, src_addr):
         name, icon, int_factory = args
@@ -1229,27 +1190,12 @@ class OscServerThread(ClientCommunicating):
 
         self.sendGui('/ray/gui/session/renameable', 1)
 
-    def getOptions(self):
-        options = (
-            ray.Option.NSM_LOCKED * self.is_nsm_locked
-            + ray.Option.SAVE_FROM_CLIENT * self.option_save_from_client
-            + ray.Option.BOOKMARK_SESSION * self.option_bookmark_session
-            + ray.Option.HAS_WMCTRL * self.option_has_wmctrl
-            + ray.Option.DESKTOPS_MEMORY * self.option_desktops_memory
-            + ray.Option.HAS_GIT * self.option_has_git
-            + ray.Option.SNAPSHOTS * self.option_snapshots
-            + ray.Option.SESSION_SCRIPTS * self.option_session_scripts)
-
-        return options
-
     def announceGui(self, url, nsm_locked=False, is_net_free=True, gui_pid=0):
         gui_addr = GuiAdress(url)
         gui_addr.gui_pid = gui_pid
 
-        options = self.getOptions()
-
         self.send(gui_addr, "/ray/gui/server/announce", ray.VERSION,
-                  self.server_status, options, self.session.root,
+                  self.server_status, self.options, self.session.root,
                   int(is_net_free))
 
         self.send(gui_addr, "/ray/gui/server/status", self.server_status)
@@ -1295,7 +1241,7 @@ class OscServerThread(ClientCommunicating):
         controller.addr = control_address
         self.controller_list.append(controller)
         self.send(control_address, "/ray/control/server/announce",
-                  ray.VERSION, self.server_status, self.getOptions(),
+                  ray.VERSION, self.server_status, self.options,
                   self.session.root, 1)
 
     def sendControllerMessage(self, message):
@@ -1339,3 +1285,9 @@ class OscServerThread(ClientCommunicating):
             if ray.areSameOscPort(gui_addr.url, addr.url):
                 return True
         return False
+
+    def setOption(self, option: int):
+        if option > 0:
+            self.options |= option
+        elif self.options & option:
+            self.options -= option

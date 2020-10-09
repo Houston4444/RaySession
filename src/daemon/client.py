@@ -39,8 +39,9 @@ class Client(ServerSender, ray.ClientData):
     _reply_message = None
 
     #can be directly changed by OSC thread
-    gui_visible = True
+    gui_visible = False
     progress = 0
+    gui_has_been_visible = False
 
     #have to be modified by main thread for security
     addr = None
@@ -318,8 +319,7 @@ class Client(ServerSender, ray.ClientData):
 
         if self.isCapableOf(':optional-gui:'):
             if self.executable_path != 'ray-proxy':
-                if self.start_gui_hidden:
-                    ctx.setAttribute('gui_visible', '0')
+                ctx.setAttribute('gui_visible', str(int(not self.start_gui_hidden)))
 
         if self._from_nsm_file:
             ctx.setAttribute('from_nsm_file', 1)
@@ -417,6 +417,15 @@ class Client(ServerSender, ray.ClientData):
                 self.last_open_duration = \
                                         time.time() - self._last_announce_time
                 self.sendReplyToCaller(OSC_SRC_OPEN, 'client opened')
+
+                if (self.hasServerOption(ray.Option.GUI_STATES)
+                        and self.session.wait_for == ray.WaitFor.NONE
+                        and self.isCapableOf(':optional-gui:')
+                        and not self.start_gui_hidden
+                        and not self.gui_visible
+                        and not self.gui_has_been_visible
+                        and self.executable_path not in ('ray-proxy', 'nsm-proxy')):
+                    self.sendToSelfAddress('/nsm/client/show_optional_gui')
 
             self.setStatus(ray.ClientStatus.READY)
             #self.message( "Client \"%s\" replied with: %s in %fms"
@@ -630,6 +639,8 @@ class Client(ServerSender, ray.ClientData):
         self.session.setRenameable(False)
 
         self.last_dirty = 0.00
+        self.gui_has_been_visible = False
+        self.gui_visible = False
 
         if self.is_dummy:
             self.sendErrorToCaller(OSC_SRC_START, ray.Err.GENERAL_ERROR,
@@ -2011,8 +2022,5 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         if self.isCapableOf(":optional-gui:"):
             self.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
-
-            if self.start_gui_hidden:
-                self.send(src_addr, "/nsm/client/hide_optional_gui")
 
         self._last_announce_time = time.time()

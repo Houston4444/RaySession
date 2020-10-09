@@ -128,7 +128,7 @@ class Session(ServerSender):
 
         if self.path:
             server = self.getServer()
-            if server and server.option_bookmark_session:
+            if server and server.options & ray.Option.BOOKMARK_SESSION:
                 self.bookmarker.setDaemonPort(server.port)
                 self.bookmarker.makeAll(self.path)
 
@@ -648,8 +648,7 @@ class OperatingSession(Session):
             if len(next_item) > 1:
                 arguments = next_item[1:]
 
-        server = self.getServer()
-        if (server and server.option_session_scripts
+        if (self.hasServerOption(ray.Option.SESSION_SCRIPTS)
                 and not self.step_scripter.isRunning()
                 and self.path and not from_run_step):
             for step_string in ('load', 'save', 'close'):
@@ -730,8 +729,7 @@ class OperatingSession(Session):
             self.window_waiter.stop()
             return
 
-        server = self.getServer()
-        if server and server.option_has_wmctrl:
+        if self.hasServerOption(ray.Option.HAS_WMCTRL):
             self.desktops_memory.setActiveWindowList()
             for client in self.clients:
                 if client.ray_hack_waiting_win:
@@ -935,7 +933,7 @@ class OperatingSession(Session):
                                  and not client.has_been_started)))
 
             cl.setAttribute('launched', launched)
-
+            
             client.writeXmlProperties(cl)
 
             xml_cls.appendChild(cl)
@@ -948,7 +946,8 @@ class OperatingSession(Session):
 
             xml_rmcls.appendChild(cl)
 
-        if self.hasServer() and self.getServer().option_desktops_memory:
+        if (self.hasServer()
+                and self.getServer().options & ray.Option.DESKTOPS_MEMORY):
             self.desktops_memory.save()
 
         for win in self.desktops_memory.saved_windows:
@@ -1023,8 +1022,7 @@ class OperatingSession(Session):
     def snapshot(self, snapshot_name='', rewind_snapshot='',
                  force=False, outing=False):
         if not force:
-            server = self.getServer()
-            if not (server and server.option_snapshots
+            if not (self.hasServerOption(ray.Option.SNAPSHOTS)
                     and not self.snapshoter.isAutoSnapshotPrevented()
                     and self.snapshoter.hasChanges()):
                 self.nextFunction()
@@ -1080,8 +1078,7 @@ class OperatingSession(Session):
     def closeNoSaveClients(self):
         self.cleanExpected()
 
-        server = self.getServer()
-        if server and server.option_has_wmctrl:
+        if self.hasServerOption(ray.Option.HAS_WMCTRL):
             has_nosave_clients = False
             for client in self.clients:
                 if client.isRunning() and client.noSaveLevel() == 2:
@@ -1703,8 +1700,7 @@ for better organization."""))
                         client_id_list.append(client.client_id)
 
                 elif tag_name == "Windows":
-                    server = self.getServer()
-                    if server and server.option_desktops_memory:
+                    if self.hasServerOption(ray.Option.DESKTOPS_MEMORY):
                         self.desktops_memory.readXml(node.toElement())
 
             ray_file.close()
@@ -1944,8 +1940,7 @@ for better organization."""))
     def load_substep5(self):
         self.cleanExpected()
 
-        server = self.getServer()
-        if server and server.option_desktops_memory:
+        if self.hasServerOption(ray.Option.DESKTOPS_MEMORY):
             self.desktops_memory.replace()
 
         self.tellAllClientsSessionIsLoaded()
@@ -1965,6 +1960,15 @@ for better organization."""))
         self.setServerStatus(ray.ServerStatus.READY)
         self.forgetOscArgs()
 
+        if self.hasServerOption(ray.Option.GUI_STATES):
+            for client in self.clients:
+                if (client.isRunning()
+                        and client.isCapableOf(':optional-gui:')
+                        and not client.start_gui_hidden
+                        and not client.gui_has_been_visible
+                        and client.executable_path not in ('ray-proxy', 'nsm-proxy')):
+                    client.sendToSelfAddress('/nsm/client/show_optional_gui')
+        
     def loadError(self, err_loading):
         self.message("Failed")
         m = _translate('Load Error', "Unknown error")

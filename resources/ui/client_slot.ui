@@ -463,7 +463,8 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionRename">
    <property name="icon">
-    <iconset theme="edit-rename"/>
+    <iconset theme="edit-rename">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Rename</string>

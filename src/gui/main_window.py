@@ -17,7 +17,6 @@ import nsm_child
 
 import ui_raysession
 
-
 class MainWindow(QMainWindow):
     @classmethod
     def toDaemon(cls, *args):
@@ -134,6 +133,8 @@ class MainWindow(QMainWindow):
             self.autoSnapshotToggled)
         self.ui.actionSessionScripts.triggered.connect(
             self.sessionScriptsToggled)
+        self.ui.actionRememberOptionalGuiStates.triggered.connect(
+            self.rememberOptionalGuiStatesToggled)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
         self.ui.actionDonate.triggered.connect(self.donate)
@@ -154,6 +155,7 @@ class MainWindow(QMainWindow):
         self.controlMenu.addAction(self.ui.actionAutoSnapshot)
         self.controlMenu.addAction(self.ui.actionDesktopsMemory)
         self.controlMenu.addAction(self.ui.actionSessionScripts)
+        self.controlMenu.addAction(self.ui.actionRememberOptionalGuiStates)
 
         self.controlToolButton = self.ui.toolBar.widgetForAction(
             self.ui.actionControlMenu)
@@ -294,6 +296,8 @@ class MainWindow(QMainWindow):
             bool(options & ray.Option.SNAPSHOTS))
         self.ui.actionSessionScripts.setChecked(
             bool(options & ray.Option.SESSION_SCRIPTS))
+        self.ui.actionRememberOptionalGuiStates.setChecked(
+            bool(options & ray.Option.GUI_STATES))
 
         has_wmctrl = bool(options & ray.Option.HAS_WMCTRL)
         self.ui.actionDesktopsMemory.setEnabled(has_wmctrl)
@@ -329,16 +333,24 @@ class MainWindow(QMainWindow):
             self.timer_raisewin.stop()
 
     def bookmarkSessionFolderToggled(self, state):
-        self.toDaemon('/ray/option/bookmark_session_folder', int(state))
+        self.setOption(ray.Option.BOOKMARK_SESSION, state)
 
     def desktopsMemoryToggled(self, state):
-        self.toDaemon('/ray/option/desktops_memory', int(state))
+        self.setOption(ray.Option.DESKTOPS_MEMORY, state)
 
     def autoSnapshotToggled(self, state):
-        self.toDaemon('/ray/option/snapshots', int(state))
+        self.setOption(ray.Option.SNAPSHOTS, state)
 
     def sessionScriptsToggled(self, state):
-        self.toDaemon('/ray/option/session_scripts', int(state))
+        self.setOption(ray.Option.SESSION_SCRIPTS, state)
+
+    def rememberOptionalGuiStatesToggled(self, state):
+        self.setOption(ray.Option.GUI_STATES, state)
+    
+    def setOption(self, option: int, state: bool):
+        if not state:
+            option = -option
+        self.toDaemon('/ray/server/set_option', option)
 
     def flashOpen(self):
         for client in self._session.client_list:

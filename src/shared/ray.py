@@ -88,6 +88,12 @@ class Protocol:
     RAY_NET = 2
 
 
+class GuiForce:
+    SHOW = 0x01
+    HIDE = 0x02
+    HIDE_EARLY = 0x04
+
+
 class Option:
     NSM_LOCKED = 0x001
     SAVE_FROM_CLIENT = 0x002 #DEPRECATED
@@ -97,6 +103,7 @@ class Option:
     HAS_GIT = 0x020
     SNAPSHOTS = 0x040
     SESSION_SCRIPTS = 0x080
+    GUI_STATES = 0x100
 
 class Err:
     OK = 0
@@ -283,11 +290,11 @@ def isValidFullPath(path: str)->bool:
     if not path.startswith('/'):
         return False
 
-    for forbidden in ('//', '/./'):
+    for forbidden in ('//', '/./', '/../'):
         if forbidden in path:
             return False
 
-    if path.endswith('/.'):
+    if path.endswith(('/.', '/..')):
         return False
     return True
 

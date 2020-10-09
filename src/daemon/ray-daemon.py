@@ -133,13 +133,7 @@ if __name__ == '__main__':
     RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
     RS.settings.setValue('daemon/favorites', RS.favorites)
     if not CommandLineArgs.no_options:
-        RS.settings.setValue('daemon/bookmark_session_folder',
-                             server.option_bookmark_session)
-        RS.settings.setValue('daemon/auto_snapshot', server.option_snapshots)
-        RS.settings.setValue('daemon/desktops_memory',
-                             server.option_desktops_memory)
-        RS.settings.setValue('daemon/session_scripts',
-                             server.option_session_scripts)
+        RS.settings.setValue('daemon/options', server.options)
 
     RS.settings.sync()
 

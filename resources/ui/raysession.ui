@@ -754,6 +754,7 @@ QToolButton {border: none}</string>
     <addaction name="actionAutoSnapshot"/>
     <addaction name="actionDesktopsMemory"/>
     <addaction name="actionSessionScripts"/>
+    <addaction name="actionRememberOptionalGuiStates"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSession"/>
@@ -1105,7 +1106,7 @@ QToolButton {border: none}</string>
      <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Auto Snapshot At Save (requires git)</string>
+    <string>&amp;Auto Snapshot At Save (requires git)</string>
    </property>
    <property name="toolTip">
     <string>Auto Snapshot at Save (requires git)</string>
@@ -1117,7 +1118,7 @@ QToolButton {border: none}</string>
      <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Donate</string>
+    <string>&amp;Donate</string>
    </property>
   </action>
   <action name="actionSessionScripts">
@@ -1129,10 +1130,24 @@ QToolButton {border: none}</string>
      <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Session Scripts</string>
+    <string>&amp;Session Scripts</string>
    </property>
    <property name="toolTip">
     <string>Run the session scripts inside the directory ray-scripts</string>
+   </property>
+  </action>
+  <action name="actionRememberOptionalGuiStates">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="preferences-system-windows"/>
+   </property>
+   <property name="text">
+    <string>Remember optional GUI states</string>
+   </property>
+   <property name="toolTip">
+    <string>Remember if optional GUIs were shown</string>
    </property>
   </action>
  </widget>

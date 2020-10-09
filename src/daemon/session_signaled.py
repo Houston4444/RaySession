@@ -194,7 +194,7 @@ class SignaledSession(OperatingSession):
             server = self.getServer()
             if (server
                     and server.getServerStatus() == ray.ServerStatus.READY
-                    and server.option_desktops_memory):
+                    and server.options & ray.Option.DESKTOPS_MEMORY):
                 self.desktops_memory.replace()
         else:
             self.message("Reply from unknown client")
@@ -616,6 +616,16 @@ class SignaledSession(OperatingSession):
 
         self._ray_session_save_as_template(
             path, [template_name, net], src_addr)
+
+    def _ray_server_set_option(self, path, args, src_addr):
+        option = args[0]
+
+        if abs(option) == ray.Option.BOOKMARK_SESSION:
+            if self.path:
+                if option > 0:
+                    self.bookmarker.makeAll(self.path)
+                else:
+                    self.bookmarker.removeAll(self.path)
 
     @session_operation
     def _ray_session_save(self, path, args, src_addr):
@@ -1592,13 +1602,6 @@ class SignaledSession(OperatingSession):
             self.endTimerIfLastExpected(client)
 
         client.net_daemon_copy_timer.start()
-
-    def _ray_option_bookmark_session_folder(self, path, args, src_addr):
-        if self.path:
-            if args[0]:
-                self.bookmarker.makeAll(self.path)
-            else:
-                self.bookmarker.removeAll(self.path)
 
     def serverOpenSessionAtStart(self, session_name):
         self.steps_order = [(self.preload, session_name),
