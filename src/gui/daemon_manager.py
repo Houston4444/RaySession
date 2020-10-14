@@ -1,3 +1,5 @@
+
+import os
 import socket
 import sys
 from liblo import Address
@@ -188,6 +190,10 @@ class DaemonManager(QObject):
                 self.launched_before = True
                 self.is_local = True
                 self.callDaemon()
+                sys.stderr.write(
+                    "\033[92m%s\033[0m\n" %  (_translate('GUI_daemon',
+                                          "Connecting GUI to existing ray-daemon port %i")
+                                % self.port))
                 return
 
         server = GUIServerThread.instance()
@@ -197,6 +203,7 @@ class DaemonManager(QObject):
 
         # start process
         arguments = ['--gui-url', str(server.url),
+                     '--gui-pid', str(os.getpid()),
                      '--osc-port', str(self.port),
                      '--session-root', CommandLineArgs.session_root]
 

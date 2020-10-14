@@ -77,6 +77,7 @@ class ClientCommunicating(liblo.ServerThread):
         self.net_master_daemon_url = ''
         self.net_daemon_id = random.randint(1, 999999999)
         self.list_asker_addr = None
+        self.options = 0
 
     @ray_method('/osc/ping', '')
     def oscPing(self, path, args, types, src_addr):
@@ -301,7 +302,7 @@ class ClientCommunicating(liblo.ServerThread):
 
         Terminal.message("Client '%s' sends gui shown" % client.client_id)
 
-        if self.option & ray.Option.GUI_STATES:
+        if self.options & ray.Option.GUI_STATES:
             if client.start_gui_hidden and not client.gui_has_been_visible:
                 if client.optional_gui_force & ray.OptionalGuiForce.HIDE_WHEN_SHOWN:
                     self.send(src_addr, '/nsm/client/hide_optional_gui')

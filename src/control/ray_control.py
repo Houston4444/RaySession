@@ -354,6 +354,11 @@ if __name__ == '__main__':
                             break
 
                         for pid in daemon.local_gui_pids:
+                            if pid == 0:
+                                # This means we don't know the pid of the local GUI
+                                # So consider this daemon has already a GUI
+                                break
+
                             if pidExists(pid) and not pidIsStopped(pid):
                                 break
                         else:
