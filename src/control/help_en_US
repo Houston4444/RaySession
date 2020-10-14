@@ -84,9 +84,10 @@ control RaySession daemons
             desktops_memory
             snapshots
             session_scripts
+            gui_states
         precede the option with 'not_' to disable this option
         example: ray_control set_options bookmark_session_folder not_snapshots
-    has option OPTION
+    has_option OPTION
         Returns an error code if OPTION is not currently used
     script_info TEXT
         Displays an info dialog on RaySession's GUI.

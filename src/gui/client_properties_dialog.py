@@ -139,7 +139,13 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         self.nsmui_frame = QFrame()
         self.nsmui = ui_nsm_properties.Ui_Frame()
         self.nsmui.setupUi(self.nsmui_frame)
-
+        self.nsmui.comboBoxHideGui.addItem('Never', 0)
+        self.nsmui.comboBoxHideGui.addItem('Hide at Start',
+                                           ray.OptionalGuiForce.HIDE_EARLY)
+        self.nsmui.comboBoxHideGui.addItem('Hide at Open',
+                                           ray.OptionalGuiForce.HIDE)
+        self.nsmui.comboBoxHideGui.addItem('Hide when shown',
+                                           ray.OptionalGuiForce.HIDE_WHEN_SHOWN)
         self.ui.verticalLayoutProtocol.addWidget(self.nsmui_frame)
 
         self.ui.tabWidget.setTabText(1, 'NSM')
@@ -161,9 +167,29 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         self.nsmui.lineEditExecutable.setText(self.client.executable_path)
         self.nsmui.lineEditArguments.setText(self.client.arguments)
         
+        if (self.client.capabilities
+                and ':optional-gui:' not in self.client.capabilities):
+            self.nsmui.groupBoxOptionalGui.setVisible(False)
+        else:
+            self.nsmui.checkBoxShowGui.setChecked(
+                self.client.optional_gui_force & ray.OptionalGuiForce.SHOW)
+            gui_force = self.client.optional_gui_force
+            if gui_force & ray.OptionalGuiForce.HIDE_WHEN_SHOWN:
+                self.nsmui.comboBoxHideGui.setCurrentIndex(3)
+            elif gui_force & ray.OptionalGuiForce.HIDE:
+                self.nsmui.comboBoxHideGui.setCurrentIndex(2)
+            elif gui_force & ray.OptionalGuiForce.HIDE_EARLY:
+                self.nsmui.comboBoxHideGui.setCurrentIndex(1)
+            else:
+                self.nsmui.comboBoxHideGui.setCurrentIndex(0)
+        
     def saveChanges(self):
         self.client.executable_path = self.nsmui.lineEditExecutable.text()
         self.client.arguments = self.nsmui.lineEditArguments.text()
+        self.client.optional_gui_force = 0
+        if self.nsmui.checkBoxShowGui.isChecked():
+            self.client.optional_gui_force = ray.OptionalGuiForce.SHOW
+        self.client.optional_gui_force += self.nsmui.comboBoxHideGui.currentData()
         ClientPropertiesDialog.saveChanges(self)
 
     def changeIconwithText(self, text):

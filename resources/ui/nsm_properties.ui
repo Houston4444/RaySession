@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>416</width>
-    <height>408</height>
+    <height>482</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -152,6 +152,12 @@
       </item>
       <item>
        <widget class="QLabel" name="labelExecutableWarning">
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+          <italic>true</italic>
+         </font>
+        </property>
         <property name="text">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit executable is strongly discouraged !&lt;br/&gt;It can be useful if you use many versions of a same software.&lt;br/&gt;Change it only if you are sure of what you are doing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -204,6 +210,11 @@
      <layout class="QVBoxLayout" name="verticalLayout_9">
       <item>
        <widget class="QLabel" name="label_11">
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Arguments are supposed to not be supported by NSM protocol.&lt;br/&gt;In some cases it can works, but no warranty !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -244,6 +255,45 @@
          </size>
         </property>
        </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBoxOptionalGui">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This only concerns client capable to hide/show their windows from the session manager.&lt;/p&gt;&lt;p&gt;In a perfect world, theses clients all save their gui state in their configuration file.&lt;/p&gt;&lt;p&gt;In the real world, someones will always start hidden,&lt;br/&gt;others will always display their graphical interface.&lt;br/&gt;Consequently, the GUI visibility state is not restored correctly.&lt;/p&gt;&lt;p&gt;use :&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Show when ready&lt;/span&gt; when client always start hidden&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Hide at start&lt;/span&gt; if client starts its GUI from the start&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Hide at open&lt;/span&gt; if hide at start makes the client crash&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Hide when shown&lt;/span&gt; if the client's GUI appears after a moment.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
+      <string>Optional GUI arrangements</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QCheckBox" name="checkBoxShowGui">
+        <property name="text">
+         <string>Show when ready</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Hide :</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="comboBoxHideGui"/>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>

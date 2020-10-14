@@ -87,9 +87,10 @@ contrôle les démons de RaySession
             desktops_memory
             snapshots
             session_scripts
+            gui_states
         Précédez l'option de 'not_' pour désactiver cette option
         Exemple: ray_control set_options bookmark_session_folder not_snapshots
-    has option OPTION
+    has_option OPTION
         Retourne un code d'erreur si OPTION n'est pas enclenchée
     script_info TEXTE
         Affiche une fenêtre de dialogue d'information sur l'IGU de RaySession

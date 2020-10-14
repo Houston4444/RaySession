@@ -317,6 +317,9 @@ class ClientSlot(QFrame):
             self.ui.killButton.setVisible(False)
 
             self.ui.saveButton.setIcon(self.saveIcon)
+            
+            if not ray_hack:
+                self.setGuiState(False)
 
         elif status == ray.ClientStatus.PRECOPY:
             self.ui.startButton.setEnabled(False)

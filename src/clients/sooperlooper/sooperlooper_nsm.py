@@ -79,7 +79,7 @@ class GeneralObject(QObject):
         self.leaving = False
         self.wait_for_load = False
 
-        self.showOptionalGui()
+        #self.showOptionalGui()
 
         self.ping_timer = QTimer()
         self.ping_timer.setInterval(100)

@@ -1722,6 +1722,9 @@ for better organization."""))
                     client.prefix_mode = ray.PrefixMode.CLIENT_NAME
                     client.auto_start = True
                     client._from_nsm_file = True
+                    if client.executable_path in ('ray-proxy', 'nsm-proxy'):
+                        client.optional_gui_force = ray.OptionalGuiForce.NONE
+
                     self.future_clients.append(client)
 
             file.close()
@@ -1952,6 +1955,16 @@ for better organization."""))
 
         self.switching_session = False
 
+        # display optional GUIs we want to be shown now
+        if self.hasServerOption(ray.Option.GUI_STATES):
+            for client in self.clients:
+                if (client.isRunning()
+                        and client.isCapableOf(':optional-gui:')
+                        and not client.start_gui_hidden
+                        and not client.gui_has_been_visible
+                        and client.optional_gui_force & ray.OptionalGuiForce.SHOW):
+                    client.sendToSelfAddress('/nsm/client/show_optional_gui')
+
         self.nextFunction()
 
     def loadDone(self):
@@ -1959,15 +1972,6 @@ for better organization."""))
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.READY)
         self.forgetOscArgs()
-
-        if self.hasServerOption(ray.Option.GUI_STATES):
-            for client in self.clients:
-                if (client.isRunning()
-                        and client.isCapableOf(':optional-gui:')
-                        and not client.start_gui_hidden
-                        and not client.gui_has_been_visible
-                        and client.executable_path not in ('ray-proxy', 'nsm-proxy')):
-                    client.sendToSelfAddress('/nsm/client/show_optional_gui')
         
     def loadError(self, err_loading):
         self.message("Failed")

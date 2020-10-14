@@ -975,6 +975,8 @@ class SignaledSession(OperatingSession):
         client.prefix_mode = prefix_mode
         client.custom_prefix = custom_prefix
         client.setDefaultGitIgnored(executable)
+        if executable in ('ray-proxy', 'nsm-proxy'):
+            client.optional_gui_force = ray.OptionalGuiForce.NONE
 
         if self.addClient(client):
             if start_it:

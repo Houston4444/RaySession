@@ -301,6 +301,11 @@ class ClientCommunicating(liblo.ServerThread):
 
         Terminal.message("Client '%s' sends gui shown" % client.client_id)
 
+        if self.option & ray.Option.GUI_STATES:
+            if client.start_gui_hidden and not client.gui_has_been_visible:
+                if client.optional_gui_force & ray.OptionalGuiForce.HIDE_WHEN_SHOWN:
+                    self.send(src_addr, '/nsm/client/hide_optional_gui')
+
         client.gui_visible = True
         client.gui_has_been_visible = True
 

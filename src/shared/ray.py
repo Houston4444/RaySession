@@ -88,10 +88,12 @@ class Protocol:
     RAY_NET = 2
 
 
-class GuiForce:
+class OptionalGuiForce:
+    NONE = 0x00
     SHOW = 0x01
     HIDE = 0x02
     HIDE_EARLY = 0x04
+    HIDE_WHEN_SHOWN = 0x08
 
 
 class Option:
@@ -104,6 +106,7 @@ class Option:
     SNAPSHOTS = 0x040
     SESSION_SCRIPTS = 0x080
     GUI_STATES = 0x100
+
 
 class Err:
     OK = 0
@@ -611,7 +614,7 @@ class ClientData:
     check_last_save = True
     ignored_extensions = getGitIgnoredExtensions()
     template_origin = ''
-    useless_int = 0
+    optional_gui_force = OptionalGuiForce.SHOW
     ray_hack = None
     ray_net = None
 
@@ -634,18 +637,18 @@ class ClientData:
                 client.icon,
                 client.capabilities, int(client.check_last_save),
                 client.ignored_extensions,
-                client.template_origin, client.useless_int)
+                client.template_origin, client.optional_gui_force)
 
     def gui_init(self, client_id, protocol):
         self.client_id = client_id
         self.protocol = protocol
-    
+
     def set_ray_hack(self, ray_hack):
         self.ray_hack = ray_hack
-    
+
     def set_ray_net(self, ray_net):
         self.ray_net = ray_net
-    
+
     def update(self, client_id, protocol,
                executable, arguments, pre_env,
                name, prefix_mode, custom_prefix,
@@ -653,7 +656,7 @@ class ClientData:
                icon,
                capabilities, check_last_save,
                ignored_extensions,
-               template_origin, useless_int,
+               template_origin, optional_gui_force,
                secure=False):
         self.executable_path = str(executable)
         self.arguments = str(arguments)
@@ -667,6 +670,7 @@ class ClientData:
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
         self.template_origin = template_origin
+        self.optional_gui_force = optional_gui_force
 
         if secure:
             return
