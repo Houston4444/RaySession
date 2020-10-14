@@ -1238,6 +1238,7 @@ class SignaledSession(OperatingSession):
     @client_action
     def _ray_client_show_optional_gui(self, path, args, src_addr, client):
         client.sendToSelfAddress("/nsm/client/show_optional_gui")
+        client.show_gui_ordered = True
         self.send(src_addr, '/reply', path, 'show optional GUI asked')
 
     @client_action

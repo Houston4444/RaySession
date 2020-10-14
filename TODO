@@ -6,8 +6,6 @@ konv# RaySession TODO
     ...
     
     review list with net and last reply -> trop compliqué pour pas gd chose
-    problème fenêtre network s'ouvre au dessus de l'autre
-    IGU ray-network mal initialisé
     ray_network change window title with daemon url 
     
     send session is loaded when program ready ->ne semble pas nécessaire
@@ -21,7 +19,6 @@ konv# RaySession TODO
     ---
     
     Icônes partout
-    protocole ray-net
     Pas de QMessageBox, tout doit être child_dialog
     
     favoris depuis ray_control -> pas pressé

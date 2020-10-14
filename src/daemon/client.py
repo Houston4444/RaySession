@@ -42,6 +42,7 @@ class Client(ServerSender, ray.ClientData):
     gui_visible = False
     progress = 0
     gui_has_been_visible = False
+    show_gui_ordered = False
 
     #have to be modified by main thread for security
     addr = None
@@ -649,6 +650,7 @@ class Client(ServerSender, ray.ClientData):
         self.last_dirty = 0.00
         self.gui_has_been_visible = False
         self.gui_visible = False
+        self.show_gui_ordered = False
 
         if self.is_dummy:
             self.sendErrorToCaller(OSC_SRC_START, ray.Err.GENERAL_ERROR,
