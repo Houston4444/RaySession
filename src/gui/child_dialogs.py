@@ -48,8 +48,16 @@ class ChildDialog(QDialog):
         self._signaler.server_status_changed.connect(self.serverStatusChanged)
         self._signaler.server_copying.connect(self.serverCopying)
 
+        self.root_folder_file_dialog = None
+        self.root_folder_message_box = QMessageBox(
+            QMessageBox.Critical,
+            _translate('root_folder_dialogs', 'unwritable dir'),
+            '',
+            QMessageBox.NoButton,
+            self)
+
         self.server_copying = parent.server_copying
-    
+
     @classmethod
     def toDaemon(cls, *args):
         server = GUIServerThread.instance()
@@ -67,38 +75,47 @@ class ChildDialog(QDialog):
         self.serverStatusChanged(self._session.server_status)
 
     def changeRootFolder(self):
-        root_folder = QFileDialog.getExistingDirectory(
-            self,
-            _translate("root_folder_dialogs",
-                       "Choose root folder for sessions"),
-            CommandLineArgs.session_root,
-            QFileDialog.ShowDirsOnly)
+        # construct this here only because it can be quite long
+        if self.root_folder_file_dialog is None:
+            self.root_folder_file_dialog = QFileDialog(
+                self,
+                _translate("root_folder_dialogs",
+                        "Choose root folder for sessions"),
+                CommandLineArgs.session_root)
+            self.root_folder_file_dialog.setFileMode(QFileDialog.Directory)
+            self.root_folder_file_dialog.setOption(QFileDialog.ShowDirsOnly)
+        else:
+            self.root_folder_file_dialog.setDirectory(CommandLineArgs.session_root)
 
-        if not root_folder:
+        self.root_folder_file_dialog.exec()
+        if not self.root_folder_file_dialog.result():
             return
+
+        selected_files = self.root_folder_file_dialog.selectedFiles()
+        if not selected_files:
+            return
+        
+        root_folder = selected_files[0]
 
         # Security, kde dialogs sends $HOME if user type a folder path
         # that doesn't already exists.
         if os.getenv('HOME') and root_folder == os.getenv('HOME'):
             return
 
-        errorDialog = QMessageBox(
-            QMessageBox.Critical,
-            _translate('root_folder_dialogs', 'unwritable dir'),
-            _translate(
-                'root_folder_dialogs',
-                '<p>You have no permissions for %s,<br>' % root_folder \
-                    + 'choose another directory !</p>'))
+        self.root_folder_message_box.setText(
+            _translate('root_folder_dialogs',
+                "<p>You have no permissions for %s,<br>choose another directory !</p>")
+                    % root_folder)
 
         if not os.path.exists(root_folder):
             try:
                 os.makedirs(root_folder)
             except:
-                errorDialog.exec()
+                self.root_folder_message_box.exec()
                 return
 
         if not os.access(root_folder, os.W_OK):
-            errorDialog.exec()
+            self.root_folder_message_box.exec()
             return
 
         RS.settings.setValue('default_session_root', root_folder)
@@ -229,6 +246,12 @@ class OpenSessionDialog(ChildDialog):
             server_status in (
                 ray.ServerStatus.OFF,
                 ray.ServerStatus.READY) and not self.server_copying)
+
+        if server_status != ray.ServerStatus.OFF:
+            if self.root_folder_file_dialog is not None:
+                self.root_folder_file_dialog.reject()
+            self.root_folder_message_box.reject()
+
         self.preventOk()
 
     def rootChanged(self, session_root):
@@ -419,6 +442,11 @@ class NewSessionDialog(ChildDialog):
             self.server_will_accept = bool(
                 server_status == ray.ServerStatus.READY and not self.server_copying)
 
+        if server_status != ray.ServerStatus.OFF:
+            if self.root_folder_file_dialog is not None:
+                self.root_folder_file_dialog.reject()
+            self.root_folder_message_box.reject()
+
         self.preventOk()
 
     def rootChanged(self, session_root):
@@ -543,6 +571,15 @@ class AbstractSaveTemplateDialog(ChildDialog):
         self.ui.pushButtonAccept.clicked.connect(self.verifyAndAccept)
         self.ui.pushButtonAccept.setEnabled(False)
 
+        self.overwrite_message_box = QMessageBox(
+            QMessageBox.Question,
+            _translate(
+                    'session template',
+                    'Overwrite Template ?'),
+            '',
+            QMessageBox.Yes | QMessageBox.No,
+            self)
+
     def textEdited(self, text):
         if '/' in text:
             self.ui.lineEdit.setText(text.replace('/', '⁄'))
@@ -562,16 +599,16 @@ class AbstractSaveTemplateDialog(ChildDialog):
     def verifyAndAccept(self):
         template_name = self.getTemplateName()
         if template_name in self.template_list:
-            ret = QMessageBox.question(
-                self,
-                _translate(
-                    'session template',
-                    'Overwrite Template ?'),
+            self.overwrite_message_box.setText(
                 _translate(
                     'session_template',
                     'Template <strong>%s</strong> already exists.\nOverwrite it ?') %
                 template_name)
-            if ret == QMessageBox.No:
+            
+            self.overwrite_message_box.exec()
+
+            if (self.overwrite_message_box.clickedButton()
+                    == self.overwrite_message_box.button(QMessageBox.No)):
                 return
         self.accept()
 
@@ -599,6 +636,7 @@ class SaveTemplateSessionDialog(AbstractSaveTemplateDialog):
         self.server_will_accept = bool(server_status == ray.ServerStatus.READY)
 
         if server_status == ray.ServerStatus.OFF:
+            self.overwrite_message_box.reject()
             self.reject()
 
         self.allowOkButton()
@@ -635,7 +673,8 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
                 ray.ServerStatus.OFF,
                 ray.ServerStatus.CLOSE) and not self.server_copying)
 
-        if server_status == ray.ServerStatus.OFF:
+        if server_status in (ray.ServerStatus.OFF, ray.ServerStatus.CLOSE):
+            self.overwrite_message_box.reject()
             self.reject()
 
         self.allowOkButton()
@@ -658,6 +697,16 @@ class ClientTrashDialog(ChildDialog):
         self.ui.toolButtonAdvanced.clicked.connect(self.showProperties)
         self.ui.pushButtonRemove.clicked.connect(self.removeClient)
         self.ui.pushButtonCancel.setFocus()
+        
+        self.remove_client_message_box = QMessageBox(
+            QMessageBox.Warning,
+            _translate('trashed_client', 'Remove definitely'),
+            _translate('trashed_client',
+                "Are you sure to want to remove definitely this client and all its files ?"),
+            QMessageBox.Ok | QMessageBox.Cancel,
+            self
+            )
+        self.remove_client_message_box.setDefaultButton(QMessageBox.Cancel)
 
     def serverStatusChanged(self, server_status):
         if server_status in (ray.ServerStatus.CLOSE,
@@ -665,18 +714,14 @@ class ClientTrashDialog(ChildDialog):
                              ray.ServerStatus.OUT_SAVE,
                              ray.ServerStatus.OUT_SNAPSHOT,
                              ray.ServerStatus.WAIT_USER):
+            self.remove_client_message_box.reject()
             self.reject()
 
     def removeClient(self):
-        button = QMessageBox.warning(
-            self,
-            _translate('trashed_client', 'Remove definitely'),
-            _translate('trashed_client',
-                "Are you sure to want to remove definitely this client and all its files ?"),
-            QMessageBox.Ok | QMessageBox.Cancel,
-            QMessageBox.Cancel)
+        self.remove_client_message_box.exec()
 
-        if button != QMessageBox.Ok:
+        if (self.remove_client_message_box.clickedButton()
+                != self.remove_client_message_box.button(QMessageBox.Ok)):
             return
 
         self.toDaemon(
