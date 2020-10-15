@@ -1225,6 +1225,11 @@ class OscServerThread(ClientCommunicating):
                           '/ray/gui/client/ray_hack_update',
                           client.client_id,
                           *client.ray_hack.spread())
+            elif client.protocol == ray.Protocol.RAY_NET:
+                self.send(gui_addr,
+                          '/ray/gui/client/ray_net_update',
+                          client.client_id,
+                          *client.ray_net.spread())
 
             self.send(gui_addr, "/ray/gui/client/status",
                       client.client_id, client.status)
@@ -1235,6 +1240,19 @@ class OscServerThread(ClientCommunicating):
 
                 self.send(gui_addr, '/ray/gui/client/gui_visible',
                           client.client_id, client.gui_visible)
+
+        for trashed_client in self.session.trashed_clients:
+            self.send(gui_addr, '/ray/gui/trash/add',
+                      *trashed_client.spread())
+
+            if trashed_client.protocol == ray.Protocol.RAY_HACK:
+                self.send(gui_addr, '/ray/gui/trash/ray_hack_update',
+                          trashed_client.client_id,
+                          *trashed_client.ray_hack.spread())
+            elif trashed_client.protocol == ray.Protocol.RAY_NET:
+                self.send(gui_addr, '/ray/gui/trash/ray_net_update',
+                          trashed_client.client_id,
+                          *trashed_client.ray_net.spread())
 
         self.gui_list.append(gui_addr)
 
