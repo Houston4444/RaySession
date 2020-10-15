@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QProcess
 from PyQt5.QtXml  import QDomDocument
@@ -423,6 +424,8 @@ class SignaledSession(OperatingSession):
 
     def _ray_server_list_sessions(self, path, args, src_addr):
         with_net = False
+        last_sent_time = time.time()
+        
         if args:
             with_net = args[0]
 
@@ -458,8 +461,10 @@ class SignaledSession(OperatingSession):
 
                     basefolder = root.replace(self.root + '/', '', 1)
                     session_list.append(basefolder)
+                    n += len(basefolder)
 
-                    if n >= 16000:
+                    if n >= 10000 or time.time() - last_sent_time > 0.300:
+                        last_sent_time = time.time()
                         self.send(src_addr, "/reply", path,
                                     *session_list)
 

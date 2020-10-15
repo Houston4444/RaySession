@@ -205,6 +205,14 @@ class OpenSessionDialog(ChildDialog):
         self.ui = ui_open_session.Ui_DialogOpenSession()
         self.ui.setupUi(self)
 
+        self.timer_progress = QTimer()
+        self.timer_progress.setInterval(50)
+        self.timer_progress_n = 0
+        self.timer_progress.timeout.connect(self.timerProgress)
+        self.timer_progress.start()
+        self.progress_inverted = False
+        self.ui.widgetSpacer.setVisible(False)
+
         self.ui.toolButtonFolder.clicked.connect(self.changeRootFolder)
         self.ui.sessionList.currentItemChanged.connect(
             self.currentItemChanged)
@@ -254,6 +262,15 @@ class OpenSessionDialog(ChildDialog):
 
         self.preventOk()
 
+    def timerProgress(self):
+        self.ui.progressBar.setValue(self.timer_progress_n)
+        if self.timer_progress_n >= 100:
+            self.timer_progress_n = 0
+            self.progress_inverted = not self.progress_inverted
+            self.ui.progressBar.setInvertedAppearance(
+                self.progress_inverted)
+        self.timer_progress_n += 5
+
     def rootChanged(self, session_root):
         self.ui.currentSessionsFolder.setText(session_root)
         self.ui.sessionList.clear()
@@ -261,6 +278,14 @@ class OpenSessionDialog(ChildDialog):
         self.toDaemon('/ray/server/list_sessions', 0)
 
     def addSessions(self, session_names):
+        if not session_names:
+            self.timer_progress.stop()
+            height = self.ui.progressBar.size().height()
+            self.ui.progressBar.setVisible(False)
+            self.ui.widgetSpacer.setVisible(True)
+            #self.ui.widgetSpacer.setMaximumHeight(height)
+            ##self.ui.widgetSpacer.setHeight(height)
+
         for session_name in session_names:
             folder_div = session_name.split('/')
             folders = self.folders

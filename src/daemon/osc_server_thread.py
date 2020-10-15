@@ -623,27 +623,6 @@ class OscServerThread(ClientCommunicating):
     def rayServerOpenSessionWithoutSaveOff(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/session/save', '')
-    def raySessionSave(self, path, args, types, src_addr):
-        if not self.session.path:
-            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "No session to save.")
-            return False
-
-    @ray_method('/ray/session/run_step', None)
-    def raySessionProcessStep(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
-            self.unknownMessage(path, types, src_addr)
-            return False
-
-    @ray_method('/ray/session/save_as_template', 's')
-    def raySessionSaveAsTemplate(self, path, args, types, src_addr):
-        template_name = args[0]
-        if '/' in template_name:
-            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
-                      "Invalid session template name.")
-            return False
-
     @ray_method('/ray/server/save_session_template', 'ss')
     def rayServerSaveSessionTemplate(self, path, args, types, src_addr):
         #save as template an not loaded session
@@ -777,6 +756,27 @@ class OscServerThread(ClientCommunicating):
 
         elif action == 'unset_jack_checker_autostart':
             os.remove("%s/%s" % (autostart_dir, desk_file))
+
+    @ray_method('/ray/session/save', '')
+    def raySessionSave(self, path, args, types, src_addr):
+        if not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "No session to save.")
+            return False
+
+    @ray_method('/ray/session/run_step', None)
+    def raySessionProcessStep(self, path, args, types, src_addr):
+        if not ray.areTheyAllString(args):
+            self.unknownMessage(path, types, src_addr)
+            return False
+
+    @ray_method('/ray/session/save_as_template', 's')
+    def raySessionSaveAsTemplate(self, path, args, types, src_addr):
+        template_name = args[0]
+        if '/' in template_name or template_name == '.':
+            self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
+                      "Invalid session template name.")
+            return False
 
     @ray_method('/ray/session/get_session_name', '')
     def raySessionGetSessionName(self, path, args, types, src_addr):
