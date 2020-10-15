@@ -5,7 +5,7 @@
       In all cases, template will be available only if the executable value is in PATH
       and if the template-name has not already been added -->
 <RAY-CLIENT-TEMPLATES>
- <Client-Template template-name="Hydrogen" client_id="hydrogen" executable="hydrogen" check_nsm_bin="1"/>
+<!--  <Client-Template template-name="Hydrogen" client_id="hydrogen" executable="hydrogen" check_nsm_bin="1"/> -->
  <Client-Template template-name="Ardour" executable="ardour" name="Ardour" icon="ardour" client_id="ardour"/>
  <Client-Template template-name="Ardour6" executable="Ardour6" name="Ardour" icon="ardour" client_id="ardour"/>
  <Client-Template template-name="ardour6" executable="ardour6" name="Ardour" icon="ardour" client_id="ardour"/>
