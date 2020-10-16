@@ -40,9 +40,9 @@ class Client(ServerSender, ray.ClientData):
 
     #can be directly changed by OSC thread
     gui_visible = False
-    progress = 0
     gui_has_been_visible = False
     show_gui_ordered = False
+    progress = 0
 
     #have to be modified by main thread for security
     addr = None
@@ -1140,6 +1140,14 @@ class Client(ServerSender, ray.ClientData):
         self.description = new_client.description
         self._from_nsm_file = new_client._from_nsm_file
 
+        self._desktop_label = new_client._desktop_label
+        self._desktop_description = new_client._desktop_description
+        self._desktop_icon = new_client._desktop_icon
+
+        self.gui_visible = new_client.gui_visible
+        self.gui_has_been_visible = self.gui_visible
+        self.show_gui_ordered = False
+
     def switch(self):
         jack_client_name = self.getJackClientName()
         client_project_path = self.getProjectPath()
@@ -1153,6 +1161,11 @@ class Client(ServerSender, ray.ClientData):
         self.pending_command = ray.Command.OPEN
         self.sendGuiClientProperties()
         self.setStatus(ray.ClientStatus.SWITCH)
+        if self.isCapableOf(':optional-gui:'):
+            self.sendGui('/ray/gui/client/has_optional_gui', 
+                         self.client_id)
+            self.sendGui('/ray/gui/client/gui_visible',
+                         self.client_id, int(self.gui_visible))
 
     def canSwitchWith(self, other_client)->bool:
         if self.protocol == ray.Protocol.RAY_HACK:
@@ -1172,8 +1185,7 @@ class Client(ServerSender, ray.ClientData):
                             == other_client.ray_net.session_root)
 
         return bool(self.running_executable == other_client.executable_path
-                    and self.running_arguments 
-                        == other_client.running_arguments)
+                    and self.running_arguments == other_client.arguments)
 
     def sendGuiClientProperties(self, removed=False):
         ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
@@ -2045,7 +2057,6 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.pending_command = ray.Command.OPEN
 
         if self.isCapableOf(":optional-gui:"):
-            self.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
             if (self.hasServerOption(ray.Option.GUI_STATES)
                     and self.start_gui_hidden
                     and self.optional_gui_force & ray.OptionalGuiForce.HIDE

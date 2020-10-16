@@ -298,6 +298,7 @@ class SignaledSession(Session):
     def _ray_gui_client_has_optional_gui(self, path, args):
         client_id = args[0]
         client = self.getClient(client_id)
+
         if client:
             client.setGuiEnabled()
 

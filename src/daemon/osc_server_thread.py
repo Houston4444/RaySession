@@ -1239,7 +1239,7 @@ class OscServerThread(ClientCommunicating):
                           client.client_id)
 
                 self.send(gui_addr, '/ray/gui/client/gui_visible',
-                          client.client_id, client.gui_visible)
+                          client.client_id, int(client.gui_visible))
 
         for trashed_client in self.session.trashed_clients:
             self.send(gui_addr, '/ray/gui/trash/add',
