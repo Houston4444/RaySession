@@ -398,14 +398,14 @@ class Session(ServerSender):
 
     def reOrderClients(self, client_ids_list, src_addr=None, src_path=''):
         client_newlist = []
-
+        print('erkoggk reordering', client_newlist)
         for client_id in client_ids_list:
             for client in self.clients:
                 if client.client_id == client_id:
                     client_newlist.append(client)
                     break
 
-        if len(client_ids_list) != len(self.clients):
+        if len(client_newlist) != len(self.clients):
             if src_addr:
                 self.send(src_addr, '/error', src_path, ray.Err.GENERAL_ERROR,
                           "%s clients are missing or incorrect" \
@@ -418,6 +418,9 @@ class Session(ServerSender):
 
         if src_addr:
             self.answer(src_addr, src_path, "clients reordered")
+        print('fkoreofkfffffffffff', *[c.client_id for c in self.clients])
+        self.sendGui('/ray/gui/session/sort_clients',
+                     *[c.client_id for c in self.clients])
 
     def isPathInASessionDir(self, spath):
         if self.isNsmLocked() and os.getenv('NSM_URL'):
@@ -1823,7 +1826,7 @@ for better organization."""))
         for i in rm_indexes:
             self.removeClient(self.clients[i])
 
-        # Lie to the GUI saying all clients are removed.
+        # Lie to the GUIs saying all clients are removed.
         # Clients will reappear just in a few time
         # It prevents GUI to have 2 clients with the same client_id
         # in the same time

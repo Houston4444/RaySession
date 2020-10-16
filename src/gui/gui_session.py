@@ -227,6 +227,10 @@ class SignaledSession(Session):
 
             new_client_list.append(client)
 
+        if args == [c.client_id for c in self.client_list]:
+            # no change between existing and new order
+            return
+
         self.client_list.clear()
         self._main_win.reCreateListWidget()
 

@@ -29,16 +29,10 @@ class ClientSlot(QFrame):
         self.client = client
         self._main_win = self.client._session._main_win
 
-        self.is_dirty_able = False
-        self.gui_visible = False
-
         self.ui.toolButtonGUI.setVisible(False)
 
-        if self.client.protocol == ray.Protocol.RAY_HACK:
-            self.showGuiButton()
-
         # connect buttons to functions
-        self.ui.toolButtonGUI.toggleGui.connect(self.toggleGui)
+        self.ui.toolButtonGUI.orderGuiState.connect(self.orderGuiState)
         self.ui.startButton.clicked.connect(self.startClient)
         self.ui.stopButton.clicked.connect(self.stopClient)
         self.ui.killButton.clicked.connect(self.killClient)
@@ -69,7 +63,6 @@ class ClientSlot(QFrame):
         self.menu.addAction(self.ui.actionReturnToAPreviousState)
         self.menu.addAction(self.ui.actionProperties)
         
-
         self.ui.actionReturnToAPreviousState.setVisible(
             self._main_win.has_git)
 
@@ -87,22 +80,16 @@ class ClientSlot(QFrame):
         self.ui.saveButton.setIcon(self.saveIcon)
 
         self.savedIcon = QIcon()
-        self.savedIcon.addPixmap(
-            QPixmap(':scalable/breeze/document-saved'),
-            QIcon.Normal,
-            QIcon.Off)
+        self.savedIcon.addPixmap(QPixmap(':scalable/breeze/document-saved'),
+                                 QIcon.Normal, QIcon.Off)
 
         self.unsavedIcon = QIcon()
-        self.unsavedIcon.addPixmap(
-            QPixmap(':scalable/breeze/document-unsaved'),
-            QIcon.Normal,
-            QIcon.Off)
+        self.unsavedIcon.addPixmap(QPixmap(':scalable/breeze/document-unsaved'),
+                                   QIcon.Normal, QIcon.Off)
 
         self.noSaveIcon = QIcon()
-        self.noSaveIcon.addPixmap(
-            QPixmap(':scalable/breeze/document-nosave'),
-            QIcon.Normal,
-            QIcon.Off)
+        self.noSaveIcon.addPixmap(QPixmap(':scalable/breeze/document-nosave'),
+                                  QIcon.Normal, QIcon.Off)
 
         # choose button colors
         if isDarkTheme(self):
@@ -177,11 +164,18 @@ class ClientSlot(QFrame):
 
         self.ui.killButton.setVisible(False)
 
+        if (self.client.protocol == ray.Protocol.RAY_HACK
+                or ':optional-gui:' in self.client.capabilities):
+            self.showGuiButton()
+            self.setGuiState(self.client.gui_state)
+
+        if self.client.has_dirty:
+            self.setDirtyState(self.client.dirty_state)
+
         self.updateClientData()
 
     def clientId(self):
         return self.client.client_id
-
 
     def startClient(self):
         self.toDaemon('/ray/client/resume', self.clientId())
@@ -365,27 +359,24 @@ class ClientSlot(QFrame):
                 _translate('client_slot', 'Display proxy window'))
 
     def setGuiState(self, state):
-        self.gui_visible = state
         self.ui.toolButtonGUI.setChecked(state)
 
-    def toggleGui(self):
+    def orderGuiState(self, state):
         if self.client.protocol == ray.Protocol.RAY_HACK:
-            if self.gui_visible:
-                self.client.properties_dialog.hide()
-            else:
+            if state:
                 self.client.showPropertiesDialog(second_tab=True)
+            else:
+                self.client.properties_dialog.hide()
 
         else:
-            if not self.gui_visible:
+            if state:
                 self.toDaemon('/ray/client/show_optional_gui',
                               self.clientId())
             else:
                 self.toDaemon('/ray/client/hide_optional_gui',
                               self.clientId())
-
+                
     def setDirtyState(self, bool_dirty):
-        self.is_dirty_able = True
-
         if bool_dirty:
             self.ui.saveButton.setIcon(self.unsavedIcon)
         else:
