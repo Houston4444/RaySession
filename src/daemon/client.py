@@ -1144,7 +1144,7 @@ class Client(ServerSender, ray.ClientData):
         self._desktop_label = new_client._desktop_label
         self._desktop_description = new_client._desktop_description
         self._desktop_icon = new_client._desktop_icon
-        print('oezko', self.client_id, self.gui_visible, new_client.gui_visible)
+
         #self.gui_visible = new_client.gui_visible
         self.gui_has_been_visible = self.gui_visible
 
@@ -1164,7 +1164,7 @@ class Client(ServerSender, ray.ClientData):
         if self.isCapableOf(':optional-gui:'):
             self.sendGui('/ray/gui/client/has_optional_gui', 
                          self.client_id)
-            print('eorkk', self.client_id, self.gui_visible)
+
             self.sendGui('/ray/gui/client/gui_visible',
                          self.client_id, int(self.gui_visible))
 
@@ -1175,7 +1175,7 @@ class Client(ServerSender, ray.ClientData):
         if self.protocol != other_client.protocol:
             return False
 
-        if not (self.active and self.isCapableOf(':switch:')
+        if not ((self.active and self.isCapableOf(':switch:'))
                 or (self.isDumbClient() and self.isRunning())):
             return False
 

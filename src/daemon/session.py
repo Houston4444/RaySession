@@ -398,7 +398,7 @@ class Session(ServerSender):
 
     def reOrderClients(self, client_ids_list, src_addr=None, src_path=''):
         client_newlist = []
-        print('erkoggk reordering', client_newlist)
+
         for client_id in client_ids_list:
             for client in self.clients:
                 if client.client_id == client_id:
@@ -418,7 +418,7 @@ class Session(ServerSender):
 
         if src_addr:
             self.answer(src_addr, src_path, "clients reordered")
-        print('fkoreofkfffffffffff', *[c.client_id for c in self.clients])
+
         self.sendGui('/ray/gui/session/sort_clients',
                      *[c.client_id for c in self.clients])
 
@@ -1784,7 +1784,7 @@ for better organization."""))
         for client in self.clients.__reversed__():
             if (open_off
                     or not client.isRunning()
-                    or client.isReplyPending()
+                    or (client.isReplyPending() and not client.isDumbClient())
                     or client.switch_state != ray.SwitchState.RESERVED):
                 self.clients_to_quit.append(client)
                 self.expected_clients.append(client)
