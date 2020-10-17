@@ -6,7 +6,7 @@ import sys
 import time
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon, QFontDatabase
-from PyQt5.QtCore import QLocale, QTranslator, QTimer
+from PyQt5.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
 
 #local imports
 from gui_tools import ArgParser, CommandLineArgs, initGuiTools, getCodeRoot
@@ -48,6 +48,10 @@ if __name__ == '__main__':
     if appTranslator.load("%s/locale/raysession_%s" % (getCodeRoot(), locale)):
         app.installTranslator(appTranslator)
 
+    sysTranslator = QTranslator()
+    pathSysTranslations = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+    sysTranslator.load("%s/qt_%s" % (pathSysTranslations, locale))
+    
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
 
