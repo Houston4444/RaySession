@@ -27,6 +27,7 @@ import ui_error_dialog
 import ui_quit_app
 import ui_script_info
 import ui_script_user_action
+import ui_session_notes
 import ui_session_scripts_info
 import ui_stop_client
 import ui_stop_client_no_save
@@ -825,6 +826,47 @@ class AbortClientCopyDialog(ChildDialog):
             self.reject()
 
 
+class SessionNotesDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui_session_notes.Ui_Dialog()
+        self.ui.setupUi(self)
+
+        if RS.settings.value('SessionNotes/geometry'):
+            self.restoreGeometry(RS.settings.value('SessionNotes/geometry'))
+        if RS.settings.value('SessionNotes/position'):
+            self.move(RS.settings.value('SessionNotes/position'))
+
+        self.ui.labelSessionName.setText(self._session.name)
+        self.ui.plainTextEdit.textChanged.connect(self.textEdited)
+
+        # use a timer to prevent osc message each time a letter is written
+        # here, a message is sent when user made not change during 400ms
+        self.timer_text = QTimer()
+        self.timer_text.setInterval(400)
+        self.timer_text.setSingleShot(True)
+        self.timer_text.timeout.connect(self.sendNotes)
+
+        self.anti_timer = False
+        self.notesUpdated()
+
+    def textEdited(self):
+        if not self.anti_timer:
+            self.timer_text.start()
+        self.anti_timer = False
+        
+    def sendNotes(self):
+        self.toDaemon('/ray/session/set_notes', self.ui.plainTextEdit.toPlainText())
+
+    def notesUpdated(self):
+        self.anti_timer = True
+        self.ui.plainTextEdit.setPlainText(self._session.notes)
+
+    def closeEvent(self, event):
+        RS.settings.setValue('SessionNotes/geometry', self.saveGeometry())
+        RS.settings.setValue('SessionNotes/position', self.pos())
+        ChildDialog.closeEvent(self, event)
+    
 class OpenNsmSessionInfoDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)

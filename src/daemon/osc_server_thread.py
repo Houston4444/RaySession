@@ -867,9 +867,12 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/set_notes', 's')
     def raySessionSetNotes(self, path, args, types, src_addr):
+        self.session.notes = args[0]
+
         for gui_addr in self.gui_list:
             if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/session/notes', args[0])
+                self.send(gui_addr, '/ray/gui/session/notes',
+                          self.session.notes)
 
     @ray_method('/ray/session/get_notes', '')
     def raySessionGetNotes(self, path, args, types, src_addr):

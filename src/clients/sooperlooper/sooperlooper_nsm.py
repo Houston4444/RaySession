@@ -33,6 +33,13 @@ class SlOSCThread(nsm_client.NSMThread):
 
         if general_object.wait_for_load:
             general_object.sl_ready.emit()
+        
+        if jack_client is not None:
+            self.send(sl_url, '/register_update', 'loop_add', self.url, '/loop_add')  
+            
+    @make_method('/loop_add', 'if')
+    def loopAdd(self, path, args):
+        print('gjirjiji', args)
 
 
 class GeneralObject(QObject):
@@ -256,6 +263,7 @@ class GeneralObject(QObject):
 
         if server.sl_is_ready:
             self.loadSession()
+            
         else:
             self.wait_for_load = True
 
@@ -266,9 +274,13 @@ class GeneralObject(QObject):
         self.wait_for_load = False
         server.send(self.sl_url, '/load_session', self.session_file,
                     server.url, '/re-load')
-
         server.send(self.sl_url, '/load_midi_bindings',
                     self.midi_bindings_file, '')
+
+        if jack_client is not None:
+            server.send(self.sl_url, '/set', 'sync_source', -1.0)
+            server.send(self.sl_url, '/set', 'eighth_per_cycle', 8.0)
+            server.send(self.sl_url, '/sl/0/set,' 'quantize', 1.0)
         server.openReply()
 
     def saveSlSession(self):

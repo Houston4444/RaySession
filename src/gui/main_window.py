@@ -36,6 +36,8 @@ class MainWindow(QMainWindow):
         self.mouse_is_inside = False
         self.terminate_request = False
 
+        self.notes_dialog = None
+
         # timer for keep focus while client opening
         self.timer_raisewin = QTimer()
         self.timer_raisewin.setInterval(50)
@@ -93,6 +95,8 @@ class MainWindow(QMainWindow):
             self.ui.actionDuplicateSession)
         self.ui.toolButtonSaveTemplateSession.setDefaultAction(
             self.ui.actionSaveTemplateSession)
+        self.ui.toolButtonNotes.setDefaultAction(
+            self.ui.actionSessionNotes)
         self.ui.toolButtonFileManager.setDefaultAction(
             self.ui.actionOpenSessionFolder)
         self.ui.toolButtonAddApplication.setDefaultAction(
@@ -118,6 +122,8 @@ class MainWindow(QMainWindow):
             self.duplicateSession)
         self.ui.actionSaveTemplateSession.triggered.connect(
             self.saveTemplateSession)
+        self.ui.actionSessionNotes.triggered.connect(
+            self.editNotes)
         self.ui.actionReturnToAPreviousState.triggered.connect(
             self.returnToAPreviousState)
         self.ui.actionOpenSessionFolder.triggered.connect(
@@ -533,6 +539,11 @@ class MainWindow(QMainWindow):
 
     def saveSession(self):
         self.toDaemon('/ray/session/save')
+
+    def editNotes(self):
+        if self.notes_dialog is None:
+            self.notes_dialog = child_dialogs.SessionNotesDialog(self)
+        self.notes_dialog.show()
 
     def addApplication(self):
         if self._session.server_status in (
