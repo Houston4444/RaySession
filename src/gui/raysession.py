@@ -50,7 +50,8 @@ if __name__ == '__main__':
 
     sysTranslator = QTranslator()
     pathSysTranslations = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
-    sysTranslator.load("%s/qt_%s" % (pathSysTranslations, locale))
+    if sysTranslator.load(QLocale(), 'qt', '_', pathSysTranslations):
+        app.installTranslator(sysTranslator)
     
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
