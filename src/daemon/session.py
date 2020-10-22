@@ -52,6 +52,8 @@ class Session(ServerSender):
         self.future_session_name = ""
         self.notes = ""
         self.future_notes = ""
+        self.notes_shown = False
+        self.future_notes_shown = False
         self.load_locked = False
 
         self.is_renameable = True
@@ -138,6 +140,7 @@ class Session(ServerSender):
         self.future_session_name = ''
         self.future_trashed_clients.clear()
         self.future_notes = ""
+        self.future_notes_shown = False
 
     def getShortPath(self):
         if self.path.startswith("%s/" % self.root):
@@ -923,6 +926,8 @@ class OperatingSession(Session):
         p = xml.createElement('RAYSESSION')
         p.setAttribute('VERSION', ray.VERSION)
         p.setAttribute('name', self.name)
+        if self.notes_shown:
+            p.setAttribute('notes_shown', 'true')
 
         xml_cls = xml.createElement('Clients')
         xml_rmcls = xml.createElement('RemovedClients')
@@ -1247,7 +1252,9 @@ class OperatingSession(Session):
         self.cleanExpected()
         self.clients.clear()
         self.setPath('')
-        self.sendGui("/ray/gui/session/name", "", "")
+        self.sendGui('/ray/gui/session/name', '', '')
+        self.sendGui('/ray/gui/session/notes', '')
+        self.sendGui('/ray/gui/session/notes_hidden')
         self.noFuture()
         self.sendReply("Closed.")
         self.message("Done")
@@ -1258,7 +1265,9 @@ class OperatingSession(Session):
         self.cleanExpected()
         self.clients.clear()
         self.setPath('')
-        self.sendGui("/ray/gui/session/name", "", "")
+        self.sendGui('/ray/gui/session/name', '', '')
+        self.sendGui('/ray/gui/notes', '')
+        self.sendGui('/ray/gui/session/notes_hidden')
         self.noFuture()
         self.sendReply("Aborted.")
         self.message("Done")
@@ -1671,6 +1680,8 @@ for better organization."""))
                 return
 
             sess_name = content.attribute('name')
+            if content.attribute('notes_shown').lower() in ('1', 'true'):
+                self.future_notes_shown = True
 
             client_id_list = []
 
@@ -1763,6 +1774,11 @@ for better organization."""))
 
         self.notes = self.future_notes
         self.sendGui('/ray/gui/session/notes', self.notes)
+        self.notes_shown = self.future_notes_shown
+        if self.notes_shown:
+            self.sendGui('/ray/gui/session/notes_shown')
+        else:
+            self.sendGui('/ray/gui/session/notes_hidden')
 
         self.load_locked = True
 

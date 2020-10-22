@@ -123,7 +123,7 @@ class MainWindow(QMainWindow):
         self.ui.actionSaveTemplateSession.triggered.connect(
             self.saveTemplateSession)
         self.ui.actionSessionNotes.triggered.connect(
-            self.editNotes)
+            self.toggleNotesVisibility)
         self.ui.actionReturnToAPreviousState.triggered.connect(
             self.returnToAPreviousState)
         self.ui.actionOpenSessionFolder.triggered.connect(
@@ -540,6 +540,12 @@ class MainWindow(QMainWindow):
     def saveSession(self):
         self.toDaemon('/ray/session/save')
 
+    def toggleNotesVisibility(self):
+        if (self.notes_dialog is None or not self.notes_dialog.isVisible()):
+            self.toDaemon('/ray/session/show_notes')
+        else:
+            self.toDaemon('/ray/session/hide_notes')
+
     def editNotes(self):
         if self.notes_dialog is None:
             self.notes_dialog = child_dialogs.SessionNotesDialog(self)
@@ -737,10 +743,14 @@ class MainWindow(QMainWindow):
         if session_name:
             self.setWindowTitle('%s - %s' % (ray.APP_TITLE, session_name))
             self.ui.stackedWidgetSessionName.setText(session_name)
+            if self.notes_dialog is not None:
+                self.notes_dialog.updateSession()
         else:
             self.setWindowTitle(ray.APP_TITLE)
             self.ui.stackedWidgetSessionName.setText(
                 _translate('main view', 'No Session Loaded'))
+            if self.notes_dialog is not None:
+                self.notes_dialog.hide()
 
     def setSessionNameEditable(self, bool_set_edit):
         self.ui.stackedWidgetSessionName.setEditable(bool_set_edit)
@@ -795,6 +805,7 @@ class MainWindow(QMainWindow):
             self.ui.actionAddApplication.setEnabled(False)
             self.ui.actionAddExecutable.setEnabled(False)
             self.ui.actionOpenSessionFolder.setEnabled(True)
+            self.ui.actionSessionNotes.setEnabled(False)
             return
 
         close_or_off = bool(
@@ -822,6 +833,8 @@ class MainWindow(QMainWindow):
         self.favorites_menu.setEnabled(
             bool(self._session.favorite_list and not close_or_off))
         self.ui.actionOpenSessionFolder.setEnabled(
+            bool(server_status != ray.ServerStatus.OFF))
+        self.ui.actionSessionNotes.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
 
         self.ui.stackedWidgetSessionName.setEditable(

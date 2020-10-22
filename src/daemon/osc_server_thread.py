@@ -950,6 +950,16 @@ class OscServerThread(ClientCommunicating):
             self.unknownMessage(path, types, src_addr)
             return False
 
+    @ray_method('/ray/session/show_notes', '')
+    def raySessionShowNotes(self, path, args, types, src_addr):
+        self.session.notes_shown = True
+        self.sendGui('/ray/gui/session/notes_shown')
+
+    @ray_method('/ray/session/hide_notes', '')
+    def raySessionHideNotes(self, path, args, types, src_addr):
+        self.session.notes_shown = False
+        self.sendGui('/ray/gui/session/notes_hidden')
+
     @ray_method('/ray/session/list_clients', None)
     def raySessionListClients(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):

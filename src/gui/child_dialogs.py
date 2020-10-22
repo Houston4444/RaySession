@@ -837,7 +837,7 @@ class SessionNotesDialog(ChildDialog):
         if RS.settings.value('SessionNotes/position'):
             self.move(RS.settings.value('SessionNotes/position'))
 
-        self.ui.labelSessionName.setText(self._session.name)
+        self.updateSession()
         self.ui.plainTextEdit.textChanged.connect(self.textEdited)
 
         # use a timer to prevent osc message each time a letter is written
@@ -849,6 +849,11 @@ class SessionNotesDialog(ChildDialog):
 
         self.anti_timer = False
         self.notesUpdated()
+
+    def updateSession(self):
+        self.setWindowTitle(_translate('notes_dialog', "%s Notes - %s")
+                            % (ray.APP_TITLE, self._session.name))
+        self.ui.labelSessionName.setText(self._session.name)
 
     def textEdited(self):
         if not self.anti_timer:
@@ -865,6 +870,7 @@ class SessionNotesDialog(ChildDialog):
     def closeEvent(self, event):
         RS.settings.setValue('SessionNotes/geometry', self.saveGeometry())
         RS.settings.setValue('SessionNotes/position', self.pos())
+        self.toDaemon('/ray/session/hide_notes')
         ChildDialog.closeEvent(self, event)
     
 class OpenNsmSessionInfoDialog(ChildDialog):
