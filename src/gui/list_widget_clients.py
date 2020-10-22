@@ -515,7 +515,7 @@ class ListWidgetClients(QListWidget):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
 
-            if (self._session
+            if (self._session is not None
                     and not self._session.server_status in (
                         ray.ServerStatus.OFF,
                         ray.ServerStatus.CLOSE,

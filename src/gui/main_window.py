@@ -227,6 +227,8 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save', dark))
         self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
 
+        self.ui.listWidget.setSession(self._session)
+
         self.setNsmLocked(CommandLineArgs.under_nsm)
 
         self.script_info_dialog = None
