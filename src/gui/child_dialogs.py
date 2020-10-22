@@ -861,7 +861,8 @@ class SessionNotesDialog(ChildDialog):
         self.anti_timer = False
         
     def sendNotes(self):
-        self.toDaemon('/ray/session/set_notes', self.ui.plainTextEdit.toPlainText())
+        self._session.notes = self.ui.plainTextEdit.toPlainText()
+        self.toDaemon('/ray/session/set_notes', self._session.notes)
 
     def notesUpdated(self):
         self.anti_timer = True

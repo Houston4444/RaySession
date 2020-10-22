@@ -160,7 +160,7 @@
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset theme="edittext">
+                <iconset theme="knotes">
                  <normaloff>.</normaloff>.</iconset>
                </property>
                <property name="checkable">
@@ -1174,7 +1174,7 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionSessionNotes">
    <property name="icon">
-    <iconset theme="edittext">
+    <iconset theme="knotes">
      <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">

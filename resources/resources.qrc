@@ -20,6 +20,9 @@
         <file>scalable/breeze/draw-star.svg</file>
         <file>scalable/breeze/star-yellow.svg</file>
         <file>scalable/breeze/empty-icon.svg</file>
+        <file>scalable/breeze/notes.svg</file>
+        <file>scalable/breeze/notes-editing.svg</file>
+        <file>scalable/breeze/notes-nonempty.svg</file>
         
         <file>scalable/breeze/configure.svg</file>
         <file>scalable/breeze/document-open.svg</file>
@@ -38,6 +41,9 @@
         <file>scalable/breeze/disabled/run-install.svg</file>
         <file>scalable/breeze/disabled/system-file-manager.svg</file>
         <file>scalable/breeze/disabled/trash-empty.svg</file>
+        <file>scalable/breeze/disabled/notes.svg</file>
+        <file>scalable/breeze/disabled/notes-editing.svg</file>
+        <file>scalable/breeze/disabled/notes-nonempty.svg</file>
         
         <file>scalable/breeze/disabled/media-playback-start.svg</file>
         <file>scalable/breeze/disabled/media-playback-stop.svg</file>
@@ -69,6 +75,9 @@
         <file>scalable/breeze-dark/run-install.svg</file>
         <file>scalable/breeze-dark/system-file-manager.svg</file>
         <file>scalable/breeze-dark/trash-empty.svg</file>
+        <file>scalable/breeze-dark/notes.svg</file>
+        <file>scalable/breeze-dark/notes-editing.svg</file>
+        <file>scalable/breeze-dark/notes-nonempty.svg</file>
         
         <file>scalable/breeze-dark/disabled/configure.svg</file>
         <file>scalable/breeze-dark/disabled/document-open.svg</file>
@@ -87,6 +96,9 @@
         <file>scalable/breeze-dark/disabled/document-save-as-template.svg</file>
         <file>scalable/breeze-dark/disabled/xml-node-duplicate.svg</file>
         <file>scalable/breeze-dark/disabled/view-list-icons.svg</file>
+        <file>scalable/breeze-dark/disabled/notes.svg</file>
+        <file>scalable/breeze-dark/disabled/notes-editing.svg</file>
+        <file>scalable/breeze-dark/disabled/notes-nonempty.svg</file>
         <file>app_icons/dark/curve-connector.svg</file>
         <file>app_icons/dark/network-wired.svg</file>
         <file>app_icons/ADLplug.png</file>

@@ -231,6 +231,8 @@ class MainWindow(QMainWindow):
         self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark))
         self.ui.actionSaveSession.setIcon(RayIcon('document-save', dark))
         self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save', dark))
+        self.ui.actionSessionNotes.setIcon(RayIcon('notes', dark))
+        self.ui.toolButtonNotes.setIcon(RayIcon('notes', dark))
         self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
 
         self.setNsmLocked(CommandLineArgs.under_nsm)
@@ -546,10 +548,20 @@ class MainWindow(QMainWindow):
         else:
             self.toDaemon('/ray/session/hide_notes')
 
-    def editNotes(self):
-        if self.notes_dialog is None:
-            self.notes_dialog = child_dialogs.SessionNotesDialog(self)
-        self.notes_dialog.show()
+    def editNotes(self, close=False):
+        icon_str = 'notes'
+        if close:
+            if self._session.notes:
+                icon_str = 'notes-nonempty'
+            if self.notes_dialog is not None and self.notes_dialog.isVisible():
+                self.notes_dialog.close()
+        else:
+            if self.notes_dialog is None:
+                self.notes_dialog = child_dialogs.SessionNotesDialog(self)
+            self.notes_dialog.show()
+            icon_str = 'notes-editing'
+
+        self.ui.actionSessionNotes.setIcon(RayIcon(icon_str, isDarkTheme(self)))
 
     def addApplication(self):
         if self._session.server_status in (
