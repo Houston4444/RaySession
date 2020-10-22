@@ -91,10 +91,6 @@ class MainWindow(QMainWindow):
             self.ui.actionSaveSession)
         self.ui.toolButtonAbortSession.setDefaultAction(
             self.ui.actionAbortSession)
-        self.ui.toolButtonDuplicateSession.setDefaultAction(
-            self.ui.actionDuplicateSession)
-        self.ui.toolButtonSaveTemplateSession.setDefaultAction(
-            self.ui.actionSaveTemplateSession)
         self.ui.toolButtonNotes.setDefaultAction(
             self.ui.actionSessionNotes)
         self.ui.toolButtonFileManager.setDefaultAction(
@@ -149,6 +145,13 @@ class MainWindow(QMainWindow):
             self.statusBarPressed)
         self.ui.stackedWidgetSessionName.name_changed.connect(
             self.renameSessionConditionnaly)
+
+        # set session menu
+        self.session_menu = QMenu()
+        self.session_menu.addAction(self.ui.actionSaveTemplateSession)
+        self.session_menu.addAction(self.ui.actionDuplicateSession)
+        self.ui.toolButtonSessionMenu.setPopupMode(QToolButton.InstantPopup)
+        self.ui.toolButtonSessionMenu.setMenu(self.session_menu)
 
         # set control menu
         self.controlMenu = QMenu()
@@ -285,7 +288,6 @@ class MainWindow(QMainWindow):
         self.ui.actionAbortSession.setEnabled(not nsm_locked)
 
         self.ui.toolBar.setVisible(not nsm_locked)
-        self.ui.toolButtonDuplicateSession.setVisible(not nsm_locked)
         self.ui.toolButtonAbortSession.setVisible(not nsm_locked)
         self.ui.closeButton.setVisible(not nsm_locked)
         self.ui.toolButtonControl2.setVisible(nsm_locked)
