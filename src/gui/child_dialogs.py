@@ -837,6 +837,7 @@ class SessionNotesDialog(ChildDialog):
         if RS.settings.value('SessionNotes/position'):
             self.move(RS.settings.value('SessionNotes/position'))
 
+        self.message_box = None
         self.updateSession()
         self.ui.plainTextEdit.textChanged.connect(self.textEdited)
 
@@ -850,18 +851,37 @@ class SessionNotesDialog(ChildDialog):
         self.anti_timer = False
         self.notesUpdated()
 
+    def serverStatusChanged(self, server_status):
+        if server_status == ray.ServerStatus.OFF:
+            if self.message_box is not None:
+                self.message_box.close()
+            self.close()
+
     def updateSession(self):
         self.setWindowTitle(_translate('notes_dialog', "%s Notes - %s")
                             % (ray.APP_TITLE, self._session.name))
         self.ui.labelSessionName.setText(self._session.name)
 
-    def textEdited(self):
+    def textEdited(self):        
         if not self.anti_timer:
             self.timer_text.start()
         self.anti_timer = False
         
     def sendNotes(self):
-        self._session.notes = self.ui.plainTextEdit.toPlainText()
+        notes = self.ui.plainTextEdit.toPlainText()
+        if len(notes) >= 65000:
+            self.message_box = QMessageBox(
+                QMessageBox.Critical,
+                _translate('session_notes', 'Too long notes'),
+                _translate('session_notes',
+                           "<p>Because notes are spread to the OSC server,<br>they can't be longer than 65000 characters.<br>Sorry !</p>"),
+                QMessageBox.Cancel,
+                self)
+            self.message_box.exec()
+            self.ui.plainTextEdit.setPlainText(notes[:64999])
+            return
+
+        self._session.notes = notes
         self.toDaemon('/ray/session/set_notes', self._session.notes)
 
     def notesUpdated(self):
