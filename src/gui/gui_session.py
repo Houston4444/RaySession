@@ -215,7 +215,14 @@ class SignaledSession(Session):
 
     def _ray_gui_session_notes(self, path, args):
         self.notes = args[0]
-        # TODO write the notes GUI
+        if self._main_win.notes_dialog is not None:
+            self._main_win.notes_dialog.notesUpdated()
+
+    def _ray_gui_session_notes_shown(self, path, args):
+        self._main_win.editNotes()
+
+    def _ray_gui_session_notes_hidden(self, path, args):
+        self._main_win.editNotes(close=True)
 
     def _ray_gui_session_sort_clients(self, path, args):
         new_client_list = []

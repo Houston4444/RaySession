@@ -36,6 +36,8 @@ class MainWindow(QMainWindow):
         self.mouse_is_inside = False
         self.terminate_request = False
 
+        self.notes_dialog = None
+
         # timer for keep focus while client opening
         self.timer_raisewin = QTimer()
         self.timer_raisewin.setInterval(50)
@@ -89,10 +91,8 @@ class MainWindow(QMainWindow):
             self.ui.actionSaveSession)
         self.ui.toolButtonAbortSession.setDefaultAction(
             self.ui.actionAbortSession)
-        self.ui.toolButtonDuplicateSession.setDefaultAction(
-            self.ui.actionDuplicateSession)
-        self.ui.toolButtonSaveTemplateSession.setDefaultAction(
-            self.ui.actionSaveTemplateSession)
+        self.ui.toolButtonNotes.setDefaultAction(
+            self.ui.actionSessionNotes)
         self.ui.toolButtonFileManager.setDefaultAction(
             self.ui.actionOpenSessionFolder)
         self.ui.toolButtonAddApplication.setDefaultAction(
@@ -118,6 +118,8 @@ class MainWindow(QMainWindow):
             self.duplicateSession)
         self.ui.actionSaveTemplateSession.triggered.connect(
             self.saveTemplateSession)
+        self.ui.actionSessionNotes.triggered.connect(
+            self.toggleNotesVisibility)
         self.ui.actionReturnToAPreviousState.triggered.connect(
             self.returnToAPreviousState)
         self.ui.actionOpenSessionFolder.triggered.connect(
@@ -143,6 +145,13 @@ class MainWindow(QMainWindow):
             self.statusBarPressed)
         self.ui.stackedWidgetSessionName.name_changed.connect(
             self.renameSessionConditionnaly)
+
+        # set session menu
+        self.session_menu = QMenu()
+        self.session_menu.addAction(self.ui.actionSaveTemplateSession)
+        self.session_menu.addAction(self.ui.actionDuplicateSession)
+        self.ui.toolButtonSessionMenu.setPopupMode(QToolButton.InstantPopup)
+        self.ui.toolButtonSessionMenu.setMenu(self.session_menu)
 
         # set control menu
         self.controlMenu = QMenu()
@@ -225,6 +234,8 @@ class MainWindow(QMainWindow):
         self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark))
         self.ui.actionSaveSession.setIcon(RayIcon('document-save', dark))
         self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save', dark))
+        self.ui.actionSessionNotes.setIcon(RayIcon('notes', dark))
+        self.ui.toolButtonNotes.setIcon(RayIcon('notes', dark))
         self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
 
         self.ui.listWidget.setSession(self._session)
@@ -279,7 +290,6 @@ class MainWindow(QMainWindow):
         self.ui.actionAbortSession.setEnabled(not nsm_locked)
 
         self.ui.toolBar.setVisible(not nsm_locked)
-        self.ui.toolButtonDuplicateSession.setVisible(not nsm_locked)
         self.ui.toolButtonAbortSession.setVisible(not nsm_locked)
         self.ui.closeButton.setVisible(not nsm_locked)
         self.ui.toolButtonControl2.setVisible(nsm_locked)
@@ -536,6 +546,27 @@ class MainWindow(QMainWindow):
     def saveSession(self):
         self.toDaemon('/ray/session/save')
 
+    def toggleNotesVisibility(self):
+        if (self.notes_dialog is None or not self.notes_dialog.isVisible()):
+            self.toDaemon('/ray/session/show_notes')
+        else:
+            self.toDaemon('/ray/session/hide_notes')
+
+    def editNotes(self, close=False):
+        icon_str = 'notes'
+        if close:
+            if self._session.notes:
+                icon_str = 'notes-nonempty'
+            if self.notes_dialog is not None and self.notes_dialog.isVisible():
+                self.notes_dialog.close()
+        else:
+            if self.notes_dialog is None:
+                self.notes_dialog = child_dialogs.SessionNotesDialog(self)
+            self.notes_dialog.show()
+            icon_str = 'notes-editing'
+
+        self.ui.actionSessionNotes.setIcon(RayIcon(icon_str, isDarkTheme(self)))
+
     def addApplication(self):
         if self._session.server_status in (
                 ray.ServerStatus.CLOSE,
@@ -728,10 +759,14 @@ class MainWindow(QMainWindow):
         if session_name:
             self.setWindowTitle('%s - %s' % (ray.APP_TITLE, session_name))
             self.ui.stackedWidgetSessionName.setText(session_name)
+            if self.notes_dialog is not None:
+                self.notes_dialog.updateSession()
         else:
             self.setWindowTitle(ray.APP_TITLE)
             self.ui.stackedWidgetSessionName.setText(
                 _translate('main view', 'No Session Loaded'))
+            if self.notes_dialog is not None:
+                self.notes_dialog.hide()
 
     def setSessionNameEditable(self, bool_set_edit):
         self.ui.stackedWidgetSessionName.setEditable(bool_set_edit)
@@ -786,6 +821,7 @@ class MainWindow(QMainWindow):
             self.ui.actionAddApplication.setEnabled(False)
             self.ui.actionAddExecutable.setEnabled(False)
             self.ui.actionOpenSessionFolder.setEnabled(True)
+            self.ui.actionSessionNotes.setEnabled(False)
             return
 
         close_or_off = bool(
@@ -813,6 +849,8 @@ class MainWindow(QMainWindow):
         self.favorites_menu.setEnabled(
             bool(self._session.favorite_list and not close_or_off))
         self.ui.actionOpenSessionFolder.setEnabled(
+            bool(server_status != ray.ServerStatus.OFF))
+        self.ui.actionSessionNotes.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
 
         self.ui.stackedWidgetSessionName.setEditable(

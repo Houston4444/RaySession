@@ -867,9 +867,12 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/set_notes', 's')
     def raySessionSetNotes(self, path, args, types, src_addr):
+        self.session.notes = args[0]
+
         for gui_addr in self.gui_list:
             if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/session/notes', args[0])
+                self.send(gui_addr, '/ray/gui/session/notes',
+                          self.session.notes)
 
     @ray_method('/ray/session/get_notes', '')
     def raySessionGetNotes(self, path, args, types, src_addr):
@@ -946,6 +949,16 @@ class OscServerThread(ClientCommunicating):
         if not ray.areTheyAllString(args):
             self.unknownMessage(path, types, src_addr)
             return False
+
+    @ray_method('/ray/session/show_notes', '')
+    def raySessionShowNotes(self, path, args, types, src_addr):
+        self.session.notes_shown = True
+        self.sendGui('/ray/gui/session/notes_shown')
+
+    @ray_method('/ray/session/hide_notes', '')
+    def raySessionHideNotes(self, path, args, types, src_addr):
+        self.session.notes_shown = False
+        self.sendGui('/ray/gui/session/notes_hidden')
 
     @ray_method('/ray/session/list_clients', None)
     def raySessionListClients(self, path, args, types, src_addr):

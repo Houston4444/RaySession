@@ -31,10 +31,9 @@ class Signaler(QObject):
     client_added_reply = pyqtSignal(str)
 
     client_properties_state_changed = pyqtSignal(str, bool)
-    
+
     favorite_added = pyqtSignal(str, str, bool)
     favorite_removed = pyqtSignal(str, bool)
-
 
     def __init__(self):
         QObject.__init__(self)

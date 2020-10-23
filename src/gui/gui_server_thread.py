@@ -133,6 +133,14 @@ class GUIServerThread(liblo.ServerThread):
     def _session_notes(self, path, args, types, src_addr):
         pass
 
+    @ray_method('/ray/gui/session/notes_shown', '')
+    def _session_notes_shown(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/session/notes_hidden', '')
+    def _session_notes_hidden(self, path, args, types, src_addr):
+        pass
+
     @ray_method('/ray/gui/session/auto_snapshot', 'i')
     def _session_auto_snapshot(self, path, args, types, src_addr):
         self._signaler.reply_auto_snapshot.emit(bool(args[0]))

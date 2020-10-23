@@ -109,45 +109,36 @@
               <number>0</number>
              </property>
              <item>
-              <widget class="QToolButton" name="toolButtonDuplicateSession">
+              <widget class="QToolButton" name="toolButtonSessionMenu">
                <property name="styleSheet">
-                <string notr="true">QToolButton{border: none}</string>
+                <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+QToolButton {border: none}</string>
                </property>
                <property name="text">
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="../resources.qrc">
-                 <normaloff>:/scalable/breeze/xml-node-duplicate.svg</normaloff>:/scalable/breeze/xml-node-duplicate.svg</iconset>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>22</width>
-                 <height>22</height>
-                </size>
+                <iconset theme="menu_new"/>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QToolButton" name="toolButtonSaveTemplateSession">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save Session as Template&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
+              <widget class="QToolButton" name="toolButtonNotes">
                <property name="styleSheet">
-                <string notr="true">QToolButton{border: none}</string>
+                <string notr="true">QToolButton{border:none}</string>
                </property>
                <property name="text">
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="../resources.qrc">
-                 <normaloff>:/scalable/breeze/document-save-as-template.svg</normaloff>:/scalable/breeze/document-save-as-template.svg</iconset>
+                <iconset theme="edittext">
+                 <normaloff>.</normaloff>.</iconset>
                </property>
-               <property name="iconSize">
-                <size>
-                 <width>22</width>
-                 <height>22</height>
-                </size>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <property name="checked">
+                <bool>false</bool>
                </property>
               </widget>
              </item>
@@ -718,6 +709,7 @@ QToolButton {border: none}</string>
     <addaction name="actionSaveTemplateSession"/>
     <addaction name="actionReturnToAPreviousState"/>
     <addaction name="actionRenameSession"/>
+    <addaction name="actionSessionNotes"/>
     <addaction name="separator"/>
     <addaction name="actionOpenSessionFolder"/>
    </widget>
@@ -1141,13 +1133,23 @@ QToolButton {border: none}</string>
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="preferences-system-windows"/>
+    <iconset theme="preferences-system-windows">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Remember optional GUI states</string>
+    <string>&amp;Remember optional GUI states</string>
    </property>
    <property name="toolTip">
     <string>Remember if optional GUIs were shown</string>
+   </property>
+  </action>
+  <action name="actionSessionNotes">
+   <property name="icon">
+    <iconset theme="knotes">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Edit Session Notes</string>
    </property>
   </action>
  </widget>
