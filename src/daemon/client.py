@@ -207,12 +207,6 @@ class Client(ServerSender, ray.ClientData):
             if ext and not ext in global_exts:
                 self.ignored_extensions += " %s" % ext
         
-        gui_force_str = ctx.attribute('optional_gui_force')
-        if gui_force_str.isdigit():
-            self.optional_gui_force = int(gui_force_str)
-        elif self.executable_path in ('ray-proxy', 'nsm-proxy'):
-            self.optional_gui_force = ray.OptionalGuiForce.NONE
-        
         open_duration = ctx.attribute('last_open_duration')
         if open_duration.replace('.', '', 1).isdigit():
             self.last_open_duration = float(open_duration)
@@ -328,8 +322,6 @@ class Client(ServerSender, ray.ClientData):
         if self.isCapableOf(':optional-gui:'):
             ctx.setAttribute('gui_visible',
                              str(int(not self.start_gui_hidden)))
-            if self.optional_gui_force != ray.OptionalGuiForce.SHOW:
-                ctx.setAttribute('optional_gui_force', self.optional_gui_force)
 
         if self._from_nsm_file:
             ctx.setAttribute('from_nsm_file', 1)
@@ -433,8 +425,7 @@ class Client(ServerSender, ray.ClientData):
                             and self.isCapableOf(':optional-gui:')
                             and not self.start_gui_hidden
                             and not self.gui_visible
-                            and not self.gui_has_been_visible
-                            and self.optional_gui_force & ray.OptionalGuiForce.SHOW):
+                            and not self.gui_has_been_visible):
                         self.sendToSelfAddress('/nsm/client/show_optional_gui')
 
             self.setStatus(ray.ClientStatus.READY)
@@ -1250,9 +1241,6 @@ class Client(ServerSender, ray.ClientData):
             elif prop == 'protocol':
                 # do not change protocol value
                 continue
-            elif prop == 'optional_gui_force':
-                if value.isdigit():
-                    self.optional_gui_force = int(value)
 
             if self.protocol == ray.Protocol.RAY_HACK:
                 if prop == 'config_file':
@@ -1298,8 +1286,7 @@ desktop_file:%s
 label:%s
 icon:%s
 check_last_save:%i
-ignored_extensions:%s
-optional_gui_force:%i""" % (self.client_id,
+ignored_extensions:%s""" % (self.client_id,
                             ray.protocolToStr(self.protocol),
                             self.executable_path,
                             self.arguments,
@@ -1310,8 +1297,7 @@ optional_gui_force:%i""" % (self.client_id,
                             self.label,
                             self.icon,
                             int(self.check_last_save),
-                            self.ignored_extensions,
-                            self.optional_gui_force)
+                            self.ignored_extensions)
 
         if self.protocol == ray.Protocol.NSM:
             message += "\ncapabilities:%s" % self.capabilities
@@ -2033,15 +2019,6 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                   ray.APP_TITLE,
                   server_capabilities)
 
-        if self.isCapableOf(":optional-gui:"):
-            self.sendGui("/ray/gui/client/has_optional_gui", self.client_id)
-
-            if (self.hasServerOption(ray.Option.GUI_STATES)
-                    and self.start_gui_hidden
-                    and self.optional_gui_force & ray.OptionalGuiForce.HIDE_EARLY
-                    and self.gui_visible):
-                self.send(src_addr, "/nsm/client/hide_optional_gui")
-
         self.sendGuiClientProperties()
         self.setStatus(ray.ClientStatus.OPEN)
 
@@ -2056,12 +2033,5 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                   self.session.name, jack_client_name)
 
         self.pending_command = ray.Command.OPEN
-
-        if self.isCapableOf(":optional-gui:"):
-            if (self.hasServerOption(ray.Option.GUI_STATES)
-                    and self.start_gui_hidden
-                    and self.optional_gui_force & ray.OptionalGuiForce.HIDE
-                    and self.gui_visible):
-                self.send(src_addr, "/nsm/client/hide_optional_gui")
 
         self._last_announce_time = time.time()

@@ -1736,8 +1736,6 @@ for better organization."""))
                     client.prefix_mode = ray.PrefixMode.CLIENT_NAME
                     client.auto_start = True
                     client._from_nsm_file = True
-                    if client.executable_path in ('ray-proxy', 'nsm-proxy'):
-                        client.optional_gui_force = ray.OptionalGuiForce.NONE
 
                     self.future_clients.append(client)
 
@@ -1980,8 +1978,7 @@ for better organization."""))
                 if (client.isRunning()
                         and client.isCapableOf(':optional-gui:')
                         and not client.start_gui_hidden
-                        and not client.gui_has_been_visible
-                        and client.optional_gui_force & ray.OptionalGuiForce.SHOW):
+                        and not client.gui_has_been_visible):
                     client.sendToSelfAddress('/nsm/client/show_optional_gui')
 
         self.nextFunction()
