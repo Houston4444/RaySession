@@ -118,7 +118,8 @@ QToolButton {border: none}</string>
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset theme="menu_new"/>
+                <iconset theme="menu_new">
+                 <normaloff>.</normaloff>.</iconset>
                </property>
               </widget>
              </item>
@@ -721,6 +722,8 @@ QToolButton {border: none}</string>
     <addaction name="actionShowMenuBar"/>
     <addaction name="separator"/>
     <addaction name="actionKeepFocus"/>
+    <addaction name="separator"/>
+    <addaction name="actionMakeReappearDialogs"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -1150,6 +1153,14 @@ QToolButton {border: none}</string>
    </property>
    <property name="text">
     <string>&amp;Edit Session Notes</string>
+   </property>
+  </action>
+  <action name="actionMakeReappearDialogs">
+   <property name="icon">
+    <iconset theme="show-dialogs"/>
+   </property>
+   <property name="text">
+    <string>Make reappear all dialog windows</string>
    </property>
   </action>
  </widget>

@@ -24,7 +24,7 @@ def getDefaultSessionRoot():
 
 class RS:
     settings = QSettings()
-    
+
     # H for Hideable dialog
     HD_Donations = 0x001
     HD_OpenNsmSession = 0x002

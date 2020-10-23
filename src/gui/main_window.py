@@ -140,6 +140,8 @@ class MainWindow(QMainWindow):
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
         self.ui.actionDonate.triggered.connect(self.donate)
+        self.ui.actionMakeReappearDialogs.triggered.connect(
+            self.makeAllDialogsReappear)
 
         self.ui.lineEditServerStatus.statusPressed.connect(
             self.statusBarPressed)
@@ -165,6 +167,8 @@ class MainWindow(QMainWindow):
         self.controlMenu.addAction(self.ui.actionDesktopsMemory)
         self.controlMenu.addAction(self.ui.actionSessionScripts)
         self.controlMenu.addAction(self.ui.actionRememberOptionalGuiStates)
+        self.controlMenu.addSeparator()
+        self.controlMenu.addAction(self.ui.actionMakeReappearDialogs)
 
         self.controlToolButton = self.ui.toolBar.widgetForAction(
             self.ui.actionControlMenu)
@@ -987,6 +991,17 @@ class MainWindow(QMainWindow):
             self.script_action_dialog.close()
             del self.script_action_dialog
             self.script_action_dialog = None
+
+    def makeAllDialogsReappear(self):
+        ok = QMessageBox.question(
+            self,
+            _translate('hidden_dialogs', 'Make reappear dialog windows'),
+            _translate('hidden_dialogs', 'Do you want to make reappear all dialogs you wanted to hide ?'))
+        
+        if not ok:
+            return
+
+        RS.resetHiddens()
 
     def resizeWinWithMessages(self, messages_visible):
         if messages_visible:
