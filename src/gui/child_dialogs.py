@@ -899,12 +899,11 @@ class OpenNsmSessionInfoDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui_nsm_open_info.Ui_Dialog()
         self.ui.setupUi(self)
-
         self.ui.checkBox.stateChanged.connect(self.showThis)
-    
+
     @classmethod
     def showThis(cls, state):
-        RS.settings.setValue('OpenNsmSessionInfo', not bool(state))
+        RS.setHidden(RS.HD_OpenNsmSession, bool(state))
 
 
 class QuitAppDialog(ChildDialog):
@@ -1337,10 +1336,7 @@ class WaitingCloseUserDialog(ChildDialog):
         self.ui.pushButtonOk.setFocus(True)
         self.ui.pushButtonUndo.clicked.connect(self.undoClose)
         self.ui.pushButtonSkip.clicked.connect(self.skip)
-        self.ui.checkBox.setChecked(
-            bool(RS.settings.value(
-                'hide_wait_close_user_dialog', False, type=bool)))
-
+        self.ui.checkBox.setChecked(not RS.isHidden(RS.HD_WaitCloseUser))
         self.ui.checkBox.clicked.connect(self.checkBoxClicked)
 
     def serverStatusChanged(self, server_status):
@@ -1354,8 +1350,7 @@ class WaitingCloseUserDialog(ChildDialog):
         self.toDaemon('/ray/session/skip_wait_user')
 
     def checkBoxClicked(self, state):
-        RS.settings.setValue('hide_wait_close_user_dialog',
-                             bool(state), type=bool)
+        RS.setHidden(RS.HD_WaitCloseUser, bool(state))
 
 class DonationsDialog(ChildDialog):
     def __init__(self, parent, display_no_again):
@@ -1367,7 +1362,7 @@ class DonationsDialog(ChildDialog):
         self.ui.checkBox.clicked.connect(self.checkBoxClicked)
 
     def checkBoxClicked(self, state):
-        RS.settings.setValue('hide_donations', state)
+        RS.setHidden(RS.HD_Donations, state)
 
 
 class ErrorDialog(ChildDialog):

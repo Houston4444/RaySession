@@ -421,8 +421,7 @@ class MainWindow(QMainWindow):
 
         if template_name.startswith('///'):
             if template_name == '///' + ray.factory_session_templates[1]:
-                if not RS.settings.value('hide_jack_config_script_dialog',
-                                        False, type=bool):
+                if not RS.isHidden(RS.HD_JackConfigScript):
                     # display jack_config_script info dialog
                     # and manage ray-jack_checker auto_start
 
@@ -435,8 +434,7 @@ class MainWindow(QMainWindow):
                     if not dialog.result():
                         return
 
-                    RS.settings.setValue('hide_jack_config_script_dialog',
-                                         dialog.notAgainValue())
+                    RS.setHidden(RS.HD_JackConfigScript, dialog.notAgainValue())
 
                     autostart_jack_checker = dialog.autostartValue()
                     action = 'set_jack_checker_autostart'
@@ -446,10 +444,8 @@ class MainWindow(QMainWindow):
                     self.toDaemon('/ray/server/exotic_action', action)
 
             elif template_name == '///' + ray.factory_session_templates[2]:
-                if not RS.settings.value('hide_session_scripts_dialog',
-                                        False, type=bool):
+                if not RS.isHidden(RS.HD_SessionScripts):
                     # display session scripts info dialog
-
                     session_path = "%s/%s" % (CommandLineArgs.session_root,
                                               session_short_path)
 
@@ -459,8 +455,7 @@ class MainWindow(QMainWindow):
                     if not dialog.result():
                         return
 
-                    RS.settings.setValue('hide_session_scripts_dialog',
-                                         dialog.notAgainValue())
+                    RS.setHidden(RS.HD_SessionScripts, dialog.notAgainValue())
 
         self.toDaemon('/ray/server/new_session', session_short_path,
                       template_name)
@@ -776,7 +771,7 @@ class MainWindow(QMainWindow):
         error_dialog.exec()
 
     def openingNsmSession(self):
-        if not RS.settings.value('OpenNsmSessionInfo', True, type=bool):
+        if RS.isHidden(RS.HD_OpenNsmSession):
             return
 
         dialog = child_dialogs.OpenNsmSessionInfoDialog(self)
@@ -881,8 +876,7 @@ class MainWindow(QMainWindow):
                 self._daemon_manager.stop()
 
         if server_status == ray.ServerStatus.WAIT_USER:
-            if not RS.settings.value(
-                    'hide_wait_close_user_dialog', False, type=bool):
+            if not RS.isHidden(RS.HD_WaitCloseUser):
                 dialog = child_dialogs.WaitingCloseUserDialog(self)
                 dialog.exec()
 

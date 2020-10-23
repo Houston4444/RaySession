@@ -454,14 +454,14 @@ class SnapshotsDialog(ChildDialog):
     def showEvent(self, event):
         ChildDialog.showEvent(self, event)
 
-        if RS.settings.value('hide_snapshots_info'):
+        if RS.isHidden(RS.HD_SnapshotsInfo):
             return
 
         info_dialog = SnapshotsInfoDialog(self)
         info_dialog.exec()
 
         if info_dialog.hasToBeHiddenNextTime():
-            RS.settings.setValue('hide_snapshots_info', True)
+            RS.setHidden(RS.HD_SnapshotsInfo)
 
 
 class SnapshotsInfoDialog(ChildDialog):

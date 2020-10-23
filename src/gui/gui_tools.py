@@ -24,11 +24,42 @@ def getDefaultSessionRoot():
 
 class RS:
     settings = QSettings()
+    
+    # H for Hideable dialog
+    HD_Donations = 0x001
+    HD_OpenNsmSession = 0x002
+    HD_SnapshotsInfo = 0x004
+    HD_WaitCloseUser = 0x008
+    HD_JackConfigScript = 0x010
+    HD_SessionScripts = 0x020
 
     @classmethod
     def setSettings(cls, settings):
         del cls.settings
         cls.settings = settings
+    
+    @classmethod
+    def isHidden(cls, hideable_dialog: int)->bool:
+        hidden_dialogs = cls.settings.value('hidden_dialogs', 0, type=int)
+        return bool(hidden_dialogs & hideable_dialog)
+    
+    @classmethod
+    def setHidden(cls, hiddeable_dialog: int, hide=True):
+        hidden_dialogs = cls.settings.value('hidden_dialogs', 0, type=int)
+
+        if hide:
+            hidden_dialogs |= hiddeable_dialog
+        elif hidden_dialogs & hiddeable_dialog:
+            hidden_dialogs -= hiddeable_dialog
+        else:
+            return
+
+        cls.settings.setValue('hidden_dialogs', hidden_dialogs)
+
+    @classmethod
+    def resetHiddens(cls):
+        cls.settings.setValue('hidden_dialogs', 0)
+
 
 def initGuiTools():
     if CommandLineArgs.under_nsm:
