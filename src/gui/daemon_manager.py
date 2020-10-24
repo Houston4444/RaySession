@@ -174,8 +174,7 @@ class DaemonManager(QObject):
         if self.launched_before:
             self.callDaemon()
             return
-        import shutil
-        print(shutil.which('ray_control'), CommandLineArgs.session_root)
+
         ray_control_process = QProcess()
         ray_control_process.start("ray_control",
                                   ['get_port_gui_free',
@@ -186,13 +185,6 @@ class DaemonManager(QObject):
             port_str_lines = ray_control_process.readAllStandardOutput().data().decode('utf-8')
             port_str = port_str_lines.partition('\n')[0]
 
-            #ray_control_process_root = QProcess()
-            #ray_control_process_root.start('ray_control', ['-p', port_str, 'get_root'])
-            #ray_control_process_root.waitForFinished(2000)
-            
-            #ray_control_root = ray_control_process_root.readAllStandardOutput().data().decode('utf-8')
-            
-            
             if port_str and port_str.isdigit():
                 self.address = Address(int(port_str))
                 self.port = self.address.port
@@ -204,6 +196,12 @@ class DaemonManager(QObject):
                     "\033[92m%s\033[0m\n" %  (_translate('GUI_daemon',
                                           "Connecting GUI to existing ray-daemon port %i")
                                 % self.port))
+
+                if CommandLineArgs.start_session:
+                    server = GUIServerThread.instance()
+                    if server:
+                        server.send(self.address, '/ray/server/open_session',
+                                    CommandLineArgs.start_session)
                 return
 
         server = GUIServerThread.instance()
@@ -217,9 +215,9 @@ class DaemonManager(QObject):
                      '--osc-port', str(self.port),
                      '--session-root', CommandLineArgs.session_root]
 
-        if CommandLineArgs.session:
+        if CommandLineArgs.start_session:
             arguments.append('--session')
-            arguments.append(CommandLineArgs.session)
+            arguments.append(CommandLineArgs.start_session)
 
         if CommandLineArgs.debug_only:
             arguments.append('--debug-only')

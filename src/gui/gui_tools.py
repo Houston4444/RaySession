@@ -7,17 +7,13 @@ from PyQt5.QtGui import QIcon, QPixmap, QPalette
 
 import ray
 
+_translate = QApplication.translate
 
-
-g_settings = QSettings()
-
-def _translate(*args):
-    return QApplication.translate(*args)
 
 class RS:
     settings = QSettings()
 
-    # H for Hideable dialog
+    # HD for Hideable dialog
     HD_Donations = 0x001
     HD_OpenNsmSession = 0x002
     HD_SnapshotsInfo = 0x004
@@ -51,82 +47,6 @@ class RS:
         cls.settings.setValue('hidden_dialogs', 0)
 
 
-def initGuiTools():
-    if CommandLineArgs.under_nsm:
-        settings = QSettings('%s/child_sessions'
-                             % QApplication.organizationName())
-    elif CommandLineArgs.config_dir:
-        settings = QSettings(CommandLineArgs.config_dir)
-    else:
-        settings = QSettings()
-
-    RS.setSettings(settings)
-
-    if not CommandLineArgs.session_root:
-        CommandLineArgs.changeSessionRoot(
-            settings.value('default_session_root',
-                           ray.DEFAULT_SESSION_ROOT,
-                           type=str))
-
-def isDarkTheme(widget):
-    return bool(
-        widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
-        > 128)
-
-def dirname(*args):
-    return os.path.dirname(*args)
-
-def getCodeRoot():
-    return dirname(dirname(dirname(os.path.realpath(__file__))))
-
-def serverStatusString(server_status):
-    server_status_strings = {
-        ray.ServerStatus.OFF     : _translate('server status', "off"),
-        ray.ServerStatus.NEW     : _translate('server status', "new"),
-        ray.ServerStatus.OPEN    : _translate('server status', "open"),
-        ray.ServerStatus.CLEAR   : _translate('server status', "clear"),
-        ray.ServerStatus.SWITCH  : _translate('server status', "switch"),
-        ray.ServerStatus.LAUNCH  : _translate('server status', "launch"),
-        ray.ServerStatus.PRECOPY : _translate('server status', "copy"),
-        ray.ServerStatus.COPY    : _translate('server status', "copy"),
-        ray.ServerStatus.READY   : _translate('server status', "ready"),
-        ray.ServerStatus.SAVE    : _translate('server status', "save"),
-        ray.ServerStatus.CLOSE   : _translate('server status', "close"),
-        ray.ServerStatus.SNAPSHOT: _translate('server_status', "snapshot"),
-        ray.ServerStatus.REWIND  : _translate('server_status', "rewind"),
-        ray.ServerStatus.WAIT_USER : _translate('server_status', "waiting"),
-        ray.ServerStatus.OUT_SAVE  : _translate('server_status', "save"),
-        ray.ServerStatus.OUT_SNAPSHOT: _translate('server_status', "snapshot"),
-        ray.ServerStatus.SCRIPT : _translate('server_status', "script")}
-
-    if not 0 <= server_status < len(server_status_strings):
-        return _translate('server status', "invalid")
-
-    return server_status_strings[server_status]
-
-def clientStatusString(client_status):
-    client_status_strings = {
-        ray.ClientStatus.STOPPED: _translate('client status', "stopped"),
-        ray.ClientStatus.LAUNCH : _translate('client status', "launch"),
-        ray.ClientStatus.OPEN   : _translate('client status', "open"),
-        ray.ClientStatus.READY  : _translate('client status', "ready"),
-        ray.ClientStatus.PRECOPY: _translate('client status', "copy"),
-        ray.ClientStatus.COPY   : _translate('client status', "copy"),
-        ray.ClientStatus.SAVE   : _translate('client status', "save"),
-        ray.ClientStatus.SWITCH : _translate('client status', "switch"),
-        ray.ClientStatus.QUIT   : _translate('client status', "quit"),
-        ray.ClientStatus.NOOP   : _translate('client status', "noop"),
-        ray.ClientStatus.ERROR  : _translate('client status', "error"),
-        ray.ClientStatus.REMOVED: _translate('client status', "removed"),
-        ray.ClientStatus.UNDEF  : _translate('client_status', ""),
-        ray.ClientStatus.SCRIPT : _translate('client_status', 'script')}
-
-    if not 0 <= client_status < len(client_status_strings):
-        return _translate('client_status', 'invalid')
-
-    return client_status_strings[client_status]
-
-
 class ErrDaemon:
     # for use on network session under NSM
     NO_ERROR = 0
@@ -139,7 +59,7 @@ class ErrDaemon:
 
 
 class RayIcon(QIcon):
-    def __init__(self, icon_name, dark=False):
+    def __init__(self, icon_name: str, dark=False):
         QIcon.__init__(self)
         breeze = 'breeze-dark' if dark else 'breeze'
         self.addFile(':scalable/%s/%s' % (breeze, icon_name), QSize(22, 22))
@@ -161,11 +81,12 @@ class CommandLineArgs(argparse.Namespace):
     under_nsm = False
     NSM_URL = ''
     session_root = ''
-    session = ''
+    start_session = ''
 
     @classmethod
     def eatAttributes(cls, parsed_args):
         for attr_name in dir(parsed_args):
+            #print('eosa', attr_name, getattr(parsed_args, attr_name))
             if not attr_name.startswith('_'):
                 setattr(cls, attr_name, getattr(parsed_args, attr_name))
 
@@ -193,7 +114,7 @@ class CommandLineArgs(argparse.Namespace):
             cls.session_root = cls.session_root[:-1]
 
     @classmethod
-    def changeSessionRoot(cls, path):
+    def changeSessionRoot(cls, path: str):
         cls.session_root = path
 
 
@@ -217,7 +138,7 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument('--session-root', '-r', type=str,
                           help=_translate(
                               'help', 'Use this folder as root for sessions'))
-        self.add_argument('--session', '-s', type=str,
+        self.add_argument('--start-session', '-s', type=str,
                           help=_translate('help',
                                           'Open this session at startup'))
         self.add_argument('--config-dir', '-c', type=str, default='',
@@ -239,3 +160,80 @@ class ArgParser(argparse.ArgumentParser):
 
         parsed_args = argparse.ArgumentParser.parse_args(self)
         CommandLineArgs.eatAttributes(parsed_args)
+
+
+def initGuiTools():
+    if CommandLineArgs.under_nsm:
+        settings = QSettings('%s/child_sessions'
+                             % QApplication.organizationName())
+    elif CommandLineArgs.config_dir:
+        settings = QSettings(CommandLineArgs.config_dir)
+    else:
+        settings = QSettings()
+
+    RS.setSettings(settings)
+
+    if not CommandLineArgs.session_root:
+        CommandLineArgs.changeSessionRoot(
+            settings.value('default_session_root',
+                           ray.DEFAULT_SESSION_ROOT,
+                           type=str))
+    #print('oekrfof', CommandLineArgs.session)
+
+def isDarkTheme(widget)->bool:
+    return bool(
+        widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
+        > 128)
+
+def dirname(*args)->str:
+    return os.path.dirname(*args)
+
+def getCodeRoot()->str:
+    return dirname(dirname(dirname(os.path.realpath(__file__))))
+
+def serverStatusString(server_status: int)->str:
+    server_status_strings = {
+        ray.ServerStatus.OFF     : _translate('server status', "off"),
+        ray.ServerStatus.NEW     : _translate('server status', "new"),
+        ray.ServerStatus.OPEN    : _translate('server status', "open"),
+        ray.ServerStatus.CLEAR   : _translate('server status', "clear"),
+        ray.ServerStatus.SWITCH  : _translate('server status', "switch"),
+        ray.ServerStatus.LAUNCH  : _translate('server status', "launch"),
+        ray.ServerStatus.PRECOPY : _translate('server status', "copy"),
+        ray.ServerStatus.COPY    : _translate('server status', "copy"),
+        ray.ServerStatus.READY   : _translate('server status', "ready"),
+        ray.ServerStatus.SAVE    : _translate('server status', "save"),
+        ray.ServerStatus.CLOSE   : _translate('server status', "close"),
+        ray.ServerStatus.SNAPSHOT: _translate('server_status', "snapshot"),
+        ray.ServerStatus.REWIND  : _translate('server_status', "rewind"),
+        ray.ServerStatus.WAIT_USER : _translate('server_status', "waiting"),
+        ray.ServerStatus.OUT_SAVE  : _translate('server_status', "save"),
+        ray.ServerStatus.OUT_SNAPSHOT: _translate('server_status', "snapshot"),
+        ray.ServerStatus.SCRIPT : _translate('server_status', "script")}
+
+    if not 0 <= server_status < len(server_status_strings):
+        return _translate('server status', "invalid")
+
+    return server_status_strings[server_status]
+
+def clientStatusString(client_status: int)->str:
+    client_status_strings = {
+        ray.ClientStatus.STOPPED: _translate('client status', "stopped"),
+        ray.ClientStatus.LAUNCH : _translate('client status', "launch"),
+        ray.ClientStatus.OPEN   : _translate('client status', "open"),
+        ray.ClientStatus.READY  : _translate('client status', "ready"),
+        ray.ClientStatus.PRECOPY: _translate('client status', "copy"),
+        ray.ClientStatus.COPY   : _translate('client status', "copy"),
+        ray.ClientStatus.SAVE   : _translate('client status', "save"),
+        ray.ClientStatus.SWITCH : _translate('client status', "switch"),
+        ray.ClientStatus.QUIT   : _translate('client status', "quit"),
+        ray.ClientStatus.NOOP   : _translate('client status', "noop"),
+        ray.ClientStatus.ERROR  : _translate('client status', "error"),
+        ray.ClientStatus.REMOVED: _translate('client status', "removed"),
+        ray.ClientStatus.UNDEF  : _translate('client_status', ""),
+        ray.ClientStatus.SCRIPT : _translate('client_status', 'script')}
+
+    if not 0 <= client_status < len(client_status_strings):
+        return _translate('client_status', 'invalid')
+
+    return client_status_strings[client_status]
