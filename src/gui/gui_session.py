@@ -49,14 +49,13 @@ class Session:
 
         # build and show Main UI
         self._main_win = MainWindow(self)
-
         self._daemon_manager.finishInit()
         server.finishInit(self)
 
         self._main_win.show()
 
         # display donations dialog under conditions
-        if not RS.settings.value('hide_donations', False, type=bool):
+        if not RS.isHidden(RS.HD_Donations):
             coreff_counter = RS.settings.value('coreff_counter', 0, type=int)
             coreff_counter += 1
             RS.settings.setValue('coreff_counter', coreff_counter)
@@ -135,7 +134,6 @@ class SignaledSession(Session):
     def __init__(self):
         Session.__init__(self)
         self._signaler.osc_receive.connect(self.oscReceive)
-
         self._daemon_manager.start()
 
     def oscReceive(self, path, args):

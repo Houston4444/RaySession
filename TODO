@@ -18,9 +18,8 @@ konv# RaySession TODO
     
     ---
     
-    Icônes partout
-    Pas de QMessageBox, tout doit être child_dialog
-    
     favoris depuis ray_control -> pas pressé
 
     traduction switch (changement) -> bascule
+
+    bug ray_control start doit démarrer sur le default session root

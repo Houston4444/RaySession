@@ -472,11 +472,12 @@ if __name__ == '__main__':
     else:
         session_root = "%s/Ray Sessions" % os.getenv('HOME')
         try:
-            settings_file = open("%s/.config/RaySession/RaySession.conf", 'r')
+            settings_file = open(
+                "%s/.config/RaySession/RaySession.conf" % os.getenv('HOME'), 'r')
             contents = settings_file.read()
             for line in contents.split('\n'):
                 if line.startswith('default_session_root='):
-                    session_root = line.replace('default_session_root', '', 1)
+                    session_root = line.partition('=')[2]
                     break
         except:
             pass

@@ -82,16 +82,19 @@ class CommandLineArgs(argparse.Namespace):
     NSM_URL = ''
     session_root = ''
     start_session = ''
+    force_new_daemon = False
 
     @classmethod
     def eatAttributes(cls, parsed_args):
         for attr_name in dir(parsed_args):
-            #print('eosa', attr_name, getattr(parsed_args, attr_name))
             if not attr_name.startswith('_'):
                 setattr(cls, attr_name, getattr(parsed_args, attr_name))
 
         if cls.debug_only:
             cls.debug = True
+
+        if cls.debug or cls.no_client_messages:
+            cls.force_new_daemon = True
 
         if cls.config_dir and not os.access(cls.config_dir, os.W_OK):
             sys.stderr.write(
@@ -151,6 +154,9 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument('---no-client-messages', '-ncm', action='store_true',
                           help=_translate('help',
                                           'do not print client messages'))
+        self.add_argument(
+            '--force-new-daemon', '-fnd', action='store_true',
+            help=_translate('help', 'prevent to attach to an already running daemon'))
         self.add_argument('--net-session-root', type=str, default='',
                           help=argparse.SUPPRESS)
         self.add_argument('--net-daemon-id', type=int, default=0,
@@ -178,7 +184,6 @@ def initGuiTools():
             settings.value('default_session_root',
                            ray.DEFAULT_SESSION_ROOT,
                            type=str))
-    #print('oekrfof', CommandLineArgs.session)
 
 def isDarkTheme(widget)->bool:
     return bool(

@@ -4,6 +4,7 @@
 import signal
 import sys
 import time
+
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon, QFontDatabase
 from PyQt5.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
