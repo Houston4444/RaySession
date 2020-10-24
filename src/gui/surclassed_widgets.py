@@ -9,7 +9,6 @@ from gui_tools import isDarkTheme
 from gui_signaler import Signaler
 
 class HideGuiButton(QToolButton):
-    #toggleGui = pyqtSignal()
     orderGuiState = pyqtSignal(bool)
 
     def __init__(self, parent):
@@ -51,7 +50,6 @@ class HideGuiButton(QToolButton):
         self.setStyleSheet(style)
 
     def mousePressEvent(self, event):
-        #self.toggleGui.emit()
         self.orderGuiState.emit(not self.isChecked())
         # and not toggle button, the client will emit a gui state that will
         # toggle this button
@@ -59,6 +57,7 @@ class HideGuiButton(QToolButton):
 
 class OpenSessionFilterBar(QLineEdit):
     updownpressed = pyqtSignal(int)
+    key_event = pyqtSignal(object)
 
     def __init__(self, parent):
         QLineEdit.__init__(self)
@@ -66,6 +65,7 @@ class OpenSessionFilterBar(QLineEdit):
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Up, Qt.Key_Down):
             self.updownpressed.emit(event.key())
+            self.key_event.emit(event)
         QLineEdit.keyPressEvent(self, event)
 
 

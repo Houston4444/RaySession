@@ -3,7 +3,7 @@ import sys
 import time
 
 from PyQt5.QtWidgets import (
-    QDialog, QDialogButtonBox, QTreeWidgetItem,
+    QDialog, QDialogButtonBox, QTreeWidget, QTreeWidgetItem,
     QCompleter, QMessageBox, QFileDialog)
 from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
 from PyQt5.QtCore import Qt, QTimer
@@ -136,7 +136,7 @@ class SessionItem(QTreeWidgetItem):
     def __init__(self, l_list):
         QTreeWidgetItem.__init__(self, l_list)
 
-    def showConditionnaly(self, string):
+    def showConditionnaly(self, string: str)->bool:
         show = bool(string.lower() in self.data(0, Qt.UserRole).lower())
 
         n = 0
@@ -221,7 +221,8 @@ class OpenSessionDialog(ChildDialog):
         self.ui.sessionList.itemDoubleClicked.connect(self.goIfAny)
         self.ui.sessionList.itemClicked.connect(self.deployItem)
         self.ui.filterBar.textEdited.connect(self.updateFilteredList)
-        self.ui.filterBar.updownpressed.connect(self.updownPressed)
+        #self.ui.filterBar.updownpressed.connect(self.updownPressed)
+        self.ui.filterBar.key_event.connect(self.updownPressed)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
 
@@ -244,6 +245,9 @@ class OpenSessionDialog(ChildDialog):
         self.all_items = []
 
         self._last_mouse_click = 0
+        self._last_session_item = None
+        
+        self.ui.filterBar.setFocus(Qt.OtherFocusReason)
 
     def serverStatusChanged(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
@@ -284,8 +288,20 @@ class OpenSessionDialog(ChildDialog):
             height = self.ui.progressBar.size().height()
             self.ui.progressBar.setVisible(False)
             self.ui.widgetSpacer.setVisible(True)
-            #self.ui.widgetSpacer.setMaximumHeight(height)
-            ##self.ui.widgetSpacer.setHeight(height)
+            
+            # Try to select last used session
+            root_item = self.ui.sessionList.invisibleRootItem()
+            for i in range(root_item.childCount()):
+                item = root_item.child(i)
+                last_session_item = item.findItemWith(
+                    RS.settings.value('last_session', type=str))
+
+                if last_session_item:
+                    self.ui.sessionList.setCurrentItem(last_session_item)
+                    self.ui.sessionList.scrollToItem(last_session_item)
+                    break
+            return
+
 
         for session_name in session_names:
             folder_div = session_name.split('/')
@@ -315,18 +331,6 @@ class OpenSessionDialog(ChildDialog):
 
         self.ui.sessionList.sortByColumn(0, Qt.AscendingOrder)
 
-        # Try to select last used session
-        root_item = self.ui.sessionList.invisibleRootItem()
-        for i in range(root_item.childCount()):
-            item = root_item.child(i)
-            last_session_item = item.findItemWith(
-                RS.settings.value('last_session', type=str))
-
-            if last_session_item:
-                self.ui.sessionList.setCurrentItem(last_session_item)
-                self.ui.sessionList.scrollToItem(last_session_item)
-                break
-
     def updateFilteredList(self, filt):
         filter_text = self.ui.filterBar.displayText()
         root_item = self.ui.sessionList.invisibleRootItem()
@@ -353,28 +357,67 @@ class OpenSessionDialog(ChildDialog):
             self.ui.filterBar.setStyleSheet("")
             self.ui.sessionList.scrollTo(self.ui.sessionList.currentIndex())
 
-    def updownPressed(self, key):
-        root_item = self.ui.sessionList.invisibleRootItem()
-        row = self.ui.sessionList.currentIndex().row()
-
-        if key == Qt.Key_Up:
-            if row == 0:
+    def updownPressed(self, event):
+        start_item = self.ui.sessionList.currentItem()
+        QTreeWidget.keyPressEvent(self.ui.sessionList, event)
+        if not start_item:
+            return
+        
+        current_item = self.ui.sessionList.currentItem()
+        if current_item == start_item:
+            return
+        
+        ex_item = current_item
+        
+        while not current_item.flags() & Qt.ItemIsSelectable:
+            ex_item = current_item
+            QTreeWidget.keyPressEvent(self.ui.sessionList, event)
+            current_item = self.ui.sessionList.currentItem()
+            if current_item == ex_item:
+                self.ui.sessionList.setCurrentItem(start_item)
                 return
-            row -= 1
-            while root_item.child(row).isHidden():
-                if row == 0:
-                    return
-                row -= 1
-        elif key == Qt.Key_Down:
-            if row == root_item.childCount() - 1:
-                return
-            row += 1
-            while root_item.child(row).isHidden():
-                if row == root_item.childCount() - 1:
-                    return
-                row += 1
+            
+        #root_item = self.ui.sessionList.invisibleRootItem()
+        #row = self.ui.sessionList.currentIndex().row()
+        #current_item = self.ui.sessionList.currentItem()
+        #print('fjifji', current_item.data(0, Qt.UserRole), row)
+        #if key == Qt.Key_Up:
+            #if row == 0:
+                #return
+            #row -= 1
+            #while root_item.child(row).isHidden():
+                #if row == 0:
+                    #return
+                #row -= 1
+            #item = root_item.child(row)
+            #while not item.flags() & Qt.ItemIsSelectable:
+                #item = item.child(item.childCount() - 1)
+                    
+                
+        #elif key == Qt.Key_Down:
+            #if row == root_item.childCount() - 1:
+                #return
+            #row += 1
+            #while root_item.child(row).isHidden():
+                #if row == root_item.childCount() - 1:
+                    #return
+                #row += 1
 
-        self.ui.sessionList.setCurrentItem(root_item.child(row))
+            #item = root_item.child(row)
+            #while not item.flags() & Qt.ItemIsSelectable:
+                #item = item.child(0)
+            
+            #next_is_the_good = False
+            #for i in range(item.childCount()):
+                #c_item = item.child(i)
+                #if next_is_the_good:
+                    #item = c_item
+                    #break
+                
+                #if c_item == current_item:
+                    #next_is_the_good = True
+        #print('adhdhd', item.data(0, Qt.UserRole))
+        #self.ui.sessionList.setCurrentItem(item)
 
     def currentItemChanged(self, item, previous_item):
         self.has_selection = bool(item and item.data(0, Qt.UserRole))

@@ -49,10 +49,8 @@ class RS:
 
         if hide:
             hidden_dialogs |= hiddeable_dialog
-        elif hidden_dialogs & hiddeable_dialog:
-            hidden_dialogs -= hiddeable_dialog
         else:
-            return
+            hidden_dialogs &= ~hiddeable_dialog
 
         cls.settings.setValue('hidden_dialogs', hidden_dialogs)
 

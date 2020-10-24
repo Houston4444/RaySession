@@ -1324,5 +1324,5 @@ class OscServerThread(ClientCommunicating):
     def setOption(self, option: int):
         if option > 0:
             self.options |= option
-        elif self.options & option:
-            self.options -= option
+        else:
+            self.options &= ~option
