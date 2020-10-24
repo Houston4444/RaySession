@@ -10,17 +10,9 @@ import ray
 
 
 g_settings = QSettings()
-default_session_root = "%s/Ray Sessions" % (os.getenv('HOME'))
 
 def _translate(*args):
     return QApplication.translate(*args)
-
-def setDefaultSessionRoot(path):
-    global default_session_root
-    default_session_root = path
-
-def getDefaultSessionRoot():
-    return default_session_root
 
 class RS:
     settings = QSettings()
@@ -70,10 +62,11 @@ def initGuiTools():
 
     RS.setSettings(settings)
 
-    CommandLineArgs.changeSessionRoot(
-        settings.value('default_session_root',
-                       "%s/Ray Sessions" % (os.getenv('HOME')),
-                        type=str))
+    if not CommandLineArgs.session_root:
+        CommandLineArgs.changeSessionRoot(
+            settings.value('default_session_root',
+                           ray.DEFAULT_SESSION_ROOT,
+                           type=str))
 
 def isDarkTheme(widget):
     return bool(
@@ -110,7 +103,6 @@ def serverStatusString(server_status):
         return _translate('server status', "invalid")
 
     return server_status_strings[server_status]
-
 
 def clientStatusString(client_status):
     client_status_strings = {
@@ -196,12 +188,8 @@ class CommandLineArgs(argparse.Namespace):
 
             cls.under_nsm = True
 
-        if not cls.session_root:
-            cls.session_root = RS.settings.value(
-                                    'default_session_root',
-                                    '%s/Ray Sessions' % os.getenv('HOME'))
-
-        if cls.session_root.endswith('/'):
+        if (cls.session_root is not None
+                and cls.session_root.endswith('/')):
             cls.session_root = cls.session_root[:-1]
 
     @classmethod

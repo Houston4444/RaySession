@@ -345,10 +345,18 @@ if __name__ == '__main__':
                 sys.exit(0)
 
             elif operation == 'get_port_gui_free':
-                for daemon in daemon_list:
-                    if (daemon.user == os.environ['USER']
-                            and not daemon.not_default):
+                print('vokrkvokrok', args, file=sys.stderr)
+                wanted_session_root = ''
+                if args:
+                    wanted_session_root = args[0]
 
+                for daemon in daemon_list:
+                    print('fzef', daemon.root, file=sys.stderr)
+                    if (daemon.user == os.environ['USER']
+                            and (daemon.root == wanted_session_root
+                                 or not wanted_session_root)
+                            and not daemon.not_default):
+                        print('fassa', daemon.root, file=sys.stderr)
                         if not daemon.has_local_gui:
                             sys.stdout.write('%s\n' % daemon.port)
                             break

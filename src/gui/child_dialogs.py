@@ -376,48 +376,6 @@ class OpenSessionDialog(ChildDialog):
             if current_item == ex_item:
                 self.ui.sessionList.setCurrentItem(start_item)
                 return
-            
-        #root_item = self.ui.sessionList.invisibleRootItem()
-        #row = self.ui.sessionList.currentIndex().row()
-        #current_item = self.ui.sessionList.currentItem()
-        #print('fjifji', current_item.data(0, Qt.UserRole), row)
-        #if key == Qt.Key_Up:
-            #if row == 0:
-                #return
-            #row -= 1
-            #while root_item.child(row).isHidden():
-                #if row == 0:
-                    #return
-                #row -= 1
-            #item = root_item.child(row)
-            #while not item.flags() & Qt.ItemIsSelectable:
-                #item = item.child(item.childCount() - 1)
-                    
-                
-        #elif key == Qt.Key_Down:
-            #if row == root_item.childCount() - 1:
-                #return
-            #row += 1
-            #while root_item.child(row).isHidden():
-                #if row == root_item.childCount() - 1:
-                    #return
-                #row += 1
-
-            #item = root_item.child(row)
-            #while not item.flags() & Qt.ItemIsSelectable:
-                #item = item.child(0)
-            
-            #next_is_the_good = False
-            #for i in range(item.childCount()):
-                #c_item = item.child(i)
-                #if next_is_the_good:
-                    #item = c_item
-                    #break
-                
-                #if c_item == current_item:
-                    #next_is_the_good = True
-        #print('adhdhd', item.data(0, Qt.UserRole))
-        #self.ui.sessionList.setCurrentItem(item)
 
     def currentItemChanged(self, item, previous_item):
         self.has_selection = bool(item and item.data(0, Qt.UserRole))

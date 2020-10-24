@@ -174,15 +174,25 @@ class DaemonManager(QObject):
         if self.launched_before:
             self.callDaemon()
             return
-
+        import shutil
+        print(shutil.which('ray_control'), CommandLineArgs.session_root)
         ray_control_process = QProcess()
-        ray_control_process.start("ray_control", ['get_port_gui_free'])
+        ray_control_process.start("ray_control",
+                                  ['get_port_gui_free',
+                                   CommandLineArgs.session_root])
         ray_control_process.waitForFinished(2000)
 
         if ray_control_process.exitCode() == 0:
             port_str_lines = ray_control_process.readAllStandardOutput().data().decode('utf-8')
             port_str = port_str_lines.partition('\n')[0]
 
+            #ray_control_process_root = QProcess()
+            #ray_control_process_root.start('ray_control', ['-p', port_str, 'get_root'])
+            #ray_control_process_root.waitForFinished(2000)
+            
+            #ray_control_root = ray_control_process_root.readAllStandardOutput().data().decode('utf-8')
+            
+            
             if port_str and port_str.isdigit():
                 self.address = Address(int(port_str))
                 self.port = self.address.port
