@@ -20,6 +20,8 @@ for dir in daemon gui shared;do
     cd "$code_root/src/$dir"
     
     for file in *.py;do
+        [[ "$file" =~ ^ui_ ]] && continue
+        
         if cat "$file"|grep -q _translate;then
             contents+="SOURCES += ../src/$dir/${file}
 "
@@ -28,8 +30,8 @@ for dir in daemon gui shared;do
 done
 
 contents+="
-TRANSLATIONS += raysession_en_US.ts
-TRANSLATIONS += raysession_fr_FR.ts
+TRANSLATIONS += raysession_en.ts
+TRANSLATIONS += raysession_fr.ts
 "
 
 echo "$contents" > "$locale_root/raysession.pro"
