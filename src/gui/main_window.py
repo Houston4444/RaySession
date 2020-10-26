@@ -296,6 +296,7 @@ class MainWindow(QMainWindow):
         self.ui.actionAbortSession.setEnabled(not nsm_locked)
 
         self.ui.toolBar.setVisible(not nsm_locked)
+        self.ui.toolButtonNoRole.setVisible(nsm_locked)
         self.ui.toolButtonAbortSession.setVisible(not nsm_locked)
         self.ui.closeButton.setVisible(not nsm_locked)
         self.ui.toolButtonControl2.setVisible(nsm_locked)

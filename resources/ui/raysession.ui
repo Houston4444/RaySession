@@ -160,6 +160,16 @@ QToolButton {border: none}</string>
               </widget>
              </item>
              <item>
+              <widget class="QToolButton" name="toolButtonNoRole">
+               <property name="styleSheet">
+                <string notr="true">QToolButton{border:none}</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QToolButton" name="toolButtonAbortSession">
                <property name="styleSheet">
                 <string notr="true">QToolButton{border: none}</string>
@@ -1157,10 +1167,11 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionMakeReappearDialogs">
    <property name="icon">
-    <iconset theme="show-dialogs"/>
+    <iconset theme="show-dialogs">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Make reappear all dialog windows</string>
+    <string>Make &amp;reappear all dialog windows</string>
    </property>
   </action>
  </widget>
