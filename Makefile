@@ -87,7 +87,7 @@ src/clients/proxy/ui_%.py: resources/ui/%.ui
 
 LOCALE: locale
 
-locale: locale/raysession_fr_FR.qm locale/raysession_en_US.qm
+locale: locale/raysession_en.qm locale/raysession_fr.qm
 
 locale/%.qm: locale/%.ts
 	$(LRELEASE) $< -qm $@

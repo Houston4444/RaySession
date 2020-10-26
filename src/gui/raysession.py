@@ -34,19 +34,20 @@ def signalHandler(sig, frame):
         session._daemon_manager.stop()
 
 if __name__ == '__main__':
-    #set Qt Application
+    # set Qt Application
     app = QApplication(sys.argv)
-    app.setApplicationName("RaySession")
+    app.setApplicationName(ray.APP_TITLE)
     app.setApplicationVersion(ray.VERSION)
-    app.setOrganizationName("RaySession")
-    app.setWindowIcon(QIcon(':/scalable/raysession.svg'))
+    app.setOrganizationName(ray.APP_TITLE)
+    app.setWindowIcon(QIcon(':/scalable/%s.svg' % ray.APP_TITLE.lower()))
     app.setQuitOnLastWindowClosed(False)
-    app.setDesktopFileName('raysession')
+    app.setDesktopFileName(ray.APP_TITLE.lower())
 
     ### Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
-    if appTranslator.load("%s/locale/raysession_%s" % (getCodeRoot(), locale)):
+    if appTranslator.load(QLocale(), ray.APP_TITLE.lower(),
+                          '_', "%s/locale" % getCodeRoot()):
         app.installTranslator(appTranslator)
 
     sysTranslator = QTranslator()
@@ -57,12 +58,13 @@ if __name__ == '__main__':
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
 
-    #get arguments
+    # get arguments
     parser = ArgParser()
 
     initGuiTools()
 
-    #Add raysession/src/bin to $PATH to can use raysession after make, whitout install
+    # Add raysession/src/bin to $PATH
+    # to can use raysession after make, whitout install
     ray.addSelfBinToPath()
 
     #connect signals
