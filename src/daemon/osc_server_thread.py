@@ -451,6 +451,11 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/change_root', 's')
     def rayServerChangeRoot(self, path, args, types, src_addr):
+        new_root = args[0]
+        if not(new_root.startswith('/') and pathIsValid(new_root)):
+            self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
+                      "invalid session root !")
+
         if self.isOperationPending(src_addr, path):
             self.send(src_addr, '/error', path, ray.Err.OPERATION_PENDING,
                       "Can't change session_root. Operation pending")
