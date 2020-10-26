@@ -114,9 +114,15 @@ class MainWindow(QMainWindow):
         self.ui.actionAbortSession.triggered.connect(self.abortSession)
         self.ui.actionRenameSession.triggered.connect(
             self.renameSessionAction)
+        self.ui.actionRenameSession_2.triggered.connect(
+            self.renameSessionAction)
         self.ui.actionDuplicateSession.triggered.connect(
             self.duplicateSession)
+        self.ui.actionDuplicateSession_2.triggered.connect(
+            self.duplicateSession)
         self.ui.actionSaveTemplateSession.triggered.connect(
+            self.saveTemplateSession)
+        self.ui.actionSaveTemplateSession_2.triggered.connect(
             self.saveTemplateSession)
         self.ui.actionSessionNotes.triggered.connect(
             self.toggleNotesVisibility)
@@ -150,8 +156,9 @@ class MainWindow(QMainWindow):
 
         # set session menu
         self.session_menu = QMenu()
-        self.session_menu.addAction(self.ui.actionSaveTemplateSession)
-        self.session_menu.addAction(self.ui.actionDuplicateSession)
+        self.session_menu.addAction(self.ui.actionSaveTemplateSession_2)
+        self.session_menu.addAction(self.ui.actionDuplicateSession_2)
+        self.session_menu.addAction(self.ui.actionRenameSession_2)
         self.ui.toolButtonSessionMenu.setPopupMode(QToolButton.InstantPopup)
         self.ui.toolButtonSessionMenu.setMenu(self.session_menu)
 
@@ -232,7 +239,11 @@ class MainWindow(QMainWindow):
 
         self.ui.actionDuplicateSession.setIcon(
             RayIcon('xml-node-duplicate', dark))
+        self.ui.actionDuplicateSession_2.setIcon(
+            RayIcon('xml-node-duplicate', dark))
         self.ui.actionSaveTemplateSession.setIcon(
+            RayIcon('document-save-as-template', dark))
+        self.ui.actionSaveTemplateSession_2.setIcon(
             RayIcon('document-save-as-template', dark))
         self.ui.actionCloseSession.setIcon(RayIcon('window-close', dark))
         self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark))
@@ -304,6 +315,8 @@ class MainWindow(QMainWindow):
         self.ui.stackedWidgetSessionName.setEditable(
             nsm_locked and not CommandLineArgs.out_daemon)
         self.ui.actionRenameSession.setEnabled(
+            nsm_locked and not CommandLineArgs.out_daemon)
+        self.ui.actionRenameSession_2.setEnabled(
             nsm_locked and not CommandLineArgs.out_daemon)
 
     def setDaemonOptions(self, options):
@@ -818,7 +831,9 @@ class MainWindow(QMainWindow):
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(True)
             self.ui.actionDuplicateSession.setEnabled(False)
+            self.ui.actionDuplicateSession_2.setEnabled(False)
             self.ui.actionSaveTemplateSession.setEnabled(False)
+            self.ui.actionSaveTemplateSession_2.setEnabled(False)
             self.ui.actionReturnToAPreviousState.setEnabled(False)
             self.ui.actionAddApplication.setEnabled(False)
             self.ui.actionAddExecutable.setEnabled(False)
@@ -841,9 +856,12 @@ class MainWindow(QMainWindow):
             not bool(server_status in (ray.ServerStatus.CLOSE,
                                        ray.ServerStatus.OFF)))
         self.ui.actionDuplicateSession.setEnabled(not close_or_off)
+        self.ui.actionDuplicateSession_2.setEnabled(not close_or_off)
         self.ui.actionReturnToAPreviousState.setEnabled(not close_or_off)
         self.ui.actionRenameSession.setEnabled(ready)
+        self.ui.actionRenameSession_2.setEnabled(ready)
         self.ui.actionSaveTemplateSession.setEnabled(not close_or_off)
+        self.ui.actionSaveTemplateSession_2.setEnabled(not close_or_off)
         self.ui.actionAddApplication.setEnabled(not close_or_off)
         self.ui.actionAddExecutable.setEnabled(not close_or_off)
         self.ui.toolButtonFavorites.setEnabled(

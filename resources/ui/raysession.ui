@@ -1174,6 +1174,48 @@ QToolButton {border: none}</string>
     <string>Make &amp;reappear all dialog windows</string>
    </property>
   </action>
+  <action name="actionSaveTemplateSession_2">
+   <property name="icon">
+    <iconset theme="document-save-as-template">
+     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+   </property>
+   <property name="text">
+    <string>Save as Template the current session</string>
+   </property>
+   <property name="toolTip">
+    <string>Save current session as template</string>
+   </property>
+  </action>
+  <action name="actionDuplicateSession_2">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/scalable/breeze/xml-node-duplicate.svg</normaloff>:/scalable/breeze/xml-node-duplicate.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Duplicate the current session</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Duplicate the current session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="actionRenameSession_2">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="edit-rename">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>Rename the current session</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
