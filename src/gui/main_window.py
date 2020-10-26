@@ -242,6 +242,8 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonNotes.setIcon(RayIcon('notes', dark))
         self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
 
+        self.ui.toolButtonSessionMenu.setIcon(RayIcon('application-menu', dark))
+
         self.ui.listWidget.setSession(self._session)
 
         self.setNsmLocked(CommandLineArgs.under_nsm)
