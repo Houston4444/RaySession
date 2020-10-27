@@ -1330,7 +1330,7 @@ class SignaledSession(OperatingSession):
                      'save_signal', 'stop_signal',
                      'no_save_level', 'wait_window',
                      'VERSION'):
-            message += "%s:%s\n" % (prop, cte.attribute(property))
+            message += "%s:%s\n" % (prop, cte.attribute(prop))
 
         # remove last empty line
         message = message.rpartition('\n')[0]
