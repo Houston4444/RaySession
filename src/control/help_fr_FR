@@ -164,6 +164,12 @@ contrôle les démons de RaySession
         Utilisé pour supprimer les clients qui peuvent avoir été gardés de la session précédente.
         Sans arguments, ça supprime tous les clients tournants,
         sinon ça supprime les clients donnés par leur CLIENT_ID.
+    set_notes NOTES
+        Définir les notes de session comme étant NOTES. Attention, celà écrase les notes de session.
+    show_notes
+        Demande aux IGUs attachées d'afficher la boîte de notes
+    hide_notes
+        Demande aux IGUs attachées de cacher la boîte de notes
 
 * COMMANDES DE CLIENT:
     Les commandes de client doivent être écrites de cette manière:

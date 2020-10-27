@@ -14,12 +14,6 @@ konv# RaySession TODO
     
     Tuer le script de session si user decheck l'option
     
-    passer les fonctions list dans GUI si local
-    
     ---
     
     favoris depuis ray_control -> pas pressé
-
-    traduction switch (changement) -> bascule
-
-    bug ray_control start doit démarrer sur le default session root

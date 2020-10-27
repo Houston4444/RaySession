@@ -30,17 +30,6 @@ server_operations = (
     'rename_session', 'set_options', 'has_option',
     'script_info', 'hide_script_info', 'script_user_action')
 
-session_operations = ('save', 'save_as_template', 'take_snapshot',
-                      'close', 'abort', 'duplicate', 'open_snapshot',
-                      'rename', 'set_notes', 'get_notes',
-                      'add_executable', 'add_proxy',
-                      'add_factory_client_template',
-                      'add_user_client_template',
-                      'add_client_template', 'list_snapshots',
-                      'list_clients', 'list_trashed_clients',
-                      'reorder_clients',
-                      'get_session_name', 'run_step', 'clear_clients')
-
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -271,12 +260,8 @@ if __name__ == '__main__':
             operation_type = OPERATION_TYPE_CONTROL
         elif operation in server_operations:
             operation_type = OPERATION_TYPE_SERVER
-        elif operation in session_operations:
-            operation_type = OPERATION_TYPE_SESSION
         else:
-            sys.stderr.write("Unknown operation: %s\n" % operation)
-            printHelp()
-            sys.exit(100)
+            operation_type = OPERATION_TYPE_SESSION
 
     arg_list = [autoTypeString(s) for s in args]
     if operation_type in (OPERATION_TYPE_CLIENT,

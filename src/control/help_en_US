@@ -157,7 +157,12 @@ control RaySession daemons
         Used to remove clients that could have been kept from the previous session.
         whitout arguments, removes all running clients,
         else removes clients given by their CLIENT_ID.
-        
+    set_notes NOTES
+        Set the session notes to notes, use with care, it will erase notes
+    show_notes
+        Ask to all attached GUIs to show the notes dialog
+    hide_notes
+        Ask to all attached GUIs to hide the notes dialog
 
 * CLIENT_COMMANDS:
     all client commands have to be written this way:
