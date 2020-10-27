@@ -143,10 +143,12 @@ contrôle les démons de RaySession
                         Essayer d'utiliser $NOUVEAU_CLIENT_ID.
                         Très utile pour utiliser des fichiers préalablement
                         copiés dans le repertoire de la session.
-    add_factory_client_template MODÈLE_DE_CLIENT
+    add_factory_client_template MODÈLE_DE_CLIENT [not_start]
         Ajoute un client à la session selon MODÈLE_DE_CLIENT d'usine
-    add_user_client_template MODÈLE_DE_CLIENT
+        Avec l'argument not_started, le client sera ajouté mais ne sera pas lancé
+    add_user_client_template MODÈLE_DE_CLIENT [not_start]
         Ajoute un client à la session selon MODÈLE_DE_CLIENT utilisateur
+        Avec l'argument not_started, le client sera ajouté mais ne sera pas lancé
     list_snapshots
         Lister les clichés de la session
     list_clients [FILTER1] [FILTER2] [FILTER3]...

@@ -1002,7 +1002,7 @@ class SignaledSession(OperatingSession):
 
         factory = bool(args[0])
         template_name = args[1]
-        auto_start = bool(len(args) <= 2 or args[2] != 'not_started')
+        auto_start = bool(len(args) <= 2 or args[2] != 'not_start')
 
         self.addClientTemplate(src_addr, path, template_name, factory, auto_start)
 

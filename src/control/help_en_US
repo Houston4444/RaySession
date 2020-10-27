@@ -136,10 +136,14 @@ control RaySession daemons
             client_id:$NEW_CLIENT_ID
                         Try to use this client_id.
                         Useful for use files copied to the session dir.
-    add_factory_client_template CLIENT_TEMPLATE
+    add_factory_client_template CLIENT_TEMPLATE [not_start]
         Adds a client to the current session from factory CLIENT_TEMPLATE
-    add_user_client_template CLIENT_TEMPLATE
+        if not_started is provided as second arg,
+        then template will be added but not start
+    add_user_client_template CLIENT_TEMPLATE [not_start]
         Adds a client to the current session from user CLIENT_TEMPLATE
+        if not_started is provided as second arg,
+        then template will be added but not start
     list_snapshots
         Lists all snapshots of the current session
     list_clients [FILTER1] [FILTER2] [FILTER3]...
