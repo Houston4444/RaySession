@@ -20,6 +20,7 @@
        <file>scalable/breeze-dark/notes-nonempty.svg</file>
        <file>scalable/breeze-dark/im-user.svg</file>
        <file>scalable/breeze-dark/configure.svg</file>
+       <file>scalable/breeze-dark/visibility.svg</file>
        <file>scalable/breeze-dark/document-open.svg</file>
        <file>scalable/breeze-dark/xml-node-duplicate.svg</file>
        <file>scalable/breeze-dark/view-list-icons.svg</file>
@@ -28,6 +29,7 @@
        <file>scalable/breeze-dark/window-close.svg</file>
        <file>scalable/breeze-dark/document-unsaved.svg</file>
        <file>scalable/breeze-dark/media-playback-start.svg</file>
+       <file>scalable/breeze-dark/hint.svg</file>
        <file>scalable/breeze-dark/media-seek-backward.svg</file>
        <file>scalable/breeze-dark/document-nosave.svg</file>
        <file>scalable/breeze-dark/trash-empty.svg</file>
@@ -44,6 +46,7 @@
        <file>scalable/breeze-dark/disabled/list-remove.svg</file>
        <file>scalable/breeze-dark/disabled/notes-nonempty.svg</file>
        <file>scalable/breeze-dark/disabled/configure.svg</file>
+       <file>scalable/breeze-dark/disabled/visibility.svg</file>
        <file>scalable/breeze-dark/disabled/document-open.svg</file>
        <file>scalable/breeze-dark/disabled/xml-node-duplicate.svg</file>
        <file>scalable/breeze-dark/disabled/view-list-icons.svg</file>
@@ -67,6 +70,7 @@
        <file>scalable/breeze/notes-nonempty.svg</file>
        <file>scalable/breeze/im-user.svg</file>
        <file>scalable/breeze/configure.svg</file>
+       <file>scalable/breeze/visibility.svg</file>
        <file>scalable/breeze/document-open.svg</file>
        <file>scalable/breeze/xml-node-duplicate.svg</file>
        <file>scalable/breeze/view-list-icons.svg</file>
@@ -75,6 +79,7 @@
        <file>scalable/breeze/window-close.svg</file>
        <file>scalable/breeze/document-unsaved.svg</file>
        <file>scalable/breeze/media-playback-start.svg</file>
+       <file>scalable/breeze/hint.svg</file>
        <file>scalable/breeze/media-seek-backward.svg</file>
        <file>scalable/breeze/empty-icon.svg</file>
        <file>scalable/breeze/document-nosave.svg</file>
@@ -92,6 +97,7 @@
        <file>scalable/breeze/disabled/list-remove.svg</file>
        <file>scalable/breeze/disabled/notes-nonempty.svg</file>
        <file>scalable/breeze/disabled/configure.svg</file>
+       <file>scalable/breeze/disabled/visibility.svg</file>
        <file>scalable/breeze/disabled/document-open.svg</file>
        <file>scalable/breeze/disabled/xml-node-duplicate.svg</file>
        <file>scalable/breeze/disabled/view-list-icons.svg</file>

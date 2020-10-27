@@ -137,7 +137,7 @@ QToolButton {border: none}</string>
       </spacer>
      </item>
      <item>
-      <widget class="HideGuiButton" name="toolButtonGUI">
+      <widget class="RayHackButton" name="toolButtonHack">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -157,17 +157,17 @@ QToolButton {border: none}</string>
         </size>
        </property>
        <property name="toolTip">
-        <string>Show GUI</string>
+        <string>Display client Ray-Hack properties</string>
        </property>
        <property name="autoFillBackground">
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>GUI</string>
+        <string>Hack</string>
        </property>
        <property name="icon">
-        <iconset theme="interface">
-         <normaloff>../../../../.designer/backup</normaloff>../../../../.designer/backup</iconset>
+        <iconset>
+         <normaloff>:/scalable/breeze/layer-visible-on.png</normaloff>:/scalable/breeze/layer-visible-on.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -180,6 +180,26 @@ QToolButton {border: none}</string>
        </property>
        <property name="toolButtonStyle">
         <enum>Qt::ToolButtonTextOnly</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButtonGUI">
+       <property name="styleSheet">
+        <string notr="true">QToolButton{border:none}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>22</width>
+         <height>22</height>
+        </size>
        </property>
       </widget>
      </item>
@@ -478,9 +498,9 @@ QToolButton {border: none}</string>
    <header>surclassed_widgets</header>
   </customwidget>
   <customwidget>
-   <class>HideGuiButton</class>
+   <class>RayHackButton</class>
    <extends>QToolButton</extends>
-   <header>surclassed_widgets</header>
+   <header location="global">surclassed_widgets</header>
   </customwidget>
  </customwidgets>
  <resources>

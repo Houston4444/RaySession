@@ -8,8 +8,8 @@ import time
 from gui_tools import isDarkTheme
 from gui_signaler import Signaler
 
-class HideGuiButton(QToolButton):
-    orderGuiState = pyqtSignal(bool)
+class RayHackButton(QToolButton):
+    orderHackVisibility = pyqtSignal(bool)
 
     def __init__(self, parent):
         QToolButton.__init__(self, parent)
@@ -50,7 +50,7 @@ class HideGuiButton(QToolButton):
         self.setStyleSheet(style)
 
     def mousePressEvent(self, event):
-        self.orderGuiState.emit(not self.isChecked())
+        self.orderHackVisibility.emit(not self.isChecked())
         # and not toggle button, the client will emit a gui state that will
         # toggle this button
 

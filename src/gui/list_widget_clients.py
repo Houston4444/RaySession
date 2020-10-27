@@ -30,9 +30,12 @@ class ClientSlot(QFrame):
         self._main_win = self.client._session._main_win
 
         self.ui.toolButtonGUI.setVisible(False)
+        if client.protocol != ray.Protocol.RAY_HACK:
+            self.ui.toolButtonHack.setVisible(False)
 
         # connect buttons to functions
-        self.ui.toolButtonGUI.orderGuiState.connect(self.orderGuiState)
+        self.ui.toolButtonHack.orderHackVisibility.connect(self.orderHackVisibility)
+        self.ui.toolButtonGUI.clicked.connect(self.changeGuiState)
         self.ui.startButton.clicked.connect(self.startClient)
         self.ui.stopButton.clicked.connect(self.stopClient)
         self.ui.killButton.clicked.connect(self.killClient)
@@ -90,6 +93,14 @@ class ClientSlot(QFrame):
         self.noSaveIcon = QIcon()
         self.noSaveIcon.addPixmap(QPixmap(':scalable/breeze/document-nosave'),
                                   QIcon.Normal, QIcon.Off)
+
+        self.icon_visible = QIcon()
+        self.icon_visible.addPixmap(
+            QPixmap(':scalable/breeze/visibility'), QIcon.Normal, QIcon.Off)
+        
+        self.icon_invisible = QIcon()
+        self.icon_invisible.addPixmap(
+            QPixmap(':scalable/breeze/hint'), QIcon.Normal, QIcon.Off)
 
         # choose button colors
         if isDarkTheme(self):
@@ -155,6 +166,14 @@ class ClientSlot(QFrame):
                 QIcon.Off)
             self.ui.closeButton.setIcon(closeIcon)
 
+            self.icon_visible = QIcon()
+            self.icon_visible.addPixmap(
+                QPixmap(':scalable/breeze-dark/visibility'), QIcon.Normal, QIcon.Off)
+            
+            self.icon_invisible = QIcon()
+            self.icon_invisible.addPixmap(
+                QPixmap(':scalable/breeze-dark/hint'), QIcon.Normal, QIcon.Off)
+            
         self.ubuntu_font = QFont(
             QFontDatabase.applicationFontFamilies(0)[0], 8)
         self.ubuntu_font_cond = QFont(
@@ -164,10 +183,9 @@ class ClientSlot(QFrame):
 
         self.ui.killButton.setVisible(False)
 
-        if (self.client.protocol == ray.Protocol.RAY_HACK
-                or ':optional-gui:' in self.client.capabilities):
-            self.showGuiButton()
+        if ':optional-gui:' in self.client.capabilities:
             self.setGuiState(self.client.gui_state)
+            self.ui.toolButtonGUI.setVisible(True)
 
         if self.client.has_dirty:
             self.setDirtyState(self.client.dirty_state)
@@ -230,8 +248,7 @@ class ClientSlot(QFrame):
 
     def updateClientData(self):
         # set main label
-        label = self.client.label if self.client.label else self.client.name
-        self.ui.ClientName.setText(label)
+        self.ui.ClientName.setText(self.client.prettier_name())
 
         # set tool tip
         tool_tip = "<html><head/><body>"
@@ -261,6 +278,9 @@ class ClientSlot(QFrame):
                 self.client.status in (
                     ray.ClientStatus.STOPPED,
                     ray.ClientStatus.PRECOPY)))
+
+        self.ui.toolButtonGUI.setVisible(
+            bool(':optional-gui:' in self.client.capabilities))
 
     def grayIcon(self, gray):
         if gray:
@@ -304,7 +324,7 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(True)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
-            self.ui.toolButtonGUI.setEnabled(ray_hack)
+            self.ui.toolButtonGUI.setEnabled(False)
             self.grayIcon(True)
 
             self.ui.stopButton.setVisible(True)
@@ -322,7 +342,7 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(True)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
-            self.ui.toolButtonGUI.setEnabled(ray_hack)
+            self.ui.toolButtonGUI.setEnabled(False)
             self.grayIcon(True)
 
             self.ui.stopButton.setVisible(True)
@@ -344,37 +364,42 @@ class ClientSlot(QFrame):
         else:
             self.ui.lineEditClientStatus.setText('')
 
+    def setHackButtonState(self, state: bool):
+        self.ui.toolButtonHack.setChecked(state)
+
     def showGuiButton(self):
+        self.ui.toolButtonGUI.setIcon(self.icon_invisible)
         self.ui.toolButtonGUI.setVisible(True)
-        if self.client.protocol == ray.Protocol.RAY_HACK:
-            self.ui.toolButtonGUI.setText(
-                _translate('client_slot', 'Hack'))
-            self.ui.toolButtonGUI.setToolTip(
-                _translate('client_slot',
-                           'Display client Ray-Hack properties'))
 
-        elif self.client.executable_path in ('nsm-proxy', 'ray-proxy'):
-            self.ui.toolButtonGUI.setText(_translate('client_slot', 'proxy'))
-            self.ui.toolButtonGUI.setToolTip(
-                _translate('client_slot', 'Display proxy window'))
-
-    def setGuiState(self, state):
-        self.ui.toolButtonGUI.setChecked(state)
-
-    def orderGuiState(self, state):
-        if self.client.protocol == ray.Protocol.RAY_HACK:
-            if state:
-                self.client.showPropertiesDialog(second_tab=True)
-            else:
-                self.client.properties_dialog.hide()
-
+    def setGuiState(self, state: bool):
+        if state:
+            self.ui.toolButtonGUI.setIcon(self.icon_visible)
         else:
-            if state:
-                self.toDaemon('/ray/client/show_optional_gui',
-                              self.clientId())
-            else:
-                self.toDaemon('/ray/client/hide_optional_gui',
-                              self.clientId())
+            self.ui.toolButtonGUI.setIcon(self.icon_invisible)
+        
+        self.gui_state = state
+
+    def changeGuiState(self):
+        if self.gui_state:
+            self.toDaemon('/ray/client/hide_optional_gui', self.clientId())
+        else:
+            self.toDaemon('/ray/client/show_optional_gui', self.clientId())
+
+    def orderHackVisibility(self, state):
+        if self.client.protocol != ray.Protocol.RAY_HACK:
+            return
+        
+        if state:
+            self.client.showPropertiesDialog(second_tab=True)
+        else:
+            self.client.properties_dialog.hide()
+
+        #if state:
+            #self.toDaemon('/ray/client/show_optional_gui',
+                            #self.clientId())
+        #else:
+            #self.toDaemon('/ray/client/hide_optional_gui',
+                            #self.clientId())
                 
     def setDirtyState(self, bool_dirty):
         if bool_dirty:
@@ -477,7 +502,7 @@ class ListWidgetClients(QListWidget):
             item = self.item(i)
             if item.getClientId() == client_id:
                 widget = item.f_widget
-                widget.setGuiState(bool_visible)
+                widget.setHackButtonState(bool_visible)
                 break
 
     def setSession(self, session):
