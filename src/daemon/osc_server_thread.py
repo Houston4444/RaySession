@@ -915,13 +915,17 @@ class OscServerThread(ClientCommunicating):
     def rayServerAddClientTemplate(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/session/add_factory_client_template', 's')
+    @ray_method('/ray/session/add_factory_client_template', None)
     def raySessionAddFactoryClientTemplate(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/session/add_user_client_template', 's')
+        if not (args and ray.areTheyAllString(args)):
+            self.unknownMessage(path, types, src_addr)
+            return False
+            
+    @ray_method('/ray/session/add_user_client_template', None)
     def raySessionAddUserClientTemplate(self, path, args, types, src_addr):
-        pass
+        if not (args and ray.areTheyAllString(args)):
+            self.unknownMessage(path, types, src_addr)
+            return False
 
     @ray_method('/ray/session/reorder_clients', None)
     def rayServerReorderClients(self, path, args, types, src_addr):
@@ -1258,8 +1262,8 @@ class OscServerThread(ClientCommunicating):
                       client.client_id, client.status)
 
             if client.isCapableOf(':optional-gui:'):
-                self.send(gui_addr, '/ray/gui/client/has_optional_gui',
-                          client.client_id)
+                #self.send(gui_addr, '/ray/gui/client/has_optional_gui',
+                          #client.client_id)
 
                 self.send(gui_addr, '/ray/gui/client/gui_visible',
                           client.client_id, int(client.gui_visible))

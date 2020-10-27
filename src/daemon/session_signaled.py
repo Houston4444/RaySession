@@ -1002,14 +1002,15 @@ class SignaledSession(OperatingSession):
 
         factory = bool(args[0])
         template_name = args[1]
+        auto_start = bool(len(args) <= 2 or args[2] != 'not_started')
 
-        self.addClientTemplate(src_addr, path, template_name, factory)
+        self.addClientTemplate(src_addr, path, template_name, factory, auto_start)
 
     def _ray_session_add_factory_client_template(self, path, args, src_addr):
-        self._ray_session_add_client_template(path, [1, args[0]], src_addr)
+        self._ray_session_add_client_template(path, [1] + args, src_addr)
 
     def _ray_session_add_user_client_template(self, path, args, src_addr):
-        self._ray_session_add_client_template(path, [0, args[0]], src_addr)
+        self._ray_session_add_client_template(path, [0] + args, src_addr)
 
     def _ray_session_reorder_clients(self, path, args, src_addr):
         client_ids_list = args

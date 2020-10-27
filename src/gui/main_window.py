@@ -235,6 +235,8 @@ class MainWindow(QMainWindow):
         self.ui.actionReturnToAPreviousState.setIcon(
                                         RayIcon('media-seek-backward', dark))
 
+        self.ui.actionRememberOptionalGuiStates.setIcon(
+            RayIcon('visibility', dark))
         self.ui.trashButton.setIcon(RayIcon('trash-empty', dark))
 
         self.ui.actionDuplicateSession.setIcon(

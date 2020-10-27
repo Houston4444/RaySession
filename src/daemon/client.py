@@ -1153,9 +1153,6 @@ class Client(ServerSender, ray.ClientData):
         self.sendGuiClientProperties()
         self.setStatus(ray.ClientStatus.SWITCH)
         if self.isCapableOf(':optional-gui:'):
-            #self.sendGui('/ray/gui/client/has_optional_gui', 
-                         #self.client_id)
-
             self.sendGui('/ray/gui/client/gui_visible',
                          self.client_id, int(self.gui_visible))
 

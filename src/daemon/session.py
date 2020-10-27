@@ -2034,7 +2034,7 @@ for better organization.""")
         QCoreApplication.quit()
 
     def addClientTemplate(self, src_addr, src_path,
-                          template_name, factory=False):
+                          template_name, factory=False, auto_start=True):
         search_paths = self.getSearchTemplateDirs(factory)
 
         for search_path in search_paths:
@@ -2131,7 +2131,6 @@ for better organization.""")
                     if not program_version:
                         continue
 
-
                     neededs = []
                     progvss = []
 
@@ -2166,6 +2165,8 @@ for better organization.""")
                     return
 
                 client.template_origin = template_name
+                if not auto_start:
+                    client.auto_start = False
 
                 if full_name_files:
                     client.setStatus(ray.ClientStatus.PRECOPY)
