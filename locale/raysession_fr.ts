@@ -2676,7 +2676,7 @@ pour une meilleure organisation.</translation>
     <message>
         <location filename="../src/gui/gui_tools.py" line="238"/>
         <source>switch</source>
-        <translation>changement</translation>
+        <translation>bascule</translation>
     </message>
     <message>
         <location filename="../src/gui/gui_tools.py" line="239"/>
@@ -3104,7 +3104,7 @@ pour une meilleure organisation.</translation>
     <message>
         <location filename="../src/gui/gui_tools.py" line="210"/>
         <source>switch</source>
-        <translation>changement</translation>
+        <translation>bascule</translation>
     </message>
     <message>
         <location filename="../src/gui/gui_tools.py" line="211"/>
