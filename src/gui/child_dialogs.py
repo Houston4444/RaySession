@@ -848,15 +848,20 @@ class SessionNotesDialog(ChildDialog):
         self.timer_text.setInterval(400)
         self.timer_text.setSingleShot(True)
         self.timer_text.timeout.connect(self.sendNotes)
+        
+        self.server_off = False
 
         self.anti_timer = False
         self.notesUpdated()
 
     def serverStatusChanged(self, server_status):
         if server_status == ray.ServerStatus.OFF:
+            self.server_off = True
             if self.message_box is not None:
                 self.message_box.close()
             self.close()
+        else:
+            self.server_off = False
 
     def updateSession(self):
         self.setWindowTitle(_translate('notes_dialog', "%s Notes - %s")
@@ -892,7 +897,8 @@ class SessionNotesDialog(ChildDialog):
     def closeEvent(self, event):
         RS.settings.setValue('SessionNotes/geometry', self.saveGeometry())
         RS.settings.setValue('SessionNotes/position', self.pos())
-        self.toDaemon('/ray/session/hide_notes')
+        if not self.server_off:
+            self.toDaemon('/ray/session/hide_notes')
         ChildDialog.closeEvent(self, event)
     
 class OpenNsmSessionInfoDialog(ChildDialog):
