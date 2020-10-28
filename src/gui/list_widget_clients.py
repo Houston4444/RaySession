@@ -285,6 +285,31 @@ class ClientSlot(QFrame):
 
         self.ui.toolButtonGUI.setVisible(
             bool(':optional-gui:' in self.client.capabilities))
+        
+        if self.client.executable_path in ('ray-proxy', 'nsm-proxy'):
+            if isDarkTheme(self):
+                self.icon_visible = QIcon()
+                self.icon_visible.addPixmap(
+                    QPixmap(':scalable/breeze-dark/emblem-symbolic-link'),
+                    QIcon.Normal, QIcon.Off)
+                self.icon_invisible = QIcon()
+                self.icon_invisible.addPixmap(
+                    QPixmap(':scalable/breeze-dark/link'),
+                    QIcon.Normal, QIcon.Off)
+                self.icon_invisible.addPixmap(
+                    QPixmap(':scalable/breeze-dark/disabled/link'),
+                    QIcon.Disabled, QIcon.Off)
+            else:
+                self.icon_visible = QIcon()
+                self.icon_visible.addPixmap(
+                    QPixmap(':scalable/breeze/emblem-symbolic-link'),
+                    QIcon.Normal, QIcon.Off)
+                self.icon_invisible = QIcon()
+                self.icon_invisible.addPixmap(
+                    QPixmap(':scalable/breeze/link'), QIcon.Normal, QIcon.Off)
+                self.icon_invisible.addPixmap(
+                    QPixmap(':scalable/breeze/disabled/link'), 
+                    QIcon.Disabled, QIcon.Off)
 
     def grayIcon(self, gray):
         if gray:

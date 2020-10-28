@@ -15,11 +15,13 @@
        <file>scalable/breeze-dark/run-install.svg</file>
        <file>scalable/breeze-dark/folder-new.svg</file>
        <file>scalable/breeze-dark/system-file-manager.svg</file>
+       <file>scalable/breeze-dark/link.svg</file>
        <file>scalable/breeze-dark/media-playback-stop.svg</file>
        <file>scalable/breeze-dark/list-remove.svg</file>
        <file>scalable/breeze-dark/notes-nonempty.svg</file>
        <file>scalable/breeze-dark/im-user.svg</file>
        <file>scalable/breeze-dark/configure.svg</file>
+       <file>scalable/breeze-dark/emblem-symbolic-link.svg</file>
        <file>scalable/breeze-dark/visibility.svg</file>
        <file>scalable/breeze-dark/document-open.svg</file>
        <file>scalable/breeze-dark/xml-node-duplicate.svg</file>
@@ -42,10 +44,12 @@
        <file>scalable/breeze-dark/disabled/run-install.svg</file>
        <file>scalable/breeze-dark/disabled/folder-new.svg</file>
        <file>scalable/breeze-dark/disabled/system-file-manager.svg</file>
+       <file>scalable/breeze-dark/disabled/link.svg</file>
        <file>scalable/breeze-dark/disabled/media-playback-stop.svg</file>
        <file>scalable/breeze-dark/disabled/list-remove.svg</file>
        <file>scalable/breeze-dark/disabled/notes-nonempty.svg</file>
        <file>scalable/breeze-dark/disabled/configure.svg</file>
+       <file>scalable/breeze-dark/disabled/emblem-symbolic-link.svg</file>
        <file>scalable/breeze-dark/disabled/visibility.svg</file>
        <file>scalable/breeze-dark/disabled/document-open.svg</file>
        <file>scalable/breeze-dark/disabled/xml-node-duplicate.svg</file>
@@ -65,12 +69,14 @@
        <file>scalable/breeze/run-install.svg</file>
        <file>scalable/breeze/folder-new.svg</file>
        <file>scalable/breeze/system-file-manager.svg</file>
+       <file>scalable/breeze/link.svg</file>
        <file>scalable/breeze/media-playback-stop.svg</file>
        <file>scalable/breeze/list-remove.svg</file>
        <file>scalable/breeze/media-playback-stop-red.svg</file>
        <file>scalable/breeze/notes-nonempty.svg</file>
        <file>scalable/breeze/im-user.svg</file>
        <file>scalable/breeze/configure.svg</file>
+       <file>scalable/breeze/emblem-symbolic-link.svg</file>
        <file>scalable/breeze/visibility.svg</file>
        <file>scalable/breeze/document-open.svg</file>
        <file>scalable/breeze/xml-node-duplicate.svg</file>
@@ -94,10 +100,12 @@
        <file>scalable/breeze/disabled/run-install.svg</file>
        <file>scalable/breeze/disabled/folder-new.svg</file>
        <file>scalable/breeze/disabled/system-file-manager.svg</file>
+       <file>scalable/breeze/disabled/link.svg</file>
        <file>scalable/breeze/disabled/media-playback-stop.svg</file>
        <file>scalable/breeze/disabled/list-remove.svg</file>
        <file>scalable/breeze/disabled/notes-nonempty.svg</file>
        <file>scalable/breeze/disabled/configure.svg</file>
+       <file>scalable/breeze/disabled/emblem-symbolic-link.svg</file>
        <file>scalable/breeze/disabled/visibility.svg</file>
        <file>scalable/breeze/disabled/document-open.svg</file>
        <file>scalable/breeze/disabled/xml-node-duplicate.svg</file>
