@@ -17,3 +17,5 @@ konv# RaySession TODO
     ---
     
     favoris depuis ray_control -> pas pressé
+
+    bug: label trop long == client widget raté

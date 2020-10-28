@@ -101,6 +101,8 @@ class ClientSlot(QFrame):
         self.icon_invisible = QIcon()
         self.icon_invisible.addPixmap(
             QPixmap(':scalable/breeze/hint'), QIcon.Normal, QIcon.Off)
+        self.icon_invisible.addPixmap(
+            QPixmap(':scalable/breeze/disabled/hint'), QIcon.Disabled, QIcon.Off)
 
         # choose button colors
         if isDarkTheme(self):
@@ -173,6 +175,8 @@ class ClientSlot(QFrame):
             self.icon_invisible = QIcon()
             self.icon_invisible.addPixmap(
                 QPixmap(':scalable/breeze-dark/hint'), QIcon.Normal, QIcon.Off)
+            self.icon_invisible.addPixmap(
+                QPixmap(':scalable/breeze-dark/disabled/hint'), QIcon.Disabled, QIcon.Off)
             
         self.ubuntu_font = QFont(
             QFontDatabase.applicationFontFamilies(0)[0], 8)
