@@ -25,12 +25,12 @@ class RS:
     def setSettings(cls, settings):
         del cls.settings
         cls.settings = settings
-    
+
     @classmethod
     def isHidden(cls, hideable_dialog: int)->bool:
         hidden_dialogs = cls.settings.value('hidden_dialogs', 0, type=int)
         return bool(hidden_dialogs & hideable_dialog)
-    
+
     @classmethod
     def setHidden(cls, hiddeable_dialog: int, hide=True):
         hidden_dialogs = cls.settings.value('hidden_dialogs', 0, type=int)

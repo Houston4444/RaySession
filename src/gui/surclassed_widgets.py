@@ -253,7 +253,7 @@ class FakeToolButton(QToolButton):
     def __init__(self, parent):
         QToolButton.__init__(self, parent)
         self.setStyleSheet("QToolButton{border:none}")
-    
+
     def mousePressEvent(self, event):
         self.parent().mousePressEvent(event)
 
@@ -271,7 +271,7 @@ class favoriteToolButton(QToolButton):
         self.favicon_not = QIcon(':scalable/breeze/draw-star.svg')
         self.favicon_yes = QIcon(':scalable/breeze/star-yellow.svg')
         self.setIcon(self.favicon_not)
-    
+
     def setDarkTheme(self):
         self.favicon_not = QIcon(':scalable/breeze-dark/draw-star.svg')
         if not self.m_state:
@@ -279,20 +279,20 @@ class favoriteToolButton(QToolButton):
 
     def setSession(self, session):
         self.session = session
-    
+
     def setTemplate(self, template_name: str,
                     template_icon: str, factory: bool):
         self.template_name = template_name
         self.template_icon = template_icon
         self.factory = factory
-    
+
     def setAsFavorite(self, bool_favorite: bool):
         self.m_state = bool_favorite
         if bool_favorite:
             self.setIcon(self.favicon_yes)
         else:
             self.setIcon(self.favicon_not)
-    
+
     def mouseReleaseEvent(self, event):
         QToolButton.mouseReleaseEvent(self, event)
         if self.session is None:

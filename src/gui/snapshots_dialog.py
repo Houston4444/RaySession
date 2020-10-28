@@ -393,7 +393,7 @@ class SnapshotsDialog(ChildDialog):
             # Snapshot list finished without any snapshot
             self.noSnapshotFound()
             return
-        
+
         for snaptext in snaptexts:
             if not snaptext:
                 continue
@@ -497,7 +497,7 @@ class SessionSnapshotsDialog(SnapshotsDialog):
 
     def setAutoSnapshot(self, bool_snapshot):
         self.toDaemon('/ray/session/set_auto_snapshot', int(bool_snapshot))
-        
+
     def noSnapshotFound(self):
         self.ui.label.setText(
             _translate('snapshots',
@@ -514,7 +514,7 @@ class ClientSnapshotsDialog(SnapshotsDialog):
 
         self.toDaemon('/ray/client/list_snapshots', client.client_id)
         self.resize(0, 0)
-    
+
     def noSnapshotFound(self):
         self.ui.label.setText(
             _translate('snapshots',

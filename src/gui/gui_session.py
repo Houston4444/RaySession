@@ -103,22 +103,22 @@ class Session:
 
     def removeAllClients(self):
         self.client_list.clear()
-        
+
     def addFavorite(self, template_name: str, icon_name: str, factory: bool):
         server = GUIServerThread.instance()
         if server:
             server.toDaemon('/ray/favorites/add', template_name,
                             icon_name, int(factory))
-            
+
     def removeFavorite(self, template_name: str, factory: bool):
         for favorite in self.favorite_list:
             if favorite.name == template_name and favorite.factory == factory:
                 break
-        
+
         server = GUIServerThread.instance()
         if server:
             server.toDaemon('/ray/favorites/remove', template_name, int(factory))
-    
+
     def isFavorite(self, template_name: str, factory: bool):
         for favorite in self.favorite_list:
             if favorite.name == template_name and favorite.factory == factory:
@@ -371,7 +371,7 @@ class SignaledSession(Session):
         template_name, icon_name, int_factory = args
 
         for favorite in self.favorite_list:
-            if (favorite.name == template_name 
+            if (favorite.name == template_name
                     and favorite.factory == bool(int_factory)):
                 # favorite already exists, update the icon
                 favorite.icon = icon_name
@@ -385,7 +385,7 @@ class SignaledSession(Session):
 
     def _ray_gui_favorites_removed(self, path, args):
         template_name, int_factory = args
-        
+
         for favorite in self.favorite_list:
             if (favorite.name == template_name
                     and favorite.factory == bool(int_factory)):

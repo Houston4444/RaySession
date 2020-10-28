@@ -43,7 +43,7 @@ class TemplateSlot(QFrame):
         self.ui.toolButtonUser.setMenu(self.user_menu)
 
         self.is_favorite = False
-        
+
         self.ui.toolButtonFavorite.setSession(self._session)
         self.ui.toolButtonFavorite.setTemplate(
             name, self.client_data.icon, self.factory)
@@ -73,10 +73,10 @@ class TemplateSlot(QFrame):
     def removeTemplate(self):
         add_app_dialog = self.list_widget.parent()
         add_app_dialog.removeTemplate(self.name, self.factory)
-    
+
     def setAsFavorite(self, bool_favorite):
         self.ui.toolButtonFavorite.setAsFavorite(bool_favorite)
-    
+
     def mouseDoubleClickEvent(self, event):
         self.list_widget.parent().accept()
 
@@ -113,10 +113,10 @@ class TemplateItem(QListWidgetItem):
 
     def updateClientData(self, *args):
         self.f_widget.updateClientData(*args)
-    
+
     def updateRayHackData(self, *args):
         self.f_widget.updateRayHackData(*args)
-    
+
     def setAsFavorite(self, bool_favorite: bool):
         self.f_widget.setAsFavorite(bool_favorite)
 
@@ -149,7 +149,7 @@ class AddApplicationDialog(ChildDialog):
         self.ui.checkBoxRayHack.setChecked(RS.settings.value(
             'AddApplication/ray_hack_box', True, type=bool))
         self.ui.widgetTemplateInfos.setVisible(False)
-        
+
         self.ui.checkBoxFactory.stateChanged.connect(self.factoryBoxChanged)
         self.ui.checkBoxUser.stateChanged.connect(self.userBoxChanged)
         self.ui.checkBoxNsm.stateChanged.connect(self.nsmBoxChanged)
@@ -161,7 +161,7 @@ class AddApplicationDialog(ChildDialog):
         self.ui.filterBar.textEdited.connect(self.updateFilteredList)
         self.ui.filterBar.updownpressed.connect(self.updownPressed)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
-        
+
         self.user_menu = QMenu()
         act_remove_template = QAction(QIcon.fromTheme('edit-delete-remove'),
                                       _translate('menu', 'remove'),
@@ -172,14 +172,14 @@ class AddApplicationDialog(ChildDialog):
         self.ui.toolButtonFavorite.setSession(self._session)
         self.ui.widgetNonSaveable.setVisible(False)
         self.ui.toolButtonAdvanced.clicked.connect(self.toolButtonAdvancedClicked)
-        
+
         if isDarkTheme(self):
             self.ui.toolButtonUser.setIcon(
                 QIcon(':scalable/breeze-dark/im-user.svg'))
             self.ui.toolButtonFavorite.setDarkTheme()
             self.ui.toolButtonNoSave.setIcon(
                 QIcon(':scalable/breeze-dark/document-nosave.svg'))
-        
+
         self._signaler.user_client_template_found.connect(
             self.addUserTemplates)
         self._signaler.factory_client_template_found.connect(
@@ -192,11 +192,11 @@ class AddApplicationDialog(ChildDialog):
             self.updateClientTemplateRayNet)
         self._signaler.favorite_added.connect(self.favoriteAdded)
         self._signaler.favorite_removed.connect(self.favoriteRemoved)
-        
+
         self.toDaemon('/ray/server/list_user_client_templates')
         self.toDaemon('/ray/server/list_factory_client_templates')
         self.listing_finished = 0
-        
+
         self.user_template_list = []
         self.factory_template_list = []
 
@@ -204,7 +204,7 @@ class AddApplicationDialog(ChildDialog):
         self.has_selection = False
 
         self.serverStatusChanged(self._session.server_status)
-        
+
         self.ui.filterBar.setFocus()
 
     def favoriteAdded(self, template_name: str,
@@ -220,7 +220,7 @@ class AddApplicationDialog(ChildDialog):
                 if item == self.ui.templateList.currentItem():
                     self.ui.toolButtonFavorite.setAsFavorite(True)
                 break
-    
+
     def favoriteRemoved(self, template_name: str, factory: bool):
         for i in range(self.ui.templateList.count()):
             item = self.ui.templateList.item(i)
@@ -233,7 +233,7 @@ class AddApplicationDialog(ChildDialog):
                 if item == self.ui.templateList.currentItem():
                     self.ui.toolButtonFavorite.setAsFavorite(False)
                 break
-    
+
     def factoryBoxChanged(self, state):
         if not state:
             self.ui.checkBoxUser.setChecked(True)
@@ -249,13 +249,13 @@ class AddApplicationDialog(ChildDialog):
     def nsmBoxChanged(self, state):
         if not state:
             self.ui.checkBoxRayHack.setChecked(True)
-            
+
         self.updateFilteredList()
 
     def rayHackBoxChanged(self, state):
         if not state:
             self.ui.checkBoxNsm.setChecked(True)
-        
+
         self.updateFilteredList()
 
     def serverStatusChanged(self, server_status):
@@ -328,7 +328,7 @@ class AddApplicationDialog(ChildDialog):
                 if self.ui.templateList.currentItem() == item:
                     self.updateTemplateInfos(item)
                 break
-    
+
     def updateClientTemplateRayHack(self, args):
         factory = bool(args[0])
         template_name = args[1]
@@ -341,7 +341,7 @@ class AddApplicationDialog(ChildDialog):
                 if self.ui.templateList.currentItem() == item:
                     self.updateTemplateInfos(item)
                 break
-    
+
     def updateClientTemplateRayNet(self, args):
         factory = bool(args[0])
         template_name = args[1]
@@ -354,7 +354,7 @@ class AddApplicationDialog(ChildDialog):
                 if self.ui.templateList.currentItem() == item:
                     self.updateTemplateInfos(item)
                 break
-    
+
     def updateFilteredList(self, filt=''):
         filter_text = self.ui.filterBar.displayText()
 
@@ -375,12 +375,12 @@ class AddApplicationDialog(ChildDialog):
 
             if not item.f_factory and not self.ui.checkBoxUser.isChecked():
                 item.setHidden(True)
-                
+
             if item.client_data is not None:
                 if (item.client_data.protocol == ray.Protocol.RAY_HACK
                         and not self.ui.checkBoxRayHack.isChecked()):
                     item.setHidden(True)
-                
+
                 if (item.client_data.protocol != ray.Protocol.RAY_HACK
                         and not self.ui.checkBoxNsm.isChecked()):
                     item.setHidden(True)
@@ -439,33 +439,33 @@ class AddApplicationDialog(ChildDialog):
         self.ui.labelExecutable.setText(cdata.executable_path)
         self.ui.labelLabel.setText(cdata.label)
         self.ui.labelName.setText(cdata.name)
-        
+
         for widget in (self.ui.labelProtocolTitle,
                        self.ui.labelProtocolColon,
                        self.ui.labelProtocol):
             widget.setVisible(bool(cdata.protocol != ray.Protocol.NSM))
-        
+
         for widget in (self.ui.labelLabelTitle,
                         self.ui.labelLabelColon,
                         self.ui.labelLabel):
             widget.setVisible(bool(cdata.label))
-        
+
         for widget in (self.ui.labelNameTitle,
                         self.ui.labelNameColon,
                         self.ui.labelName):
             widget.setVisible(bool(cdata.protocol == ray.Protocol.NSM))
-            
+
         self.ui.toolButtonUser.setVisible(not item.f_factory)
         self.ui.toolButtonFavorite.setTemplate(
             item.data(Qt.UserRole), cdata.icon, item.f_factory)
         self.ui.toolButtonFavorite.setAsFavorite(self._session.isFavorite(
             item.data(Qt.UserRole), item.f_factory))
-        
+
         self.ui.widgetNonSaveable.setVisible(bool(
             cdata.ray_hack is not None
             and cdata.protocol == ray.Protocol.RAY_HACK
             and cdata.ray_hack.no_save_level > 0))
-        
+
         # little security
         # client_properties_dialog could crash if ray_hack has not been updated yet
         # (never seen this appears, but it could with slow systems)
@@ -477,12 +477,12 @@ class AddApplicationDialog(ChildDialog):
         self.has_selection = bool(item)
         self.updateTemplateInfos(item)
         self.preventOk()
-    
+
     def toolButtonAdvancedClicked(self):
         item = self.ui.templateList.currentItem()
         if item is None:
             return
-        
+
         properties_dialog = client_properties_dialog.ClientPropertiesDialog.create(
             self, item.client_data)
         properties_dialog.updateContents()

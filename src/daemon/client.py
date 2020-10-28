@@ -206,11 +206,11 @@ class Client(ServerSender, ray.ClientData):
         for ext in ign_exts:
             if ext and not ext in global_exts:
                 self.ignored_extensions += " %s" % ext
-        
+
         open_duration = ctx.attribute('last_open_duration')
         if open_duration.replace('.', '', 1).isdigit():
             self.last_open_duration = float(open_duration)
-        
+
         prefix_mode = ctx.attribute('prefix_mode')
 
         if (prefix_mode and prefix_mode.isdigit()
@@ -238,7 +238,7 @@ class Client(ServerSender, ray.ClientData):
                 self.ray_hack.no_save_level = int(no_save_level)
 
         # backward compatibility with network session
-        if (self.protocol == ray.Protocol.NSM 
+        if (self.protocol == ray.Protocol.NSM
                 and basename(self.executable_path) == 'ray-network'):
             self.protocol = ray.Protocol.RAY_NET
 
@@ -269,7 +269,7 @@ class Client(ServerSender, ray.ClientData):
             self.ray_net.daemon_url = ctx.attribute('net_daemon_url')
             self.ray_net.session_root = ctx.attribute('net_session_root')
             self.ray_net.session_template = ctx.attribute('net_session_template')
-        
+
         if self.protocol == ray.Protocol.RAY_NET:
             # neeeded only to know if RAY_NET client is capable of switch
             self.executable_path = ray.RAYNET_BIN
@@ -665,7 +665,7 @@ class Client(ServerSender, ray.ClientData):
         self.pending_command = ray.Command.START
 
         arguments = []
-        
+
         if self.protocol == ray.Protocol.RAY_NET:
             server = self.getServer()
             if not server:
@@ -680,7 +680,7 @@ class Client(ServerSender, ray.ClientData):
             self.ray_net.running_session_root = self.ray_net.session_root
             self.process.start(ray.RAYNET_BIN, arguments)
             return
-        
+
         if self.tmp_arguments:
             arguments += shlex.split(self.tmp_arguments)
 
@@ -733,7 +733,7 @@ class Client(ServerSender, ray.ClientData):
 
         if self.arguments:
             arguments += shlex.split(arguments_line)
-        
+
         self.running_executable = self.executable_path
         self.running_arguments = self.arguments
 

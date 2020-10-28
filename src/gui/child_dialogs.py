@@ -95,7 +95,7 @@ class ChildDialog(QDialog):
         selected_files = self.root_folder_file_dialog.selectedFiles()
         if not selected_files:
             return
-        
+
         root_folder = selected_files[0]
 
         # Security, kde dialogs sends $HOME if user type a folder path
@@ -246,7 +246,7 @@ class OpenSessionDialog(ChildDialog):
 
         self._last_mouse_click = 0
         self._last_session_item = None
-        
+
         self.ui.filterBar.setFocus(Qt.OtherFocusReason)
 
     def serverStatusChanged(self, server_status):
@@ -288,7 +288,7 @@ class OpenSessionDialog(ChildDialog):
             height = self.ui.progressBar.size().height()
             self.ui.progressBar.setVisible(False)
             self.ui.widgetSpacer.setVisible(True)
-            
+
             # Try to select last used session
             root_item = self.ui.sessionList.invisibleRootItem()
             for i in range(root_item.childCount()):
@@ -362,13 +362,13 @@ class OpenSessionDialog(ChildDialog):
         QTreeWidget.keyPressEvent(self.ui.sessionList, event)
         if not start_item:
             return
-        
+
         current_item = self.ui.sessionList.currentItem()
         if current_item == start_item:
             return
-        
+
         ex_item = current_item
-        
+
         while not current_item.flags() & Qt.ItemIsSelectable:
             ex_item = current_item
             QTreeWidget.keyPressEvent(self.ui.sessionList, event)
@@ -631,7 +631,7 @@ class AbstractSaveTemplateDialog(ChildDialog):
                     'session_template',
                     'Template <strong>%s</strong> already exists.\nOverwrite it ?') %
                 template_name)
-            
+
             self.overwrite_message_box.exec()
 
             if (self.overwrite_message_box.clickedButton()
@@ -676,7 +676,7 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
         self.ui.toolButtonClientIcon.setIcon(
             ray.getAppIcon(client.icon, self))
         self.ui.labelLabel.setText(client.prettier_name())
-        
+
         self.template_list = []
         self.ui.pushButtonAccept.setEnabled(False)
 
@@ -720,11 +720,11 @@ class ClientTrashDialog(ChildDialog):
         self.ui.labelExecutable.setText(self.client_data.executable_path)
         self.ui.labelId.setText(self.client_data.client_id)
         self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(self.client_data.icon))
-        
+
         self.ui.toolButtonAdvanced.clicked.connect(self.showProperties)
         self.ui.pushButtonRemove.clicked.connect(self.removeClient)
         self.ui.pushButtonCancel.setFocus()
-        
+
         self.remove_client_message_box = QMessageBox(
             QMessageBox.Warning,
             _translate('trashed_client', 'Remove definitely'),
@@ -848,7 +848,7 @@ class SessionNotesDialog(ChildDialog):
         self.timer_text.setInterval(400)
         self.timer_text.setSingleShot(True)
         self.timer_text.timeout.connect(self.sendNotes)
-        
+
         self.server_off = False
 
         self.anti_timer = False
@@ -868,11 +868,11 @@ class SessionNotesDialog(ChildDialog):
                             % (ray.APP_TITLE, self._session.name))
         self.ui.labelSessionName.setText(self._session.name)
 
-    def textEdited(self):        
+    def textEdited(self):
         if not self.anti_timer:
             self.timer_text.start()
         self.anti_timer = False
-        
+
     def sendNotes(self):
         notes = self.ui.plainTextEdit.toPlainText()
         if len(notes) >= 65000:
@@ -900,7 +900,7 @@ class SessionNotesDialog(ChildDialog):
         if not self.server_off:
             self.toDaemon('/ray/session/hide_notes')
         ChildDialog.closeEvent(self, event)
-    
+
 class OpenNsmSessionInfoDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)

@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
         server = GUIServerThread.instance()
         if server:
             server.toDaemon(*args)
-    
+
     def __init__(self, session):
         QMainWindow.__init__(self)
         self.ui = ui_raysession.Ui_MainWindow()
@@ -380,7 +380,7 @@ class MainWindow(QMainWindow):
 
     def rememberOptionalGuiStatesToggled(self, state):
         self.setOption(ray.Option.GUI_STATES, state)
-    
+
     def setOption(self, option: int, state: bool):
         if not state:
             option = -option
@@ -1020,7 +1020,7 @@ class MainWindow(QMainWindow):
             self,
             _translate('hidden_dialogs', 'Make reappear dialog windows'),
             _translate('hidden_dialogs', 'Do you want to make reappear all dialogs you wanted to hide ?'))
-        
+
         if not ok:
             return
 
@@ -1072,7 +1072,7 @@ class MainWindow(QMainWindow):
     def enterEvent(self, event):
         self.mouse_is_inside = True
         QDialog.enterEvent(self, event)
-        
+
     def showEvent(self, event):
         if CommandLineArgs.under_nsm:
             if self._session._nsm_child is not None:

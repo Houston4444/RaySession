@@ -18,7 +18,7 @@ class ClientSlot(QFrame):
         server = GUIServerThread.instance()
         if server:
             server.toDaemon(*args)
-    
+
     def __init__(self, list_widget, client):
         QFrame.__init__(self)
         self.ui = ui_client_slot.Ui_ClientSlotWidget()
@@ -65,7 +65,7 @@ class ClientSlot(QFrame):
         self.menu.addAction(self.ui.actionRename)
         self.menu.addAction(self.ui.actionReturnToAPreviousState)
         self.menu.addAction(self.ui.actionProperties)
-        
+
         self.ui.actionReturnToAPreviousState.setVisible(
             self._main_win.has_git)
 
@@ -97,7 +97,7 @@ class ClientSlot(QFrame):
         self.icon_visible = QIcon()
         self.icon_visible.addPixmap(
             QPixmap(':scalable/breeze/visibility'), QIcon.Normal, QIcon.Off)
-        
+
         self.icon_invisible = QIcon()
         self.icon_invisible.addPixmap(
             QPixmap(':scalable/breeze/hint'), QIcon.Normal, QIcon.Off)
@@ -171,13 +171,13 @@ class ClientSlot(QFrame):
             self.icon_visible = QIcon()
             self.icon_visible.addPixmap(
                 QPixmap(':scalable/breeze-dark/visibility'), QIcon.Normal, QIcon.Off)
-            
+
             self.icon_invisible = QIcon()
             self.icon_invisible.addPixmap(
                 QPixmap(':scalable/breeze-dark/hint'), QIcon.Normal, QIcon.Off)
             self.icon_invisible.addPixmap(
                 QPixmap(':scalable/breeze-dark/disabled/hint'), QIcon.Disabled, QIcon.Off)
-            
+
         self.ubuntu_font = QFont(
             QFontDatabase.applicationFontFamilies(0)[0], 8)
         self.ubuntu_font_cond = QFont(
@@ -246,7 +246,7 @@ class ClientSlot(QFrame):
         if dialog.result():
             self.client.label = dialog.getNewLabel()
             self.client.sendPropertiesToDaemon()
-    
+
     def updateLabel(self, label):
         self._main_win.updateClientLabel(self.clientId(), label)
 
@@ -285,7 +285,7 @@ class ClientSlot(QFrame):
 
         self.ui.toolButtonGUI.setVisible(
             bool(':optional-gui:' in self.client.capabilities))
-        
+
         if self.client.executable_path in ('ray-proxy', 'nsm-proxy'):
             if isDarkTheme(self):
                 self.icon_visible = QIcon()
@@ -308,7 +308,7 @@ class ClientSlot(QFrame):
                 self.icon_invisible.addPixmap(
                     QPixmap(':scalable/breeze/link'), QIcon.Normal, QIcon.Off)
                 self.icon_invisible.addPixmap(
-                    QPixmap(':scalable/breeze/disabled/link'), 
+                    QPixmap(':scalable/breeze/disabled/link'),
                     QIcon.Disabled, QIcon.Off)
 
     def grayIcon(self, gray):
@@ -360,7 +360,7 @@ class ClientSlot(QFrame):
             self.ui.killButton.setVisible(False)
 
             self.ui.saveButton.setIcon(self.saveIcon)
-            
+
             if not ray_hack:
                 self.setGuiState(False)
 
@@ -405,7 +405,7 @@ class ClientSlot(QFrame):
             self.ui.toolButtonGUI.setIcon(self.icon_visible)
         else:
             self.ui.toolButtonGUI.setIcon(self.icon_invisible)
-        
+
         self.gui_state = state
 
     def changeGuiState(self):
@@ -417,7 +417,7 @@ class ClientSlot(QFrame):
     def orderHackVisibility(self, state):
         if self.client.protocol != ray.Protocol.RAY_HACK:
             return
-        
+
         if state:
             self.client.showPropertiesDialog(second_tab=True)
         else:
@@ -429,7 +429,7 @@ class ClientSlot(QFrame):
         #else:
             #self.toDaemon('/ray/client/hide_optional_gui',
                             #self.clientId())
-                
+
     def setDirtyState(self, bool_dirty):
         if bool_dirty:
             self.ui.saveButton.setIcon(self.unsavedIcon)
@@ -482,7 +482,7 @@ class ListWidgetClients(QListWidget):
         server = GUIServerThread.instance()
         if server:
             server.toDaemon(*args)
-    
+
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
         self.last_n = 0

@@ -941,7 +941,7 @@ class OperatingSession(Session):
                                  and not client.has_been_started)))
 
             cl.setAttribute('launched', launched)
-            
+
             client.writeXmlProperties(cl)
 
             xml_cls.appendChild(cl)
@@ -1156,7 +1156,7 @@ class OperatingSession(Session):
                         client.switch_state = ray.SwitchState.RESERVED
                         keep_client_list.append(client)
                         break
-        
+
         for client in self.clients:
             if client not in keep_client_list:
                 # client is not capable of switch, or is not wanted
@@ -1170,7 +1170,7 @@ class OperatingSession(Session):
             self.setServerStatus(ray.ServerStatus.CLEAR)
         else:
             self.setServerStatus(ray.ServerStatus.CLOSE)
-        
+
 
 
 
@@ -1988,7 +1988,7 @@ for better organization."""))
         self.message("Done")
         self.setServerStatus(ray.ServerStatus.READY)
         self.forgetOscArgs()
-        
+
     def loadError(self, err_loading):
         self.message("Failed")
         m = _translate('Load Error', "Unknown error")
@@ -2260,7 +2260,7 @@ for better organization.""")
     def loadClientSnapshotDone(self):
         self.send(self.osc_src_addr, '/reply', self.osc_path,
                   'Client snapshot loaded')
-        
+
     def terminateStepScripter(self):
         if self.step_scripter.isRunning():
             self.step_scripter.terminate()

@@ -107,5 +107,5 @@ class ServerSender(QObject):
         server = OscServerThread.getInstance()
         if not server:
             return False
-        
+
         return bool(server.options & option)

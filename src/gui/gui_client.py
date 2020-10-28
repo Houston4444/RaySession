@@ -121,11 +121,11 @@ class Client(QObject, ray.ClientData):
     def sendRayNet(self):
         if self.protocol != ray.Protocol.RAY_NET:
             return
-        
+
         server = GUIServerThread.instance()
         if not server:
             return
-        
+
         server.toDaemon('/ray/client/update_ray_net_properties',
                         self.client_id,
                         *self.ray_net.spread())
@@ -188,6 +188,6 @@ class Client(QObject, ray.ClientData):
 class TrashedClient(ray.ClientData):
     def __init__(self):
         self.menu_action = None
-    
+
     def setMenuAction(self, menu_action):
         self.menu_action = menu_action

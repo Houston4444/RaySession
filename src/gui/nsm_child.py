@@ -81,7 +81,7 @@ class NSMChild:
             self._session._main_win.hide()
 
         #self.sendGuiState(False)
-    
+
     def sendGuiState(self, state: bool):
         serverNSM = nsm_client.NSMThread.instance()
 

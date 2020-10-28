@@ -136,7 +136,7 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/session/notes_shown', '')
     def _session_notes_shown(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/session/notes_hidden', '')
     def _session_notes_hidden(self, path, args, types, src_addr):
         pass
@@ -165,11 +165,11 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/client_template_ray_hack_update', 'is' + ray.RayHack.sisi())
     def _client_template_ray_hack_update(self, path, args, types, src_addr):
         self._signaler.client_template_ray_hack_update.emit(args)
-    
+
     @ray_method('/ray/gui/client_template_ray_net_update', 'is' + ray.RayNet.sisi())
     def _client_template_ray_net_update(self, path, args, types, src_addr):
         self._signaler.client_template_ray_net_update.emit(args)
-    
+
     @ray_method('/ray/gui/client/new', ray.ClientData.sisi())
     def _client_new(self, path, args, types, src_addr):
         pass

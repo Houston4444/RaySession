@@ -87,7 +87,7 @@ class ClientCommunicating(liblo.ServerThread):
     def reply(self, path, args, types, src_addr):
         if not ray.areTheyAllString(args):
             self.unknownMessage(path, types, src_addr)
-        
+
         if not len(args) >= 1:
             self.unknownMessage(path, types, src_addr)
             return False
@@ -678,7 +678,7 @@ class OscServerThread(ClientCommunicating):
     def rayServerSetOption(self, path, args, types, src_addr):
         option = args[0]
         self.setOption(option)
-        
+
         for gui_addr in self.gui_list:
             if not ray.areSameOscPort(gui_addr.url, src_addr.url):
                 self.send(gui_addr, '/ray/gui/server/options', self.options)
@@ -689,7 +689,7 @@ class OscServerThread(ClientCommunicating):
         if not ray.areTheyAllString(args):
             self.unknownMessage(path, types, src_addr)
             return False
-        
+
         for option_str in args:
             option_value = True
             if option_str.startswith('not_'):
@@ -709,7 +709,7 @@ class OscServerThread(ClientCommunicating):
                         self.send(src_addr, '/minor_error', path,
                             "git is not present. Impossible to activate 'snapshots' option")
                         continue
-                    
+
                 if not option_value:
                     option = -option
                 self.setOption(option)
@@ -920,7 +920,7 @@ class OscServerThread(ClientCommunicating):
         if not (args and ray.areTheyAllString(args)):
             self.unknownMessage(path, types, src_addr)
             return False
-            
+
     @ray_method('/ray/session/add_user_client_template', None)
     def raySessionAddUserClientTemplate(self, path, args, types, src_addr):
         if not (args and ray.areTheyAllString(args)):
@@ -958,7 +958,7 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
                       "No session to show notes")
             return False
-        
+
         self.session.notes_shown = True
         self.sendGui('/ray/gui/session/notes_shown')
         self.send(src_addr, '/reply', path, 'notes shown')
@@ -1031,7 +1031,7 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/client/update_ray_hack_properties', 's' + ray.RayHack.sisi())
     def rayClientUpdateRayHackProperties(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/client/update_ray_net_properties', 's' + ray.RayNet.sisi())
     def rayClientUpdateRayNetProperties(self, path, args, types, src_addr):
         pass
@@ -1321,7 +1321,7 @@ class OscServerThread(ClientCommunicating):
             if ray.areOnSameMachine(self.url, gui_addr.url):
                 # we've got a local GUI
                 return 3
-            
+
             has_gui = True
 
         if has_gui:
@@ -1335,7 +1335,7 @@ class OscServerThread(ClientCommunicating):
             if ray.areOnSameMachine(gui_addr.url, self.url):
                 pid_list.append(str(gui_addr.gui_pid))
         return ':'.join(pid_list)
-        
+
     def isGuiAddress(self, addr):
         for gui_addr in self.gui_list:
             if ray.areSameOscPort(gui_addr.url, addr.url):

@@ -64,20 +64,20 @@ class ClientPropertiesDialog(ChildDialog):
             return RayNetClientPropertiesDialog(window, client)
 
         return ClientPropertiesDialog(window, client)
-    
+
     def lockWidgets(self):
         self.ui.lineEditIcon.setReadOnly(True)
         self.ui.lineEditLabel.setReadOnly(True)
         self.ui.lineEditIgnoredExtensions.setReadOnly(True)
         self.ui.checkBoxSaveStop.setEnabled(False)
         self.ui.pushButtonSaveChanges.setVisible(False)
-    
+
     def setForTemplate(self, template_name):
         self.lockWidgets()
         self.setWindowTitle(
             _translate('client_properties', "Properties of template %s")
             % template_name)
-    
+
     def setOnSecondTab(self):
         self.ui.tabWidget.setCurrentIndex(1)
 
@@ -159,7 +159,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         self.nsmui.labelCapabilities.setText(self.getCapacitiesLine())
         self.nsmui.lineEditExecutable.setText(self.client.executable_path)
         self.nsmui.lineEditArguments.setText(self.client.arguments)
-        
+
     def saveChanges(self):
         self.client.executable_path = self.nsmui.lineEditExecutable.text()
         self.client.arguments = self.nsmui.lineEditArguments.text()
@@ -240,7 +240,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.setForTemplate(self, template_name)
         self.rhack.labelWorkingDirTitle.setVisible(False)
         self.rhack.labelWorkingDir.setVisible(False)
-    
+
     def updateStatus(self, status):
         self._current_status = status
         self.rhack.lineEditClientStatus.setText(clientStatusString(status))
@@ -475,22 +475,22 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 class RayNetClientPropertiesDialog(ClientPropertiesDialog):
     def __init__(self, parent, client):
         ClientPropertiesDialog.__init__(self, parent, client)
-        
+
         self.ray_net_frame = QFrame()
         self.rnet = ui_ray_net_properties.Ui_Frame()
         self.rnet.setupUi(self.ray_net_frame)
-        
+
         self.ui.groupBoxSnapshots.setVisible(False)
-        
+
         self.ui.verticalLayoutProtocol.addWidget(self.ray_net_frame)
         self.ui.tabWidget.setTabText(1, 'Ray-Net')
-    
+
     def lockWidgets(self):
         ClientPropertiesDialog.lockWidgets(self)
         self.rnet.lineEditDaemonUrl.setReadOnly(True)
         self.rnet.lineEditSessionRoot.setReadOnly(True)
         self.rnet.lineEditTemplate.setReadOnly(True)
-        
+
     def updateContents(self):
         ClientPropertiesDialog.updateContents(self)
         self.rnet.labelClientName.setText(self.client.name)
@@ -498,7 +498,7 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         self.rnet.lineEditDaemonUrl.setText(self.client.ray_net.daemon_url)
         self.rnet.lineEditSessionRoot.setText(self.client.ray_net.session_root)
         self.rnet.lineEditTemplate.setText(self.client.ray_net.session_template)
-    
+
     def saveChanges(self):
         new_url = self.rnet.lineEditDaemonUrl.text()
         new_root = self.rnet.lineEditSessionRoot.text()
@@ -513,7 +513,7 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
 
         self.client.sendRayNet()
         ClientPropertiesDialog.saveChanges(self)
-    
+
     def changeIconwithText(self, text):
         icon = ray.getAppIcon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)

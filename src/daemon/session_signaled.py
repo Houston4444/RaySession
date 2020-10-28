@@ -326,7 +326,7 @@ class SignaledSession(OperatingSession):
                     continue
 
                 protocol = ray.protocolFromStr(ct.attribute('protocol'))
-                
+
                 if protocol != ray.Protocol.RAY_NET:
                     # check if needed executables are present
                     executable = ct.attribute('executable')
@@ -425,7 +425,7 @@ class SignaledSession(OperatingSession):
     def _ray_server_list_sessions(self, path, args, src_addr):
         with_net = False
         last_sent_time = time.time()
-        
+
         if args:
             with_net = args[0]
 
@@ -1280,7 +1280,7 @@ class SignaledSession(OperatingSession):
         if client.protocol == ray.Protocol.RAY_NET:
             client.ray_net.update(*args)
         self.send(src_addr, '/reply', path, 'ray_net updated')
-    
+
     @client_action
     def _ray_client_set_properties(self, path, args, src_addr, client):
         message = ''
