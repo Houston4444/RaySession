@@ -1,6 +1,7 @@
 
 0.10.0 / 2020-11-XX
     New Features:
+        Add option "Remember optional GUI states" which recalls the optional GUIs visibility state
         Add Application dialog largely improved with access to all possible informations about the templates
         Session Notes dialog where you can edit...session notes
         'duplicate', 'save session as template' and 'rename session' moved to a menu at top left of the session frame  
