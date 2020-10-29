@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-from PyQt5.QtCore import QCoreApplication, QStandardPaths, QSettings
+from PyQt5.QtCore import QCoreApplication, QStandardPaths, QSettings, QDateTime, QLocale
 
 import ray
 
@@ -63,6 +63,7 @@ class RS:
     def setFavorites(cls, favorites):
         cls.favorites = favorites
 
+
 class TemplateRoots:
     net_session_name = ".ray-net-session-templates"
     factory_sessions = "%s/session_templates" % getCodeRoot()
@@ -84,12 +85,29 @@ class Terminal:
     _last_client_name = ''
 
     @classmethod
-    def message(cls, string):
+    def message(cls, string, server_port=0):
         if cls._last_client_name and cls._last_client_name != 'daemon':
             sys.stderr.write('\n')
 
         sys.stderr.write('[\033[90mray-daemon\033[0m]\033[92m%s\033[0m\n'
                             % string)
+
+        log_dir = "%s/logs" % getAppConfigPath()
+        if server_port:
+            log_file_path = "%s/%i" % (log_dir, server_port)
+        else:
+            log_file_path = "%s/dummy" % log_dir
+
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        log_file = open(log_file_path, 'a')
+
+        date_time = QDateTime.currentDateTime()
+        locale = QLocale(QLocale.English)
+        date_format = locale.toString(date_time, "ddd MMM d hh:mm:ss yyyy")
+
+        log_file.write("%s: %s\n" % (date_format, string))
 
         cls._last_client_name = 'daemon'
 

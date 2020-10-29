@@ -137,6 +137,11 @@ class Client(ServerSender, ray.ClientData):
 
         self.send(self.addr, *args)
 
+    def message(self, message: str):
+        if self.session is None:
+            return
+        self.session.message(message)
+
     def sendReplyToCaller(self, slot, message):
         src_addr, src_path = self._osc_srcs[slot]
         if src_addr:
@@ -388,7 +393,7 @@ class Client(ServerSender, ray.ClientData):
         self._reply_errcode = errcode
 
         if self._reply_errcode:
-            Terminal.message("Client \"%s\" replied with error: %s (%i)"
+            self.message("Client \"%s\" replied with error: %s (%i)"
                                 % (self.name, message, errcode))
 
             if self.pending_command == ray.Command.SAVE:
@@ -994,7 +999,7 @@ class Client(ServerSender, ray.ClientData):
 
     def tellClientSessionIsLoaded(self):
         if self.active and not self.isDumbClient():
-            Terminal.message("Telling client %s that session is loaded."
+            self.message("Telling client %s that session is loaded."
                              % self.name)
             self.sendToSelfAddress("/nsm/client/session_is_loaded")
 
@@ -1039,7 +1044,7 @@ class Client(ServerSender, ray.ClientData):
                 QTimer.singleShot(300, self.rayHackSaved)
 
             elif self.canSaveNow():
-                Terminal.message("Telling %s to save" % self.name)
+                self.message("Telling %s to save" % self.name)
                 self.sendToSelfAddress("/nsm/client/save")
 
                 self.pending_command = ray.Command.SAVE
@@ -1105,7 +1110,7 @@ class Client(ServerSender, ray.ClientData):
             self.sendReplyToCaller(OSC_SRC_STOP, 'client stopped.')
 
     def quit(self):
-        Terminal.message("Commanding %s to quit" % self.name)
+        self.message("Commanding %s to quit" % self.name)
         if self.isRunning():
             self.pending_command = ray.Command.STOP
             self.terminate()
@@ -1143,7 +1148,7 @@ class Client(ServerSender, ray.ClientData):
         jack_client_name = self.getJackClientName()
         client_project_path = self.getProjectPath()
 
-        Terminal.message("Commanding %s to switch \"%s\""
+        self.message("Commanding %s to switch \"%s\""
                          % (self.name, client_project_path))
 
         self.sendToSelfAddress("/nsm/client/open", client_project_path,
@@ -1969,7 +1974,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             return
 
         if major > NSM_API_VERSION_MAJOR:
-            Terminal.message(
+            self.message(
                 "Client is using incompatible and more recent "
                 + "API version %i.%i" % (major, minor))
             self.send(src_addr, "/error", path, ray.Err.INCOMPATIBLE_API,
@@ -1990,8 +1995,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if self.executable_path in RS.non_active_clients:
             RS.non_active_clients.remove(self.executable_path)
 
-        Terminal.message("Process has pid: %i" % pid)
-        Terminal.message(
+        self.message("Process has pid: %i" % pid)
+        self.message(
             "The client \"%s\" at \"%s\" " % (self.name, self.addr.url)
             + "informs us it's ready to receive commands.")
 

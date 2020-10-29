@@ -92,7 +92,11 @@ class Session(ServerSender):
         if self.is_dummy and not even_dummy:
             return
 
-        Terminal.message(string)
+        server = self.getServer()
+        if server:
+            Terminal.message(string, server.port)
+        else:
+            Terminal.message(string)
 
     def setRoot(self, session_root):
         if self.path:
@@ -992,13 +996,13 @@ class OperatingSession(Session):
                 notes_file.write(self.notes)
                 notes_file.close()
             except:
-                Terminal.message("unable to save notes in %s"
+                self.message("unable to save notes in %s"
                                  % full_notes_path)
         elif os.path.isfile(full_notes_path):
             try:
                 os.remove(full_notes_path)
             except:
-                Terminal.message("unable to remove %s" % full_notes_path)
+                self.message("unable to remove %s" % full_notes_path)
 
         self.sendGuiMessage(_translate('GUIMSG', "Session '%s' saved.")
                                 % self.getShortPath())
