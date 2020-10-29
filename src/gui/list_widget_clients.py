@@ -4,7 +4,7 @@ from PyQt5.QtCore import pyqtSlot, QSize
 
 import ray
 from gui_server_thread import GUIServerThread
-from gui_tools import clientStatusString, _translate, isDarkTheme
+from gui_tools import clientStatusString, _translate, isDarkTheme, RayIcon
 import child_dialogs
 import snapshots_dialog
 
@@ -66,112 +66,18 @@ class ClientSlot(QFrame):
 
         self.ui.iconButton.setMenu(self.menu)
 
-        self.saveIcon = QIcon()
-        self.saveIcon.addPixmap(
-            QPixmap(':scalable/breeze/document-save'),
-            QIcon.Normal,
-            QIcon.Off)
-        self.saveIcon.addPixmap(
-            QPixmap(':scalable/breeze/disabled/document-save'),
-            QIcon.Disabled,
-            QIcon.Off)
+        dark = isDarkTheme(self)
+
+        self.saveIcon = RayIcon('document-save', dark)
+        self.savedIcon = RayIcon('document-saved', dark)
+        self.unsavedIcon = RayIcon('document-unsaved', dark)
+        self.noSaveIcon = RayIcon('document-nosave', dark)
+        self.icon_visible = RayIcon('visibility', dark)
+        self.icon_invisible = RayIcon('hint', dark)
+        self.ui.startButton.setIcon(RayIcon('media-playback-start', dark))
+        self.ui.stopButton.setIcon(RayIcon('media-playback-stop', dark))
+        self.ui.closeButton.setIcon(RayIcon('window-close', dark))
         self.ui.saveButton.setIcon(self.saveIcon)
-
-        self.savedIcon = QIcon()
-        self.savedIcon.addPixmap(QPixmap(':scalable/breeze/document-saved'),
-                                 QIcon.Normal, QIcon.Off)
-
-        self.unsavedIcon = QIcon()
-        self.unsavedIcon.addPixmap(QPixmap(':scalable/breeze/document-unsaved'),
-                                   QIcon.Normal, QIcon.Off)
-
-        self.noSaveIcon = QIcon()
-        self.noSaveIcon.addPixmap(QPixmap(':scalable/breeze/document-nosave'),
-                                  QIcon.Normal, QIcon.Off)
-
-        self.icon_visible = QIcon()
-        self.icon_visible.addPixmap(
-            QPixmap(':scalable/breeze/visibility'), QIcon.Normal, QIcon.Off)
-
-        self.icon_invisible = QIcon()
-        self.icon_invisible.addPixmap(
-            QPixmap(':scalable/breeze/hint'), QIcon.Normal, QIcon.Off)
-        self.icon_invisible.addPixmap(
-            QPixmap(':scalable/breeze/disabled/hint'), QIcon.Disabled, QIcon.Off)
-
-        # choose button colors
-        if isDarkTheme(self):
-            startIcon = QIcon()
-            startIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/media-playback-start'),
-                QIcon.Normal,
-                QIcon.Off)
-            startIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/disabled/media-playback-start'),
-                QIcon.Disabled,
-                QIcon.Off)
-            self.ui.startButton.setIcon(startIcon)
-
-            stopIcon = QIcon()
-            stopIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/media-playback-stop'),
-                QIcon.Normal,
-                QIcon.Off)
-            stopIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/disabled/media-playback-stop'),
-                QIcon.Disabled,
-                QIcon.Off)
-            self.ui.stopButton.setIcon(stopIcon)
-
-            self.saveIcon = QIcon()
-            self.saveIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/document-save'),
-                QIcon.Normal,
-                QIcon.Off)
-            self.saveIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/disabled/document-save'),
-                QIcon.Disabled,
-                QIcon.Off)
-            self.ui.saveButton.setIcon(self.saveIcon)
-
-            self.savedIcon = QIcon()
-            self.savedIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/document-saved'),
-                QIcon.Normal,
-                QIcon.Off)
-
-            self.unsavedIcon = QIcon()
-            self.unsavedIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/document-unsaved'),
-                QIcon.Normal,
-                QIcon.Off)
-
-            self.noSaveIcon = QIcon()
-            self.noSaveIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/document-nosave'),
-                QIcon.Normal,
-                QIcon.Off)
-
-            closeIcon = QIcon()
-            closeIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/window-close'),
-                QIcon.Normal,
-                QIcon.Off)
-            closeIcon.addPixmap(
-                QPixmap(':scalable/breeze-dark/disabled/window-close'),
-                QIcon.Disabled,
-                QIcon.Off)
-            self.ui.closeButton.setIcon(closeIcon)
-
-            self.icon_visible = QIcon()
-            self.icon_visible.addPixmap(
-                QPixmap(':scalable/breeze-dark/visibility'), QIcon.Normal, QIcon.Off)
-
-            self.icon_invisible = QIcon()
-            self.icon_invisible.addPixmap(
-                QPixmap(':scalable/breeze-dark/hint'), QIcon.Normal, QIcon.Off)
-            self.icon_invisible.addPixmap(
-                QPixmap(':scalable/breeze-dark/disabled/hint'), QIcon.Disabled, QIcon.Off)
 
         self.ubuntu_font = QFont(
             QFontDatabase.applicationFontFamilies(0)[0], 8)
