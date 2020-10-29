@@ -42,11 +42,6 @@ class ClientSlot(QFrame):
         self.ui.saveButton.clicked.connect(self.saveClient)
         self.ui.closeButton.clicked.connect(self.trashClient)
         self.ui.lineEditClientStatus.statusPressed.connect(self.abortCopy)
-        # self.ui.ClientName.name_changed.connect(self.updateLabel)
-
-        # prevent "stopped" status displayed at client switch
-        #self.ui.lineEditClientStatus,.setTextNow(
-                          #clientStatusString(self.client.status))
 
         self.icon_on = QIcon()
         self.icon_off = QIcon()
