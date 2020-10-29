@@ -1,4 +1,42 @@
 
+0.10.0 / 2020-11-XX
+    New Features:
+        Add Application dialog largely improved with access to all possible informations about the templates
+        Session Notes dialog where you can edit...session notes
+        'duplicate', 'save session as template' and 'rename session' moved to a menu at top left of the session frame  
+        provide log files in ~/.config/RaySession/logs/
+        improve open session dialog behavior between filter bar and treelist
+        add "Make Reappear all hidden dialogs" action
+        add RayNet client protocol, which is used only for Network Sessions
+        change icon for optional GUI visible/hidden (shamelessly pricked idea at Agordejo)
+        ray_control : add_client_template not started option added
+        clients now remember their template origin
+        "save as template" button becomes "Update the Template" in save as template (session/client) dialog if template exists
+        Jack config script now saves all pulse2jack configurations, even the more complex ones
+
+    API change:
+        raysession's --session argument has been replaced with --start-session because --session was taken by Qt, -s still works fine
+    
+    Bug Fixes:
+        Now translated in french for french speaking users out of France
+        Add all default Qt translations
+        raysession should connect to a running daemon without GUI, even after a GUI crash (GUI crash should not happen of course ;) )
+        ray_control start now start with the good session root if it is not the default one (~/Ray Sessions)
+        remove Hydrogen NSM template because RayHack template is safer for now
+        Sequencer64 template has a -m option to work fine with JACK connections
+    
+    New Templates:
+        Xtuner
+        Mamba
+    
+0.9.2 / 2020-08-01
+Bug Fix:
+    Strong: Fix empty client templates list if there was no user client template
+
+0.9.1 / 2020-07-21
+Bug Fix:
+    Remove a binary file added by error to source code
+
 0.9.0 / 2020-07-16
 New Features:
     CLI: Control allmost all GUI actions and more with the CLI ray_control.
