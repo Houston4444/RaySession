@@ -52,20 +52,14 @@ ligne du haut, de gauche à droite:
 
 * le nom de la session chargée
 * le bouton "Abandonner la session" qui permet de fermer la session sans la sauvegarder
-* le bouton "Fermer la session", qui sauvegarde et ferme la session en cours. Notez que vous n'avez pas besoin de fermer la session en cours pour en ouvrir une autre. Certains clients sont capables de basculer d'une session à l'autre et ça peut être beaucoup moins long que de tout fermer pour tout relancer.
+* le bouton "Fermer la session", qui sauvegarde et ferme la session en cours. Notez que vous n'avez pas besoin de fermer la session en cours pour en ouvrir une autre, certains clients sont capables de basculer d'une session à l'autre et ça peut être beaucoup moins long que de tout fermer pour tout relancer.
 
 ligne du bas, de gauche à droite:
 * le bouton en forme de dossier pour ouvrir le dossier de la session avec votre gestionnaire de fichiers
 * le bouton en forme d'étoile jaune qui déroule un menu contenant vos applications favorites s'il y en a
-* le bouton "Application" qui permet d'ajouter à la session un modèle d'application d'usine ou que vous aurez créé vous même. C'est la méthode conseillée pour ajouter un client.
-
-#TODO
-* le bouton "Exécutable" qui permet d'ajouter à la session un programme depuis son exécutable. Vous en aurez besoin si vous souhaiter ajouter un programme pour lequel il n'existe pas de modèle.
-
-#TODO
-
+* le bouton "Application" qui permet d'ajouter à la session un modèle d'application d'usine ou que vous aurez créé vous même. C'est la méthode conseillée pour ajouter un client. voir Fenêtre d'ajout d'Application
+* le bouton "Exécutable" qui permet d'ajouter à la session un programme depuis son exécutable. Vous en aurez besoin si vous souhaiter ajouter un programme pour lequel il n'existe pas de modèle. Voir Fenêtre d'ajout d'exécutable
 * le bouton de marche arrière pour revenir à un état précédent de la session. Celà nécessite d'avoir le programme git installé. Voir les clichés pour plus de détails.
-
 * l'indicateur d'état du serveur. Il peut avoir l'un des statuts suivante:
     * éteint : pas de session en cours
     * prêt: la session est en cours
@@ -94,14 +88,14 @@ Ce client contient de gauche à droite une icône sur laquelle vous pouvez cliqu
     * retourner à un état précédent
         Permet de faire revenir uniquement le client à un état antérieur de la session. Voir les clichés.
     * Propriétés
-        Affiche la fenêtre des propriétés du client
-            #TODO
+        Affiche la fenêtre des propriétés du client, voir fenêtre de propriétés de client
+        
     Ce même menu est accessible par clique droit n'importe où sur le client
     
 * Le nom du client, qui peut-être changé facilement par clique droit -> renommer
 
 * selon le type et les capacités du client vous pouvez voir ici
-    * un bouton "Hack", celà signifie que le client n'est pas compatible NSM, en tout cas qu'il n'est pas lancé avec ce protocole. Cliquer sur Hack permet de changer la façon dont il est lancé en ouvrant la fenêtre de propriétés du client sur l'onglet Ray-Hack
+    * un bouton "Hack", celà signifie que le client n'est pas lancé avec le protocole NSM. Cliquer sur Hack permet de changer la façon dont il est lancé en ouvrant la fenêtre de propriétés du client sur l'onglet Ray-Hack
     * un oeil (éventuellement barré), celà signifie que le client est compatible NSM et qu'il est capable d'afficher ou cacher sa fenêtre en cliquant sur l'oeil.
 
 * Le bouton "Démarrer" qui est grisé si le client est déjà démarré
@@ -187,7 +181,46 @@ Si vous tenez à connaître ce fichier .desktop, utilisez ray_control client IDE
 
 Si le client obéit au protocole NSM, l'onglet NSM fournira un champ pour éditer l'exécutable et un autre pour éditer ses arguments. Les éditer est dangereux mais peut-être utile, ne les éditez que si vous savez exactement ce que vous faites.
 
+
+____________________________________
+Ajouter un programme non fourni
+
+Si le programme que vous voulez ajouter ne gère pas de projet à enregistrer, cliquez sur "Exécutable", rentrez le nom de l'exécutable et cliquez sur 'Ok'. sinon suivez cet exemple.
+
+Nous voulons ajouter ici Audacity à la session. Audacity est choisi à titre d'exemple parce qu'il est connu et généralement installé sur les distributions audio. Ce n'est pas forcément un programme très adapté à la modularité d'une session audio étant donné la façon dont il gère JACK.
+Cliquez sur "Exécutable" (ou Ctrl+E).
+Dans la fenêtre d'ajout d'exécutable, Décochez la case "Protocole NSM", tapez 'audacity' dans le champ d'exécutable et cliquez sur 'Ok'.
+Un nouveau client est créé, sa fenêtre de propriétés s'ouvre sur l'onglet Ray-Hack et Audacity se lance.
+
+Dans Audacity, nous allons directement sauvegarder un projet vide dans le dossier du client. Le dossier du client se trouve dans le dossier de la session et porte le nom donné après "Dossier:" tout en haut de l'onglet Ray-Hack. Nous allons appeler le projet EXACTEMENT comme la session RaySession en cours.
+Pour celà, dans Audacity, faites Menu -> Fichier -> Sauvegarder le projet -> Sauvegarder le projet.
+Cliquez sur 'Valider' à l'éventuelle fenêtre d'avertissement.
+Dans la boîte de sauvegarde de fichiers qui s'ouvre, vous trouverez le dossier de la session en bas à gauche (voir Les options du démon), cliquez dessus pour rentrer dedans. À l'intérieur de celui-ci vous devez voir le dossier du client tel qu'il figure en haut de l'onglet Ray-Hack, rentrez dans ce dossier. En haut à gauche de la boîte de sauvegarde, tapez le nom exact de votre session dans le champ "Nom:" puis validez.
+Fermez Audacity.
+En haut à droite de l'onglet Ray-Hack de la fenêtre de propriétés du client, cliquez sur "Naviguer".
+sélectionnez le projet Audacity que vous venez de créer, son nom commence par le nom de la session et termine par .aup.
+Si tout s'est bien passé, le champ "Fichier de configuration" est devenu $RAY_SESSION_NAME.aup et le champ Arguments est devenu "$CONFIG_FILE".
+Cochez les cases "Attendre une fenêtre avant d'être considéré comme prêt", "Demander à l'utilisateur de fermer lui même le programme" et "Essayer de fermer gracieusement la fenêtre". Cliquez en bas à droite sur "Sauvegarder les changements".
+Lancez le client Audacity et vérifiez que la fenêtre d'Audacity porte bien le nom de la session.
+Cliquez sur l'icône du client Audacity, dans le menu déroulant choisissez "Sauvegarder comme modèle d'application", et rentrez "Audacity" dans le champ de la boîte de dialogue qui est apparue.
+Voilà, maintenant lorsque vous voudrez lancer Audacity dans la session, vous n'aurez qu'à lancer le modèle Audacity depuis la fenêtre d'ajout d'applications.
+
+Notez que le bouton de sauvegarde du client est derrière un point d'exclamation orange, celà signifie que RaySession n'est pas en mesure de sauvegarder son projet et qu'il faudra le faire vous même.
+
+Selon le programme que vous souhaitez ajouter à la session, il est possible que ce ne soit pas toujours aussi facile. Certains programmes vont exiger un argument qui précède le fichier de configuration, dans ce cas tapez mon_programme --help ou man mon_programme pour savoir comment charger un projet au démarrage du programme, et adaptez celà dans le champ "Arguments".
+
+
+
+
 Si le client est de type Ray-Hack, ici moult champs s'offrent à vous.
+Le bloc de démarrage du client comprend:
+* Le dossier du client, qui figure dans le dossier de la session
+* L'exécutable
+* le fichier de configuration, comprenez ici fichier de projet. Il est très très fortement recommandé d'utiliser ici un fichier situé dans le dossier du client.
+* un bouton naviguer pour aller chercher votre fichier de configuration
+* une ligne d'arguments
+
+Vous devez comprendre qu'un client Ray-Hack sera lancé dans le dossier du client
 ____________________________________
 Les options du démon
 
@@ -217,7 +250,7 @@ ____________________________________
 Les Clichés
 
 Les clichés nécessitent d'avoir le programme 'git' installé, si vous n'avez pas 'git', le bouton de marche arrière n'apparaît pas et il est impossible de prendre un cliché ou d'y revenir.
-Un cliché mémorise les fichiers et leurs contenu à un moment précis. Les fichiers volumineux et les fichiers ayant certaines extensions tels que les fichiers audio et video sont ignorés, sinon le processus de cliché serait trop long et celà doublerait inutilement la taille des dossiers de session. Celà n'est en fait pas très gênant, au contraire, puisque vos fichiers audio récents restent présents quand vous retournez à un cliché précédent.
+Un cliché mémorise les fichiers et leurs contenu à un moment précis. Les fichiers volumineux et les fichiers ayant certaines extensions tels que les fichiers audio et video sont ignorés, sinon le processus de cliché serait trop long et celà doublerait inutilement la taille des dossiers de session. Celà n'est en fait pas très gênant, au contraire, puisque vos fichiers audio récents resteront présents quand vous retournerez à un cliché précédent.
 L'intérêt des clichés réside dans le fait de pouvoir revenir à moment antérieur de la session, avant d'avoir eu cette idée artistique géniale qui s'est avérée nulle et non avenue, avant d'avoir tenté un redécoupage des échantillons au microcoscope qui a finalement tué toute forme de musicalité, avant qu'un programme plante pour une raison inconnue des services de police...
 Il est également possible de faire revenir uniquement un client à un état précédent de la session en faisant un clique droit sur le client, puis "Retourner à un état précédent".
 Si vous le souhaitez vous pouvez éditer pour chaque client les fichiers ignorés par les clichés dans la fenêtre de propriétés du client.
@@ -241,16 +274,16 @@ le dossier des scripts de session peut-être
 L'intérêt d'un tel comportement est de pouvoir scripter un ensemble de sessions sans avoir à y recopier les scripts, mais surtout de livrer une session non scriptée lorsqu'on la transfère à quelqu'un d'autre pour un travail collectif.
 Seul le dossier de scripts le plus près de la session dans l'arborescence sera considéré. Ainsi, un dossier ray-scripts vide dans une session désactivera les scripts pour cette session.
 
-Pour éditer les scripts, commencez par créer une session avec le modèle "avec les scripts de base", il s'agit d'un modèle de session avec des scripts ne comprenant absolument aucune action particulière. Rendez-vous dans le dossier ray-scripts de la session, vous y trouverez les fichiers load.sh, save.sh et close.sh . Dans chacun de ces scripts, "ray_control run_step" correspond à l'action normale effectuée (selon le script: charger, sauvegarder ou fermer). Si un de ces 3 scripts ne vous est d'aucune utilité, supprimez le, ce sera du temps gagné de ne pas passer par ce script.
+Pour éditer les scripts, commencez par créer une session avec le modèle "avec les scripts de base", il s'agit d'un modèle de session avec des scripts ne comprenant absolument aucune action particulière. Rendez-vous dans le dossier ray-scripts de la session, vous y trouverez les fichiers load.sh, save.sh et close.sh . Dans chacun de ces scripts, "ray_control run_step" correspond à l'action normale effectuée (selon le script: charger, sauvegarder ou fermer la session). Si un de ces 3 scripts ne vous est d'aucune utilité, supprimez le, ce sera du temps gagné de ne pas passer par ce script.
 
 Vous aurez probablement besoin de l'utilitaire en ligne de commande ray_control pour effectuer des actions en rapport avec tel ou tel client. tapez ray_control --help pour connaître toutes ses possibilités.
 
 Le modèle de session à mémoire de configuration de JACK utilise les scripts de session, mais on peut aussi imaginer moult actions possibles selon vos besoins et vos envies, par exemple :
-* définir un ordre bien précis de lancement des clients à l'ouverture de la session 
-* faire une copie de sauvegarde de la session sur un disque dur externe à chaque fermeture (un exemple est fourni dans le code source)
+* définir un ordre bien précis de lancement des clients à l'ouverture de la session (un exemple est fourni dans le code source)
+* faire une copie de sauvegarde de la session sur un disque dur externe à chaque fermeture
 * envoyer un raccourci Ctrl+S aux fenêtres des clients non sauvegardables à la sauvegarde de la session (un exemple est fourni dans le code source)
 * Allumer le bouton rouge à l'entrée du studio à l'ouverture, l'éteindre à la fermeture
-* Lancer la machine à café à la fermeture de la session (exemple débile, va donc appuyer sur le bouton de la cafetière, de toutes façons faudra changer le filtre !)
+* Lancer la machine à café à la fermeture de la session (exemple débile, allez donc appuyer sur le bouton de la cafetière, de toutes façons il faudra changer le filtre !)
 * Faire beaucoup, beaucoup, beaucoup d'erreurs qui feront planter votre session, soyez prudents évidemment !
 
 
@@ -281,7 +314,7 @@ Pour lancer une session réseau (esclave donc), lancez le modèle d'application 
 
 Vous devrez lancer un démon sur la machine distante avec la commande ray-daemon -p 1234 (1234 est un exemple, mettez le port que vous voulez). Ce démon vous affiche dans le terminal deux URLs possibles. Vous devrez copier dans la fenêtre d'invitation de la session réseau l'une de ces deux URLs. La première (qui commence par osc.udp://192.168.) doit fonctionner à coup sûr, la seconde ne fonctionnera que si le nom de la machine esclave est correctement renseigné dans le fichier /etc/hosts de la machine maître. Toutefois, renseigner le nom de la machine esclave dans /etc/hosts et utiliser la deuxième URL est préférable, parce que l'adresse en 192.168. bougera si vous branchez votre machine esclave différemment (en filaire, en wifi), ou si vous réinstallez sa distribution.
 
-Vous avez à présent 2 fenêtres RaySession sur votre machine maître, l'une contrôle la session maître, l'autre l'esclave. Vous reconnaîtrez l'esclave au fait qu'elle n'a ni barre d'outils (Nouvelle Session, Ouvrir une session, Contrôle), ni boutons "Abandonner la session", "Fermer la session". La fenêtre esclave est cachable comme c'est le cas dans beaucoup de programmes NSM.
+Vous avez à présent 2 fenêtres RaySession sur votre machine maître, l'une contrôle la session maître, l'autre l'esclave. Vous reconnaîtrez l'esclave au fait qu'elle n'a ni barre d'outils (Nouvelle Session, Ouvrir une session, Contrôle), ni boutons "Abandonner la session" et "Fermer la session". La fenêtre esclave est cachable comme c'est le cas dans beaucoup de programmes NSM.
 
 Si vous lancez raysession -p 1234 sur votre machine esclave, vous aurez la fenêtre de la session esclave en double exemplaire, une sur chaque machine.
 
