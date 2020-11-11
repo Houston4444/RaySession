@@ -380,7 +380,7 @@ Si vous lancez `raysession -p 1234` sur votre machine esclave, vous aurez la fen
 [#ajouter_un_programme_non_fourni]
 == Ajouter un programme non fourni
 
-Si le programme que vous voulez ajouter ne gère pas de projet à enregistrer, cliquez sur *Exécutable*, rentrez le nom de l'exécutable et cliquez sur *Ok*. Sinon suivez cet exemple.
+Si le programme que vous voulez ajouter ne gère pas de projet à enregistrer, cliquez sur *Exécutable*, rentrez le nom de l'exécutable et cliquez sur 'Ok'. sinon suivez cet exemple.
 
 Nous voulons ajouter ici Audacity à la session. Audacity est choisi à titre d'exemple parce qu'il est connu et généralement installé sur les distributions audio. Ce n'est pas forcément un programme très adapté à la modularité d'une session audio étant donné la façon dont il gère JACK.
 
@@ -415,7 +415,7 @@ Cochez les cases *Attendre une fenêtre avant d'être considéré comme prêt*, 
 
 image::audacity_ray_hack_final.png[Onglet Ray-Hack du client audacity dûment rempli]
 
-Lancez le client Audacity et vérifiez que la fenêtre d'Audacity porte bien le nom de la session. +
+Lancez le client Audacity et vérifiez que la fenêtre d'Audacity porte bien le nom de la session.
 Cliquez sur l'icône du client Audacity, dans le menu déroulant choisissez *Sauvegarder comme modèle d'application*, et rentrez `Audacity` dans le champ de la boîte de dialogue qui est apparue.
 Maintenant lorsque vous voudrez lancer Audacity dans la session, vous n'aurez qu'à lancer le modèle Audacity depuis la fenêtre d'ajout d'applications.
 
@@ -427,7 +427,7 @@ Selon le programme que vous souhaitez ajouter à la session, il est possible que
 
 Pour importer une session créée avec *Non Session Manager* ou *New Session Manager*, déplacez ou copiez le dossier de la session dans le dossier racine des sessions RaySession (par défaut ~/Ray Sessions). Ensuite cliquez sur *Ouvrir une session*, votre session doit apparaître dans la liste des sessions, double-cliquez dessus.
 
-RaySession ne ré-écrira pas les clients ajoutés ou supprimés dans la fichier session.nsm, à partir du moment où vous ouvrez une session NSM avec RaySession, vous devez continuer avec RaySession.
+RaySesssion ne ré-écrira pas les clients ajoutés ou supprimés dans la fichier session.nsm, à partir du moment où vous ouvrez une session NSM avec RaySession, vous devez continuer avec RaySession.
 
 
 [#options_du_demon]
@@ -491,6 +491,7 @@ Il est également possible de faire revenir uniquement un client à un état pr�
 Si vous le souhaitez vous pouvez éditer pour chaque client les fichiers ignorés par les clichés dans la fenêtre de propriétés du client.
 
 Avec l'option *Cliché automatique à la sauvegarde*, un cliché est pris juste après chaque sauvegarde de la session, sauf s'il n'y a aucun changement depuis le cliché précédent. Pour prendre un cliché à un autre moment, cliquez sur l'icône de marche arrière à droite du bouton *Exécutable* et sur *Prendre un cliché maintenant*, celà présente l'avantage de pouvoir nommer le cliché et d'avoir ainsi un repère temporel plus parlant que la date et l'heure du cliché. +
+Pour revenir à un cliché, cliquez sur l'icône de marche arrière et suivez les instructions.
 
 [#les_scripts_de_session]
 == Les scripts de session
@@ -498,7 +499,7 @@ Avec l'option *Cliché automatique à la sauvegarde*, un cliché est pris juste 
 Les scripts de session permettent de programmer des actions personnalisés à l'ouverture, à la sauvegarde et à la fermeture de la session. Ils sont notamment utilisés pour les sessions avec <<memoire_de_la_configuration_de_jack>>. +
 Des connaissances en script shell sont nécessaires pour éditer ces scripts, mais tout un chacun peut les utiliser.
 
-Les scripts de session se trouvent dans un dossier `ray-scripts` situé soit dans un dossier de la session, soit dans un dossier parent. +
+Les scripts de session se trouvent dans un dossier `ray-scripts` situé soit dans un dossier de la session, soit dans un dossier parent.
 Par exemple, pour une session étant dans: +
 `~/Ray Sessions/avec_script_de_foo/ma session`
 
