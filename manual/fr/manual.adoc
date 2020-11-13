@@ -4,13 +4,10 @@
 :toclevels: 2
 :imagesdir: images
 
-[cols="1, 9"]
-|===
-|image:flag_fr.jpeg[]
-|_En français pour la version 0.10.0_ +
-Other languages: image:flag_en.jpeg[EN, 30, 20, link=../en/manual.html]
+[.text-right]
+_Other languages:_ image:flag_en.jpeg[EN, 30, 20, link=../en/manual.html]
 
-|===
+_pour la version 0.10.0_
 
 == Introduction
 RaySession est un gestionnaire de session audio pour GNU/Linux. Il permet de démarrer dans une même session plusieurs programmes audio, de sauvegarder leurs projets ensemble et ainsi d’éviter de multiples manipulations pour retourner à une configuration donnée.

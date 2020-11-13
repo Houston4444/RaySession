@@ -485,19 +485,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 90%;">
-</colgroup>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="image"><img src="images/flag_en.jpeg" alt="flag en"></span></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>In english for the version 0.10.0</em><br>
-Other languages: <span class="image"><a class="image" href="../fr/manual.html"><img src="images/flag_fr.jpeg" alt="FR" width="30" height="20"></a></span></p></td>
-</tr>
-</tbody>
-</table>
+<div class="paragraph text-right">
+<p><em>Other languages:</em> <span class="image"><a class="image" href="../fr/manual.html"><img src="images/flag_fr.jpeg" alt="EN" width="30" height="20"></a></span></p>
+</div>
+<div class="paragraph">
+<p><em>for version 0.10.0</em></p>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -647,7 +640,7 @@ One of the advantages of modularity in this specific case is that once you have 
 <ul>
 <li>
 <p><strong>save the current session as a template</strong><br>
-The created session template will then appear in the multiple choice of session templates in the New Session dialog window. Be careful, however, all the files of the session will be saved in the template, so you should not do this if the session contains a lot of audio files. On the one hand, the copy will be long, on the other hand you run the risk of unnecessarily multi-copying files which will take up a lot of space.</p>
+The created session template will then appear in the multiple choice of session templates in the New Session dialog window. Be careful, however, all the files of the session will be saved in the template, so you should not do this if the session contains a lot of audio files. firstly, the copy will be long, secondly, you run the risk of unnecessarily multi-copying files which will take up a lot of space.</p>
 </li>
 <li>
 <p><strong>Duplicate the current session</strong><br>
@@ -1639,7 +1632,7 @@ After closing the session, JACK is restarted if necessary with the current confi
 </div>
 <div class="paragraph">
 <p>One might think that there is no point in using <code>ray_control</code> since the command <code>oscsend</code> allows to send an OSC message to the daemon, it is false.<br>
-On the one hand, because <code>oscsend</code> allows you to send messages but not to obtain information in a simple way (which are the active clients? What is the executable of such and such client? &#8230;&#8203;), on the other hand because the command <code>ray_control</code> will end when the requested action is taken, for example <code>ray_control open_session "my session"</code> will end when the session is loaded.</p>
+Firstly, because <code>oscsend</code> allows you to send messages but not to obtain information in a simple way (which are the active clients? What is the executable of such and such client? &#8230;&#8203;), secondly, because the command <code>ray_control</code> will end when the requested action is taken, for example <code>ray_control open_session "my session"</code> will end when the session is loaded.</p>
 </div>
 <div class="paragraph">
 <p>Remember to assign <code>ray_control save</code> to a global shortcut of your desktop environment (<em>Ctrl+Meta+S</em>), this will save you a lot of time!</p>
@@ -1654,14 +1647,14 @@ On the one hand, because <code>oscsend</code> allows you to send messages but no
 </div>
 <div class="paragraph">
 <p>Except for a really tiny project, no.
-If you are using Ardour, always run it from RaySession, on the one hand the automatic snapshot after save can be of unexpected help to you, on the other hand, you are not immune to needing another program even if you did not plan it.</p>
+If you are using Ardour, always run it from RaySession, firstly, the automatic snapshot after save can be of unexpected help to you, secondly, you are not immune to needing another program even if you did not plan it.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-11-13 15:10:44 +0100
+Last updated 2020-11-13 18:58:39 +0100
 </div>
 </div>
 </body>

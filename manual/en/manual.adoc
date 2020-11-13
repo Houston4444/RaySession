@@ -3,13 +3,10 @@
 :toclevels: 2
 :imagesdir: images
 
-[cols="1, 9"]
-|===
-|image:flag_en.jpeg[]
-|_In english for the version 0.10.0_ +
-Other languages: image:flag_fr.jpeg[FR, 30, 20, link=../fr/manual.html]
+[.text-right]
+_Other languages:_ image:flag_fr.jpeg[EN, 30, 20, link=../fr/manual.html]
 
-|===
+_for version 0.10.0_
 
 == Introduction
 RaySession is an audio session manager for GNU / Linux. It allows you to start several audio programs in the same session, to save their projects together and thus to avoid multiple operations to return to a given configuration.
@@ -89,7 +86,7 @@ From left to right:
 
 * the menu button gives you access to
 ** *save the current session as a template* +
-The created session template will then appear in the multiple choice of session templates in the New Session dialog window. Be careful, however, all the files of the session will be saved in the template, so you should not do this if the session contains a lot of audio files. On the one hand, the copy will be long, on the other hand you run the risk of unnecessarily multi-copying files which will take up a lot of space.
+The created session template will then appear in the multiple choice of session templates in the New Session dialog window. Be careful, however, all the files of the session will be saved in the template, so you should not do this if the session contains a lot of audio files. firstly, the copy will be long, secondly, you run the risk of unnecessarily multi-copying files which will take up a lot of space.
 
 ** *Duplicate the current session* +
 This is the equivalent of the well-known "Save As ...", except that RaySession has to stop and restart most programs to switch between sessions. Avoid duplicating a session with a lot of audio files, it could take a long time, but fortunately such an operation can be undone.
@@ -597,7 +594,7 @@ the command `ray_control` lets you do just about anything you can do with the GU
 In case there are multiple daemons started (see <<under_the_hood>>), `ray_control` will only consider the one that was started first, unless you specify its OSC port with the `--port` option or `RAY_CONTROL_PORT` environment variable.
 
 One might think that there is no point in using `ray_control` since the command `oscsend` allows to send an OSC message to the daemon, it is false. +
-On the one hand, because `oscsend` allows you to send messages but not to obtain information in a simple way (which are the active clients? What is the executable of such and such client? ...), on the other hand because the command `ray_control` will end when the requested action is taken, for example `ray_control open_session "my session"` will end when the session is loaded.
+Firstly, because `oscsend` allows you to send messages but not to obtain information in a simple way (which are the active clients? What is the executable of such and such client? ...), secondly, because the command `ray_control` will end when the requested action is taken, for example `ray_control open_session "my session"` will end when the session is loaded.
 
 Remember to assign `ray_control save` to a global shortcut of your desktop environment (_Ctrl+Meta+S_), this will save you a lot of time!
 
@@ -605,4 +602,4 @@ Remember to assign `ray_control save` to a global shortcut of your desktop envir
 *Is it still worth running Ardour (or another NSM compatible DAW) directly rather than in RaySession?*
 
 Except for a really tiny project, no.
-If you are using Ardour, always run it from RaySession, on the one hand the automatic snapshot after save can be of unexpected help to you, on the other hand, you are not immune to needing another program even if you did not plan it.
+If you are using Ardour, always run it from RaySession, firstly, the automatic snapshot after save can be of unexpected help to you, secondly, you are not immune to needing another program even if you did not plan it.
