@@ -4,6 +4,14 @@
 :toclevels: 2
 :imagesdir: images
 
+[cols="1, 9"]
+|===
+|image:flag_fr.jpeg[]
+|_En français pour la version 0.10.0_ +
+Other languages: image:flag_en.jpeg[EN, 30, 20, link=../en/manual.html]
+
+|===
+
 == Introduction
 RaySession est un gestionnaire de session audio pour GNU/Linux. Il permet de démarrer dans une même session plusieurs programmes audio, de sauvegarder leurs projets ensemble et ainsi d’éviter de multiples manipulations pour retourner à une configuration donnée.
 
@@ -117,7 +125,8 @@ De gauche à droite:
 
 * le bouton *Exécutable* qui permet d'ajouter à la session un programme depuis son exécutable. Vous en aurez besoin si vous souhaiter ajouter un programme pour lequel il n'existe pas de modèle. voir <<ajout_executable>>.
 
-* le bouton de marche arrière pour revenir à un état précédent de la session. Celà nécessite d'avoir le programme `git` installé. Voir <<cliches>> pour plus de détails.
+* le bouton de marche arrière pour revenir à un état précédent de la session. Celà nécessite d'avoir le programme `git` installé, sinon ce bouton n'apparaîtra pas. +
+Voir <<cliches>> pour plus de détails.
 
 * l'indicateur d'état du serveur. +
     Les états du serveur peuvent être en réalité très furtifs, mais ils sont affichés pendant un temps suffisament long pour que vous puissiez les voir. +
@@ -194,7 +203,9 @@ Le fenêtre d'ajout d'application se lance en cliquant sur le bouton *Applicatio
 
 image::ajout_application.png[Fenêtre d'ajout d'application]
 
-La liste des applications disponibles est à droite.
+La liste des applications disponibles est à droite. Si le logiciel que vous souhaitez lancer n'est pas présent ici, regardez <<ajouter_un_programme_non_fourni>>.
+
+'''
 
 En haut à gauche, c'est le bloc de filtres
 
@@ -206,6 +217,8 @@ image::ajout_application_filtre.png[Bloc de filtre de la fenêtre d'ajout d'appl
 * *utilisateur* affiche les modèles créés par l'utilisateur en faisant *Sauvegarder comme modèle d'application*
 * *NSM* affiche les clients compatibles NSM, ou lancés comme tel (voir <<ajouter_un_programme_non_fourni>>)
 * *Ray-Hack* affiche les clients lancés sans protocole NSM
+
+'''
 
 En bas à gauche le bloc d'informations sur le modèle sélectionné à droite
 
@@ -277,7 +290,7 @@ Si vous tenez à connaître le fichier .desktop utilisé, tapez `ray_control cli
         ** le client semble ne pas avoir été sauvegardé depuis plus d'une minute
 
 +    
-cocher cette case ou non dépend seulement de l'importance de la sauvegarde de votre client, à vous de juger.
+cocher cette case ou non dépend seulement de l'importance de la sauvegarde de votre client, à vous de juger. Celà dit, si la fenêtre d'avertissement vous agace, vous n'aurez qu'à cocher la case *Ne plus empêcher l'arrêt du client* dans cette fenêtre et la case *Empêcher l'arrêt sans sauvegarde récente ou possible* sera décochée.
 
 === Onglet *NSM*
 
@@ -292,7 +305,7 @@ Les capacités sont celle qui sont transmises par le client à son démarrage. S
 
 === Onglet *Ray-Hack*
 
-Si le client est de type Ray-Hack, ici moult champs s'offrent à vous. Ce n'est pas forcément une bonne nouvelle, l'idée est de pouvoir charger dans la session un programme qui n'est pas (encore) compatible NSM. s'il est bien implémenté dans le client, le protocole NSM sera toujours bien plus confortable à utiliser et plus fiable que cette bidouille. Ceçi dit, si l'on peut attendre l'implémentation NSM dans tous les programmes audio, ce n'est pas le cas des autres programmes qui peuvent tout de même avoir une utilité dans la session.
+Si le client est de type Ray-Hack, ici moult champs s'offrent à vous. Ce n'est pas forcément une bonne nouvelle, l'idée est de pouvoir charger dans la session un programme qui n'est pas (encore) compatible NSM. S'il est bien implémenté dans le client, le protocole NSM sera toujours bien plus confortable à utiliser et plus fiable que cette bidouille. Ceçi dit, si l'on peut attendre l'implémentation NSM dans tous les programmes audio, ce n'est pas le cas des autres programmes qui peuvent tout de même avoir une utilité dans la session.
 
 Le pseudo-protocole Ray-Hack reprend les attributs des proxy (nsm-proxy ou ray-proxy), sauf que le client est lancé directement dans la session.
 
@@ -344,7 +357,8 @@ La zone de test vous permet de tester les réglages de lancement, d'arrêt et de
 
 == Les sessions réseau
 
-Une session réseau permet de lancer une autre session sur une autre machine en même temps que votre session. Ça peut être particulièrement utile si vous utilisez net-jack pour décharger votre machine d'une partie du DSP, si vous avez des effets gourmands qui tournent sur une autre machine par exemple. +
+Une session réseau permet de lancer une autre session sur une autre machine en même temps que votre session. Ça peut être particulièrement utile si vous utilisez net-jack pour décharger votre machine d'une partie du DSP, si vous avez des effets gourmands qui tournent sur une autre machine par exemple.
+
 Les sessions réseau fonctionnent selon un rapport de maître à esclave. Une session est maîtresse et peut avoir plusieurs sessions esclaves elles-mêmes maîtresses d'autres esclaves, mais un tel scénario semble complètement farfelu. Organisez vous simplement: un maître, un ou des esclave(s).
 
 Pour lancer une session réseau (esclave donc), lancez le modèle d'application *Network Session* depuis la fenêtre des applications et suivez les instructions.
@@ -522,7 +536,7 @@ Le modèle de session à mémoire de configuration de JACK utilise les scripts d
 * définir un ordre bien précis de lancement des clients à l'ouverture de la session (un exemple est fourni dans le code source)
 * faire une copie de sauvegarde de la session sur un disque dur externe à chaque fermeture
 * envoyer un raccourci _Ctrl+S_ aux fenêtres des clients non sauvegardables à la sauvegarde de la session (un exemple est fourni dans le code source)
-* Allumer le bouton rouge à l'entrée du studio à l'ouverture, l'éteindre à la fermeture
+* Allumer la lumière rouge à l'entrée du studio à l'ouverture, l'éteindre à la fermeture
 * Lancer la machine à café à la fermeture de la session (exemple débile, allez donc appuyer sur le bouton de la cafetière, de toutes façons faudra changer le filtre !)
 * Faire beaucoup, beaucoup, beaucoup d'erreurs qui feront planter votre session, soyez prudents évidemment !
 

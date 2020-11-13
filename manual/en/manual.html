@@ -5,7 +5,7 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.8">
-<title>Manuel de RaySession</title>
+<title>RaySession Manual</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
@@ -432,306 +432,324 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="book toc2 toc-left">
 <div id="header">
-<h1>Manuel de RaySession</h1>
+<h1>RaySession Manual</h1>
 <div id="toc" class="toc2">
-<div id="toctitle">Table des matières</div>
+<div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#_introduction">Introduction</a></li>
-<li><a href="#_exemple_dutilisation_simple">Exemple d&#8217;utilisation simple</a></li>
-<li><a href="#_vue_densemble_des_outils_de_la_session">Vue d&#8217;ensemble des outils de la session</a>
+<li><a href="#_simple_use_example">Simple use example</a></li>
+<li><a href="#_overview_of_session_tools">Overview of session tools</a>
 <ul class="sectlevel2">
-<li><a href="#_ligne_du_haut">Ligne du haut</a></li>
-<li><a href="#_ligne_du_bas">Ligne du bas</a></li>
+<li><a href="#_top_row">Top row</a></li>
+<li><a href="#_bottom_row">Bottom row</a></li>
 </ul>
 </li>
-<li><a href="#_vue_densemble_dun_client">Vue d&#8217;ensemble d&#8217;un client</a></li>
-<li><a href="#ajout_application">Fenêtre d&#8217;ajout d&#8217;application</a></li>
-<li><a href="#ajout_executable">Fenêtre d&#8217;ajout d&#8217;exécutable</a></li>
-<li><a href="#proprietes_de_client">Fenêtre de propriétés d&#8217;un client</a>
+<li><a href="#_overview_of_a_client">Overview of a client</a></li>
+<li><a href="#add_application">Add application window</a></li>
+<li><a href="#add_executable">Add executable window</a></li>
+<li><a href="#client_properties">Client Properties Window</a>
 <ul class="sectlevel2">
-<li><a href="#_onglet_général">Onglet <strong>Général</strong></a></li>
-<li><a href="#_onglet_nsm">Onglet <strong>NSM</strong></a></li>
-<li><a href="#_onglet_ray_hack">Onglet <strong>Ray-Hack</strong></a></li>
+<li><a href="#_general_tab"><strong>General</strong> tab</a></li>
+<li><a href="#_nsm_tab"><strong>NSM</strong> tab</a></li>
+<li><a href="#_ray_hack_tab"><strong>Ray-Hack</strong> tab</a></li>
 </ul>
 </li>
-<li><a href="#_les_sessions_réseau">Les sessions réseau</a></li>
-<li><a href="#ajouter_un_programme_non_fourni">Ajouter un programme non fourni</a></li>
-<li><a href="#_importer_une_session_nsm">Importer une session NSM</a></li>
-<li><a href="#options_du_demon">Les options du démon</a>
+<li><a href="#_network_sessions">Network Sessions</a></li>
+<li><a href="#add_program_not_provided">Add a program not provided</a></li>
+<li><a href="#_import_an_nsm_session">Import an NSM session</a></li>
+<li><a href="#_the_daemons_options">The daemon&#8217;s options</a>
 <ul class="sectlevel2">
-<li><a href="#raccourcis_dossier_de_session">Fournir des raccourcis du dossier de la session</a></li>
-<li><a href="#_cliché_automatique_à_la_sauvegarde">Cliché automatique à la sauvegarde</a></li>
-<li><a href="#_mémoire_des_bureaux">Mémoire des bureaux</a></li>
-<li><a href="#option_scripts_de_session">Scripts de session</a></li>
-<li><a href="#_se_souvenir_de_létat_des_igus">Se souvenir de l&#8217;état des IGUs</a></li>
+<li><a href="#session_folder_shortcuts">Provide bookmarks for session folder</a></li>
+<li><a href="#_auto_snapshot_at_save">Auto Snapshot at Save</a></li>
+<li><a href="#_desktops_memory">Desktops Memory</a></li>
+<li><a href="#_session_scripts">Session scripts</a></li>
+<li><a href="#_remember_optional_gui_states">Remember optional GUI states</a></li>
 </ul>
 </li>
-<li><a href="#cliches">Les clichés</a></li>
-<li><a href="#les_scripts_de_session">Les scripts de session</a></li>
-<li><a href="#memoire_de_la_configuration_de_jack">Mémoire de la configuration de JACK</a>
+<li><a href="#snapshots">Snapshots</a></li>
+<li><a href="#session_scripts">Session scripts</a></li>
+<li><a href="#jack_configuration_memory">JACK configuration memory</a>
 <ul class="sectlevel2">
-<li><a href="#_dans_quels_cas_lutiliser">Dans quels cas l&#8217;utiliser</a></li>
-<li><a href="#_utilisation">Utilisation</a></li>
-<li><a href="#_principe_de_fonctionnement">Principe de fonctionnement</a></li>
-<li><a href="#_cas_particuliers">Cas particuliers</a></li>
+<li><a href="#_in_which_cases_to_use_it">In which cases to use it</a></li>
+<li><a href="#_usage">Usage</a></li>
+<li><a href="#_working_principle">Working principle</a></li>
+<li><a href="#_special_cases">Special cases</a></li>
 </ul>
 </li>
-<li><a href="#sous_le_capot">Sous le capot</a></li>
-<li><a href="#ray_control">Contrôler RaySession en ligne de commande</a></li>
-<li><a href="#_foire_aux_questions">Foire aux questions</a></li>
+<li><a href="#under_the_hood">Under the hood</a></li>
+<li><a href="#ray_control">Control RaySession from the command line</a></li>
+<li><a href="#_frequently_asked_questions">Frequently Asked Questions</a></li>
 </ul>
 </div>
 </div>
 <div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 90%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="image"><img src="images/flag_en.jpeg" alt="flag en"></span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>In english for the version 0.10.0</em><br>
+Other languages: <span class="image"><a class="image" href="../fr/manual.html"><img src="images/flag_fr.jpeg" alt="FR" width="30" height="20"></a></span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>RaySession est un gestionnaire de session audio pour GNU/Linux. Il permet de démarrer dans une même session plusieurs programmes audio, de sauvegarder leurs projets ensemble et ainsi d’éviter de multiples manipulations pour retourner à une configuration donnée.</p>
+<p>RaySession is an audio session manager for GNU / Linux. It allows you to start several audio programs in the same session, to save their projects together and thus to avoid multiple operations to return to a given configuration.</p>
 </div>
 <div class="paragraph">
-<p>Pour être lancés dans RaySession, il est très largement préférable que ces programmes audio soient compatibles avec le protocole NSM, et beaucoup le sont déjà, entre autres Ardour, Qtractor, Carla, Guitarix, Mamba, Patroneo, ZynAddSubFx&#8230;&#8203;</p>
+<p>To be launched in RaySession, it is very much preferable that these audio programs be compatible with the NSM protocol, and many are already, among others Ardour, Qtractor, Carla, Guitarix, Mamba, Patroneo, ZynAddSubFx &#8230;&#8203;</p>
 </div>
 <div class="paragraph">
-<p>RaySession part du principe que votre configuration audio est fonctionnelle pour de la production audio, si ce n’est pas le cas réglez d’abord ce problème et ne perdez pas votre temps à essayer d’utiliser RaySession.</p>
+<p>RaySession assumes that your audio setup is working for audio production, if not, fix this first and don&#8217;t waste your time trying to use RaySession.</p>
 </div>
 <div class="paragraph">
-<p>Maintenant voyons comment s’en servir.</p>
+<p>Now let&#8217;s see how to use it.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_exemple_dutilisation_simple">Exemple d&#8217;utilisation simple</h2>
+<h2 id="_simple_use_example">Simple use example</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Pour la production audio sous GNU/linux, Il est largement conseillé d’utiliser le serveur JACK. Avant de créer ou de lancer une session, assurez-vous que le serveur JACK tourne, RaySession n’a aucun rapport direct avec JACK, toutefois les programmes que vous allez lancer dans votre session en auront besoin.</p>
+<p>For audio production under GNU / linux, it is highly recommended to use the JACK server. Before creating or starting a session, make sure the JACK server is running, RaySession has no direct relation to JACK, however the programs you are going to launch in your session will need it.</p>
 </div>
 <div class="paragraph">
-<p>Prenons un exemple où pour composer un morceau, nous aurons besoin des logiciels Ardour et Guitarix, assurez vous que ces 2 programmes soient installés.</p>
+<p>Let&#8217;s take an example where to compose a song, we will need Ardour and Guitarix softwares, make sure that these 2 programs are installed.</p>
 </div>
 <div class="paragraph">
-<p>Pour créer une nouvelle session, cliquez en haut à gauche sur <strong>Nouvelle Session</strong> (<em>ou Ctrl+N</em>). Apparaît alors une fenêtre de dialogue.</p>
+<p>To create a new session, click at the top left on New Session (<em>or Ctrl+N</em>). A dialog window appears.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/exemple_nouvelle_session.png" alt="Nouvelle session">
+<img src="images/example_new_session.png" alt="New session">
 </div>
 </div>
 <div class="paragraph">
-<p>En haut à droite vous apercevez le dossier racine des sessions, c’est là que les sessions seront sauvegardées (une session RaySession étant un dossier contenant un fichier <code>raysession.xml</code>).</p>
+<p>At the top right you can see the root session folder, this is where the sessions will be saved (a RaySession session being a folder containing a file <code>raysession.xml</code>).</p>
 </div>
 <div class="paragraph">
-<p>Rentrez le nom voulu pour cette nouvelle session dans le champ prévu à cet effet. Pour mettre votre nouvelle session dans un sous-dossier, tapez le nom de la manière suivante : <code>sous-dossier/ma session</code> .</p>
+<p>Enter the name you want for this new session in the field provided. To put your new session in a sub-folder, type the name as follows: <code>sub-folder/my session</code>.</p>
 </div>
 <div class="paragraph">
-<p>La boîte à choix multiples de modèles de session vous permet de choisir entre</p>
+<p>The session template multiple choice box lets you choose between</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Un modèle de session vide</p>
+<p>An empty session template</p>
 </li>
 <li>
-<p>Un modèle avec mémoire des connexions JACK</p>
+<p>A template with memory of JACK connections</p>
 </li>
 <li>
-<p>Un modèle scripté avec mémoire de la configuration de JACK</p>
+<p>A scripted template with memory of the JACK configuration</p>
 </li>
 <li>
-<p>Un modèle avec les scripts de session de base (pour les utilisateurs avancées pourvus de connaissances en script shell)</p>
+<p>A template with basic session scripts (for advanced users with shell scripting knowledge)</p>
 </li>
 <li>
-<p>Tous les modèles de session que vous aurez vous-même créés.</p>
+<p>All the session templates that you have created yourself.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Dans un premier temps, laissez le modèle sur <strong>Avec mémoire du patch de JACK</strong>, cliquez sur <strong>Ok</strong> pour lancer votre session.</p>
+<p>First, keep the template on <strong>With JACK patch memory</strong> , click <strong>Ok</strong> to start your session.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/exemple_session_lancee.png" alt="Session lancée">
+<img src="images/example_session_launched.png" alt="Session launched">
 </div>
 </div>
 <div class="paragraph">
-<p>La partie session de la fenêtre devient active, en haut est écrit le nom de votre session, et votre session contient déjà un programme client qui s&#8217;appelle <strong>Connexions JACK</strong>. C&#8217;est lui qui sauvegardera et refera les connexions de la baie de brassage de JACK.</p>
+<p>The session part of the window becomes active, at the top is written the name of your session, and your session already contains a client program called <strong>JACK Connections</strong>. This client will save and redo the connections of the JACK patchbay.</p>
 </div>
 <div class="paragraph">
-<p>Pour ajouter Ardour à votre session, cliquez sur le bouton <strong>Application</strong> (ou Ctrl+A), apparaît alors la fenêtre des applications (plus de détails à la rubrique <a href="#ajout_application">Fenêtre d&#8217;ajout d&#8217;application</a>). Dans la partie droite, cherchez Ardour (Selon votre version d&#8217;ardour, il est possible qu&#8217;il s&#8217;appelle Ardour5 ou Ardour6) et double-cliquez dessus.</p>
+<p>To add Ardour to your session, click on the <strong>Application</strong> button (<em>or Ctrl+A</em>), the application dialog will appear (more details in the <a href="#add_application">Add application window</a> section). On the right side, find Ardour (Depending on your version of ardour, it may be called Ardour5 or Ardour6) and double-click on it.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/exemple_ajouter_ardour.png" alt="Ajouter Ardour à la session" width="640" height="480">
+<img src="images/example_add_ardour.png" alt="Add Ardour to the session" width="640" height="480">
 </div>
 </div>
 <div class="paragraph">
-<p>Voilà, un client <strong>Ardour</strong> apparaît en dessous de <strong>Connexions JACK</strong> et Ardour démarre (normalement directement avec une session Ardour vide).</p>
+<p>An Ardour client appears below JACK Connections and Ardour starts up (normally directly with an empty Ardour session).</p>
 </div>
 <div class="paragraph">
-<p>Faites de même avec Guitarix.</p>
+<p>Do the same with Guitarix.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/exemple_session_prete.png" alt="Session prête avec Ardour et Guitarix">
+<img src="images/example_session_ready.png" alt="Session ready with Ardour and Guitarix">
 </div>
 </div>
 <div class="paragraph">
-<p>Dans Ardour, ajoutez une piste (Menu: Piste &#8594; Ajouter une piste), dans la fenêtre Ardour qui est apparue, nommez la piste <em>Guitare</em> et mettez la boîte à choix multiples <strong>configuration</strong> sur <em>Stereo</em>.</p>
+<p>In Ardour, add a track (Menu: Track → Add a track), in the Ardour window that has appeared, name the track <strong>Guitar</strong> and put the multiple choice box configuration on <em>Stereo</em>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<a class="image" href="images/exemple_ardour_piste.png"><img src="images/exemple_ardour_piste.png" alt="Ajouter une piste Ardour pour Guitarix" width="640" height="480"></a>
+<a class="image" href="images/example_ardour_track.png"><img src="images/example_ardour_track.png" alt="Add a track in Ardour for Guitarix" width="640" height="480"></a>
 </div>
 </div>
 <div class="paragraph">
-<p>Dans votre baie de brassage (Catia, QJackCtl ou autre) ou dans Ardour, connectez l&#8217;entrée de Guitarix à une entrée matérielle et  les sorties de Guitarix vers les entrées de cette nouvelle piste Ardour. Assurez vous que les entrées de votre piste <strong>Guitare</strong> ne sont pas connectées aux entrées matérielles.</p>
+<p>In your patchbay (Catia, QJackCtl or other) or in Ardour, connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<a class="image" href="images/exemple_catia.png"><img src="images/exemple_catia.png" alt="Baie de brassage avec Catia"></a>
+<a class="image" href="images/example_catia.png"><img src="images/example_catia.png" alt="JACK patchbay with Catia"></a>
 </div>
 </div>
 <div class="paragraph">
-<p>Voilà, vous avez une configuration où vous pouvez enregistrer directement le son de votre guitare traité par Guitarix dans Ardour. Si vous n&#8217;avez pas de guitare, vous n&#8217;avez qu&#8217;à chanter faux dans un micro ou taper sur un coussin, ce n&#8217;est ici qu&#8217;un exemple.</p>
+<p>Here you have a configuration where you can directly record the sound of your guitar processed by Guitarix in Ardour. If you don&#8217;t have a guitar, all you have to do is sing out of tune into a mic or tap a cushion, this is just an example.</p>
 </div>
 <div class="paragraph">
-<p>Retournez maintenant à la fenêtre de RaySession, et sauvegardez la session en cours en cliquant le bouton en forme de disquette vers le haut à droite (<em>ou Ctrl+S</em>). Il est vivement recommandé car très pratique d&#8217;affecter un raccourci clavier global de votre système à la sauvegarde de la session en cours. Celà dependra de votre environnement de bureau, mais il suffit d&#8217;affecter le raccourci <em>Ctrl+Meta+S</em> à la commande <code>ray_control save</code> (Meta est la touche Windows), ainsi vous n&#8217;aurez pas à retourner à la fenêtre de RaySession pour sauvegarder la session.</p>
+<p>Now go back to the RaySession window, and save the current session by clicking the floppy disk button to the top right (<em>or Ctrl+S</em>). It is highly recommended because it is very practical to assign a global keyboard shortcut of your system to the save of the current session. This will depend on your desktop environment, but just assign the <em>Ctrl+Meta+S</em> shortcut to the command <code>ray_control save</code> (Meta is the Windows key), so you won&#8217;t have to return to the RaySession window to save the session.</p>
 </div>
 <div class="paragraph">
-<p>Maintenant, fermez la session en cliquant sur la croix rouge en haut à droite (<em>ou Ctrl+W</em>).</p>
+<p>Now close the session by clicking on the red cross at the top right (<em>or Ctrl+W</em>).</p>
 </div>
 <div class="paragraph">
-<p>Une fois la session fermée, cliquez sur <strong>Ouvrir une session</strong> (<em>ou Ctrl+O</em>), double-cliquez sur la session que vous venez de créer pour la ré-ouvrir.</p>
+<p>Once the session is closed, click on <strong>Open Session</strong> (<em>or Ctrl+O</em>), double-click on the session you just created to re-open it.</p>
 </div>
 <div class="paragraph">
-<p>Vous devez retrouver les programmes et leur projet ainsi que les connexions de JACK telles qu&#8217;elles étaient quand vous avez fermé la session, et tout fonctionne donc sans aucune autre manipulation.<br>
-Un des avantages de la modularité dans ce cas précis, c&#8217;est qu&#8217;une fois qu&#8217;on aura terminé les prises de guitare, on pourra arrêter Guitarix pour ne pas surcharger le processeur inutilement, et il sera tout de même facile de le redémarrer si besoin.</p>
+<p>You must find the programs and their projects as well as the JACK connections as they were when you closed the session, and everything therefore works without any further manipulation.
+One of the advantages of modularity in this specific case is that once you have finished taking the guitar, you can stop Guitarix so as not to overload the processor unnecessarily, and it will still be easy to restart it if necessary.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_vue_densemble_des_outils_de_la_session">Vue d&#8217;ensemble des outils de la session</h2>
+<h2 id="_overview_of_session_tools">Overview of session tools</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_ligne_du_haut">Ligne du haut</h3>
+<h3 id="_top_row">Top row</h3>
 <div class="imageblock">
 <div class="content">
-<img src="images/session_ligne_du_haut.png" alt="Ligne du haut de la trame de session">
+<img src="images/session_top_line.png" alt="Top line of the session frame">
 </div>
 </div>
 <div class="paragraph">
-<p>De gauche à droite:</p>
+<p>From left to right:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>le bouton menu vous donne accès à</p>
+<p>the menu button gives you access to</p>
 <div class="ulist">
 <ul>
 <li>
-<p><strong><em>sauvegarder la session en cours comme modèle</em></strong><br>
-Le modèle de session créé apparaîtra alors dans la boîte à choix multiples de modèles de session dans la fenêtre de dialogue <strong>Nouvelle Session</strong>. Attention toutefois, L&#8217;ensemble des fichiers de la session seront sauvegardés dans le modèle, il ne faut donc pas le faire si la session contient beaucoup de fichiers audios. D&#8217;une part la copie sera longue, d&#8217;autre part vous risquez de multi-copier inutilement des fichiers qui prendront beaucoup de place.</p>
+<p><strong>save the current session as a template</strong><br>
+The created session template will then appear in the multiple choice of session templates in the New Session dialog window. Be careful, however, all the files of the session will be saved in the template, so you should not do this if the session contains a lot of audio files. On the one hand, the copy will be long, on the other hand you run the risk of unnecessarily multi-copying files which will take up a lot of space.</p>
 </li>
 <li>
-<p><strong><em>Dupliquer la session en cours</em></strong><br>
-C&#8217;est l&#8217;équivalent du bien connu "Sauvegarder sous&#8230;&#8203;", sauf que RaySession est obligé d&#8217;arrêter et de redémarrer la plupart des programmes pour passer d&#8217;une session à l&#8217;autre. Évitez de dupliquer une session avec beaucoup de fichiers audios, celà pourrait être long, mais fort heureusement une telle opération peut être annulée.</p>
+<p><strong>Duplicate the current session</strong><br>
+This is the equivalent of the well-known "Save As &#8230;&#8203;", except that RaySession has to stop and restart most programs to switch between sessions. Avoid duplicating a session with a lot of audio files, it could take a long time, but fortunately such an operation can be undone.</p>
 </li>
 <li>
-<p><strong><em>Renommer la session</em></strong><br>
-Il faudra alors arrêter tous les clients.<br>
-Alternativement, vous pouvez renommer une session en la dupliquant puis en supprimant le dossier de la session initiale.<br>
-Vous pouvez aussi renommer une session en renommant son dossier, mais ATTENTION, cette session ne doit surtout pas être chargée !</p>
+<p><strong>Rename the session</strong><br>
+It will then be necessary to stop all the clients.<br>
+Alternatively, you can rename a session by duplicating it and then deleting the folder from the initial session.<br>
+You can also rename a session by renaming its folder, but BE CAREFUL, this session must not be loaded!</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p>le bouton en forme de crayon vous donne accès aux notes de session.<br>
-Écrivez ici des informations dont vous avez besoin, des réglages physiques, les paroles d&#8217;une chanson, la recette du cassoulet de mamie&#8230;&#8203;toutefois n&#8217;y écrivez pas un roman en 3 tomes, d&#8217;autres outils sont bien plus adaptés, et les notes sont limitées à 65000 caractères pour des raisons techniques.<br>
-Le crayon est vert quand des notes existent, il est orange quand la fenêtre de notes est ouverte, sinon il est transparent.</p>
+<p>the pencil-shaped button gives you access to the session notes.<br>
+Write here the information you need, the physical settings, the lyrics of a song, the recipe for granny&#8217;s cassoulet &#8230;&#8203; however do not write a novel in 3 volumes, other tools are much more suitable, and notes are limited to 65,000 characters for technical reasons.
+The pencil is green when notes exist, it is orange when the notes window is open, otherwise it is transparent.</p>
 </li>
 <li>
-<p>le nom de la session chargée (ici <strong>ma session</strong>)</p>
+<p>the name of the loaded session (here <strong>my session</strong>)</p>
 </li>
 <li>
-<p>le bouton <strong>Abandonner la session</strong> qui permet de fermer la session sans la sauvegarder</p>
+<p>the <strong>Abort session</strong> button which allows you to close the session without saving it</p>
 </li>
 <li>
-<p>le bouton <strong>Fermer la session</strong>, qui sauvegarde et ferme la session en cours.<br>
-Notez que vous n&#8217;avez pas besoin de fermer la session en cours pour en ouvrir une autre. Certains clients sont capables de basculer d&#8217;une session à l&#8217;autre et ça peut être beaucoup moins long que de tout fermer pour tout relancer.</p>
+<p>the <strong>Close session</strong> button ,which saves and closes the current session.<br>
+Note that you do not need to close the current session to start another. Some clients are able to switch from one session to another and it may take a lot less time than closing everything and restarting everything.</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_ligne_du_bas">Ligne du bas</h3>
+<h3 id="_bottom_row">Bottom row</h3>
 <div class="imageblock">
 <div class="content">
-<img src="images/session_ligne_du_bas.png" alt="Ligne du bas de la trame de session">
+<img src="images/session_bottom_line.png" alt="Bottom line of the session frame">
 </div>
 </div>
 <div class="paragraph">
-<p>De gauche à droite:</p>
+<p>From left to right:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>le bouton en forme de dossier pour ouvrir le dossier de la session avec votre gestionnaire de fichiers</p>
+<p>the folder-shaped button to open the session folder with your file manager</p>
 </li>
 <li>
-<p>le bouton en forme d&#8217;étoile jaune qui déroule un menu contenant vos applications favorites s&#8217;il y en a</p>
+<p>the yellow star-shaped button that pulls down a menu containing your favorite applications if there are any</p>
 </li>
 <li>
-<p>le bouton <strong>Application</strong> qui permet d&#8217;ajouter à la session un modèle d&#8217;application d&#8217;usine ou que vous aurez créé vous même. C&#8217;est la méthode conseillée pour ajouter un client. voir <a href="#ajout_application">Fenêtre d&#8217;ajout d&#8217;application</a>.</p>
+<p>the <strong>Application</strong> button which allows you to add to the session a factory application template or that you have created yourself. This is the recommended method for adding a client. see <a href="#add_application">Add application window</a>.</p>
 </li>
 <li>
-<p>le bouton <strong>Exécutable</strong> qui permet d&#8217;ajouter à la session un programme depuis son exécutable. Vous en aurez besoin si vous souhaiter ajouter un programme pour lequel il n&#8217;existe pas de modèle. voir <a href="#ajout_executable">Fenêtre d&#8217;ajout d&#8217;exécutable</a>.</p>
+<p>the <strong>Executable</strong> button which allows a program to be added to the session from its executable. You will need it if you want to add a program for which there is no template. see <a href="#add_executable">Add executable window</a>.</p>
 </li>
 <li>
-<p>le bouton de marche arrière pour revenir à un état précédent de la session. Celà nécessite d&#8217;avoir le programme <code>git</code> installé. Voir <a href="#cliches">Les clichés</a> pour plus de détails.</p>
+<p>the reverse button to return to a previous state of the session. This requires having the program <code>git</code> installed, else this button will not appears.<br>
+See <a href="#snapshots">Snapshots</a> for more details.</p>
 </li>
 <li>
-<p>l&#8217;indicateur d&#8217;état du serveur.<br>
-Les états du serveur peuvent être en réalité très furtifs, mais ils sont affichés pendant un temps suffisament long pour que vous puissiez les voir.<br>
-L&#8217;état du serveur peut être:</p>
+<p>the server status indicator.<br>
+Server states can actually be very stealthy, but they are displayed for a long enough time that you can see them.
+The server status can be:</p>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>éteint</strong> : pas de session en cours</p>
+<p><strong>off</strong>: no session loaded</p>
 </li>
 <li>
-<p><strong>prêt</strong> : la session est en cours</p>
+<p><strong>ready</strong>: the session is running</p>
 </li>
 <li>
-<p><strong>lancement</strong> : lancement des programmes de la session</p>
+<p><strong>launch</strong>: launch of the session&#8217;s programs</p>
 </li>
 <li>
-<p><strong>copie</strong> : une copie est en cours, pour une duplication de session ou une sauvegarde de la session comme modèle</p>
+<p><strong>copy</strong>: a copy is in progress, for a session duplication or to save the session as a template</p>
 </li>
 <li>
-<p><strong>fermeture</strong> : la session est en train de se fermer</p>
+<p><strong>close</strong>: the session is closing</p>
 </li>
 <li>
-<p><strong>cliché</strong> : un cliché de la session est en train d&#8217;être pris, donc vous pourrez revenir à l&#8217;état actuel la session.<br>
-voir <a href="#cliches">Les clichés</a>.</p>
+<p><strong>snapshot</strong>: A snapshot of the session is being taken, so you can revert to the current session state.<br>
+see <a href="#snapshots">Snapshots</a>.</p>
 </li>
 <li>
-<p><strong>attente</strong> : Le serveur attend que vous fermiez vous-même des programmes non sauvegardables</p>
+<p><strong>wait</strong>: The server waits for you to close yourself non-saveable programs</p>
 </li>
 <li>
-<p><strong>script</strong> : un script est actionné</p>
+<p><strong>script</strong>: a script is activated</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Une fenêtre d&#8217;information ou de progression s&#8217;affiche si vous cliquez sur cet indicateur d&#8217;état s&#8217;il est sur <strong>copie</strong>, <strong>cliché</strong> ou <strong>attente</strong>.</p>
+<p>An information or progress window is displayed if you click this status indicator if it is on <strong>copy</strong> , <strong>snapshot</strong>, or <strong>wait</strong>.</p>
 </div>
 </li>
 <li>
-<p>le bouton de sauvegarde de la session</p>
+<p>the <strong>Save Session</strong> button</p>
 </li>
 <li>
-<p>la corbeille, vous trouverez ici les clients que vous avez supprimés. Vous pourrez alors les restaurer dans la session ou supprimer définitivement tous les fichiers qu&#8217;ils ont créé dans le dossier de la session.</p>
+<p>the trash, here you will find the clients that you have deleted. You can then restore them in the session or permanently delete all the files they created in the session folder.</p>
 </li>
 </ul>
 </div>
@@ -739,7 +757,7 @@ voir <a href="#cliches">Les clichés</a>.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_vue_densemble_dun_client">Vue d&#8217;ensemble d&#8217;un client</h2>
+<h2 id="_overview_of_a_client">Overview of a client</h2>
 <div class="sectionbody">
 <div class="imageblock">
 <div class="content">
@@ -747,850 +765,852 @@ voir <a href="#cliches">Les clichés</a>.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Un client contient de gauche à droite:</p>
+<p>A client contains from left to right:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>L&#8217;icône du client sur laquelle vous pouvez cliquer pour faire apparaître un menu avec les actions suivantes</p>
+<p>The client icon that you can click to bring up a menu with the following actions</p>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Sauvegarder comme modèle d&#8217;application</strong><br>
-Le modèle créé apparaîtra alors dans la <a href="#ajout_application">Fenêtre d&#8217;ajout d&#8217;application</a>. Celà permet par la suite de lancer directement un client avec la configuration souhaitée (Ardour avec telles pistes, Hydrogen avec tel kit de batterie&#8230;&#8203;). Attention, celà copie tous les fichiers du client donc évitez de le faire si le client contient beaucoup de fichiers audio.</p>
+<p><strong>Save as application template</strong><br>
+The created template will then appear in the <a href="#add_application">Add application window</a>. This then allows you to directly launch a client with the desired configuration (Ardour with such tracks, Hydrogen with such drumkit…). Be careful, this copies all the client&#8217;s files so avoid doing this if the client contains a lot of audio files.</p>
 </li>
 <li>
-<p><strong>Renommer</strong><br>
-Changer le nom du client situé à droite de son icône, il s&#8217;agit d&#8217;un nom purement visuel qui peut vous aider à retrouver vos moutons</p>
+<p><strong>Rename</strong><br>
+Change the client name located to the right of its icon, it is a purely visual name that can help you organize yourself.</p>
 </li>
 <li>
-<p><strong>retourner à un état précédent</strong><br>
-Permet de faire revenir uniquement le client à un état antérieur de la session, voir <a href="#cliches">Les clichés</a>.<br>
-Vous ne pourrez toutefois pas revenir à un état antérieur à un renommage de la session, pour celà il faut faire revenir toute la session en arrière.</p>
+<p><strong>return to a previous state</strong><br>
+Returns only the client to a previous session state, see <a href="#snapshots">Snapshots</a>.<br>
+However, you will not be able to go back to a state prior to a session renaming, so you must go back the entire session.</p>
 </li>
 <li>
-<p><strong>Propriétés</strong><br>
-Affiche la fenêtre des propriétés du client</p>
+<p><strong>Properties</strong><br>
+Displays the client properties window</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Ce menu est aussi accessible par clique droit n&#8217;importe où sur le client</p>
+<p>This menu is also accessible by right-clicking anywhere on the client.</p>
 </div>
 </li>
 <li>
-<p>Le nom du client (ici <strong>Carla</strong>), qui peut-être changé facilement par clique droit &#8594; renommer</p>
+<p>The name of the client (here Carla), which can be easily changed by right-clicking → Rename</p>
 </li>
 <li>
-<p>selon le type et les capacités du client vous pouvez voir ici</p>
+<p>depending on the type and capacity of the client you can see here</p>
 <div class="ulist">
 <ul>
 <li>
-<p>un oeil (éventuellement barré), celà signifie que le client est compatible NSM et qu&#8217;il est capable d&#8217;afficher ou cacher sa fenêtre en cliquant sur l&#8217;oeil.</p>
+<p>an eye (possibly crossed out), this means that the client is NSM compatible and is capable to show or hide its window by clicking on the eye.</p>
 </li>
 <li>
-<p>un bouton <strong>Hack</strong>, celà signifie que le client n&#8217;est pas compatible NSM, en tout cas qu&#8217;il n&#8217;est pas lancé avec ce protocole. Cliquer sur Hack permet de changer la façon dont il est lancé en ouvrant la fenêtre de propriétés du client sur l&#8217;onglet Ray-Hack</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Le bouton <strong>Démarrer</strong> qui est grisé si le client est déjà démarré</p>
-</li>
-<li>
-<p>le bouton <strong>Arrêté</strong> qui est grisé si le client n&#8217;est pas démarré. Si vous arrêtez le client et qu&#8217;il n&#8217;est toujours pas arrêté après un certain temps, le bouton devient rouge et vous pouvez cliquer dessus pour tuer le client. Mais restez détendus, et ne l&#8217;utilisez que si vraiment il vous semble complètement inerte, celà pourrait causer des problèmes, même si a priori personne ne vous enverra en prison.</p>
-</li>
-<li>
-<p>l&#8217;état du client qui peut être</p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>arrêté</strong> : le client est arrêté</p>
-</li>
-<li>
-<p><strong>prêt</strong> : il est lancé et fonctionnel</p>
-</li>
-<li>
-<p><strong>ouverture</strong> : le programme est en train d&#8217;ouvrir son projet, patientez un peu</p>
-</li>
-<li>
-<p><strong>fermeture</strong> : le programme est en train de se fermer</p>
-</li>
-<li>
-<p><strong>lancé</strong> : s&#8217;il reste sur l&#8217;état lancé, celà signifie</p>
-<div class="ulist">
-<ul>
-<li>
-<p>si c&#8217;est un client Ray-Hack, qu&#8217;il n&#8217;a pas de fichier de configuration</p>
-</li>
-<li>
-<p>s&#8217;il est lancé comme un client NSM, qu&#8217;il n&#8217;est pas compatible NSM, et qu&#8217;ainsi toute sauvegarde est vaine. Il peut être pratique de lancer de cette façon certains programmes tels qu&#8217;une baie de brassage (Catia) ou un utilitaire dont on n&#8217;a pas besoin de sauvegarder l&#8217;état (Qrest).</p>
+<p>a <strong>Hack</strong> button, it means that the client is not NSM compatible, or at least that it is not launched with this protocol. Clicking on <strong>Hack</strong> allows to change the way it is launched by opening the client properties window on the Ray-Hack tab.</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p><strong>bascule</strong> : le client change de projet pendant un changement de session</p>
-</li>
-</ul>
-</div>
+<p>The Start button which is grayed out if the client is already started.</p>
 </li>
 <li>
-<p>le bouton en forme de disquette qui permet de sauvegarder le client.<br>
-Si par dessus cette disquette vous voyez</p>
+<p>the Stop button which is grayed out if the client is not started.<br>
+If you stop the client and it is still not stopped after a while, the button turns red and you can click on it to kill the client. But stay relaxed, and only use it if it really seems completely inert, it could cause problems, even if nobody will send you to jail.</p>
+</li>
+<li>
+<p>the state of the client which can be</p>
 <div class="ulist">
 <ul>
 <li>
-<p>trois points rouges: le client contient des changements non sauvegardés</p>
+<p><strong>stopped</strong>: the client is stopped</p>
 </li>
 <li>
-<p>un V vert: le client ne contient pas de changements non sauvegardés</p>
+<p><strong>ready</strong>: the client is running and everything is ok</p>
 </li>
 <li>
-<p>un point d&#8217;exclamation orange: Ce n&#8217;est pas un client NSM, et il est impossible de sauvegarder son projet, vous devrez le faire vous même</p>
-</li>
-</ul>
-</div>
+<p><strong>open</strong>: the program is opening its project, please wait a little bit.</p>
 </li>
 <li>
-<p>la croix rouge qui permet d&#8217;envoyer le client à la corbeille</p>
+<p><strong>close</strong>: the program is closing</p>
 </li>
-</ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="ajout_application">Fenêtre d&#8217;ajout d&#8217;application</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Le fenêtre d&#8217;ajout d&#8217;application se lance en cliquant sur le bouton <strong>Application</strong> (<em>ou Ctrl+A</em>).</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="images/ajout_application.png" alt="Fenêtre d&#8217;ajout d&#8217;application">
-</div>
-</div>
-<div class="paragraph">
-<p>La liste des applications disponibles est à droite.</p>
-</div>
-<div class="paragraph">
-<p>En haut à gauche, c&#8217;est le bloc de filtres</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="images/ajout_application_filtre.png" alt="Bloc de filtre de la fenêtre d&#8217;ajout d&#8217;application">
-</div>
-</div>
+<li>
+<p><strong>launch</strong>: if it stays on the launched state, it means</p>
 <div class="ulist">
 <ul>
 <li>
-<p>le champ de filtre permet de rentrer une chaîne de caractères, seuls les modèles contenant cette chaîne de caractères dans leur nom apparaîtront.</p>
+<p>if it is a Ray-Hack client, that it does not have a configuration file</p>
 </li>
 <li>
-<p>la case à cocher <strong>Usine</strong> affiche les modèles intégrés à RaySession ou fournis par votre distribution</p>
-</li>
-<li>
-<p><strong>utilisateur</strong> affiche les modèles créés par l&#8217;utilisateur en faisant <strong>Sauvegarder comme modèle d&#8217;application</strong></p>
-</li>
-<li>
-<p><strong>NSM</strong> affiche les clients compatibles NSM, ou lancés comme tel (voir <a href="#ajouter_un_programme_non_fourni">Ajouter un programme non fourni</a>)</p>
-</li>
-<li>
-<p><strong>Ray-Hack</strong> affiche les clients lancés sans protocole NSM</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>En bas à gauche le bloc d&#8217;informations sur le modèle sélectionné à droite</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="images/ajout_application_infos.png" alt="Bloc d&#8217;informations sur le modèle sélectionné">
-</div>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>en haut à droite de ce bloc une étoile, cliquez dessus pour l&#8217;ajouter aux favoris ou l&#8217;enlever des favoris</p>
-</li>
-<li>
-<p>Si c&#8217;est un modèle utilisateur, un bouton <strong>Utilisateur</strong> vous permet de supprimer ce modèle</p>
-</li>
-<li>
-<p>le bouton en bas à droite de ce bloc vous permet d&#8217;accéder à toutes les propriétés du modèle, comme dans la <a href="#proprietes_de_client">Fenêtre de propriétés d&#8217;un client</a>, sauf que rien n&#8217;est éditable.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p><strong>Astuce :</strong> Cette fenêtre est conçue pour un ajout d&#8217;application très rapide, et se comporter comme <em>Alt+F2</em> sur votre bureau.<br>
-Par exemple, depuis la fenêtre principale de RaySession, pour ajouter Carla tapez <em>Ctrl+A</em>, puis <code>carla</code>, sélectionnez le bon modèle avec les flèches Haut/Bas, puis Entrée.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="ajout_executable">Fenêtre d&#8217;ajout d&#8217;exécutable</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Le fenêtre d&#8217;ajout d&#8217;exécutable se lance en cliquant sur le bouton <strong>Exécutable</strong> (<em>ou Ctrl+E</em>).</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="images/ajout_executable.png" alt="Fenêtre d&#8217;ajout d&#8217;exécutable">
-</div>
-</div>
-<div class="paragraph">
-<p>Vous aurez besoin de passer par cette fenêtre si vous voulez ajouter un client qui n&#8217;apparaît pas dans la liste de la fenêtre d&#8217;ajout d&#8217;application.
-Cette fenêtre se présente très simplement, un champ pour rentrer l&#8217;exécutable, une case <strong>Protocole NSM</strong>, un bouton d&#8217;options avancées.</p>
-</div>
-<div class="paragraph">
-<p>Laissez le protocole NSM coché si:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>le programme à lancer est compatible NSM (s&#8217;il n&#8217;est pas dans la liste d&#8217;applications, merci de le faire savoir !)</p>
-</li>
-<li>
-<p>le programme à lancer est un utilitaire dont on n&#8217;a aucun besoin de sauvegarder un quelconque projet (QRest, Catia&#8230;&#8203;).<br>
-L&#8217;état d&#8217;un tel programme restera sur <strong>lancé</strong> et ne sera jamais <strong>prêt</strong>, c&#8217;est sans importance vu qu&#8217;ils n&#8217;a pas de projet à sauvegarder.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Si vous laissez le protocole NSM coché il ne sera pas possible d&#8217;ajouter un exécutable vers un chemin absolu, l&#8217;exécutable doit se situer dans un emplacement prévu à cet effet (vous ne pourrez pas lancer <code>/usr/bin/mon_programme</code>, mais <code>mon_programme</code>). Vous ne pouvez pas rentrer d&#8217;arguments ici, avec ou sans le protocole NSM.</p>
-</div>
-<div class="paragraph">
-<p>Décocher la case <strong>Protocole NSM</strong> revient à lancer le programme avec le pseudo-protocole Ray-Hack.</p>
-</div>
-<div class="paragraph">
-<p>Si vous cliquez sur le bouton d&#8217;options avancées, un bloc options avancées apparaît avec</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="images/ajout_executable_plus.png" alt="Fenêtre d&#8217;ajout d&#8217;exécutable avancé">
-</div>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>la case <strong>Démarrer le client</strong>, si vous la décochez le client sera ajouté mais non lancé</p>
-</li>
-<li>
-<p>la boîte à choix multiple <strong>Mode de préfixe</strong>, celà définit le préfixe du nom des fichiers du client</p>
-<div class="ulist">
-<ul>
-<li>
-<p>sur <strong>Nom de la session</strong>, les noms des fichiers commenceront par le nom de la session, c&#8217;est la valeur par défaut</p>
-</li>
-<li>
-<p>sur <strong>Nom du Client</strong>, les noms des fichiers commenceront par le nom fourni par le client lui-même, comme c&#8217;est le cas avec New Session Manager</p>
-</li>
-<li>
-<p>sur <strong>Personnalisé</strong>, les noms des fichiers commenceront par la valeur que vous inscrirez dans le champ <strong>Préfixe</strong> juste en dessous</p>
+<p>if it is started as an NSM client, if it is not NSM compatible, and therefore any save is in vain. It may be practical to launch certain programs in this way, such as a patchbay (Catia) or a utility whose state you do not need to save (Qrest).</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p>le champ <strong>Préfixe</strong> qui n&#8217;est actif que si <strong>Mode de Préfixe</strong> est sur <strong>Personnalisé</strong></p>
+<p><strong>switch</strong>: the client changes projects during a session switch</p>
+</li>
+</ul>
+</div>
 </li>
 <li>
-<p>le champ <strong>ID du client</strong> (identifiant du client). Ne rentrez ici que des caractères alphanumériques ou des '_'.<br>
-Celà est utile si vous voulez attraper et lancer des projets existants dans la session avec un exécutable. C&#8217;est pratique si vous voulez charger dans la session des projets créés en dehors d&#8217;une session. Aucune méthode ne permet de rendre la chose plus simple, celà dépend énormément du programme utilisé. RaySession vous insultera si vous rentrez un identifiant de client qui existe déjà dans la session.</p>
+<p>the floppy disk button that allows you to save the client.<br>
+If over this floppy you see</p>
+<div class="ulist">
+<ul>
+<li>
+<p>three red dots: the client contains unsaved changes</p>
+</li>
+<li>
+<p>a green V: the client does not contain unsaved changes</p>
+</li>
+<li>
+<p>an orange exclamation mark: It is not an NSM client, and it is impossible to save its project, you will have to do it yourself</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>the red cross which allows you to send the client to the trash</p>
 </li>
 </ul>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="proprietes_de_client">Fenêtre de propriétés d&#8217;un client</h2>
+<h2 id="add_application">Add application window</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>La fenêtre de propriétés d&#8217;un client s&#8217;ouvre depuis le menu du client, en cliquant sur <strong>Propriétés</strong>.</p>
+<p>The window for adding application is launched by clicking on the <strong>Application</strong> button (<em>or Ctrl+A</em>).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/add_application.png" alt="Add Application window">
+</div>
 </div>
 <div class="paragraph">
-<p>La fenêtre des propriétés du client comprend 2 onglets, un onglet <strong>Général</strong> et un onglet spécifique au protocole utilisé par le client.
-Selon le protocole du client, le deuxième onglet s&#8217;appelle NSM, Ray-Hack ou Ray-Net.</p>
+<p>The list of available applications is on the right. If the software you want to add is not present here, see <a href="#add_program_not_provided">Add a program not provided</a>.</p>
+</div>
+<hr>
+<div class="paragraph">
+<p>Top left is the filter block</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/add_application_filter.png" alt="Filter block of Add Application window">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the filter field allows you to enter a character string, only templates containing this character string in their name will appear.</p>
+</li>
+<li>
+<p>the <strong>Factory</strong> checkbox displays the templates integrated into RaySession or provided by your distribution</p>
+</li>
+<li>
+<p><strong>user</strong> displays the templates created by the user by doing <strong>Save as application template</strong></p>
+</li>
+<li>
+<p><strong>NSM</strong> displays the NSM compatible clients, or launched as such</p>
+</li>
+<li>
+<p><strong>Ray-Hack</strong> displays clients launched without NSM protocol</p>
+</li>
+</ul>
+</div>
+<hr>
+<div class="paragraph">
+<p>Bottom left the information block on the selected template on the right</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/add_application_infos.png" alt="Informations block of Add Application window">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>at the top right of this block, a star, click on it to add it to favorites or remove it from favorites</p>
+</li>
+<li>
+<p>If it is a user template, a <strong>User</strong> button allows you to delete this template</p>
+</li>
+<li>
+<p>the button at the bottom right of this block allows you to access all the properties of the template, as in the <a href="#client_properties">Client Properties Window</a>, except that nothing is editable.</p>
+</li>
+</ul>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 100%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Tip:</strong> This window is designed for very fast app addition, and behaves like <em>Alt+F2</em> on your desktop.<br>
+For example, from the main RaySession window, to add Carla type <em>Ctrl+A</em> , then <code>carla</code>, select the correct template with the Up/Down arrows, then Enter.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="add_executable">Add executable window</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The window for adding an executable is launched by clicking on the <strong>Executable</strong> button (<em>or Ctrl+E</em>).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/add_executable.png" alt="Add Executable window">
+</div>
+</div>
+<div class="paragraph">
+<p>You will need to go through this window if you want to add a client that does not appear in the list of the <a href="#add_application">Add application window</a>. This window is very simple, a field to enter the executable, an <strong>NSM Protocol</strong> box, an advanced options button.</p>
+</div>
+<div class="paragraph">
+<p>Leave the NSM protocol checked if:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the program to launch is NSM compatible (if it is not in the list of applications, please let us know!)</p>
+</li>
+<li>
+<p>the program to run is a utility for which there is no need to save any project (QRest, Catia…).
+The state of such a program will remain on <strong>launch</strong> and will never be <strong>ready</strong>, it is irrelevant since they do not have a project to save.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If you leave the <strong>NSM protocol</strong> checked, it will not be possible to add an executable to an absolute path, the executable must be located in a location provided for this purpose (you will not be able to launch <code>/usr/bin/my_program</code>, but <code>my_program</code>). You cannot enter arguments here, with or without the NSM protocol.</p>
+</div>
+<div class="paragraph">
+<p>Unchecking <strong>NSM Protocol</strong> is equivalent to launching the program with the Ray-Hack pseudo-protocol.</p>
+</div>
+<div class="paragraph">
+<p>If you click on the <strong>advanced options</strong> button, an advanced options block appears with</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/add_executable_plus.png" alt="Advanced Add Executable window">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the <strong>Start the client</strong> checkbox , if you uncheck it the client will be added but not launched</p>
+</li>
+<li>
+<p>the multiple choice box <strong>Prefix Mode</strong>, this defines the prefix of the name of the client&#8217;s files</p>
+<div class="ulist">
+<ul>
+<li>
+<p>on <strong>Session Name</strong>, the file names will start with the session name, this is the default value</p>
+</li>
+<li>
+<p>on <strong>Client Name</strong>, the file names will begin with the name provided by the client itself, as is the case with New Session Manager</p>
+</li>
+<li>
+<p>on <strong>Custom</strong>, the file names will start with the value you enter in the <strong>Prefix</strong> field just below.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>the <strong>Prefix</strong> field which is only active if <strong>Prefix Mode</strong> is set to Custom.</p>
+</li>
+<li>
+<p>the <strong>Client ID</strong> field (client identifier). Enter only alphanumeric characters or '_'.<br>
+This is useful if you want to catch and launch existing projects in the session with an executable. This is useful if you want to load in the session projects created outside a session. There is no method to make it easier, it depends a lot on the program you are using. RaySession will insult you if you enter a client ID that already exists in the session.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="client_properties">Client Properties Window</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A client&#8217;s properties window opens from the client menu by clicking Properties.</p>
+</div>
+<div class="paragraph">
+<p>The client properties window has 2 tabs, a General tab and a tab specific to the protocol used by the client. Depending on the client protocol, the second tab is called NSM, Ray-Hack or Ray-Net.</p>
 </div>
 <div class="sect2">
-<h3 id="_onglet_général">Onglet <strong>Général</strong></h3>
+<h3 id="_general_tab"><strong>General</strong> tab</h3>
 <div class="imageblock">
 <div class="content">
-<img src="images/proprietes_general.png" alt="Propriétés d&#8217;un client">
+<img src="images/properties_general.png" alt="Client properties">
 </div>
+</div>
+<div class="paragraph">
+<p>The first block of the General tab displays the client ID, protocol, label, description and icon.<br>
+If you do not edit them, the label, description and icon are taken from the .desktop file associated with the launched executable, if found.<br>
+If you want to know the .desktop file used, type <code>ray_control client CLIENT_ID get_properties</code> in a terminal (replacing CLIENT_ID with the client identifier).</p>
+</div>
+<div class="paragraph">
+<p>Then comes the block of snapshots, see <a href="#snapshots">Snapshots</a>.</p>
+</div>
+<div class="paragraph">
+<p>The checkbox <strong>Prevent stop without recent or possible save</strong> concerns the window that may appear when you ask a client to stop. If this box is unchecked, then the client will be stopped without a window warning you.<br>
+If the box is checked, the window will warn you when</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Le premier bloc de l&#8217;onglet <strong>Général</strong> affiche l&#8217;identifiant, le protocole, l&#8217;étiquette, la description et l&#8217;icône du client.<br>
-Si vous ne les éditez pas, l&#8217;étiquette, la description et l&#8217;icône sont tirées du fichier .desktop associé à l&#8217;exécutable lancé, s&#8217;il a été trouvé.<br>
-Si vous tenez à connaître le fichier .desktop utilisé, tapez <code>ray_control client IDENTIFIANT get_properties</code> dans un terminal (en remplaçant IDENTIFIANT par l&#8217;identifiant du client).</p>
+<p>the client is unsaveable from RaySession</p>
 </li>
 <li>
-<p>Ensuite vient le bloc des clichés, voir <a href="#cliches">Les clichés</a>.</p>
+<p>we know that the client contains unsaved changes</p>
 </li>
 <li>
-<p>la case à cocher <strong>Empêcher l&#8217;arrêt sans sauvegarde récente ou possible</strong> concerne la fenêtre qui peut apparaître lorsque vous demandez à un client de s&#8217;arrêter.
-Si cette case est décochée, alors le client sera stoppé sans qu&#8217;une fenêtre ne vous prévienne
-Si la case est cochée, la fenêtre vous previendra lorsque</p>
-<div class="ulist">
-<ul>
-<li>
-<p>le client est non-sauvegardable depuis RaySession</p>
-</li>
-<li>
-<p>on sait que le client contient des changements non sauvegardés</p>
-</li>
-<li>
-<p>le client semble ne pas avoir été sauvegardé depuis plus d&#8217;une minute</p>
+<p>the client appears not to have been saved for more than a minute</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>cocher cette case ou non dépend seulement de l&#8217;importance de la sauvegarde de votre client, à vous de jauger.</p>
-</div>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_onglet_nsm">Onglet <strong>NSM</strong></h3>
-<div class="imageblock">
-<div class="content">
-<img src="images/proprietes_nsm.png" alt="Propriétés NSM d&#8217;un client">
-</div>
-</div>
-<div class="paragraph">
-<p>Le nom du client ici est fourni par le client lui-même.<br>
-Les capacités sont celle qui sont transmises par le client à son démarrage. Si le client n&#8217;a pas encore été démarré, ce champ est donc vide.</p>
-</div>
-<div class="paragraph">
-<p>Éditer l&#8217;exécutable permet de changer la commande qui lance le client. Ne le changez que pour un autre exécutable capable de charger le projet du client existant. C&#8217;est utile par exemple si vous avez deux versions d&#8217;Ardour, l&#8217;une se lançant avec la commande <code>ardour</code>, l&#8217;autre avec <code>Ardour6</code>, et que vous voulez changer la version à utiliser.</p>
-</div>
-<div class="paragraph">
-<p>Éditer les arguments est fortement déconseillé, et n&#8217;est surtout pas adapté au chargement d&#8217;un fichier comme argument.</p>
+<p>Whether or not to check this box depends only on the importance of your client&#8217;s save, it&#8217;s up to you to judge. That said, if the warning is annoying, just check  <strong>Don&#8217;t prevent to stop this client again</strong> in the warning window and <strong>Prevent stop without recent or possible save</strong> will be unchecked.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_onglet_ray_hack">Onglet <strong>Ray-Hack</strong></h3>
-<div class="paragraph">
-<p>Si le client est de type Ray-Hack, ici moult champs s&#8217;offrent à vous. Ce n&#8217;est pas forcément une bonne nouvelle, l&#8217;idée est de pouvoir charger dans la session un programme qui n&#8217;est pas (encore) compatible NSM. s&#8217;il est bien implémenté dans le client, le protocole NSM sera toujours bien plus confortable à utiliser et plus fiable que cette bidouille. Ceçi dit, si l&#8217;on peut attendre l&#8217;implémentation NSM dans tous les programmes audio, ce n&#8217;est pas le cas des autres programmes qui peuvent tout de même avoir une utilité dans la session.</p>
+<h3 id="_nsm_tab"><strong>NSM</strong> tab</h3>
+<div class="imageblock">
+<div class="content">
+<img src="images/properties_nsm.png" alt="NSM Client properties">
+</div>
 </div>
 <div class="paragraph">
-<p>Le pseudo-protocole Ray-Hack reprend les attributs des proxy (nsm-proxy ou ray-proxy), sauf que le client est lancé directement dans la session.</p>
+<p>The <strong>Name</strong> of the client here is provided by the client himself.<br>
+The <strong>capabilities</strong> are those which are transmitted by the client at its start-up. If the client has not yet been started, this field is therefore empty.</p>
+</div>
+<div class="paragraph">
+<p>Editing the executable allows you to change the command that launches the client. Only change it to another executable capable of loading the existing client&#8217;s project. This is useful for example if you have two versions of Ardour, one running with the command <code>ardour</code>, the other with <code>Ardour6</code>, and you want to change which version to use.</p>
+</div>
+<div class="paragraph">
+<p>Editing the arguments is strongly discouraged, and is especially not suitable for loading a file as an argument.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ray_hack_tab"><strong>Ray-Hack</strong> tab</h3>
+<div class="paragraph">
+<p>If the client is a Ray-Hack type, here many fields are available to you. This is not necessarily good news, the idea is to be able to load a program into the session that is not (yet) compatible with NSM. If properly implemented in the client, the NSM protocol will always be much more comfortable to use and more reliable than this hack. That said, if we can expect the NSM implementation in all audio programs, this is not the case for other programs which can still be useful in the session.</p>
+</div>
+<div class="paragraph">
+<p>The Ray-Hack pseudo-protocol uses the attributes of proxies (nsm-proxy or ray-proxy), except that the client is launched directly in the session.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/proprietes_ray_hack.png" alt="Propriétés Ray-Hack d&#8217;un client">
+<img src="images/properties_ray_hack.png" alt="Ray-Hack Client properties">
 </div>
 </div>
 <div class="sect3">
-<h4 id="_bloc_de_lancement">Bloc de lancement</h4>
+<h4 id="_launch_block">Launch block</h4>
 <div class="imageblock">
 <div class="content">
-<img src="images/ray_hack_lancement.png" alt="ray hack lancement">
+<img src="images/ray_hack_launch.png" alt="ray hack launch">
 </div>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>le <strong>Dossier</strong> est le nom du dossier de ce client, dans le dossier de la session. Le programme est lancé depuis ce dossier.</p>
+<p>the <strong>Folder</strong> is the folder name of this client in the session folder. The program is launched from this folder.</p>
 </li>
 <li>
-<p>L'<strong>Exécutable</strong> est la commande qui lance le programme</p>
+<p>the <strong>Executable</strong> is the command that starts the program</p>
 </li>
 <li>
-<p>Le <strong>Fichier de configuration</strong> sera le fichier du projet qu&#8217;on souhaitera ouvrir avec ce programme. Il plus que très recommandé de faire référence à un fichier dans le dossier du client.<br>
-La variable <code>$RAY_SESSION_NAME</code> sera automatiquement remplacée par le nom de la session.<br>
-Si ce champ est vide, le client restera toujours sur le statut <strong>lancé</strong> et jamais <strong>prêt</strong>. Dans certains cas, il peut donc être utile de taper n&#8217;importe quoi ici plutôt que rien.</p>
+<p>The <strong>Config file</strong> will be the project file that we want to open with this program. It is more than highly recommended to reference a file in the client folder.<br>
+The variable <code>$RAY_SESSION_NAME</code> will be automatically replaced by the name of the session.<br>
+If this field is empty, the client status will always remain <strong>launch</strong> and will never be <strong>ready</strong>. In some cases, therefore, it may be useful to type anything here rather than nothing.</p>
 </li>
 <li>
-<p>Le bouton <strong>Naviguer</strong> ouvre une boîte de dialogue pour aller chercher le fichier de projet et remplir le champ <strong>Fichier de configuration</strong></p>
+<p>The <strong>Browse</strong> button opens a dialog box to find the project file and fill in the <strong>Configuration file</strong> field</p>
 </li>
 <li>
-<p>Le champ <strong>Arguments</strong> comprend les arguments passés à la commande <strong>Exécutable</strong><br>
-les arguments sont découpés comme ils le seraient dans un terminal, n&#8217;oubliez pas les <strong>"</strong> ou les <strong>'</strong> si nécéssaire.<br>
-par exemple pour reproduire <code>ma_commande mon_argument_1 "mon argument 2"</code> rentrez <code>ma_commande</code> dans le champ <strong>Exécutable</strong> et `ma_commande mon_argument_1 "mon argument 2"``dans le champ <strong>Arguments</strong>.</p>
+<p>The <strong>Arguments</strong> field includes the arguments passed to the Executable command<br>
+the arguments are split as they would be in a terminal, don&#8217;t forget the " or ' if necessary.<br>
+For example to reproduce <code>my_command my_argument_1 "my argument 2"</code> enter <code>my_command</code> in the <strong>Executable</strong> field and <code>my_command my_argument_1 "my argument 2 "</code> in the <strong>Arguments</strong> field.</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_bloc_des_signaux">Bloc des signaux</h4>
+<h4 id="_signals_block">Signals block</h4>
 <div class="imageblock">
 <div class="content">
-<img src="images/ray_hack_signaux.png" alt="ray hack signaux">
+<img src="images/ray_hack_signals.png" alt="ray hack signals">
 </div>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Le <strong>Signal de sauvegarde</strong> ne peut être que rarement utilisé. Il peut être SIGUSR1 pour les programmes compatibles avec le vieux protocole LASH. Sinon laissez le sur <em>Aucun</em>, s&#8217;il n&#8217;y a pas de méthode de sauvegarde, on ne peut pas l&#8217;inventer.</p>
+<p><strong>Save Signal</strong> can be only rarely used. It can be SIGUSR1 for programs compatible with the old LASH protocol. Otherwise leave it on <em>None</em>, if there is no save method, we cannot invent it.</p>
 </li>
 <li>
-<p>Le <strong>Signal d&#8217;extinction</strong> sera généralement <em>SIGTERM</em>. Ne le changez qu&#8217;au cas où ce signal ne ferme pas correctement le programme.</p>
+<p><strong>Stop Signal</strong> will usually be SIGTERM. Only change it if this signal does not close the program correctly.</p>
 </li>
 <li>
-<p>si la case <strong>Attendre une fenêtre avant d&#8217;être considéré comme prêt</strong> est cochée, alors le statut du client ne passera sur <strong>prêt</strong> que lorqu&#8217;une fenêtre apparaitra.<br>
-Si <code>wmctrl</code> n&#8217;est pas installé, ou que le gestionnaire de fenêtres ne semble pas compatible avec, alors le client passera sur <strong>prêt</strong> une demi-seconde après son lancement.</p>
+<p>If <strong>Wait for a window before considered it ready</strong> box is checked, then the client status will only change to <strong>ready</strong> when a window appears.<br>
+If <code>wmctrl</code> is not installed, or the window manager does not seem to be compatible with it, then the client status will be <strong>ready</strong> half a second after it is launched.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Avec <code>ray_control</code> vous pouvez affecter d&#8217;autres signaux que ceux proposés dans les boîtes à choix multiple.
-Par exemple<br>
-<code>ray_control client CLIENT_ID set_properties save_sig:22</code><br>
-définira le signal <strong>SIGTTOU</strong> pour la sauvegardable du client CLIENT_ID.
-Tapez <code>kill -l</code> pour connaître les signaux disponibles et leurs numéros.</p>
+<p>With <code>ray_control</code> you can assign signals other than those offered in the multiple choice boxes. For example
+<code>ray_control client CLIENT_ID set_properties save_sig:22</code>
+will define the SIGTTOU signal for the client CLIENT_ID save.<br>
+Type <code>kill -l</code> to see the available signals and their numbers.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_bloc_de_gestion_des_non_sauvegardables">Bloc de gestion des non-sauvegardables</h4>
+<h4 id="_non_saveable_management_block">Non-saveable management block</h4>
 <div class="imageblock">
 <div class="content">
-<img src="images/ray_hack_non_sauvegarde.png" alt="ray hack non sauvegarde">
+<img src="images/ray_hack_non_saveable.png" alt="ray hack non saveable">
 </div>
 </div>
 <div class="paragraph">
-<p>Ce bloc n&#8217;est actif que si le <strong>Signal de sauvegarde</strong> est reglé sur <em>Aucun</em></p>
+<p>This block is active only if the <strong>Save Signal</strong> is set to <em>None</em>.</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>si la case <strong>Demander à l&#8217;utilisateur de fermer lui-même le programme à la fermeture de la session</strong> est cochée, le client sera alors considéré comme non sauvegardable et un point d&#8217;exclamation orange apparaitra devant son icône de sauvegarde. À la fermeture de la session, RaySession attendra que vous fermiez vous-même le programme car il est impossible de savoir s&#8217;il contient des changements non sauvegardés.</p>
+<p>if <strong>Tell user to close program himself at session close</strong> is checked, the client will be considered as not saveable and an orange exclamation mark will appear in front of its save icon. When closing the session, RaySession will wait for you to close the program yourself because it is impossible to know if it contains unsaved changes.</p>
 </li>
 <li>
-<p>Si la case <strong>Essayer de fermer gracieusement la fenêtre</strong> est cochée, alors à la fermeture de la session, RaySession essaiera de fermer la fenêtre comme si vous fermiez la fenêtre du programme. C&#8217;est très pratique lorsque le programme réagit en se fermant s&#8217;il n&#8217;y a pas de changements non sauvegardés et en affichant une fenêtre de confirmation de fermeture dans le cas inverse (la plupart des programmes réagissent de la sorte). Si <code>wmctrl</code> n&#8217;est pas installé ou que le gestionnaire de fenêtres ne semble pas compatible, vous devrez fermer le programme vous même dans tous les cas.</p>
+<p>If <strong>Try to close window gracefully</strong> is checked, then at session close, RaySession will try to close the window as if you were closing the program window. This is very useful when the program reacts by closing if there are no unsaved changes and displaying a close confirmation window in the opposite case (most programs react in this way). If <code>wmctrl</code> is not installed or the window manager does not seem to be compatible, you will have to close the program yourself in any case.</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_zone_de_test">Zone de test</h4>
+<h4 id="_test_area">Test area</h4>
 <div class="imageblock">
 <div class="content">
-<img src="images/ray_hack_zone_test.png" alt="ray hack zone test">
+<img src="images/ray_hack_test_zone.png" alt="ray hack test zone">
 </div>
 </div>
 <div class="paragraph">
-<p>La zone de test vous permet de tester les réglages de lancement, d&#8217;arrêt et de sauvegarde réglés dans cette fenêtre sans avoir à <strong>Sauvegarder les changements</strong>.</p>
+<p>The test area allows you to test the start, stop, and save settings set in this window without having to <strong>Save the changes</strong>.</p>
 </div>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_les_sessions_réseau">Les sessions réseau</h2>
+<h2 id="_network_sessions">Network Sessions</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Une session réseau permet de lancer une autre session sur une autre machine en même temps que votre session. Ça peut être particulièrement utile si vous utilisez net-jack pour décharger votre machine d&#8217;une partie du DSP, si vous avez des effets gourmands qui tournent sur une autre machine par exemple.<br>
-Les sessions réseau fonctionnent selon un rapport de maître à esclave. Une session est maîtresse et peut avoir plusieurs sessions esclaves elles-mêmes maîtresses d&#8217;autres esclaves, mais un tel scénario semble complètement farfelu. Organisez vous simplement: un maître, un ou des esclave(s).</p>
+<p>A network session allows you to launch another session on another machine at the same time as your session. This can be particularly useful if you are using net-jack to unload your machine from part of the DSP, if you have greedy effects running on another machine for example.</p>
 </div>
 <div class="paragraph">
-<p>Pour lancer une session réseau (esclave donc), lancez le modèle d&#8217;application <strong>Network Session</strong> depuis la fenêtre des applications et suivez les instructions.</p>
+<p>Network sessions operate on a master-to-slave basis. A session is master and can have several slave sessions which are themselves masters of other slaves, but such a scenario seems completely out of the ordinary. Organize yourself simply: one master, one or more slave(s).</p>
+</div>
+<div class="paragraph">
+<p>To launch a network session (therefore a slave), launch the <strong>Network Session</strong> application template from the applications window and follow the instructions.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/session_reseau_modele.png" alt="Ajouter une session réseau">
+<img src="images/network_session_template.png" alt="Add a network session">
 </div>
 </div>
 <div class="paragraph">
-<p>Vous devrez lancer un démon sur la machine distante avec la commande <code>ray-daemon -p 1234</code> (<code>1234</code> est un exemple, mettez le port que vous voulez). Ce démon vous affiche dans le terminal quelque chose sous cette forme:</p>
+<p>You will have to start a daemon on the remote machine with the command <code>ray-daemon -p 1234</code> (<code>1234</code> is an example, put the port you want). This daemon displays something like this in the terminal:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code>[ray-daemon]URL : osc.udp://192.168.1.00:1234/
-[ray-daemon]      osc.udp://nom-de-machine:1234/
+<pre class="highlight"><code>[ray-daemon]URL : osc.udp://192.168.1.00:1234/`
+[ray-daemon]      osc.udp://nom-de-machine:1234/`
 [ray-daemon]ROOT: /home/utilisateur/Ray Sessions reseau</code></pre>
 </div>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/session_reseau_invite.png" alt="Configurer une session réseau">
+<img src="images/network_session_invitation.png" alt="Configure a network session">
 </div>
 </div>
 <div class="paragraph">
-<p>Vous devrez copier dans la fenêtre d&#8217;invitation de la session réseau l&#8217;une des deux URLs. La première (qui commence par <code>osc.udp://192.168.</code>) doit fonctionner à coup sûr, la seconde ne fonctionnera que si le nom de la machine esclave est correctement renseigné dans le fichier <code>/etc/hosts</code> de la machine maître. Toutefois, renseigner le nom de la machine esclave dans <code>/etc/hosts</code> et utiliser la deuxième URL est préférable, parce que l&#8217;adresse en 192.168. bougera si vous branchez votre machine esclave différemment (en filaire, en wifi), ou si vous réinstallez la distribution.</p>
+<p>You will need to copy one of the two URLs into the network session invitation window. The first (which begins with osc.udp://192.168.) must work for sure, the second will work only if the name of the slave machine is correctly entered in the file <code>/etc/hosts</code> of the master machine. However, entering the name of the slave machine in <code>/etc/hosts</code> and using the second URL is preferable, because the address in 192.168. will move if you connect your slave machine differently (wired, wifi), or if you reinstall the distribution.</p>
 </div>
 <div class="paragraph">
-<p>Vous avez à présent 2 fenêtres RaySession sur votre machine maître, l&#8217;une contrôle la session maître, l&#8217;autre l&#8217;esclave. Vous reconnaîtrez l&#8217;esclave au fait qu&#8217;elle n&#8217;a ni barre d&#8217;outils (<strong>Nouvelle Session</strong>, <strong>Ouvrir une session</strong>, <strong>Contrôle</strong>), ni boutons <strong>Abandonner la session</strong> et <strong>Fermer la session</strong>.</p>
+<p>You now have 2 RaySession windows on your master machine, one controls the master session, the other the slave. You will recognize the slave by the fact that it does not have a toolbar (<strong>New Session</strong>, <strong>Open Session</strong>, <strong>Control</strong>), nor <strong>Abort session</strong> and <strong>Close session</strong> buttons.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/session_reseau_fenetre_fille.png" alt="session reseau fenetre fille">
+<img src="images/network_session_child.png" alt="network session child">
 </div>
 </div>
 <div class="paragraph">
-<p>La fenêtre esclave est cachable comme c&#8217;est le cas dans beaucoup de programmes NSM.</p>
+<p>The slave window is hideable as is the case in many NSM programs.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/session_reseau_client.png" alt="session reseau client">
+<img src="images/network_session_client.png" alt="network session client">
 </div>
 </div>
 <div class="paragraph">
-<p>Si vous lancez <code>raysession -p 1234</code> sur votre machine esclave, vous aurez la fenêtre de la session esclave en double exemplaire, une sur chaque machine.</p>
+<p>If you run <code>raysession -p 1234</code> on your slave machine, you will have the slave session window in duplicate, one on each machine.</p>
 </div>
 <div class="paragraph">
-<p><strong>Conseil:</strong> Mettez ce <code>ray-daemon -p 1234</code> au démarrage de votre machine esclave.</p>
+<p><strong>Tip:</strong> Put this <code>ray-daemon -p 1234</code> in your slave machine startup.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="ajouter_un_programme_non_fourni">Ajouter un programme non fourni</h2>
+<h2 id="add_program_not_provided">Add a program not provided</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Si le programme que vous voulez ajouter ne gère pas de projet à enregistrer, cliquez sur <strong>Exécutable</strong>, rentrez le nom de l&#8217;exécutable et cliquez sur 'Ok'. sinon suivez cet exemple.</p>
+<p>If the program you want to add does not manage a project to save, click on <strong>Executable</strong>, enter the name of the executable and click on <strong>Ok</strong>. Otherwise follow this example.</p>
 </div>
 <div class="paragraph">
-<p>Nous voulons ajouter ici Audacity à la session. Audacity est choisi à titre d&#8217;exemple parce qu&#8217;il est connu et généralement installé sur les distributions audio. Ce n&#8217;est pas forcément un programme très adapté à la modularité d&#8217;une session audio étant donné la façon dont il gère JACK.</p>
+<p>We want to add Audacity to the session here. Audacity is chosen as an example because it is known and generally installed on audio distributions. This is not necessarily a very suitable program for the modularity of an audio session given the way it handles JACK.</p>
 </div>
 <div class="paragraph">
-<p>Cliquez sur <strong>Exécutable</strong> (<em>ou Ctrl+E</em>).<br>
-Dans la fenêtre d&#8217;ajout d&#8217;exécutable, Décochez la case <strong>Protocole NSM</strong>, tapez <code>audacity</code> dans le champ d&#8217;exécutable et cliquez sur <strong>Ok</strong>.</p>
+<p>Click <strong>Executable</strong> (<em>or Ctrl+E</em>).
+In the <a href="#add_executable">Add executable window</a>, Uncheck the <strong>NSM Protocol</strong> box, type <code>audacity</code> in the <strong>Executable</strong> field and click <strong>Ok</strong>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/audacity_executable.png" alt="Fenêtre d&#8217;ajout exécutable dûment remplie">
+<img src="images/audacity_executable.png" alt="Add Executable window well done">
 </div>
 </div>
 <div class="paragraph">
-<p>Un nouveau client est créé, sa fenêtre de propriétés s&#8217;ouvre sur l&#8217;onglet Ray-Hack et Audacity se lance.</p>
+<p>A new client is created, its properties window opens on the <strong>Ray-Hack</strong> tab and Audacity is launched.</p>
 </div>
 <div class="paragraph">
-<p>Dans Audacity, nous allons directement sauvegarder un projet vide dans le dossier du client. Le dossier du client se trouve dans le dossier de la session et porte le nom donné après <strong>Dossier:</strong> tout en haut de l&#8217;onglet Ray-Hack. Nous allons appeler le projet EXACTEMENT comme la session RaySession en cours.
-Pour celà, dans Audacity, faites <em>Menu &#8594; Fichier &#8594; Sauvegarder le projet &#8594; Sauvegarder le projet</em>.</p>
+<p>In Audacity, we will directly save an empty project in the client&#8217;s folder. The client&#8217;s folder is located in the session folder and has the name given after <strong>Folder:</strong> at the top of the <strong>Ray-Hack</strong> tab. We will call the project EXACTLY like the current RaySession session. To do this, in Audacity, go to <em>Menu → File → Save project → Save project</em>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/audacity_sauver_projet.png" alt="Sauvegarder le projet vide d&#8217;audacity">
+<img src="images/audacity_save%20project.png" alt="Save empty Audacity project">
 </div>
 </div>
 <div class="paragraph">
-<p>Cliquez sur <strong>Valider</strong> à l&#8217;éventuelle fenêtre d&#8217;avertissement.<br>
-Dans la boîte de sauvegarde de fichiers qui s&#8217;ouvre, vous trouverez le dossier de la session en bas à gauche (voir <a href="#raccourcis_dossier_de_session">Fournir des raccourcis du dossier de la session</a>), cliquez dessus pour rentrer dedans. À l&#8217;intérieur de celui-ci vous devez voir le dossier du client tel qu&#8217;il figure en haut de l&#8217;onglet Ray-Hack, rentrez dans ce dossier. En haut à gauche de la boîte de sauvegarde, tapez le nom exact de votre session dans le champ <strong>Nom:</strong> puis validez.</p>
+<p>Click <strong>Validate</strong> at the possible warning window.<br>
+In the save files box that opens, you will find the session folder at the bottom left (see <a href="#session_folder_shortcuts">Provide bookmarks for session folder</a>), click on it to enter it. Inside this you should see the client&#8217;s folder as it appears at the top of the Ray-Hack tab, enter this folder. At the top left of the backup box, type the exact name of your session in the <strong>Name:</strong> field then validate.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<a class="image" href="images/audacity_sauver_fichier.png"><img src="images/audacity_sauver_fichier.png" alt="Où sauvegarder le projet Audacity" width="640" height="480"></a>
+<a class="image" href="images/audacity_save_file.png"><img src="images/audacity_save_file.png" alt="Where to save Audacity project" width="640" height="480"></a>
 </div>
 </div>
 <div class="paragraph">
-<p>Fermez Audacity.<br>
-En haut à droite de l&#8217;onglet Ray-Hack de la fenêtre de propriétés du client, cliquez sur <strong>Naviguer</strong>.<br></p>
+<p>Close Audacity.<br>
+At the top right of the <strong>Ray-Hack</strong> tab of the client properties window, click <strong>Browse</strong>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<a class="image" href="images/audacity_charger_config_file.png"><img src="images/audacity_charger_config_file.png" alt="Fenêtre de chargement du CONFIG_FILE" width="640" height="480"></a>
+<a class="image" href="images/audacity_load_config_file.png"><img src="images/audacity_load_config_file.png" alt="Load CONFIG_FILE window" width="640" height="480"></a>
 </div>
 </div>
 <div class="paragraph">
-<p>sélectionnez le projet Audacity que vous venez de créer, son nom commence par le nom de la session et termine par <code>.aup</code>.</p>
+<p>select the Audacity project you just created, its name starts with the session name and ends with .aup.</p>
 </div>
 <div class="paragraph">
-<p>Si tout s&#8217;est bien passé, le champ <strong>Fichier de configuration</strong> est devenu <code>$RAY_SESSION_NAME.aup</code> et le champ <strong>Arguments</strong> est devenu <code>"$CONFIG_FILE"</code>.<br>
-Cochez les cases <strong>Attendre une fenêtre avant d&#8217;être considéré comme prêt</strong>, <strong>Demander à l&#8217;utilisateur de fermer lui même le programme</strong> et <strong>Essayer de fermer gracieusement la fenêtre</strong>. Cliquez en bas à droite sur <strong>Sauvegarder les changements</strong>.</p>
+<p>If all went well, the <strong>Configuration File</strong> field became <code>$RAY_SESSION_NAME.aup</code> and the <strong>Arguments</strong> field became <code>"$CONFIG_FILE"</code>.<br>
+Check the boxes <strong>Wait for a window before being considered ready</strong>, <strong>Ask the user to close the program himself</strong> and <strong>Try to close the window gracefully</strong>. Click in the bottom right corner on <strong>Save Changes</strong>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/audacity_ray_hack_final.png" alt="Onglet Ray-Hack du client audacity dûment rempli">
+<img src="images/audacity_ray_hack_final.png" alt="Ray-Hack tab of Audacity client well done">
 </div>
 </div>
 <div class="paragraph">
-<p>Lancez le client Audacity et vérifiez que la fenêtre d&#8217;Audacity porte bien le nom de la session.
-Cliquez sur l&#8217;icône du client Audacity, dans le menu déroulant choisissez <strong>Sauvegarder comme modèle d&#8217;application</strong>, et rentrez <code>Audacity</code> dans le champ de la boîte de dialogue qui est apparue.
-Voilà, maintenant lorsque vous voudrez lancer Audacity dans la session, vous n&#8217;aurez qu&#8217;à lancer le modèle Audacity depuis la fenêtre d&#8217;ajout d&#8217;applications.</p>
+<p>Launch the Audacity client and verify that the Audacity window has the name of the session.<br>
+Click on the Audacity client icon, in the drop-down menu choose <strong>Save as an application template</strong>, and enter <code>Audacity</code> the field of the dialog box that has appeared. Now when you want to launch Audacity in the session, all you have to do is launch the Audacity template from the <a href="#add_application">Add application window</a>.</p>
 </div>
 <div class="paragraph">
-<p>Notez que le bouton de sauvegarde du client est derrière un point d&#8217;exclamation orange, celà signifie que RaySession n&#8217;est pas en mesure de sauvegarder son projet et qu&#8217;il faudra le faire vous même.</p>
+<p>Note that the client&#8217;s save button is behind an orange exclamation point, this means that RaySession is not able to save its project and that you will have to do it yourself.</p>
 </div>
 <div class="paragraph">
-<p>Selon le programme que vous souhaitez ajouter à la session, il est possible que ce ne soit pas toujours aussi facile. Certains programmes vont exiger un argument qui précède le fichier de configuration, dans ce cas tapez <code>mon_programme --help</code> ou <code>man mon_programme</code> pour savoir comment charger un projet au démarrage du programme, et adaptez celà dans le champ <strong>Arguments</strong>.</p>
+<p>Depending on what program you want to add to the session, it might not always be that easy. Some programs will require an argument that precedes the configuration file, in this case type <code>my_program --help</code> or <code>man my_program</code> to know how to load a project when the program starts, and adapt this in the <strong>Arguments</strong> field.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_importer_une_session_nsm">Importer une session NSM</h2>
+<h2 id="_import_an_nsm_session">Import an NSM session</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Pour importer une session créée avec <strong>Non Session Manager</strong> ou <strong>New Session Manager</strong>, déplacez ou copiez le dossier de la session dans le dossier racine des sessions RaySession (par défaut ~/Ray Sessions). Ensuite cliquez sur <strong>Ouvrir une session</strong>, votre session doit apparaître dans la liste des sessions, double-cliquez dessus.</p>
+<p>To import a session created with Non Session Manager or New Session Manager, move or copy the session folder to the RaySession root sessions folder (default ~/Ray Sessions). Then click <strong>Open session</strong>, your session should appear in the list of sessions, double-click on it.</p>
 </div>
 <div class="paragraph">
-<p>RaySesssion ne ré-écrira pas les clients ajoutés ou supprimés dans la fichier session.nsm, à partir du moment où vous ouvrez une session NSM avec RaySession, vous devez continuer avec RaySession.</p>
+<p>RaySession will not rewrite clients added or deleted to the <code>session.nsm</code> file, as long as you open an NSM session with RaySession you must continue with RaySession.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="options_du_demon">Les options du démon</h2>
+<h2 id="_the_daemons_options">The daemon&#8217;s options</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Les options du démon sont des services qui sont activables et désactivables via le bouton <strong>Contrôle</strong> en haut à droite de la fenêtre principale, ou via le menu <strong>options</strong> de la barre de menus.</p>
+<p>Daemon options are services which can be activated and deactivated via the <strong>Control</strong> button at the top right of the main window, or via the options menu in the menu bar.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/options_du_demon.png" alt="Options du démon">
+<img src="images/daemon_options.png" alt="Daemon options">
 </div>
 </div>
 <div class="paragraph">
-<p>Voici le détail des différentes options:</p>
+<p>Here is the detail of the different options:</p>
 </div>
 <div class="sect2">
-<h3 id="raccourcis_dossier_de_session">Fournir des raccourcis du dossier de la session</h3>
+<h3 id="session_folder_shortcuts">Provide bookmarks for session folder</h3>
 <div class="paragraph">
-<p>En production audio, on a souvent recours au fait de créer un fichier audio ou midi avec un programme pour finalement le charger dans un autre. Cette option offre quelque chose de purement pratique: un raccourci vers le dossier de la session en cours dans votre gestionnaire de fichiers et dans les boîtes de dialogue prévues pour aller chercher ou sauvegarder les fichiers. Ça permet tout simplement d&#8217;éviter de perdre du temps à parcourir l&#8217;arborescence de son dossier personnel pour chercher un fichier que vous avez mis dans le dossier de votre session puisque c&#8217;est bien sa place.<br>
-Bien entendu, ce raccourci est supprimé lorsque la session est déchargée.<br>
-Techniquement, les raccourcis sont créés pour GTK2, GTK3, QT4, QT5, KDE et FLTK.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_cliché_automatique_à_la_sauvegarde">Cliché automatique à la sauvegarde</h3>
-<div class="paragraph">
-<p>Cette option est très loin d&#8217;être triviale, elle permet de prendre un cliché de la session après chaque sauvegarde. Celà signifie qu&#8217;en cas d&#8217;erreur technique ou artistique vous aurez la possibilité de retrouver la session dans l&#8217;état où elle se trouvait au moment du cliché.
-Cette option nécessite d&#8217;avoir le programme <code>git</code> installé.
-Voir <a href="#cliches">Les clichés</a> pour plus de détails.</p>
+<p>In audio production, it is often used to create an audio or midi file with one program and then load it into another. This option offers something purely practical: a shortcut to the current session folder in your file manager and in the dialog boxes provided for fetching or saving files. It simply avoids wasting time browsing through your personal folder tree to find a file that you have put in your session folder, since that is where it belongs.<br>
+Of course, this shortcut is deleted when the session is unloaded.<br>
+Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_mémoire_des_bureaux">Mémoire des bureaux</h3>
+<h3 id="_auto_snapshot_at_save">Auto Snapshot at Save</h3>
 <div class="paragraph">
-<p>Si cette option est enclenchée, RaySession sauvegardera (ou tentera de sauvegarder) le numéro du bureau virtuel sur lequel se trouvaient les fenêtres des clients à la sauvegarde de la session.<br>
-Ainsi lorsque vous relancerez la session ou les clients, les fenêtres seront redispatchées sur les bureaux sur lequels elles figuraient.<br>
-Cette option nécessite d&#8217;avoir le programme <code>wmctrl</code> installé pour fonctionner, et ne fonctionnera probablement pas avec Wayland.</p>
+<p>This option is far from being trivial, it allows you to take a snapshot of the session after each session save. This means that in case of a technical or artistic error you will be able to find the session in the state it was in at the moment of the snapshot. This option requires that you have the <code>git</code> program installed. See <a href="#snapshots">Snapshots</a> for more details.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="option_scripts_de_session">Scripts de session</h3>
+<h3 id="_desktops_memory">Desktops Memory</h3>
 <div class="paragraph">
-<p>Désactiver cette option pour n&#8217;actionner aucun script de session, et ainsi ouvrir, sauvegarder ou fermer une session en ignorant totalement les scripts associés à ces actions.<br>
-Ces scripts sont utilisés par les sessions avec <a href="#memoire_de_la_configuration_de_jack">Mémoire de la configuration de JACK</a>.<br>
-Voir <a href="#les_scripts_de_session">Les scripts de session</a> pour plus de détails.</p>
+<p>If this option is activated, RaySession will save (or attempt to save) the number of the virtual desktop on which the client windows were located when the session was saved.
+So when you restart the session or the clients, the windows will be redispatched to the desktops on which they appeared.
+This option requires you to have the program <code>wmctrl</code> installed to work, and probably will not work with Wayland.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_se_souvenir_de_létat_des_igus">Se souvenir de l&#8217;état des IGUs</h3>
+<h3 id="_session_scripts">Session scripts</h3>
 <div class="paragraph">
-<p>Cette option ne concerne que les client NSM capables d&#8217;afficher/cacher leur interface graphique. Sans cette option, certains d&#8217;entre eux vont toujours démarrer cachés, d&#8217;autres vont se souvenir s&#8217;ils étaient visibles à leur dernière sauvegarde. Avec cette option enclenchée, les interfaces graphiques seront affichées au moment où la session est prête si elles étaient visibles lors de la dernière sauvegarde ou si le client n&#8217;a jamais été lancé.</p>
+<p>Disable this option to not activate any session script, and thus open, save or close a session completely ignoring the scripts associated with these actions.
+These scripts are used by sessions with <a href="#jack_configuration_memory">JACK configuration memory</a>.
+See <a href="#session_scripts">Session scripts</a> for more details.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_remember_optional_gui_states">Remember optional GUI states</h3>
+<div class="paragraph">
+<p>This option only concerns NSM clients capable of showing/hiding their graphical interface. Without this option, some of them will always start hidden, others will remember if they were visible when they were last saved. With this option enabled, the graphical interfaces will be displayed when the session is ready if they were visible during the last save or if the client has never been launched.</p>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="cliches">Les clichés</h2>
+<h2 id="snapshots">Snapshots</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Les clichés nécessitent d&#8217;avoir le programme <code>git</code> installé, si vous n&#8217;avez pas <code>git</code>, le bouton de marche arrière n&#8217;apparaît pas et il est impossible de prendre un cliché ou d&#8217;y revenir.</p>
+<p>Snapshots require you to have the program <code>git</code> installed, if you don&#8217;t have <code>git</code>, the reverse button does not appear and it is not possible to take or return to a snapshot.</p>
 </div>
 <div class="paragraph">
-<p>Un cliché mémorise les fichiers et leurs contenu à un moment précis. Les fichiers volumineux et les fichiers ayant certaines extensions tels que les fichiers audio et video sont ignorés, sinon le processus de cliché serait trop long et celà doublerait inutilement la taille des dossiers de session. Celà n&#8217;est en fait pas très gênant, au contraire, puisque vos fichiers audio récents restent présents quand vous retournez à un cliché précédent.<br>
-Si malgré tout le processus de cliché s&#8217;avère long, une fenêtre apparaît et vous pouvez annuler sans aucun risque le cliché en cours. Si vous l&#8217;annulez, Le cliché automatique n&#8217;aura plus lieu pour cette session.</p>
+<p>A snapshot stores files and their contents at a specific time. Large files and files with certain extensions such as audio and video files are ignored, otherwise the snapshot process will take too long and the size of the session folders will needlessly double. This is actually not very annoying, on the contrary, since your recent audio files remain present when you go back to a previous snapshot.<br>
+If despite everything the snapshot process turns out to be long, a window appears and you can safely cancel the current snapshot. If you cancel it, the automatic snapshot will no longer take place for this session.</p>
 </div>
 <div class="paragraph">
-<p>L&#8217;intérêt des clichés réside dans le fait de pouvoir revenir à moment antérieur de la session, avant d&#8217;avoir eu cette idée artistique géniale qui s&#8217;est avérée nulle et non avenue, avant d&#8217;avoir tenté un redécoupage des échantillons au microcoscope qui a finalement tué toute forme de musicalité, avant qu&#8217;un programme plante pour une raison inconnue des services de police&#8230;&#8203;</p>
+<p>The interest of the snapshots lies in the fact of being able to return to the previous moment of the session, before having had this brilliant artistic idea which turned out to be null and void, before having attempted a recutting of the samples with the microcoscope which finally killed all forms of musicality, before a program crashes for some reason unknown to the police&#8230;&#8203;</p>
 </div>
 <div class="paragraph">
-<p>N&#8217;ayez crainte, revenir à un cliché ne vous empêchera pas de revenir là où vous en êtes.</p>
+<p>Don&#8217;t worry, going back to a snapshot won&#8217;t stop you from getting back to where you were.</p>
 </div>
 <div class="paragraph">
-<p>Pour faire revenir la session à un cliché, cliquez sur le bouton de marche arrière situé à droite du bouton <strong>Exécutable</strong>.</p>
+<p>To revert the session to a snapshot, click the reverse button located to the right of the <strong>Executable</strong> button.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/cliche.png" alt="cliche">
+<img src="images/snapshots.png" alt="snapshots">
 </div>
 </div>
 <div class="paragraph">
-<p>Sélectionnez le cliché vers lequel vous voulez revenir et cliquez sur <strong>Ok</strong>. Un nouveau cliché est pris, la session se ferme, le cliché voulu est rappelé et la session se ré-ouvre.</p>
+<p>Select the snapshot you want to revert to and click <strong>Ok</strong>. A new snapshot is taken, the session closes, the desired snapshot is recalled and the session reopens.</p>
 </div>
 <div class="paragraph">
-<p>Il est également possible de faire revenir uniquement un client à un état précédent de la session en faisant un clique droit sur le client, puis <strong>Retourner à un état précédent</strong>.<br>
-Si vous le souhaitez vous pouvez éditer pour chaque client les fichiers ignorés par les clichés dans la fenêtre de propriétés du client.</p>
+<p>It is also possible to return only a client to a previous state of the session by right-clicking on the client,then <strong>Return to a previous state</strong>.
+If you want you can edit for each client the files ignored by the snapshots in the <a href="#client_properties">Client Properties Window</a>.</p>
 </div>
 <div class="paragraph">
-<p>Avec l&#8217;option <strong>Cliché automatique à la sauvegarde</strong>, un cliché est pris juste après chaque sauvegarde de la session, sauf s&#8217;il n&#8217;y a aucun changement depuis le cliché précédent. Pour prendre un cliché à un autre moment, cliquez sur l&#8217;icône de marche arrière à droite du bouton <strong>Exécutable</strong> et sur <strong>Prendre un cliché maintenant</strong>, celà présente l&#8217;avantage de pouvoir nommer le cliché et d&#8217;avoir ainsi un repère temporel plus parlant que la date et l&#8217;heure du cliché.<br>
-Pour revenir à un cliché, cliquez sur l&#8217;icône de marche arrière et suivez les instructions.</p>
+<p>With the <strong>Automatic snapshot after save</strong> option, a snapshot is taken immediately after each backup of the session, unless there is no change since the previous snapshot. To take a snapshot at another time, click on the reverse icon to the right of the <strong>Executable</strong> button and on <strong>Take a snapshot now</strong>, this has the advantage of being able to name the snapshot and thus having a more meaningful time mark than the date and time of the snapshot.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="les_scripts_de_session">Les scripts de session</h2>
+<h2 id="session_scripts">Session scripts</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Les scripts de session permettent de programmer des actions personnalisés à l&#8217;ouverture, à la sauvegarde et à la fermeture de la session. Ils sont notamment utilisés pour les sessions avec <a href="#memoire_de_la_configuration_de_jack">Mémoire de la configuration de JACK</a>.<br>
-Des connaissances en script shell sont nécessaires pour éditer ces scripts, mais tout un chacun peut les utiliser.</p>
+<p>Session scripts allow you to program personalized actions when opening, saving and closing the session. They are used in particular for sessions with <a href="#jack_configuration_memory">JACK configuration memory</a>.<br>
+Knowledge of shell scripting is required to edit these scripts, but anyone can use them.</p>
 </div>
 <div class="paragraph">
-<p>Les scripts de session se trouvent dans un dossier <code>ray-scripts</code> situé soit dans un dossier de la session, soit dans un dossier parent.
-Par exemple, pour une session étant dans:<br>
+<p>Session scripts are located in a folder <code>ray-scripts</code> located either in a session folder or in a parent folder.<br>
+For example, for a session being in:<br>
 <code>~/Ray Sessions/avec_script_de_foo/ma session</code></p>
 </div>
 <div class="paragraph">
-<p>le dossier des scripts de session peut-être<br>
-<code>~/Ray Sessions/avec_script_de_foo/ma session/ray-scripts</code><br>
-<code>~/Ray Sessions/avec_script_de_foo/ray-scripts</code><br>
-<code>~/Ray Sessions/ray-scripts</code><br>
-<code>~/ray-scripts</code></p>
+<p>the session scripts folder may be</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>~/Ray Sessions/avec_script_de_foo/ma session/ray-scripts
+~/Ray Sessions/avec_script_de_foo/ray-scripts
+~/Ray Sessions/ray-scripts
+~/ray-scripts</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>L&#8217;intérêt d&#8217;un tel comportement est de pouvoir scripter un ensemble de sessions sans avoir à y recopier les scripts, mais surtout de livrer une session non scriptée lorsqu&#8217;on la transfère à quelqu&#8217;un d&#8217;autre pour un travail collectif.<br>
-Seul le dossier de scripts le plus près de la session dans l&#8217;arborescence sera considéré. Ainsi, un dossier <code>ray-scripts</code> vide dans une session désactivera les scripts pour cette session.</p>
+<p>The advantage of such behavior is to be able to script a set of sessions without having to copy the scripts there, but above all to deliver an unscripted session when it is transferred to someone else for collective work.<br>
+Only the script folder closest to the session in the tree will be considered. Thus, a <code>ray-scripts</code> empty folder in a session will disable scripts for that session.</p>
 </div>
 <div class="paragraph">
-<p>Pour éditer les scripts, commencez par créer une session avec le modèle <strong>avec les scripts de base</strong>, il s&#8217;agit d&#8217;un modèle de session avec des scripts ne comprenant absolument aucune action particulière. Rendez-vous dans le dossier <code>ray-scripts</code> dans le dossier de la session, vous y trouverez les fichiers <code>load.sh</code>, <code>save.sh</code> et <code>close.sh</code>. Dans chacun de ces scripts, <code>ray_control run_step</code> correspond à l&#8217;action normale effectuée (selon le script: charger, sauvegarder ou fermer la session). Si un de ces trois scripts ne vous est d&#8217;aucune utilité, supprimez le, ce sera du temps gagné de ne pas passer par ce script.</p>
+<p>To edit the scripts, start by creating a session with the template with the basic scripts, this is a template session with scripts that does not include any particular action. Go to the folder <code>ray-scripts</code> in the session folder, you will find the files <code>load.sh</code>, <code>save.sh</code> and <code>close.sh</code>. In each of these scripts, <code>ray_control run_step</code> corresponds to the normal action performed (depending on the script: load, save or close the session). If one of these three scripts is of no use to you, delete it, it will save time not to go through that script.</p>
 </div>
 <div class="paragraph">
-<p>Les fichiers scripts doivent impérativement être exécutables pour fonctionner.</p>
+<p>The script files must imperatively be executable to work.</p>
 </div>
 <div class="paragraph">
-<p>Vous aurez probablement besoin de l&#8217;utilitaire en ligne de commande <code>ray_control</code> pour effectuer des actions en rapport avec tel ou tel client. tapez <code>ray_control --help</code> pour connaître toutes ses possibilités.</p>
+<p>You will probably need the command line utility <code>ray_control</code> to perform actions relating to a particular client. type <code>ray_control --help</code> to know all its possibilities, see also <a href="#ray_control">Control RaySession from the command line</a>.</p>
 </div>
 <div class="paragraph">
-<p>Le modèle de session à mémoire de configuration de JACK utilise les scripts de session, mais on peut aussi imaginer moult actions possibles selon vos besoins et vos envies, par exemple :</p>
+<p>JACK memory configuration session template uses session scripts, but we can also imagine many possible actions according to your needs and desires, for example:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>définir un ordre bien précis de lancement des clients à l&#8217;ouverture de la session (un exemple est fourni dans le code source)</p>
+<p>define a specific order for launching clients when the session is opened (an example is provided in the source code)</p>
 </li>
 <li>
-<p>faire une copie de sauvegarde de la session sur un disque dur externe à chaque fermeture</p>
+<p>make a backup copy of the session on an external hard drive each time you close it</p>
 </li>
 <li>
-<p>envoyer un raccourci <em>Ctrl+S</em> aux fenêtres des clients non sauvegardables à la sauvegarde de la session (un exemple est fourni dans le code source)</p>
+<p>send a <em>Ctrl+S</em> shortcut to non-saveable client windows when saving the session (an example is provided in the source code)</p>
 </li>
 <li>
-<p>Allumer le bouton rouge à l&#8217;entrée du studio à l&#8217;ouverture, l&#8217;éteindre à la fermeture</p>
+<p>Turn on the red light at the entrance to the studio when opening, turn it off when closing</p>
 </li>
 <li>
-<p>Lancer la machine à café à la fermeture de la session (exemple débile, allez donc appuyer sur le bouton de la cafetière, de toutes façons faudra changer le filtre !)</p>
+<p>Start the coffee machine at the end of the session (stupid example, go and press the button on the coffee maker, anyway you will have to change the filter!)</p>
 </li>
 <li>
-<p>Faire beaucoup, beaucoup, beaucoup d&#8217;erreurs qui feront planter votre session, soyez prudents évidemment !</p>
+<p>Make many, many, many mistakes that will crash your session, be careful of course!</p>
 </li>
 </ul>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="memoire_de_la_configuration_de_jack">Mémoire de la configuration de JACK</h2>
+<h2 id="jack_configuration_memory">JACK configuration memory</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Il est possible grâce aux scripts de session de rappeler automatiquement la configuration de JACK spécifique à une session avant de la charger.
-Ce comportement pourra rappeler à certains le fonctionnement des studios LADISH, en beaucoup mieux fait, du moins c&#8217;est ce qui est espéré.</p>
+<p>It is possible thanks to session scripts to automatically recall the JACK configuration specific to a session before loading it. This behavior may remind some of the operation of LADISH studios, much better done, at least that&#8217;s what is hoped.</p>
 </div>
 <div class="sect2">
-<h3 id="_dans_quels_cas_lutiliser">Dans quels cas l&#8217;utiliser</h3>
+<h3 id="_in_which_cases_to_use_it">In which cases to use it</h3>
 <div class="paragraph">
-<p>Celà peut s&#8217;avérer utile:</p>
+<p>This can be useful:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Si vous avez besoin d&#8217;utiliser une interface audio spécifique pour la session</p>
+<p>If you need to use a specific audio interface for the session</p>
 </li>
 <li>
-<p>Si vous travaillez sur de multiple projets avec des fréquences d&#8217;échantillonage différentes (telle session sur 44100 Hz, telle autre sur 48000 Hz).<br>
-Ainsi celà vous évitera d&#8217;avoir à reconfigurer, arrêter et redémarrer JACK vous même, ou encore d&#8217;éviter d&#8217;oublier de le faire et de se faire insulter par certains programmes.</p>
+<p>If you are working on multiple projects with different sample rates (such session at 44100 Hz, such session at 48000 Hz).<br>
+This will prevent you from having to reconfigure, stop and restart JACK yourself, or even avoid forgetting to do so and being insulted by certain programs.</p>
 </li>
 <li>
-<p>Si vous voulez éviter de charger une session très gourmande en DSP (par exemple en phase de mixage) avec un tampon trop petit (128 par exemple).<br>
-Notez que sur la plupart des interfaces audio, il est possible de changer la taille du tampon à chaud (sans redémarrer JACK).</p>
+<p>If you want to avoid loading a very DSP-intensive session (for example in the mixing phase) with a too small buffer (128 for example).<br>
+Note that on most audio interfaces it is possible to change the buffer size hotly (without restarting JACK).</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_utilisation">Utilisation</h3>
+<h3 id="_usage">Usage</h3>
 <div class="paragraph">
-<p>Il est nécessaire que l&#8217;option <a href="#option_scripts_de_session">Scripts de session</a> soit enclenchée (Cette option est enclenchée par défaut).</p>
+<p>The Session scripts option must be enabled (This option is enabled by default).</p>
 </div>
 <div class="paragraph">
-<p>Pour utiliser le mémoire de configuration de JACK, créez une nouvelle session à partir du modèle <strong>Avec mémoire de la configuration de JACK</strong>.<br>
-Il s&#8217;agit en fait d&#8217;une session scriptée (voir <a href="#les_scripts_de_session">Les scripts de session</a>) qui lance un script fourni avec RaySession, mais qui lui est complètement externe, ainsi RaySession n&#8217;a toujours aucun rapport direct avec JACK.</p>
+<p>To use the JACK configuration memory, create a new session from the <strong>With JACK configuration memory</strong> template.
+It is in fact a scripted session (see <a href="#session_scripts">Session scripts</a>) which launches a script supplied with RaySession, but which is completely external to it, so RaySession still has no direct relation to JACK.</p>
 </div>
 <div class="paragraph">
-<p>Lisez la fenêtre d&#8217;informations à ce sujet puis validez. JACK redémarre puis votre session se lance.</p>
+<p>Read the information window on this subject then validate. JACK restarts then your session starts.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_principe_de_fonctionnement">Principe de fonctionnement</h3>
+<h3 id="_working_principle">Working principle</h3>
 <div class="paragraph">
-<p>À chaque fois que la session est sauvegardée, la configuration de JACK est sauvegardée dans la session, dans le fichier <code>jack_parameters</code>.<br>
-Avant l&#8217;ouverture de la session, JACK est redémarré si la configuration de la session est différente de la configuration actuelle de JACK.<br>
-Après la fermeture de la session, JACK est si nécessaire redémarré avec la configuration en cours avant l&#8217;ouverture.</p>
+<p>Each time the session is saved, the JACK configuration is saved in the session, in the <code>jack_parameters</code> file.<br>
+Before opening the session, JACK is restarted if the configuration of the session is different from the current configuration of JACK.<br>
+After closing the session, JACK is restarted if necessary with the current configuration before opening.<br></p>
 </div>
 <div class="paragraph">
-<p>La configuration des ponts <strong>PulseAudio &#8594; JACK</strong> est également sauvegardée et restaurée avec la configuration de JACK.</p>
+<p>The configuration of the PulseAudio → JACK bridges is also saved and restored with the JACK configuration.</p>
 </div>
 <div class="paragraph">
-<p>Si vous ouvrez cette session après l&#8217;avoir copiée sur un autre ordinateur, la configuration de JACK ne sera pas rappellée mais sera écrasée lors de la sauvegarde. Seule la fréquence d&#8217;échantillonage de la session sera utilisée.</p>
+<p>If you open this session after having copied it to another computer, the JACK configuration will not be recalled but will be overwritten when saving. Only the sampling frequency of the session will be used.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_cas_particuliers">Cas particuliers</h3>
+<h3 id="_special_cases">Special cases</h3>
 <hr>
 <div class="paragraph">
-<p><strong>Pour ouvrir une session sans recharger sa configuration de JACK:</strong></p>
+<p><strong>To open a session without reloading its configuration from JACK:</strong></p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>désactivez l&#8217;option <a href="#option_scripts_de_session">Scripts de session</a></p>
+<p>disable the <strong>Session scripts</strong> option</p>
 </li>
 <li>
-<p>ouvrez la session</p>
-</li>
-</ul>
-</div>
-<hr>
-<div class="paragraph">
-<p><strong>Pour changer la configuration de JACK d&#8217;une session:</strong></p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Démarrez JACK avec la configuration désirée</p>
-</li>
-<li>
-<p>Désactivez l&#8217;option <a href="#option_scripts_de_session">Scripts de session</a></p>
-</li>
-<li>
-<p>Ouvrez la session</p>
-</li>
-<li>
-<p>Ré-activez l&#8217;option <a href="#option_scripts_de_session">Scripts de session</a></p>
-</li>
-<li>
-<p>Sauvegardez la session</p>
+<p>open the session</p>
 </li>
 </ul>
 </div>
 <hr>
 <div class="paragraph">
-<p><strong>Pour rendre une ancienne session sensible à la configuration de JACK</strong></p>
+<p><strong>To change the JACK configuration of a session:</strong></p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>copiez le dossier <code>ray-scripts</code> d&#8217;une session avec mémoire de la configuration de JACK dans le dossier de la session</p>
+<p>Start JACK with the desired configuration</p>
 </li>
 <li>
-<p>Activez l&#8217;option <a href="#option_scripts_de_session">Scripts de session</a></p>
+<p>Disable the Session scripts option</p>
 </li>
 <li>
-<p>Ouvrez la session</p>
+<p>Open the session</p>
+</li>
+<li>
+<p>Re-enable the Session scripts option</p>
+</li>
+<li>
+<p>Save the session</p>
+</li>
+</ul>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>To make an old session sensitive to the configuration of JACK</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>copy the folder <code>ray-scripts</code> of a session with memory from the JACK configuration to the session folder</p>
+</li>
+<li>
+<p>Activate the Session scripts option</p>
+</li>
+<li>
+<p>Open the session</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p><strong>ou</strong></p>
+<p><strong>or</strong></p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>déplacez la session dans un sous-dossier contenant le dossier <code>ray-scripts</code> adhoc</p>
+<p>move the session to a sub-folder containing the good one <code>ray-scripts</code> folder</p>
 </li>
 <li>
-<p>Ouvrez la session</p>
+<p>Open the session</p>
 </li>
 </ul>
 </div>
@@ -1598,54 +1618,50 @@ Après la fermeture de la session, JACK est si nécessaire redémarré avec la c
 </div>
 </div>
 <div class="sect1">
-<h2 id="sous_le_capot">Sous le capot</h2>
+<h2 id="under_the_hood">Under the hood</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>RaySession n&#8217;est en réalité qu&#8217;une interface graphique pour ray-daemon. Lorsque vous lancez RaySession, l&#8217;interface graphique lance le démon et s&#8217;y connecte, et elle arrête le démon lorsqu&#8217;on la ferme. L&#8217;interface graphique et le démon communiquent entre eux par messages OSC (Open Sound Control), comme c&#8217;est le cas entre le démon et les clients NSM. Ainsi, vous pouvez connecter plusieurs interfaces graphiques à un démon, même à distance. Tapez <code>raysession --help</code> pour voir comment faire.</p>
+<p>RaySession is really just a GUI for ray-daemon. When you launch RaySession, the GUI launches and connects to the daemon, and it stops the daemon when closed. The graphical interface and the daemon communicate with each other by OSC (Open Sound Control) messages, as is the case between the daemon and the NSM clients. Thus, you can connect several graphical interfaces to a daemon, even remotely. Tap <code>raysession --help</code> to see how.</p>
 </div>
 <div class="paragraph">
-<p>Il n&#8217;est pas interdit d&#8217;avoir plusieurs instances de démon lancés simultanément, ainsi si vous lancez RaySession alors qu&#8217;une instance est déjà lancée, celle-ci lancera un nouveau démon. Toutefois, cette façon de travailler étant peu commune, l&#8217;utilisation d&#8217;un seul démon est favorisée. Ainsi, si un démon tourne et qu&#8217;il n&#8217;a aucune interface graphique attachée, raysession se connectera à ce démon par défaut.</p>
+<p>It is not forbidden to have several daemon instances launched simultaneously, so if you launch RaySession while an instance is already launched, it will launch a new daemon. However, this way of working being unusual, the use of a single daemon is favored. So, if a daemon is running and it has no GUI attached, raysession will connect to that daemon by default.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="ray_control">Contrôler RaySession en ligne de commande</h2>
+<h2 id="ray_control">Control RaySession from the command line</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>la commande <code>ray_control</code> vous permet de faire a peu près tout ce qu&#8217;il est possible de faire avec l&#8217;interface graphique, et même un peu plus. tapez <code>ray_control --help-all</code> pour connaître l&#8217;ensemble des possibilités.</p>
+<p>the command <code>ray_control</code> lets you do just about anything you can do with the GUI, and a little more. type <code>ray_control --help-all</code> to know all the possibilities.</p>
 </div>
 <div class="paragraph">
-<p>Au cas où il y a plusieurs démons lancés (voir <a href="#sous_le_capot">Sous le capot</a>), <code>ray_control</code> ne considerera que celui qui a été lancé en premier, sauf si vous spécifiez son port OSC avec l&#8217;option <code>--port</code> ou la variable d&#8217;environnement RAY_CONTROL_PORT.</p>
+<p>In case there are multiple daemons started (see <a href="#under_the_hood">Under the hood</a>), <code>ray_control</code> will only consider the one that was started first, unless you specify its OSC port with the <code>--port</code> option or <code>RAY_CONTROL_PORT</code> environment variable.</p>
 </div>
 <div class="paragraph">
-<p>On pourrait penser qu&#8217;il n&#8217;y a pas d&#8217;intérêt à utiliser <code>ray_control</code> puisque la commande <code>oscsend</code> permet d&#8217;envoyer un message OSC au démon, c&#8217;est faux.<br>
-D&#8217;une part, parce que <code>oscsend</code> permet d&#8217;envoyer des messages mais pas d&#8217;obtenir des informations de manière simple (quels sont les clients actifs ? quel est l&#8217;executable de tel client ? &#8230;&#8203;), d&#8217;autre part parce que la commande <code>ray_control</code> se terminera lorsque l&#8217;action demandée sera effectuée, par exemple <code>ray_control open_session ma_session</code> se terminera lorsque la session sera chargée.</p>
+<p>One might think that there is no point in using <code>ray_control</code> since the command <code>oscsend</code> allows to send an OSC message to the daemon, it is false.<br>
+On the one hand, because <code>oscsend</code> allows you to send messages but not to obtain information in a simple way (which are the active clients? What is the executable of such and such client? &#8230;&#8203;), on the other hand because the command <code>ray_control</code> will end when the requested action is taken, for example <code>ray_control open_session "my session"</code> will end when the session is loaded.</p>
 </div>
 <div class="paragraph">
-<p>Pensez à affecter <code>ray_control save</code> à un raccourci global de votre environnement de bureau (<em>Ctrl+Meta+S</em>), celà vous fera gagner un temps fou !</p>
+<p>Remember to assign <code>ray_control save</code> to a global shortcut of your desktop environment (<em>Ctrl+Meta+S</em>), this will save you a lot of time!</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_foire_aux_questions">Foire aux questions</h2>
+<h2 id="_frequently_asked_questions">Frequently Asked Questions</h2>
 <div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Est-il toujours intéressant de lancer Ardour (ou un autre DAW compatible NSM) directement plutôt que dans RaySession ?</strong></p>
 <div class="paragraph">
-<p>Sauf pour un projet vraiment tout petit, Non.<br>
-Si vous utilisez Ardour, lancez le toujours depuis RaySession, d&#8217;une part le cliché automatique à la sauvegarde peut vous être d&#8217;un secours inespéré, d&#8217;autre part, vous ne pouvez pas être sûr d&#8217;avoir besoin d&#8217;un quelconque greffon auquel vous ne pourrez accéder que d&#8217;un autre programme.</p>
+<p><strong>Is it still worth running Ardour (or another NSM compatible DAW) directly rather than in RaySession?</strong></p>
 </div>
-</li>
-</ul>
+<div class="paragraph">
+<p>Except for a really tiny project, no.
+If you are using Ardour, always run it from RaySession, on the one hand the automatic snapshot after save can be of unexpected help to you, on the other hand, you are not immune to needing another program even if you did not plan it.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-11-10 13:57:08 +0100
+Last updated 2020-11-13 15:10:44 +0100
 </div>
 </div>
 </body>

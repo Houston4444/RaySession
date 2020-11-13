@@ -483,6 +483,23 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 90%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="image"><img src="images/flag_fr.jpeg" alt="flag fr"></span></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>En français pour la version 0.10.0</em><br>
+Other languages: <span class="image"><a class="image" href="../en/manual.html"><img src="images/flag_en.jpeg" alt="EN" width="30" height="20"></a></span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
@@ -688,7 +705,8 @@ Notez que vous n&#8217;avez pas besoin de fermer la session en cours pour en ouv
 <p>le bouton <strong>Exécutable</strong> qui permet d&#8217;ajouter à la session un programme depuis son exécutable. Vous en aurez besoin si vous souhaiter ajouter un programme pour lequel il n&#8217;existe pas de modèle. voir <a href="#ajout_executable">Fenêtre d&#8217;ajout d&#8217;exécutable</a>.</p>
 </li>
 <li>
-<p>le bouton de marche arrière pour revenir à un état précédent de la session. Celà nécessite d&#8217;avoir le programme <code>git</code> installé. Voir <a href="#cliches">Les clichés</a> pour plus de détails.</p>
+<p>le bouton de marche arrière pour revenir à un état précédent de la session. Celà nécessite d&#8217;avoir le programme <code>git</code> installé, sinon ce bouton n&#8217;apparaîtra pas.<br>
+Voir <a href="#cliches">Les clichés</a> pour plus de détails.</p>
 </li>
 <li>
 <p>l&#8217;indicateur d&#8217;état du serveur.<br>
@@ -871,8 +889,9 @@ Si par dessus cette disquette vous voyez</p>
 </div>
 </div>
 <div class="paragraph">
-<p>La liste des applications disponibles est à droite.</p>
+<p>La liste des applications disponibles est à droite. Si le logiciel que vous souhaitez lancer n&#8217;est pas présent ici, regardez <a href="#ajouter_un_programme_non_fourni">Ajouter un programme non fourni</a>.</p>
 </div>
+<hr>
 <div class="paragraph">
 <p>En haut à gauche, c&#8217;est le bloc de filtres</p>
 </div>
@@ -900,6 +919,7 @@ Si par dessus cette disquette vous voyez</p>
 </li>
 </ul>
 </div>
+<hr>
 <div class="paragraph">
 <p>En bas à gauche le bloc d&#8217;informations sur le modèle sélectionné à droite</p>
 </div>
@@ -1047,7 +1067,7 @@ Si la case est cochée, la fenêtre vous previendra lorsque</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>cocher cette case ou non dépend seulement de l&#8217;importance de la sauvegarde de votre client, à vous de juger.</p>
+<p>cocher cette case ou non dépend seulement de l&#8217;importance de la sauvegarde de votre client, à vous de juger. Celà dit, si la fenêtre d&#8217;avertissement vous agace, vous n&#8217;aurez qu&#8217;à cocher la case <strong>Ne plus empêcher l&#8217;arrêt du client</strong> dans cette fenêtre et la case <strong>Empêcher l&#8217;arrêt sans sauvegarde récente ou possible</strong> sera décochée.</p>
 </div>
 </li>
 </ul>
@@ -1074,7 +1094,7 @@ Les capacités sont celle qui sont transmises par le client à son démarrage. S
 <div class="sect2">
 <h3 id="_onglet_ray_hack">Onglet <strong>Ray-Hack</strong></h3>
 <div class="paragraph">
-<p>Si le client est de type Ray-Hack, ici moult champs s&#8217;offrent à vous. Ce n&#8217;est pas forcément une bonne nouvelle, l&#8217;idée est de pouvoir charger dans la session un programme qui n&#8217;est pas (encore) compatible NSM. s&#8217;il est bien implémenté dans le client, le protocole NSM sera toujours bien plus confortable à utiliser et plus fiable que cette bidouille. Ceçi dit, si l&#8217;on peut attendre l&#8217;implémentation NSM dans tous les programmes audio, ce n&#8217;est pas le cas des autres programmes qui peuvent tout de même avoir une utilité dans la session.</p>
+<p>Si le client est de type Ray-Hack, ici moult champs s&#8217;offrent à vous. Ce n&#8217;est pas forcément une bonne nouvelle, l&#8217;idée est de pouvoir charger dans la session un programme qui n&#8217;est pas (encore) compatible NSM. S&#8217;il est bien implémenté dans le client, le protocole NSM sera toujours bien plus confortable à utiliser et plus fiable que cette bidouille. Ceçi dit, si l&#8217;on peut attendre l&#8217;implémentation NSM dans tous les programmes audio, ce n&#8217;est pas le cas des autres programmes qui peuvent tout de même avoir une utilité dans la session.</p>
 </div>
 <div class="paragraph">
 <p>Le pseudo-protocole Ray-Hack reprend les attributs des proxy (nsm-proxy ou ray-proxy), sauf que le client est lancé directement dans la session.</p>
@@ -1140,7 +1160,7 @@ Si <code>wmctrl</code> n&#8217;est pas installé, ou que le gestionnaire de fen�
 <p>Avec <code>ray_control</code> vous pouvez affecter d&#8217;autres signaux que ceux proposés dans les boîtes à choix multiple.
 Par exemple<br>
 <code>ray_control client CLIENT_ID set_properties save_sig:22</code><br>
-définira le signal <strong>SIGTTOU</strong> pour la sauvegardable du client CLIENT_ID.
+définira le signal <strong>SIGTTOU</strong> pour la sauvegarde du client CLIENT_ID.
 Tapez <code>kill -l</code> pour connaître les signaux disponibles et leurs numéros.</p>
 </div>
 </div>
@@ -1183,8 +1203,10 @@ Tapez <code>kill -l</code> pour connaître les signaux disponibles et leurs num�
 <h2 id="_les_sessions_réseau">Les sessions réseau</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Une session réseau permet de lancer une autre session sur une autre machine en même temps que votre session. Ça peut être particulièrement utile si vous utilisez net-jack pour décharger votre machine d&#8217;une partie du DSP, si vous avez des effets gourmands qui tournent sur une autre machine par exemple.<br>
-Les sessions réseau fonctionnent selon un rapport de maître à esclave. Une session est maîtresse et peut avoir plusieurs sessions esclaves elles-mêmes maîtresses d&#8217;autres esclaves, mais un tel scénario semble complètement farfelu. Organisez vous simplement: un maître, un ou des esclave(s).</p>
+<p>Une session réseau permet de lancer une autre session sur une autre machine en même temps que votre session. Ça peut être particulièrement utile si vous utilisez net-jack pour décharger votre machine d&#8217;une partie du DSP, si vous avez des effets gourmands qui tournent sur une autre machine par exemple.</p>
+</div>
+<div class="paragraph">
+<p>Les sessions réseau fonctionnent selon un rapport de maître à esclave. Une session est maîtresse et peut avoir plusieurs sessions esclaves elles-mêmes maîtresses d&#8217;autres esclaves, mais un tel scénario semble complètement farfelu. Organisez vous simplement: un maître, un ou des esclave(s).</p>
 </div>
 <div class="paragraph">
 <p>Pour lancer une session réseau (esclave donc), lancez le modèle d&#8217;application <strong>Network Session</strong> depuis la fenêtre des applications et suivez les instructions.</p>
@@ -1240,7 +1262,7 @@ Les sessions réseau fonctionnent selon un rapport de maître à esclave. Une se
 <h2 id="ajouter_un_programme_non_fourni">Ajouter un programme non fourni</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Si le programme que vous voulez ajouter ne gère pas de projet à enregistrer, cliquez sur <strong>Exécutable</strong>, rentrez le nom de l&#8217;exécutable et cliquez sur 'Ok'. sinon suivez cet exemple.</p>
+<p>Si le programme que vous voulez ajouter ne gère pas de projet à enregistrer, cliquez sur <strong>Exécutable</strong>, rentrez le nom de l&#8217;exécutable et cliquez sur <strong>Ok</strong>. Sinon suivez cet exemple.</p>
 </div>
 <div class="paragraph">
 <p>Nous voulons ajouter ici Audacity à la session. Audacity est choisi à titre d&#8217;exemple parce qu&#8217;il est connu et généralement installé sur les distributions audio. Ce n&#8217;est pas forcément un programme très adapté à la modularité d&#8217;une session audio étant donné la façon dont il gère JACK.</p>
@@ -1297,7 +1319,7 @@ Cochez les cases <strong>Attendre une fenêtre avant d&#8217;être considéré c
 </div>
 </div>
 <div class="paragraph">
-<p>Lancez le client Audacity et vérifiez que la fenêtre d&#8217;Audacity porte bien le nom de la session.
+<p>Lancez le client Audacity et vérifiez que la fenêtre d&#8217;Audacity porte bien le nom de la session.<br>
 Cliquez sur l&#8217;icône du client Audacity, dans le menu déroulant choisissez <strong>Sauvegarder comme modèle d&#8217;application</strong>, et rentrez <code>Audacity</code> dans le champ de la boîte de dialogue qui est apparue.
 Maintenant lorsque vous voudrez lancer Audacity dans la session, vous n&#8217;aurez qu&#8217;à lancer le modèle Audacity depuis la fenêtre d&#8217;ajout d&#8217;applications.</p>
 </div>
@@ -1316,7 +1338,7 @@ Maintenant lorsque vous voudrez lancer Audacity dans la session, vous n&#8217;au
 <p>Pour importer une session créée avec <strong>Non Session Manager</strong> ou <strong>New Session Manager</strong>, déplacez ou copiez le dossier de la session dans le dossier racine des sessions RaySession (par défaut ~/Ray Sessions). Ensuite cliquez sur <strong>Ouvrir une session</strong>, votre session doit apparaître dans la liste des sessions, double-cliquez dessus.</p>
 </div>
 <div class="paragraph">
-<p>RaySesssion ne ré-écrira pas les clients ajoutés ou supprimés dans la fichier session.nsm, à partir du moment où vous ouvrez une session NSM avec RaySession, vous devez continuer avec RaySession.</p>
+<p>RaySession ne ré-écrira pas les clients ajoutés ou supprimés dans la fichier session.nsm, à partir du moment où vous ouvrez une session NSM avec RaySession, vous devez continuer avec RaySession.</p>
 </div>
 </div>
 </div>
@@ -1406,8 +1428,7 @@ Si malgré tout le processus de cliché s&#8217;avère long, une fenêtre appara
 Si vous le souhaitez vous pouvez éditer pour chaque client les fichiers ignorés par les clichés dans la fenêtre de propriétés du client.</p>
 </div>
 <div class="paragraph">
-<p>Avec l&#8217;option <strong>Cliché automatique à la sauvegarde</strong>, un cliché est pris juste après chaque sauvegarde de la session, sauf s&#8217;il n&#8217;y a aucun changement depuis le cliché précédent. Pour prendre un cliché à un autre moment, cliquez sur l&#8217;icône de marche arrière à droite du bouton <strong>Exécutable</strong> et sur <strong>Prendre un cliché maintenant</strong>, celà présente l&#8217;avantage de pouvoir nommer le cliché et d&#8217;avoir ainsi un repère temporel plus parlant que la date et l&#8217;heure du cliché.<br>
-Pour revenir à un cliché, cliquez sur l&#8217;icône de marche arrière et suivez les instructions.</p>
+<p>Avec l&#8217;option <strong>Cliché automatique à la sauvegarde</strong>, un cliché est pris juste après chaque sauvegarde de la session, sauf s&#8217;il n&#8217;y a aucun changement depuis le cliché précédent. Pour prendre un cliché à un autre moment, cliquez sur l&#8217;icône de marche arrière à droite du bouton <strong>Exécutable</strong> et sur <strong>Prendre un cliché maintenant</strong>, celà présente l&#8217;avantage de pouvoir nommer le cliché et d&#8217;avoir ainsi un repère temporel plus parlant que la date et l&#8217;heure du cliché.<br></p>
 </div>
 </div>
 </div>
@@ -1419,7 +1440,7 @@ Pour revenir à un cliché, cliquez sur l&#8217;icône de marche arrière et sui
 Des connaissances en script shell sont nécessaires pour éditer ces scripts, mais tout un chacun peut les utiliser.</p>
 </div>
 <div class="paragraph">
-<p>Les scripts de session se trouvent dans un dossier <code>ray-scripts</code> situé soit dans un dossier de la session, soit dans un dossier parent.
+<p>Les scripts de session se trouvent dans un dossier <code>ray-scripts</code> situé soit dans un dossier de la session, soit dans un dossier parent.<br>
 Par exemple, pour une session étant dans:<br>
 <code>~/Ray Sessions/avec_script_de_foo/ma session</code></p>
 </div>
@@ -1458,7 +1479,7 @@ Seul le dossier de scripts le plus près de la session dans l&#8217;arborescence
 <p>envoyer un raccourci <em>Ctrl+S</em> aux fenêtres des clients non sauvegardables à la sauvegarde de la session (un exemple est fourni dans le code source)</p>
 </li>
 <li>
-<p>Allumer le bouton rouge à l&#8217;entrée du studio à l&#8217;ouverture, l&#8217;éteindre à la fermeture</p>
+<p>Allumer la lumière rouge à l&#8217;entrée du studio à l&#8217;ouverture, l&#8217;éteindre à la fermeture</p>
 </li>
 <li>
 <p>Lancer la machine à café à la fermeture de la session (exemple débile, allez donc appuyer sur le bouton de la cafetière, de toutes façons faudra changer le filtre !)</p>
@@ -1645,7 +1666,7 @@ Si vous utilisez Ardour, lancez le toujours depuis RaySession, d&#8217;une part 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-11-11 19:07:06 +0100
+Last updated 2020-11-13 15:07:21 +0100
 </div>
 </div>
 </body>
