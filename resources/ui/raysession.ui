@@ -742,6 +742,8 @@ QToolButton {border: none}</string>
     <addaction name="actionAboutRaySession"/>
     <addaction name="actionAboutQt"/>
     <addaction name="separator"/>
+    <addaction name="actionOnlineManual"/>
+    <addaction name="actionInternalManual"/>
     <addaction name="actionDonate"/>
    </widget>
    <widget class="QMenu" name="menuAdd">
@@ -1214,6 +1216,28 @@ QToolButton {border: none}</string>
    </property>
    <property name="text">
     <string>Rename the current session</string>
+   </property>
+  </action>
+  <action name="actionOnlineManual">
+   <property name="icon">
+    <iconset theme="documentation"/>
+   </property>
+   <property name="text">
+    <string>Online Manual</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the online manual in the web browser</string>
+   </property>
+  </action>
+  <action name="actionInternalManual">
+   <property name="icon">
+    <iconset theme="documentation"/>
+   </property>
+   <property name="text">
+    <string>Internal Manual</string>
+   </property>
+   <property name="toolTip">
+    <string>Displays internal manual in a web browser</string>
    </property>
   </action>
  </widget>

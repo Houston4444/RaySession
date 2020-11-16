@@ -1,11 +1,11 @@
 import time
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView)
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QTimer, pyqtSlot
+from PyQt5.QtGui import QIcon, QDesktopServices
+from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale
 
 from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
-                       serverStatusString, isDarkTheme)
+                       serverStatusString, isDarkTheme, getCodeRoot)
 import add_application_dialog
 import child_dialogs
 import snapshots_dialog
@@ -145,6 +145,8 @@ class MainWindow(QMainWindow):
             self.rememberOptionalGuiStatesToggled)
         self.ui.actionAboutRaySession.triggered.connect(self.aboutRaySession)
         self.ui.actionAboutQt.triggered.connect(QApplication.aboutQt)
+        self.ui.actionOnlineManual.triggered.connect(self.onlineManual)
+        self.ui.actionInternalManual.triggered.connect(self.internalManual)
         self.ui.actionDonate.triggered.connect(self.donate)
         self.ui.actionMakeReappearDialogs.triggered.connect(
             self.makeAllDialogsReappear)
@@ -559,6 +561,18 @@ class MainWindow(QMainWindow):
     def donate(self, display_no_again=False):
         dialog = child_dialogs.DonationsDialog(self, display_no_again)
         dialog.exec()
+
+    def onlineManual(self):
+        QDesktopServices.openUrl(QUrl('http://raysession.tuxfamily.org/manual'))
+
+    def internalManual(self):
+        short_locale = 'en'
+        locale_str = QLocale.system().name()
+        if len(locale_str) > 2 and '_' in locale_str:
+            short_locale = locale_str[:2]
+        
+        QDesktopServices.openUrl(
+            QUrl("%s/manual/%s/manual.html" % (getCodeRoot(), short_locale)))
 
     def saveSession(self):
         self.toDaemon('/ray/session/save')
