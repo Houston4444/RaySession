@@ -1,4 +1,5 @@
 import time
+import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView)
 from PyQt5.QtGui import QIcon, QDesktopServices
@@ -567,12 +568,15 @@ class MainWindow(QMainWindow):
 
     def internalManual(self):
         short_locale = 'en'
+        manual_dir = "%s/manual" % getCodeRoot()
         locale_str = QLocale.system().name()
-        if len(locale_str) > 2 and '_' in locale_str:
+        if (len(locale_str) > 2 and '_' in locale_str
+                and os.path.isfile(
+                    "%s/%s/manual.html" % (manual_dir, locale_str[:2]))):
             short_locale = locale_str[:2]
 
         QDesktopServices.openUrl(
-            QUrl("%s/manual/%s/manual.html" % (getCodeRoot(), short_locale)))
+            QUrl("%s/%s/manual.html" % (manual_dir, short_locale)))
 
     def saveSession(self):
         self.toDaemon('/ray/session/save')
