@@ -570,7 +570,7 @@ class MainWindow(QMainWindow):
         locale_str = QLocale.system().name()
         if len(locale_str) > 2 and '_' in locale_str:
             short_locale = locale_str[:2]
-        
+
         QDesktopServices.openUrl(
             QUrl("%s/manual/%s/manual.html" % (getCodeRoot(), short_locale)))
 

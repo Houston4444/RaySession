@@ -17,7 +17,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_5">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Command-line options are incompatible with robust session management for a variety of reasons, so the NSM server does not support them directly.&lt;/p&gt;&lt;p&gt;Some audio programs doesn't have NSM implementation yet, but they can have a LASH/LADISH implementation, and we can use it for the save signal.&lt;/p&gt;&lt;p&gt;Be warned that referring to files outside of the session directory will impair your ability to reliably archive and transport sessions. &lt;br/&gt;&lt;br/&gt;Patching the program to use NSM natively will result in a better experience. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;here many fields are available to you. This is not necessarily good news, the idea is to be able to load a program into the session that is not (yet) compatible with NSM. If properly implemented in the client, the NSM protocol will always be much more comfortable to use and more reliable than this hack. That said, if we can expect the NSM implementation in all audio programs, this is not the case for other programs which can still be useful in the session.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ray-Hack pseudo-protocol uses the attributes of proxies (nsm-proxy or ray-proxy), except that the client is launched directly in the session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string/>
@@ -84,7 +84,7 @@
         <item>
          <widget class="QLineEdit" name="lineEditConfigFile">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The program will be started with its current directory being a uniquely named directory under the current session directory. &lt;/p&gt;&lt;p&gt;It is recommended that you only refer to files in the current directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The program will be started in the folder named above.&lt;/p&gt;&lt;p&gt;It is recommended that you only refer to files in the current directory.&lt;/p&gt;&lt;p&gt;$RAY_SESSION_NAME will be replaced with the name of the session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
