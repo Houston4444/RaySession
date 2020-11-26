@@ -49,7 +49,7 @@
     <message>
         <location filename="../resources/ui/client_slot.ui" line="166"/>
         <source>GUI</source>
-        <translation>IGU</translation>
+        <translation>IUG</translation>
     </message>
     <message>
         <location filename="../resources/ui/client_slot.ui" line="211"/>
