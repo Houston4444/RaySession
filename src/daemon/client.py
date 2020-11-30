@@ -1812,6 +1812,32 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                         do_rename = False
                         break
 
+                    # only for hydrogen
+                    hydrogen_file = "%s/%s.%s.h2song" % (
+                        project_path, old_prefix, old_client_id)
+                    hydrogen_autosave = "%s/%s.%s.autosave.h2song" % (
+                        project_path, old_prefix, old_client_id)
+
+                    if (os.path.isfile(hydrogen_file)
+                            and os.access(hydrogen_file, os.W_OK)):
+                        new_hydro_file = "%s/%s.%s.h2song" % (
+                            project_path, new_prefix, new_client_id)
+                        if os.path.exists(new_hydro_file):
+                            do_rename = False
+                            break
+
+                        files_to_rename.append((hydrogen_file, new_hydro_file))
+
+                    if (os.path.isfile(hydrogen_autosave)
+                            and os.access(hydrogen_autosave, os.W_OK)):
+                        new_hydro_autosave = "%s/%s.%s.autosave.h2song" % (
+                            project_path, new_prefix, new_client_id)
+                        if os.path.exists(new_hydro_autosave):
+                            do_rename = False
+                            break
+
+                        files_to_rename.append((hydrogen_autosave, new_hydro_autosave))
+
                     # only for ardour
                     ardour_file = "%s/%s.ardour" % (project_path, old_prefix)
                     ardour_bak = "%s/%s.ardour.bak" % (project_path, old_prefix)
