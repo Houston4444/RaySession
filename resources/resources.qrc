@@ -129,6 +129,7 @@
        <file>app_icons/jack_mixer.svg</file>
        <file>app_icons/non-mixer.png</file>
        <file>app_icons/ADLplug.png</file>
+       <file>app_icons/org.hydrogenmusic.Hydrogen.svg</file>
        <file>app_icons/gx_head.png</file>
        <file>app_icons/vmpk.svgz</file>
        <file>app_icons/seq24.png</file>
@@ -146,6 +147,7 @@
        <file>app_icons/OPNplug.png</file>
        <file>app_icons/amsynth.svg</file>
        <file>app_icons/qtractor.svg</file>
+       <file>app_icons/Mamba.png</file>
        <file>app_icons/petri-foo.png</file>
        <file>app_icons/drumkv1.svg</file>
        <file>app_icons/samplv1.svg</file>
