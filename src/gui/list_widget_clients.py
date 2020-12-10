@@ -29,6 +29,8 @@ class ClientSlot(QFrame):
         self.client = client
         self._main_win = self.client._session._main_win
 
+        self.gui_state = False
+
         self.ui.toolButtonGUI.setVisible(False)
         if client.protocol != ray.Protocol.RAY_HACK:
             self.ui.toolButtonHack.setVisible(False)
