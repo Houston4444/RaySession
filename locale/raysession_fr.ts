@@ -109,7 +109,7 @@
     <message>
         <location filename="../resources/ui/client_slot.ui" line="166"/>
         <source>Display client Ray-Hack properties</source>
-        <translation>Affichier les propriétés Ray-Hack du client</translation>
+        <translation>Afficher les propriétés Ray-Hack du client</translation>
     </message>
     <message>
         <location filename="../resources/ui/client_slot.ui" line="172"/>
@@ -888,7 +888,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../resources/ui/add_application.ui" line="91"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;NSM is the protocol used by modern audio programs to ensure a good session management.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;NSM est le protocole utillisé par les programmes audio modernes pour assurer une bonne gestion de session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;NSM est le protocole utilisé par les programmes audio modernes pour assurer une bonne gestion de session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/add_application.ui" line="94"/>
@@ -1484,7 +1484,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="20"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;here many fields are available to you. This is not necessarily good news, the idea is to be able to load a program into the session that is not (yet) compatible with NSM. If properly implemented in the client, the NSM protocol will always be much more comfortable to use and more reliable than this hack. That said, if we can expect the NSM implementation in all audio programs, this is not the case for other programs which can still be useful in the session.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Ray-Hack pseudo-protocol uses the attributes of proxies (nsm-proxy or ray-proxy), except that the client is launched directly in the session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;.Ici moult champs s&apos;offrent à vous. Ce n’est pas forcément une bonne nouvelle, l’idée est de pouvoir charger dans la session un programme qui n’est pas (encore) compatible NSM. S’il est bien implémenté dans le client, le protocole NSM sera toujours bien plus confortable à utiliser et plus fiable que cette bidouille. Ceçi dit, si l’on peut attendre l’implémentation NSM dans tous les programmes audio, ce n’est pas le cas des autres programmes qui peuvent tout de même avoir une utilité dans la session.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Le pseudo-protocole Ray-Hack reprend les attributs des proxy (nsm-proxy ou ray-proxy), sauf que le client est lancé directement dans la session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;.Ici, moult champs s&apos;offrent à vous. Ce n&apos;est pas forcément une bonne nouvelle, l&apos;idée est de pouvoir charger dans la session un programme qui n&apos;est pas (encore) compatible NSM. S&apos;il est bien implémenté dans le client, le protocole NSM sera toujours bien plus confortable à utiliser et plus fiable que cette bidouille. Ceci dit, si l&apos;on peut attendre l&apos;implémentation NSM dans tous les programmes audio, ce n&apos;est pas le cas des autres programmes qui peuvent tout de même avoir une utilité dans la session.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Le pseudo-protocole Ray-Hack reprend les attributs des proxy (nsm-proxy ou ray-proxy), sauf que le client est lancé directement dans la session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="87"/>
