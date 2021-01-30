@@ -12,4 +12,5 @@
  <Client-Template template-name="Seq24" protocol="ray_hack" client_id="seq24" stop_signal="15" arguments="&quot;$CONFIG_FILE&quot;" config_file="$RAY_SESSION_NAME.midi" executable="seq24" save_signal="10" wait_window="1"/>
  <Client-Template template-name="Sequencer64" protocol="ray_hack" desktop_file="sequencer64" client_id="seq64" label="Sequencer64" save_signal="10" stop_signal="15" executable="seq64" config_file="$RAY_SESSION_NAME.midi" arguments="-m &quot;$CONFIG_FILE&quot;"/>
  <Client-Template template-name="Jack Mixer" protocol="ray_hack" desktop_file="jack_mixer" client_id="jack_mixer" arguments="-c &quot;$CONFIG_FILE&quot;" save_signal="10" stop_signal="15" executable="jack_mixer" config_file="$RAY_SESSION_NAME.xml" wait_window="1"/>
+ <Client-Template stop_signal="15" template-name="Rakarrack-plus" client_id="r_plus" save_signal="10" protocol="Ray-Hack" wait_win="0" executable="rakarrack-plus" arguments="-l &quot;$CONFIG_FILE&quot; -j &quot;$RAY_JACK_CLIENT_NAME&quot;" name="rakarrack-plus" config_file="$RAY_SESSION_NAME.rkr"/>
 </RAY-CLIENT-TEMPLATES>

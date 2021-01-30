@@ -19,3 +19,8 @@ konv# RaySession TODO
     favoris depuis ray_control -> pas pressé
 
     bug: label trop long == client widget raté
+
+    Traceback (most recent call last):
+  File "/usr/share/raysession/src/gui/list_widget_clients.py", line 313, in changeGuiState
+    if self.gui_state:
+AttributeError: 'ClientSlot' object has no attribute 'gui_state'

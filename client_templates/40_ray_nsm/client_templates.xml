@@ -32,6 +32,7 @@
  <Client-Template template-name="padthv1" name="padthv1" client_id="padthv1" icon="padthv1-jack" executable="padthv1_jack"/>
  <Client-Template template-name="ams" client_id="ams" executable="ams"/>
  <Client-Template template-name="Seq24" client_id="seq24" executable="seq24" check_nsm_bin="1"/>
+ <Client-Template template-name="Rakarrack-plus" client_id="rakarrack" executable="rakarrack-plus" check_nsm_bin="1"/>
  <Client-Template template-name="Sequencer64" desktop_file="sequencer64" client_id="seq64" executable="seq64" check_nsm_bin="1"/>
  <Client-Template template-name="SooperLooper" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" unignored_extensions=".wav"/>
  <Client-Template template-name="SooperLooper + Transport" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" arguments="--transport_workaround" unignored_extensions=".wav"/>
