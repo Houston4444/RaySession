@@ -106,6 +106,7 @@ set_samplerate(){
 
 check_alsa_device(){
     full_device="$1"
+    [[ "$full_device" == none ]] && full_device=""
     [ -z "$full_device" ] && return 0 # device is not set, should work in most cases
     
     device_and_index=${full_device#*:}
