@@ -109,6 +109,9 @@ QToolButton {border: none}</string>
      </item>
      <item>
       <widget class="QLabel" name="ClientName">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
