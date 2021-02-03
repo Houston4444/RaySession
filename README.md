@@ -3,11 +3,10 @@
 What is RaySession ?
 ---------------------
 
-RaySession is a GNU/Linux session manager for audio programs such as Ardour, Carla, QTractor, Patroneo etc...<br>
+RaySession is a GNU/Linux session manager for audio programs such as Ardour, Carla, QTractor, Guitarix, Patroneo etc...<br>
 The principle is to load together audio programs, then be able to save or close all documents together.<br>
 It communicates with programs using the NSM API, so programs compatible with NSM are also compatible with RaySession.<br>
 <br>
-
 RaySession has no vocation to become the hegemonic audio session manager under GNU/Linux, it's simply the best one according to its author's criteria.<br>
 it benefits from a [complete manual](https://raysession.tuxfamily.org/manual) as well as a splendid [web site](https://raysession.tuxfamily.org) .<br>
 
@@ -39,6 +38,6 @@ Screenshot
 ![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20200625_142130.png)
 
 
-You can see documentation on NSM at: http://non.tuxfamily.org/wiki/Non%20Session%20Manager
+You can see documentation on NSM at: http://non.tuxfamily.org/wiki/Non%20Session%20Manager or https://linuxaudio.github.io/new-session-manager/api/index.html
 
 RaySession is being developed by Mathieu Picot (houston4444), using Python3 and Qt5.
