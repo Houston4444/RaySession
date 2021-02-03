@@ -9,7 +9,7 @@ It communicates with programs using the NSM API, so programs compatible with NSM
 <br>
 
 RaySession has no vocation to become the hegemonic audio session manager under GNU/Linux, it's simply the best one according to its author's criteria.<br>
-it benefits from a [complete manual] (https://raysession.tuxfamily.org/manual) as well as a splendid [web site] (https://raysession.tuxfamily.org) .<br>
+it benefits from a [complete manual](https://raysession.tuxfamily.org/manual) as well as a splendid [web site](https://raysession.tuxfamily.org) .<br>
 
 An integrated client can save and restore JACK connections.<br>
 Except this, RaySession doesn't deals with JACK, the recommended user behavior is to use it when JACK is already started.<br>
