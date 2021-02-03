@@ -1,5 +1,18 @@
+0.10.1 / 2021-02-04
+    Manual:
+        Add a complete online and offline manual accessible from the help tab of the menu bar. It opens RaySession's manual in your web browser.
+        Note that english is not my mother language, corrections are welcome.
 
-0.10.0 / 2020-11-XX
+    Bug Fixes:
+        Client label is now grayed out when client is added stopped
+        Jack config memory script won't prevent anymore to load the session if ALSA device is set to 'none'
+        French translation fixes (thanks to Olivier Humbert)
+
+    New Template:
+        Rakarack-plus
+
+
+0.10.0 / 2020-11-10
     New Features:
         Add option "Remember optional GUI states" which recalls the optional GUIs visibility state
         Add Application dialog largely improved with access to all possible informations about the templates
