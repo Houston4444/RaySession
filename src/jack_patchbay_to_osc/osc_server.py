@@ -1,5 +1,8 @@
 
-import liblo
+#import liblo
+from liblo import ServerThread, Address, make_method
+
+import jacklib
 
 PORT_MODE_OUTPUT = 0
 PORT_MODE_INPUT = 1
@@ -10,13 +13,18 @@ PORT_TYPE_MIDI = 1
 PORT_TYPE_NULL = 2
 
 
-class OscJackPatch(liblo.ServerThread):
-    def __init__(self, port_list, connection_list):
-        liblo.ServerThread.__init__(self)
+class OscJackPatch(ServerThread):
+    def __init__(self, jack_client, port_list, connection_list):
+        ServerThread.__init__(self)
         
+        self.jack_client = jack_client
         self.port_list = port_list
         self.connection_list = connection_list
         self.gui_list = []
+        print('port:', self.port)
+        
+        for port in port_list:
+            print('pp', port.name) 
 
     def get_port_name(self, port_type: int, port_id: int)->str:
         for port in self.port_list:
@@ -27,39 +35,44 @@ class OscJackPatch(liblo.ServerThread):
         
         return ''
 
-    @liblo.make_method('/ray/patchbay/gui_announce', '')
-    def gui_announce(self, path, args, types, src_addr):
+    def add_gui(self, gui_url):
+        gui_addr = Address(gui_url)
+        if gui_addr is None:
+            return
+
+        self.send(gui_addr, '/ray/gui/patchbay_announce')
+
         for port in self.port_list:
-            self.send(src_addr, '/ray/gui/patchbay/add_port',
+            self.send(gui_addr, '/ray/gui/patchbay/add_port',
                       port.id, port.name, port.mode, port.type)
 
         for connection in self.connection_list:
-            self.send(src_addr, '/ray/gui/patchbay/add_connection',
+            self.send(gui_addr, '/ray/gui/patchbay/add_connection',
                       connection[0], connection[1])
 
-        self.gui_list.append(src_addr)
+        self.gui_list.append(gui_addr)
 
-    @liblo.make_method('/ray/patchbay/connect', 'iii')
+    @make_method('/ray/patchbay/add_gui', 's')
+    def add_gui_from_daemon(self, path, args, types, src_addr):
+        self.add_gui(args[0])
+
+    @make_method('/ray/patchbay/connect', 'ss')
     def connect_ports(self, path, args):
-        port_type, port_out_id, port_in_id = args
-        port_out_name = self.get_port_name(port_out_id)
-        port_in_name = self.get_port_name(port_in_id)
-
-        if not (port_out_name and port_in_name):
-            return
-            
+        port_out_name, port_in_name = args
+        print('eofkefoef', args)
         #connect here
+        jacklib.connect(self.jack_client, port_out_name, port_in_name)
     
-    @liblo.make_method('/ray/patchbay/disconnect', 'iii')
+    @make_method('/ray/patchbay/disconnect', 'ss')
     def remove_connection(self, path, args):
-        port_type, port_out_id, port_in_id = args
-        port_out_name = self.get_port_name(port_out_id)
-        port_in_name = self.get_port_name(port_in_id)
+        port_out_name, port_in_name = args
 
-        if not (port_out_name and port_in_name):
-            return
-        
         #disconnect here
+        jacklib.disconnect(self.jack_client, port_out_name, port_in_name)
+
+    @make_method(None, None)
+    def unknown_message(self, path, args, types, src_addr):
+        print('bahzde', args, types)
 
     def sendGui(self, *args):
         for gui_addr in self.gui_list:
@@ -68,7 +81,7 @@ class OscJackPatch(liblo.ServerThread):
     def port_added(self, port):
         self.sendGui('/ray/gui/patchbay/add_port',
                      port.id, port.name, port.mode, port.type)
-    
+
     def port_renamed(self, port):
         self.sendGui('/ray/gui/patchbay/port_renamed',
                      port.id, port.name)
@@ -83,4 +96,8 @@ class OscJackPatch(liblo.ServerThread):
     def connection_removed(self, connection):
         self.sendGui('/ray/gui/patchbay/connection_removed',
                      connection[0], connection[1])
+    
+    def server_stopped(self):
+        # here server is JACK (in future maybe pipewire)
+        self.sendGui('/ray/gui/patchbay/server_stopped')
     

@@ -410,6 +410,38 @@ class OscServerThread(ClientCommunicating):
         if multi_daemon_file:
             multi_daemon_file.update()
 
+    @ray_method('/ray/server/ask_for_patchbay', '')
+    def rayServerGetPatchbayPort(self, path, args, types, src_addr):
+        patchbay_file = '/tmp/RaySession/patchbay_infos'
+        patchbay_port = 0
+
+        if (os.path.exists(patchbay_file)
+                and os.access(patchbay_file, os.R_OK)):
+            file = open(patchbay_file, 'r')
+            contents = file.read()
+            file.close()
+            for line in contents.splitlines():
+                if line.startswith('port:'):
+                    port_str = line.rpartition(':')[2]
+                    good_port = False
+                    
+                    try:
+                        patchbay_addr = Address(int(port_str))
+                        good_port = True
+                    except:
+                        patchbay_addr = None
+                        sys.stderr.write(
+                            'port given for patchbay %s is not a valid osc port')
+                    
+                    if good_port:
+                        self.send(patchbay_addr, '/ray/patchbay/add_gui',
+                                  src_addr.url)
+                        return False
+                    break
+        
+        # continue in main thread if patchbay_to_osc is not started yet
+        # see session_signaled.py -> _ray_server_ask_for_patchbay
+
     @ray_method('/ray/server/controller_announce', 'i')
     def rayServerControllerAnnounce(self, path, args, types, src_addr):
         controller = Controller()

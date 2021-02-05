@@ -87,6 +87,9 @@ class GUIServerThread(liblo.ServerThread):
         self._signaler.daemon_announce.emit(
             src_addr, version, server_status,
             options, session_root, is_net_free)
+        
+        if True:
+            self.toDaemon('/ray/server/ask_for_patchbay')
 
     @ray_method('/ray/gui/server/disannounce', '')
     def _server_disannounce(self, path, args, types, src_addr):
@@ -260,6 +263,26 @@ class GUIServerThread(liblo.ServerThread):
 
     @ray_method('/ray/gui/hide_script_user_action', '')
     def _hide_script_user_action(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/patchbay/port_added', 'isii')
+    def _patchbay_port_added(self, path, args, types, src_addr):
+        print('popopel', args)
+        
+    @ray_method('/ray/gui/patchbay/port_renamed', 'iss')
+    def _patchbay_port_renamed(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/patchbay/port_removed', 'is')
+    def _patchbay_port_removed(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/patchbay/connection_added', 'ss')
+    def _patchbay_connection_added(self, path, args, types, src_addr):
+        pass
+
+    @ray_method('/ray/gui/patchbay/connection_removed', 'ss')
+    def _patchbay_connection_removed(self, path, args, types, src_addr):
         pass
 
     def send(self, *args):

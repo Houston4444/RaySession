@@ -35,8 +35,6 @@ def signalHandler(sig, frame):
         app.quit()
 
 class JackPort:
-    #is_new is used to prevent reconnections
-    # when a disconnection has not been saved and one new port append.
     id = 0
     name = ''
     mode = PORT_MODE_NULL
@@ -61,8 +59,8 @@ def JackShutdownCallback(arg=None):
     app.quit()
     return 0
 
-def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
-    portPtr = jacklib.port_by_id(jack_client, portId)
+def JackPortRegistrationCallback(port_id, registerYesNo, arg=None):
+    portPtr = jacklib.port_by_id(jack_client, port_id)
     portFlags = jacklib.port_flags(portPtr)
     port_name = str(jacklib.port_name(portPtr), encoding="utf-8")
 
@@ -82,9 +80,9 @@ def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
         port_type = PORT_TYPE_MIDI
 
     if registerYesNo:
-        signaler.port_added.emit(port_name, port_mode, port_type)
+        signaler.port_added.emit(port_id, port_name, port_mode, port_type)
     else:
-        signaler.port_removed.emit(port_name, port_mode, port_type)
+        signaler.port_removed.emit(port_id, port_name, port_mode, port_type)
 
     return 0
 
@@ -285,8 +283,13 @@ if __name__ == '__main__':
         for portConName in portConnectionNames:
             connection_list.append((portName, portConName))
 
-    osc_server = osc_server.OscJackPatch(port_list, connection_list)
+    osc_server = osc_server.OscJackPatch(jack_client, port_list, connection_list)
     write_existence_file(osc_server.port)
+    osc_server.start()
+    
+    if len(sys.argv) > 1:
+        for gui_url in sys.argv[1:]:
+            osc_server.add_gui(gui_url)
 
     app = QCoreApplication(sys.argv)
 

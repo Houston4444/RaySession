@@ -231,6 +231,10 @@ class SignaledSession(OperatingSession):
             self.sendGui('/ray/gui/client/no_save_level',
                          client.client_id, client.no_save_level)
 
+    def _ray_server_ask_for_patchbay(self, path, args, src_addr):
+        # if we are here, this means we need a patchbay to osc to run
+        QProcess.startDetached('ray-jackpatch_to_osc', [src_addr.url])
+
     def _ray_server_abort_copy(self, path, args, src_addr):
         self.file_copier.abort()
 
