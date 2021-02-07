@@ -4,7 +4,7 @@
 !/.git
 
 #UI builds
-/src/gui/ui_*.py
+/src/gui/ui/*.py
 /src/clients/proxy/ui_*.py
 
 #resources qt build
