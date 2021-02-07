@@ -8,7 +8,7 @@ from gui_tools import clientStatusString, _translate, isDarkTheme, RayIcon
 import child_dialogs
 import snapshots_dialog
 
-import ui_client_slot
+import ui.client_slot
 
 
 
@@ -21,7 +21,7 @@ class ClientSlot(QFrame):
 
     def __init__(self, list_widget, client):
         QFrame.__init__(self)
-        self.ui = ui_client_slot.Ui_ClientSlotWidget()
+        self.ui = ui.client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
 
         # needed variables

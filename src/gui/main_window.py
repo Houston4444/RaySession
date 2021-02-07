@@ -16,7 +16,7 @@ import ray
 import list_widget_clients
 import nsm_child
 
-import ui_raysession
+import ui.raysession
 
 def canvasCallback(action, value1, value2, valueStr):
     if action == patchcanvas.ACTION_GROUP_INFO:
@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, session):
         QMainWindow.__init__(self)
-        self.ui = ui_raysession.Ui_MainWindow()
+        self.ui = ui.raysession.Ui_MainWindow()
         self.ui.setupUi(self)
 
         self._session = session

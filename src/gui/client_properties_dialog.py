@@ -9,16 +9,16 @@ import ray
 from gui_tools import _translate, clientStatusString
 from child_dialogs import ChildDialog
 
-import ui_ray_hack_copy
-import ui_client_properties
-import ui_nsm_properties
-import ui_ray_hack_properties
-import ui_ray_net_properties
+import ui.ray_hack_copy
+import ui.client_properties
+import ui.nsm_properties
+import ui.ray_hack_properties
+import ui.ray_net_properties
 
 class RayHackCopyDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_ray_hack_copy.Ui_Dialog()
+        self.ui = ui.ray_hack_copy.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.rename_file = False
@@ -37,7 +37,7 @@ class RayHackCopyDialog(ChildDialog):
 class ClientPropertiesDialog(ChildDialog):
     def __init__(self, parent, client):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_client_properties.Ui_Dialog()
+        self.ui = ui.client_properties.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.client = client
