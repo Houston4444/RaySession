@@ -11,12 +11,56 @@ import add_application_dialog
 import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GUIServerThread
-
+from patchcanvas import patchcanvas
 import ray
 import list_widget_clients
 import nsm_child
 
 import ui_raysession
+
+def canvasCallback(action, value1, value2, valueStr):
+    if action == patchcanvas.ACTION_GROUP_INFO:
+        pass
+
+    elif action == patchcanvas.ACTION_GROUP_RENAME:
+        pass
+
+    elif action == patchcanvas.ACTION_GROUP_SPLIT:
+        groupId = value1
+        patchcanvas.splitGroup(groupId)
+
+    elif action == patchcanvas.ACTION_GROUP_JOIN:
+        groupId = value1
+        patchcanvas.joinGroup(groupId)
+        
+    elif action == patchcanvas.ACTION_PORT_GROUP_ADD:
+        gId, pgId, pMode, pType, pId1, pId2 =  [int(i) for i in valueStr.split(":")]
+        patchcanvas.addPortGroup(gId, pgId, pMode, pType)
+        patchcanvas.addPortToPortGroup(gId, pId1, pgId)
+        patchcanvas.addPortToPortGroup(gId, pId2, pgId)
+    
+    elif action == patchcanvas.ACTION_PORT_GROUP_REMOVE:
+        groupId = value1
+        portgrpId = value2
+        patchcanvas.removePortGroup(groupId, portgrpId)
+        
+    elif action == patchcanvas.ACTION_PORT_INFO:
+        pass
+
+    elif action == patchcanvas.ACTION_PORT_RENAME:
+        pass
+
+    elif action == patchcanvas.ACTION_PORTS_CONNECT:
+        gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")]
+
+    elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
+        connectionId = value1
+
+    elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
+        pass
+
+    elif action == patchcanvas.ACTION_INLINE_DISPLAY:
+        pass
 
 class MainWindow(QMainWindow):
     @classmethod
@@ -262,6 +306,11 @@ class MainWindow(QMainWindow):
 
         self.ui.listWidget.setSession(self._session)
 
+        self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
+        self.ui.graphicsView.setScene(self.scene)
+        
+        self.setupCanvas()
+
         self.setNsmLocked(CommandLineArgs.under_nsm)
 
         self.script_info_dialog = None
@@ -351,6 +400,72 @@ class MainWindow(QMainWindow):
                 _translate('actions', 'Auto Snapshot at Save'))
 
         self.has_git = has_git
+
+    def setupCanvas(self):
+        #options = patchcanvas.options_t()
+        #options.theme_name = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
+        #options.auto_hide_groups = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
+        #options.auto_select_items = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS]
+        #pOptions.use_bezier_lines  = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
+        #pOptions.antialiasing      = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
+        #pOptions.inline_displays   = self.fSavedSettings[CARLA_KEY_CANVAS_INLINE_DISPLAYS]
+
+        #if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY]:
+            #pOptions.eyecandy = patchcanvas.EYECANDY_FULL
+        #elif self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]:
+            #pOptions.eyecandy = patchcanvas.EYECANDY_SMALL
+        #else:
+            #pOptions.eyecandy = patchcanvas.EYECANDY_NONE
+
+        features = patchcanvas.features_t()
+        features.group_info   = False
+        features.group_rename = False
+        features.port_info    = False
+        features.port_rename  = False
+        features.handle_group_pos = True
+
+        #patchcanvas.setOptions(pOptions)
+        patchcanvas.setFeatures(features)
+        patchcanvas.init(ray.APP_TITLE, self.scene, canvasCallback, False)
+
+        #tryCanvasSize = self.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
+
+        #if len(tryCanvasSize) == 2 and tryCanvasSize[0].isdigit() and tryCanvasSize[1].isdigit():
+            #self.fCanvasWidth  = int(tryCanvasSize[0])
+            #self.fCanvasHeight = int(tryCanvasSize[1])
+        #else:
+            #self.fCanvasWidth  = CARLA_DEFAULT_CANVAS_SIZE_WIDTH
+            #self.fCanvasHeight = CARLA_DEFAULT_CANVAS_SIZE_HEIGHT
+
+        #patchcanvas.setCanvasSize(0, 0, self.fCanvasWidth, self.fCanvasHeight)
+        #patchcanvas.setInitialPos(self.fCanvasWidth / 2, self.fCanvasHeight / 2)
+        #self.ui.graphicsView.setSceneRect(0, 0, self.fCanvasWidth, self.fCanvasHeight)
+
+        #self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
+        #self.ui.miniCanvasPreview.init(self.scene, self.fCanvasWidth, self.fCanvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
+
+        #if self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] != patchcanvas.ANTIALIASING_NONE:
+            #self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, True)
+
+            #fullAA = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL
+            #self.ui.graphicsView.setRenderHint(QPainter.SmoothPixmapTransform, fullAA)
+            #self.ui.graphicsView.setRenderHint(QPainter.TextAntialiasing, fullAA)
+
+            #if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
+                #self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
+
+        #else:
+            #self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, False)
+
+        #if self.fSavedSettings[CARLA_KEY_CANVAS_FULL_REPAINTS]:
+            #self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+        #else:
+            #self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.MinimalViewportUpdate)
+
+    def updateCanvasInitialPos(self):
+        x = self.ui.graphicsView.horizontalScrollBar().value() + self.width()/4
+        y = self.ui.graphicsView.verticalScrollBar().value() + self.height()/4
+        patchcanvas.setInitialPos(x, y)
 
     def hideMessagesDock(self):
         self.ui.dockWidgetMessages.setVisible(False)

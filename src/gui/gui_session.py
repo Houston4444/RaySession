@@ -1,6 +1,7 @@
 
 from PyQt5.QtWidgets import QApplication
 
+from patchcanvas import patchcanvas
 import ray
 from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
@@ -135,6 +136,10 @@ class SignaledSession(Session):
         Session.__init__(self)
         self._signaler.osc_receive.connect(self.oscReceive)
         self._daemon_manager.start()
+
+        self.canvas_groups = []
+        self.canvas_ports = []
+        self.next_canvas_port_id = -1
 
     def oscReceive(self, path, args):
         func_path = path
@@ -410,3 +415,44 @@ class SignaledSession(Session):
 
     def _ray_gui_hide_script_user_action(self, path, args):
         self._main_win.hideScriptUserActionDialog()
+        
+    def _ray_gui_patchbay_port_added(self, path, args):
+        port_id, full_port_name, port_mode, port_type = args
+        group_name, colon, port_name = full_port_name.partition(':')
+        group_id = 0
+        for i in range(len(self.canvas_groups)):
+            if self.canvas_groups[i] == group_name:
+                group_id = i
+                break
+        else:
+            group_id = len(self.canvas_groups)
+            self.canvas_groups.append(group_name)
+            patchcanvas.addGroup(group_id, group_name)
+
+        port_id = len(self.canvas_ports)
+        self.canvas_ports.append(full_port_name)
+
+        patchcanvas.addPort(group_id, port_id, port_name, port_mode, port_type, 0)
+        
+    def _ray_gui_patchbay_port_removed(self, path, args):
+        port_id, full_port_name, port_mode, port_type = args
+        group_name, colon, port_name = full_port_name.partition(':')
+        
+        group_id = 0
+        for i in range(len(self.canvas_groups)):
+            if self.canvas_groups[i] == group_name:
+                group_id = i
+                break
+        else:
+            return
+        
+        port_id = 0
+        for i in range(len(self.canvas_ports)):
+            if self.canvas_ports[i] == full_port_name:
+                port_id = i
+                self.canvas_ports[i] = ''
+                break
+        else:
+            return
+
+        patchcanvas.removePort(group_id, port_id)

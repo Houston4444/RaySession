@@ -34,6 +34,8 @@ class GUIServerThread(liblo.ServerThread):
 
         global _instance
         _instance = self
+        
+        self.patchbay_addr = None
 
     def finishInit(self, session):
         self._session = session
@@ -265,15 +267,20 @@ class GUIServerThread(liblo.ServerThread):
     def _hide_script_user_action(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/gui/patchbay/announce', '')
+    def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
+        self.patchbay_addr = src_addr
+    
     @ray_method('/ray/gui/patchbay/port_added', 'isii')
     def _patchbay_port_added(self, path, args, types, src_addr):
-        print('popopel', args)
+        #print('popopel', args)
+        pass
         
     @ray_method('/ray/gui/patchbay/port_renamed', 'iss')
     def _patchbay_port_renamed(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/gui/patchbay/port_removed', 'is')
+    @ray_method('/ray/gui/patchbay/port_removed', 'isii')
     def _patchbay_port_removed(self, path, args, types, src_addr):
         pass
     

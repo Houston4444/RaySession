@@ -14,13 +14,13 @@ import osc_server
 connection_list = []
 port_list = []
 
-PORT_MODE_OUTPUT = 0
+PORT_MODE_NULL = 0
 PORT_MODE_INPUT = 1
-PORT_MODE_NULL = 2
+PORT_MODE_OUTPUT = 2
 
-PORT_TYPE_AUDIO = 0
-PORT_TYPE_MIDI = 1
-PORT_TYPE_NULL = 2
+PORT_TYPE_NULL = 0
+PORT_TYPE_AUDIO = 1
+PORT_TYPE_MIDI = 2
 
 EXISTENCE_PATH = '/tmp/RaySession/patchbay_infos'
 
@@ -49,8 +49,8 @@ def portExists(name, mode):
     return False
 
 class Signaler(QObject):
-    port_added = pyqtSignal(str, int, int)
-    port_removed = pyqtSignal(str, int, int)
+    port_added = pyqtSignal(int, str, int, int)
+    port_removed = pyqtSignal(int, str, int, int)
     port_renamed = pyqtSignal(str, str, int, int)
     connection_added = pyqtSignal(str, str)
     connection_removed = pyqtSignal(str, str)
@@ -126,17 +126,19 @@ def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
 
     return 0
 
-def portAdded(port_name, port_mode, port_type):
+def portAdded(port_id, port_name, port_mode, port_type):
     port = JackPort()
+    port.id = port_id
     port.name = port_name
     port.mode = port_mode
     port.type = port_type
     port.is_new = True
 
     port_list.append(port)
+    print('oomql')
     osc_server.port_added(port)
 
-def portRemoved(port_name, port_mode, port_type):
+def portRemoved(port_id, port_name, port_mode, port_type):
     for i in range(len(port_list)):
         port = port_list[i]
         if (port.name == port_name
@@ -203,6 +205,9 @@ def write_existence_file(port: int):
     file.close()
 
 def remove_existence_file():
+    if not os.path.exists(EXISTENCE_PATH):
+        return 
+
     try:
         os.remove(EXISTENCE_PATH)
     except PermissionError:

@@ -1,0 +1,51 @@
+Coordonnéees
+sauvées dans la session + la config IGU->démon à chaque déplacement
+démon -> IGU à l'ouverture de la session ('', 0, 0 pour le premier):
+    renvoyer tous les sessions spécific puis les autres
+
+Paires
+sauvées dans la session + la config IGU->démon à chaque paire créée/défaite
+démon -> IGU à l'ouverture de la session ('', '' pour la première):
+    renvoyer tous les sessions spécific puis les autres(vérifier incompatibilitées)
+
+-- démonpatch vers IGU---
+ports ajoutés par démonpatch vers IGU avec
+    port_full_name, port_alias1, port_alias2, port_flags, port_metadata
+
+port renommés avec:
+    port_full_name, port_new_name
+
+port_supprimés avec:
+    port_full_name
+
+port alias changés:
+    port_full_name, num_alias, port_alias
+
+connexion ajoutée avec:
+    port_full_name_out, port_full_name_in
+
+connexion supprimée avec:
+    port_full_name_out, port_full_name_in
+
+
+---IGU vers demonpatch ----
+connection
+    port_full_name_out, port_full_name_in
+
+deconnection
+    port_full_name_out, port_full_name_in
+
+
+patchbay_manager.py :
+    reçoit les port_full_name, les flags et les metadata
+    recoit les connexions
+    crée l'arborescence des groupes et ports
+    effectue la détection stereo selon les noms de port (pas les alias)
+    crée les groupes les ports et les paires dans le canvas
+    
+    contient les canvascallback
+    
+ui_ dans dossier ui.
+
+fermer le patchbaydemon quand plus de GUI
+checker les autres IGU par pid quand ajout IGU

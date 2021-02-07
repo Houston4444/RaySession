@@ -21,10 +21,6 @@ class OscJackPatch(ServerThread):
         self.port_list = port_list
         self.connection_list = connection_list
         self.gui_list = []
-        print('port:', self.port)
-        
-        for port in port_list:
-            print('pp', port.name) 
 
     def get_port_name(self, port_type: int, port_id: int)->str:
         for port in self.port_list:
@@ -39,15 +35,15 @@ class OscJackPatch(ServerThread):
         gui_addr = Address(gui_url)
         if gui_addr is None:
             return
-
+        print('marumba', gui_url)
         self.send(gui_addr, '/ray/gui/patchbay_announce')
 
         for port in self.port_list:
-            self.send(gui_addr, '/ray/gui/patchbay/add_port',
+            self.send(gui_addr, '/ray/gui/patchbay/port_added',
                       port.id, port.name, port.mode, port.type)
 
         for connection in self.connection_list:
-            self.send(gui_addr, '/ray/gui/patchbay/add_connection',
+            self.send(gui_addr, '/ray/gui/patchbay/connection_added',
                       connection[0], connection[1])
 
         self.gui_list.append(gui_addr)
@@ -79,7 +75,9 @@ class OscJackPatch(ServerThread):
             self.send(gui_addr, *args)
 
     def port_added(self, port):
-        self.sendGui('/ray/gui/patchbay/add_port',
+        print('ozeooelxxxx,', port.id, port.name, port.mode, port.type)
+        print('zie', type(port.id), type(port.name), type(port.mode), type(port.type))
+        self.sendGui('/ray/gui/patchbay/port_added',
                      port.id, port.name, port.mode, port.type)
 
     def port_renamed(self, port):
@@ -87,7 +85,9 @@ class OscJackPatch(ServerThread):
                      port.id, port.name)
     
     def port_removed(self, port):
-        self.sendGui('/ray/gui/patchbay/port_removed', port.id)
+        print('rmrmrm,', port.id, port.name, port.mode, port.type)
+        print('ziezazrm', type(port.id), type(port.name), type(port.mode), type(port.type))
+        self.sendGui('/ray/gui/patchbay/port_removed', port.id, port.name, port.mode, port.type)
     
     def connection_added(self, connection):
         self.sendGui('/ray/gui/patchbay/connection_added',
