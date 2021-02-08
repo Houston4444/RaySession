@@ -45,7 +45,17 @@ patchbay_manager.py :
     
     contient les canvascallback
     
-ui_ dans dossier ui.
 
-fermer le patchbaydemon quand plus de GUI
+
+/fermer le patchbaydemon quand plus de GUI
 checker les autres IGU par pid quand ajout IGU
+du set alias
+vérifer !ret! aliases et tous les aliases sont à revoir
+
+pb->IGU
+port_added : name:str, alias_1:str, alias_2:str, type:int, flags:int, metadata:str
+renamed: name, port_new_name
+removed: name
+
+IGU->pb
+set_alias : port_name:str, alias_num:int (1ou2), alias:str

@@ -10,6 +10,7 @@ from gui_server_thread import GUIServerThread
 from gui_tools import CommandLineArgs, RS
 from main_window import MainWindow
 from nsm_child import NSMChild, NSMChildOutside
+from patchbay_manager import PatchbayManager
 
 
 class Session:
@@ -26,6 +27,7 @@ class Session:
         self.is_renameable = True
 
         self._signaler = Signaler()
+        self.patchbay_manager = PatchbayManager()
 
         server = GUIServerThread.instance()
         server.start()
@@ -417,42 +419,61 @@ class SignaledSession(Session):
         self._main_win.hideScriptUserActionDialog()
         
     def _ray_gui_patchbay_port_added(self, path, args):
-        port_id, full_port_name, port_mode, port_type = args
-        group_name, colon, port_name = full_port_name.partition(':')
-        group_id = 0
-        for i in range(len(self.canvas_groups)):
-            if self.canvas_groups[i] == group_name:
-                group_id = i
-                break
-        else:
-            group_id = len(self.canvas_groups)
-            self.canvas_groups.append(group_name)
-            patchcanvas.addGroup(group_id, group_name)
+        #full_port_name, alias_1, alias_2, port_type, port_flags, metadata = args
+        self.patchbay_manager.add_port(*args)
+        
+        #group_name, colon, port_name = full_port_name.partition(':')
+        #group_id = 0
+        #for i in range(len(self.canvas_groups)):
+            #if self.canvas_groups[i] == group_name:
+                #group_id = i
+                #break
+        #else:
+            #group_id = len(self.canvas_groups)
+            #self.canvas_groups.append(group_name)
+            #patchcanvas.addGroup(group_id, group_name)
 
-        port_id = len(self.canvas_ports)
-        self.canvas_ports.append(full_port_name)
+        #port_id = len(self.canvas_ports)
+        #self.canvas_ports.append(full_port_name)
 
-        patchcanvas.addPort(group_id, port_id, port_name, port_mode, port_type, 0)
+        ##TODO
+        #port_mode = 1
+        #if port_flags & 2:
+            #port_mode = 2
+
+        #patchcanvas.addPort(group_id, port_id, port_name, port_mode, port_type, 0)
         
     def _ray_gui_patchbay_port_removed(self, path, args):
-        port_id, full_port_name, port_mode, port_type = args
-        group_name, colon, port_name = full_port_name.partition(':')
+        full_port_name = args[0]
+        self.patchbay_manager.remove_port(full_port_name)
         
-        group_id = 0
-        for i in range(len(self.canvas_groups)):
-            if self.canvas_groups[i] == group_name:
-                group_id = i
-                break
-        else:
-            return
+        #group_name, colon, port_name = full_port_name.partition(':')
         
-        port_id = 0
-        for i in range(len(self.canvas_ports)):
-            if self.canvas_ports[i] == full_port_name:
-                port_id = i
-                self.canvas_ports[i] = ''
-                break
-        else:
-            return
+        #group_id = 0
+        #for i in range(len(self.canvas_groups)):
+            #if self.canvas_groups[i] == group_name:
+                #group_id = i
+                #break
+        #else:
+            #return
+        
+        #port_id = 0
+        #for i in range(len(self.canvas_ports)):
+            #if self.canvas_ports[i] == full_port_name:
+                #port_id = i
+                #self.canvas_ports[i] = ''
+                #break
+        #else:
+            #return
 
-        patchcanvas.removePort(group_id, port_id)
+        #patchcanvas.removePort(group_id, port_id)
+        
+    def _ray_gui_patchbay_port_renamed(self, path, args):
+        self.patchbay_manager.rename_port(*args)
+
+    def _ray_gui_patchbay_connection_added(self, path, args):
+        self.patchbay_manager.add_connection(*args)
+        
+    def _ray_gui_patchbay_connection_removed(self, path, args):
+        self.patchbay_manager.remove_connection(*args)
+    

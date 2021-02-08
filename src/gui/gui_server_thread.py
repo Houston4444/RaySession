@@ -37,6 +37,13 @@ class GUIServerThread(liblo.ServerThread):
         
         self.patchbay_addr = None
 
+    def stop(self):
+        print('fe me stopp')
+        if self.patchbay_addr:
+            print('jenenvoie')
+            self.send(self.patchbay_addr, '/ray/patchbay/gui_disannounce')
+        liblo.ServerThread.stop(self)
+
     def finishInit(self, session):
         self._session = session
         self._signaler = self._session._signaler
@@ -269,18 +276,19 @@ class GUIServerThread(liblo.ServerThread):
     
     @ray_method('/ray/gui/patchbay/announce', '')
     def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
+        print('gorrooo', src_addr.url)
         self.patchbay_addr = src_addr
     
-    @ray_method('/ray/gui/patchbay/port_added', 'isii')
+    @ray_method('/ray/gui/patchbay/port_added', 'sssiis')
     def _patchbay_port_added(self, path, args, types, src_addr):
         #print('popopel', args)
         pass
         
-    @ray_method('/ray/gui/patchbay/port_renamed', 'iss')
+    @ray_method('/ray/gui/patchbay/port_renamed', 'ss')
     def _patchbay_port_renamed(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/gui/patchbay/port_removed', 'isii')
+    @ray_method('/ray/gui/patchbay/port_removed', 's')
     def _patchbay_port_removed(self, path, args, types, src_addr):
         pass
     

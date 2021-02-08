@@ -3,20 +3,13 @@
 import os
 import signal
 import sys
+import warnings
 
-from PyQt5.QtCore import QCoreApplication, QObject, QTimer, pyqtSignal
-from PyQt5.QtXml import QDomDocument
-
-#from shared import *
 import jacklib
 import osc_server
 
 connection_list = []
 port_list = []
-
-PORT_MODE_NULL = 0
-PORT_MODE_INPUT = 1
-PORT_MODE_OUTPUT = 2
 
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
@@ -24,92 +17,66 @@ PORT_TYPE_MIDI = 2
 
 EXISTENCE_PATH = '/tmp/RaySession/patchbay_infos'
 
-file_path = ""
-
-is_dirty = False
-
-pending_connection = False
+TERMINATE = False
 
 def signalHandler(sig, frame):
+    global TERMINATE
     if sig in (signal.SIGINT, signal.SIGTERM):
-        app.quit()
+        TERMINATE = True
 
 class JackPort:
     id = 0
     name = ''
-    mode = PORT_MODE_NULL
     type = PORT_TYPE_NULL
+    flags = 0
     alias_1 = ''
     alias_2 = ''
+    
+    def __init__(self, port_name:str):
+        self.name = port_name
+        port_ptr = jacklib.port_by_name(jack_client, port_name)
+        self.flags = jacklib.port_flags(port_ptr)
 
-def portExists(name, mode):
-    for port in port_list:
-        if port.name == name and port.mode == mode:
-            return True
-    return False
-
-class Signaler(QObject):
-    port_added = pyqtSignal(int, str, int, int)
-    port_removed = pyqtSignal(int, str, int, int)
-    port_renamed = pyqtSignal(str, str, int, int)
-    connection_added = pyqtSignal(str, str)
-    connection_removed = pyqtSignal(str, str)
+        port_type_str = str(jacklib.port_type(port_ptr), encoding="utf-8")
+        if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
+            self.type = PORT_TYPE_AUDIO
+        elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
+            self.type = PORT_TYPE_MIDI
+        
+        ret, alias_1, alias_2 = jacklib.port_get_aliases(port_ptr)
+        if ret:
+            self.alias_1 = alias_1
+            self.alias_2 = alias_2
 
 def JackShutdownCallback(arg=None):
-    app.quit()
+    global TERMINATE
+    osc_server.server_stopped()
+    TERMINATE = True
     return 0
 
-def JackPortRegistrationCallback(port_id, registerYesNo, arg=None):
-    portPtr = jacklib.port_by_id(jack_client, port_id)
-    portFlags = jacklib.port_flags(portPtr)
-    port_name = str(jacklib.port_name(portPtr), encoding="utf-8")
-
-    port_mode = PORT_MODE_NULL
-
-    if portFlags & jacklib.JackPortIsInput:
-        port_mode = PORT_MODE_INPUT
-    elif portFlags & jacklib.JackPortIsOutput:
-        port_mode = PORT_MODE_OUTPUT
-
-    port_type = PORT_TYPE_NULL
-
-    portTypeStr = str(jacklib.port_type(portPtr), encoding="utf-8")
-    if portTypeStr == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-        port_type = PORT_TYPE_AUDIO
-    elif portTypeStr == jacklib.JACK_DEFAULT_MIDI_TYPE:
-        port_type = PORT_TYPE_MIDI
-
-    if registerYesNo:
-        signaler.port_added.emit(port_id, port_name, port_mode, port_type)
+def JackPortRegistrationCallback(port_id, register_yes_no, arg=None):
+    port_ptr = jacklib.port_by_id(jack_client, port_id)
+    port_name = str(jacklib.port_name(port_ptr), encoding="utf-8")
+    
+    if register_yes_no:
+        jport = JackPort(port_name)
+        port_list.append(jport)
+        osc_server.port_added(jport)
     else:
-        signaler.port_removed.emit(port_id, port_name, port_mode, port_type)
-
+        for jport in port_list:
+            if jport.name == port_name:
+                port_list.remove(jport)
+                osc_server.port_removed(jport)
+                break
     return 0
 
-def JackPortRenameCallback(portId, oldName, newName, arg=None):
-    portPtr = jacklib.port_by_id(jack_client, portId)
-    portFlags = jacklib.port_flags(portPtr)
-
-    port_mode = PORT_MODE_NULL
-
-    if portFlags & jacklib.JackPortIsInput:
-        port_mode = PORT_MODE_INPUT
-    elif portFlags & jacklib.JackPortIsOutput:
-        port_mode = PORT_MODE_OUTPUT
-
-    port_type = PORT_TYPE_NULL
-
-    portTypeStr = str(jacklib.port_type(portPtr), encoding="utf-8")
-    if portTypeStr == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-        port_type = PORT_TYPE_AUDIO
-    elif portTypeStr == jacklib.JACK_DEFAULT_MIDI_TYPE:
-        port_type = PORT_TYPE_MIDI
-
-    signaler.port_renamed.emit(str(oldName, encoding='utf-8'),
-                               str(newName, encoding='utf-8'),
-                               port_mode,
-                               port_type)
-
+def JackPortRenameCallback(port_id, old_name, new_name, arg=None):
+    for jport in port_list:
+        if jport.name == old_name:
+            ex_name = jport.name
+            jport.name = new_name
+            osc_server.port_renamed(jport, ex_name)
+            break
     return 0
 
 def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
@@ -119,58 +86,17 @@ def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
     port_str_A = str(jacklib.port_name(port_ptr_A), encoding="utf-8")
     port_str_B = str(jacklib.port_name(port_ptr_B), encoding="utf-8")
 
+    connection = (port_str_A, port_str_B)
+
     if connect_yesno:
-        signaler.connection_added.emit(port_str_A, port_str_B)
+        connection_list.append(connection)
+        osc_server.connection_added(connection)
     else:
-        signaler.connection_removed.emit(port_str_A, port_str_B)
+        if connection in connection_list:
+            connection_list.remove(connection)
+            osc_server.connection_removed(connection)
 
     return 0
-
-def portAdded(port_id, port_name, port_mode, port_type):
-    port = JackPort()
-    port.id = port_id
-    port.name = port_name
-    port.mode = port_mode
-    port.type = port_type
-    port.is_new = True
-
-    port_list.append(port)
-    print('oomql')
-    osc_server.port_added(port)
-
-def portRemoved(port_id, port_name, port_mode, port_type):
-    for i in range(len(port_list)):
-        port = port_list[i]
-        if (port.name == port_name
-                and port.mode == port_mode
-                and port.type == port_type):
-            break
-    else:
-        return
-
-    port_list.__delitem__(i)
-    osc_server.port_removed(port)
-
-def portRenamed(old_name, new_name, port_mode, port_type):
-    for port in port_list:
-        if (port.name == old_name
-                and port.mode == port_mode
-                and port.type == port_type):
-            port.name = new_name
-            osc_server.port_renamed(port)
-            break
-
-def connectionAdded(port_str_A, port_str_B):
-    connection_list.append((port_str_A, port_str_B))
-    osc_server.connection_added((port_str_A, port_str_B))
-
-def connectionRemoved(port_str_A, port_str_B):
-    for i in range(len(connection_list)):
-        if (connection_list[i][0] == port_str_A
-                and connection_list[i][1] == port_str_B):
-            connection_list.__delitem__(i)
-            osc_server.connection_removed((port_str_A, port_str_B))
-            break
 
 def c_char_p_p_to_list(c_char_p_p):
     i = 0
@@ -216,6 +142,8 @@ def remove_existence_file():
             % EXISTENCE_PATH)
 
 if __name__ == '__main__':
+    # prevent deprecation warnings python messages
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     jack_client = jacklib.client_open(
         "ray-patch_to_osc",
         jacklib.JackNoStartServer | jacklib.JackSessionID,
@@ -224,6 +152,8 @@ if __name__ == '__main__':
     if not jack_client:
         sys.stderr.write('Unable to make a jack client !\n')
         sys.exit()
+
+    print('ze suis lààà')
 
     jacklib.set_port_registration_callback(jack_client,
                                            JackPortRegistrationCallback,
@@ -237,73 +167,43 @@ if __name__ == '__main__':
     jacklib.on_shutdown(jack_client, JackShutdownCallback, None)
     jacklib.activate(jack_client)
 
-    signaler = Signaler()
-    signaler.port_added.connect(portAdded)
-    signaler.port_removed.connect(portRemoved)
-    signaler.port_renamed.connect(portRenamed)
-    signaler.connection_added.connect(connectionAdded)
-    signaler.connection_removed.connect(connectionRemoved)
-
     #connect signals
     signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)
 
     #get all currents Jack ports and connections
-    portNameList = c_char_p_p_to_list(jacklib.get_ports(jack_client,
-                                                        "", "", 0))
+    port_name_list = c_char_p_p_to_list(
+        jacklib.get_ports(jack_client, "", "", 0))
+    
+    for port_name in port_name_list:
+        jport = JackPort(port_name)
+        port_list.append(jport)
 
-    for portName in portNameList:
-        jack_port = JackPort()
-        jack_port.name = portName
-
-        portPtr = jacklib.port_by_name(jack_client, portName)
-        portFlags = jacklib.port_flags(portPtr)
-
-        if portFlags & jacklib.JackPortIsInput:
-            jack_port.mode = PORT_MODE_INPUT
-        elif portFlags & jacklib.JackPortIsOutput:
-            jack_port.mode = PORT_MODE_OUTPUT
-        else:
-            jack_port.mode = PORT_MODE_NULL
-
-        portTypeStr = str(jacklib.port_type(portPtr), encoding="utf-8")
-        if portTypeStr == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-            jack_port.type = PORT_TYPE_AUDIO
-        elif portTypeStr == jacklib.JACK_DEFAULT_MIDI_TYPE:
-            jack_port.type = PORT_TYPE_MIDI
-        else:
-            jack_port.type = PORT_TYPE_NULL
-
-        jack_port.is_new = True
-
-        port_list.append(jack_port)
-
-        if jacklib.port_flags(portPtr) & jacklib.JackPortIsInput:
+        if jport.flags & jacklib.JackPortIsInput:
             continue
 
-        portConnectionNames = c_char_p_p_to_list(
-                                jacklib.port_get_all_connections(jack_client,
-                                                                 portPtr))
+        port_ptr = jacklib.port_by_name(jack_client, jport.name)
+        
+        # this port is output, list its connections
+        port_connection_names = c_char_p_p_to_list(
+            jacklib.port_get_all_connections(jack_client, port_ptr))
 
-        for portConName in portConnectionNames:
-            connection_list.append((portName, portConName))
+        for port_con_name in port_connection_names:
+            connection_list.append((jport.name, port_con_name))
 
     osc_server = osc_server.OscJackPatch(jack_client, port_list, connection_list)
     write_existence_file(osc_server.port)
-    osc_server.start()
     
     if len(sys.argv) > 1:
         for gui_url in sys.argv[1:]:
             osc_server.add_gui(gui_url)
 
-    app = QCoreApplication(sys.argv)
+    # MAIN Loop
+    while True:
+        osc_server.recv(50)
 
-    #needed for signals SIGINT, SIGTERM
-    timer = QTimer()
-    timer.start(200)
-    timer.timeout.connect(lambda: None)
-
-    app.exec()
+        if TERMINATE or osc_server.is_terminate():
+            break
 
     jacklib.deactivate(jack_client)
     jacklib.client_close(jack_client)
