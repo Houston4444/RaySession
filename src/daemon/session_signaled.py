@@ -637,21 +637,20 @@ class SignaledSession(OperatingSession):
                     self.bookmarker.removeAll(self.path)
 
     def _ray_server_patchbay_save_coordinates(self, path, args, src_addr):
-        in_or_out, group_name, x, y = args
-        print('miaouuu', args)
-        split_mode_no_split = 0
-        split_mode_input = 1
-        split_mode_output = 2
+        self.canvas_saver.save_group_position(*args)
+        #split_mode_no_split = 0
+        #split_mode_input = 1
+        #split_mode_output = 2
         
-        for position in self.canvas_group_positions:
-            if (in_or_out == position['in_or_out']
-                    and group_name == position['group']):
-                position['x'] = x
-                position['y'] = y
-                break
-        else:
-            self.canvas_group_positions.append(
-                {'in_or_out': in_or_out, 'group': group_name, 'x': x, 'y': y})
+        #for position in self.canvas_group_positions:
+            #if (in_or_out == position['in_or_out']
+                    #and group_name == position['group']):
+                #position['x'] = x
+                #position['y'] = y
+                #break
+        #else:
+            #self.canvas_group_positions.append(
+                #{'in_or_out': in_or_out, 'group': group_name, 'x': x, 'y': y})
 
     def _ray_server_patchbay_save_portgroup(self, path, args, src_addr):
         group_name, port_mode, port1, port2 = args

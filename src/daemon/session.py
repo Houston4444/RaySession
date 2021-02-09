@@ -12,15 +12,16 @@ from PyQt5.QtXml  import QDomDocument
 
 import ray
 
-from bookmarker        import BookMarker
-from desktops_memory   import DesktopsMemory
-from snapshoter        import Snapshoter
+from bookmarker import BookMarker
+from desktops_memory import DesktopsMemory
+from snapshoter import Snapshoter
 from multi_daemon_file import MultiDaemonFile
-from signaler          import Signaler
-from server_sender     import ServerSender
-from file_copier       import FileCopier
-from client            import Client
-from scripter          import StepScripter
+from signaler import Signaler
+from server_sender import ServerSender
+from file_copier import FileCopier
+from client import Client
+from scripter import StepScripter
+from canvas_saver import CanvasSaver
 from daemon_tools import (TemplateRoots, RS, Terminal,
                           getGitDefaultUnAndIgnored)
 
@@ -64,6 +65,7 @@ class Session(ServerSender):
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
+        self.canvas_saver = CanvasSaver()
         
         self.canvas_group_positions = []
         self.canvas_portgroups = []
@@ -940,8 +942,8 @@ class OperatingSession(Session):
         xml_rmcls = xml.createElement('RemovedClients')
         xml_wins = xml.createElement('Windows')
         xml_canvas = xml.createElement('Canvas')
-        xml_canvas_positions = xml.createElement('GroupPositions')
-        xml_portgroups = xml.createElement('CanvasPortgroups')
+        #xml_canvas_positions = xml.createElement('GroupPositions')
+        #xml_portgroups = xml.createElement('CanvasPortgroups')
         
         # save clients attributes
         for client in self.clients:
@@ -979,25 +981,27 @@ class OperatingSession(Session):
             xml_win.setAttribute('desktop', win.desktop)
             xml_wins.appendChild(xml_win)
 
-        # save patchbay group positions
-        for group_position in self.canvas_group_positions:
-            xml_gpos = xml.createElement('group')
-            for attribute in group_position.keys():
-                xml_gpos.setAttribute(attribute, group_position[attribute])
-            xml_canvas_positions.appendChild(xml_gpos)
         
-        # save patchbay portgroups (stereo/mono)
-        for portgroup in self.canvas_portgroups:
-            xml_pgrp = xml.createElement('portgroup')
-            for atttribute in portgroup.keys():
-                xml.pgrp.setAttribute(attribute, portgroup[attribute])
-            xml_portgroups.appendChild(xml_pgrp)
+        self.canvas_saver.save_session_canvas(xml, xml_canvas)
+        ## save patchbay group positions
+        #for group_position in self.canvas_group_positions:
+            #xml_gpos = xml.createElement('group')
+            #for attribute in group_position.keys():
+                #xml_gpos.setAttribute(attribute, group_position[attribute])
+            #xml_canvas_positions.appendChild(xml_gpos)
+        
+        ## save patchbay portgroups (stereo/mono)
+        #for portgroup in self.canvas_portgroups:
+            #xml_pgrp = xml.createElement('portgroup')
+            #for atttribute in portgroup.keys():
+                #xml.pgrp.setAttribute(attribute, portgroup[attribute])
+            #xml_portgroups.appendChild(xml_pgrp)
 
         p.appendChild(xml_cls)
         p.appendChild(xml_rmcls)
         p.appendChild(xml_wins)
-        xml_canvas.appendChild(xml_canvas_positions)
-        xml_canvas.appendChild(xml_portgroups)
+        #xml_canvas.appendChild(xml_canvas_positions)
+        #xml_canvas.appendChild(xml_portgroups)
         p.appendChild(xml_canvas)
 
         xml.appendChild(p)
@@ -1747,6 +1751,21 @@ for better organization."""))
                 elif tag_name == "Windows":
                     if self.hasServerOption(ray.Option.DESKTOPS_MEMORY):
                         self.desktops_memory.readXml(node.toElement())
+                
+                elif tag_name == "Canvas":
+                    print('ya du Canvas')
+                    self.canvas_saver.load_session_canvas(node.toElement())
+                    #canvas_elements = node.toElement().childNodes()
+                    #for j in range(canvas_elements.count()):
+                        #sub_node = canvas_elements.at(j)
+                        #sub_tag_name = sub_node.toElement().tagName()
+                        #if sub_tag_name == 'GroupPositions':
+                            #print('on irait bien')
+                            #self.canvas_saver.update_group_session_positions(
+                                #sub_node.toElement())
+                        #elif sub_tag_name == 'Portgroups':
+                            #self.canvas_saver.update_session_portgroups(
+                                #sub_node.toElement())
 
             ray_file.close()
 
@@ -1809,6 +1828,7 @@ for better organization."""))
         else:
             self.sendGui('/ray/gui/session/notes_hidden')
 
+        self.canvas_saver.send_all_group_positions()
         self.load_locked = True
 
         self.nextFunction()

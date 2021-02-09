@@ -169,8 +169,6 @@ class PatchbayManager:
             x_y_str = value_str
             
             str_x, colon, str_y = x_y_str.partition(':')
-            if not (str_x.isdigit() and str_y.isdigit()):
-                return
             
             for group in self.groups:
                 if group.group_id == group_id:
@@ -356,7 +354,12 @@ class PatchbayManager:
             
     def update_group_position(self, in_or_out: int, group_name: str,
                               x: int, y: int):
-        pass
+        print('pooopoeff', in_or_out, group_name, x, y)
+        for group in self.groups:
+            if group.name == group_name:
+                patchcanvas.moveGroupBox(group.group_id, in_or_out, x, y)
+                break
+        
     
     def update_portgroup(self, group_name: str, port_mode: int,
                          port1: str, port2:str):

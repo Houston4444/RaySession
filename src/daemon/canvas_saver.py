@@ -42,6 +42,19 @@ class CanvasSaver(ServerSender):
 
         return self.group_positions_session + group_positions_config_exclu
     
+    def send_all_group_positions(self):
+        for gpos in self.group_positions_session:
+            self.sendGui('/ray/gui/patchbay/group_position_info',
+                         gpos.in_or_out, gpos.group, gpos.x, gpos.y)
+        
+        for gpos_cf in self.group_positions_config:
+            for gpos_ss in self.group_positions_session:
+                if gpos_ss.same_group(gpos_cf):
+                    break
+            else:
+                self.sendGui('/ray/gui/patchbay/group_position_info',
+                             gpos.in_or_out, gpos.group, gpos.x, gpos.y)
+    
     def save_group_position(self, in_or_out: int, group: str,
                             x: int, y : int):
         for group_positions in (self.group_positions_session,
@@ -53,18 +66,57 @@ class CanvasSaver(ServerSender):
             else:
                 gpos = GroupPosition(in_or_out, group, x, y)
                 group_positions.append(gpos)
+    
+    def load_session_canvas(self, xml_element):
+        nodes = xml_element.childNodes()
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            tag_name = node.toElement().tagName()
+            if tag_name == 'GroupPositions':
+                self.update_group_session_positions(node)
+            elif tag_name == 'Portgroups':
+                self.update_session_portgroups(node)
+    
+    def save_session_canvas(self, xml, xml_element):
+        xml_group_positions = xml.createElement('GroupPositions')
+        xml_portgroups = xml.createElement('Portgroups')
+        
+        # save patchbay group positions
+        for gpos in self.group_positions_session:
+            xml_gpos = xml.createElement('group')
+            xml_gpos.setAttribute('in_or_out', gpos.in_or_out)
+            xml_gpos.setAttribute('group', gpos.group)
+            xml_gpos.setAttribute('x', gpos.x)
+            xml_gpos.setAttribute('y', gpos.y)
+            xml_group_positions.appendChild(xml_gpos)
+        
+        ## save patchbay portgroups (stereo/mono)
+        #for portgroup in self.portgroups_session:
+            #xml_pgs = xml.createElement('portgroup')
+            #xml_pgs.setAttribute('
                 
+                
+        #for portgroup in self.canvas_portgroups:
+            #xml_pgrp = xml.createElement('portgroup')
+            #for atttribute in portgroup.keys():
+                #xml.pgrp.setAttribute(attribute, portgroup[attribute])
+            #xml_portgroups.appendChild(xml_pgrp)
+        
+        xml_element.appendChild(xml_group_positions)
+        xml_element.appendChild(xml_portgroups)
+    
     def update_group_session_positions(self, xml_element):
         self.group_positions_session.clear()
-        
+        print('oodod')
         nodes = xml_element.childNodes()
 
         for i in range(nodes.count()):
+            print('coommlld')
             node = nodes.at(i)
             el = node.toElement()
             if el.tagName() != "group":
                 continue
-
+            print('cllms')
             in_or_out_str = el.attribute('in_or_out')
             group = el.attribute('group')
             x_str = el.attribute('x')
@@ -79,8 +131,11 @@ class CanvasSaver(ServerSender):
             
             if not int_ok:
                 continue
-                    
+            print('ldllldkd', in_or_out_str, group, x_str, y_str)
             gpos = GroupPosition(int(in_or_out_str), group,
                                  int(x_str), int(y_str))
 
             self.group_positions_session.append(gpos)
+            
+    def update_session_portgroups(self, xml_element):
+        pass

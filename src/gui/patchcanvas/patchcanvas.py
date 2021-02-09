@@ -602,7 +602,7 @@ def joinGroup(group_id):
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def moveGroupBox(group_id, port_mode, x, y):
+def moveGroupBox(group_id: int, port_mode: int, x: int, y: int):
     for group in canvas.group_list:
         if group.group_id == group_id:
             box = None
