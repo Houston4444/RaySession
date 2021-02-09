@@ -1,5 +1,6 @@
 
 from patchcanvas import patchcanvas
+from gui_server_thread import GUIServerThread
 
 # Port Type
 PORT_TYPE_NULL = 0
@@ -74,6 +75,7 @@ class Port:
         patchcanvas.changePortProperties(self.group_id, self.port_id,
                                          self.portgroup_id, self.short_name)
 
+
 class Group:
     def __init__(self, group_id: int, name: str):
         self.group_id = group_id
@@ -104,8 +106,7 @@ class Group:
         
         if not self.ports:
             # we are adding the first port of the group
-            if port.flags & PORT_IS_TERMINAL:
-                print('gigigical')
+            if port.flags & PORT_IS_PHYSICAL:
                 self._is_hardware = True
         
         self.ports.append(port)
@@ -118,6 +119,7 @@ class Group:
         if self.use_alias == USE_ALIAS_NONE:
             port.short_name = port.full_name.partition(':')[2]
 
+
 class PatchbayManager:
     def __init__(self):
         self.groups = []
@@ -128,11 +130,113 @@ class PatchbayManager:
         self._next_connection_id = 0
         
         self.use_alias = USE_ALIAS_NONE
-    
+        
+    def send_to_patchbay_daemon(self, *args):
+        server = GUIServerThread.instance()
+        if not server:
+            return
+        
+        if server.patchbay_addr is None:
+            return
+            
+        server.send(server.patchbay_addr, *args)
+
+    def send_to_daemon(self, *args):
+        server = GUIServerThread.instance()
+        if not server:
+            return
+        print('fafa', args)
+        server.toDaemon(*args)
+
+    def canvas_callbacks(self, action, value1, value2, value_str):
+        if action == patchcanvas.ACTION_GROUP_INFO:
+            pass
+
+        elif action == patchcanvas.ACTION_GROUP_RENAME:
+            pass
+
+        elif action == patchcanvas.ACTION_GROUP_SPLIT:
+            group_id = value1
+            patchcanvas.splitGroup(group_id)
+
+        elif action == patchcanvas.ACTION_GROUP_JOIN:
+            group_id = value1
+            patchcanvas.joinGroup(group_id)
+        
+        elif action == patchcanvas.ACTION_GROUP_MOVE:
+            group_id = value1
+            in_or_out = value2
+            x_y_str = value_str
+            
+            str_x, colon, str_y = x_y_str.partition(':')
+            if not (str_x.isdigit() and str_y.isdigit()):
+                return
+            
+            for group in self.groups:
+                if group.group_id == group_id:
+                    print('tobe sent to daemonr', in_or_out, group.name, int(str_x), int(str_y)) 
+                    self.send_to_daemon(
+                        '/ray/server/patchbay/save_coordinates',
+                        in_or_out, group.name, int(str_x), int(str_y))
+                    break
+        
+        elif action == patchcanvas.ACTION_PORT_GROUP_ADD:
+            g_id, pg_id, p_mode, p_type, p_id1, p_id2 =  [
+                int(i) for i in value_str.split(":")]
+            patchcanvas.addPortGroup(g_id, pg_id, p_mode, p_type)
+            patchcanvas.addPortToPortGroup(g_id, p_id1, pg_id)
+            patchcanvas.addPortToPortGroup(g_id, p_id2, pg_id)
+        
+        elif action == patchcanvas.ACTION_PORT_GROUP_REMOVE:
+            group_id = value1
+            portgrp_id = value2
+            patchcanvas.removePortGroup(group_id, portgrp_id)
+        
+        elif action == patchcanvas.ACTION_PORT_INFO:
+            pass
+
+        elif action == patchcanvas.ACTION_PORT_RENAME:
+            pass
+
+        elif action == patchcanvas.ACTION_PORTS_CONNECT:
+            g_out, p_out, g_in, p_in = [int(i) for i in value_str.split(":")]
+
+            port_out = self.get_port_from_id(p_out)
+            port_in = self.get_port_from_id(p_in)
+            
+            if port_out is None or port_in is None:
+                return
+
+            self.send_to_patchbay_daemon(
+                '/ray/patchbay/connect',
+                port_out.full_name, port_in.full_name)
+
+        elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
+            connection_id = value1
+            for connection in self.connections:
+                if connection.connection_id == connection_id:
+                    self.send_to_patchbay_daemon(
+                        '/ray/patchbay/disconnect',
+                        connection.port_out.full_name, 
+                        connection.port_in.full_name)
+                    break
+
+        elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
+            pass
+
+        elif action == patchcanvas.ACTION_INLINE_DISPLAY:
+            pass
+
     def get_port_from_name(self, port_name: str):
         for group in self.groups:
             for port in group.ports:
                 if port.full_name == port_name:
+                    return port
+    
+    def get_port_from_id(self, port_id: int):
+        for group in self.groups:
+            for port in group.ports:
+                if port.port_id == port_id:
                     return port
     
     def add_port(self, name: str, alias_1: str, alias_2: str,
@@ -148,8 +252,6 @@ class PatchbayManager:
             full_port_name = alias_2
             
         group_name, colon, port_name = full_port_name.partition(':')
-        print('yallla', group_name)
-        print('yoolle', port_name)
         group_is_new = False
         
         for group in self.groups:
@@ -180,8 +282,6 @@ class PatchbayManager:
                     group.remove_from_canvas()
                     self.groups.remove(group)
                 break
-            
-        #self.all_ports.remove(port)
     
     def rename_port(self, name: str, new_name: str):
         port = self.get_port_from_name(name)
@@ -191,7 +291,7 @@ class PatchbayManager:
         group_name = name.partition(':')[0]
         new_group_name = new_name.partition(':')[0]
         
-        # In case a port rename implies another group port
+        # In case a port rename implies another group for the port
         if (self.use_alias == USE_ALIAS_NONE
                 and group_name != new_group_name):
             for group in self.groups:
@@ -253,3 +353,11 @@ class PatchbayManager:
                 self.connections.remove(connection)
                 connection.remove_from_canvas()
                 break
+            
+    def update_group_position(self, in_or_out: int, group_name: str,
+                              x: int, y: int):
+        pass
+    
+    def update_portgroup(self, group_name: str, port_mode: int,
+                         port1: str, port2:str):
+        pass

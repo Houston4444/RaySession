@@ -417,56 +417,12 @@ class SignaledSession(Session):
 
     def _ray_gui_hide_script_user_action(self, path, args):
         self._main_win.hideScriptUserActionDialog()
-        
+    
     def _ray_gui_patchbay_port_added(self, path, args):
-        #full_port_name, alias_1, alias_2, port_type, port_flags, metadata = args
         self.patchbay_manager.add_port(*args)
         
-        #group_name, colon, port_name = full_port_name.partition(':')
-        #group_id = 0
-        #for i in range(len(self.canvas_groups)):
-            #if self.canvas_groups[i] == group_name:
-                #group_id = i
-                #break
-        #else:
-            #group_id = len(self.canvas_groups)
-            #self.canvas_groups.append(group_name)
-            #patchcanvas.addGroup(group_id, group_name)
-
-        #port_id = len(self.canvas_ports)
-        #self.canvas_ports.append(full_port_name)
-
-        ##TODO
-        #port_mode = 1
-        #if port_flags & 2:
-            #port_mode = 2
-
-        #patchcanvas.addPort(group_id, port_id, port_name, port_mode, port_type, 0)
-        
     def _ray_gui_patchbay_port_removed(self, path, args):
-        full_port_name = args[0]
-        self.patchbay_manager.remove_port(full_port_name)
-        
-        #group_name, colon, port_name = full_port_name.partition(':')
-        
-        #group_id = 0
-        #for i in range(len(self.canvas_groups)):
-            #if self.canvas_groups[i] == group_name:
-                #group_id = i
-                #break
-        #else:
-            #return
-        
-        #port_id = 0
-        #for i in range(len(self.canvas_ports)):
-            #if self.canvas_ports[i] == full_port_name:
-                #port_id = i
-                #self.canvas_ports[i] = ''
-                #break
-        #else:
-            #return
-
-        #patchcanvas.removePort(group_id, port_id)
+        self.patchbay_manager.remove_port(*args)
         
     def _ray_gui_patchbay_port_renamed(self, path, args):
         self.patchbay_manager.rename_port(*args)
@@ -476,4 +432,10 @@ class SignaledSession(Session):
         
     def _ray_gui_patchbay_connection_removed(self, path, args):
         self.patchbay_manager.remove_connection(*args)
+        
+    def _ray_gui_patchbay_group_position_info(self, path, args):
+        self.patchbay_manager.update_group_position(*args)
+    
+    def _ray_gui_patchbay_portgroup_info(self, path, args):
+        self.patchbay_manager.update_portgroup(*args)
     

@@ -64,6 +64,9 @@ class Session(ServerSender):
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
+        
+        self.canvas_group_positions = []
+        self.canvas_portgroups = []
 
     #############
     def oscReply(self, *args):
@@ -936,6 +939,11 @@ class OperatingSession(Session):
         xml_cls = xml.createElement('Clients')
         xml_rmcls = xml.createElement('RemovedClients')
         xml_wins = xml.createElement('Windows')
+        xml_canvas = xml.createElement('Canvas')
+        xml_canvas_positions = xml.createElement('GroupPositions')
+        xml_portgroups = xml.createElement('CanvasPortgroups')
+        
+        # save clients attributes
         for client in self.clients:
             cl = xml.createElement('client')
             cl.setAttribute('id', client.client_id)
@@ -950,6 +958,7 @@ class OperatingSession(Session):
 
             xml_cls.appendChild(cl)
 
+        # save trashed clients attributes
         for client in self.trashed_clients:
             cl = xml.createElement('client')
             cl.setAttribute('id', client.client_id)
@@ -958,6 +967,7 @@ class OperatingSession(Session):
 
             xml_rmcls.appendChild(cl)
 
+        # save desktop memory of windows if needed
         if (self.hasServer()
                 and self.getServer().options & ray.Option.DESKTOPS_MEMORY):
             self.desktops_memory.save()
@@ -969,9 +979,26 @@ class OperatingSession(Session):
             xml_win.setAttribute('desktop', win.desktop)
             xml_wins.appendChild(xml_win)
 
+        # save patchbay group positions
+        for group_position in self.canvas_group_positions:
+            xml_gpos = xml.createElement('group')
+            for attribute in group_position.keys():
+                xml_gpos.setAttribute(attribute, group_position[attribute])
+            xml_canvas_positions.appendChild(xml_gpos)
+        
+        # save patchbay portgroups (stereo/mono)
+        for portgroup in self.canvas_portgroups:
+            xml_pgrp = xml.createElement('portgroup')
+            for atttribute in portgroup.keys():
+                xml.pgrp.setAttribute(attribute, portgroup[attribute])
+            xml_portgroups.appendChild(xml_pgrp)
+
         p.appendChild(xml_cls)
         p.appendChild(xml_rmcls)
         p.appendChild(xml_wins)
+        xml_canvas.appendChild(xml_canvas_positions)
+        xml_canvas.appendChild(xml_portgroups)
+        p.appendChild(xml_canvas)
 
         xml.appendChild(p)
 

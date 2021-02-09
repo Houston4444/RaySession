@@ -18,49 +18,6 @@ import nsm_child
 
 import ui.raysession
 
-def canvasCallback(action, value1, value2, valueStr):
-    if action == patchcanvas.ACTION_GROUP_INFO:
-        pass
-
-    elif action == patchcanvas.ACTION_GROUP_RENAME:
-        pass
-
-    elif action == patchcanvas.ACTION_GROUP_SPLIT:
-        groupId = value1
-        patchcanvas.splitGroup(groupId)
-
-    elif action == patchcanvas.ACTION_GROUP_JOIN:
-        groupId = value1
-        patchcanvas.joinGroup(groupId)
-        
-    elif action == patchcanvas.ACTION_PORT_GROUP_ADD:
-        gId, pgId, pMode, pType, pId1, pId2 =  [int(i) for i in valueStr.split(":")]
-        patchcanvas.addPortGroup(gId, pgId, pMode, pType)
-        patchcanvas.addPortToPortGroup(gId, pId1, pgId)
-        patchcanvas.addPortToPortGroup(gId, pId2, pgId)
-    
-    elif action == patchcanvas.ACTION_PORT_GROUP_REMOVE:
-        groupId = value1
-        portgrpId = value2
-        patchcanvas.removePortGroup(groupId, portgrpId)
-        
-    elif action == patchcanvas.ACTION_PORT_INFO:
-        pass
-
-    elif action == patchcanvas.ACTION_PORT_RENAME:
-        pass
-
-    elif action == patchcanvas.ACTION_PORTS_CONNECT:
-        gOut, pOut, gIn, pIn = [int(i) for i in valueStr.split(":")]
-
-    elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
-        connectionId = value1
-
-    elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
-        pass
-
-    elif action == patchcanvas.ACTION_INLINE_DISPLAY:
-        pass
 
 class MainWindow(QMainWindow):
     @classmethod
@@ -426,7 +383,9 @@ class MainWindow(QMainWindow):
 
         #patchcanvas.setOptions(pOptions)
         patchcanvas.setFeatures(features)
-        patchcanvas.init(ray.APP_TITLE, self.scene, canvasCallback, False)
+        patchcanvas.init(
+            ray.APP_TITLE, self.scene,
+            self._session.patchbay_manager.canvas_callbacks, False)
 
         #tryCanvasSize = self.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
 

@@ -46,6 +46,7 @@ from . import (
     ACTION_GROUP_JOIN,
     ACTION_GROUP_SPLIT,
     ACTION_GROUP_RENAME,
+    ACTION_GROUP_MOVE,
     ACTION_PORTS_DISCONNECT,
     ACTION_INLINE_DISPLAY,
     EYECANDY_FULL,
@@ -69,7 +70,8 @@ from .utils import (CanvasItemFX,
                     CanvasGetFullPortName, 
                     CanvasGetPortConnectionList,
                     CanvasGetPortGroupName,
-                    CanvasGetPortGroupPosition)
+                    CanvasGetPortGroupPosition,
+                    CanvasCallback)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -704,7 +706,7 @@ class CanvasBox(QGraphicsItem):
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
             self.unsetCursor()
-            QTimer.singleShot(0, self.fixPos)
+            QTimer.singleShot(0, self.fixPosAfterMove)
         self.m_mouse_down = False
         self.m_cursor_moving = False
         QGraphicsItem.mouseReleaseEvent(self, event)
@@ -713,6 +715,17 @@ class CanvasBox(QGraphicsItem):
         self.setX(round(self.x()))
         self.setY(round(self.y()))
 
+    def fixPosAfterMove(self):
+        self.fixPos()
+        
+        in_or_out = 3
+        if self.m_splitted:
+            in_or_out = self.m_splitted_mode
+        
+        x_y_str = "%i:%i" % (round(self.x()), round(self.y()))
+        
+        CanvasCallback(ACTION_GROUP_MOVE, self.m_group_id, in_or_out, x_y_str)
+        
     def boundingRect(self):
         return QRectF(0, 0, self.p_width, self.p_height)
 

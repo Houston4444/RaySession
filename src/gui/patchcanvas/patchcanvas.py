@@ -298,11 +298,14 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
 
     if split == SPLIT_UNDEF:
         isHardware = bool(icon == ICON_HARDWARE)
-
-        if features.handle_group_pos:
-            split = getStoredCanvasSplit(group_name, SPLIT_YES if isHardware else split)
-        elif isHardware:
+        print('ozeolxx,', group_name, isHardware, split)
+        #if features.handle_group_pos:
+            #split = getStoredCanvasSplit(group_name, SPLIT_YES if isHardware else split)
+        #elif isHardware:
+            #split = SPLIT_YES
+        if isHardware:
             split = SPLIT_YES
+        print('oefkklll', group_name, split)
 
     group_box = CanvasBox(group_id, group_name, icon)
 
@@ -598,6 +601,32 @@ def joinGroup(group_id):
         connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
 
     QTimer.singleShot(0, canvas.scene.update)
+
+def moveGroupBox(group_id, port_mode, x, y):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            box = None
+            if group.split:
+                if port_mode == PORT_MODE_OUTPUT:
+                    box = group.widgets[0]
+                elif port_mode == PORT_MODE_INPUT:
+                    box = group.widgets[1]
+                else:
+                    return
+            else:
+                if port_mode == PORT_MODE_INPUT + PORT_MODE_OUTPUT:
+                    box = group.widgets[0]
+                else:
+                    return
+            
+            if box is None:
+                return
+            
+            print('gogogo', group.group_name, x, y)
+            box.setPos(QPointF(x, y))
+            break
+                
+                
 
 # ------------------------------------------------------------------------------------------------------------
 

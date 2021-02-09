@@ -300,6 +300,14 @@ class GUIServerThread(liblo.ServerThread):
     def _patchbay_connection_removed(self, path, args, types, src_addr):
         pass
 
+    @ray_method('/ray/gui/patchbay/group_position_info', 'isii')
+    def _patchbay_group_position(self, path, args, types, src_addr):
+        pass
+
+    @ray_method('/ray/gui/patchbay/portgroup_info', 'siss')
+    def _patchbay_portgroup_info(self, path, args, types, src_addr):
+        pass
+
     def send(self, *args):
         if CommandLineArgs.debug:
             sys.stderr.write(
@@ -308,6 +316,7 @@ class GUIServerThread(liblo.ServerThread):
         liblo.ServerThread.send(self, *args)
 
     def toDaemon(self, *args):
+        print('youpla', self._daemon_manager.address.url)
         self.send(self._daemon_manager.address, *args)
 
     def announce(self):

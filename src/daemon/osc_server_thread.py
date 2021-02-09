@@ -787,6 +787,14 @@ class OscServerThread(ClientCommunicating):
         elif action == 'unset_jack_checker_autostart':
             os.remove("%s/%s" % (autostart_dir, desk_file))
 
+    @ray_method('/ray/server/patchbay/save_coordinates', 'isii')
+    def rayServerPatchbaySaveCoordinates(self, path, args, types, src_addr):
+        print('faooozlllls')
+    
+    @ray_method('/ray/server/patchbay/save_portgroup', 'siss')
+    def rayServerPatchbaySavePortGroup(self, path, args, types, src_addr):
+        pass
+
     @ray_method('/ray/session/save', '')
     def raySessionSave(self, path, args, types, src_addr):
         if not self.session.path:

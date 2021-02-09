@@ -137,7 +137,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.__init__(self, parent, client)
 
         self.nsmui_frame = QFrame()
-        self.nsmui = ui_nsm_properties.Ui_Frame()
+        self.nsmui = ui.nsm_properties.Ui_Frame()
         self.nsmui.setupUi(self.nsmui_frame)
         self.ui.verticalLayoutProtocol.addWidget(self.nsmui_frame)
 
@@ -175,7 +175,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.__init__(self, parent, client)
 
         self.ray_hack_frame = QFrame()
-        self.rhack = ui_ray_hack_properties.Ui_Frame()
+        self.rhack = ui.ray_hack_properties.Ui_Frame()
         self.rhack.setupUi(self.ray_hack_frame)
 
         self.config_file = ""

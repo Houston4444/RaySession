@@ -17,7 +17,7 @@ class OscJackPatch(Server):
         self.add_method('/ray/patchbay/connect', 'ss',
                         self._ray_patchbay_connect)
         self.add_method('/ray/patchbay/disconnect', 'ss',
-                        self._ray_patchbay_connect)
+                        self._ray_patchbay_disconnect)
         
         self.jack_client = jack_client
         self.port_list = port_list
@@ -29,9 +29,7 @@ class OscJackPatch(Server):
         self.add_gui(args[0])
 
     def _ray_patchbay_gui_disannounce(self, path, args, types, src_addr):
-        print('guiii diss')
         for gui_addr in self.gui_list:
-            print('didi', gui_addr.url, src_addr.url)
             if gui_addr.url == src_addr.url:
                 # possible because we break the loop
                 self.gui_list.remove(gui_addr)
@@ -62,7 +60,6 @@ class OscJackPatch(Server):
     
     def _ray_patchbay_disconnect(self, path, args):
         port_out_name, port_in_name = args
-
         #disconnect here
         jacklib.disconnect(self.jack_client, port_out_name, port_in_name)
 
