@@ -71,10 +71,12 @@ def JackPortRegistrationCallback(port_id, register_yes_no, arg=None):
     return 0
 
 def JackPortRenameCallback(port_id, old_name, new_name, arg=None):
+    print('jackk poort rename callback', port_id, old_name, new_name, arg)
     for jport in port_list:
-        if jport.name == old_name:
+        if jport.name == str(old_name, encoding="utf-8"):
             ex_name = jport.name
-            jport.name = new_name
+            jport.name = str(new_name, encoding="utf-8")
+            #print('sent to ssoosl', old_name, new_name)
             osc_server.port_renamed(jport, ex_name)
             break
     return 0

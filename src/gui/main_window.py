@@ -1,9 +1,10 @@
 import time
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
-                             QMessageBox, QToolButton, QAbstractItemView)
+                             QMessageBox, QToolButton, QAbstractItemView,
+                             QWidget)
 from PyQt5.QtGui import QIcon, QDesktopServices
-from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale
+from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
                        serverStatusString, isDarkTheme, getCodeRoot)
@@ -28,6 +29,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, session):
         QMainWindow.__init__(self)
+        self.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea)
         self.ui = ui.raysession.Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -263,6 +265,11 @@ class MainWindow(QMainWindow):
 
         self.ui.listWidget.setSession(self._session)
 
+        self.ui.dockWidget.setTitleBarWidget(QWidget())
+        #self.ui.dockWidget_2.setTitleBarWidget(QWidget())
+
+        #self.patchbay_dialog = child_dialogs.PatchbayDialog(self)
+        #self.ui.pushButtonPatchbay.clicked.connect(self.patchbay_dialog.show)
         self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
         self.ui.graphicsView.setScene(self.scene)
         
@@ -283,6 +290,42 @@ class MainWindow(QMainWindow):
         self.progress_dialog_visible = False
 
         self.has_git = False
+        
+        self._were_visible_before_fullscreen = 0
+        self._geom_before_fullscreen = None
+
+    def toggleSceneFullScreen(self):
+        visible_maximized = 0x1
+        visible_messages = 0x2
+        visible_menubar = 0x4
+        
+        if self.isFullScreen():
+            self.ui.dockWidget.setVisible(True)
+            self.ui.toolBar.setVisible(True)
+            if self._were_visible_before_fullscreen & visible_messages:
+                self.ui.dockWidgetMessages.setVisible(True)
+            if self._were_visible_before_fullscreen & visible_menubar:
+                self.ui.menuBar.setVisible(True)
+            
+            if self._were_visible_before_fullscreen & visible_maximized:
+                self.showNormal()
+                self.showMaximized()
+            else:
+                self.showNormal()
+                self.setGeometry(self._geom_before_fullscreen)
+        else:
+            self._were_visible_before_fullscreen = \
+                visible_maximized * int(self.isMaximized()) \
+                + visible_messages * int(self.ui.dockWidgetMessages.isVisible()) \
+                + visible_menubar * int(self.ui.menuBar.isVisible())
+            
+            self._geom_before_fullscreen = self.geometry()
+            
+            self.ui.dockWidget.setVisible(False)
+            self.ui.dockWidgetMessages.setVisible(False)
+            self.ui.menuBar.setVisible(False)
+            self.ui.toolBar.setVisible(False)
+            self.showFullScreen()
 
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
@@ -358,6 +401,8 @@ class MainWindow(QMainWindow):
 
         self.has_git = has_git
 
+    
+    
     def setupCanvas(self):
         #options = patchcanvas.options_t()
         #options.theme_name = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]

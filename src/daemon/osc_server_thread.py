@@ -1278,6 +1278,8 @@ class OscServerThread(ClientCommunicating):
                   self.session.name, self.session.path)
         self.send(gui_addr, '/ray/gui/session/notes', self.session.notes)
 
+        self.session.canvas_saver.send_all_group_positions(gui_addr)
+        
         for favorite in RS.favorites:
             self.send(gui_addr, "/ray/gui/favorites/added",
                       favorite.name, favorite.icon, int(favorite.factory))

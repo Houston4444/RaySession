@@ -63,7 +63,8 @@ ACTION_PLUGIN_REPLACE    = 14 # plugin_id, N, N
 ACTION_PLUGIN_REMOVE     = 15 # plugin_id, N, N
 ACTION_PLUGIN_SHOW_UI    = 16 # plugin_id, N, N
 ACTION_BG_RIGHT_CLICK    = 17 # N, N, N
-ACTION_INLINE_DISPLAY    = 18 # plugin_id, N, N
+ACTION_DOUBLE_CLICK      = 18 # N, N, N
+ACTION_INLINE_DISPLAY    = 19 # plugin_id, N, N
 
 # Icon
 ICON_APPLICATION = 0

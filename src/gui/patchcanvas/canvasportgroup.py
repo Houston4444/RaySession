@@ -133,7 +133,9 @@ class CanvasPortGroup(QGraphicsItem):
         self.update()
 
     def SplitToMonos(self):
-        CanvasCallback(ACTION_PORT_GROUP_REMOVE, self.m_group_id, self.m_portgrp_id, "")
+        CanvasCallback(ACTION_PORT_GROUP_REMOVE,
+                       self.m_group_id, self.m_portgrp_id, "")
+        print('ohjabun')
         
     def ConnectToHover(self):
         if self.m_hover_item:
@@ -499,7 +501,7 @@ class CanvasPortGroup(QGraphicsItem):
                             act_x_disc_portgrp = discMenu.addAction(portgrp_print_name)        
                             act_x_disc_portgrp.setData(portgrp_con_list)
                             act_x_disc_portgrp.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
-                                
+
                 # set port action in submenu
                 # if port is in a portgrp and isn't the only one connected to the box 
                 if not port_alone_connected and port.portgrp_id in portgrp_dirty_connect_list:
@@ -508,25 +510,27 @@ class CanvasPortGroup(QGraphicsItem):
                     act_x_disc_port = discMenu.addAction('  → ' + port_print_name)
                     act_x_disc_port.setData(port_con_list)
                     act_x_disc_port.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
-                
+
         menu.addMenu(discMenu)
         act_x_disc_alltheportgrp = menu.addAction("Disconnect &All")
         act_x_sep_1 = menu.addSeparator()
         act_x_setasmono = menu.addAction('Split to Monos')
 
         act_selected = menu.exec_(event.screenPos())
-        
+
         if act_selected == act_x_disc_alltheportgrp:
             for connection in canvas.connection_list:
                 if CanvasConnectionConcerns(connection,
                                 self.m_group_id, self.m_port_id_list):
                     canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
-            
+
         elif act_selected == act_x_setasmono:
             self.SplitToMonos()
-            
+            #QTimer.singleShot(50, self.SplitToMonos)
+
         event.accept()
-    
+        print('rokkkadpp')
+
     def setPortGroupSelected(self, yesno):
         for connection in canvas.connection_list:
             if CanvasConnectionConcerns(connection,

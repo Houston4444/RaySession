@@ -1,4 +1,5 @@
 
+from daemon_tools import RS
 from server_sender import ServerSender
 
 
@@ -21,6 +22,11 @@ class GroupPosition:
         self.x = x
         self.y = y
 
+    def to_tuple(self)->tuple:
+        return {'group': self.group,
+                'in_or_out': self.in_or_out,
+                'x': self.x,
+                'y': self.y}
 
 class CanvasSaver(ServerSender):
     def __init__(self):
@@ -29,6 +35,13 @@ class CanvasSaver(ServerSender):
         self.group_positions_config = []
         self.portgroups_session = []
         self.portgroups_config = []
+        tuple_config_list = RS.settings.value(
+            'Canvas/GroupPositions', type=list)
+        
+        for gt in tuple_config_list:
+            group_pos = GroupPosition(
+                gt['in_or_out'], gt['group'], gt['x'], gt['y'])
+            self.group_positions_config.append(group_pos)
         
     def get_all_group_positions(self)->list:
         group_positions_config_exclu = []
@@ -42,19 +55,25 @@ class CanvasSaver(ServerSender):
 
         return self.group_positions_session + group_positions_config_exclu
     
-    def send_all_group_positions(self):
+    def send_session_group_positions(self):
         for gpos in self.group_positions_session:
             self.sendGui('/ray/gui/patchbay/group_position_info',
                          gpos.in_or_out, gpos.group, gpos.x, gpos.y)
-        
+    
+    def send_all_group_positions(self, src_addr):
+        for gpos in self.group_positions_session:
+            self.send(src_addr, '/ray/gui/patchbay/group_position_info',
+                      gpos.in_or_out, gpos.group, gpos.x, gpos.y)
+
         for gpos_cf in self.group_positions_config:
             for gpos_ss in self.group_positions_session:
                 if gpos_ss.same_group(gpos_cf):
                     break
             else:
-                self.sendGui('/ray/gui/patchbay/group_position_info',
-                             gpos.in_or_out, gpos.group, gpos.x, gpos.y)
-    
+                self.send(src_addr, '/ray/gui/patchbay/group_position_info',
+                          gpos_cf.in_or_out, gpos_cf.group,
+                          gpos_cf.x, gpos_cf.y)
+
     def save_group_position(self, in_or_out: int, group: str,
                             x: int, y : int):
         for group_positions in (self.group_positions_session,
@@ -66,6 +85,11 @@ class CanvasSaver(ServerSender):
             else:
                 gpos = GroupPosition(in_or_out, group, x, y)
                 group_positions.append(gpos)
+        
+        print('yaloo')
+        RS.settings.setValue('Canvas/GroupPositions',
+                             [gp.to_tuple() for gp in group_positions])
+        print('augooluaf')
     
     def load_session_canvas(self, xml_element):
         nodes = xml_element.childNodes()

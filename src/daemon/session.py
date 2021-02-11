@@ -65,6 +65,7 @@ class Session(ServerSender):
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
+        print('ozekoffofofofoffo')
         self.canvas_saver = CanvasSaver()
         
         self.canvas_group_positions = []
@@ -1828,7 +1829,7 @@ for better organization."""))
         else:
             self.sendGui('/ray/gui/session/notes_hidden')
 
-        self.canvas_saver.send_all_group_positions()
+        self.canvas_saver.send_session_group_positions()
         self.load_locked = True
 
         self.nextFunction()

@@ -38,6 +38,7 @@ from . import (
     CanvasBezierLineType,
     CanvasRubberbandType,
     ACTION_BG_RIGHT_CLICK,
+    ACTION_DOUBLE_CLICK,
     MAX_PLUGIN_ID_ALLOWED,
 )
 
@@ -87,6 +88,11 @@ class PatchScene(QGraphicsScene):
 
         self.selectionChanged.connect(self.slot_selectionChanged)
 
+    #def update(self):
+        #print('okokozo')
+        #QGraphicsScene.update(self)
+        #print('lazslas')
+        
     def getDevicePixelRatioF(self):
         if QT_VERSION < 0x50600:
             return 1.0
@@ -272,6 +278,10 @@ class PatchScene(QGraphicsScene):
     def startConnectionCut(self):
         if self.curCut:
             self.m_view.viewport().setCursor(self.curCut)
+
+    def mouseDoubleClickEvent(self, event):
+        #QGraphicsScene.mouseDoubleClickEvent(self, event)
+        canvas.callback(ACTION_DOUBLE_CLICK, 0, 0, "")
 
     def mousePressEvent(self, event):
         self.m_mouse_down_init = (
