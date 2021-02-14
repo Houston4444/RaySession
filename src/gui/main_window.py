@@ -1181,8 +1181,9 @@ class MainWindow(QMainWindow):
         QApplication.quit()
 
     def saveWindowSettings(self):
-        RS.settings.setValue('MainWindow/geometry', self.saveGeometry())
-        RS.settings.setValue('MainWindow/WindowState', self.saveState())
+        if not self.isFullScreen():
+            RS.settings.setValue('MainWindow/geometry', self.saveGeometry())
+            RS.settings.setValue('MainWindow/WindowState', self.saveState())
         RS.settings.setValue(
             'MainWindow/ShowMenuBar',
             self.ui.menuBar.isVisible())

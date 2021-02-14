@@ -57,12 +57,12 @@ class Theme(object):
             self.box_bg_2 = QColor(43, 47, 48)
             self.box_shadow = QColor(89, 89, 89, 180)
             self.box_header_pixmap = None
-            self.box_header_height = 24
+            self.box_header_height = 36
             self.box_header_spacing = 0
 
             self.box_text = QPen(QColor(240, 240, 240), 0)
             self.box_text_sel = self.box_text
-            self.box_text_ypos = 16
+            self.box_text_ypos = 20
             self.box_font_name = "Deja Vu Sans"
             self.box_font_size = 11
             self.box_font_state = QFont.Bold
@@ -71,7 +71,8 @@ class Theme(object):
             self.box_use_icon = True
 
             # Ports
-            self.port_text = QPen(QColor(250, 250, 250), 0)
+            #self.port_text = QPen(QColor(250, 250, 250), 0)
+            self.port_text = QPen(QColor(30, 30, 30), 0)
             self.port_text_ypos = 12
             self.port_bg_pixmap = None
             self.port_font_name = "Deja Vu Sans"
@@ -79,7 +80,8 @@ class Theme(object):
             self.port_font_state = QFont.Normal
             self.port_mode = self.THEME_PORT_POLYGON
 
-            self.port_audio_jack_pen = QPen(QColor(63, 90, 126), 1)
+            #self.port_audio_jack_pen = QPen(QColor(63, 90, 126), 1)
+            self.port_audio_jack_pen = QPen(QColor(80, 80, 80), 1)
             self.port_audio_jack_pen_sel = QPen(QColor(63 + 30, 90 + 30, 126 + 30), 1)
             self.port_midi_jack_pen = QPen(QColor(159, 44, 42), 1)
             self.port_midi_jack_pen_sel = QPen(QColor(159 + 30, 44 + 30, 42 + 30), 1)
@@ -88,7 +90,9 @@ class Theme(object):
             self.port_parameter_pen = QPen(QColor(137, 76, 43), 1)
             self.port_parameter_pen_sel = QPen(QColor(137 + 30, 76 + 30, 43 + 30), 1)
 
-            self.port_audio_jack_bg = QColor(35, 61, 99)
+            #self.port_audio_jack_bg = QColor(35, 61, 99)
+            #self.port_audio_jack_bg = QColor(183, 199, 101)
+            self.port_audio_jack_bg = QColor(160, 160, 140)
             self.port_audio_jack_bg_sel = QColor(35 + 50, 61 + 50, 99 + 50)
             self.port_midi_jack_bg = QColor(120, 15, 16)
             self.port_midi_jack_bg_sel = QColor(120 + 50, 15 + 50, 16 + 50)
@@ -97,9 +101,12 @@ class Theme(object):
             self.port_parameter_bg = QColor(101, 47, 16)
             self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
             
-            self.portgrp_audio_jack_pen = QPen(QColor(63, 90, 126), 1)
+            #self.portgrp_audio_jack_pen = QPen(QColor(63, 90, 126), 1)
+            self.portgrp_audio_jack_pen = QPen(QColor(80, 80, 80), 1)
             self.portgrp_audio_jack_pen_sel = QPen(QColor(63 + 30, 90 + 30, 126 + 30), 1)
-            self.portgrp_audio_jack_bg = QColor(26, 45, 71)
+            #self.portgrp_audio_jack_bg = QColor(26, 45, 71)
+            #self.portgrp_audio_jack_bg = QColor(209, 227, 115)
+            self.portgrp_audio_jack_bg = QColor(140, 140, 120)
             self.portgrp_audio_jack_bg_sel = QColor(27 + 50, 47 + 50, 75 + 50)
 
             self.port_audio_jack_text = self.port_text
@@ -118,7 +125,9 @@ class Theme(object):
             self.port_spacingT = 2
 
             # Lines
-            self.line_audio_jack = QColor(63, 90, 126)
+            #self.line_audio_jack = QColor(63, 90, 126)
+            #self.line_audio_jack = QColor(183, 199, 101)
+            self.line_audio_jack = QColor(160, 160, 140)
             self.line_audio_jack_sel = QColor(63 + 90, 90 + 90, 126 + 90)
             self.line_audio_jack_glow = QColor(100, 100, 200)
             self.line_midi_jack = QColor(159, 44, 42)

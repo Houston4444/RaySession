@@ -92,6 +92,9 @@ if __name__ == '__main__':
     if CommandLineArgs.gui_url:
         server.announceGui(CommandLineArgs.gui_url.url,
                            gui_pid=CommandLineArgs.gui_pid)
+    elif CommandLineArgs.gui_port:
+        server.announceGui(CommandLineArgs.gui_port.url,
+                           gui_pid=CommandLineArgs.gui_pid)
 
     # announce to ray_control if launched from it.
     if CommandLineArgs.control_url:

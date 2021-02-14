@@ -42,10 +42,11 @@ class Connection:
 
 
 class Port:
-    short_name = ''
+    display_name = ''
     group_id = -1
     portgroup_id = 0
     prevent_stereo = False
+    set_the_one_on_pair = False
 
     def __init__(self, port_id: int, name: str, alias_1: str, alias_2: str,
                  port_type: int, flags: int, metadata: str):
@@ -65,6 +66,11 @@ class Port:
         else:
             return PORT_MODE_NULL
 
+    def set_the_one(self):
+        self.display_name += ' 1'
+        self.set_the_one_on_pair = False
+        self.change_canvas_properties()
+
     def add_to_canvas(self):
         port_mode = PORT_MODE_NULL
         if self.flags & PORT_IS_INPUT:
@@ -74,7 +80,7 @@ class Port:
         else:
             return
 
-        patchcanvas.addPort(self.group_id, self.port_id, self.short_name,
+        patchcanvas.addPort(self.group_id, self.port_id, self.display_name,
                             port_mode, self.type, self.portgroup_id)
     
     def remove_from_canvas(self):
@@ -82,7 +88,7 @@ class Port:
     
     def change_canvas_properties(self):
         patchcanvas.changePortProperties(self.group_id, self.port_id,
-                                         self.portgroup_id, self.short_name)
+                                         self.portgroup_id, self.display_name)
 
 
 class Portgroup:
@@ -126,28 +132,38 @@ class Group:
         self.ports = []
         self.portgroups = []
         self._is_hardware = False
+        self.client_icon = ''
 
     def add_to_canvas(self):
-        icon = patchcanvas.ICON_APPLICATION
+        icon_type = patchcanvas.ICON_APPLICATION
         if self._is_hardware:
-            icon = patchcanvas.ICON_HARDWARE
+            icon_type = patchcanvas.ICON_HARDWARE
+        if self.client_icon:
+            icon_type = patchcanvas.ICON_CLIENT
 
+        print('add to cannvassss the group', self.name)
         patchcanvas.addGroup(self.group_id, self.name,
-                             patchcanvas.SPLIT_UNDEF, icon)
+                             patchcanvas.SPLIT_UNDEF,
+                             icon_type, self.client_icon)
     
     def remove_from_canvas(self):
         patchcanvas.removeGroup(self.group_id)
 
     def add_port(self, port, use_alias: int):
         port_full_name = port.full_name
+        
         if use_alias == USE_ALIAS_1:
             port_full_name = port.alias_1
         elif use_alias == USE_ALIAS_2:
             port_full_name = port.alias_2
         
         port.group_id = self.group_id
-        port.short_name = port_full_name.partition(':')[2]
         
+        if (port_full_name.startswith('a2j:')
+                and not port.flags & PORT_IS_PHYSICAL):
+            port_full_name = port_full_name.partition(':')[2]
+        port.display_name = port_full_name.partition(':')[2]
+
         if not self.ports:
             # we are adding the first port of the group
             if port.flags & PORT_IS_PHYSICAL:
@@ -158,9 +174,128 @@ class Group:
     def remove_port(self, port):
         if port in self.ports:
             self.ports.remove(port)
+    
+    def set_client_icon(self, icon_name:str):
+        self.client_icon = icon_name
+    
+    def get_pretty_client(self):
+        for client_name in ('firewire_pcm', 'a2j',
+                            'Hydrogen', 'ardour', 'Ardour', 'Qtractor',
+                            'SooperLooper', 'sooperlooper', 'Luppp',
+                            'seq64'):
+            if self.name == client_name:
+                return client_name
+
+            if self.name.startswith(client_name + '_'):
+                if self.name.replace(client_name + '_', '', 1).isdigit():
+                    return client_name
             
-    def rename_port(self, port):
-        port.short_name = port.full_name.partition(':')[2]
+            if self.name.startswith(client_name + '.'):
+                # TODO or to check what happens
+                return client_name
+        return ''
+    
+    def graceful_port(self, port):
+        def split_end_digits(name: str)->tuple:
+            num = ''
+            while name and name[-1].isdigit():
+                num = name[-1] + num
+                name = name[:-1]
+            
+            return (name, num)
+        
+        def cut_end(name: str, *ends: str)->str:
+            for end in ends:
+                if name.endswith(end):
+                    return name.rsplit(end)[0]
+            return name
+            
+        client_name = self.get_pretty_client()
+        
+        display_name = port.display_name
+        s_display_name = display_name
+        
+        if client_name == 'firewire_pcm':
+            if '(' in display_name and ')' in display_name:
+                after_para = display_name.partition('(')[2]
+                display_name = after_para.rpartition(')')[0]
+                display_name, num = split_end_digits(display_name)
+                
+                if num:
+                    if display_name.endswith(':'):
+                        display_name = display_name[:-1]
+                    display_name += ' ' + num
+            else:
+                display_name = display_name.partition('_')[2]
+                display_name = cut_end(display_name, '_in', '_out')
+                
+        elif client_name == 'Hydrogen':
+            if display_name.startswith('Track_'):
+                display_name = display_name.replace('Track_', '', 1)
+                
+                num, udsc, name = display_name.partition('_')
+                if num.isdigit():
+                    display_name = num + ' ' + name
+            
+            if display_name.endswith('_Main_L'):
+                display_name = display_name.replace('_Main_L', ' L', 1)
+            elif display_name.endswith('_Main_R'):
+                display_name = display_name.replace('_Main_R', ' R', 1)
+        
+        elif client_name == 'a2j':
+            name_1, colon, name_2 = display_name.partition(':')
+            if name_2:
+                display_name = name_2
+                
+                if display_name.startswith(' '):
+                    display_name = display_name[1:]
+                
+                display_name = cut_end(display_name, ' Port-0', ' MIDI 1')
+                    
+        elif client_name in ('ardour', 'Ardour'):
+            display_name, num = split_end_digits(display_name)
+            if num:
+                display_name = cut_end(display_name,
+                                       '/audio_out ', '/audio_in ',
+                                       '/midi_out ', '/midi_in ')
+                if num == '1':
+                    port.set_the_one_on_pair = True
+                else:
+                    display_name += ' ' + num
+        
+        elif client_name == 'Qtractor':
+            display_name, num = split_end_digits(display_name)
+            if num:
+                display_name = cut_end(display_name,
+                                       '/in_', '/out_')
+                if num == '1':
+                    port.set_the_one_on_pair = True
+                else:
+                    display_name += ' ' + num
+        
+        elif client_name in ('SooperLooper', 'sooperlooper'):
+            display_name, num = split_end_digits(display_name)
+            if num:
+                display_name = cut_end(display_name,
+                                       '_in_', '_out_')
+                if num == '1':
+                    port.set_the_one_on_pair = True
+                else:
+                    display_name += ' ' + num
+                    
+        elif client_name == 'Luppp':
+            if display_name.endswith('\n'):
+                display_name = display_name[:-1]
+            
+            display_name = display_name.replace('_', ' ')
+        
+        elif client_name == 'seq64':
+            display_name = display_name.replace('seq64 midi ', '', 1)
+        
+        elif not client_name:
+            display_name = display_name.replace('_', ' ')
+        
+        port.display_name = display_name if display_name else s_display_name
     
     def add_portgroup(self, portgroup):
         self.portgroups.append(portgroup)
@@ -233,7 +368,13 @@ class Group:
                 
             elif port_name.endswith('.r'):
                 may_match_list.append(port_name[:-2] + '.l')
-                
+            
+            elif port_name.endswith('_r'):
+                may_match_list.append(port_name[:-2] + '_l')
+            
+            elif port_name.endswith('_r\n'):
+                may_match_list.append(port_name[:-3] + '_l\n')
+            
             for x in ('out', 'Out', 'output', 'Output', 'in', 'In',
                       'input', 'Input', 'audio input', 'audio output'):
                 if port_name.endswith('R ' + x):
@@ -250,7 +391,8 @@ class Group:
 
         
 class PatchbayManager:
-    def __init__(self):
+    def __init__(self, session):
+        self.session = session
         self.group_positions = []
         self.groups = []
         self.connections = []
@@ -301,7 +443,6 @@ class PatchbayManager:
             
             for group in self.groups:
                 if group.group_id == group_id:
-                    print('tobe sent to daemonr', in_or_out, group.name, int(str_x), int(str_y)) 
                     self.send_to_daemon(
                         '/ray/server/patchbay/save_coordinates',
                         in_or_out, group.name, int(str_x), int(str_y))
@@ -334,18 +475,15 @@ class PatchbayManager:
             
             group_id = value1
             portgrp_id = value2
-            print('rmooove pg', portgrp_id)
+
             for group in self.groups:
                 if group.group_id == group_id:
-                    print('argim', group_id)
                     for portgroup in group.portgroups:
-                        print('pojpoj', portgroup.portgroup_id)
                         if portgroup.portgroup_id == portgrp_id:
                             group.portgroups.remove(portgroup)
                             portgroup.remove_from_canvas()
                             break
                     break
-            print('osoosk')
         
         elif action == patchcanvas.ACTION_PORT_INFO:
             pass
@@ -383,8 +521,6 @@ class PatchbayManager:
 
         elif action == patchcanvas.ACTION_INLINE_DISPLAY:
             pass
-    
-        print('nijauou')
 
     def get_port_from_name(self, port_name: str):
         for group in self.groups:
@@ -398,6 +534,13 @@ class PatchbayManager:
                 if port.port_id == port_id:
                     return port
     
+    def get_client_icon(self, group_name: str)->str:
+        for client in self.session.client_list:
+            if (client.name == group_name
+                    or client.name + '.' + client.client_id == group_name):
+                return client.icon
+        return ''
+    
     def add_port(self, name: str, alias_1: str, alias_2: str,
                  port_type: int, flags: int, metadata: str):
         port = Port(self._next_port_id, name, alias_1, alias_2,
@@ -409,21 +552,32 @@ class PatchbayManager:
             full_port_name = alias_1
         elif self.use_alias == USE_ALIAS_2:
             full_port_name = alias_2
-            
-        group_name, colon, port_name = full_port_name.partition(':')
-        group_is_new = False
         
+        group_name, colon, port_name = full_port_name.partition(':')
+        
+        if (full_port_name.startswith('a2j:')
+                and not port.flags & PORT_IS_PHYSICAL):
+            group_name, colon, port_name = port_name.partition(':')
+            group_name = group_name.rpartition(' [')[0]
+        
+        group_is_new = False
+
         for group in self.groups:
             if group.name == group_name:
                 break
         else:
             # port is an non existing group, create the group
             group = Group(self._next_group_id, group_name)
+            client_icon = self.get_client_icon(group_name)
+            group.set_client_icon(client_icon)
+            
             self._next_group_id += 1
             self.groups.append(group)
             group_is_new = True
         
         group.add_port(port, self.use_alias)
+        group.graceful_port(port)
+        
         if group_is_new:
             group.add_to_canvas()
             
@@ -441,6 +595,10 @@ class PatchbayManager:
             self._next_portgroup_id += 1
             portgroup.add_ports(other_port, port)
             group.add_portgroup(portgroup)
+            
+            if other_port.set_the_one_on_pair:
+                other_port.set_the_one()
+            
             portgroup.add_to_canvas()
 
     def remove_port(self, name: str):
@@ -494,7 +652,7 @@ class PatchbayManager:
         for group in self.groups:
             if group.group_id == port.group_id:
                 port.full_name = new_name
-                group.rename_port(port)
+                group.graceful_port(port)
                 port.change_canvas_properties()
                 break
     
@@ -531,7 +689,6 @@ class PatchbayManager:
     
     def update_group_position(self, in_or_out: int, group_name: str,
                               x: int, y: int):
-        print('update_group_position', group_name, in_or_out, x, y)
         for group in self.groups:
             if group.name == group_name:
                 patchcanvas.moveGroupBox(group.group_id, in_or_out, x, y)

@@ -75,6 +75,8 @@ class PatchScene(QGraphicsScene):
         self.m_scale_min = 0.1
         self.m_scale_max = 4.0
 
+        self.scales = (0.1, 0.25, 0.4, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0)
+
         self.m_rubberband = RubberbandRect(self)
         self.m_rubberband_selection = False
         self.m_rubberband_orig_point = QPointF(0, 0)
@@ -402,11 +404,16 @@ class PatchScene(QGraphicsScene):
         scale = transform.m11()
 
         if (delta > 0 and scale < self.m_scale_max) or (delta < 0 and scale > self.m_scale_min):
-            factor = 1.41 ** (delta / 240.0)
+            factor = 1.4142135623730951 ** (delta / 240.0)
             transform.scale(factor, factor)
             self.fixScaleFactor(transform)
             self.m_view.setTransform(transform)
             self.scaleChanged.emit(transform.m11())
+            
+            for group in canvas.group_list:
+                for widget in group.widgets:
+                    if widget and widget.icon_svg:
+                        widget.icon_svg.update_zoom(scale * factor)
 
     def wheelEvent(self, event):
         if not self.m_view:

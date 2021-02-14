@@ -200,7 +200,6 @@ def init(appName, scene, callback, debug=False):
         del canvas.theme
         canvas.theme = None
 
-    print('okoodkd', Theme.THEME_MAX)
     for i in range(Theme.THEME_MAX):
         this_theme_name = getThemeName(i)
         if this_theme_name == options.theme_name:
@@ -285,35 +284,33 @@ def setCanvasSize(x, y, width, height):
     canvas.scene.updateLimits()
     canvas.scene.fixScaleFactor()
 
-def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
+def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION, icon_name=''):
     if canvas.debug:
         print("PatchCanvas::addGroup(%i, %s, %s, %s)" % (
-              group_id, group_name.encode(), split2str(split), icon2str(icon)))
+              group_id, group_name.encode(), split2str(split), icon2str(icon_type)))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
             qWarning("PatchCanvas::addGroup(%i, %s, %s, %s) - group already exists" % (
-                     group_id, group_name.encode(), split2str(split), icon2str(icon)))
+                     group_id, group_name.encode(), split2str(split), icon2str(icon_type)))
             return
 
     if split == SPLIT_UNDEF:
-        isHardware = bool(icon == ICON_HARDWARE)
-        print('ozeolxx,', group_name, isHardware, split)
+        isHardware = bool(icon_type == ICON_HARDWARE)
         #if features.handle_group_pos:
             #split = getStoredCanvasSplit(group_name, SPLIT_YES if isHardware else split)
         #elif isHardware:
             #split = SPLIT_YES
         if isHardware:
             split = SPLIT_YES
-        print('oefkklll', group_name, split)
 
-    group_box = CanvasBox(group_id, group_name, icon)
+    group_box = CanvasBox(group_id, group_name, icon_type, icon_name)
 
     group_dict = group_dict_t()
     group_dict.group_id = group_id
     group_dict.group_name = group_name
     group_dict.split = bool(split == SPLIT_YES)
-    group_dict.icon = icon
+    group_dict.icon = icon_type
     group_dict.plugin_id = -1
     group_dict.plugin_ui = False
     group_dict.plugin_inline = False
@@ -327,7 +324,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         else:
             group_box.setPos(CanvasGetNewGroupPos(False))
 
-        group_sbox = CanvasBox(group_id, group_name, icon)
+        group_sbox = CanvasBox(group_id, group_name, icon_type, icon_name)
         group_sbox.setSplit(True, PORT_MODE_INPUT)
 
         group_dict.widgets[1] = group_sbox
@@ -352,7 +349,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
             group_box.setPos(getStoredCanvasPosition(group_name, CanvasGetNewGroupPos(False)))
         else:
             # Special ladish fake-split groups
-            horizontal = bool(icon == ICON_HARDWARE or icon == ICON_LADISH_ROOM)
+            horizontal = bool(icon_type in (ICON_HARDWARE, ICON_LADISH_ROOM))
             group_box.setPos(CanvasGetNewGroupPos(horizontal))
 
     group_box.checkItemPos()
@@ -605,7 +602,6 @@ def joinGroup(group_id):
 def moveGroupBox(group_id: int, port_mode: int, x: int, y: int):
     print('ododl', group_id, port_mode, x, y)
     for group in canvas.group_list:
-        print('okofrlrrl', group_id)
         if group.group_id == group_id:
             print('yeah, we found the box')
             box = None

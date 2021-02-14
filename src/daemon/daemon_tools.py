@@ -157,6 +157,7 @@ class CommandLineArgs(argparse.Namespace):
     osc_port = 0
     findfreeport = True
     gui_url = None
+    gui_port = 0
     gui_pid = 0
     config_dir = ''
     debug = False
@@ -203,6 +204,8 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument('--findfreeport', action='store_true',
                           help='find another port if port is not free')
         self.add_argument('--gui-url', type=ray.getLibloAddress,
+                          help=argparse.SUPPRESS)
+        self.add_argument('--gui-port', type=ray.getLibloAddressFromPort,
                           help=argparse.SUPPRESS)
         self.add_argument('--gui-pid', type=int,
                           help=argparse.SUPPRESS)

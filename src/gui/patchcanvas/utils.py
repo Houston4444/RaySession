@@ -171,7 +171,7 @@ def CanvasGetPortGroupFullName(group_id, portgrp_id):
     
     return ""
 
-def CanvasAddPortToPortGroup(group_id, port_id, portgrp_id):
+def CanvasAddPortToPortGroup(group_id: int, port_id: int, portgrp_id: int):
     # returns the portgrp_id if portgrp is active, else 0
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id

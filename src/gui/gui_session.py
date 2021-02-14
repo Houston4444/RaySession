@@ -27,7 +27,7 @@ class Session:
         self.is_renameable = True
 
         self._signaler = Signaler()
-        self.patchbay_manager = PatchbayManager()
+        self.patchbay_manager = PatchbayManager(self)
 
         server = GUIServerThread.instance()
         server.start()

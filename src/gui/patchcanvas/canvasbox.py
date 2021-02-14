@@ -62,7 +62,7 @@ from . import (
 )
 
 from .canvasboxshadow import CanvasBoxShadow
-from .canvasicon import CanvasIcon
+from .canvasicon import CanvasIcon, CanvasIconPixmap
 from .canvasport import CanvasPort
 from .canvasportgroup import CanvasPortGroup
 from .theme import Theme
@@ -87,7 +87,8 @@ class CanvasBox(QGraphicsItem):
     INLINE_DISPLAY_ENABLED  = 1
     INLINE_DISPLAY_CACHED   = 2
 
-    def __init__(self, group_id, group_name, icon, parent=None):
+    def __init__(self, group_id: int, group_name: str, icon_type: int,
+                 icon_name: str, parent=None):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
 
@@ -133,7 +134,8 @@ class CanvasBox(QGraphicsItem):
 
         # Icon
         if canvas.theme.box_use_icon:
-            self.icon_svg = CanvasIcon(icon, self.m_group_name, self)
+            self.icon_svg = CanvasIconPixmap(icon_type, icon_name, self.m_group_name, self)
+            #self.icon_svg = CanvasIcon(icon, self.m_group_name, self)
         else:
             self.icon_svg = None
 
@@ -210,9 +212,9 @@ class CanvasBox(QGraphicsItem):
         self.m_plugin_inline = self.INLINE_DISPLAY_ENABLED if hasInlineDisplay else self.INLINE_DISPLAY_DISABLED
         self.update()
 
-    def setIcon(self, icon):
+    def setIcon(self, icon_type, icon_name):
         if self.icon_svg is not None:
-            self.icon_svg.setIcon(icon, self.m_group_name)
+            self.icon_svg.setIcon(icon_type, icon_name, self.m_group_name)
 
     def setSplit(self, split, mode=PORT_MODE_NULL):
         self.m_splitted = split
@@ -314,7 +316,7 @@ class CanvasBox(QGraphicsItem):
         self.prepareGeometryChange()
 
         # Check Text Name size
-        app_name_size = QFontMetrics(self.m_font_name).width(self.m_group_name) + 30
+        app_name_size = QFontMetrics(self.m_font_name).width(self.m_group_name) + 40
         self.p_width = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50, app_name_size)
 
         # Get Port List
@@ -776,7 +778,7 @@ class CanvasBox(QGraphicsItem):
             painter.setPen(canvas.theme.box_text)
 
         if canvas.theme.box_use_icon:
-            textPos = QPointF(25, canvas.theme.box_text_ypos)
+            textPos = QPointF(36, canvas.theme.box_text_ypos)
         else:
             appNameSize = QFontMetrics(self.m_font_name).width(self.m_group_name)
             rem = self.p_width - appNameSize
