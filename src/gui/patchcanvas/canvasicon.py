@@ -37,7 +37,9 @@ from . import (
     ICON_FILE,
     ICON_PLUGIN,
     ICON_LADISH_ROOM,
-    ICON_CLIENT
+    ICON_CLIENT,
+    PORT_MODE_INPUT,
+    PORT_MODE_OUTPUT
 )
 
 # ------------------------------------------------------------------------------------------------------------
@@ -86,7 +88,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
     
     def setIcon(self, icon, name):
         icon_path = ":/app_icons/gx_head.png"
-        self.m_renderer = QSvgRenderer(icon_path, canvas.scene)
+        #self.m_renderer = QSvgRenderer(icon_path, canvas.scene)
     
     def update_zoom(self, scale: float):
         if self.icon is None or scale <= 0.0:
@@ -112,7 +114,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         #painter.restore()
     
 class CanvasIcon(QGraphicsSvgItem):
-    def __init__(self, icon, name, parent):
+    def __init__(self, icon_type, name, port_mode, parent):
         QGraphicsSvgItem.__init__(self)
         self.setParentItem(parent)
 
@@ -123,9 +125,9 @@ class CanvasIcon(QGraphicsSvgItem):
         self.m_colorFX.setColor(canvas.theme.box_text.color())
 
         #self.setGraphicsEffect(self.m_colorFX)
-        self.setIcon(icon, name)
+        self.setIcon(icon_type, name, port_mode)
 
-    def setIcon(self, icon, name):
+    def setIcon(self, icon, name, port_mode):
         name = name.lower()
         icon_path = ""
 
@@ -156,9 +158,19 @@ class CanvasIcon(QGraphicsSvgItem):
                 self.p_size = QRectF(4, 3, 24, 24)
 
         elif icon == ICON_HARDWARE:
-            #icon_path = ":/scalable/pb_hardware.svg"
-            icon_path = ":/app_icons/h2-icon.svg"
-            self.p_size = QRectF(5, 2, 24, 24)
+            if name == "a2j":
+                icon_path = ":/scalable/DIN-5.svg"
+                self.p_size = QRectF(4, 4, 24, 24)
+            else:
+                print('oefkkllfl', port_mode)
+                if port_mode & PORT_MODE_INPUT:
+                    if port_mode & PORT_MODE_OUTPUT:
+                        icon_path = ":/scalable/pb_hardware.svg"
+                    else:
+                        icon_path = ":/scalable/audio-input-microphone.svg"
+                else:
+                    icon_path = ":/scalable/audio-headphones.svg"
+                self.p_size = QRectF(4, 4, 24, 24)
 
         elif icon == ICON_DISTRHO:
             icon_path = ":/scalable/pb_distrho.svg"
@@ -186,6 +198,9 @@ class CanvasIcon(QGraphicsSvgItem):
         self.m_renderer = QSvgRenderer(icon_path, canvas.scene)
         self.setSharedRenderer(self.m_renderer)
         self.update()
+
+    def update_zoom(self, scale: float):
+        pass
 
     def type(self):
         return CanvasIconType

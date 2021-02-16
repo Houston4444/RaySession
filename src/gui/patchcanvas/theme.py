@@ -72,47 +72,42 @@ class Theme(object):
 
             # Ports
             #self.port_text = QPen(QColor(250, 250, 250), 0)
-            self.port_text = QPen(QColor(30, 30, 30), 0)
+            self.port_text = QPen(QColor(61, 51, 0))
             self.port_text_ypos = 12
             self.port_bg_pixmap = None
+            #self.port_bg_pixmap = QPixmap(":/canvas/dirty-metal-texture.jpg")
             self.port_font_name = "Deja Vu Sans"
             self.port_font_size = 11
             self.port_font_state = QFont.Normal
             self.port_mode = self.THEME_PORT_POLYGON
 
-            #self.port_audio_jack_pen = QPen(QColor(63, 90, 126), 1)
-            self.port_audio_jack_pen = QPen(QColor(80, 80, 80), 1)
-            self.port_audio_jack_pen_sel = QPen(QColor(63 + 30, 90 + 30, 126 + 30), 1)
-            self.port_midi_jack_pen = QPen(QColor(159, 44, 42), 1)
-            self.port_midi_jack_pen_sel = QPen(QColor(159 + 30, 44 + 30, 42 + 30), 1)
+            self.port_audio_jack_pen = QPen(QColor(143, 119, 0), 1.4)
+            self.port_audio_jack_pen_sel = self.port_audio_jack_pen
+            self.port_midi_jack_pen = QPen(QColor(43, 23, 9), 1)
+            self.port_midi_jack_pen_sel = self.port_midi_jack_pen
             self.port_midi_alsa_pen = QPen(QColor(93, 141, 46), 1)
             self.port_midi_alsa_pen_sel = QPen(QColor(93 + 30, 141 + 30, 46 + 30), 1)
             self.port_parameter_pen = QPen(QColor(137, 76, 43), 1)
             self.port_parameter_pen_sel = QPen(QColor(137 + 30, 76 + 30, 43 + 30), 1)
 
-            #self.port_audio_jack_bg = QColor(35, 61, 99)
-            #self.port_audio_jack_bg = QColor(183, 199, 101)
-            self.port_audio_jack_bg = QColor(160, 160, 140)
-            self.port_audio_jack_bg_sel = QColor(35 + 50, 61 + 50, 99 + 50)
-            self.port_midi_jack_bg = QColor(120, 15, 16)
-            self.port_midi_jack_bg_sel = QColor(120 + 50, 15 + 50, 16 + 50)
+            self.port_audio_jack_bg = QColor(180, 180, 180)
+            self.port_audio_jack_bg_sel = QColor(198, 161, 80)
+            self.port_midi_jack_bg = QColor(77, 42, 16)
+            self.port_midi_jack_bg_sel = QColor(160, 86, 33)
             self.port_midi_alsa_bg = QColor(64, 112, 18)
             self.port_midi_alsa_bg_sel = QColor(64 + 50, 112 + 50, 18 + 50)
             self.port_parameter_bg = QColor(101, 47, 16)
             self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
             
-            #self.portgrp_audio_jack_pen = QPen(QColor(63, 90, 126), 1)
-            self.portgrp_audio_jack_pen = QPen(QColor(80, 80, 80), 1)
-            self.portgrp_audio_jack_pen_sel = QPen(QColor(63 + 30, 90 + 30, 126 + 30), 1)
-            #self.portgrp_audio_jack_bg = QColor(26, 45, 71)
-            #self.portgrp_audio_jack_bg = QColor(209, 227, 115)
-            self.portgrp_audio_jack_bg = QColor(140, 140, 120)
-            self.portgrp_audio_jack_bg_sel = QColor(27 + 50, 47 + 50, 75 + 50)
+            self.portgrp_audio_jack_pen = QPen(QColor(143, 119, 0), 1.4)
+            self.portgrp_audio_jack_pen_sel = self.portgrp_audio_jack_pen
+            self.portgrp_audio_jack_bg = QColor(207, 207, 207)
+            self.portgrp_audio_jack_bg_sel = QColor(209, 170, 86)
 
             self.port_audio_jack_text = self.port_text
             self.port_audio_jack_text_sel = self.port_text
-            self.port_midi_jack_text = self.port_text
-            self.port_midi_jack_text_sel = self.port_text
+            self.port_midi_jack_text = QPen(QColor(255, 255, 150), 0)
+            self.port_midi_jack_text_sel = self.port_midi_jack_text
             self.port_midi_alsa_text = self.port_text
             self.port_midi_alsa_text_sel = self.port_text
             self.port_parameter_text = self.port_text
@@ -125,10 +120,8 @@ class Theme(object):
             self.port_spacingT = 2
 
             # Lines
-            #self.line_audio_jack = QColor(63, 90, 126)
-            #self.line_audio_jack = QColor(183, 199, 101)
-            self.line_audio_jack = QColor(160, 160, 140)
-            self.line_audio_jack_sel = QColor(63 + 90, 90 + 90, 126 + 90)
+            self.line_audio_jack = QColor(180, 180, 180)
+            self.line_audio_jack_sel = QColor(198, 161, 80)
             self.line_audio_jack_glow = QColor(100, 100, 200)
             self.line_midi_jack = QColor(159, 44, 42)
             self.line_midi_jack_sel = QColor(159 + 90, 44 + 90, 42 + 90)

@@ -3,14 +3,17 @@
        <file>48x48/raysession.png</file>
        <file>128x128/raysession.png</file>
        <file>256x256/raysession.png</file>
+       <file>scalable/audio-input-microphone.svg</file>
        <file>scalable/raysession.svg</file>
        <file>scalable/pb_hardware.svg</file>
        <file>scalable/raysession24.svg</file>
        <file>scalable/pb_generic.svg</file>
+       <file>scalable/audio-headphones.svg</file>
        <file>scalable/raysession64.svg</file>
        <file>scalable/raysession_little.svg</file>
        <file>scalable/raysession16.svg</file>
        <file>scalable/raysession48.svg</file>
+       <file>scalable/DIN-5.svg</file>
        <file>scalable/raysession256.svg</file>
        <file>scalable/breeze-dark/document-saved.svg</file>
        <file>scalable/breeze-dark/document-edit.svg</file>

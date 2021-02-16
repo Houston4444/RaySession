@@ -136,15 +136,20 @@ class Group:
 
     def add_to_canvas(self):
         icon_type = patchcanvas.ICON_APPLICATION
+        icon_name = ""
+
         if self._is_hardware:
             icon_type = patchcanvas.ICON_HARDWARE
+            if self.name == "a2j":
+                icon_name = "a2j"
         if self.client_icon:
             icon_type = patchcanvas.ICON_CLIENT
+            icon_name = self.client_icon
 
         print('add to cannvassss the group', self.name)
         patchcanvas.addGroup(self.group_id, self.name,
                              patchcanvas.SPLIT_UNDEF,
-                             icon_type, self.client_icon)
+                             icon_type, icon_name)
     
     def remove_from_canvas(self):
         patchcanvas.removeGroup(self.group_id)

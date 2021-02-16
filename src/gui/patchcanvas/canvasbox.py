@@ -23,7 +23,7 @@ from sip import voidptr
 from struct import pack
 
 from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer
-from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QImage, QLinearGradient, QPainter, QPen
+from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QImage, QLinearGradient, QPainter, QPen, QPolygonF, QColor
 from PyQt5.QtWidgets import QGraphicsItem, QMenu
 
 # ------------------------------------------------------------------------------------------------------------
@@ -59,6 +59,7 @@ from . import (
     PORT_TYPE_MIDI_JACK,
     PORT_TYPE_PARAMETER,
     MAX_PLUGIN_ID_ALLOWED,
+    ICON_HARDWARE,
 )
 
 from .canvasboxshadow import CanvasBoxShadow
@@ -132,9 +133,16 @@ class CanvasBox(QGraphicsItem):
         self.m_font_port.setPixelSize(canvas.theme.port_font_size)
         self.m_font_port.setWeight(canvas.theme.port_font_state)
 
+        self._is_hardware = bool(icon_type == ICON_HARDWARE)
         # Icon
         if canvas.theme.box_use_icon:
-            self.icon_svg = CanvasIconPixmap(icon_type, icon_name, self.m_group_name, self)
+            if icon_type == ICON_HARDWARE:
+                port_mode = PORT_MODE_INPUT + PORT_MODE_OUTPUT
+                if self.m_splitted:
+                    port_mode = self.m_splitted_mode
+                self.icon_svg = CanvasIcon(icon_type, icon_name, port_mode, self)
+            else:
+                self.icon_svg = CanvasIconPixmap(icon_type, icon_name, self.m_group_name, self)
             #self.icon_svg = CanvasIcon(icon, self.m_group_name, self)
         else:
             self.icon_svg = None
@@ -729,18 +737,106 @@ class CanvasBox(QGraphicsItem):
         CanvasCallback(ACTION_GROUP_MOVE, self.m_group_id, in_or_out, x_y_str)
         
     def boundingRect(self):
+        if self._is_hardware:
+            return QRectF(-9, -9, self.p_width + 9, self.p_height + 9)
         return QRectF(0, 0, self.p_width, self.p_height)
 
     def paint(self, painter, option, widget):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
-        rect = QRectF(0, 0, self.p_width, self.p_height)
-
+        
         # Draw rectangle
         pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)
         pen.setWidthF(pen.widthF() + 0.00001)
         painter.setPen(pen)
         lineHinting = pen.widthF() / 2
+        
+        if self._is_hardware:
+            d = 9
+            hw_gradient = QLinearGradient(-d, -d, self.p_width +d, self.p_height +d)
+            hw_gradient.setColorAt(0, QColor(70, 70, 50))
+            hw_gradient.setColorAt(1, QColor(50, 50, 30))
+            painter.setBrush(hw_gradient)
+            painter.setPen(QPen(QColor(30, 30, 30), 1))
+            if self.m_splitted:
+                hardware_poly = QPolygonF()
+                    
+                if self.m_splitted_mode == PORT_MODE_INPUT:
+                    hardware_poly += QPointF(- lineHinting, - lineHinting)
+                    hardware_poly += QPointF(- lineHinting, 34)
+                    hardware_poly += QPointF(-d /2.0, 34)
+                    hardware_poly += QPointF(-d, 34 - d / 2.0)
+                    hardware_poly += QPointF(-d, -d / 2.0)
+                    hardware_poly += QPointF(-d / 2.0, -d)
+                    hardware_poly += QPointF(self.p_width + d/2.0, -d)
+                    hardware_poly += QPointF(self.p_width + d, -d / 2.0)
+                    hardware_poly += QPointF(self.p_width + d, self.p_height + d/2.0)
+                    hardware_poly += QPointF(self.p_width + d/2.0, self.p_height + d)
+                    hardware_poly += QPointF(-d/2.0, self.p_height +d)
+                    hardware_poly += QPointF(-d, self.p_height +d/2.0)
+                    hardware_poly += QPointF(-d, self.p_height -3 + d/2.0)
+                    hardware_poly += QPointF(-d/2.0, self.p_height -3)
+                    hardware_poly += QPointF(- lineHinting, self.p_height -3)
+                    hardware_poly += QPointF(- lineHinting, self.p_height + lineHinting)
+                    hardware_poly += QPointF(self.p_width + lineHinting, self.p_height + lineHinting)
+                    hardware_poly += QPointF(self.p_width + lineHinting, - lineHinting)
+                else:
+                    hardware_poly += QPointF(self.p_width + lineHinting, - lineHinting)
+                    hardware_poly += QPointF(self.p_width + lineHinting, 34)
+                    hardware_poly += QPointF(self.p_width + d/2.0, 34)
+                    hardware_poly += QPointF(self.p_width + d, 34 - d/2.0)
+                    hardware_poly += QPointF(self.p_width +d, -d / 2.0)
+                    hardware_poly += QPointF(self.p_width + d/2.0, -d)
+                    hardware_poly += QPointF(-d / 2.0, -d)
+                    hardware_poly += QPointF(-d, -d/2.0)
+                    hardware_poly += QPointF(-d, self.p_height + d/2.0)
+                    hardware_poly += QPointF(-d/2.0, self.p_height + d)
+                    hardware_poly += QPointF(self.p_width + d/2.0, self.p_height + d)
+                    hardware_poly += QPointF(self.p_width + d, self.p_height + d/2.0)
+                    hardware_poly += QPointF(self.p_width +d, self.p_height -3 + d/2.0)
+                    hardware_poly += QPointF(self.p_width + d/2, self.p_height -3)
+                    hardware_poly += QPointF(self.p_width + lineHinting, self.p_height -3)
+                    hardware_poly += QPointF(self.p_width + lineHinting, self.p_height + lineHinting)
+                    hardware_poly += QPointF(-lineHinting, self.p_height + lineHinting)
+                    hardware_poly += QPointF(-lineHinting, -lineHinting)
+                    
+                painter.drawPolygon(hardware_poly)
+            else:
+                hw_poly_top = QPolygonF()
+                hw_poly_top += QPointF(-lineHinting, -lineHinting)
+                hw_poly_top += QPointF(-lineHinting, 34)
+                hw_poly_top += QPointF(-d /2.0, 34)
+                hw_poly_top += QPointF(-d, 34 - d / 2.0)
+                hw_poly_top += QPointF(-d, -d / 2.0)
+                hw_poly_top += QPointF(-d / 2.0, -d)
+                hw_poly_top += QPointF(self.p_width + d/2.0, -d)
+                hw_poly_top += QPointF(self.p_width + d, -d / 2.0)
+                hw_poly_top += QPointF(self.p_width + d, 34 - d/2)
+                hw_poly_top += QPointF(self.p_width+ d/2, 34)
+                hw_poly_top += QPointF(self.p_width + lineHinting, 34)
+                hw_poly_top += QPointF(self.p_width + lineHinting, -lineHinting)
+                painter.drawPolygon(hw_poly_top)
+                
+                hw_poly_bt = QPolygonF()
+                hw_poly_bt += QPointF(-lineHinting, self.p_height + lineHinting)
+                hw_poly_bt += QPointF(-lineHinting, self.p_height -3)
+                hw_poly_bt += QPointF(-d/2, self.p_height -3)
+                hw_poly_bt += QPointF(-d, self.p_height -3 + d/2)
+                hw_poly_bt += QPointF(-d, self.p_height + d/2)
+                hw_poly_bt += QPointF(-d/2, self.p_height + d)
+                hw_poly_bt += QPointF(self.p_width + d/2, self.p_height + d)
+                hw_poly_bt += QPointF(self.p_width +d, self.p_height + d/2)
+                hw_poly_bt += QPointF(self.p_width +d, self.p_height -3 + d/2)
+                hw_poly_bt += QPointF(self.p_width +d/2, self.p_height -3)
+                hw_poly_bt += QPointF(self.p_width + lineHinting, self.p_height -3)
+                hw_poly_bt += QPointF(self.p_width + lineHinting, self.p_height + lineHinting)
+                painter.drawPolygon(hw_poly_bt)
+                    
+            pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)
+            pen.setWidthF(pen.widthF() + 0.00001)
+            painter.setPen(pen)
+        
+        rect = QRectF(0, 0, self.p_width, self.p_height)
 
         if canvas.theme.box_bg_type == Theme.THEME_BG_GRADIENT:
             box_gradient = QLinearGradient(0, 0, 0, self.p_height)
@@ -778,13 +874,17 @@ class CanvasBox(QGraphicsItem):
             painter.setPen(canvas.theme.box_text)
 
         if canvas.theme.box_use_icon:
-            textPos = QPointF(36, canvas.theme.box_text_ypos)
+            textPos = QPointF(33, canvas.theme.box_text_ypos)
         else:
             appNameSize = QFontMetrics(self.m_font_name).width(self.m_group_name)
             rem = self.p_width - appNameSize
             textPos = QPointF(rem/2, canvas.theme.box_text_ypos)
 
         painter.drawText(textPos, self.m_group_name)
+
+        
+                
+                
 
         self.repaintLines()
 

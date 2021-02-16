@@ -22,7 +22,7 @@
 from math import floor
 
 from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer, QSizeF
-from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF
+from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF, QLinearGradient, QColor, QRadialGradient
 from PyQt5.QtWidgets import QGraphicsItem, QMenu
 
 # ------------------------------------------------------------------------------------------------------------
@@ -550,7 +550,7 @@ class CanvasPort(QGraphicsItem):
             #text_pen.setColor(text_pen.color()) #.darker(150))
             #conn_pen.setColor(conn_pen.color()) #.darker(150))
         
-        polygon  = QPolygonF()
+        polygon = QPolygonF()
         
         if self.m_portgrp_id:
             first_of_portgrp = False
@@ -586,11 +586,25 @@ class CanvasPort(QGraphicsItem):
             polygon += QPointF(poly_locx[0], lineHinting)
 
         if canvas.theme.port_bg_pixmap:
-            portRect = polygon.boundingRect().adjusted(-lineHinting+1, -lineHinting+1, lineHinting-1, lineHinting-1)
+            portRect = polygon.boundingRect().adjusted(
+                -lineHinting+1, -lineHinting+1, lineHinting-1, lineHinting-1)
             portPos = portRect.topLeft()
             painter.drawTiledPixmap(portRect, canvas.theme.port_bg_pixmap, portPos)
         else:
-            painter.setBrush(poly_color) #.lighter(200))
+            port_gradient = QLinearGradient(0, 0, 0, self.m_port_height)
+
+            dark_color = poly_color.darker(112)
+            light_color = poly_color.lighter(111)
+
+            if poly_color.lightness() > 127:
+                port_gradient.setColorAt(0, dark_color)
+                port_gradient.setColorAt(0.5, light_color)
+                port_gradient.setColorAt(1, dark_color)
+            else:
+                port_gradient.setColorAt(0, light_color)
+                port_gradient.setColorAt(0.5, dark_color)
+                port_gradient.setColorAt(1, light_color)
+            painter.setBrush(port_gradient)
 
         painter.setPen(poly_pen)
         painter.drawPolygon(polygon)
@@ -600,7 +614,7 @@ class CanvasPort(QGraphicsItem):
         
         if self.m_portgrp_id:
             print_name = CanvasGetPortPrintName(
-                            self.m_group_id, self.m_port_id, 
+                            self.m_group_id, self.m_port_id,
                             self.m_portgrp_id)
             print_name_size = QFontMetrics(self.m_port_font).width(print_name)    
             if self.m_port_mode == PORT_MODE_OUTPUT:
@@ -608,7 +622,7 @@ class CanvasPort(QGraphicsItem):
                 text_pos = QPointF(self.m_port_width + 9 - print_name_size, canvas.theme.port_text_ypos) 
 
             if print_name_size > (canvas.theme.port_in_portgrp_width - 6):
-                painter.setPen(QPen(poly_color, 3))
+                painter.setPen(QPen(port_gradient, 3))
                 painter.drawLine(poly_locx[5], 3, poly_locx[5], canvas.theme.port_height - 3)
                 painter.setPen(text_pen)
                 painter.setFont(self.m_port_font)

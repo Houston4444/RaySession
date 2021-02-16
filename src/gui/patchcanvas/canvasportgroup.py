@@ -23,7 +23,7 @@ from math import floor
 
 from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QPainter, QPainterPath,
-                         QPen, QPolygonF, QLinearGradient)
+                         QPen, QPolygonF, QLinearGradient, QColor)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu
 
 # ------------------------------------------------------------------------------------------------------------
@@ -614,15 +614,31 @@ class CanvasPortGroup(QGraphicsItem):
         poly_pen = canvas.theme.portgrp_audio_jack_pen_sel  if self.isSelected() else canvas.theme.portgrp_audio_jack_pen
         text_pen = canvas.theme.port_audio_jack_text_sel if self.isSelected() else canvas.theme.port_audio_jack_text
         
-        if self.m_port_mode == PORT_MODE_OUTPUT:
-            real_portgrp_width = self.m_portgrp_width - canvas.theme.port_in_portgrp_width
-            portgrp_gradient = QLinearGradient(real_portgrp_width -40, 0, real_portgrp_width, 0)
-            portgrp_gradient.setColorAt(0, canvas.theme.port_audio_jack_bg_sel if self.isSelected() else canvas.theme.port_audio_jack_bg)
-            portgrp_gradient.setColorAt(1, canvas.theme.portgrp_audio_jack_bg_sel if self.isSelected() else canvas.theme.portgrp_audio_jack_bg)
-        else:
-            portgrp_gradient = QLinearGradient(canvas.theme.port_in_portgrp_width, 0, canvas.theme.port_in_portgrp_width + 40, 0)
-            portgrp_gradient.setColorAt(0, canvas.theme.portgrp_audio_jack_bg_sel if self.isSelected() else canvas.theme.portgrp_audio_jack_bg)
-            portgrp_gradient.setColorAt(1, canvas.theme.port_audio_jack_bg_sel if self.isSelected() else canvas.theme.port_audio_jack_bg)
+        #port_audio_color = QColor(175, 147, 55) #55
+        #port_audio_color = QColor(190, 190, 190) #55
+        
+        color = canvas.theme.portgrp_audio_jack_bg_sel if self.isSelected() else canvas.theme.portgrp_audio_jack_bg
+        light_color = color.lighter(108)
+        dark_color = color.darker(109)
+        
+        portgrp_gradient = QLinearGradient(0, 0, 0, self.m_portgrp_height * 2)
+        portgrp_gradient.setColorAt(0, dark_color)
+        #portgrp_gradient.setColorAt(0.5, QColor(255, 215, 80))
+        #portgrp_gradient.setColorAt(0.5, QColor(225, 225, 225))
+        portgrp_gradient.setColorAt(0.5, light_color)
+        portgrp_gradient.setColorAt(1, dark_color)
+        #if self.m_port_mode == PORT_MODE_OUTPUT:
+            #real_portgrp_width = self.m_portgrp_width - canvas.theme.port_in_portgrp_width
+            ##portgrp_gradient = QLinearGradient(real_portgrp_width -40, 0, real_portgrp_width, 0)
+            
+            ##portgrp_gradient.setColorAt(
+                ##0, canvas.theme.port_audio_jack_bg_sel if self.isSelected() else canvas.theme.port_audio_jack_bg)
+            ##portgrp_gradient.setColorAt(
+                ##1, canvas.theme.portgrp_audio_jack_bg_sel if self.isSelected() else canvas.theme.portgrp_audio_jack_bg)
+        #else:
+            #portgrp_gradient = QLinearGradient(canvas.theme.port_in_portgrp_width, 0, canvas.theme.port_in_portgrp_width + 40, 0)
+            #portgrp_gradient.setColorAt(0, canvas.theme.portgrp_audio_jack_bg_sel if self.isSelected() else canvas.theme.portgrp_audio_jack_bg)
+            #portgrp_gradient.setColorAt(1, canvas.theme.port_audio_jack_bg_sel if self.isSelected() else canvas.theme.port_audio_jack_bg)
             
         
         polygon  = QPolygonF()
