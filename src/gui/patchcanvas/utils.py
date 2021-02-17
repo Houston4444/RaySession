@@ -256,8 +256,8 @@ def CanvasRemovePortFromPortGroup(group_id, port_id, portgrp_id):
             portgrp.port_id_list.clear()
             break
 
-def CanvasConnectionMatches(connection, group_id_1, port_ids_list_1,
-                            group_id_2, port_ids_list_2):
+def CanvasConnectionMatches(connection, group_id_1: int, port_ids_list_1: list,
+                            group_id_2: int, port_ids_list_2: list):
     if (connection.group_in_id == group_id_1
         and connection.port_in_id in port_ids_list_1
         and connection.group_out_id == group_id_2
@@ -271,7 +271,7 @@ def CanvasConnectionMatches(connection, group_id_1, port_ids_list_1,
     else:
         return False
 
-def CanvasConnectionConcerns(connection, group_id, port_ids_list):
+def CanvasConnectionConcerns(connection, group_id: int, port_ids_list: list):
     if (connection.group_in_id == group_id
         and connection.port_in_id in port_ids_list):
             return True

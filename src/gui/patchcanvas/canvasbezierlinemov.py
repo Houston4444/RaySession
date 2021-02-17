@@ -55,6 +55,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         self.m_port_posinportgrp_to = port_posinportgrp
         self.m_portgrp_lenght = portgrp_lenght
         self.m_portgrp_lenght_to = portgrp_lenght
+        self.m_ready_to_disc  = False
         
         # Port position doesn't change while moving around line
         self.p_itemX = self.scenePos().x()
@@ -77,11 +78,43 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         pen.setWidthF(pen.widthF() + 0.00001)
         self.setPen(pen)
     
+    def setReadyToDisc(self, yesno):
+        self.m_ready_to_disc = yesno
+        
+    def toggleReadyToDisc(self):
+        self.m_ready_to_disc = not bool(self.m_ready_to_disc)
+    
     def setDestinationPortGroupPosition(self, port_pos, portgrp_len):
         self.m_port_posinportgrp_to = port_pos
         self.m_portgrp_lenght_to = portgrp_len
     
     def updateLinePos(self, scenePos):
+        if self.m_ready_to_disc:
+            if self.m_port_type == PORT_TYPE_AUDIO_JACK:
+                pen = QPen(canvas.theme.line_audio_jack, 2, Qt.DotLine)
+            elif self.m_port_type == PORT_TYPE_MIDI_JACK:
+                pen = QPen(canvas.theme.line_midi_jack, 2, Qt.DotLine)
+            elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
+                pen = QPen(canvas.theme.line_midi_alsa, 2, Qt.DotLine)
+            elif self.m_port_type == PORT_TYPE_PARAMETER:
+                pen = QPen(canvas.theme.line_parameter, 2, Qt.DotLine)
+            else:
+                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
+                pen = QPen(Qt.black)
+        else:
+            if self.m_port_type == PORT_TYPE_AUDIO_JACK:
+                pen = QPen(canvas.theme.line_audio_jack, 2)
+            elif self.m_port_type == PORT_TYPE_MIDI_JACK:
+                pen = QPen(canvas.theme.line_midi_jack, 2)
+            elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
+                pen = QPen(canvas.theme.line_midi_alsa, 2)
+            elif self.m_port_type == PORT_TYPE_PARAMETER:
+                pen = QPen(canvas.theme.line_parameter, 2)
+            else:
+                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
+                pen = QPen(Qt.black)
+        self.setPen(pen)
+        
         phi = 0.75 if self.m_portgrp_lenght > 2 else 0.62
         phito = 0.75 if self.m_portgrp_lenght_to > 2 else 0.62
                 

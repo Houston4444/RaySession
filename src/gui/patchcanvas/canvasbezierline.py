@@ -54,10 +54,17 @@ class CanvasBezierLine(QGraphicsPathItem):
 
         self.m_locked = False
         self.m_lineSelected = False
+        self.m_ready_to_disc = False
 
         self.setBrush(QColor(0, 0, 0, 0))
         self.setGraphicsEffect(None)
         self.updateLinePos()
+
+    def isReadyToDisc(self):
+        return self.m_ready_to_disc
+        
+    def setReadyToDisc(self, yesno):
+        self.m_ready_to_disc = yesno
 
     def isLocked(self):
         return self.m_locked
@@ -184,10 +191,15 @@ class CanvasBezierLine(QGraphicsPathItem):
             base_color = canvas.theme.port_midi_jack_bg
             if self.m_lineSelected:
                 base_color = canvas.theme.port_midi_jack_bg_sel
-            
-        port_gradient.setColorAt(0, base_color.lighter(130))
-        port_gradient.setColorAt(0.5, base_color.darker(130))
-        port_gradient.setColorAt(1, base_color.lighter(130))
+        
+        if self.m_ready_to_disc:
+            port_gradient.setColorAt(pos1, QColor(34, 34, 34))
+            port_gradient.setColorAt(pos2, QColor(34, 34, 34))
+            self.setPen(QPen(port_gradient, 2, Qt.DotLine))
+        else:
+            port_gradient.setColorAt(0, base_color.lighter(130))
+            port_gradient.setColorAt(0.5, base_color.darker(130))
+            port_gradient.setColorAt(1, base_color.lighter(130))
 
         self.setPen(QPen(port_gradient, 1.750001, Qt.SolidLine, Qt.FlatCap))
 
