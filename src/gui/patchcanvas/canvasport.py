@@ -226,9 +226,26 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.hoverLeaveEvent(self, event)
 
     def mousePressEvent(self, event):
-        self.m_hover_item = None
-        self.m_mouse_down = bool(event.button() == Qt.LeftButton)
-        self.m_cursor_moving = False
+        if event.button() == Qt.LeftButton:
+            self.m_hover_item = None
+            self.m_mouse_down = True
+            self.m_cursor_moving = False
+            
+        elif event.button() == Qt.RightButton:
+            if canvas.is_line_mov:
+                if self.m_hover_item:
+                    #self.m_r_click_time = time.time()
+                    self.connectToHover()
+                    self.m_r_click_conn = self.m_hover_item
+                    for line_mov in self.m_line_mov_list:
+                        #line_mov.toggleReadyToDisc()
+                        line_mov.updateLinePos(event.scenePos())
+                    
+                    for connection in self.m_dotcon_list:
+                        if connection in canvas.connection_list:
+                            #connection.widget.setReadyToDisc(True)
+                            connection.widget.updateLineGradient()
+                            
         QGraphicsItem.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
@@ -258,6 +275,7 @@ class CanvasPort(QGraphicsItem):
             self.m_line_mov_list.append(line_mov)
             line_mov.setZValue(canvas.last_z_value)
             canvas.last_z_value += 1
+            canvas.is_line_mov = True
             self.parentItem().setZValue(canvas.last_z_value)
 
         item = None
@@ -320,6 +338,10 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
+        if event.button() != Qt.LeftButton:
+            QGraphicsItem.mouseReleaseEvent(self, event)
+            return
+
         if self.m_mouse_down:
             if self.m_line_mov_list:
                 for line_mov in self.m_line_mov_list:
@@ -344,9 +366,13 @@ class CanvasPort(QGraphicsItem):
         self.m_hover_item = None
         self.m_mouse_down = False
         self.m_cursor_moving = False
+        canvas.is_line_mov = False
         QGraphicsItem.mouseReleaseEvent(self, event)
 
     def contextMenuEvent(self, event):
+        if canvas.is_line_mov:
+            return
+
         event.accept()
         canvas.scene.clearSelection()
         self.setSelected(True)

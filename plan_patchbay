@@ -36,3 +36,13 @@ vérifer !ret! aliases et tous les aliases sont à revoir
 
 IGU->pb
 set_alias : port_name:str, alias_num:int (1ou2), alias:str
+
+
+connection par clic droit
+lignes pointillées si en déconnexion
+icones PulseAudio
+vérif port rename et display name
+ajout fenêtre d'options du canvas
+démon jack qui boucle si jack non démarré
+supprimer tous les ports à jack shutdown
+fonction refresh

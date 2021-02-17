@@ -226,9 +226,21 @@ class CanvasPortGroup(QGraphicsItem):
         QGraphicsItem.hoverLeaveEvent(self, event)
 
     def mousePressEvent(self, event):
-        self.m_hover_item = None
-        self.m_mouse_down = bool(event.button() == Qt.LeftButton)
-        self.m_cursor_moving = False
+        if event.button() == Qt.LeftButton:
+            self.m_hover_item = None
+            self.m_mouse_down = True
+            self.m_cursor_moving = False
+            
+        elif event.button() == Qt.RightButton:
+            if canvas.is_line_mov:
+                if self.m_hover_item:
+                    self.ConnectToHover()
+                    self.m_r_click_conn = self.m_hover_item
+                    #self.m_r_click_time = time.time()
+                    
+                    for line_mov in self.m_line_mov_list:
+                        #line_mov.toggleReadyToDisc()
+                        line_mov.updateLinePos(event.scenePos())
         QGraphicsItem.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
@@ -265,6 +277,7 @@ class CanvasPortGroup(QGraphicsItem):
                     
                 self.m_line_mov_list.append(line_mov)
             
+            canvas.is_line_mov = True
             canvas.last_z_value += 1
             self.parentItem().setZValue(canvas.last_z_value)
 
@@ -379,10 +392,14 @@ class CanvasPortGroup(QGraphicsItem):
             self.m_hover_item = None
             self.m_mouse_down = False
             self.m_cursor_moving = False
+            canvas.is_line_mov = False
         QGraphicsItem.mouseReleaseEvent(self, event)
 
         
     def contextMenuEvent(self, event):
+        if canvas.is_line_mov:
+            return
+        
         canvas.scene.clearSelection()
         self.setSelected(True)
         
@@ -641,33 +658,15 @@ class CanvasPortGroup(QGraphicsItem):
         poly_pen = canvas.theme.portgrp_audio_jack_pen_sel  if self.isSelected() else canvas.theme.portgrp_audio_jack_pen
         text_pen = canvas.theme.port_audio_jack_text_sel if self.isSelected() else canvas.theme.port_audio_jack_text
         
-        #port_audio_color = QColor(175, 147, 55) #55
-        #port_audio_color = QColor(190, 190, 190) #55
-        
         color = canvas.theme.portgrp_audio_jack_bg_sel if self.isSelected() else canvas.theme.portgrp_audio_jack_bg
         light_color = color.lighter(108)
         dark_color = color.darker(109)
         
         portgrp_gradient = QLinearGradient(0, 0, 0, self.m_portgrp_height * 2)
         portgrp_gradient.setColorAt(0, dark_color)
-        #portgrp_gradient.setColorAt(0.5, QColor(255, 215, 80))
-        #portgrp_gradient.setColorAt(0.5, QColor(225, 225, 225))
         portgrp_gradient.setColorAt(0.5, light_color)
         portgrp_gradient.setColorAt(1, dark_color)
-        #if self.m_port_mode == PORT_MODE_OUTPUT:
-            #real_portgrp_width = self.m_portgrp_width - canvas.theme.port_in_portgrp_width
-            ##portgrp_gradient = QLinearGradient(real_portgrp_width -40, 0, real_portgrp_width, 0)
-            
-            ##portgrp_gradient.setColorAt(
-                ##0, canvas.theme.port_audio_jack_bg_sel if self.isSelected() else canvas.theme.port_audio_jack_bg)
-            ##portgrp_gradient.setColorAt(
-                ##1, canvas.theme.portgrp_audio_jack_bg_sel if self.isSelected() else canvas.theme.portgrp_audio_jack_bg)
-        #else:
-            #portgrp_gradient = QLinearGradient(canvas.theme.port_in_portgrp_width, 0, canvas.theme.port_in_portgrp_width + 40, 0)
-            #portgrp_gradient.setColorAt(0, canvas.theme.portgrp_audio_jack_bg_sel if self.isSelected() else canvas.theme.portgrp_audio_jack_bg)
-            #portgrp_gradient.setColorAt(1, canvas.theme.port_audio_jack_bg_sel if self.isSelected() else canvas.theme.port_audio_jack_bg)
-            
-        
+
         polygon  = QPolygonF()
         polygon += QPointF(poly_locx[0], lineHinting)
         polygon += QPointF(poly_locx[1], lineHinting)
