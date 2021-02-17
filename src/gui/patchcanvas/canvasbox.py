@@ -63,7 +63,7 @@ from . import (
 )
 
 from .canvasboxshadow import CanvasBoxShadow
-from .canvasicon import CanvasIcon, CanvasIconPixmap
+from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
 from .canvasport import CanvasPort
 from .canvasportgroup import CanvasPortGroup
 from .theme import Theme
@@ -134,31 +134,38 @@ class CanvasBox(QGraphicsItem):
         self.m_font_port.setWeight(canvas.theme.port_font_state)
 
         self._is_hardware = bool(icon_type == ICON_HARDWARE)
+        self._icon_name = icon_name
+        
         # Icon
         if canvas.theme.box_use_icon:
             if icon_type == ICON_HARDWARE:
-                port_mode = PORT_MODE_INPUT + PORT_MODE_OUTPUT
+                port_mode = PORT_MODE_NULL
                 if self.m_splitted:
                     port_mode = self.m_splitted_mode
-                self.icon_svg = CanvasIcon(icon_type, icon_name, port_mode, self)
+                self.top_icon = CanvasSvgIcon(
+                    icon_type, icon_name, port_mode, self)
             else:
-                self.icon_svg = CanvasIconPixmap(icon_type, icon_name, self.m_group_name, self)
-            #self.icon_svg = CanvasIcon(icon, self.m_group_name, self)
+                self.top_icon = CanvasIconPixmap(
+                    icon_type, icon_name, self.m_group_name, self)
+                if self.top_icon.is_null():
+                    canvas.scene.removeItem(self.top_icon)
+                    self.top_icon = None
         else:
-            self.icon_svg = None
+            self.top_icon = None
 
         # Shadow
+        self.shadow = None
         # FIXME FX on top of graphic items make them lose high-dpi
         # See https://bugreports.qt.io/browse/QTBUG-65035
         if options.eyecandy and canvas.scene.getDevicePixelRatioF() == 1.0:
             self.shadow = CanvasBoxShadow(self.toGraphicsObject())
             self.shadow.setFakeParent(self)
             self.setGraphicsEffect(self.shadow)
-        else:
-            self.shadow = None
 
         # Final touches
-        self.setFlags(QGraphicsItem.ItemIsFocusable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+        self.setFlags(QGraphicsItem.ItemIsFocusable
+                      | QGraphicsItem.ItemIsMovable
+                      | QGraphicsItem.ItemIsSelectable)
 
         # Wait for at least 1 port
         if options.auto_hide_groups:
@@ -221,12 +228,28 @@ class CanvasBox(QGraphicsItem):
         self.update()
 
     def setIcon(self, icon_type, icon_name):
-        if self.icon_svg is not None:
-            self.icon_svg.setIcon(icon_type, icon_name, self.m_group_name)
+        if icon_type == ICON_HARDWARE:
+            self.removeIconFromScene()
+            port_mode = PORT_MODE_NULL
+            if self.m_splitted:
+                port_mode = self.m_splitted_mode
+            self.top_icon = CanvasSvgIcon(icon_type, icon_name, port_mode, self)
+            return
+        
+        if self.top_icon is not None:
+            self.top_icon.setIcon(icon_type, icon_name, self.m_group_name)
+
+    def has_top_icon(self)->bool:
+        if self.top_icon is None:
+            return False
+        
+        return not self.top_icon.is_null()
 
     def setSplit(self, split, mode=PORT_MODE_NULL):
         self.m_splitted = split
         self.m_splitted_mode = mode
+        if self._is_hardware:
+            self.setIcon(ICON_HARDWARE, self._icon_name)
 
     def setGroupName(self, group_name):
         self.m_group_name = group_name
@@ -312,20 +335,32 @@ class CanvasBox(QGraphicsItem):
                     self.setPos(pos.x(), canvas.size_rect.height() - self.p_height)
 
     def removeIconFromScene(self):
-        if self.icon_svg is None:
+        if self.top_icon is None:
             return
 
-        item = self.icon_svg
-        self.icon_svg = None
+        item = self.top_icon
+        self.top_icon = None
         canvas.scene.removeItem(item)
         del item
+
+    def get_string_size(self, string: str)->int:
+        return QFontMetrics(self.m_font_name).width(string)
 
     def updatePositions(self):
         self.prepareGeometryChange()
 
         # Check Text Name size
-        app_name_size = QFontMetrics(self.m_font_name).width(self.m_group_name) + 40
-        self.p_width = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50, app_name_size)
+        box_title, slash, box_subtitle = self.m_group_name.partition('/')
+        title_size = self.get_string_size(box_title)
+        subtitle_size = self.get_string_size(box_subtitle)
+        self.p_width = max(title_size, subtitle_size)
+        
+        if self.has_top_icon():
+            self.p_width += 37
+        else:
+            self.p_width += 16
+        
+        self.p_width = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50, self.p_width)
 
         # Get Port List
         port_list = []
@@ -462,6 +497,13 @@ class CanvasBox(QGraphicsItem):
             self.p_height  = max(last_in_pos, last_out_pos)
             self.p_height += max(canvas.theme.port_spacing, canvas.theme.port_spacingT) - canvas.theme.port_spacing
             self.p_height += canvas.theme.box_pen.widthF()
+
+        #if self.m_splitted and self.m_splitted_mode == PORT_MODE_OUTPUT:
+            #if self.has_top_icon():
+                #self.top_icon.align_right(self.p_width)
+        #elif not self.m_splitted:
+        if self.has_top_icon():
+            self.top_icon.align_at((self.p_width - max(title_size, subtitle_size) - 29)/2)
 
         self.repaintLines(True)
         self.update()
@@ -866,6 +908,64 @@ class CanvasBox(QGraphicsItem):
             painter.drawTiledPixmap(rect, canvas.theme.box_header_pixmap, rect.topLeft())
 
         # Draw text
+        
+
+        #if canvas.theme.box_use_icon:
+            #textPos = QPointF(33, canvas.theme.box_text_ypos)
+        #else:
+            #appNameSize = QFontMetrics(self.m_font_name).width(self.m_group_name)
+            #rem = self.p_width - appNameSize
+            #textPos = QPointF(rem/2, canvas.theme.box_text_ypos)
+
+        title_x_pos = 8
+        if self.has_top_icon():
+            title_x_pos += 25
+        
+        subtitle_x_pos = title_x_pos
+        
+        title_y_pos = canvas.theme.box_text_ypos
+
+        box_title = self.m_group_name
+        box_subtitle = ''
+        if '/' in box_title:
+            box_title, slash, box_subtitle = self.m_group_name.partition('/')
+
+        title_size = self.get_string_size(box_title)
+        subtitle_size = self.get_string_size(box_subtitle)
+
+        painter.setPen(QPen(QColor(255, 192, 0, 80), 1))
+
+        #if self.m_splitted:
+            #if self.m_splitted_mode == PORT_MODE_OUTPUT:
+                #title_x_pos = self.p_width - 8 - title_size
+                #subtitle_x_pos = self.p_width - 8 - subtitle_size
+
+                #if self.has_top_icon():
+                    #title_x_pos -= 25
+                    #subtitle_x_pos -= 25
+                
+                #if min(title_x_pos, subtitle_x_pos) > 10:
+                    #painter.drawLine(5, 16, min(title_x_pos, subtitle_x_pos) - 5, 16)
+        #else:
+        if self.has_top_icon():
+            title_x_pos = 29 + (self.p_width - 29 - max(title_size, subtitle_size)) / 2
+            subtitle_x_pos = title_x_pos
+            
+            if title_x_pos > 43:
+                painter.drawLine(5, 16, title_x_pos -29 -5, 16)
+                painter.drawLine(
+                    title_x_pos + max(title_size, subtitle_size) + 5, 16,
+                    self.p_width -5, 16)
+            
+        else:
+            title_x_pos = (self.p_width - title_size) / 2
+            subtitle_x_pos = (self.p_width - subtitle_size) / 2
+            if min(title_x_pos, subtitle_x_pos) > 10:
+                painter.drawLine(5, 16, min(title_x_pos, subtitle_x_pos) - 5, 16)
+                painter.drawLine(
+                    max(title_x_pos + title_size, subtitle_x_pos + subtitle_size) + 5, 16,
+                    self.p_width - 5, 16)
+
         painter.setFont(self.m_font_name)
 
         if self.isSelected():
@@ -873,18 +973,14 @@ class CanvasBox(QGraphicsItem):
         else:
             painter.setPen(canvas.theme.box_text)
 
-        if canvas.theme.box_use_icon:
-            textPos = QPointF(33, canvas.theme.box_text_ypos)
+        if box_subtitle:
+            painter.drawText(
+                QPointF(title_x_pos, title_y_pos -6), box_title)
+            painter.drawText(
+                QPointF(subtitle_x_pos, title_y_pos +9), box_subtitle)
         else:
-            appNameSize = QFontMetrics(self.m_font_name).width(self.m_group_name)
-            rem = self.p_width - appNameSize
-            textPos = QPointF(rem/2, canvas.theme.box_text_ypos)
-
-        painter.drawText(textPos, self.m_group_name)
-
-        
-                
-                
+            painter.drawText(
+                QPointF(title_x_pos, title_y_pos), self.m_group_name)
 
         self.repaintLines()
 

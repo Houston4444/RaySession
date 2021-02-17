@@ -129,6 +129,7 @@ class Group:
     def __init__(self, group_id: int, name: str):
         self.group_id = group_id
         self.name = name
+        self.display_name = name
         self.ports = []
         self.portgroups = []
         self._is_hardware = False
@@ -138,6 +139,8 @@ class Group:
         icon_type = patchcanvas.ICON_APPLICATION
         icon_name = ""
 
+        icon_name = self.name.partition('.')[0].lower()
+        
         if self._is_hardware:
             icon_type = patchcanvas.ICON_HARDWARE
             if self.name == "a2j":
@@ -146,13 +149,70 @@ class Group:
             icon_type = patchcanvas.ICON_CLIENT
             icon_name = self.client_icon
 
-        print('add to cannvassss the group', self.name)
-        patchcanvas.addGroup(self.group_id, self.name,
+        if self.name.startswith("PulseAudio "):
+            self.display_name = self.name.replace(' ', '/', 1)
+
+        patchcanvas.addGroup(self.group_id, self.display_name,
                              patchcanvas.SPLIT_UNDEF,
                              icon_type, icon_name)
     
     def remove_from_canvas(self):
         patchcanvas.removeGroup(self.group_id)
+
+    def set_port_alignments(self):
+        pass
+        #inputs, outputs = 0
+        
+        #input_names = []
+        #output_names = []
+        
+        #for port in self.ports:
+            #if port.flags & PORT_IS_INPUT:
+                #input_names.append(port.display_name)
+            #elif port.flags & PORT_IS_OUTPUT:
+                #output_names.append(port.display_name)
+        
+        #if not (input_names and output_names):
+            #return
+        
+        #if len(input_names) == len(output_names):
+            #return
+        
+        #align_max = abs(len(input_names) - len(output_names))
+        #align_done = 0
+        
+        #if len(input_names) < len(output_names):
+            #for i in range(len(input_names)):
+                #if input_names[i] in output_names:
+                    #index_diff = output_names.index(input_names[i]) -i + align_done
+                    #if index_diff < 0:
+                        #continue
+                    #if index_diff > 
+        
+
+    def midi_alignable(self)->int:
+        in_audio = in_midi = out_audio = out_midi = 0
+
+        for port in self.ports:
+            if port.flags & PORT_IS_INPUT:
+                if port.type == PORT_TYPE_AUDIO:
+                    in_audio += 1
+                elif port.type == PORT_TYPE_MIDI:
+                    in_midi += 1
+            elif port.flags & PORT_IS_OUTPUT:
+                if port.type == PORT_TYPE_AUDIO:
+                    out_audio += 1
+                elif port.type == PORT_TYPE_MIDI:
+                    out_midi += 1
+
+        if in_audio <= out_audio:
+            if in_midi <= out_midi:
+                return PORT_MODE_INPUT
+        else:
+            if out_midi <= in_midi:
+                return PORT_MODE_OUTPUT
+
+        return PORT_MODE_NULL
 
     def add_port(self, port, use_alias: int):
         port_full_name = port.full_name
@@ -187,7 +247,7 @@ class Group:
         for client_name in ('firewire_pcm', 'a2j',
                             'Hydrogen', 'ardour', 'Ardour', 'Qtractor',
                             'SooperLooper', 'sooperlooper', 'Luppp',
-                            'seq64'):
+                            'seq64', 'calfjackhost'):
             if self.name == client_name:
                 return client_name
 
@@ -296,6 +356,14 @@ class Group:
         
         elif client_name == 'seq64':
             display_name = display_name.replace('seq64 midi ', '', 1)
+        
+        elif client_name == 'calfjackhost':
+            display_name, num = split_end_digits(display_name)
+            if num:
+                display_name = cut_end(display_name,
+                                       ' Out #', ' In #')
+                
+                display_name += " " + num
         
         elif not client_name:
             display_name = display_name.replace('_', ' ')

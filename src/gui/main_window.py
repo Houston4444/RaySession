@@ -211,6 +211,8 @@ class MainWindow(QMainWindow):
         sg.daemon_url_request.connect(self.showDaemonUrlWindow)
         sg.client_properties_state_changed.connect(
             self.clientPropertiesStateChanged)
+        sg.canvas_callback.connect(
+            self._session.patchbay_manager.canvas_callbacks)
 
         # set spare icons if system icons not avalaible
         dark = isDarkTheme(self)
@@ -401,7 +403,10 @@ class MainWindow(QMainWindow):
 
         self.has_git = has_git
 
-    
+    def canvas_callback(self, action:int, value1: int,
+                        value2: int, value_str: str):
+        self._session._signaler.canvas_callback.emit(
+            action, value1, value2, value_str)
     
     def setupCanvas(self):
         #options = patchcanvas.options_t()
@@ -430,7 +435,7 @@ class MainWindow(QMainWindow):
         patchcanvas.setFeatures(features)
         patchcanvas.init(
             ray.APP_TITLE, self.scene,
-            self._session.patchbay_manager.canvas_callbacks, False)
+            self.canvas_callback, False)
 
         #tryCanvasSize = self.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
 

@@ -412,8 +412,8 @@ class PatchScene(QGraphicsScene):
             
             for group in canvas.group_list:
                 for widget in group.widgets:
-                    if widget and widget.icon_svg:
-                        widget.icon_svg.update_zoom(scale * factor)
+                    if widget and widget.top_icon:
+                        widget.top_icon.update_zoom(scale * factor)
 
     def wheelEvent(self, event):
         if not self.m_view:

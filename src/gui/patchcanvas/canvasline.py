@@ -66,11 +66,10 @@ class CanvasLine(QGraphicsLineItem):
     def isLineSelected(self):
         return self.m_lineSelected
 
-    def updateLineSelected(self):
+    def setLineSelected(self, yesno):
         if self.m_locked:
             return
 
-        yesno = self.item1.isSelected() or self.item2.isSelected()
         if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
             if yesno:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))

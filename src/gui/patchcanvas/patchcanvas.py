@@ -310,7 +310,8 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     group_dict.group_id = group_id
     group_dict.group_name = group_name
     group_dict.split = bool(split == SPLIT_YES)
-    group_dict.icon = icon_type
+    group_dict.icon_type = icon_type
+    group_dict.icon_name = icon_name
     group_dict.plugin_id = -1
     group_dict.plugin_ui = False
     group_dict.plugin_inline = False
@@ -432,7 +433,8 @@ def splitGroup(group_id):
 
     item = None
     group_name = ""
-    group_icon = ICON_APPLICATION
+    group_icon_type = ICON_APPLICATION
+    group_icon_name = ""
     plugin_id = -1
     plugin_ui = False
     plugin_inline = False
@@ -448,7 +450,8 @@ def splitGroup(group_id):
 
             item = group.widgets[0]
             group_name = group.group_name
-            group_icon = group.icon
+            group_icon_type = group.icon_type
+            group_icon_name = group.icon_name
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
@@ -474,7 +477,8 @@ def splitGroup(group_id):
             ports_data.append(port_dict)
 
     for connection in canvas.connection_list:
-        if connection.port_out_id in port_list_ids or connection.port_in_id in port_list_ids:
+        if (connection.port_out_id in port_list_ids
+                or connection.port_in_id in port_list_ids):
             connection_dict = connection_dict_t()
             connection_dict.connection_id = connection.connection_id
             connection_dict.group_in_id = connection.group_in_id
@@ -494,7 +498,8 @@ def splitGroup(group_id):
     removeGroup(group_id)
 
     # Step 3 - Re-create Item, now split
-    addGroup(group_id, group_name, SPLIT_YES, group_icon)
+    addGroup(group_id, group_name, SPLIT_YES,
+             group_icon_type, group_icon_name)
 
     if plugin_id >= 0:
         setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
@@ -504,7 +509,8 @@ def splitGroup(group_id):
                 port.port_type, port.portgrp_id, port.is_alternate)
 
     for conn in conns_data:
-        connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id, conn.group_in_id, conn.port_in_id)
+        connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id,
+                     conn.group_in_id, conn.port_in_id)
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -515,7 +521,8 @@ def joinGroup(group_id):
     item = None
     s_item = None
     group_name = ""
-    group_icon = ICON_APPLICATION
+    group_icon_type = ICON_APPLICATION
+    group_icon_name = ""
     plugin_id = -1
     plugin_ui = False
     plugin_inline = False
@@ -532,7 +539,8 @@ def joinGroup(group_id):
             item = group.widgets[0]
             s_item = group.widgets[1]
             group_name = group.group_name
-            group_icon = group.icon
+            group_icon_type = group.icon_type
+            group_icon_name = group.icon_name
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
@@ -586,7 +594,8 @@ def joinGroup(group_id):
     removeGroup(group_id)
 
     # Step 3 - Re-create Item, now together
-    addGroup(group_id, group_name, SPLIT_NO, group_icon)
+    addGroup(group_id, group_name, SPLIT_NO,
+             group_icon_type, group_icon_name)
 
     if plugin_id >= 0:
         setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
@@ -709,22 +718,22 @@ def setGroupPosFull(group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group
 
 # ------------------------------------------------------------------------------------------------------------
 
-def setGroupIcon(group_id, icon):
+def setGroupIcon(group_id, icon_type):
     if canvas.debug:
-        print("PatchCanvas::setGroupIcon(%i, %s)" % (group_id, icon2str(icon)))
+        print("PatchCanvas::setGroupIcon(%i, %s)" % (group_id, icon2str(icon_type)))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
-            group.icon = icon
-            group.widgets[0].setIcon(icon)
+            group.icon_type = icon_type
+            group.widgets[0].setIcon(icon_type)
 
             if group.split and group.widgets[1]:
-                group.widgets[1].setIcon(icon)
+                group.widgets[1].setIcon(icon_type)
 
             QTimer.singleShot(0, canvas.scene.update)
             return
 
-    qCritical("PatchCanvas::setGroupIcon(%i, %s) - unable to find group to change icon" % (group_id, icon2str(icon)))
+    qCritical("PatchCanvas::setGroupIcon(%i, %s) - unable to find group to change icon" % (group_id, icon2str(icon_type)))
 
 def setGroupAsPlugin(group_id, plugin_id, hasUI, hasInlineDisplay):
     if canvas.debug:

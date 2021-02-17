@@ -74,7 +74,7 @@ ICON_FILE = 3
 ICON_PLUGIN = 4
 ICON_LADISH_ROOM = 5
 ICON_CLIENT = 6
-
+ICON_INTERNAL = 7
 
 # Split Option
 SPLIT_UNDEF = 0
@@ -162,7 +162,8 @@ class group_dict_t(object):
         'group_id',
         'group_name',
         'split',
-        'icon',
+        'icon_type',
+        'icon_name',
         'plugin_id',
         'plugin_ui',
         'plugin_inline',

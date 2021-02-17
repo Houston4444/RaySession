@@ -18,7 +18,7 @@
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
-
+from math import log
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QColor, QLinearGradient, QPainter, QPainterPath, QPen
 from PyQt5.QtWidgets import QGraphicsPathItem
@@ -68,11 +68,10 @@ class CanvasBezierLine(QGraphicsPathItem):
     def isLineSelected(self):
         return self.m_lineSelected
 
-    def updateLineSelected(self):
+    def setLineSelected(self, yesno):
         if self.m_locked:
             return
 
-        yesno = self.item1.isSelected() or self.item2.isSelected()
         if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
             if yesno:
                 self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
@@ -128,6 +127,13 @@ class CanvasBezierLine(QGraphicsPathItem):
             item2_mid_x = abs(item1_x - item2_x) / 2
             item2_new_x = item2_x - item2_mid_x
             
+            item1_new_y, item2_new_y = item1_y, item2_y
+            
+            diffxy = abs(item1_y - item2_y) - abs(item1_x - item2_x)
+            if diffxy > 0:
+                item1_new_x += abs(diffxy)
+                item2_new_x -= abs(diffxy)
+
             path = QPainterPath(QPointF(item1_x, item1_y))
             path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y, item2_x, item2_y)
             self.setPath(path)

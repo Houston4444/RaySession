@@ -428,7 +428,7 @@ class CanvasPort(QGraphicsItem):
         for connection in canvas.connection_list:
             if CanvasConnectionConcerns(connection,
                             self.m_group_id, [self.m_port_id]):
-                connection.widget.updateLineSelected()
+                connection.widget.setLineSelected(yesno)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedHasChanged:
@@ -478,7 +478,8 @@ class CanvasPort(QGraphicsItem):
             text_pen = theme.port_parameter_text_sel if selected else theme.port_parameter_text
             conn_pen = QPen(theme.port_parameter_pen_sel)
         else:
-            qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'" % port_type2str(self.m_port_type))
+            qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'"
+                      % port_type2str(self.m_port_type))
             return
 
         # To prevent quality worsening
