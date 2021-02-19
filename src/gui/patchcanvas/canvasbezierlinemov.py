@@ -45,7 +45,8 @@ from . import (
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasBezierLineMov(QGraphicsPathItem):
-    def __init__(self, port_mode, port_type, port_posinportgrp, portgrp_lenght, parent):
+    def __init__(self, port_mode, port_type,
+                 port_posinportgrp, portgrp_lenght, parent):
         QGraphicsPathItem.__init__(self)
         self.setParentItem(parent)
 
@@ -61,22 +62,13 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         self.p_itemX = self.scenePos().x()
         self.p_itemY = self.scenePos().y()
         self.p_width = parent.getPortWidth()
-
-        if port_type == PORT_TYPE_AUDIO_JACK:
-            pen = QPen(canvas.theme.line_audio_jack, 2)
-        elif port_type == PORT_TYPE_MIDI_JACK:
-            pen = QPen(canvas.theme.line_midi_jack, 2)
-        elif port_type == PORT_TYPE_MIDI_ALSA:
-            pen = QPen(canvas.theme.line_midi_alsa, 2)
-        elif port_type == PORT_TYPE_PARAMETER:
-            pen = QPen(canvas.theme.line_parameter, 2)
-        else:
-            qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
-            pen = QPen(Qt.black)
-
-        pen.setCapStyle(Qt.FlatCap)
-        pen.setWidthF(pen.widthF() + 0.00001)
-        self.setPen(pen)
+        
+        if self.m_port_type not in (PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK,
+                                    PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER):
+            qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type"
+                     % (port_mode2str(self.m_port_mode),
+                        port_type2str(self.m_port_type),
+                        self.parentItem()))
     
     def setReadyToDisc(self, yesno):
         self.m_ready_to_disc = yesno
@@ -91,28 +83,29 @@ class CanvasBezierLineMov(QGraphicsPathItem):
     def updateLinePos(self, scenePos):
         if self.m_ready_to_disc:
             if self.m_port_type == PORT_TYPE_AUDIO_JACK:
-                pen = QPen(canvas.theme.line_audio_jack, 2, Qt.DotLine)
+                pen = QPen(canvas.theme.line_audio_jack_sel, 2, Qt.DotLine)
             elif self.m_port_type == PORT_TYPE_MIDI_JACK:
-                pen = QPen(canvas.theme.line_midi_jack, 2, Qt.DotLine)
+                pen = QPen(canvas.theme.line_midi_jack_sel, 2, Qt.DotLine)
             elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
-                pen = QPen(canvas.theme.line_midi_alsa, 2, Qt.DotLine)
+                pen = QPen(canvas.theme.line_midi_alsa_sel, 2, Qt.DotLine)
             elif self.m_port_type == PORT_TYPE_PARAMETER:
-                pen = QPen(canvas.theme.line_parameter, 2, Qt.DotLine)
+                pen = QPen(canvas.theme.line_parameter_sel, 2, Qt.DotLine)
             else:
-                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
                 pen = QPen(Qt.black)
         else:
             if self.m_port_type == PORT_TYPE_AUDIO_JACK:
-                pen = QPen(canvas.theme.line_audio_jack, 2)
+                pen = QPen(canvas.theme.line_audio_jack_sel, 2)
             elif self.m_port_type == PORT_TYPE_MIDI_JACK:
-                pen = QPen(canvas.theme.line_midi_jack, 2)
+                pen = QPen(canvas.theme.line_midi_jack_sel, 2)
             elif self.m_port_type == PORT_TYPE_MIDI_ALSA:
-                pen = QPen(canvas.theme.line_midi_alsa, 2)
+                pen = QPen(canvas.theme.line_midi_alsa_sel, 2)
             elif self.m_port_type == PORT_TYPE_PARAMETER:
-                pen = QPen(canvas.theme.line_parameter, 2)
+                pen = QPen(canvas.theme.line_parameter_sel, 2)
             else:
-                qWarning("PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type" % (port_mode2str(port_mode), port_type2str(port_type), parent))
                 pen = QPen(Qt.black)
+
+        pen.setCapStyle(Qt.FlatCap)
+        pen.setWidthF(pen.widthF() + 0.00001)
         self.setPen(pen)
         
         phi = 0.75 if self.m_portgrp_lenght > 2 else 0.62
@@ -123,7 +116,8 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 first_old_y = canvas.theme.port_height * phi
                 last_old_y  = canvas.theme.port_height * (self.m_portgrp_lenght - phi)
                 delta = (last_old_y - first_old_y) / (self.m_portgrp_lenght -1)
-                old_y = first_old_y + (self.m_port_posinportgrp * delta) - (canvas.theme.port_height * self.m_port_posinportgrp)
+                old_y = first_old_y + (self.m_port_posinportgrp * delta) \
+                        - canvas.theme.port_height * self.m_port_posinportgrp
             else:
                 old_y = canvas.theme.port_height / 2
                 
@@ -134,7 +128,8 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 last_new_y  = canvas.theme.port_height * (self.m_portgrp_lenght_to - phito)
                 delta = (last_new_y - first_new_y) / (self.m_portgrp_lenght_to -1)
                 new_y1 = first_new_y + (self.m_port_posinportgrp_to * delta)
-                new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
+                new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) \
+                        - canvas.theme.port_height * phito
                 
             if self.m_port_mode == PORT_MODE_INPUT:
                 old_x = 0
@@ -179,8 +174,16 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         final_x = scenePos.x() - self.p_itemX
         final_y = scenePos.y() - self.p_itemY + new_y
 
+        new_x1 = new_x
+        new_x2 = new_x
+            
+        diffxy = abs(final_y - old_y) - abs(final_x - old_x)
+        if diffxy > 0:
+            new_x1 += abs(diffxy)
+            new_x2 -= abs(diffxy)
+
         path = QPainterPath(QPointF(old_x, old_y))
-        path.cubicTo(new_x, old_y, new_x, final_y, final_x, final_y)
+        path.cubicTo(new_x1, old_y, new_x2, final_y, final_x, final_y)
         self.setPath(path)
 
     def type(self):

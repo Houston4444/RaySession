@@ -119,7 +119,7 @@ class CanvasSvgIcon(QGraphicsSvgItem):
         self.setParentItem(parent)
 
         self.m_renderer = None
-        self.p_size = QRectF(0, 0, 0, 0)
+        self.p_size = QRectF(4, 4, 24, 24)
 
         self.m_colorFX = QGraphicsColorizeEffect(self)
         self.m_colorFX.setColor(canvas.theme.box_text.color())
@@ -186,6 +186,12 @@ class CanvasSvgIcon(QGraphicsSvgItem):
             # TODO - make a unique ladish-room icon
             icon_path = ":/scalable/pb_hardware.svg"
             self.p_size = QRectF(5, 2, 16, 16)
+
+        elif icon == ICON_INTERNAL:
+            print('zeokll')
+            icon_path = ":/scalable/" + name
+            self.p_size = QRectF(4, 4, 24, 24)
+            print('dkske', icon_path)
 
         else:
             self.p_size = QRectF(0, 0, 0, 0)

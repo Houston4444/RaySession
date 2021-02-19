@@ -19,8 +19,8 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSlot, qCritical, qFatal, qWarning, QObject
-from PyQt5.QtCore import QPointF, QRectF, QSettings, QTimer
+from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
+                          QPointF, QRectF, QSettings, QTimer, pyqtSignal)
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -68,6 +68,11 @@ from .scene import PatchScene
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasObject(QObject):
+    port_added = pyqtSignal(int, int)
+    port_removed = pyqtSignal(int, int)
+    connection_added = pyqtSignal(int)
+    connection_removed = pyqtSignal(int)
+    
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
 
@@ -98,37 +103,51 @@ class CanvasObject(QObject):
             if item:
                 CanvasRemoveItemFX(item)
 
+    #@pyqtSlot()
+    #def PortContextMenuConnect(self):
+        #try:
+            #sources, targets = self.sender().data()
+        #except:
+            #return
+
+        #for port_type in (PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK,
+                          #PORT_TYPE_MIDI_ALSA):
+            #source_ports = sources[port_type]
+            #target_ports = targets[port_type]
+
+            #source_ports_len = len(source_ports)
+            #target_ports_len = len(target_ports)
+
+            #if source_ports_len == 0 or target_ports_len == 0:
+                #continue
+
+            #for i in range(min(source_ports_len, target_ports_len)):
+                #data = "%i:%i:%i:%i" % (source_ports[i][0],
+                                        #source_ports[i][1],
+                                        #target_ports[i][0],
+                                        #target_ports[i][1])
+                #CanvasCallback(ACTION_PORTS_CONNECT, 0, 0, data)
+
+            #if source_ports_len == 1 and target_ports_len > 1:
+                #for i in range(1, target_ports_len):
+                    #data = "%i:%i:%i:%i" % (source_ports[0][0],
+                                            #source_ports[0][1],
+                                            #target_ports[i][0],
+                                            #target_ports[i][1])
+                    #CanvasCallback(ACTION_PORTS_CONNECT, 0, 0, data)
+
     @pyqtSlot()
-    def PortContextMenuConnect(self):
+    def port_context_menu_connect(self):
         try:
-            sources, targets = self.sender().data()
+            all_ids = list(self.sender().data())
         except:
             return
-
-        for port_type in (PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA):
-            source_ports = sources[port_type]
-            target_ports = targets[port_type]
-
-            source_ports_len = len(source_ports)
-            target_ports_len = len(target_ports)
-
-            if source_ports_len == 0 or target_ports_len == 0:
-                continue
-
-            for i in range(min(source_ports_len, target_ports_len)):
-                data = "%i:%i:%i:%i" % (source_ports[i][0],
-                                        source_ports[i][1],
-                                        target_ports[i][0],
-                                        target_ports[i][1])
-                CanvasCallback(ACTION_PORTS_CONNECT, 0, 0, data)
-
-            if source_ports_len == 1 and target_ports_len > 1:
-                for i in range(1, target_ports_len):
-                    data = "%i:%i:%i:%i" % (source_ports[0][0],
-                                            source_ports[0][1],
-                                            target_ports[i][0],
-                                            target_ports[i][1])
-                    CanvasCallback(ACTION_PORTS_CONNECT, 0, 0, data)
+        
+        if len(all_ids) != 4:
+            return
+        
+        group_out_id, port_out_id, group_in_id, port_in_id = all_ids
+        CanvasCallback(ACTION_PORTS_CONNECT, '', '', ':'.join(all_ids))
 
     @pyqtSlot()
     def PortContextMenuDisconnect(self):
@@ -813,6 +832,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, portgrp_id, is_a
         CanvasItemFX(port_widget, True, False)
         return
 
+    canvas.qobject.port_added.emit(port_dict.group_id, port_dict.port_id)
     QTimer.singleShot(0, canvas.scene.update)
 
 def removePort(group_id, port_id):
@@ -830,7 +850,8 @@ def removePort(group_id, port_id):
             canvas.scene.removeItem(item)
             canvas.port_list.remove(port)
             del item
-
+            
+            canvas.qobject.port_removed.emit(group_id, port_id)
             QTimer.singleShot(0, canvas.scene.update)
             return
 
@@ -998,7 +1019,9 @@ def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_
     connection_dict.widget.setZValue(canvas.last_z_value)
 
     canvas.connection_list.append(connection_dict)
-
+    
+    canvas.qobject.connection_added.emit(connection_id)
+    
     if options.eyecandy == EYECANDY_FULL:
         item = connection_dict.widget
         CanvasItemFX(item, True, False)
@@ -1025,6 +1048,8 @@ def disconnectPorts(connection_id):
             line = connection.widget
             canvas.connection_list.remove(connection)
             break
+
+    canvas.qobject.connection_removed.emit(connection_id)
 
     if not line:
         qCritical("PatchCanvas::disconnectPorts(%i) - unable to find connection ports" % connection_id)

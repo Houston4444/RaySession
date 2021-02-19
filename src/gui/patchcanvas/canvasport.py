@@ -24,7 +24,7 @@ import time
 
 from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer, QSizeF
 from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF, QLinearGradient, QColor, QRadialGradient
-from PyQt5.QtWidgets import QGraphicsItem, QMenu
+from PyQt5.QtWidgets import QGraphicsItem, QMenu, QCheckBox, QWidgetAction
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -54,6 +54,7 @@ from . import (
 from .canvasbezierlinemov import CanvasBezierLineMov
 from .canvaslinemov import CanvasLineMov
 from .theme import Theme
+from .connect_menu import ConnectMenu
 from .utils import (
     CanvasGetFullPortName,
     CanvasGetPortConnectionList,
@@ -61,9 +62,82 @@ from .utils import (
     CanvasGetPortPrintName,
     CanvasConnectionMatches,
     CanvasConnectionConcerns,
+    CanvasGetGroupIcon,
     CanvasCallback)
 
 # ------------------------------------------------------------------------------------------------------------
+
+class ConnectAction(QWidgetAction):
+    def __init__(self, parent):
+        QWidgetAction.__init__(self, parent)
+        self._group_out_id = -1
+        self._port_out_id = -1
+        self._group_in_id = -1
+        self._port_in_id = -1
+        
+    def set_group_and_port_id_out(self, group_id: int, port_id: int):
+        self._group_out_id = group_id
+        self._port_out_id = port_id
+        
+    def set_group_and_port_id_in(self, group_id: int, port_id: int):
+        self._group_in_id = group_id
+        self._port_in_id = port_id
+        
+    def state_changed(self, state: bool):
+        if state:
+            all_ids = [self._group_out_id, self._port_out_id,
+                       self._group_in_id, self._port_in_id]
+            print('taritati(')
+            print(':'.join([str(i) for i in all_ids]))
+            CanvasCallback(ACTION_PORTS_CONNECT, '', '',
+                           ':'.join([str(i) for i in all_ids]))
+
+
+class ContextGroupMenu(QMenu):
+    def __init__(self, group_name, group_id, parent=None):
+        QMenu.__init__(self, group_name, parent)
+        self._group_id = group_id
+        self._ports = []
+        canvas.qobject.port_removed.connect(self.port_removed_from_canvas)
+        
+    #def actionEvent(self, event):
+        #self._n_actions += 1
+        #QMenu.actionEvent(self, event)
+    
+    ##def hideEvent(self, event):
+        ##print('figjjgjhide', self._n_actions)
+        ##if self._n_actions >= 3:
+            ##QMenu.hideEvent(self, event)
+    #def mouseReleaseEvent(self, event):
+        #print('oekflg')
+        #action = self.activeAction()
+        #if action is not None:
+            #print('rrr', action.objectName(), action.isCheckable())
+        #if action and action.isEnabled():
+            #print('oeklllccl', action.objectName())
+            #action.setEnabled(False)
+            #QMenu.mouseReleaseEvent(self, event)
+            #action.setEnabled(True)
+            #action.trigger()
+        #else:
+            #QMenu.mouseReleaseEvent(self, event)
+    
+    def add_port(self, action, port_id: int):
+        QMenu.addAction(self, action)
+        self._ports.append({'port_id': port_id, 'action': action})
+    
+    def port_removed_from_canvas(self, group_id: int, port_id: int):
+        print('zoefkoflflfllmmmqqmqq', group_id, port_id)
+        if group_id != self._group_id:
+            return
+        
+        print('amimiamia', self._group_id)
+        
+        for port_dict in self._ports:
+            if port_dict['port_id'] == port_id:
+                print('rmeooove actiont')
+                self.removeAction(port_dict['action'])
+        
 
 class CanvasPort(QGraphicsItem):
     def __init__(self, group_id, port_id, port_name, port_mode, 
@@ -89,7 +163,7 @@ class CanvasPort(QGraphicsItem):
         self.m_port_font.setWeight(canvas.theme.port_font_state)
 
         self.m_line_mov_list = []
-        self.m_r_click_conn = None
+        self.m_last_rclick_item = None
         self.m_r_click_time = 0
         self.m_dotcon_list = []
         self.m_hover_item = None
@@ -249,7 +323,7 @@ class CanvasPort(QGraphicsItem):
                 if self.m_hover_item:
                     self.m_r_click_time = time.time()
                     self.connectToHover()
-                    self.m_r_click_conn = self.m_hover_item
+                    self.m_last_rclick_item = self.m_hover_item
                     
                     for line_mov in self.m_line_mov_list:
                         line_mov.toggleReadyToDisc()
@@ -290,7 +364,7 @@ class CanvasPort(QGraphicsItem):
             line_mov.setZValue(canvas.last_z_value)
             canvas.last_z_value += 1
             canvas.is_line_mov = True
-            self.m_r_click_conn = None
+            self.m_last_rclick_item = None
             self.parentItem().setZValue(canvas.last_z_value)
 
         item = None
@@ -379,7 +453,7 @@ class CanvasPort(QGraphicsItem):
             self.m_hover_item = None
             self.resetLineMovPositions()
             self.resetDotLines()
-            self.m_r_click_conn = None
+            self.m_last_rclick_item = None
         
         for line_mov in self.m_line_mov_list:
             line_mov.updateLinePos(event.scenePos())
@@ -407,13 +481,13 @@ class CanvasPort(QGraphicsItem):
                     connection.widget.setLocked(False)
 
             if self.m_hover_item:
-                if (self.m_r_click_conn != self.m_hover_item
+                if (self.m_last_rclick_item != self.m_hover_item
                         and time.time() > self.m_r_click_time + 0.3):
                     self.connectToHover()
 
                 canvas.scene.clearSelection()
                 
-            if self.m_r_click_conn:
+            if self.m_last_rclick_item:
                 canvas.scene.clearSelection()
 
         if self.m_cursor_moving:
@@ -434,6 +508,83 @@ class CanvasPort(QGraphicsItem):
         self.setSelected(True)
 
         menu = QMenu()
+        
+        #connect_menu = QMenu("Connect", menu)
+        connect_menu = ConnectMenu(self.m_group_id, self.m_port_id, menu)
+        
+        #all_ports = []
+        
+        #for group in canvas.group_list:
+            #group_submenu = None
+            #group_icon = None
+            #n = 0
+            #for port in canvas.port_list:
+                #if (port.group_id == group.group_id
+                        #and port.port_type == self.m_port_type
+                        #and port.port_mode != self.m_port_mode):
+                    #if group_submenu is None:
+                        #group_name = group.group_name
+                        #if len(group_name) > 15:
+                            #if '/' in group_name:
+                                #group_name = group_name.partition('/')[2]
+                        
+                        #group_submenu = ContextGroupMenu(
+                            #group_name, group.group_id, menu)
+                        #group_icon = CanvasGetGroupIcon(
+                            #group.group_id, self.m_group_id)
+                        #group_submenu.setIcon(group_icon)
+                    
+                    #check_box = QCheckBox(port.port_name, group_submenu)
+                    #check_box.setMinimumHeight(23)
+                    #act_x_conn = ConnectAction(menu)
+                    #act_x_conn.setDefaultWidget(check_box)
+                    #if self.m_port_mode == PORT_MODE_OUTPUT:
+                        #act_x_conn.set_group_and_port_id_out(
+                            #self.m_group_id, self.m_port_id)
+                        #act_x_conn.set_group_and_port_id_in(
+                            #port.group_id, port.port_id)
+                    #else:
+                        #act_x_conn.set_group_and_port_id_out(
+                            #port.group_id, port.port_id)
+                        #act_x_conn.set_group_and_port_id_in(
+                            #self.m_group_id, self.m_port_id)
+                    #check_box.stateChanged.connect(act_x_conn.state_changed)
+                    ##act_x_conn.setIcon(group_icon)
+                    ##group_submenu.addAction(act_x_conn)
+                    #group_submenu.add_port(act_x_conn, port.port_id)
+                    
+                    #if n % 2:
+                        #group_submenu.addSeparator()
+                    
+                    #n += 1
+                    ##act_x_conn = group_submenu.addAction(port_name)
+                    
+                    ##act_x_conn.setCheckable(True)
+            
+            #if group_submenu is not None:
+                #connect_menu.addMenu(group_submenu)
+                    
+        menu.addMenu(connect_menu)
+                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         discMenu = QMenu("Disconnect", menu)
 
         conn_list = CanvasGetPortConnectionList(self.m_group_id, self.m_port_id)
@@ -441,6 +592,7 @@ class CanvasPort(QGraphicsItem):
         if len(conn_list) > 0:
             for conn_id, group_id, port_id in conn_list:
                 act_x_disc = discMenu.addAction(CanvasGetFullPortName(group_id, port_id))
+                act_x_disc.setIcon(CanvasGetGroupIcon(group_id, self.m_port_mode))
                 act_x_disc.setData([conn_id])
                 act_x_disc.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
         else:

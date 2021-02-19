@@ -88,7 +88,7 @@ class CanvasPortGroup(QGraphicsItem):
 
         self.m_line_mov_list = []
         self.m_dotcon_list = []
-        self.m_r_click_conn = None
+        self.m_last_rclick_item = None
         self.m_r_click_time = 0
         self.m_hover_item = None
 
@@ -249,7 +249,7 @@ class CanvasPortGroup(QGraphicsItem):
             if canvas.is_line_mov:
                 if self.m_hover_item:
                     self.ConnectToHover()
-                    self.m_r_click_conn = self.m_hover_item
+                    self.m_last_rclick_item = self.m_hover_item
                     self.m_r_click_time = time.time()
                     
                     for line_mov in self.m_line_mov_list:
@@ -272,7 +272,7 @@ class CanvasPortGroup(QGraphicsItem):
                     connection.widget.setLocked(True)
 
         if not self.m_line_mov_list:
-            self.m_r_click_conn = None
+            self.m_last_rclick_item = None
             canvas.last_z_value += 1
             self.setZValue(canvas.last_z_value)
             canvas.last_z_value += 1
@@ -417,7 +417,7 @@ class CanvasPortGroup(QGraphicsItem):
         else:
             if item != self.m_hover_item:
                 self.m_hover_item = None
-                self.m_r_click_conn = None
+                self.m_last_rclick_item = None
                 self.resetDotLines()
                 self.resetLineMovPositions()
         
@@ -442,12 +442,12 @@ class CanvasPortGroup(QGraphicsItem):
                         connection.widget.setLocked(False)
                 
                 if self.m_hover_item:
-                    if (self.m_r_click_conn != self.m_hover_item
+                    if (self.m_last_rclick_item != self.m_hover_item
                             and time.time() > self.m_r_click_time + 0.3):
                         self.ConnectToHover()
                     canvas.scene.clearSelection()
                     
-                elif self.m_r_click_conn:
+                elif self.m_last_rclick_item:
                     canvas.scene.clearSelection()
 
             if self.m_cursor_moving:

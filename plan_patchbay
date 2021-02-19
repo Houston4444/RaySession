@@ -37,12 +37,17 @@ vérifer !ret! aliases et tous les aliases sont à revoir
 IGU->pb
 set_alias : port_name:str, alias_num:int (1ou2), alias:str
 
-
-connection par clic droit
-lignes pointillées si en déconnexion
-icones PulseAudio
+/ pas de plein écran en double clic droit
+/ connection midi rouge -> marron
+/ connection audio blanc -> jaune
+connection forme diffxy -> pas prioritaire
+/ icones PulseAudio
+context menu box -> icones PulseAudio/hardware/a2j dispos en light theme
+bug hardware polygon
 vérif port rename et display name
+revoir sauvegarde groupe position et paires
 ajout fenêtre d'options du canvas
+ajout boutons JACK et patchbay dans la barre d'outils
 démon jack qui boucle si jack non démarré
 supprimer tous les ports à jack shutdown
 fonction refresh

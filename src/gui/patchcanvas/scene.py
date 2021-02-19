@@ -281,9 +281,29 @@ class PatchScene(QGraphicsScene):
         if self.curCut:
             self.m_view.viewport().setCursor(self.curCut)
 
+    def zoom_wheel(self, delta):
+        transform = self.m_view.transform()
+        scale = transform.m11()
+
+        if ((delta > 0 and scale < self.m_scale_max)
+                or (delta < 0 and scale > self.m_scale_min)):
+            factor = 1.4142135623730951 ** (delta / 240.0)
+            transform.scale(factor, factor)
+            self.fixScaleFactor(transform)
+            self.m_view.setTransform(transform)
+            self.scaleChanged.emit(transform.m11())
+            
+            for group in canvas.group_list:
+                for widget in group.widgets:
+                    if widget and widget.top_icon:
+                        widget.top_icon.update_zoom(scale * factor)
+
     def mouseDoubleClickEvent(self, event):
-        #QGraphicsScene.mouseDoubleClickEvent(self, event)
-        canvas.callback(ACTION_DOUBLE_CLICK, 0, 0, "")
+        if event.button() == Qt.LeftButton:
+            canvas.callback(ACTION_DOUBLE_CLICK, 0, 0, "")
+            return
+        
+        QGraphicsScene.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
         self.m_mouse_down_init = (
@@ -398,22 +418,6 @@ class PatchScene(QGraphicsScene):
             return
 
         QGraphicsScene.mouseReleaseEvent(self, event)
-
-    def zoom_wheel(self, delta):
-        transform = self.m_view.transform()
-        scale = transform.m11()
-
-        if (delta > 0 and scale < self.m_scale_max) or (delta < 0 and scale > self.m_scale_min):
-            factor = 1.4142135623730951 ** (delta / 240.0)
-            transform.scale(factor, factor)
-            self.fixScaleFactor(transform)
-            self.m_view.setTransform(transform)
-            self.scaleChanged.emit(transform.m11())
-            
-            for group in canvas.group_list:
-                for widget in group.widgets:
-                    if widget and widget.top_icon:
-                        widget.top_icon.update_zoom(scale * factor)
 
     def wheelEvent(self, event):
         if not self.m_view:

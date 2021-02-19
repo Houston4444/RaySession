@@ -23,7 +23,9 @@ from sip import voidptr
 from struct import pack
 
 from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer
-from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QImage, QLinearGradient, QPainter, QPen, QPolygonF, QColor
+from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
+                         QLinearGradient, QPainter, QPen, QPolygonF,
+                         QColor, QIcon)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu
 
 # ------------------------------------------------------------------------------------------------------------
@@ -60,6 +62,7 @@ from . import (
     PORT_TYPE_PARAMETER,
     MAX_PLUGIN_ID_ALLOWED,
     ICON_HARDWARE,
+    ICON_INTERNAL
 )
 
 from .canvasboxshadow import CanvasBoxShadow
@@ -72,7 +75,9 @@ from .utils import (CanvasItemFX,
                     CanvasGetPortConnectionList,
                     CanvasGetPortGroupName,
                     CanvasGetPortGroupPosition,
-                    CanvasCallback)
+                    CanvasCallback,
+                    CanvasConnectionConcerns,
+                    CanvasGetIcon)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -139,7 +144,7 @@ class CanvasBox(QGraphicsItem):
         
         # Icon
         if canvas.theme.box_use_icon:
-            if icon_type == ICON_HARDWARE:
+            if icon_type in (ICON_HARDWARE, ICON_INTERNAL):
                 port_mode = PORT_MODE_NULL
                 if self.m_splitted:
                     port_mode = self.m_splitted_mode
@@ -539,89 +544,107 @@ class CanvasBox(QGraphicsItem):
         event.accept()
         menu = QMenu()
 
-        # Conenct menu stuff
-        connMenu = QMenu("Connect", menu)
-
-        our_port_types = []
-        our_port_outs = {
-            PORT_TYPE_AUDIO_JACK: [],
-            PORT_TYPE_MIDI_JACK: [],
-            PORT_TYPE_MIDI_ALSA: [],
-        }
-        for port in canvas.port_list:
-            if port.group_id != self.m_group_id:
-                continue
-            if port.port_mode != PORT_MODE_OUTPUT:
-                continue
-            if port.port_id not in self.m_port_list_ids:
-                continue
-            if port.port_type not in our_port_types:
-                our_port_types.append(port.port_type)
-            our_port_outs[port.port_type].append((port.group_id, port.port_id))
-
-        if len(our_port_types) != 0:
-            act_x_conn = None
-            for group in canvas.group_list:
-                if self.m_group_id == group.group_id:
-                    continue
-
-                has_ports = False
-                target_ports = {
-                    PORT_TYPE_AUDIO_JACK: [],
-                    PORT_TYPE_MIDI_JACK: [],
-                    PORT_TYPE_MIDI_ALSA: [],
-                }
-
-                for port in canvas.port_list:
-                    if port.group_id != group.group_id:
-                        continue
-                    if port.port_mode != PORT_MODE_INPUT:
-                        continue
-                    if port.port_type not in our_port_types:
-                        continue
-                    has_ports = True
-                    target_ports[port.port_type].append((port.group_id, port.port_id))
-
-                if not has_ports:
-                    continue
-
-                act_x_conn = connMenu.addAction(group.group_name)
-                act_x_conn.setData((our_port_outs, target_ports))
-                act_x_conn.triggered.connect(canvas.qobject.PortContextMenuConnect)
-
-            if act_x_conn is None:
-                act_x_disc = connMenu.addAction("Nothing to connect to")
-                act_x_disc.setEnabled(False)
-
-        else:
-            act_x_disc = connMenu.addAction("No output ports")
-            act_x_disc.setEnabled(False)
-
         # Disconnect menu stuff
         discMenu = QMenu("Disconnect", menu)
+        discMenu.setIcon(QIcon.fromTheme('gtk-disconnect'))
 
-        conn_list = []
         conn_list_ids = []
+        disconnect_list = [] # will contains disconnect_element dicts
 
-        for port_id in self.m_port_list_ids:
-            tmp_conn_list = CanvasGetPortConnectionList(self.m_group_id, port_id)
-            for tmp_conn_id, tmp_group_id, tmp_port_id in tmp_conn_list:
-                if tmp_conn_id not in conn_list_ids:
-                    conn_list.append((tmp_conn_id, tmp_group_id, tmp_port_id))
-                    conn_list_ids.append(tmp_conn_id)
-
-        if len(conn_list) > 0:
-            for conn_id, group_id, port_id in conn_list:
-                act_x_disc = discMenu.addAction(CanvasGetFullPortName(group_id, port_id))
-                act_x_disc.setData(conn_id)
-                act_x_disc.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
+        for connection in canvas.connection_list:
+            if CanvasConnectionConcerns(
+                    connection, self.m_group_id, self.m_port_list_ids):
+                conn_list_ids.append(connection.connection_id)
+                other_group_id = connection.group_in_id
+                group_port_mode = PORT_MODE_INPUT
+                
+                if self.m_splitted:
+                    if self.m_splitted_mode == PORT_MODE_INPUT:
+                        other_group_id = connection.group_out_id
+                        group_port_mode = PORT_MODE_OUTPUT
+                else:
+                    if other_group_id == self.m_group_id:
+                        other_group_id = connection.group_out_id
+                        group_port_mode = PORT_MODE_OUTPUT
+                
+                for disconnect_element in disconnect_list:
+                    if disconnect_element['group_id'] == other_group_id:
+                        if group_port_mode == PORT_MODE_INPUT:
+                            disconnect_element['connection_in_ids'].append(
+                                connection.connection_id)
+                        else:
+                            disconnect_element['connection_out_ids'].append(
+                                connection.connection_id)
+                        break
+                else:
+                    disconnect_element = {'group_id': other_group_id,
+                                          'connection_in_ids': [],
+                                          'connection_out_ids': []}
+                    
+                    if group_port_mode == PORT_MODE_INPUT:
+                        disconnect_element['connection_in_ids'].append(
+                            connection.connection_id)
+                    else:
+                        disconnect_element['connection_out_ids'].append(
+                            connection.connection_id)
+                    
+                    disconnect_list.append(disconnect_element)
+        
+        if disconnect_list:
+            for disconnect_element in disconnect_list:
+                for group in canvas.group_list:
+                    if group.group_id == disconnect_element['group_id']:
+                        if (group.split
+                                and disconnect_element['connection_in_ids']
+                                and disconnect_element['connection_out_ids']):
+                            ins_label = " (inputs)"
+                            outs_label = " (outputs)"
+                            
+                            if group.icon_type == ICON_HARDWARE:
+                                ins_label = " (playbacks)"
+                                outs_label = " (captures)"
+                                
+                            act_x_disc1 = discMenu.addAction(
+                                group.group_name + outs_label)
+                            act_x_disc1.setIcon(CanvasGetIcon(
+                                group.icon_type, group.icon_name, PORT_MODE_OUTPUT))
+                            act_x_disc1.setData(
+                                disconnect_element['connection_out_ids'])
+                            act_x_disc1.triggered.connect(
+                                canvas.qobject.PortContextMenuDisconnect)
+                            
+                            act_x_disc2 = discMenu.addAction(
+                                group.group_name + ins_label)
+                            act_x_disc2.setIcon(CanvasGetIcon(
+                                group.icon_type, group.icon_name, PORT_MODE_INPUT))
+                            act_x_disc2.setData(
+                                disconnect_element['connection_in_ids'])
+                            act_x_disc2.triggered.connect(
+                                canvas.qobject.PortContextMenuDisconnect)
+                        else:
+                            port_mode = PORT_MODE_NULL
+                            if not disconnect_element['connection_in_ids']:
+                                port_mode = PORT_MODE_OUTPUT
+                            elif not disconnect_element['connection_out_ids']:
+                                port_mode = PORT_MODE_INPUT
+                            
+                            act_x_disc = discMenu.addAction(group.group_name)
+                            icon = CanvasGetIcon(
+                                group.icon_type, group.icon_name, port_mode)
+                            act_x_disc.setIcon(icon)
+                            act_x_disc.setData(
+                                disconnect_element['connection_out_ids']
+                                + disconnect_element['connection_in_ids'])
+                            act_x_disc.triggered.connect(
+                                canvas.qobject.PortContextMenuDisconnect)
+                        break
         else:
             act_x_disc = discMenu.addAction("No connections")
             act_x_disc.setEnabled(False)
-
-        menu.addMenu(connMenu)
+        
         menu.addMenu(discMenu)
         act_x_disc_all = menu.addAction("Disconnect &All")
+        act_x_disc_all.setIcon(QIcon.fromTheme('gtk-disconnect'))
         act_x_sep1 = menu.addSeparator()
         act_x_info = menu.addAction("Info")
         act_x_rename = menu.addAction("Rename")

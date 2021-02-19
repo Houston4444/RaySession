@@ -19,12 +19,15 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import qCritical, QPointF, QTimer
+from PyQt5.QtCore import qCritical, QPointF, QTimer, QFile
+from PyQt5.QtGui import QIcon
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from . import bool2str, canvas, CanvasBoxType
+from . import (bool2str, canvas, CanvasBoxType,
+               ICON_APPLICATION, ICON_CLIENT, ICON_HARDWARE, ICON_INTERNAL,
+               PORT_MODE_NULL, PORT_MODE_INPUT, PORT_MODE_OUTPUT)
 from .canvasfadeanimation import CanvasFadeAnimation
 
 # ------------------------------------------------------------------------------------------------------------
@@ -71,15 +74,22 @@ def CanvasGetFullPortName(group_id, port_id):
 
 def CanvasGetPortConnectionList(group_id, port_id):
     if canvas.debug:
-        print("PatchCanvas::CanvasGetPortConnectionList(%i, %i)" % (group_id, port_id))
+        print("PatchCanvas::CanvasGetPortConnectionList(%i, %i)"
+              % (group_id, port_id))
 
     conn_list = []
 
     for connection in canvas.connection_list:
-        if connection.group_out_id == group_id and connection.port_out_id == port_id:
-            conn_list.append((connection.connection_id, connection.group_in_id, connection.port_in_id))
-        elif connection.group_in_id == group_id and connection.port_in_id == port_id:
-            conn_list.append((connection.connection_id, connection.group_out_id, connection.port_out_id))
+        if (connection.group_out_id == group_id
+                and connection.port_out_id == port_id):
+            conn_list.append((connection.connection_id,
+                              connection.group_in_id,
+                              connection.port_in_id))
+        elif (connection.group_in_id == group_id
+                and connection.port_in_id == port_id):
+            conn_list.append((connection.connection_id,
+                              connection.group_out_id,
+                              connection.port_out_id))
 
     return conn_list
 
@@ -105,8 +115,8 @@ def CanvasGetPortGroupName(group_id, ports_ids_list):
     if len(ports_names) < 2:
         return ''
     
-    portgrp_name_ends = ( ' ', '_', '.', '-', '#', ':', 'out', 'in', 'Out',
-                            'In', 'Output', 'Input', 'output', 'input' )
+    portgrp_name_ends = (' ', '_', '.', '-', '#', ':', 'out', 'in', 'Out',
+                         'In', 'Output', 'Input', 'output', 'input' )
     
     # set portgrp name
     portgrp_name = ''
@@ -257,7 +267,7 @@ def CanvasRemovePortFromPortGroup(group_id, port_id, portgrp_id):
             break
 
 def CanvasConnectionMatches(connection, group_id_1: int, port_ids_list_1: list,
-                            group_id_2: int, port_ids_list_2: list):
+                            group_id_2: int, port_ids_list_2: list)->bool:
     if (connection.group_in_id == group_id_1
         and connection.port_in_id in port_ids_list_1
         and connection.group_out_id == group_id_2
@@ -271,7 +281,7 @@ def CanvasConnectionMatches(connection, group_id_1: int, port_ids_list_1: list,
     else:
         return False
 
-def CanvasConnectionConcerns(connection, group_id: int, port_ids_list: list):
+def CanvasConnectionConcerns(connection, group_id: int, port_ids_list: list)->bool:
     if (connection.group_in_id == group_id
         and connection.port_in_id in port_ids_list):
             return True
@@ -280,7 +290,57 @@ def CanvasConnectionConcerns(connection, group_id: int, port_ids_list: list):
               return True
     else:
         return False
+
+def CanvasGetGroupIcon(group_id: int, port_mode: int):
+    # port_mode is here reversed
+    group_port_mode = PORT_MODE_INPUT
+    if port_mode == PORT_MODE_INPUT:
+        group_port_mode = PORT_MODE_OUTPUT
+    
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            if not group.split:
+                group_port_mode = PORT_MODE_NULL
             
+            return CanvasGetIcon(
+                group.icon_type, group.icon_name, group_port_mode)
+    
+    return QIcon()
+
+def CanvasGetIcon(icon_type: int, icon_name: str, port_mode: int):
+    if icon_type in (ICON_CLIENT, ICON_APPLICATION):
+        icon = QIcon.fromTheme(icon_name)
+
+        if icon.isNull():
+            for ext in ('svg', 'svgz', 'png'):
+                filename = ":app_icons/%s.%s" % (icon_name, ext)
+
+                if QFile.exists(filename):
+                    del icon
+                    icon = QIcon()
+                    icon.addFile(filename)
+                    break
+        return icon
+    
+    icon = QIcon()
+    
+    if icon_type == ICON_HARDWARE:
+        icon_file = ":/scalable/pb_hardware.svg"
+        
+        if icon_name == "a2j":
+            icon_file = ":/scalable/DIN-5.svg"
+        elif port_mode == PORT_MODE_INPUT:
+            icon_file = ":/scalable/audio-headphones.svg"
+        elif port_mode == PORT_MODE_OUTPUT:
+            icon_file = ":/scalable/microphone.svg"
+        
+        icon.addFile(icon_file)
+    
+    elif icon_type == ICON_INTERNAL:
+        icon.addFile(":/scalable/%s" % icon_name)
+    
+    return icon
+
 def CanvasCallback(action, value1, value2, value_str):
     if canvas.debug:
         print("PatchCanvas::CanvasCallback(%i, %i, %i, %s)" % (action, value1, value2, value_str.encode()))

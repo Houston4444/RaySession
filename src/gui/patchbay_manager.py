@@ -149,8 +149,15 @@ class Group:
             icon_type = patchcanvas.ICON_CLIENT
             icon_name = self.client_icon
 
-        if self.name.startswith("PulseAudio "):
+        if (self.name.startswith("PulseAudio ")
+                and not self.client_icon):
             self.display_name = self.name.replace(' ', '/', 1)
+            if "sink" in self.name.lower():
+                icon_type = patchcanvas.ICON_INTERNAL
+                icon_name = "audio-volume-medium.svg"
+            elif "source" in self.name.lower():
+                icon_type = patchcanvas.ICON_INTERNAL
+                icon_name = "audio-input-microphone.svg"
 
         patchcanvas.addGroup(self.group_id, self.display_name,
                              patchcanvas.SPLIT_UNDEF,
