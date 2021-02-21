@@ -141,6 +141,8 @@ class Canvas(object):
         self.portgrp_list = []
         self.connection_list = []
         self.animation_list = []
+        self.clipboard = []
+        self.clipboard_cut = True
         self.group_plugin_map = {}
 
         self.callback = self.callback
@@ -203,6 +205,15 @@ class connection_dict_t(object):
         'port_out_id',
         'widget'
     ]
+
+class clipboard_element_dict_t:
+    __slots__ = [
+        'port_type',
+        'port_mode',
+        'group_id',
+        'port_id',
+        'group_port_ids']
+        
 
 class animation_dict_t(object):
     __slots__ = [

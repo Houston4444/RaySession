@@ -42,7 +42,10 @@ set_alias : port_name:str, alias_num:int (1ou2), alias:str
 / connection audio blanc -> jaune
 connection forme diffxy -> pas prioritaire
 / icones PulseAudio
+
 context menu box -> icones PulseAudio/hardware/a2j dispos en light theme
+    traductions "Connect"
+
 bug hardware polygon
 vérif port rename et display name
 revoir sauvegarde groupe position et paires

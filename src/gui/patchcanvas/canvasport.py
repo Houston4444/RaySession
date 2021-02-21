@@ -54,7 +54,7 @@ from . import (
 from .canvasbezierlinemov import CanvasBezierLineMov
 from .canvaslinemov import CanvasLineMov
 from .theme import Theme
-from .connect_menu import ConnectMenu
+from .connect_menu import MainContextMenu
 from .utils import (
     CanvasGetFullPortName,
     CanvasGetPortConnectionList,
@@ -507,100 +507,8 @@ class CanvasPort(QGraphicsItem):
         canvas.scene.clearSelection()
         self.setSelected(True)
 
-        menu = QMenu()
-        
-        #connect_menu = QMenu("Connect", menu)
-        connect_menu = ConnectMenu(self.m_group_id, self.m_port_id, menu)
-        
-        #all_ports = []
-        
-        #for group in canvas.group_list:
-            #group_submenu = None
-            #group_icon = None
-            #n = 0
-            #for port in canvas.port_list:
-                #if (port.group_id == group.group_id
-                        #and port.port_type == self.m_port_type
-                        #and port.port_mode != self.m_port_mode):
-                    #if group_submenu is None:
-                        #group_name = group.group_name
-                        #if len(group_name) > 15:
-                            #if '/' in group_name:
-                                #group_name = group_name.partition('/')[2]
-                        
-                        #group_submenu = ContextGroupMenu(
-                            #group_name, group.group_id, menu)
-                        #group_icon = CanvasGetGroupIcon(
-                            #group.group_id, self.m_group_id)
-                        #group_submenu.setIcon(group_icon)
-                    
-                    #check_box = QCheckBox(port.port_name, group_submenu)
-                    #check_box.setMinimumHeight(23)
-                    #act_x_conn = ConnectAction(menu)
-                    #act_x_conn.setDefaultWidget(check_box)
-                    #if self.m_port_mode == PORT_MODE_OUTPUT:
-                        #act_x_conn.set_group_and_port_id_out(
-                            #self.m_group_id, self.m_port_id)
-                        #act_x_conn.set_group_and_port_id_in(
-                            #port.group_id, port.port_id)
-                    #else:
-                        #act_x_conn.set_group_and_port_id_out(
-                            #port.group_id, port.port_id)
-                        #act_x_conn.set_group_and_port_id_in(
-                            #self.m_group_id, self.m_port_id)
-                    #check_box.stateChanged.connect(act_x_conn.state_changed)
-                    ##act_x_conn.setIcon(group_icon)
-                    ##group_submenu.addAction(act_x_conn)
-                    #group_submenu.add_port(act_x_conn, port.port_id)
-                    
-                    #if n % 2:
-                        #group_submenu.addSeparator()
-                    
-                    #n += 1
-                    ##act_x_conn = group_submenu.addAction(port_name)
-                    
-                    ##act_x_conn.setCheckable(True)
-            
-            #if group_submenu is not None:
-                #connect_menu.addMenu(group_submenu)
-                    
-        menu.addMenu(connect_menu)
-                
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        discMenu = QMenu("Disconnect", menu)
+        menu = MainContextMenu(self.m_group_id, self.m_port_id)
 
-        conn_list = CanvasGetPortConnectionList(self.m_group_id, self.m_port_id)
-
-        if len(conn_list) > 0:
-            for conn_id, group_id, port_id in conn_list:
-                act_x_disc = discMenu.addAction(CanvasGetFullPortName(group_id, port_id))
-                act_x_disc.setIcon(CanvasGetGroupIcon(group_id, self.m_port_mode))
-                act_x_disc.setData([conn_id])
-                act_x_disc.triggered.connect(canvas.qobject.PortContextMenuDisconnect)
-        else:
-            act_x_disc = discMenu.addAction("No connections")
-            act_x_disc.setEnabled(False)
-
-        menu.addMenu(discMenu)
-        act_x_disc_all = menu.addAction("Disconnect &All")
         act_x_sep_1 = menu.addSeparator()
         
         if self.m_port_type == PORT_TYPE_AUDIO_JACK and not self.m_portgrp_id:
@@ -648,11 +556,7 @@ class CanvasPort(QGraphicsItem):
 
         act_selected = menu.exec_(event.screenPos())
 
-        if act_selected == act_x_disc_all:
-            for conn_id, group_id, port_id in conn_list:
-                canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
-
-        elif act_selected == act_x_info:
+        if act_selected == act_x_info:
             canvas.callback(ACTION_PORT_INFO, self.m_group_id, self.m_port_id, "")
 
         elif act_selected == act_x_rename:
