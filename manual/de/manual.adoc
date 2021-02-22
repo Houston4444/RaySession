@@ -1,0 +1,629 @@
+= RaySession Manual
+:toc: left
+:toclevels: 2
+:imagesdir: images
+
+[.text-right]
+image:flag_en.jpeg[EN, 30, 20, link=../en/manual.html] image:flag_fr.jpeg[FR, 30, 20, link=../fr/manual.html] image:flag_de.jpeg[DE, 40, 30, link=../de/manual.html]
+
+
+_für Version 0.10.0_
+
+== Einführung
+RaySession ist ein Audio Session Manager für GNU / Linux. Er ermöglicht, verschiedene Audio Programme in einer Session zu starten und zu speichern, wodurch die Wiederherstellung einer bereits konfigurierten Session das Ausführen mehrerer Einzelschritte vermeidet.
+
+Audio Programme, die in einer Raysession gestartet werden, sollten möglichst mit dem NSM Protokol kompatibel sein. Für eine Vielzahl an Programmen wie Ardour, Qtractor, Carla, Guitarix, Mamba, Patroneo, ZynAddSubFx und andere ist das bereits gegeben.
+
+RaySession setzt ein bereits vorhandenes Audio Setup für die Audio Produktion voraus. Ist dies noch nicht gegeben, muss dies erfolgen
+bevor RaySession sinnvoll genutzt werden kann.
+
+Nun zur Nutzung: 
+
+== Einfaches Nutzungs Beispiel
+Zur Audioproduktion unter GNU / Linux ist die Nutzung des JACK Server sehr empfehlenswert. Bevor eine Session gestartet oder geöffnet wird,
+sollte der Jack Server bereits laufen. RaySession hat keine direkte Verbindung zu JACK, er wird aber von den in einer Session laufenden
+Anwendungen benötigt.
+
+Nehmen wir ein Beispiel, in dem ein Song komponiert wird. Hiefür nutzen wir die Software Ardour und Guitarix, diese beiden Programme
+sollten also installiert sein.
+
+Um eine neue Session zu starten, klicken Sie oben links auf New Session (_oder Strg+N_). Ein Dialog Fenster wird sich öffnen.
+
+image::example_new_session.png[New session]
+
+Oben rechts ist der Root Ordner der Session zu sehen. Hier wird die neue Session gespeichert (eine RaySession ist ein Ordner, der die
+Datei `raysession.xml`, enthält).
+
+Geben Sie den gewünschten Namen in das das Eingabefeld ein. Um die neue Session in einem Unterordner zu erstellen, geben Sie den Namen
+folgendermassen ein: `Unterordner/My Session`.
+
+Die Session Vorlage lässt Sie zwischen den folgenden Optionen wählen: 
+
+* Eine leere Session Vorlage
+* Eine Vorlage mit gespeicherten JACK Verbindungen
+* Eine durch Skript erstellte Vorlage mit gespeicherten JACK
+Konfiguration
+* Eine Vorlage mit grundlegenden Session Skripten (für fortgeschrittene
+Nutzer mit Kenntnissen in Shell Skripting)
+* Alle selbst erstellten Vorlagen
+
+Belassen sie es zunächst bei der Standard Vorlage *With JACK
+patch memory*, und klicken Sie auf *Ok*, um die
+Session zu starten.
+
+image::example_session_launched.png[Session launched]
+
+Das Session Fenster wird aktiviert, die Fensterleiste enthält den Namen ihrer Session und eine Klient Anwendung mit dem Namen
+*JACK Connections* ist bereits aktiviert. Dieser Klient wird die Verbindungen der JACK Patchbay speichern und wiederherstellen.
+
+Um Ardour zu ihrer Session hinzuzufügen, klicken Sie auf *Application*/Anwendung (_ oder Strg+A_), und das Anwendungs
+Dialogfenster wird sich öffnen (mehr hierzu unter <<add_application>>). Finden Sie auf der rechten Seite Ardour (je nach Version unter Umständen Ardour5 oder Ardour6 genannt) und Doppelklicken Sie darauf.
+
+image::example_add_ardour.png[Add Ardour to the session, 640, 480]
+
+Ein Ardour Klient wird unter dem JACK Connections Klienten erscheinen und Ardour wird gestartet (normalerweise direkt mit einer leeren Ardour Session).
+
+Gehen Sie für Guitarix auf die gleiche Weise vor.
+
+image::example_session_ready.png[Session ready with Ardour and Guitarix]
+
+Fügen Sie in Ardour eine Spur hinzu (Menu: Spur → Füge Spur hinzu). In dem sich öffnenden Fenster, nennen sie die Spur *Guitar* und setzen Sie die Kanaleinstellungen auf _Stereo_.
+
+[caption="Figure 1: ",link=images/example_ardour_track.png]
+image::example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
+
+Verbinden Sie Guitarix Input in der von Ihnen genutzten Patchbay (Catia, QjackCtl oder ähnlich) oder in Ardour selbst mit dem gegebenen Hardware Input und den Guitarix Output mit der neuen Ardour Spur. Stellen Sie sicher, dass die Spur Inputs nicht mit den Hardware Inputs verbunden sind.
+
+[caption="Figure 1: ",link=images/example_catia.png]
+image::example_catia.png[JACK patchbay with Catia]
+
+Dies ist ein Beispiel, in dem der Gitarrensound durch Guitarix verarbeitet direkt in Ardour aufgenommen wird. Falls Sie über keine Gitarre verfügen, können Sie auch in ein Mikrofon singen, es handelt sich lediglich um ein Beispiel.
+
+Kehren Sie nun zum Fenster der RaySession zurück. Sichern Sie die aktuelle Session, indem sie oben rechts auf das FloppyDisk Symbol klicken (_oder Ctrl+S_). Es ist empfehlenswert, zur Sicherung der Session eine systemweite Tastenkombination zu erstellen. Es hängt von der jeweiligen Desktopumgebung ab, aber indem Sie zB. die Tastenkombiation _Ctrl+Meta+S_ dem  Kommando `ray_control save` (Meta ist die Windows-Taste) zuweisen lässt es sich vermeiden, zum Sichern stets zum RaySession Fenster zurückkehren zu müssen.
+
+Schliessen Sie nun die Session, indem Sie auf das Kreuz im roten Kreis oben rechts klicken (_oder Strg+W_).
+
+Nachdem sich die Session geschlossen hat, klicken Sie auf *Open Session* (_oder Strg+O_), und Doppelklicken Sie auf die Session, die Sie gerade erstellt und geschlossen haben, und diese wird sich wieder öffnen.
+
+Sie werden alle Programme und JACK Connections so vorfinden, wie sie waren, als die Session geschlossen wurde. Hierdurch wird alles ohne zusätzlich  Aktionen Ihrerseits wieder nutzbar sein. Ein weiterer Vorteil des modularen Ansatzes im gegebenen Fall ist, dass nachdem die Gitarre aufgenommen wurde, Guitarix gestoppt werden kann und nicht unnötig Prozessorkapazitäten verwendet, aber trotzdem bei Bedarf jederzeit wieder gestartet werden kann.
+
+== Überblick Session Werkzeuge
+
+=== Obere Zeile
+
+image::session_top_line.png[Top line of the session frame]
+
+Von links nach rechts:
+
+* Das Menu Symbol ermöglicht:
+** *Save as Template: Die aktuelle Session als Vorlage speichern* +
+Die laufende Session wird dann als Vorlage in den Auswahlmöglichkeiten des New Session Dialogs zu finden sein. Da in dieser Vorglage alle Dateien der Session gespeichert werden, sollten Sessions, die viele Audio Dateien enthalten, nicht als Vorlage gespeichert werden. Erstens wäre die Kopie sehr gross und zweitens besteht die Gefahr, Dateien unnötig mehrfach zu kopieren, was viel Speicherplatz in Anspruch nehmen würde.
+
+** *Duplicate: Die aktuelle Session duplizieren* +
+Dies entspricht dem gut bekannten "Speichern als ...", im Unterschied dazu muss RaySession aber die meisten Anwendungen stoppen und  neu starten, um zwischen Sessions zu wechseln. 
+Sessions, die viele Audio Dateien enthalten, zu duplizieren, könnte sehr lange dauern, aber eine solche Aktion kann gestoppt werden.
+
+** *Rename: Session umbenennen* +
+Hierzu müssen alle Klienten gestoppt werden. +
+Alternativ kann eine Session auch dupliziert  und der Original Ordner der ursprünglichen Session gelöscht werden. +
+Eine Session kann auch umbenannt werden, indem der Ordner umbenannt wird, aber mit VORSICHT, die Session darf währenddessen nicht laufen.
+
+* Das Bleistift Symbol öffnet die  session notes/Anmerkungen. +
+Hier können Sie hilfreiche Informationen zB. über den Hardware Aufbau, Songtexte, und anderes, wie Grossmutter's Eintopf, aufschreiben. Belassen Sie es aber bei den notwendigen Informationen in der nötigen Kürze, da die notes/Anmerkungen aus technischen Gründen  auf 65,000 Buchstaben
+beschränkt sind. Andere Anwendungen sind für ausführlichere  Beschreibungen besser geeignet.
+
+* Der Name der laufenden Session (hier:  *my session*)
+
+* Das *Abort session* Symbol, welches die Session ohne
+Speicherung schliesst.
+
+* Das *Close session* Symbol, das die Session speichert
+und dann schliesst. +
+Die laufende Session muss nicht geschlossen werden, um eine weitere zu starten. Einige Klienten sind in der Lage, zwischen verschiedenen Sessions zu wechseln, was weniger Zeit in Anspruch nehmen kann, als sie alle zu schliessen und neu zu starten.
+
+=== Untere Zeile
+
+image::session_bottom_line.png[Bottom line of the session frame]
+
+Von links nach rechts:
+
+* Das Ordner Symbol öffnet den Sesssion Ordner im Dateimanager
+* Das gelbe Stern Symbol mit den favorisierten Anwendungen, falls sie vorhanden sind.
+* Das  *Application* (Anwendungen) Feld, mit welchem bereits vorhandene Anwendungsvorlagen oder selbst erstellte als Klient zur
+Session hinzugefügt werden können. Dies ist die empfohlene Methode, eine neue Klient-Anwendung hinzuzufügen. Siehe <<add_application>> Anwendung hinzufügen Fenster.
+* Das *Executable* Feld, durch welches eine Anwendung durch das entsprechende  Kommando hinzugefügt werden kann. Dies benötigen Sie, falls für die Anwendung keine Vorlage vorhanden ist. Siehe <<add_executable>> Kommando hinzufügen Fenster.
+
+* Das Reverse Symbol ermöglicht die Rückkehr zum vorherigen Status der Session. Die Anwendung  `git` muss installiert sein, ansonsten ist das Symbol nicht sichtbar. +
+Siehe <<snapshots>> für weitere Details.
+
+* Der Server Status Indikator. +
+Der Server Status kann sehr kurzfristig erscheinen, aber er wird lange genug bleiben, damit Sie ihn sehen können.
+Der Server Status kann folgende Anzeigen haben:
+
+** *off*: keine Session ist geladen
+** *ready*: die Session läuft
+** *launch*: die Anwendungen der Session werden geladen
+** *copy*: eine Kopie findet statt, entweder als Duplikat oder als Vorlage
+** *close*: die Session wird geschlossen
+** *snapshot*: Ein Snapshot der Session wird erstellt, so
+dass zum aktuellem Status der Session mit dem Reverse Symbol zurückgekehrt werden kann. +
+Siehe <<snapshots>>.
+** *wait*: der Server wartet, damit Sie nicht sicherbare Anwendungen selbst schliessen können.
+** *script*: ein Skript ist aktiviert
++
+Falls der Status des Indikators *copy*, *snapshot*, oder *wait* ist, wird durch ein Klicken auf ihn ein Fenster geöffnet, in dem der Fortschritt des Vorgangs gesehen werden kann.
+
+* Das *Save Session* Symbol.
+* Der Papierkorb, in welchem die entfernten Klienten zu finden sind. Diese können wiederhergestellt oder inklusive aller Dateien dauerhaft aus dem Session Ordner entfernt werden.
+
+== Überblick Klient
+
+image::client_carla.png[trame d'un client]
+
+Von links nach rechts:
+
+* Das Symbol der Klient Anwendung enthält ein Menu mit den folgenden Aktionen
+
+** *Anwendung als Vorlage sichern* +
+Die Vorlage wird im <<add_application> Anwendung hinzufügen Fenster erscheinen. Die gesicherte Vorlage ermöglicht, eine Anwendung direkt mit einer bestimmten Konfiguration zu starten (Ardour mit bestimmten Tracks, Hydrogen  mit bestimmten Drumkits ...). Seien Sie mit dieser Speicherung vorsichtig, falls der Klient viele Audio Dateien enthält, da alle Dateien des Klienten kopiert werden.
+** *Umbenennen* +
+Den Namen des Klienten, rechts vom Symbol sichtbar, ändern. Dieser Name dient lediglich ihrer Organisation.
+** *zum vorherigen Status zurückkehren* +
+Stellt den vorherigen Status des Klienten wieder her, siehe <<snapshots>>.
+Sie können aber nicht zu einem Status vor dem Umbenennen einer Session zurückkehren, in diesem Fall müssen sie den Status der gesamten Session wieder herstellen.
+** *Eigenschaften* +
+Öffnet das Eigenschaften Fenster des Klienten.
+
++
+Dieses Menü erscheint auch, indem Sie irgendwo in der Klientzeile den rechten Mausklick ausführen.
+
+* Der Name des Klienten (hier Carla), der durch rechter Mausklick → Rename (Umbenennen)  leicht geändert werden kann
+* Je nach Art und Möglichkeiten des Klienten sehen sie noch:
+
+** ein Auge (unter Umständen durchgestrichen), welches bedeutet, dass der Klient NSM kompatibel ist und durch Klicken auf das Symbol Auge gezeigt oder verborgen werden kann.
+** Das *Hack* Feld deutet an, dass der Klient entweder nicht NSM kompatibel ist oder bloss nicht mit dem NSM Protokoll gestartet wurde. Durch Mausklick auf *Hack* kann das Klient Eigenschaften Fenster geöffnet werden, in dem die Art, wie der Klient gestartet wird, geändert werden kann.
+
+* Das Start Symbol, welches ausgegraut ist, falls der Klient bereits gestartet ist.
+* Das Stop Symbol, welches ausgegraut ist, falls der Klient bereits gestoppt ist. +
+Falls der Klient nicht stoppt, wird das Symbol rot und Sie können den Klienten durch kill beenden. Seien Sie aber geduldig und nutzen Sie dies nur, wenn der Klient völlig eingefroren zu sein scheint. Ihn zu killen könnte zu Problemen führen, auch wenn Sie kaum dafür im  Gefängnis landen werden.
+* der Status des Klienten: 
+
+** *stopped*: Der Klient ist gestoppt
+** *ready*: der Klient ist gestartet und alles ist in Ordnung
+** *open*: Die Klient Anwendung  wird geöffnet und läd das Projekt, bitte gedulden Sie sich
+** *close*: Die Klient Anwendung wird geschlossen
+** *launch*: Falls der Status sich von launch nicht ändert, heisst dies:
+
+*** Es handelt sich um einen Ray-Hack Klienten ohne Konfigurations Datei
+*** es ist als NSM Klient gestartet, aber nicht NSM kompatibel, und kann deshalb nicht speichern. Bei manchen Anwendungen, wie einem Patchbay (z.B. Catia) oder eine Anwendung, die nicht gespeichert werden muss (Qrest), kann es sinnvoll sein, diese so zu starten.
+
+** *switch*: Der Klient wechselt das Projekt während die Session gewechselt wird.
+
+* Das Floppy Disk Symbol, mit welchem der Klient gespeichert werden kann. +
+Ist die Maus über diesem Symbol gehalten, ist das Folgende zu sehen
+
+** 3 rote Punkte: Der Klient enthält nicht gespeicherte Änderungen
+** ein grünes V: der Klient enthält keine nicht gespeicherten Änderungen
+** ein orangenes Ausfrufezeichen: es handelt sich nicht um einen NSM kompatiblen Klienten und damit ist es nicht möglich, das Projekt zu speichern.Sie müssen dies selbst tun.
+
+* Das rote Kreuz ermöglicht es Ihnen, den Klienten in den Papierkorb zu löschen.
+
+[#add_application]
+== Anwendung hinzufügen Fenster
+Durch Klicken auf das  *Application* Feld (oder _ Strg+A_) öffnet sich das Fenster, um eine Anwendung hinzuzufügen.
+
+image::add_application.png[Add Application window]
+
+Die Liste mit den verfügbaren Anwendungen ist auf der rechten Seite. Falls die Software, die sie hinzufügen wollen, hier nicht zu finden ist, siehe <<add_program_not_provided>> Nicht verfügbare Anwendung hinzufügen.
+
+
+'''
+
+Oben links ist das  Filter Feld
+
+image::add_application_filter.png[Filter block of Add Application window]
+
+* tDas Filter Feld erlaubt Ihnen, durch einen Teil des Namens der Anwendung nur die Anwendungen anzuzeigen, die diesen Teil enthalten.
+* Die *Factory* Checkbox zeigt die in RaySession integrierten oder durch die Distribution verfügbaren Vorlag.
+* *User* zeigt die durch den User durch *Save as application template* erstellten Vorlagen.
+* *NSM* zeigt die NSM kompatiblen oder als solche gestartete Klienten
+* *Ray-Hack* zeigt die ohne NSM Protokoll startbaren Klienten
+
+'''
+
+Unten links ist das Informations Feld zu der gewählten  Vorlage auf der rechten Seite.
+
+image::add_application_infos.png[Informations block of Add Application window]
+
+* Oben rechts in diesem Feld ist ein Stern Symbol, mit welchem die Vorlage zu den Favoriten hinzugefügt werden kann.
+* Falls es eine durch den User erstellte Vorlage ist, kann durch ein *User* Feld die Vorlage gelöscht werden.
+* Das Symbol unten rechts in diesem Feld ermöglicht Ihnen, das Fenster mit allen Eigenschaften dieser Vorlage zu öffnen. Siehe auch <<client_properties>>. Dies dient lediglich der Information.
+
+|===
+
+|*Tip:* Dieses Fenster verhält sich wie _Alt+F2_ auf dem Desktop, und Vorlagen können
+schnell hinzugefügt werden. +
+Um zum Beispiel aus dem Hauptfenster der RaySession Carla hinzuzufügen, benutzen sie die Keyboard Kombination _Ctrl+A_, tippen Sie im Suchfeld dann `carla`, und wählen Sie die entsprechende Vorlage durch die Pfeil-oben/unten Taste aus, und bestätigen das Hinzufügen durch die Enter Taste.
+
+|===
+
+[#add_executable]
+== Kommando hinzufügen Fenster
+Das Fenster, mit dem ein ausführbares Kommando hinzugefügt werden kann, öffnet sich durch Klicken auf das  *Executable* Feld (_oder Ctrl+E_).
+
+image::add_executable.png[Add Executable window]
+
+Dieses Fenster muss benutzt werden, falls der Klient sich nicht in der Liste vom <<add_application>> findet. Dieses Fenster ist sehr übersichtlich: ein Fenster, in dem das ausführbare Kommando eingegeben wird, eine Checkbox für das *NSM Protocol* und das Pfeil-nach-unten-Symbol für erweiterte Optionen.
+
+Lassen sie die Checkbox für das NSM Protokoll aktiviert, wenn:
+
+* das zu startende Programm NSM kompatibel ist (wenn es trotzdem nicht
+in der Liste zu finden ist, lassen Sie es uns wissen!)
+* Das Programm ein Werkzeug ist, welches Projekte nicht sichern muss (QRest, Catia…).
+Der Status eines solchen Programmes wird immer auf *launch* bleiben und nie zu *ready* wechseln, was unbedeutend ist, da kein Projekt gesichert werden muss.
+
+Falls in der Checkbox das *NSM protocol* aktiviert ist, kann nicht der volle Pfad wie `/usr/bin/my_program` genutzt werden, es muss  `my_program` genutzt werden. Ebenso können weder mit noch ohne aktiviertem NSM Protokoll Argumente von Kommandos genutzt werden.
+
+Ist in der Checkbox das *NSM Protocol* deaktiviert, gleicht dies dem Starten eines Programms durch das Ray-Hack Pseudo-Protokoll.
+
+Wenn Sie auf das *advanced options* (erweiterte Optionen) Feld klicken, wird sich ein Block mit den erweiterten Optionen öffnen
+
+image::add_executable_plus.png[Advanced Add Executable window]
+
+* Die *Start the client* Checkbox. Ist sie nicht aktiviert, wird der Klient lediglich hinzugefügt und nicht automatisch direkt gestartet.
+* Die Multiple Choice Box *Prefix Mode*, welche das Präfix der Klienten Dateien bestimmt
+
+** *Session Name*, die Dateinamen beginnen mit dem Namen der Session, dies ist die default Voreinstellung
+** *Klient Name*, die Dateinamen beginnen mit dem Namen des Klienten, wie es auch beim Neue Session Manager der Fall ist.
+** *Custom*, die Dateinamen beginnen mit der Eingabe, die Sie im darunter liegenden Feld *Prefix* angeben.
+
+* Das *Prefix* Feld ist nur aktiv, wenn der *Prefix Mode* auf Custom gestellt wurde.
+
+* Das *Klient ID* Feld (der Klient Identifikator). Nutzen Sie lediglich alphanumerische Zeichen oder '_'. +
+Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und starten wollen. Auch, wenn Sie Session Projekte ausserhalb der bestehenden Session laden wollen. Es gibt keinen einfachere Weise, dies zu tun. Die Details hängen stark von der jeweilig genutzten Anwendung ab. Falls Sie eine in der Session bereits verwendete ID eingeben, wird RaySession darauf entsprechend lautstark hinweisen.
+
+
+[#client_properties]
+== Klient Eigenschaften/Properties Fenster
+Das Eigenschaften Fenster lässt sich öffnen, indem sie im Menu des Klienten (öffnet sich durch rechten Mausklick) auf Eigenschaften/Properties klicken
+
+Das Eigenschaften Fenster hat 2 Tabs, "General" (Allgemein) und einen Tab für das genutzte Protokoll. Dieser hängt von dem vom Klienten genutzten Protokoll ab und kann NSM, Ray-Hack oder Ray-Net heissen.
+
+=== *General* Tab
+image::properties_general.png[Client properties]
+
+Der obere Block des General Tab zeigt ID, Protokoll, Label,
+Beschreibung/description und das Iconsymbol des Klienten. +
+Falls Sie diese Eingaben nicht bearbeiten, werden die Werte aus der entsprechenden .desktop Datei der verwendeten Anwendung genutzt, falls vorhanden. +
+Falls Sie wissen möchten, welche .desktop Datei hierfür verwendet wird, nutzen sie den Befehl `ray_control client CLIENT_ID get_properties` in einem Terminal-Emulator (ersetzen Sie CLIENT_ID mit der ID des Klienten).
+
+Darunter liegt der Block Snapshots, siehe <<snapshots>>.
+
+Unter diesem Block ist die Checkbox  *Prevent stop without recent or possible save* (Stop ohne vorherige oder kürzliche Sicherung), die das Fenster beim stoppen eines Klienten betrifft +
+Ist die Checkbox deaktiviert, wird der Klient ohne ein Fenster mit entsprechender Warnung über Sicherungen gestoppt werden.
+
+* Der Klient kann nicht durch RaySession gespeichert werden
+* Der Klient enthält ungespeicherte Änderungen
+* Der Klient wurde länger als eine Minute nicht gespeichert
+
+Ob es sinnvoll ist, die Checkbox aktiviert oder deaktiviert zu haben, hängt davon ab, ob eine Speicherung wichtig ist; dies müssen Sie entscheiden. Falls Sie unschlüssig sind, können Sie im Warnfenster beim
+Schliessen *Don't prevent to stop this client again* (nicht nochmals die Schliessung des Klienten verhindern) aktivieren, und  *Prevent stop without recent or possible save* wird automatisch deaktiviert.
+
+=== *NSM* Tab
+
+image::properties_nsm.png[NSM Client properties]
+
+Der hier genutzte  *Name* für den Klienten wird durch ihn selbst bestimmt. +
+*capabilities* (Kapazitäten) sind jene, die der Klient übermittelt, während er startet. Entsprechend ist dieses Feld bei nicht gestartetem Klienten leer.
+
+Wird das Feld executable (ausführbarer Befehl) bearbeitet, kann hierdurch geändert werden, wie der Klient gestartet wird. Die geänderte Startweise sollte in der Lage sein, das gegebene Projekt des Klienten auszuführen. Sinvoll ist die Bearbeitung des executable Felds zB falls Sie 2 verschiedene Version von Ardour installiert haben, eine wird durch `ardour`, die andere durch  `Ardour6` gestartet, und Sie wollen die genutzte Version ändern.
+
+Ansonsten wird dringend davon abgeraten, die genutzten Argumente zu ändern, und um Dateien als Argument zu laden ist es völlig unbrauchbar.
+
+
+=== *Ray-Hack* Tab
+
+Falls der Klient vom Typ Ray-Hack ist, stehen Ihnen hier viele Felder zur Verfügung. Das sind aber nicht unbedingt gute Nachrichten. Die Grundidee ist es zu ermöglichen, eine Anwendung, die (noch) nicht mit dem NSM Protokoll kompatibel ist, in der Session laden zu können. Das NSM Protokoll ist, falls sauber im Klienten implementiert, wesentlich komfortabler und verlässlicher als dieser Hack. Dies im Hinterkopf lässt sich dennoch sagen, dass wir zwar in allen Audio Programmen das NSM Protokoll erwarten können, es aber auch nützliche Programme gibt, bei denen dies nicht der Fall ist.
+
+Das Ray-Hack Pseudo-Protokoll nutzt die Attribute von Proxies (nsm-proxy oder ray-proxy), aber der Klient wird direkt in der Session gestartet.
+
+image::properties_ray_hack.png[Ray-Hack Client properties]
+
+==== Launch block
+
+image::ray_hack_launch.png[]
+
+* *Folder* ist der Ordner Name für diesen Klienten im
+Session Ordner.
+* *Executable* ist das Kommando, mit dem die Anwendung gestartet wird.
+* *Config file* ist die Projekt Datei, die wir mit dieser Anwendung öffnen wollen. Es ist sehr zu empfehlen, eine Datei zu benennen, die sich im Klienten Ordner befindet. +
+Die Variable `$RAY_SESSION_NAME` wird automatisch durch den Namen der Session ersetzt. +
+Falls dieses Feld leer ist, wird der Status des Klienten immer auf *launch* bleiben und nicht zu *ready* wechseln. In manchen Fällen mag es besser sein, einen beliebigen Wert einzugeben anstatt ihn leer zu lassen.
+
+* Das *Browse* Feld öffnet ein Dialogfenster, um die Projekt Datei zu finden und im *Configuration file* Feld einzufügen.
+* Das *Arguments* Feld enthält etwaige Argumente für das Kommando. +
+Die Argumente werden wie in der Kommandozeile getrennt, vergessen Sie
+also falls nötig nicht " und '. +
+Um zum Beispiel das Kommando  `my_command my_argument_1 "my argument 2"` zu reproduzieren, geben Sie `my_command` im  *Executable* Feld und `my_command my_argument_1 "my argument 2 "` im *Arguments* Feld ein.
+
+==== Signals block
+
+image::ray_hack_signals.png[]
+
+* *Save Signal* kann nur sehr selten genutzt werde. Für Anwendungen, die mit dem alten LASH Protokoll kompatibel sind, kann es SIGUSR1 sein. Ansonsten lassen Sie es auf _None_, wenn keine Speichermethode vorhanden ist, können wir sie nicht aus dem Ärmel zaubern.
+
+* *Stop Signal* wird normalerweise SIGTERM sein. Ändern Sie dies nur, wenn die Anwendung sich nicht korrekt schliesst.
+
+* Falls die *Wait for a window before considered it ready* (auf Fenster warten) Checkbox aktiviert ist, wechselt der Status des Klienten erst zu  *ready* sobald das Anwendungsfenster sich geöffnet hat. +
+Falls `wmctrl` nicht installiert ist oder der WindowManager ihn aus Kompatibilitätsgründen nicht nutzen kann, wird der Status sonst zu schnell, eine halbe Sekunde, nach dem Starten auf  *ready* wechseln.
+
+Mit `ray_control` können andere Signale als die der
+Multiple Choice Box zugewiesen werden.
+`ray_control client CLIENT_ID set_properties save_sig:22`
+wird zum Beispiel das SIGTTOU Signal für das Sichern des Klienten mit CLIENT_ID zuweisen. +
+Das Kommando `kill -l` zeigt Ihnen im Terminal-Emulator die möglichen Signale und ensprechenden Nummern.
+
+==== Non-saveable management block
+
+image::ray_hack_non_saveable.png[]
+
+Dieser Block ist nur aktiv, falls *Save Signal* auf _None_ gestellt ist.
+
+* Falls *Tell user to close program himself at session close* (Nutzer informieren, dass er die Anwendung selbst schliessen muss) gewählt ist, gilt der Klient als nicht speicherbar und ein orangenes Ausrufezeichen ist vor dem Save Symbol sichtbar. Wird die Session beendet, wird RaySession warten, bis Sie die Anwendung selbst geschlossen haben, da es unklar ist, ob Sie ungespeicherte Änderungen haben.
+* Falls *Try to close window gracefully* (Fenster elegant schliessen) gewählt ist, wird RaySession beim Beenden der Session versuchen, die Anwendung so zu schliessen, als würden Sie es tun. Dies ist sehr nützlich, falls die Anwendung auch im Fall von keinen nicht gespeicherten Änderungen einen Bestätigungsdialog erfordert (was oft der Fall ist). Falls `wmctrl` nicht installiert oder mit dem WindowManager nicht kompatibel ist, müssen Sie die Anwendung in jedem Fall selbst schliessen.
+
+==== Test area
+
+image::ray_hack_test_zone.png[]
+
+Das Areal gibt Ihnen die Möglichkeit Start, Stop und Einstellungen speichern zu testen, ohne vorher *Save the changes* (Änderungen Speichern) auszuführen.
+
+== Network Sessions
+Durch eine Network Session kann auf einem weiteren Computer zeitgleich eine weitere Session gestartet werdeDurch eine Network Session kann auf einem weiteren Computer zeitgleich eine weiter Session gestartet werden. Dies ist besonders nützlich, wenn Sie net-jack nutzen um das DSP zu entlasten, z.B. um ressourcenintensive Effekte auf einer anderen Maschine zu starten.
+
+Network Sesssions arbeiten nach dem Master-Slave Prinzip. Eine Session ist der Master und kann mehrere Slave sessions haben, die wiederum Master von anderen Slave Sessions sein können, aber dies wäre eher ungewöhnlich. Organisieren Sie dies besser einfach: Ein Master und ein oder mehrere Slaves von diesem.
+
+Um eine Network Session (also einen Slave) zu starten, nutzen Sie die *Network Session* Anwendungs Vorlage aus dem Anwendungs Fenster und folgen Sie den Anweisungen.
+
+image::network_session_template.png[Add a network session]
+
+Starten sie auf dem Remote Computer durch den Befehl `ray-daemon -p 1234` (`1234` ist lediglich ein Beispiel, Sie könne dies frei wählen) einen Dämon. Dieser wird etwas entsprechendes im Terminal anzeigen:
+
+```
+[ray-daemon]URL : osc.udp://192.168.1.00:1234/`
+[ray-daemon]      osc.udp://nom-de-machine:1234/`
+[ray-daemon]ROOT: /home/utilisateur/Ray Sessions reseau
+```
+
+image::network_session_invitation.png[Configure a network session]
+
+Kopieren Sie eine der beiden URLs in das network session invitation window. Die erste Variante (startend mit osc.udp://192.168.) muss mit Sicherheit funktionieren, die zweite wird nur funktioneren, wenn `/etc/hosts` vom  dem Master Computer einen Eintrag für den Slave Computer enthält. Den Namen des Slave Computers in `/etc/hosts` einzutragen und die zweite Variante der URL zu nutzen ist aber vorzuziehen, da sich die Addresse 192.168 ändern kann falls sich der Remote Computer durch den Wechsel von wired zu wifi oder durch eine Neuinstallation der Distribution ändern kann.
+
+Auf dem Master Computer haben Sie nun 2 RaySession Fenster, eines kontrolliert die Master Session, das andere die Slave Session. Sie erkennen die Slave Session daran, dass das Fenster weder die Toolbar mit  (*New Session*, *Open Session*, *Control*), noch *Abort session* oder *Close session* Felder hat.
+
+image::network_session_child.png[]
+
+Wie viele andere NSM Anwendungen kann das Slave Fenster verborgen werden.
+
+image::network_session_client.png[]
+
+Wenn Sie auf dem Slave Computer das Kommando `raysession -p 1234` nutzen, haben Sie das Slave Fenster doppelt, eines auf jedem Computer.
+
+*Tip:* Nutzen Sie auf dem Slave Computer `ray-daemon -p 1234` im Startup.
+
+[#add_program_not_provided]
+== Nicht verfügbare Anwendung hinzufügen
+Falls die Anwendung, die sie hinzufügen möchten, das Speichern von Projekten nicht leisten muss, klicken Sie auf  *Executable*, fügen Sie den ausführbaren Namen der Anwendung ein und klicken auf *Ok*. Ansonsten folgen Sie dem Beispiel:
+
+Wir werden als Beispiel Audacity zu der bestehenden Session hinzufügen. Diese Anwendung ist sehr bekannt und gewöhnlicherweise in Audio Distributionen vorinstalliert.
+
+Klicken Sie auf  *Executable* (_oder nutzen Sie Ctrl+E_).
+In dem sich öffnenden Fenster <<add_executable>> (auführbare Anwendung hinzufügen), entfernen Sie die Auswahl für das *NSM Protocol*, fügen Sie `audacity` in das  *Executable* Feld ein und klicken auf *Ok*.
+
+image::audacity_executable.png[Add Executable window well done]
+
+Ein neuer Klient wird erstellt, sein Eigenschaften Fenster öffnet sich im  *Ray-Hack* Tab und Audacity wird gestartet.
+
+Wir werden nun sofort ein leeres Projekt von Audacity im Ordner des Klienten speichern. Dieser befindet sich im Ordner der Session und hat den Namen, den Sie ihm im *Folder:* Feld im *Ray-Hack* Tab oben gelegen gegeben haben. Wir werden dieses Projekt GENAU so nennen, wie die aktuelle RaySession. Nutzen Sie in Audacity hierfür:  _Menu → File → Save project → Save project_ (Menu, Datei, Projekt Sichern, Sichern).
+
+image::audacity_save project.png[Save empty Audacity project]
+
+Klicken Sie auf *Validate* (Bestätigen) falls sich ein Warnfenster öffnet. +
+In der sich öffnenden Box um die Datei zu speichern, finden Sie den Session Ordner unten links (siehe <<session_folder_shortcuts>>). Klicken Sie darauf, um ihn zu öffnen. Darin sollten Sie den Ordner des Klienten mit dem Namen, der ihm im RayHack Tab gegeben wurde,finden. Nutzen Sie diesen. Fügen Sie in der Speicherbox den genauen Namen, den sie der Session im  *Name:* Feld gegeben haben und bestätigen Sie.
+
+[caption="Figure 1: ",link=images/audacity_save_file.png]
+image::audacity_save_file.png[Where to save Audacity project, 640, 480]
+
+Schliessen Sie Audacity. +
+Klicken Sie oben rechts im *Ray-Hack* Tab vom Eigenschaftern Fenster des Klienten auf *Browse*.
+
+[caption="Figure 1: ",link=images/audacity_load_config_file.png]
+image::audacity_load_config_file.png[Load CONFIG_FILE window, 640, 480]
+
+wählen Sie das gerade erstellte Audacity Projekt mit dem Session Namen und mit .aup endend.
+
+Das *Configuration File* Feld sollte nun `$RAY_SESSION_NAME.aup` und das *Arguments* Feld `"$CONFIG_FILE"` enthalten. +
+Aktivieren Sie *Wait for a window before being considered ready*, *Ask the user to close the program himself* und *Try to close the window gracefully*. Klicken Sie dann unten rechts auf *Save Changes*.
+
+image::audacity_ray_hack_final.png[Ray-Hack tab of Audacity client well done]
+
+Starten Sie den Audacity Klienten und versichern Sie sich, dass das Audacity Fenster den Namen der Session hat.. +
+Klicken Sie auf das Symbol für den Audacity Klienten, wählen Sie im Drop-Down Menü *Save as an application template*, und geben Sie in der sich öffnenden Dialog Box `Audacity` ein. Nun müssen Sie lediglich Audacity wie in <<add_application>> beschrieben wählen, um Audacity in der Session zu starten.
+
+Vor dem Speichersymbol des Klienten ist ein orangenes Ausfrufungszeichen, welches bedeutet, dass RaySession nicht in der Lage ist, dieses Projekt zu sichern und Sie dies selbständig machen müssen.
+
+Je nach der Anwendung, die sie zur Session so hinzufügen möchten, kann dies auch schwieriger sein. Einige Programme benötigen zB ein Kommando Argument, um eine Konfigurationsdatei zu nutzen. Nutzen sie hierfür im Terminal-Emulator  `my_program --help` oder `man my_program` und fügen die entsprechenden Argumente im *Arguments* Feld ein.
+
+== NSM Session importieren
+Um eine Session, die mit Non Session Manager oder New Session Manager erstellt wurde, zu importieren, kopieren oder verschieben Sie den entsprechenden Session Ordner in den Root Session Folder von RaySession (default ist ~/Ray Sessions). Wenn Sie nun auf *Open session* klicken, sollte die Session in der Liste der verfügbaren Sessions aufgelistet sein. Doppel-Klicken Sie darauf, um sie auszuwählen.
+
+RaySession wird danach hinzugefügte oder entfernte Klienten nicht in  `session.nsm` speichern, Sie müssen also hierfür auch weiterhin RaySession nutzen.
+
+== Die Dämon Optionen
+Die Dämon Optionen sind Services, die durch Klicken auf das *Control* Feld oben rechts im Hauptfenster im Untermenü aktiviert oder deaktiviert werden können. Das Untermenü findet sich ebenso unter options in der Menübar.
+
+image::daemon_options.png[Daemon options]
+
+Die Details zu den jeweiligen Optionen sind die folgenden:
+
+[#session_folder_shortcuts]
+=== Bookmarks für den Session Ordner erstellen
+In der Audioproduktion wird häufig eine Audio oder Midi Datei mit einem Program erstellt und dann von einem anderen Program genutzt. Die vorliegende Option bietet hiefür einen praktischen Nutzen: einen Shortcut für den aktuellen Session Folder (Ordner) im Dateimanager und in der Dialogbox, um Dateien zu laden oder zu speichern. Sie vermeiden also den unnötigen Zeitaufwand, sich durch ihren persönlichen Ordner im Dateimanager klicken zu müssen, um eine Datei zu finden, die in ihrem Session Ordner ist. +
+Dieser Shortcut wird entfernt, sobald die Session geschlossen wird. +
+ies Option funktioniert technisch für  GTK2, GTK3, QT4, QT5, KDE and FLTK.
+
+=== Automatisch Snapshot beim Sichern erstellen
+Dies Option ist alles andere als unbedeutend. Sie ermöglicht Ihnen, bei jeder Speicherung einen Snapshot der Session zu erstellen. Im Falle eines technischen oder künstlerischen Fehlers steht Ihnen also der Snaphot zur Verfügung. Um diese Option zu nutzen, muss `git` installiert sein. Unter <<snapshots>> finden Sie weitere Details.
+
+=== Desktop Status
+Falls diese Option aktiviert ist, wird RaySession auch den virtuellen Desktop, auf dem sich ein Klient Fenster beim Schliessen der RaySession befindet, speichern (oder zumindest wird dies versucht).
+Falls Sie die Session oder den Klienten wieder starten, wird das entsprechende Fenster also auf dem Desktop gestartet, auf dem es beim Schliessen zu finden war.
+Für diese Option muss die Anwendung `wmctrl` installiert sein. Unter Wayland wird sie vermutlich nicht funktionieren
+
+=== Session Skripte
+Deaktivieren Sie diese Option, um beim Öffnen, Speichern oder Schliessen einer Session diese Skripte völlig zu ignorieren.
+Die Skripte werden für <<jack_configuration_memory>> genutzt.
+Unter <<session_scripts>> finden Sie weitere Details.
+
+=== Optionalen GUI Status erinnern
+Diese Option betrifft lediglich NSM Klienten, die ihre Fenster sowohl verbergen als auch anzeigen können. Einige Klienten starten immer verborgen, andere starten so, wie sie geschlossen wurden. Wird diese Option aktiviert, werden alle Clienten immer so gestartet, wie sie während der letzten Sicherung beendet wurden. Wurden sie noch nie gestartet, werden sich nicht verborgen gezeigt
+
+[#snapshots]
+== Snapshots
+Für Snaphots muss das Programm `git` installiert sein. Falls es nicht installiert ist, wird das Reverse Symbol nicht zu sehen sein und es ist unmöglich, Snaphots zu machen oder den entsprechenden Status wieder herzustellen.
+
+Der Snapshot speichert Dateien und deren Inhalt zu einger gegebenen Zeit. Grosse Dateien und Dateien mit Dateiendungen für Audio und Video werden ignoriert, da dies zuviel Zeit in Anspruch nehmen würde und der Session Ordner zu gross werden würde. Dies ist kein grosses Problem, im Gegenteil, da ihre erst kürzlich erstellten Audiodateien erhalten bleiben, falls Sie zu einem vorherigen Snapshot zurückkehren. +
+Sollte trotz all dem der Snaphot Vorgang zu lange dauern, wird sich ein Fenster öffnen und Sie können den aktuellen Snapshot bedenkenlos abbrechen. Der automatische Snapshot wird dann für diese Session nicht mehr stattfinden.
+
+Der Nutzen von Snapshots liegt in der Tatsache, dass Sie zu dem Stand der Arbeit zurückehren könne, bevor Sie diese eine brilliante Idee gehabt haben, die sich dann als fruchtlos erwiesen hat, oder bevor sie die Samples neu geschnitten und dadurch alle Musikalität zerstört haben, oder bevor die Anwendung aus unbekannten Gründen anfing abzustürzen.
+
+Seien Sie aber sorglos, zu einem Snapshot zurückzukehren heisst nicht, dass Sie den aktuellen Stand nicht ebenso wieder herstellen könnten.
+
+Um die Session zu einem Snapshot zurückzusetzen, klicken Sie auf das Reverse Symbol rechts vom *Executable* Feld.
+
+image::snapshots.png[]
+
+Wählen Sie in der Auswahl den Snapshot, zu dem Sie zurücksetzen möchten und klicken Sie auf *Ok*. Zunächst wird ein neuer Snapshot erstellt, dann schliesst sich die aktuelle Session, es wird zum Snapshot zurückgekehrt und die Session öffnet sich wieder.
+
+Ebenso ist es möglich, lediglich einen Klienten in einen vorherigen Status zurückzusetzen. Wählen Sie nach einem Rechtsklick auf den Clienten im Menü hierfür *Return to a previous state* (zu vorherigem Status zurückkehren).
+Falls gewünscht können Sie für jeden Klienten die Dateien, die bei einem Snapshot ignoriert werden sollen, festlegen, indem Sie dies im <<client_properties>> unter "Snapshot ignored extensions" (bei Snapshots ignorierte Dateiendungen) entsprechend bearbeiten.
+
+Ist die Option *Automatic snapshot after save* (automatischer Snapshot beim Speichern) gewählt, wird nach jeder Speicherung der Session ein Snapshot erstellt, ausser es sind keine Änderungen vorhanden. Um Snapshots zu anderen Zeitpunkten zu erstellen, klicken Sie auf das Reverse Symbol rechts vom *Executable* und bestätigen Sie *Take a snapshot now*. Ein Vorteil dieser Methode liegt darin, dass Sie dem Snapshot aufschlussreichere Namen als lediglich Datum und Uhrzeit geben können.
+
+[#session_scripts]
+== Session Skripte
+Session Skripte ermöglicht Ihnen, beim Öffnen, Speichern oder Schliessen der Session eigene Aktionen auszuführen. Im besonderen für die Möglichkeit <<jack_configuration_memory>> ist dies nützlich. +
+Um diese Skripte zu bearbeiten, sind zwar Kenntnisse in Shell Skripting nötig, nutzen kann sie aber jeder.
+
+Die Session Skripte befinden sich in dem Ordner `ray-scripts`, entweder im Session folder oder einem Parent Ordner von diesem. +
+Eine Session, die sich im Ordner : +
+`~/Ray Sessions/avec_script_de_foo/ma session`
+
+findet, kann der Skript Ordner folgende Pfade haben:
+```
+~/Ray Sessions/avec_script_de_foo/ma session/ray-scripts
+~/Ray Sessions/avec_script_de_foo/ray-scripts
+~/Ray Sessions/ray-scripts
+~/ray-scripts
+```
+
+Der Vorteil, die Skripte in diesen möglichen Pfaden zu haben liegt darin, dass mehrere Sessions diese nutzen können, ohne die Skripte in den jeweiligen Ordner kopieren zu müssen. Ebenso eröffnet dies die  Möglichkeit, jemandem eine nicht geskriptete Session für mögliches Teamwork einfach zu kopieren. +
+Es wird lediglich der Skript Ordner genutzt werden, der im Pfad dem Session Ordner am nächsten ist. Ein leerer  `ray-scripts` innerhalb des Ordners der Session selbst wird also alle sonstigen Skripte leicht deaktivieren.
+
+Um die Skripte zu bearbeiten, erstellen Sie zunächst eine Session aus der Vorlage mit den Basisskripten. Die Vorlage enthält Skripte, die keine besondere Aktion ausführen werden. Gehen Sie im Session Ordner in den Ordner `ray-scripts`. Hier finden Sie die Dateien  `load.sh`, `save.sh` und `close.sh`. In jedem dieser Skripte bezieht sich `ray_control run_step` auf die gewöhnlich ausgeführte Aktion (je nach Skript: Laden, Sichern oder Schliessen der Session). Ist eines dieser Skripte für Sie ohne nutzen, löschen sie das Skript einfach. Es ist unnötig, dies dann zu bearbeiten.
+
+Die Skripte müssen zwingend ausführbar sein, also die entsprechenden Rechte haben, um funktionieren zu können.
+
+Um einem Klienten eine bestimmte Aktion zuzusprechen, werden Sie vermutlich das Kommando `ray_control` nutzen. Geben sie in der Kommandozeile `ray_control --help` ein, um sich einen Überblick zu verschaffen. Mehr Informationen finden Sie unter  <<ray_control>> (RaySession von der Kommandozeile kontrollieren).
+
+Die Vorlage JACK memory configuration (JACK Konfiguration erinnern) nutzt Session Skripte, aber es sind viele Aktionen entsprechend ihren Bedürfnissen und Vorstellungen denkbar, z.B.:
+
+* die Reihenfolge festlegen, in der die Klienten gestartet werden sollen, sobald die Session geöffnet wird (ein Beispiel findet sich im Quellcode)
+* ein Backup der Session auf einem externen Datenträger erstellen, sobald die Session geschlossen wird
+* den Fenstern von nicht sicherbaren Klienten den Shortcut  _Ctrl+S_ senden, sobald die Session beendet wird (ein Beispiel findet sich im Quellcode)
+* Das rote Licht beim Betreten des Studios anschalten, und beim Verlassen ausschalten
+* Beim Beenden der Session die Kaffeemaschine einschalten (ein blödes Beispiel, müssen Sie doch den Filter immer noch selbst wechseln)
+* Viele, viele Fehler machen, die ihre Session abstürzen lassen. Seien Sie also entsprechend vorsichtig!
+
+[#jack_configuration_memory]
+== JACK Konfiguration erhalten
+Dank der Session Skripte ist es möglich, die für eine zu ladende Session erstellten Jack Konfigurationen zu erinnern, bzw. wiederherzustellen. Dieses Verhalten erinnert an einige Operationen von LADISH Studios, tut dies, zumindest unserer Meinung nach, aber viel besser.
+
+=== Anwendungsmöglichkeiten
+Dies kann nützlich sein wenn:
+
+* Sie ein bestimmtes Audio Interface in der Session müssen.
+* Sie an mehreren Projekten arbeiten, die unterschliedliche Sample Rates (Signalverarbeitungsraten) nutzen (eine Session mit 44100 Hz, eine andere mit 44800 Hz) +
+Sie müssen also JACK nicht selber neu konfigurieren, stoppen und wieder starten. Ausserdem verhindern Sie hierdurch, dies zu vergessen und von einigen Anwendungen entsprechend gewarnt zu werden.
+* Wenn Sie verhindern wollen, eine sehr DSP intensive Session (zB in der Phase des Mixens) mit einem zu kleinen Buffer (z.B. 128) zu laden +
+Die meisten Audio Interfaces sind aber durchaus in der Lage, die Buffergrösse ohne Neustart (also hot) von Jack zu wechseln.
+
+=== Anwendungsweise
+Die Session Skripte Option muss aktiviert sein (dies ist die Voreinstellung)
+
+Um Jack configuration memory (Jack Konfiguration erhalten) zu nutzen, erstellen Sie eine neue Session aus der *With JACK configuration memory* Vorlage.
+Es handelt sich de facto um eine geskriptete Session (see <<session_scripts>>) die ein Skript startet, das zwar mit RaySession vorhanden, zu diesem aber völlig extern ist, insofern hat RaySession noch immer keine direkte Beziehung zu JACK.
+
+Lesen Sie die Informationen im Fenster und bestätigen Sie dann. JACK wird neu gestartet und dann startet ihre Session.
+
+=== Funktionsweise
+Bei jedem Speichern der Session wird die aktuelle JACK Konfiguration in der Datei `jack_parameters` gespeichert. +
+Ist beim Öffnen der Session wird JACK neu gestartet, falls die gespeicherte Konfiguration von der aktuellen unterscheidet. +
+Wird die Session geschlossen, wird JACK abermals gestartet, diesmal mit der vorherigen Konfiguration. +
+
+PulseAudio → JACK Konfigurationen werden ebenso gespeichert und wiederhergestellt.
+
+Wird die Session auf einen anderen Computer kopiert und dort genutzt, wird die Konfiguration von JACK nicht erinnert und beim Speichern überschrieben werden. Lediglich die gespeicherte Samplerate wird genutzt werden.
+
+=== besondere Fälle
+'''
+*Die gespeicherte JACK Konfiguration einer Session nicht nutzen:*
+
+* deaktivieren Sie die *Session scripts* Option
+* Öffnen Sie die Session
+
+'''
+
+*Die JACK Konfiguration einer Session ändern:*
+
+* Starten Sie JACK mit der gewünschten Konfiguration.
+* Deaktivieren Sie die Option Session Skripte.
+* Starten Sie die Session.
+* Aktivieren Sie die Option Session Skripte wieder.
+* Speichern Sie die Session.
+
+'''
+
+*In einer bereits bestehenden Session JACK Konfiguration zu ermöglichen*
+
+* Kopieren Sie den Ordner `ray-scripts` aus einer Session mit erhaltener JACK konfiguration in den Session Ordner.
+* Aktivieren Sie die Option Session Skripte.
+* Starten Sie die Session.
+
+*oder*
+
+* Verschieben Sie den Session Ordner in einen Unterordner mit `ray-scripts` Ordner
+* Öffnen Sie die Session.
+
+[#under_the_hood]
+== Unter der Haube
+RaySession ist lediglich eine grafische Oberfläche, GUI, für ray-daemon. Wenn sie RaySession starten, öffnet sich die grafische Oberfläche und verbindet sich mit dem Dämon, und sobald sie die Anwendung schliessen, stoppt diese den Dämon. Die grafische Oberfläche und der Dämon kommunizieren über OSC (Open Sound Control) Meldungen. Dasselbe gilt für den Dämon und die NSM Klienten. Dementsprechend können sie mehrere grafische Oberflächen mit dem Daemon verbinden, auch über das Netz. Tippen Sie `raysession --help` für die entsprechenden Informationen.
+
+Es können mehrere Dämonen gestartet werden. Falls Sie also RaySession starten, wenn bereits eine weitere Instanz gestartet ist, wird ein neuer Dämon gestartet werden. Trotzdem ist diese Vorgehensweise eher ungewöhnlich, die Nutzung nur eines Dämons ist zu bevorzugen. Falls ein Dämon bereits gestartet, ihm aber keine GUI zugewiesen ist, wird sich RaySession per Voreinstellung beim Start mit diesem Dämon verbinden.
+
+[#ray_control]
+== RaySession von der Kommandozeile steuern
+Mit dem Kommando `ray_control` können Sie alles tun, was Sie auch mit in GUI tun können, und ein wenig mehr. Tippen Sie  `ray_control --help-all` in einem Terminal-Emulator, um alle Möglichkeiten kennezulernen.
+
+Falls mehrere Dämonen gestartet sind (siehe <<under_the_hood>>), wird `ray_control` den zuerst gestarteten in Betracht ziehen, ausser sie bestimmen den OSC Port mit der Option `--port` oder durch die Umgebungsvariable `RAY_CONTROL_PORT`.
+
+Anzunehmen, `ray_control` wäre überflüssig, da das Kommando `oscsend` OSC Mitteilungen an den Dämon schicken kann, ist falsch. +
+Zum einen kann `oscsend` zwar Mitteilungen senden, aber keine Informationen auf einfache Weise empfangen (welches sind die aktiven Klienten? Was ist der ausführbare Befehl von einem bestimmenten Clienten? ...); und zum anderen, weil `ray_control` nach dem Ausführen der verlangten Aktion sauber beendet wird. z.B. `ray_control open_session "my session"` wird beendet, sobald die Session geladen ist.
+
+Seien Sie hier noch einmal daran erinnert, einen globalen Keyboard-Shortcut für den Befehl`ray_control save` zuzuweisen (_Ctrl+Meta+S_). Dies wird Ihnen viel Arbeit ersparen.
+
+== Frequently Asked Questions
+*Ist die direkte Nutzung von Ardour (oder einer anderen NSM kompatiblen DAW) anstatt in RaySession trotzdem noch sinnvoll?*
+
+Ausser für wirklich winzige Projekte, eher nein.
+all Sie Ardour nutzen, starten Sie es immer in einer RaySession. Erstens können Ihnen die automatisierten Snapshots unerwartet von grossem Nutzen sein, zweitens ist es möglich, dass Sie später noch eine weitere Anwendung nutzen wollen, auch wenn Sie dies bisher noch nicht geplant haben.

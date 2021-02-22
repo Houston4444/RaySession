@@ -4,7 +4,7 @@
 :imagesdir: images
 
 [.text-right]
-_Other languages:_ image:flag_fr.jpeg[EN, 30, 20, link=../fr/manual.html]
+image:flag_en.jpeg[EN, 40, 30, link=../en/manual.html] image:flag_fr.jpeg[FR, 30, 20, link=../fr/manual.html] image:flag_de.jpeg[DE, 30, 20, link=../de/manual.html]
 
 _for version 0.10.0_
 
