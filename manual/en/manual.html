@@ -614,8 +614,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Once the session is closed, click on <strong>Open Session</strong> (<em>or Ctrl+O</em>), double-click on the session you just created to re-open it.</p>
 </div>
 <div class="paragraph">
-<p>You must find the programs and their projects as well as the JACK connections as they were when you closed the session, and everything therefore works without any further manipulation.
-One of the advantages of modularity in this specific case is that once you have finished taking the guitar, you can stop Guitarix so as not to overload the processor unnecessarily, and it will still be easy to restart it if necessary.</p>
+<p>You will find the programs and their projects as well as the JACK connections as they were when you closed the session, and everything therefore works without any further manipulation.
+One of the advantages of modularity in this specific case is that once you have finished the guitar records, you can stop Guitarix so as not to overload the processor unnecessarily, and it will still be easy to restart it if necessary.</p>
 </div>
 </div>
 </div>
@@ -644,7 +644,7 @@ The created session template will then appear in the multiple choice of session 
 </li>
 <li>
 <p><strong>Duplicate the current session</strong><br>
-This is the equivalent of the well-known "Save As &#8230;&#8203;", except that RaySession has to stop and restart most programs to switch between sessions. Avoid duplicating a session with a lot of audio files, it could take a long time, but fortunately such an operation can be undone.</p>
+This is the equivalent of the well-known "Save As &#8230;&#8203;", except that RaySession has to stop and restart most programs to switch between sessions. Avoid duplicating a session with a lot of audio files, it could take a long time, but fortunately such an operation can be stopped.</p>
 </li>
 <li>
 <p><strong>Rename the session</strong><br>
@@ -977,7 +977,7 @@ The state of such a program will remain on <strong>launch</strong> and will neve
 </ul>
 </div>
 <div class="paragraph">
-<p>If you leave the <strong>NSM protocol</strong> checked, it will not be possible to add an executable to an absolute path, the executable must be located in a location provided for this purpose (you will not be able to launch <code>/usr/bin/my_program</code>, but <code>my_program</code>). You cannot enter arguments here, with or without the NSM protocol.</p>
+<p>If you leave the <strong>NSM protocol</strong> checked, it will not be possible to use the absolute path of an executable to add it, the executable must be located in a location provided for this purpose (you will not be able to launch <code>/usr/bin/my_program</code>, but <code>my_program</code>). You cannot enter arguments here, with or without the NSM protocol.</p>
 </div>
 <div class="paragraph">
 <p>Unchecking <strong>NSM Protocol</strong> is equivalent to launching the program with the Ray-Hack pseudo-protocol.</p>
@@ -1345,12 +1345,12 @@ Click on the Audacity client icon, in the drop-down menu choose <strong>Save as 
 </div>
 </div>
 <div class="paragraph">
-<p>Here is the detail of the different options:</p>
+<p>Here are the details of the different options:</p>
 </div>
 <div class="sect2">
 <h3 id="session_folder_shortcuts">Provide bookmarks for session folder</h3>
 <div class="paragraph">
-<p>In audio production, it is often used to create an audio or midi file with one program and then load it into another. This option offers something purely practical: a shortcut to the current session folder in your file manager and in the dialog boxes provided for fetching or saving files. It simply avoids wasting time browsing through your personal folder tree to find a file that you have put in your session folder, since that is where it belongs.<br>
+<p>In audio production, creating audio or midi file with one program and load it into another is an usual case. This option offers something purely practical: a shortcut to the current session folder in your file manager and in the dialog boxes provided for fetching or saving files. It simply avoids wasting time browsing through your personal folder tree to find a file that you have put in your session folder, since that is where it belongs.<br>
 Of course, this shortcut is deleted when the session is unloaded.<br>
 Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</p>
 </div>
@@ -1431,15 +1431,15 @@ Knowledge of shell scripting is required to edit these scripts, but anyone can u
 <div class="paragraph">
 <p>Session scripts are located in a folder <code>ray-scripts</code> located either in a session folder or in a parent folder.<br>
 For example, for a session being in:<br>
-<code>~/Ray Sessions/avec_script_de_foo/ma session</code></p>
+<code>~/Ray Sessions/with_foo_script/my session</code></p>
 </div>
 <div class="paragraph">
 <p>the session scripts folder may be</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code>~/Ray Sessions/avec_script_de_foo/ma session/ray-scripts
-~/Ray Sessions/avec_script_de_foo/ray-scripts
+<pre class="highlight"><code>~/Ray Sessions/with_foo_script/my session/ray-scripts
+~/Ray Sessions/with_foo_script/ray-scripts
 ~/Ray Sessions/ray-scripts
 ~/ray-scripts</code></pre>
 </div>
@@ -1614,7 +1614,7 @@ After closing the session, JACK is restarted if necessary with the current confi
 <h2 id="under_the_hood">Under the hood</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>RaySession is really just a GUI for ray-daemon. When you launch RaySession, the GUI launches and connects to the daemon, and it stops the daemon when closed. The graphical interface and the daemon communicate with each other by OSC (Open Sound Control) messages, as is the case between the daemon and the NSM clients. Thus, you can connect several graphical interfaces to a daemon, even remotely. Tap <code>raysession --help</code> to see how.</p>
+<p>RaySession is really just a GUI for ray-daemon. When you launch RaySession, the GUI launches and connects to the daemon, and it stops the daemon when closed. The graphical interface and the daemon communicate with each other by OSC (Open Sound Control) messages, as is the case between the daemon and the NSM clients. Thus, you can connect several graphical interfaces to a daemon, even remotely. Type <code>raysession --help</code> to see how.</p>
 </div>
 <div class="paragraph">
 <p>It is not forbidden to have several daemon instances launched simultaneously, so if you launch RaySession while an instance is already launched, it will launch a new daemon. However, this way of working being unusual, the use of a single daemon is favored. So, if a daemon is running and it has no GUI attached, raysession will connect to that daemon by default.</p>
@@ -1631,7 +1631,7 @@ After closing the session, JACK is restarted if necessary with the current confi
 <p>In case there are multiple daemons started (see <a href="#under_the_hood">Under the hood</a>), <code>ray_control</code> will only consider the one that was started first, unless you specify its OSC port with the <code>--port</code> option or <code>RAY_CONTROL_PORT</code> environment variable.</p>
 </div>
 <div class="paragraph">
-<p>One might think that there is no point in using <code>ray_control</code> since the command <code>oscsend</code> allows to send an OSC message to the daemon, it is false.<br>
+<p>One might think that there is no point in using <code>ray_control</code> since the command <code>oscsend</code> allows to send an OSC message to the daemon, but it is false.<br>
 Firstly, because <code>oscsend</code> allows you to send messages but not to obtain information in a simple way (which are the active clients? What is the executable of such and such client? &#8230;&#8203;), secondly, because the command <code>ray_control</code> will end when the requested action is taken, for example <code>ray_control open_session "my session"</code> will end when the session is loaded.</p>
 </div>
 <div class="paragraph">
@@ -1654,7 +1654,7 @@ If you are using Ardour, always run it from RaySession, firstly, the automatic s
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-02-22 23:29:11 +0100
+Last updated 2021-02-23 00:05:06 +0100
 </div>
 </div>
 </body>

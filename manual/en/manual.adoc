@@ -72,8 +72,8 @@ Now close the session by clicking on the red cross at the top right (_or Ctrl+W_
 
 Once the session is closed, click on *Open Session* (_or Ctrl+O_), double-click on the session you just created to re-open it.
 
-You must find the programs and their projects as well as the JACK connections as they were when you closed the session, and everything therefore works without any further manipulation.
-One of the advantages of modularity in this specific case is that once you have finished taking the guitar, you can stop Guitarix so as not to overload the processor unnecessarily, and it will still be easy to restart it if necessary.
+You will find the programs and their projects as well as the JACK connections as they were when you closed the session, and everything therefore works without any further manipulation.
+One of the advantages of modularity in this specific case is that once you have finished the guitar records, you can stop Guitarix so as not to overload the processor unnecessarily, and it will still be easy to restart it if necessary.
 
 
 == Overview of session tools
@@ -89,7 +89,7 @@ From left to right:
 The created session template will then appear in the multiple choice of session templates in the New Session dialog window. Be careful, however, all the files of the session will be saved in the template, so you should not do this if the session contains a lot of audio files. firstly, the copy will be long, secondly, you run the risk of unnecessarily multi-copying files which will take up a lot of space.
 
 ** *Duplicate the current session* +
-This is the equivalent of the well-known "Save As ...", except that RaySession has to stop and restart most programs to switch between sessions. Avoid duplicating a session with a lot of audio files, it could take a long time, but fortunately such an operation can be undone.
+This is the equivalent of the well-known "Save As ...", except that RaySession has to stop and restart most programs to switch between sessions. Avoid duplicating a session with a lot of audio files, it could take a long time, but fortunately such an operation can be stopped.
 
 ** *Rename the session* +
 It will then be necessary to stop all the clients. +
@@ -244,7 +244,7 @@ Leave the NSM protocol checked if:
 * the program to run is a utility for which there is no need to save any project (QRest, Catia…).
 The state of such a program will remain on *launch* and will never be *ready*, it is irrelevant since they do not have a project to save.
 
-If you leave the *NSM protocol* checked, it will not be possible to add an executable to an absolute path, the executable must be located in a location provided for this purpose (you will not be able to launch `/usr/bin/my_program`, but `my_program`). You cannot enter arguments here, with or without the NSM protocol.
+If you leave the *NSM protocol* checked, it will not be possible to use the absolute path of an executable to add it, the executable must be located in a location provided for this purpose (you will not be able to launch `/usr/bin/my_program`, but `my_program`). You cannot enter arguments here, with or without the NSM protocol.
 
 Unchecking *NSM Protocol* is equivalent to launching the program with the Ray-Hack pseudo-protocol.
 
@@ -440,11 +440,11 @@ Daemon options are services which can be activated and deactivated via the *Cont
 
 image::daemon_options.png[Daemon options]
 
-Here is the detail of the different options:
+Here are the details of the different options:
 
 [#session_folder_shortcuts]
 === Provide bookmarks for session folder
-In audio production, it is often used to create an audio or midi file with one program and then load it into another. This option offers something purely practical: a shortcut to the current session folder in your file manager and in the dialog boxes provided for fetching or saving files. It simply avoids wasting time browsing through your personal folder tree to find a file that you have put in your session folder, since that is where it belongs. +
+In audio production, creating audio or midi file with one program and load it into another is an usual case. This option offers something purely practical: a shortcut to the current session folder in your file manager and in the dialog boxes provided for fetching or saving files. It simply avoids wasting time browsing through your personal folder tree to find a file that you have put in your session folder, since that is where it belongs. +
 Of course, this shortcut is deleted when the session is unloaded. +
 Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.
 
@@ -493,12 +493,12 @@ Knowledge of shell scripting is required to edit these scripts, but anyone can u
 
 Session scripts are located in a folder `ray-scripts` located either in a session folder or in a parent folder. +
 For example, for a session being in: +
-`~/Ray Sessions/avec_script_de_foo/ma session`
+`~/Ray Sessions/with_foo_script/my session`
 
 the session scripts folder may be
 ```
-~/Ray Sessions/avec_script_de_foo/ma session/ray-scripts
-~/Ray Sessions/avec_script_de_foo/ray-scripts
+~/Ray Sessions/with_foo_script/my session/ray-scripts
+~/Ray Sessions/with_foo_script/ray-scripts
 ~/Ray Sessions/ray-scripts
 ~/ray-scripts
 ```
@@ -583,7 +583,7 @@ If you open this session after having copied it to another computer, the JACK co
 
 [#under_the_hood]
 == Under the hood
-RaySession is really just a GUI for ray-daemon. When you launch RaySession, the GUI launches and connects to the daemon, and it stops the daemon when closed. The graphical interface and the daemon communicate with each other by OSC (Open Sound Control) messages, as is the case between the daemon and the NSM clients. Thus, you can connect several graphical interfaces to a daemon, even remotely. Tap `raysession --help` to see how.
+RaySession is really just a GUI for ray-daemon. When you launch RaySession, the GUI launches and connects to the daemon, and it stops the daemon when closed. The graphical interface and the daemon communicate with each other by OSC (Open Sound Control) messages, as is the case between the daemon and the NSM clients. Thus, you can connect several graphical interfaces to a daemon, even remotely. Type `raysession --help` to see how.
 
 It is not forbidden to have several daemon instances launched simultaneously, so if you launch RaySession while an instance is already launched, it will launch a new daemon. However, this way of working being unusual, the use of a single daemon is favored. So, if a daemon is running and it has no GUI attached, raysession will connect to that daemon by default.
 
@@ -593,7 +593,7 @@ the command `ray_control` lets you do just about anything you can do with the GU
 
 In case there are multiple daemons started (see <<under_the_hood>>), `ray_control` will only consider the one that was started first, unless you specify its OSC port with the `--port` option or `RAY_CONTROL_PORT` environment variable.
 
-One might think that there is no point in using `ray_control` since the command `oscsend` allows to send an OSC message to the daemon, it is false. +
+One might think that there is no point in using `ray_control` since the command `oscsend` allows to send an OSC message to the daemon, but it is false. +
 Firstly, because `oscsend` allows you to send messages but not to obtain information in a simple way (which are the active clients? What is the executable of such and such client? ...), secondly, because the command `ray_control` will end when the requested action is taken, for example `ray_control open_session "my session"` will end when the session is loaded.
 
 Remember to assign `ray_control save` to a global shortcut of your desktop environment (_Ctrl+Meta+S_), this will save you a lot of time!
