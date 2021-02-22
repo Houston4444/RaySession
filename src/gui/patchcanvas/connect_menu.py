@@ -331,7 +331,7 @@ class ClipboardMenu(QMenu):
                     group_id, port_id = group_port_id
                     
                     if canvas.clipboard_cut:
-                        print('cuuutttt')
+                        # remove the original connection if still exists
                         for connection in canvas.connection_list:
                             print(connection.group_out_id, connection.port_out_id,
                                   connection.group_in_id, connection.port_in_id)
@@ -340,7 +340,6 @@ class ClipboardMenu(QMenu):
                                     connection,
                                     element.group_id, [element.port_id],
                                     group_id, [port_id]):
-                                print('yamodldld')
                                 CanvasCallback(
                                     ACTION_PORTS_DISCONNECT,
                                     connection.connection_id, 0, '')

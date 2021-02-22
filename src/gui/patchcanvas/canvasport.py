@@ -269,6 +269,8 @@ class CanvasPort(QGraphicsItem):
     
     def connectToHover(self):
         if self.m_hover_item:
+            hover_port_id_list = []
+            
             if self.m_hover_item.type() == CanvasPortType:
                 hover_port_id_list = [ self.m_hover_item.getPortId() ]
             elif self.m_hover_item.type() == CanvasPortGroupType:
@@ -278,6 +280,31 @@ class CanvasPort(QGraphicsItem):
             con_list = []
             ports_connected_list = []
             
+            if (self.m_hover_item.getPortMode() == self.m_port_mode
+                    and self.m_hover_item.type() == CanvasPortType):
+                hover_port_id = self.m_hover_item.getPortId()
+                
+                
+                
+                for connection in canvas.connection_list:
+                    if CanvasConnectionConcerns(
+                            connection, self.m_group_id, [self.m_port_id]):
+                        canvas.callback(ACTION_PORTS_DISCONNECT,
+                                        connection.connection_id, 0, '')
+                        if self.m_port_mode == PORT_MODE_OUTPUT:
+                            canvas.callback(
+                                ACTION_PORTS_CONNECT, 0, 0,
+                                "%i:%i:%i:%i" % (
+                                    hover_group_id, hover_port_id,
+                                    connection.group_in_id, connection.port_in_id))
+                        else:
+                            canvas.callback(
+                                ACTION_PORTS_CONNECT, 0, 0,
+                                "%i:%i:%i:%i" % (
+                                    connection.group_out_id, connection.port_out_id,
+                                    hover_group_id, hover_port_id))
+                return
+                        
             # FIXME clean this big if stuff
             for hover_port_id in hover_port_id_list:
                 for connection in canvas.connection_list:
@@ -289,14 +316,20 @@ class CanvasPort(QGraphicsItem):
             
             if len(con_list) == len(hover_port_id_list):
                 for connection in con_list:
-                    canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
+                    canvas.callback(
+                        ACTION_PORTS_DISCONNECT,
+                        connection.connection_id, 0, "")
             else:
                 for porthover_id in hover_port_id_list:
                     if not porthover_id in ports_connected_list:
                         if self.m_port_mode == PORT_MODE_OUTPUT:
-                            conn = "%i:%i:%i:%i" % (self.m_group_id, self.m_port_id, hover_group_id, porthover_id) 
+                            conn = "%i:%i:%i:%i" % (
+                                self.m_group_id, self.m_port_id,
+                                hover_group_id, porthover_id)
                         else:
-                            conn = "%i:%i:%i:%i" % (hover_group_id, porthover_id, self.m_group_id, self.m_port_id)
+                            conn = "%i:%i:%i:%i" % (
+                                hover_group_id, porthover_id,
+                                self.m_group_id, self.m_port_id)
                         canvas.callback(ACTION_PORTS_CONNECT, '', '', conn)
     
     def type(self):
@@ -383,7 +416,7 @@ class CanvasPort(QGraphicsItem):
             self.m_hover_item.setSelected(False)
 
         if (item is not None
-                and item.getPortMode() != self.m_port_mode
+                #and item.getPortMode() != self.m_port_mode
                 and item.getPortType() == self.m_port_type):
             item.setSelected(True)
             
