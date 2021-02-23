@@ -63,6 +63,7 @@ from .utils import (
     CanvasConnectionMatches,
     CanvasConnectionConcerns,
     CanvasGetGroupIcon,
+    CanvasConnectPorts,
     CanvasCallback)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -162,14 +163,15 @@ class CanvasPort(QGraphicsItem):
         self.m_port_font.setPixelSize(canvas.theme.port_font_size)
         self.m_port_font.setWeight(canvas.theme.port_font_state)
 
+        # needed for line mov
         self.m_line_mov_list = []
         self.m_last_rclick_item = None
         self.m_r_click_time = 0
         self.m_dotcon_list = []
         self.m_hover_item = None
-
         self.m_mouse_down = False
         self.m_cursor_moving = False
+        self.m_has_connections = False
 
         self.setFlags(QGraphicsItem.ItemIsSelectable)
 
@@ -280,29 +282,24 @@ class CanvasPort(QGraphicsItem):
             con_list = []
             ports_connected_list = []
             
-            if (self.m_hover_item.getPortMode() == self.m_port_mode
-                    and self.m_hover_item.type() == CanvasPortType):
-                hover_port_id = self.m_hover_item.getPortId()
-                
-                
-                
+            # cut and paste connections directly by attempt to connect
+            # one port to another with same type and mode
+            if self.m_hover_item.getPortMode() == self.m_port_mode:
                 for connection in canvas.connection_list:
                     if CanvasConnectionConcerns(
                             connection, self.m_group_id, [self.m_port_id]):
                         canvas.callback(ACTION_PORTS_DISCONNECT,
                                         connection.connection_id, 0, '')
+                        
+                        con_group_id = connection.group_out_id
+                        con_port_id = connection.port_out_id
                         if self.m_port_mode == PORT_MODE_OUTPUT:
-                            canvas.callback(
-                                ACTION_PORTS_CONNECT, 0, 0,
-                                "%i:%i:%i:%i" % (
-                                    hover_group_id, hover_port_id,
-                                    connection.group_in_id, connection.port_in_id))
-                        else:
-                            canvas.callback(
-                                ACTION_PORTS_CONNECT, 0, 0,
-                                "%i:%i:%i:%i" % (
-                                    connection.group_out_id, connection.port_out_id,
-                                    hover_group_id, hover_port_id))
+                            con_group_id = connection.group_in_id
+                            con_port_id = connection.port_in_id
+                            
+                        for hover_port_id in hover_port_id_list:
+                            CanvasConnectPorts(con_group_id, con_port_id,
+                                               hover_group_id, hover_port_id)
                 return
                         
             # FIXME clean this big if stuff
@@ -350,6 +347,14 @@ class CanvasPort(QGraphicsItem):
             self.m_hover_item = None
             self.m_mouse_down = True
             self.m_cursor_moving = False
+            
+            for connection in canvas.connection_list:
+                if CanvasConnectionConcerns(
+                        connection, self.m_group_id, [self.m_port_id]):
+                    self.m_has_connections = True
+                    break
+            else:
+                self.m_has_connections = False
             
         elif event.button() == Qt.RightButton:
             if canvas.is_line_mov:
@@ -416,7 +421,24 @@ class CanvasPort(QGraphicsItem):
             self.m_hover_item.setSelected(False)
 
         if (item is not None
-                #and item.getPortMode() != self.m_port_mode
+                and item.getPortType() == self.m_port_type
+                and item.getPortMode() == self.m_port_mode):
+            item_valid = False
+            
+            if self.m_has_connections:
+                if item.type() == CanvasPortType:
+                    for connection in canvas.connection_list:
+                        if CanvasConnectionConcerns(
+                                connection, item.getGroupId(),
+                                [item.getPortId()]):
+                            break
+                    else:
+                        item_valid = True
+            
+            if not item_valid:
+                item = None
+
+        if (item is not None
                 and item.getPortType() == self.m_port_type):
             item.setSelected(True)
             
@@ -442,6 +464,7 @@ class CanvasPort(QGraphicsItem):
                             line_mov = CanvasLineMov(
                                 self.m_port_mode, self.m_port_type,
                                 port_pos, portgrp_len, self)
+                            
                         line_mov.setDestinationPortGroupPosition(
                             i, self.m_hover_item.getPortLength())
                         self.m_line_mov_list.append(line_mov)
@@ -454,7 +477,8 @@ class CanvasPort(QGraphicsItem):
                             self.m_hover_item.getPortsList()):
                         self.m_dotcon_list.append(connection)
                             
-                if len(self.m_dotcon_list) == len(self.m_hover_item.getPortsList()):
+                if (len(self.m_dotcon_list)
+                        == len(self.m_hover_item.getPortsList())):
                     for connection in self.m_dotcon_list:
                         connection.widget.setReadyToDisc(True)
                         connection.widget.updateLineGradient()
@@ -467,21 +491,35 @@ class CanvasPort(QGraphicsItem):
                 self.resetLineMovPositions()
                 self.resetDotLines()
                 
-                for connection in canvas.connection_list:
-                    if CanvasConnectionMatches(
-                            connection,
-                            self.m_group_id, [self.m_port_id],
-                            self.m_hover_item.getGroupId(),
-                            [self.m_hover_item.getPortId()]):
-                        for line_mov in self.m_line_mov_list:
-                            line_mov.setReadyToDisc(True)
+                if item.getPortMode() == self.m_port_mode:
+                    # situation of cut and paste existing connections
+                    for connection in canvas.connection_list:
+                        if CanvasConnectionConcerns(
+                                connection,
+                                self.m_group_id, [self.m_port_id]):
+                            connection.widget.setReadyToDisc(True)
+                            connection.widget.updateLineGradient()
+                            self.m_dotcon_list.append(connection)
                             
-                        connection.widget.setReadyToDisc(True)
-                        connection.widget.updateLineGradient()
-                        self.m_dotcon_list.append(connection)
-                    elif connection.widget.isReadyToDisc():
-                        connection.widget.setReadyToDisc(False)
-                        connection.widget.updateLineGradient()
+                    for line_mov in self.m_line_mov_list:
+                        line_mov.setReadyToDisc(True)
+                else:
+                    for connection in canvas.connection_list:
+                        if CanvasConnectionMatches(
+                                connection,
+                                self.m_group_id, [self.m_port_id],
+                                self.m_hover_item.getGroupId(),
+                                [self.m_hover_item.getPortId()]):
+                            for line_mov in self.m_line_mov_list:
+                                line_mov.setReadyToDisc(True)
+                                
+                            connection.widget.setReadyToDisc(True)
+                            connection.widget.updateLineGradient()
+                            self.m_dotcon_list.append(connection)
+                            
+                        elif connection.widget.isReadyToDisc():
+                            connection.widget.setReadyToDisc(False)
+                            connection.widget.updateLineGradient()
         else:
             self.m_hover_item = None
             self.resetLineMovPositions()

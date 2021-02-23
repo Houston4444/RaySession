@@ -19,6 +19,8 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+import sys
+
 from PyQt5.QtCore import qCritical, QPointF, QTimer, QFile
 from PyQt5.QtGui import QIcon
 
@@ -27,7 +29,8 @@ from PyQt5.QtGui import QIcon
 
 from . import (bool2str, canvas, CanvasBoxType,
                ICON_APPLICATION, ICON_CLIENT, ICON_HARDWARE, ICON_INTERNAL,
-               PORT_MODE_NULL, PORT_MODE_INPUT, PORT_MODE_OUTPUT)
+               PORT_MODE_NULL, PORT_MODE_INPUT, PORT_MODE_OUTPUT,
+               ACTION_PORTS_CONNECT)
 from .canvasfadeanimation import CanvasFadeAnimation
 
 # ------------------------------------------------------------------------------------------------------------
@@ -93,8 +96,9 @@ def CanvasGetPortConnectionList(group_id, port_id):
 
     return conn_list
 
-def CanvasGetPortGroupPosition(group_id, port_id, portgrp_id):
-    if portgrp_id < 0:
+def CanvasGetPortGroupPosition(group_id: int, port_id: int,
+                               portgrp_id: int)->tuple:
+    if portgrp_id <= 0:
         return (0, 1)
     
     for portgrp in canvas.portgrp_list:
@@ -105,7 +109,7 @@ def CanvasGetPortGroupPosition(group_id, port_id, portgrp_id):
                     return (i, len(portgrp.port_id_list))
     return (0, 1)
 
-def CanvasGetPortGroupName(group_id, ports_ids_list):
+def CanvasGetPortGroupName(group_id: int, ports_ids_list: list)->str:
     ports_names = []
     
     for port in canvas.port_list:
@@ -120,14 +124,14 @@ def CanvasGetPortGroupName(group_id, ports_ids_list):
     
     # set portgrp name
     portgrp_name = ''
-    checkCharacter = True
+    check_character = True
     
     for c in ports_names[0]:        
         for eachname in ports_names:
             if not eachname.startswith(portgrp_name + c):
-                checkCharacter = False
+                check_character = False
                 break
-        if not checkCharacter:
+        if not check_character:
             break
         portgrp_name += c
     
@@ -141,7 +145,7 @@ def CanvasGetPortGroupName(group_id, ports_ids_list):
                 break
         
         if len(portgrp_name) == 0 or portgrp_name in ports_names:
-                check = True
+            check = True
             
         if not check:
             portgrp_name = portgrp_name[:-1]
@@ -341,9 +345,37 @@ def CanvasGetIcon(icon_type: int, icon_name: str, port_mode: int):
     
     return icon
 
+def CanvasConnectPorts(group_id_1: int, port_id_1: int,
+                       group_id_2: int, port_id_2:int):
+    one_is_out = True
+    
+    for port in canvas.port_list:
+        if port.group_id == group_id_1 and port.port_id == port_id_1:
+            if port.port_mode != PORT_MODE_OUTPUT:
+                one_is_out = False
+            break
+        elif port.group_id == group_id_2 and port.port_id == port_id_2:
+            if port.port_mode == PORT_MODE_OUTPUT:
+                one_is_out = False
+            break
+    else:
+        sys.stderr.write(
+            "PatchCanvas::CanvasConnectPorts, port not found %i:%i and %i:%i\n"
+            % (group_id_1, port_id_1, group_id_2, port_id_2))
+        return
+    
+    string_to_send = "%i:%i:%i:%i" % (group_id_2, port_id_2,
+                                      group_id_1, port_id_1)
+    if one_is_out:
+        string_to_send = "%i:%i:%i:%i" % (group_id_1, port_id_1,
+                                          group_id_2, port_id_2)
+    
+    canvas.callback(ACTION_PORTS_CONNECT, 0, 0, string_to_send)
+
 def CanvasCallback(action, value1, value2, value_str):
     if canvas.debug:
-        print("PatchCanvas::CanvasCallback(%i, %i, %i, %s)" % (action, value1, value2, value_str.encode()))
+        sys.stderr.write("PatchCanvas::CanvasCallback(%i, %i, %i, %s)\n"
+                         % (action, value1, value2, value_str.encode()))
 
     canvas.callback(action, value1, value2, value_str)
 
