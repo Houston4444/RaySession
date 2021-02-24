@@ -131,16 +131,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) \
                         - canvas.theme.port_height * phito
                 
-            if self.m_port_mode == PORT_MODE_INPUT:
-                old_x = 0
-                mid_x = abs(scenePos.x() - self.p_itemX) / 2
-                new_x = old_x - mid_x
-            elif self.m_port_mode == PORT_MODE_OUTPUT:
-                old_x = self.p_width + 12
-                mid_x = abs(scenePos.x() - (self.p_itemX + old_x)) / 2
-                new_x = old_x + mid_x
-            else:
-                return
+            
             
         elif self.parentItem().type() == CanvasPortGroupType:
             first_old_y = canvas.theme.port_height * phi
@@ -160,27 +151,69 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 new_y1 = first_new_y + (self.m_port_posinportgrp_to * delta)
                 new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
             
-            if self.m_port_mode == PORT_MODE_INPUT:
-                old_x = 0
-                mid_x = abs(scenePos.x() - self.p_itemX) / 2
-                new_x = old_x - mid_x
-            elif self.m_port_mode == PORT_MODE_OUTPUT:
-                old_x = self.p_width + 12
-                mid_x = abs(scenePos.x() - (self.p_itemX + old_x)) / 2
-                new_x = old_x + mid_x
-            else:
-                return
+            #if self.m_port_mode == PORT_MODE_INPUT:
+                #old_x = 0
+                #mid_x = abs(scenePos.x() - self.p_itemX) / 2
+                #new_x = old_x - mid_x
+            #elif self.m_port_mode == PORT_MODE_OUTPUT:
+                #old_x = self.p_width + 12
+                #mid_x = abs(scenePos.x() - (self.p_itemX + old_x)) / 2
+                #new_x = old_x + mid_x
+            #else:
+                #return
             
         final_x = scenePos.x() - self.p_itemX
         final_y = scenePos.y() - self.p_itemY + new_y
-
-        new_x1 = new_x
-        new_x2 = new_x
+        
+        
+        if self.m_port_mode == PORT_MODE_OUTPUT:
+            old_x = self.p_width + 12
             
-        diffxy = abs(final_y - old_y) - abs(final_x - old_x)
-        if diffxy > 0:
-            new_x1 += abs(diffxy)
-            new_x2 -= abs(diffxy)
+            mid_x = abs(final_x - old_x) / 2
+        
+            new_x1 = old_x + mid_x
+            new_x2 = final_x - mid_x
+            
+            diffxy = abs(final_y - old_y) - abs(final_x - old_x)
+            if diffxy > 0:
+                new_x1 += abs(diffxy)
+                new_x2 -= abs(diffxy)
+            
+        #if self.m_port_mode == PORT_MODE_INPUT:
+            #old_x = 0
+            ##mid_x = abs(scenePos.x() - self.p_itemX) / 2
+            #mid_x = abs(final_x - old_x) / 2
+            ##new_x = old_x - mid_x
+            
+            #new_x = old_x + mid_x
+        elif self.m_port_mode == PORT_MODE_INPUT:
+            old_x = 0
+            mid_x = abs(final_x - old_x) / 2
+            new_x1 = old_x - mid_x
+            new_x2 = final_x + mid_x
+            
+            diffxy = abs(final_y - old_y) - abs(final_x - old_x)
+            if diffxy > 0:
+                new_x1 -= abs(diffxy)
+                new_x2 += abs(diffxy)
+            #old_x = self.p_width + 12
+            #mid_x = abs(scenePos.x() - (self.p_itemX + old_x)) / 2
+            ##mid_x = abs(scenePos.x() - old_x) / 2
+            ##new_x = old_x + mid_x
+            #new_x = (final_x + old_x) / 2
+            
+            #mid_x = abs(final_x - old_x) / 2
+            ##new_x = old_x - mid_x
+            
+            #new_x1 = old_x + mid_x
+            #new_x2 = 
+        else:
+            return
+        
+        #new_x1 = new_x
+        #new_x2 = new_x
+            
+        
 
         path = QPainterPath(QPointF(old_x, old_y))
         path.cubicTo(new_x1, old_y, new_x2, final_y, final_x, final_y)
