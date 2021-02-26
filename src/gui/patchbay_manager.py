@@ -1,4 +1,7 @@
 
+from PyQt5.QtGui import QCursor, QIcon
+from PyQt5.QtWidgets import QMenu, QAction
+
 from patchcanvas import patchcanvas
 from gui_server_thread import GUIServerThread
 
@@ -57,6 +60,10 @@ class Port:
         self.type = port_type
         self.flags = flags
         self.metadata = metadata
+        self.use_graceful_names = True
+
+    def set_use_graceful_names(self, use_graceful_names: bool):
+        self.use_graceful_names = use_graceful_names
 
     def mode(self):
         if self.flags & PORT_IS_OUTPUT:
@@ -80,15 +87,23 @@ class Port:
         else:
             return
 
-        patchcanvas.addPort(self.group_id, self.port_id, self.display_name,
+        display_name = self.display_name
+        if not self.use_graceful_names:
+            display_name = self.full_name.partition(':')[2]
+
+        patchcanvas.addPort(self.group_id, self.port_id, display_name,
                             port_mode, self.type, self.portgroup_id)
     
     def remove_from_canvas(self):
         patchcanvas.removePort(self.group_id, self.port_id)
     
     def change_canvas_properties(self):
+        display_name = self.display_name
+        if not self.use_graceful_names:
+            display_name = self.full_name.partition(':')[2]
+        
         patchcanvas.changePortProperties(self.group_id, self.port_id,
-                                         self.portgroup_id, self.display_name)
+                                         self.portgroup_id, display_name)
 
 
 class Portgroup:
@@ -104,6 +119,10 @@ class Portgroup:
         for port in ports:
             port.portgroup_id = self.portgroup_id
             self.ports.append(port)
+    
+    def update_ports_in_canvas(self):
+        for port in self.ports:
+            port.change_canvas_properties()
     
     def add_to_canvas(self):
         if len(self.ports) < 2:
@@ -134,6 +153,13 @@ class Group:
         self.portgroups = []
         self._is_hardware = False
         self.client_icon = ''
+        self.use_graceful_names = True
+
+    def set_use_graceful_names(self, use_graceful_names: bool):
+        self.use_graceful_names = use_graceful_names
+        for port in self.ports:
+            port.set_use_graceful_names(use_graceful_names)
+            port.change_canvas_properties()
 
     def add_to_canvas(self):
         icon_type = patchcanvas.ICON_APPLICATION
@@ -284,7 +310,11 @@ class Group:
             
         client_name = self.get_pretty_client()
         
-        display_name = port.display_name
+        #display_name = port.display_name
+        display_name = port.full_name.partition(':')[2]
+        if port.full_name.startswith('a2j') and client_name != 'a2j':
+            display_name = display_name.partition(': ')[2]
+            
         s_display_name = display_name
         
         if client_name == 'firewire_pcm':
@@ -300,6 +330,7 @@ class Group:
             else:
                 display_name = display_name.partition('_')[2]
                 display_name = cut_end(display_name, '_in', '_out')
+                display_name = display_name.replace(':', ' ')
                 
         elif client_name == 'Hydrogen':
             if display_name.startswith('Track_'):
@@ -482,6 +513,7 @@ class PatchbayManager:
         self._next_connection_id = 0
         
         self.use_alias = USE_ALIAS_NONE
+        self.use_graceful_names = True
         
     def send_to_patchbay_daemon(self, *args):
         server = GUIServerThread.instance()
@@ -532,7 +564,6 @@ class PatchbayManager:
             g_id, p_mode, p_type, p_id1, p_id2 =  [
                 int(i) for i in value_str.split(":")]
             
-            print('add_new_group_from_canvsss', self._next_portgroup_id, g_id)
             portgroup = Portgroup(g_id, self._next_portgroup_id, p_mode)
             self._next_portgroup_id += 1
             
@@ -594,13 +625,29 @@ class PatchbayManager:
                         connection.port_in.full_name)
                     break
 
-        elif action == patchcanvas.ACTION_DOUBLE_CLICK:
-            server = GUIServerThread.instance()
-            if server:
-                server._session._main_win.toggleSceneFullScreen()
+        elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
+            menu = QMenu()
+            action_graceful = menu.addAction("Use graceful names")
+            action_graceful.setCheckable(True)
+            action_graceful.setChecked(self.use_graceful_names)
+            action_graceful.triggered.connect(self.toggle_graceful_names)
+            
+            action_fullscreen = menu.addAction("Toggle Full Screen")
+            action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
+            action_fullscreen.triggered.connect(self.toggle_full_screen)
 
-        elif action == patchcanvas.ACTION_INLINE_DISPLAY:
-            pass
+            menu.exec(QCursor.pos())
+
+        elif action == patchcanvas.ACTION_DOUBLE_CLICK:
+            self.toggle_full_screen()
+
+    def toggle_graceful_names(self):
+        self.use_graceful_names = not self.use_graceful_names
+        for group in self.groups:
+            group.set_use_graceful_names(self.use_graceful_names)
+
+    def toggle_full_screen(self):
+        self.session._main_win.toggleSceneFullScreen()
 
     def get_port_from_name(self, port_name: str):
         for group in self.groups:
