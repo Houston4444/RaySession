@@ -8,21 +8,46 @@ import warnings
 import jacklib
 import osc_server
 
-connection_list = []
-port_list = []
-
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
 PORT_TYPE_MIDI = 2
 
 EXISTENCE_PATH = '/tmp/RaySession/patchbay_infos'
 
-TERMINATE = False
 
-def signalHandler(sig, frame):
-    global TERMINATE
-    if sig in (signal.SIGINT, signal.SIGTERM):
-        TERMINATE = True
+
+
+
+# Define a context manager to suppress stdout and stderr.
+class suppress_stdout_stderr(object):
+    '''
+    A context manager for doing a "deep suppression" of stdout and stderr in 
+    Python, i.e. will suppress all print, even if the print originates in a 
+    compiled C/Fortran sub-function.
+       This will not suppress raised exceptions, since exceptions are printed
+    to stderr just before a script exits, and after the context manager has
+    exited (at least, I think that is why it lets exceptions through).      
+
+    '''
+    def __init__(self):
+        # Open a pair of null files
+        self.null_fds =  [os.open(os.devnull,os.O_RDWR) for x in range(2)]
+        # Save the actual stdout (1) and stderr (2) file descriptors.
+        self.save_fds = [os.dup(1), os.dup(2)]
+
+    def __enter__(self):
+        # Assign the null pointers to stdout and stderr.
+        os.dup2(self.null_fds[0],1)
+        os.dup2(self.null_fds[1],2)
+
+    def __exit__(self, *_):
+        # Re-assign the real stdout/stderr back to (1) and (2)
+        os.dup2(self.save_fds[0],1)
+        os.dup2(self.save_fds[1],2)
+        # Close all file descriptors
+        for fd in self.null_fds + self.save_fds:
+            os.close(fd)
+            
 
 class JackPort:
     id = 0
@@ -32,7 +57,7 @@ class JackPort:
     alias_1 = ''
     alias_2 = ''
     
-    def __init__(self, port_name:str):
+    def __init__(self, port_name:str, jack_client):
         self.name = port_name
         port_ptr = jacklib.port_by_name(jack_client, port_name)
         self.flags = jacklib.port_flags(port_ptr)
@@ -48,165 +73,225 @@ class JackPort:
             self.alias_1 = alias_1
             self.alias_2 = alias_2
 
-def JackShutdownCallback(arg=None):
-    global TERMINATE
-    osc_server.server_stopped()
-    TERMINATE = True
-    return 0
 
-def JackPortRegistrationCallback(port_id, register_yes_no, arg=None):
-    port_ptr = jacklib.port_by_id(jack_client, port_id)
-    port_name = str(jacklib.port_name(port_ptr), encoding="utf-8")
+class MainObject:
+    port_list = []
+    connection_list = []
+    jack_running = False
+    osc_server = None
+    terminate = False
+    jack_client = None
     
-    if register_yes_no:
-        jport = JackPort(port_name)
-        port_list.append(jport)
-        osc_server.port_added(jport)
-    else:
-        for jport in port_list:
-            if jport.name == port_name:
-                port_list.remove(jport)
-                osc_server.port_removed(jport)
+    def __init__(self):
+        self.osc_server = osc_server.OscJackPatch(
+            self.jack_client, self.port_list, self.connection_list)
+        self.write_existence_file(self.osc_server.port)
+        self.start_jack_client()
+    
+    @staticmethod
+    def c_char_p_p_to_list(c_char_p_p):
+        i = 0
+        return_list = []
+
+        if not c_char_p_p:
+            return return_list
+
+        while True:
+            new_char_p = c_char_p_p[i]
+            if new_char_p:
+                return_list.append(str(new_char_p, encoding="utf-8"))
+                i += 1
+            else:
                 break
-    return 0
 
-def JackPortRenameCallback(port_id, old_name, new_name, arg=None):
-    print('jackk poort rename callback', port_id, old_name, new_name, arg)
-    for jport in port_list:
-        if jport.name == str(old_name, encoding="utf-8"):
-            ex_name = jport.name
-            jport.name = str(new_name, encoding="utf-8")
-            #print('sent to ssoosl', old_name, new_name)
-            osc_server.port_renamed(jport, ex_name)
-            break
-    return 0
+        jacklib.free(c_char_p_p)
+        return return_list
+    
+    @staticmethod
+    def write_existence_file(port: int):
+        try:
+            file = open(EXISTENCE_PATH, 'w')
+        except PermissionError:
+            sys.stderr.write(
+                'ray-patchbay_to_osc: Error, no permission for existence file\n')
+            sys.exit(1)
 
-def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
-    port_ptr_A = jacklib.port_by_id(jack_client, port_id_A)
-    port_ptr_B = jacklib.port_by_id(jack_client, port_id_B)
+        contents = 'pid:%i\n' % os.getpid()
+        contents += 'port:%i\n' % port
 
-    port_str_A = str(jacklib.port_name(port_ptr_A), encoding="utf-8")
-    port_str_B = str(jacklib.port_name(port_ptr_B), encoding="utf-8")
+        file.write(contents)
+        file.close()
+    
+    @staticmethod
+    def remove_existence_file():
+        if not os.path.exists(EXISTENCE_PATH):
+            return 
 
-    connection = (port_str_A, port_str_B)
+        try:
+            os.remove(EXISTENCE_PATH)
+        except PermissionError:
+            sys.stderr.write(
+                'ray-patchbay_to_osc: Error, unable to remove %s\n'
+                % EXISTENCE_PATH)
+    
+    @classmethod
+    def signal_handler(cls, sig: int, frame):
+        if sig in (signal.SIGINT, signal.SIGTERM):
+            cls.terminate = True
+    
+    def add_gui(self, gui_url: str):
+        self.osc_server.add_gui(gui_url)
+    
+    def start_loop(self):
+        n = 0
 
-    if connect_yesno:
-        connection_list.append(connection)
-        osc_server.connection_added(connection)
-    else:
-        if connection in connection_list:
-            connection_list.remove(connection)
-            osc_server.connection_removed(connection)
+        while True:
+            self.osc_server.recv(50)
+            
+            if self.is_terminate():
+                break
 
-    return 0
+            if not self.jack_running:
+                if n % 10 == 0:
+                    n = 0
+                    self.start_jack_client()
+                    self.osc_server.server_restarted()
+                n += 1
+    
+    def exit(self):
+        jacklib.deactivate(self.jack_client)
+        jacklib.client_close(self.jack_client)
+        self.remove_existence_file()
+    
+    def start_jack_client(self):
+        with suppress_stdout_stderr():
+            self.jack_client = jacklib.client_open(
+                "ray-patch_to_osc",
+                jacklib.JackNoStartServer | jacklib.JackSessionID,
+                None)
 
-def c_char_p_p_to_list(c_char_p_p):
-    i = 0
-    retList = []
-
-    if not c_char_p_p:
-        return retList
-
-    while True:
-        new_char_p = c_char_p_p[i]
-        if new_char_p:
-            retList.append(str(new_char_p, encoding="utf-8"))
-            i += 1
+        if self.jack_client:
+            self.jack_running = True
+            self.set_registrations()
+            self.osc_server.set_jack_client(self.jack_client)
         else:
-            break
+            self.jack_running = False
+    
+    def is_terminate(self)->bool:
+        if self.terminate or self.osc_server.is_terminate():
+            return True
+        
+        return False
+    
+    def set_registrations(self):
+        if not self.jack_client:
+            return
+        
+        jacklib.set_port_registration_callback(
+            self.jack_client, self.jack_port_registration_callback, None)
+        jacklib.set_port_connect_callback(
+            self.jack_client, self.jack_port_connect_callback, None)
+        jacklib.set_port_rename_callback(
+            self.jack_client, self.jack_port_rename_callback, None)
+        jacklib.on_shutdown(
+            self.jack_client, self.jack_shutdown_callback, None)
+        jacklib.activate(self.jack_client)
+        
+        #get all currents Jack ports and connections
+        port_name_list = self.c_char_p_p_to_list(
+            jacklib.get_ports(self.jack_client, "", "", 0))
+        
+        for port_name in port_name_list:
+            jport = JackPort(port_name, self.jack_client)
+            self.port_list.append(jport)
 
-    jacklib.free(c_char_p_p)
-    return retList
+            if jport.flags & jacklib.JackPortIsInput:
+                continue
 
-def write_existence_file(port: int):
-    try:
-        file = open(EXISTENCE_PATH, 'w')
-    except PermissionError:
-        sys.stderr.write(
-            'ray-patchbay_to_osc: Error, no permission for existence file\n')
-        sys.exit(1)
+            port_ptr = jacklib.port_by_name(self.jack_client, jport.name)
+            
+            # this port is output, list its connections
+            port_connection_names = self.c_char_p_p_to_list(
+                jacklib.port_get_all_connections(self.jack_client, port_ptr))
 
-    contents = 'pid:%i\n' % os.getpid()
-    contents += 'port:%i\n' % port
+            for port_con_name in port_connection_names:
+                self.connection_list.append((jport.name, port_con_name))
+    
+    def jack_shutdown_callback(self, arg=None)->int:
+        self.jack_running = False
+        self.port_list.clear()
+        self.connection_list.clear()
+        self.osc_server.server_stopped()
+        return 0
 
-    file.write(contents)
-    file.close()
+    def jack_port_registration_callback(self, port_id: int, register: bool,
+                                        arg=None)->int:
+        if not self.jack_client:
+            return 0
+        
+        port_ptr = jacklib.port_by_id(self.jack_client, port_id)
+        port_name = str(jacklib.port_name(port_ptr), encoding="utf-8")
+        
+        if register:
+            jport = JackPort(port_name, self.jack_client)
+            self.port_list.append(jport)
+            self.osc_server.port_added(jport)
+        else:
+            for jport in self.port_list:
+                if jport.name == port_name:
+                    self.port_list.remove(jport)
+                    self.osc_server.port_removed(jport)
+                    break
+        return 0
+    
+    def jack_port_rename_callback(self, port_id: int, old_name: str,
+                                  new_name: str, arg=None)->int:
+        for jport in self.port_list:
+            if jport.name == str(old_name, encoding="utf-8"):
+                ex_name = jport.name
+                jport.name = str(new_name, encoding="utf-8")
+                self.osc_server.port_renamed(jport, ex_name)
+                break
+        return 0
 
-def remove_existence_file():
-    if not os.path.exists(EXISTENCE_PATH):
-        return 
+    def jack_port_connect_callback(self, port_id_A: int, port_id_B: int,
+                                   connect_yesno: bool, arg=None)->int:
+        #if not self.jack_client:
+            #return 0
+        
+        port_ptr_A = jacklib.port_by_id(self.jack_client, port_id_A)
+        port_ptr_B = jacklib.port_by_id(self.jack_client, port_id_B)
 
-    try:
-        os.remove(EXISTENCE_PATH)
-    except PermissionError:
-        sys.stderr.write(
-            'ray-patchbay_to_osc: Error, unable to remove %s\n'
-            % EXISTENCE_PATH)
+        port_str_A = str(jacklib.port_name(port_ptr_A), encoding="utf-8")
+        port_str_B = str(jacklib.port_name(port_ptr_B), encoding="utf-8")
+
+        connection = (port_str_A, port_str_B)
+
+        if connect_yesno:
+            self.connection_list.append(connection)
+            self.osc_server.connection_added(connection)
+        else:
+            if connection in self.connection_list:
+                self.connection_list.remove(connection)
+                self.osc_server.connection_removed(connection)
+
+        return 0
+
+def main_loop():
+    main_object = MainObject()
+    
+    if len(sys.argv) > 1:
+        for gui_url in sys.argv[1:]:
+            main_object.add_gui(gui_url)
+    
+    main_object.start_loop()
+    main_object.exit()
 
 if __name__ == '__main__':
     # prevent deprecation warnings python messages
     warnings.filterwarnings("ignore", category=DeprecationWarning)
-    jack_client = jacklib.client_open(
-        "ray-patch_to_osc",
-        jacklib.JackNoStartServer | jacklib.JackSessionID,
-        None)
-
-    if not jack_client:
-        sys.stderr.write('Unable to make a jack client !\n')
-        sys.exit()
-
-    print('ze suis lààà')
-
-    jacklib.set_port_registration_callback(jack_client,
-                                           JackPortRegistrationCallback,
-                                           None)
-    jacklib.set_port_connect_callback(jack_client,
-                                      JackPortConnectCallback,
-                                      None)
-    jacklib.set_port_rename_callback(jack_client,
-                                     JackPortRenameCallback,
-                                     None)
-    jacklib.on_shutdown(jack_client, JackShutdownCallback, None)
-    jacklib.activate(jack_client)
-
-    #connect signals
-    signal.signal(signal.SIGINT, signalHandler)
-    signal.signal(signal.SIGTERM, signalHandler)
-
-    #get all currents Jack ports and connections
-    port_name_list = c_char_p_p_to_list(
-        jacklib.get_ports(jack_client, "", "", 0))
     
-    for port_name in port_name_list:
-        jport = JackPort(port_name)
-        port_list.append(jport)
-
-        if jport.flags & jacklib.JackPortIsInput:
-            continue
-
-        port_ptr = jacklib.port_by_name(jack_client, jport.name)
-        
-        # this port is output, list its connections
-        port_connection_names = c_char_p_p_to_list(
-            jacklib.port_get_all_connections(jack_client, port_ptr))
-
-        for port_con_name in port_connection_names:
-            connection_list.append((jport.name, port_con_name))
-
-    osc_server = osc_server.OscJackPatch(jack_client, port_list, connection_list)
-    write_existence_file(osc_server.port)
+    signal.signal(signal.SIGINT, MainObject.signal_handler)
+    signal.signal(signal.SIGTERM, MainObject.signal_handler)
     
-    if len(sys.argv) > 1:
-        for gui_url in sys.argv[1:]:
-            osc_server.add_gui(gui_url)
-
-    # MAIN Loop
-    while True:
-        osc_server.recv(50)
-
-        if TERMINATE or osc_server.is_terminate():
-            break
-
-    jacklib.deactivate(jack_client)
-    jacklib.client_close(jack_client)
-    remove_existence_file()
+    main_loop()

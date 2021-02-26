@@ -25,6 +25,9 @@ class OscJackPatch(Server):
         self.gui_list = []
         self._terminate = False
 
+    def set_jack_client(self, jack_client):
+        self.jack_client = jack_client
+    
     def _ray_patchbay_add_gui(self, path, args, types, src_addr):
         self.add_gui(args[0])
 
@@ -85,6 +88,15 @@ class OscJackPatch(Server):
 
         self.gui_list.append(gui_addr)
 
+    def server_restarted(self):
+        for port in self.port_list:
+            self.sendGui('/ray/gui/patchbay/port_added',
+                        port.name, port.alias_1, port.alias_2,
+                        port.type, port.flags, '')
+        for connection in self.connection_list:
+            self.sendGui('/ray/gui/patchbay/connection_added',
+                         connection[0], connection[1])
+
     def port_added(self, port):
         self.sendGui('/ray/gui/patchbay/port_added',
                      port.name, port.alias_1, port.alias_2,
@@ -108,7 +120,7 @@ class OscJackPatch(Server):
     def server_stopped(self):
         # here server is JACK (in future maybe pipewire)
         self.sendGui('/ray/gui/patchbay/server_stopped')
-        self._terminate = True
+        #self._terminate = True
         
     def is_terminate(self):
         return self._terminate

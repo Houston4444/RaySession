@@ -301,6 +301,10 @@ class GUIServerThread(liblo.ServerThread):
     def _patchbay_connection_removed(self, path, args, types, src_addr):
         pass
 
+    @ray_method('/ray/gui/patchbay/server_stopped', '')
+    def _patchbay_server_stopped(self, path, args, types, src_addr):
+        pass
+
     @ray_method('/ray/gui/patchbay/group_position_info', 'isii')
     def _patchbay_group_position(self, path, args, types, src_addr):
         pass
@@ -308,6 +312,7 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/patchbay/portgroup_info', 'siss')
     def _patchbay_portgroup_info(self, path, args, types, src_addr):
         pass
+
 
     def send(self, *args):
         if CommandLineArgs.debug:

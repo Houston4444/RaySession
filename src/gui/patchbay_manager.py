@@ -188,6 +188,12 @@ class Group:
     def remove_from_canvas(self):
         patchcanvas.removeGroup(self.group_id)
 
+    def remove_all_ports(self):
+        for port in self.ports:
+            port.remove_from_canvas()
+        
+        self.ports.clear()
+
     def set_port_alignments(self):
         pass
         #inputs, outputs = 0
@@ -833,3 +839,12 @@ class PatchbayManager:
     def update_portgroup(self, group_name: str, port_mode: int,
                          port1: str, port2:str):
         pass
+    
+    def server_stopped(self):
+        for group in self.groups:
+            group.remove_all_ports()
+            group.remove_from_canvas()
+        
+        self.groups.clear()
+    
+        

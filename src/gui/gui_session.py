@@ -438,4 +438,7 @@ class SignaledSession(Session):
     
     def _ray_gui_patchbay_portgroup_info(self, path, args):
         self.patchbay_manager.update_portgroup(*args)
+        
+    def _ray_gui_patchbay_server_stopped(self, path, args):
+        self.patchbay_manager.server_stopped(*args)
     
