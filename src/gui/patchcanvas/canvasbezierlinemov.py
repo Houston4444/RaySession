@@ -141,13 +141,15 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 new_y = 0
             elif (self.m_port_posinportgrp_to == self.m_port_posinportgrp
                     and self.m_portgrp_lenght == self.m_portgrp_lenght_to):
-                new_y = old_y - ( (last_old_y - first_old_y) / 2 ) - (canvas.theme.port_height * phi)
+                new_y = old_y - ( (last_old_y - first_old_y) / 2 ) \
+                        - (canvas.theme.port_height * phi)
             else:
                 first_new_y = canvas.theme.port_height * phito
                 last_new_y  = canvas.theme.port_height * (self.m_portgrp_lenght_to - phito)
                 delta = (last_new_y - first_new_y) / (self.m_portgrp_lenght_to -1)
                 new_y1 = first_new_y + (self.m_port_posinportgrp_to * delta)
-                new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
+                new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) \
+                        - (canvas.theme.port_height * phito)
             
         final_x = scenePos.x() - self.p_itemX
         final_y = scenePos.y() - self.p_itemY + new_y

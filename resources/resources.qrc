@@ -17,6 +17,7 @@
        <file>scalable/audio-input-microphone.svg.2021_02_17_09_37_52.0.svg</file>
        <file>scalable/raysession48.svg</file>
        <file>scalable/DIN-5.svg</file>
+       <file>scalable/test_icon.svg</file>
        <file>scalable/raysession256.svg</file>
        <file>scalable/breeze-dark/document-saved.svg</file>
        <file>scalable/breeze-dark/document-edit.svg</file>
@@ -129,6 +130,7 @@
        <file>scalable/breeze/disabled/document-save-as-template.svg</file>
        <file>scalable/breeze/disabled/notes.svg</file>
        <file>scalable/breeze/disabled/application-menu.svg</file>
+       <file>scalable/test_icon/dessin.svg</file>
        <file>app_icons/qsampler.png</file>
        <file>app_icons/padthv1.svg</file>
        <file>app_icons/sequencer64.png</file>

@@ -40,6 +40,7 @@ if __name__ == '__main__':
     app.setApplicationVersion(ray.VERSION)
     app.setOrganizationName(ray.APP_TITLE)
     app.setWindowIcon(QIcon(':/scalable/%s.svg' % ray.APP_TITLE.lower()))
+    #app.setWindowIcon(QIcon(':/scalable/test_icon.svg'))
     app.setQuitOnLastWindowClosed(False)
     app.setDesktopFileName(ray.APP_TITLE.lower())
 

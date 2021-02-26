@@ -30,7 +30,7 @@ from PyQt5.QtGui import QIcon
 from . import (bool2str, canvas, CanvasBoxType,
                ICON_APPLICATION, ICON_CLIENT, ICON_HARDWARE, ICON_INTERNAL,
                PORT_MODE_NULL, PORT_MODE_INPUT, PORT_MODE_OUTPUT,
-               ACTION_PORTS_CONNECT)
+               ACTION_PORTS_CONNECT, ACTION_PORTS_DISCONNECT)
 from .canvasfadeanimation import CanvasFadeAnimation
 
 # ------------------------------------------------------------------------------------------------------------
@@ -161,6 +161,13 @@ def CanvasGetPortPrintName(group_id, port_id, portgrp_id):
             for port in canvas.port_list:
                 if port.group_id == group_id and port.port_id == port_id:
                     return port.port_name.replace(portgrp_name, '', 1)
+
+def CanvasGetPortGroupPortList(group_id: int, portgrp_id: int)->list:
+    for portgrp in canvas.portgrp_list:
+        if (portgrp.group_id == group_id
+                and portgrp.portgrp_id == portgrp_id):
+            return portgrp.port_id_list
+    return []
 
 def CanvasGetPortGroupFullName(group_id, portgrp_id):
     for portgrp in canvas.portgrp_list:
@@ -371,6 +378,141 @@ def CanvasConnectPorts(group_id_1: int, port_id_1: int,
                                           group_id_2, port_id_2)
     
     canvas.callback(ACTION_PORTS_CONNECT, 0, 0, string_to_send)
+
+
+def CanvasPortGroupConnectionState(group_id_1: int, port_id_list_1: list,
+                                   group_id_2: int, port_id_list_2: list)->int:
+    # returns
+    # 0 if no connection
+    # 1 if connection is irregular
+    # 2 if connection is correct
+    
+    group_out_id = 0
+    group_in_id = 0
+    out_port_id_list = []
+    in_port_id_list = []
+    
+    
+    for port in canvas.port_list:
+        if (port.group_id == group_id_1
+                and port.port_id in port_id_list_1):
+            if port.port_mode == PORT_MODE_OUTPUT:
+                out_port_id_list = port_id_list_1
+            else:
+                in_port_id_list = port_id_list_1
+        elif (port.group_id == group_id_2
+                and port.port_id in port_id_list_2):
+            if port.port_mode == PORT_MODE_OUTPUT:
+                out_port_id_list = port_id_list_2
+            else:
+                in_port_id_list = port_id_list_2
+
+    if not (out_port_id_list and in_port_id_list):
+        return 0
+    
+    has_connection = False
+    miss_connection = False
+    
+    for out_index in range(len(out_port_id_list)):
+        for in_index in range(len(in_port_id_list)):
+            if (out_index % len(in_port_id_list)
+                    == in_index % len(out_port_id_list)):
+                for connection in canvas.connection_list:
+                    if (connection.group_out_id == group_out_id
+                            and connection.port_out_id == out_port_id_list[out_index]
+                            and connection.group_in_id == group_in_id
+                            and connection.port_in_id == in_port_id_list[in_index]):
+                        has_connection = True
+                        break
+                else:
+                    miss_connection = True
+            else:
+                for connection in canvas.connection_list:
+                    if (connection.group_out_id == group_out_id
+                            and connection.port_out_id == out_port_id_list[out_index]
+                            and connection.group_in_id == group_in_id
+                            and connection.port_in_id == in_port_id_list[in_index]):
+                        # irregular connection exists
+                        # we are sure connection is irregular
+                        return 1
+    
+    if has_connection:
+        if miss_connection:
+            return 1
+        else:
+            return 2
+    else:
+        return 0
+                    
+
+def CanvasConnectPortGroups(group_id_1: int, portgrp_id_1: int,
+                            group_id_2: int, portgrp_id_2: int,
+                            disconnect=False):
+    group_out_id = 0
+    group_in_id = 0
+    out_port_id_list = []
+    in_port_id_list = []
+    
+    for portgrp in canvas.portgrp_list:
+        if (portgrp.group_id == group_id_1
+                and portgrp.portgrp_id == portgrp_id_1):
+            if portgrp.port_mode == PORT_MODE_OUTPUT:
+                group_out_id = group_id_1
+                out_port_id_list = portgrp.port_id_list
+            else:
+                group_in_id = group_id_1
+                in_port_id_list = portgrp.port_id_list
+                
+        elif (portgrp.group_id == group_id_2
+                and portgrp.portgrp_id == portgrp_id_2):
+            if portgrp.port_mode == PORT_MODE_OUTPUT:
+                group_out_id = group_id_2
+                out_port_id_list = portgrp.port_id_list
+            else:
+                group_in_id = group_id_2
+                in_port_id_list = portgrp.port_id_list
+    
+    if not (out_port_id_list and in_port_id_list):
+        sys.stderr.write(
+            "PatchCanvas::CanvasConnectPortGroups, empty port id list\n")
+        return
+    
+    connected_indexes = []
+    
+    # disconnect irregular connections
+    for connection in canvas.connection_list:
+        if (connection.group_out_id == group_out_id
+                and connection.port_out_id in out_port_id_list
+                and connection.group_in_id == group_in_id
+                and connection.port_in_id in in_port_id_list):
+            out_index = out_port_id_list.index(connection.port_out_id)
+            in_index = in_port_id_list.index(connection.port_in_id)
+
+            if (out_index % len(in_port_id_list)
+                    == in_index % len(out_port_id_list)
+                    and not disconnect):
+                # remember this connection already exists
+                # and has not to be remade
+                connected_indexes.append((out_index, in_index))
+            else:
+                canvas.callback(ACTION_PORTS_DISCONNECT,
+                                connection.connection_id, 0, '')
+    
+    if disconnect:
+        return
+    
+    # finally connect the ports
+    for out_index in range(len(out_port_id_list)):
+        for in_index in range(len(in_port_id_list)):
+            if (out_index % len(in_port_id_list)
+                        == in_index % len(out_port_id_list)
+                    and (out_index, in_index) not in connected_indexes):
+                canvas.callback(
+                    ACTION_PORTS_CONNECT, 0, 0,
+                    "%i:%i:%i:%i" % (
+                        group_out_id, out_port_id_list[out_index],
+                        group_in_id, in_port_id_list[in_index]))
+            
 
 def CanvasCallback(action, value1, value2, value_str):
     if canvas.debug:

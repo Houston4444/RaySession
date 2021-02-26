@@ -54,7 +54,7 @@ from . import (
 from .canvasbezierlinemov import CanvasBezierLineMov
 from .canvaslinemov import CanvasLineMov
 from .theme import Theme
-from .connect_menu import MainContextMenu
+from .connect_menu import MainPortContextMenu
 from .utils import (
     CanvasGetFullPortName,
     CanvasGetPortConnectionList,
@@ -578,7 +578,7 @@ class CanvasPort(QGraphicsItem):
         canvas.scene.clearSelection()
         self.setSelected(True)
 
-        menu = MainContextMenu(self.m_group_id, self.m_port_id)
+        menu = MainPortContextMenu(self.m_group_id, self.m_port_id)
 
         act_x_sep_1 = menu.addSeparator()
         
