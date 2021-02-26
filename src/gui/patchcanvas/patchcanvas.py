@@ -860,12 +860,10 @@ def removePort(group_id, port_id):
 def changePortProperties(group_id, port_id, portgrp_id, new_port_name):
     if canvas.debug:
         print("PatchCanvas::renamePort(%i, %i, %s)" % (group_id, port_id, new_port_name.encode()))
-    print('ijejifej', group_id, port_id, portgrp_id, new_port_name)
+
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
-            print('kekke')
             if new_port_name != port.port_name:
-                print('meaooer', new_port_name, port.port_name)
                 port.port_name = new_port_name
                 port.widget.setPortName(new_port_name)
             
