@@ -130,9 +130,7 @@ class ConnectGroupMenu(SubMenu):
                 break
     
     def check_element(self, port_id: int, portgrp_id: int, check_state: int):
-        print('checkcck eleement', port_id, portgrp_id, check_state)
         for element in self.elements:
-            print('ellle', element['port_id'], element['portgrp_id'])
             if (element['port_id'] == port_id
                     and element['portgrp_id'] == portgrp_id):
                 check_box = element['check_box']
@@ -330,6 +328,8 @@ class DisconnectMenu(SubMenu):
                 self.removeAction(element['action'])
                 self.elements.remove(element)
                 break
+        else:
+            return
         
         if not self.elements:
             self._no_action = self.addAction(self._no_action_title)
