@@ -38,9 +38,7 @@ class GUIServerThread(liblo.ServerThread):
         self.patchbay_addr = None
 
     def stop(self):
-        print('fe me stopp')
         if self.patchbay_addr:
-            print('jenenvoie')
             self.send(self.patchbay_addr, '/ray/patchbay/gui_disannounce')
         liblo.ServerThread.stop(self)
 
@@ -48,10 +46,34 @@ class GUIServerThread(liblo.ServerThread):
         self._session = session
         self._signaler = self._session._signaler
         self._daemon_manager = self._session._daemon_manager
+        
+        for path_types in (
+            ('/ray/gui/server/disannounce', ''),
+            ('/ray/gui/server/nsm_locked', 'i'),
+            ('/ray/gui/server/options', 'i'),
+            ('/ray/gui/server/message', 's'),
+            ('/ray/gui/session/name', 'ss'),
+            ('/ray/gui/session/notes', 's'),
+            ('/ray/gui/patchbay/dsp_load', 'i'),
+            ('/ray/gui/patchbay/add_xrun', ''),
+            ('/ray/gui/patchbay/buffer_size', 'i')):
+                self.add_method(path_types[0], path_types[1],
+                                self.generic_callback)
+            
+            
+            
+        
+        self.direct_to_session('/ray/gui/patchbay/port_added', 'sssiis')
+
+    def direct_to_session(self, path: str, types: str):
+        self.add_method(path, types, self.generic_callback)
 
     @staticmethod
     def instance():
         return _instance
+
+    def generic_callback(self, path, args, types, src_addr):
+        self._signaler.osc_receive.emit(path, args)
 
     @ray_method('/error', 'sis')
     def _error(self, path, args, types, src_addr):
@@ -274,15 +296,14 @@ class GUIServerThread(liblo.ServerThread):
     def _hide_script_user_action(self, path, args, types, src_addr):
         pass
     
-    @ray_method('/ray/gui/patchbay/announce', '')
+    @ray_method('/ray/gui/patchbay/announce', 'iii')
     def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
-        print('gorrooo', src_addr.url)
+        print('gorrooo', src_addr.url, args)
         self.patchbay_addr = src_addr
     
-    @ray_method('/ray/gui/patchbay/port_added', 'sssiis')
-    def _patchbay_port_added(self, path, args, types, src_addr):
-        #print('popopel', args)
-        pass
+    #@ray_method('/ray/gui/patchbay/port_added', 'sssiis')
+    #def _patchbay_port_added(self, path, args, types, src_addr):
+        #pass
         
     @ray_method('/ray/gui/patchbay/port_renamed', 'ss')
     def _patchbay_port_renamed(self, path, args, types, src_addr):

@@ -418,6 +418,9 @@ class SignaledSession(Session):
     def _ray_gui_hide_script_user_action(self, path, args):
         self._main_win.hideScriptUserActionDialog()
     
+    def _ray_gui_patchbay_announce(self, path, args):
+        self.patchbay_manager.patchbay_announce(*args)
+    
     def _ray_gui_patchbay_port_added(self, path, args):
         self.patchbay_manager.add_port(*args)
         
@@ -442,3 +445,11 @@ class SignaledSession(Session):
     def _ray_gui_patchbay_server_stopped(self, path, args):
         self.patchbay_manager.server_stopped(*args)
     
+    def _ray_gui_patchbay_dsp_load(self, path, args):
+        self.patchbay_manager.set_dsp_load(*args)
+    
+    def _ray_gui_patchbay_add_xrun(self, path, args):
+        self.patchbay_manager.add_xrun(*args)
+        
+    def _ray_gui_patchbay_buffer_size(self, path, args):
+        self.patchbay_manager.buffer_size_changed(*args)

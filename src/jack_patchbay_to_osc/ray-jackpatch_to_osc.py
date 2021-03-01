@@ -81,10 +81,14 @@ class MainObject:
     osc_server = None
     terminate = False
     jack_client = None
+    samplerate = 48000
+    buffer_size = 1024
     
     def __init__(self):
-        self.osc_server = osc_server.OscJackPatch(
-            self.jack_client, self.port_list, self.connection_list)
+        self.last_sent_dsp_load = 0
+        self.max_dsp_since_last_sent = 0.00
+        
+        self.osc_server = osc_server.OscJackPatch(self)
         self.write_existence_file(self.osc_server.port)
         self.start_jack_client()
     
@@ -142,6 +146,18 @@ class MainObject:
     def add_gui(self, gui_url: str):
         self.osc_server.add_gui(gui_url)
     
+    def remember_dsp_load(self):
+        self.max_dsp_since_last_sent = max(
+            self.max_dsp_since_last_sent,
+            jacklib.cpu_load(self.jack_client))
+        
+    def send_dsp_load(self):
+        current_dsp = int(self.max_dsp_since_last_sent + 0.5)
+        if current_dsp != self.last_sent_dsp_load:
+            self.osc_server.send_dsp_load(current_dsp)
+            self.last_sent_dsp_load = current_dsp
+        self.max_dsp_since_last_sent = 0.00
+    
     def start_loop(self):
         n = 0
 
@@ -151,17 +167,23 @@ class MainObject:
             if self.is_terminate():
                 break
 
-            if not self.jack_running:
+            if self.jack_running:
+                if n % 4 == 0:
+                    self.remember_dsp_load()
+                if n % 20 == 0:
+                    self.send_dsp_load()
+
+            else:
                 if n % 10 == 0:
-                    n = 0
                     self.start_jack_client()
                     self.osc_server.server_restarted()
-                n += 1
+            n += 1
     
     def exit(self):
         jacklib.deactivate(self.jack_client)
         jacklib.client_close(self.jack_client)
         self.remove_existence_file()
+        del self.osc_server
     
     def start_jack_client(self):
         with suppress_stdout_stderr():
@@ -176,6 +198,9 @@ class MainObject:
             self.osc_server.set_jack_client(self.jack_client)
         else:
             self.jack_running = False
+        
+        self.samplerate = jacklib.get_sample_rate(self.jack_client)
+        self.buffer_size = jacklib.get_buffer_size(self.jack_client)
     
     def is_terminate(self)->bool:
         if self.terminate or self.osc_server.is_terminate():
@@ -193,6 +218,10 @@ class MainObject:
             self.jack_client, self.jack_port_connect_callback, None)
         jacklib.set_port_rename_callback(
             self.jack_client, self.jack_port_rename_callback, None)
+        jacklib.set_xrun_callback(
+            self.jack_client, self.jack_xrun_callback, None)
+        jacklib.set_buffer_size_callback(
+            self.jack_client, self.jack_buffer_size_callback, None)
         jacklib.on_shutdown(
             self.jack_client, self.jack_shutdown_callback, None)
         jacklib.activate(self.jack_client)
@@ -222,6 +251,15 @@ class MainObject:
         self.port_list.clear()
         self.connection_list.clear()
         self.osc_server.server_stopped()
+        return 0
+
+    def jack_xrun_callback(self, arg=None)->int:
+        self.osc_server.send_one_xrun()
+        return 0
+
+    def jack_buffer_size_callback(self, buffer_size, arg=None)->int:
+        self.buffer_size = buffer_size
+        self.osc_server.send_buffersize()
         return 0
 
     def jack_port_registration_callback(self, port_id: int, register: bool,
@@ -276,6 +314,10 @@ class MainObject:
                 self.osc_server.connection_removed(connection)
 
         return 0
+    
+    def set_buffer_size(self, buffer_size: int):
+        jacklib.set_buffer_size(self.jack_client, buffer_size)
+
 
 def main_loop():
     main_object = MainObject()

@@ -47,7 +47,7 @@ context menu box -> icones PulseAudio/hardware/a2j dispos en light theme
     traductions "Connect"
 
 bug hardware polygon
-vérif port rename et display name
+/ vérif port rename et display name
 revoir sauvegarde groupe position et paires
 ajout fenêtre d'options du canvas
 ajout boutons JACK et patchbay dans la barre d'outils

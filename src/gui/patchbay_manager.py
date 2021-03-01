@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMenu, QAction
 
 from patchcanvas import patchcanvas
 from gui_server_thread import GUIServerThread
+from patchbay_tools import PatchbayToolsWidget
 
 # Port Type
 PORT_TYPE_NULL = 0
@@ -26,7 +27,6 @@ PORT_IS_CONTROL_VOLTAGE = 0x100
 USE_ALIAS_NONE = 0
 USE_ALIAS_1 = 1
 USE_ALIAS_2 = 2
-
 
 _translate = QGuiApplication.translate
 
@@ -508,6 +508,10 @@ class PatchbayManager:
     
     def __init__(self, session):
         self.session = session
+        
+        self.tools_widget = PatchbayToolsWidget()
+        self.tools_widget.buffer_size_changed.connect(self.change_buffersize)
+
         self.group_positions = []
         self.groups = []
         self.connections = []
@@ -676,6 +680,12 @@ class PatchbayManager:
                     or client.name + '.' + client.client_id == group_name):
                 return client.icon
         return ''
+    
+    def patchbay_announce(self, jack_running: int, samplerate: int,
+                          buffer_size: int):
+        self.tools_widget.set_samplerate(samplerate)
+        self.tools_widget.set_buffer_size(buffer_size)
+        self.session._main_win.add_patchbay_tools(self.tools_widget)
     
     def add_port(self, name: str, alias_1: str, alias_2: str,
                  port_type: int, flags: int, metadata: str):
@@ -846,5 +856,19 @@ class PatchbayManager:
             group.remove_from_canvas()
         
         self.groups.clear()
+        
+    def set_dsp_load(self, dsp_load: int):
+        self.tools_widget.set_dsp_load(dsp_load)
+    
+    def add_xrun(self):
+        self.tools_widget.add_xrun()
+        
+    def change_buffersize(self, buffer_size):
+        print('djlkjdkdjnnnnnn', buffer_size, type(buffer_size))
+        self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',
+                                     buffer_size)
+        
+    def buffer_size_changed(self, buffer_size):
+        self.tools_widget.set_buffer_size(buffer_size)
     
         

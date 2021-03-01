@@ -2,7 +2,7 @@ import time
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView,
-                             QWidget)
+                             QWidget, QWidgetAction, QCheckBox)
 from PyQt5.QtGui import QIcon, QDesktopServices
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
@@ -18,6 +18,7 @@ import list_widget_clients
 import nsm_child
 
 import ui.raysession
+import ui.patchbay_tools
 
 
 class MainWindow(QMainWindow):
@@ -270,6 +271,20 @@ class MainWindow(QMainWindow):
         self.ui.dockWidget.setTitleBarWidget(QWidget())
         #self.ui.dockWidget_2.setTitleBarWidget(QWidget())
 
+
+        #check_box = QCheckBox("odekdl", self)
+        ##action = QWidgetAction(self)
+        ##action.setDefaultWidget(check_box)
+        #self.ui.toolBar.addSeparator()
+        #self.ui.toolBar.addWidget(check_box)
+        #self.ui.toolBar.addAction(action)
+        #patchbay_tools = QWidget()
+        #patchbay_tools.ui = ui.patchbay_tools.Ui_Form()
+        #patchbay_tools.ui.setupUi(patchbay_tools)
+        ##patchbay_tools = ui.patchbay_tools
+        #self.ui.toolBar.addWidget(patchbay_tools)
+
+
         #self.patchbay_dialog = child_dialogs.PatchbayDialog(self)
         #self.ui.pushButtonPatchbay.clicked.connect(self.patchbay_dialog.show)
         self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
@@ -328,6 +343,9 @@ class MainWindow(QMainWindow):
             self.ui.menuBar.setVisible(False)
             self.ui.toolBar.setVisible(False)
             self.showFullScreen()
+
+    def add_patchbay_tools(self, widget):
+        self.ui.toolBar.addWidget(widget)
 
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)

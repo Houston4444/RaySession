@@ -6,7 +6,7 @@ import jacklib
 
 
 class OscJackPatch(Server):
-    def __init__(self, jack_client, port_list, connection_list):
+    def __init__(self, main_object):
         Server.__init__(self)
         self.add_method('/ray/patchbay/add_gui', 's',
                         self._ray_patchbay_add_gui)
@@ -18,10 +18,13 @@ class OscJackPatch(Server):
                         self._ray_patchbay_connect)
         self.add_method('/ray/patchbay/disconnect', 'ss',
                         self._ray_patchbay_disconnect)
+        self.add_method('/ray/patchbay/set_buffer_size', 'i',
+                        self._ray_patchbay_set_buffersize)
         
-        self.jack_client = jack_client
-        self.port_list = port_list
-        self.connection_list = connection_list
+        self.main_object = main_object
+        self.jack_client = main_object.jack_client
+        self.port_list = main_object.port_list
+        self.connection_list = main_object.connection_list
         self.gui_list = []
         self._terminate = False
 
@@ -66,6 +69,11 @@ class OscJackPatch(Server):
         #disconnect here
         jacklib.disconnect(self.jack_client, port_out_name, port_in_name)
 
+    def _ray_patchbay_set_buffersize(self, path, args):
+        print('ien reçu buffer_size', args[0])
+        buffer_size = args[0]
+        self.main_object.set_buffer_size(buffer_size)
+
     def sendGui(self, *args):
         for gui_addr in self.gui_list:
             self.send(gui_addr, *args)
@@ -75,7 +83,10 @@ class OscJackPatch(Server):
         if gui_addr is None:
             return
 
-        self.send(gui_addr, '/ray/gui/patchbay/announce')
+        self.send(gui_addr, '/ray/gui/patchbay/announce',
+                  int(self.main_object.jack_running),
+                  self.main_object.samplerate,
+                  self.main_object.buffer_size)
 
         for port in self.port_list:
             self.send(gui_addr, '/ray/gui/patchbay/port_added',
@@ -121,7 +132,17 @@ class OscJackPatch(Server):
         # here server is JACK (in future maybe pipewire)
         self.sendGui('/ray/gui/patchbay/server_stopped')
         #self._terminate = True
-        
+    
+    def send_dsp_load(self, dsp_load: int):
+        self.sendGui('/ray/gui/patchbay/dsp_load', dsp_load)
+    
+    def send_one_xrun(self):
+        self.sendGui('/ray/gui/patchbay/add_xrun')
+    
+    def send_buffersize(self):
+        self.sendGui('/ray/gui/patchbay/buffer_size',
+                     self.main_object.buffer_size)
+    
     def is_terminate(self):
         return self._terminate
     
