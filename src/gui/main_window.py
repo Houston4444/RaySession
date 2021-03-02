@@ -427,7 +427,14 @@ class MainWindow(QMainWindow):
             action, value1, value2, value_str)
     
     def setupCanvas(self):
-        #options = patchcanvas.options_t()
+        options = patchcanvas.options_t()
+        options.theme_name = patchcanvas.getDefaultTheme()
+        options.antialiasing = patchcanvas.ANTIALIASING_SMALL
+        options.eyecandy = patchcanvas.EYECANDY_SMALL
+        options.auto_hide_groups = False
+        options.auto_select_items = False
+        options.inline_displays = False
+        options.use_bezier_lines = True
         #options.theme_name = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
         #options.auto_hide_groups = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
         #options.auto_select_items = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS]
@@ -449,7 +456,7 @@ class MainWindow(QMainWindow):
         features.port_rename = False
         features.handle_group_pos = True
 
-        #patchcanvas.setOptions(pOptions)
+        patchcanvas.setOptions(options)
         patchcanvas.setFeatures(features)
         patchcanvas.init(
             ray.APP_TITLE, self.scene,

@@ -423,8 +423,6 @@ class OscServerThread(ClientCommunicating):
             for line in contents.splitlines():
                 if line.startswith('port:'):
                     port_str = line.rpartition(':')[2]
-                    
-                    print('zeilj', "\"%s\"" % port_str)
                     good_port = False
                     
                     try:
@@ -436,7 +434,6 @@ class OscServerThread(ClientCommunicating):
                             'port given for patchbay %s is not a valid osc port')
                     
                     if good_port:
-                        print('kelkgklll')
                         self.send(patchbay_addr, '/ray/patchbay/add_gui',
                                   src_addr.url)
                         return False
@@ -792,7 +789,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/patchbay/save_coordinates', 'isii')
     def rayServerPatchbaySaveCoordinates(self, path, args, types, src_addr):
-        print('faooozlllls')
+        pass
     
     @ray_method('/ray/server/patchbay/save_portgroup', 'siss')
     def rayServerPatchbaySavePortGroup(self, path, args, types, src_addr):

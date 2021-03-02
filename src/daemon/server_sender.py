@@ -39,9 +39,8 @@ class ServerSender(QObject):
 
         server = OscServerThread.getInstance()
         if not server:
-            print('nnnooo server')
             return
-        print('betudoisender')
+
         server.sendGui(*args)
 
     def sendGuiMessage(self, message):

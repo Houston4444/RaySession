@@ -188,10 +188,8 @@ class CanvasSvgIcon(QGraphicsSvgItem):
             self.p_size = QRectF(5, 2, 16, 16)
 
         elif icon == ICON_INTERNAL:
-            print('zeokll')
             icon_path = ":/scalable/" + name
             self.p_size = QRectF(4, 4, 24, 24)
-            print('dkske', icon_path)
 
         else:
             self.p_size = QRectF(0, 0, 0, 0)

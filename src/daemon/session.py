@@ -1754,19 +1754,7 @@ for better organization."""))
                         self.desktops_memory.readXml(node.toElement())
                 
                 elif tag_name == "Canvas":
-                    print('ya du Canvas')
                     self.canvas_saver.load_session_canvas(node.toElement())
-                    #canvas_elements = node.toElement().childNodes()
-                    #for j in range(canvas_elements.count()):
-                        #sub_node = canvas_elements.at(j)
-                        #sub_tag_name = sub_node.toElement().tagName()
-                        #if sub_tag_name == 'GroupPositions':
-                            #print('on irait bien')
-                            #self.canvas_saver.update_group_session_positions(
-                                #sub_node.toElement())
-                        #elif sub_tag_name == 'Portgroups':
-                            #self.canvas_saver.update_session_portgroups(
-                                #sub_node.toElement())
 
             ray_file.close()
 

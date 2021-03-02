@@ -628,10 +628,8 @@ def joinGroup(group_id):
     QTimer.singleShot(0, canvas.scene.update)
 
 def moveGroupBox(group_id: int, port_mode: int, x: int, y: int):
-    print('ododl', group_id, port_mode, x, y)
     for group in canvas.group_list:
         if group.group_id == group_id:
-            print('yeah, we found the box')
             box = None
             if group.split:
                 if port_mode == PORT_MODE_OUTPUT:
@@ -649,7 +647,6 @@ def moveGroupBox(group_id: int, port_mode: int, x: int, y: int):
             if box is None:
                 return
             
-            print('gogogo', group.group_name, x, y)
             box.setPos(QPointF(x, y))
             break
                 

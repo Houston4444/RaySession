@@ -1,8 +1,11 @@
 
+import sys
+
 from PyQt5.QtWidgets import QApplication
 
-from patchcanvas import patchcanvas
 import ray
+
+from patchcanvas import patchcanvas
 from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
 from gui_signaler import Signaler
@@ -101,8 +104,10 @@ class Session:
             if client.client_id == client_id:
                 return client
 
-        raise NameError("gui_session does not contains client %s"
-                        % client_id)
+        if CommandLineArgs.debug:
+            sys.stderr.write("gui_session does not contains client %s\n"
+                             % client_id)
+        return None
 
     def removeAllClients(self):
         self.client_list.clear()

@@ -20,12 +20,13 @@ class PatchbayToolsWidget(QWidget):
         self.ui.comboBoxBuffer.currentIndexChanged.connect(
             self.change_buffersize)
         
-        self.current_buffer_size = 1024
         self.buffer_sizes = [16, 32, 64, 128, 256, 512,
                              1024, 2048, 4096, 8192]
         
         for size in self.buffer_sizes:
             self.ui.comboBoxBuffer.addItem(str(size), size)
+        
+        self.current_buffer_size = self.ui.comboBoxBuffer.currentData()
         
         self.xruns_counter = 0
         
@@ -48,6 +49,7 @@ class PatchbayToolsWidget(QWidget):
         index = self.ui.comboBoxBuffer.findData(buffer_size)
         
         # manage exotic buffer sizes
+        # findData returns -1 if buffer_size is not in combo box values
         if index < 0:
             index = 0
             for size in self.buffer_sizes:
@@ -80,8 +82,10 @@ class PatchbayToolsWidget(QWidget):
         # prevent loop of buffer size change
         if self._buffer_change_from_osc:
             # change_buffersize not called by user
+            # but ensure next time it could be
             self._buffer_change_from_osc = False
             return
+        
         
         self.ui.comboBoxBuffer.setEnabled(False)
         self._waiting_buffer_change = True

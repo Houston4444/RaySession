@@ -89,11 +89,6 @@ class PatchScene(QGraphicsScene):
         self.curZoomArea = None
 
         self.selectionChanged.connect(self.slot_selectionChanged)
-
-    #def update(self):
-        #print('okokozo')
-        #QGraphicsScene.update(self)
-        #print('lazslas')
         
     def getDevicePixelRatioF(self):
         if QT_VERSION < 0x50600:
@@ -231,6 +226,7 @@ class PatchScene(QGraphicsScene):
 
     def triggerRubberbandScale(self):
         self.m_scale_area = True
+        
         if self.curZoomArea:
             self.m_view.viewport().setCursor(self.curZoomArea)
 
@@ -333,7 +329,6 @@ class PatchScene(QGraphicsScene):
                                                                           CanvasIconType,
                                                                           CanvasPortType,
                                                                           CanvasPortGroupType))
-
         if self.m_mouse_rubberband:
             event.accept()
             pos = event.scenePos()

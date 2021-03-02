@@ -697,7 +697,6 @@ class PatchbayManager:
     
     def add_port(self, name: str, alias_1: str, alias_2: str,
                  port_type: int, flags: int, metadata: str):
-        print('kdklzoezo', name)
         port = Port(self._next_port_id, name, alias_1, alias_2,
                     port_type, flags, metadata)
         self._next_port_id += 1
@@ -881,9 +880,6 @@ class PatchbayManager:
     def server_stopped(self):
         self.tools_widget.set_jack_running(False)
         self.clear_all()
-       
-        
-        print('-----------------------------------------------------')
         
     def set_dsp_load(self, dsp_load: int):
         self.tools_widget.set_dsp_load(dsp_load)

@@ -72,7 +72,7 @@
        <enum>QLayout::SetNoConstraint</enum>
       </property>
       <item>
-       <widget class="QGraphicsView" name="graphicsView">
+       <widget class="DraggableGraphicsView" name="graphicsView">
         <property name="minimumSize">
          <size>
           <width>20</width>
@@ -1338,6 +1338,11 @@ QToolButton {border: none}</string>
    <extends>QStackedWidget</extends>
    <header>surclassed_widgets</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>DraggableGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>surclassed_widgets</header>
   </customwidget>
  </customwidgets>
  <resources>

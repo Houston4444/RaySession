@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
-                             QFrame, QComboBox)
-from PyQt5.QtGui import QFont, QFontDatabase, QFontMetrics, QPalette, QIcon
+                             QFrame, QGraphicsView)
+from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
+                         QIcon, QCursor, QMouseEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
 import time
@@ -304,33 +305,43 @@ class favoriteToolButton(QToolButton):
             self.session.addFavorite(self.template_name, self.template_icon,
                                      self.factory)
 
-
-class BufferSizeComboBox(QComboBox):
-    buffer_change_asked = pyqtSignal(int)
-    
+# taken from carla (falktx)
+class DraggableGraphicsView(QGraphicsView):
     def __init__(self, parent):
-        QComboBox.__init__(self, parent)
-        self.ex_data = 1024
-    
+        QGraphicsView.__init__(self, parent)
+
+        self.fPanning = False
+        self.fCtrlDown = False
+
+        try:
+            self.fMiddleButton = Qt.MiddleButton
+        except:
+            self.fMiddleButton = Qt.MidButton
+
     def mousePressEvent(self, event):
-        print('kslksdkk')
-        QComboBox.mousePressEvent(self, event)
-    
-    def changeEvent(self, event):
-        print('odkldllaaas')
-        self.ex_data = self.currentData()
-        QComboBox.changeEvent(self, event)
-        current_data = self.currentData()
-        if current_data != self.ex_data:
-            self.buffer_change_asked.emit(current_data)
-            self.setEnabled(False)
-            QTimer.singleShot(10000, self.reset_and_enable)
-    
-    def reset_and_enable(self):
-        if not self.isEnabled():
-            self.setEnabled(True)
-            self.setCurrentIndex(self.findData(self.ex_data))
-            
-            
-        
-        
+        if event.button() == self.fMiddleButton and not self.fCtrlDown:
+            self.fPanning = True
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
+            event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton, Qt.LeftButton, event.modifiers())
+
+        QGraphicsView.mousePressEvent(self, event)
+
+    def mouseReleaseEvent(self, event):
+        QGraphicsView.mouseReleaseEvent(self, event)
+
+        if not self.fPanning:
+            return
+
+        self.fPanning = False
+        self.setDragMode(QGraphicsView.NoDrag)
+        self.setCursor(QCursor(Qt.ArrowCursor))
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.fCtrlDown = True
+        QGraphicsView.keyPressEvent(self, event)
+
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.fCtrlDown = False
+        QGraphicsView.keyReleaseEvent(self, event)
