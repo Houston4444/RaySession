@@ -164,10 +164,10 @@ class CanvasBox(QGraphicsItem):
         self.shadow = None
         # FIXME FX on top of graphic items make them lose high-dpi
         # See https://bugreports.qt.io/browse/QTBUG-65035
-        if options.eyecandy and canvas.scene.getDevicePixelRatioF() == 1.0:
-            self.shadow = CanvasBoxShadow(self.toGraphicsObject())
-            self.shadow.setFakeParent(self)
-            self.setGraphicsEffect(self.shadow)
+        #if options.eyecandy and canvas.scene.getDevicePixelRatioF() == 1.0:
+            #self.shadow = CanvasBoxShadow(self.toGraphicsObject())
+            #self.shadow.setFakeParent(self)
+            #self.setGraphicsEffect(self.shadow)
 
         # Final touches
         self.setFlags(QGraphicsItem.ItemIsFocusable
@@ -863,7 +863,8 @@ class CanvasBox(QGraphicsItem):
 
     def paint(self, painter, option, widget):
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
+        painter.setRenderHint(QPainter.Antialiasing,
+                              bool(options.antialiasing == ANTIALIASING_FULL))
         
         # Draw rectangle
         pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)
@@ -879,49 +880,6 @@ class CanvasBox(QGraphicsItem):
             painter.setBrush(hw_gradient)
             painter.setPen(QPen(QColor(30, 30, 30), 1))
             if self.m_splitted:
-                #hardware_poly = QPolygonF()
-                    
-                #if self.m_splitted_mode == PORT_MODE_INPUT:
-                    #hardware_poly += QPointF(- lineHinting, - lineHinting)
-                    #hardware_poly += QPointF(- lineHinting, 34)
-                    #hardware_poly += QPointF(-d /2.0, 34)
-                    #hardware_poly += QPointF(-d, 34 - d / 2.0)
-                    #hardware_poly += QPointF(-d, -d / 2.0)
-                    #hardware_poly += QPointF(-d / 2.0, -d)
-                    #hardware_poly += QPointF(self.p_width + d/2.0, -d)
-                    #hardware_poly += QPointF(self.p_width + d, -d / 2.0)
-                    #hardware_poly += QPointF(self.p_width + d, self.p_height + d/2.0)
-                    #hardware_poly += QPointF(self.p_width + d/2.0, self.p_height + d)
-                    #hardware_poly += QPointF(-d/2.0, self.p_height +d)
-                    #hardware_poly += QPointF(-d, self.p_height +d/2.0)
-                    #hardware_poly += QPointF(-d, self.p_height -3 + d/2.0)
-                    #hardware_poly += QPointF(-d/2.0, self.p_height -3)
-                    #hardware_poly += QPointF(- lineHinting, self.p_height -3)
-                    #hardware_poly += QPointF(- lineHinting, self.p_height + lineHinting)
-                    #hardware_poly += QPointF(self.p_width + lineHinting, self.p_height + lineHinting)
-                    #hardware_poly += QPointF(self.p_width + lineHinting, - lineHinting)
-                #else:
-                    #hardware_poly += QPointF(self.p_width + lineHinting, - lineHinting)
-                    #hardware_poly += QPointF(self.p_width + lineHinting, 34)
-                    #hardware_poly += QPointF(self.p_width + d/2.0, 34)
-                    #hardware_poly += QPointF(self.p_width + d, 34 - d/2.0)
-                    #hardware_poly += QPointF(self.p_width +d, -d / 2.0)
-                    #hardware_poly += QPointF(self.p_width + d/2.0, -d)
-                    #hardware_poly += QPointF(-d / 2.0, -d)
-                    #hardware_poly += QPointF(-d, -d/2.0)
-                    #hardware_poly += QPointF(-d, self.p_height + d/2.0)
-                    #hardware_poly += QPointF(-d/2.0, self.p_height + d)
-                    #hardware_poly += QPointF(self.p_width + d/2.0, self.p_height + d)
-                    #hardware_poly += QPointF(self.p_width + d, self.p_height + d/2.0)
-                    #hardware_poly += QPointF(self.p_width +d, self.p_height -3 + d/2.0)
-                    #hardware_poly += QPointF(self.p_width + d/2, self.p_height -3)
-                    #hardware_poly += QPointF(self.p_width + lineHinting, self.p_height -3)
-                    #hardware_poly += QPointF(self.p_width + lineHinting, self.p_height + lineHinting)
-                    #hardware_poly += QPointF(-lineHinting, self.p_height + lineHinting)
-                    #hardware_poly += QPointF(-lineHinting, -lineHinting)
-                
-                #self._hw_polygons = [hardware_poly]
-                #painter.drawPolygon(hardware_poly)
                 painter.drawPolygon(self._hw_polygon)
             else:
                 hw_poly_top = QPolygonF()

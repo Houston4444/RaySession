@@ -1,6 +1,6 @@
 
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
-from PyQt5.QtWidgets import QMenu, QAction
+from PyQt5.QtWidgets import QMenu, QAction, QLabel
 
 from patchcanvas import patchcanvas
 from gui_server_thread import GUIServerThread
@@ -192,6 +192,10 @@ class Group:
         for port in self.ports:
             port.remove_from_canvas()
         
+        for portgroup in self.portgroups:
+            portgroup.remove_from_canvas()
+        
+        self.portgroups.clear()
         self.ports.clear()
 
     def set_port_alignments(self):
@@ -510,7 +514,8 @@ class PatchbayManager:
         self.session = session
         
         self.tools_widget = PatchbayToolsWidget()
-        self.tools_widget.buffer_size_changed.connect(self.change_buffersize)
+        self.tools_widget.buffer_size_change_order.connect(
+            self.change_buffersize)
 
         self.group_positions = []
         self.groups = []
@@ -648,6 +653,11 @@ class PatchbayManager:
                 _translate('patchbay', "Toggle Full Screen"))
             action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
             action_fullscreen.triggered.connect(self.toggle_full_screen)
+            
+            action_refresh = menu.addAction(
+                _translate('patchbay', "Refresh the canvas"))
+            action_refresh.setIcon(QIcon.fromTheme('view-refresh'))
+            action_refresh.triggered.connect(self.refresh)
 
             menu.exec(QCursor.pos())
 
@@ -661,6 +671,10 @@ class PatchbayManager:
 
     def toggle_full_screen(self):
         self.session._main_win.toggleSceneFullScreen()
+
+    def refresh(self):
+        self.clear_all()
+        self.send_to_patchbay_daemon('/ray/patchbay/refresh')
 
     def get_port_from_name(self, port_name: str):
         for group in self.groups:
@@ -681,14 +695,9 @@ class PatchbayManager:
                 return client.icon
         return ''
     
-    def patchbay_announce(self, jack_running: int, samplerate: int,
-                          buffer_size: int):
-        self.tools_widget.set_samplerate(samplerate)
-        self.tools_widget.set_buffer_size(buffer_size)
-        self.session._main_win.add_patchbay_tools(self.tools_widget)
-    
     def add_port(self, name: str, alias_1: str, alias_2: str,
                  port_type: int, flags: int, metadata: str):
+        print('kdklzoezo', name)
         port = Port(self._next_port_id, name, alias_1, alias_2,
                     port_type, flags, metadata)
         self._next_port_id += 1
@@ -850,12 +859,31 @@ class PatchbayManager:
                          port1: str, port2:str):
         pass
     
-    def server_stopped(self):
+    def clear_all(self):
+        for connection in self.connections:
+            connection.remove_from_canvas()
+        
         for group in self.groups:
             group.remove_all_ports()
             group.remove_from_canvas()
         
+        self.connections.clear()
         self.groups.clear()
+        
+        self._next_group_id = 0
+        self._next_port_id = 0
+        self._next_portgroup_id = 1
+        self._next_connection_id = 0
+    
+    def server_started(self):
+        self.tools_widget.set_jack_running(True)
+    
+    def server_stopped(self):
+        self.tools_widget.set_jack_running(False)
+        self.clear_all()
+       
+        
+        print('-----------------------------------------------------')
         
     def set_dsp_load(self, dsp_load: int):
         self.tools_widget.set_dsp_load(dsp_load)
@@ -864,11 +892,18 @@ class PatchbayManager:
         self.tools_widget.add_xrun()
         
     def change_buffersize(self, buffer_size):
-        print('djlkjdkdjnnnnnn', buffer_size, type(buffer_size))
         self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',
                                      buffer_size)
         
     def buffer_size_changed(self, buffer_size):
         self.tools_widget.set_buffer_size(buffer_size)
-    
         
+    def sample_rate_changed(self, samplerate):
+        self.tools_widget.set_samplerate(samplerate)
+    
+    def patchbay_announce(self, jack_running: int, samplerate: int,
+                          buffer_size: int):
+        self.tools_widget.set_samplerate(samplerate)
+        self.tools_widget.set_buffer_size(buffer_size)
+        self.tools_widget.set_jack_running(jack_running)
+        self.session._main_win.add_patchbay_tools(self.tools_widget)

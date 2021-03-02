@@ -146,6 +146,11 @@ class MainObject:
     def add_gui(self, gui_url: str):
         self.osc_server.add_gui(gui_url)
     
+    def refresh(self):
+        if self.jack_running:
+            self.get_all_ports_and_connections()
+            self.osc_server.server_restarted()
+    
     def remember_dsp_load(self):
         self.max_dsp_since_last_sent = max(
             self.max_dsp_since_last_sent,
@@ -176,12 +181,12 @@ class MainObject:
             else:
                 if n % 10 == 0:
                     self.start_jack_client()
-                    self.osc_server.server_restarted()
             n += 1
     
     def exit(self):
-        jacklib.deactivate(self.jack_client)
-        jacklib.client_close(self.jack_client)
+        if self.jack_running:
+            jacklib.deactivate(self.jack_client)
+            jacklib.client_close(self.jack_client)
         self.remove_existence_file()
         del self.osc_server
     
@@ -195,12 +200,13 @@ class MainObject:
         if self.jack_client:
             self.jack_running = True
             self.set_registrations()
+            self.get_all_ports_and_connections()
             self.osc_server.set_jack_client(self.jack_client)
+            self.samplerate = jacklib.get_sample_rate(self.jack_client)
+            self.buffer_size = jacklib.get_buffer_size(self.jack_client)
+            self.osc_server.server_restarted()
         else:
             self.jack_running = False
-        
-        self.samplerate = jacklib.get_sample_rate(self.jack_client)
-        self.buffer_size = jacklib.get_buffer_size(self.jack_client)
     
     def is_terminate(self)->bool:
         if self.terminate or self.osc_server.is_terminate():
@@ -222,10 +228,16 @@ class MainObject:
             self.jack_client, self.jack_xrun_callback, None)
         jacklib.set_buffer_size_callback(
             self.jack_client, self.jack_buffer_size_callback, None)
+        jacklib.set_sample_rate_callback(
+            self.jack_client, self.jack_sample_rate_callback, None)
         jacklib.on_shutdown(
             self.jack_client, self.jack_shutdown_callback, None)
         jacklib.activate(self.jack_client)
-        
+    
+    def get_all_ports_and_connections(self):
+        self.port_list.clear()
+        self.connection_list.clear()
+
         #get all currents Jack ports and connections
         port_name_list = self.c_char_p_p_to_list(
             jacklib.get_ports(self.jack_client, "", "", 0))
@@ -255,6 +267,11 @@ class MainObject:
 
     def jack_xrun_callback(self, arg=None)->int:
         self.osc_server.send_one_xrun()
+        return 0
+
+    def jack_sample_rate_callback(self, samplerate, arg=None)->int:
+        self.samplerate = samplerate
+        self.osc_server.send_samplerate()
         return 0
 
     def jack_buffer_size_callback(self, buffer_size, arg=None)->int:

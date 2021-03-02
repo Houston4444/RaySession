@@ -441,7 +441,10 @@ class SignaledSession(Session):
     
     def _ray_gui_patchbay_portgroup_info(self, path, args):
         self.patchbay_manager.update_portgroup(*args)
-        
+    
+    def _ray_gui_patchbay_server_started(self, path, args):
+        self.patchbay_manager.server_started(*args)
+    
     def _ray_gui_patchbay_server_stopped(self, path, args):
         self.patchbay_manager.server_stopped(*args)
     
@@ -453,3 +456,6 @@ class SignaledSession(Session):
         
     def _ray_gui_patchbay_buffer_size(self, path, args):
         self.patchbay_manager.buffer_size_changed(*args)
+        
+    def _ray_gui_patchbay_sample_rate(self, path, args):
+        self.patchbay_manager.sample_rate_changed(*args)

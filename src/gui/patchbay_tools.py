@@ -5,16 +5,19 @@ from PyQt5.QtCore import pyqtSignal, QTimer
 import ui.patchbay_tools
 
 class PatchbayToolsWidget(QWidget):
-    buffer_size_changed = pyqtSignal(int)
+    buffer_size_change_order = pyqtSignal(int)
     
     def __init__(self):
         QWidget.__init__(self)
         self.ui = ui.patchbay_tools.Ui_Form()
         self.ui.setupUi(self)
         
+        self._waiting_buffer_change = False
+        self._buffer_change_from_osc = False
+        
         self.ui.pushButtonXruns.clicked.connect(
             self.reset_xruns)
-        self.ui.comboBoxBuffer.currentTextChanged.connect(
+        self.ui.comboBoxBuffer.currentIndexChanged.connect(
             self.change_buffersize)
         
         self.current_buffer_size = 1024
@@ -24,16 +27,24 @@ class PatchbayToolsWidget(QWidget):
         for size in self.buffer_sizes:
             self.ui.comboBoxBuffer.addItem(str(size), size)
         
-        self._waiting_buffer_change = False
-        
         self.xruns_counter = 0
         
     def set_samplerate(self, samplerate: int):
-        k_samplerate = samplerate / 1000.0
-        self.ui.labelSamplerate.setText("%.3f" % k_samplerate)
+        #k_samplerate = samplerate / 1000.0
+        str_sr = str(samplerate)
+        str_samplerate = str_sr[:-3] + ' ' + str_sr[-3:]
+        
+        self.ui.labelSamplerate.setText(str_samplerate)
         
     def set_buffer_size(self, buffer_size: int):
         self._waiting_buffer_change = False
+        self.ui.comboBoxBuffer.setEnabled(True)
+
+        if self.ui.comboBoxBuffer.currentData() == buffer_size:
+            return
+        
+        self._buffer_change_from_osc = True
+        
         index = self.ui.comboBoxBuffer.findData(buffer_size)
         
         # manage exotic buffer sizes
@@ -49,7 +60,6 @@ class PatchbayToolsWidget(QWidget):
                 index, str(buffer_size), buffer_size)
         
         self.ui.comboBoxBuffer.setCurrentIndex(index)
-        self.ui.comboBoxBuffer.setEnabled(True)
         self.current_buffer_size = buffer_size
     
     def update_xruns(self):
@@ -66,17 +76,40 @@ class PatchbayToolsWidget(QWidget):
     def set_dsp_load(self, dsp_load: int):
         self.ui.progressBarDsp.setValue(dsp_load)
     
-    def change_buffersize(self, buffer_string: str):
-        if not buffer_string.isdigit():
+    def change_buffersize(self, index: int):
+        # prevent loop of buffer size change
+        if self._buffer_change_from_osc:
+            # change_buffersize not called by user
+            self._buffer_change_from_osc = False
             return
+        
         self.ui.comboBoxBuffer.setEnabled(False)
         self._waiting_buffer_change = True
-        self.buffer_size_changed.emit(int(buffer_string))
+        self.buffer_size_change_order.emit(
+            self.ui.comboBoxBuffer.currentData())
+        
+        # only in the case no set_buffer_size message come back
         QTimer.singleShot(10000, self.re_enable_buffer_combobox)
         
     def re_enable_buffer_combobox(self):
         if self._waiting_buffer_change:
             self.set_buffer_size(self.current_buffer_size)
-    
+            
+    def set_jack_running(self, yesno: bool):
+        for widget in (
+                self.ui.labelSamplerateTitle,
+                self.ui.labelSamplerate,
+                self.ui.labelSamplerateUnits,
+                self.ui.labelBuffer,
+                self.ui.comboBoxBuffer,
+                self.ui.pushButtonXruns,
+                self.ui.labelDsp,
+                self.ui.progressBarDsp,
+                self.ui.lineSep1,
+                self.ui.lineSep2,
+                self.ui.lineSep3):
+            widget.setVisible(yesno)
+        
+        self.ui.labelJackNotStarted.setVisible(not yesno)
         
         

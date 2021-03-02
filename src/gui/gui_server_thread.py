@@ -56,7 +56,9 @@ class GUIServerThread(liblo.ServerThread):
             ('/ray/gui/session/notes', 's'),
             ('/ray/gui/patchbay/dsp_load', 'i'),
             ('/ray/gui/patchbay/add_xrun', ''),
-            ('/ray/gui/patchbay/buffer_size', 'i')):
+            ('/ray/gui/patchbay/buffer_size', 'i'),
+            ('/ray/gui/patchbay/sample_rate', 'i'),
+            ('/ray/gui/patchbay/server_started', '')):
                 self.add_method(path_types[0], path_types[1],
                                 self.generic_callback)
             

@@ -431,9 +431,9 @@ class MainWindow(QMainWindow):
         #options.theme_name = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
         #options.auto_hide_groups = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
         #options.auto_select_items = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS]
-        #pOptions.use_bezier_lines  = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
-        #pOptions.antialiasing      = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
-        #pOptions.inline_displays   = self.fSavedSettings[CARLA_KEY_CANVAS_INLINE_DISPLAYS]
+        #pOptions.use_bezier_lines = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
+        #pOptions.antialiasing = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
+        #pOptions.inline_displays = self.fSavedSettings[CARLA_KEY_CANVAS_INLINE_DISPLAYS]
 
         #if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY]:
             #pOptions.eyecandy = patchcanvas.EYECANDY_FULL
@@ -443,10 +443,10 @@ class MainWindow(QMainWindow):
             #pOptions.eyecandy = patchcanvas.EYECANDY_NONE
 
         features = patchcanvas.features_t()
-        features.group_info   = False
+        features.group_info = False
         features.group_rename = False
-        features.port_info    = False
-        features.port_rename  = False
+        features.port_info = False
+        features.port_rename = False
         features.handle_group_pos = True
 
         #patchcanvas.setOptions(pOptions)

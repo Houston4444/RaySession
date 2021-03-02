@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
-                             QFrame)
+                             QFrame, QComboBox)
 from PyQt5.QtGui import QFont, QFontDatabase, QFontMetrics, QPalette, QIcon
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
@@ -303,3 +303,34 @@ class favoriteToolButton(QToolButton):
         else:
             self.session.addFavorite(self.template_name, self.template_icon,
                                      self.factory)
+
+
+class BufferSizeComboBox(QComboBox):
+    buffer_change_asked = pyqtSignal(int)
+    
+    def __init__(self, parent):
+        QComboBox.__init__(self, parent)
+        self.ex_data = 1024
+    
+    def mousePressEvent(self, event):
+        print('kslksdkk')
+        QComboBox.mousePressEvent(self, event)
+    
+    def changeEvent(self, event):
+        print('odkldllaaas')
+        self.ex_data = self.currentData()
+        QComboBox.changeEvent(self, event)
+        current_data = self.currentData()
+        if current_data != self.ex_data:
+            self.buffer_change_asked.emit(current_data)
+            self.setEnabled(False)
+            QTimer.singleShot(10000, self.reset_and_enable)
+    
+    def reset_and_enable(self):
+        if not self.isEnabled():
+            self.setEnabled(True)
+            self.setCurrentIndex(self.findData(self.ex_data))
+            
+            
+        
+        

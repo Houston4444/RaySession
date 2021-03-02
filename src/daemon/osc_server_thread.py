@@ -423,10 +423,12 @@ class OscServerThread(ClientCommunicating):
             for line in contents.splitlines():
                 if line.startswith('port:'):
                     port_str = line.rpartition(':')[2]
+                    
+                    print('zeilj', "\"%s\"" % port_str)
                     good_port = False
                     
                     try:
-                        patchbay_addr = Address(int(port_str))
+                        patchbay_addr = liblo.Address(int(port_str))
                         good_port = True
                     except:
                         patchbay_addr = None
@@ -434,6 +436,7 @@ class OscServerThread(ClientCommunicating):
                             'port given for patchbay %s is not a valid osc port')
                     
                     if good_port:
+                        print('kelkgklll')
                         self.send(patchbay_addr, '/ray/patchbay/add_gui',
                                   src_addr.url)
                         return False

@@ -20,6 +20,8 @@ class OscJackPatch(Server):
                         self._ray_patchbay_disconnect)
         self.add_method('/ray/patchbay/set_buffer_size', 'i',
                         self._ray_patchbay_set_buffersize)
+        self.add_method('/ray/patchbay/refresh', '',
+                        self._ray_patchbay_refresh)
         
         self.main_object = main_object
         self.jack_client = main_object.jack_client
@@ -70,9 +72,11 @@ class OscJackPatch(Server):
         jacklib.disconnect(self.jack_client, port_out_name, port_in_name)
 
     def _ray_patchbay_set_buffersize(self, path, args):
-        print('ien reçu buffer_size', args[0])
         buffer_size = args[0]
         self.main_object.set_buffer_size(buffer_size)
+
+    def _ray_patchbay_refresh(self, path, args):
+        self.main_object.refresh()
 
     def sendGui(self, *args):
         for gui_addr in self.gui_list:
@@ -100,6 +104,10 @@ class OscJackPatch(Server):
         self.gui_list.append(gui_addr)
 
     def server_restarted(self):
+        self.sendGui('/ray/gui/patchbay/server_started')
+        self.send_samplerate()
+        self.send_buffersize()
+        
         for port in self.port_list:
             self.sendGui('/ray/gui/patchbay/port_added',
                         port.name, port.alias_1, port.alias_2,
@@ -131,7 +139,6 @@ class OscJackPatch(Server):
     def server_stopped(self):
         # here server is JACK (in future maybe pipewire)
         self.sendGui('/ray/gui/patchbay/server_stopped')
-        #self._terminate = True
     
     def send_dsp_load(self, dsp_load: int):
         self.sendGui('/ray/gui/patchbay/dsp_load', dsp_load)
@@ -142,6 +149,10 @@ class OscJackPatch(Server):
     def send_buffersize(self):
         self.sendGui('/ray/gui/patchbay/buffer_size',
                      self.main_object.buffer_size)
+    
+    def send_samplerate(self):
+        self.sendGui('/ray/gui/patchbay/sample_rate',
+                     self.main_object.samplerate)
     
     def is_terminate(self):
         return self._terminate
