@@ -137,6 +137,7 @@ class MainWindow(QMainWindow):
             self.openFileManager)
         self.ui.actionAddApplication.triggered.connect(self.addApplication)
         self.ui.actionAddExecutable.triggered.connect(self.addExecutable)
+        self.ui.actionShowJackPatchbay.toggled.connect(self.showJackPatchbay)
         self.ui.actionKeepFocus.toggled.connect(self.toggleKeepFocus)
         self.ui.actionBookmarkSessionFolder.triggered.connect(
             self.bookmarkSessionFolderToggled)
@@ -173,6 +174,7 @@ class MainWindow(QMainWindow):
         self.controlMenu = QMenu()
         self.controlMenu.addAction(self.ui.actionShowMenuBar)
         self.controlMenu.addAction(self.ui.actionToggleShowMessages)
+        self.controlMenu.addAction(self.ui.actionShowJackPatchbay)
         self.controlMenu.addSeparator()
         self.controlMenu.addAction(self.ui.actionKeepFocus)
         self.controlMenu.addSeparator()
@@ -268,7 +270,7 @@ class MainWindow(QMainWindow):
 
         self.ui.listWidget.setSession(self._session)
 
-        self.ui.dockWidget.setTitleBarWidget(QWidget())
+        self.ui.dockWidgetSession.setTitleBarWidget(QWidget())
         #self.ui.dockWidget_2.setTitleBarWidget(QWidget())
 
 
@@ -291,7 +293,9 @@ class MainWindow(QMainWindow):
         self.ui.graphicsView.setScene(self.scene)
         
         self.setupCanvas()
-
+        
+        self.canvas_tools_action = None
+        
         self.setNsmLocked(CommandLineArgs.under_nsm)
 
         self.script_info_dialog = None
@@ -310,6 +314,8 @@ class MainWindow(QMainWindow):
         
         self._were_visible_before_fullscreen = 0
         self._geom_before_fullscreen = None
+        
+        self._previous_width = 0
 
     def toggleSceneFullScreen(self):
         visible_maximized = 0x1
@@ -317,7 +323,7 @@ class MainWindow(QMainWindow):
         visible_menubar = 0x4
         
         if self.isFullScreen():
-            self.ui.dockWidget.setVisible(True)
+            self.ui.dockWidgetSession.setVisible(True)
             self.ui.toolBar.setVisible(True)
             if self._were_visible_before_fullscreen & visible_messages:
                 self.ui.dockWidgetMessages.setVisible(True)
@@ -338,14 +344,14 @@ class MainWindow(QMainWindow):
             
             self._geom_before_fullscreen = self.geometry()
             
-            self.ui.dockWidget.setVisible(False)
+            self.ui.dockWidgetSession.setVisible(False)
             self.ui.dockWidgetMessages.setVisible(False)
             self.ui.menuBar.setVisible(False)
             self.ui.toolBar.setVisible(False)
             self.showFullScreen()
 
     def add_patchbay_tools(self, widget):
-        self.ui.toolBar.addWidget(widget)
+        self.canvas_tools_action = self.ui.toolBar.addWidget(widget)
 
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
@@ -785,6 +791,29 @@ class MainWindow(QMainWindow):
 
         self.toDaemon('/ray/session/add_executable', command, int(auto_start),
                       int(via_proxy), prefix_mode, prefix, client_id)
+
+    def showJackPatchbay(self, yesno: bool):
+        self.ui.graphicsView.setVisible(yesno)
+        if self.canvas_tools_action is not None:
+            self.canvas_tools_action.setVisible(yesno)
+        
+        print('zoeij', self.minimumWidth())
+        print('slf;', self._session.patchbay_manager.tools_widget.minimumWidth())
+        
+        rect = self.geometry()
+        x = rect.x()
+        y = rect.y()
+        height = rect.height()
+        
+        if yesno:
+            self.toDaemon('/ray/server/ask_for_patchbay')
+            self.setGeometry(x, y, max(rect.width(), 1024), height)
+        else:
+            self._session.patchbay_manager.disannounce()
+            
+            self.setGeometry(x, y, 460, height)
+            
+            
 
     def stopClient(self, client_id):
         client = self._session.getClient(client_id)

@@ -73,6 +73,12 @@
       </property>
       <item>
        <widget class="DraggableGraphicsView" name="graphicsView">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>20</width>
@@ -201,6 +207,7 @@
     </property>
     <addaction name="actionToggleShowMessages"/>
     <addaction name="actionShowMenuBar"/>
+    <addaction name="actionShowJackPatchbay"/>
     <addaction name="separator"/>
     <addaction name="actionKeepFocus"/>
     <addaction name="separator"/>
@@ -273,9 +280,9 @@
    <addaction name="actionOpenSession"/>
    <addaction name="actionControlMenu"/>
   </widget>
-  <widget class="QDockWidget" name="dockWidget">
+  <widget class="QDockWidget" name="dockWidgetSession">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
@@ -1313,6 +1320,18 @@ QToolButton {border: none}</string>
    </property>
    <property name="toolTip">
     <string>Displays internal manual in a web browser</string>
+   </property>
+  </action>
+  <action name="actionShowJackPatchbay">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="qjackctl">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>Show &amp;JACK patchbay</string>
    </property>
   </action>
  </widget>

@@ -874,6 +874,10 @@ class PatchbayManager:
         self._next_portgroup_id = 1
         self._next_connection_id = 0
     
+    def disannounce(self):
+        self.send_to_patchbay_daemon('/ray/patchbay/gui_disannounce')
+        self.clear_all()
+    
     def server_started(self):
         self.tools_widget.set_jack_running(True)
     

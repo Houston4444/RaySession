@@ -406,21 +406,20 @@ def areOnSameMachine(url1, url2):
         return True
 
     try:
-        if ((socket.gethostbyname(address1.hostname) in ('127.0.0.1', '127.0.1.1')) and (
-                socket.gethostbyname(address2.hostname) in ('127.0.0.1', '127.0.1.1'))):
+        if (socket.gethostbyname(address1.hostname)
+                    in ('127.0.0.1', '127.0.1.1')
+                and socket.gethostbyname(address2.hostname)
+                    in ('127.0.0.1', '127.0.1.1')):
             return True
 
         if socket.gethostbyaddr(
                 address1.hostname) == socket.gethostbyaddr(
                 address2.hostname):
             return True
+
     except BaseException:
         try:
-            ips = subprocess.check_output(['hostname', '-I']).decode()
-            ip = ips.split(' ')[0]
-
-            if ip.count('.') != 3:
-                return False
+            ip = Machine192.get()
 
             if ip not in (address1.hostname, address2.hostname):
                 return False
@@ -447,63 +446,9 @@ def areOnSameMachine(url1, url2):
 
     return False
 
-
-def getUrl192(url):
-    try:
-        ips = subprocess.check_output(['hostname', '-I']).decode()
-        ip = ips.split(' ')[0]
-    except BaseException:
-        return url
-
-    if ip.count('.') != 3:
-        return url
-
-    suffix_port = url.rpartition(':')[2]
-    return "osc.udp://%s:%s" % (ip, suffix_port)
-
-
-def getThis192():
-    global machine192
-
-    if 'machine192' in globals():
-        return machine192
-
-    try:
-        ips = subprocess.check_output(['hostname', '-I']).decode()
-        ip = ips.split(' ')[0]
-        machine192 = ip
-        return ip
-    except BaseException:
-        return ''
-
-def getMachine192(hostname=None):
-    if hostname is None:
-        return getThis192()
-
-    if hostname in ('localhost', socket.gethostname()):
-        return getThis192()
-
-    return socket.gethostbyname(hostname)
-
-def getMachine192ByUrl(url):
-    try:
-        addr = Address(url)
-    except BaseException:
-        return ''
-
-    hostname = addr.hostname
-    del addr
-
-    return getMachine192(hostname)
-
-def getNetUrl(port):
-    try:
-        ips = subprocess.check_output(['hostname', '-I']).decode()
-        ip = ips.split(' ')[0]
-    except BaseException:
-        return ''
-
-    if ip.count('.') != 3:
+def getNetUrl(port)->str:
+    ip = Machine192.get()
+    if not ip:
         return ''
 
     return "osc.udp://%s:%i/" % (ip, port)
@@ -588,6 +533,43 @@ def protocolFromStr(protocol_str: str)->int:
     elif protocol_str.lower() in ('ray_net', 'ray-net'):
         return Protocol.RAY_NET
     return Protocol.NSM
+
+
+class Machine192:
+    ip = ''
+    read_done = False
+    
+    @staticmethod
+    def read()->str:
+        try:
+            ips = subprocess.check_output(
+                ['ip', 'route', 'get', '1']).decode()
+            ip_line = ips.partition('\n')[0]
+            ip_end = ip_line.rpartition('src ')[2]
+            ip = ip_end.partition(' ')[0]
+
+        except BaseException:
+            try:
+                ips = subprocess.check_output(['hostname', '-I']).decode()
+                ip = ips.split(' ')[0]
+            except BaseException:
+                return ''
+
+        if ip.count('.') != 3:
+            return ''
+        
+        return ip
+    
+    @classmethod
+    def get(cls)->str:
+        if cls.read_done:
+            return cls.ip
+        
+        cls.ip = cls.read()
+        cls.read_done = True
+
+        return cls.ip
+
 
 class ClientData:
     client_id = ''

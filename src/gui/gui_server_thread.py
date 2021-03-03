@@ -61,10 +61,7 @@ class GUIServerThread(liblo.ServerThread):
             ('/ray/gui/patchbay/server_started', '')):
                 self.add_method(path_types[0], path_types[1],
                                 self.generic_callback)
-            
-            
-            
-        
+
         self.direct_to_session('/ray/gui/patchbay/port_added', 'sssiis')
 
     def direct_to_session(self, path: str, types: str):
@@ -82,7 +79,7 @@ class GUIServerThread(liblo.ServerThread):
         pass
 
     @ray_method('/minor_error', 'sis')
-    def error(self, path, args, types, src_addr):
+    def _minor_error(self, path, args, types, src_addr):
         pass
 
     @ray_method('/reply', None)
@@ -120,9 +117,6 @@ class GUIServerThread(liblo.ServerThread):
         self._signaler.daemon_announce.emit(
             src_addr, version, server_status,
             options, session_root, is_net_free)
-        
-        if True:
-            self.toDaemon('/ray/server/ask_for_patchbay')
 
     @ray_method('/ray/gui/server/disannounce', '')
     def _server_disannounce(self, path, args, types, src_addr):
@@ -300,7 +294,6 @@ class GUIServerThread(liblo.ServerThread):
     
     @ray_method('/ray/gui/patchbay/announce', 'iii')
     def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
-        print('gorrooo', src_addr.url, args)
         self.patchbay_addr = src_addr
     
     #@ray_method('/ray/gui/patchbay/port_added', 'sssiis')
