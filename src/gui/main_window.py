@@ -270,7 +270,7 @@ class MainWindow(QMainWindow):
 
         self.ui.listWidget.setSession(self._session)
 
-        self.ui.dockWidgetSession.setTitleBarWidget(QWidget())
+        #self.ui.dockWidgetSession.setTitleBarWidget(QWidget())
         #self.ui.dockWidget_2.setTitleBarWidget(QWidget())
 
 
@@ -323,7 +323,7 @@ class MainWindow(QMainWindow):
         visible_menubar = 0x4
         
         if self.isFullScreen():
-            self.ui.dockWidgetSession.setVisible(True)
+            #self.ui.dockWidgetSession.setVisible(True)
             self.ui.toolBar.setVisible(True)
             if self._were_visible_before_fullscreen & visible_messages:
                 self.ui.dockWidgetMessages.setVisible(True)
@@ -344,7 +344,7 @@ class MainWindow(QMainWindow):
             
             self._geom_before_fullscreen = self.geometry()
             
-            self.ui.dockWidgetSession.setVisible(False)
+            #self.ui.dockWidgetSession.setVisible(False)
             self.ui.dockWidgetMessages.setVisible(False)
             self.ui.menuBar.setVisible(False)
             self.ui.toolBar.setVisible(False)
