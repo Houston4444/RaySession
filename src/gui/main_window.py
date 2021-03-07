@@ -61,23 +61,44 @@ class MainWindow(QMainWindow):
         self.timer_snapshot.setInterval(2000)
         self.timer_snapshot.timeout.connect(self.showSnapshotProgressDialog)
 
-
         self.server_copying = False
 
         self.keep_focus = RS.settings.value('keepfocus', True, type=bool)
         self.ui.actionKeepFocus.setChecked(self.keep_focus)
 
+        # do not enable keep focus option under Wayland
+        # because activate a window from it self on Wayland not allowed
         if ray.getWindowManager() == ray.WindowManager.WAYLAND:
-            # do not enable keep focus option under Wayland
-            # because activate a window from it self on Wayland not allowed
             self.keep_focus = False
             self.ui.actionKeepFocus.setEnabled(False)
 
-        if RS.settings.value('MainWindow/geometry'):
+        # manage geometry depending of use of embedded jack patchbay
+        show_patchbay = RS.settings.value(
+            'MainWindow/show_patchbay', False, type=bool)
+        self.ui.actionShowJackPatchbay.setChecked(show_patchbay)
+        self.waiting_for_patchbay = show_patchbay
+
+        if show_patchbay:
+            patchbay_geom = RS.settings.value('MainWindow/patchbay_geometry')
+            if patchbay_geom:
+                self.restoreGeometry(patchbay_geom)
+            splitter_sizes = RS.settings.value(
+                'MainWindow/splitter_canvas_sizes')
+            if splitter_sizes:
+                self.ui.splitterMainVsCanvas.setSizes(
+                    int(s) for s in splitter_sizes)
+                
+        elif RS.settings.value('MainWindow/geometry'):
+            self.ui.graphicsView.setVisible(False)
+            self.ui.splitterMainVsCanvas.setSizes([100, 0])
             self.restoreGeometry(RS.settings.value('MainWindow/geometry'))
+        
         else:
             # first start (or start without config)
             # set window as little as possible
+            self.ui.graphicsView.setVisible(False)
+            self.ui.splitterMainVsCanvas.setSizes([100, 0])
+            
             rect = self.geometry()
             x = rect.x()
             y = rect.y()
@@ -85,12 +106,18 @@ class MainWindow(QMainWindow):
             self.setMinimumWidth(450)
             self.setGeometry(x, y, 460, height)
 
+        splitter_sizes = RS.settings.value("MainWindow/splitter_messages")
+        if splitter_sizes:
+            self.ui.splitterSessionVsMessages.setSizes(
+                [int(s) for s in splitter_sizes])
+
         if RS.settings.value('MainWindow/WindowState'):
             self.restoreState(RS.settings.value('MainWindow/WindowState'))
         self.ui.actionShowMenuBar.activate(RS.settings.value(
             'MainWindow/ShowMenuBar', False, type=bool))
         self.ui.actionToggleShowMessages.triggered.connect(
             self.showMessagesWidget)
+        
         # set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
         self.ui.toolButtonSaveSession.setDefaultAction(
@@ -297,12 +324,11 @@ class MainWindow(QMainWindow):
 
         #self.patchbay_dialog = child_dialogs.PatchbayDialog(self)
         #self.ui.pushButtonPatchbay.clicked.connect(self.patchbay_dialog.show)
+        self.canvas_tools_action = None
         self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
         self.ui.graphicsView.setScene(self.scene)
         
         self.setupCanvas()
-        
-        self.canvas_tools_action = None
         
         self.setNsmLocked(CommandLineArgs.under_nsm)
 
@@ -333,9 +359,6 @@ class MainWindow(QMainWindow):
         if self.isFullScreen():
             #self.ui.dockWidgetSession.setVisible(True)
             self.ui.toolBar.setVisible(True)
-            if self._were_visible_before_fullscreen & visible_messages:
-                #self.ui.dockWidgetMessages.setVisible(True)
-                pass
             if self._were_visible_before_fullscreen & visible_menubar:
                 self.ui.menuBar.setVisible(True)
             
@@ -345,6 +368,8 @@ class MainWindow(QMainWindow):
             else:
                 self.showNormal()
                 self.setGeometry(self._geom_before_fullscreen)
+            
+            self.ui.splitterMainVsCanvas.setSizes([50, 50])
         else:
             self._were_visible_before_fullscreen = \
                 visible_maximized * int(self.isMaximized()) \
@@ -357,6 +382,7 @@ class MainWindow(QMainWindow):
             #self.ui.dockWidgetMessages.setVisible(False)
             self.ui.menuBar.setVisible(False)
             self.ui.toolBar.setVisible(False)
+            self.ui.splitterMainVsCanvas.setSizes([0, 100])
             self.showFullScreen()
 
     def splitterSessionVsMessagesMoved(self, pos: int, index: int):
@@ -371,6 +397,7 @@ class MainWindow(QMainWindow):
         self.ui.splitterSessionVsMessages.setSizes(sizes)
 
     def add_patchbay_tools(self, widget):
+        print('lsdmlfkf')
         self.canvas_tools_action = self.ui.toolBar.addWidget(widget)
 
     def createClientWidget(self, client):
@@ -818,9 +845,6 @@ class MainWindow(QMainWindow):
         if self.canvas_tools_action is not None:
             self.canvas_tools_action.setVisible(yesno)
         
-        print('zoeij', self.minimumWidth())
-        print('slf;', self._session.patchbay_manager.tools_widget.minimumWidth())
-        
         rect = self.geometry()
         x = rect.x()
         y = rect.y()
@@ -835,6 +859,8 @@ class MainWindow(QMainWindow):
         else:
             self._session.patchbay_manager.disannounce()
             
+            if self.isMaximized():
+                self.showNormal()
             self.setGeometry(x, y, 460, height)
             self.ui.splitterMainVsCanvas.setSizes([10, 0])
             
@@ -1266,14 +1292,23 @@ class MainWindow(QMainWindow):
 
     def saveWindowSettings(self):
         if not self.isFullScreen():
-            RS.settings.setValue('MainWindow/geometry', self.saveGeometry())
+            geom_path = 'MainWindow/geometry'
+            if self.ui.actionShowJackPatchbay.isChecked():
+                geom_path = 'MainWindow/patchbay_geometry'
+                RS.settings.setValue(
+                    'MainWindow/splitter_canvas_sizes',
+                    self.ui.splitterMainVsCanvas.sizes())
+                
+            RS.settings.setValue(geom_path, self.saveGeometry())
             RS.settings.setValue('MainWindow/WindowState', self.saveState())
+
         RS.settings.setValue(
             'MainWindow/ShowMenuBar',
             self.ui.menuBar.isVisible())
-        RS.settings.setValue(
-            'MainWindow/ShowMessages',
-            True)
+        RS.settings.setValue("MainWindow/show_patchbay",
+                             self.ui.actionShowJackPatchbay.isChecked())
+        RS.settings.setValue("MainWindow/splitter_messages",
+                             self.ui.splitterSessionVsMessages.sizes())
         RS.settings.sync()
 
     # Reimplemented Functions

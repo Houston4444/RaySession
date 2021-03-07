@@ -139,6 +139,11 @@ class DaemonManager(QObject):
             server = GUIServerThread.instance()
             server.toDaemon('/ray/server/set_nsm_locked')
 
+        if self._session._main_win.waiting_for_patchbay:
+            self._session._main_win.waiting_for_patchbay = False
+            server = GUIServerThread.instance()
+            server.toDaemon('/ray/server/ask_for_patchbay')
+
         self._signaler.daemon_announce_ok.emit()
         self._session.setDaemonOptions(options)
 

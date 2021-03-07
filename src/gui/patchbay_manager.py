@@ -906,4 +906,5 @@ class PatchbayManager:
         self.tools_widget.set_samplerate(samplerate)
         self.tools_widget.set_buffer_size(buffer_size)
         self.tools_widget.set_jack_running(jack_running)
+        print('sldmlksmdlgk', jack_running, samplerate, buffer_size)
         self.session._main_win.add_patchbay_tools(self.tools_widget)
