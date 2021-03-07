@@ -89,7 +89,8 @@ class MainWindow(QMainWindow):
             self.restoreState(RS.settings.value('MainWindow/WindowState'))
         self.ui.actionShowMenuBar.activate(RS.settings.value(
             'MainWindow/ShowMenuBar', False, type=bool))
-
+        self.ui.actionToggleShowMessages.triggered.connect(
+            self.showMessagesWidget)
         # set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
         self.ui.toolButtonSaveSession.setDefaultAction(
@@ -107,8 +108,8 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSnapshots.setDefaultAction(
             self.ui.actionReturnToAPreviousState)
 
-        self.ui.dockWidgetMessages.visibilityChanged.connect(
-            self.resizeWinWithMessages)
+        #self.ui.dockWidgetMessages.visibilityChanged.connect(
+            #self.resizeWinWithMessages)
 
         # connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
@@ -270,6 +271,13 @@ class MainWindow(QMainWindow):
 
         self.ui.listWidget.setSession(self._session)
 
+
+        # prevent to hide the session frame with splitter
+        self.ui.splitterSessionVsMessages.setCollapsible(0, False)
+        self.ui.splitterSessionVsMessages.splitterMoved.connect(
+            self.splitterSessionVsMessagesMoved)
+        
+        
         #self.ui.dockWidgetSession.setTitleBarWidget(QWidget())
         #self.ui.dockWidget_2.setTitleBarWidget(QWidget())
 
@@ -326,7 +334,8 @@ class MainWindow(QMainWindow):
             #self.ui.dockWidgetSession.setVisible(True)
             self.ui.toolBar.setVisible(True)
             if self._were_visible_before_fullscreen & visible_messages:
-                self.ui.dockWidgetMessages.setVisible(True)
+                #self.ui.dockWidgetMessages.setVisible(True)
+                pass
             if self._were_visible_before_fullscreen & visible_menubar:
                 self.ui.menuBar.setVisible(True)
             
@@ -339,16 +348,27 @@ class MainWindow(QMainWindow):
         else:
             self._were_visible_before_fullscreen = \
                 visible_maximized * int(self.isMaximized()) \
-                + visible_messages * int(self.ui.dockWidgetMessages.isVisible()) \
+                + visible_messages * int(True) \
                 + visible_menubar * int(self.ui.menuBar.isVisible())
             
             self._geom_before_fullscreen = self.geometry()
             
             #self.ui.dockWidgetSession.setVisible(False)
-            self.ui.dockWidgetMessages.setVisible(False)
+            #self.ui.dockWidgetMessages.setVisible(False)
             self.ui.menuBar.setVisible(False)
             self.ui.toolBar.setVisible(False)
             self.showFullScreen()
+
+    def splitterSessionVsMessagesMoved(self, pos: int, index: int):
+        self.ui.actionToggleShowMessages.setChecked(
+            bool(pos < self.ui.splitterSessionVsMessages.height() -10))
+
+    def showMessagesWidget(self, yesno: bool):
+        sizes = [10, 0]
+        if yesno:
+            sizes = [30, 10]
+
+        self.ui.splitterSessionVsMessages.setSizes(sizes)
 
     def add_patchbay_tools(self, widget):
         self.canvas_tools_action = self.ui.toolBar.addWidget(widget)
@@ -508,7 +528,8 @@ class MainWindow(QMainWindow):
         patchcanvas.setInitialPos(x, y)
 
     def hideMessagesDock(self):
-        self.ui.dockWidgetMessages.setVisible(False)
+        #self.ui.dockWidgetMessages.setVisible(False)
+        pass
 
     def openFileManager(self):
         self.toDaemon('/ray/session/open_folder')
@@ -577,7 +598,7 @@ class MainWindow(QMainWindow):
         client.updateLabel(label)
 
     def createNewSession(self):
-        self.ui.dockWidgetMessages.setVisible(False)
+        #self.ui.dockWidgetMessages.setVisible(False)
         dialog = child_dialogs.NewSessionDialog(self)
         dialog.exec()
         if not dialog.result():
@@ -805,6 +826,9 @@ class MainWindow(QMainWindow):
         y = rect.y()
         height = rect.height()
         
+        handle = self.ui.splitterMainVsCanvas.handle(1)
+        handle.setEnabled(yesno)
+        
         if yesno:
             self.toDaemon('/ray/server/ask_for_patchbay')
             self.setGeometry(x, y, max(rect.width(), 1024), height)
@@ -812,6 +836,7 @@ class MainWindow(QMainWindow):
             self._session.patchbay_manager.disannounce()
             
             self.setGeometry(x, y, 460, height)
+            self.ui.splitterMainVsCanvas.setSizes([10, 0])
             
             
 
@@ -1248,7 +1273,7 @@ class MainWindow(QMainWindow):
             self.ui.menuBar.isVisible())
         RS.settings.setValue(
             'MainWindow/ShowMessages',
-            self.ui.dockWidgetMessages.isVisible())
+            True)
         RS.settings.sync()
 
     # Reimplemented Functions
