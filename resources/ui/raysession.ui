@@ -58,7 +58,7 @@
      <number>2</number>
     </property>
     <item>
-     <widget class="QSplitter" name="splitterMainVsCanvas">
+     <widget class="CanvasSplitter" name="splitterMainVsCanvas">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
@@ -657,55 +657,55 @@ QToolButton {border: none}</string>
           </widget>
           <widget class="QWidget" name="layoutWidget121">
            <layout class="QVBoxLayout" name="AppListLayout31">
-               <item>
-                    <spacer name="verticalSpacer">
-                     <property name="orientation">
-                      <enum>Qt::Vertical</enum>
-                     </property>
-                     <property name="sizeType">
-                      <enum>QSizePolicy::Fixed</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>20</width>
-                       <height>3</height>
-                      </size>
-                     </property>
-                    </spacer>
-                   </item>
-                   <item>
-          <widget class="QPlainTextEdit" name="textEditMessages">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>30</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>480</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPlainTextEdit { font-size: 12px;border-radius:4px}</string>
-           </property>
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-           <property name="plainText">
-            <string/>
-           </property>
+            <item>
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>3</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPlainTextEdit" name="textEditMessages">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>30</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>480</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QPlainTextEdit { font-size: 12px;border-radius:4px}</string>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+              <property name="plainText">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </widget>
-      </item>
-  </layout>
-</widget>
          </widget>
         </item>
        </layout>
@@ -1336,6 +1336,12 @@ QToolButton {border: none}</string>
    <class>DraggableGraphicsView</class>
    <extends>QGraphicsView</extends>
    <header>surclassed_widgets</header>
+  </customwidget>
+  <customwidget>
+   <class>CanvasSplitter</class>
+   <extends>QSplitter</extends>
+   <header>surclassed_widgets</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

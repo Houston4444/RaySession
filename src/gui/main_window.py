@@ -2,7 +2,7 @@ import time
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView,
-                             QWidget, QWidgetAction, QCheckBox)
+                             QWidget, QWidgetAction, QCheckBox, QSplitterHandle)
 from PyQt5.QtGui import QIcon, QDesktopServices
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
@@ -21,6 +21,8 @@ import ui.raysession
 import ui.patchbay_tools
 
 
+
+
 class MainWindow(QMainWindow):
     @classmethod
     def toDaemon(cls, *args):
@@ -30,7 +32,6 @@ class MainWindow(QMainWindow):
 
     def __init__(self, session):
         QMainWindow.__init__(self)
-        self.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea)
         self.ui = ui.raysession.Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -91,6 +92,7 @@ class MainWindow(QMainWindow):
         elif RS.settings.value('MainWindow/geometry'):
             self.ui.graphicsView.setVisible(False)
             self.ui.splitterMainVsCanvas.setSizes([100, 0])
+            self.ui.splitterMainVsCanvas.set_active(False)
             self.restoreGeometry(RS.settings.value('MainWindow/geometry'))
         
         else:
@@ -98,6 +100,7 @@ class MainWindow(QMainWindow):
             # set window as little as possible
             self.ui.graphicsView.setVisible(False)
             self.ui.splitterMainVsCanvas.setSizes([100, 0])
+            self.ui.splitterMainVsCanvas.set_active(False)
             
             rect = self.geometry()
             x = rect.x()
@@ -134,9 +137,6 @@ class MainWindow(QMainWindow):
             self.ui.actionAddExecutable)
         self.ui.toolButtonSnapshots.setDefaultAction(
             self.ui.actionReturnToAPreviousState)
-
-        #self.ui.dockWidgetMessages.visibilityChanged.connect(
-            #self.resizeWinWithMessages)
 
         # connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
@@ -304,26 +304,6 @@ class MainWindow(QMainWindow):
         self.ui.splitterSessionVsMessages.splitterMoved.connect(
             self.splitterSessionVsMessagesMoved)
         
-        
-        #self.ui.dockWidgetSession.setTitleBarWidget(QWidget())
-        #self.ui.dockWidget_2.setTitleBarWidget(QWidget())
-
-
-        #check_box = QCheckBox("odekdl", self)
-        ##action = QWidgetAction(self)
-        ##action.setDefaultWidget(check_box)
-        #self.ui.toolBar.addSeparator()
-        #self.ui.toolBar.addWidget(check_box)
-        #self.ui.toolBar.addAction(action)
-        #patchbay_tools = QWidget()
-        #patchbay_tools.ui = ui.patchbay_tools.Ui_Form()
-        #patchbay_tools.ui.setupUi(patchbay_tools)
-        ##patchbay_tools = ui.patchbay_tools
-        #self.ui.toolBar.addWidget(patchbay_tools)
-
-
-        #self.patchbay_dialog = child_dialogs.PatchbayDialog(self)
-        #self.ui.pushButtonPatchbay.clicked.connect(self.patchbay_dialog.show)
         self.canvas_tools_action = None
         self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
         self.ui.graphicsView.setScene(self.scene)
@@ -357,7 +337,6 @@ class MainWindow(QMainWindow):
         visible_menubar = 0x4
         
         if self.isFullScreen():
-            #self.ui.dockWidgetSession.setVisible(True)
             self.ui.toolBar.setVisible(True)
             if self._were_visible_before_fullscreen & visible_menubar:
                 self.ui.menuBar.setVisible(True)
@@ -377,9 +356,7 @@ class MainWindow(QMainWindow):
                 + visible_menubar * int(self.ui.menuBar.isVisible())
             
             self._geom_before_fullscreen = self.geometry()
-            
-            #self.ui.dockWidgetSession.setVisible(False)
-            #self.ui.dockWidgetMessages.setVisible(False)
+
             self.ui.menuBar.setVisible(False)
             self.ui.toolBar.setVisible(False)
             self.ui.splitterMainVsCanvas.setSizes([0, 100])
@@ -554,10 +531,6 @@ class MainWindow(QMainWindow):
         y = self.ui.graphicsView.verticalScrollBar().value() + self.height()/4
         patchcanvas.setInitialPos(x, y)
 
-    def hideMessagesDock(self):
-        #self.ui.dockWidgetMessages.setVisible(False)
-        pass
-
     def openFileManager(self):
         self.toDaemon('/ray/session/open_folder')
 
@@ -625,7 +598,6 @@ class MainWindow(QMainWindow):
         client.updateLabel(label)
 
     def createNewSession(self):
-        #self.ui.dockWidgetMessages.setVisible(False)
         dialog = child_dialogs.NewSessionDialog(self)
         dialog.exec()
         if not dialog.result():
@@ -842,6 +814,8 @@ class MainWindow(QMainWindow):
 
     def showJackPatchbay(self, yesno: bool):
         self.ui.graphicsView.setVisible(yesno)
+        self.ui.splitterMainVsCanvas.set_active(yesno)
+        
         if self.canvas_tools_action is not None:
             self.canvas_tools_action.setVisible(yesno)
         
@@ -849,9 +823,6 @@ class MainWindow(QMainWindow):
         x = rect.x()
         y = rect.y()
         height = rect.height()
-        
-        handle = self.ui.splitterMainVsCanvas.handle(1)
-        handle.setEnabled(yesno)
         
         if yesno:
             self.toDaemon('/ray/server/ask_for_patchbay')

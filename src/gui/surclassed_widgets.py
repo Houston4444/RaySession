@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
-                             QFrame, QGraphicsView)
+                             QFrame, QGraphicsView, QSplitter, QSplitterHandle)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QCursor, QMouseEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
@@ -345,3 +345,38 @@ class DraggableGraphicsView(QGraphicsView):
         if event.key() == Qt.Key_Control:
             self.fCtrlDown = False
         QGraphicsView.keyReleaseEvent(self, event)
+
+
+class CanvasSplitterHandle(QSplitterHandle):
+    def __init__(self, parent):
+        QSplitterHandle.__init__(self, Qt.Horizontal, parent)
+        self._default_cursor = self.cursor()
+        self._active = True
+        
+    def set_active(self, yesno: bool):
+        self._active = yesno
+
+        if yesno:
+            self.setCursor(self._default_cursor)
+        else:
+            self.unsetCursor()
+
+    def mouseMoveEvent(self, event):
+        if not self._active:
+            return
+
+        QSplitterHandle.mouseMoveEvent(self, event)
+
+
+class CanvasSplitter(QSplitter):
+    def __init__(self, parent):
+        QSplitter.__init__(self, parent)
+    
+    def set_active(self, yesno: bool):
+        handle = self.handle(1)
+        if handle:
+            handle.set_active(yesno)
+
+    def createHandle(self):
+        return CanvasSplitterHandle(self)
+
