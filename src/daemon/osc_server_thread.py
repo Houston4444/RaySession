@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import time
 import liblo
+
+from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtXml import QDomDocument
 
 import ray
@@ -15,7 +17,7 @@ from daemon_tools import (TemplateRoots, CommandLineArgs, Terminal, RS,
 
 instance = None
 signaler = Signaler.instance()
-
+_translate = QCoreApplication.translate
 
 def pathIsValid(path: str)->bool:
     if path.startswith(('./', '../')):
@@ -1325,6 +1327,9 @@ class OscServerThread(ClientCommunicating):
                 self.send(gui_addr, '/ray/gui/trash/ray_net_update',
                           trashed_client.client_id,
                           *trashed_client.ray_net.spread())
+
+        self.send(gui_addr, '/ray/gui/server/message',
+                  _translate('daemon', "daemon runs at %s") % self.url)
 
         self.gui_list.append(gui_addr)
 

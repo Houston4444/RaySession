@@ -19,6 +19,8 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+import os
+
 from PyQt5.QtCore import qCritical, QRectF, QFile
 from PyQt5.QtGui import QPainter, QPalette, QIcon, QPixmap
 from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
@@ -64,6 +66,17 @@ def getAppIcon(icon_name):
                 icon = QIcon()
                 icon.addFile(filename)
                 break
+            
+    if icon.isNull():
+        for path in ('/usr/local', '/usr', '%s/.local' % os.getenv('HOME')):
+            for ext in ('png', 'svg', 'svgz', 'xpm'):
+                filename = "%s/share/pixmaps/%s.%s" % (path, icon_name, ext)
+                if QFile.exists(filename):
+                    del icon
+                    icon = QIcon()
+                    icon.addFile(filename)
+                    break
+    
     return icon
 
 class CanvasIconPixmap(QGraphicsPixmapItem):

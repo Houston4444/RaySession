@@ -69,10 +69,6 @@ class Session:
             if coreff_counter % 44 == 29:
                 self._main_win.donate(True)
 
-        # The only way I found to not show Messages Dock by default.
-        if not RS.settings.value('MainWindow/ShowMessages', False, type=bool):
-            self._main_win.hideMessagesDock()
-
     def quit(self):
         self._main_win.hide()
         del self._main_win

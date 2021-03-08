@@ -689,10 +689,17 @@ class PatchbayManager:
                     return port
     
     def get_client_icon(self, group_name: str)->str:
+        group_name = group_name.partition('/')[0]
+
         for client in self.session.client_list:
-            if (client.name == group_name
-                    or client.name + '.' + client.client_id == group_name):
+            client_num = ''
+            if client.client_id and client.client_id[-1].isdigit():
+                client_num = '_' + client.client_id.rpartition('_')[2]
+            
+            if (group_name == client.name + client_num
+                    or group_name == client.name + '.' + client.client_id):
                 return client.icon
+                
         return ''
     
     def add_port(self, name: str, alias_1: str, alias_2: str,

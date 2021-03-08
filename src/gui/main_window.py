@@ -88,26 +88,23 @@ class MainWindow(QMainWindow):
             if splitter_sizes:
                 self.ui.splitterMainVsCanvas.setSizes(
                     int(s) for s in splitter_sizes)
-                
-        elif RS.settings.value('MainWindow/geometry'):
-            self.ui.graphicsView.setVisible(False)
-            self.ui.splitterMainVsCanvas.setSizes([100, 0])
-            self.ui.splitterMainVsCanvas.set_active(False)
-            self.restoreGeometry(RS.settings.value('MainWindow/geometry'))
         
         else:
-            # first start (or start without config)
-            # set window as little as possible
             self.ui.graphicsView.setVisible(False)
             self.ui.splitterMainVsCanvas.setSizes([100, 0])
             self.ui.splitterMainVsCanvas.set_active(False)
             
-            rect = self.geometry()
-            x = rect.x()
-            y = rect.y()
-            height = rect.height()
-            self.setMinimumWidth(450)
-            self.setGeometry(x, y, 460, height)
+            geom = RS.settings.value('MainWindow/geometry')
+            
+            if geom:
+                self.restoreGeometry(geom)
+            else:
+                rect = self.geometry()
+                x = rect.x()
+                y = rect.y()
+                height = rect.height()
+                self.setMinimumWidth(450)
+                self.setGeometry(x, y, 460, height)
 
         splitter_sizes = RS.settings.value("MainWindow/splitter_messages")
         if splitter_sizes:
@@ -120,6 +117,9 @@ class MainWindow(QMainWindow):
             'MainWindow/ShowMenuBar', False, type=bool))
         self.ui.actionToggleShowMessages.triggered.connect(
             self.showMessagesWidget)
+        
+        self.ui.actionToggleShowMessages.setChecked(
+            bool(self.ui.splitterSessionVsMessages.sizes()[1] > 0))
         
         # set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
@@ -813,8 +813,7 @@ class MainWindow(QMainWindow):
                       int(via_proxy), prefix_mode, prefix, client_id)
 
     def showJackPatchbay(self, yesno: bool):
-        self.ui.graphicsView.setVisible(yesno)
-        self.ui.splitterMainVsCanvas.set_active(yesno)
+        self.saveWindowSettings(not yesno)
         
         if self.canvas_tools_action is not None:
             self.canvas_tools_action.setVisible(yesno)
@@ -826,16 +825,32 @@ class MainWindow(QMainWindow):
         
         if yesno:
             self.toDaemon('/ray/server/ask_for_patchbay')
-            self.setGeometry(x, y, max(rect.width(), 1024), height)
+            
+            patchbay_geom = RS.settings.value('MainWindow/patchbay_geometry')
+            sizes = RS.settings.value('MainWindow/splitter_canvas_sizes')
+            
+            if patchbay_geom:
+                self.restoreGeometry(patchbay_geom)
+            else:
+                self.setGeometry(x, y, max(rect.width(), 1024), height)
+            
+            if sizes:
+                self.ui.splitterMainVsCanvas.setSizes([int(s) for s in sizes])
         else:
             self._session.patchbay_manager.disannounce()
             
             if self.isMaximized():
                 self.showNormal()
-            self.setGeometry(x, y, 460, height)
+            
+            geom = RS.settings.value('MainWindow/geometry')
+            if geom:
+                self.restoreGeometry(geom)
+            else:
+                self.setGeometry(x, y, 460, height)
             self.ui.splitterMainVsCanvas.setSizes([10, 0])
             
-            
+        self.ui.graphicsView.setVisible(yesno)
+        self.ui.splitterMainVsCanvas.set_active(yesno)    
 
     def stopClient(self, client_id):
         client = self._session.getClient(client_id)
@@ -1261,17 +1276,19 @@ class MainWindow(QMainWindow):
                 'errors', "ray-daemon crashed, sorry !"))
         QApplication.quit()
 
-    def saveWindowSettings(self):
-        if not self.isFullScreen():
-            geom_path = 'MainWindow/geometry'
-            if self.ui.actionShowJackPatchbay.isChecked():
-                geom_path = 'MainWindow/patchbay_geometry'
-                RS.settings.setValue(
-                    'MainWindow/splitter_canvas_sizes',
-                    self.ui.splitterMainVsCanvas.sizes())
-                
-            RS.settings.setValue(geom_path, self.saveGeometry())
-            RS.settings.setValue('MainWindow/WindowState', self.saveState())
+    def saveWindowSettings(self, with_patchbay: bool):
+        if self.isFullScreen():
+            return
+        
+        geom_path = 'MainWindow/geometry'
+        if with_patchbay:
+            geom_path = 'MainWindow/patchbay_geometry'
+            RS.settings.setValue(
+                'MainWindow/splitter_canvas_sizes',
+                self.ui.splitterMainVsCanvas.sizes())
+            
+        RS.settings.setValue(geom_path, self.saveGeometry())
+        RS.settings.setValue('MainWindow/WindowState', self.saveState())
 
         RS.settings.setValue(
             'MainWindow/ShowMenuBar',
@@ -1285,7 +1302,7 @@ class MainWindow(QMainWindow):
     # Reimplemented Functions
 
     def closeEvent(self, event):
-        self.saveWindowSettings()
+        self.saveWindowSettings(self.ui.actionShowJackPatchbay.isChecked())
 
         if self.quitApp():
             QMainWindow.closeEvent(self, event)
