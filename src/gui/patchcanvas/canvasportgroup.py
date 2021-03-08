@@ -382,7 +382,11 @@ class CanvasPortGroup(QGraphicsItem):
                 and item.getPortType() == self.m_port_type):
             item.setSelected(True)
             
-            if item.type() == CanvasPortType:
+            if item == self.m_hover_item:
+                # prevent unneeded operations
+                pass
+            
+            elif item.type() == CanvasPortType:
                 self.m_hover_item = item
                 self.resetDotLines()
                 self.resetLineMovPositions()

@@ -1252,7 +1252,6 @@ class OscServerThread(ClientCommunicating):
     def informCopytoGui(self, copy_state):
         self.sendGui('/ray/gui/server/copying', int(copy_state))
 
-
     def sendRenameable(self, renameable):
         if not renameable:
             self.sendGui('/ray/gui/session/renameable', 0)
@@ -1306,9 +1305,6 @@ class OscServerThread(ClientCommunicating):
                       client.client_id, client.status)
 
             if client.isCapableOf(':optional-gui:'):
-                #self.send(gui_addr, '/ray/gui/client/has_optional_gui',
-                          #client.client_id)
-
                 self.send(gui_addr, '/ray/gui/client/gui_visible',
                           client.client_id, int(client.gui_visible))
 
@@ -1351,7 +1347,7 @@ class OscServerThread(ClientCommunicating):
         for controller in self.controller_list:
             self.send(controller.addr, '/ray/control/message', message)
 
-    def getControllerPid(self, addr):
+    def getControllerPid(self, addr)->int:
         for controller in self.controller_list:
             if controller.addr == addr:
                 return controller.pid
@@ -1383,7 +1379,7 @@ class OscServerThread(ClientCommunicating):
                 pid_list.append(str(gui_addr.gui_pid))
         return ':'.join(pid_list)
 
-    def isGuiAddress(self, addr):
+    def isGuiAddress(self, addr)->bool:
         for gui_addr in self.gui_list:
             if ray.areSameOscPort(gui_addr.url, addr.url):
                 return True
