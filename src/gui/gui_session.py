@@ -70,6 +70,7 @@ class Session:
                 self._main_win.donate(True)
 
     def quit(self):
+        self.patchbay_manager.clear_all()
         self._main_win.hide()
         del self._main_win
 

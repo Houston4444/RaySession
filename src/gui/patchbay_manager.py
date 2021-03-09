@@ -6,6 +6,8 @@ from patchcanvas import patchcanvas
 from gui_server_thread import GUIServerThread
 from patchbay_tools import PatchbayToolsWidget
 
+import canvas_options
+
 # Port Type
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
@@ -152,6 +154,7 @@ class Group:
         self.portgroups = []
         self._is_hardware = False
         self.client_icon = ''
+        self.a2j_group = False
 
     def update_ports_in_canvas(self):
         for port in self.ports:
@@ -165,7 +168,7 @@ class Group:
         
         if self._is_hardware:
             icon_type = patchcanvas.ICON_HARDWARE
-            if self.name == "a2j":
+            if self.a2j_group:
                 icon_name = "a2j"
         if self.client_icon:
             icon_type = patchcanvas.ICON_CLIENT
@@ -517,6 +520,14 @@ class PatchbayManager:
         self.tools_widget.buffer_size_change_order.connect(
             self.change_buffersize)
 
+        self.options_dialog = canvas_options.CanvasOptionsDialog(None)
+        self.options_dialog.gracious_names_checked.connect(
+            self.set_graceful_names)
+        self.options_dialog.a2j_grouped_checked.connect(
+            self.set_a2j_grouped)
+        self.options_dialog.group_shadows_checked.connect(
+            self.set_group_shadows)
+
         self.group_positions = []
         self.groups = []
         self.connections = []
@@ -526,6 +537,8 @@ class PatchbayManager:
         self._next_connection_id = 0
         
         self.use_alias = USE_ALIAS_NONE
+        
+        self.split_a2j_hw = False
         
     @classmethod
     def set_use_graceful_names(cls, yesno: bool):
@@ -572,7 +585,7 @@ class PatchbayManager:
             for group in self.groups:
                 if group.group_id == group_id:
                     self.send_to_daemon(
-                        '/ray/server/patchbay/save_coordinates',
+                        '/ray/server/patchbay/save_group_position',
                         in_or_out, group.name, int(str_x), int(str_y))
                     break
         
@@ -643,11 +656,6 @@ class PatchbayManager:
 
         elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
             menu = QMenu()
-            action_graceful = menu.addAction(
-                _translate('patchbay', "Use graceful names"))
-            action_graceful.setCheckable(True)
-            action_graceful.setChecked(self.use_graceful_names)
-            action_graceful.triggered.connect(self.toggle_graceful_names)
             
             action_fullscreen = menu.addAction(
                 _translate('patchbay', "Toggle Full Screen"))
@@ -659,10 +667,31 @@ class PatchbayManager:
             action_refresh.setIcon(QIcon.fromTheme('view-refresh'))
             action_refresh.triggered.connect(self.refresh)
 
+            action_options = menu.addAction(
+                _translate('patchbay', "Canvas options"))
+            action_options.setIcon(QIcon.fromTheme("configure"))
+            action_options.triggered.connect(self.options_dialog.show)
+
             menu.exec(QCursor.pos())
 
         elif action == patchcanvas.ACTION_DOUBLE_CLICK:
             self.toggle_full_screen()
+
+    def set_graceful_names(self, yesno: int):
+        if self.use_graceful_names != yesno:
+            self.toggle_graceful_names()
+            
+    def set_a2j_grouped(self, yesno: int):
+        if self.split_a2j_hw == bool(yesno):
+            self.split_a2j_hw = not bool(yesno)
+            self.refresh()
+            
+    def set_group_shadows(self, yesno: int):
+        if yesno:
+            patchcanvas.options.eyecandy = patchcanvas.EYECANDY_SMALL
+        else:
+            patchcanvas.options.eyecandy = patchcanvas.EYECANDY_NONE
+        self.refresh()
 
     def toggle_graceful_names(self):
         PatchbayManager.set_use_graceful_names(not self.use_graceful_names)
@@ -716,10 +745,15 @@ class PatchbayManager:
         
         group_name, colon, port_name = full_port_name.partition(':')
         
+        a2j_group = False
+        
         if (full_port_name.startswith('a2j:')
-                and not port.flags & PORT_IS_PHYSICAL):
+                and (self.split_a2j_hw
+                     or not port.flags & PORT_IS_PHYSICAL)):
             group_name, colon, port_name = port_name.partition(':')
             group_name = group_name.rpartition(' [')[0]
+            if port.flags & PORT_IS_PHYSICAL:
+                a2j_group = True
         
         group_is_new = False
 
@@ -729,6 +763,7 @@ class PatchbayManager:
         else:
             # port is an non existing group, create the group
             group = Group(self._next_group_id, group_name)
+            group.a2j_group = a2j_group
             client_icon = self.get_client_icon(group_name)
             group.set_client_icon(client_icon)
             
@@ -746,6 +781,10 @@ class PatchbayManager:
                 if gp['group'] == group.name:
                     patchcanvas.moveGroupBox(
                         group.group_id, gp['in_or_out'], gp['x'], gp['y'])
+                    
+                    self.send_to_daemon(
+                        '/ray/server/patchbay/save_group_position',
+                        gp['in_or_out'], group.name, gp['x'], gp['y'])
                 
         port.add_to_canvas()
         
@@ -850,9 +889,13 @@ class PatchbayManager:
     
     def update_group_position(self, in_or_out: int, group_name: str,
                               x: int, y: int):
-        for group in self.groups:
-            if group.name == group_name:
-                patchcanvas.moveGroupBox(group.group_id, in_or_out, x, y)
+        #print('recv gp pos', in_or_out, group_name, x, y) 
+        for group_position in self.group_positions:
+            if (group_position['in_or_out'] == in_or_out
+                    and group_position['group'] == group_name):
+                group_position['x'] = x
+                group_position['y'] = y
+                print('gppposs update')
                 break
         else:
             self.group_positions.append(
@@ -860,6 +903,12 @@ class PatchbayManager:
                  'group': group_name,
                  'x': x,
                  'y': y})
+        
+        for group in self.groups:
+            if group.name == group_name:
+                print('gppposs on the canvas')
+                patchcanvas.moveGroupBox(group.group_id, in_or_out, x, y)
+                break
 
     def update_portgroup(self, group_name: str, port_mode: int,
                          port1: str, port2:str):
@@ -913,5 +962,4 @@ class PatchbayManager:
         self.tools_widget.set_samplerate(samplerate)
         self.tools_widget.set_buffer_size(buffer_size)
         self.tools_widget.set_jack_running(jack_running)
-        print('sldmlksmdlgk', jack_running, samplerate, buffer_size)
         self.session._main_win.add_patchbay_tools(self.tools_widget)

@@ -248,7 +248,7 @@ class DaemonManager(QObject):
 
         server = GUIServerThread.instance()
         server.toDaemon('/ray/server/quit')
-        QTimer.singleShot(10, QApplication.quit)
+        QTimer.singleShot(50, QApplication.quit)
 
     def notEndedAfterWait(self):
         sys.stderr.write('ray-daemon is still running, sorry !\n')

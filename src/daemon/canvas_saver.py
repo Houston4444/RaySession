@@ -145,10 +145,15 @@ class CanvasSaver(ServerSender):
             group = el.attribute('group')
             x_str = el.attribute('x')
             y_str = el.attribute('y')
+            print('skfj', in_or_out_str, group, x_str, y_str)
+            print('skdjfx', type(in_or_out_str), type(x_str), type(y_str))
             
             # verify that values are digits
             int_ok = True
             for digit_str in (in_or_out_str, x_str, y_str):
+                if digit_str.startswith('-'):
+                    digit_str = digit_str.replace('-', '', 1)
+
                 if not digit_str.isdigit():
                     int_ok = False
                     break

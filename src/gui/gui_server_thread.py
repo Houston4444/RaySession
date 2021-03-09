@@ -17,6 +17,9 @@ def ray_method(path, types):
                 sys.stderr.write(
                     '\033[93mOSC::gui_receives\033[0m %s, %s, %s, %s\n'
                     % (t_path, t_types, t_args, src_addr.url))
+            
+            if t_thread.stopping:
+                return
 
             response = func(*args[:-1], **kwargs)
 
@@ -36,10 +39,17 @@ class GUIServerThread(liblo.ServerThread):
         _instance = self
         
         self.patchbay_addr = None
+        
+        # Try to prevent impossibility to stop server
+        # while receiving messages
+        self.stopping = False
 
     def stop(self):
+        self.stopping = True
+
         if self.patchbay_addr:
             self.send(self.patchbay_addr, '/ray/patchbay/gui_disannounce')
+
         liblo.ServerThread.stop(self)
 
     def finishInit(self, session):
@@ -72,6 +82,9 @@ class GUIServerThread(liblo.ServerThread):
         return _instance
 
     def generic_callback(self, path, args, types, src_addr):
+        if self.stopping:
+            return
+
         self._signaler.osc_receive.emit(path, args)
 
     @ray_method('/error', 'sis')

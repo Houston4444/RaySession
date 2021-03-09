@@ -183,7 +183,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         #elif port_type2 == PORT_TYPE_PARAMETER:
             #port_gradient.setColorAt(pos2, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
             
-        base_color = canvas.theme.port_audio_jack_bg
+        base_color = canvas.theme.line_audio_jack
         if self.m_lineSelected:
             base_color = canvas.theme.port_audio_jack_bg_sel
         

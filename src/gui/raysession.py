@@ -84,7 +84,7 @@ if __name__ == '__main__':
     app.exec()
 
     # TODO find something better, sometimes program never ends without.
-    time.sleep(0.002)
+    #time.sleep(0.002)
 
     server.stop()
     session.quit()

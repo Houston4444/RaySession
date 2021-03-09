@@ -165,10 +165,10 @@ class CanvasBox(QGraphicsItem):
         self.shadow = None
         # FIXME FX on top of graphic items make them lose high-dpi
         # See https://bugreports.qt.io/browse/QTBUG-65035
-        #if options.eyecandy and canvas.scene.getDevicePixelRatioF() == 1.0:
-            #self.shadow = CanvasBoxShadow(self.toGraphicsObject())
-            #self.shadow.setFakeParent(self)
-            #self.setGraphicsEffect(self.shadow)
+        if options.eyecandy and canvas.scene.getDevicePixelRatioF() == 1.0:
+            self.shadow = CanvasBoxShadow(self.toGraphicsObject())
+            self.shadow.setFakeParent(self)
+            self.setGraphicsEffect(self.shadow)
 
         # Final touches
         self.setFlags(QGraphicsItem.ItemIsFocusable

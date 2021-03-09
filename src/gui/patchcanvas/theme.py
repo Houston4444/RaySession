@@ -72,7 +72,7 @@ class Theme(object):
 
             # Ports
             #self.port_text = QPen(QColor(250, 250, 250), 0)
-            self.port_text = QPen(QColor(61, 51, 0))
+            self.port_text = QPen(QColor(30, 30, 30))
             self.port_text_ypos = 12
             self.port_bg_pixmap = None
             #self.port_bg_pixmap = QPixmap(":/canvas/dirty-metal-texture.jpg")
@@ -90,7 +90,7 @@ class Theme(object):
             self.port_parameter_pen = QPen(QColor(137, 76, 43), 1)
             self.port_parameter_pen_sel = QPen(QColor(137 + 30, 76 + 30, 43 + 30), 1)
 
-            self.port_audio_jack_bg = QColor(180, 180, 180)
+            self.port_audio_jack_bg = QColor(165, 165, 165)
             self.port_audio_jack_bg_sel = QColor(198, 161, 80)
             self.port_midi_jack_bg = QColor(77, 42, 16)
             self.port_midi_jack_bg_sel = QColor(160, 86, 33)
@@ -101,7 +101,7 @@ class Theme(object):
             
             self.portgrp_audio_jack_pen = QPen(QColor(143, 119, 0), 1.4)
             self.portgrp_audio_jack_pen_sel = self.portgrp_audio_jack_pen
-            self.portgrp_audio_jack_bg = QColor(207, 207, 207)
+            self.portgrp_audio_jack_bg = QColor(185, 185, 185)
             self.portgrp_audio_jack_bg_sel = QColor(209, 170, 86)
 
             self.port_audio_jack_text = self.port_text
@@ -120,7 +120,7 @@ class Theme(object):
             self.port_spacingT = 2
 
             # Lines
-            self.line_audio_jack = QColor(180, 180, 180)
+            self.line_audio_jack = QColor(100, 100, 100)
             self.line_audio_jack_sel = QColor(198, 161, 80)
             self.line_audio_jack_glow = QColor(100, 100, 200)
             self.line_midi_jack = QColor(77, 42, 16)

@@ -72,6 +72,15 @@ class MainWindow(QMainWindow):
         if ray.getWindowManager() == ray.WindowManager.WAYLAND:
             self.keep_focus = False
             self.ui.actionKeepFocus.setEnabled(False)
+        
+        self.long_appli_name = self.ui.actionAddApplication.text()
+        self.long_exec_name = self.ui.actionAddExecutable.text()
+        self.short_appli_name = _translate('main_win', 'App')
+        self.short_exec_name = _translate('main_win', 'exec')
+        self.ui.frameCurrentSession.shorterSize.connect(
+            self.set_short_app_exec_names)
+        
+        #print('amzle', self.ui.frameCurrentSession.width())
 
         # manage geometry depending of use of embedded jack patchbay
         show_patchbay = RS.settings.value(
@@ -83,11 +92,17 @@ class MainWindow(QMainWindow):
             patchbay_geom = RS.settings.value('MainWindow/patchbay_geometry')
             if patchbay_geom:
                 self.restoreGeometry(patchbay_geom)
+                
+            self.ui.graphicsView.setVisible(True)
+            
             splitter_sizes = RS.settings.value(
                 'MainWindow/splitter_canvas_sizes')
             if splitter_sizes:
                 self.ui.splitterMainVsCanvas.setSizes(
                     int(s) for s in splitter_sizes)
+            
+            #self.ui.actionAddApplication.setText(self.short_appli_name)
+            #self.ui.actionAddExecutable.setText(self.short_exec_name)
         
         else:
             self.ui.graphicsView.setVisible(False)
@@ -138,6 +153,10 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSnapshots.setDefaultAction(
             self.ui.actionReturnToAPreviousState)
 
+        self.ui.frameCurrentSession.setBaseWidth(
+            205 + self.ui.toolButtonAddApplication.minimumSizeHint().width()
+            + self.ui.toolButtonAddExecutable.minimumSizeHint().width())
+        
         # connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
         self.ui.actionOpenSession.triggered.connect(self.openSession)
@@ -298,7 +317,6 @@ class MainWindow(QMainWindow):
 
         self.ui.listWidget.setSession(self._session)
 
-
         # prevent to hide the session frame with splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
         self.ui.splitterSessionVsMessages.splitterMoved.connect(
@@ -330,6 +348,10 @@ class MainWindow(QMainWindow):
         self._geom_before_fullscreen = None
         
         self._previous_width = 0
+        
+        print('amale', self.ui.frameCurrentSession.width())
+        print('zmlel', self.ui.frameCurrentSession.minimumSizeHint().width())
+        print('fldks', self.width())
 
     def toggleSceneFullScreen(self):
         visible_maximized = 0x1
@@ -366,6 +388,14 @@ class MainWindow(QMainWindow):
         self.ui.actionToggleShowMessages.setChecked(
             bool(pos < self.ui.splitterSessionVsMessages.height() -10))
 
+    def set_short_app_exec_names(self, yesno: bool):
+        if yesno:
+            self.ui.actionAddApplication.setText(self.short_appli_name)
+            self.ui.actionAddExecutable.setText(self.short_exec_name)
+        else:
+            self.ui.actionAddApplication.setText(self.long_appli_name)
+            self.ui.actionAddExecutable.setText(self.long_exec_name)
+            
     def showMessagesWidget(self, yesno: bool):
         sizes = [10, 0]
         if yesno:
@@ -826,6 +856,9 @@ class MainWindow(QMainWindow):
         if yesno:
             self.toDaemon('/ray/server/ask_for_patchbay')
             
+            #self.ui.actionAddApplication.setText(self.short_appli_name)
+            #self.ui.actionAddExecutable.setText(self.short_exec_name)
+            
             patchbay_geom = RS.settings.value('MainWindow/patchbay_geometry')
             sizes = RS.settings.value('MainWindow/splitter_canvas_sizes')
             
@@ -836,8 +869,13 @@ class MainWindow(QMainWindow):
             
             if sizes:
                 self.ui.splitterMainVsCanvas.setSizes([int(s) for s in sizes])
+                
+            
         else:
             self._session.patchbay_manager.disannounce()
+            
+            #self.ui.actionAddApplication.setText(self.long_appli_name)
+            #self.ui.actionAddExecutable.setText(self.long_exec_name)
             
             if self.isMaximized():
                 self.showNormal()

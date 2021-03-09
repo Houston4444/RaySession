@@ -88,8 +88,28 @@ class CustomLineEdit(QLineEdit):
 
 
 class SessionFrame(QFrame):
+    shorterSize = pyqtSignal(bool)
+    
     def __init__(self, parent):
         QFrame.__init__(self)
+
+        self._base_width = 419
+        self._names_are_short = False
+    
+    def setBaseWidth(self, base_width):
+        self._base_width = base_width
+    
+    def resizeEvent(self, event):
+        QFrame.resizeEvent(self, event)
+
+        if self._names_are_short:
+            if self.width() > self._base_width:
+                self.shorterSize.emit(False)
+                self._names_are_short = False
+        else:
+            if self.width() < self._base_width:
+                self.shorterSize.emit(True)
+                self._names_are_short = True
 
 
 class StackedSessionName(QStackedWidget):
