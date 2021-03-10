@@ -1,5 +1,6 @@
 
 from PyQt5.QtWidgets import QDialog
+from PyQt5.QtCore import Qt
 
 
 from gui_tools import RS
@@ -9,7 +10,7 @@ import ui.canvas_options
 
 class CanvasOptionsDialog(QDialog):
     def __init__(self, parent):
-        QDialog.__init__(self, parent)
+        QDialog.__init__(self, parent, Qt.Tool)
         self.ui = ui.canvas_options.Ui_Dialog()
         self.ui.setupUi(self)
         

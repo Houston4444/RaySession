@@ -23,8 +23,11 @@ from math import floor
 import time
 
 from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer, QSizeF
-from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF, QLinearGradient, QColor, QRadialGradient
-from PyQt5.QtWidgets import QGraphicsItem, QMenu, QCheckBox, QWidgetAction
+from PyQt5.QtGui import (
+    QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF,
+    QLinearGradient, QColor, QRadialGradient)
+from PyQt5.QtWidgets import (
+    QGraphicsItem, QMenu, QCheckBox, QWidgetAction, QGraphicsEllipseItem)
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -631,8 +634,8 @@ class CanvasPort(QGraphicsItem):
         poly_pen = QPen(poly_pen)
         poly_pen.setWidthF(poly_pen.widthF() + 0.00001)
 
-        if self.m_is_alternate:
-            poly_color = poly_color.darker(180)
+        #if self.m_is_alternate:
+            #poly_color = poly_color.darker(180)
             #poly_pen.setColor(poly_pen.color().darker(110))
             #text_pen.setColor(text_pen.color()) #.darker(150))
             #conn_pen.setColor(conn_pen.color()) #.darker(150))
@@ -644,17 +647,20 @@ class CanvasPort(QGraphicsItem):
         if poly_corner_xhinting == 0:
             poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
 
+        is_cv_port = bool(self.m_port_type == PORT_TYPE_AUDIO_JACK
+                          and self.m_is_alternate) 
+
         if self.m_port_mode == PORT_MODE_INPUT:
             text_pos = QPointF(3, canvas.theme.port_text_ypos)
 
-            if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
+            if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON and not is_cv_port:
                 poly_locx[0] = lineHinting
                 poly_locx[1] = self.m_port_width + 5 - lineHinting
                 poly_locx[2] = self.m_port_width + 12 - poly_corner_xhinting
                 poly_locx[3] = self.m_port_width + 5 - lineHinting
                 poly_locx[4] = lineHinting
                 poly_locx[5] = canvas.theme.port_in_portgrp_width
-            elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
+            elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE or is_cv_port:
                 poly_locx[0] = lineHinting
                 poly_locx[1] = self.m_port_width + 5 - lineHinting
                 poly_locx[2] = self.m_port_width + 5 - lineHinting
@@ -668,14 +674,14 @@ class CanvasPort(QGraphicsItem):
         elif self.m_port_mode == PORT_MODE_OUTPUT:
             text_pos = QPointF(9, canvas.theme.port_text_ypos)
 
-            if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
+            if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON and not is_cv_port:
                 poly_locx[0] = self.m_port_width + 12 - lineHinting
                 poly_locx[1] = 7 + lineHinting
                 poly_locx[2] = 0 + poly_corner_xhinting
                 poly_locx[3] = 7 + lineHinting
                 poly_locx[4] = self.m_port_width + 12 - lineHinting
                 poly_locx[5] = self.m_port_width + 12 - canvas.theme.port_in_portgrp_width - lineHinting
-            elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
+            elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE or is_cv_port:
                 poly_locx[0] = self.m_port_width + 12 - lineHinting
                 poly_locx[1] = 5 + lineHinting
                 poly_locx[2] = 5 + lineHinting
@@ -690,8 +696,11 @@ class CanvasPort(QGraphicsItem):
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port mode '%s'" % port_mode2str(self.m_port_mode))
             return
 
-        if self.m_is_alternate:
-            poly_color = poly_color.darker(180)
+        if is_cv_port and not selected:
+            poly_color = QColor(170, 140, 150)
+            
+        #if self.m_is_alternate:
+            #poly_color = poly_color.lighter(230)
             #poly_pen.setColor(poly_pen.color().darker(110))
             #text_pen.setColor(text_pen.color()) #.darker(150))
             #conn_pen.setColor(conn_pen.color()) #.darker(150))
@@ -754,10 +763,33 @@ class CanvasPort(QGraphicsItem):
 
         painter.setPen(poly_pen)
         painter.drawPolygon(polygon)
-
+        
+        if self.m_is_alternate and not self.m_portgrp_id:
+            if is_cv_port:
+                poly_pen.setWidthF(2.000001)
+                painter.setPen(poly_pen)
+                
+                y_line = canvas.theme.port_height / 2.0
+                if self.m_port_mode == PORT_MODE_OUTPUT:
+                    painter.drawLine(0, y_line, poly_locx[1], y_line)
+                elif self.m_port_mode == PORT_MODE_INPUT:
+                    painter.drawLine(self.m_port_width + 5, y_line, self.m_port_width + 12, y_line)
+            else:
+                poly_pen.setWidthF(1.000001)
+                painter.setBrush(canvas.theme.box_bg_1)
+                
+                ellipse_x = poly_locx[1]
+                if self.m_port_mode == PORT_MODE_OUTPUT:
+                    ellipse_x -= 2
+                elif self.m_port_mode == PORT_MODE_INPUT:
+                    ellipse_x += 2
+                
+                painter.drawEllipse(
+                    QPointF(ellipse_x, canvas.theme.port_height / 2.0), 2, 2)
+        
         painter.setPen(text_pen)
         painter.setFont(self.m_port_font)
-        
+
         if self.m_portgrp_id:
             print_name = CanvasGetPortPrintName(
                             self.m_group_id, self.m_port_id,

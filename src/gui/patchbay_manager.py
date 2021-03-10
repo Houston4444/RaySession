@@ -94,8 +94,19 @@ class Port:
         #if not self.use_graceful_names:
             display_name = self.full_name.partition(':')[2]
 
-        patchcanvas.addPort(self.group_id, self.port_id, display_name,
-                            port_mode, self.type, self.portgroup_id)
+        is_alternate = False
+        if self.flags & PORT_IS_CONTROL_VOLTAGE:
+            is_alternate = True
+        if self.type == PORT_TYPE_MIDI and self.full_name.startswith('a2j:'):
+            for group in PatchbayManager.groups:
+                if group.group_id == self.group_id:
+                    if group.name != 'a2j':
+                        is_alternate = True
+                        break
+
+        patchcanvas.addPort(
+            self.group_id, self.port_id, display_name,
+            port_mode, self.type, self.portgroup_id, is_alternate)
     
     def remove_from_canvas(self):
         patchcanvas.removePort(self.group_id, self.port_id)
@@ -371,6 +382,9 @@ class Group:
         if port.type != PORT_TYPE_AUDIO:
             return
         
+        if port.flags & PORT_IS_CONTROL_VOLTAGE:
+            return
+        
         # find the last port with same type and mode in the group
         for other_port in reversed(self.ports):
             if other_port == port:
@@ -378,6 +392,7 @@ class Group:
             
             if (other_port.type == port.type
                     and other_port.mode() == port.mode()
+                    and not other_port.flags & PORT_IS_CONTROL_VOLTAGE
                     and not other_port.portgroup_id
                     and not other_port.prevent_stereo):
                 break
@@ -459,6 +474,7 @@ class Group:
         
 class PatchbayManager:
     use_graceful_names = True
+    groups = []
     
     def __init__(self, session):
         self.session = session
@@ -476,7 +492,6 @@ class PatchbayManager:
             self.set_group_shadows)
 
         self.group_positions = []
-        self.groups = []
         self.connections = []
         self._next_group_id = 0
         self._next_port_id = 0
