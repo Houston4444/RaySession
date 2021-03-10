@@ -2,6 +2,8 @@
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
 from PyQt5.QtWidgets import QMenu, QAction, QLabel
 
+from gui_tools import RS
+
 from patchcanvas import patchcanvas
 from gui_server_thread import GUIServerThread
 from patchbay_tools import PatchbayToolsWidget
@@ -200,61 +202,6 @@ class Group:
         
         self.portgroups.clear()
         self.ports.clear()
-
-    def set_port_alignments(self):
-        pass
-        #inputs, outputs = 0
-        
-        #input_names = []
-        #output_names = []
-        
-        #for port in self.ports:
-            #if port.flags & PORT_IS_INPUT:
-                #input_names.append(port.display_name)
-            #elif port.flags & PORT_IS_OUTPUT:
-                #output_names.append(port.display_name)
-        
-        #if not (input_names and output_names):
-            #return
-        
-        #if len(input_names) == len(output_names):
-            #return
-        
-        #align_max = abs(len(input_names) - len(output_names))
-        #align_done = 0
-        
-        #if len(input_names) < len(output_names):
-            #for i in range(len(input_names)):
-                #if input_names[i] in output_names:
-                    #index_diff = output_names.index(input_names[i]) -i + align_done
-                    #if index_diff < 0:
-                        #continue
-                    #if index_diff > 
-        
-
-    def midi_alignable(self)->int:
-        in_audio = in_midi = out_audio = out_midi = 0
-
-        for port in self.ports:
-            if port.flags & PORT_IS_INPUT:
-                if port.type == PORT_TYPE_AUDIO:
-                    in_audio += 1
-                elif port.type == PORT_TYPE_MIDI:
-                    in_midi += 1
-            elif port.flags & PORT_IS_OUTPUT:
-                if port.type == PORT_TYPE_AUDIO:
-                    out_audio += 1
-                elif port.type == PORT_TYPE_MIDI:
-                    out_midi += 1
-
-        if in_audio <= out_audio:
-            if in_midi <= out_midi:
-                return PORT_MODE_INPUT
-        else:
-            if out_midi <= in_midi:
-                return PORT_MODE_OUTPUT
-
-        return PORT_MODE_NULL
 
     def add_port(self, port, use_alias: int):
         port_full_name = port.full_name
@@ -538,7 +485,10 @@ class PatchbayManager:
         
         self.use_alias = USE_ALIAS_NONE
         
-        self.split_a2j_hw = False
+        self.set_graceful_names(RS.settings.value(
+            'Canvas/use_graceful_names', True, type=bool))
+        self.group_a2j_hw = RS.settings.value(
+            'Canvas/group_a2j_ports', True, type=bool)
         
     @classmethod
     def set_use_graceful_names(cls, yesno: bool):
@@ -682,8 +632,8 @@ class PatchbayManager:
             self.toggle_graceful_names()
             
     def set_a2j_grouped(self, yesno: int):
-        if self.split_a2j_hw == bool(yesno):
-            self.split_a2j_hw = not bool(yesno)
+        if self.group_a2j_hw != bool(yesno):
+            self.group_a2j_hw = bool(yesno)
             self.refresh()
             
     def set_group_shadows(self, yesno: int):
@@ -746,16 +696,15 @@ class PatchbayManager:
         group_name, colon, port_name = full_port_name.partition(':')
         
         a2j_group = False
+        group_is_new = False
         
         if (full_port_name.startswith('a2j:')
-                and (self.split_a2j_hw
+                and (not self.group_a2j_hw
                      or not port.flags & PORT_IS_PHYSICAL)):
             group_name, colon, port_name = port_name.partition(':')
             group_name = group_name.rpartition(' [')[0]
             if port.flags & PORT_IS_PHYSICAL:
                 a2j_group = True
-        
-        group_is_new = False
 
         for group in self.groups:
             if group.name == group_name:
@@ -764,8 +713,7 @@ class PatchbayManager:
             # port is an non existing group, create the group
             group = Group(self._next_group_id, group_name)
             group.a2j_group = a2j_group
-            client_icon = self.get_client_icon(group_name)
-            group.set_client_icon(client_icon)
+            group.set_client_icon(self.get_client_icon(group_name))
             
             self._next_group_id += 1
             self.groups.append(group)
@@ -776,18 +724,19 @@ class PatchbayManager:
         
         if group_is_new:
             group.add_to_canvas()
-            
+
             for gp in self.group_positions:
                 if gp['group'] == group.name:
                     patchcanvas.moveGroupBox(
                         group.group_id, gp['in_or_out'], gp['x'], gp['y'])
-                    
+
                     self.send_to_daemon(
                         '/ray/server/patchbay/save_group_position',
                         gp['in_or_out'], group.name, gp['x'], gp['y'])
                 
         port.add_to_canvas()
-        
+
+        # detect left audio port if it is a right one
         other_port = group.stereo_detection(port)
         if other_port is not None:
             portgroup = Portgroup(group.group_id, self._next_portgroup_id,

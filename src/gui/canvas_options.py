@@ -18,7 +18,7 @@ class CanvasOptionsDialog(QDialog):
         self.a2j_grouped = RS.settings.value(
             'Canvas/group_a2j_ports', True, type=bool)
         self.use_shadows = RS.settings.value(
-            'Canvas/group_shadows', True, type=bool)
+            'Canvas/box_shadows', True, type=bool)
         
         self.ui.checkBoxGracefulNames.setChecked(
             self.gracious_names)
@@ -41,11 +41,12 @@ class CanvasOptionsDialog(QDialog):
         return self.ui.checkBoxShadows.isChecked()
     
     def closeEvent(self, event):
+        print('savvve', self.get_gracious_names())
         RS.settings.setValue('Canvas/use_graceful_names',
                              self.get_gracious_names())
         RS.settings.setValue('Canvas/group_a2j_ports',
                              self.get_a2j_grouped())
-        RS.settings.setValue('Canvas/group_shadows',
+        RS.settings.setValue('Canvas/box_shadows',
                              self.get_group_shadows())
         
         QDialog.closeEvent(self, event)

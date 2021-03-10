@@ -49,8 +49,14 @@ context menu box -> icones PulseAudio/hardware/a2j dispos en light theme
 / bug hardware polygon
 / vérif port rename et display name
 revoir sauvegarde groupe position et paires
-ajout fenêtre d'options du canvas
+/ajout fenêtre d'options du canvas
 / ajout boutons JACK et patchbay dans la barre d'outils
 / démon jack qui boucle si jack non démarré
 / supprimer tous les ports à jack shutdown
 / fonction refresh
+
+bug "connect" input ports 
+theme modern dark
+distinctif a2j CV
+charger les préférences canvas
+fenere dvant
