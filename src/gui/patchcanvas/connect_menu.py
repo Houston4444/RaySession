@@ -139,7 +139,7 @@ class ConnectGroupMenu(SubMenu):
     
     def connection_asked_from_box(self, port_id: int, portgrp_id: int,
                                   yesno: bool):
-        self._parent.connection_asked_from_box(self._group_id, port_id,
+        self._parent.connection_asked_from_box(self._menu_group_id, port_id,
                                                portgrp_id, yesno)
     
 
@@ -147,7 +147,6 @@ class ConnectMenu(SubMenu):
     def __init__(self, port_data, parent):
         SubMenu.__init__(self, _translate('patchbay', 'Connect'),
                          port_data, parent)
-        
         #canvas.qobject.port_added.connect(self.port_added_to_canvas)
         #canvas.qobject.port_removed.connect(self.port_removed_from_canvas)
         
@@ -177,6 +176,7 @@ class ConnectMenu(SubMenu):
     
     def connection_asked_from_box(self, group_id: int, port_id: int,
                                   portgrp_id: int, yesno: bool):
+        print('nareia', yesno)
         if yesno:
             if self._portgrp_id and portgrp_id:
                 # in and out are portgroups
@@ -445,14 +445,29 @@ class MainPortContextMenu(QMenu):
     def __init__(self, group_id: int, port_id: int, portgrp_id=0):
         QMenu.__init__(self)
         
-        for port in canvas.port_list:
-            if port.group_id == group_id and port.port_id == port_id:
-                port_type = port.port_type
-                port_mode = port.port_mode
-                break
-        else:
-            return
+        self.setStyleSheet(
+            "QMenu{background-color:#222222; border: 1px solid;border-color: #777777; border-radius: 4px}")
         
+        if portgrp_id:
+            # menu is for a portgroup
+            for portgrp in canvas.portgrp_list:
+                if (portgrp.group_id == group_id
+                        and portgrp.portgrp_id == portgrp_id):
+                    port_type = portgrp.port_type
+                    port_mode = portgrp.port_mode
+                    break
+            else:
+                return
+        else:
+            # menu is for a port
+            for port in canvas.port_list:
+                if port.group_id == group_id and port.port_id == port_id:
+                    port_type = port.port_type
+                    port_mode = port.port_mode
+                    break
+            else:
+                return
+
         PortData.__init__(self, group_id, port_id,
                           port_type, port_mode, portgrp_id)
         
@@ -500,7 +515,7 @@ class MainPortContextMenu(QMenu):
     
     def add_connection(self, connection):
         self.connection_list.append(connection)
-        
+
         for port in canvas.port_list:
             if ((self._port_mode == PORT_MODE_OUTPUT
                         and port.group_id == connection.group_in_id
@@ -521,9 +536,12 @@ class MainPortContextMenu(QMenu):
                 con_state = CanvasPortGroupConnectionState(
                     self._group_id, self._port_id_list,
                     group_id, port_id_list)
+                
+                print('zoumaas', con_state)
 
                 for group_menu in self.connect_menu.group_menus:
                     if group_menu.group_id() == group_id:
+                        print('gogogoelz', con_state)
                         group_menu.check_element(
                             port_id, portgrp_id, con_state)
                         break

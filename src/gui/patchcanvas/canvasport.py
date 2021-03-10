@@ -713,6 +713,11 @@ class CanvasPort(QGraphicsItem):
             
             for portgrp in canvas.portgrp_list:
                 if portgrp.portgrp_id == self.m_portgrp_id:
+                    # a crash has been seen here
+                    if not portgrp.port_id_list:
+                        self.m_port_id = 0
+                        break
+                    
                     if self.m_port_id == portgrp.port_id_list[0]:
                         first_of_portgrp = True
                     if self.m_port_id == portgrp.port_id_list[-1]:

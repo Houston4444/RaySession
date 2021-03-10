@@ -392,20 +392,23 @@ def CanvasPortGroupConnectionState(group_id_1: int, port_id_list_1: list,
     out_port_id_list = []
     in_port_id_list = []
     
-    
     for port in canvas.port_list:
         if (port.group_id == group_id_1
                 and port.port_id in port_id_list_1):
             if port.port_mode == PORT_MODE_OUTPUT:
                 out_port_id_list = port_id_list_1
+                group_out_id = group_id_1
             else:
                 in_port_id_list = port_id_list_1
+                group_in_id = group_id_1
         elif (port.group_id == group_id_2
                 and port.port_id in port_id_list_2):
             if port.port_mode == PORT_MODE_OUTPUT:
                 out_port_id_list = port_id_list_2
+                group_out_id = group_id_2
             else:
                 in_port_id_list = port_id_list_2
+                group_in_id = group_id_2
 
     if not (out_port_id_list and in_port_id_list):
         return 0
