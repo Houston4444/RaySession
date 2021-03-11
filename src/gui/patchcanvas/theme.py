@@ -46,6 +46,29 @@ class Theme(object):
         object.__init__(self)
 
         self.idx = idx
+        
+        # don't manage different themes anymore with different sizes anymore
+        # only color schemes and pen widths
+        self.box_header_pixmap = None
+        self.box_header_height = 36
+        self.box_header_spacing = 0
+        
+        self.box_text_ypos = 20
+        
+        self.box_bg_type = self.THEME_BG_GRADIENT
+        self.box_use_icon = True
+        
+        self.port_text_ypos = 12
+        self.port_bg_pixmap = None
+        
+        self.port_mode = self.THEME_PORT_POLYGON
+        
+        self.port_in_portgrp_width = 18
+        self.port_height = 16
+        self.port_offset = 0
+        self.port_spacing = 2
+        self.port_spacingT = 2
+        
         self.setTheme(idx)
 
     def setTheme(self, idx):
@@ -59,29 +82,20 @@ class Theme(object):
             self.box_bg_1 = QColor(32, 34, 35)
             self.box_bg_2 = QColor(43, 47, 48)
             self.box_shadow = QColor(89, 89, 89, 180)
-            self.box_header_pixmap = None
-            self.box_header_height = 36
-            self.box_header_spacing = 0
-
+            
             self.box_text = QPen(QColor(240, 240, 240), 0)
             self.box_text_sel = self.box_text
-            self.box_text_ypos = 20
+            
             self.box_font_name = "Deja Vu Sans"
             self.box_font_size = 11
             self.box_font_state = QFont.Bold
 
-            self.box_bg_type = self.THEME_BG_GRADIENT
-            self.box_use_icon = True
-
             # Ports
-            self.port_text = QPen(QColor(48, 32, 0))
-            self.port_text_ypos = 12
-            self.port_bg_pixmap = None
+            self.port_text = QPen(QColor(48, 32, 0))            
             self.port_font_name = "Deja Vu Sans"
             self.port_font_size = 11
             self.port_font_state = QFont.Normal
-            self.port_mode = self.THEME_PORT_POLYGON
-
+            
             self.port_audio_jack_pen = QPen(QColor(143, 119, 0), 1.4)
             self.port_audio_jack_pen_sel = self.port_audio_jack_pen
             self.port_midi_jack_pen = QPen(QColor(43, 23, 9), 1)
@@ -117,12 +131,6 @@ class Theme(object):
             self.port_midi_alsa_text_sel = self.port_text
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
-            
-            self.port_in_portgrp_width = 18
-            self.port_height = 16
-            self.port_offset = 0
-            self.port_spacing = 2
-            self.port_spacingT = 2
 
             # Lines
             self.line_audio_jack = QColor(100, 100, 100)
@@ -151,13 +159,9 @@ class Theme(object):
             self.box_bg_1 = QColor(32, 34, 35)
             self.box_bg_2 = QColor(43, 47, 48)
             self.box_shadow = QColor(89, 89, 89, 180)
-            self.box_header_pixmap = None
-            self.box_header_height = 36
-            self.box_header_spacing = 0
 
             self.box_text = QPen(QColor(240, 240, 240), 0)
             self.box_text_sel = self.box_text
-            self.box_text_ypos = 20
             self.box_font_name = "Deja Vu Sans"
             self.box_font_size = 11
             self.box_font_state = QFont.Bold
@@ -167,12 +171,9 @@ class Theme(object):
 
             # Ports
             self.port_text = QPen(QColor(250, 250, 250), 0)
-            self.port_text_ypos = 12
-            self.port_bg_pixmap = None
             self.port_font_name = "Deja Vu Sans"
             self.port_font_size = 11
             self.port_font_state = QFont.Normal
-            self.port_mode = self.THEME_PORT_POLYGON
 
             self.port_audio_jack_pen = QPen(QColor(63, 90, 126), 1)
             self.port_audio_jack_pen_sel = QPen(QColor(63 + 30, 90 + 30, 126 + 30), 1)
@@ -210,12 +211,6 @@ class Theme(object):
             self.port_parameter_text = self.port_text
             self.port_parameter_text_sel = self.port_text
             
-            self.port_in_portgrp_width = 18
-            self.port_height = 16
-            self.port_offset = 0
-            self.port_spacing = 2
-            self.port_spacingT = 2
-
             # Lines
             self.line_audio_jack = QColor(63, 90, 126)
             self.line_audio_jack_sel = QColor(63 + 90, 90 + 90, 126 + 90)

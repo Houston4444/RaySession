@@ -11,6 +11,7 @@ from . import (
     ACTION_PORTS_DISCONNECT,
     PORT_TYPE_NULL,
     PORT_TYPE_AUDIO_JACK,
+    PORT_TYPE_MIDI_JACK,
     PORT_MODE_NULL,
     PORT_MODE_OUTPUT,
     PORT_MODE_INPUT)
@@ -37,6 +38,7 @@ class PortCheckBox(QCheckBox):
         QCheckBox.__init__(self, port_name, parent)
         self.setTristate(True)
         self.setMinimumHeight(23)
+        self.setMinimumWidth(100)
         self._parent = parent
         self._port_id = port_id
         self._portgrp_id = portgrp_id
@@ -449,10 +451,11 @@ class MainPortContextMenu(QMenu):
     def __init__(self, group_id: int, port_id: int, portgrp_id=0):
         QMenu.__init__(self)
         
-        self.setStyleSheet(
-            """QMenu{background-color:#202020; border: 1px solid;
-            border-color: #777777; border-radius: 4px};
-            QMenu:selected{background-color: red}""")
+        #self.setStyleSheet(
+            #"""QMenu{background-color:#202020; border: 1px solid;
+            #border-color: red; border-radius: 4px};
+            #QMenu::item{background-color:#999900};
+            #QMenu::item:selected{background-color: red}""")
         
         if portgrp_id:
             # menu is for a portgroup
@@ -473,6 +476,24 @@ class MainPortContextMenu(QMenu):
                     break
             else:
                 return
+
+        border_color = canvas.theme.port_audio_jack_pen.color().name()
+        sel_bg = canvas.theme.port_audio_jack_bg.name()
+        sel_text_color = canvas.theme.port_audio_jack_text.color().name()
+        
+        if port_type == PORT_TYPE_MIDI_JACK:
+            border_color = canvas.theme.port_midi_jack_pen.color().name()
+            sel_bg = canvas.theme.port_midi_jack_bg.name()
+            sel_text_color = canvas.theme.port_midi_jack_text.color().name()
+
+        style_str = """QMenu{background-color:#202020; border: 1px solid;
+            border-color: %s; border-radius: 4px}
+            QMenu::item{background-color: #202020;color: white}
+            QMenu::item:disabled{color: #777777}
+            QMenu::item:selected{background-color: %s; color:%s}""" % (
+                border_color, sel_bg, sel_text_color)
+        
+        self.setStyleSheet(style_str)
 
         PortData.__init__(self, group_id, port_id,
                           port_type, port_mode, portgrp_id)
