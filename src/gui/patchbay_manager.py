@@ -665,18 +665,17 @@ class PatchbayManager:
         self.refresh()
 
     def change_theme(self, index:int):
-        options = patchcanvas.options
-        theme_name = patchcanvas.getDefaultTheme()
         idx = 0
         
         if index == 0:
             idx = 0
-            theme_name = "Egyptian"
         elif index == 1:
             idx = 1
-            theme_name = "Modern Dark"
         
         patchcanvas.changeTheme(idx)
+        
+        theme_name = patchcanvas.getThemeName(idx)
+        RS.settings.setValue('Canvas/theme', theme_name)
         
     def toggle_graceful_names(self):
         PatchbayManager.set_use_graceful_names(not self.use_graceful_names)

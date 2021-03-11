@@ -488,7 +488,9 @@ class MainWindow(QMainWindow):
     
     def setupCanvas(self):
         options = patchcanvas.options_t()
-        options.theme_name = patchcanvas.getDefaultTheme()
+        #options.theme_name = patchcanvas.getDefaultTheme()
+        options.theme_name = RS.settings.value(
+            'Canvas/theme', 'Egyptian', type=str)
         options.antialiasing = patchcanvas.ANTIALIASING_SMALL
         options.eyecandy = patchcanvas.EYECANDY_NONE
         if RS.settings.value('Canvas/box_shadows', False, type=bool):
