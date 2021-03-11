@@ -33,6 +33,10 @@ class CanvasOptionsDialog(QDialog):
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Egyptian'))
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Modern Dark'))
         
+        current_theme = RS.settings.value('Canvas/theme', 'Egyptian', type=str)
+        if current_theme == "Modern Dark":
+            self.ui.comboBoxTheme.setCurrentIndex(1)
+        
         self.gracious_names_checked = self.ui.checkBoxGracefulNames.stateChanged
         self.a2j_grouped_checked = self.ui.checkBoxA2J.stateChanged
         self.group_shadows_checked = self.ui.checkBoxShadows.stateChanged

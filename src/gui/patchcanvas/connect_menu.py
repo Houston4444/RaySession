@@ -34,11 +34,25 @@ _translate = QCoreApplication.translate
 
 
 class PortCheckBox(QCheckBox):
-    def __init__(self, port_id: int, portgrp_id: int, port_name: str, parent):
+    def __init__(self, port_id: int, portgrp_id: int, port_name: str,
+                 port_type: int, parent):
         QCheckBox.__init__(self, port_name, parent)
         self.setTristate(True)
         self.setMinimumHeight(23)
         self.setMinimumWidth(100)
+        
+        border_color = canvas.theme.port_audio_jack_pen.color().name()
+        sel_bg = canvas.theme.port_audio_jack_bg.name()
+        sel_text_color = canvas.theme.port_audio_jack_text.color().name()
+        
+        if port_type == PORT_TYPE_MIDI_JACK:
+            border_color = canvas.theme.port_midi_jack_pen.color().name()
+            sel_bg = canvas.theme.port_midi_jack_bg.name()
+            sel_text_color = canvas.theme.port_midi_jack_text.color().name()
+        
+        self.setStyleSheet(
+            """QCheckBox:hover{background-color: %s;color: %s}""" % (
+                sel_bg, sel_text_color))
         self._parent = parent
         self._port_id = port_id
         self._portgrp_id = portgrp_id
@@ -114,7 +128,8 @@ class ConnectGroupMenu(SubMenu):
         if self._port_type == PORT_TYPE_AUDIO_JACK and is_alternate:
             port_name = "CV| %s" % port_name
 
-        check_box = PortCheckBox(port_id, portgrp_id, port_name, self)
+        check_box = PortCheckBox(port_id, portgrp_id, port_name,
+                                 self._port_type, self)
         action = QWidgetAction(self._parent)
         action.setDefaultWidget(check_box)
         
