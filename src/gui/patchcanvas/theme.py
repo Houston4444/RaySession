@@ -101,7 +101,7 @@ class Theme(object):
             self.port_midi_alsa_bg_sel = QColor(64 + 50, 112 + 50, 18 + 50)
             self.port_parameter_bg = QColor(101, 47, 16)
             self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
-            self.port_cv_jack_bg = QColor(145, 145, 145)
+            self.port_cv_jack_bg = QColor(220, 220, 220)
             self.port_cv_jack_bg_sel = QColor(198, 161, 80)
             
             self.portgrp_audio_jack_pen = QPen(QColor(143, 119, 0), 1.4)
@@ -193,7 +193,7 @@ class Theme(object):
             self.port_midi_alsa_bg_sel = QColor(64 + 50, 112 + 50, 18 + 50)
             self.port_parameter_bg = QColor(101, 47, 16)
             self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
-            self.port_cv_jack_bg = QColor(19, 33, 54)
+            self.port_cv_jack_bg = QColor(18, 32, 50)
             self.port_cv_jack_bg_sel = self.port_audio_jack_bg_sel
             
             self.portgrp_audio_jack_pen = QPen(QColor(63, 90, 126), 1)
