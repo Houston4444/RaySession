@@ -10,6 +10,7 @@ from . import (
     ACTION_PORTS_CONNECT,
     ACTION_PORTS_DISCONNECT,
     PORT_TYPE_NULL,
+    PORT_TYPE_AUDIO_JACK,
     PORT_MODE_NULL,
     PORT_MODE_OUTPUT,
     PORT_MODE_INPUT)
@@ -101,12 +102,16 @@ class ConnectGroupMenu(SubMenu):
                                 break
                 else:
                     self.add_element(port.port_id, port.portgrp_id,
-                                     port.port_name)
+                                     port.port_name, port.is_alternate)
 
     def group_id(self)->int:
         return self._menu_group_id
 
-    def add_element(self, port_id: int, portgrp_id: int, port_name: str):
+    def add_element(self, port_id: int, portgrp_id: int,
+                    port_name: str, is_alternate=False):
+        if self._port_type == PORT_TYPE_AUDIO_JACK and is_alternate:
+            port_name = "CV| %s" % port_name
+
         check_box = PortCheckBox(port_id, portgrp_id, port_name, self)
         action = QWidgetAction(self._parent)
         action.setDefaultWidget(check_box)
@@ -176,7 +181,6 @@ class ConnectMenu(SubMenu):
     
     def connection_asked_from_box(self, group_id: int, port_id: int,
                                   portgrp_id: int, yesno: bool):
-        print('nareia', yesno)
         if yesno:
             if self._portgrp_id and portgrp_id:
                 # in and out are portgroups
@@ -446,7 +450,9 @@ class MainPortContextMenu(QMenu):
         QMenu.__init__(self)
         
         self.setStyleSheet(
-            "QMenu{background-color:#222222; border: 1px solid;border-color: #777777; border-radius: 4px}")
+            """QMenu{background-color:#202020; border: 1px solid;
+            border-color: #777777; border-radius: 4px};
+            QMenu:selected{background-color: red}""")
         
         if portgrp_id:
             # menu is for a portgroup

@@ -606,8 +606,12 @@ class CanvasPort(QGraphicsItem):
         selected = self.isSelected()
         theme = canvas.theme
         if self.m_port_type == PORT_TYPE_AUDIO_JACK:
-            poly_color = theme.port_audio_jack_bg_sel if selected else theme.port_audio_jack_bg
-            poly_pen = theme.port_audio_jack_pen_sel  if selected else theme.port_audio_jack_pen
+            if self.m_is_alternate:
+                poly_color = theme.port_cv_jack_bg_sel if selected else theme.port_cv_jack_bg
+                poly_pen = theme.port_cv_jack_pen_sel  if selected else theme.port_cv_jack_pen
+            else:
+                poly_color = theme.port_audio_jack_bg_sel if selected else theme.port_audio_jack_bg
+                poly_pen = theme.port_audio_jack_pen_sel  if selected else theme.port_audio_jack_pen
             text_pen = theme.port_audio_jack_text_sel if selected else theme.port_audio_jack_text
             conn_pen = QPen(theme.port_audio_jack_pen_sel)
         elif self.m_port_type == PORT_TYPE_MIDI_JACK:
@@ -633,12 +637,6 @@ class CanvasPort(QGraphicsItem):
         # To prevent quality worsening
         poly_pen = QPen(poly_pen)
         poly_pen.setWidthF(poly_pen.widthF() + 0.00001)
-
-        #if self.m_is_alternate:
-            #poly_color = poly_color.darker(180)
-            #poly_pen.setColor(poly_pen.color().darker(110))
-            #text_pen.setColor(text_pen.color()) #.darker(150))
-            #conn_pen.setColor(conn_pen.color()) #.darker(150))
 
         lineHinting = poly_pen.widthF() / 2
 
@@ -696,8 +694,8 @@ class CanvasPort(QGraphicsItem):
             qCritical("PatchCanvas::CanvasPort.paint() - invalid port mode '%s'" % port_mode2str(self.m_port_mode))
             return
 
-        if is_cv_port and not selected:
-            poly_color = QColor(170, 140, 150)
+        #if is_cv_port and not selected:
+            #poly_color = QColor(170, 140, 150)
             
         #if self.m_is_alternate:
             #poly_color = poly_color.lighter(230)

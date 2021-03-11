@@ -1086,6 +1086,18 @@ def arrange():
     if canvas.debug:
         print("PatchCanvas::arrange()")
 
+def changeTheme(idx: int):
+    canvas.theme.setTheme(idx)
+    canvas.scene.updateTheme()
+    
+    for group in canvas.group_list:
+        for widget in group.widgets:
+            if widget is not None:
+                widget.repaintLines(forced=True)
+                widget.update()
+
+    QTimer.singleShot(0, canvas.scene.update)
+
 # ------------------------------------------------------------------------------------------------------------
 
 def updateZValues():

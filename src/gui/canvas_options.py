@@ -1,11 +1,13 @@
 
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QApplication
 from PyQt5.QtCore import Qt
 
 
 from gui_tools import RS
 
 import ui.canvas_options
+
+_translate = QApplication.translate
 
 
 class CanvasOptionsDialog(QDialog):
@@ -28,9 +30,13 @@ class CanvasOptionsDialog(QDialog):
         self.ui.checkBoxShadows.setChecked(
             self.use_shadows)
         
+        self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Egyptian'))
+        self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Modern Dark'))
+        
         self.gracious_names_checked = self.ui.checkBoxGracefulNames.stateChanged
         self.a2j_grouped_checked = self.ui.checkBoxA2J.stateChanged
         self.group_shadows_checked = self.ui.checkBoxShadows.stateChanged
+        self.theme_changed = self.ui.comboBoxTheme.currentIndexChanged
     
     def get_gracious_names(self)->bool:
         return self.ui.checkBoxGracefulNames.isChecked()

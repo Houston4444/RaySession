@@ -490,6 +490,8 @@ class PatchbayManager:
             self.set_a2j_grouped)
         self.options_dialog.group_shadows_checked.connect(
             self.set_group_shadows)
+        self.options_dialog.theme_changed.connect(
+            self.change_theme)
 
         self.group_positions = []
         self.connections = []
@@ -635,12 +637,16 @@ class PatchbayManager:
             action_options = menu.addAction(
                 _translate('patchbay', "Canvas options"))
             action_options.setIcon(QIcon.fromTheme("configure"))
-            action_options.triggered.connect(self.options_dialog.show)
+            action_options.triggered.connect(self.show_options_dialog)
 
             menu.exec(QCursor.pos())
 
         elif action == patchcanvas.ACTION_DOUBLE_CLICK:
             self.toggle_full_screen()
+
+    def show_options_dialog(self):
+        self.options_dialog.move(QCursor.pos())
+        self.options_dialog.show()
 
     def set_graceful_names(self, yesno: int):
         if self.use_graceful_names != yesno:
@@ -658,6 +664,20 @@ class PatchbayManager:
             patchcanvas.options.eyecandy = patchcanvas.EYECANDY_NONE
         self.refresh()
 
+    def change_theme(self, index:int):
+        options = patchcanvas.options
+        theme_name = patchcanvas.getDefaultTheme()
+        idx = 0
+        
+        if index == 0:
+            idx = 0
+            theme_name = "Egyptian"
+        elif index == 1:
+            idx = 1
+            theme_name = "Modern Dark"
+        
+        patchcanvas.changeTheme(idx)
+        
     def toggle_graceful_names(self):
         PatchbayManager.set_use_graceful_names(not self.use_graceful_names)
         for group in self.groups:

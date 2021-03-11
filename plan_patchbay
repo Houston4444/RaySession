@@ -55,8 +55,8 @@ revoir sauvegarde groupe position et paires
 / supprimer tous les ports à jack shutdown
 / fonction refresh
 
-bug "connect" input ports 
+/bug "connect" input ports
 theme modern dark
 / distinctif a2j CV
 splitter après plein écran
-
+remettre le noir marron sur ports jack
