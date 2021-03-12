@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
                              QFrame, QGraphicsView, QSplitter, QSplitterHandle)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QCursor, QMouseEvent)
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint, QPointF, QRectF, QSizeF
 
 import time
 
@@ -365,7 +365,72 @@ class DraggableGraphicsView(QGraphicsView):
         if event.key() == Qt.Key_Control:
             self.fCtrlDown = False
         QGraphicsView.keyReleaseEvent(self, event)
+        
+    def wheelEvent(self, event):
+        if (event.modifiers() & Qt.ControlModifier == Qt.ControlModifier
+                and event.angleDelta().x() == 0):
 
+            pos = event.pos()
+            posf = self.mapToScene(pos)
+
+            angle = event.angleDelta().y()
+            by = 1
+            
+            if angle > 0:
+                by = 1 + ( angle / 360 * 0.33)
+            elif angle < 0:
+                by = 1 - (-angle / 360 * 0.33)
+
+            
+
+            self.scale(by, by)
+
+            current_scale = self.transform().m11()
+            print('ldefk', current_scale)
+            
+            if current_scale > 4:
+                self.scale(4/current_scale, 4/current_scale)
+            elif current_scale < 0.25:
+                self.scale(0.25/current_scale, 0.25/current_scale)
+            else:
+                w = self.viewport().width()
+                h = self.viewport().height()
+
+                center_view = QPoint(int(w / 2), int(h / 2))
+                center_scene = self.mapToScene(center_view)
+                delta_x = pos.x() - center_view.x()
+                delta_y = pos.y() - center_view.y()
+                
+                new_center_x = posf.x() - delta_x / current_scale
+                new_center_y = posf.y() - delta_y / current_scale
+                
+                self.centerOn(QPointF(new_center_x, new_center_y))
+            
+            
+            #wf = self.mapToScene(QPoint(w - 1, 0)).x() \
+                            #- self.mapToScene(QPoint(0,0)).x()
+            #hf = self.mapToScene(QPoint(0, h - 1)).y() \
+                            #- self.mapToScene(QPoint(0,0)).y()
+
+            #lf = posf.x() - pos.x() * wf / w
+            #tf = posf.y() - pos.y() * hf / h
+
+            ##/* try to set viewport properly */
+            #self.ensureVisible(lf, tf, wf, hf, 0, 0)
+
+            #new_pos = self.mapToScene(pos)
+
+            ##/* readjust according to the still remaining offset/drift
+            ##    * I don't know how to do this any other way */
+            #self.ensureVisible(QRectF(QPointF(lf, tf) - new_pos + posf,
+                               #QSizeF(wf, hf)), 0, 0)
+            #self.centerOn(QPointF(lf, tf))
+
+            event.accept()
+
+        if event.modifiers() & Qt.ControlModifier != Qt.ControlModifier:
+            #/* no scrolling while control is held */
+            QGraphicsView.wheelEvent(self, event)
 
 class CanvasSplitterHandle(QSplitterHandle):
     def __init__(self, parent):

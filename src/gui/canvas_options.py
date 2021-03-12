@@ -30,12 +30,15 @@ class CanvasOptionsDialog(QDialog):
         self.ui.checkBoxShadows.setChecked(
             self.use_shadows)
         
-        self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Egyptian'))
+        self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Silver Gold'))
+        self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Black Gold'))
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Modern Dark'))
         
-        current_theme = RS.settings.value('Canvas/theme', 'Egyptian', type=str)
-        if current_theme == "Modern Dark":
+        current_theme = RS.settings.value('Canvas/theme', 'Silver Gold', type=str)
+        if current_theme == "Black Gold":
             self.ui.comboBoxTheme.setCurrentIndex(1)
+        elif current_theme == "Modern Dark":
+            self.ui.comboBoxTheme.setCurrentIndex(2)
         
         self.gracious_names_checked = self.ui.checkBoxGracefulNames.stateChanged
         self.a2j_grouped_checked = self.ui.checkBoxA2J.stateChanged
@@ -52,7 +55,6 @@ class CanvasOptionsDialog(QDialog):
         return self.ui.checkBoxShadows.isChecked()
     
     def closeEvent(self, event):
-        print('savvve', self.get_gracious_names())
         RS.settings.setValue('Canvas/use_graceful_names',
                              self.get_gracious_names())
         RS.settings.setValue('Canvas/group_a2j_ports',

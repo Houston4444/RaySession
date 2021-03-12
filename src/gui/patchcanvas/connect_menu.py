@@ -50,9 +50,10 @@ class PortCheckBox(QCheckBox):
             sel_bg = canvas.theme.port_midi_jack_bg.name()
             sel_text_color = canvas.theme.port_midi_jack_text.color().name()
         
-        self.setStyleSheet(
-            """QCheckBox:hover{background-color: %s;color: %s}""" % (
-                sel_bg, sel_text_color))
+        #self.setStyleSheet(
+            #"""QCheckBox:hover{background-color: %s;color: %s}
+            #QCheckBox::indicator:hover{background-color: #202020;color: white}""" % (
+                #sel_bg, sel_text_color))
         self._parent = parent
         self._port_id = port_id
         self._portgrp_id = portgrp_id

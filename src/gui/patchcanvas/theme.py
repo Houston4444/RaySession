@@ -30,13 +30,14 @@ class Theme(object):
     THEME_PORT_POLYGON = 1
 
     # enum List
-    THEME_EGYPTIAN = 0
-    THEME_MODERN_DARK = 1
-    THEME_MODERN_DARK_TINY = 2
-    THEME_MODERN_LIGHT = 3
-    THEME_CLASSIC_DARK = 4
-    THEME_OOSTUDIO = 5
-    THEME_MAX = 6
+    THEME_SILVER_GOLD = 0
+    THEME_BLACK_GOLD = 1
+    THEME_MODERN_DARK = 2
+    THEME_MODERN_DARK_TINY = 3
+    THEME_MODERN_LIGHT = 4
+    THEME_CLASSIC_DARK = 5
+    THEME_OOSTUDIO = 6
+    THEME_MAX = 7
 
     # enum BackgroundType
     THEME_BG_SOLID = 0
@@ -72,7 +73,7 @@ class Theme(object):
         self.setTheme(idx)
 
     def setTheme(self, idx):
-        if idx == self.THEME_EGYPTIAN:
+        if idx == self.THEME_SILVER_GOLD:
             # Canvas
             self.canvas_bg = QColor(0, 0, 0)
 
@@ -149,6 +150,83 @@ class Theme(object):
             self.rubberband_pen = QPen(QColor(206, 207, 208), 1, Qt.SolidLine)
             self.rubberband_brush = QColor(76, 77, 78, 100)
 
+        if idx == self.THEME_BLACK_GOLD:
+            # Canvas
+            self.canvas_bg = QColor(0, 0, 0)
+
+            # Boxes
+            self.box_pen = QPen(QColor(76, 77, 78), 1, Qt.SolidLine)
+            self.box_pen_sel = QPen(QColor(206, 207, 208), 1, Qt.DashLine)
+            self.box_bg_1 = QColor(32, 34, 35)
+            self.box_bg_2 = QColor(43, 47, 48)
+            self.box_shadow = QColor(89, 89, 89, 180)
+            
+            self.box_text = QPen(QColor(240, 240, 240), 0)
+            self.box_text_sel = self.box_text
+            
+            self.box_font_name = "Deja Vu Sans"
+            self.box_font_size = 11
+            self.box_font_state = QFont.Bold
+
+            # Ports
+            self.port_text = QPen(QColor(200, 200, 200))            
+            self.port_font_name = "Deja Vu Sans"
+            self.port_font_size = 11
+            self.port_font_state = QFont.Normal
+            
+            self.port_audio_jack_pen = QPen(QColor(100, 81, 0), 1.0)
+            self.port_audio_jack_pen_sel = self.port_audio_jack_pen
+            self.port_midi_jack_pen = QPen(QColor(43, 23, 9), 1)
+            self.port_midi_jack_pen_sel = self.port_midi_jack_pen
+            self.port_midi_alsa_pen = QPen(QColor(93, 141, 46), 1)
+            self.port_midi_alsa_pen_sel = QPen(QColor(93 + 30, 141 + 30, 46 + 30), 1)
+            self.port_parameter_pen = QPen(QColor(137, 76, 43), 1)
+            self.port_parameter_pen_sel = QPen(QColor(137 + 30, 76 + 30, 43 + 30), 1)
+            self.port_cv_jack_pen = self.port_audio_jack_pen
+            self.port_cv_jack_pen_sel = self.port_audio_jack_pen_sel
+
+            self.port_audio_jack_bg = QColor(40, 40, 48)
+            self.port_audio_jack_bg_sel = QColor(198, 161, 80)
+            self.port_midi_jack_bg = QColor(77, 42, 16)
+            self.port_midi_jack_bg_sel = QColor(160, 86, 33)
+            self.port_midi_alsa_bg = QColor(64, 112, 18)
+            self.port_midi_alsa_bg_sel = QColor(64 + 50, 112 + 50, 18 + 50)
+            self.port_parameter_bg = QColor(101, 47, 16)
+            self.port_parameter_bg_sel = QColor(101 + 50, 47 + 50, 16 + 50)
+            self.port_cv_jack_bg = QColor(20, 20, 25)
+            self.port_cv_jack_bg_sel = QColor(198, 161, 80)
+            
+            self.portgrp_audio_jack_pen = QPen(QColor(100, 81, 0), 1.0)
+            self.portgrp_audio_jack_pen_sel = self.portgrp_audio_jack_pen
+            self.portgrp_audio_jack_bg = QColor(25, 25, 30)
+            self.portgrp_audio_jack_bg_sel = QColor(209, 170, 86)
+
+            self.port_audio_jack_text = self.port_text
+            self.port_audio_jack_text_sel = QPen(QColor(0, 0, 0))
+            self.port_midi_jack_text = QPen(QColor(255, 255, 150), 0)
+            self.port_midi_jack_text_sel = self.port_midi_jack_text
+            self.port_midi_alsa_text = self.port_text
+            self.port_midi_alsa_text_sel = self.port_text
+            self.port_parameter_text = self.port_text
+            self.port_parameter_text_sel = self.port_text
+
+            # Lines
+            self.line_audio_jack = QColor(80, 80, 96)
+            self.line_audio_jack_sel = QColor(198, 161, 80)
+            self.line_audio_jack_glow = QColor(100, 100, 200)
+            self.line_midi_jack = QColor(77, 42, 16)
+            self.line_midi_jack_sel = QColor(160, 86, 33)
+            self.line_midi_jack_glow = QColor(200, 100, 100)
+            self.line_midi_alsa = QColor(93, 141, 46)
+            self.line_midi_alsa_sel = QColor(93 + 90, 141 + 90, 46 + 90)
+            self.line_midi_alsa_glow = QColor(100, 200, 100)
+            self.line_parameter = QColor(137, 76, 43)
+            self.line_parameter_sel = QColor(137 + 90, 76 + 90, 43 + 90)
+            self.line_parameter_glow = QColor(166, 133, 133)
+
+            self.rubberband_pen = QPen(QColor(206, 207, 208), 1, Qt.SolidLine)
+            self.rubberband_brush = QColor(76, 77, 78, 100)
+            
         elif idx == self.THEME_MODERN_DARK:
             # Canvas
             self.canvas_bg = QColor(0, 0, 0)
@@ -588,11 +666,13 @@ class Theme(object):
 # ------------------------------------------------------------------------------------------------------------
 
 def getDefaultTheme():
-    return Theme.THEME_EGYPTIAN
+    return Theme.THEME_SILVER_GOLD
 
 def getThemeName(idx):
-    if idx == Theme.THEME_EGYPTIAN:
-        return "Egyptian"
+    if idx == Theme.THEME_BLACK_GOLD:
+        return "Black Gold"
+    if idx == Theme.THEME_SILVER_GOLD:
+        return "Silver Gold"
     if idx == Theme.THEME_MODERN_DARK:
         return "Modern Dark"
     if idx == Theme.THEME_MODERN_DARK_TINY:
@@ -606,6 +686,6 @@ def getThemeName(idx):
     return ""
 
 def getDefaultThemeName():
-    return "Modern Dark"
+    return "Silver Gold"
 
 # ------------------------------------------------------------------------------------------------------------

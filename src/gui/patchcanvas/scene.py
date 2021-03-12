@@ -21,8 +21,9 @@
 
 from math import floor
 
-from PyQt5.QtCore import QT_VERSION, pyqtSignal, pyqtSlot, qFatal, Qt, QPointF, QRectF
-from PyQt5.QtGui import QCursor, QPixmap, QPolygonF
+from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
+                          Qt, QPoint, QPointF, QRectF, QTimer, QSizeF)
+from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QLinearGradient, QColor
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene
 
 # ------------------------------------------------------------------------------------------------------------
@@ -88,6 +89,13 @@ class PatchScene(QGraphicsScene):
         self.curCut = None
         self.curZoomArea = None
 
+        self.move_boxes = []
+        self.move_box_timer = QTimer()
+        self.move_box_timer.setInterval(20) # 20 ms step animation (50 Hz)
+        self.move_box_timer.timeout.connect(self.move_boxes_animation)
+        self.move_box_n = 0
+        self.move_box_n_max = 20 # 20 animations steps (20ms * 20 = 400ms)
+
         self.selectionChanged.connect(self.slot_selectionChanged)
         
     def getDevicePixelRatioF(self):
@@ -122,6 +130,54 @@ class PatchScene(QGraphicsScene):
             self.scaleChanged.emit(transform.m11())
 
         return fix
+
+    def move_boxes_animation(self):
+        self.move_box_n += 1
+        
+        for box_dict in self.move_boxes:
+            if box_dict['widget'] is not None:
+                total_n = self.move_box_n_max - box_dict['n_start']
+                n = self.move_box_n - box_dict['n_start']
+                
+                x = box_dict['from_x'] \
+                    + (box_dict['to_x'] - box_dict['from_x']) \
+                        * (n/total_n)
+                y = box_dict['from_y'] \
+                    + (box_dict['to_y'] - box_dict['from_y']) \
+                        * (n/total_n)
+
+                box_dict['widget'].setPos(x, y)
+        
+        if self.move_box_n == self.move_box_n_max:
+            self.move_box_n = 0
+            self.move_box_timer.stop()
+            self.move_boxes.clear()
+            QTimer.singleShot(0, self.update)
+            
+            for box_dict in self.move_boxes:
+                if box_dict['widget'] is not None:
+                    QTimer.singleShot(0, box_dict['widget'].repaintLines)
+            canvas.qobject.move_boxes_finished.emit()
+            
+        elif self.move_box_n % 5 == 4:
+            self.update()
+
+    def add_box_to_animation(self, box_widget, to_x: int, to_y: int):
+        for box_dict in self.move_boxes:
+            if box_dict['widget'] == box_widget:
+                break
+        else:
+            box_dict = {'widget': box_widget}
+            self.move_boxes.append(box_dict)
+            
+        box_dict['from_x'] = box_widget.pos().x()
+        box_dict['from_y'] = box_widget.pos().y()
+        box_dict['to_x'] = to_x
+        box_dict['to_y'] = to_y
+        box_dict['n_start'] = self.move_box_n
+
+        if not self.move_box_timer.isActive():
+            self.move_box_timer.start()
 
     def updateLimits(self):
         w0 = canvas.size_rect.width()
@@ -165,7 +221,8 @@ class PatchScene(QGraphicsScene):
                         max_y = max(max_y, y + rect.height())
 
             if not first_value:
-                self.m_view.fitInView(min_x, min_y, abs(max_x - min_x), abs(max_y - min_y), Qt.KeepAspectRatio)
+                self.m_view.fitInView(min_x, min_y, abs(max_x - min_x),
+                                      abs(max_y - min_y), Qt.KeepAspectRatio)
                 self.fixScaleFactor()
 
     def zoom_in(self):
@@ -278,17 +335,45 @@ class PatchScene(QGraphicsScene):
             self.m_view.viewport().setCursor(self.curCut)
 
     def zoom_wheel(self, delta):
+        print('ldkj')
+        print('skld', self.m_view.mapToScene(QCursor.pos()))
+        
         transform = self.m_view.transform()
         scale = transform.m11()
+
+        delta_x = transform.dx()
+        delta_y = transform.dy()
+        print('ksldkg', delta_x, delta_y)
 
         if ((delta > 0 and scale < self.m_scale_max)
                 or (delta < 0 and scale > self.m_scale_min)):
             factor = 1.4142135623730951 ** (delta / 240.0)
             transform.scale(factor, factor)
             self.fixScaleFactor(transform)
-            self.m_view.setTransform(transform)
-            self.scaleChanged.emit(transform.m11())
             
+            w = self.m_view.width()
+            h = self.m_view.height()
+            wf = self.m_view.mapToScene(QPoint(w -1, 0)).x() \
+                 - self.m_view.mapToScene(QPoint(0, 0)).x()
+            hf = self.m_view.mapToScene(QPoint(0, h - 1)).y() \
+                 - self.m_view.mapToScene(QPoint(0, 0)).y()
+             
+            c_pos = QCursor.pos()
+            cs_pos = self.m_view.mapToScene(c_pos)
+            
+            lf = cs_pos.x() - c_pos.x() * wf / w
+            tf = cs_pos.y() - c_pos.y() * hf / h
+            
+            self.m_view.ensureVisible(lf, tf, wf, hf, 0, 0)
+            new_pos = self.m_view.mapToScene(c_pos)
+            
+            self.m_view.ensureVisible(QRectF(QPointF(lf, tf) - new_pos + cs_pos,
+                                             QSizeF(wf, hf)), 0, 0)
+            
+            print('zzzzzzz', delta)
+            #self.m_view.setTransform(transform)
+            #self.scaleChanged.emit(transform.m11())
+            #self.m_view.rotate(90)
             for group in canvas.group_list:
                 for widget in group.widgets:
                     if widget and widget.top_icon:
@@ -421,6 +506,7 @@ class PatchScene(QGraphicsScene):
 
         if self.m_ctrl_down:
             event.accept()
+            print('go zoolm')
             self.zoom_wheel(event.delta())
             return
 

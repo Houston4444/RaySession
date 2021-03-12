@@ -788,6 +788,7 @@ class CanvasBox(QGraphicsItem):
         if self.m_cursor_moving:
             self.unsetCursor()
             QTimer.singleShot(0, self.fixPosAfterMove)
+            QTimer.singleShot(0, canvas.scene.update)
         self.m_mouse_down = False
         self.m_cursor_moving = False
         QGraphicsItem.mouseReleaseEvent(self, event)

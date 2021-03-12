@@ -56,7 +56,8 @@ revoir sauvegarde groupe position et paires
 / fonction refresh
 
 /bug "connect" input ports
-theme modern dark
+/ theme modern dark
 / distinctif a2j CV
 splitter après plein écran
-remettre le noir marron sur ports jack
+/ remettre le noir marron sur ports jack
+modifier zoomer sur

@@ -1,4 +1,4 @@
-
+import time
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
 from PyQt5.QtWidgets import QMenu, QAction, QLabel
 
@@ -507,6 +507,10 @@ class PatchbayManager:
         self.group_a2j_hw = RS.settings.value(
             'Canvas/group_a2j_ports', True, type=bool)
         
+        self.wait_join_group_id = None
+        self.join_animation_connected = False
+        
+        
     @classmethod
     def set_use_graceful_names(cls, yesno: bool):
         cls.use_graceful_names = yesno
@@ -527,6 +531,11 @@ class PatchbayManager:
             return
         server.toDaemon(*args)
 
+    def join_animation_finished(self):
+        if self.wait_join_group_id is not None:
+            patchcanvas.joinGroup(self.wait_join_group_id)
+            self.wait_join_group_id = None
+
     def canvas_callbacks(self, action, value1, value2, value_str):
         if action == patchcanvas.ACTION_GROUP_INFO:
             pass
@@ -540,7 +549,13 @@ class PatchbayManager:
 
         elif action == patchcanvas.ACTION_GROUP_JOIN:
             group_id = value1
-            patchcanvas.joinGroup(group_id)
+            self.wait_join_group_id = group_id
+            if not self.join_animation_connected:
+                patchcanvas.canvas.qobject.move_boxes_finished.connect(
+                    self.join_animation_finished)
+                self.join_animation_connected = True
+            patchcanvas.animateBeforeJoin(group_id)
+            #patchcanvas.joinGroup(group_id)
         
         elif action == patchcanvas.ACTION_GROUP_MOVE:
             group_id = value1
@@ -671,6 +686,8 @@ class PatchbayManager:
             idx = 0
         elif index == 1:
             idx = 1
+        elif index == 2:
+            idx = 2
         
         patchcanvas.changeTheme(idx)
         
@@ -762,7 +779,8 @@ class PatchbayManager:
             for gp in self.group_positions:
                 if gp['group'] == group.name:
                     patchcanvas.moveGroupBox(
-                        group.group_id, gp['in_or_out'], gp['x'], gp['y'])
+                        group.group_id, gp['in_or_out'], gp['x'], gp['y'],
+                        animate=False)
 
                     self.send_to_daemon(
                         '/ray/server/patchbay/save_group_position',
@@ -878,7 +896,6 @@ class PatchbayManager:
                     and group_position['group'] == group_name):
                 group_position['x'] = x
                 group_position['y'] = y
-                print('gppposs update')
                 break
         else:
             self.group_positions.append(
@@ -889,7 +906,6 @@ class PatchbayManager:
         
         for group in self.groups:
             if group.name == group_name:
-                print('gppposs on the canvas')
                 patchcanvas.moveGroupBox(group.group_id, in_or_out, x, y)
                 break
 

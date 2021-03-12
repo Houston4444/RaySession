@@ -72,6 +72,7 @@ class CanvasObject(QObject):
     port_removed = pyqtSignal(int, int)
     connection_added = pyqtSignal(int)
     connection_removed = pyqtSignal(int)
+    move_boxes_finished = pyqtSignal()
     
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
@@ -303,7 +304,8 @@ def setCanvasSize(x, y, width, height):
     canvas.scene.updateLimits()
     canvas.scene.fixScaleFactor()
 
-def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION, icon_name=''):
+def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION,
+             icon_name='', orig_pos=None):
     if canvas.debug:
         print("PatchCanvas::addGroup(%i, %s, %s, %s)" % (
               group_id, group_name.encode(), split2str(split), icon2str(icon_type)))
@@ -340,9 +342,19 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         group_box.setSplit(True, PORT_MODE_OUTPUT)
 
         if features.handle_group_pos:
-            group_box.setPos(getStoredCanvasPosition(group_name + "_OUTPUT", CanvasGetNewGroupPos(False)))
+            #group_box.setPos(getStoredCanvasPosition(group_name + "_OUTPUT", CanvasGetNewGroupPos(False)))
+            new_pos = getStoredCanvasPosition(group_name + "_OUTPUT", CanvasGetNewGroupPos(False))
+            
+            if orig_pos is None:
+                group_box.setPos(new_pos)
+            else:
+                print('kladdd', orig_pos, new_pos)
+                group_box.setPos(orig_pos)
+                canvas.scene.add_box_to_animation(group_box, new_pos.x(), new_pos.y())
         else:
-            group_box.setPos(CanvasGetNewGroupPos(False))
+            #group_box.setPos(CanvasGetNewGroupPos(False))
+            new_pos = CanvasGetNewGroupPos(False)
+            canvas.scene.add_box_to_animation(group_box, new_pos.x(), new_pos.y())
 
         group_sbox = CanvasBox(group_id, group_name, icon_type, icon_name)
         group_sbox.setSplit(True, PORT_MODE_INPUT)
@@ -350,9 +362,19 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         group_dict.widgets[1] = group_sbox
 
         if features.handle_group_pos:
-            group_sbox.setPos(getStoredCanvasPosition(group_name + "_INPUT", CanvasGetNewGroupPos(True)))
+            
+            new_pos = getStoredCanvasPosition(group_name + "_INPUT", CanvasGetNewGroupPos(True))
+            
+            if orig_pos is None:
+                group_sbox.setPos(new_pos)
+            else:
+                group_sbox.setPos(orig_pos)
+                canvas.scene.add_box_to_animation(group_sbox, new_pos.x(), new_pos.y())
+            #group_sbox.setPos(getStoredCanvasPosition(group_name + "_INPUT", CanvasGetNewGroupPos(True)))
         else:
-            group_sbox.setPos(CanvasGetNewGroupPos(True))
+            #group_sbox.setPos(CanvasGetNewGroupPos(True))
+            new_pos = CanvasGetNewGroupPos(True)
+            canvas.scene.add_box_to_animation(group_sbox, new_pos.x(), new_pos.y())
 
         canvas.last_z_value += 1
         group_sbox.setZValue(canvas.last_z_value)
@@ -385,7 +407,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def removeGroup(group_id):
+def removeGroup(group_id, save_positions=True):
     if canvas.debug:
         print("PatchCanvas::removeGroup(%i)" % group_id)
 
@@ -397,7 +419,7 @@ def removeGroup(group_id):
             if group.split:
                 s_item = group.widgets[1]
 
-                if features.handle_group_pos:
+                if features.handle_group_pos and save_positions:
                     canvas.settings.setValue("CanvasPositions/%s_OUTPUT" % group_name, item.pos())
                     canvas.settings.setValue("CanvasPositions/%s_INPUT" % group_name, s_item.pos())
                     canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, SPLIT_YES)
@@ -410,7 +432,7 @@ def removeGroup(group_id):
                     del s_item
 
             else:
-                if features.handle_group_pos:
+                if features.handle_group_pos and save_positions:
                     canvas.settings.setValue("CanvasPositions/%s" % group_name, item.pos())
                     canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, SPLIT_NO)
 
@@ -514,11 +536,13 @@ def splitGroup(group_id):
     for port_id in port_list_ids:
         removePort(group_id, port_id)
 
+    ex_pos = item.pos()
+
     removeGroup(group_id)
 
     # Step 3 - Re-create Item, now split
     addGroup(group_id, group_name, SPLIT_YES,
-             group_icon_type, group_icon_name)
+             group_icon_type, group_icon_name, orig_pos=ex_pos)
 
     if plugin_id >= 0:
         setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
@@ -570,8 +594,6 @@ def joinGroup(group_id):
         qCritical("PatchCanvas::joinGroup(%i) - unable to find groups to join" % group_id)
         return
     
-    
-    
     port_list_ids = list(item.getPortList())
     port_list_idss = s_item.getPortList()
     
@@ -610,7 +632,7 @@ def joinGroup(group_id):
     for port_id in port_list_ids:
         removePort(group_id, port_id)
 
-    removeGroup(group_id)
+    removeGroup(group_id, save_positions=False)
 
     # Step 3 - Re-create Item, now together
     addGroup(group_id, group_name, SPLIT_NO,
@@ -627,7 +649,24 @@ def joinGroup(group_id):
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def moveGroupBox(group_id: int, port_mode: int, x: int, y: int):
+def animateBeforeJoin(group_id: int):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            canvas.settings.setValue(
+                "CanvasPositions/%s_OUTPUT" % group.group_name, group.widgets[0].pos())
+            canvas.settings.setValue(
+                "CanvasPositions/%s_INPUT" % group.group_name, group.widgets[1].pos())
+            canvas.settings.setValue(
+                "CanvasPositions/%s_SPLIT" % group.group_name, SPLIT_YES)
+            
+            new_pos = getStoredCanvasPosition(
+                group.group_name, CanvasGetNewGroupPos(False))
+            for widget in group.widgets:
+                canvas.scene.add_box_to_animation(
+                    widget, new_pos.x(), new_pos.y())
+            break
+
+def moveGroupBox(group_id: int, port_mode: int, x: int, y: int, animate=True):
     for group in canvas.group_list:
         if group.group_id == group_id:
             box = None
@@ -647,7 +686,14 @@ def moveGroupBox(group_id: int, port_mode: int, x: int, y: int):
             if box is None:
                 return
             
-            box.setPos(QPointF(x, y))
+            if animate:
+                canvas.scene.add_box_to_animation(box, x, y)
+            else:
+                box.setPos(x, y)
+            #canvas.scene.move_boxes.append(
+                #{'widget': box, 'from_x': box.pos().x(), 'from_y': box.pos().y(),
+                 #'to_x': x, 'to_y': y})
+            #canvas.scene.move_box_timer.start()
             break
                 
                 
