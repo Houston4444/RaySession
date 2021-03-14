@@ -335,45 +335,17 @@ class PatchScene(QGraphicsScene):
             self.m_view.viewport().setCursor(self.curCut)
 
     def zoom_wheel(self, delta):
-        print('ldkj')
-        print('skld', self.m_view.mapToScene(QCursor.pos()))
-        
         transform = self.m_view.transform()
         scale = transform.m11()
-
-        delta_x = transform.dx()
-        delta_y = transform.dy()
-        print('ksldkg', delta_x, delta_y)
 
         if ((delta > 0 and scale < self.m_scale_max)
                 or (delta < 0 and scale > self.m_scale_min)):
             factor = 1.4142135623730951 ** (delta / 240.0)
             transform.scale(factor, factor)
             self.fixScaleFactor(transform)
-            
-            w = self.m_view.width()
-            h = self.m_view.height()
-            wf = self.m_view.mapToScene(QPoint(w -1, 0)).x() \
-                 - self.m_view.mapToScene(QPoint(0, 0)).x()
-            hf = self.m_view.mapToScene(QPoint(0, h - 1)).y() \
-                 - self.m_view.mapToScene(QPoint(0, 0)).y()
-             
-            c_pos = QCursor.pos()
-            cs_pos = self.m_view.mapToScene(c_pos)
-            
-            lf = cs_pos.x() - c_pos.x() * wf / w
-            tf = cs_pos.y() - c_pos.y() * hf / h
-            
-            self.m_view.ensureVisible(lf, tf, wf, hf, 0, 0)
-            new_pos = self.m_view.mapToScene(c_pos)
-            
-            self.m_view.ensureVisible(QRectF(QPointF(lf, tf) - new_pos + cs_pos,
-                                             QSizeF(wf, hf)), 0, 0)
-            
-            print('zzzzzzz', delta)
-            #self.m_view.setTransform(transform)
-            #self.scaleChanged.emit(transform.m11())
-            #self.m_view.rotate(90)
+            self.m_view.setTransform(transform)
+            self.scaleChanged.emit(transform.m11())
+
             for group in canvas.group_list:
                 for widget in group.widgets:
                     if widget and widget.top_icon:
