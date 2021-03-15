@@ -22,9 +22,9 @@
 from math import floor
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
-                          Qt, QPoint, QPointF, QRectF, QTimer, QSizeF)
+                          Qt, QPoint, QPointF, QRectF, QTimer, QSizeF, QMarginsF)
 from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QLinearGradient, QColor
-from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene
+from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene, QGraphicsView
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -97,6 +97,7 @@ class PatchScene(QGraphicsScene):
         self.move_box_n_max = 20 # 20 animations steps (20ms * 20 = 400ms)
 
         self.selectionChanged.connect(self.slot_selectionChanged)
+        #self.setSceneRect(-10000, -10000, 20000, 20000)
         
     def getDevicePixelRatioF(self):
         if QT_VERSION < 0x50600:
@@ -131,6 +132,24 @@ class PatchScene(QGraphicsScene):
 
         return fix
 
+    def fix_temporary_scroll_bars(self):
+        if self.m_view is None:
+            return
+        
+        if self.m_view.horizontalScrollBar().isVisible():
+            self.m_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        else:
+            self.m_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            
+        if self.m_view.verticalScrollBar().isVisible():
+            self.m_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        else:
+            self.m_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            
+    def reset_scroll_bars(self):
+        self.m_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.m_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
     def move_boxes_animation(self):
         self.move_box_n += 1
         
@@ -147,6 +166,8 @@ class PatchScene(QGraphicsScene):
                         * (n/total_n)
 
                 box_dict['widget'].setPos(x, y)
+        
+        self.resize_the_scene()
         
         if self.move_box_n == self.move_box_n_max:
             self.move_box_n = 0
@@ -194,6 +215,39 @@ class PatchScene(QGraphicsScene):
         cur_color = "black" if canvas.theme.canvas_bg.blackF() < 0.5 else "white"
         self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
         self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
+
+    def resize_the_scene(self, item=None):
+        first_pass = True
+        recenter = False
+        
+        for group in canvas.group_list:
+            for widget in group.widgets:
+                if widget is None:
+                    continue
+                
+                item_rect = widget.boundingRect().translated(widget.scenePos())
+                item_rect = item_rect.marginsAdded(QMarginsF(20, 20, 20, 20))
+                
+                if first_pass:
+                    full_rect = item_rect
+                else:
+                    full_rect = full_rect.united(item_rect)
+                
+                if widget is item:
+                    orig_rect = self.sceneRect()
+                    if not (orig_rect.contains(item_rect.topLeft())
+                            and orig_rect.contains(item_rect.bottomRight())):
+                        recenter = True
+                
+                first_pass = False
+        
+        if not first_pass:
+            self.setSceneRect(full_rect)
+            if recenter and self.m_view is not None:
+                #scene_rect = self.sceneRect()
+                #self.m_view.centerOn(scene_rect.left(), scene_rect.bottom())
+                #self.m_view.setAlignment(Qt.AlignTop)
+                pass
 
     def zoom_fit(self):
         min_x = min_y = max_x = max_y = None
@@ -340,12 +394,38 @@ class PatchScene(QGraphicsScene):
 
         if ((delta > 0 and scale < self.m_scale_max)
                 or (delta < 0 and scale > self.m_scale_min)):
+            # prevent too large unzoom
+            if delta < 0:
+                rect = self.sceneRect()
+                
+                top_left_vw = self.m_view.mapFromScene(rect.topLeft())
+                bottom_right_vw = self.m_view.mapFromScene(rect.bottomRight())
+                
+                if (top_left_vw.x() > self.m_view.width() / 4
+                        and top_left_vw.y() > self.m_view.height() / 4):
+                    return
+                
+                
+                
+                #top_left_sc = self.m_view.mapToScene(QPoint(0, 0))
+                #bottom_right_sc = self.m_view.mapToScene(
+                    #QPoint(self.m_view.width(), self.m_view.height()))
+                #margin = 100
+                #if (top_left_sc.x() < rect.left() - margin
+                        #and top_left_sc.y() < rect.top() - margin
+                        #and bottom_right_sc.x() > rect.right() + margin
+                        #and bottom_right_sc.y() > rect.bottom() + margin):
+                    #return
+            
+            # Apply scale
             factor = 1.4142135623730951 ** (delta / 240.0)
             transform.scale(factor, factor)
             self.fixScaleFactor(transform)
             self.m_view.setTransform(transform)
             self.scaleChanged.emit(transform.m11())
 
+            # Update box icons especially when they are not scalable 
+            # eg. coming from theme 
             for group in canvas.group_list:
                 for widget in group.widgets:
                     if widget and widget.top_icon:
@@ -478,7 +558,6 @@ class PatchScene(QGraphicsScene):
 
         if self.m_ctrl_down:
             event.accept()
-            print('go zoolm')
             self.zoom_wheel(event.delta())
             return
 

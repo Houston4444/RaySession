@@ -337,6 +337,9 @@ class DraggableGraphicsView(QGraphicsView):
             self.fMiddleButton = Qt.MiddleButton
         except:
             self.fMiddleButton = Qt.MidButton
+            
+        self.h_scroll_visible = False
+        self.v_scroll_visible = False
 
     def mousePressEvent(self, event):
         if event.button() == self.fMiddleButton and not self.fCtrlDown:
@@ -365,6 +368,19 @@ class DraggableGraphicsView(QGraphicsView):
         if event.key() == Qt.Key_Control:
             self.fCtrlDown = False
         QGraphicsView.keyReleaseEvent(self, event)
+        
+    #def resizeEvent(self, event):
+        #h_scroll_visible = self.horizontalScrollBar().isVisible()
+        #v_scroll_visible = self.verticalScrollBar().isVisible()
+        
+        #if (h_scroll_visible == self.h_scroll_visible
+                #and v_scroll_visible == self.v_scroll_visible):
+            #QGraphicsView.resizeEvent(self, event)
+        
+        #self.h_scroll_visible = h_scroll_visible
+        #self.v_scroll_visible = v_scroll_visible
+        
+        #print('ifjk', self.h_scroll_visible, self.v_scroll_visible)
         
 
 class CanvasSplitterHandle(QSplitterHandle):

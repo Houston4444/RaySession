@@ -23,7 +23,7 @@ import sys
 from sip import voidptr
 from struct import pack
 
-from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer
+from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer, pyqtSignal, QMarginsF
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
                          QLinearGradient, QPainter, QPen, QPolygonF,
                          QColor, QIcon)
@@ -113,6 +113,9 @@ class CanvasBox(QGraphicsItem):
         self.p_width_in = 0
         self.p_width_out = 0
         self.p_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
+        self.p_ex_width = self.p_width
+        self.p_ex_height = self.p_height
+        self.p_ex_scene_pos = self.scenePos()
 
         self.m_last_pos = QPointF()
         self.m_splitted = False
@@ -513,6 +516,15 @@ class CanvasBox(QGraphicsItem):
         if self.has_top_icon():
             self.top_icon.align_at((self.p_width - max(title_size, subtitle_size) - 29)/2)
 
+        if (self.p_width != self.p_ex_width
+                or self.p_height != self.p_ex_height
+                or self.scenePos() != self.p_ex_scene_pos):
+            canvas.scene.resize_the_scene()
+        
+        self.p_ex_width = self.p_width
+        self.p_ex_height = self.p_height
+        self.p_ex_scene_pos = self.scenePos()
+                    
         self.repaintLines(True)
         self.update()
 
@@ -781,12 +793,16 @@ class CanvasBox(QGraphicsItem):
             if not self.m_cursor_moving:
                 self.setCursor(QCursor(Qt.SizeAllCursor))
                 self.m_cursor_moving = True
+                canvas.scene.fix_temporary_scroll_bars()
+                
             self.repaintLines()
+            canvas.scene.resize_the_scene(self)
         QGraphicsItem.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
             self.unsetCursor()
+            canvas.scene.reset_scroll_bars()
             QTimer.singleShot(0, self.fixPosAfterMove)
             QTimer.singleShot(0, canvas.scene.update)
         self.m_mouse_down = False
@@ -812,6 +828,16 @@ class CanvasBox(QGraphicsItem):
         if self._is_hardware:
             return QRectF(-9, -9, self.p_width + 18, self.p_height + 18)
         return QRectF(0, 0, self.p_width, self.p_height)
+
+    #def itemChange(self, change, value):
+        #pass
+        ##if change != QGraphicsItem.ItemPositionChange:
+            ##return
+        
+        ##i = 0
+        
+        ##for group in canvas.group_list:
+            
 
     def paint(self, painter, option, widget):
         painter.save()

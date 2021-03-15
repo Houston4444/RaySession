@@ -735,8 +735,14 @@ QToolButton {border: none}</string>
           <property name="styleSheet">
            <string notr="true">QGraphicsView{border:none}</string>
           </property>
+          <property name="sizeAdjustPolicy">
+           <enum>QAbstractScrollArea::AdjustToContents</enum>
+          </property>
           <property name="transformationAnchor">
            <enum>QGraphicsView::AnchorUnderMouse</enum>
+          </property>
+          <property name="resizeAnchor">
+           <enum>QGraphicsView::NoAnchor</enum>
           </property>
          </widget>
         </item>

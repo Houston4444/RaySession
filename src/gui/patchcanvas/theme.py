@@ -212,7 +212,7 @@ class Theme(object):
 
             # Lines
             self.line_audio_jack = QColor(80, 80, 96)
-            self.line_audio_jack_sel = QColor(198, 161, 80)
+            self.line_audio_jack_sel = QColor(147, 131, 78)
             self.line_audio_jack_glow = QColor(100, 100, 200)
             self.line_midi_jack = QColor(77, 42, 16)
             self.line_midi_jack_sel = QColor(160, 86, 33)

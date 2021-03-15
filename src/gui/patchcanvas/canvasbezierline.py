@@ -185,7 +185,7 @@ class CanvasBezierLine(QGraphicsPathItem):
             
         base_color = canvas.theme.line_audio_jack
         if self.m_lineSelected:
-            base_color = canvas.theme.port_audio_jack_bg_sel
+            base_color = canvas.theme.line_audio_jack_sel
         
         if port_type1 == PORT_TYPE_MIDI_JACK:
             base_color = canvas.theme.port_midi_jack_bg
