@@ -910,12 +910,12 @@ def changePortProperties(group_id, port_id, portgrp_id, new_port_name):
                 port.port_name = new_port_name
                 port.widget.setPortName(new_port_name)
             
-            if portgrp_id != port.portgrp_id:
-                if port.portgrp_id:
-                    CanvasRemovePortFromPortGroup(group_id, port_id,
-                                                  port.portgrp_id)
-                if portgrp_id:
-                    CanvasAddPortToPortGroup(group_id, port_id, portgrp_id)
+            #if portgrp_id != port.portgrp_id:
+                #if port.portgrp_id:
+                    #CanvasRemovePortFromPortGroup(group_id, port_id,
+                                                  #port.portgrp_id)
+                #if portgrp_id:
+                    #CanvasAddPortToPortGroup(group_id, port_id, portgrp_id)
             
             port.widget.parentItem().updatePositions()
 

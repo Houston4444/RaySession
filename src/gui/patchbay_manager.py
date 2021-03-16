@@ -39,14 +39,26 @@ class Connection:
         self.connection_id = connection_id
         self.port_out = port_out
         self.port_in = port_in
+        self.in_canvas = False
+    
+    def port_type(self)->int:
+        return self.port_out.type
     
     def add_to_canvas(self):
+        if self.in_canvas:
+            return
+        
+        self.in_canvas = True
         patchcanvas.connectPorts(
             self.connection_id,
             self.port_out.group_id, self.port_out.port_id,
             self.port_in.group_id, self.port_in.port_id)
         
     def remove_from_canvas(self):
+        if not self.in_canvas:
+            return
+
+        self.in_canvas = False
         patchcanvas.disconnectPorts(self.connection_id)
 
 
@@ -56,6 +68,7 @@ class Port:
     portgroup_id = 0
     prevent_stereo = False
     set_the_one_on_pair = False
+    in_canvas = False
 
     def __init__(self, port_id: int, name: str, alias_1: str, alias_2: str,
                  port_type: int, flags: int, metadata: str):
@@ -81,6 +94,9 @@ class Port:
         self.change_canvas_properties()
 
     def add_to_canvas(self):
+        if self.in_canvas:
+            return
+        
         port_mode = PORT_MODE_NULL
         if self.flags & PORT_IS_INPUT:
             port_mode = PORT_MODE_INPUT
@@ -104,17 +120,23 @@ class Port:
                         is_alternate = True
                         break
         
-        #if self.type == PORT_TYPE_AUDIO:
-            #return
+        self.in_canvas = True
 
         patchcanvas.addPort(
             self.group_id, self.port_id, display_name,
             port_mode, self.type, self.portgroup_id, is_alternate)
     
     def remove_from_canvas(self):
+        if not self.in_canvas:
+            return
+        
         patchcanvas.removePort(self.group_id, self.port_id)
+        self.in_canvas = False
     
     def change_canvas_properties(self):
+        if not self.in_canvas:
+            return
+        
         display_name = self.display_name
         if not PatchbayManager.use_graceful_names:
             display_name = self.full_name.partition(':')[2]
@@ -131,23 +153,34 @@ class Portgroup:
         self.portgroup_id = portgroup_id
         self.port_mode = port_mode
         self.ports = []
+        self.in_canvas = False
     
     def add_ports(self, *ports):
         for port in ports:
             port.portgroup_id = self.portgroup_id
             self.ports.append(port)
     
+    def port_type(self):
+        if not self.ports:
+            return PORT_TYPE_NULL
+        
+        return self.ports[0].type
+    
     def update_ports_in_canvas(self):
         for port in self.ports:
             port.change_canvas_properties()
     
     def add_to_canvas(self):
+        if self.in_canvas:
+            return
+        
         if len(self.ports) < 2:
             return
         
         port_mode = self.ports[0].mode()
         port_type = self.ports[0].type
 
+        self.in_canvas = True
         patchcanvas.addPortGroup(self.group_id, self.portgroup_id,
                                  self.port_mode, port_type)
         for port in self.ports:
@@ -155,10 +188,14 @@ class Portgroup:
                 self.group_id, port.port_id, self.portgroup_id)
 
     def remove_from_canvas(self):
+        if not self.in_canvas:
+            return
+        
         for port in self.ports:
             port.portgroup_id = 0
 
         patchcanvas.removePortGroup(self.group_id, self.portgroup_id)
+        self.in_canvas = False
 
 
 class Group:
@@ -171,12 +208,16 @@ class Group:
         self._is_hardware = False
         self.client_icon = ''
         self.a2j_group = False
+        self.in_canvas = False
 
     def update_ports_in_canvas(self):
         for port in self.ports:
             port.change_canvas_properties()
 
     def add_to_canvas(self):
+        if self.in_canvas:
+            return
+        
         icon_type = patchcanvas.ICON_APPLICATION
         icon_name = ""
 
@@ -200,12 +241,17 @@ class Group:
                 icon_type = patchcanvas.ICON_INTERNAL
                 icon_name = "audio-input-microphone.svg"
 
+        self.in_canvas = True
         patchcanvas.addGroup(self.group_id, self.display_name,
                              patchcanvas.SPLIT_UNDEF,
                              icon_type, icon_name)
     
     def remove_from_canvas(self):
+        if not self.in_canvas:
+            return
+        
         patchcanvas.removeGroup(self.group_id)
+        self.in_canvas = False
 
     def remove_all_ports(self):
         for port in self.ports:
@@ -381,6 +427,34 @@ class Group:
     def add_portgroup(self, portgroup):
         self.portgroups.append(portgroup)
     
+    def change_audio_midi_view(self, audio_midi_view: int):
+        # first add group to canvas if not already
+        if not self.in_canvas:
+            self.add_to_canvas()
+
+        for portgroup in self.portgroups:
+            if not audio_midi_view & portgroup.port_type():
+                portgroup.remove_from_canvas()
+                
+        for port in self.ports:
+            if not audio_midi_view & port.type:
+                port.remove_from_canvas()
+                
+        for port in self.ports:
+            if audio_midi_view & port.type:
+                port.add_to_canvas()
+        
+        for portgroup in self.portgroups:
+            if audio_midi_view & portgroup.port_type():
+                portgroup.add_to_canvas()
+
+        # remove group from canvas if no visible ports
+        for port in self.ports:
+            if port.in_canvas:
+                break
+        else:
+            self.remove_from_canvas()
+            
     def stereo_detection(self, port):
         if port.type != PORT_TYPE_AUDIO:
             return
@@ -477,12 +551,15 @@ class Group:
         
 class PatchbayManager:
     use_graceful_names = True
+    audio_midi_view = PORT_TYPE_AUDIO + PORT_TYPE_MIDI
     groups = []
     
     def __init__(self, session):
         self.session = session
         
         self.tools_widget = PatchbayToolsWidget()
+        self.tools_widget.audio_midi_change_order.connect(
+            self.change_audio_midi_view)
         self.tools_widget.buffer_size_change_order.connect(
             self.change_buffersize)
 
@@ -782,7 +859,8 @@ class PatchbayManager:
         group.graceful_port(port)
         
         if group_is_new:
-            group.add_to_canvas()
+            if self.audio_midi_view & port_type:
+                group.add_to_canvas()
 
             for gp in self.group_positions:
                 if gp['group'] == group.name:
@@ -793,8 +871,10 @@ class PatchbayManager:
                     self.send_to_daemon(
                         '/ray/server/patchbay/save_group_position',
                         gp['in_or_out'], group.name, gp['x'], gp['y'])
-                
-        port.add_to_canvas()
+
+        if self.audio_midi_view & port_type:
+            group.add_to_canvas()
+            port.add_to_canvas()
 
         # detect left audio port if it is a right one
         other_port = group.stereo_detection(port)
@@ -808,7 +888,8 @@ class PatchbayManager:
             if other_port.set_the_one_on_pair:
                 other_port.set_the_one()
             
-            portgroup.add_to_canvas()
+            if group.in_canvas:
+                portgroup.add_to_canvas()
 
     def remove_port(self, name: str):
         port = self.get_port_from_name(name)
@@ -819,6 +900,7 @@ class PatchbayManager:
             if group.group_id == port.group_id:
                 group.remove_port(port)
                 port.remove_from_canvas()
+
                 if not group.ports:
                     group.remove_from_canvas()
                     self.groups.remove(group)
@@ -853,9 +935,11 @@ class PatchbayManager:
                 group = Group(self._next_group_id, new_group_name)
                 self._next_group_id += 1
                 group.add_port(port)
-                group.add_to_canvas()
+                if self.audio_midi_view & port.type:
+                    group.add_to_canvas()
             
-            port.add_to_canvas()
+            if self.audio_midi_view & port.type:
+                port.add_to_canvas()
             return
         
         for group in self.groups:
@@ -936,7 +1020,23 @@ class PatchbayManager:
         self._next_port_id = 0
         self._next_portgroup_id = 1
         self._next_connection_id = 0
-    
+
+    def change_audio_midi_view(self, audio_midi_view: int):
+        self.audio_midi_view = audio_midi_view
+        
+        for connection in self.connections:
+            if (connection.in_canvas
+                    and not audio_midi_view & connection.port_type()):
+                connection.remove_from_canvas()
+
+        for group in self.groups:
+            group.change_audio_midi_view(audio_midi_view)
+            
+        for connection in self.connections:
+            if (not connection.in_canvas
+                    and audio_midi_view & connection.port_type()):
+                connection.add_to_canvas()
+
     def disannounce(self):
         self.send_to_patchbay_daemon('/ray/patchbay/gui_disannounce')
         self.clear_all()
@@ -953,7 +1053,7 @@ class PatchbayManager:
     
     def add_xrun(self):
         self.tools_widget.add_xrun()
-        
+
     def change_buffersize(self, buffer_size):
         self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',
                                      buffer_size)

@@ -6,6 +6,7 @@ import ui.patchbay_tools
 
 class PatchbayToolsWidget(QWidget):
     buffer_size_change_order = pyqtSignal(int)
+    audio_midi_change_order = pyqtSignal(int)
     
     def __init__(self):
         QWidget.__init__(self)
@@ -15,6 +16,12 @@ class PatchbayToolsWidget(QWidget):
         self._waiting_buffer_change = False
         self._buffer_change_from_osc = False
         
+        self._current_audio_midi = 3
+        
+        self.ui.checkBoxAudio.stateChanged.connect(
+            self.audio_button_checked)
+        self.ui.checkBoxMidi.stateChanged.connect(
+            self.midi_button_checked)
         self.ui.pushButtonXruns.clicked.connect(
             self.reset_xruns)
         self.ui.comboBoxBuffer.currentIndexChanged.connect(
@@ -29,7 +36,29 @@ class PatchbayToolsWidget(QWidget):
         self.current_buffer_size = self.ui.comboBoxBuffer.currentData()
         
         self.xruns_counter = 0
+    
+    def audio_button_checked(self, yesno: bool):
+        if yesno:
+            self._current_audio_midi |= 1
+        else:
+            self._current_audio_midi &= ~1
+            if not self._current_audio_midi & 2:
+                self.ui.checkBoxMidi.setChecked(True)
+                return
         
+        self.audio_midi_change_order.emit(self._current_audio_midi)
+    
+    def midi_button_checked(self, yesno: bool):
+        if yesno:
+            self._current_audio_midi |= 2
+        else:
+            self._current_audio_midi &= ~2
+            if not self._current_audio_midi & 1:
+                self.ui.checkBoxAudio.setChecked(True)
+                return
+
+        self.audio_midi_change_order.emit(self._current_audio_midi)
+    
     def set_samplerate(self, samplerate: int):
         #k_samplerate = samplerate / 1000.0
         str_sr = str(samplerate)
@@ -101,6 +130,8 @@ class PatchbayToolsWidget(QWidget):
             
     def set_jack_running(self, yesno: bool):
         for widget in (
+                self.ui.checkBoxAudio,
+                self.ui.checkBoxMidi,
                 self.ui.labelSamplerateTitle,
                 self.ui.labelSamplerate,
                 self.ui.labelSamplerateUnits,
