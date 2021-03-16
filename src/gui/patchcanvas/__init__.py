@@ -115,7 +115,8 @@ class options_t(object):
         'use_bezier_lines',
         'antialiasing',
         'eyecandy',
-        'inline_displays'
+        'inline_displays',
+        'elastic'
     ]
 
 # Canvas features
@@ -284,12 +285,13 @@ canvas = Canvas()
 
 options = options_t()
 options.theme_name = getDefaultThemeName()
-options.auto_hide_groups  = False
+options.auto_hide_groups = False
 options.auto_select_items = False
-options.use_bezier_lines  = True
-options.antialiasing      = ANTIALIASING_SMALL
-options.eyecandy          = EYECANDY_SMALL
-options.inline_displays   = False
+options.use_bezier_lines = True
+options.antialiasing = ANTIALIASING_SMALL
+options.eyecandy = EYECANDY_SMALL
+options.inline_displays = False
+options.elastic = True
 
 features = features_t()
 features.group_info   = False
@@ -301,13 +303,14 @@ features.handle_group_pos = False
 # PatchCanvas API
 def setOptions(new_options):
     if canvas.initiated: return
-    options.theme_name        = new_options.theme_name
-    options.auto_hide_groups  = new_options.auto_hide_groups
+    options.theme_name = new_options.theme_name
+    options.auto_hide_groups = new_options.auto_hide_groups
     options.auto_select_items = new_options.auto_select_items
-    options.use_bezier_lines  = new_options.use_bezier_lines
-    options.antialiasing      = new_options.antialiasing
-    options.eyecandy          = new_options.eyecandy
-    options.inline_displays   = new_options.inline_displays
+    options.use_bezier_lines = new_options.use_bezier_lines
+    options.antialiasing = new_options.antialiasing
+    options.eyecandy = new_options.eyecandy
+    options.inline_displays = new_options.inline_displays
+    options.elastic = new_options.elastic
 
 def setFeatures(new_features):
     if canvas.initiated: return

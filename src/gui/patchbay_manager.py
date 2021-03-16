@@ -103,6 +103,9 @@ class Port:
                     if group.name != 'a2j':
                         is_alternate = True
                         break
+        
+        #if self.type == PORT_TYPE_AUDIO:
+            #return
 
         patchcanvas.addPort(
             self.group_id, self.port_id, display_name,
@@ -492,6 +495,8 @@ class PatchbayManager:
             self.set_group_shadows)
         self.options_dialog.theme_changed.connect(
             self.change_theme)
+        self.options_dialog.elastic_checked.connect(
+            self.set_elastic_canvas)
 
         self.group_positions = []
         self.connections = []
@@ -693,7 +698,10 @@ class PatchbayManager:
         
         theme_name = patchcanvas.getThemeName(idx)
         RS.settings.setValue('Canvas/theme', theme_name)
-        
+    
+    def set_elastic_canvas(self, yesno: int):
+        patchcanvas.setElastic(yesno)
+
     def toggle_graceful_names(self):
         PatchbayManager.set_use_graceful_names(not self.use_graceful_names)
         for group in self.groups:

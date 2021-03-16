@@ -22,6 +22,8 @@ class CanvasOptionsDialog(QDialog):
             'Canvas/group_a2j_ports', True, type=bool)
         self.use_shadows = RS.settings.value(
             'Canvas/box_shadows', True, type=bool)
+        self.elastic_canvas = RS.settings.value(
+            'Canvas/elastic', True, type=bool)
         
         self.ui.checkBoxGracefulNames.setChecked(
             self.gracious_names)
@@ -29,6 +31,8 @@ class CanvasOptionsDialog(QDialog):
             self.a2j_grouped)
         self.ui.checkBoxShadows.setChecked(
             self.use_shadows)
+        self.ui.checkBoxElastic.setChecked(
+            self.elastic_canvas)
         
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Silver Gold'))
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Black Gold'))
@@ -44,6 +48,7 @@ class CanvasOptionsDialog(QDialog):
         self.a2j_grouped_checked = self.ui.checkBoxA2J.stateChanged
         self.group_shadows_checked = self.ui.checkBoxShadows.stateChanged
         self.theme_changed = self.ui.comboBoxTheme.currentIndexChanged
+        self.elastic_checked = self.ui.checkBoxElastic.stateChanged
     
     def get_gracious_names(self)->bool:
         return self.ui.checkBoxGracefulNames.isChecked()
@@ -54,6 +59,9 @@ class CanvasOptionsDialog(QDialog):
     def get_group_shadows(self)->bool:
         return self.ui.checkBoxShadows.isChecked()
     
+    def get_elastic(self)->bool:
+        return self.ui.checkBoxElastic.isChecked()
+    
     def closeEvent(self, event):
         RS.settings.setValue('Canvas/use_graceful_names',
                              self.get_gracious_names())
@@ -61,5 +69,7 @@ class CanvasOptionsDialog(QDialog):
                              self.get_a2j_grouped())
         RS.settings.setValue('Canvas/box_shadows',
                              self.get_group_shadows())
+        RS.settings.setValue('Canvas/elastic',
+                             self.get_elastic())
         
         QDialog.closeEvent(self, event)

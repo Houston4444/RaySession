@@ -1217,4 +1217,7 @@ def handleAllPluginsRemoved():
         if group.split and group.widgets[1]:
             group.widgets[1].removeAsPlugin()
 
+def setElastic(yesno: bool):
+    canvas.scene.set_elastic(yesno)
+
 # ------------------------------------------------------------------------------------------------------------

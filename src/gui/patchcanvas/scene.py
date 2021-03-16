@@ -31,6 +31,7 @@ from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene, QGraphicsView
 
 from . import (
     canvas,
+    options,
     CanvasBoxType,
     CanvasIconType,
     CanvasPortType,
@@ -88,13 +89,15 @@ class PatchScene(QGraphicsScene):
 
         self.curCut = None
         self.curZoomArea = None
-
+        
         self.move_boxes = []
         self.move_box_timer = QTimer()
         self.move_box_timer.setInterval(20) # 20 ms step animation (50 Hz)
         self.move_box_timer.timeout.connect(self.move_boxes_animation)
         self.move_box_n = 0
         self.move_box_n_max = 20 # 20 animations steps (20ms * 20 = 400ms)
+
+        self.elastic_scene = True
 
         self.selectionChanged.connect(self.slot_selectionChanged)
         #self.setSceneRect(-10000, -10000, 20000, 20000)
@@ -216,9 +219,8 @@ class PatchScene(QGraphicsScene):
         self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
         self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
 
-    def resize_the_scene(self, item=None):
+    def get_new_scene_rect(self):
         first_pass = True
-        recenter = False
         
         for group in canvas.group_list:
             for widget in group.widgets:
@@ -233,21 +235,37 @@ class PatchScene(QGraphicsScene):
                 else:
                     full_rect = full_rect.united(item_rect)
                 
-                if widget is item:
-                    orig_rect = self.sceneRect()
-                    if not (orig_rect.contains(item_rect.topLeft())
-                            and orig_rect.contains(item_rect.bottomRight())):
-                        recenter = True
-                
                 first_pass = False
         
         if not first_pass:
-            self.setSceneRect(full_rect)
-            if recenter and self.m_view is not None:
-                #scene_rect = self.sceneRect()
-                #self.m_view.centerOn(scene_rect.left(), scene_rect.bottom())
-                #self.m_view.setAlignment(Qt.AlignTop)
-                pass
+            return full_rect
+        
+        return QRectF()
+
+    def resize_the_scene(self):
+        if not options.elastic:
+            return
+        
+        scene_rect = self.get_new_scene_rect()
+        if not scene_rect.isNull():
+            self.setSceneRect(self.get_new_scene_rect())
+
+    def set_elastic(self, yesno: bool):
+        options.elastic = True
+        self.resize_the_scene()
+        options.elastic = yesno
+
+        if not yesno:
+            # resize the scene to a null QRectF to auto set sceneRect
+            # always growing with items
+            self.setSceneRect(QRectF())
+            
+            # add a fake item with the current canvas scene size
+            # (calculated with items), and remove it.
+            fake_item = QGraphicsRectItem(self.get_new_scene_rect())
+            self.addItem(fake_item)
+            self.update()
+            self.removeItem(fake_item)
 
     def zoom_fit(self):
         min_x = min_y = max_x = max_y = None

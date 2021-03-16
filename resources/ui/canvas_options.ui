@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>201</width>
-    <height>154</height>
+    <height>172</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -50,6 +50,16 @@
       <widget class="QCheckBox" name="checkBoxShadows">
        <property name="text">
         <string>Boxes have shadows</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkBoxElastic">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Always resize the canvas scene to the mininum contents.&lt;/p&gt;&lt;p&gt;This way, the view is directly optimized while moving boxes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Elastic canvas</string>
        </property>
       </widget>
      </item>

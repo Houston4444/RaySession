@@ -796,7 +796,7 @@ class CanvasBox(QGraphicsItem):
                 canvas.scene.fix_temporary_scroll_bars()
                 
             self.repaintLines()
-            canvas.scene.resize_the_scene(self)
+            canvas.scene.resize_the_scene()
         QGraphicsItem.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):

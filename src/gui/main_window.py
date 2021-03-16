@@ -496,10 +496,11 @@ class MainWindow(QMainWindow):
         if RS.settings.value('Canvas/box_shadows', False, type=bool):
             options.eyecandy = patchcanvas.EYECANDY_SMALL
         
-        options.auto_hide_groups = False
+        options.auto_hide_groups = True
         options.auto_select_items = False
         options.inline_displays = False
         options.use_bezier_lines = True
+        options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
         #options.theme_name = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
         #options.auto_hide_groups = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
         #options.auto_select_items = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS]
