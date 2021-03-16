@@ -58,8 +58,8 @@ class Connection:
         if not self.in_canvas:
             return
 
-        self.in_canvas = False
         patchcanvas.disconnectPorts(self.connection_id)
+        self.in_canvas = False
 
 
 class Port:
@@ -964,7 +964,8 @@ class PatchbayManager:
         connection = Connection(self._next_connection_id, port_out, port_in)
         self._next_connection_id += 1
         self.connections.append(connection)
-        connection.add_to_canvas()
+        if connection.port_type() & self.audio_midi_view:
+            connection.add_to_canvas()
     
     def remove_connection(self, port_out_name: str, port_in_name: str):
         port_out = self.get_port_from_name(port_out_name)

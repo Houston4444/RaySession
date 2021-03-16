@@ -1,11 +1,16 @@
 
 import sys
+import time
+
 from liblo import Server, Address, make_method
 
 import jacklib
 
 
 class OscJackPatch(Server):
+    slow_wait_time = 0.020
+    slow_wait_num = 20
+    
     def __init__(self, main_object):
         Server.__init__(self)
         self.add_method('/ray/patchbay/add_gui', 's',
@@ -92,14 +97,24 @@ class OscJackPatch(Server):
                   self.main_object.samplerate,
                   self.main_object.buffer_size)
 
+        n = 0
+
         for port in self.port_list:
             self.send(gui_addr, '/ray/gui/patchbay/port_added',
                       port.name, port.alias_1, port.alias_2,
                       port.type, port.flags, '')
+            
+            n += 1
+            if n % self.slow_wait_num == 0:
+                time.sleep(self.slow_wait_time)
 
         for connection in self.connection_list:
             self.send(gui_addr, '/ray/gui/patchbay/connection_added',
                       connection[0], connection[1])
+            
+            n += 1
+            if n % self.slow_wait_num == 0:
+                time.sleep(self.slow_wait_time)
 
         self.gui_list.append(gui_addr)
 
@@ -108,13 +123,28 @@ class OscJackPatch(Server):
         self.send_samplerate()
         self.send_buffersize()
         
+        # we need to slow the long process of messages sends
+        # to prevent loss packets
+        n = 0
+        
         for port in self.port_list:
             self.sendGui('/ray/gui/patchbay/port_added',
                         port.name, port.alias_1, port.alias_2,
                         port.type, port.flags, '')
+            
+            n += 1
+            
+            if n % self.slow_wait_num == 0:
+                time.sleep(self.slow_wait_time)
+
         for connection in self.connection_list:
             self.sendGui('/ray/gui/patchbay/connection_added',
                          connection[0], connection[1])
+            
+            n += 1
+            
+            if n % self.slow_wait_num == 0:
+                time.sleep(self.slow_wait_time)
 
     def port_added(self, port):
         self.sendGui('/ray/gui/patchbay/port_added',
