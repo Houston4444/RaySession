@@ -124,10 +124,6 @@ class CanvasPortGroup(QGraphicsItem):
     
     def getPortLength(self):
         return len(self.m_port_id_list)
-    
-    def setPortMode(self, port_mode):
-        self.m_port_mode = port_mode
-        self.update()
 
     def type(self):
         return CanvasPortGroupType

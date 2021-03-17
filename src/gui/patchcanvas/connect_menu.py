@@ -579,12 +579,9 @@ class MainPortContextMenu(QMenu):
                 con_state = CanvasPortGroupConnectionState(
                     self._group_id, self._port_id_list,
                     group_id, port_id_list)
-                
-                print('zoumaas', con_state)
 
                 for group_menu in self.connect_menu.group_menus:
                     if group_menu.group_id() == group_id:
-                        print('gogogoelz', con_state)
                         group_menu.check_element(
                             port_id, portgrp_id, con_state)
                         break

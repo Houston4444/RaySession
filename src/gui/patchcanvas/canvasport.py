@@ -74,7 +74,7 @@ from .utils import (
 
 class CanvasPort(QGraphicsItem):
     def __init__(self, group_id, port_id, port_name, port_mode, 
-                 port_type, portgrp_id, is_alternate, parent):
+                 port_type, is_alternate, parent):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
 
@@ -84,7 +84,7 @@ class CanvasPort(QGraphicsItem):
         self.m_port_mode = port_mode
         self.m_port_type = port_type
         self.m_port_name = port_name
-        self.m_portgrp_id = portgrp_id
+        self.m_portgrp_id = 0
         self.m_is_alternate = is_alternate
 
         # Base Variables
@@ -140,18 +140,10 @@ class CanvasPort(QGraphicsItem):
     def getPortGroupPosition(self):
         return CanvasGetPortGroupPosition(self.m_group_id, self.m_port_id,
                                           self.m_portgrp_id)
-    
-    def setPortMode(self, port_mode):
-        self.m_port_mode = port_mode
-        self.update()
-
-    def setPortType(self, port_type):
-        self.m_port_type = port_type
-        self.update()
 
     def setPortGroupId(self, portgrp_id):
         self.m_portgrp_id = portgrp_id
-        self.update()
+        #self.update()
     
     def setPortName(self, port_name):
         if QFontMetrics(self.m_port_font).width(port_name) < QFontMetrics(self.m_port_font).width(self.m_port_name):

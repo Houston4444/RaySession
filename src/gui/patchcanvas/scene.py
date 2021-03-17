@@ -68,6 +68,7 @@ class PatchScene(QGraphicsScene):
     def __init__(self, parent, view):
         QGraphicsScene.__init__(self, parent)
 
+        #self.setItemIndexMethod(QGraphicsScene.NoIndex)
         self.m_ctrl_down = False
         self.m_scale_area = False
         self.m_mouse_down_init = False
@@ -202,6 +203,11 @@ class PatchScene(QGraphicsScene):
 
         if not self.move_box_timer.isActive():
             self.move_box_timer.start()
+
+    def removeItem(self, item):
+        for child_item in item.childItems():
+            QGraphicsScene.removeItem(self, child_item)
+        QGraphicsScene.removeItem(self, item)
 
     def updateLimits(self):
         w0 = canvas.size_rect.width()

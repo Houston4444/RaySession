@@ -1,6 +1,7 @@
 import time
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
 from PyQt5.QtWidgets import QMenu, QAction, QLabel
+from PyQt5.QtCore import pyqtSlot
 
 from gui_tools import RS
 
@@ -124,7 +125,7 @@ class Port:
 
         patchcanvas.addPort(
             self.group_id, self.port_id, display_name,
-            port_mode, self.type, self.portgroup_id, is_alternate)
+            port_mode, self.type, is_alternate)
     
     def remove_from_canvas(self):
         if not self.in_canvas:
@@ -154,12 +155,12 @@ class Portgroup:
         self.port_mode = port_mode
         self.ports = []
         self.in_canvas = False
-    
+
     def add_ports(self, *ports):
         for port in ports:
             port.portgroup_id = self.portgroup_id
             self.ports.append(port)
-    
+
     def port_type(self):
         if not self.ports:
             return PORT_TYPE_NULL
@@ -169,7 +170,7 @@ class Portgroup:
     def update_ports_in_canvas(self):
         for port in self.ports:
             port.change_canvas_properties()
-    
+
     def add_to_canvas(self):
         if self.in_canvas:
             return
@@ -182,17 +183,12 @@ class Portgroup:
 
         self.in_canvas = True
         patchcanvas.addPortGroup(self.group_id, self.portgroup_id,
-                                 self.port_mode, port_type)
-        for port in self.ports:
-            patchcanvas.addPortToPortGroup(
-                self.group_id, port.port_id, self.portgroup_id)
+                                 self.port_mode, port_type,
+                                 [port.port_id for port in self.ports])
 
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
-        
-        for port in self.ports:
-            port.portgroup_id = 0
 
         patchcanvas.removePortGroup(self.group_id, self.portgroup_id)
         self.in_canvas = False
@@ -254,11 +250,11 @@ class Group:
         self.in_canvas = False
 
     def remove_all_ports(self):
-        for port in self.ports:
-            port.remove_from_canvas()
-        
         for portgroup in self.portgroups:
             portgroup.remove_from_canvas()
+        
+        for port in self.ports:
+            port.remove_from_canvas()
         
         self.portgroups.clear()
         self.ports.clear()
@@ -288,6 +284,10 @@ class Group:
     def remove_port(self, port):
         if port in self.ports:
             self.ports.remove(port)
+    
+    def remove_portgroup(self, portgroup):
+        if portgroup in self.portgroups:
+            self.portgroups.remove(portgroup)
     
     def set_client_icon(self, icon_name:str):
         self.client_icon = icon_name
@@ -421,6 +421,18 @@ class Group:
         
         elif not client_name:
             display_name = display_name.replace('_', ' ')
+            if display_name.lower().endswith(' left'):
+                display_name = display_name[:-5] + ' L'
+            elif display_name.lower().endswith(' right'):
+                display_name = display_name[:-6] + ' R'
+            elif display_name.lower() == 'left in':
+                display_name = 'In L'
+            elif display_name.lower() == 'right in':
+                display_name = 'In R'
+            elif display_name.lower() == 'left out':
+                display_name = 'Out L'
+            elif display_name.lower() == 'right out':
+                display_name = 'Out R'
         
         port.display_name = display_name if display_name else s_display_name
     
@@ -429,13 +441,12 @@ class Group:
     
     def change_audio_midi_view(self, audio_midi_view: int):
         # first add group to canvas if not already
-        if not self.in_canvas:
-            self.add_to_canvas()
+        self.add_to_canvas()
 
         for portgroup in self.portgroups:
             if not audio_midi_view & portgroup.port_type():
                 portgroup.remove_from_canvas()
-                
+        
         for port in self.ports:
             if not audio_midi_view & port.type:
                 port.remove_from_canvas()
@@ -454,7 +465,7 @@ class Group:
                 break
         else:
             self.remove_from_canvas()
-            
+        
     def stereo_detection(self, port):
         if port.type != PORT_TYPE_AUDIO:
             return
@@ -898,6 +909,14 @@ class PatchbayManager:
         
         for group in self.groups:
             if group.group_id == port.group_id:
+                # remove portgroup first if port is in a portgroup
+                if port.portgroup_id:
+                    for portgroup in group.portgroups:
+                        if portgroup.portgroup_id == port.portgroup_id:
+                            group.portgroups.remove(portgroup)
+                            portgroup.remove_from_canvas()
+                            break
+
                 group.remove_port(port)
                 port.remove_from_canvas()
 
@@ -1022,6 +1041,7 @@ class PatchbayManager:
         self._next_portgroup_id = 1
         self._next_connection_id = 0
 
+
     def change_audio_midi_view(self, audio_midi_view: int):
         self.audio_midi_view = audio_midi_view
         
@@ -1032,7 +1052,7 @@ class PatchbayManager:
 
         for group in self.groups:
             group.change_audio_midi_view(audio_midi_view)
-            
+        
         for connection in self.connections:
             if (not connection.in_canvas
                     and audio_midi_view & connection.port_type()):
