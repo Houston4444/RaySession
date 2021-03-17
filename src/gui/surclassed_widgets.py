@@ -369,27 +369,6 @@ class DraggableGraphicsView(QGraphicsView):
             self.fCtrlDown = False
         QGraphicsView.keyReleaseEvent(self, event)
         
-    #def paintEvent(self, event):
-        #print('viieww paiitn')
-        #scene = self.scene()
-        #for item in scene.items():
-            #print('fk', item.type())
-        
-        #QGraphicsView.paintEvent(self, event)
-        
-    #def resizeEvent(self, event):
-        #h_scroll_visible = self.horizontalScrollBar().isVisible()
-        #v_scroll_visible = self.verticalScrollBar().isVisible()
-        
-        #if (h_scroll_visible == self.h_scroll_visible
-                #and v_scroll_visible == self.v_scroll_visible):
-            #QGraphicsView.resizeEvent(self, event)
-        
-        #self.h_scroll_visible = h_scroll_visible
-        #self.v_scroll_visible = v_scroll_visible
-        
-        #print('ifjk', self.h_scroll_visible, self.v_scroll_visible)
-        
 
 class CanvasSplitterHandle(QSplitterHandle):
     def __init__(self, parent):

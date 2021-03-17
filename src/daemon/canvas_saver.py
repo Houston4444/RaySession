@@ -85,11 +85,9 @@ class CanvasSaver(ServerSender):
             else:
                 gpos = GroupPosition(in_or_out, group, x, y)
                 group_positions.append(gpos)
-        
-        print('yaloo')
+
         RS.settings.setValue('Canvas/GroupPositions',
                              [gp.to_tuple() for gp in group_positions])
-        print('augooluaf')
     
     def load_session_canvas(self, xml_element):
         nodes = xml_element.childNodes()
@@ -131,22 +129,18 @@ class CanvasSaver(ServerSender):
     
     def update_group_session_positions(self, xml_element):
         self.group_positions_session.clear()
-        print('oodod')
         nodes = xml_element.childNodes()
 
         for i in range(nodes.count()):
-            print('coommlld')
             node = nodes.at(i)
             el = node.toElement()
             if el.tagName() != "group":
                 continue
-            print('cllms')
+
             in_or_out_str = el.attribute('in_or_out')
             group = el.attribute('group')
             x_str = el.attribute('x')
             y_str = el.attribute('y')
-            print('skfj', in_or_out_str, group, x_str, y_str)
-            print('skdjfx', type(in_or_out_str), type(x_str), type(y_str))
             
             # verify that values are digits
             int_ok = True
@@ -160,7 +154,7 @@ class CanvasSaver(ServerSender):
             
             if not int_ok:
                 continue
-            print('ldllldkd', in_or_out_str, group, x_str, y_str)
+
             gpos = GroupPosition(int(in_or_out_str), group,
                                  int(x_str), int(y_str))
 

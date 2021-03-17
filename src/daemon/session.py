@@ -65,7 +65,6 @@ class Session(ServerSender):
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
-        print('ozekoffofofofoffo')
         self.canvas_saver = CanvasSaver()
         
         self.canvas_group_positions = []

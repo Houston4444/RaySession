@@ -79,8 +79,6 @@ class MainWindow(QMainWindow):
         self.short_exec_name = _translate('main_win', 'exec')
         self.ui.frameCurrentSession.shorterSize.connect(
             self.set_short_app_exec_names)
-        
-        #print('amzle', self.ui.frameCurrentSession.width())
 
         # manage geometry depending of use of embedded jack patchbay
         show_patchbay = RS.settings.value(
@@ -346,12 +344,9 @@ class MainWindow(QMainWindow):
         
         self._were_visible_before_fullscreen = 0
         self._geom_before_fullscreen = None
+        self._splitter_pos_before_fullscreen = [100, 100]
         
         self._previous_width = 0
-        
-        print('amale', self.ui.frameCurrentSession.width())
-        print('zmlel', self.ui.frameCurrentSession.minimumSizeHint().width())
-        print('fldks', self.width())
 
     def toggleSceneFullScreen(self):
         visible_maximized = 0x1
@@ -370,7 +365,8 @@ class MainWindow(QMainWindow):
                 self.showNormal()
                 self.setGeometry(self._geom_before_fullscreen)
             
-            self.ui.splitterMainVsCanvas.setSizes([50, 50])
+            self.ui.splitterMainVsCanvas.setSizes(
+                self._splitter_pos_before_fullscreen)
         else:
             self._were_visible_before_fullscreen = \
                 visible_maximized * int(self.isMaximized()) \
@@ -381,6 +377,8 @@ class MainWindow(QMainWindow):
 
             self.ui.menuBar.setVisible(False)
             self.ui.toolBar.setVisible(False)
+            self._splitter_pos_before_fullscreen = \
+                self.ui.splitterMainVsCanvas.sizes()
             self.ui.splitterMainVsCanvas.setSizes([0, 100])
             self.showFullScreen()
 
@@ -404,7 +402,6 @@ class MainWindow(QMainWindow):
         self.ui.splitterSessionVsMessages.setSizes(sizes)
 
     def add_patchbay_tools(self, widget):
-        print('lsdmlfkf')
         self.canvas_tools_action = self.ui.toolBar.addWidget(widget)
 
     def createClientWidget(self, client):

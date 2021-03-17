@@ -289,6 +289,7 @@ class ClientSlot(QFrame):
         if self.ui.toolButtonGUI.isVisible():
             width -= self.ui.toolButtonGUI.width()
         
+        width = max(30, width)
         self.ui.ClientName.setMaximumWidth(width)
         
 

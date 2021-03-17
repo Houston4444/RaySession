@@ -315,7 +315,6 @@ class GUIServerThread(liblo.ServerThread):
         
     @ray_method('/ray/gui/patchbay/port_renamed', 'ss')
     def _patchbay_port_renamed(self, path, args, types, src_addr):
-        print('gui port renamed', args)
         pass
     
     @ray_method('/ray/gui/patchbay/port_removed', 's')
@@ -351,7 +350,6 @@ class GUIServerThread(liblo.ServerThread):
         liblo.ServerThread.send(self, *args)
 
     def toDaemon(self, *args):
-        print('youpla', self._daemon_manager.address.url)
         self.send(self._daemon_manager.address, *args)
 
     def announce(self):

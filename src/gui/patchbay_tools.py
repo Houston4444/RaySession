@@ -38,7 +38,6 @@ class PatchbayToolsWidget(QWidget):
         self.xruns_counter = 0
     
     def audio_button_checked(self, yesno: int):
-        print('chala1', yesno)
         if yesno:
             self._current_audio_midi |= 1
         else:
@@ -48,10 +47,8 @@ class PatchbayToolsWidget(QWidget):
                 return
         
         self.audio_midi_change_order.emit(self._current_audio_midi)
-        print('chala2')
         
     def midi_button_checked(self, yesno: int):
-        print('chalamidi', yesno)
         if yesno:
             self._current_audio_midi |= 2
         else:
