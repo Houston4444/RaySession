@@ -347,7 +347,6 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
             if orig_pos is None:
                 group_box.setPos(new_pos)
             else:
-                print('kladdd', orig_pos, new_pos)
                 group_box.setPos(orig_pos)
                 canvas.scene.add_box_to_animation(group_box, new_pos.x(), new_pos.y())
         else:
@@ -361,7 +360,6 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         group_dict.widgets[1] = group_sbox
 
         if features.handle_group_pos:
-            
             new_pos = getStoredCanvasPosition(group_name + "_INPUT", CanvasGetNewGroupPos(True))
             
             if orig_pos is None:
@@ -540,7 +538,7 @@ def splitGroup(group_id):
 
     # Step 2 - Remove Item and Children
     for conn in conns_data:
-        disconnectPorts(conn.connection_id)
+        disconnectPorts(conn.connection_id, fast=True)
     
     for portgrp in portgrps_data:
         if portgrp.group_id == group_id:
@@ -571,7 +569,7 @@ def splitGroup(group_id):
 
     for conn in conns_data:
         connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id,
-                     conn.group_in_id, conn.port_in_id)
+                     conn.group_in_id, conn.port_in_id, fast=True)
     
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -657,7 +655,7 @@ def joinGroup(group_id):
 
     # Step 2 - Remove Item and Children
     for conn in conns_data:
-        disconnectPorts(conn.connection_id)
+        disconnectPorts(conn.connection_id, fast=True)
     
     for portgrp in portgrps_data:
         removePortGroup(group_id, portgrp.portgrp_id, fast=True)
@@ -684,7 +682,7 @@ def joinGroup(group_id):
     
     for conn in conns_data:
         connectPorts(conn.connection_id, conn.group_out_id, conn.port_out_id,
-                     conn.group_in_id, conn.port_in_id)
+                     conn.group_in_id, conn.port_in_id, fast=True)
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -692,6 +690,14 @@ def joinGroup(group_id):
                 if box is not None:
                     box.updatePositions()
 
+    QTimer.singleShot(0, canvas.scene.update)
+
+def updateAllPositions():
+    for group in canvas.group_list:
+        for box in group.widgets:
+            if box is not None:
+                box.updatePositions()
+    
     QTimer.singleShot(0, canvas.scene.update)
 
 def animateBeforeJoin(group_id: int):
@@ -741,7 +747,13 @@ def moveGroupBox(group_id: int, port_mode: int, x: int, y: int, animate=True):
             #canvas.scene.move_box_timer.start()
             break
                 
-                
+def wrapGroupBox(group_id: int, port_mode: int, yesno: bool):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            for box in group.widgets:
+                if (box is not None
+                        and box.getSplittedMode() == port_mode):
+                    box.set_wrapped(yesno)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -1070,7 +1082,8 @@ def removePortGroup(group_id, portgrp_id, fast=False):
     
     QTimer.singleShot(0, canvas.scene.update)
 
-def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id):
+def connectPorts(connection_id, group_out_id, port_out_id,
+                 group_in_id, port_in_id, fast=False):
     if canvas.debug:
         print("PatchCanvas::connectPorts(%i, %i, %i, %i, %i)" % (
               connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
@@ -1124,6 +1137,9 @@ def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_
     
     canvas.qobject.connection_added.emit(connection_id)
     
+    if fast:
+        return
+    
     if options.eyecandy == EYECANDY_FULL:
         item = connection_dict.widget
         CanvasItemFX(item, True, False)
@@ -1131,7 +1147,7 @@ def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def disconnectPorts(connection_id):
+def disconnectPorts(connection_id, fast=False):
     if canvas.debug:
         print("PatchCanvas::disconnectPorts(%i)" % connection_id)
 
@@ -1178,13 +1194,16 @@ def disconnectPorts(connection_id):
     item1.parentItem().removeLineFromGroup(connection_id)
     item2.parentItem().removeLineFromGroup(connection_id)
 
-    if options.eyecandy == EYECANDY_FULL:
+    if options.eyecandy == EYECANDY_FULL and not fast:
         CanvasItemFX(line, False, True)
         return
 
     canvas.scene.removeItem(line)
     del line
 
+    if fast:
+        return
+    
     QTimer.singleShot(0, canvas.scene.update)
 
 # ------------------------------------------------------------------------------------------------------------

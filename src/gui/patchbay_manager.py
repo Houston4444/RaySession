@@ -1,6 +1,6 @@
 import time
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
-from PyQt5.QtWidgets import QMenu, QAction, QLabel
+from PyQt5.QtWidgets import QMenu, QAction, QLabel, QMessageBox
 from PyQt5.QtCore import pyqtSlot
 
 from gui_tools import RS
@@ -50,16 +50,21 @@ class Connection:
             return
         
         self.in_canvas = True
+        
+        fast_operation = PatchbayManager.optimized_operation
+        
         patchcanvas.connectPorts(
             self.connection_id,
             self.port_out.group_id, self.port_out.port_id,
-            self.port_in.group_id, self.port_in.port_id)
+            self.port_in.group_id, self.port_in.port_id,
+            fast=fast_operation)
         
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
 
-        patchcanvas.disconnectPorts(self.connection_id)
+        patchcanvas.disconnectPorts(self.connection_id,
+                                    fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
 
@@ -123,15 +128,19 @@ class Port:
         
         self.in_canvas = True
 
+        fast_operation = PatchbayManager.optimized_operation
+
         patchcanvas.addPort(
             self.group_id, self.port_id, display_name,
-            port_mode, self.type, is_alternate)
+            port_mode, self.type, is_alternate, fast=fast_operation)
     
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
         
-        patchcanvas.removePort(self.group_id, self.port_id)
+        fast_operation = PatchbayManager.optimized_operation
+        
+        patchcanvas.removePort(self.group_id, self.port_id, fast=fast_operation)
         self.in_canvas = False
     
     def change_canvas_properties(self):
@@ -182,15 +191,22 @@ class Portgroup:
         port_type = self.ports[0].type
 
         self.in_canvas = True
+        
+        fast_operation = PatchbayManager.optimized_operation
+        
         patchcanvas.addPortGroup(self.group_id, self.portgroup_id,
                                  self.port_mode, port_type,
-                                 [port.port_id for port in self.ports])
+                                 [port.port_id for port in self.ports],
+                                 fast=fast_operation)
 
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
-
-        patchcanvas.removePortGroup(self.group_id, self.portgroup_id)
+        
+        fast_operation = PatchbayManager.optimized_operation
+        
+        patchcanvas.removePortGroup(self.group_id, self.portgroup_id,
+                                    fast=fast_operation)
         self.in_canvas = False
 
 
@@ -563,6 +579,7 @@ class Group:
 class PatchbayManager:
     use_graceful_names = True
     audio_midi_view = PORT_TYPE_AUDIO + PORT_TYPE_MIDI
+    optimized_operation = False
     groups = []
     
     def __init__(self, session):
@@ -607,6 +624,10 @@ class PatchbayManager:
     @classmethod
     def set_use_graceful_names(cls, yesno: bool):
         cls.use_graceful_names = yesno
+    
+    @classmethod
+    def optimize_operation(cls, yesno: bool):
+        cls.optimized_operation = yesno
     
     def send_to_patchbay_daemon(self, *args):
         server = GUIServerThread.instance()
@@ -664,6 +685,13 @@ class PatchbayManager:
                         in_or_out, group.name, int(str_x), int(str_y))
                     break
         
+        elif action == patchcanvas.ACTION_GROUP_WRAP:
+            group_id = value1
+            in_or_out = value2
+            wrap = bool(value_str == 'True')
+            
+            patchcanvas.wrapGroupBox(group_id, in_or_out, wrap)
+        
         elif action == patchcanvas.ACTION_PORT_GROUP_ADD:
             g_id, p_mode, p_type, p_id1, p_id2 =  [
                 int(i) for i in value_str.split(":")]
@@ -681,10 +709,6 @@ class PatchbayManager:
                     group.add_portgroup(portgroup)
             
             portgroup.add_to_canvas()
-            
-            #patchcanvas.addPortGroup(g_id, pg_id, p_mode, p_type)
-            #patchcanvas.addPortToPortGroup(g_id, p_id1, pg_id)
-            #patchcanvas.addPortToPortGroup(g_id, p_id2, pg_id)
         
         elif action == patchcanvas.ACTION_PORT_GROUP_REMOVE:
             
@@ -1026,12 +1050,15 @@ class PatchbayManager:
         pass
     
     def clear_all(self):
+        self.optimize_operation(True)
         for connection in self.connections:
             connection.remove_from_canvas()
         
         for group in self.groups:
             group.remove_all_ports()
             group.remove_from_canvas()
+        
+        self.optimize_operation(False)
         
         self.connections.clear()
         self.groups.clear()
@@ -1044,6 +1071,7 @@ class PatchbayManager:
 
     def change_audio_midi_view(self, audio_midi_view: int):
         self.audio_midi_view = audio_midi_view
+        self.optimize_operation(True)
         
         for connection in self.connections:
             if (connection.in_canvas
@@ -1057,6 +1085,9 @@ class PatchbayManager:
             if (not connection.in_canvas
                     and audio_midi_view & connection.port_type()):
                 connection.add_to_canvas()
+        
+        self.optimize_operation(False)
+        patchcanvas.updateAllPositions()
 
     def disannounce(self):
         self.send_to_patchbay_daemon('/ray/patchbay/gui_disannounce')
@@ -1068,7 +1099,14 @@ class PatchbayManager:
     def server_stopped(self):
         self.tools_widget.set_jack_running(False)
         self.clear_all()
-        
+    
+    def server_lose(self):
+        self.tools_widget.set_jack_running(False)
+        self.clear_all()
+        print('larlkezrlekl')
+        ret = QMessageBox.critical(self.session._main_win,
+            _translate('patchbay', "JACK server seems to be totally busy... ;("))
+    
     def set_dsp_load(self, dsp_load: int):
         self.tools_widget.set_dsp_load(dsp_load)
     
@@ -1084,6 +1122,11 @@ class PatchbayManager:
         
     def sample_rate_changed(self, samplerate):
         self.tools_widget.set_samplerate(samplerate)
+    
+    def receive_big_packets(self, state: int):
+        self.optimize_operation(not bool(state))
+        if state:
+            patchcanvas.updateAllPositions()
     
     def patchbay_announce(self, jack_running: int, samplerate: int,
                           buffer_size: int):

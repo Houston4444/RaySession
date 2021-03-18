@@ -45,26 +45,27 @@ PORT_TYPE_MIDI_ALSA  = 3
 PORT_TYPE_PARAMETER  = 4
 
 # Callback Action
-ACTION_GROUP_INFO        =  0 # group_id, N, N
-ACTION_GROUP_RENAME      =  1 # group_id, N, N
-ACTION_GROUP_SPLIT       =  2 # group_id, N, N
-ACTION_GROUP_JOIN        =  3 # group_id, N, N
-ACTION_GROUP_MOVE        =  4 # group_id, in_or_out, "x:y"
-ACTION_PORT_GROUP_ADD    =  5 # N, N, "gId:pgId:pMode:pType:portId1:portId2"
+ACTION_GROUP_INFO = 0 # group_id, N, N
+ACTION_GROUP_RENAME = 1 # group_id, N, N
+ACTION_GROUP_SPLIT = 2 # group_id, N, N
+ACTION_GROUP_JOIN = 3 # group_id, N, N
+ACTION_GROUP_MOVE = 4 # group_id, in_or_out, "x:y"
+ACTION_GROUP_WRAP = 5 # group_id, folded, N
+ACTION_PORT_GROUP_ADD = 5 # N, N, "gId:pgId:pMode:pType:portId1:portId2"
 ACTION_PORT_GROUP_REMOVE =  6 # group_id, portgrp_id, N
-ACTION_PORT_INFO         =  7 # group_id, port_id, N
-ACTION_PORT_RENAME       =  8 # group_id, port_id, N
-ACTION_PORTS_CONNECT     =  9 # N, N, "outG:outP:inG:inP"
-ACTION_PORTS_DISCONNECT  = 10 # conn_id, N, N
-ACTION_PLUGIN_CLONE      = 11 # plugin_id, N, N
-ACTION_PLUGIN_EDIT       = 12 # plugin_id, N, N
-ACTION_PLUGIN_RENAME     = 13 # plugin_id, N, N
-ACTION_PLUGIN_REPLACE    = 14 # plugin_id, N, N
-ACTION_PLUGIN_REMOVE     = 15 # plugin_id, N, N
-ACTION_PLUGIN_SHOW_UI    = 16 # plugin_id, N, N
-ACTION_BG_RIGHT_CLICK    = 17 # N, N, N
-ACTION_DOUBLE_CLICK      = 18 # N, N, N
-ACTION_INLINE_DISPLAY    = 19 # plugin_id, N, N
+ACTION_PORT_INFO = 7 # group_id, port_id, N
+ACTION_PORT_RENAME = 8 # group_id, port_id, N
+ACTION_PORTS_CONNECT = 9 # N, N, "outG:outP:inG:inP"
+ACTION_PORTS_DISCONNECT = 10 # conn_id, N, N
+ACTION_PLUGIN_CLONE = 11 # plugin_id, N, N
+ACTION_PLUGIN_EDIT = 12 # plugin_id, N, N
+ACTION_PLUGIN_RENAME = 13 # plugin_id, N, N
+ACTION_PLUGIN_REPLACE = 14 # plugin_id, N, N
+ACTION_PLUGIN_REMOVE = 15 # plugin_id, N, N
+ACTION_PLUGIN_SHOW_UI = 16 # plugin_id, N, N
+ACTION_BG_RIGHT_CLICK = 17 # N, N, N
+ACTION_DOUBLE_CLICK = 18 # N, N, N
+ACTION_INLINE_DISPLAY = 19 # plugin_id, N, N
 
 # Icon
 ICON_APPLICATION = 0

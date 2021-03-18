@@ -7,6 +7,8 @@ import warnings
 
 import jacklib
 import osc_server
+import threading
+import time
 
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
@@ -87,10 +89,18 @@ class MainObject:
     def __init__(self):
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
+        self._waiting_jack_client_open = True
         
+        print('sdgkjgj')
         self.osc_server = osc_server.OscJackPatch(self)
+        print('sdlkfjjffjc')
         self.write_existence_file(self.osc_server.port)
+        
+        self.jack_waiter_thread = threading.Thread(
+            target=self.check_jack_client_responding)
+        self.jack_waiter_thread.start()
         self.start_jack_client()
+        print('sldkxkxkxxkx')
     
     @staticmethod
     def c_char_p_p_to_list(c_char_p_p):
@@ -146,6 +156,19 @@ class MainObject:
     def add_gui(self, gui_url: str):
         self.osc_server.add_gui(gui_url)
     
+    def check_jack_client_responding(self):
+        print('decoaldlek')
+        for i in range(10):
+            print('dkfxjxkxkxk', i, self._waiting_jack_client_open)
+            time.sleep(0.500)
+            if not self._waiting_jack_client_open:
+                break
+        else:
+            print('serveur perdu')
+            self.osc_server.sendGui('/ray/gui/patchbay/server_lose')
+            self.remove_existence_file()
+            os.kill(os.getpid(), signal.SIGKILL)
+    
     def refresh(self):
         if self.jack_running:
             self.get_all_ports_and_connections()
@@ -191,11 +214,13 @@ class MainObject:
         del self.osc_server
     
     def start_jack_client(self):
-        with suppress_stdout_stderr():
-            self.jack_client = jacklib.client_open(
-                "ray-patch_to_osc",
-                jacklib.JackNoStartServer | jacklib.JackSessionID,
-                None)
+        self._waiting_jack_client_open = True
+        
+        #with suppress_stdout_stderr():
+        self.jack_client = jacklib.client_open(
+            "ray-patch_to_osc",
+            jacklib.JackNoStartServer | jacklib.JackSessionID,
+            None)
 
         if self.jack_client:
             self.jack_running = True
@@ -207,7 +232,9 @@ class MainObject:
             self.osc_server.server_restarted()
         else:
             self.jack_running = False
-    
+        
+        self._waiting_jack_client_open = False
+
     def is_terminate(self)->bool:
         if self.terminate or self.osc_server.is_terminate():
             return True
@@ -337,8 +364,9 @@ class MainObject:
 
 
 def main_loop():
+    print('ekfek')
     main_object = MainObject()
-    
+    print('mlsdfkdl')
     if len(sys.argv) > 1:
         for gui_url in sys.argv[1:]:
             main_object.add_gui(gui_url)

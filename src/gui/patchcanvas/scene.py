@@ -93,10 +93,10 @@ class PatchScene(QGraphicsScene):
         
         self.move_boxes = []
         self.move_box_timer = QTimer()
-        self.move_box_timer.setInterval(20) # 20 ms step animation (50 Hz)
+        self.move_box_timer.setInterval(40) # 40 ms step animation (25 Hz)
         self.move_box_timer.timeout.connect(self.move_boxes_animation)
         self.move_box_n = 0
-        self.move_box_n_max = 20 # 20 animations steps (20ms * 20 = 400ms)
+        self.move_box_n_max = 8 # 10 animations steps (40ms * 8 = 320ms)
 
         self.elastic_scene = True
 

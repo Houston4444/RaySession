@@ -9,7 +9,7 @@ import jacklib
 
 class OscJackPatch(Server):
     slow_wait_time = 0.020
-    slow_wait_num = 20
+    slow_wait_num = 50
     
     def __init__(self, main_object):
         Server.__init__(self)
@@ -91,12 +91,13 @@ class OscJackPatch(Server):
         gui_addr = Address(gui_url)
         if gui_addr is None:
             return
-
+        
         self.send(gui_addr, '/ray/gui/patchbay/announce',
                   int(self.main_object.jack_running),
                   self.main_object.samplerate,
                   self.main_object.buffer_size)
 
+        #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 0)
         n = 0
 
         for port in self.port_list:
@@ -106,7 +107,9 @@ class OscJackPatch(Server):
             
             n += 1
             if n % self.slow_wait_num == 0:
+                #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 1)
                 time.sleep(self.slow_wait_time)
+                #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 0)
 
         for connection in self.connection_list:
             self.send(gui_addr, '/ray/gui/patchbay/connection_added',
@@ -114,8 +117,12 @@ class OscJackPatch(Server):
             
             n += 1
             if n % self.slow_wait_num == 0:
+                #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 1)
                 time.sleep(self.slow_wait_time)
+                #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 0)
 
+        #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 1)
+        
         self.gui_list.append(gui_addr)
 
     def server_restarted(self):
@@ -123,8 +130,10 @@ class OscJackPatch(Server):
         self.send_samplerate()
         self.send_buffersize()
         
+        self.sendGui('/ray/gui/patchbay/big_packets', 0)
         # we need to slow the long process of messages sends
         # to prevent loss packets
+        
         n = 0
         
         for port in self.port_list:
@@ -135,7 +144,9 @@ class OscJackPatch(Server):
             n += 1
             
             if n % self.slow_wait_num == 0:
+                self.sendGui('/ray/gui/patchbay/big_packets', 1)
                 time.sleep(self.slow_wait_time)
+                self.sendGui('/ray/gui/patchbay/big_packets', 0)
 
         for connection in self.connection_list:
             self.sendGui('/ray/gui/patchbay/connection_added',
@@ -144,7 +155,11 @@ class OscJackPatch(Server):
             n += 1
             
             if n % self.slow_wait_num == 0:
+                self.sendGui('/ray/gui/patchbay/big_packets', 1)
                 time.sleep(self.slow_wait_time)
+                self.sendGui('/ray/gui/patchbay/big_packets', 0)
+        
+        self.sendGui('/ray/gui/patchbay/big_packets', 1)
 
     def port_added(self, port):
         self.sendGui('/ray/gui/patchbay/port_added',
