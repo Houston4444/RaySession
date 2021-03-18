@@ -699,7 +699,6 @@ class PatchbayManager:
             portgroup = Portgroup(g_id, self._next_portgroup_id, p_mode)
             self._next_portgroup_id += 1
             
-            
             for port_id in p_id1, p_id2:
                 port = self.get_port_from_id(port_id)
                 portgroup.add_ports(port)

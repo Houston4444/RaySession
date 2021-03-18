@@ -398,11 +398,17 @@ class CanvasBox(QGraphicsItem):
                 if port.widget is not None:
                     port.widget.setVisible(not hide)
 
-    def set_wrapped(self, yesno: bool):
+    def is_wrapped(self)->bool:
+        return self._wrapped
+
+    def set_wrapped(self, yesno: bool, animate=True):
         self._wrapped = yesno
         
         if yesno:
             self.hide_ports_for_wrap(True)
+
+        if not animate:
+            return
 
         self._wrapping = yesno
         self._unwrapping = not yesno

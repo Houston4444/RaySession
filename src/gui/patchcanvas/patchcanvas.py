@@ -500,6 +500,8 @@ def splitGroup(group_id):
         qCritical("PatchCanvas::splitGroup(%i) - unable to find group to split" % group_id)
         return
 
+    wrap = item.is_wrapped()
+
     for portgrp in canvas.portgrp_list:
         if portgrp.group_id == group_id:
             portgrp_dict = portgrp_dict_t()
@@ -575,6 +577,7 @@ def splitGroup(group_id):
         if group.group_id == group_id:
             for box in group.widgets:
                 if box is not None:
+                    box.set_wrapped(wrap, animate=False)
                     box.updatePositions()
 
     QTimer.singleShot(0, canvas.scene.update)
@@ -616,6 +619,8 @@ def joinGroup(group_id):
     if not (item and s_item):
         qCritical("PatchCanvas::joinGroup(%i) - unable to find groups to join" % group_id)
         return
+    
+    wrap = item.is_wrapped() and s_item.is_wrapped()
     
     for portgrp in canvas.portgrp_list:
         if portgrp.group_id == group_id:
@@ -688,6 +693,7 @@ def joinGroup(group_id):
         if group.group_id == group_id:
             for box in group.widgets:
                 if box is not None:
+                    box.set_wrapped(wrap, animate=False)
                     box.updatePositions()
 
     QTimer.singleShot(0, canvas.scene.update)
