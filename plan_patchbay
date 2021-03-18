@@ -49,15 +49,19 @@ context menu box -> icones PulseAudio/hardware/a2j dispos en light theme
 / bug hardware polygon
 / vérif port rename et display name
 revoir sauvegarde groupe position et paires
-/ajout fenêtre d'options du canvas
-/ ajout boutons JACK et patchbay dans la barre d'outils
-/ démon jack qui boucle si jack non démarré
-/ supprimer tous les ports à jack shutdown
-/ fonction refresh
 
-/bug "connect" input ports
-/ theme modern dark
-/ distinctif a2j CV
-splitter après plein écran
-/ remettre le noir marron sur ports jack
-modifier zoomer sur
+group position
+context: audio, midi ou les 2
+zone: nom de la zone, '' si global
+xNULL, yNULL, xOUTPUT, yOUTPUT, xINPUT, yOUTPUT
+splitted_mode: NULL, OUTPUT, INPUT
+mode rabattu
+
+fenêtre port info
+
+
+
+revoir un peu le thème black gold pour moins de confusion de couleurs
+revoir les icônes pour thème clair et intégrer gtk-connect gtk-disconnect
+outils de zoom (boutons et menu)
+ctrl pressé et zoom

@@ -107,6 +107,9 @@ class CanvasBezierLine(QGraphicsPathItem):
                 last_old_y = canvas.theme.port_height * (portgrp_len_1 - phi)
                 delta = (last_old_y - first_old_y) / (portgrp_len_1 -1)
                 old_y1 = first_old_y + (port_pos_1 * delta) - (canvas.theme.port_height * port_pos_1)
+                if not self.item1.isVisible():
+                    # item is hidden port when its box is folded
+                    old_y1 = canvas.theme.port_height - old_y1
             else:
                 old_y1 = canvas.theme.port_height / 2
             
@@ -123,6 +126,8 @@ class CanvasBezierLine(QGraphicsPathItem):
                 last_old_y  = canvas.theme.port_height * (portgrp_len_2 - phi)
                 delta = (last_old_y - first_old_y) / (portgrp_len_2 -1)
                 old_y2 = first_old_y + (port_pos_2 * delta) - (canvas.theme.port_height * port_pos_2)
+                if not self.item2.isVisible():
+                    old_y2 = canvas.theme.port_height - old_y2
             else:
                 old_y2 = canvas.theme.port_height / 2
                 

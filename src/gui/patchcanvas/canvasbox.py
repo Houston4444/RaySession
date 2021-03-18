@@ -23,11 +23,11 @@ import sys
 from sip import voidptr
 from struct import pack
 
-from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer, pyqtSignal, QMarginsF
+from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer, pyqtSignal, QMarginsF, QTimer
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
                          QLinearGradient, QPainter, QPen, QPolygonF,
                          QColor, QIcon)
-from PyQt5.QtWidgets import QGraphicsItem, QMenu
+from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -80,6 +80,8 @@ from .utils import (CanvasItemFX,
                     CanvasConnectionConcerns,
                     CanvasGetIcon)
 
+_translate = QApplication.translate
+
 # ------------------------------------------------------------------------------------------------------------
 
 class cb_line_t(object):
@@ -120,6 +122,7 @@ class CanvasBox(QGraphicsItem):
         self.m_last_pos = QPointF()
         self.m_splitted = False
         self.m_splitted_mode = PORT_MODE_NULL
+        self.m_current_port_mode = PORT_MODE_NULL # depends of present ports
 
         self.m_cursor_moving = False
         self.m_forced_split = False
@@ -145,6 +148,15 @@ class CanvasBox(QGraphicsItem):
         self._is_hardware = bool(icon_type == ICON_HARDWARE)
         self._hw_polygon = QPolygonF()
         self._icon_name = icon_name
+        
+        self._folded = False
+        self._folding = False
+        self._unfolding = False
+        self._folding_timer = QTimer()
+        self._folding_timer.setInterval(40)
+        self._folding_timer.timeout.connect(self.animateFolding)
+        self._folding_n = 0
+        self._folding_max = 5
         
         # Icon
         if canvas.theme.box_use_icon:
@@ -259,6 +271,8 @@ class CanvasBox(QGraphicsItem):
     def setSplit(self, split, mode=PORT_MODE_NULL):
         self.m_splitted = split
         self.m_splitted_mode = mode
+        self.m_current_port_mode = mode
+        
         if self._is_hardware:
             self.setIcon(ICON_HARDWARE, self._icon_name)
 
@@ -280,6 +294,8 @@ class CanvasBox(QGraphicsItem):
 
         new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, 
                                 port_type, is_alternate, self)
+        if self._folded:
+            new_widget.setVisible(False)
 
         self.m_port_list_ids.append(port_id)
 
@@ -305,6 +321,9 @@ class CanvasBox(QGraphicsItem):
     def addPortGroupFromGroup(self, portgrp_id, port_mode, port_type, port_id_list):
         new_widget = CanvasPortGroup(self.m_group_id, portgrp_id, port_mode, 
                                      port_type, port_id_list, self)
+        
+        if self._folded:
+            new_widget.setVisible(False)
         
         return new_widget
     
@@ -344,6 +363,49 @@ class CanvasBox(QGraphicsItem):
         canvas.scene.removeItem(item)
         del item
 
+    def animateFolding(self):
+        self._folding_n += 1
+        if self._folding_n +1 == self._folding_max:
+            self._folding_n = 0
+            
+            if self._unfolding:
+                self.hide_ports_for_fold(False)
+            
+            self._folding = False
+            self._unfolding = False
+            self._folding_timer.stop()
+        
+        self.updatePositions()
+
+    def hide_ports_for_fold(self, hide: bool):
+        for portgrp in canvas.portgrp_list:
+            if portgrp.group_id == self.m_group_id:
+                if (self.m_splitted
+                        and self.m_splitted_mode != portgrp.port_mode):
+                    continue
+                
+                if portgrp.widget is not None:
+                    portgrp.widget.setVisible(not hide)
+        
+        for port in canvas.port_list:
+            if port.group_id == self.m_group_id:
+                if (self.m_splitted
+                        and self.m_splitted_mode != port.port_mode):
+                    continue
+                
+                if port.widget is not None:
+                    port.widget.setVisible(not hide)
+
+    def set_folded(self, yesno: bool):
+        self._folded = yesno
+        
+        if yesno:
+            self.hide_ports_for_fold(True)
+
+        self._folding = yesno
+        self._unfolding = not yesno
+        self._folding_timer.start()
+
     def get_string_size(self, string: str)->int:
         return QFontMetrics(self.m_font_name).width(string)
 
@@ -365,9 +427,13 @@ class CanvasBox(QGraphicsItem):
 
         # Get Port List
         port_list = []
+        self.m_current_port_mode = PORT_MODE_NULL
+        
         for port in canvas.port_list:
             if port.group_id == self.m_group_id and port.port_id in self.m_port_list_ids:
                 port_list.append(port)
+                # used to know present port types
+                self.m_current_port_mode |= port.port_mode
 
         if len(port_list) == 0:
             self.p_height = canvas.theme.box_header_height
@@ -381,6 +447,7 @@ class CanvasBox(QGraphicsItem):
             port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
             last_in_type = last_out_type = PORT_TYPE_NULL
             last_in_pos = last_out_pos = canvas.theme.box_header_height + canvas.theme.box_header_spacing
+            folded_port_pos = last_in_pos
             last_of_portgrp = True
             
             for port_type in port_types:
@@ -411,14 +478,29 @@ class CanvasBox(QGraphicsItem):
                             if last_in_type != PORT_TYPE_NULL:
                                 last_in_pos += canvas.theme.port_spacingT
                             last_in_type = port.port_type
-                        port.widget.setY(last_in_pos)
+                        
+                        if self._folding:
+                            port.widget.setY(last_in_pos
+                                             - (last_in_pos - folded_port_pos)
+                                                * self._folding_n / self._folding_max)
+                        elif self._unfolding:
+                            port.widget.setY(folded_port_pos
+                                             + (last_in_pos - folded_port_pos)
+                                                * self._folding_n / self._folding_max)
+                        elif self._folded:
+                            port.widget.setY(folded_port_pos)
+                        else:
+                            port.widget.setY(last_in_pos)
                         
                         if port.portgrp_id and first_of_portgrp:
                             for portgrp in canvas.portgrp_list:
                                 if (portgrp.group_id == self.m_group_id
                                         and portgrp.portgrp_id == port.portgrp_id):
-                                    if portgrp.widget:
-                                        portgrp.widget.setY(last_in_pos)
+                                    if portgrp.widget is not None:
+                                        if self._folded:
+                                            portgrp.widget.setY(folded_port_pos)
+                                        else:
+                                            portgrp.widget.setY(last_in_pos)
                                     break
                         
                         if last_of_portgrp:
@@ -432,14 +514,29 @@ class CanvasBox(QGraphicsItem):
                             if last_out_type != PORT_TYPE_NULL:
                                 last_out_pos += canvas.theme.port_spacingT
                             last_out_type = port.port_type
-                        port.widget.setY(last_out_pos)
+                        
+                        if self._folding:
+                            port.widget.setY(last_out_pos
+                                             - (last_out_pos - folded_port_pos)
+                                                * self._folding_n / self._folding_max)
+                        elif self._unfolding:
+                            port.widget.setY(folded_port_pos
+                                             + (last_out_pos - folded_port_pos)
+                                                * self._folding_n / self._folding_max)
+                        elif self._folded:
+                            port.widget.setY(folded_port_pos)
+                        else:
+                            port.widget.setY(last_out_pos)
                         
                         if port.portgrp_id and first_of_portgrp:
                             for portgrp in canvas.portgrp_list:
                                 if (portgrp.group_id == self.m_group_id
                                         and portgrp.portgrp_id == port.portgrp_id):
-                                    if portgrp.widget:
-                                        portgrp.widget.setY(last_out_pos)
+                                    if portgrp.widget is not None:
+                                        if self._folded:
+                                            portgrp.widget.setY(folded_port_pos)
+                                        else:
+                                            portgrp.widget.setY(last_out_pos)
                                     break
                         
                         if last_of_portgrp:
@@ -494,8 +591,23 @@ class CanvasBox(QGraphicsItem):
                         else:
                             port.widget.setX(outX)
                             port.widget.setPortWidth(max_out_width)
+            
+            normal_height = max(last_in_pos, last_out_pos)
+            folded_height = folded_port_pos + canvas.theme.port_height
+            
+            if self._folding:
+                self.p_height = normal_height \
+                                - (normal_height - folded_height) \
+                                    * (self._folding_n / self._folding_max)
+            elif self._unfolding:
+                self.p_height = folded_height \
+                                 + (normal_height - folded_height) \
+                                    * (self._folding_n / self._folding_max)
+            elif self._folded:
+                self.p_height = folded_port_pos + canvas.theme.port_height
+            else:
+                self.p_height  = max(last_in_pos, last_out_pos)
 
-            self.p_height  = max(last_in_pos, last_out_pos)
             self.p_height += max(canvas.theme.port_spacing, canvas.theme.port_spacingT) - canvas.theme.port_spacing
             self.p_height += canvas.theme.box_pen.widthF()
 
@@ -650,6 +762,16 @@ class CanvasBox(QGraphicsItem):
         act_x_rename = menu.addAction("Rename")
         act_x_sep2 = menu.addSeparator()
         act_x_split_join = menu.addAction("Join" if self.m_splitted else "Split")
+        act_x_sep3 = menu.addSeparator()
+        
+        fold_title = _translate('patchbay', 'fold')
+        fold_icon = QIcon.fromTheme('pan-up-symbolic')
+        if self._folded:
+            fold_title = _translate('patchbay', 'unfold')
+            fold_icon = QIcon.fromTheme('pan-down-symbolic')
+
+        act_x_fold = menu.addAction(fold_title)
+        act_x_fold.setIcon(fold_icon)
 
         if not features.group_info:
             act_x_info.setVisible(False)
@@ -728,6 +850,9 @@ class CanvasBox(QGraphicsItem):
 
         elif act_selected == act_p_remove:
             canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")
+            
+        elif act_selected == act_x_fold:
+            self.set_folded(not self._folded)
 
     def keyPressEvent(self, event):
         if self.m_plugin_id >= 0 and event.key() == Qt.Key_Delete:
@@ -766,6 +891,32 @@ class CanvasBox(QGraphicsItem):
 
         elif event.button() == Qt.LeftButton:
             if self.sceneBoundingRect().contains(event.scenePos()):
+                if self._folded:
+                    # unfold the box if event is one of the triangles zones
+                    
+                    triangle_rect_out = QRectF(
+                        0, canvas.theme.box_header_height,
+                        24, canvas.theme.port_height + canvas.theme.port_spacing)
+                    triangle_rect_in = QRectF(
+                        self.p_width - 24, canvas.theme.box_header_height,
+                        24, canvas.theme.port_height + canvas.theme.port_spacing)
+                    
+                    mode = PORT_MODE_INPUT
+                    fold = False
+
+                    for trirect in triangle_rect_out, triangle_rect_in:
+                        trirect.translate(self.scenePos())
+                        if (self.m_current_port_mode & mode
+                                and trirect.contains(event.scenePos())):
+                            fold = True
+                            break
+                        
+                        mode = PORT_MODE_OUTPUT
+
+                    if fold:
+                        self.set_folded(False)
+                        return
+                
                 self.m_mouse_down = True
             else:
                 # FIXME: Check if still valid: Fix a weird Qt behaviour with right-click mouseMove
@@ -959,15 +1110,6 @@ class CanvasBox(QGraphicsItem):
             painter.drawTiledPixmap(rect, canvas.theme.box_header_pixmap, rect.topLeft())
 
         # Draw text
-        
-
-        #if canvas.theme.box_use_icon:
-            #textPos = QPointF(33, canvas.theme.box_text_ypos)
-        #else:
-            #appNameSize = QFontMetrics(self.m_font_name).width(self.m_group_name)
-            #rem = self.p_width - appNameSize
-            #textPos = QPointF(rem/2, canvas.theme.box_text_ypos)
-
         title_x_pos = 8
         if self.has_top_icon():
             title_x_pos += 25
@@ -986,18 +1128,6 @@ class CanvasBox(QGraphicsItem):
 
         painter.setPen(QPen(QColor(255, 192, 0, 80), 1))
 
-        #if self.m_splitted:
-            #if self.m_splitted_mode == PORT_MODE_OUTPUT:
-                #title_x_pos = self.p_width - 8 - title_size
-                #subtitle_x_pos = self.p_width - 8 - subtitle_size
-
-                #if self.has_top_icon():
-                    #title_x_pos -= 25
-                    #subtitle_x_pos -= 25
-                
-                #if min(title_x_pos, subtitle_x_pos) > 10:
-                    #painter.drawLine(5, 16, min(title_x_pos, subtitle_x_pos) - 5, 16)
-        #else:
         if self.has_top_icon():
             title_x_pos = 29 + (self.p_width - 29 - max(title_size, subtitle_size)) / 2
             subtitle_x_pos = title_x_pos
@@ -1007,7 +1137,6 @@ class CanvasBox(QGraphicsItem):
                 painter.drawLine(
                     title_x_pos + max(title_size, subtitle_size) + 5, 16,
                     self.p_width -5, 16)
-            
         else:
             title_x_pos = (self.p_width - title_size) / 2
             subtitle_x_pos = (self.p_width - subtitle_size) / 2
@@ -1032,6 +1161,26 @@ class CanvasBox(QGraphicsItem):
         else:
             painter.drawText(
                 QPointF(title_x_pos, title_y_pos), self.m_group_name)
+
+        if self._folded:
+            painter.setPen(canvas.theme.box_pen)
+            painter.setBrush(QColor(255, 192, 0, 80))
+            
+            for port_mode in PORT_MODE_INPUT, PORT_MODE_OUTPUT:
+                if self.m_current_port_mode & port_mode:
+                    side = 6
+                    x = 6
+            
+                    if port_mode == PORT_MODE_OUTPUT:
+                        x = self.p_width - (x + 2 * side)
+    
+                    triangle = QPolygonF()
+                    triangle += QPointF(x, canvas.theme.box_header_height + 2)
+                    triangle += QPointF(x + 2 * side ,
+                                        canvas.theme.box_header_height + 2)
+                    triangle += QPointF(x + side,
+                                        canvas.theme.box_header_height + side + 2)
+                    painter.drawPolygon(triangle)
 
         self.repaintLines()
 
