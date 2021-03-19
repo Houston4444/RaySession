@@ -304,7 +304,7 @@ def setCanvasSize(x, y, width, height):
     canvas.scene.fixScaleFactor()
 
 def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION,
-             icon_name='', orig_pos=None):
+             icon_name='', orig_pos=None, fast=False):
     if canvas.debug:
         print("PatchCanvas::addGroup(%i, %s, %s, %s)" % (
               group_id, group_name.encode(), split2str(split), icon2str(icon_type)))
@@ -402,9 +402,11 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         CanvasItemFX(group_box, True, False)
         return
 
+    if fast:
+        return
     QTimer.singleShot(0, canvas.scene.update)
 
-def removeGroup(group_id, save_positions=True):
+def removeGroup(group_id, save_positions=True, fast=False):
     if canvas.debug:
         print("PatchCanvas::removeGroup(%i)" % group_id)
 
@@ -443,6 +445,8 @@ def removeGroup(group_id, save_positions=True):
             canvas.group_list.remove(group)
             canvas.group_plugin_map.pop(group.plugin_id, None)
 
+            if fast:
+                return
             QTimer.singleShot(0, canvas.scene.update)
             return
 
@@ -997,7 +1001,7 @@ def addPortGroup(group_id, portgrp_id, port_mode, port_type, port_id_list, fast=
             qWarning("PatchCanvas::addPortGroup(%i, %i) - port group already exists" % (
                      group_id, portgrp_id))
             return
-        
+    print('zogoniuniu')
     portgrp_dict = portgrp_dict_t()
     portgrp_dict.group_id = group_id
     portgrp_dict.portgrp_id = portgrp_id

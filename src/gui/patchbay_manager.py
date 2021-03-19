@@ -256,13 +256,15 @@ class Group:
         self.in_canvas = True
         patchcanvas.addGroup(self.group_id, self.display_name,
                              patchcanvas.SPLIT_UNDEF,
-                             icon_type, icon_name)
+                             icon_type, icon_name,
+                             fast=PatchbayManager.optimized_operation)
     
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
         
-        patchcanvas.removeGroup(self.group_id)
+        patchcanvas.removeGroup(self.group_id,
+                                fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
     def remove_all_ports(self):
@@ -693,6 +695,7 @@ class PatchbayManager:
             patchcanvas.wrapGroupBox(group_id, in_or_out, wrap)
         
         elif action == patchcanvas.ACTION_PORT_GROUP_ADD:
+            print('klfjdlkdflksj')
             g_id, p_mode, p_type, p_id1, p_id2 =  [
                 int(i) for i in value_str.split(":")]
             
@@ -706,7 +709,7 @@ class PatchbayManager:
             for group in self.groups:
                 if group.group_id == g_id:
                     group.add_portgroup(portgroup)
-            
+            print('faozpeokflldldl')
             portgroup.add_to_canvas()
         
         elif action == patchcanvas.ACTION_PORT_GROUP_REMOVE:
