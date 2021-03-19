@@ -417,12 +417,29 @@ class OscServerThread(ClientCommunicating):
         patchbay_file = '/tmp/RaySession/patchbay_infos'
         patchbay_port = 0
 
-        if (os.path.exists(patchbay_file)
-                and os.access(patchbay_file, os.R_OK)):
+        with open(patchbay_file, 'r') as file:
+
+        #if (os.path.exists(patchbay_file)
+                #and os.access(patchbay_file, os.R_OK)):
             file = open(patchbay_file, 'r')
             contents = file.read()
-            file.close()
+            #file.close()
             for line in contents.splitlines():
+                if line.startswith('pid:'):
+                    pid_str = line.rpartition(':')[2]
+                    if pid_str.isdigit():
+                        pid = int(pid_str)
+                        try:
+                            os.kill(pid, 0)
+                        except OSError:
+                            # go to main thread (session_signaled.py)
+                            return True
+                        else:
+                            # pid is okay, let check the osc port next
+                            continue
+                    else:
+                        return True
+                
                 if line.startswith('port:'):
                     port_str = line.rpartition(':')[2]
                     good_port = False
@@ -440,6 +457,8 @@ class OscServerThread(ClientCommunicating):
                                   src_addr.url)
                         return False
                     break
+                
+                
         
         # continue in main thread if patchbay_to_osc is not started yet
         # see session_signaled.py -> _ray_server_ask_for_patchbay

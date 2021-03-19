@@ -1001,7 +1001,7 @@ def addPortGroup(group_id, portgrp_id, port_mode, port_type, port_id_list, fast=
             qWarning("PatchCanvas::addPortGroup(%i, %i) - port group already exists" % (
                      group_id, portgrp_id))
             return
-    print('zogoniuniu')
+
     portgrp_dict = portgrp_dict_t()
     portgrp_dict.group_id = group_id
     portgrp_dict.portgrp_id = portgrp_id

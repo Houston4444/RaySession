@@ -33,7 +33,11 @@ class OscJackPatch(Server):
         self.port_list = main_object.port_list
         self.connection_list = main_object.connection_list
         self.gui_list = []
+        self._tmp_gui_url = ''
         self._terminate = False
+
+    def set_tmp_gui_url(self, gui_url):
+        self._tmp_gui_url = gui_url
 
     def set_jack_client(self, jack_client):
         self.jack_client = jack_client
@@ -202,3 +206,16 @@ class OscJackPatch(Server):
     def is_terminate(self):
         return self._terminate
     
+    def send_server_lose(self):
+        self.sendGui('/ray/gui/patchbay/server_lose')
+        
+        # In the case server is not responding
+        # and gui has not yet been added to gui_list
+        # but gui url stocked in self._tmp_gui_url
+        if not self.gui_list and self._tmp_gui_url:
+            try:
+                addr = Address(self._tmp_gui_url)
+            except:
+                return
+        
+        self.send(addr, '/ray/gui/patchbay/server_lose')

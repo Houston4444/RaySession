@@ -86,21 +86,16 @@ class MainObject:
     samplerate = 48000
     buffer_size = 1024
     
-    def __init__(self):
+    def __init__(self, gui_url):
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
         self._waiting_jack_client_open = True
-        
-        print('sdgkjgj')
+
         self.osc_server = osc_server.OscJackPatch(self)
-        print('sdlkfjjffjc')
+        self.osc_server.set_tmp_gui_url(gui_url)
         self.write_existence_file(self.osc_server.port)
         
-        self.jack_waiter_thread = threading.Thread(
-            target=self.check_jack_client_responding)
-        self.jack_waiter_thread.start()
         self.start_jack_client()
-        print('sldkxkxkxxkx')
     
     @staticmethod
     def c_char_p_p_to_list(c_char_p_p):
@@ -157,16 +152,18 @@ class MainObject:
         self.osc_server.add_gui(gui_url)
     
     def check_jack_client_responding(self):
-        print('decoaldlek')
-        for i in range(10):
-            print('dkfxjxkxkxk', i, self._waiting_jack_client_open)
-            time.sleep(0.500)
+        for i in range(25): # JACK has 5s to answer
+            time.sleep(0.200)
             if not self._waiting_jack_client_open:
                 break
         else:
-            print('serveur perdu')
-            self.osc_server.sendGui('/ray/gui/patchbay/server_lose')
+            # server never answer
+            self.osc_server.send_server_lose()
             self.remove_existence_file()
+            
+            # JACK is not responding at all
+            # probably it is started but totally bugged
+            # finally kill this program from system
             os.kill(os.getpid(), signal.SIGKILL)
     
     def refresh(self):
@@ -216,11 +213,22 @@ class MainObject:
     def start_jack_client(self):
         self._waiting_jack_client_open = True
         
-        #with suppress_stdout_stderr():
-        self.jack_client = jacklib.client_open(
-            "ray-patch_to_osc",
-            jacklib.JackNoStartServer | jacklib.JackSessionID,
-            None)
+        # Sometimes JACK never registers the client
+        # and never answers. This thread will allow to exit
+        # if JACK didn't answer 5 seconds after register ask
+        jack_waiter_thread = threading.Thread(
+            target=self.check_jack_client_responding)
+        jack_waiter_thread.start()
+        
+        #time.sleep(20)
+        with suppress_stdout_stderr():
+            self.jack_client = jacklib.client_open(
+                "ray-patch_to_osc",
+                jacklib.JackNoStartServer | jacklib.JackSessionID,
+                None)
+
+        self._waiting_jack_client_open = False
+        jack_waiter_thread.join()
 
         if self.jack_client:
             self.jack_running = True
@@ -233,7 +241,7 @@ class MainObject:
         else:
             self.jack_running = False
         
-        self._waiting_jack_client_open = False
+        
 
     def is_terminate(self)->bool:
         if self.terminate or self.osc_server.is_terminate():
@@ -363,10 +371,13 @@ class MainObject:
         jacklib.set_buffer_size(self.jack_client, buffer_size)
 
 
-def main_loop():
-    print('ekfek')
-    main_object = MainObject()
-    print('mlsdfkdl')
+def main_process():
+    gui_url = ''
+    if len(sys.argv) > 1:
+        gui_url = sys.argv[1]
+    
+    main_object = MainObject(gui_url)
+
     if len(sys.argv) > 1:
         for gui_url in sys.argv[1:]:
             main_object.add_gui(gui_url)
@@ -381,4 +392,4 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, MainObject.signal_handler)
     signal.signal(signal.SIGTERM, MainObject.signal_handler)
     
-    main_loop()
+    main_process()

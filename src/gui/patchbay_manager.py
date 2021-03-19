@@ -695,7 +695,6 @@ class PatchbayManager:
             patchcanvas.wrapGroupBox(group_id, in_or_out, wrap)
         
         elif action == patchcanvas.ACTION_PORT_GROUP_ADD:
-            print('klfjdlkdflksj')
             g_id, p_mode, p_type, p_id1, p_id2 =  [
                 int(i) for i in value_str.split(":")]
             
@@ -709,7 +708,7 @@ class PatchbayManager:
             for group in self.groups:
                 if group.group_id == g_id:
                     group.add_portgroup(portgroup)
-            print('faozpeokflldldl')
+
             portgroup.add_to_canvas()
         
         elif action == patchcanvas.ACTION_PORT_GROUP_REMOVE:
@@ -1106,7 +1105,9 @@ class PatchbayManager:
         self.tools_widget.set_jack_running(False)
         self.clear_all()
         print('larlkezrlekl')
-        ret = QMessageBox.critical(self.session._main_win,
+        ret = QMessageBox.critical(
+            self.session._main_win,
+            _translate('patchbay', "JACK server lose"),
             _translate('patchbay', "JACK server seems to be totally busy... ;("))
     
     def set_dsp_load(self, dsp_load: int):

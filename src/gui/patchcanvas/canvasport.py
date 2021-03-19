@@ -190,7 +190,7 @@ class CanvasPort(QGraphicsItem):
         data = "%i:%i:%i:%i:%i" % (self.m_group_id,
                                    self.m_port_mode, self.m_port_type,
                                    port_id_list[0], port_id_list[1])
-        print('l,dkcck,l')
+
         CanvasCallback(ACTION_PORT_GROUP_ADD, 0, 0, data)
     
     def connectToHover(self):

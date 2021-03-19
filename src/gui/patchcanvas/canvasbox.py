@@ -946,9 +946,7 @@ class CanvasBox(QGraphicsItem):
                 self.m_cursor_moving = True
                 canvas.scene.fix_temporary_scroll_bars()
             
-            #print('befoline', time.time())
             self.repaintLines()
-            #print('aftoline', time.time())
             canvas.scene.resize_the_scene()
         QGraphicsItem.mouseMoveEvent(self, event)
 
