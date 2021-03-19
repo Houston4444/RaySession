@@ -14,7 +14,7 @@ RaySession ist ein Audio Session Manager für GNU / Linux. Er ermöglicht, versc
 
 Audio Programme, die in einer Raysession gestartet werden, sollten möglichst mit dem NSM Protokol kompatibel sein. Für eine Vielzahl an Programmen wie Ardour, Qtractor, Carla, Guitarix, Mamba, Patroneo, ZynAddSubFx und andere ist das bereits gegeben.
 
-RaySession setzt ein bereits vorhandenes Audio Setup für die Audio Produktion voraus. Ist dies noch nicht gegeben, muss dies erfolgen
+RaySession setzt ein bereits vorhandenes Audio Setup für die Audio Produktion voraus. Ist dies noch nicht gegeben, muss dies erfolgen,
 bevor RaySession sinnvoll genutzt werden kann.
 
 Nun zur Nutzung: 
@@ -56,7 +56,7 @@ image::example_session_launched.png[Session launched]
 Das Session Fenster wird aktiviert, die Fensterleiste enthält den Namen ihrer Session und eine Klient Anwendung mit dem Namen
 *JACK Connections* ist bereits aktiviert. Dieser Klient wird die Verbindungen der JACK Patchbay speichern und wiederherstellen.
 
-Um Ardour zu ihrer Session hinzuzufügen, klicken Sie auf *Application*/Anwendung (_ oder Strg+A_), und das Anwendungs
+Um Ardour zu ihrer Session hinzuzufügen, klicken Sie auf *Application*/Anwendung (_oder Strg+A_), und das Anwendungs
 Dialogfenster wird sich öffnen (mehr hierzu unter <<add_application>>). Finden Sie auf der rechten Seite Ardour (je nach Version unter Umständen Ardour5 oder Ardour6 genannt) und Doppelklicken Sie darauf.
 
 image::example_add_ardour.png[Add Ardour to the session, 640, 480]
@@ -85,7 +85,7 @@ Schliessen Sie nun die Session, indem Sie auf das Kreuz im roten Kreis oben rech
 
 Nachdem sich die Session geschlossen hat, klicken Sie auf *Open Session* (_oder Strg+O_), und Doppelklicken Sie auf die Session, die Sie gerade erstellt und geschlossen haben, und diese wird sich wieder öffnen.
 
-Sie werden alle Programme und JACK Connections so vorfinden, wie sie waren, als die Session geschlossen wurde. Hierdurch wird alles ohne zusätzlich  Aktionen Ihrerseits wieder nutzbar sein. Ein weiterer Vorteil des modularen Ansatzes im gegebenen Fall ist, dass nachdem die Gitarre aufgenommen wurde, Guitarix gestoppt werden kann und nicht unnötig Prozessorkapazitäten verwendet, aber trotzdem bei Bedarf jederzeit wieder gestartet werden kann.
+Sie werden alle Programme und JACK Connections so vorfinden, wie sie waren, als die Session geschlossen wurde. Hierdurch wird alles ohne zusätzliche  Aktionen Ihrerseits wieder nutzbar sein. Ein weiterer Vorteil des modularen Ansatzes im gegebenen Fall ist, dass nachdem die Gitarre aufgenommen wurde, Guitarix gestoppt werden kann und nicht unnötig Prozessorkapazitäten verwendet, aber trotzdem bei Bedarf jederzeit wieder gestartet werden kann.
 
 == Überblick Session Werkzeuge
 
@@ -165,7 +165,7 @@ Von links nach rechts:
 * Das Symbol der Klient Anwendung enthält ein Menu mit den folgenden Aktionen
 
 ** *Anwendung als Vorlage sichern* +
-Die Vorlage wird im <<add_application> Anwendung hinzufügen Fenster erscheinen. Die gesicherte Vorlage ermöglicht, eine Anwendung direkt mit einer bestimmten Konfiguration zu starten (Ardour mit bestimmten Tracks, Hydrogen  mit bestimmten Drumkits ...). Seien Sie mit dieser Speicherung vorsichtig, falls der Klient viele Audio Dateien enthält, da alle Dateien des Klienten kopiert werden.
+Die Vorlage wird im <<add_application>> Anwendung hinzufügen Fenster erscheinen. Die gesicherte Vorlage ermöglicht, eine Anwendung direkt mit einer bestimmten Konfiguration zu starten (Ardour mit bestimmten Tracks, Hydrogen  mit bestimmten Drumkits ...). Seien Sie mit dieser Speicherung vorsichtig, falls der Klient viele Audio Dateien enthält, da alle Dateien des Klienten kopiert werden.
 ** *Umbenennen* +
 Den Namen des Klienten, rechts vom Symbol sichtbar, ändern. Dieser Name dient lediglich ihrer Organisation.
 ** *zum vorherigen Status zurückkehren* +
@@ -210,7 +210,7 @@ Ist die Maus über diesem Symbol gehalten, ist das Folgende zu sehen
 
 [#add_application]
 == Anwendung hinzufügen Fenster
-Durch Klicken auf das  *Application* Feld (oder _ Strg+A_) öffnet sich das Fenster, um eine Anwendung hinzuzufügen.
+Durch Klicken auf das  *Application* Feld (oder _Strg+A_) öffnet sich das Fenster, um eine Anwendung hinzuzufügen.
 
 image::add_application.png[Add Application window]
 
@@ -224,7 +224,7 @@ Oben links ist das  Filter Feld
 image::add_application_filter.png[Filter block of Add Application window]
 
 * tDas Filter Feld erlaubt Ihnen, durch einen Teil des Namens der Anwendung nur die Anwendungen anzuzeigen, die diesen Teil enthalten.
-* Die *Factory* Checkbox zeigt die in RaySession integrierten oder durch die Distribution verfügbaren Vorlag.
+* Die *Factory* Checkbox zeigt die in RaySession integrierten oder durch die Distribution verfügbaren Vorlagen.
 * *User* zeigt die durch den User durch *Save as application template* erstellten Vorlagen.
 * *NSM* zeigt die NSM kompatiblen oder als solche gestartete Klienten
 * *Ray-Hack* zeigt die ohne NSM Protokoll startbaren Klienten
@@ -280,7 +280,7 @@ image::add_executable_plus.png[Advanced Add Executable window]
 * Das *Prefix* Feld ist nur aktiv, wenn der *Prefix Mode* auf Custom gestellt wurde.
 
 * Das *Klient ID* Feld (der Klient Identifikator). Nutzen Sie lediglich alphanumerische Zeichen oder '_'. +
-Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und starten wollen. Auch, wenn Sie Session Projekte ausserhalb der bestehenden Session laden wollen. Es gibt keinen einfachere Weise, dies zu tun. Die Details hängen stark von der jeweilig genutzten Anwendung ab. Falls Sie eine in der Session bereits verwendete ID eingeben, wird RaySession darauf entsprechend lautstark hinweisen.
+Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und starten wollen. Auch, wenn Sie Session Projekte ausserhalb der bestehenden Session laden wollen. Es gibt keine einfachere Weise, dies zu tun. Die Details hängen stark von der jeweilig genutzten Anwendung ab. Falls Sie eine in der Session bereits verwendete ID eingeben, wird RaySession darauf entsprechend lautstark hinweisen.
 
 
 [#client_properties]
@@ -379,7 +379,7 @@ image::ray_hack_test_zone.png[]
 Das Areal gibt Ihnen die Möglichkeit Start, Stop und Einstellungen speichern zu testen, ohne vorher *Save the changes* (Änderungen Speichern) auszuführen.
 
 == Network Sessions
-Durch eine Network Session kann auf einem weiteren Computer zeitgleich eine weitere Session gestartet werdeDurch eine Network Session kann auf einem weiteren Computer zeitgleich eine weiter Session gestartet werden. Dies ist besonders nützlich, wenn Sie net-jack nutzen um das DSP zu entlasten, z.B. um ressourcenintensive Effekte auf einer anderen Maschine zu starten.
+Durch eine Network Session kann auf einem weiteren Computer zeitgleich eine weitere Session gestartet werden. Durch eine Network Session kann auf einem weiteren Computer zeitgleich eine weitere Session gestartet werden. Dies ist besonders nützlich, wenn Sie net-jack nutzen um das DSP zu entlasten, z.B. um ressourcenintensive Effekte auf einer anderen Maschine zu starten.
 
 Network Sesssions arbeiten nach dem Master-Slave Prinzip. Eine Session ist der Master und kann mehrere Slave sessions haben, die wiederum Master von anderen Slave Sessions sein können, aber dies wäre eher ungewöhnlich. Organisieren Sie dies besser einfach: Ein Master und ein oder mehrere Slaves von diesem.
 
@@ -399,7 +399,7 @@ image::network_session_invitation.png[Configure a network session]
 
 Kopieren Sie eine der beiden URLs in das network session invitation window. Die erste Variante (startend mit osc.udp://192.168.) muss mit Sicherheit funktionieren, die zweite wird nur funktioneren, wenn `/etc/hosts` vom  dem Master Computer einen Eintrag für den Slave Computer enthält. Den Namen des Slave Computers in `/etc/hosts` einzutragen und die zweite Variante der URL zu nutzen ist aber vorzuziehen, da sich die Addresse 192.168 ändern kann falls sich der Remote Computer durch den Wechsel von wired zu wifi oder durch eine Neuinstallation der Distribution ändern kann.
 
-Auf dem Master Computer haben Sie nun 2 RaySession Fenster, eines kontrolliert die Master Session, das andere die Slave Session. Sie erkennen die Slave Session daran, dass das Fenster weder die Toolbar mit  (*New Session*, *Open Session*, *Control*), noch *Abort session* oder *Close session* Felder hat.
+Auf dem Master Computer haben Sie nun 2 RaySession Fenster, eines kontrolliert die Master Session, das andere die Slave Session. Sie erkennen die Slave Session daran, dass das Fenster weder die Toolbar mit  *New Session*, *Open Session*, *Control*, noch *Abort session* oder *Close session* Felder hat.
 
 image::network_session_child.png[]
 
@@ -468,12 +468,12 @@ Die Details zu den jeweiligen Optionen sind die folgenden:
 
 [#session_folder_shortcuts]
 === Bookmarks für den Session Ordner erstellen
-In der Audioproduktion wird häufig eine Audio oder Midi Datei mit einem Program erstellt und dann von einem anderen Program genutzt. Die vorliegende Option bietet hiefür einen praktischen Nutzen: einen Shortcut für den aktuellen Session Folder (Ordner) im Dateimanager und in der Dialogbox, um Dateien zu laden oder zu speichern. Sie vermeiden also den unnötigen Zeitaufwand, sich durch ihren persönlichen Ordner im Dateimanager klicken zu müssen, um eine Datei zu finden, die in ihrem Session Ordner ist. +
+In der Audioproduktion wird häufig eine Audio oder Midi Datei mit einem Program erstellt und dann von einem anderem Program genutzt. Die vorliegende Option bietet hiefür einen praktischen Nutzen: einen Shortcut für den aktuellen Session Folder (Ordner) im Dateimanager und in der Dialogbox, um Dateien zu laden oder zu speichern. Sie vermeiden also den unnötigen Zeitaufwand, sich durch ihren persönlichen Ordner im Dateimanager klicken zu müssen, um eine Datei zu finden, die in ihrem Session Ordner ist. +
 Dieser Shortcut wird entfernt, sobald die Session geschlossen wird. +
-ies Option funktioniert technisch für  GTK2, GTK3, QT4, QT5, KDE and FLTK.
+Diese Option funktioniert technisch für  GTK2, GTK3, QT4, QT5, KDE and FLTK.
 
 === Automatisch Snapshot beim Sichern erstellen
-Dies Option ist alles andere als unbedeutend. Sie ermöglicht Ihnen, bei jeder Speicherung einen Snapshot der Session zu erstellen. Im Falle eines technischen oder künstlerischen Fehlers steht Ihnen also der Snaphot zur Verfügung. Um diese Option zu nutzen, muss `git` installiert sein. Unter <<snapshots>> finden Sie weitere Details.
+Diese Option ist alles andere als unbedeutend. Sie ermöglicht Ihnen, bei jeder Speicherung einen Snapshot der Session zu erstellen. Im Falle eines technischen oder künstlerischen Fehlers steht Ihnen also der Snaphot zur Verfügung. Um diese Option zu nutzen, muss `git` installiert sein. Unter <<snapshots>> finden Sie weitere Details.
 
 === Desktop Status
 Falls diese Option aktiviert ist, wird RaySession auch den virtuellen Desktop, auf dem sich ein Klient Fenster beim Schliessen der RaySession befindet, speichern (oder zumindest wird dies versucht).
@@ -486,16 +486,16 @@ Die Skripte werden für <<jack_configuration_memory>> genutzt.
 Unter <<session_scripts>> finden Sie weitere Details.
 
 === Optionalen GUI Status erinnern
-Diese Option betrifft lediglich NSM Klienten, die ihre Fenster sowohl verbergen als auch anzeigen können. Einige Klienten starten immer verborgen, andere starten so, wie sie geschlossen wurden. Wird diese Option aktiviert, werden alle Clienten immer so gestartet, wie sie während der letzten Sicherung beendet wurden. Wurden sie noch nie gestartet, werden sich nicht verborgen gezeigt
+Diese Option betrifft lediglich NSM Klienten, die ihre Fenster sowohl verbergen als auch anzeigen können. Einige Klienten starten immer verborgen, andere starten so, wie sie geschlossen wurden. Wird diese Option aktiviert, werden alle Clienten immer so gestartet, wie sie während der letzten Sicherung beendet wurden. Wurden sie noch nie gestartet, werden sie nicht verborgen gezeigt
 
 [#snapshots]
 == Snapshots
 Für Snaphots muss das Programm `git` installiert sein. Falls es nicht installiert ist, wird das Reverse Symbol nicht zu sehen sein und es ist unmöglich, Snaphots zu machen oder den entsprechenden Status wieder herzustellen.
 
-Der Snapshot speichert Dateien und deren Inhalt zu einger gegebenen Zeit. Grosse Dateien und Dateien mit Dateiendungen für Audio und Video werden ignoriert, da dies zuviel Zeit in Anspruch nehmen würde und der Session Ordner zu gross werden würde. Dies ist kein grosses Problem, im Gegenteil, da ihre erst kürzlich erstellten Audiodateien erhalten bleiben, falls Sie zu einem vorherigen Snapshot zurückkehren. +
+Der Snapshot speichert Dateien und deren Inhalt zu einer gegebenen Zeit. Grosse Dateien und Dateien mit Dateiendungen für Audio und Video werden ignoriert, da dies zuviel Zeit in Anspruch nehmen würde und der Session Ordner zu gross werden würde. Dies ist kein grosses Problem, im Gegenteil, da ihre erst kürzlich erstellten Audiodateien erhalten bleiben, falls Sie zu einem vorherigen Snapshot zurückkehren. +
 Sollte trotz all dem der Snaphot Vorgang zu lange dauern, wird sich ein Fenster öffnen und Sie können den aktuellen Snapshot bedenkenlos abbrechen. Der automatische Snapshot wird dann für diese Session nicht mehr stattfinden.
 
-Der Nutzen von Snapshots liegt in der Tatsache, dass Sie zu dem Stand der Arbeit zurückehren könne, bevor Sie diese eine brilliante Idee gehabt haben, die sich dann als fruchtlos erwiesen hat, oder bevor sie die Samples neu geschnitten und dadurch alle Musikalität zerstört haben, oder bevor die Anwendung aus unbekannten Gründen anfing abzustürzen.
+Der Nutzen von Snapshots liegt in der Tatsache, dass Sie zu dem Stand der Arbeit zurückehren könne, bevor Sie diese eine brilliante Idee gehabt haben, die sich dann als fruchtlos erwiesen hat, oder bevor sie die Samples neu geschnitten und dadurch alle Musikalität zerstört haben, oder bevor die Anwendung aus unbekannten Gründen anfing, abzustürzen.
 
 Seien Sie aber sorglos, zu einem Snapshot zurückzukehren heisst nicht, dass Sie den aktuellen Stand nicht ebenso wieder herstellen könnten.
 
@@ -505,14 +505,14 @@ image::snapshots.png[]
 
 Wählen Sie in der Auswahl den Snapshot, zu dem Sie zurücksetzen möchten und klicken Sie auf *Ok*. Zunächst wird ein neuer Snapshot erstellt, dann schliesst sich die aktuelle Session, es wird zum Snapshot zurückgekehrt und die Session öffnet sich wieder.
 
-Ebenso ist es möglich, lediglich einen Klienten in einen vorherigen Status zurückzusetzen. Wählen Sie nach einem Rechtsklick auf den Clienten im Menü hierfür *Return to a previous state* (zu vorherigem Status zurückkehren).
+Ebenso ist es möglich, lediglich einen Klienten in einen vorherigen Status zurückzusetzen. Wählen Sie nach einem Rechtsklick auf den Klienten im Menü hierfür *Return to a previous state* (zu vorherigem Status zurückkehren).
 Falls gewünscht können Sie für jeden Klienten die Dateien, die bei einem Snapshot ignoriert werden sollen, festlegen, indem Sie dies im <<client_properties>> unter "Snapshot ignored extensions" (bei Snapshots ignorierte Dateiendungen) entsprechend bearbeiten.
 
 Ist die Option *Automatic snapshot after save* (automatischer Snapshot beim Speichern) gewählt, wird nach jeder Speicherung der Session ein Snapshot erstellt, ausser es sind keine Änderungen vorhanden. Um Snapshots zu anderen Zeitpunkten zu erstellen, klicken Sie auf das Reverse Symbol rechts vom *Executable* und bestätigen Sie *Take a snapshot now*. Ein Vorteil dieser Methode liegt darin, dass Sie dem Snapshot aufschlussreichere Namen als lediglich Datum und Uhrzeit geben können.
 
 [#session_scripts]
 == Session Skripte
-Session Skripte ermöglicht Ihnen, beim Öffnen, Speichern oder Schliessen der Session eigene Aktionen auszuführen. Im besonderen für die Möglichkeit <<jack_configuration_memory>> ist dies nützlich. +
+Session Skripte ermöglicht Ihnen, beim Öffnen, Speichern oder Schliessen der Session eigene Aktionen auszuführen. Im Besonderen für die Möglichkeit <<jack_configuration_memory>> ist dies nützlich. +
 Um diese Skripte zu bearbeiten, sind zwar Kenntnisse in Shell Skripting nötig, nutzen kann sie aber jeder.
 
 Die Session Skripte befinden sich in dem Ordner `ray-scripts`, entweder im Session folder oder einem Parent Ordner von diesem. +
@@ -530,7 +530,7 @@ findet, kann der Skript Ordner folgende Pfade haben:
 Der Vorteil, die Skripte in diesen möglichen Pfaden zu haben liegt darin, dass mehrere Sessions diese nutzen können, ohne die Skripte in den jeweiligen Ordner kopieren zu müssen. Ebenso eröffnet dies die  Möglichkeit, jemandem eine nicht geskriptete Session für mögliches Teamwork einfach zu kopieren. +
 Es wird lediglich der Skript Ordner genutzt werden, der im Pfad dem Session Ordner am nächsten ist. Ein leerer  `ray-scripts` innerhalb des Ordners der Session selbst wird also alle sonstigen Skripte leicht deaktivieren.
 
-Um die Skripte zu bearbeiten, erstellen Sie zunächst eine Session aus der Vorlage mit den Basisskripten. Die Vorlage enthält Skripte, die keine besondere Aktion ausführen werden. Gehen Sie im Session Ordner in den Ordner `ray-scripts`. Hier finden Sie die Dateien  `load.sh`, `save.sh` und `close.sh`. In jedem dieser Skripte bezieht sich `ray_control run_step` auf die gewöhnlich ausgeführte Aktion (je nach Skript: Laden, Sichern oder Schliessen der Session). Ist eines dieser Skripte für Sie ohne nutzen, löschen sie das Skript einfach. Es ist unnötig, dies dann zu bearbeiten.
+Um die Skripte zu bearbeiten, erstellen Sie zunächst eine Session aus der Vorlage mit den Basisskripten. Die Vorlage enthält Skripte, die keine besondere Aktion ausführen werden. Gehen Sie im Session Ordner in den Ordner `ray-scripts`. Hier finden Sie die Dateien  `load.sh`, `save.sh` und `close.sh`. In jedem dieser Skripte bezieht sich `ray_control run_step` auf die gewöhnlich ausgeführte Aktion (je nach Skript: Laden, Sichern oder Schliessen der Session). Ist eines dieser Skripte für Sie ohne Nutzen, löschen sie das Skript einfach. Es ist unnötig, dies dann zu bearbeiten.
 
 Die Skripte müssen zwingend ausführbar sein, also die entsprechenden Rechte haben, um funktionieren zu können.
 
@@ -568,7 +568,7 @@ Lesen Sie die Informationen im Fenster und bestätigen Sie dann. JACK wird neu g
 
 === Funktionsweise
 Bei jedem Speichern der Session wird die aktuelle JACK Konfiguration in der Datei `jack_parameters` gespeichert. +
-Ist beim Öffnen der Session wird JACK neu gestartet, falls die gespeicherte Konfiguration von der aktuellen unterscheidet. +
+Beim Öffnen der Session wird JACK neu gestartet, falls sich die gespeicherte Konfiguration von der aktuellen unterscheidet. +
 Wird die Session geschlossen, wird JACK abermals gestartet, diesmal mit der vorherigen Konfiguration. +
 
 PulseAudio → JACK Konfigurationen werden ebenso gespeichert und wiederhergestellt.
@@ -626,4 +626,4 @@ Seien Sie hier noch einmal daran erinnert, einen globalen Keyboard-Shortcut für
 *Ist die direkte Nutzung von Ardour (oder einer anderen NSM kompatiblen DAW) anstatt in RaySession trotzdem noch sinnvoll?*
 
 Ausser für wirklich winzige Projekte, eher nein.
-all Sie Ardour nutzen, starten Sie es immer in einer RaySession. Erstens können Ihnen die automatisierten Snapshots unerwartet von grossem Nutzen sein, zweitens ist es möglich, dass Sie später noch eine weitere Anwendung nutzen wollen, auch wenn Sie dies bisher noch nicht geplant haben.
+Falls Sie Ardour nutzen, starten Sie es immer in einer RaySession. Erstens können Ihnen die automatisierten Snapshots unerwartet von grossem Nutzen sein, zweitens ist es möglich, dass Sie später noch eine weitere Anwendung nutzen wollen, auch wenn Sie dies bisher noch nicht geplant haben.
