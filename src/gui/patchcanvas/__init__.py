@@ -173,6 +173,9 @@ class group_dict_t(object):
         'plugin_id',
         'plugin_ui',
         'plugin_inline',
+        'null_pos',
+        'in_pos',
+        'out_pos',
         'widgets'
     ]
 

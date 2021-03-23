@@ -748,3 +748,47 @@ class RayNet():
 
     def spread(self)->tuple:
         return (self.daemon_url, self.session_root, self.session_template)
+
+
+class GroupPosition():
+    group_name = ''
+    null_zone = ''
+    in_zone = ''
+    out_zone = ''
+    null_x = 0
+    null_y = 0
+    in_x = 0
+    in_y = 0
+    out_x = 0
+    out_y = 0
+    flags = 0
+    
+    @staticmethod
+    def sisi():
+        return 'ssssiiiiiii'
+    
+    @staticmethod
+    def newFrom():
+        group_position = GroupPosition()
+        group_position.update(*args)
+        return group_position
+    
+    def update(self, group_name: str, null_zone: str, in_zone: str,
+               out_zone: str, null_x: int, null_y: int, in_x: int, in_y: int,
+               out_x: int, out_y: int, flags: int):
+        self.group_name = group_name
+        self.null_zone = null_zone
+        self.in_zone = in_zone
+        self.out_zone = out_zone
+        self.null_x = null_x
+        self.null_y = null_y
+        self.in_x = in_x
+        self.in_y = in_y
+        self.out_x = out_x
+        self.out_y = out_y
+        self.flags = flags
+        
+    def spread(self)->tuple:
+        return (self.group_name, self.null_zone, self.in_zone, self.out_zone,
+                self.null_x, self.null_y, self.in_x, self.in_y,
+                self.out_x, self.out_y, self.flags)

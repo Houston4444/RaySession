@@ -4,6 +4,9 @@ from PyQt5.QtCore import pyqtSignal, QTimer
 
 import ui.patchbay_tools
 
+CONTEXT_AUDIO = 0x01
+CONTEXT_MIDI = 0x02
+
 class PatchbayToolsWidget(QWidget):
     buffer_size_change_order = pyqtSignal(int)
     audio_midi_change_order = pyqtSignal(int)
@@ -39,10 +42,10 @@ class PatchbayToolsWidget(QWidget):
     
     def audio_button_checked(self, yesno: int):
         if yesno:
-            self._current_audio_midi |= 1
+            self._current_audio_midi |= CONTEXT_AUDIO
         else:
-            self._current_audio_midi &= ~1
-            if not self._current_audio_midi & 2:
+            self._current_audio_midi &= ~CONTEXT_AUDIO
+            if not self._current_audio_midi & CONTEXT_MIDI:
                 self.ui.checkBoxMidi.setChecked(True)
                 return
         
@@ -50,10 +53,10 @@ class PatchbayToolsWidget(QWidget):
         
     def midi_button_checked(self, yesno: int):
         if yesno:
-            self._current_audio_midi |= 2
+            self._current_audio_midi |= CONTEXT_MIDI
         else:
-            self._current_audio_midi &= ~2
-            if not self._current_audio_midi & 1:
+            self._current_audio_midi &= ~CONTEXT_MIDI
+            if not self._current_audio_midi & CONTEXT_AUDIO:
                 self.ui.checkBoxAudio.setChecked(True)
                 return
 

@@ -417,10 +417,10 @@ class OscServerThread(ClientCommunicating):
         patchbay_file = '/tmp/RaySession/patchbay_infos'
         patchbay_port = 0
 
-        with open(patchbay_file, 'r') as file:
+        if not os.path.exists(patchbay_file):
+            return True
 
-        #if (os.path.exists(patchbay_file)
-                #and os.access(patchbay_file, os.R_OK)):
+        with open(patchbay_file, 'r') as file:
             file = open(patchbay_file, 'r')
             contents = file.read()
             #file.close()
@@ -457,8 +457,6 @@ class OscServerThread(ClientCommunicating):
                                   src_addr.url)
                         return False
                     break
-                
-                
         
         # continue in main thread if patchbay_to_osc is not started yet
         # see session_signaled.py -> _ray_server_ask_for_patchbay

@@ -240,8 +240,6 @@ class MainObject:
             self.osc_server.server_restarted()
         else:
             self.jack_running = False
-        
-        
 
     def is_terminate(self)->bool:
         if self.terminate or self.osc_server.is_terminate():

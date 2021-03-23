@@ -101,7 +101,7 @@ class OscJackPatch(Server):
                   self.main_object.samplerate,
                   self.main_object.buffer_size)
 
-        #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 0)
+        self.send(gui_addr, '/ray/gui/patchbay/big_packets', 0)
         n = 0
 
         for port in self.port_list:
@@ -111,9 +111,9 @@ class OscJackPatch(Server):
             
             n += 1
             if n % self.slow_wait_num == 0:
-                #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 1)
+                self.send(gui_addr, '/ray/gui/patchbay/big_packets', 1)
                 time.sleep(self.slow_wait_time)
-                #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 0)
+                self.send(gui_addr, '/ray/gui/patchbay/big_packets', 0)
 
         for connection in self.connection_list:
             self.send(gui_addr, '/ray/gui/patchbay/connection_added',
@@ -121,11 +121,11 @@ class OscJackPatch(Server):
             
             n += 1
             if n % self.slow_wait_num == 0:
-                #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 1)
+                self.send(gui_addr, '/ray/gui/patchbay/big_packets', 1)
                 time.sleep(self.slow_wait_time)
-                #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 0)
+                self.send(gui_addr, '/ray/gui/patchbay/big_packets', 0)
 
-        #self.send(gui_addr, '/ray/gui/patchbay/big_packets', 1)
+        self.send(gui_addr, '/ray/gui/patchbay/big_packets', 1)
         
         self.gui_list.append(gui_addr)
 
@@ -150,6 +150,7 @@ class OscJackPatch(Server):
             if n % self.slow_wait_num == 0:
                 self.sendGui('/ray/gui/patchbay/big_packets', 1)
                 time.sleep(self.slow_wait_time)
+                #self.recv(0)
                 self.sendGui('/ray/gui/patchbay/big_packets', 0)
 
         for connection in self.connection_list:
@@ -161,6 +162,7 @@ class OscJackPatch(Server):
             if n % self.slow_wait_num == 0:
                 self.sendGui('/ray/gui/patchbay/big_packets', 1)
                 time.sleep(self.slow_wait_time)
+                #self.recv(0)
                 self.sendGui('/ray/gui/patchbay/big_packets', 0)
         
         self.sendGui('/ray/gui/patchbay/big_packets', 1)

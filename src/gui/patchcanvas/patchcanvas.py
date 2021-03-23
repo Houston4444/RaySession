@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
-                          QPointF, QRectF, QSettings, QTimer, pyqtSignal)
+                          QPoint, QPointF, QRectF, QSettings, QTimer, pyqtSignal)
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -335,6 +335,9 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     group_dict.plugin_id = -1
     group_dict.plugin_ui = False
     group_dict.plugin_inline = False
+    group_dict.null_pos = QPoint()
+    group_dict.in_pos = QPoint()
+    group_dict.out_pos = QPoint()
     group_dict.widgets = [group_box, None]
 
     if split == SPLIT_YES:
@@ -727,35 +730,60 @@ def animateBeforeJoin(group_id: int):
                     widget, new_pos.x(), new_pos.y())
             break
 
-def moveGroupBox(group_id: int, port_mode: int, x: int, y: int, animate=True):
+def moveGroupBoxes(group_id: int, null_x: int, null_y: int,
+                   in_x: int, in_y: int, out_x: int, out_y: int, animate=True):
     for group in canvas.group_list:
         if group.group_id == group_id:
-            box = None
-            if group.split:
-                if port_mode == PORT_MODE_OUTPUT:
-                    box = group.widgets[0]
-                elif port_mode == PORT_MODE_INPUT:
-                    box = group.widgets[1]
-                else:
-                    return
-            else:
-                if port_mode == PORT_MODE_INPUT + PORT_MODE_OUTPUT:
-                    box = group.widgets[0]
-                else:
-                    return
-            
-            if box is None:
-                return
-            
-            if animate:
-                canvas.scene.add_box_to_animation(box, x, y)
-            else:
-                box.setPos(x, y)
-            #canvas.scene.move_boxes.append(
-                #{'widget': box, 'from_x': box.pos().x(), 'from_y': box.pos().y(),
-                 #'to_x': x, 'to_y': y})
-            #canvas.scene.move_box_timer.start()
             break
+    else:
+        return
+            
+    group.null_pos = QPoint(null_x, null_y)
+    group.in_pos = QPoint(in_x, in_y)
+    group.out_pos = QPoint(out_x, out_y)
+    
+    if group.split:
+        for port_mode in (PORT_MODE_OUTPUT, PORT_MODE_INPUT):
+            box = group.widgets[0]
+            if port_mode == PORT_MODE_INPUT:
+                box = group.widgets[1]
+
+            if box is None:
+                continue
+            
+            box_pos = box.pos()
+            if port_mode == PORT_MODE_OUTPUT:
+                if (int(box_pos.x()) == out_x
+                        and int(box_pos.y()) == out_y):
+                    continue
+                
+                if animate:
+                    canvas.scene.add_box_to_animation(box, out_x, out_y)
+                else:
+                    box.setPos(out_x, out_y)
+            
+            elif port_mode == PORT_MODE_INPUT:
+                if (int(box_pos.x()) == in_x
+                        and int(box_pos.y()) == in_y):
+                    continue
+                
+                if animate:
+                    canvas.scene.add_box_to_animation(box, in_x, in_y)
+                else:
+                    box.setPos(in_x, in_y)
+    else:
+        box = group.widgets[0]
+        if box is None:
+            return
+            
+        box_pos = box.pos()
+        if int(box_pos.x()) == null_x and int(box_pos.y()) == null_y:
+            return
+        
+        if animate:
+            canvas.scene.add_box_to_animation(box, null_x, null_y)
+        else:
+            box.setPos(null_x, null_y)
                 
 def wrapGroupBox(group_id: int, port_mode: int, yesno: bool):
     for group in canvas.group_list:

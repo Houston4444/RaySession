@@ -33,6 +33,13 @@ USE_ALIAS_NONE = 0
 USE_ALIAS_1 = 1
 USE_ALIAS_2 = 2
 
+GROUP_CONTEXT_AUDIO = 0x01
+GROUP_CONTEXT_MIDI = 0x02
+GROUP_SPLITTED = 0x04
+GROUP_WRAPPED_UNSPLITTED = 0x08
+GROUP_WRAPPED_INPUT = 0x10
+GROUP_WRAPPED_OUTPUT = 0x20
+
 _translate = QGuiApplication.translate
 
 class Connection:
@@ -221,12 +228,13 @@ class Group:
         self.client_icon = ''
         self.a2j_group = False
         self.in_canvas = False
+        self.splitted = False
 
     def update_ports_in_canvas(self):
         for port in self.ports:
             port.change_canvas_properties()
 
-    def add_to_canvas(self):
+    def add_to_canvas(self, split=patchcanvas.SPLIT_UNDEF):
         if self.in_canvas:
             return
         
@@ -235,7 +243,14 @@ class Group:
 
         icon_name = self.name.partition('.')[0].lower()
         
+        if split == patchcanvas.SPLIT_UNDEF:
+            if self._is_hardware:
+                split = patchcanvas.SPLIT_YES
+            else:
+                split = patchcanvas.SPLIT_NO
+        
         if self._is_hardware:
+            split = patchcanvas.SPLIT_YES
             icon_type = patchcanvas.ICON_HARDWARE
             if self.a2j_group:
                 icon_name = "a2j"
@@ -252,7 +267,7 @@ class Group:
             elif "source" in self.name.lower():
                 icon_type = patchcanvas.ICON_INTERNAL
                 icon_name = "audio-input-microphone.svg"
-
+        
         self.in_canvas = True
         patchcanvas.addGroup(self.group_id, self.display_name,
                              patchcanvas.SPLIT_UNDEF,
@@ -267,12 +282,22 @@ class Group:
                                 fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
-    def remove_all_ports(self):
-        for portgroup in self.portgroups:
-            portgroup.remove_from_canvas()
+    def move_boxes(self, null_x: int, null_y: int, in_x: int, in_y: int,
+                   out_x: int, out_y: int, anim=True):
+        if not self.in_canvas:
+            return
         
-        for port in self.ports:
-            port.remove_from_canvas()
+        patchcanvas.moveGroupBoxes(
+            self.group_id, null_x, null_y, in_x, in_y, out_x, out_y,
+            animate=anim)
+
+    def remove_all_ports(self):
+        if self.in_canvas:
+            for portgroup in self.portgroups:
+                portgroup.remove_from_canvas()
+            
+            for port in self.ports:
+                port.remove_from_canvas()
         
         self.portgroups.clear()
         self.ports.clear()
@@ -650,6 +675,12 @@ class PatchbayManager:
     def join_animation_finished(self):
         if self.wait_join_group_id is not None:
             patchcanvas.joinGroup(self.wait_join_group_id)
+            
+            for group in self.groups:
+                if group.group_id == self.wait_join_group_id:
+                    group.splitted = False
+                    break
+                
             self.wait_join_group_id = None
 
     def canvas_callbacks(self, action, value1, value2, value_str):
@@ -662,6 +693,10 @@ class PatchbayManager:
         elif action == patchcanvas.ACTION_GROUP_SPLIT:
             group_id = value1
             patchcanvas.splitGroup(group_id)
+            for group in self.groups:
+                if group.group_id == group_id:
+                    group.splitted = True
+                    break
 
         elif action == patchcanvas.ACTION_GROUP_JOIN:
             group_id = value1
@@ -671,7 +706,6 @@ class PatchbayManager:
                     self.join_animation_finished)
                 self.join_animation_connected = True
             patchcanvas.animateBeforeJoin(group_id)
-            #patchcanvas.joinGroup(group_id)
         
         elif action == patchcanvas.ACTION_GROUP_MOVE:
             group_id = value1
@@ -894,6 +928,15 @@ class PatchbayManager:
         group.add_port(port, self.use_alias)
         group.graceful_port(port)
         
+        split = patchcanvas.SPLIT_UNDEF
+        for group_position in self.group_positions:
+            if group.position.group_name == group.name:
+                if group_position.flags & GROUP_SPLITTED:
+                    split = patchcanvas.SPLIT_YES
+                else:
+                    split = patchcanvas.SPLIT_NO
+                break
+        
         if group_is_new:
             if self.audio_midi_view & port_type:
                 group.add_to_canvas()
@@ -1025,25 +1068,56 @@ class PatchbayManager:
                 connection.remove_from_canvas()
                 break
     
-    def update_group_position(self, in_or_out: int, group_name: str,
-                              x: int, y: int):
-        #print('recv gp pos', in_or_out, group_name, x, y) 
+    def update_group_position(
+        self, group_name: str, null_zone: str, in_zone: str, out_zone: str,
+        null_x: int, null_y: int, in_x: int, in_y: int, out_x: int, out_y:int,
+        flags: int):
+        # remember group position and move boxes if needed
+        context = int(GROUP_CONTEXT_AUDIO + GROUP_CONTEXT_MIDI) & flags
+        
         for group_position in self.group_positions:
-            if (group_position['in_or_out'] == in_or_out
-                    and group_position['group'] == group_name):
-                group_position['x'] = x
-                group_position['y'] = y
+            if (group_position['group_name'] == group_name
+                    and group_position['context'] == context):
+                group_position['null_zone'] = null_zone
+                group_position['in_zone'] = in_zone
+                group_position['out_zone'] = out_zone
+                group_position['null_x'] = null_x
+                group_position['null_y'] = null_y
+                group_position['in_x'] = in_x
+                group_position['in_y'] = in_y
+                group_position['x_out'] = out_x
+                group_position['y_out'] = out_y
+                group_position['null_wrapped'] = flags & GROUP_WRAPPED_UNSPLITTED
+                group_position['in_wrapped'] = flags & GROUP_WRAPPED_INPUT
+                group_position['out_wrapped'] = flags & GROUP_WRAPPED_OUTPUT
+                group_position['splitted'] = flags & GROUP_SPLITTED
                 break
         else:
-            self.group_positions.append(
-                {'in_or_out': in_or_out,
-                 'group': group_name,
-                 'x': x,
-                 'y': y})
+            group_position = {
+                'group_name': group_name,
+                'context': context,
+                'null_zone': null_zone,
+                'in_zone': in_zone,
+                'out_zone': out_zone,
+                'null_x': null_x,
+                'null_y': null_y,
+                'in_x': in_x,
+                'in_y': in_y,
+                'out_x': out_x,
+                'out_y': out_y,
+                'null_wrapped': flags & GROUP_WRAPPED_UNSPLITTED,
+                'in_wrapped': flags & GROUP_WRAPPED_INPUT,
+                'out_wrapped': flags & GROUP_WRAPPED_OUTPUT,
+                'splitted': flags & GROUP_SPLITTED}
+            
+            self.group_positions.append(group_position)
+        
+        if context != self.audio_midi_view:
+            return
         
         for group in self.groups:
             if group.name == group_name:
-                patchcanvas.moveGroupBox(group.group_id, in_or_out, x, y)
+                group.move_boxes(null_x, null_y, in_x, in_y, out_x, out_y)
                 break
 
     def update_portgroup(self, group_name: str, port_mode: int,
@@ -1073,6 +1147,8 @@ class PatchbayManager:
     def change_audio_midi_view(self, audio_midi_view: int):
         self.audio_midi_view = audio_midi_view
         self.optimize_operation(True)
+        
+        
         
         for connection in self.connections:
             if (connection.in_canvas
@@ -1104,7 +1180,7 @@ class PatchbayManager:
     def server_lose(self):
         self.tools_widget.set_jack_running(False)
         self.clear_all()
-        print('larlkezrlekl')
+
         ret = QMessageBox.critical(
             self.session._main_win,
             _translate('patchbay', "JACK server lose"),
