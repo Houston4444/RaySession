@@ -335,7 +335,8 @@ class GUIServerThread(liblo.ServerThread):
     def _patchbay_server_stopped(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/gui/patchbay/group_position_info', 'ssssiiiiiii')
+    @ray_method('/ray/gui/patchbay/group_position_info',
+                ray.GroupPosition.sisi())
     def _patchbay_group_position(self, path, args, types, src_addr):
         pass
 

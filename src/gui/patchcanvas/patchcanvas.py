@@ -732,6 +732,8 @@ def animateBeforeJoin(group_id: int):
 
 def moveGroupBoxes(group_id: int, null_x: int, null_y: int,
                    in_x: int, in_y: int, out_x: int, out_y: int, animate=True):
+    print('moooovvlvlv', group_id, null_x, null_y)
+    
     for group in canvas.group_list:
         if group.group_id == group_id:
             break

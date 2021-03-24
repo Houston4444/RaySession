@@ -3,6 +3,8 @@ from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QMessageBox
 from PyQt5.QtCore import pyqtSlot
 
+import ray
+
 from gui_tools import RS
 
 from patchcanvas import patchcanvas
@@ -716,6 +718,10 @@ class PatchbayManager:
             
             for group in self.groups:
                 if group.group_id == group_id:
+                    for group_position in self.group_positions:
+                        if (group_position.group_name == group.name
+                                and group_position.context() == self.audio_midi_view):
+                            group_positio
                     self.send_to_daemon(
                         '/ray/server/patchbay/save_group_position',
                         in_or_out, group.name, int(str_x), int(str_y))
@@ -930,26 +936,28 @@ class PatchbayManager:
         
         split = patchcanvas.SPLIT_UNDEF
         for group_position in self.group_positions:
-            if group.position.group_name == group.name:
+            if group_position.group_name == group.name:
                 if group_position.flags & GROUP_SPLITTED:
                     split = patchcanvas.SPLIT_YES
                 else:
                     split = patchcanvas.SPLIT_NO
                 break
         
-        if group_is_new:
-            if self.audio_midi_view & port_type:
-                group.add_to_canvas()
+        if group_is_new and self.audio_midi_view & port_type:
+            group.add_to_canvas()
 
             for gp in self.group_positions:
-                if gp['group'] == group.name:
-                    patchcanvas.moveGroupBox(
-                        group.group_id, gp['in_or_out'], gp['x'], gp['y'],
+                if (gp.group_name == group.name
+                        and gp.context() == self.audio_midi_view):
+                    patchcanvas.moveGroupBoxes(
+                        group.group_id, gp.null_x, gp.null_y,
+                        gp.in_x, gp.in_y, gp.out_x, gp.out_y,
                         animate=False)
 
                     self.send_to_daemon(
                         '/ray/server/patchbay/save_group_position',
-                        gp['in_or_out'], group.name, gp['x'], gp['y'])
+                        *gp.spread())
+                    break
 
         if self.audio_midi_view & port_type:
             group.add_to_canvas()
@@ -1068,56 +1076,26 @@ class PatchbayManager:
                 connection.remove_from_canvas()
                 break
     
-    def update_group_position(
-        self, group_name: str, null_zone: str, in_zone: str, out_zone: str,
-        null_x: int, null_y: int, in_x: int, in_y: int, out_x: int, out_y:int,
-        flags: int):
+    def update_group_position(self, *args):
+        print('taeliteltek', args)
+        
         # remember group position and move boxes if needed
-        context = int(GROUP_CONTEXT_AUDIO + GROUP_CONTEXT_MIDI) & flags
+        gpos = ray.GroupPosition.newFrom(*args)
+        context = (GROUP_CONTEXT_AUDIO + GROUP_CONTEXT_MIDI) & gpos.flags
         
         for group_position in self.group_positions:
-            if (group_position['group_name'] == group_name
-                    and group_position['context'] == context):
-                group_position['null_zone'] = null_zone
-                group_position['in_zone'] = in_zone
-                group_position['out_zone'] = out_zone
-                group_position['null_x'] = null_x
-                group_position['null_y'] = null_y
-                group_position['in_x'] = in_x
-                group_position['in_y'] = in_y
-                group_position['x_out'] = out_x
-                group_position['y_out'] = out_y
-                group_position['null_wrapped'] = flags & GROUP_WRAPPED_UNSPLITTED
-                group_position['in_wrapped'] = flags & GROUP_WRAPPED_INPUT
-                group_position['out_wrapped'] = flags & GROUP_WRAPPED_OUTPUT
-                group_position['splitted'] = flags & GROUP_SPLITTED
-                break
+            if group_position.group_name == gpos.group_name:
+                group_position.update(*args)
         else:
-            group_position = {
-                'group_name': group_name,
-                'context': context,
-                'null_zone': null_zone,
-                'in_zone': in_zone,
-                'out_zone': out_zone,
-                'null_x': null_x,
-                'null_y': null_y,
-                'in_x': in_x,
-                'in_y': in_y,
-                'out_x': out_x,
-                'out_y': out_y,
-                'null_wrapped': flags & GROUP_WRAPPED_UNSPLITTED,
-                'in_wrapped': flags & GROUP_WRAPPED_INPUT,
-                'out_wrapped': flags & GROUP_WRAPPED_OUTPUT,
-                'splitted': flags & GROUP_SPLITTED}
-            
-            self.group_positions.append(group_position)
+            self.group_positions.append(gpos)
         
         if context != self.audio_midi_view:
             return
         
         for group in self.groups:
-            if group.name == group_name:
-                group.move_boxes(null_x, null_y, in_x, in_y, out_x, out_y)
+            if group.name == gpos.group_name:
+                group.move_boxes(gpos.null_x, gpos.null_y, gpos.in_x,
+                                 gpos.in_y, gpos.out_x, gpos.out_y)
                 break
 
     def update_portgroup(self, group_name: str, port_mode: int,

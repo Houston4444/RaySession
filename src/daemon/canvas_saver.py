@@ -1,32 +1,9 @@
 
+import ray
+
 from daemon_tools import RS
 from server_sender import ServerSender
 
-
-class GroupPosition:
-    def __init__(self, in_or_out: int, group: str, x: int, y: int):
-        self.in_or_out = in_or_out
-        self.group = group
-        self.x = x
-        self.y = y
-    
-    def is_group(self, in_or_out: int, group: str):
-        return bool (self.in_or_out == in_or_out
-                     and self.group == group)
-    
-    def same_group(self, other)->bool:
-        return bool(self.in_or_out == other.in_or_out
-                    and self.group == other.group)
-    
-    def change_x_y(self, x: int, y: int):
-        self.x = x
-        self.y = y
-
-    def to_tuple(self)->tuple:
-        return {'group': self.group,
-                'in_or_out': self.in_or_out,
-                'x': self.x,
-                'y': self.y}
 
 class CanvasSaver(ServerSender):
     def __init__(self):
@@ -39,8 +16,8 @@ class CanvasSaver(ServerSender):
             'Canvas/GroupPositions', type=list)
         
         for gt in tuple_config_list:
-            group_pos = GroupPosition(
-                gt['in_or_out'], gt['group'], gt['x'], gt['y'])
+            group_pos = ray.GroupPosition()
+            group_pos.write_from_dict(gt)
             self.group_positions_config.append(group_pos)
         
     def get_all_group_positions(self)->list:
@@ -48,7 +25,7 @@ class CanvasSaver(ServerSender):
         
         for gpos_cf in self.group_positions_config:
             for gpos_ss in self.group_positions_session:
-                if gpos_ss.same_group(gpos_cf):
+                if gpos_ss.group_name == gpos_cg.group_name:
                     break
             else:
                 group_positions_config_exclu.append(gpos_cf)
@@ -58,36 +35,35 @@ class CanvasSaver(ServerSender):
     def send_session_group_positions(self):
         for gpos in self.group_positions_session:
             self.sendGui('/ray/gui/patchbay/group_position_info',
-                         gpos.in_or_out, gpos.group, gpos.x, gpos.y)
+                         *gpos.spread())
     
     def send_all_group_positions(self, src_addr):
+        print('chaminiiia')
         for gpos in self.group_positions_session:
             self.send(src_addr, '/ray/gui/patchbay/group_position_info',
-                      gpos.in_or_out, gpos.group, gpos.x, gpos.y)
+                      *gpos.spread())
 
         for gpos_cf in self.group_positions_config:
             for gpos_ss in self.group_positions_session:
-                if gpos_ss.same_group(gpos_cf):
+                if gpos_ss.group_name == gpos_cf.group_name:
                     break
             else:
                 self.send(src_addr, '/ray/gui/patchbay/group_position_info',
-                          gpos_cf.in_or_out, gpos_cf.group,
-                          gpos_cf.x, gpos_cf.y)
+                          *gpos_cf.spread())
 
-    def save_group_position(self, in_or_out: int, group: str,
-                            x: int, y : int):
+    def save_group_position(self, *args):
+        gp = ray.GroupPosition.newFrom(*args)
         for group_positions in (self.group_positions_session,
                                 self.group_positions_config):
             for gpos in group_positions:
-                if gpos.is_group(in_or_out, group):
-                    gpos.change_x_y(x, y)
+                if gpos.group_name == gp.group_name:
+                    gpos.update(*args)
                     break
             else:
-                gpos = GroupPosition(in_or_out, group, x, y)
-                group_positions.append(gpos)
+                group_positions.append(gp)
 
         RS.settings.setValue('Canvas/GroupPositions',
-                             [gp.to_tuple() for gp in group_positions])
+                             [gp.to_dict() for gp in group_positions])
     
     def load_session_canvas(self, xml_element):
         nodes = xml_element.childNodes()
@@ -105,11 +81,10 @@ class CanvasSaver(ServerSender):
         
         # save patchbay group positions
         for gpos in self.group_positions_session:
-            xml_gpos = xml.createElement('group')
-            xml_gpos.setAttribute('in_or_out', gpos.in_or_out)
-            xml_gpos.setAttribute('group', gpos.group)
-            xml_gpos.setAttribute('x', gpos.x)
-            xml_gpos.setAttribute('y', gpos.y)
+            xml_gpos = xml.createElement('group_position')
+            for attr in gpos.get_attributes():
+                xml_gpos.setAttribute(attr, gpos.get_str_value(attr))
+            
             xml_group_positions.appendChild(xml_gpos)
         
         ## save patchbay portgroups (stereo/mono)
@@ -128,35 +103,41 @@ class CanvasSaver(ServerSender):
         xml_element.appendChild(xml_portgroups)
     
     def update_group_session_positions(self, xml_element):
+        print('zlkjfdkkkdsks')
         self.group_positions_session.clear()
         nodes = xml_element.childNodes()
 
         for i in range(nodes.count()):
             node = nodes.at(i)
             el = node.toElement()
-            if el.tagName() != "group":
+            if el.tagName() != "group_position":
                 continue
 
-            in_or_out_str = el.attribute('in_or_out')
-            group = el.attribute('group')
-            x_str = el.attribute('x')
-            y_str = el.attribute('y')
-            
-            # verify that values are digits
-            int_ok = True
-            for digit_str in (in_or_out_str, x_str, y_str):
-                if digit_str.startswith('-'):
-                    digit_str = digit_str.replace('-', '', 1)
+            args = []
+            for attr in ray.GroupPosition.get_attributes():
+                args.append(el.attribute(attr))
 
-                if not digit_str.isdigit():
-                    int_ok = False
-                    break
+            #in_or_out_str = el.attribute('in_or_out')
+            #group = el.attribute('group')
+            #x_str = el.attribute('x')
+            #y_str = el.attribute('y')
             
-            if not int_ok:
-                continue
+            ## verify that values are digits
+            #int_ok = True
+            #for digit_str in (in_or_out_str, x_str, y_str):
+                #if digit_str.startswith('-'):
+                    #digit_str = digit_str.replace('-', '', 1)
 
-            gpos = GroupPosition(int(in_or_out_str), group,
-                                 int(x_str), int(y_str))
+                #if not digit_str.isdigit():
+                    #int_ok = False
+                    #break
+            
+            #if not int_ok:
+                #continue
+
+            #gpos = GroupPosition(int(in_or_out_str), group,
+                                 #int(x_str), int(y_str))
+            gpos = ray.GroupPosition.newFrom(*args)
 
             self.group_positions_session.append(gpos)
             

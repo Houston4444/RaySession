@@ -33,6 +33,10 @@ factory_session_templates = (
     'with_jack_patch', 'with_jack_config', 'scripted')
 RAYNET_BIN = 'ray-network'
 
+
+GROUP_CONTEXT_AUDIO = 0x01
+GROUP_CONTEXT_MIDI = 0x02
+
 class PrefixMode:
     CUSTOM = 0
     CLIENT_NAME = 1
@@ -764,31 +768,82 @@ class GroupPosition():
     flags = 0
     
     @staticmethod
+    def get_attributes():
+        return ('group_name', 'null_zone', 'in_zone', 'out_zone',
+                'null_x', 'null_y', 'in_x', 'in_y', 'out_x', 'out_y', 'flags')
+    
+    @staticmethod
     def sisi():
         return 'ssssiiiiiii'
     
     @staticmethod
-    def newFrom():
+    def newFrom(*args):
         group_position = GroupPosition()
         group_position.update(*args)
         return group_position
     
+    def write_from_dict(self, input_dict: dict):
+        for attr in input_dict:
+            if not attr in self.get_attributes():
+                sys.stderr.write(
+                    'group position has no attribute %s\n' % attr)
+                continue
+            
+            self_attr = self.__getattribute__(attr)
+            self_attr = input_dict[attr]
+    
     def update(self, group_name: str, null_zone: str, in_zone: str,
                out_zone: str, null_x: int, null_y: int, in_x: int, in_y: int,
                out_x: int, out_y: int, flags: int):
+        for string in (group_name, null_zone, in_zone, out_zone):
+            if type(string) != str:
+                return 
+        
+        for digit in (null_x, null_y, in_x, in_y, out_x, out_y, flags):
+            if type(digit) == int:
+                continue
+            
+            if type(digit) != str:
+                return
+            
+            if (digit.isdigit()
+                    or (digit.startswith('-')
+                        and digit.replace('-', '', 1).isdigit())):
+                continue
+            else:
+                return
+
         self.group_name = group_name
         self.null_zone = null_zone
         self.in_zone = in_zone
         self.out_zone = out_zone
-        self.null_x = null_x
-        self.null_y = null_y
-        self.in_x = in_x
-        self.in_y = in_y
-        self.out_x = out_x
-        self.out_y = out_y
-        self.flags = flags
+        self.null_x = int(null_x)
+        self.null_y = int(null_y)
+        self.in_x = int(in_x)
+        self.in_y = int(in_y)
+        self.out_x = int(out_x)
+        self.out_y = int(out_y)
+        self.flags = int(flags)
         
     def spread(self)->tuple:
         return (self.group_name, self.null_zone, self.in_zone, self.out_zone,
                 self.null_x, self.null_y, self.in_x, self.in_y,
                 self.out_x, self.out_y, self.flags)
+    
+    def context(self)->int:
+        return self.flags & (GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+    
+    def to_dict(self)->dict:
+        new_dict = {}
+        
+        for attr in self.__dir__():
+            if attr in self.get_attributes():
+                new_dict[attr] = self.__getattribute__(attr)
+        
+        return new_dict
+    
+    def get_str_value(self, attr: str)->str:
+        if attr not in self.get_attributes():
+            return ''
+        
+        return str(self.__getattribute__(attr))
