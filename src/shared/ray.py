@@ -755,26 +755,24 @@ class RayNet():
 
 
 class GroupPosition():
+    context = GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI
     group_name = ''
     null_zone = ''
     in_zone = ''
     out_zone = ''
-    null_x = 0
-    null_y = 0
-    in_x = 0
-    in_y = 0
-    out_x = 0
-    out_y = 0
+    null_xy = (0, 0)
+    in_xy = (0, 0)
+    out_xy = (0, 0)
     flags = 0
     
     @staticmethod
     def get_attributes():
-        return ('group_name', 'null_zone', 'in_zone', 'out_zone',
-                'null_x', 'null_y', 'in_x', 'in_y', 'out_x', 'out_y', 'flags')
+        return ('context', 'group_name', 'null_zone', 'in_zone', 'out_zone',
+                'null_xy', 'in_xy', 'out_xy', 'flags')
     
     @staticmethod
     def sisi():
-        return 'ssssiiiiiii'
+        return 'issssiiiiiii'
     
     @staticmethod
     def newFrom(*args):
@@ -788,18 +786,23 @@ class GroupPosition():
                 sys.stderr.write(
                     'group position has no attribute %s\n' % attr)
                 continue
-            
+            print('ff,', attr)
             self_attr = self.__getattribute__(attr)
-            self_attr = input_dict[attr]
+            print('gg', self_attr)
+            if type(input_dict[attr]) == list:
+                self_attr = tuple(input_dict[attr])
+            else:
+                self_attr = input_dict[attr]
     
-    def update(self, group_name: str, null_zone: str, in_zone: str,
-               out_zone: str, null_x: int, null_y: int, in_x: int, in_y: int,
+    def update(self, context: int, group_name: str,
+               null_zone: str, in_zone: str, out_zone: str,
+               null_x: int, null_y: int, in_x: int, in_y: int,
                out_x: int, out_y: int, flags: int):
         for string in (group_name, null_zone, in_zone, out_zone):
             if type(string) != str:
                 return 
         
-        for digit in (null_x, null_y, in_x, in_y, out_x, out_y, flags):
+        for digit in (context, null_x, null_y, in_x, in_y, out_x, out_y, flags):
             if type(digit) == int:
                 continue
             
@@ -813,25 +816,21 @@ class GroupPosition():
             else:
                 return
 
+        self.context = context
         self.group_name = group_name
         self.null_zone = null_zone
         self.in_zone = in_zone
         self.out_zone = out_zone
-        self.null_x = int(null_x)
-        self.null_y = int(null_y)
-        self.in_x = int(in_x)
-        self.in_y = int(in_y)
-        self.out_x = int(out_x)
-        self.out_y = int(out_y)
+        self.null_xy = (int(null_x), int(null_y))
+        self.in_xy = (int(in_x), int(in_y))
+        self.out_xy = (int(out_x), int(out_y))
         self.flags = int(flags)
         
     def spread(self)->tuple:
-        return (self.group_name, self.null_zone, self.in_zone, self.out_zone,
-                self.null_x, self.null_y, self.in_x, self.in_y,
-                self.out_x, self.out_y, self.flags)
-    
-    def context(self)->int:
-        return self.flags & (GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+        return (self.context, self.group_name,
+                self.null_zone, self.in_zone, self.out_zone,
+                self.null_xy[0], self.null_xy[1], self.in_xy[0], self.in_xy[1],
+                self.out_xy[0], self.out_xy[1], self.flags)
     
     def to_dict(self)->dict:
         new_dict = {}

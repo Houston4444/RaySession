@@ -809,6 +809,7 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/patchbay/save_group_position',
                 ray.GroupPosition.sisi())
     def rayServerPatchbaySaveCoordinates(self, path, args, types, src_addr):
+        print('gpooss', args)
         pass
 
     @ray_method('/ray/server/patchbay/save_portgroup', 'siss')

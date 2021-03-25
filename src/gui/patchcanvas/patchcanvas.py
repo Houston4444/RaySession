@@ -730,19 +730,17 @@ def animateBeforeJoin(group_id: int):
                     widget, new_pos.x(), new_pos.y())
             break
 
-def moveGroupBoxes(group_id: int, null_x: int, null_y: int,
-                   in_x: int, in_y: int, out_x: int, out_y: int, animate=True):
-    print('moooovvlvlv', group_id, null_x, null_y)
-    
+def moveGroupBoxes(group_id: int, null_xy: tuple,
+                   in_xy: tuple, out_xy: tuple, animate=True):
     for group in canvas.group_list:
         if group.group_id == group_id:
             break
     else:
         return
             
-    group.null_pos = QPoint(null_x, null_y)
-    group.in_pos = QPoint(in_x, in_y)
-    group.out_pos = QPoint(out_x, out_y)
+    group.null_pos = QPoint(*null_xy)
+    group.in_pos = QPoint(*in_xy)
+    group.out_pos = QPoint(*out_xy)
     
     if group.split:
         for port_mode in (PORT_MODE_OUTPUT, PORT_MODE_INPUT):
@@ -755,37 +753,38 @@ def moveGroupBoxes(group_id: int, null_x: int, null_y: int,
             
             box_pos = box.pos()
             if port_mode == PORT_MODE_OUTPUT:
-                if (int(box_pos.x()) == out_x
-                        and int(box_pos.y()) == out_y):
+                if (int(box_pos.x()) == out_xy[0]
+                        and int(box_pos.y()) == out_xy[1]):
                     continue
                 
                 if animate:
-                    canvas.scene.add_box_to_animation(box, out_x, out_y)
+                    canvas.scene.add_box_to_animation(
+                        box, out_xy[0], out_xy[1])
                 else:
-                    box.setPos(out_x, out_y)
+                    box.setPos(*out_xy)
             
             elif port_mode == PORT_MODE_INPUT:
-                if (int(box_pos.x()) == in_x
-                        and int(box_pos.y()) == in_y):
+                if (int(box_pos.x()) == in_xy[0]
+                        and int(box_pos.y()) == in_xy[1]):
                     continue
                 
                 if animate:
-                    canvas.scene.add_box_to_animation(box, in_x, in_y)
+                    canvas.scene.add_box_to_animation(box, in_xy[0], in_xy[1])
                 else:
-                    box.setPos(in_x, in_y)
+                    box.setPos(*in_xy)
     else:
         box = group.widgets[0]
         if box is None:
             return
-            
+
         box_pos = box.pos()
-        if int(box_pos.x()) == null_x and int(box_pos.y()) == null_y:
+        if int(box_pos.x()) == null_xy[0] and int(box_pos.y()) == null_xy[1]:
             return
-        
+
         if animate:
-            canvas.scene.add_box_to_animation(box, null_x, null_y)
+            canvas.scene.add_box_to_animation(box, null_xy[0], null_xy[1])
         else:
-            box.setPos(null_x, null_y)
+            box.setPos(*null_xy)
                 
 def wrapGroupBox(group_id: int, port_mode: int, yesno: bool):
     for group in canvas.group_list:

@@ -194,7 +194,8 @@ class PatchScene(QGraphicsScene):
         else:
             box_dict = {'widget': box_widget}
             self.move_boxes.append(box_dict)
-            
+        
+        print('sdflkjdfkkfffffff', box_widget.pos())
         box_dict['from_x'] = box_widget.pos().x()
         box_dict['from_y'] = box_widget.pos().y()
         box_dict['to_x'] = to_x

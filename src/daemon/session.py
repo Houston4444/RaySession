@@ -982,7 +982,8 @@ class OperatingSession(Session):
             xml_wins.appendChild(xml_win)
 
         
-        self.canvas_saver.save_session_canvas(xml, xml_canvas)
+        #self.canvas_saver.save_session_canvas(xml, xml_canvas)
+        
         ## save patchbay group positions
         #for group_position in self.canvas_group_positions:
             #xml_gpos = xml.createElement('group')
@@ -1018,6 +1019,8 @@ class OperatingSession(Session):
             self.saveError(ray.Err.CREATE_FAILED)
 
         file.close()
+
+        self.canvas_saver.save_json_session_canvas(self.path)
 
         full_notes_path = "%s/%s" % (self.path, ray.NOTES_PATH)
 
@@ -1752,8 +1755,8 @@ for better organization."""))
                     if self.hasServerOption(ray.Option.DESKTOPS_MEMORY):
                         self.desktops_memory.readXml(node.toElement())
                 
-                elif tag_name == "Canvas":
-                    self.canvas_saver.load_session_canvas(node.toElement())
+                #elif tag_name == "Canvas":
+                    #self.canvas_saver.load_session_canvas(node.toElement())
 
             ray_file.close()
 
@@ -1779,6 +1782,8 @@ for better organization."""))
 
             file.close()
             self.sendGui('/ray/gui/session/is_nsm')
+
+        self.canvas_saver.load_json_session_canvas(spath)
 
         full_notes_path = "%s/%s" % (spath, ray.NOTES_PATH)
 

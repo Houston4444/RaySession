@@ -1,9 +1,13 @@
 
+import json
+import os
+
 import ray
 
 from daemon_tools import RS
 from server_sender import ServerSender
 
+JSON_PATH = 'ray_canvas_positions.json'
 
 class CanvasSaver(ServerSender):
     def __init__(self):
@@ -25,7 +29,7 @@ class CanvasSaver(ServerSender):
         
         for gpos_cf in self.group_positions_config:
             for gpos_ss in self.group_positions_session:
-                if gpos_ss.group_name == gpos_cg.group_name:
+                if gpos_ss.group_name == gpos_cf.group_name:
                     break
             else:
                 group_positions_config_exclu.append(gpos_cf)
@@ -33,12 +37,13 @@ class CanvasSaver(ServerSender):
         return self.group_positions_session + group_positions_config_exclu
     
     def send_session_group_positions(self):
+        print('ilrzrillrifzrli')
         for gpos in self.group_positions_session:
+            print('eijrjijif', gpos.group_name)
             self.sendGui('/ray/gui/patchbay/group_position_info',
                          *gpos.spread())
     
     def send_all_group_positions(self, src_addr):
-        print('chaminiiia')
         for gpos in self.group_positions_session:
             self.send(src_addr, '/ray/gui/patchbay/group_position_info',
                       *gpos.spread())
@@ -62,8 +67,25 @@ class CanvasSaver(ServerSender):
             else:
                 group_positions.append(gp)
 
-        RS.settings.setValue('Canvas/GroupPositions',
-                             [gp.to_dict() for gp in group_positions])
+        #RS.settings.setValue('Canvas/GroupPositions',
+                             #[gp.to_dict() for gp in group_positions])
+    
+    def load_json_session_canvas(self, session_path: str):
+        self.group_positions_session.clear()
+        
+        session_canvas_file = "%s/.%s" % (session_path, JSON_PATH)
+        
+        if not os.path.exists(session_canvas_file):
+            return
+            
+        with open(session_canvas_file, 'r') as f:
+            gpos_list = json.load(f)
+            for gpos_dict in gpos_list:
+                gpos = ray.GroupPosition()
+                gpos.write_from_dict(gpos_dict)
+                print('zouga', gpos_dict)
+                print('kdlfjdfkjl', gpos.group_name)
+                self.group_positions_session.append(gpos)
     
     def load_session_canvas(self, xml_element):
         nodes = xml_element.childNodes()
@@ -74,6 +96,33 @@ class CanvasSaver(ServerSender):
                 self.update_group_session_positions(node)
             elif tag_name == 'Portgroups':
                 self.update_session_portgroups(node)
+    
+    def save_json_session_canvas(self, session_path: str):
+        session_json_path = "%s/.%s" % (session_path, JSON_PATH)
+        
+        if not self.group_positions_session:
+            return
+        
+        #audio_midi_gpos = []
+        #audio_gpos = []
+        #midi_gpos = []
+        
+        #save_dict = {'audio+midi': audio_midi_gpos,
+                     #'audio': audio_gpos,
+                     #'midi': midi_gpos}
+        
+        #for gpos in self.group_positions_session:
+            #if gpos.context == ray.GROUP_CONTEXT_AUDIO:
+                #audio_gpos.append(gpos.to_dict())
+            #elif gpos.context == ray.GROUP_CONTEXT_MIDI:
+                #midi_gpos.append(gpos.to_dict())
+            #else:
+                #audio_midi_gpos.append(gpos.to_dict())
+        
+        with open(session_json_path, 'w+') as f:
+            json.dump(
+                [gpos.to_dict() for gpos in self.group_positions_session],
+                f, indent=2)
     
     def save_session_canvas(self, xml, xml_element):
         xml_group_positions = xml.createElement('GroupPositions')
@@ -103,7 +152,6 @@ class CanvasSaver(ServerSender):
         xml_element.appendChild(xml_portgroups)
     
     def update_group_session_positions(self, xml_element):
-        print('zlkjfdkkkdsks')
         self.group_positions_session.clear()
         nodes = xml_element.childNodes()
 
@@ -117,28 +165,7 @@ class CanvasSaver(ServerSender):
             for attr in ray.GroupPosition.get_attributes():
                 args.append(el.attribute(attr))
 
-            #in_or_out_str = el.attribute('in_or_out')
-            #group = el.attribute('group')
-            #x_str = el.attribute('x')
-            #y_str = el.attribute('y')
-            
-            ## verify that values are digits
-            #int_ok = True
-            #for digit_str in (in_or_out_str, x_str, y_str):
-                #if digit_str.startswith('-'):
-                    #digit_str = digit_str.replace('-', '', 1)
-
-                #if not digit_str.isdigit():
-                    #int_ok = False
-                    #break
-            
-            #if not int_ok:
-                #continue
-
-            #gpos = GroupPosition(int(in_or_out_str), group,
-                                 #int(x_str), int(y_str))
             gpos = ray.GroupPosition.newFrom(*args)
-
             self.group_positions_session.append(gpos)
             
     def update_session_portgroups(self, xml_element):

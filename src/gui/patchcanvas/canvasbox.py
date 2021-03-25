@@ -967,13 +967,9 @@ class CanvasBox(QGraphicsItem):
     def fixPosAfterMove(self):
         self.fixPos()
         
-        in_or_out = 3
-        if self.m_splitted:
-            in_or_out = self.m_splitted_mode
-        
         x_y_str = "%i:%i" % (round(self.x()), round(self.y()))
-        
-        CanvasCallback(ACTION_GROUP_MOVE, self.m_group_id, in_or_out, x_y_str)
+        CanvasCallback(ACTION_GROUP_MOVE, self.m_group_id,
+                       self.m_splitted_mode, x_y_str)
         
     def boundingRect(self):
         if self._is_hardware:
