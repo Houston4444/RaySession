@@ -58,7 +58,7 @@ from .canvasbezierline import CanvasBezierLine
 from .canvasline import CanvasLine
 from .theme import Theme, getDefaultTheme, getThemeName
 from .utils import (CanvasCallback, CanvasGetNewGroupPos, CanvasItemFX, 
-    CanvasRemoveItemFX, CanvasGetPortGroupPosition)
+    CanvasRemoveItemFX, CanvasGetPortGroupPosition, CanvasGetNewGroupPositions)
 
 # FIXME
 from . import *
@@ -400,6 +400,18 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     group_box.setZValue(canvas.last_z_value)
 
     canvas.group_list.append(group_dict)
+
+    #if split == SPLIT_YES:
+        #in_pointf = group_sbox.pos()
+        #out_pointf = group_box.pos()
+        #in_x_y_str = "%i:%i" % (round(in_pointf.x()), round(in_pointf.y()))
+        #out_x_y_str = "%i:%i" % (round(out_pointf.x()), round(out_pointf.y()))
+        #CanvasCallback(ACTION_GROUP_MOVE, group_id, PORT_MODE_INPUT, in_x_y_str)
+        #CanvasCallback(ACTION_GROUP_MOVE, group_id, PORT_MODE_OUTPUT, out_x_y_str)
+    #else:
+        #pointf = group_box.pos()
+        #x_y_str = "%i:%i" % (round(pointf.x()), round(pointf.y()))
+        #CanvasCallback(ACTION_GROUP_MOVE, group_id, PORT_MODE_NULL, x_y_str)
 
     if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
         CanvasItemFX(group_box, True, False)
@@ -795,6 +807,30 @@ def wrapGroupBox(group_id: int, port_mode: int, yesno: bool):
                     box.set_wrapped(yesno)
 
 # ------------------------------------------------------------------------------------------------------------
+
+#def getGroupPositions(group_id):
+    #null_x, null_y, in_x, in_y, out_x, out_y = 0
+    #group_splitted = False
+    
+    #for group in canvas.group_list:
+        #if group.group_id == group_id:
+            #if group.split:
+                #box = group.widgets[0]
+                #if box is not None:
+                    #out_x = round(box.pos().x())
+                    #out_y = round(box.pos().y())
+                
+                #sbox = group.widgets[1]
+                #if sbox is not None:
+                    #in_x = round(box.pos().x())
+                    #in_y = round(box.pos().y())
+            #else:
+                #box = group.widgets[0]
+                #if box is not None:
+                    #null_x = round(box.pos().x())
+                    #null_y = round(box.pos().y())
+    
+    #return (group_splitted, null_x, null_y, in_x, in_y, out_x, out_y)
 
 def getGroupPos(group_id, port_mode=PORT_MODE_OUTPUT):
     if canvas.debug:

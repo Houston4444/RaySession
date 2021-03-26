@@ -35,6 +35,18 @@ from .canvasfadeanimation import CanvasFadeAnimation
 
 # ------------------------------------------------------------------------------------------------------------
 
+def CanvasGetNewGroupPositions()->tuple:
+    rect = canvas.scene.get_new_scene_rect()
+    if rect.isNull():
+        return ((200, 0), (0, 0), (400, 0))
+
+    y = rect.bottom() + 20
+    print('asasasasp')
+
+    return ((rect.left() + rect.width() / 2, y),
+            (rect.left(), y),
+            (rect.right() - 50, y))
+
 def CanvasGetNewGroupPos(horizontal):
     if canvas.debug:
         print("PatchCanvas::CanvasGetNewGroupPos(%s)" % bool2str(horizontal))

@@ -786,13 +786,21 @@ class GroupPosition():
                 sys.stderr.write(
                     'group position has no attribute %s\n' % attr)
                 continue
-            print('ff,', attr)
-            self_attr = self.__getattribute__(attr)
-            print('gg', self_attr)
-            if type(input_dict[attr]) == list:
-                self_attr = tuple(input_dict[attr])
-            else:
-                self_attr = input_dict[attr]
+            
+            value = input_dict[attr]
+            attr_type = type(value)
+            if attr in ('context', 'flags'):
+                if attr_type != int:
+                    continue
+            elif attr in ('group_name', 'null_zone', 'in_zone', 'out_zone'):
+                if attr_type != str:
+                    continue
+            elif attr in ('null_xy', 'in_xy', 'out_xy'):
+                if attr_type not in (list, tuple):
+                    continue
+                value = tuple(value)
+            
+            self.__setattr__(attr, value)
     
     def update(self, context: int, group_name: str,
                null_zone: str, in_zone: str, out_zone: str,

@@ -517,7 +517,7 @@ class MainWindow(QMainWindow):
         features.group_rename = False
         features.port_info = False
         features.port_rename = False
-        features.handle_group_pos = True
+        features.handle_group_pos = False
 
         patchcanvas.setOptions(options)
         patchcanvas.setFeatures(features)
