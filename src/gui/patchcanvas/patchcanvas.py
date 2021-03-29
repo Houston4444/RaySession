@@ -355,7 +355,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         else:
             #group_box.setPos(CanvasGetNewGroupPos(False))
             new_pos = CanvasGetNewGroupPos(False)
-            canvas.scene.add_box_to_animation(group_box, new_pos.x(), new_pos.y())
+            #canvas.scene.add_box_to_animation(group_box, new_pos.x(), new_pos.y())
 
         group_sbox = CanvasBox(group_id, group_name, icon_type, icon_name)
         group_sbox.setSplit(True, PORT_MODE_INPUT)
@@ -374,7 +374,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         else:
             #group_sbox.setPos(CanvasGetNewGroupPos(True))
             new_pos = CanvasGetNewGroupPos(True)
-            canvas.scene.add_box_to_animation(group_sbox, new_pos.x(), new_pos.y())
+            #canvas.scene.add_box_to_animation(group_sbox, new_pos.x(), new_pos.y())
 
         canvas.last_z_value += 1
         group_sbox.setZValue(canvas.last_z_value)
@@ -392,7 +392,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         else:
             # Special ladish fake-split groups
             horizontal = bool(icon_type in (ICON_HARDWARE, ICON_LADISH_ROOM))
-            group_box.setPos(CanvasGetNewGroupPos(horizontal))
+            #group_box.setPos(CanvasGetNewGroupPos(horizontal))
 
     group_box.checkItemPos()
 
@@ -744,12 +744,14 @@ def animateBeforeJoin(group_id: int):
 
 def moveGroupBoxes(group_id: int, null_xy: tuple,
                    in_xy: tuple, out_xy: tuple, animate=True):
+    print('moveGroupBoxes0')
     for group in canvas.group_list:
         if group.group_id == group_id:
             break
     else:
         return
-            
+    print('moveGroupBoxes1', null_xy, in_xy, out_xy, animate)
+    
     group.null_pos = QPoint(*null_xy)
     group.in_pos = QPoint(*in_xy)
     group.out_pos = QPoint(*out_xy)
@@ -757,33 +759,28 @@ def moveGroupBoxes(group_id: int, null_xy: tuple,
     if group.split:
         for port_mode in (PORT_MODE_OUTPUT, PORT_MODE_INPUT):
             box = group.widgets[0]
+            xy = out_xy
+            pos = group.out_pos
+            
             if port_mode == PORT_MODE_INPUT:
                 box = group.widgets[1]
+                xy = in_xy
+                pos = group.in_pos
 
             if box is None:
                 continue
             
             box_pos = box.pos()
-            if port_mode == PORT_MODE_OUTPUT:
-                if (int(box_pos.x()) == out_xy[0]
-                        and int(box_pos.y()) == out_xy[1]):
-                    continue
-                
-                if animate:
-                    canvas.scene.add_box_to_animation(
-                        box, out_xy[0], out_xy[1])
-                else:
-                    box.setPos(*out_xy)
+            if int(box_pos.x()) == xy[0] and int(box_pos.y()) == xy[1]:
+                continue
             
-            elif port_mode == PORT_MODE_INPUT:
-                if (int(box_pos.x()) == in_xy[0]
-                        and int(box_pos.y()) == in_xy[1]):
-                    continue
-                
-                if animate:
-                    canvas.scene.add_box_to_animation(box, in_xy[0], in_xy[1])
-                else:
-                    box.setPos(*in_xy)
+            if animate:
+                print('fmeokfe', port_mode, xy)
+                canvas.scene.add_box_to_animation(
+                    box, xy[0], xy[1])
+            else:
+                print('stepos', port_mode, xy)
+                box.setPos(*xy)
     else:
         box = group.widgets[0]
         if box is None:

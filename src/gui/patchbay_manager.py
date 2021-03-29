@@ -483,24 +483,24 @@ class Group:
     def add_portgroup(self, portgroup):
         self.portgroups.append(portgroup)
     
-    def change_audio_midi_view(self, audio_midi_view: int):
+    def change_port_types_view(self, port_types_view: int):
         # first add group to canvas if not already
         self.add_to_canvas()
 
         for portgroup in self.portgroups:
-            if not audio_midi_view & portgroup.port_type():
+            if not port_types_view & portgroup.port_type():
                 portgroup.remove_from_canvas()
         
         for port in self.ports:
-            if not audio_midi_view & port.type:
+            if not port_types_view & port.type:
                 port.remove_from_canvas()
                 
         for port in self.ports:
-            if audio_midi_view & port.type:
+            if port_types_view & port.type:
                 port.add_to_canvas()
         
         for portgroup in self.portgroups:
-            if audio_midi_view & portgroup.port_type():
+            if port_types_view & portgroup.port_type():
                 portgroup.add_to_canvas()
 
         # remove group from canvas if no visible ports
@@ -606,7 +606,7 @@ class Group:
         
 class PatchbayManager:
     use_graceful_names = True
-    audio_midi_view = PORT_TYPE_AUDIO + PORT_TYPE_MIDI
+    port_types_view = PORT_TYPE_AUDIO + PORT_TYPE_MIDI
     optimized_operation = False
     groups = []
     
@@ -615,7 +615,7 @@ class PatchbayManager:
         
         self.tools_widget = PatchbayToolsWidget()
         self.tools_widget.audio_midi_change_order.connect(
-            self.change_audio_midi_view)
+            self.change_port_types_view)
         self.tools_widget.buffer_size_change_order.connect(
             self.change_buffersize)
 
@@ -721,11 +721,11 @@ class PatchbayManager:
                 if group.group_id == group_id:
                     for gpos in self.group_positions:
                         if (gpos.group_name == group.name
-                                and gpos.context == self.audio_midi_view):
+                                and gpos.port_types_view == self.port_types_view):
                             break
                     else:
                         gpos = ray.GroupPosition()
-                        gpos.context = self.audio_midi_view
+                        gpos.port_types_view = self.port_types_view
                         gpos.group_name = group.name
                         if port_mode != PORT_MODE_NULL:
                             gpos.flags = GROUP_SPLITTED
@@ -954,33 +954,41 @@ class PatchbayManager:
         split = patchcanvas.SPLIT_UNDEF
         for group_position in self.group_positions:
             if (group_position.group_name == group.name
-                    and group_position.context == self.audio_midi_view):
+                    and group_position.port_types_view == self.port_types_view):
                 if group_position.flags & GROUP_SPLITTED:
                     split = patchcanvas.SPLIT_YES
                 else:
                     split = patchcanvas.SPLIT_NO
                 break
         
-        if group_is_new and self.audio_midi_view & port_type:
+        if group_is_new and self.port_types_view & port_type:
             new_group_pos = patchcanvas.CanvasGetNewGroupPositions()
             group.add_to_canvas(split=split)
 
             for gp in self.group_positions:
                 if (gp.group_name == group.name
-                        and gp.context == self.audio_midi_view):
+                        and gp.port_types_view == self.port_types_view):
+                    new_group_pos = (gp.null_xy, gp.in_xy, gp.out_xy)
+                    print('ieri', gp.group_name, new_group_pos)
                     patchcanvas.moveGroupBoxes(
                         group.group_id, gp.null_xy, gp.in_xy, gp.out_xy,
                         animate=False)
 
-                    self.send_to_daemon(
-                        '/ray/server/patchbay/save_group_position',
-                        *gp.spread())
+                    #self.send_to_daemon(
+                        #'/ray/server/patchbay/save_group_position',
+                        #*gp.spread())
                     break
             else:
-                print('sdfmsdfllsfllf', group.group_id)
-                patchcanvas.moveGroupBoxes(group.group_id, *new_group_pos)
+                gp = ray.GroupPosition()
+                gp.port_types_view = self.port_types_view
+                gp.group_name = group.name
+                gp.null_xy, gp.in_xy, gp.out_xy = new_group_pos
+                patchcanvas.moveGroupBoxes(group.group_id, *new_group_pos, animate=False)
+                print('djiz', gp.spread())
+                self.send_to_daemon('/ray/server/patchbay/save_group_position',
+                                    *gp.spread())
 
-        if self.audio_midi_view & port_type:
+        if self.port_types_view & port_type:
             group.add_to_canvas(split=split)
             port.add_to_canvas()
 
@@ -1051,10 +1059,10 @@ class PatchbayManager:
                 group = Group(self._next_group_id, new_group_name)
                 self._next_group_id += 1
                 group.add_port(port)
-                if self.audio_midi_view & port.type:
+                if self.port_types_view & port.type:
                     group.add_to_canvas()
             
-            if self.audio_midi_view & port.type:
+            if self.port_types_view & port.type:
                 port.add_to_canvas()
             return
         
@@ -1080,7 +1088,7 @@ class PatchbayManager:
         connection = Connection(self._next_connection_id, port_out, port_in)
         self._next_connection_id += 1
         self.connections.append(connection)
-        if connection.port_type() & self.audio_midi_view:
+        if connection.port_type() & self.port_types_view:
             connection.add_to_canvas()
     
     def remove_connection(self, port_out_name: str, port_in_name: str):
@@ -1109,11 +1117,12 @@ class PatchbayManager:
         else:
             self.group_positions.append(gpos)
         
-        if gpos.context != self.audio_midi_view:
+        if gpos.port_types_view != self.port_types_view:
             return
         
         for group in self.groups:
             if group.name == gpos.group_name:
+                print('move boxesss')
                 group.move_boxes(gpos.null_xy, gpos.in_xy, gpos.out_xy)
                 break
 
@@ -1141,23 +1150,27 @@ class PatchbayManager:
         self._next_connection_id = 0
 
 
-    def change_audio_midi_view(self, audio_midi_view: int):
-        self.audio_midi_view = audio_midi_view
+    def change_port_types_view(self, port_types_view: int):
+        self.port_types_view = port_types_view
         self.optimize_operation(True)
-        
-        
         
         for connection in self.connections:
             if (connection.in_canvas
-                    and not audio_midi_view & connection.port_type()):
+                    and not port_types_view & connection.port_type()):
                 connection.remove_from_canvas()
 
         for group in self.groups:
-            group.change_audio_midi_view(audio_midi_view)
+            group.change_port_types_view(port_types_view)
+            for gpos in self.group_positions:
+                if (gpos.group_name == group.name
+                        and gpos.port_types_view == port_types_view):
+                    patchcanvas.moveGroupBoxes(
+                        group.group_id, gpos.null_xy, gpos.in_xy, gpos.out_xy)
+                    break
         
         for connection in self.connections:
             if (not connection.in_canvas
-                    and audio_midi_view & connection.port_type()):
+                    and port_types_view & connection.port_type()):
                 connection.add_to_canvas()
         
         self.optimize_operation(False)

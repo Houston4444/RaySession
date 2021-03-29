@@ -188,6 +188,7 @@ class PatchScene(QGraphicsScene):
             self.update()
 
     def add_box_to_animation(self, box_widget, to_x: int, to_y: int):
+        print('fafa', to_x, to_y)
         for box_dict in self.move_boxes:
             if box_dict['widget'] == box_widget:
                 break
@@ -195,7 +196,7 @@ class PatchScene(QGraphicsScene):
             box_dict = {'widget': box_widget}
             self.move_boxes.append(box_dict)
         
-        print('sdflkjdfkkfffffff', box_widget.pos())
+        print('add_box_to_animation', box_widget.pos().x(), box_widget.pos().y())
         box_dict['from_x'] = box_widget.pos().x()
         box_dict['from_y'] = box_widget.pos().y()
         box_dict['to_x'] = to_x

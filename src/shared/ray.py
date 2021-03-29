@@ -755,7 +755,7 @@ class RayNet():
 
 
 class GroupPosition():
-    context = GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI
+    port_types_view = GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI
     group_name = ''
     null_zone = ''
     in_zone = ''
@@ -767,7 +767,8 @@ class GroupPosition():
     
     @staticmethod
     def get_attributes():
-        return ('context', 'group_name', 'null_zone', 'in_zone', 'out_zone',
+        return ('port_types_view', 'group_name',
+                'null_zone', 'in_zone', 'out_zone',
                 'null_xy', 'in_xy', 'out_xy', 'flags')
     
     @staticmethod
@@ -789,7 +790,7 @@ class GroupPosition():
             
             value = input_dict[attr]
             attr_type = type(value)
-            if attr in ('context', 'flags'):
+            if attr in ('port_types_view', 'flags'):
                 if attr_type != int:
                     continue
             elif attr in ('group_name', 'null_zone', 'in_zone', 'out_zone'):
@@ -802,7 +803,14 @@ class GroupPosition():
             
             self.__setattr__(attr, value)
     
-    def update(self, context: int, group_name: str,
+    def is_same(self, other)->bool:
+        if (self.port_types_view == other.port_types_view
+                and self.group_name == other.group_name):
+            return True
+        
+        return False
+    
+    def update(self, port_types_view: int, group_name: str,
                null_zone: str, in_zone: str, out_zone: str,
                null_x: int, null_y: int, in_x: int, in_y: int,
                out_x: int, out_y: int, flags: int):
@@ -810,7 +818,8 @@ class GroupPosition():
             if type(string) != str:
                 return 
         
-        for digit in (context, null_x, null_y, in_x, in_y, out_x, out_y, flags):
+        for digit in (port_types_view, null_x, null_y, in_x, in_y,
+                      out_x, out_y, flags):
             if type(digit) == int:
                 continue
             
@@ -824,7 +833,7 @@ class GroupPosition():
             else:
                 return
 
-        self.context = context
+        self.port_types_view = port_types_view
         self.group_name = group_name
         self.null_zone = null_zone
         self.in_zone = in_zone
@@ -835,7 +844,7 @@ class GroupPosition():
         self.flags = int(flags)
         
     def spread(self)->tuple:
-        return (self.context, self.group_name,
+        return (self.port_types_view, self.group_name,
                 self.null_zone, self.in_zone, self.out_zone,
                 self.null_xy[0], self.null_xy[1], self.in_xy[0], self.in_xy[1],
                 self.out_xy[0], self.out_xy[1], self.flags)

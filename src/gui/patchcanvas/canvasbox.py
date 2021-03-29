@@ -984,7 +984,6 @@ class CanvasBox(QGraphicsItem):
         ##i = 0
         
         ##for group in canvas.group_list:
-            
 
     def paint(self, painter, option, widget):
         painter.save()

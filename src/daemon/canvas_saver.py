@@ -16,13 +16,16 @@ class CanvasSaver(ServerSender):
         self.group_positions_config = []
         self.portgroups_session = []
         self.portgroups_config = []
-        tuple_config_list = RS.settings.value(
-            'Canvas/GroupPositions', type=list)
-        
-        for gt in tuple_config_list:
-            group_pos = ray.GroupPosition()
-            group_pos.write_from_dict(gt)
-            self.group_positions_config.append(group_pos)
+        self._config_json_path = "%s/%s" % (
+            os.path.dirname(RS.settings.fileName()), JSON_PATH)
+
+        if os.path.exists(self._config_json_path):
+            with open(self._config_json_path, 'r') as f:
+                gpos_list = json.load(f)
+                for gpos_dict in gpos_list:
+                    gpos = ray.GroupPosition()
+                    gpos.write_from_dict(gpos_dict)
+                    self.group_positions_config.append(gpos)
         
     def get_all_group_positions(self)->list:
         group_positions_config_exclu = []
@@ -61,7 +64,7 @@ class CanvasSaver(ServerSender):
         for group_positions in (self.group_positions_session,
                                 self.group_positions_config):
             for gpos in group_positions:
-                if gpos.group_name == gp.group_name:
+                if gpos.is_same(gp):
                     gpos.update(*args)
                     break
             else:
@@ -150,6 +153,15 @@ class CanvasSaver(ServerSender):
         
         xml_element.appendChild(xml_group_positions)
         xml_element.appendChild(xml_portgroups)
+    
+    def save_config_file(self):
+        if not self.group_positions_config:
+            return
+
+        with open(self._config_json_path, 'w+') as f:
+            json.dump(
+                [gpos.to_dict() for gpos in self.group_positions_config],
+                f, indent=2)
     
     def update_group_session_positions(self, xml_element):
         self.group_positions_session.clear()
