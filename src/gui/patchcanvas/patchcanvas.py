@@ -687,6 +687,16 @@ def joinGroup(group_id):
     for port in ports_data:
         removePort(group_id, port.port_id, fast=True)
 
+    #null_xy = (0, 0)
+    #in_xy = (0, 0)
+    #out_xy = (0, 0)
+    #for group in canvas.group_list:
+        #if group.group_id == group_id:
+            #null_pos = group.null_pos
+            #in_pos = group.in_pos
+            #out_pos = group.out_pos
+            #break
+
     removeGroup(group_id, save_positions=False)
 
     # Step 3 - Re-create Item, now together
@@ -714,6 +724,11 @@ def joinGroup(group_id):
                 if box is not None:
                     box.set_wrapped(wrap, animate=False)
                     box.updatePositions()
+            
+    #moveGroupBoxes(
+        #group_id, (null_pos.x(), null_pos.y()),
+        #(in_pos.x(), in_pos.y()), (out_pos.x(), out_pos.y()),
+        #animate=False)
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -774,13 +789,8 @@ def moveGroupBoxes(group_id: int, null_xy: tuple,
             if int(box_pos.x()) == xy[0] and int(box_pos.y()) == xy[1]:
                 continue
             
-            if animate:
-                print('fmeokfe', port_mode, xy)
-                canvas.scene.add_box_to_animation(
-                    box, xy[0], xy[1])
-            else:
-                print('stepos', port_mode, xy)
-                box.setPos(*xy)
+            canvas.scene.add_box_to_animation(
+                box, xy[0], xy[1], force_anim=animate)
     else:
         box = group.widgets[0]
         if box is None:
@@ -790,10 +800,8 @@ def moveGroupBoxes(group_id: int, null_xy: tuple,
         if int(box_pos.x()) == null_xy[0] and int(box_pos.y()) == null_xy[1]:
             return
 
-        if animate:
-            canvas.scene.add_box_to_animation(box, null_xy[0], null_xy[1])
-        else:
-            box.setPos(*null_xy)
+        canvas.scene.add_box_to_animation(box, null_xy[0], null_xy[1],
+                                          force_anim=animate)
                 
 def wrapGroupBox(group_id: int, port_mode: int, yesno: bool):
     for group in canvas.group_list:

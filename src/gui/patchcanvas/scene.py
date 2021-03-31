@@ -187,16 +187,24 @@ class PatchScene(QGraphicsScene):
         elif self.move_box_n % 5 == 4:
             self.update()
 
-    def add_box_to_animation(self, box_widget, to_x: int, to_y: int):
-        print('fafa', to_x, to_y)
+    def add_box_to_animation(self, box_widget, to_x: int, to_y: int,
+                             force_anim=True):
+        print('addddboxx', to_x, to_y, box_widget.m_group_name, force_anim)
         for box_dict in self.move_boxes:
             if box_dict['widget'] == box_widget:
                 break
         else:
+            if not force_anim:
+                # if box is not in a current animation
+                # and force_anim is False,
+                # then box position is directly changed
+                if box_widget is not None:
+                    box_widget.setPos(to_x, to_y)
+                return
+            
             box_dict = {'widget': box_widget}
             self.move_boxes.append(box_dict)
         
-        print('add_box_to_animation', box_widget.pos().x(), box_widget.pos().y())
         box_dict['from_x'] = box_widget.pos().x()
         box_dict['from_y'] = box_widget.pos().y()
         box_dict['to_x'] = to_x

@@ -737,8 +737,7 @@ class PatchbayManager:
                         gpos.in_xy = (x, y)
                     elif port_mode == PORT_MODE_OUTPUT:
                         gpos.out_xy = (x, y)
-                    
-                    print('tu nenvoi', group.name)
+
                     self.send_to_daemon(
                         '/ray/server/patchbay/save_group_position',
                         *gpos.spread())
@@ -966,10 +965,10 @@ class PatchbayManager:
             group.add_to_canvas(split=split)
 
             for gp in self.group_positions:
+                #print('chacha', gp.group_name, gp.port_types_view)
                 if (gp.group_name == group.name
                         and gp.port_types_view == self.port_types_view):
                     new_group_pos = (gp.null_xy, gp.in_xy, gp.out_xy)
-                    print('ieri', gp.group_name, new_group_pos)
                     patchcanvas.moveGroupBoxes(
                         group.group_id, gp.null_xy, gp.in_xy, gp.out_xy,
                         animate=False)
@@ -983,8 +982,8 @@ class PatchbayManager:
                 gp.port_types_view = self.port_types_view
                 gp.group_name = group.name
                 gp.null_xy, gp.in_xy, gp.out_xy = new_group_pos
+                print('gouboutcham', group.name, *new_group_pos)
                 patchcanvas.moveGroupBoxes(group.group_id, *new_group_pos, animate=False)
-                print('djiz', gp.spread())
                 self.send_to_daemon('/ray/server/patchbay/save_group_position',
                                     *gp.spread())
 
@@ -1106,8 +1105,6 @@ class PatchbayManager:
                 break
     
     def update_group_position(self, *args):
-        print('taeliteltek', args)
-        
         # remember group position and move boxes if needed
         gpos = ray.GroupPosition.newFrom(*args)
         
@@ -1160,12 +1157,15 @@ class PatchbayManager:
                 connection.remove_from_canvas()
 
         for group in self.groups:
+            in_canvas = group.in_canvas
             group.change_port_types_view(port_types_view)
             for gpos in self.group_positions:
                 if (gpos.group_name == group.name
                         and gpos.port_types_view == port_types_view):
-                    patchcanvas.moveGroupBoxes(
-                        group.group_id, gpos.null_xy, gpos.in_xy, gpos.out_xy)
+                    # move the boxes to wanted position
+                    # animate this move only if group already was in canvas
+                    group.move_boxes(
+                        gpos.null_xy, gpos.in_xy, gpos.out_xy, in_canvas)
                     break
         
         for connection in self.connections:
