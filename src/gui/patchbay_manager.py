@@ -645,7 +645,7 @@ class PatchbayManager:
         self.group_a2j_hw = RS.settings.value(
             'Canvas/group_a2j_ports', True, type=bool)
         
-        self.wait_join_group_id = None
+        self._wait_join_group_ids = []
         self.join_animation_connected = False
         
         
@@ -674,15 +674,15 @@ class PatchbayManager:
         server.toDaemon(*args)
 
     def join_animation_finished(self):
-        if self.wait_join_group_id is not None:
-            patchcanvas.joinGroup(self.wait_join_group_id)
+        for group_id in self._wait_join_group_ids:
+            patchcanvas.joinGroup(group_id)
             
             for group in self.groups:
-                if group.group_id == self.wait_join_group_id:
+                if group.group_id == group_id:
                     group.splitted = False
                     break
                 
-            self.wait_join_group_id = None
+        self._wait_join_group_ids.clear()
 
     def canvas_callbacks(self, action, value1, value2, value_str):
         if action == patchcanvas.ACTION_GROUP_INFO:
@@ -701,7 +701,7 @@ class PatchbayManager:
 
         elif action == patchcanvas.ACTION_GROUP_JOIN:
             group_id = value1
-            self.wait_join_group_id = group_id
+            self._wait_join_group_ids.append(group_id)
             if not self.join_animation_connected:
                 patchcanvas.canvas.qobject.move_boxes_finished.connect(
                     self.join_animation_finished)

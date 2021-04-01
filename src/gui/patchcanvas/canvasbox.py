@@ -24,7 +24,8 @@ import time
 from sip import voidptr
 from struct import pack
 
-from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QTimer, pyqtSignal, QMarginsF, QTimer
+from PyQt5.QtCore import (qCritical, Qt, QPoint, QPointF, QRectF, QTimer,
+                          pyqtSignal, QMarginsF, QTimer)
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
                          QLinearGradient, QPainter, QPen, QPolygonF,
                          QColor, QIcon)
@@ -970,6 +971,18 @@ class CanvasBox(QGraphicsItem):
         x_y_str = "%i:%i" % (round(self.x()), round(self.y()))
         CanvasCallback(ACTION_GROUP_MOVE, self.m_group_id,
                        self.m_splitted_mode, x_y_str)
+        
+        for group in canvas.group_list:
+            if group.group_id == self.m_group_id:
+                pos = QPoint(round(self.x()), round(self.y()))
+                
+                if self.m_splitted_mode == PORT_MODE_NULL:
+                    group.null_pos = pos
+                elif self.m_splitted_mode == PORT_MODE_INPUT:
+                    group.in_pos = pos
+                elif self.m_splitted_mode == PORT_MODE_OUTPUT:
+                    group.out_pos = pos
+                break
         
     def boundingRect(self):
         if self._is_hardware:
