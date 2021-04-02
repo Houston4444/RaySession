@@ -75,6 +75,8 @@ class CanvasObject(QObject):
     
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
+        self.groups_to_join = []
+        self.move_boxes_finished.connect(self.join_after_move)
 
     @pyqtSlot()
     def AnimationFinishedShow(self):
@@ -102,39 +104,6 @@ class CanvasObject(QObject):
             item = animation.item()
             if item:
                 CanvasRemoveItemFX(item)
-
-    #@pyqtSlot()
-    #def PortContextMenuConnect(self):
-        #try:
-            #sources, targets = self.sender().data()
-        #except:
-            #return
-
-        #for port_type in (PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK,
-                          #PORT_TYPE_MIDI_ALSA):
-            #source_ports = sources[port_type]
-            #target_ports = targets[port_type]
-
-            #source_ports_len = len(source_ports)
-            #target_ports_len = len(target_ports)
-
-            #if source_ports_len == 0 or target_ports_len == 0:
-                #continue
-
-            #for i in range(min(source_ports_len, target_ports_len)):
-                #data = "%i:%i:%i:%i" % (source_ports[i][0],
-                                        #source_ports[i][1],
-                                        #target_ports[i][0],
-                                        #target_ports[i][1])
-                #CanvasCallback(ACTION_PORTS_CONNECT, 0, 0, data)
-
-            #if source_ports_len == 1 and target_ports_len > 1:
-                #for i in range(1, target_ports_len):
-                    #data = "%i:%i:%i:%i" % (source_ports[0][0],
-                                            #source_ports[0][1],
-                                            #target_ports[i][0],
-                                            #target_ports[i][1])
-                    #CanvasCallback(ACTION_PORTS_CONNECT, 0, 0, data)
 
     @pyqtSlot()
     def port_context_menu_connect(self):
@@ -172,6 +141,12 @@ class CanvasObject(QObject):
         port_widget = all_data[0]
         port_id = all_data[1]
         port_widget.SetAsStereo(port_id)
+        
+    def join_after_move(self):
+        for group_id in self.groups_to_join:
+            joinGroup(group_id)
+        
+        self.groups_to_join.clear()
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -317,6 +292,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
                      group_id, group_name.encode(), split2str(split), icon2str(icon_type)))
             return
 
+    print('addGroupfi', group_name, split)
     if split == SPLIT_UNDEF:
         isHardware = bool(icon_type == ICON_HARDWARE)
         #if features.handle_group_pos:
@@ -342,6 +318,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     group_dict.out_pos = QPoint(*out_xy)
     group_dict.widgets = [group_box, None]
 
+    print('addGroup', group_dict.group_name, group_dict.split)
     if split == SPLIT_YES:
         group_box.setSplit(True, PORT_MODE_OUTPUT)
 
@@ -751,6 +728,8 @@ def updateAllPositions():
     QTimer.singleShot(0, canvas.scene.update)
 
 def animateBeforeJoin(group_id: int):
+    canvas.qobject.groups_to_join.append(group_id)
+    
     for group in canvas.group_list:
         if group.group_id == group_id:
             for widget in group.widgets:
@@ -760,14 +739,12 @@ def animateBeforeJoin(group_id: int):
 
 def moveGroupBoxes(group_id: int, null_xy: tuple,
                    in_xy: tuple, out_xy: tuple, animate=True):
-    print('moveGroupBoxes0')
     for group in canvas.group_list:
         if group.group_id == group_id:
             break
     else:
         return
-    print('moveGroupBoxes1', null_xy, in_xy, out_xy, animate)
-    
+    print('moovveeedk', group.group_name, group.split)
     group.null_pos = QPoint(*null_xy)
     group.in_pos = QPoint(*in_xy)
     group.out_pos = QPoint(*out_xy)
@@ -787,9 +764,10 @@ def moveGroupBoxes(group_id: int, null_xy: tuple,
                 continue
             
             box_pos = box.pos()
+
             if int(box_pos.x()) == xy[0] and int(box_pos.y()) == xy[1]:
                 continue
-            
+            print('dadari' ,box.m_group_name, xy)
             canvas.scene.add_box_to_animation(
                 box, xy[0], xy[1], force_anim=animate)
     else:

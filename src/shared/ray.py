@@ -764,6 +764,7 @@ class GroupPosition():
     in_xy = (0, 0)
     out_xy = (0, 0)
     flags = 0
+    fully_set = True
     
     @staticmethod
     def get_attributes():

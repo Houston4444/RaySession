@@ -403,6 +403,9 @@ class CanvasBox(QGraphicsItem):
         return self._wrapped
 
     def set_wrapped(self, yesno: bool, animate=True):
+        if yesno == self._wrapped:
+            return
+        
         self._wrapped = yesno
         
         if yesno:
@@ -925,7 +928,9 @@ class CanvasBox(QGraphicsItem):
                         mode = PORT_MODE_OUTPUT
 
                     if wrap:
-                        self.set_wrapped(False)
+                        CanvasCallback(
+                            ACTION_GROUP_WRAP, self.m_group_id,
+                            self.m_splitted_mode, 'False')
                         return
                 
                 self.m_mouse_down = True
