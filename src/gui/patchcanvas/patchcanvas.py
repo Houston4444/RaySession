@@ -716,7 +716,9 @@ def joinGroup(group_id):
                 if box is not None:
                     box.set_wrapped(wrap, animate=False)
                     box.updatePositions()
-
+    
+    canvas.callback(ACTION_GROUP_JOINED, group_id, 0, '')
+        
     QTimer.singleShot(0, canvas.scene.update)
 
 def updateAllPositions():

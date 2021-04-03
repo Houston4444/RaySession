@@ -38,13 +38,8 @@ USE_ALIAS_2 = 2
 GROUP_CONTEXT_AUDIO = 0x01
 GROUP_CONTEXT_MIDI = 0x02
 GROUP_SPLITTED = 0x04
-GROUP_WRAPPED_UNSPLITTED = 0x08
 GROUP_WRAPPED_INPUT = 0x10
 GROUP_WRAPPED_OUTPUT = 0x20
-
-WRAP_MATCHES = ((PORT_MODE_NULL, GROUP_WRAPPED_UNSPLITTED),
-                (PORT_MODE_INPUT, GROUP_WRAPPED_INPUT),
-                (PORT_MODE_OUTPUT, GROUP_WRAPPED_OUTPUT))
 
 _translate = QGuiApplication.translate
 
@@ -234,8 +229,6 @@ class Group:
         self.client_icon = ''
         self.a2j_group = False
         self.in_canvas = False
-        self.splitted = False
-        
         self.current_position = group_position
     
     def update_ports_in_canvas(self):
@@ -282,9 +275,18 @@ class Group:
             icon_type, icon_name, fast=PatchbayManager.optimized_operation,
             null_xy=gpos.null_xy, in_xy=gpos.in_xy, out_xy=gpos.out_xy)
         
-        for match in WRAP_MATCHES:
+        if split:
             patchcanvas.wrapGroupBox(
-                self.group_id, match[0], gpos.flags & match[1])
+                self.group_id, PORT_MODE_INPUT,
+                bool(gpos.flags & GROUP_WRAPPED_INPUT))
+            patchcanvas.wrapGroupBox(
+                self.group_id, PORT_MODE_OUTPUT,
+                bool(gpos.flags & GROUP_WRAPPED_OUTPUT))
+        else:
+            patchcanvas.wrapGroupBox(
+                self.group_id, PORT_MODE_NULL,
+                bool(gpos.flags & GROUP_WRAPPED_INPUT
+                     and gpos.flags & GROUP_WRAPPED_OUTPUT))
     
     def remove_from_canvas(self):
         if not self.in_canvas:
@@ -353,36 +355,34 @@ class Group:
         
         if not self.in_canvas:
             return
-        
-        print('mooovve', self.name, gpos.null_xy, gpos.in_xy, gpos.out_xy)
+
         patchcanvas.moveGroupBoxes(
             self.group_id, gpos.null_xy, gpos.in_xy, gpos.out_xy)
         
-        print('tirili', gpos.flags, ex_gpos_flags)
-        
-        if gpos.flags & GROUP_SPLITTED:
-            if not ex_gpos_flags & GROUP_SPLITTED:
-                patchcanvas.splitGroup(self.group_id)
+        if (gpos.flags & GROUP_SPLITTED
+                and not ex_gpos_flags & GROUP_SPLITTED):
+            patchcanvas.splitGroup(self.group_id)
             
-            patchcanvas.wrapGroupBox(self.group_id, PORT_MODE_INPUT,
-                                     gpos.flags & GROUP_WRAPPED_INPUT)
-            patchcanvas.wrapGroupBox(self.group_id, PORT_MODE_OUTPUT,
-                                     gpos.flags & GROUP_WRAPPED_OUTPUT)
-        else:
-            patchcanvas.wrapGroupBox(self.group_id, PORT_MODE_INPUT,
-                                     gpos.flags & GROUP_WRAPPED_INPUT)
-            patchcanvas.wrapGroupBox(self.group_id, PORT_MODE_OUTPUT,
-                                     gpos.flags & GROUP_WRAPPED_OUTPUT)
-            if ex_gpos_flags & GROUP_SPLITTED:
-                patchcanvas.animateBeforeJoin(self.group_id)
+        patchcanvas.wrapGroupBox(self.group_id, PORT_MODE_INPUT,
+                                 bool(gpos.flags & GROUP_WRAPPED_INPUT))
+        patchcanvas.wrapGroupBox(self.group_id, PORT_MODE_OUTPUT,
+                                 bool(gpos.flags & GROUP_WRAPPED_OUTPUT))
+        
+        if (ex_gpos_flags & GROUP_SPLITTED
+                and not gpos.flags & GROUP_SPLITTED):
+            patchcanvas.animateBeforeJoin(self.group_id)
     
     def wrap_box(self, port_mode: int, yesno: bool):
-        for match in WRAP_MATCHES:
-            if port_mode == match[0]:
-                if yesno:
-                    self.current_position.flags |= match[1]
-                else:
-                    self.current_position.flags &= ~match[1]
+        wrap_flag = GROUP_WRAPPED_OUTPUT | GROUP_WRAPPED_INPUT
+        if port_mode == PORT_MODE_INPUT:
+            wrap_flag = GROUP_WRAPPED_INPUT
+        elif port_mode == PORT_MODE_OUTPUT:
+            wrap_flag = GROUP_WRAPPED_OUTPUT
+            
+        if yesno:
+            self.current_position.flags |= wrap_flag
+        else:
+            self.current_position.flags &= ~wrap_flag
 
         self.save_current_position()
         
@@ -746,25 +746,21 @@ class PatchbayManager:
             for group in self.groups:
                 if group.group_id == group_id:
                     group.current_position.flags |= GROUP_SPLITTED
-                    group.splitted = True
-                    self.send_to_daemon(
-                        '/ray/server/patchbay/save_group_position',
-                        *group.current_position.spread())
+                    group.save_current_position()
                     break
 
         elif action == patchcanvas.ACTION_GROUP_JOIN:
+            group_id = value1
+            patchcanvas.animateBeforeJoin(group_id)
+        
+        elif action == patchcanvas.ACTION_GROUP_JOINED:
             group_id = value1
             
             for group in self.groups:
                 if group.group_id == group_id:
                     group.current_position.flags &= ~GROUP_SPLITTED
-                    group.splitted = False
-                    self.send_to_daemon(
-                        '/ray/server/patchbay/save_group_position',
-                        *group.current_position.spread())
+                    group.save_current_position()
                     break
-            
-            patchcanvas.animateBeforeJoin(group_id)
         
         elif action == patchcanvas.ACTION_GROUP_MOVE:
             group_id = value1
@@ -784,33 +780,8 @@ class PatchbayManager:
                         gpos.in_xy = (x, y)
                     elif port_mode == PORT_MODE_OUTPUT:
                         gpos.out_xy = (x, y)
-
-                    self.send_to_daemon(
-                        '/ray/server/patchbay/save_group_position',
-                        *gpos.spread())
-                    
-                    #for gpos in self.group_positions:
-                        #if (gpos.group_name == group.name
-                                #and gpos.port_types_view == self.port_types_view):
-                            #break
-                    #else:
-                        #gpos = ray.GroupPosition()
-                        #gpos.port_types_view = self.port_types_view
-                        #gpos.group_name = group.name
-                        #if port_mode != PORT_MODE_NULL:
-                            #gpos.flags = GROUP_SPLITTED
-                        #self.group_positions.append(gpos)
-                            
-                    #if port_mode == PORT_MODE_NULL:
-                        #gpos.null_xy = (x, y)
-                    #elif port_mode == PORT_MODE_INPUT:
-                        #gpos.in_xy = (x, y)
-                    #elif port_mode == PORT_MODE_OUTPUT:
-                        #gpos.out_xy = (x, y)
-
-                    #self.send_to_daemon(
-                        #'/ray/server/patchbay/save_group_position',
-                        #*gpos.spread())
+                        
+                    group.save_current_position()
                     break
         
         elif action == patchcanvas.ACTION_GROUP_WRAP:
@@ -822,7 +793,6 @@ class PatchbayManager:
                 if group.group_id == group_id:
                     group.wrap_box(splitted_mode, yesno)
                     break
-            #patchcanvas.wrapGroupBox(group_id, splitted_mode, wrap)
         
         elif action == patchcanvas.ACTION_PORT_GROUP_ADD:
             g_id, p_mode, p_type, p_id1, p_id2 =  [
