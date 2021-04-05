@@ -941,9 +941,6 @@ class OperatingSession(Session):
         xml_cls = xml.createElement('Clients')
         xml_rmcls = xml.createElement('RemovedClients')
         xml_wins = xml.createElement('Windows')
-        xml_canvas = xml.createElement('Canvas')
-        #xml_canvas_positions = xml.createElement('GroupPositions')
-        #xml_portgroups = xml.createElement('CanvasPortgroups')
         
         # save clients attributes
         for client in self.clients:
@@ -981,30 +978,9 @@ class OperatingSession(Session):
             xml_win.setAttribute('desktop', win.desktop)
             xml_wins.appendChild(xml_win)
 
-        
-        #self.canvas_saver.save_session_canvas(xml, xml_canvas)
-        
-        ## save patchbay group positions
-        #for group_position in self.canvas_group_positions:
-            #xml_gpos = xml.createElement('group')
-            #for attribute in group_position.keys():
-                #xml_gpos.setAttribute(attribute, group_position[attribute])
-            #xml_canvas_positions.appendChild(xml_gpos)
-        
-        ## save patchbay portgroups (stereo/mono)
-        #for portgroup in self.canvas_portgroups:
-            #xml_pgrp = xml.createElement('portgroup')
-            #for atttribute in portgroup.keys():
-                #xml.pgrp.setAttribute(attribute, portgroup[attribute])
-            #xml_portgroups.appendChild(xml_pgrp)
-
         p.appendChild(xml_cls)
         p.appendChild(xml_rmcls)
         p.appendChild(xml_wins)
-        #xml_canvas.appendChild(xml_canvas_positions)
-        #xml_canvas.appendChild(xml_portgroups)
-        p.appendChild(xml_canvas)
-
         xml.appendChild(p)
 
         contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"

@@ -620,13 +620,11 @@ class CanvasBox(QGraphicsItem):
             else:
                 self.p_height  = max(last_in_pos, last_out_pos)
 
-            self.p_height += max(canvas.theme.port_spacing, canvas.theme.port_spacingT) - canvas.theme.port_spacing
+            self.p_height += max(canvas.theme.port_spacing,
+                                 canvas.theme.port_spacingT) \
+                             - canvas.theme.port_spacing
             self.p_height += canvas.theme.box_pen.widthF()
 
-        #if self.m_splitted and self.m_splitted_mode == PORT_MODE_OUTPUT:
-            #if self.has_top_icon():
-                #self.top_icon.align_right(self.p_width)
-        #elif not self.m_splitted:
         if self.has_top_icon():
             self.top_icon.align_at((self.p_width - max(title_size, subtitle_size) - 29)/2)
 
@@ -864,7 +862,6 @@ class CanvasBox(QGraphicsItem):
             canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")
             
         elif act_selected == act_x_wrap:
-            #self.set_wrapped(not self._wrapped)
             canvas.callback(ACTION_GROUP_WRAP, self.m_group_id,
                             self.m_splitted_mode, str(not self._wrapped))
 

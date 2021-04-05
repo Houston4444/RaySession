@@ -59,13 +59,11 @@ class Connection:
         
         self.in_canvas = True
         
-        fast_operation = PatchbayManager.optimized_operation
-        
         patchcanvas.connectPorts(
             self.connection_id,
             self.port_out.group_id, self.port_out.port_id,
             self.port_in.group_id, self.port_in.port_id,
-            fast=fast_operation)
+            fast=PatchbayManager.optimized_operation)
         
     def remove_from_canvas(self):
         if not self.in_canvas:
@@ -136,19 +134,17 @@ class Port:
         
         self.in_canvas = True
 
-        fast_operation = PatchbayManager.optimized_operation
-
         patchcanvas.addPort(
             self.group_id, self.port_id, display_name,
-            port_mode, self.type, is_alternate, fast=fast_operation)
+            port_mode, self.type, is_alternate,
+            fast=PatchbayManager.optimized_operation)
     
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
         
-        fast_operation = PatchbayManager.optimized_operation
-        
-        patchcanvas.removePort(self.group_id, self.port_id, fast=fast_operation)
+        patchcanvas.removePort(self.group_id, self.port_id,
+                               fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
     
     def change_canvas_properties(self):
@@ -200,21 +196,17 @@ class Portgroup:
 
         self.in_canvas = True
         
-        fast_operation = PatchbayManager.optimized_operation
-        
         patchcanvas.addPortGroup(self.group_id, self.portgroup_id,
                                  self.port_mode, port_type,
                                  [port.port_id for port in self.ports],
-                                 fast=fast_operation)
+                                 fast=PatchbayManager.optimized_operation)
 
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
         
-        fast_operation = PatchbayManager.optimized_operation
-        
         patchcanvas.removePortGroup(self.group_id, self.portgroup_id,
-                                    fast=fast_operation)
+                                    fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
 
@@ -958,7 +950,7 @@ class PatchbayManager:
             if (gpos.port_types_view == self.port_types_view
                     and gpos.group_name == group_name):
                 return gpos
-        print('not in this view')
+
         # prevent move to a new position in case of port_types_view change
         # if there is no remembered position for this group in new view
         for group in self.groups:
@@ -970,7 +962,7 @@ class PatchbayManager:
                 self.group_positions.append(gpos)
                 return gpos
 
-        print('createposs')
+        # group position doesn't already exists, create one
         gpos = ray.GroupPosition()
         gpos.fully_set = False
         gpos.port_types_view = self.port_types_view
@@ -1190,7 +1182,9 @@ class PatchbayManager:
 
     def change_port_types_view(self, port_types_view: int):
         self.port_types_view = port_types_view
-        self.optimize_operation(True)
+        # Prevent visual update at each canvas item creation
+        # because we may create a lot of ports here
+        self.optimize_operation(True) 
         
         for connection in self.connections:
             if (connection.in_canvas

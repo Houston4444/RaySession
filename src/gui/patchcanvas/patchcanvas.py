@@ -292,13 +292,8 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
                      group_id, group_name.encode(), split2str(split), icon2str(icon_type)))
             return
 
-    print('addGroupfi', group_name, split)
     if split == SPLIT_UNDEF:
         isHardware = bool(icon_type == ICON_HARDWARE)
-        #if features.handle_group_pos:
-            #split = getStoredCanvasSplit(group_name, SPLIT_YES if isHardware else split)
-        #elif isHardware:
-            #split = SPLIT_YES
         if isHardware:
             split = SPLIT_YES
 
@@ -318,22 +313,17 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     group_dict.out_pos = QPoint(*out_xy)
     group_dict.widgets = [group_box, None]
 
-    print('addGroup', group_dict.group_name, group_dict.split)
     if split == SPLIT_YES:
         group_box.setSplit(True, PORT_MODE_OUTPUT)
 
         if features.handle_group_pos:
-            #group_box.setPos(getStoredCanvasPosition(group_name + "_OUTPUT", CanvasGetNewGroupPos(False)))
             new_pos = getStoredCanvasPosition(group_name + "_OUTPUT", CanvasGetNewGroupPos(False))
             canvas.scene.add_box_to_animation(group_box, new_pos.x(), new_pos.y())
         else:
-            #group_box.setPos(CanvasGetNewGroupPos(False))
-            #new_pos = CanvasGetNewGroupPos(False)
             if split_animated:
                 group_box.setPos(group_dict.null_pos)
             else:
                 group_box.setPos(group_dict.out_pos)
-            #canvas.scene.add_box_to_animation(group_box, new_pos.x(), new_pos.y())
 
         group_sbox = CanvasBox(group_id, group_name, icon_type, icon_name)
         group_sbox.setSplit(True, PORT_MODE_INPUT)
@@ -343,16 +333,11 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         if features.handle_group_pos:
             new_pos = getStoredCanvasPosition(group_name + "_INPUT", CanvasGetNewGroupPos(True))
             canvas.scene.add_box_to_animation(group_sbox, new_pos.x(), new_pos.y())
-            #group_sbox.setPos(getStoredCanvasPosition(group_name + "_INPUT", CanvasGetNewGroupPos(True)))
         else:
-            #group_sbox.setPos(CanvasGetNewGroupPos(True))
-            #new_pos = CanvasGetNewGroupPos(True)
-            #new_pos = group_dict.in_pos
             if split_animated:
                 group_sbox.setPos(group_dict.null_pos)
             else:
                 group_sbox.setPos(group_dict.in_pos)
-            #canvas.scene.add_box_to_animation(group_sbox, new_pos.x(), new_pos.y())
 
         canvas.last_z_value += 1
         group_sbox.setZValue(canvas.last_z_value)
@@ -368,9 +353,6 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
             # Special ladish fake-split groups
             #horizontal = bool(icon_type in (ICON_HARDWARE, ICON_LADISH_ROOM))
             group_box.setPos(group_dict.null_pos)
-            #group_box.setPos(CanvasGetNewGroupPos(horizontal))
-
-    #group_box.checkItemPos()
 
     canvas.last_z_value += 1
     group_box.setZValue(canvas.last_z_value)
@@ -494,7 +476,6 @@ def splitGroup(group_id):
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
-            print('zinplin', group_in_pos, group_out_pos)
             break
 
     if not item:
@@ -629,8 +610,6 @@ def joinGroup(group_id):
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
-            
-            print('zoupala', group_null_pos)
             break
 
     # FIXME
@@ -746,7 +725,7 @@ def moveGroupBoxes(group_id: int, null_xy: tuple,
             break
     else:
         return
-    print('moovveeedk', group.group_name, group.split)
+
     group.null_pos = QPoint(*null_xy)
     group.in_pos = QPoint(*in_xy)
     group.out_pos = QPoint(*out_xy)
@@ -769,7 +748,7 @@ def moveGroupBoxes(group_id: int, null_xy: tuple,
 
             if int(box_pos.x()) == xy[0] and int(box_pos.y()) == xy[1]:
                 continue
-            print('dadari' ,box.m_group_name, xy)
+
             canvas.scene.add_box_to_animation(
                 box, xy[0], xy[1], force_anim=animate)
     else:
@@ -794,30 +773,6 @@ def wrapGroupBox(group_id: int, port_mode: int, yesno: bool):
 
 # ------------------------------------------------------------------------------------------------------------
 
-#def getGroupPositions(group_id):
-    #null_x, null_y, in_x, in_y, out_x, out_y = 0
-    #group_splitted = False
-    
-    #for group in canvas.group_list:
-        #if group.group_id == group_id:
-            #if group.split:
-                #box = group.widgets[0]
-                #if box is not None:
-                    #out_x = round(box.pos().x())
-                    #out_y = round(box.pos().y())
-                
-                #sbox = group.widgets[1]
-                #if sbox is not None:
-                    #in_x = round(box.pos().x())
-                    #in_y = round(box.pos().y())
-            #else:
-                #box = group.widgets[0]
-                #if box is not None:
-                    #null_x = round(box.pos().x())
-                    #null_y = round(box.pos().y())
-    
-    #return (group_splitted, null_x, null_y, in_x, in_y, out_x, out_y)
-
 def getGroupPos(group_id, port_mode=PORT_MODE_OUTPUT):
     if canvas.debug:
         print("PatchCanvas::getGroupPos(%i, %s)" % (group_id, port_mode2str(port_mode)))
@@ -828,31 +783,6 @@ def getGroupPos(group_id, port_mode=PORT_MODE_OUTPUT):
 
     qCritical("PatchCanvas::getGroupPos(%i, %s) - unable to find group" % (group_id, port_mode2str(port_mode)))
     return QPointF(0, 0)
-
-def saveGroupPositions():
-    if canvas.debug:
-        print("PatchCanvas::getGroupPositions()")
-
-    ret = []
-
-    for group in canvas.group_list:
-        if group.split:
-            pos1 = group.widgets[0].pos()
-            pos2 = group.widgets[1].pos()
-        else:
-            pos1 = group.widgets[0].pos()
-            pos2 = QPointF(0, 0)
-
-        ret.append({
-            "name" : group.group_name,
-            "pos1x": pos1.x(),
-            "pos1y": pos1.y(),
-            "pos2x": pos2.x(),
-            "pos2y": pos2.y(),
-            "split": group.split,
-        })
-
-    return ret
 
 def restoreGroupPositions(dataList):
     if canvas.debug:
