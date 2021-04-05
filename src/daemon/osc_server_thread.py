@@ -809,8 +809,11 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/patchbay/save_group_position',
                 ray.GroupPosition.sisi())
     def rayServerPatchbaySaveCoordinates(self, path, args, types, src_addr):
-        print('gpooss', args)
-        pass
+        # here send to others GUI the new group position
+        for gui_addr in self.gui_list:
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                self.send(gui_addr, '/ray/gui/patchbay/group_position_info',
+                          *args)
 
     @ray_method('/ray/server/patchbay/save_portgroup', 'siss')
     def rayServerPatchbaySavePortGroup(self, path, args, types, src_addr):

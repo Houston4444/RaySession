@@ -970,9 +970,7 @@ class CanvasBox(QGraphicsItem):
         self.setX(round(self.x()))
         self.setY(round(self.y()))
 
-    def fixPosAfterMove(self):
-        self.fixPos()
-        
+    def send_move_callback(self):
         x_y_str = "%i:%i" % (round(self.x()), round(self.y()))
         CanvasCallback(ACTION_GROUP_MOVE, self.m_group_id,
                        self.m_splitted_mode, x_y_str)
@@ -988,20 +986,17 @@ class CanvasBox(QGraphicsItem):
                 elif self.m_splitted_mode == PORT_MODE_OUTPUT:
                     group.out_pos = pos
                 break
+
+    def fixPosAfterMove(self):
+        for item in canvas.scene.selectedItems():
+            if item.type() == CanvasBoxType:
+                item.fixPos()
+                item.send_move_callback()
         
     def boundingRect(self):
         if self._is_hardware:
             return QRectF(-9, -9, self.p_width + 18, self.p_height + 18)
         return QRectF(0, 0, self.p_width, self.p_height)
-
-    #def itemChange(self, change, value):
-        #pass
-        ##if change != QGraphicsItem.ItemPositionChange:
-            ##return
-        
-        ##i = 0
-        
-        ##for group in canvas.group_list:
 
     def paint(self, painter, option, widget):
         painter.save()
