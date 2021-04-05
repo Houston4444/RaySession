@@ -754,7 +754,7 @@ class RayNet():
         return (self.daemon_url, self.session_root, self.session_template)
 
 
-class GroupPosition():
+class GroupPosition:
     port_types_view = GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI
     group_name = ''
     null_zone = ''
@@ -864,3 +864,59 @@ class GroupPosition():
             return ''
         
         return str(self.__getattribute__(attr))
+    
+class PortGroupMemory:
+    group_name = ''
+    port_type = 0
+    port_mode = 0
+    port_names = []
+    
+    @staticmethod
+    def get_attributes():
+        return ('group_name', 'port_type', 'port_mode', 'port_names')
+    
+    @staticmethod
+    def newFrom(*args):
+        portgrp_memory = PortGroupMemory()
+        portgrp_memory.update(*args)
+        return portgrp_memory
+    
+    def write_from_dict(self, input_dict: dict):
+        for attr in input_dict:
+            if not attr in self.get_attributes():
+                sys.stderr.write(
+                    'PortGroupMemory has no attribute %s\n' % attr)
+                continue
+
+            value = input_dict[attr]
+            attr_type = type(value)
+            if value == 'group_name' and attr_type != str:
+                continue
+            if value in ('port_type, port_mode') and attr_type != int:
+                continue
+            if value == 'port_names' and attr_type not in (tuple, list):
+                continue
+
+            self.__setattr__(attr, value)
+    
+    def update(self, group_name: str, port_type: int, port_mode: int,
+               *port_names):
+        self.group_name = group_name
+        self.port_type = port_type
+        self.port_mode = port_mode
+        self.port_names = port_names
+    
+    def spread(self)->tuple:
+        return (self.group_name, self.port_type, self.port_mode,
+                *self.port_names)
+    
+    def to_dict(self)->dict:
+        new_dict = {}
+        
+        for attr in self.__dir__():
+            if attr in self.get_attributes():
+                new_dict[attr] = self.__getattribute__(attr)
+        
+        return new_dict
+        
+    

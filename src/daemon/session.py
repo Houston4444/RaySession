@@ -66,9 +66,6 @@ class Session(ServerSender):
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
         self.canvas_saver = CanvasSaver()
-        
-        self.canvas_group_positions = []
-        self.canvas_portgroups = []
 
     #############
     def oscReply(self, *args):

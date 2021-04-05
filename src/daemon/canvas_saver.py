@@ -14,24 +14,33 @@ class CanvasSaver(ServerSender):
         ServerSender.__init__(self)
         self.group_positions_session = []
         self.group_positions_config = []
-        self.portgroups_session = []
-        self.portgroups_config = []
+        self.portgroups = []
         self._config_json_path = "%s/%s" % (
             os.path.dirname(RS.settings.fileName()), JSON_PATH)
 
-        if os.path.exists(self._config_json_path):
-            with open(self._config_json_path, 'r') as f:
-                json_contents = json.load(f)
-                gpos_list = []
-                if (type(json_contents) == dict
-                        and 'group_positions' in json_contents.keys()):
-                    gpos_list = json_contents['group_positions']
+        if not os.path.exists(self._config_json_path):
+            return
 
-                for gpos_dict in gpos_list:
-                    gpos = ray.GroupPosition()
-                    gpos.write_from_dict(gpos_dict)
-                    self.group_positions_config.append(gpos)
-        
+        with open(self._config_json_path, 'r') as f:
+            json_contents = json.load(f)
+            gpos_list = []
+            pg_list = []
+            if type(json_contents) == dict:
+                if 'group_positions' in json_contents.keys():
+                    gpos_list = json_contents['group_positions']
+                if 'portgroups' in json_contents.keys():
+                    pg_list = json_contents['portgroups']
+
+            for gpos_dict in gpos_list:
+                gpos = ray.GroupPosition()
+                gpos.write_from_dict(gpos_dict)
+                self.group_positions_config.append(gpos)
+
+            for pg_dict in pg_list:
+                portgroup = ray.PortGroupMemory()
+                portgroup.write_from_dict(pg_dict)
+                self.portgroups.append(portgroup)
+
     def get_all_group_positions(self)->list:
         group_positions_config_exclu = []
         
@@ -124,6 +133,37 @@ class CanvasSaver(ServerSender):
         json_contents = {}
         json_contents['group_positions'] = [
             gpos.to_dict() for gpos in self.group_positions_config]
+        json_contents['portgroups'] = [
+            portgroup.to_dict() for portgroup in self.portgroups]
 
         with open(self._config_json_path, 'w+') as f:
             json.dump(json_contents, f, indent=2)
+            
+    def save_portgroup(self, *args):
+        group_name, port_type, port_mode, *port_names = args
+        
+        remove_list = []
+        
+        # if one portgroup already contains one of the ports
+        # first, remove this group
+        for portgroup in self.portgroups:
+            if (portgroup.group_name == group_name
+                    and portgroup.port_type == port_type
+                    and portgroup.port_mode == port_mode):
+                for port_name in port_names:
+                    if port_name in portgroup.port_names:
+                        remove_list.append(portgroup)
+                        break
+        
+        for portgroup in remove_list:
+            self.portgroups.remove(portgroup)
+        
+        # in all case, save the new portgroup
+        portgroup = ray.PortGroupMemory.newFrom(*args)
+        self.portgroups.append(portgroup)
+        
+    def send_portgroups(self, src_addr):
+        for portgroup in self.portgroups:
+            self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
+                      *portgroup.spread())
+

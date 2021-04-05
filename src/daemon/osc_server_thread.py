@@ -815,9 +815,20 @@ class OscServerThread(ClientCommunicating):
                 self.send(gui_addr, '/ray/gui/patchbay/group_position_info',
                           *args)
 
-    @ray_method('/ray/server/patchbay/save_portgroup', 'siss')
+    @ray_method('/ray/server/patchbay/save_portgroup', None)
     def rayServerPatchbaySavePortGroup(self, path, args, types, src_addr):
-        pass
+        # args must be group_name, port_type, port_mode, *port_names
+        # where port_names are all strings
+        # so types must start with 'siis' and may continue with strings only
+        if not types.startswith('siis'):
+            self.unknownMessage(path, types, src_addr)
+            return False
+        
+        other_types = types.replace('siis', '', 1)
+        for t in other_types:
+            if t != 's':
+                self.unknownMessage(path, types, src_addr)
+                return False
 
     @ray_method('/ray/session/save', '')
     def raySessionSave(self, path, args, types, src_addr):
