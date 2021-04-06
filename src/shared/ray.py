@@ -892,7 +892,7 @@ class PortGroupMemory:
             attr_type = type(value)
             if value == 'group_name' and attr_type != str:
                 continue
-            if value in ('port_type, port_mode') and attr_type != int:
+            if value in ('port_type', 'port_mode') and attr_type != int:
                 continue
             if value == 'port_names' and attr_type not in (tuple, list):
                 continue
@@ -918,5 +918,16 @@ class PortGroupMemory:
                 new_dict[attr] = self.__getattribute__(attr)
         
         return new_dict
+    
+    def has_a_common_port_with(self, other)->bool:
+        if (self.port_type != other.port_type
+                or self.port_mode != other.port_mode
+                or self.group_name != other.group_name):
+            return False
         
+        for port_name in self.port_names:
+            if port_name in other.port_names:
+                return True
+        
+        return False
     

@@ -100,6 +100,9 @@ class Port:
         else:
             return PORT_MODE_NULL
 
+    def short_name(self)->str:
+        return self.full_name.partition(':')[2]
+
     def set_the_one(self):
         self.display_name += ' 1'
         self.set_the_one_on_pair = False
@@ -120,7 +123,7 @@ class Port:
         display_name = self.display_name
         if not PatchbayManager.use_graceful_names:
         #if not self.use_graceful_names:
-            display_name = self.full_name.partition(':')[2]
+            display_name = self.short_name()
 
         is_alternate = False
         if self.flags & PORT_IS_CONTROL_VOLTAGE:
@@ -153,7 +156,7 @@ class Port:
         
         display_name = self.display_name
         if not PatchbayManager.use_graceful_names:
-            display_name = self.full_name.partition(':')[2]
+            display_name = self.short_name()
         
         patchcanvas.changePortProperties(self.group_id, self.port_id,
                                          self.portgroup_id, display_name)
@@ -162,17 +165,16 @@ class Port:
 class Portgroup:
     # Portgroup is a stereo pair of ports
     # but could be a group of more ports
-    def __init__(self, group_id: int, portgroup_id: int, port_mode: int):
+    def __init__(self, group_id: int, portgroup_id: int,
+                 port_mode: int, ports: tuple):
         self.group_id = group_id
         self.portgroup_id = portgroup_id
         self.port_mode = port_mode
-        self.ports = []
+        self.ports = tuple(ports)
         self.in_canvas = False
-
-    def add_ports(self, *ports):
-        for port in ports:
-            port.portgroup_id = self.portgroup_id
-            self.ports.append(port)
+        
+        for port in self.ports:
+            port.portgroup_id = portgroup_id
 
     def port_type(self):
         if not self.ports:
@@ -196,9 +198,13 @@ class Portgroup:
 
         self.in_canvas = True
         
+        print('go for canvaspg', self.group_id, self.portgroup_id, [port.short_name() for port in self.ports], [port.in_canvas for port in self.ports])
+        port_id_list = [port.port_id for port in self.ports]
+        port_id_list = tuple(port_id_list)
+        
         patchcanvas.addPortGroup(self.group_id, self.portgroup_id,
                                  self.port_mode, port_type,
-                                 [port.port_id for port in self.ports],
+                                 port_id_list,
                                  fast=PatchbayManager.optimized_operation)
 
     def remove_from_canvas(self):
@@ -335,6 +341,71 @@ class Group:
         if portgroup in self.portgroups:
             self.portgroups.remove(portgroup)
     
+    def portgroup_memory_removed(self, portgroup_mem):
+        if portgroup_mem.group_name != self.name:
+            return
+        
+        for portgroup in self.portgroups:
+            if (portgroup.port_mode != portgroup_mem.port_mode
+                    or portgroup.port_type() != portgroup_mem.port_type):
+                continue
+            
+            if ([port.short_name() for port in portgroup.ports]
+                    == portgroup_mem.port_names):
+                portgroup.remove_from_canvas()
+                self.remove_portgroup(portgroup)
+                break
+   
+    def portgroup_memory_added(self, portgroup_mem):
+        if portgroup_mem.group_name != self.name:
+            return
+        
+        remove_list = []
+        
+        # first remove any existing portgroup with one of the porgroup_mem ports
+        for portgroup in self.portgroups:
+            if (portgroup.port_mode != portgroup_mem.port_mode
+                    or portgroup.port_type() != portgroup_mem.port_type):
+                continue
+
+            for port in portgroup.ports:
+                if port.short_name() in portgroup_mem.port_names:
+                    remove_list.append(portgroup)
+        
+        for portgroup in remove_list:
+            portgroup.remove_from_canvas()
+            self.remove_portgroup(portgroup)
+        
+        # add a portgroup if all needed ports are present and consecutive
+        port_list = []
+        
+        for port in self.ports:
+            if (port.mode != portgroup_mem.port_mode
+                    or port.type != portgroup_mem.port_type):
+                continue
+            
+            if port.short_name() == portgroup_mem.port_names[len(port_list)]:
+                port_list.append(port)
+
+                if len(port_list) == len(portgroup_mem.port_names):
+                    # all ports are presents, create the portgroup
+                    portgroup = PatchbayManager.new_portgroup(
+                        self.group_id, port.port_mode, port_list)
+                    self.portgroups.append(portgroup)
+                    
+                    # add portgroup to canvas if all ports are in canvas
+                    for port in port_list:
+                        if not port.in_canvas:
+                            break
+                    else:
+                        portgroup.add_to_canvas()
+                    
+                    break
+
+            elif port_list:
+                # here it is a port breaking the consecutivity of the portgroup
+                break
+
     def save_current_position(self):
         PatchbayManager.send_to_daemon(
             '/ray/server/patchbay/save_group_position',
@@ -419,9 +490,7 @@ class Group:
             return name
             
         client_name = self.get_pretty_client()
-        
-        #display_name = port.display_name
-        display_name = port.full_name.partition(':')[2]
+        display_name = port.short_name()
         if port.full_name.startswith('a2j') and client_name != 'a2j':
             display_name = display_name.partition(': ')[2]
             
@@ -652,6 +721,65 @@ class Group:
         
         if other_port_name in may_match_list:
             return other_port
+        
+    def check_for_portgroup_on_last_port(self):
+        if not self.ports:
+            return
+
+        last_port = self.ports[-1]
+        last_port_name = last_port.short_name()
+        
+        # check in the saved portgroups if we need to make a portgroup
+        # or prevent stereo detection
+        for portgroup_mem in PatchbayManager.portgroups_memory:
+            if (portgroup_mem.group_name == self.name
+                    and portgroup_mem.port_type == last_port.type
+                    and portgroup_mem.port_mode == last_port.mode()
+                    and last_port_name in portgroup_mem.port_names):
+                if (len(portgroup_mem.port_names) == 1
+                    or portgroup_mem.port_names.index(last_port_name) + 1
+                        != len(portgroup_mem.port_names)):
+                    return
+                
+                port_list = []
+                
+                for port in self.ports:
+                    if (port.type == last_port.type
+                            and port.mode() == last_port.mode()):
+                        #print('strinsg', port.short_name(), portgroup_mem.port_names)
+                        if (port.short_name()
+                                == portgroup_mem.port_names[len(port_list)]):
+                            print('addy', port.short_name())
+                            port_list.append(port)
+                            
+                            if len(port_list) == len(portgroup_mem.port_names):
+                                print('tadatam', [port.short_name() for port in port_list])
+                                portgroup = PatchbayManager.new_portgroup(
+                                    self.group_id, port.mode, port_list)
+                                self.portgroups.append(portgroup)
+                                for port in port_list:
+                                    if not port.in_canvas:
+                                        break
+                                else:
+                                    portgroup.add_to_canvas()
+                            
+                        elif port_list:
+                            return
+        
+        print('go for stereo')
+        # detect left audio port if it is a right one
+        other_port = self.stereo_detection(last_port)
+        if other_port is not None:
+            portgroup = PatchbayManager.new_portgroup(
+                self.group_id, last_port.mode(), (other_port, last_port))
+            self.add_portgroup(portgroup)
+            
+            if other_port.set_the_one_on_pair:
+                other_port.set_the_one()
+            
+            if self.in_canvas:
+                portgroup.add_to_canvas()
+        
 
         
 class PatchbayManager:
@@ -659,6 +787,8 @@ class PatchbayManager:
     port_types_view = PORT_TYPE_AUDIO + PORT_TYPE_MIDI
     optimized_operation = False
     groups = []
+    portgroups_memory = []
+    _next_portgroup_id = 1
     
     def __init__(self, session):
         self.session = session
@@ -685,7 +815,6 @@ class PatchbayManager:
         self.connections = []
         self._next_group_id = 0
         self._next_port_id = 0
-        self._next_portgroup_id = 1
         self._next_connection_id = 0
         
         self.use_alias = USE_ALIAS_NONE
@@ -724,6 +853,13 @@ class PatchbayManager:
     @classmethod
     def optimize_operation(cls, yesno: bool):
         cls.optimized_operation = yesno
+
+    @classmethod
+    def new_portgroup(cls, group_id: int, port_mode: int, ports: tuple):
+        portgroup = Portgroup(group_id, cls._next_portgroup_id,
+                              port_mode, ports)
+        cls._next_portgroup_id += 1
+        return portgroup
 
     def canvas_callbacks(self, action, value1, value2, value_str):
         if action == patchcanvas.ACTION_GROUP_INFO:
@@ -789,17 +925,24 @@ class PatchbayManager:
         elif action == patchcanvas.ACTION_PORT_GROUP_ADD:
             g_id, p_mode, p_type, p_id1, p_id2 =  [
                 int(i) for i in value_str.split(":")]
-            
-            portgroup = Portgroup(g_id, self._next_portgroup_id, p_mode)
-            self._next_portgroup_id += 1
+
+            port_list = []
             
             for port_id in p_id1, p_id2:
                 port = self.get_port_from_id(port_id)
-                portgroup.add_ports(port)
+                port_list.append(port)
+            
+            portgroup = self.new_portgroup(g_id, p_mode, port_list)
             
             for group in self.groups:
                 if group.group_id == g_id:
                     group.add_portgroup(portgroup)
+            
+                    self.send_to_daemon(
+                        '/ray/server/patchbay/save_portgroup',
+                        group.name, portgroup.port_type(), portgroup.port_mode,
+                        *[port.short_name() for port in port_list])
+                    break
 
             portgroup.add_to_canvas()
         
@@ -812,8 +955,18 @@ class PatchbayManager:
                 if group.group_id == group_id:
                     for portgroup in group.portgroups:
                         if portgroup.portgroup_id == portgrp_id:
-                            group.portgroups.remove(portgroup)
+                            for port in portgroup.ports:
+                                # save a fake portgroup with one port only
+                                # it will be considered as a forced mono port
+                                # (no stereo detection)
+                                self.send_to_daemon(
+                                    '/ray/server/patchbay/save_portgroup',
+                                    group.name, port.type, port.mode(),
+                                    port.short_name())
+
                             portgroup.remove_from_canvas()
+                            group.portgroups.remove(portgroup)
+                            
                             break
                     break
         
@@ -1025,20 +1178,34 @@ class PatchbayManager:
             group.add_to_canvas()
             port.add_to_canvas()
 
-        # detect left audio port if it is a right one
-        other_port = group.stereo_detection(port)
-        if other_port is not None:
-            portgroup = Portgroup(group.group_id, self._next_portgroup_id,
-                                  port.mode())
-            self._next_portgroup_id += 1
-            portgroup.add_ports(other_port, port)
-            group.add_portgroup(portgroup)
+        group.check_for_portgroup_on_last_port()
+
+        ## check in the saved portgroups if we need to make a portgroup
+        ## or prevent stereo detection
+        #for portgroup_mem in self.portgroups_memory:
+            #if (portgroup_mem.group_name == group_name
+                    #and portgroup_mem.port_type == port_type
+                    #and portgroup_mem.port_mode == port.mode()
+                    #and full_port_name.partition(':')[2] in portgroup_mem.port_names):
+                #if (len(portgroup_mem.port_names) == 1
+                    #or portgroup_mem.index(full_port_name) + 1
+                        #!= len(portgroup_mem.port_names)):
+                    #return
+                
+                
+
+        ## detect left audio port if it is a right one
+        #other_port = group.stereo_detection(port)
+        #if other_port is not None:
+            #portgroup = self.new_portgroup(
+                #group.group_id, port.mode(), (other_port, port))
+            #group.add_portgroup(portgroup)
             
-            if other_port.set_the_one_on_pair:
-                other_port.set_the_one()
+            #if other_port.set_the_one_on_pair:
+                #other_port.set_the_one()
             
-            if group.in_canvas:
-                portgroup.add_to_canvas()
+            #if group.in_canvas:
+                #portgroup.add_to_canvas()
 
     def remove_port(self, name: str):
         port = self.get_port_from_name(name)
@@ -1156,10 +1323,25 @@ class PatchbayManager:
                     group.set_group_position(gpos)
                     break
 
-    def update_portgroup(self, group_name: str, port_mode: int,
-                         port1: str, port2:str):
-        pass
-    
+    def update_portgroup(self, *args):
+        portgroup_mem = ray.PortGroupMemory.newFrom(*args)
+        
+        remove_list = []
+        
+        for pg_mem in self.portgroups_memory:
+            if pg_mem.has_a_common_port_with(portgroup_mem):
+                remove_list.append(pg_mem)
+        
+        for pg_mem in remove_list:
+            self.portgroups_memory.remove(pg_mem)
+            
+        self.portgroups_memory.append(portgroup_mem)
+        for group in self.groups:
+            if group.name == portgroup_mem.group_name:
+                for pg_mem in remove_list:
+                    group.portgroup_memory_removed(pg_mem)
+                group.portgroup_memory_added(portgroup_mem)
+                
     def clear_all(self):
         self.optimize_operation(True)
         for connection in self.connections:

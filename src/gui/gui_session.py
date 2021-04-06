@@ -438,10 +438,10 @@ class SignaledSession(Session):
     def _ray_gui_patchbay_connection_removed(self, path, args):
         self.patchbay_manager.remove_connection(*args)
         
-    def _ray_gui_patchbay_group_position_info(self, path, args):
+    def _ray_gui_patchbay_update_group_position(self, path, args):
         self.patchbay_manager.update_group_position(*args)
     
-    def _ray_gui_patchbay_portgroup_info(self, path, args):
+    def _ray_gui_patchbay_update_portgroup(self, path, args):
         self.patchbay_manager.update_portgroup(*args)
     
     def _ray_gui_patchbay_server_started(self, path, args):

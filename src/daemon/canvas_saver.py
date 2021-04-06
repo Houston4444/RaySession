@@ -56,21 +56,24 @@ class CanvasSaver(ServerSender):
     
     def send_session_group_positions(self):
         for gpos in self.group_positions_session:
-            self.sendGui('/ray/gui/patchbay/group_position_info',
+            self.sendGui('/ray/gui/patchbay/update_group_position',
                          *gpos.spread())
     
     def send_all_group_positions(self, src_addr):
         for gpos in self.group_positions_session:
-            self.send(src_addr, '/ray/gui/patchbay/group_position_info',
+            self.send(src_addr, '/ray/gui/patchbay/update_group_position',
                       *gpos.spread())
 
         for gpos_cf in self.group_positions_config:
             for gpos_ss in self.group_positions_session:
-                if gpos_ss.group_name == gpos_cf.group_name:
+                if (gpos_ss.port_types_view == gpos_cf.port_types_view
+                        and gpos_ss.group_name == gpos_cf.group_name):
                     break
             else:
-                self.send(src_addr, '/ray/gui/patchbay/group_position_info',
+                self.send(src_addr, '/ray/gui/patchbay/update_group_position',
                           *gpos_cf.spread())
+        
+        self.send_portgroups(src_addr)
 
     def save_group_position(self, *args):
         gp = ray.GroupPosition.newFrom(*args)
@@ -140,30 +143,23 @@ class CanvasSaver(ServerSender):
             json.dump(json_contents, f, indent=2)
             
     def save_portgroup(self, *args):
-        group_name, port_type, port_mode, *port_names = args
+        new_portgroup = ray.PortGroupMemory.newFrom(*args)
         
         remove_list = []
         
-        # if one portgroup already contains one of the ports
-        # first, remove this group
+        # remove any portgroup with a commmon port with the new one
         for portgroup in self.portgroups:
-            if (portgroup.group_name == group_name
-                    and portgroup.port_type == port_type
-                    and portgroup.port_mode == port_mode):
-                for port_name in port_names:
-                    if port_name in portgroup.port_names:
-                        remove_list.append(portgroup)
-                        break
+            if portgroup.has_a_common_port_with(new_portgroup):
+                remove_list.append(portgroup)
         
         for portgroup in remove_list:
             self.portgroups.remove(portgroup)
         
-        # in all case, save the new portgroup
-        portgroup = ray.PortGroupMemory.newFrom(*args)
-        self.portgroups.append(portgroup)
+        self.portgroups.append(new_portgroup)
         
     def send_portgroups(self, src_addr):
         for portgroup in self.portgroups:
+            print('fkjj', portgroup.spread())
             self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
                       *portgroup.spread())
 

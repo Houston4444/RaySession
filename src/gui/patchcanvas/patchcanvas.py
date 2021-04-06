@@ -979,6 +979,7 @@ def addPortGroup(group_id, portgrp_id, port_mode, port_type, port_id_list, fast=
         
     for portgrp in canvas.portgrp_list:
         if portgrp.group_id == group_id and portgrp.portgrp_id == portgrp_id:
+            print('pasokpasok')
             qWarning("PatchCanvas::addPortGroup(%i, %i) - port group already exists" % (
                      group_id, portgrp_id))
             return
@@ -988,16 +989,18 @@ def addPortGroup(group_id, portgrp_id, port_mode, port_type, port_id_list, fast=
     portgrp_dict.portgrp_id = portgrp_id
     portgrp_dict.port_mode = port_mode
     portgrp_dict.port_type = port_type
-    portgrp_dict.port_id_list = port_id_list.copy()
+    portgrp_dict.port_id_list = port_id_list
     portgrp_dict.widget = None
     
     # check that port ids are present in canvas in this group
     i = 0
+    print('tilitil', group_id, portgrp_id)
     for port in canvas.port_list:
         if (port.group_id == group_id
                 and port.port_type == port_type
                 and port.port_mode == port_mode
                 and port.port_id in port_id_list):
+            print('ezze', port.port_name)
             i += 1
     
     if len(port_id_list) != i:
@@ -1021,7 +1024,7 @@ def addPortGroup(group_id, portgrp_id, port_mode, port_type, port_id_list, fast=
             for box in group.widgets:
                 if box is None:
                     continue
-                
+
                 if (not box.isSplitted()
                         or box.getSplittedMode() == port_mode):
                     portgrp_dict.widget = box.addPortGroupFromGroup(
@@ -1049,8 +1052,6 @@ def removePortGroup(group_id, portgrp_id, fast=False):
                     if port.widget is not None:
                         port.widget.setPortGroupId(0)
                         box_widget = port.widget.parentItem()
-                        
-            portgrp.port_id_list.clear()
             
             if portgrp.widget is not None:
                 item = portgrp.widget

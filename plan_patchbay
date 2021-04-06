@@ -50,13 +50,6 @@ context menu box -> icones PulseAudio/hardware/a2j dispos en light theme
 / vérif port rename et display name
 revoir sauvegarde groupe position et paires
 
-group position
-context: audio, midi ou les 2
-zone: nom de la zone, '' si global
-xNULL, yNULL, xOUTPUT, yOUTPUT, xINPUT, yOUTPUT
-splitted_mode: NULL, OUTPUT, INPUT
-mode rabattu
-
 fenêtre port info
 
 
@@ -66,3 +59,15 @@ revoir les icônes pour thème clair et intégrer gtk-connect gtk-disconnect
 outils de zoom (boutons et menu)
 ctrl pressé et zoom
 remettre dans Carla
+
+
+suppirmer portgroup_id de Port
+portgroup port_list non dynamique
+set_the_one_on_pair ne devrait pas avoir de rapport avec les portgroup
+detection stereo: pas si port dans un portgroup_memory
+ajouter portgroup à la création du port si dans portgroup_mem (portgroup mem portlist > 1)
+
+
+
+
+
