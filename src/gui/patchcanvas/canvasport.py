@@ -41,7 +41,7 @@ from . import (
     CanvasPortType,
     CanvasPortGroupType,
     ANTIALIASING_FULL,
-    ACTION_PORT_GROUP_ADD,
+    ACTION_PORTGROUP_ADD,
     ACTION_PORT_INFO,
     ACTION_PORT_RENAME,
     ACTION_PORTS_CONNECT,
@@ -191,7 +191,7 @@ class CanvasPort(QGraphicsItem):
                                    self.m_port_mode, self.m_port_type,
                                    port_id_list[0], port_id_list[1])
 
-        CanvasCallback(ACTION_PORT_GROUP_ADD, 0, 0, data)
+        CanvasCallback(ACTION_PORTGROUP_ADD, 0, 0, data)
     
     def connectToHover(self):
         if self.m_hover_item:

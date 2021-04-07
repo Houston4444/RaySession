@@ -39,7 +39,7 @@ from . import (
     CanvasPortType,
     CanvasPortGroupType,
     ANTIALIASING_FULL,
-    ACTION_PORT_GROUP_REMOVE,
+    ACTION_PORTGROUP_REMOVE,
     ACTION_PORT_INFO,
     ACTION_PORT_RENAME,
     ACTION_PORTS_CONNECT,
@@ -146,7 +146,7 @@ class CanvasPortGroup(QGraphicsItem):
         self.m_dotcon_list.clear()
 
     def SplitToMonos(self):
-        CanvasCallback(ACTION_PORT_GROUP_REMOVE,
+        CanvasCallback(ACTION_PORTGROUP_REMOVE,
                        self.m_group_id, self.m_portgrp_id, "")
         
     def ConnectToHover(self):

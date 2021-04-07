@@ -931,3 +931,38 @@ class PortGroupMemory:
         
         return False
     
+class PortGroupsDataBase:
+    _portgroups_memory = []
+    
+    def add_portgroup(self, group_name: str, port_type: int, port_mode: int,
+                      *port_names):
+        remove_list = []
+        
+        # remove any portgroup_mem with one of the ports
+        for portgroup_mem in self._portgroups_memory:
+            if (portgroup_mem.group_name == group_name
+                    and portgroup_mem.port_type == port_type
+                    and portgroup_mem.port_mode == port_mode):
+                for port_name in port_names:
+                    if port_name in portgroup_mem.port_names:
+                        remove_list.append(portgroup_mem)
+                        break
+        
+        for portgroup_mem in remove_list:
+            self._portgroups_memory.remove(portgroup_mem)
+            
+        new_portgroup_mem = PortGroupMemory(
+            group_name, port_type, port_mode, port_names)
+        self.portgroups_memory.append(new_portgroup_mem)
+        return new_portgroup_mem
+        
+    def port_list_for_port(self, group_name: str, port_type: int,
+                           port_mode: int, port_name: str)->tuple:
+        for portgroup_mem in self._portgroups_memory:
+            if (portgroup_mem.group_name == group_name
+                    and portgroup_mem.port_type == port_type
+                    and portgroup_mem.port_mode == port_mode
+                    and port_name in portgroup_mem.port_names):
+                return portgroup_mem.port_names
+
+        return ()

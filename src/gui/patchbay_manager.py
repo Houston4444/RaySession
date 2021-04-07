@@ -790,6 +790,7 @@ class PatchbayManager:
     optimized_operation = False
     groups = []
     portgroups_memory = []
+    portgroups_database = ray.PortGroupsDataBase()
     _next_portgroup_id = 1
     
     def __init__(self, session):
@@ -924,7 +925,7 @@ class PatchbayManager:
                     group.wrap_box(splitted_mode, yesno)
                     break
         
-        elif action == patchcanvas.ACTION_PORT_GROUP_ADD:
+        elif action == patchcanvas.ACTION_PORTGROUP_ADD:
             g_id, p_mode, p_type, p_id1, p_id2 =  [
                 int(i) for i in value_str.split(":")]
 
@@ -948,15 +949,14 @@ class PatchbayManager:
 
             portgroup.add_to_canvas()
         
-        elif action == patchcanvas.ACTION_PORT_GROUP_REMOVE:
-            
+        elif action == patchcanvas.ACTION_PORTGROUP_REMOVE:
             group_id = value1
-            portgrp_id = value2
+            portgroup_id = value2
 
             for group in self.groups:
                 if group.group_id == group_id:
                     for portgroup in group.portgroups:
-                        if portgroup.portgroup_id == portgrp_id:
+                        if portgroup.portgroup_id == portgroup_id:
                             for port in portgroup.ports:
                                 # save a fake portgroup with one port only
                                 # it will be considered as a forced mono port
