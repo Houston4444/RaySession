@@ -973,14 +973,14 @@ def changePortProperties(group_id, port_id, portgrp_id, new_port_name):
     qCritical("PatchCanvas::renamePort(%i, %i, %s) - Unable to find port to rename" % (
               group_id, port_id, new_port_name.encode()))            
 
-def addPortGroup(group_id, portgrp_id, port_mode, port_type, port_id_list, fast=False):
+def addPortGroup(group_id, portgrp_id, port_mode, port_type,
+                 port_id_list, fast=False):
     if canvas.debug:
         print("PatchCanvas::addPortGroup(%i, %i)" % (group_id, portgrp_id))
         
     for portgrp in canvas.portgrp_list:
         if portgrp.group_id == group_id and portgrp.portgrp_id == portgrp_id:
-            print('pasokpasok')
-            qWarning("PatchCanvas::addPortGroup(%i, %i) - port group already exists" % (
+            qWarning("PatchCanvas::addPortGroup(%i, %i) - portgroup already exists" % (
                      group_id, portgrp_id))
             return
 
@@ -992,20 +992,31 @@ def addPortGroup(group_id, portgrp_id, port_mode, port_type, port_id_list, fast=
     portgrp_dict.port_id_list = port_id_list
     portgrp_dict.widget = None
     
-    # check that port ids are present in canvas in this group
     i = 0
-    print('tilitil', group_id, portgrp_id)
+    # check that port ids are present and groupable in this group
     for port in canvas.port_list:
         if (port.group_id == group_id
                 and port.port_type == port_type
-                and port.port_mode == port_mode
-                and port.port_id in port_id_list):
-            print('ezze', port.port_name)
-            i += 1
-    
-    if len(port_id_list) != i:
-        qWarning("PatchCanvas::addPortGroup(%i, %i) - not enought ports with port_id_list" % (
-            group_id, portgrp_id))
+                and port.port_mode == port_mode):
+            if port.port_id == port_id_list[i]:
+                if port.portgrp_id:
+                    qWarning("PatchCanvas::addPortGroup(%i, %i, %s) - port id %i is already in portgroup %i"
+                             % (group_id, portgrp_id, str(port_id_list), port.port_id, port.portgrp_id))
+                    return
+
+                i += 1
+                
+                if i == len(port_id_list):
+                    # everything seems ok for this portgroup, stop the check
+                    break
+                
+            elif i > 0:
+                qWarning("PatchCanvas::addPortGroup(%i, %i, %s) - port ids are not consecutive" % (
+                    group_id, portgrp_id, str(port_id_list)))
+                return
+    else:
+        qWarning("PatchCanvas::addPortGroup(%i, %i, %s) - not enought ports with port_id_list" % (
+            group_id, portgrp_id, str(port_id_list)))
         return
     
     # modify ports impacted by portgroup

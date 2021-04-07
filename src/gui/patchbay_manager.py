@@ -197,8 +197,7 @@ class Portgroup:
         port_type = self.ports[0].type
 
         self.in_canvas = True
-        
-        print('go for canvaspg', self.group_id, self.portgroup_id, [port.short_name() for port in self.ports], [port.in_canvas for port in self.ports])
+
         port_id_list = [port.port_id for port in self.ports]
         port_id_list = tuple(port_id_list)
         
@@ -646,6 +645,14 @@ class Group:
                     and not other_port.flags & PORT_IS_CONTROL_VOLTAGE
                     and not other_port.portgroup_id
                     and not other_port.prevent_stereo):
+                for portgroup_mem in PatchbayManager.portgroups_memory:
+                    if (portgroup_mem.group_name == self.name
+                        and portgroup_mem.port_mode == other_port.mode()
+                        and portgroup_mem.port_type == other_port.type
+                        and other_port.short_name() in portgroup_mem.port_names):
+                        # other_port (left) is in a remembered portgroup
+                        # prevent stereo detection
+                        return
                 break
         else:
             return
@@ -735,7 +742,7 @@ class Group:
             if (portgroup_mem.group_name == self.name
                     and portgroup_mem.port_type == last_port.type
                     and portgroup_mem.port_mode == last_port.mode()
-                    and last_port_name in portgroup_mem.port_names):
+                    and last_port_name == portgroup_mem.port_names[-1]):
                 if (len(portgroup_mem.port_names) == 1
                     or portgroup_mem.port_names.index(last_port_name) + 1
                         != len(portgroup_mem.port_names)):
@@ -746,16 +753,13 @@ class Group:
                 for port in self.ports:
                     if (port.type == last_port.type
                             and port.mode() == last_port.mode()):
-                        #print('strinsg', port.short_name(), portgroup_mem.port_names)
                         if (port.short_name()
                                 == portgroup_mem.port_names[len(port_list)]):
-                            print('addy', port.short_name())
                             port_list.append(port)
                             
                             if len(port_list) == len(portgroup_mem.port_names):
-                                print('tadatam', [port.short_name() for port in port_list])
                                 portgroup = PatchbayManager.new_portgroup(
-                                    self.group_id, port.mode, port_list)
+                                    self.group_id, port.mode(), port_list)
                                 self.portgroups.append(portgroup)
                                 for port in port_list:
                                     if not port.in_canvas:
@@ -766,7 +770,6 @@ class Group:
                         elif port_list:
                             return
         
-        print('go for stereo')
         # detect left audio port if it is a right one
         other_port = self.stereo_detection(last_port)
         if other_port is not None:
@@ -779,7 +782,6 @@ class Group:
             
             if self.in_canvas:
                 portgroup.add_to_canvas()
-        
 
         
 class PatchbayManager:
@@ -1179,33 +1181,6 @@ class PatchbayManager:
             port.add_to_canvas()
 
         group.check_for_portgroup_on_last_port()
-
-        ## check in the saved portgroups if we need to make a portgroup
-        ## or prevent stereo detection
-        #for portgroup_mem in self.portgroups_memory:
-            #if (portgroup_mem.group_name == group_name
-                    #and portgroup_mem.port_type == port_type
-                    #and portgroup_mem.port_mode == port.mode()
-                    #and full_port_name.partition(':')[2] in portgroup_mem.port_names):
-                #if (len(portgroup_mem.port_names) == 1
-                    #or portgroup_mem.index(full_port_name) + 1
-                        #!= len(portgroup_mem.port_names)):
-                    #return
-                
-                
-
-        ## detect left audio port if it is a right one
-        #other_port = group.stereo_detection(port)
-        #if other_port is not None:
-            #portgroup = self.new_portgroup(
-                #group.group_id, port.mode(), (other_port, port))
-            #group.add_portgroup(portgroup)
-            
-            #if other_port.set_the_one_on_pair:
-                #other_port.set_the_one()
-            
-            #if group.in_canvas:
-                #portgroup.add_to_canvas()
 
     def remove_port(self, name: str):
         port = self.get_port_from_name(name)
