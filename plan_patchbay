@@ -61,11 +61,9 @@ ctrl pressé et zoom
 remettre dans Carla
 
 
-suppirmer portgroup_id de Port
 portgroup port_list non dynamique
 set_the_one_on_pair ne devrait pas avoir de rapport avec les portgroup
-detection stereo: pas si port dans un portgroup_memory
-ajouter portgroup à la création du port si dans portgroup_mem (portgroup mem portlist > 1)
+rename group rester en place
 
 
 

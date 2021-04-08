@@ -1,4 +1,9 @@
+
+import json
+import pickle
+import os
 import time
+
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QMessageBox
 from PyQt5.QtCore import pyqtSlot
@@ -276,7 +281,7 @@ class Group:
             icon_type, icon_name, fast=PatchbayManager.optimized_operation,
             null_xy=gpos.null_xy, in_xy=gpos.in_xy, out_xy=gpos.out_xy)
         
-        if split:
+        if split == patchcanvas.SPLIT_YES:
             patchcanvas.wrapGroupBox(
                 self.group_id, PORT_MODE_INPUT,
                 bool(gpos.flags & GROUP_WRAPPED_INPUT))
@@ -1395,6 +1400,49 @@ class PatchbayManager:
         self.optimize_operation(not bool(state))
         if state:
             patchcanvas.updateAllPositions()
+    
+    def fast_temp_file_memory(self, temp_path):
+        canvas_data = {}
+        with open(temp_path, 'r') as file:
+            canvas_data = json.load(file)
+        print('dof', canvas_data, type(canvas_data))
+        for key in canvas_data.keys():
+            if key == 'group_positions':
+                for gpos_dict in canvas_data[key]:
+                    gpos = ray.GroupPosition()
+                    gpos.write_from_dict(gpos_dict)
+                    self.group_positions.append(gpos)
+            
+            elif key == 'portgroups':
+                for pg_dict in canvas_data[key]:
+                    portgroup_mem = ray.PortGroupMemory()
+                    portgroup_mem.write_from_dict(pg_dict)
+                    self.add_portgroup_memory(portgroup_mem)
+                    
+        os.remove(temp_path)
+        
+    def fast_temp_file_running(self, temp_path):
+        print('zoeoork', time.time())
+        file = open(temp_path, 'r')
+        patchbay_data = json.load(file)
+        print('zoookkiya', time.time())
+        self.optimize_operation(True)
+        #print('tatatrrrooror')
+        for key in patchbay_data.keys():
+            if key == 'ports':
+                for p in patchbay_data[key]:
+                    self.add_port(
+                        p['name'], p['alias_1'], p['alias_2'], p['type'],
+                        p['flags'], p['metadata'])
+            
+            elif key == 'connections':
+                for c in patchbay_data[key]:
+                    self.add_connection(c['port_out_name'], c['port_in_name'])
+
+        self.optimize_operation(False)
+        patchcanvas.updateAllPositions()
+        
+        os.remove(temp_path)
     
     def patchbay_announce(self, jack_running: int, samplerate: int,
                           buffer_size: int):

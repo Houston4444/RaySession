@@ -1,10 +1,68 @@
 
 import sys
 import time
+#import pickle
+import tempfile
+import socket
+import json
 
 from liblo import Server, Address, make_method
 
 import jacklib
+
+def areOnSameMachine(url1, url2):
+    if url1 == url2:
+        return True
+
+    try:
+        address1 = Address(url1)
+        address2 = Address(url2)
+    except BaseException:
+        return False
+
+    if address1.hostname == address2.hostname:
+        return True
+
+    try:
+        if (socket.gethostbyname(address1.hostname)
+                    in ('127.0.0.1', '127.0.1.1')
+                and socket.gethostbyname(address2.hostname)
+                    in ('127.0.0.1', '127.0.1.1')):
+            return True
+
+        if socket.gethostbyaddr(
+                address1.hostname) == socket.gethostbyaddr(
+                address2.hostname):
+            return True
+
+    except BaseException:
+        try:
+            ip = Machine192.get()
+
+            if ip not in (address1.hostname, address2.hostname):
+                return False
+
+            try:
+                if socket.gethostbyname(
+                        address1.hostname) in (
+                        '127.0.0.1',
+                        '127.0.1.1'):
+                    if address2.hostname == ip:
+                        return True
+            except BaseException:
+                if socket.gethostbyname(
+                        address2.hostname) in (
+                        '127.0.0.1',
+                        '127.0.1.1'):
+                    if address1.hostname == ip:
+                        return True
+
+        except BaseException:
+            return False
+
+        return False
+
+    return False
 
 
 class OscJackPatch(Server):
@@ -91,7 +149,38 @@ class OscJackPatch(Server):
         for gui_addr in self.gui_list:
             self.send(gui_addr, *args)
 
+    def send_local_data(self, src_addr):
+        # at invitation, if gui is on the same machine
+        # it's prefferable to save all data in /tmp
+        # Indeed, to prevent OSC packet loses
+        # this daemon will send a lot of OSC messages not too fast
+        # so here, it is faster, and prevent osc saturation
+        # json format (and not binary with pickle) is choosen
+        # this way, code language of GUI is not a blocker
+        patchbay_data = {'ports': [], 'connections': []}
+        for port in self.port_list:
+            port_dict = {'name': port.name,
+                            'alias_1': port.alias_1,
+                            'alias_2': port.alias_2,
+                            'type': port.type,
+                            'flags': port.flags,
+                            'metadata': ''}
+            patchbay_data['ports'].append(port_dict)
+        
+        for connection in self.connection_list:
+            conn_dict = {'port_out_name': connection[0],
+                         'port_in_name': connection[1]}
+            patchbay_data['connections'].append(conn_dict)
+
+        file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
+        json.dump(patchbay_data, file)
+        file.close()
+
+        self.send(src_addr, '/ray/gui/patchbay/fast_temp_file_running', file.name)
+
     def add_gui(self, gui_url):
+        print('dfkjskjdfs')
+        
         gui_addr = Address(gui_url)
         if gui_addr is None:
             return
@@ -100,7 +189,12 @@ class OscJackPatch(Server):
                   int(self.main_object.jack_running),
                   self.main_object.samplerate,
                   self.main_object.buffer_size)
-
+        print('dfklj')
+        if areOnSameMachine(gui_url, self.url):
+            self.send_local_data(gui_addr)
+            self.gui_list.append(gui_addr)
+            return
+        print('pasasmem machine')
         self.send(gui_addr, '/ray/gui/patchbay/big_packets', 0)
         n = 0
 

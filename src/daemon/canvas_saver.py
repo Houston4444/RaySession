@@ -1,6 +1,8 @@
 
 import json
+import pickle
 import os
+import tempfile
 
 import ray
 
@@ -60,6 +62,28 @@ class CanvasSaver(ServerSender):
                          *gpos.spread())
     
     def send_all_group_positions(self, src_addr):
+        if ray.areOnSameMachine(self.getServerUrl(), src_addr.url):
+            canvas_dict = {'group_positions': [], 'portgroups': []}
+            for gpos in self.group_positions_session:
+                canvas_dict['group_positions'].append(gpos.to_dict())
+            
+            for gpos_cf in self.group_positions_config:
+                for gpos_ss in self.group_positions_session:
+                    if (gpos_ss.port_types_view == gpos_cf.port_types_view
+                            and gpos_ss.group_name == gpos_cf.group_name):
+                        break
+                else:
+                    canvas_dict['group_positions'].append(gpos_cf.to_dict())
+            
+            for portgroup in self.portgroups:
+                canvas_dict['portgroups'].append(portgroup.to_dict())
+            
+            file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
+            json.dump(canvas_dict, file)
+            file.close()
+            self.send(src_addr, '/ray/gui/patchbay/fast_temp_file_memory', file.name)
+            return
+        
         for gpos in self.group_positions_session:
             self.send(src_addr, '/ray/gui/patchbay/update_group_position',
                       *gpos.spread())
@@ -73,7 +97,9 @@ class CanvasSaver(ServerSender):
                 self.send(src_addr, '/ray/gui/patchbay/update_group_position',
                           *gpos_cf.spread())
         
-        self.send_portgroups(src_addr)
+        for portgroup in self.portgroups:
+            self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
+                      *portgroup.spread())
 
     def save_group_position(self, *args):
         gp = ray.GroupPosition.newFrom(*args)
@@ -159,7 +185,6 @@ class CanvasSaver(ServerSender):
         
     def send_portgroups(self, src_addr):
         for portgroup in self.portgroups:
-            print('fkjj', portgroup.spread())
             self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
                       *portgroup.spread())
 

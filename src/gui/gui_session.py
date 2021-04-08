@@ -451,7 +451,6 @@ class SignaledSession(Session):
         self.patchbay_manager.server_stopped(*args)
     
     def _ray_gui_patchbay_server_lose(self, path, args):
-        print('sdkflsdkflkdlskflkl')
         self.patchbay_manager.server_lose(*args)
     
     def _ray_gui_patchbay_dsp_load(self, path, args):
@@ -469,4 +468,8 @@ class SignaledSession(Session):
     def _ray_gui_patchbay_big_packets(self, path, args):
         self.patchbay_manager.receive_big_packets(*args)
     
+    def _ray_gui_patchbay_fast_temp_file_memory(self, path, args):
+        self.patchbay_manager.fast_temp_file_memory(*args)
     
+    def _ray_gui_patchbay_fast_temp_file_running(self, path, args):
+        self.patchbay_manager.fast_temp_file_running(*args)
