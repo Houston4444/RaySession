@@ -193,6 +193,10 @@ class Portgroup:
         if len(self.ports) < 2:
             return
         
+        for port in self.ports:
+            if not port.in_canvas:
+                return
+        
         port_mode = self.ports[0].mode()
         port_type = self.ports[0].type
 
@@ -339,21 +343,6 @@ class Group:
     def remove_portgroup(self, portgroup):
         if portgroup in self.portgroups:
             self.portgroups.remove(portgroup)
-    
-    def portgroup_memory_removed(self, portgroup_mem):
-        if portgroup_mem.group_name != self.name:
-            return
-        
-        for portgroup in self.portgroups:
-            if (portgroup.port_mode != portgroup_mem.port_mode
-                    or portgroup.port_type() != portgroup_mem.port_type):
-                continue
-            
-            if ([port.short_name() for port in portgroup.ports]
-                    == portgroup_mem.port_names):
-                portgroup.remove_from_canvas()
-                self.remove_portgroup(portgroup)
-                break
    
     def portgroup_memory_added(self, portgroup_mem):
         if portgroup_mem.group_name != self.name:
@@ -391,15 +380,7 @@ class Group:
                     portgroup = PatchbayManager.new_portgroup(
                         self.group_id, port.port_mode, port_list)
                     self.portgroups.append(portgroup)
-                    
-                    # add portgroup to canvas if all ports are in canvas
-                    for port in port_list:
-                        if not port.in_canvas:
-                            break
-                    else:
-                        portgroup.add_to_canvas()
-                    
-                    break
+                    portgroup.add_to_canvas()
 
             elif port_list:
                 # here it is a port breaking the consecutivity of the portgroup
@@ -583,9 +564,9 @@ class Group:
         
         elif not client_name:
             display_name = display_name.replace('_', ' ')
-            if display_name.lower().endswith(' left'):
+            if display_name.lower().endswith(('-left', ' left')):
                 display_name = display_name[:-5] + ' L'
-            elif display_name.lower().endswith(' right'):
+            elif display_name.lower().endswith(('-right', ' right')):
                 display_name = display_name[:-6] + ' R'
             elif display_name.lower() == 'left in':
                 display_name = 'In L'
@@ -790,7 +771,6 @@ class PatchbayManager:
     optimized_operation = False
     groups = []
     portgroups_memory = []
-    portgroups_database = ray.PortGroupsDataBase()
     _next_portgroup_id = 1
     
     def __init__(self, session):
@@ -941,6 +921,12 @@ class PatchbayManager:
                 if group.group_id == g_id:
                     group.add_portgroup(portgroup)
             
+                    new_portgroup_mem = ray.PortGroupMemory.newFrom(
+                        group.name, portgroup.port_type(), portgroup.port_mode,
+                        *[port.short_name() for port in port_list])
+                    
+                    self.add_portgroup_memory(new_portgroup_mem)
+
                     self.send_to_daemon(
                         '/ray/server/patchbay/save_portgroup',
                         group.name, portgroup.port_type(), portgroup.port_mode,
@@ -961,6 +947,11 @@ class PatchbayManager:
                                 # save a fake portgroup with one port only
                                 # it will be considered as a forced mono port
                                 # (no stereo detection)
+                                new_portgroup_mem = ray.PortGroupMemory.newFrom(
+                                    group.name, portgroup.port_type(),
+                                    portgroup.port_mode, port.short_name())
+                                self.add_portgroup_memory(new_portgroup_mem)
+                                
                                 self.send_to_daemon(
                                     '/ray/server/patchbay/save_portgroup',
                                     group.name, port.type, port.mode(),
@@ -1128,6 +1119,18 @@ class PatchbayManager:
         self.send_to_daemon(
             '/ray/server/patchbay/save_group_position', *gpos.spread())
         return gpos
+
+    def add_portgroup_memory(self, portgroup_mem):
+        remove_list = []
+        
+        for pg_mem in self.portgroups_memory:
+            if pg_mem.has_a_common_port_with(portgroup_mem):
+                remove_list.append(pg_mem)
+        
+        for pg_mem in remove_list:
+            self.portgroups_memory.remove(pg_mem)
+            
+        self.portgroups_memory.append(portgroup_mem)
 
     def add_port(self, name: str, alias_1: str, alias_2: str,
                  port_type: int, flags: int, metadata: str):
@@ -1300,22 +1303,12 @@ class PatchbayManager:
 
     def update_portgroup(self, *args):
         portgroup_mem = ray.PortGroupMemory.newFrom(*args)
-        
-        remove_list = []
-        
-        for pg_mem in self.portgroups_memory:
-            if pg_mem.has_a_common_port_with(portgroup_mem):
-                remove_list.append(pg_mem)
-        
-        for pg_mem in remove_list:
-            self.portgroups_memory.remove(pg_mem)
-            
-        self.portgroups_memory.append(portgroup_mem)
+        self.add_portgroup_memory(portgroup_mem)
+
         for group in self.groups:
             if group.name == portgroup_mem.group_name:
-                for pg_mem in remove_list:
-                    group.portgroup_memory_removed(pg_mem)
                 group.portgroup_memory_added(portgroup_mem)
+                break
                 
     def clear_all(self):
         self.optimize_operation(True)
