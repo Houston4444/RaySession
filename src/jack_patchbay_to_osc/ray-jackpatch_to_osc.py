@@ -341,7 +341,7 @@ class MainObject:
                 self.osc_server.port_renamed(jport, ex_name)
                 break
         return 0
-
+    
     def jack_port_connect_callback(self, port_id_A: int, port_id_B: int,
                                    connect_yesno: bool, arg=None)->int:
         #if not self.jack_client:

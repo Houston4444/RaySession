@@ -1,6 +1,7 @@
 
 import json
 import os
+import sys
 
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QMessageBox
@@ -1249,6 +1250,10 @@ class PatchbayManager:
     def rename_port(self, name: str, new_name: str):
         port = self.get_port_from_name(name)
         if port is None:
+            sys.stderr.write(
+                "RaySession:PatchbayManager::rename_port" 
+                + "\"%s\" to \"%s\", port doesn't exists\n"
+                    % (name, new_name))
             return
         
         group_name = name.partition(':')[0]
@@ -1272,7 +1277,12 @@ class PatchbayManager:
                     group.add_port(port)
                     break
             else:
-                gpos = self.get_group_position(new_group_name)
+                # copy the group_position to not move the group
+                # because group has been renamed
+                orig_gpos = self.get_group_position(group_name)
+                gpos = ray.GroupPosition.newFrom(*orig_gpos.spread())
+                gpos.group_name = new_group_name
+                
                 group = Group(self._next_group_id, new_group_name, gpos)
                 self._next_group_id += 1
                 group.add_port(port)
