@@ -1,8 +1,6 @@
 
 import json
-import pickle
 import os
-import time
 
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QMessageBox
@@ -84,7 +82,7 @@ class Port:
     group_id = -1
     portgroup_id = 0
     prevent_stereo = False
-    set_the_one_on_pair = False
+    last_digit_to_add = ''
     in_canvas = False
 
     def __init__(self, port_id: int, name: str, alias_1: str, alias_2: str,
@@ -106,11 +104,15 @@ class Port:
             return PORT_MODE_NULL
 
     def short_name(self)->str:
+        if self.full_name.startswith('a2j:'):
+            long_name = self.full_name.partition(':')[2]
+            return long_name.partition(': ')[2]
+            
         return self.full_name.partition(':')[2]
 
-    def set_the_one(self):
-        self.display_name += ' 1'
-        self.set_the_one_on_pair = False
+    def add_the_last_digit(self):
+        self.display_name += ' ' + self.last_digit_to_add
+        self.last_digit_to_add = ''
         self.change_canvas_properties()
 
     def add_to_canvas(self):
@@ -127,7 +129,6 @@ class Port:
 
         display_name = self.display_name
         if not PatchbayManager.use_graceful_names:
-        #if not self.use_graceful_names:
             display_name = self.short_name()
 
         is_alternate = False
@@ -136,9 +137,8 @@ class Port:
         if self.type == PORT_TYPE_MIDI and self.full_name.startswith('a2j:'):
             for group in PatchbayManager.groups:
                 if group.group_id == self.group_id:
-                    if group.name != 'a2j':
-                        is_alternate = True
-                        break
+                    is_alternate = True
+                    break
         
         self.in_canvas = True
 
@@ -475,10 +475,15 @@ class Group:
             return name
             
         client_name = self.get_pretty_client()
+        
+        # same graceful names for physical a2j ports
+        # if they are grouped or not
+        if (not client_name
+                and port.full_name.startswith('a2j:')
+                and port.flags & PORT_IS_PHYSICAL):
+            client_name = 'a2j'
+        
         display_name = port.short_name()
-        if port.full_name.startswith('a2j') and client_name != 'a2j':
-            display_name = display_name.partition(': ')[2]
-            
         s_display_name = display_name
         
         if client_name == 'firewire_pcm':
@@ -510,14 +515,23 @@ class Group:
                 display_name = display_name.replace('_Main_R', ' R', 1)
         
         elif client_name == 'a2j':
-            name_1, colon, name_2 = display_name.partition(':')
-            if name_2:
-                display_name = name_2
-                
-                if display_name.startswith(' '):
-                    display_name = display_name[1:]
-                
-                display_name = cut_end(display_name, ' Port-0', ' MIDI 1')
+            display_name, num = split_end_digits(display_name)
+            if num:
+                if display_name.endswith(' MIDI '):
+                    display_name = cut_end(display_name, ' MIDI ')
+                    
+                    if num == '1':
+                        port.last_digit_to_add = '1'
+                    else:
+                        display_name += ' ' + num
+                        
+                elif display_name.endswith(' Port-'):
+                    display_name = cut_end(display_name, ' Port-')
+                    
+                    if num == '0':
+                        port.last_digit_to_add = '0'
+                    else:
+                        display_name += ' ' + num
                     
         elif client_name in ('ardour', 'Ardour'):
             display_name, num = split_end_digits(display_name)
@@ -526,7 +540,7 @@ class Group:
                                        '/audio_out ', '/audio_in ',
                                        '/midi_out ', '/midi_in ')
                 if num == '1':
-                    port.set_the_one_on_pair = True
+                    port.last_digit_to_add = '1'
                 else:
                     display_name += ' ' + num
         
@@ -536,7 +550,7 @@ class Group:
                 display_name = cut_end(display_name,
                                        '/in_', '/out_')
                 if num == '1':
-                    port.set_the_one_on_pair = True
+                    port.last_digit_to_add = '1'
                 else:
                     display_name += ' ' + num
         
@@ -546,7 +560,7 @@ class Group:
                 display_name = cut_end(display_name,
                                        '_in_', '_out_')
                 if num == '1':
-                    port.set_the_one_on_pair = True
+                    port.last_digit_to_add = '1'
                 else:
                     display_name += ' ' + num
                     
@@ -763,12 +777,30 @@ class Group:
                 self.group_id, last_port.mode(), (other_port, last_port))
             self.add_portgroup(portgroup)
             
-            if other_port.set_the_one_on_pair:
-                other_port.set_the_one()
-            
             if self.in_canvas:
                 portgroup.add_to_canvas()
-
+    
+    def check_for_display_name_on_last_port(self):
+        if not self.ports:
+            return
+        
+        last_port = self.ports[-1]
+        last_digit = last_port.full_name[-1]
+        
+        if last_digit not in ('1', '2'):
+            return
+        
+        for port in reversed(self.ports):
+            if (port.type == last_port.type
+                    and port.mode() == last_port.mode()
+                    and port is not last_port):
+                if (port.full_name[:-1] == last_port.full_name[:-1]
+                        and ((port.last_digit_to_add == '0'
+                              and last_digit == '1'))
+                             or (port.last_digit_to_add == '1'
+                                 and last_digit == '2')):
+                        port.add_the_last_digit()
+                break
         
 class PatchbayManager:
     use_graceful_names = True
@@ -1189,6 +1221,7 @@ class PatchbayManager:
             port.add_to_canvas()
 
         group.check_for_portgroup_on_last_port()
+        group.check_for_display_name_on_last_port()
 
     def remove_port(self, name: str):
         port = self.get_port_from_name(name)
@@ -1405,29 +1438,28 @@ class PatchbayManager:
         canvas_data = {}
         with open(temp_path, 'r') as file:
             canvas_data = json.load(file)
-        print('dof', canvas_data, type(canvas_data))
+
         for key in canvas_data.keys():
             if key == 'group_positions':
                 for gpos_dict in canvas_data[key]:
                     gpos = ray.GroupPosition()
                     gpos.write_from_dict(gpos_dict)
-                    self.group_positions.append(gpos)
+                    self.update_group_position(*gpos.spread())
             
             elif key == 'portgroups':
                 for pg_dict in canvas_data[key]:
                     portgroup_mem = ray.PortGroupMemory()
                     portgroup_mem.write_from_dict(pg_dict)
-                    self.add_portgroup_memory(portgroup_mem)
+                    self.update_portgroup(*portgroup_mem.spread())
                     
         os.remove(temp_path)
         
     def fast_temp_file_running(self, temp_path):
-        print('zoeoork', time.time())
         file = open(temp_path, 'r')
         patchbay_data = json.load(file)
-        print('zoookkiya', time.time())
+
         self.optimize_operation(True)
-        #print('tatatrrrooror')
+
         for key in patchbay_data.keys():
             if key == 'ports':
                 for p in patchbay_data[key]:

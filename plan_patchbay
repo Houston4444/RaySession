@@ -48,7 +48,7 @@ context menu box -> icones PulseAudio/hardware/a2j dispos en light theme
 
 / bug hardware polygon
 / vérif port rename et display name
-revoir sauvegarde groupe position et paires
+/ revoir sauvegarde groupe position et paires
 
 fenêtre port info
 
@@ -60,8 +60,6 @@ outils de zoom (boutons et menu)
 ctrl pressé et zoom
 remettre dans Carla
 
-
-portgroup port_list non dynamique
 set_the_one_on_pair ne devrait pas avoir de rapport avec les portgroup
 rename group rester en place
 

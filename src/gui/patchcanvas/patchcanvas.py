@@ -989,7 +989,7 @@ def addPortGroup(group_id, portgrp_id, port_mode, port_type,
     portgrp_dict.portgrp_id = portgrp_id
     portgrp_dict.port_mode = port_mode
     portgrp_dict.port_type = port_type
-    portgrp_dict.port_id_list = port_id_list
+    portgrp_dict.port_id_list = tuple(port_id_list)
     portgrp_dict.widget = None
     
     i = 0

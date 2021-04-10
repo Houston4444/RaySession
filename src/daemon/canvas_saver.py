@@ -1,8 +1,8 @@
 
 import json
-import pickle
 import os
 import tempfile
+import time
 
 import ray
 
@@ -57,9 +57,37 @@ class CanvasSaver(ServerSender):
         return self.group_positions_session + group_positions_config_exclu
     
     def send_session_group_positions(self):
-        for gpos in self.group_positions_session:
-            self.sendGui('/ray/gui/patchbay/update_group_position',
-                         *gpos.spread())
+        server = self.getServer()
+        if not server:
+            return
+
+        local_guis = []
+        distant_guis = []
+        for gui_addr in server.gui_list:
+            if ray.areOnSameMachine(server.url, gui_addr.url):
+                local_guis.append(gui_addr)
+            else:
+                distant_guis.append(gui_addr)
+        
+        if local_guis:
+            session_gpos_dict = {'group_positions': []}
+            for gpos in self.group_positions_session:
+                session_gpos_dict['group_positions'].append(gpos.to_dict())
+
+            for gui_addr in local_guis:
+                file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
+                json.dump(session_gpos_dict, file)
+
+                self.send(gui_addr,
+                          '/ray/gui/patchbay/fast_temp_file_memory',
+                          file.name)
+        
+        if distant_guis:
+            for gui_addr in distant_guis:
+                for gpos in self.group_positions_session:
+                    self.send(gui_addr,
+                              '/ray/gui/patchbay/update_group_position',
+                              *gpos.spread())
     
     def send_all_group_positions(self, src_addr):
         if ray.areOnSameMachine(self.getServerUrl(), src_addr.url):
@@ -81,12 +109,22 @@ class CanvasSaver(ServerSender):
             file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
             json.dump(canvas_dict, file)
             file.close()
-            self.send(src_addr, '/ray/gui/patchbay/fast_temp_file_memory', file.name)
+            self.send(src_addr,
+                      '/ray/gui/patchbay/fast_temp_file_memory',
+                      file.name)
             return
+        
+        i = 0
         
         for gpos in self.group_positions_session:
             self.send(src_addr, '/ray/gui/patchbay/update_group_position',
                       *gpos.spread())
+            i += 1
+            if i == 50:
+                # we need to slow big process of canvas memory
+                # to prevent loss OSC packets
+                time.sleep(0.020)
+                i = 0
 
         for gpos_cf in self.group_positions_config:
             for gpos_ss in self.group_positions_session:
@@ -96,10 +134,19 @@ class CanvasSaver(ServerSender):
             else:
                 self.send(src_addr, '/ray/gui/patchbay/update_group_position',
                           *gpos_cf.spread())
+                
+                i += 1
+                if i == 50:
+                    time.sleep(0.020)
+                    i = 0
         
         for portgroup in self.portgroups:
             self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
                       *portgroup.spread())
+            
+            i += 1
+            if i == 50:
+                time.sleep(0.020)
 
     def save_group_position(self, *args):
         gp = ray.GroupPosition.newFrom(*args)
@@ -131,16 +178,6 @@ class CanvasSaver(ServerSender):
                 gpos = ray.GroupPosition()
                 gpos.write_from_dict(gpos_dict)
                 self.group_positions_session.append(gpos)
-    
-    def load_session_canvas(self, xml_element):
-        nodes = xml_element.childNodes()
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            tag_name = node.toElement().tagName()
-            if tag_name == 'GroupPositions':
-                self.update_group_session_positions(node)
-            elif tag_name == 'Portgroups':
-                self.update_session_portgroups(node)
     
     def save_json_session_canvas(self, session_path: str):
         session_json_path = "%s/.%s" % (session_path, JSON_PATH)
@@ -182,9 +219,4 @@ class CanvasSaver(ServerSender):
             self.portgroups.remove(portgroup)
         
         self.portgroups.append(new_portgroup)
-        
-    def send_portgroups(self, src_addr):
-        for portgroup in self.portgroups:
-            self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
-                      *portgroup.spread())
 
