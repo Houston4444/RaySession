@@ -294,9 +294,10 @@ class PatchScene(QGraphicsScene):
                 if item and item.isVisible() and item.type() == CanvasBoxType:
                     pos = item.scenePos()
                     rect = item.boundingRect()
+                    print('okef', pos, rect)
 
-                    x = pos.x()
-                    y = pos.y()
+                    x = pos.x() + rect.left()
+                    y = pos.y() + rect.top()
                     if first_value:
                         first_value = False
                         min_x, min_y = x, y

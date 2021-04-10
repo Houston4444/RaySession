@@ -1064,19 +1064,73 @@ class PatchbayManager:
             action_fullscreen = menu.addAction(
                 _translate('patchbay', "Toggle Full Screen"))
             action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
-            action_fullscreen.triggered.connect(self.toggle_full_screen)
+            
+            port_types_menu = QMenu(_translate('patchbay', 'Type filter'))
+            port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
+            action_audio_midi = port_types_menu.addAction(
+                _translate('patchbay', 'Audio + Midi'))
+            action_audio = port_types_menu.addAction(
+                _translate('patchbay', 'Audio only'))
+            action_midi = port_types_menu.addAction(
+                _translate('patchbay', 'MIDI only'))
+            menu.addMenu(port_types_menu)
+            
+            zoom_menu = QMenu(_translate('patchbay', 'Zoom'))
+            zoom_menu.setIcon(QIcon.fromTheme('zoom'))
+            
+            autofit = zoom_menu.addAction(
+                _translate('patchbay', 'auto-fit'))
+            autofit.setIcon(QIcon.fromTheme('zoom-select-fit'))
+            autofit.setShortcut('Home')
+            
+            zoom_in = zoom_menu.addAction(
+                _translate('patchbay', 'Zoom +'))
+            zoom_in.setIcon(QIcon.fromTheme('zoom-in'))
+            zoom_in.setShortcut('Ctrl++')
+            
+            zoom_out = zoom_menu.addAction(
+                _translate('patchbay', 'Zoom -'))
+            zoom_out.setIcon(QIcon.fromTheme('zoom-out'))
+            zoom_out.setShortcut('Ctrl+-')
+            
+            zoom_orig = zoom_menu.addAction(
+                _translate('patchbay', 'Zoom 100%'))
+            zoom_orig.setIcon(QIcon.fromTheme('zoom'))
+            zoom_orig.setShortcut('Ctrl+1')
+            
+            menu.addMenu(zoom_menu)
             
             action_refresh = menu.addAction(
                 _translate('patchbay', "Refresh the canvas"))
             action_refresh.setIcon(QIcon.fromTheme('view-refresh'))
-            action_refresh.triggered.connect(self.refresh)
 
             action_options = menu.addAction(
                 _translate('patchbay', "Canvas options"))
             action_options.setIcon(QIcon.fromTheme("configure"))
-            action_options.triggered.connect(self.show_options_dialog)
 
-            menu.exec(QCursor.pos())
+            act_sel = menu.exec(QCursor.pos())
+            
+            if act_sel == action_fullscreen:
+                self.toggle_full_screen()
+            elif act_sel == action_audio_midi:
+                self.change_port_types_view(
+                    GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+            elif act_sel == action_audio:
+                self.change_port_types_view(GROUP_CONTEXT_AUDIO)
+            elif act_sel == action_midi:
+                self.change_port_types_view(GROUP_CONTEXT_MIDI)
+            elif act_sel == autofit:
+                patchcanvas.canvas.scene.zoom_fit()
+            elif act_sel == zoom_in:
+                patchcanvas.canvas.scene.zoom_in()
+            elif act_sel == zoom_out:
+                patchcanvas.canvas.scene.zoom_out()
+            elif act_sel == zoom_orig:
+                patchcanvas.canvas.scene.zoom_reset()
+            elif act_sel == action_refresh:
+                self.refresh()
+            elif act_sel == action_options:
+                self.show_options_dialog()
 
         elif action == patchcanvas.ACTION_DOUBLE_CLICK:
             self.toggle_full_screen()
@@ -1409,6 +1463,9 @@ class PatchbayManager:
 
 
     def change_port_types_view(self, port_types_view: int):
+        if port_types_view == self.port_types_view:
+            return
+
         self.port_types_view = port_types_view
         # Prevent visual update at each canvas item creation
         # because we may create a lot of ports here
