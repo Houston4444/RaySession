@@ -15,11 +15,11 @@
        <file>scalable/raysession_old.svg</file>
        <file>scalable/audio-volume-medium.svg</file>
        <file>scalable/raysession16.svg</file>
-       <file>scalable/audio-input-microphone.svg.2021_02_17_09_37_52.0.svg</file>
        <file>scalable/raysession48.svg</file>
        <file>scalable/DIN-5.svg</file>
        <file>scalable/raysession256.svg</file>
        <file>scalable/breeze-dark/document-saved.svg</file>
+       <file>scalable/breeze-dark/lines-connector.svg</file>
        <file>scalable/breeze-dark/document-edit.svg</file>
        <file>scalable/breeze-dark/run-install.svg</file>
        <file>scalable/breeze-dark/folder-new.svg</file>
@@ -27,6 +27,7 @@
        <file>scalable/breeze-dark/link.svg</file>
        <file>scalable/breeze-dark/media-playback-stop.svg</file>
        <file>scalable/breeze-dark/list-remove.svg</file>
+       <file>scalable/breeze-dark/lines-disconnector.svg</file>
        <file>scalable/breeze-dark/notes-nonempty.svg</file>
        <file>scalable/breeze-dark/im-user.svg</file>
        <file>scalable/breeze-dark/configure.svg</file>
@@ -75,12 +76,14 @@
        <file>scalable/breeze-dark/disabled/notes.svg</file>
        <file>scalable/breeze-dark/disabled/application-menu.svg</file>
        <file>scalable/breeze/document-saved.svg</file>
+       <file>scalable/breeze/lines-connector.svg</file>
        <file>scalable/breeze/run-install.svg</file>
        <file>scalable/breeze/folder-new.svg</file>
        <file>scalable/breeze/system-file-manager.svg</file>
        <file>scalable/breeze/link.svg</file>
        <file>scalable/breeze/media-playback-stop.svg</file>
        <file>scalable/breeze/list-remove.svg</file>
+       <file>scalable/breeze/lines-disconnector.svg</file>
        <file>scalable/breeze/media-playback-stop-red.svg</file>
        <file>scalable/breeze/notes-nonempty.svg</file>
        <file>scalable/breeze/im-user.svg</file>
@@ -95,6 +98,7 @@
        <file>scalable/breeze/window-close.svg</file>
        <file>scalable/breeze/document-unsaved.svg</file>
        <file>scalable/breeze/media-playback-start.svg</file>
+       <file>scalable/breeze/audio-jack-connector.svg</file>
        <file>scalable/breeze/hint.svg</file>
        <file>scalable/breeze/media-seek-backward.svg</file>
        <file>scalable/breeze/empty-icon.svg</file>

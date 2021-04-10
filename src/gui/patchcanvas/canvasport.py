@@ -25,7 +25,7 @@ import time
 from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer, QSizeF
 from PyQt5.QtGui import (
     QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF,
-    QLinearGradient, QColor, QRadialGradient)
+    QLinearGradient, QColor, QRadialGradient, QIcon)
 from PyQt5.QtWidgets import (
     QGraphicsItem, QMenu, QCheckBox, QWidgetAction, QGraphicsEllipseItem)
 
@@ -545,6 +545,7 @@ class CanvasPort(QGraphicsItem):
                 act_x_setasstereo.setEnabled(False)
         
         act_x_info = menu.addAction("Get &Info")
+        act_x_info.setIcon(QIcon.fromTheme('dialog-information'))
         act_x_rename = menu.addAction("&Rename")
 
         if not features.port_info:

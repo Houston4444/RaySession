@@ -2,7 +2,7 @@
 
 from PyQt5.QtCore import pyqtSlot, QCoreApplication, Qt
 from PyQt5.QtWidgets import QWidgetAction, QMenu, QCheckBox, QAction
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap, QPalette
 
 from . import (
     canvas,
@@ -31,6 +31,11 @@ from .utils import(
 
 
 _translate = QCoreApplication.translate
+
+def isDarkTheme(widget)->bool:
+    return bool(
+        widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
+        > 128)
 
 
 class PortCheckBox(QCheckBox):
@@ -509,7 +514,7 @@ class MainPortContextMenu(QMenu):
             QMenu::item:selected{background-color: %s; color:%s}""" % (
                 border_color, sel_bg, sel_text_color)
         
-        self.setStyleSheet(style_str)
+        #self.setStyleSheet(style_str)
 
         PortData.__init__(self, group_id, port_id,
                           port_type, port_mode, portgrp_id)
@@ -523,21 +528,32 @@ class MainPortContextMenu(QMenu):
         
         port_data = PortData(group_id, port_id, port_type,
                              port_mode, portgrp_id)
+
+        dark = ''
+        text_color = self.palette().base().color()
+        lightness = self.palette().brightText().color().lightness()
+        if isDarkTheme(self):
+            print('dokzadz dark', text_color.red(), text_color.green(), text_color.blue())
+            dark = '-dark'
         
         self.connect_menu = ConnectMenu(port_data, self)
-        self.connect_menu.setIcon(QIcon.fromTheme('gtk-connect'))
+        self.connect_menu.setIcon(
+            QIcon(QPixmap(':scalable/breeze%s/lines-connector' % dark)))
         self.addMenu(self.connect_menu)
         
         self.disconnect_menu = DisconnectMenu(port_data, self)
-        self.disconnect_menu.setIcon(QIcon.fromTheme('gtk-disconnect'))
+        self.disconnect_menu.setIcon(
+            QIcon(QPixmap(':scalable/breeze%s/lines-disconnector' % dark)))
         self.addMenu(self.disconnect_menu)
         
         disconnect_all_action = self.addAction(
             _translate('patchbay', "Disconnect All"))
-        disconnect_all_action.setIcon(QIcon.fromTheme('gtk-disconnect'))
+        disconnect_all_action.setIcon(
+            QIcon(QPixmap(':scalable/breeze%s/lines-disconnector' % dark)))
         disconnect_all_action.triggered.connect(self.disconnect_all)
         
         self.clipboard_menu = ClipboardMenu(port_data, self)
+        self.clipboard_menu.setIcon(QIcon.fromTheme('edit-paste'))
         self.addMenu(self.clipboard_menu)
         
         self.addSeparator()

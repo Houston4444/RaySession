@@ -50,11 +50,11 @@ context menu box -> icones PulseAudio/hardware/a2j dispos en light theme
 / vérif port rename et display name
 / revoir sauvegarde groupe position et paires
 
-fenêtre port info
+/ fenêtre port info
 
 
 
-revoir un peu le thème black gold pour moins de confusion de couleurs
+ / revoir un peu le thème black gold pour moins de confusion de couleurs
 revoir les icônes pour thème clair et intégrer gtk-connect gtk-disconnect
 outils de zoom (boutons et menu)
 ctrl pressé et zoom

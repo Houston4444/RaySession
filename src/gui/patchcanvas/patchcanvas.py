@@ -491,7 +491,7 @@ def splitGroup(group_id):
             portgrp_dict.portgrp_id = portgrp.portgrp_id
             portgrp_dict.port_type = portgrp.port_type
             portgrp_dict.port_mode = portgrp.port_mode
-            portgrp_dict.port_id_list = portgrp.port_id_list.copy()
+            portgrp_dict.port_id_list = portgrp.port_id_list
             portgrp_dict.widget = None
             portgrps_data.append(portgrp_dict)
 
@@ -626,7 +626,7 @@ def joinGroup(group_id):
             portgrp_dict.portgrp_id = portgrp.portgrp_id
             portgrp_dict.port_type = portgrp.port_type
             portgrp_dict.port_mode = portgrp.port_mode
-            portgrp_dict.port_id_list = portgrp.port_id_list.copy()
+            portgrp_dict.port_id_list = portgrp.port_id_list
             portgrp_dict.widget = None
             portgrps_data.append(portgrp_dict)
     
