@@ -45,17 +45,20 @@
     </size>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_3">
+    <property name="spacing">
+     <number>0</number>
+    </property>
     <property name="leftMargin">
      <number>2</number>
     </property>
     <property name="topMargin">
-     <number>2</number>
+     <number>0</number>
     </property>
     <property name="rightMargin">
-     <number>2</number>
+     <number>0</number>
     </property>
     <property name="bottomMargin">
-     <number>2</number>
+     <number>0</number>
     </property>
     <item>
      <widget class="CanvasSplitter" name="splitterMainVsCanvas">
@@ -712,6 +715,9 @@ QToolButton {border: none}</string>
       </widget>
       <widget class="QWidget" name="layoutWidget2">
        <layout class="QVBoxLayout" name="AppListLayout2">
+        <property name="spacing">
+         <number>0</number>
+        </property>
         <item>
          <widget class="DraggableGraphicsView" name="graphicsView">
           <property name="sizePolicy">

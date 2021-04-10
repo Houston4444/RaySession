@@ -19,7 +19,7 @@
    inkscape:version="0.92.4 (5da689c313, 2019-01-14)"><metadata
    id="metadata13"><rdf:RDF><cc:Work
        rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><sodipodi:namedview
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><sodipodi:namedview
    pagecolor="#3b3b3b"
    bordercolor="#666666"
    borderopacity="1"
@@ -28,20 +28,20 @@
    guidetolerance="10"
    inkscape:pageopacity="0"
    inkscape:pageshadow="2"
-   inkscape:window-width="1628"
-   inkscape:window-height="1017"
+   inkscape:window-width="1388"
+   inkscape:window-height="867"
    id="namedview11"
    showgrid="false"
-   inkscape:zoom="1.0373626"
-   inkscape:cx="114.152"
-   inkscape:cy="114.29782"
+   inkscape:zoom="0.5186813"
+   inkscape:cx="-129.50886"
+   inkscape:cy="490.8432"
    inkscape:window-x="44"
    inkscape:window-y="0"
    inkscape:window-maximized="1"
    inkscape:current-layer="Layer_1" /><defs
    id="defs4693" />
 <path
-   style="fill:#ffffff;stroke:#ffffff;stroke-width:5;fill-opacity:1;stroke-opacity:1"
+   style="fill:#dddddd;stroke:#777777;stroke-width:6;fill-opacity:1;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
    d="M 226.99805 28.496094 C 117.37505 28.496094 28.498047 117.376 28.498047 227 C 28.498047 336.631 117.37505 425.50391 226.99805 425.50391 C 336.62405 425.50391 425.49805 336.631 425.49805 227 C 425.49805 117.376 336.62605 28.496094 226.99805 28.496094 z M 227.00195 45.121094 C 327.44895 45.121094 408.87691 126.557 408.87891 227 C 408.87891 314.806 346.64391 388.07886 263.87891 405.13086 C 261.38991 386.96386 245.84191 372.94922 227.00391 372.94922 C 208.15191 372.94922 192.60528 386.959 190.11328 405.125 C 107.35128 388.079 45.117188 314.806 45.117188 227 C 45.117187 126.557 126.55395 45.121094 227.00195 45.121094 z "
    transform="translate(-9.302,-9.782)"
    id="path4678" />
