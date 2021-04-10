@@ -950,7 +950,7 @@ class PatchbayManager:
             port_list = []
             
             for port_id in p_id1, p_id2:
-                port = self.get_port_from_id(port_id)
+                port = self.get_port_from_id(g_id, port_id)
                 port_list.append(port)
             
             portgroup = self.new_portgroup(g_id, p_mode, port_list)
@@ -1002,7 +1002,35 @@ class PatchbayManager:
                     break
         
         elif action == patchcanvas.ACTION_PORT_INFO:
-            pass
+            group_id = value1
+            port_id = value2
+            
+            port = self.get_port_from_id(group_id, port_id)
+            if port is None:
+                return
+            
+            port_type_str = _translate('patchbay', "Audio")
+            if port.type == PORT_TYPE_MIDI:
+                port_type_str = _translate('patchbay', "MIDI")
+                
+            flags_list = []
+            
+            dict_flag_str = {
+                PORT_IS_INPUT: _translate('patchbay', 'Input'),
+                PORT_IS_OUTPUT: _translate('patchbay', 'Output'),
+                PORT_IS_PHYSICAL: _translate('patchbay', 'Physical'),
+                PORT_CAN_MONITOR: _translate('patchbay', 'Monitor'),
+                PORT_IS_TERMINAL: _translate('patchbay', 'Terminal'),
+                PORT_IS_CONTROL_VOLTAGE: _translate('patchbay', 'Control Voltage')}
+            
+            for key in dict_flag_str.keys():
+                if port.flags & key:
+                    flags_list.append(dict_flag_str[key])
+            
+            port_flags_str = ' | '.join(flags_list)
+            
+            self.session._main_win.show_canvas_port_info(
+                port.full_name, port_type_str, port_flags_str)
 
         elif action == patchcanvas.ACTION_PORT_RENAME:
             pass
@@ -1010,8 +1038,8 @@ class PatchbayManager:
         elif action == patchcanvas.ACTION_PORTS_CONNECT:
             g_out, p_out, g_in, p_in = [int(i) for i in value_str.split(":")]
 
-            port_out = self.get_port_from_id(p_out)
-            port_in = self.get_port_from_id(p_in)
+            port_out = self.get_port_from_id(g_out, p_out)
+            port_in = self.get_port_from_id(g_in, p_in)
             
             if port_out is None or port_in is None:
                 return
@@ -1109,11 +1137,13 @@ class PatchbayManager:
                 if port.full_name == port_name:
                     return port
     
-    def get_port_from_id(self, port_id: int):
+    def get_port_from_id(self, group_id: int, port_id: int):
         for group in self.groups:
-            for port in group.ports:
-                if port.port_id == port_id:
-                    return port
+            if group.group_id == group_id:
+                for port in group.ports:
+                    if port.port_id == port_id:
+                        return port
+                break
     
     def get_client_icon(self, group_name: str)->str:
         group_name = group_name.partition('/')[0]

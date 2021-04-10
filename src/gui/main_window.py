@@ -485,7 +485,6 @@ class MainWindow(QMainWindow):
     
     def setupCanvas(self):
         options = patchcanvas.options_t()
-        #options.theme_name = patchcanvas.getDefaultTheme()
         options.theme_name = RS.settings.value(
             'Canvas/theme', 'Silver Gold', type=str)
         options.antialiasing = patchcanvas.ANTIALIASING_SMALL
@@ -498,24 +497,11 @@ class MainWindow(QMainWindow):
         options.inline_displays = False
         options.use_bezier_lines = True
         options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
-        #options.theme_name = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
-        #options.auto_hide_groups = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
-        #options.auto_select_items = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS]
-        #pOptions.use_bezier_lines = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
-        #pOptions.antialiasing = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
-        #pOptions.inline_displays = self.fSavedSettings[CARLA_KEY_CANVAS_INLINE_DISPLAYS]
-
-        #if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY]:
-            #pOptions.eyecandy = patchcanvas.EYECANDY_FULL
-        #elif self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]:
-            #pOptions.eyecandy = patchcanvas.EYECANDY_SMALL
-        #else:
-            #pOptions.eyecandy = patchcanvas.EYECANDY_NONE
 
         features = patchcanvas.features_t()
         features.group_info = False
         features.group_rename = False
-        features.port_info = False
+        features.port_info = True
         features.port_rename = False
         features.handle_group_pos = False
 
@@ -524,40 +510,6 @@ class MainWindow(QMainWindow):
         patchcanvas.init(
             ray.APP_TITLE, self.scene,
             self.canvas_callback, False)
-
-        #tryCanvasSize = self.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
-
-        #if len(tryCanvasSize) == 2 and tryCanvasSize[0].isdigit() and tryCanvasSize[1].isdigit():
-            #self.fCanvasWidth  = int(tryCanvasSize[0])
-            #self.fCanvasHeight = int(tryCanvasSize[1])
-        #else:
-            #self.fCanvasWidth  = CARLA_DEFAULT_CANVAS_SIZE_WIDTH
-            #self.fCanvasHeight = CARLA_DEFAULT_CANVAS_SIZE_HEIGHT
-
-        #patchcanvas.setCanvasSize(0, 0, self.fCanvasWidth, self.fCanvasHeight)
-        #patchcanvas.setInitialPos(self.fCanvasWidth / 2, self.fCanvasHeight / 2)
-        #self.ui.graphicsView.setSceneRect(0, 0, self.fCanvasWidth, self.fCanvasHeight)
-
-        #self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
-        #self.ui.miniCanvasPreview.init(self.scene, self.fCanvasWidth, self.fCanvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
-
-        #if self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] != patchcanvas.ANTIALIASING_NONE:
-            #self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, True)
-
-            #fullAA = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL
-            #self.ui.graphicsView.setRenderHint(QPainter.SmoothPixmapTransform, fullAA)
-            #self.ui.graphicsView.setRenderHint(QPainter.TextAntialiasing, fullAA)
-
-            #if self.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
-                #self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
-
-        #else:
-            #self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, False)
-
-        #if self.fSavedSettings[CARLA_KEY_CANVAS_FULL_REPAINTS]:
-            #self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-        #else:
-            #self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.MinimalViewportUpdate)
 
     def updateCanvasInitialPos(self):
         x = self.ui.graphicsView.horizontalScrollBar().value() + self.width()/4
@@ -1288,6 +1240,12 @@ class MainWindow(QMainWindow):
             self.script_action_dialog.close()
             del self.script_action_dialog
             self.script_action_dialog = None
+
+    def show_canvas_port_info(self, port_full_name: str,
+                              port_type: str, port_flags: str):
+        dialog = child_dialogs.CanvasPortInfoDialog(self)
+        dialog.set_infos(port_full_name, port_type, port_flags)
+        dialog.show()
 
     def makeAllDialogsReappear(self):
         ok = QMessageBox.question(

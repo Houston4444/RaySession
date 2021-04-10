@@ -46,6 +46,7 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/about_raysession.py \
 	    src/gui/ui/add_application.py \
 	    src/gui/ui/canvas_options.py \
+	    src/gui/ui/canvas_port_info.py \
 	    src/gui/ui/client_properties.py \
 	    src/gui/ui/client_rename.py \
 	    src/gui/ui/client_slot.py \
@@ -61,7 +62,6 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/ray_hack_copy.py \
 	    src/gui/ui/nsm_open_info.py \
 	    src/gui/ui/open_session.py \
-	    src/gui/ui/patchbay.py \
 	    src/gui/ui/patchbay_tools.py \
 	    src/gui/ui/quit_app.py \
 	    src/gui/ui/ray_hack_properties.py \

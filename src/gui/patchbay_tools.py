@@ -2,10 +2,12 @@
 from PyQt5.QtWidgets import QWidget, QComboBox
 from PyQt5.QtCore import pyqtSignal, QTimer
 
+import ui.canvas_port_info
 import ui.patchbay_tools
 
 CONTEXT_AUDIO = 0x01
 CONTEXT_MIDI = 0x02
+
 
 class PatchbayToolsWidget(QWidget):
     buffer_size_change_order = pyqtSignal(int)
@@ -149,5 +151,4 @@ class PatchbayToolsWidget(QWidget):
             widget.setVisible(yesno)
         
         self.ui.labelJackNotStarted.setVisible(not yesno)
-        
         
