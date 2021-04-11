@@ -815,8 +815,6 @@ class PatchbayManager:
         self.session = session
         
         self.tools_widget = PatchbayToolsWidget()
-        self.tools_widget.audio_midi_change_order.connect(
-            self.change_port_types_view)
         self.tools_widget.buffer_size_change_order.connect(
             self.change_buffersize)
 
@@ -1065,14 +1063,28 @@ class PatchbayManager:
                 _translate('patchbay', "Toggle Full Screen"))
             action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
             
+            port_types_view = self.port_types_view & (GROUP_CONTEXT_AUDIO
+                                                      | GROUP_CONTEXT_MIDI)
+            
             port_types_menu = QMenu(_translate('patchbay', 'Type filter'))
             port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
             action_audio_midi = port_types_menu.addAction(
                 _translate('patchbay', 'Audio + Midi'))
+            action_audio_midi.setCheckable(True)
+            action_audio_midi.setChecked(
+                bool(port_types_view == (GROUP_CONTEXT_AUDIO
+                                         | GROUP_CONTEXT_MIDI)))
+            
             action_audio = port_types_menu.addAction(
                 _translate('patchbay', 'Audio only'))
+            action_audio.setCheckable(True)
+            action_audio.setChecked(port_types_view == GROUP_CONTEXT_AUDIO)
+            
             action_midi = port_types_menu.addAction(
                 _translate('patchbay', 'MIDI only'))
+            action_midi.setCheckable(True)
+            action_midi.setChecked(port_types_view == GROUP_CONTEXT_MIDI)
+            
             menu.addMenu(port_types_menu)
             
             zoom_menu = QMenu(_translate('patchbay', 'Zoom'))

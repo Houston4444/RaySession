@@ -11,7 +11,6 @@ CONTEXT_MIDI = 0x02
 
 class PatchbayToolsWidget(QWidget):
     buffer_size_change_order = pyqtSignal(int)
-    audio_midi_change_order = pyqtSignal(int)
     
     def __init__(self):
         QWidget.__init__(self)
@@ -21,12 +20,6 @@ class PatchbayToolsWidget(QWidget):
         self._waiting_buffer_change = False
         self._buffer_change_from_osc = False
         
-        self._current_audio_midi = 3
-        
-        self.ui.checkBoxAudio.stateChanged.connect(
-            self.audio_button_checked)
-        self.ui.checkBoxMidi.stateChanged.connect(
-            self.midi_button_checked)
         self.ui.pushButtonXruns.clicked.connect(
             self.reset_xruns)
         self.ui.comboBoxBuffer.currentIndexChanged.connect(
@@ -42,32 +35,11 @@ class PatchbayToolsWidget(QWidget):
         
         self.xruns_counter = 0
     
-    def audio_button_checked(self, yesno: int):
-        if yesno:
-            self._current_audio_midi |= CONTEXT_AUDIO
-        else:
-            self._current_audio_midi &= ~CONTEXT_AUDIO
-            if not self._current_audio_midi & CONTEXT_MIDI:
-                self.ui.checkBoxMidi.setChecked(True)
-                return
-        
-        self.audio_midi_change_order.emit(self._current_audio_midi)
-        
-    def midi_button_checked(self, yesno: int):
-        if yesno:
-            self._current_audio_midi |= CONTEXT_MIDI
-        else:
-            self._current_audio_midi &= ~CONTEXT_MIDI
-            if not self._current_audio_midi & CONTEXT_AUDIO:
-                self.ui.checkBoxAudio.setChecked(True)
-                return
-
-        self.audio_midi_change_order.emit(self._current_audio_midi)
-    
     def set_samplerate(self, samplerate: int):
-        #k_samplerate = samplerate / 1000.0
         str_sr = str(samplerate)
-        str_samplerate = str_sr[:-3] + ' ' + str_sr[-3:]
+        str_samplerate = str_sr
+        if len(str_sr) > 3:
+            str_samplerate = str_sr[:-3] + ' ' + str_sr[-3:]
         
         self.ui.labelSamplerate.setText(str_samplerate)
         
@@ -135,8 +107,6 @@ class PatchbayToolsWidget(QWidget):
             
     def set_jack_running(self, yesno: bool):
         for widget in (
-                self.ui.checkBoxAudio,
-                self.ui.checkBoxMidi,
                 self.ui.labelSamplerateTitle,
                 self.ui.labelSamplerate,
                 self.ui.labelSamplerateUnits,

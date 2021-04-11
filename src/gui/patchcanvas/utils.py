@@ -41,7 +41,6 @@ def CanvasGetNewGroupPositions()->tuple:
         return ((200, 0), (400, 0), (0, 0))
 
     y = rect.bottom() + 20
-    print('asasasasp')
 
     return ((rect.left() + rect.width() / 2, y),
             (rect.right() - 50, y),

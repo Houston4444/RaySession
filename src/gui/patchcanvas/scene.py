@@ -189,7 +189,6 @@ class PatchScene(QGraphicsScene):
 
     def add_box_to_animation(self, box_widget, to_x: int, to_y: int,
                              force_anim=True):
-        print('addddboxx', to_x, to_y, box_widget.m_group_name, force_anim)
         for box_dict in self.move_boxes:
             if box_dict['widget'] == box_widget:
                 break
@@ -294,7 +293,6 @@ class PatchScene(QGraphicsScene):
                 if item and item.isVisible() and item.type() == CanvasBoxType:
                     pos = item.scenePos()
                     rect = item.boundingRect()
-                    print('okef', pos, rect)
 
                     x = pos.x() + rect.left()
                     y = pos.y() + rect.top()

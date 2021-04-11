@@ -530,10 +530,7 @@ class MainPortContextMenu(QMenu):
                              port_mode, portgrp_id)
 
         dark = ''
-        text_color = self.palette().base().color()
-        lightness = self.palette().brightText().color().lightness()
         if isDarkTheme(self):
-            print('dokzadz dark', text_color.red(), text_color.green(), text_color.blue())
             dark = '-dark'
         
         self.connect_menu = ConnectMenu(port_data, self)
