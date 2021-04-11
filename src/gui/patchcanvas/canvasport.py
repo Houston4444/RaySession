@@ -27,7 +27,8 @@ from PyQt5.QtGui import (
     QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF,
     QLinearGradient, QColor, QRadialGradient, QIcon)
 from PyQt5.QtWidgets import (
-    QGraphicsItem, QMenu, QCheckBox, QWidgetAction, QGraphicsEllipseItem)
+    QGraphicsItem, QMenu, QCheckBox, QWidgetAction, QGraphicsEllipseItem,
+    QApplication)
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -70,7 +71,7 @@ from .utils import (
     CanvasCallback)
 
 # ------------------------------------------------------------------------------------------------------------
-        
+_translate = QApplication.translate
 
 class CanvasPort(QGraphicsItem):
     def __init__(self, group_id, port_id, port_name, port_mode, 
@@ -514,7 +515,7 @@ class CanvasPort(QGraphicsItem):
         act_x_sep_1 = menu.addSeparator()
         
         if self.m_port_type == PORT_TYPE_AUDIO_JACK and not self.m_portgrp_id:
-            StereoMenu = QMenu('Set as Stereo with', menu)
+            StereoMenu = QMenu(_translate('patchbay', "Set as Stereo with"), menu)
             menu.addMenu(StereoMenu)
             
             # get list of available mono ports settables as stereo with port
@@ -544,9 +545,9 @@ class CanvasPort(QGraphicsItem):
                 act_x_setasstereo = StereoMenu.addAction('no available mono port')
                 act_x_setasstereo.setEnabled(False)
         
-        act_x_info = menu.addAction("Get &Info")
+        act_x_info = menu.addAction(_translate('patchbay', "Get &Info"))
         act_x_info.setIcon(QIcon.fromTheme('dialog-information'))
-        act_x_rename = menu.addAction("&Rename")
+        act_x_rename = menu.addAction(_translate('patchbay', "&Rename"))
 
         if not features.port_info:
             act_x_info.setVisible(False)

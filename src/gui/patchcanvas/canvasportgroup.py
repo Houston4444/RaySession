@@ -25,7 +25,7 @@ import time
 from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QPainter, QPainterPath,
                          QPen, QPolygonF, QLinearGradient, QColor)
-from PyQt5.QtWidgets import QGraphicsItem, QMenu
+from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -63,7 +63,7 @@ from .utils import (CanvasGetFullPortName, CanvasGetPortConnectionList,
                     CanvasCallback, CanvasConnectPorts)
 
 # ------------------------------------------------------------------------------------------------------------
-
+_translate = QApplication.translate
 
 
 class CanvasPortGroup(QGraphicsItem):
@@ -546,7 +546,8 @@ class CanvasPortGroup(QGraphicsItem):
 
         menu = MainPortContextMenu(self.m_group_id, 0, self.m_portgrp_id)
         
-        act_x_setasmono = menu.addAction('Split to Monos')
+        act_x_setasmono = menu.addAction(
+            _translate('patchbay', "Split to Monos"))
         act_selected = menu.exec_(event.screenPos())
         
         if act_selected == act_x_setasmono:

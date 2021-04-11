@@ -667,7 +667,7 @@ class CanvasBox(QGraphicsItem):
         menu = QMenu()
 
         # Disconnect menu stuff
-        discMenu = QMenu("Disconnect", menu)
+        discMenu = QMenu(_translate('patchbay', "Disconnect"), menu)
         discMenu.setIcon(QIcon.fromTheme('gtk-disconnect'))
 
         conn_list_ids = []
@@ -765,14 +765,20 @@ class CanvasBox(QGraphicsItem):
             act_x_disc.setEnabled(False)
         
         menu.addMenu(discMenu)
-        act_x_disc_all = menu.addAction("Disconnect &All")
+        act_x_disc_all = menu.addAction(
+            _translate('patchbay', "Disconnect &All"))
         act_x_disc_all.setIcon(QIcon.fromTheme('gtk-disconnect'))
         act_x_sep1 = menu.addSeparator()
-        act_x_info = menu.addAction("Info")
-        act_x_rename = menu.addAction("Rename")
+        act_x_info = menu.addAction(_translate('patchbay', "Info"))
+        act_x_rename = menu.addAction(_translate('patchbay', "Rename"))
         act_x_sep2 = menu.addSeparator()
-        act_x_split_join = menu.addAction("Join" if self.m_splitted else "Split")
-        act_x_sep3 = menu.addSeparator()
+        split_join_name = _translate('patchbay', "Split")
+        split_join_icon = QIcon.fromTheme('split')
+        if self.m_splitted:
+            split_join_name = _translate('patchbay', "Join")
+            split_join_icon = QIcon.fromTheme('join')
+        act_x_split_join = menu.addAction(split_join_name)
+        act_x_split_join.setIcon(split_join_icon)
         
         wrap_title = _translate('patchbay', 'Wrap')
         wrap_icon = QIcon.fromTheme('pan-up-symbolic')
@@ -782,6 +788,8 @@ class CanvasBox(QGraphicsItem):
 
         act_x_wrap = menu.addAction(wrap_title)
         act_x_wrap.setIcon(wrap_icon)
+
+        act_x_sep3 = menu.addSeparator()
 
         if not features.group_info:
             act_x_info.setVisible(False)
