@@ -486,7 +486,7 @@ class MainWindow(QMainWindow):
     def setupCanvas(self):
         options = patchcanvas.options_t()
         options.theme_name = RS.settings.value(
-            'Canvas/theme', 'Silver Gold', type=str)
+            'Canvas/theme', 'Black Gold', type=str)
         options.antialiasing = patchcanvas.ANTIALIASING_SMALL
         options.eyecandy = patchcanvas.EYECANDY_NONE
         if RS.settings.value('Canvas/box_shadows', False, type=bool):

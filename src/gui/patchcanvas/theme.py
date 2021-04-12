@@ -671,7 +671,7 @@ class Theme(object):
 # ------------------------------------------------------------------------------------------------------------
 
 def getDefaultTheme():
-    return Theme.THEME_SILVER_GOLD
+    return Theme.THEME_BLACK_GOLD
 
 def getThemeName(idx):
     if idx == Theme.THEME_BLACK_GOLD:

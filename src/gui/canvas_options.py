@@ -21,7 +21,7 @@ class CanvasOptionsDialog(QDialog):
         self.a2j_grouped = RS.settings.value(
             'Canvas/group_a2j_ports', True, type=bool)
         self.use_shadows = RS.settings.value(
-            'Canvas/box_shadows', True, type=bool)
+            'Canvas/box_shadows', False, type=bool)
         self.elastic_canvas = RS.settings.value(
             'Canvas/elastic', True, type=bool)
         
