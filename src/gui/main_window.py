@@ -1,9 +1,10 @@
 import time
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
-                             QMessageBox, QToolButton, QAbstractItemView)
+                             QMessageBox, QToolButton, QAbstractItemView,
+                             QWidget, QWidgetAction, QCheckBox, QSplitterHandle)
 from PyQt5.QtGui import QIcon, QDesktopServices
-from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale
+from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
                        serverStatusString, isDarkTheme, getCodeRoot)
@@ -11,12 +12,16 @@ import add_application_dialog
 import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GUIServerThread
-
+from patchcanvas import patchcanvas
 import ray
 import list_widget_clients
 import nsm_child
 
-import ui_raysession
+import ui.raysession
+import ui.patchbay_tools
+
+
+
 
 class MainWindow(QMainWindow):
     @classmethod
@@ -27,7 +32,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, session):
         QMainWindow.__init__(self)
-        self.ui = ui_raysession.Ui_MainWindow()
+        self.ui = ui.raysession.Ui_MainWindow()
         self.ui.setupUi(self)
 
         self._session = session
@@ -57,35 +62,78 @@ class MainWindow(QMainWindow):
         self.timer_snapshot.setInterval(2000)
         self.timer_snapshot.timeout.connect(self.showSnapshotProgressDialog)
 
-
         self.server_copying = False
 
         self.keep_focus = RS.settings.value('keepfocus', True, type=bool)
         self.ui.actionKeepFocus.setChecked(self.keep_focus)
 
+        # do not enable keep focus option under Wayland
+        # because activate a window from it self on Wayland not allowed
         if ray.getWindowManager() == ray.WindowManager.WAYLAND:
-            # do not enable keep focus option under Wayland
-            # because activate a window from it self on Wayland not allowed
             self.keep_focus = False
             self.ui.actionKeepFocus.setEnabled(False)
+        
+        self.long_appli_name = self.ui.actionAddApplication.text()
+        self.long_exec_name = self.ui.actionAddExecutable.text()
+        self.short_appli_name = _translate('main_win', 'App')
+        self.short_exec_name = _translate('main_win', 'exec')
+        self.ui.frameCurrentSession.shorterSize.connect(
+            self.set_short_app_exec_names)
 
-        if RS.settings.value('MainWindow/geometry'):
-            self.restoreGeometry(RS.settings.value('MainWindow/geometry'))
+        # manage geometry depending of use of embedded jack patchbay
+        show_patchbay = RS.settings.value(
+            'MainWindow/show_patchbay', False, type=bool)
+        self.ui.actionShowJackPatchbay.setChecked(show_patchbay)
+        self.waiting_for_patchbay = show_patchbay
+
+        if show_patchbay:
+            patchbay_geom = RS.settings.value('MainWindow/patchbay_geometry')
+            if patchbay_geom:
+                self.restoreGeometry(patchbay_geom)
+                
+            self.ui.graphicsView.setVisible(True)
+            
+            splitter_sizes = RS.settings.value(
+                'MainWindow/splitter_canvas_sizes')
+            if splitter_sizes:
+                self.ui.splitterMainVsCanvas.setSizes(
+                    int(s) for s in splitter_sizes)
+            
+            #self.ui.actionAddApplication.setText(self.short_appli_name)
+            #self.ui.actionAddExecutable.setText(self.short_exec_name)
+        
         else:
-            # first start (or start without config)
-            # set window as little as possible
-            rect = self.geometry()
-            x = rect.x()
-            y = rect.y()
-            height = rect.height()
-            self.setMinimumWidth(450)
-            self.setGeometry(x, y, 460, height)
+            self.ui.graphicsView.setVisible(False)
+            self.ui.splitterMainVsCanvas.setSizes([100, 0])
+            self.ui.splitterMainVsCanvas.set_active(False)
+            
+            geom = RS.settings.value('MainWindow/geometry')
+            
+            if geom:
+                self.restoreGeometry(geom)
+            else:
+                rect = self.geometry()
+                x = rect.x()
+                y = rect.y()
+                height = rect.height()
+                self.setMinimumWidth(450)
+                self.setGeometry(x, y, 460, height)
+
+        splitter_sizes = RS.settings.value("MainWindow/splitter_messages")
+        if splitter_sizes:
+            self.ui.splitterSessionVsMessages.setSizes(
+                [int(s) for s in splitter_sizes])
 
         if RS.settings.value('MainWindow/WindowState'):
             self.restoreState(RS.settings.value('MainWindow/WindowState'))
         self.ui.actionShowMenuBar.activate(RS.settings.value(
             'MainWindow/ShowMenuBar', False, type=bool))
-
+        self.ui.actionToggleShowMessages.triggered.connect(
+            self.showMessagesWidget)
+        
+        self.ui.actionToggleShowMessages.setChecked(
+            bool(self.ui.splitterSessionVsMessages.sizes()[1] > 0))
+        
         # set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
         self.ui.toolButtonSaveSession.setDefaultAction(
@@ -103,9 +151,10 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSnapshots.setDefaultAction(
             self.ui.actionReturnToAPreviousState)
 
-        self.ui.dockWidgetMessages.visibilityChanged.connect(
-            self.resizeWinWithMessages)
-
+        self.ui.frameCurrentSession.setBaseWidth(
+            205 + self.ui.toolButtonAddApplication.minimumSizeHint().width()
+            + self.ui.toolButtonAddExecutable.minimumSizeHint().width())
+        
         # connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
         self.ui.actionOpenSession.triggered.connect(self.openSession)
@@ -133,6 +182,7 @@ class MainWindow(QMainWindow):
             self.openFileManager)
         self.ui.actionAddApplication.triggered.connect(self.addApplication)
         self.ui.actionAddExecutable.triggered.connect(self.addExecutable)
+        self.ui.actionShowJackPatchbay.toggled.connect(self.showJackPatchbay)
         self.ui.actionKeepFocus.toggled.connect(self.toggleKeepFocus)
         self.ui.actionBookmarkSessionFolder.triggered.connect(
             self.bookmarkSessionFolderToggled)
@@ -169,6 +219,7 @@ class MainWindow(QMainWindow):
         self.controlMenu = QMenu()
         self.controlMenu.addAction(self.ui.actionShowMenuBar)
         self.controlMenu.addAction(self.ui.actionToggleShowMessages)
+        self.controlMenu.addAction(self.ui.actionShowJackPatchbay)
         self.controlMenu.addSeparator()
         self.controlMenu.addAction(self.ui.actionKeepFocus)
         self.controlMenu.addSeparator()
@@ -208,6 +259,8 @@ class MainWindow(QMainWindow):
         sg.daemon_url_request.connect(self.showDaemonUrlWindow)
         sg.client_properties_state_changed.connect(
             self.clientPropertiesStateChanged)
+        sg.canvas_callback.connect(
+            self._session.patchbay_manager.canvas_callbacks)
 
         # set spare icons if system icons not avalaible
         dark = isDarkTheme(self)
@@ -262,6 +315,17 @@ class MainWindow(QMainWindow):
 
         self.ui.listWidget.setSession(self._session)
 
+        # prevent to hide the session frame with splitter
+        self.ui.splitterSessionVsMessages.setCollapsible(0, False)
+        self.ui.splitterSessionVsMessages.splitterMoved.connect(
+            self.splitterSessionVsMessagesMoved)
+        
+        self.canvas_tools_action = None
+        self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
+        self.ui.graphicsView.setScene(self.scene)
+        
+        self.setupCanvas()
+        
         self.setNsmLocked(CommandLineArgs.under_nsm)
 
         self.script_info_dialog = None
@@ -277,6 +341,68 @@ class MainWindow(QMainWindow):
         self.progress_dialog_visible = False
 
         self.has_git = False
+        
+        self._were_visible_before_fullscreen = 0
+        self._geom_before_fullscreen = None
+        self._splitter_pos_before_fullscreen = [100, 100]
+        
+        self._previous_width = 0
+
+    def toggleSceneFullScreen(self):
+        visible_maximized = 0x1
+        visible_messages = 0x2
+        visible_menubar = 0x4
+        
+        if self.isFullScreen():
+            self.ui.toolBar.setVisible(True)
+            if self._were_visible_before_fullscreen & visible_menubar:
+                self.ui.menuBar.setVisible(True)
+            
+            if self._were_visible_before_fullscreen & visible_maximized:
+                self.showNormal()
+                self.showMaximized()
+            else:
+                self.showNormal()
+                self.setGeometry(self._geom_before_fullscreen)
+            
+            self.ui.splitterMainVsCanvas.setSizes(
+                self._splitter_pos_before_fullscreen)
+        else:
+            self._were_visible_before_fullscreen = \
+                visible_maximized * int(self.isMaximized()) \
+                + visible_messages * int(True) \
+                + visible_menubar * int(self.ui.menuBar.isVisible())
+            
+            self._geom_before_fullscreen = self.geometry()
+
+            self.ui.menuBar.setVisible(False)
+            self.ui.toolBar.setVisible(False)
+            self._splitter_pos_before_fullscreen = \
+                self.ui.splitterMainVsCanvas.sizes()
+            self.ui.splitterMainVsCanvas.setSizes([0, 100])
+            self.showFullScreen()
+
+    def splitterSessionVsMessagesMoved(self, pos: int, index: int):
+        self.ui.actionToggleShowMessages.setChecked(
+            bool(pos < self.ui.splitterSessionVsMessages.height() -10))
+
+    def set_short_app_exec_names(self, yesno: bool):
+        if yesno:
+            self.ui.actionAddApplication.setText(self.short_appli_name)
+            self.ui.actionAddExecutable.setText(self.short_exec_name)
+        else:
+            self.ui.actionAddApplication.setText(self.long_appli_name)
+            self.ui.actionAddExecutable.setText(self.long_exec_name)
+            
+    def showMessagesWidget(self, yesno: bool):
+        sizes = [10, 0]
+        if yesno:
+            sizes = [30, 10]
+
+        self.ui.splitterSessionVsMessages.setSizes(sizes)
+
+    def add_patchbay_tools(self, widget):
+        self.canvas_tools_action = self.ui.toolBar.addWidget(widget)
 
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
@@ -352,8 +478,43 @@ class MainWindow(QMainWindow):
 
         self.has_git = has_git
 
-    def hideMessagesDock(self):
-        self.ui.dockWidgetMessages.setVisible(False)
+    def canvas_callback(self, action:int, value1: int,
+                        value2: int, value_str: str):
+        self._session._signaler.canvas_callback.emit(
+            action, value1, value2, value_str)
+    
+    def setupCanvas(self):
+        options = patchcanvas.options_t()
+        options.theme_name = RS.settings.value(
+            'Canvas/theme', 'Black Gold', type=str)
+        options.antialiasing = patchcanvas.ANTIALIASING_SMALL
+        options.eyecandy = patchcanvas.EYECANDY_NONE
+        if RS.settings.value('Canvas/box_shadows', False, type=bool):
+            options.eyecandy = patchcanvas.EYECANDY_SMALL
+        
+        options.auto_hide_groups = False
+        options.auto_select_items = False
+        options.inline_displays = False
+        options.use_bezier_lines = True
+        options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
+
+        features = patchcanvas.features_t()
+        features.group_info = False
+        features.group_rename = False
+        features.port_info = True
+        features.port_rename = False
+        features.handle_group_pos = False
+
+        patchcanvas.setOptions(options)
+        patchcanvas.setFeatures(features)
+        patchcanvas.init(
+            ray.APP_TITLE, self.scene,
+            self.canvas_callback, False)
+
+    def updateCanvasInitialPos(self):
+        x = self.ui.graphicsView.horizontalScrollBar().value() + self.width()/4
+        y = self.ui.graphicsView.verticalScrollBar().value() + self.height()/4
+        patchcanvas.setInitialPos(x, y)
 
     def openFileManager(self):
         self.toDaemon('/ray/session/open_folder')
@@ -422,7 +583,6 @@ class MainWindow(QMainWindow):
         client.updateLabel(label)
 
     def createNewSession(self):
-        self.ui.dockWidgetMessages.setVisible(False)
         dialog = child_dialogs.NewSessionDialog(self)
         dialog.exec()
         if not dialog.result():
@@ -636,6 +796,54 @@ class MainWindow(QMainWindow):
 
         self.toDaemon('/ray/session/add_executable', command, int(auto_start),
                       int(via_proxy), prefix_mode, prefix, client_id)
+
+    def showJackPatchbay(self, yesno: bool):
+        self.saveWindowSettings(not yesno)
+        
+        if self.canvas_tools_action is not None:
+            self.canvas_tools_action.setVisible(yesno)
+        
+        rect = self.geometry()
+        x = rect.x()
+        y = rect.y()
+        height = rect.height()
+        
+        if yesno:
+            self.toDaemon('/ray/server/ask_for_patchbay')
+            
+            #self.ui.actionAddApplication.setText(self.short_appli_name)
+            #self.ui.actionAddExecutable.setText(self.short_exec_name)
+            
+            patchbay_geom = RS.settings.value('MainWindow/patchbay_geometry')
+            sizes = RS.settings.value('MainWindow/splitter_canvas_sizes')
+            
+            if patchbay_geom:
+                self.restoreGeometry(patchbay_geom)
+            else:
+                self.setGeometry(x, y, max(rect.width(), 1024), height)
+            
+            if sizes:
+                self.ui.splitterMainVsCanvas.setSizes([int(s) for s in sizes])
+                
+            
+        else:
+            self._session.patchbay_manager.disannounce()
+            
+            #self.ui.actionAddApplication.setText(self.long_appli_name)
+            #self.ui.actionAddExecutable.setText(self.long_exec_name)
+            
+            if self.isMaximized():
+                self.showNormal()
+            
+            geom = RS.settings.value('MainWindow/geometry')
+            if geom:
+                self.restoreGeometry(geom)
+            else:
+                self.setGeometry(x, y, 460, height)
+            self.ui.splitterMainVsCanvas.setSizes([10, 0])
+            
+        self.ui.graphicsView.setVisible(yesno)
+        self.ui.splitterMainVsCanvas.set_active(yesno)    
 
     def stopClient(self, client_id):
         client = self._session.getClient(client_id)
@@ -1033,6 +1241,12 @@ class MainWindow(QMainWindow):
             del self.script_action_dialog
             self.script_action_dialog = None
 
+    def show_canvas_port_info(self, port_full_name: str,
+                              port_type: str, port_flags: str):
+        dialog = child_dialogs.CanvasPortInfoDialog(self)
+        dialog.set_infos(port_full_name, port_type, port_flags)
+        dialog.show()
+
     def makeAllDialogsReappear(self):
         ok = QMessageBox.question(
             self,
@@ -1061,21 +1275,33 @@ class MainWindow(QMainWindow):
                 'errors', "ray-daemon crashed, sorry !"))
         QApplication.quit()
 
-    def saveWindowSettings(self):
-        RS.settings.setValue('MainWindow/geometry', self.saveGeometry())
+    def saveWindowSettings(self, with_patchbay: bool):
+        if self.isFullScreen():
+            return
+        
+        geom_path = 'MainWindow/geometry'
+        if with_patchbay:
+            geom_path = 'MainWindow/patchbay_geometry'
+            RS.settings.setValue(
+                'MainWindow/splitter_canvas_sizes',
+                self.ui.splitterMainVsCanvas.sizes())
+            
+        RS.settings.setValue(geom_path, self.saveGeometry())
         RS.settings.setValue('MainWindow/WindowState', self.saveState())
+
         RS.settings.setValue(
             'MainWindow/ShowMenuBar',
             self.ui.menuBar.isVisible())
-        RS.settings.setValue(
-            'MainWindow/ShowMessages',
-            self.ui.dockWidgetMessages.isVisible())
+        RS.settings.setValue("MainWindow/show_patchbay",
+                             self.ui.actionShowJackPatchbay.isChecked())
+        RS.settings.setValue("MainWindow/splitter_messages",
+                             self.ui.splitterSessionVsMessages.sizes())
         RS.settings.sync()
 
     # Reimplemented Functions
 
     def closeEvent(self, event):
-        self.saveWindowSettings()
+        self.saveWindowSettings(self.ui.actionShowJackPatchbay.isChecked())
 
         if self.quitApp():
             QMainWindow.closeEvent(self, event)

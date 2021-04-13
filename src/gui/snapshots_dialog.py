@@ -4,9 +4,9 @@ from PyQt5.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 from child_dialogs import ChildDialog
 from gui_tools import _translate, RS
 
-import ui_list_snapshots
-import ui_snapshot_name
-import ui_snapshots_info
+import ui.list_snapshots
+import ui.snapshot_name
+import ui.snapshots_info
 
 GROUP_ELEMENT = 0
 GROUP_DAY = 1
@@ -315,7 +315,7 @@ class SnapGroup(Snapshot):
 class TakeSnapshotDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_snapshot_name.Ui_Dialog()
+        self.ui = ui.snapshot_name.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.ui.lineEdit.textChanged.connect(self.textChanged)
@@ -345,7 +345,7 @@ class TakeSnapshotDialog(ChildDialog):
 class SnapshotsDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_list_snapshots.Ui_Dialog()
+        self.ui = ui.list_snapshots.Ui_Dialog()
         self.ui.setupUi(self)
 
         self._original_label = self.ui.label.text()
@@ -467,7 +467,7 @@ class SnapshotsDialog(ChildDialog):
 class SnapshotsInfoDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_snapshots_info.Ui_Dialog()
+        self.ui = ui.snapshots_info.Ui_Dialog()
         self.ui.setupUi(self)
 
     def hasToBeHiddenNextTime(self):

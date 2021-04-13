@@ -17,6 +17,9 @@ def ray_method(path, types):
                 sys.stderr.write(
                     '\033[93mOSC::gui_receives\033[0m %s, %s, %s, %s\n'
                     % (t_path, t_types, t_args, src_addr.url))
+            
+            if t_thread.stopping:
+                return
 
             response = func(*args[:-1], **kwargs)
 
@@ -34,22 +37,66 @@ class GUIServerThread(liblo.ServerThread):
 
         global _instance
         _instance = self
+        
+        self.patchbay_addr = None
+        
+        # Try to prevent impossibility to stop server
+        # while receiving messages
+        self.stopping = False
+
+    def stop(self):
+        self.stopping = True
+
+        if self.patchbay_addr:
+            self.send(self.patchbay_addr, '/ray/patchbay/gui_disannounce')
+
+        liblo.ServerThread.stop(self)
 
     def finishInit(self, session):
         self._session = session
         self._signaler = self._session._signaler
         self._daemon_manager = self._session._daemon_manager
+        
+        for path_types in (
+            ('/ray/gui/server/disannounce', ''),
+            ('/ray/gui/server/nsm_locked', 'i'),
+            ('/ray/gui/server/options', 'i'),
+            ('/ray/gui/server/message', 's'),
+            ('/ray/gui/session/name', 'ss'),
+            ('/ray/gui/session/notes', 's'),
+            ('/ray/gui/patchbay/dsp_load', 'i'),
+            ('/ray/gui/patchbay/add_xrun', ''),
+            ('/ray/gui/patchbay/buffer_size', 'i'),
+            ('/ray/gui/patchbay/sample_rate', 'i'),
+            ('/ray/gui/patchbay/server_started', ''),
+            ('/ray/gui/patchbay/big_packets', 'i'),
+            ('/ray/gui/patchbay/server_lose', ''),
+            ('/ray/gui/patchbay/fast_temp_file_memory', 's'),
+            ('/ray/gui/patchbay/fast_temp_file_running', 's')):
+                self.add_method(path_types[0], path_types[1],
+                                self.generic_callback)
+
+        self.direct_to_session('/ray/gui/patchbay/port_added', 'sssiis')
+
+    def direct_to_session(self, path: str, types: str):
+        self.add_method(path, types, self.generic_callback)
 
     @staticmethod
     def instance():
         return _instance
+
+    def generic_callback(self, path, args, types, src_addr):
+        if self.stopping:
+            return
+
+        self._signaler.osc_receive.emit(path, args)
 
     @ray_method('/error', 'sis')
     def _error(self, path, args, types, src_addr):
         pass
 
     @ray_method('/minor_error', 'sis')
-    def error(self, path, args, types, src_addr):
+    def _minor_error(self, path, args, types, src_addr):
         pass
 
     @ray_method('/reply', None)
@@ -261,6 +308,49 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/hide_script_user_action', '')
     def _hide_script_user_action(self, path, args, types, src_addr):
         pass
+    
+    @ray_method('/ray/gui/patchbay/announce', 'iii')
+    def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
+        self.patchbay_addr = src_addr
+    
+    #@ray_method('/ray/gui/patchbay/port_added', 'sssiis')
+    #def _patchbay_port_added(self, path, args, types, src_addr):
+        #pass
+        
+    @ray_method('/ray/gui/patchbay/port_renamed', 'ss')
+    def _patchbay_port_renamed(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/patchbay/port_removed', 's')
+    def _patchbay_port_removed(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/gui/patchbay/connection_added', 'ss')
+    def _patchbay_connection_added(self, path, args, types, src_addr):
+        pass
+
+    @ray_method('/ray/gui/patchbay/connection_removed', 'ss')
+    def _patchbay_connection_removed(self, path, args, types, src_addr):
+        pass
+
+    @ray_method('/ray/gui/patchbay/server_stopped', '')
+    def _patchbay_server_stopped(self, path, args, types, src_addr):
+        pass
+
+    @ray_method('/ray/gui/patchbay/update_group_position',
+                ray.GroupPosition.sisi())
+    def _patchbay_group_position(self, path, args, types, src_addr):
+        pass
+
+    @ray_method('/ray/gui/patchbay/update_portgroup', None)
+    def _patchbay_update_portgroup(self, path, args, types, src_addr):
+        if not types.startswith('siis'):
+            return False
+        
+        types_end = types.replace('siis', '', 1)
+        for c in types_end:
+            if c != 's':
+                return False
 
     def send(self, *args):
         if CommandLineArgs.debug:

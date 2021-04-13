@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>722</width>
-    <height>541</height>
+    <width>468</width>
+    <height>589</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+   <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -40,662 +40,730 @@
    </property>
    <property name="maximumSize">
     <size>
-     <width>480</width>
+     <width>16777215</width>
      <height>16777215</height>
     </size>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_4">
+   <layout class="QVBoxLayout" name="verticalLayout_3">
     <property name="spacing">
-     <number>6</number>
-    </property>
-    <property name="sizeConstraint">
-     <enum>QLayout::SetDefaultConstraint</enum>
+     <number>0</number>
     </property>
     <property name="leftMargin">
      <number>0</number>
     </property>
     <property name="topMargin">
-     <number>2</number>
+     <number>0</number>
     </property>
     <property name="rightMargin">
      <number>0</number>
     </property>
     <property name="bottomMargin">
-     <number>4</number>
+     <number>0</number>
     </property>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <property name="spacing">
-       <number>0</number>
+     <widget class="CanvasSplitter" name="splitterMainVsCanvas">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
       </property>
-      <property name="sizeConstraint">
-       <enum>QLayout::SetMinAndMaxSize</enum>
+      <property name="childrenCollapsible">
+       <bool>true</bool>
       </property>
-      <item>
-       <widget class="SessionFrame" name="frameCurrentSession">
-        <property name="enabled">
-         <bool>false</bool>
+      <widget class="QWidget" name="layoutWidget1">
+       <layout class="QVBoxLayout" name="AppListLayout1">
+        <property name="spacing">
+         <number>0</number>
         </property>
-        <property name="maximumSize">
-         <size>
-          <width>480</width>
-          <height>16777215</height>
-         </size>
+        <property name="sizeConstraint">
+         <enum>QLayout::SetMaximumSize</enum>
         </property>
-        <property name="styleSheet">
-         <string notr="true">SessionFrame{background-color: rgba(127, 127, 127, 35);border-radius:4px}</string>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <property name="leftMargin">
-          <number>3</number>
-         </property>
-         <property name="topMargin">
-          <number>3</number>
-         </property>
-         <property name="rightMargin">
-          <number>3</number>
-         </property>
-         <property name="bottomMargin">
-          <number>3</number>
-         </property>
-         <item>
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <property name="spacing">
-            <number>2</number>
-           </property>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_2">
-             <property name="spacing">
-              <number>0</number>
-             </property>
-             <item>
-              <widget class="QToolButton" name="toolButtonSessionMenu">
-               <property name="styleSheet">
-                <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
-QToolButton {border: none}</string>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset theme="menu_new">
-                 <normaloff>.</normaloff>.</iconset>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="toolButtonNotes">
-               <property name="styleSheet">
-                <string notr="true">QToolButton{border:none}</string>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset theme="edittext">
-                 <normaloff>.</normaloff>.</iconset>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="checked">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="StackedSessionName" name="stackedWidgetSessionName">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="lineWidth">
-                <number>0</number>
-               </property>
-               <property name="currentIndex">
-                <number>-1</number>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="toolButtonNoRole">
-               <property name="styleSheet">
-                <string notr="true">QToolButton{border:none}</string>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="toolButtonAbortSession">
-               <property name="styleSheet">
-                <string notr="true">QToolButton{border: none}</string>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset theme="list-remove">
-                 <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>22</width>
-                 <height>22</height>
-                </size>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="closeButton">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>22</width>
-                 <height>22</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>22</width>
-                 <height>22</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save &amp;amp; Close Session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="styleSheet">
-                <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
-QToolButton {border: none}</string>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset theme="window-close">
-                 <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
-               </property>
-               <property name="iconSize">
-                <size>
-                 <width>22</width>
-                 <height>22</height>
-                </size>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="toolButtonControl2">
-               <property name="styleSheet">
-                <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
-QToolButton {border: none}</string>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset theme="configure">
-                 <normaloff>.</normaloff>.</iconset>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <spacer name="verticalSpacer">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>2</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_6">
-             <property name="bottomMargin">
-              <number>2</number>
-             </property>
-             <item>
-              <layout class="QVBoxLayout" name="verticalLayout_8">
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_7">
-                 <property name="spacing">
-                  <number>0</number>
+        <item>
+         <widget class="QSplitter" name="splitterSessionVsMessages">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <widget class="QWidget" name="layoutWidget12">
+           <layout class="QHBoxLayout" name="AppListLayout1">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="sizeConstraint">
+             <enum>QLayout::SetMaximumSize</enum>
+            </property>
+            <item>
+             <layout class="QHBoxLayout" name="AppListLayout1">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="SessionFrame" name="frameCurrentSession">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>480</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">SessionFrame{background-color: rgba(127, 127, 127, 35);border-radius:4px}</string>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <property name="leftMargin">
+                  <number>3</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>3</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>3</number>
                  </property>
                  <property name="bottomMargin">
-                  <number>0</number>
+                  <number>3</number>
                  </property>
                  <item>
-                  <spacer name="horizontalSpacer_2">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
+                  <layout class="QVBoxLayout" name="verticalLayout">
+                   <property name="spacing">
+                    <number>2</number>
                    </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Fixed</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>4</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="QToolButton" name="toolButtonFileManager">
-                   <property name="enabled">
-                    <bool>false</bool>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>32</width>
-                     <height>32</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>Open Session Folder</string>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">QToolButton{border: none}</string>
-                   </property>
-                   <property name="text">
-                    <string>...</string>
-                   </property>
-                   <property name="icon">
-                    <iconset theme="system-file-manager">
-                     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
-                   </property>
-                   <property name="iconSize">
-                    <size>
-                     <width>32</width>
-                     <height>32</height>
-                    </size>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer_5">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Fixed</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>6</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="QToolButton" name="toolButtonFavorites">
-                   <property name="toolTip">
-                    <string>Favorite Applications</string>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_2">
+                     <property name="spacing">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <widget class="QToolButton" name="toolButtonSessionMenu">
+                       <property name="styleSheet">
+                        <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
 QToolButton {border: none}</string>
-                   </property>
-                   <property name="text">
-                    <string>...</string>
-                   </property>
-                   <property name="icon">
-                    <iconset resource="../resources.qrc">
-                     <normaloff>:/scalable/breeze/star-yellow.svg</normaloff>:/scalable/breeze/star-yellow.svg</iconset>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QToolButton" name="toolButtonAddApplication">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>3200</width>
-                     <height>32</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>Run Command</string>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">QToolButton{margin:0px}</string>
-                   </property>
-                   <property name="text">
-                    <string>Application</string>
-                   </property>
-                   <property name="icon">
-                    <iconset theme="list-add">
-                     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
-                   </property>
-                   <property name="iconSize">
-                    <size>
-                     <width>22</width>
-                     <height>22</height>
-                    </size>
-                   </property>
-                   <property name="toolButtonStyle">
-                    <enum>Qt::ToolButtonTextBesideIcon</enum>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer_7">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>6</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="QToolButton" name="toolButtonAddExecutable">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>3200</width>
-                     <height>32</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>Run Command</string>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">QToolButton{margin:0px}</string>
-                   </property>
-                   <property name="text">
-                    <string>Executable</string>
-                   </property>
-                   <property name="icon">
-                    <iconset theme="run-install">
-                     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
-                   </property>
-                   <property name="iconSize">
-                    <size>
-                     <width>22</width>
-                     <height>22</height>
-                    </size>
-                   </property>
-                   <property name="toolButtonStyle">
-                    <enum>Qt::ToolButtonTextBesideIcon</enum>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer_3">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Preferred</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>6</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="QToolButton" name="toolButtonSnapshots">
-                   <property name="maximumSize">
-                    <size>
-                     <width>32</width>
-                     <height>32</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go back to a previous state of the session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">QToolButton { border: none}</string>
-                   </property>
-                   <property name="text">
-                    <string>Snapshots</string>
-                   </property>
-                   <property name="icon">
-                    <iconset theme="media-seek-backward" resource="../resources.qrc">
-                     <normaloff>:/scalable/breeze/document-save.svg</normaloff>:/scalable/breeze/document-save.svg</iconset>
-                   </property>
-                   <property name="iconSize">
-                    <size>
-                     <width>16</width>
-                     <height>16</height>
-                    </size>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="StatusBarNegativ" name="lineEditServerStatus">
-                   <property name="minimumSize">
-                    <size>
-                     <width>60</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>60</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
-                   <property name="contextMenuPolicy">
-                    <enum>Qt::NoContextMenu</enum>
-                   </property>
-                   <property name="toolTip">
-                    <string>Server Status</string>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true"/>
-                   </property>
-                   <property name="text">
-                    <string>off</string>
-                   </property>
-                   <property name="alignment">
-                    <set>Qt::AlignCenter</set>
-                   </property>
-                   <property name="readOnly">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QToolButton" name="toolButtonSaveSession">
-                   <property name="maximumSize">
-                    <size>
-                     <width>32</width>
-                     <height>32</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>Save Session</string>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">QToolButton { border: none}</string>
-                   </property>
-                   <property name="text">
-                    <string>Save Session</string>
-                   </property>
-                   <property name="icon">
-                    <iconset resource="../resources.qrc">
-                     <normaloff>:/scalable/breeze/document-save.svg</normaloff>:/scalable/breeze/document-save.svg</iconset>
-                   </property>
-                   <property name="iconSize">
-                    <size>
-                     <width>32</width>
-                     <height>32</height>
-                    </size>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Fixed</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>7</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="QToolButton" name="trashButton">
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trash&lt;/p&gt;&lt;p&gt;You will find here removed clients.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+                       </property>
+                       <property name="text">
+                        <string>...</string>
+                       </property>
+                       <property name="icon">
+                        <iconset theme="menu_new">
+                         <normaloff>.</normaloff>.</iconset>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QToolButton" name="toolButtonNotes">
+                       <property name="styleSheet">
+                        <string notr="true">QToolButton{border:none}</string>
+                       </property>
+                       <property name="text">
+                        <string>...</string>
+                       </property>
+                       <property name="icon">
+                        <iconset theme="edittext">
+                         <normaloff>.</normaloff>.</iconset>
+                       </property>
+                       <property name="checkable">
+                        <bool>true</bool>
+                       </property>
+                       <property name="checked">
+                        <bool>false</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="StackedSessionName" name="stackedWidgetSessionName">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="lineWidth">
+                        <number>0</number>
+                       </property>
+                       <property name="currentIndex">
+                        <number>-1</number>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QToolButton" name="toolButtonNoRole">
+                       <property name="styleSheet">
+                        <string notr="true">QToolButton{border:none}</string>
+                       </property>
+                       <property name="text">
+                        <string/>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QToolButton" name="toolButtonAbortSession">
+                       <property name="styleSheet">
+                        <string notr="true">QToolButton{border: none}</string>
+                       </property>
+                       <property name="text">
+                        <string>...</string>
+                       </property>
+                       <property name="icon">
+                        <iconset theme="list-remove">
+                         <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+                       </property>
+                       <property name="iconSize">
+                        <size>
+                         <width>22</width>
+                         <height>22</height>
+                        </size>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QToolButton" name="closeButton">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="minimumSize">
+                        <size>
+                         <width>22</width>
+                         <height>22</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>22</width>
+                         <height>22</height>
+                        </size>
+                       </property>
+                       <property name="toolTip">
+                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save &amp;amp; Close Session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       </property>
+                       <property name="styleSheet">
+                        <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
 QToolButton {border: none}</string>
-                   </property>
-                   <property name="text">
-                    <string>...</string>
-                   </property>
-                   <property name="icon">
-                    <iconset theme="trash-empty">
-                     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
-                   </property>
-                  </widget>
+                       </property>
+                       <property name="text">
+                        <string>...</string>
+                       </property>
+                       <property name="icon">
+                        <iconset theme="window-close">
+                         <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+                       </property>
+                       <property name="iconSize">
+                        <size>
+                         <width>22</width>
+                         <height>22</height>
+                        </size>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QToolButton" name="toolButtonControl2">
+                       <property name="styleSheet">
+                        <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+QToolButton {border: none}</string>
+                       </property>
+                       <property name="text">
+                        <string>...</string>
+                       </property>
+                       <property name="icon">
+                        <iconset theme="configure">
+                         <normaloff>.</normaloff>.</iconset>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <spacer name="verticalSpacer">
+                     <property name="orientation">
+                      <enum>Qt::Vertical</enum>
+                     </property>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>20</width>
+                       <height>2</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_6">
+                     <property name="bottomMargin">
+                      <number>2</number>
+                     </property>
+                     <item>
+                      <layout class="QVBoxLayout" name="verticalLayout_8">
+                       <item>
+                        <layout class="QHBoxLayout" name="horizontalLayout_7">
+                         <property name="spacing">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                         <item>
+                          <spacer name="horizontalSpacer_2">
+                           <property name="orientation">
+                            <enum>Qt::Horizontal</enum>
+                           </property>
+                           <property name="sizeType">
+                            <enum>QSizePolicy::Fixed</enum>
+                           </property>
+                           <property name="sizeHint" stdset="0">
+                            <size>
+                             <width>4</width>
+                             <height>20</height>
+                            </size>
+                           </property>
+                          </spacer>
+                         </item>
+                         <item>
+                          <widget class="QToolButton" name="toolButtonFileManager">
+                           <property name="enabled">
+                            <bool>false</bool>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>32</width>
+                             <height>32</height>
+                            </size>
+                           </property>
+                           <property name="toolTip">
+                            <string>Open Session Folder</string>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QToolButton{border: none}</string>
+                           </property>
+                           <property name="text">
+                            <string>...</string>
+                           </property>
+                           <property name="icon">
+                            <iconset theme="system-file-manager">
+                             <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+                           </property>
+                           <property name="iconSize">
+                            <size>
+                             <width>32</width>
+                             <height>32</height>
+                            </size>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <spacer name="horizontalSpacer_5">
+                           <property name="orientation">
+                            <enum>Qt::Horizontal</enum>
+                           </property>
+                           <property name="sizeType">
+                            <enum>QSizePolicy::Fixed</enum>
+                           </property>
+                           <property name="sizeHint" stdset="0">
+                            <size>
+                             <width>6</width>
+                             <height>20</height>
+                            </size>
+                           </property>
+                          </spacer>
+                         </item>
+                         <item>
+                          <widget class="QToolButton" name="toolButtonFavorites">
+                           <property name="toolTip">
+                            <string>Favorite Applications</string>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+QToolButton {border: none}</string>
+                           </property>
+                           <property name="text">
+                            <string>...</string>
+                           </property>
+                           <property name="icon">
+                            <iconset resource="../resources.qrc">
+                             <normaloff>:/scalable/breeze/star-yellow.svg</normaloff>:/scalable/breeze/star-yellow.svg</iconset>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QToolButton" name="toolButtonAddApplication">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>3200</width>
+                             <height>32</height>
+                            </size>
+                           </property>
+                           <property name="toolTip">
+                            <string>Run Command</string>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QToolButton{margin:0px}</string>
+                           </property>
+                           <property name="text">
+                            <string>Application</string>
+                           </property>
+                           <property name="icon">
+                            <iconset theme="list-add">
+                             <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+                           </property>
+                           <property name="iconSize">
+                            <size>
+                             <width>22</width>
+                             <height>22</height>
+                            </size>
+                           </property>
+                           <property name="toolButtonStyle">
+                            <enum>Qt::ToolButtonTextBesideIcon</enum>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <spacer name="horizontalSpacer_7">
+                           <property name="orientation">
+                            <enum>Qt::Horizontal</enum>
+                           </property>
+                           <property name="sizeType">
+                            <enum>QSizePolicy::Preferred</enum>
+                           </property>
+                           <property name="sizeHint" stdset="0">
+                            <size>
+                             <width>6</width>
+                             <height>20</height>
+                            </size>
+                           </property>
+                          </spacer>
+                         </item>
+                         <item>
+                          <widget class="QToolButton" name="toolButtonAddExecutable">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>3200</width>
+                             <height>32</height>
+                            </size>
+                           </property>
+                           <property name="toolTip">
+                            <string>Run Command</string>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QToolButton{margin:0px}</string>
+                           </property>
+                           <property name="text">
+                            <string>Executable</string>
+                           </property>
+                           <property name="icon">
+                            <iconset theme="run-install">
+                             <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+                           </property>
+                           <property name="iconSize">
+                            <size>
+                             <width>22</width>
+                             <height>22</height>
+                            </size>
+                           </property>
+                           <property name="toolButtonStyle">
+                            <enum>Qt::ToolButtonTextBesideIcon</enum>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <spacer name="horizontalSpacer_3">
+                           <property name="orientation">
+                            <enum>Qt::Horizontal</enum>
+                           </property>
+                           <property name="sizeType">
+                            <enum>QSizePolicy::Preferred</enum>
+                           </property>
+                           <property name="sizeHint" stdset="0">
+                            <size>
+                             <width>6</width>
+                             <height>20</height>
+                            </size>
+                           </property>
+                          </spacer>
+                         </item>
+                         <item>
+                          <widget class="QToolButton" name="toolButtonSnapshots">
+                           <property name="maximumSize">
+                            <size>
+                             <width>32</width>
+                             <height>32</height>
+                            </size>
+                           </property>
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go back to a previous state of the session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QToolButton { border: none}</string>
+                           </property>
+                           <property name="text">
+                            <string>Snapshots</string>
+                           </property>
+                           <property name="icon">
+                            <iconset theme="media-seek-backward" resource="../resources.qrc">
+                             <normaloff>:/scalable/breeze/document-save.svg</normaloff>:/scalable/breeze/document-save.svg</iconset>
+                           </property>
+                           <property name="iconSize">
+                            <size>
+                             <width>16</width>
+                             <height>16</height>
+                            </size>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="StatusBarNegativ" name="lineEditServerStatus">
+                           <property name="minimumSize">
+                            <size>
+                             <width>60</width>
+                             <height>0</height>
+                            </size>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>60</width>
+                             <height>16777215</height>
+                            </size>
+                           </property>
+                           <property name="contextMenuPolicy">
+                            <enum>Qt::NoContextMenu</enum>
+                           </property>
+                           <property name="toolTip">
+                            <string>Server Status</string>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true"/>
+                           </property>
+                           <property name="text">
+                            <string>off</string>
+                           </property>
+                           <property name="alignment">
+                            <set>Qt::AlignCenter</set>
+                           </property>
+                           <property name="readOnly">
+                            <bool>true</bool>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QToolButton" name="toolButtonSaveSession">
+                           <property name="maximumSize">
+                            <size>
+                             <width>32</width>
+                             <height>32</height>
+                            </size>
+                           </property>
+                           <property name="toolTip">
+                            <string>Save Session</string>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QToolButton { border: none}</string>
+                           </property>
+                           <property name="text">
+                            <string>Save Session</string>
+                           </property>
+                           <property name="icon">
+                            <iconset resource="../resources.qrc">
+                             <normaloff>:/scalable/breeze/document-save.svg</normaloff>:/scalable/breeze/document-save.svg</iconset>
+                           </property>
+                           <property name="iconSize">
+                            <size>
+                             <width>32</width>
+                             <height>32</height>
+                            </size>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <spacer name="horizontalSpacer">
+                           <property name="orientation">
+                            <enum>Qt::Horizontal</enum>
+                           </property>
+                           <property name="sizeType">
+                            <enum>QSizePolicy::Fixed</enum>
+                           </property>
+                           <property name="sizeHint" stdset="0">
+                            <size>
+                             <width>7</width>
+                             <height>20</height>
+                            </size>
+                           </property>
+                          </spacer>
+                         </item>
+                         <item>
+                          <widget class="QToolButton" name="trashButton">
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trash&lt;/p&gt;&lt;p&gt;You will find here removed clients.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QToolButton::menu-indicator{ image: url(none.jpg);}
+QToolButton {border: none}</string>
+                           </property>
+                           <property name="text">
+                            <string>...</string>
+                           </property>
+                           <property name="icon">
+                            <iconset theme="trash-empty">
+                             <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </item>
+                      </layout>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <widget class="ListWidgetClients" name="listWidget">
+                     <property name="acceptDrops">
+                      <bool>true</bool>
+                     </property>
+                     <property name="styleSheet">
+                      <string notr="true">QFrame{border:none}</string>
+                     </property>
+                     <property name="dragEnabled">
+                      <bool>true</bool>
+                     </property>
+                     <property name="dragDropMode">
+                      <enum>QAbstractItemView::InternalMove</enum>
+                     </property>
+                     <property name="selectionMode">
+                      <enum>QAbstractItemView::SingleSelection</enum>
+                     </property>
+                     <property name="uniformItemSizes">
+                      <bool>true</bool>
+                     </property>
+                     <property name="batchSize">
+                      <number>80</number>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
                  </item>
                 </layout>
-               </item>
-              </layout>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="ListWidgetClients" name="listWidget">
-             <property name="acceptDrops">
-              <bool>true</bool>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">QFrame{border:none}</string>
-             </property>
-             <property name="dragEnabled">
-              <bool>true</bool>
-             </property>
-             <property name="dragDropMode">
-              <enum>QAbstractItemView::InternalMove</enum>
-             </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::SingleSelection</enum>
-             </property>
-             <property name="uniformItemSizes">
-              <bool>true</bool>
-             </property>
-             <property name="batchSize">
-              <number>80</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </widget>
-      </item>
-     </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="layoutWidget121">
+           <layout class="QVBoxLayout" name="AppListLayout31">
+            <item>
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>3</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPlainTextEdit" name="textEditMessages">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>30</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>480</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QPlainTextEdit { font-size: 12px;border-radius:4px}</string>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+              <property name="plainText">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="layoutWidget2">
+       <layout class="QVBoxLayout" name="AppListLayout2">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="DraggableGraphicsView" name="graphicsView">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="baseSize">
+           <size>
+            <width>-1</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QGraphicsView{border:none}</string>
+          </property>
+          <property name="sizeAdjustPolicy">
+           <enum>QAbstractScrollArea::AdjustToContents</enum>
+          </property>
+          <property name="transformationAnchor">
+           <enum>QGraphicsView::AnchorUnderMouse</enum>
+          </property>
+          <property name="resizeAnchor">
+           <enum>QGraphicsView::NoAnchor</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
     </item>
    </layout>
-  </widget>
-  <widget class="QDockWidget" name="dockWidgetMessages">
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="minimumSize">
-    <size>
-     <width>280</width>
-     <height>76</height>
-    </size>
-   </property>
-   <property name="contextMenuPolicy">
-    <enum>Qt::NoContextMenu</enum>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QDockWidget{border-radius:4px}</string>
-   </property>
-   <property name="floating">
-    <bool>false</bool>
-   </property>
-   <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
-   </property>
-   <property name="windowTitle">
-    <string>&amp;Messages</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_3">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QPlainTextEdit" name="textEditMessages">
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">QPlainTextEdit { font-size: 12px;border-radius:4px}</string>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-       <property name="plainText">
-        <string/>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>722</width>
+     <width>468</width>
      <height>30</height>
     </rect>
    </property>
@@ -730,6 +798,7 @@ QToolButton {border: none}</string>
     </property>
     <addaction name="actionToggleShowMessages"/>
     <addaction name="actionShowMenuBar"/>
+    <addaction name="actionShowJackPatchbay"/>
     <addaction name="separator"/>
     <addaction name="actionKeepFocus"/>
     <addaction name="separator"/>
@@ -1220,10 +1289,11 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionOnlineManual">
    <property name="icon">
-    <iconset theme="documentation"/>
+    <iconset theme="documentation">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Online Manual</string>
+    <string>&amp;Online Manual</string>
    </property>
    <property name="toolTip">
     <string>Open the online manual in the web browser</string>
@@ -1231,13 +1301,26 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionInternalManual">
    <property name="icon">
-    <iconset theme="documentation"/>
+    <iconset theme="documentation">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Internal Manual</string>
+    <string>&amp;Internal Manual</string>
    </property>
    <property name="toolTip">
     <string>Displays internal manual in a web browser</string>
+   </property>
+  </action>
+  <action name="actionShowJackPatchbay">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="qjackctl">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>Show &amp;JACK patchbay</string>
    </property>
   </action>
  </widget>
@@ -1264,43 +1347,22 @@ QToolButton {border: none}</string>
    <header>surclassed_widgets</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>DraggableGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>surclassed_widgets</header>
+  </customwidget>
+  <customwidget>
+   <class>CanvasSplitter</class>
+   <extends>QSplitter</extends>
+   <header>surclassed_widgets</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
  </resources>
  <connections>
-  <connection>
-   <sender>actionToggleShowMessages</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>dockWidgetMessages</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>219</x>
-     <y>446</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>dockWidgetMessages</sender>
-   <signal>visibilityChanged(bool)</signal>
-   <receiver>actionToggleShowMessages</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>219</x>
-     <y>446</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>actionShowMenuBar</sender>
    <signal>toggled(bool)</signal>

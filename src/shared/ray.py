@@ -33,6 +33,10 @@ factory_session_templates = (
     'with_jack_patch', 'with_jack_config', 'scripted')
 RAYNET_BIN = 'ray-network'
 
+
+GROUP_CONTEXT_AUDIO = 0x01
+GROUP_CONTEXT_MIDI = 0x02
+
 class PrefixMode:
     CUSTOM = 0
     CLIENT_NAME = 1
@@ -406,21 +410,20 @@ def areOnSameMachine(url1, url2):
         return True
 
     try:
-        if ((socket.gethostbyname(address1.hostname) in ('127.0.0.1', '127.0.1.1')) and (
-                socket.gethostbyname(address2.hostname) in ('127.0.0.1', '127.0.1.1'))):
+        if (socket.gethostbyname(address1.hostname)
+                    in ('127.0.0.1', '127.0.1.1')
+                and socket.gethostbyname(address2.hostname)
+                    in ('127.0.0.1', '127.0.1.1')):
             return True
 
         if socket.gethostbyaddr(
                 address1.hostname) == socket.gethostbyaddr(
                 address2.hostname):
             return True
+
     except BaseException:
         try:
-            ips = subprocess.check_output(['hostname', '-I']).decode()
-            ip = ips.split(' ')[0]
-
-            if ip.count('.') != 3:
-                return False
+            ip = Machine192.get()
 
             if ip not in (address1.hostname, address2.hostname):
                 return False
@@ -447,63 +450,9 @@ def areOnSameMachine(url1, url2):
 
     return False
 
-
-def getUrl192(url):
-    try:
-        ips = subprocess.check_output(['hostname', '-I']).decode()
-        ip = ips.split(' ')[0]
-    except BaseException:
-        return url
-
-    if ip.count('.') != 3:
-        return url
-
-    suffix_port = url.rpartition(':')[2]
-    return "osc.udp://%s:%s" % (ip, suffix_port)
-
-
-def getThis192():
-    global machine192
-
-    if 'machine192' in globals():
-        return machine192
-
-    try:
-        ips = subprocess.check_output(['hostname', '-I']).decode()
-        ip = ips.split(' ')[0]
-        machine192 = ip
-        return ip
-    except BaseException:
-        return ''
-
-def getMachine192(hostname=None):
-    if hostname is None:
-        return getThis192()
-
-    if hostname in ('localhost', socket.gethostname()):
-        return getThis192()
-
-    return socket.gethostbyname(hostname)
-
-def getMachine192ByUrl(url):
-    try:
-        addr = Address(url)
-    except BaseException:
-        return ''
-
-    hostname = addr.hostname
-    del addr
-
-    return getMachine192(hostname)
-
-def getNetUrl(port):
-    try:
-        ips = subprocess.check_output(['hostname', '-I']).decode()
-        ip = ips.split(' ')[0]
-    except BaseException:
-        return ''
-
-    if ip.count('.') != 3:
+def getNetUrl(port)->str:
+    ip = Machine192.get()
+    if not ip:
         return ''
 
     return "osc.udp://%s:%i/" % (ip, port)
@@ -588,6 +537,43 @@ def protocolFromStr(protocol_str: str)->int:
     elif protocol_str.lower() in ('ray_net', 'ray-net'):
         return Protocol.RAY_NET
     return Protocol.NSM
+
+
+class Machine192:
+    ip = ''
+    read_done = False
+    
+    @staticmethod
+    def read()->str:
+        try:
+            ips = subprocess.check_output(
+                ['ip', 'route', 'get', '1']).decode()
+            ip_line = ips.partition('\n')[0]
+            ip_end = ip_line.rpartition('src ')[2]
+            ip = ip_end.partition(' ')[0]
+
+        except BaseException:
+            try:
+                ips = subprocess.check_output(['hostname', '-I']).decode()
+                ip = ips.split(' ')[0]
+            except BaseException:
+                return ''
+
+        if ip.count('.') != 3:
+            return ''
+        
+        return ip
+    
+    @classmethod
+    def get(cls)->str:
+        if cls.read_done:
+            return cls.ip
+        
+        cls.ip = cls.read()
+        cls.read_done = True
+
+        return cls.ip
+
 
 class ClientData:
     client_id = ''
@@ -766,3 +752,181 @@ class RayNet():
 
     def spread(self)->tuple:
         return (self.daemon_url, self.session_root, self.session_template)
+
+
+class GroupPosition:
+    port_types_view = GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI
+    group_name = ''
+    null_zone = ''
+    in_zone = ''
+    out_zone = ''
+    null_xy = (0, 0)
+    in_xy = (0, 0)
+    out_xy = (0, 0)
+    flags = 0
+    fully_set = True
+    
+    @staticmethod
+    def get_attributes():
+        return ('port_types_view', 'group_name',
+                'null_zone', 'in_zone', 'out_zone',
+                'null_xy', 'in_xy', 'out_xy', 'flags')
+    
+    @staticmethod
+    def sisi():
+        return 'issssiiiiiii'
+    
+    @staticmethod
+    def newFrom(*args):
+        group_position = GroupPosition()
+        group_position.update(*args)
+        return group_position
+    
+    def write_from_dict(self, input_dict: dict):
+        for attr in input_dict:
+            if not attr in self.get_attributes():
+                sys.stderr.write(
+                    'group position has no attribute %s\n' % attr)
+                continue
+            
+            value = input_dict[attr]
+            attr_type = type(value)
+            if attr in ('port_types_view', 'flags'):
+                if attr_type != int:
+                    continue
+            elif attr in ('group_name', 'null_zone', 'in_zone', 'out_zone'):
+                if attr_type != str:
+                    continue
+            elif attr in ('null_xy', 'in_xy', 'out_xy'):
+                if attr_type not in (list, tuple):
+                    continue
+                value = tuple(value)
+            
+            self.__setattr__(attr, value)
+    
+    def is_same(self, other)->bool:
+        if (self.port_types_view == other.port_types_view
+                and self.group_name == other.group_name):
+            return True
+        
+        return False
+    
+    def update(self, port_types_view: int, group_name: str,
+               null_zone: str, in_zone: str, out_zone: str,
+               null_x: int, null_y: int, in_x: int, in_y: int,
+               out_x: int, out_y: int, flags: int):
+        for string in (group_name, null_zone, in_zone, out_zone):
+            if type(string) != str:
+                return 
+        
+        for digit in (port_types_view, null_x, null_y, in_x, in_y,
+                      out_x, out_y, flags):
+            if type(digit) == int:
+                continue
+            
+            if type(digit) != str:
+                return
+            
+            if (digit.isdigit()
+                    or (digit.startswith('-')
+                        and digit.replace('-', '', 1).isdigit())):
+                continue
+            else:
+                return
+
+        self.port_types_view = port_types_view
+        self.group_name = group_name
+        self.null_zone = null_zone
+        self.in_zone = in_zone
+        self.out_zone = out_zone
+        self.null_xy = (int(null_x), int(null_y))
+        self.in_xy = (int(in_x), int(in_y))
+        self.out_xy = (int(out_x), int(out_y))
+        self.flags = int(flags)
+        
+    def spread(self)->tuple:
+        return (self.port_types_view, self.group_name,
+                self.null_zone, self.in_zone, self.out_zone,
+                self.null_xy[0], self.null_xy[1], self.in_xy[0], self.in_xy[1],
+                self.out_xy[0], self.out_xy[1], self.flags)
+    
+    def to_dict(self)->dict:
+        new_dict = {}
+        
+        for attr in self.__dir__():
+            if attr in self.get_attributes():
+                new_dict[attr] = self.__getattribute__(attr)
+        
+        return new_dict
+    
+    def get_str_value(self, attr: str)->str:
+        if attr not in self.get_attributes():
+            return ''
+        
+        return str(self.__getattribute__(attr))
+    
+class PortGroupMemory:
+    group_name = ''
+    port_type = 0
+    port_mode = 0
+    port_names = []
+    
+    @staticmethod
+    def get_attributes():
+        return ('group_name', 'port_type', 'port_mode', 'port_names')
+    
+    @staticmethod
+    def newFrom(*args):
+        portgrp_memory = PortGroupMemory()
+        portgrp_memory.update(*args)
+        return portgrp_memory
+    
+    def write_from_dict(self, input_dict: dict):
+        for attr in input_dict:
+            if not attr in self.get_attributes():
+                sys.stderr.write(
+                    'PortGroupMemory has no attribute %s\n' % attr)
+                continue
+
+            value = input_dict[attr]
+            attr_type = type(value)
+            if value == 'group_name' and attr_type != str:
+                continue
+            if value in ('port_type', 'port_mode') and attr_type != int:
+                continue
+            if value == 'port_names' and attr_type not in (tuple, list):
+                continue
+
+            self.__setattr__(attr, value)
+    
+    def update(self, group_name: str, port_type: int, port_mode: int,
+               *port_names):
+        self.group_name = group_name
+        self.port_type = port_type
+        self.port_mode = port_mode
+        self.port_names = port_names
+    
+    def spread(self)->tuple:
+        return (self.group_name, self.port_type, self.port_mode,
+                *self.port_names)
+    
+    def to_dict(self)->dict:
+        new_dict = {}
+        
+        for attr in self.__dir__():
+            if attr in self.get_attributes():
+                new_dict[attr] = self.__getattribute__(attr)
+        
+        return new_dict
+    
+    def has_a_common_port_with(self, other)->bool:
+        if (self.port_type != other.port_type
+                or self.port_mode != other.port_mode
+                or self.group_name != other.group_name):
+            return False
+        
+        for port_name in self.port_names:
+            if port_name in other.port_names:
+                return True
+        
+        return False

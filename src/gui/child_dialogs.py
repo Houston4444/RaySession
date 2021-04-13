@@ -14,29 +14,32 @@ from gui_server_thread import GUIServerThread
 from gui_tools import (ErrDaemon, _translate,
                        CommandLineArgs, RS, isDarkTheme)
 
-import ui_open_session
-import ui_new_session
-import ui_save_template_session
-import ui_nsm_open_info
-import ui_abort_session
-import ui_about_raysession
-import ui_donations
-import ui_jack_config_info
-import ui_new_executable
-import ui_error_dialog
-import ui_quit_app
-import ui_script_info
-import ui_script_user_action
-import ui_session_notes
-import ui_session_scripts_info
-import ui_stop_client
-import ui_stop_client_no_save
-import ui_abort_copy
-import ui_client_trash
-import ui_daemon_url
-import ui_snapshot_progress
-import ui_waiting_close_user
-import ui_client_rename
+from patchcanvas import patchcanvas
+
+import ui.open_session
+import ui.new_session
+import ui.save_template_session
+import ui.nsm_open_info
+import ui.abort_session
+import ui.about_raysession
+import ui.donations
+import ui.jack_config_info
+import ui.new_executable
+import ui.error_dialog
+import ui.quit_app
+import ui.script_info
+import ui.script_user_action
+import ui.session_notes
+import ui.session_scripts_info
+import ui.stop_client
+import ui.stop_client_no_save
+import ui.abort_copy
+import ui.client_trash
+import ui.daemon_url
+import ui.snapshot_progress
+import ui.waiting_close_user
+import ui.client_rename
+import ui.canvas_port_info
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -203,7 +206,7 @@ class SessionFolder:
 class OpenSessionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_open_session.Ui_DialogOpenSession()
+        self.ui = ui.open_session.Ui_DialogOpenSession()
         self.ui.setupUi(self)
 
         self.timer_progress = QTimer()
@@ -410,7 +413,7 @@ class OpenSessionDialog(ChildDialog):
 class NewSessionDialog(ChildDialog):
     def __init__(self, parent, duplicate_window=False):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_new_session.Ui_DialogNewSession()
+        self.ui = ui.new_session.Ui_DialogNewSession()
         self.ui.setupUi(self)
 
         self.is_duplicate = bool(duplicate_window)
@@ -586,7 +589,7 @@ class NewSessionDialog(ChildDialog):
 class AbstractSaveTemplateDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_save_template_session.Ui_DialogSaveTemplateSession()
+        self.ui = ui.save_template_session.Ui_DialogSaveTemplateSession()
         self.ui.setupUi(self)
 
         self.server_will_accept = False
@@ -710,7 +713,7 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
 class ClientTrashDialog(ChildDialog):
     def __init__(self, parent, client_data):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_client_trash.Ui_Dialog()
+        self.ui = ui.client_trash.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.client_data = client_data
@@ -766,7 +769,7 @@ class ClientTrashDialog(ChildDialog):
 class AbortSessionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_abort_session.Ui_AbortSession()
+        self.ui = ui.abort_session.Ui_AbortSession()
         self.ui.setupUi(self)
 
         self.ui.pushButtonAbort.clicked.connect(self.accept)
@@ -789,7 +792,7 @@ class AbortSessionDialog(ChildDialog):
 class AbortServerCopyDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_abort_copy.Ui_Dialog()
+        self.ui = ui.abort_copy.Ui_Dialog()
         self.ui.setupUi(self)
 
         self._signaler.server_progress.connect(self.setProgress)
@@ -809,7 +812,7 @@ class AbortServerCopyDialog(ChildDialog):
 class AbortClientCopyDialog(ChildDialog):
     def __init__(self, parent, client_id):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_abort_copy.Ui_Dialog()
+        self.ui = ui.abort_copy.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.client_id = client_id
@@ -830,7 +833,7 @@ class AbortClientCopyDialog(ChildDialog):
 class SessionNotesDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_session_notes.Ui_Dialog()
+        self.ui = ui.session_notes.Ui_Dialog()
         self.ui.setupUi(self)
 
         if RS.settings.value('SessionNotes/geometry'):
@@ -904,7 +907,7 @@ class SessionNotesDialog(ChildDialog):
 class OpenNsmSessionInfoDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_nsm_open_info.Ui_Dialog()
+        self.ui = ui.nsm_open_info.Ui_Dialog()
         self.ui.setupUi(self)
         self.ui.checkBox.stateChanged.connect(self.showThis)
 
@@ -916,7 +919,7 @@ class OpenNsmSessionInfoDialog(ChildDialog):
 class QuitAppDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_quit_app.Ui_DialogQuitApp()
+        self.ui = ui.quit_app.Ui_DialogQuitApp()
         self.ui.setupUi(self)
         self.ui.pushButtonCancel.setFocus(Qt.OtherFocusReason)
         self.ui.pushButtonSaveQuit.clicked.connect(self.closeSession)
@@ -960,7 +963,7 @@ class QuitAppDialog(ChildDialog):
 class AboutRaySessionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_about_raysession.Ui_DialogAboutRaysession()
+        self.ui = ui.about_raysession.Ui_DialogAboutRaysession()
         self.ui.setupUi(self)
         all_text = self.ui.labelRayAndVersion.text()
         self.ui.labelRayAndVersion.setText(all_text % ray.VERSION)
@@ -969,7 +972,7 @@ class AboutRaySessionDialog(ChildDialog):
 class NewExecutableDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_new_executable.Ui_DialogNewExecutable()
+        self.ui = ui.new_executable.Ui_DialogNewExecutable()
         self.ui.setupUi(self)
 
         self.ui.groupBoxAdvanced.setVisible(False)
@@ -1065,7 +1068,7 @@ class NewExecutableDialog(ChildDialog):
 class StopClientDialog(ChildDialog):
     def __init__(self, parent, client_id):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_stop_client.Ui_Dialog()
+        self.ui = ui.stop_client.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.client_id = client_id
@@ -1111,7 +1114,7 @@ class StopClientDialog(ChildDialog):
 class StopClientNoSaveDialog(ChildDialog):
     def __init__(self, parent, client_id):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_stop_client_no_save.Ui_Dialog()
+        self.ui = ui.stop_client_no_save.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.client_id = client_id
@@ -1138,7 +1141,7 @@ class StopClientNoSaveDialog(ChildDialog):
 class ClientRenameDialog(ChildDialog):
     def __init__(self, parent, client):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_client_rename.Ui_Dialog()
+        self.ui = ui.client_rename.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.client = client
@@ -1155,7 +1158,7 @@ class ClientRenameDialog(ChildDialog):
 class SnapShotProgressDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_snapshot_progress.Ui_Dialog()
+        self.ui = ui.snapshot_progress.Ui_Dialog()
         self.ui.setupUi(self)
         self._signaler.server_progress.connect(self.serverProgress)
 
@@ -1169,7 +1172,7 @@ class SnapShotProgressDialog(ChildDialog):
 class ScriptInfoDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_script_info.Ui_Dialog()
+        self.ui = ui.script_info.Ui_Dialog()
         self.ui.setupUi(self)
 
     def setInfoLabel(self, text):
@@ -1182,7 +1185,7 @@ class ScriptInfoDialog(ChildDialog):
 class ScriptUserActionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_script_user_action.Ui_Dialog()
+        self.ui = ui.script_user_action.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.ui.buttonBox.clicked.connect(self.buttonBoxClicked)
@@ -1224,7 +1227,7 @@ class ScriptUserActionDialog(ChildDialog):
 class SessionScriptsInfoDialog(ChildDialog):
     def __init__(self, parent, session_path):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_session_scripts_info.Ui_Dialog()
+        self.ui = ui.session_scripts_info.Ui_Dialog()
         self.ui.setupUi(self)
 
         scripts_dir = "%s/%s" % (session_path, ray.SCRIPTS_DIR)
@@ -1242,7 +1245,7 @@ class SessionScriptsInfoDialog(ChildDialog):
 class JackConfigInfoDialog(ChildDialog):
     def __init__(self, parent, session_path):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_jack_config_info.Ui_Dialog()
+        self.ui = ui.jack_config_info.Ui_Dialog()
         self.ui.setupUi(self)
 
         scripts_dir = "%s/%s" % (session_path, ray.SCRIPTS_DIR)
@@ -1264,7 +1267,7 @@ class JackConfigInfoDialog(ChildDialog):
 class DaemonUrlWindow(ChildDialog):
     def __init__(self, parent, err_code, ex_url):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_daemon_url.Ui_Dialog()
+        self.ui = ui.daemon_url.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.ui.lineEdit.textChanged.connect(self.allowUrl)
@@ -1333,7 +1336,7 @@ class DaemonUrlWindow(ChildDialog):
 class WaitingCloseUserDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_waiting_close_user.Ui_Dialog()
+        self.ui = ui.waiting_close_user.Ui_Dialog()
         self.ui.setupUi(self)
 
         if isDarkTheme(self):
@@ -1359,10 +1362,22 @@ class WaitingCloseUserDialog(ChildDialog):
     def checkBoxClicked(self, state):
         RS.setHidden(RS.HD_WaitCloseUser, bool(state))
 
+
+class CanvasPortInfoDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui.canvas_port_info.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+    def set_infos(self, port_full_name: str, port_type: str, port_flags: str):
+        self.ui.lineEditFullPortName.setText(port_full_name)
+        self.ui.labelPortType.setText(port_type)
+        self.ui.labelPortFlags.setText(port_flags)
+
 class DonationsDialog(ChildDialog):
     def __init__(self, parent, display_no_again):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_donations.Ui_Dialog()
+        self.ui = ui.donations.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.ui.checkBox.setVisible(display_no_again)
@@ -1375,7 +1390,7 @@ class DonationsDialog(ChildDialog):
 class ErrorDialog(ChildDialog):
     def __init__(self, parent, message):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_error_dialog.Ui_Dialog()
+        self.ui = ui.error_dialog.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.ui.label.setText(message)

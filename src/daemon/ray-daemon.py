@@ -92,6 +92,9 @@ if __name__ == '__main__':
     if CommandLineArgs.gui_url:
         server.announceGui(CommandLineArgs.gui_url.url,
                            gui_pid=CommandLineArgs.gui_pid)
+    elif CommandLineArgs.gui_port:
+        server.announceGui(CommandLineArgs.gui_port.url,
+                           gui_pid=CommandLineArgs.gui_pid)
 
     # announce to ray_control if launched from it.
     if CommandLineArgs.control_url:
@@ -135,6 +138,9 @@ if __name__ == '__main__':
     RS.settings.setValue('daemon/favorites', RS.favorites)
     if not CommandLineArgs.no_options:
         RS.settings.setValue('daemon/options', server.options)
+    
+    # save JSON config group positions
+    session.canvas_saver.save_config_file()
 
     RS.settings.sync()
 

@@ -231,6 +231,10 @@ class SignaledSession(OperatingSession):
             self.sendGui('/ray/gui/client/no_save_level',
                          client.client_id, client.no_save_level)
 
+    def _ray_server_ask_for_patchbay(self, path, args, src_addr):
+        # if we are here, this means we need a patchbay to osc to run
+        QProcess.startDetached('ray-jackpatch_to_osc', [src_addr.url])
+
     def _ray_server_abort_copy(self, path, args, src_addr):
         self.file_copier.abort()
 
@@ -631,6 +635,12 @@ class SignaledSession(OperatingSession):
                     self.bookmarker.makeAll(self.path)
                 else:
                     self.bookmarker.removeAll(self.path)
+
+    def _ray_server_patchbay_save_group_position(self, path, args, src_addr):
+        self.canvas_saver.save_group_position(*args)
+
+    def _ray_server_patchbay_save_portgroup(self, path, args, src_addr):
+        self.canvas_saver.save_portgroup(*args)
 
     @session_operation
     def _ray_session_save(self, path, args, src_addr):

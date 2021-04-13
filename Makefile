@@ -35,46 +35,53 @@ src/gui/resources_rc.py: resources/resources.qrc
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # UI code
 
-UI: raysession ray_proxy
+UI: mkdir_ui raysession ray_proxy
 
-raysession: src/gui/ui_abort_copy.py \
-	    src/gui/ui_abort_session.py \
-	    src/gui/ui_about_raysession.py \
-	    src/gui/ui_add_application.py \
-	    src/gui/ui_client_properties.py \
-	    src/gui/ui_client_rename.py \
-	    src/gui/ui_client_slot.py \
-	    src/gui/ui_client_trash.py \
-	    src/gui/ui_donations.py \
-	    src/gui/ui_daemon_url.py \
-	    src/gui/ui_error_dialog.py \
-	    src/gui/ui_jack_config_info.py \
-	    src/gui/ui_list_snapshots.py \
-	    src/gui/ui_new_executable.py \
-	    src/gui/ui_new_session.py \
-	    src/gui/ui_nsm_properties.py \
-	    src/gui/ui_ray_hack_copy.py \
-	    src/gui/ui_nsm_open_info.py \
-	    src/gui/ui_open_session.py \
-	    src/gui/ui_quit_app.py \
-	    src/gui/ui_ray_hack_properties.py \
-	    src/gui/ui_ray_net_properties.py \
-	    src/gui/ui_raysession.py \
-	    src/gui/ui_remove_template.py \
-	    src/gui/ui_save_template_session.py \
-	    src/gui/ui_session_scripts_info.py \
-	    src/gui/ui_script_info.py \
-	    src/gui/ui_script_user_action.py \
-	    src/gui/ui_session_notes.py \
-	    src/gui/ui_snapshot_name.py \
-	    src/gui/ui_snapshots_info.py \
-	    src/gui/ui_snapshot_progress.py \
-	    src/gui/ui_stop_client.py \
-	    src/gui/ui_stop_client_no_save.py \
-	    src/gui/ui_template_slot.py \
-	    src/gui/ui_waiting_close_user.py
+mkdir_ui:
+	mkdir -p src/gui/ui
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
-src/gui/ui_%.py: resources/ui/%.ui
+raysession: src/gui/ui/abort_copy.py \
+	    src/gui/ui/abort_session.py \
+	    src/gui/ui/about_raysession.py \
+	    src/gui/ui/add_application.py \
+	    src/gui/ui/canvas_options.py \
+	    src/gui/ui/canvas_port_info.py \
+	    src/gui/ui/client_properties.py \
+	    src/gui/ui/client_rename.py \
+	    src/gui/ui/client_slot.py \
+	    src/gui/ui/client_trash.py \
+	    src/gui/ui/donations.py \
+	    src/gui/ui/daemon_url.py \
+	    src/gui/ui/error_dialog.py \
+	    src/gui/ui/jack_config_info.py \
+	    src/gui/ui/list_snapshots.py \
+	    src/gui/ui/new_executable.py \
+	    src/gui/ui/new_session.py \
+	    src/gui/ui/nsm_properties.py \
+	    src/gui/ui/ray_hack_copy.py \
+	    src/gui/ui/nsm_open_info.py \
+	    src/gui/ui/open_session.py \
+	    src/gui/ui/patchbay_tools.py \
+	    src/gui/ui/quit_app.py \
+	    src/gui/ui/ray_hack_properties.py \
+	    src/gui/ui/ray_net_properties.py \
+	    src/gui/ui/raysession.py \
+	    src/gui/ui/remove_template.py \
+	    src/gui/ui/save_template_session.py \
+	    src/gui/ui/session_scripts_info.py \
+	    src/gui/ui/script_info.py \
+	    src/gui/ui/script_user_action.py \
+	    src/gui/ui/session_notes.py \
+	    src/gui/ui/snapshot_name.py \
+	    src/gui/ui/snapshots_info.py \
+	    src/gui/ui/snapshot_progress.py \
+	    src/gui/ui/stop_client.py \
+	    src/gui/ui/stop_client_no_save.py \
+	    src/gui/ui/template_slot.py \
+	    src/gui/ui/waiting_close_user.py
+
+src/gui/ui/%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
 	
 ray_proxy: src/clients/proxy/ui_proxy_copy.py \
@@ -94,8 +101,9 @@ locale/%.qm: locale/%.ts
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	rm -f *~ src/*~ src/*.pyc src/gui/ui_*.py src/clients/proxy/ui_*.py \
+	rm -f *~ src/*~ src/*.pyc  src/clients/proxy/ui_*.py \
 	      src/gui/resources_rc.py locale/*.qm
+	rm -f -R src/gui/ui
 	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__
 # -----------------------------------------------------------------------------------------------------------------------------------------
 

@@ -32,12 +32,12 @@
         <translation>Trame</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="437"/>
+        <location filename="../resources/ui/client_slot.ui" line="440"/>
         <source>...</source>
         <translation>...</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="128"/>
+        <location filename="../resources/ui/client_slot.ui" line="131"/>
         <source>ClientName</source>
         <translation>NomDuClient</translation>
     </message>
@@ -52,67 +52,67 @@
         <translation type="obsolete">IUG</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="237"/>
+        <location filename="../resources/ui/client_slot.ui" line="240"/>
         <source>Launch</source>
         <translation>Lancer</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="349"/>
+        <location filename="../resources/ui/client_slot.ui" line="352"/>
         <source>Status</source>
         <translation>État</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="352"/>
+        <location filename="../resources/ui/client_slot.ui" line="355"/>
         <source>stopped</source>
         <translation>arrêté</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="377"/>
+        <location filename="../resources/ui/client_slot.ui" line="380"/>
         <source>Save</source>
         <translation>Sauvegarder</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="431"/>
+        <location filename="../resources/ui/client_slot.ui" line="434"/>
         <source>Remove</source>
         <translation>Supprimer</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="270"/>
+        <location filename="../resources/ui/client_slot.ui" line="273"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Politely ask the client to stop.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Demander poliment au client de s&apos;arrêter.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="303"/>
+        <location filename="../resources/ui/client_slot.ui" line="306"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Kill !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Tuer !&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="469"/>
+        <location filename="../resources/ui/client_slot.ui" line="472"/>
         <source>Save As Application Template</source>
         <translation>Sauvegarder comme modèle d&apos;application</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="478"/>
+        <location filename="../resources/ui/client_slot.ui" line="481"/>
         <source>Properties</source>
         <translation>Propriétés</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="487"/>
+        <location filename="../resources/ui/client_slot.ui" line="490"/>
         <source>Return To A Previous State</source>
         <translation>Retourner à un état précédent</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="496"/>
+        <location filename="../resources/ui/client_slot.ui" line="499"/>
         <source>Rename</source>
         <translation>Renommer</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="166"/>
+        <location filename="../resources/ui/client_slot.ui" line="169"/>
         <source>Display client Ray-Hack properties</source>
         <translation>Afficher les propriétés Ray-Hack du client</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_slot.ui" line="172"/>
+        <location filename="../resources/ui/client_slot.ui" line="175"/>
         <source>Hack</source>
         <translation>Hack</translation>
     </message>
@@ -834,6 +834,76 @@ p, li { white-space: pre-wrap; }
         <source>Session name</source>
         <translation>Nom de la session</translation>
     </message>
+    <message>
+        <location filename="../resources/ui/canvas_options.ui" line="14"/>
+        <source>Canvas Options</source>
+        <translation>Préférences du canevas</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_options.ui" line="35"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Display shorter and more readable ports and groups names.&lt;/p&gt;&lt;p&gt;If unchecked, displayed port names will be the trought port names.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Afficher des noms de ports et de groupes plus courts et plus lisibles.&lt;/p&gt;&lt;p&gt;Si décochée, les noms de ports affichés seront les vrais noms de ports.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_options.ui" line="38"/>
+        <source>Use graceful names</source>
+        <translation>Utiliser des noms digestes</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_options.ui" line="45"/>
+        <source>Group A2J hardware ports</source>
+        <translation>Grouper les ports A2J matériels</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_options.ui" line="52"/>
+        <source>Boxes have shadows</source>
+        <translation>Les boîtes ont des ombres</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_options.ui" line="59"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Always resize the canvas scene to the mininum contents.&lt;/p&gt;&lt;p&gt;This way, the view is directly optimized while moving boxes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Toujours redimensionner la scène à son contenu minimum.&lt;/p&gt;&lt;p&gt;De cette façon, la vue est optimisée en direct lors du déplacement des boîtes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_options.ui" line="62"/>
+        <source>Elastic canvas</source>
+        <translation>Canevas élastique</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_options.ui" line="77"/>
+        <source>Theme :</source>
+        <translation>Thème :</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_port_info.ui" line="14"/>
+        <source>Port Infos</source>
+        <translation>Infos sur le port</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_port_info.ui" line="39"/>
+        <source>Full port name :</source>
+        <translation>Nom complet du port :</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_port_info.ui" line="81"/>
+        <source>Type</source>
+        <translation>Type</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_port_info.ui" line="101"/>
+        <source>Flags</source>
+        <translation>Attributs</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_port_info.ui" line="108"/>
+        <source>Port Flags</source>
+        <translation>Attributs du port</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/canvas_port_info.ui" line="115"/>
+        <source>Audio Port</source>
+        <translation>Port audio</translation>
+    </message>
 </context>
 <context>
     <name>DialogAboutRaysession</name>
@@ -1234,14 +1304,57 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Duplicate</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="440"/>
+        <location filename="../src/gui/child_dialogs.py" line="443"/>
         <source>Duplicated session name :</source>
         <translation>Nom de la session dupliquée :</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="442"/>
+        <location filename="../src/gui/child_dialogs.py" line="445"/>
         <source>Duplicate Session</source>
         <translation>Dupliquer la session</translation>
+    </message>
+</context>
+<context>
+    <name>Form</name>
+    <message>
+        <location filename="../resources/ui/patchbay_tools.ui" line="14"/>
+        <source>Form</source>
+        <translation>Forme</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/patchbay_tools.ui" line="44"/>
+        <source>Sample Rate :</source>
+        <translation>Échantillonage :</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/patchbay_tools.ui" line="56"/>
+        <source>48.000</source>
+        <translation>48.000</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/patchbay_tools.ui" line="68"/>
+        <source>Hz</source>
+        <translation>Hz</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/patchbay_tools.ui" line="87"/>
+        <source>Buffer :</source>
+        <translation>Tampon :</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/patchbay_tools.ui" line="133"/>
+        <source>0 Xruns</source>
+        <translation>0 Xruns</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/patchbay_tools.ui" line="152"/>
+        <source>DSP :</source>
+        <translation>DSP :</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/patchbay_tools.ui" line="177"/>
+        <source>&lt;p style=&quot;color:red&quot;&gt;JACK is not started !&lt;/p&gt;</source>
+        <translation>&lt;p style=&quot;color:red&quot;&gt;JACKn&apos;es pas lancé !&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1560,7 +1673,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Tous les clients attendus sont arrêtés</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1036"/>
+        <location filename="../src/daemon/session.py" line="1043"/>
         <source>Can&apos;t save session, session file is unwriteable !</source>
         <translation>Impossible de sauvegarder la session, le fichier de session n&apos;est pas inscriptible !</translation>
     </message>
@@ -1575,12 +1688,12 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ordonne aux clients attachés de s&apos;arrêter.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1295"/>
+        <location filename="../src/daemon/session.py" line="1302"/>
         <source>Creating new session &quot;%s&quot;</source>
         <translation>Création d&apos;une nouvelle session &quot;%s&quot;</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1320"/>
+        <location filename="../src/daemon/session.py" line="1327"/>
         <source>Session is ready</source>
         <translation>La session est prête</translation>
     </message>
@@ -1620,17 +1733,17 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Session sauvegardée comme modèle nommé %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="866"/>
+        <location filename="../src/daemon/session_signaled.py" line="876"/>
         <source>Stop all clients before rename session !</source>
         <translation>Arrêtez tous les clients avant de renommer la session !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="886"/>
+        <location filename="../src/daemon/session_signaled.py" line="896"/>
         <source>Session %s has been renamed to %s .</source>
         <translation>La session %s a été renommée %s.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="880"/>
+        <location filename="../src/daemon/session_signaled.py" line="890"/>
         <source>Session directory is now: %s</source>
         <translation>Le répertoire de la session est maintenant: %s</translation>
     </message>
@@ -1725,7 +1838,7 @@ p, li { white-space: pre-wrap; }
         <translation>%s n&apos;est pas accessible en écriture !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2230"/>
+        <location filename="../src/daemon/session.py" line="2243"/>
         <source>Copy has been aborted !</source>
         <translation>La copie a été abandonnée !</translation>
     </message>
@@ -1755,142 +1868,142 @@ p, li { white-space: pre-wrap; }
         <translation>--- Le script personnalisé%s a commencé ...%s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="640"/>
+        <location filename="../src/daemon/session.py" line="642"/>
         <source>%s didn&apos;t announce.</source>
         <translation>%s n&apos;a pas annoncé.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="645"/>
+        <location filename="../src/daemon/session.py" line="647"/>
         <source>%s still alive !</source>
         <translation>%s est tourne encore!</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="893"/>
+        <location filename="../src/daemon/session.py" line="895"/>
         <source>-- Saving session %s --</source>
         <translation>- Sauvegarde de la session %s -</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="903"/>
+        <location filename="../src/daemon/session.py" line="905"/>
         <source>waiting for %s to save...</source>
         <translation>en attente de %s pour enregistrer ...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="907"/>
+        <location filename="../src/daemon/session.py" line="909"/>
         <source>waiting for %i clients to save...</source>
         <translation>attente de la sauvegarde de %i clients...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1020"/>
+        <location filename="../src/daemon/session.py" line="1027"/>
         <source>Session &apos;%s&apos; saved.</source>
         <translation>La session &apos;%s&apos; a été sauvegardée.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1061"/>
+        <location filename="../src/daemon/session.py" line="1068"/>
         <source>snapshot started...</source>
         <translation>cliché démarré...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1068"/>
+        <location filename="../src/daemon/session.py" line="1075"/>
         <source>Snapshot aborted!</source>
         <translation>cliché abandonné!</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1070"/>
+        <location filename="../src/daemon/session.py" line="1077"/>
         <source>...snapshot finished.</source>
         <translation>...cliché terminé.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1121"/>
+        <location filename="../src/daemon/session.py" line="1128"/>
         <source>waiting for no saveable clients to be closed gracefully...</source>
         <translation>attente de la fermeture gracieuse des clients non sauvegardables...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1142"/>
+        <location filename="../src/daemon/session.py" line="1149"/>
         <source>waiting you to close yourself unsaveable clients...</source>
         <translation>en attente que vous fermiez vous même les clients non sauvegardables...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1235"/>
+        <location filename="../src/daemon/session.py" line="1242"/>
         <source>waiting for %s to quit...</source>
         <translation>attente de la fermeture de %s...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1240"/>
+        <location filename="../src/daemon/session.py" line="1247"/>
         <source>waiting for %i clients to quit...</source>
         <translation>attente de la fermeture de %i clients...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1358"/>
+        <location filename="../src/daemon/session.py" line="1365"/>
         <source>-- Duplicating session %s to %s --</source>
         <translation>- Duplication de la session %s à %s -</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1386"/>
+        <location filename="../src/daemon/session.py" line="1393"/>
         <source>waiting for network daemons to start duplicate...</source>
         <translation>attente que les démons du réseau commencent à dupliquer ...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1398"/>
+        <location filename="../src/daemon/session.py" line="1405"/>
         <source>start session copy...</source>
         <translation>démarrer la copie de session ...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1409"/>
+        <location filename="../src/daemon/session.py" line="1416"/>
         <source>...session copy finished.</source>
         <translation>...copie de session terminée.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1416"/>
+        <location filename="../src/daemon/session.py" line="1423"/>
         <source>waiting for network daemons to finish duplicate</source>
         <translation>attente que les démons réseau terminent la duplication</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1483"/>
+        <location filename="../src/daemon/session.py" line="1490"/>
         <source>start session copy to template...</source>
         <translation>démarrer la copie de session dans le modèle...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1501"/>
+        <location filename="../src/daemon/session.py" line="1508"/>
         <source>...session saved as template named %s</source>
         <translation>...session sauvegardée comme modèle nommé %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1555"/>
+        <location filename="../src/daemon/session.py" line="1562"/>
         <source>start copy from template to session folder</source>
         <translation>démarrer la copie du modèle vers le dossier de session</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1839"/>
+        <location filename="../src/daemon/session.py" line="1852"/>
         <source>-- Opening session %s --</source>
         <translation>- Ouverture de la session %s -</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1962"/>
+        <location filename="../src/daemon/session.py" line="1975"/>
         <source>waiting for %s to load its project...</source>
         <translation>attente du chargement de projet de %s...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1967"/>
+        <location filename="../src/daemon/session.py" line="1980"/>
         <source>waiting for %s clients to load their project...</source>
         <translation>attente du chargement de projet de %s clients...</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1986"/>
+        <location filename="../src/daemon/session.py" line="1999"/>
         <source>session %s is loaded.</source>
         <translation>la session%s est chargée.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2067"/>
+        <location filename="../src/daemon/session.py" line="2080"/>
         <source>%s is missing or corrupted !</source>
         <translation>%s est manquant ou corrompu!</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2074"/>
+        <location filename="../src/daemon/session.py" line="2087"/>
         <source>%s has no RAY-CLIENT-TEMPLATES top element !</source>
         <translation>%s n&apos;a pas d&apos;élément supérieur RAY-CLIENT-TEMPLATES!</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2214"/>
+        <location filename="../src/daemon/session.py" line="2227"/>
         <source>%s is not an existing template !</source>
         <translation>%s n&apos;est pas un modèle existant!</translation>
     </message>
@@ -1905,72 +2018,72 @@ p, li { white-space: pre-wrap; }
         <translation>Impossible, copie en cours !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="559"/>
+        <location filename="../src/daemon/session_signaled.py" line="563"/>
         <source>session %s is already opened !</source>
         <translation>la session %s est déjà ouverte!</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="570"/>
+        <location filename="../src/daemon/session_signaled.py" line="574"/>
         <source>session %s is already used by another daemon !</source>
         <translation>la session %s est déjà utilisée par un autre démon !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="710"/>
+        <location filename="../src/daemon/session_signaled.py" line="720"/>
         <source>abort ordered from elsewhere, sorry !</source>
         <translation>abandon ordonné d&apos;ailleurs, désolé !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="801"/>
+        <location filename="../src/daemon/session_signaled.py" line="811"/>
         <source>%s already exists !</source>
         <translation>%s existe déjà !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="773"/>
+        <location filename="../src/daemon/session_signaled.py" line="783"/>
         <source>session %s is already used by this or another daemon !</source>
         <translation>la session %s est déjà utilisée par ce démon ou un autre!</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1077"/>
+        <location filename="../src/daemon/session_signaled.py" line="1087"/>
         <source>No session to list clients !</source>
         <translation>Aucune session pour lister les clients!</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1197"/>
+        <location filename="../src/daemon/session_signaled.py" line="1207"/>
         <source>client %s is already running.</source>
         <translation>le client %s est déjà en cours d&apos;exécution.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1218"/>
+        <location filename="../src/daemon/session_signaled.py" line="1228"/>
         <source>client %s is already active.</source>
         <translation>le client %s est déjà actif.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1235"/>
+        <location filename="../src/daemon/session_signaled.py" line="1245"/>
         <source>%s is not saveable.</source>
         <translation>%s n&apos;est pas sauvegardable.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1368"/>
+        <location filename="../src/daemon/session_signaled.py" line="1378"/>
         <source>%s seems to not be a proxy client !</source>
         <translation>%s ne semble pas être un client proxy !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1401"/>
+        <location filename="../src/daemon/session_signaled.py" line="1411"/>
         <source>impossible to read %s correctly !</source>
         <translation>impossible de lire correctement %s!</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1359"/>
+        <location filename="../src/daemon/session_signaled.py" line="1369"/>
         <source>Impossible to set proxy properties while client is running.</source>
         <translation>Impossible de définir les propriétés du proxy lorsque le client est en cours d&apos;exécution.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1421"/>
+        <location filename="../src/daemon/session_signaled.py" line="1431"/>
         <source>%s is not writeable</source>
         <translation>%s n&apos;est pas accessible en écriture</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1486"/>
+        <location filename="../src/daemon/session_signaled.py" line="1496"/>
         <source>%s is not running.</source>
         <translation>%s n&apos;est pas en cours d&apos;exécution.</translation>
     </message>
@@ -1983,7 +2096,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>GUI_daemon</name>
     <message>
-        <location filename="../src/gui/daemon_manager.py" line="199"/>
+        <location filename="../src/gui/daemon_manager.py" line="204"/>
         <source>Connecting GUI to existing ray-daemon port %i</source>
         <translation>Connexion de l&apos;IGU au port ray-daemon existant %i</translation>
     </message>
@@ -1991,32 +2104,32 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Load Error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="2012"/>
+        <location filename="../src/daemon/session.py" line="2025"/>
         <source>Unknown error</source>
         <translation>Erreur inconnue</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2014"/>
+        <location filename="../src/daemon/session.py" line="2027"/>
         <source>Could not create session file!</source>
         <translation>Impossible de créer le fichier de session !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2016"/>
+        <location filename="../src/daemon/session.py" line="2029"/>
         <source>Session is locked by another process!</source>
         <translation>La session est verrouillée par un autre processus !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2019"/>
+        <location filename="../src/daemon/session.py" line="2032"/>
         <source>The named session does not exist.</source>
         <translation>La session sus-nommée n&apos;existe pas.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2021"/>
+        <location filename="../src/daemon/session.py" line="2034"/>
         <source>Could not load session file.</source>
         <translation>Impossible de charger le fichier de session.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2023"/>
+        <location filename="../src/daemon/session.py" line="2036"/>
         <source>Can&apos;t create session in a dir containing a session
 for better organization.</source>
         <translation>Impossible de créer une session dans un répertoire contenant une session
@@ -2026,7 +2139,7 @@ pour une meilleure organisation.</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="590"/>
+        <location filename="../resources/ui/raysession.ui" line="613"/>
         <source>...</source>
         <translation>...</translation>
     </message>
@@ -2041,37 +2154,37 @@ pour une meilleure organisation.</translation>
         <translation type="obsolete">Aucune session chargée</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="310"/>
+        <location filename="../resources/ui/raysession.ui" line="333"/>
         <source>Open Session Folder</source>
         <translation>Ouvrir le dossier de la session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="433"/>
+        <location filename="../resources/ui/raysession.ui" line="456"/>
         <source>Run Command</source>
         <translation>Lancer une commande</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="525"/>
+        <location filename="../resources/ui/raysession.ui" line="548"/>
         <source>off</source>
         <translation>éteint</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="550"/>
+        <location filename="../resources/ui/raysession.ui" line="573"/>
         <source>Save Session</source>
         <translation>Sauvegarder la session</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="664"/>
         <source>&amp;Messages</source>
-        <translation>&amp;Messages</translation>
+        <translation type="obsolete">&amp;Messages</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="704"/>
+        <location filename="../resources/ui/raysession.ui" line="772"/>
         <source>Fi&amp;le</source>
         <translation>&amp;Fichier</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="714"/>
+        <location filename="../resources/ui/raysession.ui" line="782"/>
         <source>&amp;Session</source>
         <translation>&amp;Session</translation>
     </message>
@@ -2081,157 +2194,157 @@ pour une meilleure organisation.</translation>
         <translation type="obsolete">&amp;Affichage</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="740"/>
+        <location filename="../resources/ui/raysession.ui" line="809"/>
         <source>&amp;Help</source>
         <translation>&amp;Aide</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="784"/>
+        <location filename="../resources/ui/raysession.ui" line="853"/>
         <source>toolBar</source>
         <translation>Barre d&apos;outils</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="814"/>
+        <location filename="../resources/ui/raysession.ui" line="883"/>
         <source>&amp;Show Messages</source>
         <translation>&amp;Afficher les messages</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="817"/>
+        <location filename="../resources/ui/raysession.ui" line="886"/>
         <source>Ctrl+L</source>
         <translation>Ctrl+L</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="829"/>
+        <location filename="../resources/ui/raysession.ui" line="898"/>
         <source>&amp;Save</source>
         <translation>&amp;Sauvegarder</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="832"/>
+        <location filename="../resources/ui/raysession.ui" line="901"/>
         <source>Ctrl+S</source>
         <translation>Ctrl+S</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="844"/>
+        <location filename="../resources/ui/raysession.ui" line="913"/>
         <source>&amp;Open Session</source>
         <translation>&amp;Ouvrir une session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="847"/>
+        <location filename="../resources/ui/raysession.ui" line="916"/>
         <source>Ctrl+O</source>
         <translation>Ctrl+O</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="856"/>
+        <location filename="../resources/ui/raysession.ui" line="925"/>
         <source>&amp;New Session</source>
         <translation>&amp;Nouvelle session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="859"/>
+        <location filename="../resources/ui/raysession.ui" line="928"/>
         <source>Ctrl+N</source>
         <translation>Ctrl+N</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="868"/>
+        <location filename="../resources/ui/raysession.ui" line="937"/>
         <source>&amp;Quit</source>
         <translation>&amp;Quitter</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="871"/>
+        <location filename="../resources/ui/raysession.ui" line="940"/>
         <source>Ctrl+Q</source>
         <translation>Ctrl+Q</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="880"/>
+        <location filename="../resources/ui/raysession.ui" line="949"/>
         <source>&amp;About Ray Session</source>
         <translation>À &amp;propos de Ray Session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="895"/>
+        <location filename="../resources/ui/raysession.ui" line="964"/>
         <source>Show &amp;Menu Bar</source>
         <translation>Afficher la barre de &amp;menu</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="898"/>
+        <location filename="../resources/ui/raysession.ui" line="967"/>
         <source>Ctrl+M</source>
         <translation>Ctrl+M</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="910"/>
+        <location filename="../resources/ui/raysession.ui" line="979"/>
         <source>Control</source>
         <translation>Contrôle</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="923"/>
+        <location filename="../resources/ui/raysession.ui" line="992"/>
         <source>&amp;Close</source>
         <translation>&amp;Fermer</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="929"/>
+        <location filename="../resources/ui/raysession.ui" line="998"/>
         <source>Ctrl+W</source>
         <translation>Ctrl+W</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="943"/>
+        <location filename="../resources/ui/raysession.ui" line="1012"/>
         <source>&amp;Abort</source>
         <translation>&amp;Abandonner</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="946"/>
+        <location filename="../resources/ui/raysession.ui" line="1015"/>
         <source>Abort Current Session</source>
         <translation>Abandonner la session en cours</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="949"/>
+        <location filename="../resources/ui/raysession.ui" line="1018"/>
         <source>Ctrl+Shift+W</source>
         <translation>Ctrl+Maj+W</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="961"/>
+        <location filename="../resources/ui/raysession.ui" line="1030"/>
         <source>&amp;Open Session Folder</source>
         <translation>&amp;Ouvrir le dossier de la session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="964"/>
+        <location filename="../resources/ui/raysession.ui" line="1033"/>
         <source>Open session folder with file manager</source>
         <translation>Ouvrir le dossier de la session avec le gestionnaire de fichiers</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="979"/>
+        <location filename="../resources/ui/raysession.ui" line="1048"/>
         <source>&amp;Keep focus while opening clients</source>
         <translation>&amp;Garder le focus lors de l&apos;ouverture des clients</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="982"/>
+        <location filename="../resources/ui/raysession.ui" line="1051"/>
         <source>Ctrl+F</source>
         <translation>Ctrl+F</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="987"/>
+        <location filename="../resources/ui/raysession.ui" line="1056"/>
         <source>About &amp;Qt</source>
         <translation>À propos de &amp;Qt</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="999"/>
+        <location filename="../resources/ui/raysession.ui" line="1068"/>
         <source>&amp;Duplicate</source>
         <translation>&amp;Dupliquer</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1203"/>
+        <location filename="../resources/ui/raysession.ui" line="1272"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Duplicate the current session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Dupliquer la session en cours&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1206"/>
+        <location filename="../resources/ui/raysession.ui" line="1275"/>
         <source>Ctrl+D</source>
         <translation>Ctrl+D</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1050"/>
+        <location filename="../resources/ui/raysession.ui" line="1119"/>
         <source>Ctrl+A</source>
         <translation>Ctrl+A</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="213"/>
+        <location filename="../resources/ui/raysession.ui" line="236"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save &amp;amp; Close Session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sauvegarder &amp;amp; et fermer la session&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
@@ -2316,62 +2429,62 @@ pour une meilleure organisation.</translation>
         <translation type="obsolete">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sauvegarder la session comme modèle&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="385"/>
+        <location filename="../resources/ui/raysession.ui" line="408"/>
         <source>Application</source>
         <translation>Application</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="439"/>
+        <location filename="../resources/ui/raysession.ui" line="462"/>
         <source>Executable</source>
         <translation>Exécutable</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1032"/>
+        <location filename="../resources/ui/raysession.ui" line="1101"/>
         <source>Sa&amp;ve As Template</source>
         <translation>Sau&amp;vegarder comme modèle</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1188"/>
+        <location filename="../resources/ui/raysession.ui" line="1257"/>
         <source>Save current session as template</source>
         <translation>Sauvegarde la session en cours comme modèle</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="751"/>
+        <location filename="../resources/ui/raysession.ui" line="820"/>
         <source>Add</source>
         <translation>Ajouter</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1014"/>
+        <location filename="../resources/ui/raysession.ui" line="1083"/>
         <source>&amp;Executable</source>
         <translation>&amp;Exécutable</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1044"/>
+        <location filename="../resources/ui/raysession.ui" line="1113"/>
         <source>&amp;Application</source>
         <translation>&amp;Application</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="519"/>
+        <location filename="../resources/ui/raysession.ui" line="542"/>
         <source>Server Status</source>
         <translation>État du serveur</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="926"/>
+        <location filename="../resources/ui/raysession.ui" line="995"/>
         <source>Save and Close Session</source>
         <translation>Sauvegarder et fermer la session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1017"/>
+        <location filename="../resources/ui/raysession.ui" line="1086"/>
         <source>Add executable to current session</source>
         <translation>Ajouter un exécutable à la session en cours</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1020"/>
+        <location filename="../resources/ui/raysession.ui" line="1089"/>
         <source>Ctrl+E</source>
         <translation>Ctrl+E</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1047"/>
+        <location filename="../resources/ui/raysession.ui" line="1116"/>
         <source>Add application to current session</source>
         <translation>Ajouter une application à la session en cours</translation>
     </message>
@@ -2381,17 +2494,17 @@ pour une meilleure organisation.</translation>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Les variables d&apos;environnement $NSM_CLIENT_ID et $RAY_SESSION_NAME contiennent respectivement l&apos;identifiant du client et le nom de la session.&lt;br/&gt;La variable $CONFIG_FILE contient le nom du fichier sélectionné ci-dessus.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="583"/>
+        <location filename="../resources/ui/raysession.ui" line="606"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trash&lt;/p&gt;&lt;p&gt;You will find here removed clients.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Corbeille&lt;/p&gt;&lt;p&gt;Vous trouverez ici les clients supprimés.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="729"/>
+        <location filename="../resources/ui/raysession.ui" line="797"/>
         <source>&amp;View</source>
         <translation>&amp;Affichage</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1062"/>
+        <location filename="../resources/ui/raysession.ui" line="1131"/>
         <source>&amp;Rename</source>
         <translation>&amp;Renommer</translation>
     </message>
@@ -2411,12 +2524,12 @@ pour une meilleure organisation.</translation>
         <translation>Attendre une fenêtre avant de répondre au serveur (requiert wmctrl)</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="758"/>
+        <location filename="../resources/ui/raysession.ui" line="827"/>
         <source>Options</source>
         <translation>Options</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1077"/>
+        <location filename="../resources/ui/raysession.ui" line="1146"/>
         <source>&amp;Provide bookmarks for session folder</source>
         <translation>Fournir des &amp;raccourcis du dossier de la session</translation>
     </message>
@@ -2426,22 +2539,22 @@ pour une meilleure organisation.</translation>
         <translation type="obsolete">Mémoire des bureaux (requiert wmctrl)</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="481"/>
+        <location filename="../resources/ui/raysession.ui" line="504"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go back to a previous state of the session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Retourner à un état précédent de la session.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="487"/>
+        <location filename="../resources/ui/raysession.ui" line="510"/>
         <source>Snapshots</source>
         <translation>Clichés</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1089"/>
+        <location filename="../resources/ui/raysession.ui" line="1158"/>
         <source>&amp;Desktops Memory (requires wmctrl)</source>
         <translation>Mémoire des &amp;bureaux (nécessite wmctrl)</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1101"/>
+        <location filename="../resources/ui/raysession.ui" line="1170"/>
         <source>Return To A &amp;Previous State (requires git)</source>
         <translation>Retourner à un état &amp;précédent (nécessite git)</translation>
     </message>
@@ -2451,7 +2564,7 @@ pour une meilleure organisation.</translation>
         <translation type="obsolete">Cliché automatique à la sauvegarde (nécessite git)</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1119"/>
+        <location filename="../resources/ui/raysession.ui" line="1188"/>
         <source>Auto Snapshot at Save (requires git)</source>
         <translation>Cliché automatique à la sauvegarde (nécessite git)</translation>
     </message>
@@ -2466,7 +2579,7 @@ pour une meilleure organisation.</translation>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Si ce proxy n&apos;a pas de signal de sauvegarde,&lt;br/&gt;il peut transmettre au gestionnaire de session cette information.&lt;/p&gt;&lt;p&gt;&lt;ul&gt;&lt;li&gt;0 - cette information n&apos;est pas transmise.&lt;/li&gt;&lt;li&gt;1 - cette information est transmise, le gestionnaire de session demandera à l&apos;utilisateur de fermer le programme lui-même au déchargement de la session.&lt;/li&gt;&lt;li&gt;2 - cette information est transmise, le gestionnaire de session peut essayer de fermer gracieusement les fenêtres du programme au déchargement de la session. Bon choix si le programme affiche une fenêtre de dialogue si des changements n&apos;ont pas été sauvegardés.&lt;/li&gt;&lt;/ul&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="349"/>
+        <location filename="../resources/ui/raysession.ui" line="372"/>
         <source>Favorite Applications</source>
         <translation>Applications favorites</translation>
     </message>
@@ -2481,7 +2594,7 @@ pour une meilleure organisation.</translation>
         <translation type="obsolete">Scripts de session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1143"/>
+        <location filename="../resources/ui/raysession.ui" line="1212"/>
         <source>Run the session scripts inside the directory ray-scripts</source>
         <translation>Exécutez les scripts de session dans le répertoire ray-scripts</translation>
     </message>
@@ -2491,74 +2604,89 @@ pour une meilleure organisation.</translation>
         <translation>RaySession</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1116"/>
+        <location filename="../resources/ui/raysession.ui" line="1185"/>
         <source>&amp;Auto Snapshot At Save (requires git)</source>
-        <translation>Cliché automatique à la sauvegarde (nécessite git)</translation>
+        <translation>Cliché &amp;automatique à la sauvegarde (nécessite git)</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1128"/>
+        <location filename="../resources/ui/raysession.ui" line="1197"/>
         <source>&amp;Donate</source>
         <translation>&amp;Dons</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1140"/>
+        <location filename="../resources/ui/raysession.ui" line="1209"/>
         <source>&amp;Session Scripts</source>
         <translation>&amp;Scripts de session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1155"/>
+        <location filename="../resources/ui/raysession.ui" line="1224"/>
         <source>&amp;Remember optional GUI states</source>
         <translation>Se souvenir de l&apos;état des &amp;IGUs</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1158"/>
+        <location filename="../resources/ui/raysession.ui" line="1227"/>
         <source>Remember if optional GUIs were shown</source>
         <translation>Se souvenir de l&apos;état de visibilité des IGUs optionelles</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1167"/>
+        <location filename="../resources/ui/raysession.ui" line="1236"/>
         <source>&amp;Edit Session Notes</source>
         <translation>&amp;Éditer les notes de session</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1176"/>
+        <location filename="../resources/ui/raysession.ui" line="1245"/>
         <source>Make &amp;reappear all dialog windows</source>
         <translation>Faire &amp;ré-apparaître toutes les fenêtres de dialogue</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1185"/>
+        <location filename="../resources/ui/raysession.ui" line="1254"/>
         <source>Save as Template the current session</source>
         <translation>Sauvegarder la session en cours comme modèle</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1200"/>
+        <location filename="../resources/ui/raysession.ui" line="1269"/>
         <source>Duplicate the current session</source>
         <translation>Dupliquer la session en cours</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1218"/>
+        <location filename="../resources/ui/raysession.ui" line="1287"/>
         <source>Rename the current session</source>
         <translation>Renommer la session en cours</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="1226"/>
         <source>Online Manual</source>
-        <translation>Manuel en ligne</translation>
+        <translation type="obsolete">Manuel en ligne</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1229"/>
+        <location filename="../resources/ui/raysession.ui" line="1299"/>
         <source>Open the online manual in the web browser</source>
         <translation>Ouvrir le manuel en ligne dans le navigateur web</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="1237"/>
         <source>Internal Manual</source>
-        <translation>Manuel interne</translation>
+        <translation type="obsolete">Manuel interne</translation>
     </message>
     <message>
-        <location filename="../resources/ui/raysession.ui" line="1240"/>
+        <location filename="../resources/ui/raysession.ui" line="1311"/>
         <source>Displays internal manual in a web browser</source>
         <translation>Ouvrir le manuel interne dans le navigateur web</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/raysession.ui" line="1296"/>
+        <source>&amp;Online Manual</source>
+        <translation>&amp;Manuel en ligne</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/raysession.ui" line="1308"/>
+        <source>&amp;Internal Manual</source>
+        <translation>Manuel &amp;interne</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/raysession.ui" line="1323"/>
+        <source>Show &amp;JACK patchbay</source>
+        <translation>Afficher la baie de brassage de &amp;JACK</translation>
     </message>
 </context>
 <context>
@@ -2572,59 +2700,59 @@ pour une meilleure organisation.</translation>
 <context>
     <name>Snapshot Error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="1078"/>
+        <location filename="../src/daemon/session.py" line="1085"/>
         <source>Unknown error</source>
         <translation>Erreur inconnue</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1080"/>
+        <location filename="../src/daemon/session.py" line="1087"/>
         <source>git didn&apos;t stop normally.
 %s</source>
         <translation>git ne s&apos;est pas arrêté normalement.
 %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1083"/>
+        <location filename="../src/daemon/session.py" line="1090"/>
         <source>git crashes.
 %s</source>
         <translation>git a planté.
 %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1086"/>
+        <location filename="../src/daemon/session.py" line="1093"/>
         <source>git exit with an error code.
 %s</source>
         <translation>git s&apos;est terminé avec un code d&apos;erreur.
 %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2256"/>
+        <location filename="../src/daemon/session.py" line="2269"/>
         <source>Snapshot error</source>
         <translation>Erreur de cliché</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2258"/>
+        <location filename="../src/daemon/session.py" line="2271"/>
         <source>command didn&apos;t stop normally:
 %s</source>
         <translation>la commande ne s&apos;est pas arrêtée normalement:
 %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2261"/>
+        <location filename="../src/daemon/session.py" line="2274"/>
         <source>command crashes:
 %s</source>
         <translation>la commande a planté :
 %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2264"/>
+        <location filename="../src/daemon/session.py" line="2277"/>
         <source>command exit with an error code:
 %s</source>
         <translation>la commande s&apos;est terminée avec un code d&apos;erreur :
 %s</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2267"/>
+        <location filename="../src/daemon/session.py" line="2280"/>
         <source>error reading file:
 %s</source>
         <translation>erreur de lecture du fichier :
@@ -2634,12 +2762,12 @@ pour une meilleure organisation.</translation>
 <context>
     <name>actions</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="342"/>
+        <location filename="../src/gui/main_window.py" line="468"/>
         <source>Desktops Memory</source>
         <translation>Mémoire des bureaux</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="350"/>
+        <location filename="../src/gui/main_window.py" line="476"/>
         <source>Auto Snapshot at Save</source>
         <translation>Cliché automatique à la sauvegarde</translation>
     </message>
@@ -2775,17 +2903,17 @@ pour une meilleure organisation.</translation>
         <translation type="obsolete">Afficher la fenêtre de proxy</translation>
     </message>
     <message>
-        <location filename="../src/gui/list_widget_clients.py" line="166"/>
+        <location filename="../src/gui/list_widget_clients.py" line="168"/>
         <source>Protocol</source>
         <translation>Protocole</translation>
     </message>
     <message>
-        <location filename="../src/gui/list_widget_clients.py" line="169"/>
+        <location filename="../src/gui/list_widget_clients.py" line="171"/>
         <source>Executable</source>
         <translation>Exécutable</translation>
     </message>
     <message>
-        <location filename="../src/gui/list_widget_clients.py" line="172"/>
+        <location filename="../src/gui/list_widget_clients.py" line="174"/>
         <source>client id</source>
         <translation>Identifiant</translation>
     </message>
@@ -2816,7 +2944,7 @@ pour une meilleure organisation.</translation>
 <context>
     <name>client_stop</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1087"/>
+        <location filename="../src/gui/child_dialogs.py" line="1090"/>
         <source>&lt;strong&gt;%s&lt;/strong&gt; seems to has not been saved for %i minute(s).&lt;br /&gt;Do you really want to stop it ?</source>
         <translation>&lt;strong&gt;%s&lt;/strong&gt; semble ne pas avoir été sauvegardé depuis %i minute(s).&lt;br /&gt;Voulez-vous vraiment l&apos;arrêter ?</translation>
     </message>
@@ -2835,21 +2963,26 @@ pour une meilleure organisation.</translation>
         <translation>le port %i n&apos;est pas libre, essayez-en un autre
 </translation>
     </message>
+    <message>
+        <location filename="../src/daemon/osc_server_thread.py" line="1364"/>
+        <source>daemon runs at %s</source>
+        <translation>le démon tourne sur %s</translation>
+    </message>
 </context>
 <context>
     <name>error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="1353"/>
+        <location filename="../src/daemon/session.py" line="1360"/>
         <source>Some clients could not save</source>
         <translation>Certains clients ne peuvent pas être sauvegardés</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1449"/>
+        <location filename="../src/daemon/session.py" line="1456"/>
         <source>Impossible to save template, unwriteable file !</source>
         <translation>Impossible de sauvegarder le modèle, fichier non inscriptible !</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1529"/>
+        <location filename="../src/daemon/session.py" line="1536"/>
         <source>No template named %s</source>
         <translation>Pas de modèle nommé %s</translation>
     </message>
@@ -2863,7 +2996,7 @@ already exists</source>
 existe déjà</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="830"/>
+        <location filename="../src/daemon/session.py" line="832"/>
         <source>impossible to read %s</source>
         <translation>impossible de lire %s</translation>
     </message>
@@ -2875,7 +3008,7 @@ existe déjà</translation>
 </translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1538"/>
+        <location filename="../src/daemon/session.py" line="1545"/>
         <source>Folder
 %s
 already exists</source>
@@ -2884,19 +3017,19 @@ already exists</source>
 existe déjà</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1544"/>
+        <location filename="../src/daemon/session.py" line="1551"/>
         <source>Can&apos;t create session in a dir containing a session
 for better organization.</source>
         <translation>Impossible de créer une session dans un répertoire contenant une session
 pour une meilleure organisation.</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="961"/>
+        <location filename="../src/daemon/session_signaled.py" line="971"/>
         <source>client_id %s is not alphanumeric</source>
         <translation>l&apos;identifiant de client %s n&apos;est pas alphanumérique</translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="969"/>
+        <location filename="../src/daemon/session_signaled.py" line="979"/>
         <source>client_id %s is already used</source>
         <translation>l&apos;identifiant de client %s est déjà utilisé</translation>
     </message>
@@ -2912,12 +3045,12 @@ pour une meilleure organisation.</translation>
 <context>
     <name>errors</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="1058"/>
+        <location filename="../src/gui/main_window.py" line="1272"/>
         <source>daemon crash!</source>
         <translation>Plantage du démon !</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="1058"/>
+        <location filename="../src/gui/main_window.py" line="1272"/>
         <source>ray-daemon crashed, sorry !</source>
         <translation>ray-daemon a planté, désolé !</translation>
     </message>
@@ -2978,12 +3111,12 @@ pour une meilleure organisation.</translation>
 <context>
     <name>hidden_dialogs</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="1037"/>
+        <location filename="../src/gui/main_window.py" line="1251"/>
         <source>Make reappear dialog windows</source>
         <translation>Faire ré-apparaître les boites de dialogue</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="1037"/>
+        <location filename="../src/gui/main_window.py" line="1251"/>
         <source>Do you want to make reappear all dialogs you wanted to hide ?</source>
         <translation>Êtes-vous sûr de vouloir faire ré-apparaître toutes les boîtes de dialogue que vous avez voulu cacher ?</translation>
     </message>
@@ -2991,9 +3124,22 @@ pour une meilleure organisation.</translation>
 <context>
     <name>main view</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="801"/>
+        <location filename="../src/gui/main_window.py" line="1009"/>
         <source>No Session Loaded</source>
         <translation>Pas de session chargée</translation>
+    </message>
+</context>
+<context>
+    <name>main_win</name>
+    <message>
+        <location filename="../src/gui/main_window.py" line="78"/>
+        <source>App</source>
+        <translation>Appli</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/main_window.py" line="79"/>
+        <source>exec</source>
+        <translation>Exéc</translation>
     </message>
 </context>
 <context>
@@ -3004,7 +3150,7 @@ pour une meilleure organisation.</translation>
         <translation>supprimer</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="192"/>
+        <location filename="../src/gui/main_window.py" line="243"/>
         <source>Favorites</source>
         <translation>Favoris</translation>
     </message>
@@ -3028,7 +3174,7 @@ pour une meilleure organisation.</translation>
 <context>
     <name>new client template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="686"/>
+        <location filename="../src/gui/child_dialogs.py" line="689"/>
         <source>New application template name :</source>
         <translation>Nom du nouveau modèle d&apos;application :</translation>
     </message>
@@ -3036,17 +3182,17 @@ pour une meilleure organisation.</translation>
 <context>
     <name>new_executable</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="993"/>
+        <location filename="../src/gui/child_dialogs.py" line="996"/>
         <source>Custom</source>
         <translation>Personnalisé</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="995"/>
+        <location filename="../src/gui/child_dialogs.py" line="998"/>
         <source>Client Name</source>
         <translation>Nom du client</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="997"/>
+        <location filename="../src/gui/child_dialogs.py" line="1000"/>
         <source>Session Name</source>
         <translation>Nom de la session</translation>
     </message>
@@ -3062,9 +3208,232 @@ pour une meilleure organisation.</translation>
 <context>
     <name>notes_dialog</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="870"/>
+        <location filename="../src/gui/child_dialogs.py" line="873"/>
         <source>%s Notes - %s</source>
         <translation>Notes %s - %s</translation>
+    </message>
+</context>
+<context>
+    <name>patchbay</name>
+    <message>
+        <location filename="../src/gui/canvas_options.py" line="36"/>
+        <source>Silver Gold</source>
+        <translation>Or et argent</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/canvas_options.py" line="37"/>
+        <source>Black Gold</source>
+        <translation>Or noir</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/canvas_options.py" line="38"/>
+        <source>Modern Dark</source>
+        <translation>Noir moderne</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1016"/>
+        <source>Audio</source>
+        <translation>Audio</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1018"/>
+        <source>MIDI</source>
+        <translation>MIDI</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1023"/>
+        <source>Input</source>
+        <translation>Entrée</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1024"/>
+        <source>Output</source>
+        <translation>Sortie</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1025"/>
+        <source>Physical</source>
+        <translation>Matériel</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1026"/>
+        <source>Monitor</source>
+        <translation>Moniteur</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1027"/>
+        <source>Terminal</source>
+        <translation>Terminal</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1028"/>
+        <source>Control Voltage</source>
+        <translation>Voltage de contrôle</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1068"/>
+        <source>Toggle Full Screen</source>
+        <translation>Plein écran</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1075"/>
+        <source>Type filter</source>
+        <translation>Filtrer les ports</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1077"/>
+        <source>Audio + Midi</source>
+        <translation>Audio + Midi</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1084"/>
+        <source>Audio only</source>
+        <translation>Audio seulement</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1089"/>
+        <source>MIDI only</source>
+        <translation>MIDI seulement</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1096"/>
+        <source>Zoom</source>
+        <translation>Zoom</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1099"/>
+        <source>auto-fit</source>
+        <translation>Auto ajusté</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1104"/>
+        <source>Zoom +</source>
+        <translation>Zoom +</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1109"/>
+        <source>Zoom -</source>
+        <translation>Zoom -</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1114"/>
+        <source>Zoom 100%</source>
+        <translation>Zoom 100%</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1121"/>
+        <source>Refresh the canvas</source>
+        <translation>Rafraîchir le canevas</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1125"/>
+        <source>Canvas options</source>
+        <translation>Préférences du canevas</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1528"/>
+        <source>JACK server lose</source>
+        <translation>Serveur JACK perdu</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_manager.py" line="1528"/>
+        <source>JACK server seems to be totally busy... ;(</source>
+        <translation>Le serveur JACK semble être complètement dans les choux... ;(</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="781"/>
+        <source>Wrap</source>
+        <translation>Emballer</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="784"/>
+        <source>Unwrap</source>
+        <translation>Déballer</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="175"/>
+        <source>Connect</source>
+        <translation>Connecter</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="270"/>
+        <source>Disconnect</source>
+        <translation>Déconnecter</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="274"/>
+        <source>No connections</source>
+        <translation>Aucune connexion</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="368"/>
+        <source>Clipboard</source>
+        <translation>Presse-papier</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="371"/>
+        <source>Cut connections</source>
+        <translation>Couper les connexions</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="376"/>
+        <source>Copy connections</source>
+        <translation>Copier les connexions</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="397"/>
+        <source>Paste connections</source>
+        <translation>Coller les connexions</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="547"/>
+        <source>Disconnect All</source>
+        <translation>Tout déconnecter</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="768"/>
+        <source>Disconnect &amp;All</source>
+        <translation>&amp;Tout déconnecter</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="772"/>
+        <source>Info</source>
+        <translation>Informations</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="773"/>
+        <source>Rename</source>
+        <translation>Renommer</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="775"/>
+        <source>Split</source>
+        <translation>Séparer</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="777"/>
+        <source>Join</source>
+        <translation>Joindre</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasportgroup.py" line="549"/>
+        <source>Split to Monos</source>
+        <translation>Séparer en canaux monos</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasport.py" line="518"/>
+        <source>Set as Stereo with</source>
+        <translation>Mettre en stéréo avec</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasport.py" line="548"/>
+        <source>Get &amp;Info</source>
+        <translation>&amp;Informations</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchcanvas/canvasport.py" line="550"/>
+        <source>&amp;Rename</source>
+        <translation>&amp;Renommer</translation>
     </message>
 </context>
 <context>
@@ -3086,12 +3455,12 @@ pour une meilleure organisation.</translation>
 <context>
     <name>rename_session</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="514"/>
+        <location filename="../src/gui/main_window.py" line="674"/>
         <source>Rename Session</source>
         <translation>Renommer la session</translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="514"/>
+        <location filename="../src/gui/main_window.py" line="674"/>
         <source>&lt;p&gt;In order to rename current session,&lt;br&gt;please first stop all clients.&lt;br&gt;then, double click on session name.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Pour renommer la session en cours,&lt;br&gt;Arrêtez d&apos;abord tous les clients.&lt;br&gt;Ensuite, double-cliquez sur le nom de la session.&lt;/p&gt;</translation>
     </message>
@@ -3099,17 +3468,17 @@ pour une meilleure organisation.</translation>
 <context>
     <name>root_folder_dialogs</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="81"/>
+        <location filename="../src/gui/child_dialogs.py" line="84"/>
         <source>Choose root folder for sessions</source>
         <translation>Sélectionnez le dossier de racine pour les sessions</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="53"/>
+        <location filename="../src/gui/child_dialogs.py" line="56"/>
         <source>unwritable dir</source>
         <translation>Dossier non-inscriptible</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="106"/>
+        <location filename="../src/gui/child_dialogs.py" line="109"/>
         <source>&lt;p&gt;You have no permissions for %s,&lt;br&gt;choose another directory !&lt;/p&gt;</source>
         <translation>&lt;p&gt;Vous n&apos;avez pas les permissions pour %s,&lt;br&gt;Sélectionnez un autre répertoire !&lt;/p&gt;</translation>
     </message>
@@ -3203,12 +3572,12 @@ pour une meilleure organisation.</translation>
 <context>
     <name>session template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="604"/>
+        <location filename="../src/gui/child_dialogs.py" line="607"/>
         <source>Overwrite Template ?</source>
         <translation>Écraser le modèle ?</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="597"/>
+        <location filename="../src/gui/child_dialogs.py" line="600"/>
         <source>Update the template</source>
         <translation>Mettre à jour le modèle</translation>
     </message>
@@ -3216,12 +3585,12 @@ pour une meilleure organisation.</translation>
 <context>
     <name>session_notes</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="882"/>
+        <location filename="../src/gui/child_dialogs.py" line="885"/>
         <source>Too long notes</source>
         <translation>Notes trop longues</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="882"/>
+        <location filename="../src/gui/child_dialogs.py" line="885"/>
         <source>&lt;p&gt;Because notes are spread to the OSC server,&lt;br&gt;they can&apos;t be longer than 65000 characters.&lt;br&gt;Sorry !&lt;/p&gt;</source>
         <translation>&lt;p&gt;Du fait que les notes sont diffusées par le serveur OSC,&lt;br&gt;elles ne peuvent pas excéder 65000 caractères.&lt;br&gt;Désolé !&lt;/p&gt;</translation>
     </message>
@@ -3229,29 +3598,29 @@ pour une meilleure organisation.</translation>
 <context>
     <name>session_template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="632"/>
+        <location filename="../src/gui/child_dialogs.py" line="635"/>
         <source>Template &lt;strong&gt;%s&lt;/strong&gt; already exists.
 Overwrite it ?</source>
         <translation>Le modèle &lt;strong&gt;%s&lt;/strong&gt; existe déjà.
 Voulez-vous l&apos;écraser ?</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="489"/>
+        <location filename="../src/gui/child_dialogs.py" line="492"/>
         <source>empty</source>
         <translation>vide</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="491"/>
+        <location filename="../src/gui/child_dialogs.py" line="494"/>
         <source>with JACK patch memory</source>
         <translation>avec mémoire du patch de JACK</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="493"/>
+        <location filename="../src/gui/child_dialogs.py" line="496"/>
         <source>with JACK config memory</source>
         <translation>avec mémoire de la configuration de JACK</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="495"/>
+        <location filename="../src/gui/child_dialogs.py" line="498"/>
         <source>with basic scripts</source>
         <translation>avec les scripts de base</translation>
     </message>
@@ -3297,12 +3666,12 @@ Voulez-vous l&apos;écraser ?</translation>
 <context>
     <name>trashed_client</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="731"/>
+        <location filename="../src/gui/child_dialogs.py" line="734"/>
         <source>Remove definitely</source>
         <translation>Supprimer définitivement</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="731"/>
+        <location filename="../src/gui/child_dialogs.py" line="734"/>
         <source>Are you sure to want to remove definitely this client and all its files ?</source>
         <translation>Êtes-vous sûr(e) de vouloir supprimer définitivement ce client et tous ses fichiers ?</translation>
     </message>
@@ -3310,7 +3679,7 @@ Voulez-vous l&apos;écraser ?</translation>
 <context>
     <name>url window</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1298"/>
+        <location filename="../src/gui/child_dialogs.py" line="1301"/>
         <source>&lt;p align=&quot;left&quot;&gt;To run a network session,&lt;br&gt;open a terminal on another computer of this network.&lt;br&gt;Launch ray-daemon on port 1234 (for example)&lt;br&gt;by typing the command :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Then paste below the first url&lt;br&gt;that ray-daemon gives you at startup.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</source>
         <translation>&lt;p align=&quot;left&quot;&gt;Pour lancer une session réseau,&lt;br&gt;ouvrez un terminal sur un autre ordinateur de ce réseau.&lt;br&gt;Lancez ray-daemon sur le port 1234 (par exemple)&lt;br&gt;en tapant la commande suivante :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Ensuite collez ci-dessous la première url&lt;br&gt;que ray-daemon affiche au démarrage.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</translation>
     </message>
@@ -3318,7 +3687,7 @@ Voulez-vous l&apos;écraser ?</translation>
 <context>
     <name>url_window</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1278"/>
+        <location filename="../src/gui/child_dialogs.py" line="1281"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;didn&apos;t announce !&lt;br&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Le démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;ne s&apos;est pas annoncé !&lt;br&gt;&lt;/p&gt;</translation>
     </message>
@@ -3328,12 +3697,12 @@ Voulez-vous l&apos;écraser ?</translation>
         <translation type="obsolete">&lt;p&gt;La démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;a déjà une session chargée.&lt;br&gt;Il n&apos;est pas utilisable pour une session esclave&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1286"/>
+        <location filename="../src/gui/child_dialogs.py" line="1289"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses an other session root folder !&lt;.p&gt;</source>
         <translation>&lt;p&gt;Le démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;n&apos;utilise pas le bon dossier de sessions racine !&lt;.p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1290"/>
+        <location filename="../src/gui/child_dialogs.py" line="1293"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses a forbidden session root folder !&lt;.p&gt;</source>
         <translation>&lt;p&gt;Le démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;utilise un dossier de sessions racine interdit !&lt;.p&gt;</translation>
     </message>
@@ -3343,12 +3712,12 @@ Voulez-vous l&apos;écraser ?</translation>
         <translation type="obsolete">&lt;p&gt;Le démon à &apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;utilise une autre version de RaySession.&lt;.p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1282"/>
+        <location filename="../src/gui/child_dialogs.py" line="1285"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;has a loaded self._session.&lt;br&gt;It can&apos;t be used for slave session&lt;/p&gt;</source>
         <translation>&lt;p&gt;le démon à&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;a une session chargée.&lt;br&gt;Il ne peut pas être utilisé pour une session exclave&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1296"/>
+        <location filename="../src/gui/child_dialogs.py" line="1299"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses another %s version.&lt;.p&gt;</source>
         <translation>&lt;p&gt;le démon à &lt;br&gt; &lt;strong&gt;%s &lt;/strong&gt; &lt;br&gt; utilise une autre version de %s. &lt;. p&gt;</translation>
     </message>

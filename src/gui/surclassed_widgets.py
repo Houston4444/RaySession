@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
-                             QFrame)
-from PyQt5.QtGui import QFont, QFontDatabase, QFontMetrics, QPalette, QIcon
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+                             QFrame, QGraphicsView, QSplitter, QSplitterHandle)
+from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
+                         QIcon, QCursor, QMouseEvent)
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint, QPointF, QRectF, QSizeF
 
 import time
 
@@ -87,8 +88,28 @@ class CustomLineEdit(QLineEdit):
 
 
 class SessionFrame(QFrame):
+    shorterSize = pyqtSignal(bool)
+    
     def __init__(self, parent):
         QFrame.__init__(self)
+
+        self._base_width = 419
+        self._names_are_short = False
+    
+    def setBaseWidth(self, base_width):
+        self._base_width = base_width
+    
+    def resizeEvent(self, event):
+        QFrame.resizeEvent(self, event)
+
+        if self._names_are_short:
+            if self.width() > self._base_width:
+                self.shorterSize.emit(False)
+                self._names_are_short = False
+        else:
+            if self.width() < self._base_width:
+                self.shorterSize.emit(True)
+                self._names_are_short = True
 
 
 class StackedSessionName(QStackedWidget):
@@ -303,3 +324,82 @@ class favoriteToolButton(QToolButton):
         else:
             self.session.addFavorite(self.template_name, self.template_icon,
                                      self.factory)
+
+# taken from carla (falktx)
+class DraggableGraphicsView(QGraphicsView):
+    def __init__(self, parent):
+        QGraphicsView.__init__(self, parent)
+
+        self.fPanning = False
+        self.fCtrlDown = False
+
+        try:
+            self.fMiddleButton = Qt.MiddleButton
+        except:
+            self.fMiddleButton = Qt.MidButton
+            
+        self.h_scroll_visible = False
+        self.v_scroll_visible = False
+
+    def mousePressEvent(self, event):
+        if event.button() == self.fMiddleButton and not self.fCtrlDown:
+            self.fPanning = True
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
+            event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton, Qt.LeftButton, event.modifiers())
+
+        QGraphicsView.mousePressEvent(self, event)
+
+    def mouseReleaseEvent(self, event):
+        QGraphicsView.mouseReleaseEvent(self, event)
+
+        if not self.fPanning:
+            return
+
+        self.fPanning = False
+        self.setDragMode(QGraphicsView.NoDrag)
+        self.setCursor(QCursor(Qt.ArrowCursor))
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.fCtrlDown = True
+        QGraphicsView.keyPressEvent(self, event)
+
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.fCtrlDown = False
+        QGraphicsView.keyReleaseEvent(self, event)
+        
+
+class CanvasSplitterHandle(QSplitterHandle):
+    def __init__(self, parent):
+        QSplitterHandle.__init__(self, Qt.Horizontal, parent)
+        self._default_cursor = self.cursor()
+        self._active = True
+        
+    def set_active(self, yesno: bool):
+        self._active = yesno
+
+        if yesno:
+            self.setCursor(self._default_cursor)
+        else:
+            self.unsetCursor()
+
+    def mouseMoveEvent(self, event):
+        if not self._active:
+            return
+
+        QSplitterHandle.mouseMoveEvent(self, event)
+
+
+class CanvasSplitter(QSplitter):
+    def __init__(self, parent):
+        QSplitter.__init__(self, parent)
+    
+    def set_active(self, yesno: bool):
+        handle = self.handle(1)
+        if handle:
+            handle.set_active(yesno)
+
+    def createHandle(self):
+        return CanvasSplitterHandle(self)
+

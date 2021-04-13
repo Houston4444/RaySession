@@ -10,16 +10,16 @@ from gui_tools import RS, _translate, isDarkTheme
 from child_dialogs import ChildDialog
 from gui_signaler import Signaler
 
-import ui_add_application
-import ui_template_slot
-import ui_remove_template
+import ui.add_application
+import ui.template_slot
+import ui.remove_template
 
 
 class TemplateSlot(QFrame):
     def __init__(self, list_widget, item, session,
                  name, factory, client_data):
         QFrame.__init__(self)
-        self.ui = ui_template_slot.Ui_Frame()
+        self.ui = ui.template_slot.Ui_Frame()
         self.ui.setupUi(self)
 
         self.list_widget = list_widget
@@ -124,7 +124,7 @@ class TemplateItem(QListWidgetItem):
 class RemoveTemplateDialog(ChildDialog):
     def __init__(self, parent, template_name):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_remove_template.Ui_Dialog()
+        self.ui = ui.remove_template.Ui_Dialog()
         self.ui.setupUi(self)
 
         self.ui.label.setText(
@@ -137,7 +137,7 @@ class RemoveTemplateDialog(ChildDialog):
 class AddApplicationDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
-        self.ui = ui_add_application.Ui_DialogAddApplication()
+        self.ui = ui.add_application.Ui_DialogAddApplication()
         self.ui.setupUi(self)
 
         self._session = parent._session

@@ -8,7 +8,7 @@ from gui_tools import clientStatusString, _translate, isDarkTheme, RayIcon
 import child_dialogs
 import snapshots_dialog
 
-import ui_client_slot
+import ui.client_slot
 
 
 
@@ -21,7 +21,7 @@ class ClientSlot(QFrame):
 
     def __init__(self, list_widget, client):
         QFrame.__init__(self)
-        self.ui = ui_client_slot.Ui_ClientSlotWidget()
+        self.ui = ui.client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
 
         # needed variables
@@ -285,6 +285,14 @@ class ClientSlot(QFrame):
         elif status == ray.ClientStatus.COPY:
             self.ui.saveButton.setEnabled(False)
 
+    def setMaxLabelWidth(self, width: int):
+        if self.ui.toolButtonGUI.isVisible():
+            width -= self.ui.toolButtonGUI.width()
+        
+        width = max(30, width)
+        self.ui.ClientName.setMaximumWidth(width)
+        
+
     def allowKill(self):
         self.ui.stopButton.setVisible(False)
         self.ui.killButton.setVisible(True)
@@ -326,13 +334,6 @@ class ClientSlot(QFrame):
         else:
             self.client.properties_dialog.hide()
 
-        #if state:
-            #self.toDaemon('/ray/client/show_optional_gui',
-                            #self.clientId())
-        #else:
-            #self.toDaemon('/ray/client/hide_optional_gui',
-                            #self.clientId())
-
     def setDirtyState(self, bool_dirty):
         if bool_dirty:
             self.ui.saveButton.setIcon(self.unsavedIcon)
@@ -351,6 +352,11 @@ class ClientSlot(QFrame):
     def setDaemonOptions(self, options):
         has_git = bool(options & ray.Option.HAS_GIT)
         self.ui.actionReturnToAPreviousState.setVisible(has_git)
+
+    def resizeEvent(self, event):
+        QFrame.resizeEvent(self, event)
+        
+        print('sle', self.client.prettier_name(), self.width(), self.minimumSizeHint().width())
 
     def contextMenuEvent(self, event):
         act_selected = self.menu.exec(self.mapToGlobal(event.pos()))
@@ -498,3 +504,11 @@ class ListWidgetClients(QListWidget):
                 act_selected = menu.exec(self.mapToGlobal(event.pos()))
             event.accept()
             return
+
+    def resizeEvent(self, event):
+        QListWidget.resizeEvent(self, event)
+        for i in range(self.count()):
+            item = self.item(i)
+            widget = self.itemWidget(item)
+            widget.setMaxLabelWidth(self.width() - 228)
+        
