@@ -92,6 +92,27 @@ class cb_line_t(object):
         self.line = line
         self.connection_id = connection_id
 
+
+class TitleLine:
+    text = ''
+    size = 0
+    x = 0
+    y = 0
+    is_little = False
+    
+    def __init__(self, text: str, little=False):
+        self.text = text
+        self.is_little = little
+        self.x = 0
+        self.y = 0
+        self.font = QFont()
+        self.font.setFamily(canvas.theme.box_font_name)
+        self.font.setPixelSize(canvas.theme.box_font_size)
+        if not little:
+            self.font.setWeight(QFont.Bold)
+            
+        self.size = QFontMetrics(self.font).width(text)
+        
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasBox(QGraphicsItem):
@@ -107,6 +128,8 @@ class CanvasBox(QGraphicsItem):
         # Save Variables, useful for later
         self.m_group_id = group_id
         self.m_group_name = group_name
+
+        self.splitTitle()
 
         # plugin Id, < 0 if invalid
         self.m_plugin_id = -1
@@ -142,6 +165,13 @@ class CanvasBox(QGraphicsItem):
         self.m_font_name.setFamily(canvas.theme.box_font_name)
         self.m_font_name.setPixelSize(canvas.theme.box_font_size)
         self.m_font_name.setWeight(canvas.theme.box_font_state)
+        
+        self.m_font_italic = QFont()
+        self.m_font_italic.setFamily(canvas.theme.box_font_name)
+        self.m_font_italic.setPixelSize(canvas.theme.box_font_size)
+        self.m_font_italic.setWeight(canvas.theme.box_font_state)
+        #self.m_font_italic.setItalic(True)
+        self.m_font_italic.setBold(False)
 
         self.m_font_port = QFont()
         self.m_font_port.setFamily(canvas.theme.port_font_name)
@@ -279,8 +309,33 @@ class CanvasBox(QGraphicsItem):
         if self._is_hardware:
             self.setIcon(ICON_HARDWARE, self._icon_name)
 
+    def splitTitle(self):
+        title_lines = []
+        
+        title, slash, subtitle = self.m_group_name.partition('/')
+        if subtitle:
+            title_lines.append(TitleLine(title, little=True))
+            if len(subtitle) > 12:
+                subtitle_1, subtitle_2 = self.split_in_two(subtitle)
+                title_lines.append(TitleLine(subtitle_1))
+                if subtitle_2:
+                    title_lines.append(TitleLine(subtitle_2))
+            else:
+                title_lines.append(TitleLine(subtitle))
+        else:
+            if len(self.m_group_name) > 12:
+                title_1, title_2 = self.split_in_two(self.m_group_name)
+                title_lines.append(TitleLine(title_1))
+                if title_2:
+                    title_lines.append(TitleLine(title_2))
+            else:
+                title_lines.append(TitleLine(self.m_group_name))
+        
+        self._title_lines = tuple(title_lines)
+
     def setGroupName(self, group_name):
         self.m_group_name = group_name
+        self.splitTitle()
         self.updatePositions()
 
     def setShadowOpacity(self, opacity):
@@ -421,14 +476,59 @@ class CanvasBox(QGraphicsItem):
     def get_string_size(self, string: str)->int:
         return QFontMetrics(self.m_font_name).width(string)
 
+    @staticmethod
+    def split_in_two(string: str)->tuple:
+        middle = int(len(string)/2)
+        sep_indexes = []
+        last_was_digit = False
+        
+        for sep in (' ', '-', '_', 'capital'):
+            for i in range(len(string)):
+                c = string[i]
+                if sep == 'capital':
+                    if c.upper() == c:
+                        if not c.isdigit() or not last_was_digit:
+                            sep_indexes.append(i)
+                        last_was_digit = c.isdigit()
+                        
+                elif c == sep:
+                    sep_indexes.append(i)
+                    
+            if sep_indexes:
+                break
+        
+        if not sep_indexes:
+            return (string, '')
+        
+        best_index = 0
+        best_dif = middle
+        
+        for s in sep_indexes:
+            dif = abs(middle - s)
+            if dif < best_dif:
+                best_index = s
+                best_dif = dif
+        
+        if sep == ' ':
+            return (string[:best_index], string[best_index+1:])
+        return (string[:best_index], string[best_index:])
+
     def updatePositions(self):
         self.prepareGeometryChange()
 
         # Check Text Name size
-        box_title, slash, box_subtitle = self.m_group_name.partition('/')
-        title_size = self.get_string_size(box_title)
-        subtitle_size = self.get_string_size(box_subtitle)
-        self.p_width = max(title_size, subtitle_size)
+        max_title_size = 0
+        for title_line in self._title_lines:
+            max_title_size = max(max_title_size, title_line.size)
+        #title_size = subtitle_size = 0
+
+        #for title_line in self._title_lines:
+            #title_size = max(title_size, self.get_string_size(title_line))
+        #for subtitle_line in self._subtitle_lines:
+            #subtitle_size = max(subtitle_size,
+                                #self.get_string_size(subtitle_line))
+
+        self.p_width = max_title_size
         
         if self.has_top_icon():
             self.p_width += 37
@@ -459,6 +559,10 @@ class CanvasBox(QGraphicsItem):
             port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK, PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
             last_in_type = last_out_type = PORT_TYPE_NULL
             last_in_pos = last_out_pos = canvas.theme.box_header_height + canvas.theme.box_header_spacing
+            if len(self._title_lines) == 3:
+                last_in_pos += 14
+                last_out_pos += 14
+                
             wrapped_port_pos = last_in_pos
             last_of_portgrp = True
             
@@ -626,7 +730,7 @@ class CanvasBox(QGraphicsItem):
             self.p_height += canvas.theme.box_pen.widthF()
 
         if self.has_top_icon():
-            self.top_icon.align_at((self.p_width - max(title_size, subtitle_size) - 29)/2)
+            self.top_icon.align_at((self.p_width - max_title_size - 29)/2)
 
         if (self.p_width != self.p_ex_width
                 or self.p_height != self.p_ex_height
@@ -912,13 +1016,15 @@ class CanvasBox(QGraphicsItem):
             if self.sceneBoundingRect().contains(event.scenePos()):
                 if self._wrapped:
                     # unwrap the box if event is one of the triangles zones
+                    ypos = canvas.theme.box_header_height
+                    if len(self._title_lines) == 3:
+                        ypos += 14
                     
                     triangle_rect_out = QRectF(
-                        0, canvas.theme.box_header_height,
-                        24, canvas.theme.port_height + canvas.theme.port_spacing)
+                        0, ypos, 24, ypos + canvas.theme.port_spacing)
                     triangle_rect_in = QRectF(
-                        self.p_width - 24, canvas.theme.box_header_height,
-                        24, canvas.theme.port_height + canvas.theme.port_spacing)
+                        self.p_width - 24, ypos,
+                        24, ypos + canvas.theme.port_spacing)
                     
                     mode = PORT_MODE_INPUT
                     wrap = False
@@ -1137,53 +1243,69 @@ class CanvasBox(QGraphicsItem):
         if self.has_top_icon():
             title_x_pos += 25
         
-        subtitle_x_pos = title_x_pos
-        
-        title_y_pos = canvas.theme.box_text_ypos
+        #title_y_pos = canvas.theme.box_text_ypos
 
-        box_title = self.m_group_name
-        box_subtitle = ''
-        if '/' in box_title:
-            box_title, slash, box_subtitle = self.m_group_name.partition('/')
+        for title_line in self._title_lines:
+            title_line.x = title_x_pos
+            title_line.y = canvas.theme.box_text_ypos
 
-        title_size = self.get_string_size(box_title)
-        subtitle_size = self.get_string_size(box_subtitle)
+        if len(self._title_lines) >= 2:
+            if self._title_lines[0].is_little:
+                self._title_lines[0].y -= 7
+                self._title_lines[1].y += 9
+                if len(self._title_lines) == 3:
+                    self._title_lines[2].y += 24
+            else:
+                self._title_lines[0].y -= 6
+                self._title_lines[1].y += 9
+            
 
+        max_title_size = 0
+        for title_line in self._title_lines:
+            max_title_size = max(max_title_size, title_line.size)
+
+        # may draw horizontal lines around title
+        # and set x on title lines
         painter.setPen(QPen(QColor(255, 192, 0, 80), 1))
 
         if self.has_top_icon():
-            title_x_pos = 29 + (self.p_width - 29 - max(title_size, subtitle_size)) / 2
-            subtitle_x_pos = title_x_pos
+            title_x_pos = 29 + (self.p_width - 29 - max_title_size) / 2
             
             if title_x_pos > 43:
                 painter.drawLine(5, 16, title_x_pos -29 -5, 16)
                 painter.drawLine(
-                    title_x_pos + max(title_size, subtitle_size) + 5, 16,
+                    title_x_pos + max_title_size + 5, 16,
                     self.p_width -5, 16)
+            
+            for title_line in self._title_lines:
+                title_line.x = title_x_pos
         else:
-            title_x_pos = (self.p_width - title_size) / 2
-            subtitle_x_pos = (self.p_width - subtitle_size) / 2
-            if min(title_x_pos, subtitle_x_pos) > 10:
-                painter.drawLine(5, 16, min(title_x_pos, subtitle_x_pos) - 5, 16)
-                painter.drawLine(
-                    max(title_x_pos + title_size, subtitle_x_pos + subtitle_size) + 5, 16,
-                    self.p_width - 5, 16)
+            left_xpos = self.p_width
+            right_xpos = 0
 
-        painter.setFont(self.m_font_name)
+            for title_line in self._title_lines:
+                title_line.x = (self.p_width - title_line.size) / 2
+                left_xpos = min(left_xpos, title_line.x)
+                right_xpos = max(right_xpos, title_line.x + title_line.size)
+            
+            if left_xpos > 10:
+                painter.drawLine(5, 16, left_xpos - 5, 16)
+                painter.drawLine(right_xpos + 5, 16,
+                                 self.p_width - 5, 16)
 
         if self.isSelected():
             painter.setPen(canvas.theme.box_text_sel)
         else:
             painter.setPen(canvas.theme.box_text)
-
-        if box_subtitle:
-            painter.drawText(
-                QPointF(title_x_pos, title_y_pos -6), box_title)
-            painter.drawText(
-                QPointF(subtitle_x_pos, title_y_pos +9), box_subtitle)
-        else:
-            painter.drawText(
-                QPointF(title_x_pos, title_y_pos), self.m_group_name)
+            
+        # draw title lines
+        for title_line in self._title_lines:
+            painter.setFont(title_line.font)
+            painter.setOpacity(1.0)
+            if title_line.is_little:
+                painter.setOpacity(0.5)
+            
+            painter.drawText(title_line.x, title_line.y, title_line.text)
 
         if self._wrapped:
             painter.setPen(canvas.theme.box_pen)
@@ -1193,16 +1315,18 @@ class CanvasBox(QGraphicsItem):
                 if self.m_current_port_mode & port_mode:
                     side = 6
                     x = 6
+                    
+                    ypos = canvas.theme.box_header_height
+                    if len(self._title_lines) == 3:
+                        ypos += 14
             
                     if port_mode == PORT_MODE_OUTPUT:
                         x = self.p_width - (x + 2 * side)
     
                     triangle = QPolygonF()
-                    triangle += QPointF(x, canvas.theme.box_header_height + 2)
-                    triangle += QPointF(x + 2 * side ,
-                                        canvas.theme.box_header_height + 2)
-                    triangle += QPointF(x + side,
-                                        canvas.theme.box_header_height + side + 2)
+                    triangle += QPointF(x, ypos + 2)
+                    triangle += QPointF(x + 2 * side, ypos + 2)
+                    triangle += QPointF(x + side, ypos + side + 2)
                     painter.drawPolygon(triangle)
 
         self.repaintLines()

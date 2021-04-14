@@ -265,7 +265,6 @@ class Group:
 
         if (self.name.startswith("PulseAudio ")
                 and not self.client_icon):
-            self.display_name = self.name.replace(' ', '/', 1)
             if "sink" in self.name.lower():
                 icon_type = patchcanvas.ICON_INTERNAL
                 icon_name = "audio-volume-medium.svg"
@@ -276,6 +275,9 @@ class Group:
         self.in_canvas = True
         
         gpos = self.current_position
+        
+        self.display_name = self.display_name.replace('.0/', '/')
+        self.display_name = self.display_name.replace('_', ' ')
 
         patchcanvas.addGroup(
             self.group_id, self.display_name, split,
@@ -447,7 +449,7 @@ class Group:
         for client_name in ('firewire_pcm', 'a2j',
                             'Hydrogen', 'ardour', 'Ardour', 'Qtractor',
                             'SooperLooper', 'sooperlooper', 'Luppp',
-                            'seq64', 'calfjackhost'):
+                            'seq64', 'calfjackhost', 'rakarrack-plus'):
             if self.name == client_name:
                 return client_name
 
@@ -582,6 +584,10 @@ class Group:
                 
                 display_name += " " + num
         
+        elif client_name == 'rakarrack-plus':
+            if display_name.startswith('rakarrack-plus '):
+                display_name = display_name.replace('rakarrack-plus ', '', 1)
+        
         elif not client_name:
             display_name = display_name.replace('_', ' ')
             if display_name.lower().endswith(('-left', ' left')):
@@ -596,6 +602,9 @@ class Group:
                 display_name = 'Out L'
             elif display_name.lower() == 'right out':
                 display_name = 'Out R'
+
+            if display_name.startswith('Audio'):
+                display_name = display_name.replace('Audio ', '')
         
         port.display_name = display_name if display_name else s_display_name
     
