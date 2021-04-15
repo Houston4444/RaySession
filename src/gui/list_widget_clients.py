@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu
-from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase
+from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
+from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
 from PyQt5.QtCore import pyqtSlot, QSize
 
 import ray
@@ -9,27 +9,68 @@ import child_dialogs
 import snapshots_dialog
 
 import ui.client_slot
+import ui.client_slot_2
 
 
 
 class ClientSlot(QFrame):
+    @staticmethod
+    def split_in_two(string: str)->tuple:
+        middle = int(len(string)/2)
+        sep_indexes = []
+        last_was_digit = False
+        
+        for sep in (' ', '-', '_', 'capital'):
+            for i in range(len(string)):
+                c = string[i]
+                if sep == 'capital':
+                    if c.upper() == c:
+                        if not c.isdigit() or not last_was_digit:
+                            sep_indexes.append(i)
+                        last_was_digit = c.isdigit()
+                        
+                elif c == sep:
+                    sep_indexes.append(i)
+                    
+            if sep_indexes:
+                break
+        
+        if not sep_indexes or sep_indexes == [0]:
+            return (string, '')
+        
+        best_index = 0
+        best_dif = middle
+        
+        for s in sep_indexes:
+            dif = abs(middle - s)
+            if dif < best_dif:
+                best_index = s
+                best_dif = dif
+        
+        if sep == ' ':
+            return (string[:best_index], string[best_index+1:])
+        return (string[:best_index], string[best_index:])
+    
     @classmethod
     def toDaemon(cls, *args):
         server = GUIServerThread.instance()
         if server:
             server.toDaemon(*args)
 
-    def __init__(self, list_widget, client):
+    def __init__(self, list_widget, list_widget_item, client):
         QFrame.__init__(self)
-        self.ui = ui.client_slot.Ui_ClientSlotWidget()
+        self.ui = ui.client_slot_2.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
 
         # needed variables
         self.list_widget = list_widget
+        self.list_widget_item = list_widget_item
         self.client = client
         self._main_win = self.client._session._main_win
 
         self.gui_state = False
+        
+        self._max_label_width = 800
 
         self.ui.toolButtonGUI.setVisible(False)
         if client.protocol != ray.Protocol.RAY_HACK:
@@ -89,6 +130,7 @@ class ClientSlot(QFrame):
         self.ubuntu_font_cond.setBold(True)
 
         self.ui.killButton.setVisible(False)
+        self.ui.ClientName2.setVisible(False)
 
         if ':optional-gui:' in self.client.capabilities:
             self.setGuiState(self.client.gui_state)
@@ -153,9 +195,70 @@ class ClientSlot(QFrame):
     def updateLabel(self, label):
         self._main_win.updateClientLabel(self.clientId(), label)
 
+    def set_display_name(self):
+        default_font_size = 13
+        font = self.ui.ClientName.font()
+        main_size = QFontMetrics(font).width(self.client.prettier_name())
+        
+        list_widget_width = self.list_widget.width()
+        scroll_bar = self.list_widget.verticalScrollBar()
+        if scroll_bar.isVisible():
+            list_widget_width -= scroll_bar.width()
+        
+        max_label_width = list_widget_width - 228
+        if self.ui.toolButtonGUI.isVisible():
+            max_label_width -= self.ui.toolButtonGUI.width()
+        
+        if main_size <= max_label_width:
+            self.ui.ClientName.setText(self.client.prettier_name())
+            self.ui.ClientName2.setVisible(False)
+            self.list_widget_item.setSizeHint(QSize(100, 45))
+            self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
+            return
+        
+        # split title in two lines
+        top, bottom = self.split_in_two(self.client.prettier_name())
+        self.ui.ClientName2.setVisible(bool(bottom))
+            
+        max_size = 0
+        
+        for text in (top, bottom):
+            if not text:
+                continue
+            
+            size = QFontMetrics(font).width(text)
+            max_size = max(max_size, size)
+        
+        if max_size <= max_label_width:
+            self.ui.ClientName.setText(top)
+            self.ui.ClientName2.setText(bottom)
+            self.list_widget_item.setSizeHint(QSize(100, 45))
+            self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
+            return
+        
+        # responsive design, put label at top of the controls
+        # if there is not enought space for label
+        
+        self.ui.mainLayout.setDirection(QBoxLayout.TopToBottom)
+        
+        max_label_width = list_widget_width - 50
+        
+        if main_size <= max_label_width:
+            self.list_widget_item.setSizeHint(QSize(100, 70))
+            self.ui.ClientName.setText(self.client.prettier_name())
+            self.ui.ClientName2.setVisible(False)
+            return
+        
+        self.list_widget_item.setSizeHint(QSize(100, 80))
+        
+        top, bottom = self.split_in_two(self.client.prettier_name())
+        self.ui.ClientName.setText(top)
+        self.ui.ClientName2.setVisible(bool(bottom))
+
     def updateClientData(self):
         # set main label
-        self.ui.ClientName.setText(self.client.prettier_name())
+        #self.ui.ClientName.setText(self.client.prettier_name())
+        self.set_display_name()
 
         # set tool tip
         tool_tip = "<html><head/><body>"
@@ -236,6 +339,8 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(False)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
             self.ui.ClientName.setEnabled(True)
+            self.ui.ClientName2.setStyleSheet('QLabel {font-weight : bold}')
+            self.ui.ClientName2.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
             self.grayIcon(False)
 
@@ -245,6 +350,8 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(False)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
             self.ui.ClientName.setEnabled(True)
+            self.ui.ClientName2.setStyleSheet('QLabel {font-weight : bold}')
+            self.ui.ClientName2.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
             self.ui.saveButton.setEnabled(True)
             self.grayIcon(False)
@@ -256,6 +363,8 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(True)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
+            self.ui.ClientName2.setStyleSheet('QLabel {font-weight : normal}')
+            self.ui.ClientName2.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
             self.grayIcon(True)
 
@@ -274,6 +383,8 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(True)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
+            self.ui.ClientName2.setStyleSheet('QLabel {font-weight : normal}')
+            self.ui.ClientName2.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
             self.grayIcon(True)
 
@@ -286,12 +397,16 @@ class ClientSlot(QFrame):
             self.ui.saveButton.setEnabled(False)
 
     def setMaxLabelWidth(self, width: int):
+        width -= 228
+        
         if self.ui.toolButtonGUI.isVisible():
             width -= self.ui.toolButtonGUI.width()
-        
+
         width = max(30, width)
-        self.ui.ClientName.setMaximumWidth(width)
         
+        self._max_label_width = width
+        #self.ui.ClientName.setMaximumWidth(width)
+        self.set_display_name()
 
     def allowKill(self):
         self.ui.stopButton.setVisible(False)
@@ -366,9 +481,11 @@ class ClientSlot(QFrame):
 class ClientItem(QListWidgetItem):
     def __init__(self, parent, client_data):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
-        self.f_widget = ClientSlot(parent, client_data)
+        self.f_widget = ClientSlot(parent, self, client_data)
         parent.setItemWidget(self, self.f_widget)
         self.setSizeHint(QSize(100, 45))
+        
+        #self.setSizeHint(QSize(100, 70))
         self.sort_number = 0
 
     def __lt__(self, other):
@@ -383,6 +500,15 @@ class ClientItem(QListWidgetItem):
 
     def getClientId(self):
         return self.f_widget.clientId()
+    
+    def reCreateWidget(self, parent, big_label=False):
+        client_data = self.f_widget.client
+        del self.f_widget
+        #self.close()
+        self.f_widget = ClientSlot(parent, self, client_data)
+        self.setSizeHint(QSize(100, 70 if big_label else 45))
+        parent.setItemWidget(self, self.f_widget)
+        
 
 
 class ListWidgetClients(QListWidget):
@@ -510,5 +636,5 @@ class ListWidgetClients(QListWidget):
         for i in range(self.count()):
             item = self.item(i)
             widget = self.itemWidget(item)
-            widget.setMaxLabelWidth(self.width() - 228)
+            widget.setMaxLabelWidth(self.width())
         

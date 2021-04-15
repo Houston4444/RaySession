@@ -50,6 +50,7 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/client_properties.py \
 	    src/gui/ui/client_rename.py \
 	    src/gui/ui/client_slot.py \
+	    src/gui/ui/client_slot_2.py \
 	    src/gui/ui/client_trash.py \
 	    src/gui/ui/donations.py \
 	    src/gui/ui/daemon_url.py \

@@ -763,13 +763,13 @@ def moveGroupBoxes(group_id: int, null_xy: tuple,
         canvas.scene.add_box_to_animation(box, null_xy[0], null_xy[1],
                                           force_anim=animate)
                 
-def wrapGroupBox(group_id: int, port_mode: int, yesno: bool):
+def wrapGroupBox(group_id: int, port_mode: int, yesno: bool, animate=True):
     for group in canvas.group_list:
         if group.group_id == group_id:
             for box in group.widgets:
                 if (box is not None
                         and box.getSplittedMode() == port_mode):
-                    box.set_wrapped(yesno)
+                    box.set_wrapped(yesno, animate=animate)
 
 # ------------------------------------------------------------------------------------------------------------
 

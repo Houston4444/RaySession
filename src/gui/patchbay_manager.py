@@ -287,15 +287,18 @@ class Group:
         if split == patchcanvas.SPLIT_YES:
             patchcanvas.wrapGroupBox(
                 self.group_id, PORT_MODE_INPUT,
-                bool(gpos.flags & GROUP_WRAPPED_INPUT))
+                bool(gpos.flags & GROUP_WRAPPED_INPUT),
+                animate=False)
             patchcanvas.wrapGroupBox(
                 self.group_id, PORT_MODE_OUTPUT,
-                bool(gpos.flags & GROUP_WRAPPED_OUTPUT))
+                bool(gpos.flags & GROUP_WRAPPED_OUTPUT),
+                animate=False)
         else:
             patchcanvas.wrapGroupBox(
                 self.group_id, PORT_MODE_NULL,
                 bool(gpos.flags & GROUP_WRAPPED_INPUT
-                     and gpos.flags & GROUP_WRAPPED_OUTPUT))
+                     and gpos.flags & GROUP_WRAPPED_OUTPUT),
+                animate=False)
     
     def remove_from_canvas(self):
         if not self.in_canvas:

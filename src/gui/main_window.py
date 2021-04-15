@@ -98,9 +98,6 @@ class MainWindow(QMainWindow):
             if splitter_sizes:
                 self.ui.splitterMainVsCanvas.setSizes(
                     int(s) for s in splitter_sizes)
-            
-            #self.ui.actionAddApplication.setText(self.short_appli_name)
-            #self.ui.actionAddExecutable.setText(self.short_exec_name)
         
         else:
             self.ui.graphicsView.setVisible(False)
@@ -388,8 +385,10 @@ class MainWindow(QMainWindow):
 
     def set_short_app_exec_names(self, yesno: bool):
         if yesno:
-            self.ui.actionAddApplication.setText(self.short_appli_name)
-            self.ui.actionAddExecutable.setText(self.short_exec_name)
+            #self.ui.actionAddApplication.setText(self.short_appli_name)
+            #self.ui.actionAddExecutable.setText(self.short_exec_name)
+            self.ui.actionAddApplication.setText('')
+            self.ui.actionAddExecutable.setText('')
         else:
             self.ui.actionAddApplication.setText(self.long_appli_name)
             self.ui.actionAddExecutable.setText(self.long_exec_name)
@@ -424,7 +423,7 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setDragEnabled(True)
         self.ui.listWidget.setDragDropMode(QAbstractItemView.InternalMove)
         self.ui.listWidget.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.ui.listWidget.setUniformItemSizes(True)
+        self.ui.listWidget.setUniformItemSizes(False)
         self.ui.listWidget.setBatchSize(80)
         self.ui.listWidget.setObjectName("listWidget")
         self.ui.listWidget.setSession(self._session)
@@ -810,9 +809,6 @@ class MainWindow(QMainWindow):
         
         if yesno:
             self.toDaemon('/ray/server/ask_for_patchbay')
-            
-            #self.ui.actionAddApplication.setText(self.short_appli_name)
-            #self.ui.actionAddExecutable.setText(self.short_exec_name)
             
             patchbay_geom = RS.settings.value('MainWindow/patchbay_geometry')
             sizes = RS.settings.value('MainWindow/splitter_canvas_sizes')

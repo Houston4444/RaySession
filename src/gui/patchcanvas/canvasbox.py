@@ -520,13 +520,6 @@ class CanvasBox(QGraphicsItem):
         max_title_size = 0
         for title_line in self._title_lines:
             max_title_size = max(max_title_size, title_line.size)
-        #title_size = subtitle_size = 0
-
-        #for title_line in self._title_lines:
-            #title_size = max(title_size, self.get_string_size(title_line))
-        #for subtitle_line in self._subtitle_lines:
-            #subtitle_size = max(subtitle_size,
-                                #self.get_string_size(subtitle_line))
 
         self.p_width = max_title_size
         
