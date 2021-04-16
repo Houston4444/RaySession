@@ -441,7 +441,7 @@ def renameGroup(group_id, new_group_name):
 
     qCritical("PatchCanvas::renameGroup(%i, %s) - unable to find group to rename" % (group_id, new_group_name.encode()))
 
-def splitGroup(group_id):
+def splitGroup(group_id, on_place=False):
     if canvas.debug:
         print("PatchCanvas::splitGroup(%i)" % group_id)
 
@@ -476,6 +476,14 @@ def splitGroup(group_id):
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
+            
+            if on_place and item is not None:
+                pos = item.pos()
+                rect = item.boundingRect()
+                y = int(pos.y())
+                x = int(pos.x())
+                group_in_pos = QPoint(x - int(rect.width() / 2), y)
+                group_out_pos = QPoint(x + int(rect.width() / 2), y)
             break
 
     if not item:

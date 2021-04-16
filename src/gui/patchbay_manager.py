@@ -44,6 +44,7 @@ GROUP_CONTEXT_MIDI = 0x02
 GROUP_SPLITTED = 0x04
 GROUP_WRAPPED_INPUT = 0x10
 GROUP_WRAPPED_OUTPUT = 0x20
+GROUP_HAS_BEEN_SPLITTED = 0x40
 
 _translate = QGuiApplication.translate
 
@@ -284,7 +285,8 @@ class Group:
             icon_type, icon_name, fast=PatchbayManager.optimized_operation,
             null_xy=gpos.null_xy, in_xy=gpos.in_xy, out_xy=gpos.out_xy)
         
-        if split == patchcanvas.SPLIT_YES:
+        if do_split:
+            gpos.flags |= GROUP_HAS_BEEN_SPLITTED
             patchcanvas.wrapGroupBox(
                 self.group_id, PORT_MODE_INPUT,
                 bool(gpos.flags & GROUP_WRAPPED_INPUT),
@@ -901,10 +903,13 @@ class PatchbayManager:
 
         elif action == patchcanvas.ACTION_GROUP_SPLIT:
             group_id = value1
-            patchcanvas.splitGroup(group_id)
             for group in self.groups:
                 if group.group_id == group_id:
+                    on_place = not bool(
+                        group.current_position.flags & GROUP_HAS_BEEN_SPLITTED)
+                    patchcanvas.splitGroup(group_id, on_place=on_place)
                     group.current_position.flags |= GROUP_SPLITTED
+                    group.current_position.flags |= GROUP_HAS_BEEN_SPLITTED
                     group.save_current_position()
                     break
 

@@ -193,6 +193,19 @@ class ClientSlot(QFrame):
     def updateLabel(self, label):
         self._main_win.updateClientLabel(self.clientId(), label)
 
+    def set_very_short(self, yesno: bool):
+        self._very_short = yesno
+        
+        if yesno:
+            self.ui.startButton.setVisible(self.ui.startButton.isEnabled())
+            self.ui.stopButton.setVisible(self.ui.stopButton.isEnabled())
+            self.ui.toolButtonHack.setVisible(False)
+        else:
+            self.ui.startButton.setVisible(True)
+            self.ui.stopButton.setVisible(True)
+            self.ui.toolButtonHack.setVisible(
+                self.client.protocol == ray.Protocol.RAY_HACK)
+    
     def set_fat(self, yesno: bool, very_fat=False):
         if yesno:
             self.ui.mainLayout.setDirection(QBoxLayout.TopToBottom)
@@ -211,15 +224,7 @@ class ClientSlot(QFrame):
         
         layout_width = self.list_widget.width()
         
-        if layout_width < 233:
-            self.ui.startButton.setVisible(self.ui.startButton.isEnabled())
-            self.ui.stopButton.setVisible(self.ui.stopButton.isEnabled())
-            self.ui.toolButtonHack.setVisible(False)
-        else:
-            self.ui.startButton.setVisible(True)
-            self.ui.stopButton.setVisible(True)
-            self.ui.toolButtonHack.setVisible(
-                self.client.protocol == ray.Protocol.RAY_HACK)
+        self.set_very_short(layout_width < 233)
         
         scroll_bar = self.list_widget.verticalScrollBar()
         if scroll_bar.isVisible():
@@ -354,6 +359,10 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
             self.grayIcon(False)
+            
+            if self._very_short:
+                self.ui.startButton.setVisible(False)
+                self.ui.stopButton.setVisible(True)
 
         elif status == ray.ClientStatus.READY:
             self.ui.startButton.setEnabled(False)
@@ -364,6 +373,10 @@ class ClientSlot(QFrame):
             self.ui.toolButtonGUI.setEnabled(True)
             self.ui.saveButton.setEnabled(True)
             self.grayIcon(False)
+            
+            if self._very_short:
+                self.ui.startButton.setVisible(False)
+                self.ui.stopButton.setVisible(True)
 
         elif status == ray.ClientStatus.STOPPED:
             self.ui.startButton.setEnabled(True)
@@ -374,6 +387,10 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
             self.grayIcon(True)
+
+            if self._very_short:
+                self.ui.startButton.setVisible(True)
+                self.ui.stopButton.setVisible(False)
 
             self.ui.saveButton.setIcon(self.save_icon)
             self.ui.stopButton.setIcon(self.stop_icon)
@@ -391,6 +408,10 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
             self.grayIcon(True)
+
+            if self._very_short:
+                self.ui.startButton.setVisible(True)
+                self.ui.stopButton.setVisible(False)
 
             self.ui.saveButton.setIcon(self.save_icon)
             self.ui.stopButton.setIcon(self.stop_icon)
