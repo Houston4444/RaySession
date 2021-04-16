@@ -109,17 +109,17 @@ class ClientSlot(QFrame):
 
         dark = isDarkTheme(self)
 
-        self.saveIcon = RayIcon('document-save', dark)
-        self.savedIcon = RayIcon('document-saved', dark)
-        self.unsavedIcon = RayIcon('document-unsaved', dark)
-        self.noSaveIcon = RayIcon('document-nosave', dark)
+        self.save_icon = RayIcon('document-save', dark)
+        self.saved_icon = RayIcon('document-saved', dark)
+        self.unsaved_icon = RayIcon('document-unsaved', dark)
+        self.no_save_icon = RayIcon('document-nosave', dark)
         self.icon_visible = RayIcon('visibility', dark)
         self.icon_invisible = RayIcon('hint', dark)
         self.stop_icon = RayIcon('media-playback-stop', dark)
         self.kill_icon = RayIcon('media-playback-stop_red', dark)
         self.ui.startButton.setIcon(RayIcon('media-playback-start', dark))
         self.ui.closeButton.setIcon(RayIcon('window-close', dark))
-        self.ui.saveButton.setIcon(self.saveIcon)
+        self.ui.saveButton.setIcon(self.save_icon)
         self.ui.stopButton.setIcon(self.stop_icon)
 
         self.ubuntu_font = QFont(
@@ -204,7 +204,7 @@ class ClientSlot(QFrame):
             self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
             self.list_widget_item.setSizeHint(QSize(100, 45))
     
-    def set_display_name(self):
+    def update_disposition(self):
         default_font_size = 13
         font = self.ui.ClientName.font()
         main_size = QFontMetrics(font).width(self.client.prettier_name())
@@ -271,7 +271,7 @@ class ClientSlot(QFrame):
 
     def updateClientData(self):
         # set main label and main disposition
-        self.set_display_name()
+        self.update_disposition()
 
         # set tool tip
         tool_tip = "<html><head/><body>"
@@ -375,7 +375,7 @@ class ClientSlot(QFrame):
             self.ui.toolButtonGUI.setEnabled(False)
             self.grayIcon(True)
 
-            self.ui.saveButton.setIcon(self.saveIcon)
+            self.ui.saveButton.setIcon(self.save_icon)
             self.ui.stopButton.setIcon(self.stop_icon)
             self._stop_is_kill = False
 
@@ -392,15 +392,12 @@ class ClientSlot(QFrame):
             self.ui.toolButtonGUI.setEnabled(False)
             self.grayIcon(True)
 
-            self.ui.saveButton.setIcon(self.saveIcon)
+            self.ui.saveButton.setIcon(self.save_icon)
             self.ui.stopButton.setIcon(self.stop_icon)
             self._stop_is_kill = False
 
         elif status == ray.ClientStatus.COPY:
             self.ui.saveButton.setEnabled(False)
-
-    def setMaxLabelWidth(self):
-        self.set_display_name()
 
     def allowKill(self):
         self._stop_is_kill = True
@@ -444,16 +441,12 @@ class ClientSlot(QFrame):
             self.client.properties_dialog.hide()
 
     def setDirtyState(self, bool_dirty):
-        if bool_dirty:
-            self.ui.saveButton.setIcon(self.unsavedIcon)
-        else:
-            self.ui.saveButton.setIcon(self.savedIcon)
+        self.ui.saveButton.setIcon(
+            self.unsaved_icon if bool_dirty else self.saved_icon)
 
     def setNoSaveLevel(self, no_save_level):
-        if no_save_level:
-            self.ui.saveButton.setIcon(self.noSaveIcon)
-        else:
-            self.ui.saveButton.setIcon(self.saveIcon)
+        self.ui.saveButton.setIcon(
+            self.no_save_icon if no_save_level else self.save_icon)
 
     def setProgress(self, progress):
         self.ui.lineEditClientStatus.setProgress(progress)
@@ -461,11 +454,6 @@ class ClientSlot(QFrame):
     def setDaemonOptions(self, options):
         has_git = bool(options & ray.Option.HAS_GIT)
         self.ui.actionReturnToAPreviousState.setVisible(has_git)
-
-    def resizeEvent(self, event):
-        QFrame.resizeEvent(self, event)
-        
-        print('sle', self.client.prettier_name(), self.width(), self.minimumSizeHint().width())
 
     def contextMenuEvent(self, event):
         act_selected = self.menu.exec(self.mapToGlobal(event.pos()))
@@ -630,5 +618,5 @@ class ListWidgetClients(QListWidget):
         for i in range(self.count()):
             item = self.item(i)
             widget = self.itemWidget(item)
-            widget.set_display_name()
+            widget.update_disposition()
         

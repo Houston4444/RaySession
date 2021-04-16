@@ -387,7 +387,7 @@ class MainWindow(QMainWindow):
             # move down the session name label
             self.ui.layoutTopSession.removeWidget(
                 self.ui.stackedWidgetSessionName)
-            self.ui.layoutCenterSession.insertWidget(
+            self.ui.layoutSessionDown.insertWidget(
                 0, self.ui.stackedWidgetSessionName)
             
             # keep the file manager tool button at bottom left
@@ -402,7 +402,7 @@ class MainWindow(QMainWindow):
             self.ui.widgetPreRewindSpacer.setVisible(True)
         else:
             self.ui.layoutSessionDown.setDirection(QBoxLayout.LeftToRight)
-            self.ui.layoutCenterSession.removeWidget(
+            self.ui.layoutSessionDown.removeWidget(
                 self.ui.stackedWidgetSessionName)
             self.ui.layoutTopSession.insertWidget(
                 4, self.ui.stackedWidgetSessionName)
