@@ -2,7 +2,8 @@ import time
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView,
-                             QWidget, QWidgetAction, QCheckBox, QSplitterHandle)
+                             QWidget, QWidgetAction, QCheckBox, QSplitterHandle,
+                             QBoxLayout)
 from PyQt5.QtGui import QIcon, QDesktopServices
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
@@ -72,13 +73,6 @@ class MainWindow(QMainWindow):
         if ray.getWindowManager() == ray.WindowManager.WAYLAND:
             self.keep_focus = False
             self.ui.actionKeepFocus.setEnabled(False)
-        
-        self.long_appli_name = self.ui.actionAddApplication.text()
-        self.long_exec_name = self.ui.actionAddExecutable.text()
-        self.short_appli_name = _translate('main_win', 'App')
-        self.short_exec_name = _translate('main_win', 'exec')
-        self.ui.frameCurrentSession.shorterSize.connect(
-            self.set_short_app_exec_names)
 
         # manage geometry depending of use of embedded jack patchbay
         show_patchbay = RS.settings.value(
@@ -147,10 +141,6 @@ class MainWindow(QMainWindow):
             self.ui.actionAddExecutable)
         self.ui.toolButtonSnapshots.setDefaultAction(
             self.ui.actionReturnToAPreviousState)
-
-        self.ui.frameCurrentSession.setBaseWidth(
-            205 + self.ui.toolButtonAddApplication.minimumSizeHint().width()
-            + self.ui.toolButtonAddExecutable.minimumSizeHint().width())
         
         # connect actions
         self.ui.actionNewSession.triggered.connect(self.createNewSession)
@@ -203,6 +193,8 @@ class MainWindow(QMainWindow):
             self.statusBarPressed)
         self.ui.stackedWidgetSessionName.name_changed.connect(
             self.renameSessionConditionnaly)
+        self.ui.frameCurrentSession.frame_resized.connect(
+            self.session_frame_resized)
 
         # set session menu
         self.session_menu = QMenu()
@@ -344,6 +336,8 @@ class MainWindow(QMainWindow):
         self._splitter_pos_before_fullscreen = [100, 100]
         
         self._previous_width = 0
+        
+        #self.ui.layoutSessionDown.setDirection(QBoxLayout.TopToBottom)
 
     def toggleSceneFullScreen(self):
         visible_maximized = 0x1
@@ -383,15 +377,59 @@ class MainWindow(QMainWindow):
         self.ui.actionToggleShowMessages.setChecked(
             bool(pos < self.ui.splitterSessionVsMessages.height() -10))
 
-    def set_short_app_exec_names(self, yesno: bool):
-        if yesno:
-            #self.ui.actionAddApplication.setText(self.short_appli_name)
-            #self.ui.actionAddExecutable.setText(self.short_exec_name)
-            self.ui.actionAddApplication.setText('')
-            self.ui.actionAddExecutable.setText('')
+    def session_frame_resized(self):
+        width = self.ui.frameCurrentSession.width()
+
+        if width <= 283:
+            # reorganize the window because session frame is not large
+            self.ui.layoutSessionDown.setDirection(QBoxLayout.TopToBottom)
+            
+            # move down the session name label
+            self.ui.layoutTopSession.removeWidget(
+                self.ui.stackedWidgetSessionName)
+            self.ui.layoutCenterSession.insertWidget(
+                0, self.ui.stackedWidgetSessionName)
+            
+            # keep the file manager tool button at bottom left
+            # of the session header
+            self.ui.layoutSessionToolsLeft.removeWidget(
+                self.ui.fullButtonFolder)
+            self.ui.layoutSessionToolsRight.insertWidget(
+                0, self.ui.fullButtonFolder)
+            
+            # set visible spacer between file manager button
+            # and snapshots buttons
+            self.ui.widgetPreRewindSpacer.setVisible(True)
         else:
-            self.ui.actionAddApplication.setText(self.long_appli_name)
-            self.ui.actionAddExecutable.setText(self.long_exec_name)
+            self.ui.layoutSessionDown.setDirection(QBoxLayout.LeftToRight)
+            self.ui.layoutCenterSession.removeWidget(
+                self.ui.stackedWidgetSessionName)
+            self.ui.layoutTopSession.insertWidget(
+                4, self.ui.stackedWidgetSessionName)
+            self.ui.layoutSessionToolsRight.removeWidget(
+                self.ui.fullButtonFolder)
+            self.ui.layoutSessionToolsLeft.insertWidget(
+                0, self.ui.fullButtonFolder)
+            self.ui.widgetPreRewindSpacer.setVisible(False)
+        
+        app = self.ui.toolButtonAddApplication
+        exe = self.ui.toolButtonAddExecutable
+        
+        if width >= 419:
+            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        elif width >= 350:
+            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        elif width > 283:
+            app.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        elif width > 260:
+            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        else:
+            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
             
     def showMessagesWidget(self, yesno: bool):
         sizes = [10, 0]
@@ -773,7 +811,6 @@ class MainWindow(QMainWindow):
 
         if dialog.result():
             template_name, factory = dialog.getSelectedTemplate()
-            #factory = dialog.isTemplateFactory(template_name)
             self.toDaemon(
                 '/ray/session/add_client_template',
                 int(factory),
@@ -821,12 +858,8 @@ class MainWindow(QMainWindow):
             if sizes:
                 self.ui.splitterMainVsCanvas.setSizes([int(s) for s in sizes])
                 
-            
         else:
             self._session.patchbay_manager.disannounce()
-            
-            #self.ui.actionAddApplication.setText(self.long_appli_name)
-            #self.ui.actionAddExecutable.setText(self.long_exec_name)
             
             if self.isMaximized():
                 self.showNormal()

@@ -67,21 +67,19 @@ class ClientSlot(QFrame):
         self.list_widget_item = list_widget_item
         self.client = client
         self._main_win = self.client._session._main_win
-
         self.gui_state = False
-        
-        self._max_label_width = 800
+        self._stop_is_kill = False
 
         self.ui.toolButtonGUI.setVisible(False)
         if client.protocol != ray.Protocol.RAY_HACK:
             self.ui.toolButtonHack.setVisible(False)
 
         # connect buttons to functions
-        self.ui.toolButtonHack.orderHackVisibility.connect(self.orderHackVisibility)
+        self.ui.toolButtonHack.orderHackVisibility.connect(
+            self.orderHackVisibility)
         self.ui.toolButtonGUI.clicked.connect(self.changeGuiState)
         self.ui.startButton.clicked.connect(self.startClient)
         self.ui.stopButton.clicked.connect(self.stopClient)
-        self.ui.killButton.clicked.connect(self.killClient)
         self.ui.saveButton.clicked.connect(self.saveClient)
         self.ui.closeButton.clicked.connect(self.trashClient)
         self.ui.lineEditClientStatus.statusPressed.connect(self.abortCopy)
@@ -117,10 +115,12 @@ class ClientSlot(QFrame):
         self.noSaveIcon = RayIcon('document-nosave', dark)
         self.icon_visible = RayIcon('visibility', dark)
         self.icon_invisible = RayIcon('hint', dark)
+        self.stop_icon = RayIcon('media-playback-stop', dark)
+        self.kill_icon = RayIcon('media-playback-stop_red', dark)
         self.ui.startButton.setIcon(RayIcon('media-playback-start', dark))
-        self.ui.stopButton.setIcon(RayIcon('media-playback-stop', dark))
         self.ui.closeButton.setIcon(RayIcon('window-close', dark))
         self.ui.saveButton.setIcon(self.saveIcon)
+        self.ui.stopButton.setIcon(self.stop_icon)
 
         self.ubuntu_font = QFont(
             QFontDatabase.applicationFontFamilies(0)[0], 8)
@@ -128,9 +128,6 @@ class ClientSlot(QFrame):
             QFontDatabase.applicationFontFamilies(1)[0], 8)
         self.ubuntu_font.setBold(True)
         self.ubuntu_font_cond.setBold(True)
-
-        self.ui.killButton.setVisible(False)
-        self.ui.ClientName2.setVisible(False)
 
         if ':optional-gui:' in self.client.capabilities:
             self.setGuiState(self.client.gui_state)
@@ -148,12 +145,13 @@ class ClientSlot(QFrame):
         self.toDaemon('/ray/client/resume', self.clientId())
 
     def stopClient(self):
+        if self._stop_is_kill:
+            self.toDaemon('/ray/client/kill', self.clientId())
+            return
+        
         # we need to prevent accidental stop with a window confirmation
         # under conditions
         self._main_win.stopClient(self.clientId())
-
-    def killClient(self):
-        self.toDaemon('/ray/client/kill', self.clientId())
 
     def saveClient(self):
         self.toDaemon('/ray/client/save', self.clientId())
@@ -195,30 +193,52 @@ class ClientSlot(QFrame):
     def updateLabel(self, label):
         self._main_win.updateClientLabel(self.clientId(), label)
 
+    def set_fat(self, yesno: bool, very_fat=False):
+        if yesno:
+            self.ui.mainLayout.setDirection(QBoxLayout.TopToBottom)
+            self.ui.spacerLeftOfDown.setVisible(True)
+            self.list_widget_item.setSizeHint(
+                QSize(100, 80 if very_fat else 70))
+        else:
+            self.ui.spacerLeftOfDown.setVisible(False)
+            self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
+            self.list_widget_item.setSizeHint(QSize(100, 45))
+    
     def set_display_name(self):
         default_font_size = 13
         font = self.ui.ClientName.font()
         main_size = QFontMetrics(font).width(self.client.prettier_name())
         
-        list_widget_width = self.list_widget.width()
+        layout_width = self.list_widget.width()
+        
+        if layout_width < 233:
+            self.ui.startButton.setVisible(self.ui.startButton.isEnabled())
+            self.ui.stopButton.setVisible(self.ui.stopButton.isEnabled())
+            self.ui.toolButtonHack.setVisible(False)
+        else:
+            self.ui.startButton.setVisible(True)
+            self.ui.stopButton.setVisible(True)
+            self.ui.toolButtonHack.setVisible(
+                self.client.protocol == ray.Protocol.RAY_HACK)
+        
         scroll_bar = self.list_widget.verticalScrollBar()
         if scroll_bar.isVisible():
-            list_widget_width -= scroll_bar.width()
+            layout_width -= scroll_bar.width()
         
-        max_label_width = list_widget_width - 228
+        max_label_width = layout_width - 231
+        
         if self.ui.toolButtonGUI.isVisible():
             max_label_width -= self.ui.toolButtonGUI.width()
+        if self.ui.toolButtonHack.isVisible():
+            max_label_width -= self.ui.toolButtonHack.width()
         
         if main_size <= max_label_width:
             self.ui.ClientName.setText(self.client.prettier_name())
-            self.ui.ClientName2.setVisible(False)
-            self.list_widget_item.setSizeHint(QSize(100, 45))
-            self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
+            self.set_fat(False)
             return
         
         # split title in two lines
         top, bottom = self.split_in_two(self.client.prettier_name())
-        self.ui.ClientName2.setVisible(bool(bottom))
             
         max_size = 0
         
@@ -230,34 +250,27 @@ class ClientSlot(QFrame):
             max_size = max(max_size, size)
         
         if max_size <= max_label_width:
-            self.ui.ClientName.setText(top)
-            self.ui.ClientName2.setText(bottom)
-            self.list_widget_item.setSizeHint(QSize(100, 45))
-            self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
+            self.ui.ClientName.setText('\n'.join((top, bottom)))
+            self.set_fat(False)
             return
         
         # responsive design, put label at top of the controls
         # if there is not enought space for label
-        
-        self.ui.mainLayout.setDirection(QBoxLayout.TopToBottom)
-        
-        max_label_width = list_widget_width - 50
+            
+        max_label_width = layout_width - 50
         
         if main_size <= max_label_width:
-            self.list_widget_item.setSizeHint(QSize(100, 70))
+            self.set_fat(True)
             self.ui.ClientName.setText(self.client.prettier_name())
-            self.ui.ClientName2.setVisible(False)
             return
-        
-        self.list_widget_item.setSizeHint(QSize(100, 80))
+
+        self.set_fat(True, very_fat=True)
         
         top, bottom = self.split_in_two(self.client.prettier_name())
-        self.ui.ClientName.setText(top)
-        self.ui.ClientName2.setVisible(bool(bottom))
+        self.ui.ClientName.setText('\n'.join((top, bottom)))
 
     def updateClientData(self):
-        # set main label
-        #self.ui.ClientName.setText(self.client.prettier_name())
+        # set main label and main disposition
         self.set_display_name()
 
         # set tool tip
@@ -339,8 +352,6 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(False)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
             self.ui.ClientName.setEnabled(True)
-            self.ui.ClientName2.setStyleSheet('QLabel {font-weight : bold}')
-            self.ui.ClientName2.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
             self.grayIcon(False)
 
@@ -350,8 +361,6 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(False)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
             self.ui.ClientName.setEnabled(True)
-            self.ui.ClientName2.setStyleSheet('QLabel {font-weight : bold}')
-            self.ui.ClientName2.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
             self.ui.saveButton.setEnabled(True)
             self.grayIcon(False)
@@ -363,15 +372,12 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(True)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
-            self.ui.ClientName2.setStyleSheet('QLabel {font-weight : normal}')
-            self.ui.ClientName2.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
             self.grayIcon(True)
 
-            self.ui.stopButton.setVisible(True)
-            self.ui.killButton.setVisible(False)
-
             self.ui.saveButton.setIcon(self.saveIcon)
+            self.ui.stopButton.setIcon(self.stop_icon)
+            self._stop_is_kill = False
 
             if not ray_hack:
                 self.setGuiState(False)
@@ -383,34 +389,22 @@ class ClientSlot(QFrame):
             self.ui.closeButton.setEnabled(True)
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
-            self.ui.ClientName2.setStyleSheet('QLabel {font-weight : normal}')
-            self.ui.ClientName2.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
             self.grayIcon(True)
 
-            self.ui.stopButton.setVisible(True)
-            self.ui.killButton.setVisible(False)
-
             self.ui.saveButton.setIcon(self.saveIcon)
+            self.ui.stopButton.setIcon(self.stop_icon)
+            self._stop_is_kill = False
 
         elif status == ray.ClientStatus.COPY:
             self.ui.saveButton.setEnabled(False)
 
-    def setMaxLabelWidth(self, width: int):
-        width -= 228
-        
-        if self.ui.toolButtonGUI.isVisible():
-            width -= self.ui.toolButtonGUI.width()
-
-        width = max(30, width)
-        
-        self._max_label_width = width
-        #self.ui.ClientName.setMaximumWidth(width)
+    def setMaxLabelWidth(self):
         self.set_display_name()
 
     def allowKill(self):
-        self.ui.stopButton.setVisible(False)
-        self.ui.killButton.setVisible(True)
+        self._stop_is_kill = True
+        self.ui.stopButton.setIcon(self.kill_icon)
 
     def flashIfOpen(self, boolflash):
         if boolflash:
@@ -636,5 +630,5 @@ class ListWidgetClients(QListWidget):
         for i in range(self.count()):
             item = self.item(i)
             widget = self.itemWidget(item)
-            widget.setMaxLabelWidth(self.width())
+            widget.set_display_name()
         
