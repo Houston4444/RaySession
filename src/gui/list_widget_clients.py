@@ -69,6 +69,7 @@ class ClientSlot(QFrame):
         self._main_win = self.client._session._main_win
         self.gui_state = False
         self._stop_is_kill = False
+        self._very_short = False
 
         self.ui.toolButtonGUI.setVisible(False)
         if client.protocol != ray.Protocol.RAY_HACK:
@@ -117,17 +118,11 @@ class ClientSlot(QFrame):
         self.icon_invisible = RayIcon('hint', dark)
         self.stop_icon = RayIcon('media-playback-stop', dark)
         self.kill_icon = RayIcon('media-playback-stop_red', dark)
+        
         self.ui.startButton.setIcon(RayIcon('media-playback-start', dark))
         self.ui.closeButton.setIcon(RayIcon('window-close', dark))
         self.ui.saveButton.setIcon(self.save_icon)
         self.ui.stopButton.setIcon(self.stop_icon)
-
-        self.ubuntu_font = QFont(
-            QFontDatabase.applicationFontFamilies(0)[0], 8)
-        self.ubuntu_font_cond = QFont(
-            QFontDatabase.applicationFontFamilies(1)[0], 8)
-        self.ubuntu_font.setBold(True)
-        self.ubuntu_font_cond.setBold(True)
 
         if ':optional-gui:' in self.client.capabilities:
             self.setGuiState(self.client.gui_state)
@@ -190,15 +185,18 @@ class ClientSlot(QFrame):
             self.client.label = dialog.getNewLabel()
             self.client.sendPropertiesToDaemon()
 
-    def updateLabel(self, label):
-        self._main_win.updateClientLabel(self.clientId(), label)
-
     def set_very_short(self, yesno: bool):
         self._very_short = yesno
         
         if yesno:
-            self.ui.startButton.setVisible(self.ui.startButton.isEnabled())
-            self.ui.stopButton.setVisible(self.ui.stopButton.isEnabled())
+            if not (self.ui.startButton.isEnabled()
+                    or self.ui.stopButton.isEnabled()):
+                self.ui.startButton.setVisible(True)
+                self.ui.stopButton.setVisible(False)
+            else:
+                self.ui.startButton.setVisible(
+                    self.ui.startButton.isEnabled())
+                self.ui.stopButton.setVisible(self.ui.stopButton.isEnabled())
             self.ui.toolButtonHack.setVisible(False)
         else:
             self.ui.startButton.setVisible(True)

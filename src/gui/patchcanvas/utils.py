@@ -36,15 +36,87 @@ from .canvasfadeanimation import CanvasFadeAnimation
 # ------------------------------------------------------------------------------------------------------------
 
 def CanvasGetNewGroupPositions()->tuple:
+    def get_middle_empty_positions(scene_rect)->tuple:
+        if scene_rect.isNull():
+            return ((0, 200))
+        
+        needed_x = 120
+        needed_y = 120
+        margin_x = 50
+        margin_y = 10
+        
+        x = scene_rect.center().x() - needed_y / 2
+        y = scene_rect.top() + 20
+        
+        y_list = []
+        
+        min_top = scene_rect.bottom()
+        max_bottom = scene_rect.top()
+        
+        for group in canvas.group_list:
+            for widget in group.widgets:
+                if widget is None:
+                    continue
+                
+                box_rect = widget.sceneBoundingRect()
+                min_top = min(min_top, box_rect.top())
+                max_bottom = max(max_bottom, box_rect.bottom())
+                
+                if box_rect.left() - needed_x <= x <= box_rect.right() + margin_x:
+                    y_list.append(
+                        (box_rect.top(), box_rect.bottom(), box_rect.left()))
+        
+        if not y_list:
+            return (int(x), int(y))
+        
+        y_list.sort()
+        available_segments = [[min_top, max_bottom, x]]
+        
+        for box_top, box_bottom, box_left in y_list:
+            for segment in available_segments:
+                seg_top, seg_bottom, seg_left = segment
+                
+                if box_bottom <= seg_top or box_top >= seg_bottom:
+                    continue
+                
+                if box_top <= seg_top and box_bottom >= seg_bottom:
+                    available_segments.remove(segment)
+                    break
+                
+                if box_top > seg_top:
+                    segment[1] = box_top
+                    if box_bottom < seg_bottom:
+                        available_segments.insert(
+                            available_segments.index(segment) + 1,
+                            [box_bottom, seg_bottom, box_left])
+                        break
+                
+                segment[0] = box_bottom
+        
+        if not available_segments:
+            return (int(x), int(max_bottom + margin_y))
+        
+        available_segments.sort()
+        
+        for seg_top, seg_bottom, seg_left in available_segments:
+            if seg_bottom - seg_top >= 200:
+                y = seg_top + margin_y
+                x = seg_left
+                break
+        else:
+            y = max_bottom + margin_y
+        
+        return (int(x), int(y))
+    
     rect = canvas.scene.get_new_scene_rect()
     if rect.isNull():
         return ((200, 0), (400, 0), (0, 0))
 
-    y = rect.bottom() + 20
-
-    return ((rect.left() + rect.width() / 2, y),
-            (rect.right() - 50, y),
-            (rect.left(), y))
+    y = rect.bottom()
+    
+    return (get_middle_empty_positions(rect),
+            (400, y),
+            (0, y))
 
 def CanvasGetNewGroupPos(horizontal):
     if canvas.debug:

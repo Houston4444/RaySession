@@ -595,11 +595,6 @@ class MainWindow(QMainWindow):
         self.flash_open_bool = not self.flash_open_bool
 
     def quitApp(self):
-        #if (self._daemon_manager.launched_before
-                #and not CommandLineArgs.under_nsm):
-            #self.quitAppNow()
-            #return True
-
         if self._session.isRunning():
             dialog = child_dialogs.QuitAppDialog(self)
             dialog.exec()
@@ -611,13 +606,6 @@ class MainWindow(QMainWindow):
 
     def quitAppNow(self):
         self._daemon_manager.stop()
-
-    def updateClientLabel(self, client_id, label):
-        client = self._session.getClient(client_id)
-        if not client:
-            return
-
-        client.updateLabel(label)
 
     def createNewSession(self):
         dialog = child_dialogs.NewSessionDialog(self)

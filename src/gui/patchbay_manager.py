@@ -1584,7 +1584,12 @@ class PatchbayManager:
         file = open(temp_path, 'r')
         patchbay_data = json.load(file)
 
-        self.optimize_operation(True)
+        # optimize_operation allow to not redraw group at each port added.
+        # however, if there is no group position
+        # (i.e. if there is no config at all), it is prefferable to
+        # know where finish the group boxes before to add another one.
+        if self.group_positions:
+            self.optimize_operation(True)
 
         for key in patchbay_data.keys():
             if key == 'ports':

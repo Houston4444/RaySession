@@ -70,10 +70,6 @@ class Client(QObject, ray.ClientData):
     def allowKill(self):
         self.widget.allowKill()
 
-    def updateLabel(self, label):
-        self.label = label
-        self.sendPropertiesToDaemon()
-
     def updateClientProperties(self, *args):
         self.update(*args)
         self.widget.updateClientData()
