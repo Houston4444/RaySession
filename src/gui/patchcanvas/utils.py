@@ -22,7 +22,7 @@
 import sys
 
 from PyQt5.QtCore import qCritical, QPointF, QTimer, QFile
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -560,5 +560,10 @@ def CanvasRemoveItemFX(item):
     del item
 
     QTimer.singleShot(0, canvas.scene.update)
+
+def isDarkTheme(widget)->bool:
+    return bool(
+        widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
+        > 128)
 
 # ------------------------------------------------------------------------------------------------------------

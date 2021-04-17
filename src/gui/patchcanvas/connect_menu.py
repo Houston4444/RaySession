@@ -27,15 +27,11 @@ from .utils import(
     CanvasGetPortGroupFullName,
     CanvasGetPortGroupPortList,
     CanvasConnectPortGroups,
-    CanvasPortGroupConnectionState)
+    CanvasPortGroupConnectionState,
+    isDarkTheme)
 
 
 _translate = QCoreApplication.translate
-
-def isDarkTheme(widget)->bool:
-    return bool(
-        widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
-        > 128)
 
 
 class PortCheckBox(QCheckBox):

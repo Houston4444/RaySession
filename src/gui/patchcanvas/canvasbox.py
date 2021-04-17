@@ -28,7 +28,7 @@ from PyQt5.QtCore import (qCritical, Qt, QPoint, QPointF, QRectF, QTimer,
                           pyqtSignal, QMarginsF, QTimer)
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
                          QLinearGradient, QPainter, QPen, QPolygonF,
-                         QColor, QIcon)
+                         QColor, QIcon, QPixmap)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 # ------------------------------------------------------------------------------------------------------------
@@ -81,7 +81,8 @@ from .utils import (CanvasItemFX,
                     CanvasGetPortGroupPosition,
                     CanvasCallback,
                     CanvasConnectionConcerns,
-                    CanvasGetIcon)
+                    CanvasGetIcon,
+                    isDarkTheme)
 
 _translate = QApplication.translate
 
@@ -762,10 +763,15 @@ class CanvasBox(QGraphicsItem):
         
         event.accept()
         menu = QMenu()
-
+        
+        dark = ''
+        if isDarkTheme(menu):
+            dark = '-dark'
+        
         # Disconnect menu stuff
         discMenu = QMenu(_translate('patchbay', "Disconnect"), menu)
-        discMenu.setIcon(QIcon.fromTheme('gtk-disconnect'))
+        discMenu.setIcon(
+            QIcon(QPixmap(':scalable/breeze%s/lines-disconnector' % dark)))
 
         conn_list_ids = []
         disconnect_list = [] # will contains disconnect_element dicts
@@ -864,7 +870,8 @@ class CanvasBox(QGraphicsItem):
         menu.addMenu(discMenu)
         act_x_disc_all = menu.addAction(
             _translate('patchbay', "Disconnect &All"))
-        act_x_disc_all.setIcon(QIcon.fromTheme('gtk-disconnect'))
+        act_x_disc_all.setIcon(
+            QIcon(QPixmap(':scalable/breeze%s/lines-disconnector' % dark)))
         act_x_sep1 = menu.addSeparator()
         act_x_info = menu.addAction(_translate('patchbay', "Info"))
         act_x_rename = menu.addAction(_translate('patchbay', "Rename"))
