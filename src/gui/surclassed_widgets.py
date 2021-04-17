@@ -90,10 +90,10 @@ class CustomLineEdit(QLineEdit):
 
 class SessionFrame(QFrame):
     frame_resized = pyqtSignal()
-    
+
     def __init__(self, parent):
         QFrame.__init__(self)
-    
+
     def resizeEvent(self, event):
         QFrame.resizeEvent(self, event)
         self.frame_resized.emit()
@@ -324,7 +324,7 @@ class DraggableGraphicsView(QGraphicsView):
             self.fMiddleButton = Qt.MiddleButton
         except:
             self.fMiddleButton = Qt.MidButton
-            
+
         self.h_scroll_visible = False
         self.v_scroll_visible = False
 
@@ -355,14 +355,14 @@ class DraggableGraphicsView(QGraphicsView):
         if event.key() == Qt.Key_Control:
             self.fCtrlDown = False
         QGraphicsView.keyReleaseEvent(self, event)
-        
+
 
 class CanvasSplitterHandle(QSplitterHandle):
     def __init__(self, parent):
         QSplitterHandle.__init__(self, Qt.Horizontal, parent)
         self._default_cursor = self.cursor()
         self._active = True
-        
+
     def set_active(self, yesno: bool):
         self._active = yesno
 
@@ -381,7 +381,7 @@ class CanvasSplitterHandle(QSplitterHandle):
 class CanvasSplitter(QSplitter):
     def __init__(self, parent):
         QSplitter.__init__(self, parent)
-    
+
     def set_active(self, yesno: bool):
         handle = self.handle(1)
         if handle:

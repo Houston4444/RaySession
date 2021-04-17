@@ -90,7 +90,7 @@ class PatchScene(QGraphicsScene):
 
         self.curCut = None
         self.curZoomArea = None
-        
+
         self.move_boxes = []
         self.move_box_timer = QTimer()
         self.move_box_timer.setInterval(40) # 40 ms step animation (25 Hz)
@@ -102,7 +102,7 @@ class PatchScene(QGraphicsScene):
 
         self.selectionChanged.connect(self.slot_selectionChanged)
         #self.setSceneRect(-10000, -10000, 20000, 20000)
-        
+
     def getDevicePixelRatioF(self):
         if QT_VERSION < 0x50600:
             return 1.0
@@ -139,29 +139,29 @@ class PatchScene(QGraphicsScene):
     def fix_temporary_scroll_bars(self):
         if self.m_view is None:
             return
-        
+
         if self.m_view.horizontalScrollBar().isVisible():
             self.m_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         else:
             self.m_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            
+
         if self.m_view.verticalScrollBar().isVisible():
             self.m_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         else:
             self.m_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            
+
     def reset_scroll_bars(self):
         self.m_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.m_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        
+
     def move_boxes_animation(self):
         self.move_box_n += 1
-        
+
         for box_dict in self.move_boxes:
             if box_dict['widget'] is not None:
                 total_n = self.move_box_n_max - box_dict['n_start']
                 n = self.move_box_n - box_dict['n_start']
-                
+
                 x = box_dict['from_x'] \
                     + (box_dict['to_x'] - box_dict['from_x']) \
                         * (n/total_n)
@@ -170,20 +170,20 @@ class PatchScene(QGraphicsScene):
                         * (n/total_n)
 
                 box_dict['widget'].setPos(x, y)
-        
+
         self.resize_the_scene()
-        
+
         if self.move_box_n == self.move_box_n_max:
             self.move_box_n = 0
             self.move_box_timer.stop()
             self.move_boxes.clear()
             QTimer.singleShot(0, self.update)
-            
+
             for box_dict in self.move_boxes:
                 if box_dict['widget'] is not None:
                     QTimer.singleShot(0, box_dict['widget'].repaintLines)
             canvas.qobject.move_boxes_finished.emit()
-            
+
         elif self.move_box_n % 5 == 4:
             self.update()
 
@@ -200,10 +200,10 @@ class PatchScene(QGraphicsScene):
                 if box_widget is not None:
                     box_widget.setPos(to_x, to_y)
                 return
-            
+
             box_dict = {'widget': box_widget}
             self.move_boxes.append(box_dict)
-        
+
         box_dict['from_x'] = box_widget.pos().x()
         box_dict['from_y'] = box_widget.pos().y()
         box_dict['to_x'] = to_x
@@ -236,31 +236,31 @@ class PatchScene(QGraphicsScene):
 
     def get_new_scene_rect(self):
         first_pass = True
-        
+
         for group in canvas.group_list:
             for widget in group.widgets:
                 if widget is None:
                     continue
-                
+
                 item_rect = widget.boundingRect().translated(widget.scenePos())
                 item_rect = item_rect.marginsAdded(QMarginsF(20, 20, 20, 20))
-                
+
                 if first_pass:
                     full_rect = item_rect
                 else:
                     full_rect = full_rect.united(item_rect)
-                
+
                 first_pass = False
-        
+
         if not first_pass:
             return full_rect
-        
+
         return QRectF()
 
     def resize_the_scene(self):
         if not options.elastic:
             return
-        
+
         scene_rect = self.get_new_scene_rect()
         if not scene_rect.isNull():
             self.setSceneRect(self.get_new_scene_rect())
@@ -274,7 +274,7 @@ class PatchScene(QGraphicsScene):
             # resize the scene to a null QRectF to auto set sceneRect
             # always growing with items
             self.setSceneRect(QRectF())
-            
+
             # add a fake item with the current canvas scene size
             # (calculated with items), and remove it.
             fake_item = QGraphicsRectItem(self.get_new_scene_rect())
@@ -370,7 +370,7 @@ class PatchScene(QGraphicsScene):
 
     def triggerRubberbandScale(self):
         self.m_scale_area = True
-        
+
         if self.curZoomArea:
             self.m_view.viewport().setCursor(self.curZoomArea)
 
@@ -430,16 +430,16 @@ class PatchScene(QGraphicsScene):
             # prevent too large unzoom
             if delta < 0:
                 rect = self.sceneRect()
-                
+
                 top_left_vw = self.m_view.mapFromScene(rect.topLeft())
                 bottom_right_vw = self.m_view.mapFromScene(rect.bottomRight())
-                
+
                 if (top_left_vw.x() > self.m_view.width() / 4
                         and top_left_vw.y() > self.m_view.height() / 4):
                     return
-                
-                
-                
+
+
+
                 #top_left_sc = self.m_view.mapToScene(QPoint(0, 0))
                 #bottom_right_sc = self.m_view.mapToScene(
                     #QPoint(self.m_view.width(), self.m_view.height()))
@@ -449,7 +449,7 @@ class PatchScene(QGraphicsScene):
                         #and bottom_right_sc.x() > rect.right() + margin
                         #and bottom_right_sc.y() > rect.bottom() + margin):
                     #return
-            
+
             # Apply scale
             factor = 1.4142135623730951 ** (delta / 240.0)
             transform.scale(factor, factor)
@@ -457,8 +457,8 @@ class PatchScene(QGraphicsScene):
             self.m_view.setTransform(transform)
             self.scaleChanged.emit(transform.m11())
 
-            # Update box icons especially when they are not scalable 
-            # eg. coming from theme 
+            # Update box icons especially when they are not scalable
+            # eg. coming from theme
             for group in canvas.group_list:
                 for widget in group.widgets:
                     if widget and widget.top_icon:
@@ -468,7 +468,7 @@ class PatchScene(QGraphicsScene):
         if event.button() == Qt.LeftButton:
             canvas.callback(ACTION_DOUBLE_CLICK, 0, 0, "")
             return
-        
+
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):

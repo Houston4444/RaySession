@@ -138,7 +138,7 @@ if __name__ == '__main__':
     RS.settings.setValue('daemon/favorites', RS.favorites)
     if not CommandLineArgs.no_options:
         RS.settings.setValue('daemon/options', server.options)
-    
+
     # save JSON config group positions
     session.canvas_saver.save_config_file()
 

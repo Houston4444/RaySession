@@ -66,7 +66,7 @@ def getAppIcon(icon_name):
                 icon = QIcon()
                 icon.addFile(filename)
                 break
-            
+
     if icon.isNull():
         for path in ('/usr/local', '/usr', '%s/.local' % os.getenv('HOME')):
             for ext in ('png', 'svg', 'svgz', 'xpm'):
@@ -76,21 +76,21 @@ def getAppIcon(icon_name):
                     icon = QIcon()
                     icon.addFile(filename)
                     break
-    
+
     return icon
 
 class CanvasIconPixmap(QGraphicsPixmapItem):
     def __init__(self, icon_type, icon_name, name, parent):
         QGraphicsPixmapItem.__init__(self)
         self.setParentItem(parent)
-        
-        self.p_size = QRectF(0, 0, 24, 24)        
+
+        self.p_size = QRectF(0, 0, 24, 24)
         self.icon = None
         self.x_offset = 4
 
         if icon_type in (ICON_CLIENT, ICON_APPLICATION):
             self.setIcon(icon_type, icon_name)
-    
+
     def setIcon(self, icon, name):
         self.icon = getAppIcon(name)
         if not self.icon.isNull():
@@ -98,7 +98,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
             self.setPixmap(pixmap)
             self.setOffset(4, 4)
         #icon_path = ":/app_icons/gx_head.png"
-    
+
     def update_zoom(self, scale: float):
         if self.icon is None or scale <= 0.0:
             return
@@ -107,25 +107,25 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         self.setPixmap(pixmap)
         self.setScale(1.0 / scale)
         self.setOffset(self.x_offset * scale, 4 * scale)
-    
+
     def is_null(self)->bool:
         if self.icon is None:
             return True
-        
+
         return self.icon.isNull()
-    
+
     def align_at(self, x_pos: int):
         self.x_offset = x_pos
         self.setOffset(self.x_offset, 4)
-    
+
     def align_right(self, width: int):
         self.x_offset = width - 28
         self.setOffset(self.x_offset, 4)
-    
+
     def boundingRect(self):
         return self.p_size
-    
-    
+
+
 class CanvasSvgIcon(QGraphicsSvgItem):
     def __init__(self, icon_type, name, port_mode, parent):
         QGraphicsSvgItem.__init__(self)
@@ -244,6 +244,6 @@ class CanvasSvgIcon(QGraphicsSvgItem):
         painter.restore()
 
 # ------------------------------------------------------------------------------------------------------------
-    
-    
-    
+
+
+

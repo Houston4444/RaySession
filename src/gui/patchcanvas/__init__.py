@@ -155,7 +155,7 @@ class Canvas(object):
         self.last_connection_id = 0
         self.initial_pos = QPointF(0, 0)
         self.size_rect = QRectF()
-        
+
         self.is_line_mov = False
 
     def callback(self, action, value1, value2, value_str):
@@ -219,7 +219,7 @@ class clipboard_element_dict_t:
         'group_id',
         'port_id',
         'group_port_ids']
-        
+
 
 class animation_dict_t(object):
     __slots__ = [

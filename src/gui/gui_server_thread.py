@@ -17,7 +17,7 @@ def ray_method(path, types):
                 sys.stderr.write(
                     '\033[93mOSC::gui_receives\033[0m %s, %s, %s, %s\n'
                     % (t_path, t_types, t_args, src_addr.url))
-            
+
             if t_thread.stopping:
                 return
 
@@ -37,9 +37,9 @@ class GUIServerThread(liblo.ServerThread):
 
         global _instance
         _instance = self
-        
+
         self.patchbay_addr = None
-        
+
         # Try to prevent impossibility to stop server
         # while receiving messages
         self.stopping = False
@@ -56,7 +56,7 @@ class GUIServerThread(liblo.ServerThread):
         self._session = session
         self._signaler = self._session._signaler
         self._daemon_manager = self._session._daemon_manager
-        
+
         for path_types in (
             ('/ray/gui/server/disannounce', ''),
             ('/ray/gui/server/nsm_locked', 'i'),
@@ -308,23 +308,23 @@ class GUIServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/hide_script_user_action', '')
     def _hide_script_user_action(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/patchbay/announce', 'iii')
     def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
         self.patchbay_addr = src_addr
-    
+
     #@ray_method('/ray/gui/patchbay/port_added', 'sssiis')
     #def _patchbay_port_added(self, path, args, types, src_addr):
         #pass
-        
+
     @ray_method('/ray/gui/patchbay/port_renamed', 'ss')
     def _patchbay_port_renamed(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/patchbay/port_removed', 's')
     def _patchbay_port_removed(self, path, args, types, src_addr):
         pass
-    
+
     @ray_method('/ray/gui/patchbay/connection_added', 'ss')
     def _patchbay_connection_added(self, path, args, types, src_addr):
         pass
@@ -346,7 +346,7 @@ class GUIServerThread(liblo.ServerThread):
     def _patchbay_update_portgroup(self, path, args, types, src_addr):
         if not types.startswith('siis'):
             return False
-        
+
         types_end = types.replace('siis', '', 1)
         for c in types_end:
             if c != 's':

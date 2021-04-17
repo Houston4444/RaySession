@@ -55,7 +55,7 @@ class CanvasLineMov(QGraphicsLineItem):
         self.m_port_pos_dest = port_pos
         self.m_portgrp_len_from = portgrp_len
         self.m_portgrp_len_dest = portgrp_len
-        
+
         # Port position doesn't change while moving around line
         self.p_lineX = self.scenePos().x()
         self.p_lineY = self.scenePos().y()
@@ -76,15 +76,15 @@ class CanvasLineMov(QGraphicsLineItem):
         pen.setCapStyle(Qt.RoundCap)
         pen.setWidthF(pen.widthF() + 0.00001)
         self.setPen(pen)
-    
+
     def setDestinationPortGroupPosition(self, port_pos, portgrp_len):
         self.m_port_pos_dest = port_pos
         self.m_portgrp_len_dest = portgrp_len
-    
+
     def updateLinePos(self, scenePos):
         phi = 0.75 if self.m_portgrp_len_from > 2 else 0.62
         phito = 0.75 if self.m_portgrp_len_dest > 2 else 0.62
-        
+
         item_pos = [0, 0]
 
         if self.m_port_mode == PORT_MODE_INPUT:
@@ -93,7 +93,7 @@ class CanvasLineMov(QGraphicsLineItem):
             item_pos[0] = self.p_width + 12
         else:
             return
-        
+
         if self.parentItem().type() == CanvasPortType:
             if self.m_portgrp_len_from > 1:
                 first_old_y = canvas.theme.port_height * phi
@@ -103,13 +103,13 @@ class CanvasLineMov(QGraphicsLineItem):
                               - (canvas.theme.port_height * self.m_port_pos_from)
             else:
                 item_pos[1] = float(canvas.theme.port_height)/2
-        
+
         elif self.parentItem().type() == CanvasPortGroupType:
             first_old_y = canvas.theme.port_height * phi
             last_old_y  = canvas.theme.port_height * (self.m_portgrp_len_from - phi)
             delta = (last_old_y - first_old_y) / (self.m_portgrp_len_from -1)
             item_pos[1] = first_old_y + (self.m_port_pos_from * delta)
-            
+
         if self.m_portgrp_len_dest == 1:
             mouse_y_offset = 0
         else:
@@ -118,7 +118,7 @@ class CanvasLineMov(QGraphicsLineItem):
             delta = (last_new_y - first_new_y) / (self.m_portgrp_len_dest -1)
             new_y1 = first_new_y + (self.m_port_pos_dest * delta)
             mouse_y_offset = new_y1 - ( (last_new_y - first_new_y) / 2 ) - (canvas.theme.port_height * phito)
-        
+
         line = QLineF(item_pos[0], item_pos[1], scenePos.x() - self.p_lineX, scenePos.y() - self.p_lineY + mouse_y_offset)
         self.setLine(line)
 
@@ -130,5 +130,5 @@ class CanvasLineMov(QGraphicsLineItem):
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing))
         QGraphicsLineItem.paint(self, painter, option, widget)
         painter.restore()
-        
+
 # ------------------------------------------------------------------------------------------------------------

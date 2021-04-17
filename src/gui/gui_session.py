@@ -419,57 +419,57 @@ class SignaledSession(Session):
 
     def _ray_gui_hide_script_user_action(self, path, args):
         self._main_win.hideScriptUserActionDialog()
-    
+
     def _ray_gui_patchbay_announce(self, path, args):
         self.patchbay_manager.patchbay_announce(*args)
-    
+
     def _ray_gui_patchbay_port_added(self, path, args):
         self.patchbay_manager.add_port(*args)
-        
+
     def _ray_gui_patchbay_port_removed(self, path, args):
         self.patchbay_manager.remove_port(*args)
-        
+
     def _ray_gui_patchbay_port_renamed(self, path, args):
         self.patchbay_manager.rename_port(*args)
 
     def _ray_gui_patchbay_connection_added(self, path, args):
         self.patchbay_manager.add_connection(*args)
-        
+
     def _ray_gui_patchbay_connection_removed(self, path, args):
         self.patchbay_manager.remove_connection(*args)
-        
+
     def _ray_gui_patchbay_update_group_position(self, path, args):
         self.patchbay_manager.update_group_position(*args)
-    
+
     def _ray_gui_patchbay_update_portgroup(self, path, args):
         self.patchbay_manager.update_portgroup(*args)
-    
+
     def _ray_gui_patchbay_server_started(self, path, args):
         self.patchbay_manager.server_started(*args)
-    
+
     def _ray_gui_patchbay_server_stopped(self, path, args):
         self.patchbay_manager.server_stopped(*args)
-    
+
     def _ray_gui_patchbay_server_lose(self, path, args):
         self.patchbay_manager.server_lose(*args)
-    
+
     def _ray_gui_patchbay_dsp_load(self, path, args):
         self.patchbay_manager.set_dsp_load(*args)
-    
+
     def _ray_gui_patchbay_add_xrun(self, path, args):
         self.patchbay_manager.add_xrun(*args)
-        
+
     def _ray_gui_patchbay_buffer_size(self, path, args):
         self.patchbay_manager.buffer_size_changed(*args)
-        
+
     def _ray_gui_patchbay_sample_rate(self, path, args):
         self.patchbay_manager.sample_rate_changed(*args)
-    
+
     def _ray_gui_patchbay_big_packets(self, path, args):
         self.patchbay_manager.receive_big_packets(*args)
-    
+
     def _ray_gui_patchbay_fast_temp_file_memory(self, path, args):
         self.patchbay_manager.fast_temp_file_memory(*args)
-    
+
     def _ray_gui_patchbay_fast_temp_file_running(self, path, args):
         self.patchbay_manager.fast_temp_file_running(*args)

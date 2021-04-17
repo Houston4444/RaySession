@@ -23,7 +23,7 @@ class ServerSender(QObject):
         server = OscServerThread.getInstance()
         if not server:
             return
-        
+
         server.send(*args)
 
     def sendEvenDummy(self, *args):

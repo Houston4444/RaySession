@@ -19,7 +19,7 @@ class ClientSlot(QFrame):
         middle = int(len(string)/2)
         sep_indexes = []
         last_was_digit = False
-        
+
         for sep in (' ', '-', '_', 'capital'):
             for i in range(len(string)):
                 c = string[i]
@@ -28,29 +28,29 @@ class ClientSlot(QFrame):
                         if not c.isdigit() or not last_was_digit:
                             sep_indexes.append(i)
                         last_was_digit = c.isdigit()
-                        
+
                 elif c == sep:
                     sep_indexes.append(i)
-                    
+
             if sep_indexes:
                 break
-        
+
         if not sep_indexes or sep_indexes == [0]:
             return (string, '')
-        
+
         best_index = 0
         best_dif = middle
-        
+
         for s in sep_indexes:
             dif = abs(middle - s)
             if dif < best_dif:
                 best_index = s
                 best_dif = dif
-        
+
         if sep == ' ':
             return (string[:best_index], string[best_index+1:])
         return (string[:best_index], string[best_index:])
-    
+
     @classmethod
     def toDaemon(cls, *args):
         server = GUIServerThread.instance()
@@ -118,7 +118,7 @@ class ClientSlot(QFrame):
         self.icon_invisible = RayIcon('hint', dark)
         self.stop_icon = RayIcon('media-playback-stop', dark)
         self.kill_icon = RayIcon('media-playback-stop_red', dark)
-        
+
         self.ui.startButton.setIcon(RayIcon('media-playback-start', dark))
         self.ui.closeButton.setIcon(RayIcon('window-close', dark))
         self.ui.saveButton.setIcon(self.save_icon)
@@ -143,7 +143,7 @@ class ClientSlot(QFrame):
         if self._stop_is_kill:
             self.toDaemon('/ray/client/kill', self.clientId())
             return
-        
+
         # we need to prevent accidental stop with a window confirmation
         # under conditions
         self._main_win.stopClient(self.clientId())
@@ -187,7 +187,7 @@ class ClientSlot(QFrame):
 
     def set_very_short(self, yesno: bool):
         self._very_short = yesno
-        
+
         if yesno:
             if not (self.ui.startButton.isEnabled()
                     or self.ui.stopButton.isEnabled()):
@@ -203,7 +203,7 @@ class ClientSlot(QFrame):
             self.ui.stopButton.setVisible(True)
             self.ui.toolButtonHack.setVisible(
                 self.client.protocol == ray.Protocol.RAY_HACK)
-    
+
     def set_fat(self, yesno: bool, very_fat=False):
         if yesno:
             self.ui.mainLayout.setDirection(QBoxLayout.TopToBottom)
@@ -214,61 +214,61 @@ class ClientSlot(QFrame):
             self.ui.spacerLeftOfDown.setVisible(False)
             self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
             self.list_widget_item.setSizeHint(QSize(100, 45))
-    
+
     def update_disposition(self):
         default_font_size = 13
         font = self.ui.ClientName.font()
         main_size = QFontMetrics(font).width(self.client.prettier_name())
-        
+
         layout_width = self.list_widget.width()
-        
+
         self.set_very_short(layout_width < 233)
-        
+
         scroll_bar = self.list_widget.verticalScrollBar()
         if scroll_bar.isVisible():
             layout_width -= scroll_bar.width()
-        
+
         max_label_width = layout_width - 231
-        
+
         if self.ui.toolButtonGUI.isVisible():
             max_label_width -= self.ui.toolButtonGUI.width()
         if self.ui.toolButtonHack.isVisible():
             max_label_width -= self.ui.toolButtonHack.width()
-        
+
         if main_size <= max_label_width:
             self.ui.ClientName.setText(self.client.prettier_name())
             self.set_fat(False)
             return
-        
+
         # split title in two lines
         top, bottom = self.split_in_two(self.client.prettier_name())
-            
+
         max_size = 0
-        
+
         for text in (top, bottom):
             if not text:
                 continue
-            
+
             size = QFontMetrics(font).width(text)
             max_size = max(max_size, size)
-        
+
         if max_size <= max_label_width:
             self.ui.ClientName.setText('\n'.join((top, bottom)))
             self.set_fat(False)
             return
-        
+
         # responsive design, put label at top of the controls
         # if there is not enought space for label
-            
+
         max_label_width = layout_width - 50
-        
+
         if main_size <= max_label_width:
             self.set_fat(True)
             self.ui.ClientName.setText(self.client.prettier_name())
             return
 
         self.set_fat(True, very_fat=True)
-        
+
         top, bottom = self.split_in_two(self.client.prettier_name())
         self.ui.ClientName.setText('\n'.join((top, bottom)))
 
@@ -357,7 +357,7 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
             self.grayIcon(False)
-            
+
             if self._very_short:
                 self.ui.startButton.setVisible(False)
                 self.ui.stopButton.setVisible(True)
@@ -371,7 +371,7 @@ class ClientSlot(QFrame):
             self.ui.toolButtonGUI.setEnabled(True)
             self.ui.saveButton.setEnabled(True)
             self.grayIcon(False)
-            
+
             if self._very_short:
                 self.ui.startButton.setVisible(False)
                 self.ui.stopButton.setVisible(True)
@@ -485,7 +485,7 @@ class ClientItem(QListWidgetItem):
         self.f_widget = ClientSlot(parent, self, client_data)
         parent.setItemWidget(self, self.f_widget)
         self.setSizeHint(QSize(100, 45))
-        
+
         #self.setSizeHint(QSize(100, 70))
         self.sort_number = 0
 
@@ -501,7 +501,7 @@ class ClientItem(QListWidgetItem):
 
     def getClientId(self):
         return self.f_widget.clientId()
-    
+
     def reCreateWidget(self, parent, big_label=False):
         client_data = self.f_widget.client
         del self.f_widget
@@ -509,7 +509,7 @@ class ClientItem(QListWidgetItem):
         self.f_widget = ClientSlot(parent, self, client_data)
         self.setSizeHint(QSize(100, 70 if big_label else 45))
         parent.setItemWidget(self, self.f_widget)
-        
+
 
 
 class ListWidgetClients(QListWidget):
@@ -638,4 +638,4 @@ class ListWidgetClients(QListWidget):
             item = self.item(i)
             widget = self.itemWidget(item)
             widget.update_disposition()
-        
+

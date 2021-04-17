@@ -439,11 +439,11 @@ class OscServerThread(ClientCommunicating):
                             continue
                     else:
                         return True
-                
+
                 if line.startswith('port:'):
                     port_str = line.rpartition(':')[2]
                     good_port = False
-                    
+
                     try:
                         patchbay_addr = liblo.Address(int(port_str))
                         good_port = True
@@ -451,13 +451,13 @@ class OscServerThread(ClientCommunicating):
                         patchbay_addr = None
                         sys.stderr.write(
                             'port given for patchbay %s is not a valid osc port')
-                    
+
                     if good_port:
                         self.send(patchbay_addr, '/ray/patchbay/add_gui',
                                   src_addr.url)
                         return False
                     break
-        
+
         # continue in main thread if patchbay_to_osc is not started yet
         # see session_signaled.py -> _ray_server_ask_for_patchbay
 
@@ -823,7 +823,7 @@ class OscServerThread(ClientCommunicating):
         if not types.startswith('siis'):
             self.unknownMessage(path, types, src_addr)
             return False
-        
+
         other_types = types.replace('siis', '', 1)
         for t in other_types:
             if t != 's':
@@ -1313,7 +1313,7 @@ class OscServerThread(ClientCommunicating):
         self.send(gui_addr, '/ray/gui/session/notes', self.session.notes)
 
         self.session.canvas_saver.send_all_group_positions(gui_addr)
-        
+
         for favorite in RS.favorites:
             self.send(gui_addr, "/ray/gui/favorites/added",
                       favorite.name, favorite.icon, int(favorite.factory))

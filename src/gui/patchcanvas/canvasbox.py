@@ -75,7 +75,7 @@ from .canvasport import CanvasPort
 from .canvasportgroup import CanvasPortGroup
 from .theme import Theme
 from .utils import (CanvasItemFX,
-                    CanvasGetFullPortName, 
+                    CanvasGetFullPortName,
                     CanvasGetPortConnectionList,
                     CanvasGetPortGroupName,
                     CanvasGetPortGroupPosition,
@@ -100,7 +100,7 @@ class TitleLine:
     x = 0
     y = 0
     is_little = False
-    
+
     def __init__(self, text: str, little=False):
         self.text = text
         self.is_little = little
@@ -111,9 +111,9 @@ class TitleLine:
         self.font.setPixelSize(canvas.theme.box_font_size)
         if not little:
             self.font.setWeight(QFont.Bold)
-            
+
         self.size = QFontMetrics(self.font).width(text)
-        
+
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasBox(QGraphicsItem):
@@ -166,7 +166,7 @@ class CanvasBox(QGraphicsItem):
         self.m_font_name.setFamily(canvas.theme.box_font_name)
         self.m_font_name.setPixelSize(canvas.theme.box_font_size)
         self.m_font_name.setWeight(canvas.theme.box_font_state)
-        
+
         self.m_font_italic = QFont()
         self.m_font_italic.setFamily(canvas.theme.box_font_name)
         self.m_font_italic.setPixelSize(canvas.theme.box_font_size)
@@ -182,7 +182,7 @@ class CanvasBox(QGraphicsItem):
         self._is_hardware = bool(icon_type == ICON_HARDWARE)
         self._hw_polygon = QPolygonF()
         self._icon_name = icon_name
-        
+
         self._wrapped = False
         self._wrapping = False
         self._unwrapping = False
@@ -191,7 +191,7 @@ class CanvasBox(QGraphicsItem):
         self._wrapping_timer.timeout.connect(self.animateWrapping)
         self._wrapping_n = 0
         self._wrapping_max = 5
-        
+
         # Icon
         if canvas.theme.box_use_icon:
             if icon_type in (ICON_HARDWARE, ICON_INTERNAL):
@@ -292,27 +292,27 @@ class CanvasBox(QGraphicsItem):
                 port_mode = self.m_splitted_mode
             self.top_icon = CanvasSvgIcon(icon_type, icon_name, port_mode, self)
             return
-        
+
         if self.top_icon is not None:
             self.top_icon.setIcon(icon_type, icon_name, self.m_group_name)
 
     def has_top_icon(self)->bool:
         if self.top_icon is None:
             return False
-        
+
         return not self.top_icon.is_null()
 
     def setSplit(self, split, mode=PORT_MODE_NULL):
         self.m_splitted = split
         self.m_splitted_mode = mode
         self.m_current_port_mode = mode
-        
+
         if self._is_hardware:
             self.setIcon(ICON_HARDWARE, self._icon_name)
 
     def splitTitle(self):
         title_lines = []
-        
+
         title, slash, subtitle = self.m_group_name.partition('/')
         if subtitle:
             title_lines.append(TitleLine(title, little=True))
@@ -331,7 +331,7 @@ class CanvasBox(QGraphicsItem):
                     title_lines.append(TitleLine(title_2))
             else:
                 title_lines.append(TitleLine(self.m_group_name))
-        
+
         self._title_lines = tuple(title_lines)
 
     def setGroupName(self, group_name):
@@ -343,7 +343,7 @@ class CanvasBox(QGraphicsItem):
         if self.shadow:
             self.shadow.setOpacity(opacity)
 
-    def addPortFromGroup(self, port_id, port_mode, port_type, 
+    def addPortFromGroup(self, port_id, port_mode, port_type,
                          port_name, is_alternate):
         if len(self.m_port_list_ids) == 0:
             if options.auto_hide_groups:
@@ -351,7 +351,7 @@ class CanvasBox(QGraphicsItem):
                     CanvasItemFX(self, True, False)
                 self.setVisible(True)
 
-        new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, 
+        new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode,
                                 port_type, is_alternate, self)
         if self._wrapped:
             new_widget.setVisible(False)
@@ -376,16 +376,16 @@ class CanvasBox(QGraphicsItem):
                     CanvasItemFX(self, False, False)
                 else:
                     self.setVisible(False)
-    
+
     def addPortGroupFromGroup(self, portgrp_id, port_mode, port_type, port_id_list):
-        new_widget = CanvasPortGroup(self.m_group_id, portgrp_id, port_mode, 
+        new_widget = CanvasPortGroup(self.m_group_id, portgrp_id, port_mode,
                                      port_type, port_id_list, self)
-        
+
         if self._wrapped:
             new_widget.setVisible(False)
-        
+
         return new_widget
-    
+
     def addLineFromGroup(self, line, connection_id):
         new_cbline = cb_line_t(line, connection_id)
         self.m_connection_lines.append(new_cbline)
@@ -426,14 +426,14 @@ class CanvasBox(QGraphicsItem):
         self._wrapping_n += 1
         if self._wrapping_n +1 == self._wrapping_max:
             self._wrapping_n = 0
-            
+
             if self._unwrapping:
                 self.hide_ports_for_wrap(False)
-            
+
             self._wrapping = False
             self._unwrapping = False
             self._wrapping_timer.stop()
-        
+
         self.updatePositions()
 
     def hide_ports_for_wrap(self, hide: bool):
@@ -442,16 +442,16 @@ class CanvasBox(QGraphicsItem):
                 if (self.m_splitted
                         and self.m_splitted_mode != portgrp.port_mode):
                     continue
-                
+
                 if portgrp.widget is not None:
                     portgrp.widget.setVisible(not hide)
-        
+
         for port in canvas.port_list:
             if port.group_id == self.m_group_id:
                 if (self.m_splitted
                         and self.m_splitted_mode != port.port_mode):
                     continue
-                
+
                 if port.widget is not None:
                     port.widget.setVisible(not hide)
 
@@ -461,9 +461,9 @@ class CanvasBox(QGraphicsItem):
     def set_wrapped(self, yesno: bool, animate=True):
         if yesno == self._wrapped:
             return
-        
+
         self._wrapped = yesno
-        
+
         if yesno:
             self.hide_ports_for_wrap(True)
 
@@ -482,7 +482,7 @@ class CanvasBox(QGraphicsItem):
         middle = int(len(string)/2)
         sep_indexes = []
         last_was_digit = False
-        
+
         for sep in (' ', '-', '_', 'capital'):
             for i in range(len(string)):
                 c = string[i]
@@ -491,25 +491,25 @@ class CanvasBox(QGraphicsItem):
                         if not c.isdigit() or not last_was_digit:
                             sep_indexes.append(i)
                         last_was_digit = c.isdigit()
-                        
+
                 elif c == sep:
                     sep_indexes.append(i)
-                    
+
             if sep_indexes:
                 break
-        
+
         if not sep_indexes:
             return (string, '')
-        
+
         best_index = 0
         best_dif = middle
-        
+
         for s in sep_indexes:
             dif = abs(middle - s)
             if dif < best_dif:
                 best_index = s
                 best_dif = dif
-        
+
         if sep == ' ':
             return (string[:best_index], string[best_index+1:])
         return (string[:best_index], string[best_index:])
@@ -523,18 +523,18 @@ class CanvasBox(QGraphicsItem):
             max_title_size = max(max_title_size, title_line.size)
 
         self.p_width = max_title_size
-        
+
         if self.has_top_icon():
             self.p_width += 37
         else:
             self.p_width += 16
-        
+
         self.p_width = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50, self.p_width)
 
         # Get Port List
         port_list = []
         self.m_current_port_mode = PORT_MODE_NULL
-        
+
         for port in canvas.port_list:
             if port.group_id == self.m_group_id and port.port_id in self.m_port_list_ids:
                 port_list.append(port)
@@ -556,20 +556,20 @@ class CanvasBox(QGraphicsItem):
             if len(self._title_lines) == 3:
                 last_in_pos += 14
                 last_out_pos += 14
-                
+
             wrapped_port_pos = last_in_pos
             last_of_portgrp = True
-            
+
             for port_type in port_types:
                 for port in port_list:
                     if port.port_type != port_type:
                         continue
-                    
+
                     port_pos, pg_len = CanvasGetPortGroupPosition(self.m_group_id,
                                                 port.port_id, port.portgrp_id)
                     first_of_portgrp = bool(port_pos == 0)
                     last_of_portgrp = bool(port_pos+1 == pg_len)
-                    
+
                     size = QFontMetrics(self.m_font_port).width(port.port_name)
                     if port.portgrp_id:
                         size = 0
@@ -581,14 +581,14 @@ class CanvasBox(QGraphicsItem):
                                 size = QFontMetrics(self.m_font_port).width(portgrp_name) + canvas.theme.port_in_portgrp_width
                                 break
                         size = max(size, totsize)
-                    
+
                     if port.port_mode == PORT_MODE_INPUT:
                         max_in_width = max(max_in_width, size)
                         if port.port_type != last_in_type:
                             if last_in_type != PORT_TYPE_NULL:
                                 last_in_pos += canvas.theme.port_spacingT
                             last_in_type = port.port_type
-                        
+
                         if self._wrapping:
                             port.widget.setY(last_in_pos
                                              - (last_in_pos - wrapped_port_pos)
@@ -601,7 +601,7 @@ class CanvasBox(QGraphicsItem):
                             port.widget.setY(wrapped_port_pos)
                         else:
                             port.widget.setY(last_in_pos)
-                        
+
                         if port.portgrp_id and first_of_portgrp:
                             for portgrp in canvas.portgrp_list:
                                 if (portgrp.group_id == self.m_group_id
@@ -612,7 +612,7 @@ class CanvasBox(QGraphicsItem):
                                         else:
                                             portgrp.widget.setY(last_in_pos)
                                     break
-                        
+
                         if last_of_portgrp:
                             last_in_pos += port_spacing
                         else:
@@ -624,7 +624,7 @@ class CanvasBox(QGraphicsItem):
                             if last_out_type != PORT_TYPE_NULL:
                                 last_out_pos += canvas.theme.port_spacingT
                             last_out_type = port.port_type
-                        
+
                         if self._wrapping:
                             port.widget.setY(last_out_pos
                                              - (last_out_pos - wrapped_port_pos)
@@ -637,7 +637,7 @@ class CanvasBox(QGraphicsItem):
                             port.widget.setY(wrapped_port_pos)
                         else:
                             port.widget.setY(last_out_pos)
-                        
+
                         if port.portgrp_id and first_of_portgrp:
                             for portgrp in canvas.portgrp_list:
                                 if (portgrp.group_id == self.m_group_id
@@ -648,7 +648,7 @@ class CanvasBox(QGraphicsItem):
                                         else:
                                             portgrp.widget.setY(last_out_pos)
                                     break
-                        
+
                         if last_of_portgrp:
                             last_out_pos += port_spacing
                         else:
@@ -665,14 +665,14 @@ class CanvasBox(QGraphicsItem):
             inX = canvas.theme.port_offset
             outX = self.p_width - max_out_width - canvas.theme.port_offset - 12
             out_in_portgrpX = self.p_width - canvas.theme.port_offset - 12 - canvas.theme.port_in_portgrp_width
-            
+
             for port_type in port_types:
                 for port in port_list:
                     if port.port_mode == PORT_MODE_INPUT:
                         port.widget.setX(inX)
                         if port.portgrp_id:
                             port.widget.setPortWidth(canvas.theme.port_in_portgrp_width)
-                            
+
                             for portgrp in canvas.portgrp_list:
                                 if (portgrp.group_id == self.m_group_id
                                         and portgrp.port_id_list
@@ -681,7 +681,7 @@ class CanvasBox(QGraphicsItem):
                                         portgrp.widget.setPortGroupWidth(max_in_width)
                                         portgrp.widget.setX(canvas.theme.port_offset +1)
                                     break
-                            
+
                         else:
                             port.widget.setPortWidth(max_in_width)
 
@@ -689,7 +689,7 @@ class CanvasBox(QGraphicsItem):
                         if port.portgrp_id:
                             port.widget.setX(out_in_portgrpX)
                             port.widget.setPortWidth(canvas.theme.port_in_portgrp_width)
-                            
+
                             for portgrp in canvas.portgrp_list:
                                 if (portgrp.group_id == self.m_group_id
                                         and portgrp.port_id_list
@@ -701,10 +701,10 @@ class CanvasBox(QGraphicsItem):
                         else:
                             port.widget.setX(outX)
                             port.widget.setPortWidth(max_out_width)
-            
+
             normal_height = max(last_in_pos, last_out_pos)
             wrapped_height = wrapped_port_pos + canvas.theme.port_height
-            
+
             if self._wrapping:
                 self.p_height = normal_height \
                                 - (normal_height - wrapped_height) \
@@ -730,11 +730,11 @@ class CanvasBox(QGraphicsItem):
                 or self.p_height != self.p_ex_height
                 or self.scenePos() != self.p_ex_scene_pos):
             canvas.scene.resize_the_scene()
-        
+
         self.p_ex_width = self.p_width
         self.p_ex_height = self.p_height
         self.p_ex_scene_pos = self.scenePos()
-                    
+
         self.repaintLines(True)
         self.update()
 
@@ -760,14 +760,14 @@ class CanvasBox(QGraphicsItem):
     def contextMenuEvent(self, event):
         if canvas.is_line_mov:
             return
-        
+
         event.accept()
         menu = QMenu()
-        
+
         dark = ''
         if isDarkTheme(menu):
             dark = '-dark'
-        
+
         # Disconnect menu stuff
         discMenu = QMenu(_translate('patchbay', "Disconnect"), menu)
         discMenu.setIcon(
@@ -782,7 +782,7 @@ class CanvasBox(QGraphicsItem):
                 conn_list_ids.append(connection.connection_id)
                 other_group_id = connection.group_in_id
                 group_port_mode = PORT_MODE_INPUT
-                
+
                 if self.m_splitted:
                     if self.m_splitted_mode == PORT_MODE_INPUT:
                         other_group_id = connection.group_out_id
@@ -791,7 +791,7 @@ class CanvasBox(QGraphicsItem):
                     if other_group_id == self.m_group_id:
                         other_group_id = connection.group_out_id
                         group_port_mode = PORT_MODE_OUTPUT
-                
+
                 for disconnect_element in disconnect_list:
                     if disconnect_element['group_id'] == other_group_id:
                         if group_port_mode == PORT_MODE_INPUT:
@@ -805,16 +805,16 @@ class CanvasBox(QGraphicsItem):
                     disconnect_element = {'group_id': other_group_id,
                                           'connection_in_ids': [],
                                           'connection_out_ids': []}
-                    
+
                     if group_port_mode == PORT_MODE_INPUT:
                         disconnect_element['connection_in_ids'].append(
                             connection.connection_id)
                     else:
                         disconnect_element['connection_out_ids'].append(
                             connection.connection_id)
-                    
+
                     disconnect_list.append(disconnect_element)
-        
+
         if disconnect_list:
             for disconnect_element in disconnect_list:
                 for group in canvas.group_list:
@@ -824,11 +824,11 @@ class CanvasBox(QGraphicsItem):
                                 and disconnect_element['connection_out_ids']):
                             ins_label = " (inputs)"
                             outs_label = " (outputs)"
-                            
+
                             if group.icon_type == ICON_HARDWARE:
                                 ins_label = " (playbacks)"
                                 outs_label = " (captures)"
-                                
+
                             act_x_disc1 = discMenu.addAction(
                                 group.group_name + outs_label)
                             act_x_disc1.setIcon(CanvasGetIcon(
@@ -837,7 +837,7 @@ class CanvasBox(QGraphicsItem):
                                 disconnect_element['connection_out_ids'])
                             act_x_disc1.triggered.connect(
                                 canvas.qobject.PortContextMenuDisconnect)
-                            
+
                             act_x_disc2 = discMenu.addAction(
                                 group.group_name + ins_label)
                             act_x_disc2.setIcon(CanvasGetIcon(
@@ -852,7 +852,7 @@ class CanvasBox(QGraphicsItem):
                                 port_mode = PORT_MODE_OUTPUT
                             elif not disconnect_element['connection_out_ids']:
                                 port_mode = PORT_MODE_INPUT
-                            
+
                             act_x_disc = discMenu.addAction(group.group_name)
                             icon = CanvasGetIcon(
                                 group.icon_type, group.icon_name, port_mode)
@@ -866,7 +866,7 @@ class CanvasBox(QGraphicsItem):
         else:
             act_x_disc = discMenu.addAction("No connections")
             act_x_disc.setEnabled(False)
-        
+
         menu.addMenu(discMenu)
         act_x_disc_all = menu.addAction(
             _translate('patchbay', "Disconnect &All"))
@@ -883,7 +883,7 @@ class CanvasBox(QGraphicsItem):
             split_join_icon = QIcon.fromTheme('join')
         act_x_split_join = menu.addAction(split_join_name)
         act_x_split_join.setIcon(split_join_icon)
-        
+
         wrap_title = _translate('patchbay', 'Wrap')
         wrap_icon = QIcon.fromTheme('pan-up-symbolic')
         if self._wrapped:
@@ -972,7 +972,7 @@ class CanvasBox(QGraphicsItem):
 
         elif act_selected == act_p_remove:
             canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")
-            
+
         elif act_selected == act_x_wrap:
             canvas.callback(ACTION_GROUP_WRAP, self.m_group_id,
                             self.m_splitted_mode, str(not self._wrapped))
@@ -1019,13 +1019,13 @@ class CanvasBox(QGraphicsItem):
                     ypos = canvas.theme.box_header_height
                     if len(self._title_lines) == 3:
                         ypos += 14
-                    
+
                     triangle_rect_out = QRectF(
                         0, ypos, 24, ypos + canvas.theme.port_spacing)
                     triangle_rect_in = QRectF(
                         self.p_width - 24, ypos,
                         24, ypos + canvas.theme.port_spacing)
-                    
+
                     mode = PORT_MODE_INPUT
                     wrap = False
 
@@ -1035,7 +1035,7 @@ class CanvasBox(QGraphicsItem):
                                 and trirect.contains(event.scenePos())):
                             wrap = True
                             break
-                        
+
                         mode = PORT_MODE_OUTPUT
 
                     if wrap:
@@ -1043,7 +1043,7 @@ class CanvasBox(QGraphicsItem):
                             ACTION_GROUP_WRAP, self.m_group_id,
                             self.m_splitted_mode, 'False')
                         return
-                
+
                 self.m_mouse_down = True
             else:
                 # FIXME: Check if still valid: Fix a weird Qt behaviour with right-click mouseMove
@@ -1062,7 +1062,7 @@ class CanvasBox(QGraphicsItem):
                 self.setCursor(QCursor(Qt.SizeAllCursor))
                 self.m_cursor_moving = True
                 canvas.scene.fix_temporary_scroll_bars()
-            
+
             self.repaintLines()
             canvas.scene.resize_the_scene()
         QGraphicsItem.mouseMoveEvent(self, event)
@@ -1085,11 +1085,11 @@ class CanvasBox(QGraphicsItem):
         x_y_str = "%i:%i" % (round(self.x()), round(self.y()))
         CanvasCallback(ACTION_GROUP_MOVE, self.m_group_id,
                        self.m_splitted_mode, x_y_str)
-        
+
         for group in canvas.group_list:
             if group.group_id == self.m_group_id:
                 pos = QPoint(round(self.x()), round(self.y()))
-                
+
                 if self.m_splitted_mode == PORT_MODE_NULL:
                     group.null_pos = pos
                 elif self.m_splitted_mode == PORT_MODE_INPUT:
@@ -1103,7 +1103,7 @@ class CanvasBox(QGraphicsItem):
             if item.type() == CanvasBoxType:
                 item.fixPos()
                 item.send_move_callback()
-        
+
     def boundingRect(self):
         if self._is_hardware:
             return QRectF(-9, -9, self.p_width + 18, self.p_height + 18)
@@ -1113,13 +1113,13 @@ class CanvasBox(QGraphicsItem):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing,
                               bool(options.antialiasing == ANTIALIASING_FULL))
-        
+
         # Draw rectangle
         pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)
         pen.setWidthF(pen.widthF() + 0.00001)
         painter.setPen(pen)
         lineHinting = pen.widthF() / 2
-        
+
         if self._is_hardware:
             d = 9
             hw_gradient = QLinearGradient(-d, -d, self.p_width +d, self.p_height +d)
@@ -1129,7 +1129,7 @@ class CanvasBox(QGraphicsItem):
             painter.setPen(QPen(QColor(30, 30, 30), 1))
             if self.m_splitted:
                 hardware_poly = QPolygonF()
-                
+
                 if self.m_splitted_mode == PORT_MODE_INPUT:
                     hardware_poly += QPointF(- lineHinting, - lineHinting)
                     hardware_poly += QPointF(- lineHinting, 34)
@@ -1170,7 +1170,7 @@ class CanvasBox(QGraphicsItem):
                                              self.p_height + lineHinting)
                     hardware_poly += QPointF(-lineHinting, self.p_height + lineHinting)
                     hardware_poly += QPointF(-lineHinting, -lineHinting)
-                
+
                 painter.drawPolygon(hardware_poly)
                 #hw_rect = QRectF(-10, -10, self.p_width + 30, self.p_height + 5)
                 #painter.drawRect(hw_rect)
@@ -1189,7 +1189,7 @@ class CanvasBox(QGraphicsItem):
                 hw_poly_top += QPointF(self.p_width + lineHinting, 34)
                 hw_poly_top += QPointF(self.p_width + lineHinting, -lineHinting)
                 painter.drawPolygon(hw_poly_top)
-                
+
                 hw_poly_bt = QPolygonF()
                 hw_poly_bt += QPointF(-lineHinting, self.p_height + lineHinting)
                 hw_poly_bt += QPointF(-lineHinting, self.p_height -3)
@@ -1204,11 +1204,11 @@ class CanvasBox(QGraphicsItem):
                 hw_poly_bt += QPointF(self.p_width + lineHinting, self.p_height -3)
                 hw_poly_bt += QPointF(self.p_width + lineHinting, self.p_height + lineHinting)
                 painter.drawPolygon(hw_poly_bt)
-                    
+
             pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)
             pen.setWidthF(pen.widthF() + 0.00001)
             painter.setPen(pen)
-        
+
         rect = QRectF(0, 0, self.p_width, self.p_height)
 
         if canvas.theme.box_bg_type == Theme.THEME_BG_GRADIENT:
@@ -1242,7 +1242,7 @@ class CanvasBox(QGraphicsItem):
         title_x_pos = 8
         if self.has_top_icon():
             title_x_pos += 25
-        
+
         #title_y_pos = canvas.theme.box_text_ypos
 
         for title_line in self._title_lines:
@@ -1258,7 +1258,7 @@ class CanvasBox(QGraphicsItem):
             else:
                 self._title_lines[0].y -= 6
                 self._title_lines[1].y += 9
-            
+
 
         max_title_size = 0
         for title_line in self._title_lines:
@@ -1270,13 +1270,13 @@ class CanvasBox(QGraphicsItem):
 
         if self.has_top_icon():
             title_x_pos = 29 + (self.p_width - 29 - max_title_size) / 2
-            
+
             if title_x_pos > 43:
                 painter.drawLine(5, 16, title_x_pos -29 -5, 16)
                 painter.drawLine(
                     title_x_pos + max_title_size + 5, 16,
                     self.p_width -5, 16)
-            
+
             for title_line in self._title_lines:
                 title_line.x = title_x_pos
         else:
@@ -1287,7 +1287,7 @@ class CanvasBox(QGraphicsItem):
                 title_line.x = (self.p_width - title_line.size) / 2
                 left_xpos = min(left_xpos, title_line.x)
                 right_xpos = max(right_xpos, title_line.x + title_line.size)
-            
+
             if left_xpos > 10:
                 painter.drawLine(5, 16, left_xpos - 5, 16)
                 painter.drawLine(right_xpos + 5, 16,
@@ -1297,32 +1297,32 @@ class CanvasBox(QGraphicsItem):
             painter.setPen(canvas.theme.box_text_sel)
         else:
             painter.setPen(canvas.theme.box_text)
-            
+
         # draw title lines
         for title_line in self._title_lines:
             painter.setFont(title_line.font)
             painter.setOpacity(1.0)
             if title_line.is_little:
                 painter.setOpacity(0.5)
-            
+
             painter.drawText(title_line.x, title_line.y, title_line.text)
 
         if self._wrapped:
             painter.setPen(canvas.theme.box_pen)
             painter.setBrush(QColor(255, 192, 0, 80))
-            
+
             for port_mode in PORT_MODE_INPUT, PORT_MODE_OUTPUT:
                 if self.m_current_port_mode & port_mode:
                     side = 6
                     x = 6
-                    
+
                     ypos = canvas.theme.box_header_height
                     if len(self._title_lines) == 3:
                         ypos += 14
-            
+
                     if port_mode == PORT_MODE_OUTPUT:
                         x = self.p_width - (x + 2 * side)
-    
+
                     triangle = QPolygonF()
                     triangle += QPointF(x, ypos + 2)
                     triangle += QPointF(x + 2 * side, ypos + 2)

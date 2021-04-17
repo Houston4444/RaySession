@@ -938,7 +938,7 @@ class OperatingSession(Session):
         xml_cls = xml.createElement('Clients')
         xml_rmcls = xml.createElement('RemovedClients')
         xml_wins = xml.createElement('Windows')
-        
+
         # save clients attributes
         for client in self.clients:
             cl = xml.createElement('client')
@@ -1727,7 +1727,7 @@ for better organization."""))
                 elif tag_name == "Windows":
                     if self.hasServerOption(ray.Option.DESKTOPS_MEMORY):
                         self.desktops_memory.readXml(node.toElement())
-                
+
                 #elif tag_name == "Canvas":
                     #self.canvas_saver.load_session_canvas(node.toElement())
 

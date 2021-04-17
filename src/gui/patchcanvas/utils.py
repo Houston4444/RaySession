@@ -39,50 +39,50 @@ def CanvasGetNewGroupPositions()->tuple:
     def get_middle_empty_positions(scene_rect)->tuple:
         if scene_rect.isNull():
             return ((0, 200))
-        
+
         needed_x = 120
         needed_y = 120
         margin_x = 50
         margin_y = 10
-        
+
         x = scene_rect.center().x() - needed_y / 2
         y = scene_rect.top() + 20
-        
+
         y_list = []
-        
+
         min_top = scene_rect.bottom()
         max_bottom = scene_rect.top()
-        
+
         for group in canvas.group_list:
             for widget in group.widgets:
                 if widget is None:
                     continue
-                
+
                 box_rect = widget.sceneBoundingRect()
                 min_top = min(min_top, box_rect.top())
                 max_bottom = max(max_bottom, box_rect.bottom())
-                
+
                 if box_rect.left() - needed_x <= x <= box_rect.right() + margin_x:
                     y_list.append(
                         (box_rect.top(), box_rect.bottom(), box_rect.left()))
-        
+
         if not y_list:
             return (int(x), int(y))
-        
+
         y_list.sort()
         available_segments = [[min_top, max_bottom, x]]
-        
+
         for box_top, box_bottom, box_left in y_list:
             for segment in available_segments:
                 seg_top, seg_bottom, seg_left = segment
-                
+
                 if box_bottom <= seg_top or box_top >= seg_bottom:
                     continue
-                
+
                 if box_top <= seg_top and box_bottom >= seg_bottom:
                     available_segments.remove(segment)
                     break
-                
+
                 if box_top > seg_top:
                     segment[1] = box_top
                     if box_bottom < seg_bottom:
@@ -90,14 +90,14 @@ def CanvasGetNewGroupPositions()->tuple:
                             available_segments.index(segment) + 1,
                             [box_bottom, seg_bottom, box_left])
                         break
-                
+
                 segment[0] = box_bottom
-        
+
         if not available_segments:
             return (int(x), int(max_bottom + margin_y))
-        
+
         available_segments.sort()
-        
+
         for seg_top, seg_bottom, seg_left in available_segments:
             if seg_bottom - seg_top >= 200:
                 y = seg_top + margin_y
@@ -105,15 +105,15 @@ def CanvasGetNewGroupPositions()->tuple:
                 break
         else:
             y = max_bottom + margin_y
-        
+
         return (int(x), int(y))
-    
+
     rect = canvas.scene.get_new_scene_rect()
     if rect.isNull():
         return ((200, 0), (400, 0), (0, 0))
 
     y = rect.bottom()
-    
+
     return (get_middle_empty_positions(rect),
             (400, y),
             (0, y))
@@ -183,7 +183,7 @@ def CanvasGetPortGroupPosition(group_id: int, port_id: int,
                                portgrp_id: int)->tuple:
     if portgrp_id <= 0:
         return (0, 1)
-    
+
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
@@ -194,22 +194,22 @@ def CanvasGetPortGroupPosition(group_id: int, port_id: int,
 
 def CanvasGetPortGroupName(group_id: int, ports_ids_list: list)->str:
     ports_names = []
-    
+
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id in ports_ids_list:
             ports_names.append(port.port_name)
-    
+
     if len(ports_names) < 2:
         return ''
-    
+
     portgrp_name_ends = (' ', '_', '.', '-', '#', ':', 'out', 'in', 'Out',
                          'In', 'Output', 'Input', 'output', 'input' )
-    
+
     # set portgrp name
     portgrp_name = ''
     check_character = True
-    
-    for c in ports_names[0]:        
+
+    for c in ports_names[0]:
         for eachname in ports_names:
             if not eachname.startswith(portgrp_name + c):
                 check_character = False
@@ -217,7 +217,7 @@ def CanvasGetPortGroupName(group_id: int, ports_ids_list: list)->str:
         if not check_character:
             break
         portgrp_name += c
-    
+
     # reduce portgrp name until it ends with one of the characters
     # in portgrp_name_ends
     check = False
@@ -226,13 +226,13 @@ def CanvasGetPortGroupName(group_id: int, ports_ids_list: list)->str:
             if portgrp_name.endswith(x):
                 check = True
                 break
-        
+
         if len(portgrp_name) == 0 or portgrp_name in ports_names:
             check = True
-            
+
         if not check:
             portgrp_name = portgrp_name[:-1]
-    
+
     return portgrp_name
 
 def CanvasGetPortPrintName(group_id, port_id, portgrp_id):
@@ -263,16 +263,16 @@ def CanvasGetPortGroupFullName(group_id, portgrp_id):
                     break
             else:
                 return ""
-            
+
             endofname = ''
             for port_id in portgrp.port_id_list:
                 endofname += "%s/" % CanvasGetPortPrintName(group_id, port_id,
                                                      portgrp.portgrp_id)
-            portgrp_name = CanvasGetPortGroupName(group_id, 
+            portgrp_name = CanvasGetPortGroupName(group_id,
                                                      portgrp.port_id_list)
-            
+
             return "%s:%s %s" % (group_name, portgrp_name, endofname[:-1])
-    
+
     return ""
 
 def CanvasConnectionMatches(connection, group_id_1: int, port_ids_list_1: list,
@@ -305,15 +305,15 @@ def CanvasGetGroupIcon(group_id: int, port_mode: int):
     group_port_mode = PORT_MODE_INPUT
     if port_mode == PORT_MODE_INPUT:
         group_port_mode = PORT_MODE_OUTPUT
-    
+
     for group in canvas.group_list:
         if group.group_id == group_id:
             if not group.split:
                 group_port_mode = PORT_MODE_NULL
-            
+
             return CanvasGetIcon(
                 group.icon_type, group.icon_name, group_port_mode)
-    
+
     return QIcon()
 
 def CanvasGetIcon(icon_type: int, icon_name: str, port_mode: int):
@@ -330,30 +330,30 @@ def CanvasGetIcon(icon_type: int, icon_name: str, port_mode: int):
                     icon.addFile(filename)
                     break
         return icon
-    
+
     icon = QIcon()
-    
+
     if icon_type == ICON_HARDWARE:
         icon_file = ":/scalable/pb_hardware.svg"
-        
+
         if icon_name == "a2j":
             icon_file = ":/scalable/DIN-5.svg"
         elif port_mode == PORT_MODE_INPUT:
             icon_file = ":/scalable/audio-headphones.svg"
         elif port_mode == PORT_MODE_OUTPUT:
             icon_file = ":/scalable/microphone.svg"
-        
+
         icon.addFile(icon_file)
-    
+
     elif icon_type == ICON_INTERNAL:
         icon.addFile(":/scalable/%s" % icon_name)
-    
+
     return icon
 
 def CanvasConnectPorts(group_id_1: int, port_id_1: int,
                        group_id_2: int, port_id_2:int):
     one_is_out = True
-    
+
     for port in canvas.port_list:
         if port.group_id == group_id_1 and port.port_id == port_id_1:
             if port.port_mode != PORT_MODE_OUTPUT:
@@ -368,13 +368,13 @@ def CanvasConnectPorts(group_id_1: int, port_id_1: int,
             "PatchCanvas::CanvasConnectPorts, port not found %i:%i and %i:%i\n"
             % (group_id_1, port_id_1, group_id_2, port_id_2))
         return
-    
+
     string_to_send = "%i:%i:%i:%i" % (group_id_2, port_id_2,
                                       group_id_1, port_id_1)
     if one_is_out:
         string_to_send = "%i:%i:%i:%i" % (group_id_1, port_id_1,
                                           group_id_2, port_id_2)
-    
+
     canvas.callback(ACTION_PORTS_CONNECT, 0, 0, string_to_send)
 
 
@@ -384,12 +384,12 @@ def CanvasPortGroupConnectionState(group_id_1: int, port_id_list_1: list,
     # 0 if no connection
     # 1 if connection is irregular
     # 2 if connection is correct
-    
+
     group_out_id = 0
     group_in_id = 0
     out_port_id_list = []
     in_port_id_list = []
-    
+
     for port in canvas.port_list:
         if (port.group_id == group_id_1
                 and port.port_id in port_id_list_1):
@@ -410,10 +410,10 @@ def CanvasPortGroupConnectionState(group_id_1: int, port_id_list_1: list,
 
     if not (out_port_id_list and in_port_id_list):
         return 0
-    
+
     has_connection = False
     miss_connection = False
-    
+
     for out_index in range(len(out_port_id_list)):
         for in_index in range(len(in_port_id_list)):
             if (out_index % len(in_port_id_list)
@@ -436,7 +436,7 @@ def CanvasPortGroupConnectionState(group_id_1: int, port_id_list_1: list,
                         # irregular connection exists
                         # we are sure connection is irregular
                         return 1
-    
+
     if has_connection:
         if miss_connection:
             return 1
@@ -444,7 +444,7 @@ def CanvasPortGroupConnectionState(group_id_1: int, port_id_list_1: list,
             return 2
     else:
         return 0
-                    
+
 
 def CanvasConnectPortGroups(group_id_1: int, portgrp_id_1: int,
                             group_id_2: int, portgrp_id_2: int,
@@ -453,7 +453,7 @@ def CanvasConnectPortGroups(group_id_1: int, portgrp_id_1: int,
     group_in_id = 0
     out_port_id_list = []
     in_port_id_list = []
-    
+
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id_1
                 and portgrp.portgrp_id == portgrp_id_1):
@@ -463,7 +463,7 @@ def CanvasConnectPortGroups(group_id_1: int, portgrp_id_1: int,
             else:
                 group_in_id = group_id_1
                 in_port_id_list = portgrp.port_id_list
-                
+
         elif (portgrp.group_id == group_id_2
                 and portgrp.portgrp_id == portgrp_id_2):
             if portgrp.port_mode == PORT_MODE_OUTPUT:
@@ -472,14 +472,14 @@ def CanvasConnectPortGroups(group_id_1: int, portgrp_id_1: int,
             else:
                 group_in_id = group_id_2
                 in_port_id_list = portgrp.port_id_list
-    
+
     if not (out_port_id_list and in_port_id_list):
         sys.stderr.write(
             "PatchCanvas::CanvasConnectPortGroups, empty port id list\n")
         return
-    
+
     connected_indexes = []
-    
+
     # disconnect irregular connections
     for connection in canvas.connection_list:
         if (connection.group_out_id == group_out_id
@@ -498,10 +498,10 @@ def CanvasConnectPortGroups(group_id_1: int, portgrp_id_1: int,
             else:
                 canvas.callback(ACTION_PORTS_DISCONNECT,
                                 connection.connection_id, 0, '')
-    
+
     if disconnect:
         return
-    
+
     # finally connect the ports
     for out_index in range(len(out_port_id_list)):
         for in_index in range(len(in_port_id_list)):
@@ -513,7 +513,7 @@ def CanvasConnectPortGroups(group_id_1: int, portgrp_id_1: int,
                     "%i:%i:%i:%i" % (
                         group_out_id, out_port_id_list[out_index],
                         group_in_id, in_port_id_list[in_index]))
-            
+
 
 def CanvasCallback(action, value1, value2, value_str):
     if canvas.debug:

@@ -62,7 +62,7 @@ class CanvasBezierLine(QGraphicsPathItem):
 
     def isReadyToDisc(self):
         return self.m_ready_to_disc
-        
+
     def setReadyToDisc(self, yesno):
         self.m_ready_to_disc = yesno
 
@@ -97,11 +97,11 @@ class CanvasBezierLine(QGraphicsPathItem):
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
             item1_x = self.item1.scenePos().x() + self.item1.getPortWidth() + 12
-            
+
             port_pos_1, portgrp_len_1 = self.item1.getPortGroupPosition()
-            
+
             phi = 0.75 if portgrp_len_1 > 2 else 0.62
-            
+
             if portgrp_len_1 > 1:
                 first_old_y = canvas.theme.port_height * phi
                 last_old_y = canvas.theme.port_height * (portgrp_len_1 - phi)
@@ -112,15 +112,15 @@ class CanvasBezierLine(QGraphicsPathItem):
                     old_y1 = canvas.theme.port_height - old_y1
             else:
                 old_y1 = canvas.theme.port_height / 2
-            
+
             item1_y = self.item1.scenePos().y() + old_y1
-            
+
             item2_x = self.item2.scenePos().x()
-            
+
             port_pos_2, portgrp_len_2 = self.item2.getPortGroupPosition()
-            
+
             phi = 0.75 if portgrp_len_1 > 2 else 0.62
-            
+
             if portgrp_len_2 > 1:
                 first_old_y = canvas.theme.port_height * phi
                 last_old_y  = canvas.theme.port_height * (portgrp_len_2 - phi)
@@ -130,7 +130,7 @@ class CanvasBezierLine(QGraphicsPathItem):
                     old_y2 = canvas.theme.port_height - old_y2
             else:
                 old_y2 = canvas.theme.port_height / 2
-                
+
             item2_y = self.item2.scenePos().y() + old_y2
 
             item1_mid_x = abs(item1_x - item2_x) / 2
@@ -138,9 +138,9 @@ class CanvasBezierLine(QGraphicsPathItem):
 
             item2_mid_x = abs(item1_x - item2_x) / 2
             item2_new_x = item2_x - item2_mid_x
-            
+
             item1_new_y, item2_new_y = item1_y, item2_y
-            
+
             diffxy = abs(item1_y - item2_y) - abs(item1_x - item2_x)
             if diffxy > 0:
                 item1_new_x += abs(diffxy)
@@ -187,16 +187,16 @@ class CanvasBezierLine(QGraphicsPathItem):
             #port_gradient.setColorAt(pos2, canvas.theme.line_midi_alsa_sel if self.m_lineSelected else canvas.theme.line_midi_alsa)
         #elif port_type2 == PORT_TYPE_PARAMETER:
             #port_gradient.setColorAt(pos2, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
-            
+
         base_color = canvas.theme.line_audio_jack
         if self.m_lineSelected:
             base_color = canvas.theme.line_audio_jack_sel
-        
+
         if port_type1 == PORT_TYPE_MIDI_JACK:
             base_color = canvas.theme.port_midi_jack_bg
             if self.m_lineSelected:
                 base_color = canvas.theme.port_midi_jack_bg_sel
-        
+
         if self.m_ready_to_disc:
             port_gradient.setColorAt(pos1, QColor(34, 34, 34))
             port_gradient.setColorAt(pos2, QColor(34, 34, 34))

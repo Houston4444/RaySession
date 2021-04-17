@@ -41,16 +41,16 @@ class PortCheckBox(QCheckBox):
         self.setTristate(True)
         self.setMinimumHeight(23)
         self.setMinimumWidth(100)
-        
+
         border_color = canvas.theme.port_audio_jack_pen.color().name()
         sel_bg = canvas.theme.port_audio_jack_bg.name()
         sel_text_color = canvas.theme.port_audio_jack_text.color().name()
-        
+
         if port_type == PORT_TYPE_MIDI_JACK:
             border_color = canvas.theme.port_midi_jack_pen.color().name()
             sel_bg = canvas.theme.port_midi_jack_bg.name()
             sel_text_color = canvas.theme.port_midi_jack_text.color().name()
-        
+
         #self.setStyleSheet(
             #"""QCheckBox:hover{background-color: %s;color: %s}
             #QCheckBox::indicator:hover{background-color: #202020;color: white}""" % (
@@ -58,7 +58,7 @@ class PortCheckBox(QCheckBox):
         self._parent = parent
         self._port_id = port_id
         self._portgrp_id = portgrp_id
-    
+
     def nextCheckState(self):
         self._parent.connection_asked_from_box(
             self._port_id, self._portgrp_id, not self.isChecked())
@@ -74,7 +74,7 @@ class SubMenu(QMenu):
         self._port_mode = port_data._port_mode
         self._portgrp_id = port_data._portgrp_id
         self._port_id_list = port_data._port_id_list
-        
+
 
 class PortData:
     def __init__(self, group_id: int, port_id: int, port_type: int,
@@ -85,11 +85,11 @@ class PortData:
         self._port_mode = port_mode
         self._portgrp_id = portgrp_id
         self._port_id_list = [port_id]
-        
+
         if portgrp_id:
             self._port_id_list = CanvasGetPortGroupPortList(group_id,
                                                             portgrp_id)
-            
+
 
 class ConnectGroupMenu(SubMenu):
     def __init__(self, group_name: str, group_id: str, port_data, parent):
@@ -97,9 +97,9 @@ class ConnectGroupMenu(SubMenu):
         self._parent = parent
         self._menu_group_id = group_id
         self.elements = []
-        
+
         self._last_portgrp_id = 0
-        
+
         for port in canvas.port_list:
             if (port.group_id == self._menu_group_id
                     and port.port_type == self._port_type
@@ -113,7 +113,7 @@ class ConnectGroupMenu(SubMenu):
                                     portgrp.group_id, portgrp.portgrp_id)
                                 portgrp_name = '‖ ' \
                                     + portgrp_full_name.partition(':')[2]
-                                
+
                                 # all portgroups items will have -1 as port_id
                                 self.add_element(-1, port.portgrp_id,
                                                  portgrp_name)
@@ -134,17 +134,17 @@ class ConnectGroupMenu(SubMenu):
                                  self._port_type, self)
         action = QWidgetAction(self._parent)
         action.setDefaultWidget(check_box)
-        
+
         if not self._portgrp_id and portgrp_id != self._last_portgrp_id:
             self.addSeparator()
         self._last_portgrp_id = portgrp_id
-        
+
         self.addAction(action)
-        
+
         self.elements.append(
             {'port_id': port_id, 'portgrp_id': portgrp_id,
              'action': action, 'check_box': check_box})
-    
+
     def remove_element(self, port_id: int, portgrp_id: int):
         for element in self.elements:
             if (element['port_id'] == port_id
@@ -152,7 +152,7 @@ class ConnectGroupMenu(SubMenu):
                 self.removeAction(element['action'])
                 self.elements.remove(element)
                 break
-    
+
     def check_element(self, port_id: int, portgrp_id: int, check_state: int):
         for element in self.elements:
             if (element['port_id'] == port_id
@@ -160,12 +160,12 @@ class ConnectGroupMenu(SubMenu):
                 check_box = element['check_box']
                 check_box.setCheckState(check_state)
                 break
-    
+
     def connection_asked_from_box(self, port_id: int, portgrp_id: int,
                                   yesno: bool):
         self._parent.connection_asked_from_box(self._menu_group_id, port_id,
                                                portgrp_id, yesno)
-    
+
 
 class ConnectMenu(SubMenu):
     def __init__(self, port_data, parent):
@@ -173,10 +173,10 @@ class ConnectMenu(SubMenu):
                          port_data, parent)
         #canvas.qobject.port_added.connect(self.port_added_to_canvas)
         #canvas.qobject.port_removed.connect(self.port_removed_from_canvas)
-        
+
         self.group_menus = []
         self.connection_list = []
-        
+
         # add the needed groups (not the ports)
         for group in canvas.group_list:
             for port in canvas.port_list:
@@ -185,19 +185,19 @@ class ConnectMenu(SubMenu):
                         and port.port_mode != self._port_mode):
                     self.add_group_menu(group.group_id, group.group_name)
                     break
-    
+
     def add_group_menu(self, group_id: int, group_name: str):
         if len(group_name) > 15:
             if '/' in group_name:
                 group_name = group_name.partition('/')[2]
-        
+
         group_menu = ConnectGroupMenu(group_name, group_id,
                                       self._port_data, self)
         group_icon = CanvasGetGroupIcon(group_id, self._port_mode)
         group_menu.setIcon(group_icon)
         self.group_menus.append(group_menu)
         self.addMenu(group_menu)
-    
+
     def connection_asked_from_box(self, group_id: int, port_id: int,
                                   portgrp_id: int, yesno: bool):
         if yesno:
@@ -221,19 +221,19 @@ class ConnectMenu(SubMenu):
                         CanvasCallback(
                             ACTION_PORTS_DISCONNECT,
                             connection.connection_id, '', '')
-    
+
     # TODO was initially added the fact menu was updated
     # when port was added or removed
     # for portgroup it seems to be much complicated
     # user will just have to re-open the menu
-    
+
     #def port_added_to_canvas(self, group_id: int, port_id: int):
         #for port in canvas.port_list:
             #if port.group_id == group_id and port.port_id == port_id:
                 #if (port.port_type != self._port_type
                         #or port.port_mode == self._port_mode):
                     #continue
-                
+
                 #for group_menu in self.group_menus:
                     #if group_menu.group_id() == port.group_id:
                         #if (self._portgrp_id and port.portgrp_id
@@ -254,30 +254,30 @@ class ConnectMenu(SubMenu):
                             ## this group menu will see itself the port
                             #break
                 #break
-    
+
     #def port_removed_from_canvas(self, group_id: int, port_id: int):
         #for group_menu in self.group_menus:
             #if group_menu.group_id() == group_id:
                 #group_menu.remove_element(port_id, 0)
                 #break
-        
-    
+
+
 class DisconnectMenu(SubMenu):
     def __init__(self, port_data, parent):
         SubMenu.__init__(self, _translate('patchbay', "Disconnect"),
                          port_data, parent)
         self.elements = []
-        
+
         self._no_action_title = _translate('patchbay', 'No connections')
         self._no_action = self.addAction(self._no_action_title)
         self._no_action.setEnabled(False)
-    
+
     @pyqtSlot()
     def apply_disconnection(self):
         action = self.sender()
         if action is None:
             return
-        
+
         for element in self.elements:
             if element['action'] == action:
                 for connection in canvas.connection_list:
@@ -288,22 +288,22 @@ class DisconnectMenu(SubMenu):
                             ACTION_PORTS_DISCONNECT,
                             connection.connection_id, '', '')
                 break
-    
+
     def add_element(self, group_id: int, port_id_list: list,
                     portgrp_id: int):
         if not port_id_list:
             return
-        
+
         for element in self.elements:
             if (element['group_id'] == group_id
                     and element['port_id_list'] == port_id_list):
                 # element already exists
                 return
-        
+
         # display actions in the group_id and port_id order
         i = 0
         following_action = None
-        
+
         for element in self.elements:
             if (element['group_id'] > group_id
                     or (element['group_id'] == group_id
@@ -311,37 +311,37 @@ class DisconnectMenu(SubMenu):
                 following_action = element['action']
                 break
             i += 1
-        
+
         action_name = ""
         if self._portgrp_id and portgrp_id:
             action_name = '‖ '
             action_name += CanvasGetPortGroupFullName(group_id, portgrp_id)
         else:
             action_name = CanvasGetFullPortName(group_id, port_id_list[0])
-            
+
         icon = CanvasGetGroupIcon(group_id, self._port_mode)
-        
+
         action = QAction(action_name)
         action.setIcon(icon)
         action.triggered.connect(self.apply_disconnection)
-        
+
         if following_action is None:
             self.addAction(action)
         else:
             self.insertAction(following_action, action)
-        
+
         element = {'group_id': group_id,
                    'port_id_list': port_id_list,
                    'portgrp_id': portgrp_id,
                    'action': action}
-        
+
         self.elements.insert(i, element)
-        
+
         # remove "no connections" fake action
         if self._no_action is not None:
             self.removeAction(self._no_action)
             self._no_action = None
-    
+
     def remove_element(self, group_id: int, port_id_list: int,
                        portgrp_id: int):
         for element in self.elements:
@@ -353,7 +353,7 @@ class DisconnectMenu(SubMenu):
                 break
         else:
             return
-        
+
         if not self.elements:
             self._no_action = self.addAction(self._no_action_title)
             self._no_action.setEnabled(False)
@@ -363,17 +363,17 @@ class ClipboardMenu(SubMenu):
     def __init__(self, port_data, parent):
         SubMenu.__init__(self, _translate('patchbay', 'Clipboard'),
                          port_data, parent)
-        
+
         cut_action = self.addAction(
             _translate('patchbay', 'Cut connections'))
         cut_action.setIcon(QIcon.fromTheme('edit-cut'))
         cut_action.triggered.connect(self.cut_connections)
-        
+
         copy_action = self.addAction(
             _translate('patchbay', 'Copy connections'))
         copy_action.setIcon(QIcon.fromTheme('edit-copy'))
         copy_action.triggered.connect(self.copy_connections)
-        
+
         has_connection = False
         for self_port_id in self._port_id_list:
             con_list = CanvasGetPortConnectionList(self._group_id,
@@ -385,7 +385,7 @@ class ClipboardMenu(SubMenu):
         if not con_list:
             cut_action.setEnabled(False)
             copy_action.setEnabled(False)
-        
+
         for cb_element in canvas.clipboard:
             if (cb_element.port_type == self._port_type
                     and cb_element.port_mode == self._port_mode
@@ -395,7 +395,7 @@ class ClipboardMenu(SubMenu):
                 paste_action.setIcon(QIcon.fromTheme('edit-paste'))
                 paste_action.triggered.connect(self.paste_connections)
                 break
-    
+
     def write_clipboard(self, cut: bool):
         canvas.clipboard.clear()
         canvas.clipboard_cut = cut
@@ -414,22 +414,22 @@ class ClipboardMenu(SubMenu):
                             and connection.port_in_id == self_port_id):
                         group_port_ids.append((connection.group_out_id,
                                             connection.port_out_id))
-        
+
             element = clipboard_element_dict_t()
             element.group_id = self._group_id
             element.port_id = self_port_id
             element.port_type = self._port_type
             element.port_mode = self._port_mode
             element.group_port_ids = group_port_ids
-            
+
             canvas.clipboard.append(element)
-    
+
     def cut_connections(self):
         self.write_clipboard(True)
-    
+
     def copy_connections(self):
         self.write_clipboard(False)
-    
+
     def paste_connections(self):
         for i in range(len(self._port_id_list)):
             for j in range(len(canvas.clipboard)):
@@ -437,12 +437,12 @@ class ClipboardMenu(SubMenu):
                     continue
                 self_port_id = self._port_id_list[i]
                 element = canvas.clipboard[j]
-                
+
                 if (element.port_type == self._port_type
                         and element.port_mode == self._port_mode):
                     for group_port_id in element.group_port_ids:
                         group_id, port_id = group_port_id
-                        
+
                         if canvas.clipboard_cut:
                             # remove the original connection if still exists
                             for connection in canvas.connection_list:
@@ -454,26 +454,26 @@ class ClipboardMenu(SubMenu):
                                         ACTION_PORTS_DISCONNECT,
                                         connection.connection_id, 0, '')
                                     break
-                        
+
                         CanvasConnectPorts(self._group_id, self_port_id,
                                            group_id, port_id)
                     break
-        
+
         # once past, de-activate cut to prevent recut of connections
         # if they have been remade by user
         canvas.clipboard_cut = False
-    
+
 
 class MainPortContextMenu(QMenu):
     def __init__(self, group_id: int, port_id: int, portgrp_id=0):
         QMenu.__init__(self)
-        
+
         #self.setStyleSheet(
             #"""QMenu{background-color:#202020; border: 1px solid;
             #border-color: red; border-radius: 4px};
             #QMenu::item{background-color:#999900};
             #QMenu::item:selected{background-color: red}""")
-        
+
         if portgrp_id:
             # menu is for a portgroup
             for portgrp in canvas.portgrp_list:
@@ -497,7 +497,7 @@ class MainPortContextMenu(QMenu):
         border_color = canvas.theme.port_audio_jack_pen.color().name()
         sel_bg = canvas.theme.port_audio_jack_bg.name()
         sel_text_color = canvas.theme.port_audio_jack_text.color().name()
-        
+
         if port_type == PORT_TYPE_MIDI_JACK:
             border_color = canvas.theme.port_midi_jack_pen.color().name()
             sel_bg = canvas.theme.port_midi_jack_bg.name()
@@ -509,62 +509,62 @@ class MainPortContextMenu(QMenu):
             QMenu::item:disabled{color: #777777}
             QMenu::item:selected{background-color: %s; color:%s}""" % (
                 border_color, sel_bg, sel_text_color)
-        
+
         #self.setStyleSheet(style_str)
 
         PortData.__init__(self, group_id, port_id,
                           port_type, port_mode, portgrp_id)
-        
+
         self.connection_list = []
-        
+
         canvas.qobject.connection_added.connect(
             self.connection_added_to_canvas)
         canvas.qobject.connection_removed.connect(
             self.connection_removed_from_canvas)
-        
+
         port_data = PortData(group_id, port_id, port_type,
                              port_mode, portgrp_id)
 
         dark = ''
         if isDarkTheme(self):
             dark = '-dark'
-        
+
         self.connect_menu = ConnectMenu(port_data, self)
         self.connect_menu.setIcon(
             QIcon(QPixmap(':scalable/breeze%s/lines-connector' % dark)))
         self.addMenu(self.connect_menu)
-        
+
         self.disconnect_menu = DisconnectMenu(port_data, self)
         self.disconnect_menu.setIcon(
             QIcon(QPixmap(':scalable/breeze%s/lines-disconnector' % dark)))
         self.addMenu(self.disconnect_menu)
-        
+
         disconnect_all_action = self.addAction(
             _translate('patchbay', "Disconnect All"))
         disconnect_all_action.setIcon(
             QIcon(QPixmap(':scalable/breeze%s/lines-disconnector' % dark)))
         disconnect_all_action.triggered.connect(self.disconnect_all)
-        
+
         self.clipboard_menu = ClipboardMenu(port_data, self)
         self.clipboard_menu.setIcon(QIcon.fromTheme('edit-paste'))
         self.addMenu(self.clipboard_menu)
-        
+
         self.addSeparator()
-        
+
         for connection in canvas.connection_list:
             if CanvasConnectionConcerns(
                     connection, self._group_id, self._port_id_list):
                 self.add_connection(connection)
-    
+
     def get_port_attributes(self)->tuple:
         return (self._group_id, self._port_id,
                 self._port_type, self._port_mode)
-    
+
     def disconnect_all(self):
         for connection in self.connection_list:
             CanvasCallback(ACTION_PORTS_DISCONNECT,
                            connection.connection_id, 0, '')
-    
+
     def add_connection(self, connection):
         self.connection_list.append(connection)
 
@@ -579,12 +579,12 @@ class MainPortContextMenu(QMenu):
                 port_id = port.port_id
                 portgrp_id = port.portgrp_id
                 port_id_list = [port_id]
-                
+
                 if self._portgrp_id and portgrp_id:
                     port_id = -1
                     port_id_list = CanvasGetPortGroupPortList(
                         group_id, portgrp_id)
-                
+
                 con_state = CanvasPortGroupConnectionState(
                     self._group_id, self._port_id_list,
                     group_id, port_id_list)
@@ -594,18 +594,18 @@ class MainPortContextMenu(QMenu):
                         group_menu.check_element(
                             port_id, portgrp_id, con_state)
                         break
-                
+
                 self.disconnect_menu.add_element(group_id, port_id_list,
                                                  portgrp_id)
                 break
-    
+
     def connection_added_to_canvas(self, connection_id: int):
         for connection in canvas.connection_list:
             if connection.connection_id == connection_id:
                 if not CanvasConnectionConcerns(
                         connection, self._group_id, self._port_id_list):
                     return
-                
+
                 self.add_connection(connection)
 
     def connection_removed_from_canvas(self, connection_id: int):
@@ -621,24 +621,24 @@ class MainPortContextMenu(QMenu):
                         group_id = port.group_id
                         port_id = port.port_id
                         portgrp_id = port.portgrp_id
-                        
+
                         if self._portgrp_id and portgrp_id:
                             port_id = -1
                             port_id_list = CanvasGetPortGroupPortList(
                                 group_id, portgrp_id)
                         else:
                             port_id_list = [port_id]
-                        
+
                         con_state = CanvasPortGroupConnectionState(
                             self._group_id, self._port_id_list,
                             group_id, port_id_list)
-                        
+
                         for group_menu in self.connect_menu.group_menus:
                             if group_menu.group_id() == group_id:
                                 group_menu.check_element(
                                     port_id, portgrp_id, con_state)
                                 break
-                            
+
                         self.disconnect_menu.remove_element(
                             group_id, port_id_list, portgrp_id)
                         break
