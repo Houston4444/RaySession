@@ -1106,7 +1106,7 @@ class CanvasBox(QGraphicsItem):
 
     def boundingRect(self):
         if self._is_hardware:
-            return QRectF(-9, -9, self.p_width + 18, self.p_height + 18)
+            return QRectF(-7, -7, self.p_width + 14, self.p_height + 14)
         return QRectF(0, 0, self.p_width, self.p_height)
 
     def paint(self, painter, option, widget):
@@ -1121,7 +1121,7 @@ class CanvasBox(QGraphicsItem):
         lineHinting = pen.widthF() / 2
 
         if self._is_hardware:
-            d = 9
+            d = 7
             hw_gradient = QLinearGradient(-d, -d, self.p_width +d, self.p_height +d)
             hw_gradient.setColorAt(0, QColor(70, 70, 50))
             hw_gradient.setColorAt(1, QColor(50, 50, 30))
