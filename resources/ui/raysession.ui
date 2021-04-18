@@ -1399,6 +1399,9 @@ QToolButton {border: none}</string>
    <property name="text">
     <string>Show &amp;JACK patchbay</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+J</string>
+   </property>
   </action>
  </widget>
  <customwidgets>
