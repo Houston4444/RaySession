@@ -46,6 +46,7 @@ if __name__ == '__main__':
 
     ### Translation process
     locale = QLocale.system().name()
+
     appTranslator = QTranslator()
     if appTranslator.load(QLocale(), ray.APP_TITLE.lower(),
                           '_', "%s/locale" % getCodeRoot()):
