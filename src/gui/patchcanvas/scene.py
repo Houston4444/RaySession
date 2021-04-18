@@ -243,7 +243,7 @@ class PatchScene(QGraphicsScene):
                     continue
 
                 item_rect = widget.boundingRect().translated(widget.scenePos())
-                item_rect = item_rect.marginsAdded(QMarginsF(20, 20, 20, 20))
+                item_rect = item_rect.marginsAdded(QMarginsF(50, 50, 50, 50))
 
                 if first_pass:
                     full_rect = item_rect

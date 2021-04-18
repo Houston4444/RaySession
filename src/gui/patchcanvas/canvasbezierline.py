@@ -18,7 +18,7 @@
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
-from math import log
+from math import log, sqrt
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QColor, QLinearGradient, QPainter, QPainterPath, QPen
 from PyQt5.QtWidgets import QGraphicsPathItem
@@ -133,21 +133,21 @@ class CanvasBezierLine(QGraphicsPathItem):
 
             item2_y = self.item2.scenePos().y() + old_y2
 
-            item1_mid_x = abs(item1_x - item2_x) / 2
-            item1_new_x = item1_x + item1_mid_x
-
-            item2_mid_x = abs(item1_x - item2_x) / 2
-            item2_new_x = item2_x - item2_mid_x
-
-            item1_new_y, item2_new_y = item1_y, item2_y
+            mid_x = abs(item1_x - item2_x) / 2
 
             diffxy = abs(item1_y - item2_y) - abs(item1_x - item2_x)
             if diffxy > 0:
-                item1_new_x += abs(diffxy)
-                item2_new_x -= abs(diffxy)
+                mid_x += diffxy
+
+            if diffxy > 0 or item1_x > item2_x:
+                mid_x = min(mid_x, 200)
+            
+            item1_new_x = item1_x + mid_x
+            item2_new_x = item2_x - mid_x
 
             path = QPainterPath(QPointF(item1_x, item1_y))
             path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y, item2_x, item2_y)
+            #path.cubicTo(item1_new_x, item1_new_y, item2_new_x, item2_new_y, item2_x, item2_y)
             self.setPath(path)
 
             self.m_lineSelected = False
