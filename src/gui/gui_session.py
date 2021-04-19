@@ -56,6 +56,7 @@ class Session:
         # build and show Main UI
         self._main_win = MainWindow(self)
         self._daemon_manager.finishInit()
+        self.patchbay_manager.finish_init()
         server.finishInit(self)
 
         self._main_win.show()

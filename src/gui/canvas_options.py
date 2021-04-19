@@ -12,7 +12,7 @@ _translate = QApplication.translate
 
 class CanvasOptionsDialog(QDialog):
     def __init__(self, parent):
-        QDialog.__init__(self, parent, Qt.Tool)
+        QDialog.__init__(self, parent)
         self.ui = ui.canvas_options.Ui_Dialog()
         self.ui.setupUi(self)
 

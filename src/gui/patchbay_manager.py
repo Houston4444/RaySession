@@ -832,18 +832,6 @@ class PatchbayManager:
         self.tools_widget.buffer_size_change_order.connect(
             self.change_buffersize)
 
-        self.options_dialog = canvas_options.CanvasOptionsDialog(None)
-        self.options_dialog.gracious_names_checked.connect(
-            self.set_graceful_names)
-        self.options_dialog.a2j_grouped_checked.connect(
-            self.set_a2j_grouped)
-        self.options_dialog.group_shadows_checked.connect(
-            self.set_group_shadows)
-        self.options_dialog.theme_changed.connect(
-            self.change_theme)
-        self.options_dialog.elastic_checked.connect(
-            self.set_elastic_canvas)
-
         self.group_positions = []
         self.connections = []
         self._next_group_id = 0
@@ -860,6 +848,19 @@ class PatchbayManager:
         self._wait_join_group_ids = []
         self.join_animation_connected = False
 
+    def finish_init(self):
+        self.options_dialog = canvas_options.CanvasOptionsDialog(
+            self.session._main_win)
+        self.options_dialog.gracious_names_checked.connect(
+            self.set_graceful_names)
+        self.options_dialog.a2j_grouped_checked.connect(
+            self.set_a2j_grouped)
+        self.options_dialog.group_shadows_checked.connect(
+            self.set_group_shadows)
+        self.options_dialog.theme_changed.connect(
+            self.change_theme)
+        self.options_dialog.elastic_checked.connect(
+            self.set_elastic_canvas)
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
