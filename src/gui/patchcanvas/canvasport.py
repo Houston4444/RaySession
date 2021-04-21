@@ -123,11 +123,40 @@ class CanvasPort(QGraphicsItem):
     def getPortType(self):
         return self.m_port_type
 
+    def isAlternate(self):
+        return self.m_is_alternate
+
     def getPortName(self):
         return self.m_port_name
 
     def getPortGroupId(self):
         return self.m_portgrp_id
+
+    def is_connectable_to(self, other, accept_same_port_mode=False)->bool:
+        if self.m_port_type != other.getPortType():
+            return False
+        
+        if not accept_same_port_mode:
+            if self.m_port_mode == other.getPortMode():
+                return False
+        
+        if self.m_port_type == PORT_TYPE_AUDIO_JACK:
+            if other.getPortMode() == self.m_port_mode:
+                return bool(self.isAlternate() == other.isAlternate())
+            # absolutely forbidden to connect an output CV port
+            # to an input audio port.
+            # It could destroy material.
+            if self.m_port_mode == PORT_MODE_OUTPUT:
+                if self.isAlternate():
+                    return other.isAlternate()
+                return True
+            
+            if self.m_port_mode == PORT_MODE_INPUT:
+                if self.isAlternate():
+                    return True
+                return not other.isAlternate()
+        
+        return True
 
     def getFullPortName(self):
         return "%s:%s" % (self.parentItem().getGroupName(), self.m_port_name)
@@ -365,7 +394,13 @@ class CanvasPort(QGraphicsItem):
             if not item_valid:
                 item = None
 
-        if (item is not None
+        if item is not None and not self.is_connectable_to(
+            item, accept_same_port_mode=True):
+            # prevent connection from an out CV port to a non CV port input
+            # because it is very dangerous for monitoring
+            pass
+
+        elif (item is not None
                 and item.getPortType() == self.m_port_type):
             item.setSelected(True)
 
@@ -514,7 +549,9 @@ class CanvasPort(QGraphicsItem):
 
         act_x_sep_1 = menu.addSeparator()
 
-        if self.m_port_type == PORT_TYPE_AUDIO_JACK and not self.m_portgrp_id:
+        if (self.m_port_type == PORT_TYPE_AUDIO_JACK
+                and not self.m_is_alternate
+                and not self.m_portgrp_id):
             StereoMenu = QMenu(_translate('patchbay', "Set as Stereo with"), menu)
             menu.addMenu(StereoMenu)
 
@@ -523,7 +560,8 @@ class CanvasPort(QGraphicsItem):
             for port in canvas.port_list:
                 if (port.port_type == PORT_TYPE_AUDIO_JACK
                         and port.group_id == self.m_group_id
-                        and port.port_mode == self.m_port_mode):
+                        and port.port_mode == self.m_port_mode
+                        and not port.is_alternate):
                     port_cousin_list.append(port.port_id)
 
             selfport_index = port_cousin_list.index(self.m_port_id)
@@ -705,11 +743,6 @@ class CanvasPort(QGraphicsItem):
 
             for portgrp in canvas.portgrp_list:
                 if portgrp.portgrp_id == self.m_portgrp_id:
-                    # a crash has been seen here
-                    if not portgrp.port_id_list:
-                        self.m_port_id = 0
-                        break
-
                     if self.m_port_id == portgrp.port_id_list[0]:
                         first_of_portgrp = True
                     if self.m_port_id == portgrp.port_id_list[-1]:
@@ -772,6 +805,7 @@ class CanvasPort(QGraphicsItem):
                 elif self.m_port_mode == PORT_MODE_INPUT:
                     painter.drawLine(self.m_port_width + 5, y_line, self.m_port_width + 12, y_line)
             else:
+                # draw the little circle for a2j port
                 poly_pen.setWidthF(1.000001)
                 painter.setBrush(canvas.theme.box_bg_1)
 
@@ -796,7 +830,7 @@ class CanvasPort(QGraphicsItem):
 
                 text_pos = QPointF(self.m_port_width + 9 - print_name_size, canvas.theme.port_text_ypos)
 
-            if print_name_size > (canvas.theme.port_in_portgrp_width - 6):
+            if print_name_size > (canvas.theme.port_in_portgrp_width - 4):
                 painter.setPen(QPen(port_gradient, 3))
                 painter.drawLine(poly_locx[5], 3, poly_locx[5], canvas.theme.port_height - 3)
                 painter.setPen(text_pen)

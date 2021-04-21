@@ -1,12 +1,17 @@
 
-from PyQt5.QtWidgets import QWidget, QComboBox
 from PyQt5.QtCore import pyqtSignal, QTimer
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QWidget, QComboBox, QMenu, QApplication
+
+import patchcanvas
 
 import ui.canvas_port_info
 import ui.patchbay_tools
 
-CONTEXT_AUDIO = 0x01
-CONTEXT_MIDI = 0x02
+GROUP_CONTEXT_AUDIO = 0x01
+GROUP_CONTEXT_MIDI = 0x02
+
+_translate = QApplication.translate
 
 
 class PatchbayToolsWidget(QWidget):
@@ -122,3 +127,130 @@ class PatchbayToolsWidget(QWidget):
 
         self.ui.labelJackNotStarted.setVisible(not yesno)
 
+
+class CanvasMenu(QMenu):
+    def __init__(self, patchbay_manager):
+        QMenu.__init__(self, _translate('patchbay', 'Patchbay'))
+        self.patchbay_manager = patchbay_manager
+        
+        self.action_fullscreen = self.addAction(
+            _translate('patchbay', "Toggle Full Screen"))
+        self.action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
+        self.action_fullscreen.triggered.connect(
+            patchbay_manager.toggle_full_screen)
+
+        port_types_view = patchbay_manager.port_types_view & (
+            GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+
+        self.port_types_menu = QMenu(_translate('patchbay', 'Type filter'))
+        self.port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
+        self.action_audio_midi = self.port_types_menu.addAction(
+            _translate('patchbay', 'Audio + Midi'))
+        self.action_audio_midi.setCheckable(True)
+        self.action_audio_midi.setChecked(
+            bool(port_types_view == (GROUP_CONTEXT_AUDIO
+                                     | GROUP_CONTEXT_MIDI)))
+        self.action_audio_midi.triggered.connect(
+            self.port_types_view_audio_midi_choice)
+        
+        self.action_audio = self.port_types_menu.addAction(
+            _translate('patchbay', 'Audio only'))
+        self.action_audio.setCheckable(True)
+        self.action_audio.setChecked(port_types_view == GROUP_CONTEXT_AUDIO)
+        self.action_audio.triggered.connect(
+            self.port_types_view_audio_choice)
+
+        self.action_midi = self.port_types_menu.addAction(
+            _translate('patchbay', 'MIDI only'))
+        self.action_midi.setCheckable(True)
+        self.action_midi.setChecked(port_types_view == GROUP_CONTEXT_MIDI)
+        self.action_midi.triggered.connect(
+            self.port_types_view_midi_choice)
+
+        self.addMenu(self.port_types_menu)
+
+        self.zoom_menu = QMenu(_translate('patchbay', 'Zoom'))
+        self.zoom_menu.setIcon(QIcon.fromTheme('zoom'))
+
+        self.autofit = self.zoom_menu.addAction(
+            _translate('patchbay', 'auto-fit'))
+        self.autofit.setIcon(QIcon.fromTheme('zoom-select-fit'))
+        self.autofit.setShortcut('Home')
+        self.autofit.triggered.connect(patchcanvas.canvas.scene.zoom_fit)
+
+        self.zoom_in = self.zoom_menu.addAction(
+            _translate('patchbay', 'Zoom +'))
+        self.zoom_in.setIcon(QIcon.fromTheme('zoom-in'))
+        self.zoom_in.setShortcut('Ctrl++')
+        self.zoom_in.triggered.connect(patchcanvas.canvas.scene.zoom_in)
+
+        self.zoom_out = self.zoom_menu.addAction(
+            _translate('patchbay', 'Zoom -'))
+        self.zoom_out.setIcon(QIcon.fromTheme('zoom-out'))
+        self.zoom_out.setShortcut('Ctrl+-')
+        self.zoom_out.triggered.connect(patchcanvas.canvas.scene.zoom_out)
+
+        self.zoom_orig = self.zoom_menu.addAction(
+            _translate('patchbay', 'Zoom 100%'))
+        self.zoom_orig.setIcon(QIcon.fromTheme('zoom'))
+        self.zoom_orig.setShortcut('Ctrl+1')
+        self.zoom_orig.triggered.connect(patchcanvas.canvas.scene.zoom_reset)
+
+        self.addMenu(self.zoom_menu)
+
+        self.action_refresh = self.addAction(
+            _translate('patchbay', "Refresh the canvas"))
+        self.action_refresh.setIcon(QIcon.fromTheme('view-refresh'))
+        self.action_refresh.triggered.connect(patchbay_manager.refresh)
+
+        self.action_options = self.addAction(
+            _translate('patchbay', "Canvas options"))
+        self.action_options.setIcon(QIcon.fromTheme("configure"))
+        self.action_options.triggered.connect(
+            patchbay_manager.show_options_dialog)
+
+    def port_types_view_audio_midi_choice(self):
+        self.action_audio_midi.setChecked(True)
+        self.action_audio.setChecked(False)
+        self.action_midi.setChecked(False)
+        
+        self.patchbay_manager.change_port_types_view(
+            GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+    
+    def port_types_view_audio_choice(self):
+        self.action_audio_midi.setChecked(False)
+        self.action_audio.setChecked(True)
+        self.action_midi.setChecked(False)
+        self.patchbay_manager.change_port_types_view(
+            GROUP_CONTEXT_AUDIO)
+    
+    def port_types_view_midi_choice(self):
+        self.action_audio_midi.setChecked(False)
+        self.action_audio.setChecked(False)
+        self.action_midi.setChecked(True)
+        self.patchbay_manager.change_port_types_view(
+            GROUP_CONTEXT_MIDI)
+
+        #act_sel = menu.exec(QCursor.pos())
+
+        #if act_sel == action_fullscreen:
+            #self.toggle_full_screen()
+        #elif act_sel == action_audio_midi:
+            #self.change_port_types_view(
+                #GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+        #elif act_sel == action_audio:
+            #self.change_port_types_view(GROUP_CONTEXT_AUDIO)
+        #elif act_sel == action_midi:
+            #self.change_port_types_view(GROUP_CONTEXT_MIDI)
+        #elif act_sel == autofit:
+            #patchcanvas.canvas.scene.zoom_fit()
+        #elif act_sel == zoom_in:
+            #patchcanvas.canvas.scene.zoom_in()
+        #elif act_sel == zoom_out:
+            #patchcanvas.canvas.scene.zoom_out()
+        #elif act_sel == zoom_orig:
+            #patchcanvas.canvas.scene.zoom_reset()
+        #elif act_sel == action_refresh:
+            #self.refresh()
+        #elif act_sel == action_options:
+            #self.show_options_dialog()

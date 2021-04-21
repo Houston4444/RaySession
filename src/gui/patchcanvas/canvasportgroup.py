@@ -107,6 +107,35 @@ class CanvasPortGroup(QGraphicsItem):
     def getPortType(self):
         return self.m_port_type
 
+    def isAlternate(self):
+        return False
+
+    def is_connectable_to(self, other, accept_same_port_mode=False)->bool:
+        if self.m_port_type != other.getPortType():
+            return False
+        
+        if not accept_same_port_mode:
+            if self.m_port_mode == other.getPortMode():
+                return False
+        
+        if self.m_port_type == PORT_TYPE_AUDIO_JACK:
+            if other.getPortMode() == self.m_port_mode:
+                return bool(self.isAlternate() == other.isAlternate())
+            # absolutely forbidden to connect an output CV port
+            # to an input audio port.
+            # It could destroy material.
+            if self.m_port_mode == PORT_MODE_OUTPUT:
+                if self.isAlternate():
+                    return other.isAlternate()
+                return True
+            
+            if self.m_port_mode == PORT_MODE_INPUT:
+                if self.isAlternate():
+                    return True
+                return not other.isAlternate()
+        
+        return True
+
     def getGroupId(self):
         return self.m_group_id
 
@@ -373,7 +402,13 @@ class CanvasPortGroup(QGraphicsItem):
             if not item_valid:
                 item = None
 
-        if (item is not None
+        if item is not None and not self.is_connectable_to(
+            item, accept_same_port_mode=True):
+            # prevent connection from an out CV port to a non CV port input
+            # because it is very dangerous for monitoring
+            pass
+
+        elif (item is not None
                 and self.m_hover_item != item
                 and item.getPortType() == self.m_port_type):
             item.setSelected(True)

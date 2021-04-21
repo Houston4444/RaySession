@@ -144,24 +144,9 @@ class CanvasBezierLine(QGraphicsPathItem):
             
             item1_new_x = item1_x + mid_x
             item2_new_x = item2_x - mid_x
-
-            #item1_new_y, item2_new_y = item1_y, item2_y
-            
-            #if item1_x > item2_x:
-                #limit_strait = 20
-                
-                #diff_y = item1_y - item2_y
-                #if abs(diff_y) < limit_strait:
-                    #if diff_y > 0:
-                        #item1_new_y = item1_y + diff_y
-                        #item2_new_y = item2_y - diff_y
-                    #else:
-                        #item1_new_y = item1_y - diff_y + (diff_y - item1_y) / 2
-                        #item2_new_y = item2_y + diff_y - (diff_y - item1_y) / 2
                 
             path = QPainterPath(QPointF(item1_x, item1_y))
             path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y, item2_x, item2_y)
-            #path.cubicTo(item1_new_x, item1_new_y, item2_new_x, item2_new_y, item2_x, item2_y)
             self.setPath(path)
 
             self.m_lineSelected = False

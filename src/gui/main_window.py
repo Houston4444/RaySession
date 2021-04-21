@@ -310,6 +310,7 @@ class MainWindow(QMainWindow):
             self.splitterSessionVsMessagesMoved)
 
         self.canvas_tools_action = None
+        self.canvas_menu = None
         self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
         self.ui.graphicsView.setScene(self.scene)
 
@@ -438,8 +439,9 @@ class MainWindow(QMainWindow):
 
         self.ui.splitterSessionVsMessages.setSizes(sizes)
 
-    def add_patchbay_tools(self, widget):
-        self.canvas_tools_action = self.ui.toolBar.addWidget(widget)
+    def add_patchbay_tools(self, tools_widget, canvas_menu):
+        self.canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)
+        self.canvas_menu = self.ui.menuBar.addMenu(canvas_menu)
 
     def createClientWidget(self, client):
         return self.ui.listWidget.createClientWidget(client)
@@ -826,6 +828,8 @@ class MainWindow(QMainWindow):
 
         if self.canvas_tools_action is not None:
             self.canvas_tools_action.setVisible(yesno)
+        if self.canvas_menu is not None:
+            self.canvas_menu.setVisible(yesno)
 
         rect = self.geometry()
         x = rect.x()

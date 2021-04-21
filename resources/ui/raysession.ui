@@ -873,8 +873,8 @@ QToolButton {border: none}</string>
     <property name="title">
      <string>&amp;View</string>
     </property>
-    <addaction name="actionToggleShowMessages"/>
     <addaction name="actionShowMenuBar"/>
+    <addaction name="actionToggleShowMessages"/>
     <addaction name="actionShowJackPatchbay"/>
     <addaction name="separator"/>
     <addaction name="actionKeepFocus"/>

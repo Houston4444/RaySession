@@ -33,6 +33,10 @@ from .utils import(
 
 _translate = QCoreApplication.translate
 
+DANGEROUS_NO_CARE = 0
+DANGEROUS_NO = 1
+DANGEROUS_YES = 2
+
 
 class PortCheckBox(QCheckBox):
     def __init__(self, port_id: int, portgrp_id: int, port_name: str,
@@ -73,17 +77,19 @@ class SubMenu(QMenu):
         self._port_type = port_data._port_type
         self._port_mode = port_data._port_mode
         self._portgrp_id = port_data._portgrp_id
+        self._is_alternate = port_data._is_alternate
         self._port_id_list = port_data._port_id_list
 
 
 class PortData:
     def __init__(self, group_id: int, port_id: int, port_type: int,
-                 port_mode: int, portgrp_id: int):
+                 port_mode: int, portgrp_id: int, is_alternate: bool):
         self._group_id = group_id
         self._port_id = port_id
         self._port_type = port_type
         self._port_mode = port_mode
         self._portgrp_id = portgrp_id
+        self._is_alternate = is_alternate
         self._port_id_list = [port_id]
 
         if portgrp_id:
@@ -92,7 +98,8 @@ class PortData:
 
 
 class ConnectGroupMenu(SubMenu):
-    def __init__(self, group_name: str, group_id: str, port_data, parent):
+    def __init__(self, group_name: str, group_id: str, port_data, parent,
+                 dangerous_mode=DANGEROUS_NO_CARE):
         SubMenu.__init__(self, group_name, port_data, parent)
         self._parent = parent
         self._menu_group_id = group_id
@@ -119,6 +126,14 @@ class ConnectGroupMenu(SubMenu):
                                                  portgrp_name)
                                 break
                 else:
+                    if (dangerous_mode == DANGEROUS_YES
+                            and self._is_alternate == port.is_alternate):
+                        continue
+                    
+                    if (dangerous_mode == DANGEROUS_NO
+                            and self._is_alternate != port.is_alternate):
+                        continue
+                    
                     self.add_element(port.port_id, port.portgrp_id,
                                      port.port_name, port.is_alternate)
 
@@ -166,6 +181,51 @@ class ConnectGroupMenu(SubMenu):
         self._parent.connection_asked_from_box(self._menu_group_id, port_id,
                                                portgrp_id, yesno)
 
+class DangerousMenu(SubMenu):
+    def __init__(self, name, port_data, parent):
+        SubMenu.__init__(self, name, port_data, parent)
+        self.setIcon(QIcon.fromTheme('emblem-warning'))
+        
+        self.group_menus = []
+        self.connection_list = []
+                    
+    def add_group_menu(self, group_id: int, group_name: str):
+        if len(group_name) > 15:
+            if '/' in group_name:
+                group_name = group_name.partition('/')[2]
+
+        group_menu = ConnectGroupMenu(group_name, group_id,
+                                      self._port_data, self,
+                                      dangerous_mode=DANGEROUS_YES)
+        group_icon = CanvasGetGroupIcon(group_id, self._port_mode)
+        group_menu.setIcon(group_icon)
+        self.group_menus.append(group_menu)
+        self.addMenu(group_menu)
+
+    def connection_asked_from_box(self, group_id: int, port_id: int,
+                                  portgrp_id: int, yesno: bool):
+        if yesno:
+            if self._portgrp_id and portgrp_id:
+                # in and out are portgroups
+                CanvasConnectPortGroups(self._group_id, self._portgrp_id,
+                                        group_id, portgrp_id)
+            else:
+                for self_port_id in self._port_id_list:
+                    CanvasConnectPorts(self._group_id, self_port_id,
+                                        group_id, port_id)
+        else:
+            if self._portgrp_id and portgrp_id:
+                CanvasConnectPortGroups(self._group_id, self._portgrp_id,
+                                        group_id, portgrp_id, disconnect=True)
+            else:
+                for connection in canvas.connection_list:
+                    if CanvasConnectionMatches(
+                            connection, self._group_id, self._port_id_list,
+                            group_id, [port_id]):
+                        CanvasCallback(
+                            ACTION_PORTS_DISCONNECT,
+                            connection.connection_id, '', '')
+
 
 class ConnectMenu(SubMenu):
     def __init__(self, port_data, parent):
@@ -176,23 +236,74 @@ class ConnectMenu(SubMenu):
 
         self.group_menus = []
         self.connection_list = []
+        
+        dangerous_name = ''
+
+        if self._port_type == PORT_TYPE_AUDIO_JACK:
+            if (self._port_mode == PORT_MODE_OUTPUT
+                    and self._is_alternate):
+                dangerous_name = _translate(
+                    'patchbay', 'Audio | DANGEROUS !!!')
+            elif (self._port_mode == PORT_MODE_INPUT
+                    and not self._is_alternate):
+                dangerous_name = _translate(
+                    'patchbay', 'CV | DANGEROUS !!!')
+                
+        self.dangerous_submenu = DangerousMenu(
+            dangerous_name, port_data, self)
+
+        has_dangerous_global = False
 
         # add the needed groups (not the ports)
         for group in canvas.group_list:
+            has_dangerous = False
+            has_regular = False
+            
             for port in canvas.port_list:
                 if (port.group_id == group.group_id
                         and port.port_type == self._port_type
                         and port.port_mode != self._port_mode):
-                    self.add_group_menu(group.group_id, group.group_name)
-                    break
+                    
+                    if (self._port_type == PORT_TYPE_AUDIO_JACK
+                            and (self._port_mode == PORT_MODE_OUTPUT
+                                 and self._is_alternate
+                                 and not port.is_alternate)
+                                or (self._port_mode == PORT_MODE_INPUT
+                                    and not self._is_alternate
+                                    and port.is_alternate)):
+                        if not has_dangerous:
+                            self.dangerous_submenu.add_group_menu(
+                                group.group_id, group.group_name)
+                        has_dangerous = True
+                        has_dangerous_global = True
+                    else:
+                        if not has_regular:
+                            self.add_group_menu(group.group_id, group.group_name)
+                        has_regular = True
+                    
+                    if has_dangerous and has_regular:
+                        break
+        
+        if has_dangerous_global:
+            self.addSeparator()
+            self.addMenu(self.dangerous_submenu)
 
     def add_group_menu(self, group_id: int, group_name: str):
         if len(group_name) > 15:
             if '/' in group_name:
                 group_name = group_name.partition('/')[2]
 
+        dangerous = DANGEROUS_NO_CARE
+        if (self._port_type == PORT_TYPE_AUDIO_JACK
+                and (self._port_mode == PORT_MODE_OUTPUT
+                     and self._is_alternate)
+                    or (self._port_mode == PORT_MODE_INPUT
+                        and not self._is_alternate)):
+            dangerous = DANGEROUS_NO
+
         group_menu = ConnectGroupMenu(group_name, group_id,
-                                      self._port_data, self)
+                                      self._port_data, self,
+                                      dangerous_mode=dangerous)
         group_icon = CanvasGetGroupIcon(group_id, self._port_mode)
         group_menu.setIcon(group_icon)
         self.group_menus.append(group_menu)
@@ -481,6 +592,7 @@ class MainPortContextMenu(QMenu):
                         and portgrp.portgrp_id == portgrp_id):
                     port_type = portgrp.port_type
                     port_mode = portgrp.port_mode
+                    is_alternate = False
                     break
             else:
                 return
@@ -490,6 +602,7 @@ class MainPortContextMenu(QMenu):
                 if port.group_id == group_id and port.port_id == port_id:
                     port_type = port.port_type
                     port_mode = port.port_mode
+                    is_alternate = port.is_alternate
                     break
             else:
                 return
@@ -512,8 +625,8 @@ class MainPortContextMenu(QMenu):
 
         #self.setStyleSheet(style_str)
 
-        PortData.__init__(self, group_id, port_id,
-                          port_type, port_mode, portgrp_id)
+        PortData.__init__(self, group_id, port_id, port_type,
+                          port_mode, portgrp_id, is_alternate)
 
         self.connection_list = []
 
@@ -523,7 +636,7 @@ class MainPortContextMenu(QMenu):
             self.connection_removed_from_canvas)
 
         port_data = PortData(group_id, port_id, port_type,
-                             port_mode, portgrp_id)
+                             port_mode, portgrp_id, is_alternate)
 
         dark = ''
         if isDarkTheme(self):
@@ -594,6 +707,12 @@ class MainPortContextMenu(QMenu):
                         group_menu.check_element(
                             port_id, portgrp_id, con_state)
                         break
+                
+                for group_menu in self.connect_menu.dangerous_submenu.group_menus:
+                    if group_menu.group_id() == group_id:
+                        group_menu.check_element(
+                            port_id, portgrp_id, con_state)
+                        break
 
                 self.disconnect_menu.add_element(group_id, port_id_list,
                                                  portgrp_id)
@@ -634,6 +753,12 @@ class MainPortContextMenu(QMenu):
                             group_id, port_id_list)
 
                         for group_menu in self.connect_menu.group_menus:
+                            if group_menu.group_id() == group_id:
+                                group_menu.check_element(
+                                    port_id, portgrp_id, con_state)
+                                break
+
+                        for group_menu in self.connect_menu.dangerous_submenu.group_menus:
                             if group_menu.group_id() == group_id:
                                 group_menu.check_element(
                                     port_id, portgrp_id, con_state)

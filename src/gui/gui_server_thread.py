@@ -89,6 +89,10 @@ class GUIServerThread(liblo.ServerThread):
         if self.stopping:
             return
 
+        if CommandLineArgs.debug:
+            sys.stderr.write('OSC::patchbay receives (%s, %s, %s)\n'
+                             % (path, args, types))
+
         self._signaler.osc_receive.emit(path, args)
 
     @ray_method('/error', 'sis')

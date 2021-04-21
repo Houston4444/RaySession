@@ -13,7 +13,7 @@ from gui_tools import RS
 
 from patchcanvas import patchcanvas
 from gui_server_thread import GUIServerThread
-from patchbay_tools import PatchbayToolsWidget
+from patchbay_tools import PatchbayToolsWidget, CanvasMenu
 
 import canvas_options
 
@@ -473,6 +473,9 @@ class Group:
             while name and name[-1].isdigit():
                 num = name[-1] + num
                 name = name[:-1]
+            
+            if num.startswith('0') and num not in ('0', '09'):
+                num = num[1:]
 
             return (name, num)
 
@@ -508,6 +511,8 @@ class Group:
                 display_name = display_name.partition('_')[2]
                 display_name = cut_end(display_name, '_in', '_out')
                 display_name = display_name.replace(':', ' ')
+                display_name, num = split_end_digits(display_name)
+                display_name = display_name + num
 
         elif client_name == 'Hydrogen':
             if display_name.startswith('Track_'):
@@ -849,6 +854,7 @@ class PatchbayManager:
         self.join_animation_connected = False
 
     def finish_init(self):
+        self.canvas_menu = CanvasMenu(self)
         self.options_dialog = canvas_options.CanvasOptionsDialog(
             self.session._main_win)
         self.options_dialog.gracious_names_checked.connect(
@@ -1075,92 +1081,93 @@ class PatchbayManager:
                     break
 
         elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
-            menu = QMenu()
+            self.canvas_menu.exec(QCursor.pos())
+            #menu = QMenu()
 
-            action_fullscreen = menu.addAction(
-                _translate('patchbay', "Toggle Full Screen"))
-            action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
+            #action_fullscreen = menu.addAction(
+                #_translate('patchbay', "Toggle Full Screen"))
+            #action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
 
-            port_types_view = self.port_types_view & (GROUP_CONTEXT_AUDIO
-                                                      | GROUP_CONTEXT_MIDI)
+            #port_types_view = self.port_types_view & (GROUP_CONTEXT_AUDIO
+                                                      #| GROUP_CONTEXT_MIDI)
 
-            port_types_menu = QMenu(_translate('patchbay', 'Type filter'))
-            port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
-            action_audio_midi = port_types_menu.addAction(
-                _translate('patchbay', 'Audio + Midi'))
-            action_audio_midi.setCheckable(True)
-            action_audio_midi.setChecked(
-                bool(port_types_view == (GROUP_CONTEXT_AUDIO
-                                         | GROUP_CONTEXT_MIDI)))
+            #port_types_menu = QMenu(_translate('patchbay', 'Type filter'))
+            #port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
+            #action_audio_midi = port_types_menu.addAction(
+                #_translate('patchbay', 'Audio + Midi'))
+            #action_audio_midi.setCheckable(True)
+            #action_audio_midi.setChecked(
+                #bool(port_types_view == (GROUP_CONTEXT_AUDIO
+                                         #| GROUP_CONTEXT_MIDI)))
 
-            action_audio = port_types_menu.addAction(
-                _translate('patchbay', 'Audio only'))
-            action_audio.setCheckable(True)
-            action_audio.setChecked(port_types_view == GROUP_CONTEXT_AUDIO)
+            #action_audio = port_types_menu.addAction(
+                #_translate('patchbay', 'Audio only'))
+            #action_audio.setCheckable(True)
+            #action_audio.setChecked(port_types_view == GROUP_CONTEXT_AUDIO)
 
-            action_midi = port_types_menu.addAction(
-                _translate('patchbay', 'MIDI only'))
-            action_midi.setCheckable(True)
-            action_midi.setChecked(port_types_view == GROUP_CONTEXT_MIDI)
+            #action_midi = port_types_menu.addAction(
+                #_translate('patchbay', 'MIDI only'))
+            #action_midi.setCheckable(True)
+            #action_midi.setChecked(port_types_view == GROUP_CONTEXT_MIDI)
 
-            menu.addMenu(port_types_menu)
+            #menu.addMenu(port_types_menu)
 
-            zoom_menu = QMenu(_translate('patchbay', 'Zoom'))
-            zoom_menu.setIcon(QIcon.fromTheme('zoom'))
+            #zoom_menu = QMenu(_translate('patchbay', 'Zoom'))
+            #zoom_menu.setIcon(QIcon.fromTheme('zoom'))
 
-            autofit = zoom_menu.addAction(
-                _translate('patchbay', 'auto-fit'))
-            autofit.setIcon(QIcon.fromTheme('zoom-select-fit'))
-            autofit.setShortcut('Home')
+            #autofit = zoom_menu.addAction(
+                #_translate('patchbay', 'auto-fit'))
+            #autofit.setIcon(QIcon.fromTheme('zoom-select-fit'))
+            #autofit.setShortcut('Home')
 
-            zoom_in = zoom_menu.addAction(
-                _translate('patchbay', 'Zoom +'))
-            zoom_in.setIcon(QIcon.fromTheme('zoom-in'))
-            zoom_in.setShortcut('Ctrl++')
+            #zoom_in = zoom_menu.addAction(
+                #_translate('patchbay', 'Zoom +'))
+            #zoom_in.setIcon(QIcon.fromTheme('zoom-in'))
+            #zoom_in.setShortcut('Ctrl++')
 
-            zoom_out = zoom_menu.addAction(
-                _translate('patchbay', 'Zoom -'))
-            zoom_out.setIcon(QIcon.fromTheme('zoom-out'))
-            zoom_out.setShortcut('Ctrl+-')
+            #zoom_out = zoom_menu.addAction(
+                #_translate('patchbay', 'Zoom -'))
+            #zoom_out.setIcon(QIcon.fromTheme('zoom-out'))
+            #zoom_out.setShortcut('Ctrl+-')
 
-            zoom_orig = zoom_menu.addAction(
-                _translate('patchbay', 'Zoom 100%'))
-            zoom_orig.setIcon(QIcon.fromTheme('zoom'))
-            zoom_orig.setShortcut('Ctrl+1')
+            #zoom_orig = zoom_menu.addAction(
+                #_translate('patchbay', 'Zoom 100%'))
+            #zoom_orig.setIcon(QIcon.fromTheme('zoom'))
+            #zoom_orig.setShortcut('Ctrl+1')
 
-            menu.addMenu(zoom_menu)
+            #menu.addMenu(zoom_menu)
 
-            action_refresh = menu.addAction(
-                _translate('patchbay', "Refresh the canvas"))
-            action_refresh.setIcon(QIcon.fromTheme('view-refresh'))
+            #action_refresh = menu.addAction(
+                #_translate('patchbay', "Refresh the canvas"))
+            #action_refresh.setIcon(QIcon.fromTheme('view-refresh'))
 
-            action_options = menu.addAction(
-                _translate('patchbay', "Canvas options"))
-            action_options.setIcon(QIcon.fromTheme("configure"))
+            #action_options = menu.addAction(
+                #_translate('patchbay', "Canvas options"))
+            #action_options.setIcon(QIcon.fromTheme("configure"))
 
-            act_sel = menu.exec(QCursor.pos())
+            #act_sel = menu.exec(QCursor.pos())
 
-            if act_sel == action_fullscreen:
-                self.toggle_full_screen()
-            elif act_sel == action_audio_midi:
-                self.change_port_types_view(
-                    GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
-            elif act_sel == action_audio:
-                self.change_port_types_view(GROUP_CONTEXT_AUDIO)
-            elif act_sel == action_midi:
-                self.change_port_types_view(GROUP_CONTEXT_MIDI)
-            elif act_sel == autofit:
-                patchcanvas.canvas.scene.zoom_fit()
-            elif act_sel == zoom_in:
-                patchcanvas.canvas.scene.zoom_in()
-            elif act_sel == zoom_out:
-                patchcanvas.canvas.scene.zoom_out()
-            elif act_sel == zoom_orig:
-                patchcanvas.canvas.scene.zoom_reset()
-            elif act_sel == action_refresh:
-                self.refresh()
-            elif act_sel == action_options:
-                self.show_options_dialog()
+            #if act_sel == action_fullscreen:
+                #self.toggle_full_screen()
+            #elif act_sel == action_audio_midi:
+                #self.change_port_types_view(
+                    #GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+            #elif act_sel == action_audio:
+                #self.change_port_types_view(GROUP_CONTEXT_AUDIO)
+            #elif act_sel == action_midi:
+                #self.change_port_types_view(GROUP_CONTEXT_MIDI)
+            #elif act_sel == autofit:
+                #patchcanvas.canvas.scene.zoom_fit()
+            #elif act_sel == zoom_in:
+                #patchcanvas.canvas.scene.zoom_in()
+            #elif act_sel == zoom_out:
+                #patchcanvas.canvas.scene.zoom_out()
+            #elif act_sel == zoom_orig:
+                #patchcanvas.canvas.scene.zoom_reset()
+            #elif act_sel == action_refresh:
+                #self.refresh()
+            #elif act_sel == action_options:
+                #self.show_options_dialog()
 
         elif action == patchcanvas.ACTION_DOUBLE_CLICK:
             self.toggle_full_screen()
@@ -1613,4 +1620,5 @@ class PatchbayManager:
         self.tools_widget.set_samplerate(samplerate)
         self.tools_widget.set_buffer_size(buffer_size)
         self.tools_widget.set_jack_running(jack_running)
-        self.session._main_win.add_patchbay_tools(self.tools_widget)
+        self.session._main_win.add_patchbay_tools(
+            self.tools_widget, self.canvas_menu)
