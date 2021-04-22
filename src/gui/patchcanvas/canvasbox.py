@@ -546,6 +546,38 @@ class CanvasBox(QGraphicsItem):
         wrapped_port_pos = last_in_pos
         last_of_portgrp = True
 
+        align_port_types = True
+        port_types_aligner = []
+        
+        for port_type in port_types:
+            aligner_item = []
+            for alternate in (False, True):
+                n_ins = 0
+                n_outs = 0
+                
+                for port in port_list:
+                    if (port.port_type == port_type
+                            and port.is_alternate == alternate):
+                        if port.port_mode == PORT_MODE_INPUT:
+                            n_ins += 1
+                        elif port.port_mode == PORT_MODE_OUTPUT:
+                            n_outs += 1
+                
+                port_types_aligner.append((n_ins, n_outs))
+        
+        winner = PORT_MODE_NULL
+        
+        for n_ins, n_outs in port_types_aligner:
+            if ((winner == PORT_MODE_INPUT and n_outs > n_ins)
+                    or (winner == PORT_MODE_OUTPUT and n_ins > n_outs)):
+                align_port_types = False
+                break
+            
+            if n_ins > n_outs:
+                winner = PORT_MODE_INPUT
+            elif n_outs > n_ins:
+                winner = PORT_MODE_OUTPUT
+
         for port_type in port_types:
             for alternate in (False, True):
                 for port in port_list:
@@ -647,6 +679,16 @@ class CanvasBox(QGraphicsItem):
                             last_out_pos += port_spacing
                         else:
                             last_out_pos += canvas.theme.port_height
+                
+                if align_port_types:
+                    # align port types horizontally
+                    if last_in_pos > last_out_pos:
+                        last_out_type = last_in_type
+                        last_out_alter = last_in_alter
+                    else:
+                        last_in_type = last_out_type
+                        last_in_alter = last_out_alter
+                    last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
 
         self.p_width = 30
         if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED:
