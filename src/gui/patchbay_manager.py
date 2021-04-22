@@ -1251,10 +1251,13 @@ class PatchbayManager:
         return ''
 
     def get_group_position(self, group_name):
+        print('get_group_positionnn', group_name)
         for gpos in self.group_positions:
             if (gpos.port_types_view == self.port_types_view
                     and gpos.group_name == group_name):
                 return gpos
+        
+        print('gpos fogund1')
 
         # prevent move to a new position in case of port_types_view change
         # if there is no remembered position for this group in new view
@@ -1263,9 +1266,12 @@ class PatchbayManager:
                 # copy the group_position
                 gpos = ray.GroupPosition.newFrom(
                     *group.current_position.spread())
+                print('gposuo', gpos.null_xy)
                 gpos.port_types_view = self.port_types_view
                 self.group_positions.append(gpos)
                 return gpos
+
+        print('gposs foundkk2')
 
         # group position doesn't already exists, create one
         gpos = ray.GroupPosition()

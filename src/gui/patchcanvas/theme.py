@@ -161,7 +161,7 @@ class Theme(object):
             self.box_bg_2 = QColor(43, 47, 48)
             self.box_shadow = QColor(89, 89, 89, 180)
 
-            self.box_text = QPen(QColor(240, 240, 240), 0)
+            self.box_text = QPen(QColor(210, 210, 210), 0)
             self.box_text_sel = self.box_text
 
             self.box_font_name = "Deja Vu Sans"

@@ -191,6 +191,15 @@ class port_dict_t(object):
         'is_alternate',
         'widget'
     ]
+    
+    def is_connectable_to(self, other)->bool:
+        if self.port_type != other.port_type:
+            return False
+        
+        if self.port_mode == other.port_mode:
+            return False
+        
+        
 
 class portgrp_dict_t(object):
     __slots__ = [
