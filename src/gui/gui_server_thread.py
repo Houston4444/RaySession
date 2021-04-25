@@ -65,7 +65,6 @@ class GUIServerThread(liblo.ServerThread):
             ('/ray/gui/session/name', 'ss'),
             ('/ray/gui/session/notes', 's'),
             ('/ray/gui/patchbay/metadata_updated', 'hss'),
-            ('/ray/gui/patchbay/port_order_changed', 'si'),
             ('/ray/gui/patchbay/dsp_load', 'i'),
             ('/ray/gui/patchbay/add_xrun', ''),
             ('/ray/gui/patchbay/buffer_size', 'i'),
@@ -78,7 +77,7 @@ class GUIServerThread(liblo.ServerThread):
                 self.add_method(path_types[0], path_types[1],
                                 self.generic_callback)
 
-        self.direct_to_session('/ray/gui/patchbay/port_added', 'siii')
+        self.direct_to_session('/ray/gui/patchbay/port_added', 'siih')
 
     def direct_to_session(self, path: str, types: str):
         self.add_method(path, types, self.generic_callback)

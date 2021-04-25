@@ -21,7 +21,6 @@ EXISTENCE_PATH = '/tmp/RaySession/patchbay_infos'
 
 
 
-
 # Define a context manager to suppress stdout and stderr.
 class suppress_stdout_stderr(object):
     '''
@@ -107,6 +106,20 @@ class MainObject:
         self.write_existence_file(self.osc_server.port)
         
         self.start_jack_client()
+    
+    @staticmethod
+    def get_metadata_value_str(prop)->str:
+        value = prop.value
+        if type(value) == bytes:
+            return value.decode()
+        elif type(value) == str:
+            return value
+        else:
+            try:
+                value = str(value)
+            except:
+                return ''
+        return value
     
     @staticmethod
     def c_char_p_p_to_list(c_char_p_p):
@@ -314,11 +327,11 @@ class MainObject:
                 if prop is None:
                     continue
 
-                value = prop.value
+                value = self.get_metadata_value_str(prop)
                 self.metadata_list.append(
                     {'uuid': jport.uuid,
                      'key': key,
-                     'value': value.decode()})
+                     'value': value})
     
     def jack_shutdown_callback(self, arg=None)->int:
         self.jack_running = False
@@ -400,9 +413,20 @@ class MainObject:
         if prop is None:
             return 0
         
-        value = prop.value
-        value_str = value.decode()
-        self.osc_server.metadata_updated(uuid, property_str, value_str)
+        useless_value = prop.value
+        print('value of metadata', property_str, useless_value, type(useless_value))
+        
+        value = self.get_metadata_value_str(prop)
+
+        for metadata in self.metadata_list:
+            if metadata['uuid'] == uuid and metadata['key'] == property_str:
+                metadata['value'] = value
+                break
+        else:
+            self.metadata_list.append(
+                {'uuid': uuid, 'key': property_str, 'value': value})
+        
+        self.osc_server.metadata_updated(uuid, property_str, value)
 
         return 0
     
