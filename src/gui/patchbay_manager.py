@@ -1127,7 +1127,7 @@ class PatchbayManager:
             port_flags_str = ' | '.join(flags_list)
 
             self.session._main_win.show_canvas_port_info(
-                port.full_name, port_type_str, port_flags_str)
+                port.full_name, port.uuid, port_type_str, port_flags_str)
 
         elif action == patchcanvas.ACTION_PORT_RENAME:
             pass

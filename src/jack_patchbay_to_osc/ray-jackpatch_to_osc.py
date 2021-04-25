@@ -5,12 +5,12 @@ import signal
 import sys
 import warnings
 
-#from jacklib import jacklib
-import jacklib
-from jacklib.helpers import c_char_p_p_to_list, voidptr2str
 import osc_server
 import threading
 import time
+
+import jacklib
+from jacklib.helpers import c_char_p_p_to_list, voidptr2str
 
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1

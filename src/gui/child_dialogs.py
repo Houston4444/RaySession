@@ -1369,8 +1369,10 @@ class CanvasPortInfoDialog(ChildDialog):
         self.ui = ui.canvas_port_info.Ui_Dialog()
         self.ui.setupUi(self)
 
-    def set_infos(self, port_full_name: str, port_type: str, port_flags: str):
+    def set_infos(self, port_full_name: str, port_uuid: int, 
+                  port_type: str, port_flags: str):
         self.ui.lineEditFullPortName.setText(port_full_name)
+        self.ui.lineEditUuid.setText(str(port_uuid))
         self.ui.labelPortType.setText(port_type)
         self.ui.labelPortFlags.setText(port_flags)
 
