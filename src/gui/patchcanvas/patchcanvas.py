@@ -708,12 +708,22 @@ def joinGroup(group_id):
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def updateAllPositions():
+def redrawAllGroups():
     for group in canvas.group_list:
         for box in group.widgets:
             if box is not None:
                 box.updatePositions()
 
+    QTimer.singleShot(0, canvas.scene.update)
+
+def redrawGroup(group_id: int):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            for box in group.widgets:
+                if box is not None:
+                    box.updatePositions()
+            break
+        
     QTimer.singleShot(0, canvas.scene.update)
 
 def animateBeforeJoin(group_id: int):

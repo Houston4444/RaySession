@@ -433,6 +433,9 @@ class SignaledSession(Session):
     def _ray_gui_patchbay_port_renamed(self, path, args):
         self.patchbay_manager.rename_port(*args)
 
+    def _ray_gui_patchbay_metadata_updated(self, path, args):
+        self.patchbay_manager.metadata_update(*args)
+
     def _ray_gui_patchbay_connection_added(self, path, args):
         self.patchbay_manager.add_connection(*args)
 

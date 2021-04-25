@@ -5,7 +5,7 @@ import sys
 
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QMessageBox
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot, QTimer
 
 import ray
 
@@ -35,16 +35,26 @@ PORT_CAN_MONITOR = 0x08
 PORT_IS_TERMINAL = 0x10
 PORT_IS_CONTROL_VOLTAGE = 0x100
 
-USE_ALIAS_NONE = 0
-USE_ALIAS_1 = 1
-USE_ALIAS_2 = 2
-
 GROUP_CONTEXT_AUDIO = 0x01
 GROUP_CONTEXT_MIDI = 0x02
 GROUP_SPLITTED = 0x04
 GROUP_WRAPPED_INPUT = 0x10
 GROUP_WRAPPED_OUTPUT = 0x20
 GROUP_HAS_BEEN_SPLITTED = 0x40
+
+
+# Meta data (taken from pyjacklib)
+_JACK_METADATA_PREFIX = "http://jackaudio.org/metadata/"
+JACK_METADATA_CONNECTED = _JACK_METADATA_PREFIX + "connected"
+JACK_METADATA_EVENT_TYPES = _JACK_METADATA_PREFIX + "event-types"
+JACK_METADATA_HARDWARE = _JACK_METADATA_PREFIX + "hardware"
+JACK_METADATA_ICON_LARGE = _JACK_METADATA_PREFIX + "icon-large"
+JACK_METADATA_ICON_NAME = _JACK_METADATA_PREFIX + "icon-name"
+JACK_METADATA_ICON_SMALL = _JACK_METADATA_PREFIX + "icon-small"
+JACK_METADATA_ORDER = _JACK_METADATA_PREFIX + "order"
+JACK_METADATA_PORT_GROUP = _JACK_METADATA_PREFIX + "port-group"
+JACK_METADATA_PRETTY_NAME = _JACK_METADATA_PREFIX + "pretty-name"
+JACK_METADATA_SIGNAL_TYPE = _JACK_METADATA_PREFIX + "signal-type"
 
 _translate = QGuiApplication.translate
 
@@ -86,16 +96,16 @@ class Port:
     prevent_stereo = False
     last_digit_to_add = ''
     in_canvas = False
+    order = None
+    uuid = 0 # will contains the real JACK uuid
 
-    def __init__(self, port_id: int, name: str, alias_1: str, alias_2: str,
-                 port_type: int, flags: int, metadata: str):
+    def __init__(self, port_id: int, name: str,
+                 port_type: int, flags: int, uuid: int):
         self.port_id = port_id
         self.full_name = name
-        self.alias_1 = alias_1
-        self.alias_2 = alias_2
         self.type = port_type
         self.flags = flags
-        self.metadata = metadata
+        self.uuid = uuid
 
     def mode(self):
         if self.flags & PORT_IS_OUTPUT:
@@ -167,6 +177,30 @@ class Port:
 
         patchcanvas.changePortProperties(self.group_id, self.port_id,
                                          self.portgroup_id, display_name)
+        
+    def __lt__(self, other):
+        if self.type < other.type:
+            return True
+        
+        if (self.flags & PORT_IS_CONTROL_VOLTAGE
+                !=  other.flags & PORT_IS_CONTROL_VOLTAGE):
+            return not self.flags & PORT_IS_CONTROL_VOLTAGE
+        
+        if (self.full_name.startswith('a2j:')
+                != other.full_name.startswith('a2j:')):
+            return not self.full_name.startswith('a2j:')
+        
+        if self.mode() < other.mode():
+            return True
+        
+        if self.order is None and other.order is None:
+            return self.port_id < other.port_id
+        if self.order is None:
+            return False
+        if other.order is None:
+            return True
+        
+        return self.order < other.order
 
 
 class Portgroup:
@@ -192,6 +226,11 @@ class Portgroup:
     def update_ports_in_canvas(self):
         for port in self.ports:
             port.change_canvas_properties()
+
+    def sort_ports(self):
+        port_list = list(self.ports)
+        port_list.sort()
+        self.ports = tuple(port_list)
 
     def add_to_canvas(self):
         if self.in_canvas:
@@ -238,6 +277,11 @@ class Group:
         self.a2j_group = False
         self.in_canvas = False
         self.current_position = group_position
+        
+        self._timer_port_order = QTimer()
+        self._timer_port_order.setInterval(20)
+        self._timer_port_order.setSingleShot(True)
+        self._timer_port_order.timeout.connect(self.sort_ports_in_canvas)
 
     def update_ports_in_canvas(self):
         for port in self.ports:
@@ -321,13 +365,8 @@ class Group:
         self.portgroups.clear()
         self.ports.clear()
 
-    def add_port(self, port, use_alias: int):
+    def add_port(self, port):
         port_full_name = port.full_name
-
-        if use_alias == USE_ALIAS_1:
-            port_full_name = port.alias_1
-        elif use_alias == USE_ALIAS_2:
-            port_full_name = port.alias_2
 
         port.group_id = self.group_id
 
@@ -821,6 +860,44 @@ class Group:
                                  and last_digit == '2')):
                         port.add_the_last_digit()
                 break
+            
+    def sort_ports_in_canvas(self):
+        tmp_ports = self.ports.copy()
+        self.ports.clear()
+        tmp_ports.sort()
+        for port in tmp_ports:
+            for portgroup in self.portgroups:
+                portgroup.sort_ports()
+                if port == portgroup.ports[0]:
+                    for p in portgroup.ports:
+                        self.ports.append(p)
+                    break
+            else:
+                if not port in self.ports:
+                    self.ports.append(port)
+
+        PatchbayManager.optimize_operation(True)
+        
+        for portgroup in self.portgroups:
+            portgroup.remove_from_canvas()
+        
+        for port in self.ports:
+            port.remove_from_canvas()
+        
+        for port in self.ports:
+            if PatchbayManager.port_types_view & port.type:
+                port.add_to_canvas()
+        
+        for portgroup in self.portgroups:
+            if PatchbayManager.port_types_view & portgroup.port_type():
+                portgroup.add_to_canvas()
+        
+        PatchbayManager.optimize_operation(False)
+        patchcanvas.redrawGroup(self.group_id)
+        
+    def sort_ports_later(self):
+        self._timer_port_order.start()
+
 
 class PatchbayManager:
     use_graceful_names = True
@@ -842,8 +919,6 @@ class PatchbayManager:
         self._next_group_id = 0
         self._next_port_id = 0
         self._next_connection_id = 0
-
-        self.use_alias = USE_ALIAS_NONE
 
         self.set_graceful_names(RS.settings.value(
             'Canvas/use_graceful_names', True, type=bool))
@@ -1082,92 +1157,6 @@ class PatchbayManager:
 
         elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
             self.canvas_menu.exec(QCursor.pos())
-            #menu = QMenu()
-
-            #action_fullscreen = menu.addAction(
-                #_translate('patchbay', "Toggle Full Screen"))
-            #action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
-
-            #port_types_view = self.port_types_view & (GROUP_CONTEXT_AUDIO
-                                                      #| GROUP_CONTEXT_MIDI)
-
-            #port_types_menu = QMenu(_translate('patchbay', 'Type filter'))
-            #port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
-            #action_audio_midi = port_types_menu.addAction(
-                #_translate('patchbay', 'Audio + Midi'))
-            #action_audio_midi.setCheckable(True)
-            #action_audio_midi.setChecked(
-                #bool(port_types_view == (GROUP_CONTEXT_AUDIO
-                                         #| GROUP_CONTEXT_MIDI)))
-
-            #action_audio = port_types_menu.addAction(
-                #_translate('patchbay', 'Audio only'))
-            #action_audio.setCheckable(True)
-            #action_audio.setChecked(port_types_view == GROUP_CONTEXT_AUDIO)
-
-            #action_midi = port_types_menu.addAction(
-                #_translate('patchbay', 'MIDI only'))
-            #action_midi.setCheckable(True)
-            #action_midi.setChecked(port_types_view == GROUP_CONTEXT_MIDI)
-
-            #menu.addMenu(port_types_menu)
-
-            #zoom_menu = QMenu(_translate('patchbay', 'Zoom'))
-            #zoom_menu.setIcon(QIcon.fromTheme('zoom'))
-
-            #autofit = zoom_menu.addAction(
-                #_translate('patchbay', 'auto-fit'))
-            #autofit.setIcon(QIcon.fromTheme('zoom-select-fit'))
-            #autofit.setShortcut('Home')
-
-            #zoom_in = zoom_menu.addAction(
-                #_translate('patchbay', 'Zoom +'))
-            #zoom_in.setIcon(QIcon.fromTheme('zoom-in'))
-            #zoom_in.setShortcut('Ctrl++')
-
-            #zoom_out = zoom_menu.addAction(
-                #_translate('patchbay', 'Zoom -'))
-            #zoom_out.setIcon(QIcon.fromTheme('zoom-out'))
-            #zoom_out.setShortcut('Ctrl+-')
-
-            #zoom_orig = zoom_menu.addAction(
-                #_translate('patchbay', 'Zoom 100%'))
-            #zoom_orig.setIcon(QIcon.fromTheme('zoom'))
-            #zoom_orig.setShortcut('Ctrl+1')
-
-            #menu.addMenu(zoom_menu)
-
-            #action_refresh = menu.addAction(
-                #_translate('patchbay', "Refresh the canvas"))
-            #action_refresh.setIcon(QIcon.fromTheme('view-refresh'))
-
-            #action_options = menu.addAction(
-                #_translate('patchbay', "Canvas options"))
-            #action_options.setIcon(QIcon.fromTheme("configure"))
-
-            #act_sel = menu.exec(QCursor.pos())
-
-            #if act_sel == action_fullscreen:
-                #self.toggle_full_screen()
-            #elif act_sel == action_audio_midi:
-                #self.change_port_types_view(
-                    #GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
-            #elif act_sel == action_audio:
-                #self.change_port_types_view(GROUP_CONTEXT_AUDIO)
-            #elif act_sel == action_midi:
-                #self.change_port_types_view(GROUP_CONTEXT_MIDI)
-            #elif act_sel == autofit:
-                #patchcanvas.canvas.scene.zoom_fit()
-            #elif act_sel == zoom_in:
-                #patchcanvas.canvas.scene.zoom_in()
-            #elif act_sel == zoom_out:
-                #patchcanvas.canvas.scene.zoom_out()
-            #elif act_sel == zoom_orig:
-                #patchcanvas.canvas.scene.zoom_reset()
-            #elif act_sel == action_refresh:
-                #self.refresh()
-            #elif act_sel == action_options:
-                #self.show_options_dialog()
 
         elif action == patchcanvas.ACTION_DOUBLE_CLICK:
             self.toggle_full_screen()
@@ -1228,6 +1217,12 @@ class PatchbayManager:
                 if port.full_name == port_name:
                     return port
 
+    def get_port_from_uuid(self, uuid:int):
+        for group in self.groups:
+            for port in group.ports:
+                if port.uuid == uuid:
+                    return port
+
     def get_port_from_id(self, group_id: int, port_id: int):
         for group in self.groups:
             if group.group_id == group_id:
@@ -1251,13 +1246,13 @@ class PatchbayManager:
         return ''
 
     def get_group_position(self, group_name):
-        print('get_group_positionnn', group_name)
+        #print('get_group_positionnn', group_name)
         for gpos in self.group_positions:
             if (gpos.port_types_view == self.port_types_view
                     and gpos.group_name == group_name):
                 return gpos
         
-        print('gpos fogund1')
+        #print('gpos fogund1')
 
         # prevent move to a new position in case of port_types_view change
         # if there is no remembered position for this group in new view
@@ -1266,12 +1261,12 @@ class PatchbayManager:
                 # copy the group_position
                 gpos = ray.GroupPosition.newFrom(
                     *group.current_position.spread())
-                print('gposuo', gpos.null_xy)
+                #print('gposuo', gpos.null_xy)
                 gpos.port_types_view = self.port_types_view
                 self.group_positions.append(gpos)
                 return gpos
 
-        print('gposs foundkk2')
+        #print('gposs foundkk2')
 
         # group position doesn't already exists, create one
         gpos = ray.GroupPosition()
@@ -1297,18 +1292,59 @@ class PatchbayManager:
 
         self.portgroups_memory.append(portgroup_mem)
 
-    def add_port(self, name: str, alias_1: str, alias_2: str,
-                 port_type: int, flags: int, metadata: str):
-        port = Port(self._next_port_id, name, alias_1, alias_2,
-                    port_type, flags, metadata)
+    def clear_all(self):
+        self.optimize_operation(True)
+        for connection in self.connections:
+            connection.remove_from_canvas()
+
+        for group in self.groups:
+            group.remove_all_ports()
+            group.remove_from_canvas()
+
+        self.optimize_operation(False)
+
+        self.connections.clear()
+        self.groups.clear()
+
+        self._next_group_id = 0
+        self._next_port_id = 0
+        self._next_portgroup_id = 1
+        self._next_connection_id = 0
+
+
+    def change_port_types_view(self, port_types_view: int):
+        if port_types_view == self.port_types_view:
+            return
+
+        self.port_types_view = port_types_view
+        # Prevent visual update at each canvas item creation
+        # because we may create a lot of ports here
+        self.optimize_operation(True)
+
+        for connection in self.connections:
+            if (connection.in_canvas
+                    and not port_types_view & connection.port_type()):
+                connection.remove_from_canvas()
+
+        for group in self.groups:
+            in_canvas = group.in_canvas
+            group.change_port_types_view(port_types_view)
+            gpos = self.get_group_position(group.name)
+            group.set_group_position(gpos)
+
+        for connection in self.connections:
+            if (not connection.in_canvas
+                    and port_types_view & connection.port_type()):
+                connection.add_to_canvas()
+
+        self.optimize_operation(False)
+        patchcanvas.redrawAllGroups()
+
+    def add_port(self, name: str, port_type: int, flags: int, uuid: int):
+        port = Port(self._next_port_id, name, port_type, flags, uuid)
         self._next_port_id += 1
 
         full_port_name = name
-        if self.use_alias == USE_ALIAS_1:
-            full_port_name = alias_1
-        elif self.use_alias == USE_ALIAS_2:
-            full_port_name = alias_2
-
         group_name, colon, port_name = full_port_name.partition(':')
 
         a2j_group = False
@@ -1336,7 +1372,7 @@ class PatchbayManager:
             self.groups.append(group)
             group_is_new = True
 
-        group.add_port(port, self.use_alias)
+        group.add_port(port)
         group.graceful_port(port)
 
         if group_is_new and self.port_types_view & port_type:
@@ -1387,8 +1423,7 @@ class PatchbayManager:
         new_group_name = new_name.partition(':')[0]
 
         # In case a port rename implies another group for the port
-        if (self.use_alias == USE_ALIAS_NONE
-                and group_name != new_group_name):
+        if group_name != new_group_name:
             for group in self.groups:
                 if group.name == group_name:
                     group.remove_port(port)
@@ -1427,6 +1462,28 @@ class PatchbayManager:
                 port.change_canvas_properties()
                 break
 
+    def metadata_update(self, uuid: int, key: str, value: str):
+        if key == JACK_METADATA_ORDER:
+            port = self.get_port_from_uuid(uuid)
+            if port is None:
+                print('plouf', uuid, key, value)
+                return
+            
+            try:
+                port_order = int(value)
+            except:
+                sys.stderr.write(
+                    "RaySession:PatchbayManager::JACK_METADATA_ORDER "
+                    + "value is not an int (%i,%s)\n" % (uuid, value))
+                return
+            
+            port.order = value
+
+            for group in self.groups:
+                if group.group_id == port.group_id:
+                    group.sort_ports_later()
+                    break
+            
     def add_connection(self, port_out_name: str, port_in_name: str):
         port_out = self.get_port_from_name(port_out_name)
         port_in = self.get_port_from_name(port_in_name)
@@ -1485,54 +1542,6 @@ class PatchbayManager:
                 group.portgroup_memory_added(portgroup_mem)
                 break
 
-    def clear_all(self):
-        self.optimize_operation(True)
-        for connection in self.connections:
-            connection.remove_from_canvas()
-
-        for group in self.groups:
-            group.remove_all_ports()
-            group.remove_from_canvas()
-
-        self.optimize_operation(False)
-
-        self.connections.clear()
-        self.groups.clear()
-
-        self._next_group_id = 0
-        self._next_port_id = 0
-        self._next_portgroup_id = 1
-        self._next_connection_id = 0
-
-
-    def change_port_types_view(self, port_types_view: int):
-        if port_types_view == self.port_types_view:
-            return
-
-        self.port_types_view = port_types_view
-        # Prevent visual update at each canvas item creation
-        # because we may create a lot of ports here
-        self.optimize_operation(True)
-
-        for connection in self.connections:
-            if (connection.in_canvas
-                    and not port_types_view & connection.port_type()):
-                connection.remove_from_canvas()
-
-        for group in self.groups:
-            in_canvas = group.in_canvas
-            group.change_port_types_view(port_types_view)
-            gpos = self.get_group_position(group.name)
-            group.set_group_position(gpos)
-
-        for connection in self.connections:
-            if (not connection.in_canvas
-                    and port_types_view & connection.port_type()):
-                connection.add_to_canvas()
-
-        self.optimize_operation(False)
-        patchcanvas.updateAllPositions()
-
     def disannounce(self):
         self.send_to_patchbay_daemon('/ray/patchbay/gui_disannounce')
         self.clear_all()
@@ -1572,7 +1581,7 @@ class PatchbayManager:
     def receive_big_packets(self, state: int):
         self.optimize_operation(not bool(state))
         if state:
-            patchcanvas.updateAllPositions()
+            patchcanvas.redrawAllGroups()
 
     def fast_temp_file_memory(self, temp_path):
         canvas_data = {}
@@ -1608,16 +1617,18 @@ class PatchbayManager:
         for key in patchbay_data.keys():
             if key == 'ports':
                 for p in patchbay_data[key]:
-                    self.add_port(
-                        p['name'], p['alias_1'], p['alias_2'], p['type'],
-                        p['flags'], p['metadata'])
+                    self.add_port(p['name'], p['type'], p['flags'], p['uuid'])
 
             elif key == 'connections':
                 for c in patchbay_data[key]:
                     self.add_connection(c['port_out_name'], c['port_in_name'])
+            
+            elif key == 'metadatas':
+                for m in patchbay_data[key]:
+                    self.metadata_update(m['uuid'], m['key'], m['value'])
 
         self.optimize_operation(False)
-        patchcanvas.updateAllPositions()
+        patchcanvas.redrawAllGroups()
 
         os.remove(temp_path)
 

@@ -5,7 +5,9 @@ import signal
 import sys
 import warnings
 
+#from jacklib import jacklib
 import jacklib
+from jacklib.helpers import c_char_p_p_to_list, voidptr2str
 import osc_server
 import threading
 import time
@@ -58,17 +60,25 @@ class JackPort:
     flags = 0
     alias_1 = ''
     alias_2 = ''
+    order = None
+    uuid = 0
     
     def __init__(self, port_name:str, jack_client):
         self.name = port_name
         port_ptr = jacklib.port_by_name(jack_client, port_name)
         self.flags = jacklib.port_flags(port_ptr)
+        self.uuid = jacklib.port_uuid(port_ptr)
 
-        port_type_str = str(jacklib.port_type(port_ptr), encoding="utf-8")
+        port_type_str = jacklib.port_type(port_ptr)
         if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
             self.type = PORT_TYPE_AUDIO
         elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
             self.type = PORT_TYPE_MIDI
+            
+        order_prop = jacklib.get_property(self.uuid,
+                                          jacklib.JACK_METADATA_ORDER)
+        
+        
         
         ret, alias_1, alias_2 = jacklib.port_get_aliases(port_ptr)
         if ret:
@@ -79,6 +89,7 @@ class JackPort:
 class MainObject:
     port_list = []
     connection_list = []
+    metadata_list = []
     jack_running = False
     osc_server = None
     terminate = False
@@ -263,6 +274,8 @@ class MainObject:
             self.jack_client, self.jack_buffer_size_callback, None)
         jacklib.set_sample_rate_callback(
             self.jack_client, self.jack_sample_rate_callback, None)
+        jacklib.set_property_change_callback(
+            self.jack_client, self.jack_properties_change_callback, None)
         jacklib.on_shutdown(
             self.jack_client, self.jack_shutdown_callback, None)
         jacklib.activate(self.jack_client)
@@ -270,12 +283,14 @@ class MainObject:
     def get_all_ports_and_connections(self):
         self.port_list.clear()
         self.connection_list.clear()
+        self.metadata_list.clear()
 
         #get all currents Jack ports and connections
-        port_name_list = self.c_char_p_p_to_list(
+        port_name_list = c_char_p_p_to_list(
             jacklib.get_ports(self.jack_client, "", "", 0))
         
         for port_name in port_name_list:
+            port_ptr = jacklib.port_by_name(self.jack_client, port_name)
             jport = JackPort(port_name, self.jack_client)
             self.port_list.append(jport)
 
@@ -285,11 +300,25 @@ class MainObject:
             port_ptr = jacklib.port_by_name(self.jack_client, jport.name)
             
             # this port is output, list its connections
-            port_connection_names = self.c_char_p_p_to_list(
+            port_connection_names = tuple(
                 jacklib.port_get_all_connections(self.jack_client, port_ptr))
 
             for port_con_name in port_connection_names:
                 self.connection_list.append((jport.name, port_con_name))
+                
+            for key in (jacklib.JACK_METADATA_CONNECTED,
+                        jacklib.JACK_METADATA_ORDER,
+                        jacklib.JACK_METADATA_PORT_GROUP,
+                        jacklib.JACK_METADATA_PRETTY_NAME):
+                prop = jacklib.get_property(jport.uuid, key)
+                if prop is None:
+                    continue
+
+                value = prop.value
+                self.metadata_list.append(
+                    {'uuid': jport.uuid,
+                     'key': key,
+                     'value': value.decode()})
     
     def jack_shutdown_callback(self, arg=None)->int:
         self.jack_running = False
@@ -318,7 +347,7 @@ class MainObject:
             return 0
         
         port_ptr = jacklib.port_by_id(self.jack_client, port_id)
-        port_name = str(jacklib.port_name(port_ptr), encoding="utf-8")
+        port_name = jacklib.port_name(port_ptr)
         
         if register:
             jport = JackPort(port_name, self.jack_client)
@@ -335,9 +364,9 @@ class MainObject:
     def jack_port_rename_callback(self, port_id: int, old_name: str,
                                   new_name: str, arg=None)->int:
         for jport in self.port_list:
-            if jport.name == str(old_name, encoding="utf-8"):
+            if jport.name == str(old_name.decode()):
                 ex_name = jport.name
-                jport.name = str(new_name, encoding="utf-8")
+                jport.name = str(new_name.decode())
                 self.osc_server.port_renamed(jport, ex_name)
                 break
         return 0
@@ -350,18 +379,30 @@ class MainObject:
         port_ptr_A = jacklib.port_by_id(self.jack_client, port_id_A)
         port_ptr_B = jacklib.port_by_id(self.jack_client, port_id_B)
 
-        port_str_A = str(jacklib.port_name(port_ptr_A), encoding="utf-8")
-        port_str_B = str(jacklib.port_name(port_ptr_B), encoding="utf-8")
+        port_str_A = jacklib.port_name(port_ptr_A)
+        port_str_B = jacklib.port_name(port_ptr_B)
 
         connection = (port_str_A, port_str_B)
 
         if connect_yesno:
             self.connection_list.append(connection)
             self.osc_server.connection_added(connection)
-        else:
-            if connection in self.connection_list:
-                self.connection_list.remove(connection)
-                self.osc_server.connection_removed(connection)
+        elif connection in self.connection_list:
+            self.connection_list.remove(connection)
+            self.osc_server.connection_removed(connection)
+
+        return 0
+    
+    def jack_properties_change_callback(self, uuid: int, property: bytes,
+                                        zef: int, arg=None)->int:
+        property_str = property.decode()
+        prop = jacklib.get_property(uuid, property_str)
+        if prop is None:
+            return 0
+        
+        value = prop.value
+        value_str = value.decode()
+        self.osc_server.metadata_updated(uuid, property_str, value_str)
 
         return 0
     

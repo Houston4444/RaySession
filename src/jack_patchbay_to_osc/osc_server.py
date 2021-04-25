@@ -131,6 +131,7 @@ class OscJackPatch(Server):
         self.jack_client = main_object.jack_client
         self.port_list = main_object.port_list
         self.connection_list = main_object.connection_list
+        self.metadata_list = main_object.metadata_list
         self.gui_list = []
         self._tmp_gui_url = ''
         self._terminate = False
@@ -202,20 +203,19 @@ class OscJackPatch(Server):
         # so here, it is faster, and prevent OSC saturation.
         # json format (and not binary with pickle) is choosen
         # this way, code language of the GUI is not a blocker
-        patchbay_data = {'ports': [], 'connections': []}
+        patchbay_data = {'ports': [], 'connections': [], 'metadatas': []}
         for port in self.port_list:
-            port_dict = {'name': port.name,
-                            'alias_1': port.alias_1,
-                            'alias_2': port.alias_2,
-                            'type': port.type,
-                            'flags': port.flags,
-                            'metadata': ''}
+            port_dict = {'name': port.name, 'type': port.type,
+                         'flags': port.flags, 'uuid': port.uuid}
             patchbay_data['ports'].append(port_dict)
         
         for connection in self.connection_list:
             conn_dict = {'port_out_name': connection[0],
                          'port_in_name': connection[1]}
             patchbay_data['connections'].append(conn_dict)
+
+        for metadata in self.metadata_list:
+            patchbay_data['metadatas'].append(metadata)
 
         for src_addr in src_addr_list:
             # tmp file is deleted by the gui itself once read
@@ -236,8 +236,7 @@ class OscJackPatch(Server):
 
         for port in self.port_list:
             self.multi_send(src_addr_list, '/ray/gui/patchbay/port_added',
-                            port.name, port.alias_1, port.alias_2,
-                            port.type, port.flags, '')
+                            port.name, port.type, port.flags, port.uuid)
             
             n += increment
             if n % self.slow_wait_num < increment:
@@ -251,6 +250,20 @@ class OscJackPatch(Server):
             self.multi_send(src_addr_list,
                             '/ray/gui/patchbay/connection_added',
                             connection[0], connection[1])
+            
+            n += increment
+            if n % self.slow_wait_num < increment:
+                self.multi_send(src_addr_list,
+                                '/ray/gui/patchbay/big_packets', 1)
+                time.sleep(self.slow_wait_time)
+                self.multi_send(src_addr_list,
+                                '/ray/gui/patchbay/big_packets', 0)
+                
+        for metadata in self.metadata_list:
+            self.multi_send(src_addr_list,
+                            '/ray/gui/patchbay/metadata_updated',
+                            metadata['uuid'], metadata['key'],
+                            metadata['value'])
             
             n += increment
             if n % self.slow_wait_num < increment:
@@ -300,15 +313,23 @@ class OscJackPatch(Server):
 
     def port_added(self, port):
         self.send_gui('/ray/gui/patchbay/port_added',
-                     port.name, port.alias_1, port.alias_2,
-                     port.type, port.flags, '') 
+                      port.name, port.type, port.flags, port.uuid) 
 
     def port_renamed(self, port, ex_name):
-        self.send_gui('/ray/gui/patchbay/port_renamed',
-                     ex_name, port.name)
+        self.send_gui('/ray/gui/patchbay/port_renamed', ex_name, port.name)
     
     def port_removed(self, port):
         self.send_gui('/ray/gui/patchbay/port_removed', port.name)
+    
+    def metadata_updated(self, uuid: int, key: str, value: str):
+        self.send_gui('/ray/gui/patchbay/metadata_updated', uuid, key, value)
+    
+    def port_order_changed(self, port):
+        if port.order is None:
+            return
+
+        self.send_gui('/ray/gui/patchbay/port_order_changed',
+                      port.name, port.order)
     
     def connection_added(self, connection):
         self.send_gui('/ray/gui/patchbay/connection_added',
