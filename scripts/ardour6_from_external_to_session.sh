@@ -73,7 +73,7 @@ $move_or_copy "$ardour_session_dir" "$new_ardour_session_dir"
 
 if ! mv "$new_ardour_session_dir/interchange/$ardour_session_name" \
         "$new_ardour_session_dir/interchange/$ardour_session_name.$client_id";then
-    "file copy/move failed. abort"
+    # file copy/move failed. abort
     ray_control client $client_id trash
     exit 5
 fi

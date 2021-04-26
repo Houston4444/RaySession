@@ -1642,19 +1642,29 @@ Firstly, because <code>oscsend</code> allows you to send messages but not to obt
 <div class="sect1">
 <h2 id="_frequently_asked_questions">Frequently Asked Questions</h2>
 <div class="sectionbody">
-<div class="paragraph">
+<div class="ulist">
+<ul>
+<li>
 <p><strong>Is it still worth running Ardour (or another NSM compatible DAW) directly rather than in RaySession?</strong></p>
-</div>
 <div class="paragraph">
 <p>Except for a really tiny project, no.
 If you are using Ardour, always run it from RaySession, firstly, the automatic snapshot after save can be of unexpected help to you, secondly, you are not immune to needing another program even if you did not plan it.</p>
+</div>
+</li>
+<li>
+<p><strong>Can I launch an Ardour session launched normally into a RaySession session ?</strong></p>
+<div class="paragraph">
+<p>You will find in source code <a href="https://github.com/Houston4444/RaySession/blob/master/scripts">here</a> a script named <code>ardour6_from_external_to_session.sh</code>. Before to use it, backup your ardour session directory. Download this file, set it executable and execute it with a .ardour file as argument, it will adds the ardour project to the current session, or create a session if no session is loaded.</p>
+</div>
+</li>
+</ul>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-02-23 00:05:06 +0100
+Last updated 2021-04-26 10:30:45 +0200
 </div>
 </div>
 </body>

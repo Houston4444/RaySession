@@ -599,7 +599,13 @@ Firstly, because `oscsend` allows you to send messages but not to obtain informa
 Remember to assign `ray_control save` to a global shortcut of your desktop environment (_Ctrl+Meta+S_), this will save you a lot of time!
 
 == Frequently Asked Questions
-*Is it still worth running Ardour (or another NSM compatible DAW) directly rather than in RaySession?*
+- *Is it still worth running Ardour (or another NSM compatible DAW) directly rather than in RaySession?*
 
++
 Except for a really tiny project, no.
 If you are using Ardour, always run it from RaySession, firstly, the automatic snapshot after save can be of unexpected help to you, secondly, you are not immune to needing another program even if you did not plan it.
+
+- *Can I launch an Ardour session launched normally into a RaySession session ?*
+
++
+You will find in source code https://github.com/Houston4444/RaySession/blob/master/scripts[here] a script named `ardour6_from_external_to_session.sh`. Before to use it, backup your ardour session directory. Download this file, set it executable and execute it with a .ardour file as argument, it will adds the ardour project to the current session, or create a session if no session is loaded.

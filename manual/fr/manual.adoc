@@ -631,5 +631,10 @@ Pensez à affecter `ray_control save` à un raccourci global de votre environnem
 Sauf pour un projet vraiment tout petit, Non. +
 Si vous utilisez Ardour, lancez le toujours depuis RaySession, d'une part le cliché automatique à la sauvegarde peut vous être d'un secours inespéré, d'autre part, vous n'êtes pas à l'abri d'avoir besoin d'un autre programme même si vous ne l'aviez pas prévu.
 
+- *Puis-je lancer dans une session RaySession un projet Ardour déjà existant ?*
 
++
+Vous trouverez https://github.com/Houston4444/RaySession/blob/master/scripts[ici] dans le code source un script nommé `ardour6_from_external_to_session.sh`.
+Avant de l'utiliser, sauvegardez votre projet Ardour.
+Téléchargez ce fichier, mettez le exécutable et exécutez le avec un fichier .ardour comme argument, celà ajoutera le projet Ardour à la session en cours, ou créera une session si aucune session n'est chargée.
 

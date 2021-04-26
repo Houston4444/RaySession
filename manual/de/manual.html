@@ -1665,19 +1665,29 @@ Zum einen kann <code>oscsend</code> zwar Mitteilungen senden, aber keine Informa
 <div class="sect1">
 <h2 id="_frequently_asked_questions">Frequently Asked Questions</h2>
 <div class="sectionbody">
-<div class="paragraph">
+<div class="ulist">
+<ul>
+<li>
 <p><strong>Ist die direkte Nutzung von Ardour (oder einer anderen NSM kompatiblen DAW) anstatt in RaySession trotzdem noch sinnvoll?</strong></p>
-</div>
 <div class="paragraph">
 <p>Ausser für wirklich winzige Projekte, eher nein.
 Falls Sie Ardour nutzen, starten Sie es immer in einer RaySession. Erstens können Ihnen die automatisierten Snapshots unerwartet von grossem Nutzen sein, zweitens ist es möglich, dass Sie später noch eine weitere Anwendung nutzen wollen, auch wenn Sie dies bisher noch nicht geplant haben.</p>
+</div>
+</li>
+<li>
+<p><strong>Can I launch an Ardour session launched normally into a RaySession session ?</strong></p>
+<div class="paragraph">
+<p>You will find in source code <a href="https://github.com/Houston4444/RaySession/blob/master/scripts">here</a> a script named <code>ardour6_from_external_to_session.sh</code>. Before to use it, backup your ardour session directory. Download this file, set it executable and execute it with a .ardour file as argument, it will adds the ardour project to the current session, or create a session if no session is loaded.</p>
+</div>
+</li>
+</ul>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-03-19 09:19:18 +0100
+Last updated 2021-04-26 10:31:57 +0200
 </div>
 </div>
 </body>
