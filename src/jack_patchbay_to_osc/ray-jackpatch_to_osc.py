@@ -433,6 +433,10 @@ class MainObject:
     def set_buffer_size(self, buffer_size: int):
         jacklib.set_buffer_size(self.jack_client, buffer_size)
 
+    def set_metadata(self, uuid: int, key: str, value: str):
+        print('kofezokf', uuid, key, value)
+        jacklib.set_property(uuid, key, value, 'text/plain', jacklib.ENCODING)
+
 
 def main_process():
     gui_url = ''

@@ -126,6 +126,8 @@ class OscJackPatch(Server):
                         self._ray_patchbay_set_buffersize)
         self.add_method('/ray/patchbay/refresh', '',
                         self._ray_patchbay_refresh)
+        self.add_method('/ray/patchbay/set_metadata', 'hss',
+                        self._ray_patchbay_set_metadata)
         
         self.main_object = main_object
         self.jack_client = main_object.jack_client
@@ -186,6 +188,10 @@ class OscJackPatch(Server):
 
     def _ray_patchbay_refresh(self, path, args):
         self.main_object.refresh()
+
+    def _ray_patchbay_set_metadata(self, path, args):
+        uuid, key, value = args
+        self.main_object.set_metadata(uuid, key, value)
 
     def send_gui(self, *args):
         for gui_addr in self.gui_list:

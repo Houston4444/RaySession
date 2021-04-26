@@ -35,6 +35,7 @@ PORT_CAN_MONITOR = 0x08
 PORT_IS_TERMINAL = 0x10
 PORT_IS_CONTROL_VOLTAGE = 0x100
 
+# Group Position Flags
 GROUP_CONTEXT_AUDIO = 0x01
 GROUP_CONTEXT_MIDI = 0x02
 GROUP_SPLITTED = 0x04
@@ -42,6 +43,10 @@ GROUP_WRAPPED_INPUT = 0x10
 GROUP_WRAPPED_OUTPUT = 0x20
 GROUP_HAS_BEEN_SPLITTED = 0x40
 
+# Portgroup Origin
+PORTGROUP_FROM_DETECTION = 0
+PORTGROUP_FROM_METADATA = 1
+PORTGROUP_FROM_USER = 2
 
 # Meta data (taken from pyjacklib)
 _JACK_METADATA_PREFIX = "http://jackaudio.org/metadata/"
@@ -98,6 +103,10 @@ class Port:
     in_canvas = False
     order = None
     uuid = 0 # will contains the real JACK uuid
+
+    # given by JACK metadatas
+    pretty_name = ''
+    mdata_portgroup = ''
 
     def __init__(self, port_id: int, name: str,
                  port_type: int, flags: int, uuid: int):
@@ -172,6 +181,9 @@ class Port:
             return
 
         display_name = self.display_name
+        if self.pretty_name:
+            display_name = self.pretty_name
+
         if not PatchbayManager.use_graceful_names:
             display_name = self.short_name()
 
@@ -394,6 +406,7 @@ class Group:
 
     def remove_portgroup(self, portgroup):
         if portgroup in self.portgroups:
+            portgroup.remove_from_canvas()
             self.portgroups.remove(portgroup)
 
     def portgroup_memory_added(self, portgroup_mem):
@@ -413,7 +426,6 @@ class Group:
                     remove_list.append(portgroup)
 
         for portgroup in remove_list:
-            portgroup.remove_from_canvas()
             self.remove_portgroup(portgroup)
 
         # add a portgroup if all needed ports are present and consecutive
@@ -432,6 +444,12 @@ class Group:
                     portgroup = PatchbayManager.new_portgroup(
                         self.group_id, port.port_mode, port_list)
                     self.portgroups.append(portgroup)
+                    print('chilbaba', port_list)
+                    for port in port_list:
+                        self.send_to_patchbay_daemon(
+                            '/ray/gui/patchbay/set_metadata', port.uuid,
+                            JACK_METADATA_PORT_GROUP, 'tintin')
+                    
                     portgroup.add_to_canvas()
 
             elif port_list:
@@ -1466,7 +1484,6 @@ class PatchbayManager:
         if key == JACK_METADATA_ORDER:
             port = self.get_port_from_uuid(uuid)
             if port is None:
-                print('plouf', uuid, key, value)
                 return
             
             try:
@@ -1479,11 +1496,38 @@ class PatchbayManager:
             
             port.order = value
 
+            # we may receive this message as many times as there are ports.
+            # So, canvas redraw will be done 20ms after the last message.
             for group in self.groups:
                 if group.group_id == port.group_id:
                     group.sort_ports_later()
                     break
-            
+
+        elif key == JACK_METADATA_PRETTY_NAME:
+            port = self.get_port_from_uuid(uuid)
+            if port is None:
+                return
+
+            port.pretty_name = value
+            port.change_canvas_properties()
+        
+        elif key == JACK_METADATA_PORT_GROUP:
+            port = self.get_port_from_uuid(uuid)
+            if port is None:
+                return
+
+            port.mdata_portgroup = value
+
+            for group in self.groups:
+                if group.group_id == port.group_id:
+                    for portgroup in group.portgroups:
+                        if port in portgroup.ports:
+                            group.remove_portgroup(portgroup)
+                            break
+
+                    group.sort_ports_later()
+                    break
+
     def add_connection(self, port_out_name: str, port_in_name: str):
         port_out = self.get_port_from_name(port_out_name)
         port_in = self.get_port_from_name(port_in_name)
