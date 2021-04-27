@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
-                             QFrame, QGraphicsView, QSplitter, QSplitterHandle)
+                             QFrame, QGraphicsView, QSplitter, QSplitterHandle,
+                             QSlider, QToolTip, QApplication)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QCursor, QMouseEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint, QPointF, QRectF, QSizeF
@@ -332,7 +333,8 @@ class DraggableGraphicsView(QGraphicsView):
         if event.button() == self.fMiddleButton and not self.fCtrlDown:
             self.fPanning = True
             self.setDragMode(QGraphicsView.ScrollHandDrag)
-            event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton, Qt.LeftButton, event.modifiers())
+            event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton,
+                                Qt.LeftButton, event.modifiers())
 
         QGraphicsView.mousePressEvent(self, event)
 
@@ -390,3 +392,53 @@ class CanvasSplitter(QSplitter):
     def createHandle(self):
         return CanvasSplitterHandle(self)
 
+
+class ZoomSlider(QSlider):
+    def __init__(self, parent):
+        QSlider.__init__(self, parent)
+
+    @staticmethod
+    def map_float_to(x, min_a, max_a, min_b, max_b):
+        if max_a == min_a:
+            return min_b
+        return min_b + ((x - min_a) / (max_a - min_a)) * (max_b - min_b)
+
+    def zoom_percent(self)->int:
+        percent = 100.0
+        if self.value() <= 500:
+            percent = self.map_float_to(self.value(), 0, 500, 20, 100)
+        else:
+            percent = self.map_float_to(self.value(), 500, 1000, 100, 300)
+        return percent
+
+    def set_percent(self, percent: float):
+        if 99.99999 < percent < 100.00001:
+            self.setValue(500)
+        elif percent < 100:
+            self.setValue(self.map_float_to(percent, 20, 100, 0, 500))
+        else:
+            self.setValue(self.map_float_to(percent, 100, 300, 500, 1000))
+        self.show_tool_tip()
+
+    def show_tool_tip(self):
+        string = "Zoom: %i%%" % int(self.zoom_percent())
+        QToolTip.showText(self.mapToGlobal(QPoint(0, 12)), string)
+
+    def mouseDoubleClickEvent(self, event):
+        self.setValue(500.0)
+        self.show_tool_tip()
+    
+    def wheelEvent(self, event):
+        direction = 1 if event.angleDelta().y() > 0 else -1
+        
+        if QApplication.keyboardModifiers() & Qt.ControlModifier:
+            self.set_percent(self.zoom_percent() + direction)
+        else:
+            self.set_percent(self.zoom_percent() + direction * 5)
+            #QSlider.wheelEvent(self, event)
+        self.show_tool_tip()
+        
+    def mouseMoveEvent(self, event):
+        QSlider.mouseMoveEvent(self, event)
+        self.show_tool_tip()
+        

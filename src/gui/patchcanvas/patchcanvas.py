@@ -72,6 +72,7 @@ class CanvasObject(QObject):
     connection_added = pyqtSignal(int)
     connection_removed = pyqtSignal(int)
     move_boxes_finished = pyqtSignal()
+    zoom_changed = pyqtSignal(int)
 
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
@@ -713,6 +714,7 @@ def redrawAllGroups():
         for box in group.widgets:
             if box is not None:
                 box.updatePositions()
+                
 
     QTimer.singleShot(0, canvas.scene.update)
 

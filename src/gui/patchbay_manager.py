@@ -896,6 +896,17 @@ class Group:
 
         PatchbayManager.optimize_operation(True)
         
+        conn_list = []
+        
+        for conn in PatchbayManager.connections:
+            for port in self.ports:
+                if port in (conn.port_out, conn.port_in):
+                    if conn not in conn_list:
+                        conn_list.append(conn)
+        
+        for connection in conn_list:
+            connection.remove_from_canvas()
+        
         for portgroup in self.portgroups:
             portgroup.remove_from_canvas()
         
@@ -910,6 +921,10 @@ class Group:
             if PatchbayManager.port_types_view & portgroup.port_type():
                 portgroup.add_to_canvas()
         
+        for connection in conn_list:
+            if PatchbayManager.port_types_view & connection.port_out.type:
+                connection.add_to_canvas()
+        
         PatchbayManager.optimize_operation(False)
         patchcanvas.redrawGroup(self.group_id)
         
@@ -922,6 +937,8 @@ class PatchbayManager:
     port_types_view = PORT_TYPE_AUDIO + PORT_TYPE_MIDI
     optimized_operation = False
     groups = []
+    connections = []
+    group_positions = []
     portgroups_memory = []
     _next_portgroup_id = 1
 
@@ -932,8 +949,6 @@ class PatchbayManager:
         self.tools_widget.buffer_size_change_order.connect(
             self.change_buffersize)
 
-        self.group_positions = []
-        self.connections = []
         self._next_group_id = 0
         self._next_port_id = 0
         self._next_connection_id = 0

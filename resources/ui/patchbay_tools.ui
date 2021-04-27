@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>848</width>
-    <height>34</height>
+    <width>885</width>
+    <height>33</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -34,14 +34,64 @@
     </spacer>
    </item>
    <item>
-    <widget class="QLabel" name="labelSamplerateTitle">
-     <property name="font">
-      <font>
-       <pointsize>9</pointsize>
-      </font>
+    <widget class="ZoomSlider" name="sliderZoom">
+     <property name="maximumSize">
+      <size>
+       <width>90</width>
+       <height>16777215</height>
+      </size>
      </property>
-     <property name="text">
-      <string>Sample Rate :</string>
+     <property name="mouseTracking">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QSlider:handle{
+    border-radius:4px;
+	 image: url(:cursors/src/zoom-centered.svg);
+}</string>
+     </property>
+     <property name="minimum">
+      <number>0</number>
+     </property>
+     <property name="maximum">
+      <number>1000</number>
+     </property>
+     <property name="singleStep">
+      <number>10</number>
+     </property>
+     <property name="pageStep">
+      <number>10</number>
+     </property>
+     <property name="value">
+      <number>500</number>
+     </property>
+     <property name="tracking">
+      <bool>true</bool>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="invertedAppearance">
+      <bool>false</bool>
+     </property>
+     <property name="invertedControls">
+      <bool>false</bool>
+     </property>
+     <property name="tickPosition">
+      <enum>QSlider::TicksBelow</enum>
+     </property>
+     <property name="tickInterval">
+      <number>500</number>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
     </widget>
    </item>
@@ -51,6 +101,9 @@
       <font>
        <pointsize>9</pointsize>
       </font>
+     </property>
+     <property name="toolTip">
+      <string>JACK Samplerate</string>
      </property>
      <property name="text">
       <string>48.000</string>
@@ -126,6 +179,9 @@
        <pointsize>9</pointsize>
       </font>
      </property>
+     <property name="toolTip">
+      <string>Number of audio Xruns. Click on it to reset them.</string>
+     </property>
      <property name="styleSheet">
       <string notr="true">QPushButton{border:none}</string>
      </property>
@@ -180,6 +236,15 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <customwidgets>
+  <customwidget>
+   <class>ZoomSlider</class>
+   <extends>QSlider</extends>
+   <header>surclassed_widgets</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

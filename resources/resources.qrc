@@ -188,6 +188,7 @@
        <file>cursors/src/cut.svg</file>
        <file>cursors/src/zoom-area.svg</file>
        <file>cursors/src/zoom-generic.svg</file>
+       <file>cursors/src/zoom-centered.svg</file>
        <file>cursors/src/zoom-out.svg</file>
    </qresource>
 </RCC>
