@@ -917,27 +917,54 @@ class Group:
 
         for portgroup in self.portgroups:
             search_index = 0
+            previous_port = None
+            seems_ok = False
             
             for port in self.ports:
-                if port is portgroup.ports[search_index]:
+                if not seems_ok and port is portgroup.ports[search_index]:
                     if (port.mdata_portgroup != portgroup.mdata_portgroup
                             and not portgroup.above_metadatas):
+                        portgroups_to_remove.append(portgroup)
+                        break
+                    
+                    if (not portgroup.above_metadatas and not search_index
+                            and previous_port is not None
+                            and previous_port.mdata_portgroup
+                            and previous_port.mdata_portgroup == port.mdata_portgroup):
+                        # previous port had the same portgroup metadata
+                        # that this port. we need to remove this portgroup.
                         portgroups_to_remove.append(portgroup)
                         break
                     
                     search_index += 1
                     if search_index == len(portgroup.ports):
                         # all ports of portgroup are consecutive
+                        # but still exists the risk that metadatas says
+                        # that the portgroup has now more ports
+                        seems_ok = True
+                        if (portgroup.above_metadatas
+                                or not portgroup.mdata_portgroup):
+                            break
+                
+                elif search_index:
+                    if (seems_ok
+                            and (port.mdata_portgroup != previous_port.mdata_portgroup
+                                 or port.type != portgroup.port_type()
+                                 or port.mode() != portgroup.port_mode)):
+                        # port after the portgroup has not to make
+                        # the portgroup higher. We keep this portgroup
                         break
                     
-                elif search_index:
                     # this port breaks portgroup ports consecutivity.
                     # note that ports have been just sorted by type and mode
                     # so no risk that this port is falsely breaking portgroup
                     portgroups_to_remove.append(portgroup)
                     break
+                
+                previous_port = port
             else:
-                portgroups_to_remove.append(portgroup)
+                if not seems_ok:
+                    portgroups_to_remove.append(portgroup)
         
         for portgroup in portgroups_to_remove:
             self.remove_portgroup(portgroup)
@@ -949,7 +976,7 @@ class Group:
             
             if portgroup_mem.group_name != self.name:
                 continue
-            print('chiendds', portgroup_mem.port_names)
+
             founded_ports = []
             
             for port in self.ports:
@@ -970,7 +997,6 @@ class Group:
         
         # detect and add portgroups given from metadatas
         portgroups_mdata = [] # list of dicts
-        last_is_in_a_portgroup = False
         
         for port in self.ports:
             if port.mdata_portgroup:
@@ -978,7 +1004,7 @@ class Group:
                 if portgroups_mdata:
                     pg_mdata = portgroups_mdata[-1]
                 
-                if not last_is_in_a_portgroup and not port.portgroup_id:
+                if not port.portgroup_id:
                     if (pg_mdata is not None 
                             and pg_mdata['pg_name'] == port.mdata_portgroup
                             and pg_mdata['port_type'] == port.type
@@ -990,10 +1016,11 @@ class Group:
                             'port_type': port.type,
                             'port_mode': port.mode(),
                             'ports':[port]})
-                         
-            last_is_in_a_portgroup = bool(port.portgroup_id)
-                
+        
         for pg_mdata in portgroups_mdata:
+            if len(pg_mdata['ports']) < 2:
+                continue
+
             new_portgroup = PatchbayManager.new_portgroup(
                 self.group_id, pg_mdata['port_mode'], pg_mdata['ports'])
             new_portgroup.mdata_portgroup = pg_mdata['pg_name']
@@ -1646,10 +1673,11 @@ class PatchbayManager:
             port.change_canvas_properties()
         
         elif key == JACK_METADATA_PORT_GROUP:
+            print('ofk')
             port = self.get_port_from_uuid(uuid)
             if port is None:
                 return
-
+            print('erok', port.full_name)
             port.mdata_portgroup = value
 
             for group in self.groups:

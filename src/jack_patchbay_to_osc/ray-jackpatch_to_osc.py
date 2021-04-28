@@ -405,29 +405,35 @@ class MainObject:
             self.osc_server.connection_removed(connection)
 
         return 0
-    
-    def jack_properties_change_callback(self, uuid: int, property: bytes,
-                                        zef: int, arg=None)->int:
-        print('ofkaofkea', uuid, property, zef, arg)
-        property_str = property.decode()
-        prop = jacklib.get_property(uuid, property_str)
-        if prop is None:
-            return 0
+
+    def jack_properties_change_callback(self, uuid: int, name: bytes,
+                                        type_: int, arg=None)->int:
+        #print('ofkaofkea', uuid, name, type_, arg)
+        #property_str = name.decode()
+        #prop = jacklib.get_property(uuid, property_str)
         
-        useless_value = prop.value
-        print('value of metadata', property_str, useless_value, type(useless_value))
+        if name is not None:
+            name = name.decode()
         
-        value = self.get_metadata_value_str(prop)
+        value = ''
+
+        if name and type_ != jacklib.PropertyDeleted:
+            prop = jacklib.get_property(uuid, name)
+            if prop is None:
+                return 0
+            
+            value = self.get_metadata_value_str(prop)
+        
 
         for metadata in self.metadata_list:
-            if metadata['uuid'] == uuid and metadata['key'] == property_str:
+            if metadata['uuid'] == uuid and metadata['key'] == name:
                 metadata['value'] = value
                 break
         else:
             self.metadata_list.append(
-                {'uuid': uuid, 'key': property_str, 'value': value})
+                {'uuid': uuid, 'key': name, 'value': value})
         
-        self.osc_server.metadata_updated(uuid, property_str, value)
+        self.osc_server.metadata_updated(uuid, name, value)
 
         return 0
     
