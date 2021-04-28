@@ -349,10 +349,10 @@ class GUIServerThread(liblo.ServerThread):
 
     @ray_method('/ray/gui/patchbay/update_portgroup', None)
     def _patchbay_update_portgroup(self, path, args, types, src_addr):
-        if not types.startswith('siis'):
+        if not types.startswith('siiis'):
             return False
 
-        types_end = types.replace('siis', '', 1)
+        types_end = types.replace('siiis', '', 1)
         for c in types_end:
             if c != 's':
                 return False

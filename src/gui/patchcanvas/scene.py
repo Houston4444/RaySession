@@ -323,6 +323,9 @@ class PatchScene(QGraphicsScene):
                 self.m_view.fitInView(min_x, min_y, abs(max_x - min_x),
                                       abs(max_y - min_y), Qt.KeepAspectRatio)
                 self.fixScaleFactor()
+        
+        if self.m_view:
+            self.scaleChanged.emit(self.m_view.transform().m11())
 
     def zoom_in(self):
         view = self.m_view
@@ -403,26 +406,22 @@ class PatchScene(QGraphicsScene):
         elif event.key() == Qt.Key_Home:
             event.accept()
             self.zoom_fit()
-            self.send_zoom_to_zoom_widget()
             return
 
         elif QApplication.keyboardModifiers() & Qt.ControlModifier:
             if event.key() == Qt.Key_Plus:
                 event.accept()
                 self.zoom_in()
-                self.send_zoom_to_zoom_widget()
                 return
 
             if event.key() == Qt.Key_Minus:
                 event.accept()
                 self.zoom_out()
-                self.send_zoom_to_zoom_widget()
                 return
 
             if event.key() == Qt.Key_1:
                 event.accept()
                 self.zoom_reset()
-                self.send_zoom_to_zoom_widget()
                 return
 
         QGraphicsScene.keyPressEvent(self, event)
@@ -613,7 +612,6 @@ class PatchScene(QGraphicsScene):
         if QApplication.keyboardModifiers() & Qt.ControlModifier:
             event.accept()
             self.zoom_wheel(event.delta())
-            self.send_zoom_to_zoom_widget()
             return
 
         QGraphicsScene.wheelEvent(self, event)

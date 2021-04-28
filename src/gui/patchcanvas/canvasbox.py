@@ -1221,6 +1221,7 @@ class CanvasBox(QGraphicsItem):
         pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)
         pen.setWidthF(pen.widthF() + 0.00001)
         painter.setPen(pen)
+        brush = painter.brush()
         lineHinting = pen.widthF() / 2
 
         if self._is_hardware:
@@ -1309,6 +1310,7 @@ class CanvasBox(QGraphicsItem):
             pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)
             pen.setWidthF(pen.widthF() + 0.00001)
             painter.setPen(pen)
+            painter.setBrush(brush)
 
         rect = QRectF(0, 0, self.p_width, self.p_height)
 
@@ -1317,6 +1319,7 @@ class CanvasBox(QGraphicsItem):
             box_gradient.setColorAt(0, canvas.theme.box_bg_1)
             box_gradient.setColorAt(1, canvas.theme.box_bg_2)
             painter.setBrush(box_gradient)
+            
         else:
             painter.setBrush(canvas.theme.box_bg_1)
 

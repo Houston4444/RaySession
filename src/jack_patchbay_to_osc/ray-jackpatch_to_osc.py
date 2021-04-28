@@ -408,6 +408,7 @@ class MainObject:
     
     def jack_properties_change_callback(self, uuid: int, property: bytes,
                                         zef: int, arg=None)->int:
+        print('ofkaofkea', uuid, property, zef, arg)
         property_str = property.decode()
         prop = jacklib.get_property(uuid, property_str)
         if prop is None:
@@ -434,7 +435,6 @@ class MainObject:
         jacklib.set_buffer_size(self.jack_client, buffer_size)
 
     def set_metadata(self, uuid: int, key: str, value: str):
-        print('kofezokf', uuid, key, value)
         jacklib.set_property(uuid, key, value, 'text/plain', jacklib.ENCODING)
 
 

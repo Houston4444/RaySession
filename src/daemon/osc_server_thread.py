@@ -817,14 +817,15 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/patchbay/save_portgroup', None)
     def rayServerPatchbaySavePortGroup(self, path, args, types, src_addr):
-        # args must be group_name, port_type, port_mode, *port_names
+        # args must be group_name, port_type, port_mode, above_metadatas, *port_names
         # where port_names are all strings
-        # so types must start with 'siis' and may continue with strings only
-        if not types.startswith('siis'):
+        # so types must start with 'siiis' and may continue with strings only
+        print('ofkezfe', args)
+        if not types.startswith('siiis'):
             self.unknownMessage(path, types, src_addr)
             return False
 
-        other_types = types.replace('siis', '', 1)
+        other_types = types.replace('siiis', '', 1)
         for t in other_types:
             if t != 's':
                 self.unknownMessage(path, types, src_addr)

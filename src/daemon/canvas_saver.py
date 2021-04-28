@@ -207,6 +207,7 @@ class CanvasSaver(ServerSender):
 
     def save_portgroup(self, *args):
         new_portgroup = ray.PortGroupMemory.newFrom(*args)
+        print('armalzlk', new_portgroup.above_metadatas)
 
         remove_list = []
 
@@ -219,4 +220,3 @@ class CanvasSaver(ServerSender):
             self.portgroups.remove(portgroup)
 
         self.portgroups.append(new_portgroup)
-

@@ -14,8 +14,14 @@
    <string>Form</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
    <property name="topMargin">
     <number>1</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
    </property>
    <property name="bottomMargin">
     <number>1</number>
@@ -48,9 +54,14 @@
       <string/>
      </property>
      <property name="styleSheet">
-      <string notr="true">QSlider:handle{
-    border-radius:4px;
-	 image: url(:cursors/src/zoom-centered.svg);
+      <string notr="true">QSlider:focus{
+    border: none;
+}
+
+
+QSlider::handle:horizontal{
+
+	 image: url(:scalable/breeze/zoom-centered.svg);
 }</string>
      </property>
      <property name="minimum">
@@ -89,11 +100,43 @@
     </widget>
    </item>
    <item>
-    <widget class="Line" name="line">
+    <spacer name="horizontalSpacer_5">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>6</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="Line" name="lineSep1">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
     </widget>
+   </item>
+   <item>
+    <spacer name="horizontalSpacer_6">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>6</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item>
     <widget class="QLabel" name="labelSamplerate">
@@ -123,11 +166,43 @@
     </widget>
    </item>
    <item>
-    <widget class="Line" name="lineSep1">
+    <spacer name="horizontalSpacer_4">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>6</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="Line" name="lineSep2">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
     </widget>
+   </item>
+   <item>
+    <spacer name="horizontalSpacer_7">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>6</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item>
     <widget class="QLabel" name="labelBuffer">
@@ -140,6 +215,22 @@
       <string>Buffer :</string>
      </property>
     </widget>
+   </item>
+   <item>
+    <spacer name="horizontalSpacer_8">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>2</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item>
     <widget class="QComboBox" name="comboBoxBuffer">
@@ -160,7 +251,23 @@
     </widget>
    </item>
    <item>
-    <widget class="Line" name="lineSep2">
+    <spacer name="horizontalSpacer_3">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>6</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="Line" name="line">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
@@ -183,7 +290,7 @@
       <string>Number of audio Xruns. Click on it to reset them.</string>
      </property>
      <property name="styleSheet">
-      <string notr="true">QPushButton{border:none}</string>
+      <string notr="true">QPushButton{border:none; text-align:right}</string>
      </property>
      <property name="text">
       <string>0 Xruns</string>
@@ -191,23 +298,20 @@
     </widget>
    </item>
    <item>
-    <widget class="Line" name="lineSep3">
+    <spacer name="horizontalSpacer_2">
      <property name="orientation">
-      <enum>Qt::Vertical</enum>
+      <enum>Qt::Horizontal</enum>
      </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="labelDsp">
-     <property name="font">
-      <font>
-       <pointsize>9</pointsize>
-      </font>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
      </property>
-     <property name="text">
-      <string>DSP :</string>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>6</width>
+       <height>20</height>
+      </size>
      </property>
-    </widget>
+    </spacer>
    </item>
    <item>
     <widget class="QProgressBar" name="progressBarDsp">
@@ -222,8 +326,24 @@
        <pointsize>9</pointsize>
       </font>
      </property>
+     <property name="styleSheet">
+      <string notr="true">QProgressBar{
+border: 1px solid;
+border-radius: 0px;
+text-align:center;
+background-color:black;
+}
+
+QProgressBar:chunk {
+background-color: #404040;
+width: 20px;
+}</string>
+     </property>
      <property name="value">
       <number>0</number>
+     </property>
+     <property name="format">
+      <string>DSP: %p%</string>
      </property>
     </widget>
    </item>

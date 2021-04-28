@@ -870,10 +870,12 @@ class PortGroupMemory:
     port_type = 0
     port_mode = 0
     port_names = []
+    above_metadatas = False
     
     @staticmethod
     def get_attributes():
-        return ('group_name', 'port_type', 'port_mode', 'port_names')
+        return ('group_name', 'port_type', 'port_mode',
+                'above_metadatas', 'port_names')
     
     @staticmethod
     def newFrom(*args):
@@ -894,21 +896,24 @@ class PortGroupMemory:
                 continue
             if value in ('port_type', 'port_mode') and attr_type != int:
                 continue
+            if value == 'above_metadatas' and attr_type != bool:
+                continue
             if value == 'port_names' and attr_type not in (tuple, list):
                 continue
 
             self.__setattr__(attr, value)
     
     def update(self, group_name: str, port_type: int, port_mode: int,
-               *port_names):
+               above_metadatas: int, *port_names):
         self.group_name = group_name
         self.port_type = port_type
         self.port_mode = port_mode
+        self.above_metadatas = bool(above_metadatas)
         self.port_names = port_names
     
     def spread(self)->tuple:
         return (self.group_name, self.port_type, self.port_mode,
-                *self.port_names)
+                int(self.above_metadatas), *self.port_names)
     
     def to_dict(self)->dict:
         new_dict = {}

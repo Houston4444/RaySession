@@ -394,6 +394,8 @@ class CanvasSplitter(QSplitter):
 
 
 class ZoomSlider(QSlider):
+    zoom_fit_asked = pyqtSignal()
+    
     def __init__(self, parent):
         QSlider.__init__(self, parent)
 
@@ -421,11 +423,17 @@ class ZoomSlider(QSlider):
         self.show_tool_tip()
 
     def show_tool_tip(self):
-        string = "Zoom: %i%%" % int(self.zoom_percent())
+        win = QApplication.activeWindow()
+        if win and win.isFullScreen():
+            return
+        string = "  Zoom: %i%%  " % int(self.zoom_percent())
         QToolTip.showText(self.mapToGlobal(QPoint(0, 12)), string)
 
     def mouseDoubleClickEvent(self, event):
-        self.setValue(500.0)
+        self.zoom_fit_asked.emit()
+    
+    def contextMenuEvent(self, event):
+        self.setValue(500)
         self.show_tool_tip()
     
     def wheelEvent(self, event):

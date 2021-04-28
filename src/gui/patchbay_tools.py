@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import QWidget, QComboBox, QMenu, QApplication
 
 import patchcanvas
 
+from gui_tools import isDarkTheme
+
 import ui.canvas_port_info
 import ui.patchbay_tools
 
@@ -22,10 +24,15 @@ class PatchbayToolsWidget(QWidget):
         self.ui = ui.patchbay_tools.Ui_Form()
         self.ui.setupUi(self)
 
+        if isDarkTheme(self):
+            self.ui.sliderZoom.setStyleSheet(
+                self.ui.sliderZoom.styleSheet().replace('/breeze/', '/breeze-dark/'))
+
         self._waiting_buffer_change = False
         self._buffer_change_from_osc = False
 
         self.ui.sliderZoom.valueChanged.connect(self.set_zoom)
+            
         self.ui.pushButtonXruns.clicked.connect(
             self.reset_xruns)
         self.ui.comboBoxBuffer.currentIndexChanged.connect(
@@ -41,8 +48,8 @@ class PatchbayToolsWidget(QWidget):
 
         self.xruns_counter = 0
 
-    def zoom_changed_from_canvas(self, percent):
-        self.ui.sliderZoom.set_percent(percent)
+    def zoom_changed_from_canvas(self, ratio):
+        self.ui.sliderZoom.set_percent(ratio * 100)
     
     def set_zoom(self, value):
         percent = self.ui.sliderZoom.zoom_percent()
@@ -126,17 +133,17 @@ class PatchbayToolsWidget(QWidget):
                 self.ui.labelBuffer,
                 self.ui.comboBoxBuffer,
                 self.ui.pushButtonXruns,
-                self.ui.labelDsp,
                 self.ui.progressBarDsp,
                 self.ui.lineSep1,
-                self.ui.lineSep2,
-                self.ui.lineSep3):
+                self.ui.lineSep2):
             widget.setVisible(yesno)
 
         self.ui.labelJackNotStarted.setVisible(not yesno)
         if yesno:
-            patchcanvas.canvas.qobject.zoom_changed.connect(
+            patchcanvas.canvas.scene.scaleChanged.connect(
                 self.zoom_changed_from_canvas)
+            self.ui.sliderZoom.zoom_fit_asked.connect(
+                patchcanvas.canvas.scene.zoom_fit)
 
 
 class CanvasMenu(QMenu):

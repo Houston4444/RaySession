@@ -45,6 +45,7 @@
        <file>scalable/breeze-dark/media-seek-backward.svg</file>
        <file>scalable/breeze-dark/document-nosave.svg</file>
        <file>scalable/breeze-dark/trash-empty.svg</file>
+       <file>scalable/breeze-dark/zoom-centered.svg</file>
        <file>scalable/breeze-dark/media-playback-stop_red.svg</file>
        <file>scalable/breeze-dark/draw-star.svg</file>
        <file>scalable/breeze-dark/document-save.svg</file>
@@ -104,6 +105,7 @@
        <file>scalable/breeze/empty-icon.svg</file>
        <file>scalable/breeze/document-nosave.svg</file>
        <file>scalable/breeze/trash-empty.svg</file>
+       <file>scalable/breeze/zoom-centered.svg</file>
        <file>scalable/breeze/draw-star.svg</file>
        <file>scalable/breeze/document-save.svg</file>
        <file>scalable/breeze/document-save-as-template.svg</file>
