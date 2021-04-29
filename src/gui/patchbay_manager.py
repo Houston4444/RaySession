@@ -303,6 +303,7 @@ class Group:
         self.a2j_group = False
         self.in_canvas = False
         self.current_position = group_position
+        self.uuid = 0
         
         self._timer_port_order = QTimer()
         self._timer_port_order.setInterval(20)
@@ -1219,12 +1220,9 @@ class PatchbayManager:
 
             for port_id in p_id1, p_id2:
                 port = self.get_port_from_id(g_id, port_id)
-                print('rgokreogk', port.short_name(), port.mdata_portgroup)
                 if port.mdata_portgroup:
                     above_metadatas = True
                 port_list.append(port)
-
-            print('above_metadatas', above_metadatas)
 
             portgroup = self.new_portgroup(g_id, p_mode, port_list)
     
@@ -1236,8 +1234,7 @@ class PatchbayManager:
                         group.name, portgroup.port_type(),
                         portgroup.port_mode, int(above_metadatas),
                         *[port.short_name() for port in port_list])
-                    
-                    print('ofkeokef', new_portgroup_mem.above_metadatas)
+
                     self.add_portgroup_memory(new_portgroup_mem)
 
                     self.send_to_daemon(
@@ -1411,8 +1408,6 @@ class PatchbayManager:
             if (gpos.port_types_view == self.port_types_view
                     and gpos.group_name == group_name):
                 return gpos
-        
-        #print('gpos fogund1')
 
         # prevent move to a new position in case of port_types_view change
         # if there is no remembered position for this group in new view
@@ -1499,6 +1494,12 @@ class PatchbayManager:
 
         self.optimize_operation(False)
         patchcanvas.redrawAllGroups()
+
+    def client_name_and_uuid(self, client_name: str, uuid: int):
+        for group in self.groups:
+            if group.name == client_name:
+                group.uuid = uuid
+                break
 
     def add_port(self, name: str, port_type: int, flags: int, uuid: int):
         port = Port(self._next_port_id, name, port_type, flags, uuid)
@@ -1654,17 +1655,21 @@ class PatchbayManager:
             port.change_canvas_properties()
         
         elif key == JACK_METADATA_PORT_GROUP:
-            print('ofk')
             port = self.get_port_from_uuid(uuid)
             if port is None:
                 return
-            print('erok', port.full_name)
+
             port.mdata_portgroup = value
 
             for group in self.groups:
                 if group.group_id == port.group_id:
                     group.sort_ports_later()
                     break
+        
+        elif key == JACK_METADATA_ICON_NAME:
+            for group in self.groups:
+                if group.uuid == uuid:
+                    group.set_client_icon(value)
 
     def add_connection(self, port_out_name: str, port_in_name: str):
         port_out = self.get_port_from_name(port_out_name)
@@ -1799,15 +1804,22 @@ class PatchbayManager:
         for key in patchbay_data.keys():
             if key == 'ports':
                 for p in patchbay_data[key]:
-                    self.add_port(p['name'], p['type'], p['flags'], p['uuid'])
+                    self.add_port(p.get('name'), p.get('type'),
+                                  p.get('flags'), p.get('uuid'))
 
             elif key == 'connections':
                 for c in patchbay_data[key]:
-                    self.add_connection(c['port_out_name'], c['port_in_name'])
+                    self.add_connection(c.get('port_out_name'),
+                                        c.get('port_in_name'))
             
             elif key == 'metadatas':
                 for m in patchbay_data[key]:
-                    self.metadata_update(m['uuid'], m['key'], m['value'])
+                    self.metadata_update(
+                        m.get('uuid'), m.get('key'), m.get('value'))
+
+            elif key == 'clients':
+                for cnu in patchbay_data[key]:
+                    self.client_name_and_uuid(cnu['name'], cnu['uuid'])
 
         self.optimize_operation(False)
         patchcanvas.redrawAllGroups()

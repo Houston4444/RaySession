@@ -134,6 +134,7 @@ class OscJackPatch(Server):
         self.port_list = main_object.port_list
         self.connection_list = main_object.connection_list
         self.metadata_list = main_object.metadata_list
+        self.client_list = main_object.client_list
         self.gui_list = []
         self._tmp_gui_url = ''
         self._terminate = False
@@ -209,7 +210,8 @@ class OscJackPatch(Server):
         # so here, it is faster, and prevent OSC saturation.
         # json format (and not binary with pickle) is choosen
         # this way, code language of the GUI is not a blocker
-        patchbay_data = {'ports': [], 'connections': [], 'metadatas': []}
+        patchbay_data = {'ports': [], 'connections': [],
+                         'metadatas': [], 'clients': []}
         for port in self.port_list:
             port_dict = {'name': port.name, 'type': port.type,
                          'flags': port.flags, 'uuid': port.uuid}
@@ -222,6 +224,9 @@ class OscJackPatch(Server):
 
         for metadata in self.metadata_list:
             patchbay_data['metadatas'].append(metadata)
+
+        for client_dict in self.client_list:
+            patchbay_data['clients'].append(client_dict)
 
         for src_addr in src_addr_list:
             # tmp file is deleted by the gui itself once read
@@ -316,6 +321,10 @@ class OscJackPatch(Server):
             self.send_local_data(local_guis)
         if distant_guis:
             self.send_distant_data(distant_guis)
+
+    def client_name_and_uuid(self, client_name: str, uuid: int):
+        self.send_gui('/ray/gui/patchbay/client_name_and_uuid',
+                      client_name, uuid)
 
     def port_added(self, port):
         self.send_gui('/ray/gui/patchbay/port_added',

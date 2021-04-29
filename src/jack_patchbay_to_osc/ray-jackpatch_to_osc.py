@@ -89,6 +89,7 @@ class MainObject:
     port_list = []
     connection_list = []
     metadata_list = []
+    client_list = [] # list of dicts {'name': client_name, 'uuid': client_uuid}
     jack_running = False
     osc_server = None
     terminate = False
@@ -275,6 +276,8 @@ class MainObject:
         if not self.jack_client:
             return
         
+        jacklib.set_client_registration_callback(
+            self.jack_client, self.jack_client_registration_callback, None)
         jacklib.set_port_registration_callback(
             self.jack_client, self.jack_port_registration_callback, None)
         jacklib.set_port_connect_callback(
@@ -302,10 +305,16 @@ class MainObject:
         port_name_list = c_char_p_p_to_list(
             jacklib.get_ports(self.jack_client, "", "", 0))
         
+        client_names = []
+        
         for port_name in port_name_list:
             port_ptr = jacklib.port_by_name(self.jack_client, port_name)
             jport = JackPort(port_name, self.jack_client)
             self.port_list.append(jport)
+            
+            client_name = port_name.partition(':')[0]
+            if not client_name in client_names:
+                client_names.append(client_name)
 
             if jport.flags & jacklib.JackPortIsInput:
                 continue
@@ -332,6 +341,13 @@ class MainObject:
                     {'uuid': jport.uuid,
                      'key': key,
                      'value': value})
+        
+        for client_name in client_names:
+            uuid = jacklib.get_uuid_for_client_name(self.jack_client, client_name)
+            if not uuid:
+                continue
+
+            self.client_list.append({'name': client_name, 'uuid': int(uuid)})
     
     def jack_shutdown_callback(self, arg=None)->int:
         self.jack_running = False
@@ -354,6 +370,17 @@ class MainObject:
         self.osc_server.send_buffersize()
         return 0
 
+    def jack_client_registration_callback(self, client_name: bytes,
+                                          register: int, arg=None):
+        client_name = client_name.decode()
+        uuid = jacklib.get_uuid_for_client_name(self.jack_client, client_name)
+        for client_dict in self.client_list:
+            if client_dict['name'] == client_name:
+                client_dict['uuid'] = uuid
+                break
+        else:
+            self.client_list.append({'name': client_name, 'uuid': uuid})
+        
     def jack_port_registration_callback(self, port_id: int, register: bool,
                                         arg=None)->int:
         if not self.jack_client:
@@ -408,10 +435,6 @@ class MainObject:
 
     def jack_properties_change_callback(self, uuid: int, name: bytes,
                                         type_: int, arg=None)->int:
-        #print('ofkaofkea', uuid, name, type_, arg)
-        #property_str = name.decode()
-        #prop = jacklib.get_property(uuid, property_str)
-        
         if name is not None:
             name = name.decode()
         
@@ -424,7 +447,6 @@ class MainObject:
             
             value = self.get_metadata_value_str(prop)
         
-
         for metadata in self.metadata_list:
             if metadata['uuid'] == uuid and metadata['key'] == name:
                 metadata['value'] = value

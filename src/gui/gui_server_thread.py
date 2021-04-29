@@ -73,7 +73,8 @@ class GUIServerThread(liblo.ServerThread):
             ('/ray/gui/patchbay/big_packets', 'i'),
             ('/ray/gui/patchbay/server_lose', ''),
             ('/ray/gui/patchbay/fast_temp_file_memory', 's'),
-            ('/ray/gui/patchbay/fast_temp_file_running', 's')):
+            ('/ray/gui/patchbay/fast_temp_file_running', 's'),
+            ('/ray/gui/patchbay/client_name_and_uuid', 'sh')):
                 self.add_method(path_types[0], path_types[1],
                                 self.generic_callback)
 

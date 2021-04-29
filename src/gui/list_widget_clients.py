@@ -637,5 +637,6 @@ class ListWidgetClients(QListWidget):
         for i in range(self.count()):
             item = self.item(i)
             widget = self.itemWidget(item)
-            widget.update_disposition()
+            if widget is not None:
+                widget.update_disposition()
 
