@@ -9,8 +9,6 @@ import child_dialogs
 import snapshots_dialog
 
 import ui.client_slot
-import ui.client_slot_2
-
 
 
 class ClientSlot(QFrame):
@@ -59,7 +57,7 @@ class ClientSlot(QFrame):
 
     def __init__(self, list_widget, list_widget_item, client):
         QFrame.__init__(self)
-        self.ui = ui.client_slot_2.Ui_ClientSlotWidget()
+        self.ui = ui.client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
 
         # needed variables
@@ -341,7 +339,9 @@ class ClientSlot(QFrame):
 
     def updateStatus(self, status):
         self.ui.lineEditClientStatus.setText(clientStatusString(status))
-
+        self.ui.lineEditClientStatus.setEnabled(
+            status != ray.ClientStatus.STOPPED)
+        
         ray_hack = bool(self.client.protocol == ray.Protocol.RAY_HACK)
 
         if status in (

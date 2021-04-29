@@ -1807,6 +1807,10 @@ class PatchbayManager:
                     self.add_port(p.get('name'), p.get('type'),
                                   p.get('flags'), p.get('uuid'))
 
+            elif key == 'clients':
+                for cnu in patchbay_data[key]:
+                    self.client_name_and_uuid(cnu.get('name'), cnu.get('uuid'))
+
             elif key == 'connections':
                 for c in patchbay_data[key]:
                     self.add_connection(c.get('port_out_name'),
@@ -1816,10 +1820,6 @@ class PatchbayManager:
                 for m in patchbay_data[key]:
                     self.metadata_update(
                         m.get('uuid'), m.get('key'), m.get('value'))
-
-            elif key == 'clients':
-                for cnu in patchbay_data[key]:
-                    self.client_name_and_uuid(cnu['name'], cnu['uuid'])
 
         self.optimize_operation(False)
         patchcanvas.redrawAllGroups()
