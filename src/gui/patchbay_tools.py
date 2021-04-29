@@ -1,7 +1,7 @@
 
 from PyQt5.QtCore import pyqtSignal, QTimer
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QComboBox, QMenu, QApplication
+from PyQt5.QtWidgets import QWidget, QComboBox, QMenu, QApplication, QDialog
 
 import patchcanvas
 
@@ -9,12 +9,25 @@ from gui_tools import isDarkTheme
 
 import ui.canvas_port_info
 import ui.patchbay_tools
+import ui.canvas_port_info
 
 GROUP_CONTEXT_AUDIO = 0x01
 GROUP_CONTEXT_MIDI = 0x02
 
-_translate = QApplication.translate
+# Port Type
+PORT_TYPE_NULL = 0
+PORT_TYPE_AUDIO = 1
+PORT_TYPE_MIDI = 2
 
+# Port Flags
+PORT_IS_INPUT = 0x01
+PORT_IS_OUTPUT = 0x02
+PORT_IS_PHYSICAL = 0x04
+PORT_CAN_MONITOR = 0x08
+PORT_IS_TERMINAL = 0x10
+PORT_IS_CONTROL_VOLTAGE = 0x100
+
+_translate = QApplication.translate
 
 class PatchbayToolsWidget(QWidget):
     buffer_size_change_order = pyqtSignal(int)
@@ -272,3 +285,55 @@ class CanvasMenu(QMenu):
             #self.refresh()
         #elif act_sel == action_options:
             #self.show_options_dialog()
+
+
+class CanvasPortInfoDialog(QDialog):
+    def __init__(self, parent):
+        QDialog.__init__(self, parent)
+        self.ui = ui.canvas_port_info.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self._port = None
+        self.ui.toolButtonRefresh.clicked.connect(
+            self.update_contents)
+
+    def set_port(self, port):
+        self._port = port
+        self.update_contents()
+    
+    def update_contents(self):
+        if self._port is None:
+            return
+        
+        port_type_str = _translate('patchbay', "Audio")
+        if self._port.type == PORT_TYPE_MIDI:
+            port_type_str = _translate('patchbay', "MIDI")
+
+        flags_list = []
+
+        dict_flag_str = {
+            PORT_IS_INPUT: _translate('patchbay', 'Input'),
+            PORT_IS_OUTPUT: _translate('patchbay', 'Output'),
+            PORT_IS_PHYSICAL: _translate('patchbay', 'Physical'),
+            PORT_CAN_MONITOR: _translate('patchbay', 'Monitor'),
+            PORT_IS_TERMINAL: _translate('patchbay', 'Terminal'),
+            PORT_IS_CONTROL_VOLTAGE: _translate('patchbay', 'Control Voltage')}
+
+        for key in dict_flag_str.keys():
+            if self._port.flags & key:
+                flags_list.append(dict_flag_str[key])
+
+        port_flags_str = ' | '.join(flags_list)
+        
+        self.ui.lineEditFullPortName.setText(self._port.full_name)
+        self.ui.lineEditUuid.setText(str(self._port.uuid))
+        self.ui.labelPortType.setText(port_type_str)
+        self.ui.labelPortFlags.setText(port_flags_str)
+        self.ui.labelPrettyName.setText(self._port.pretty_name)
+        self.ui.labelPortOrder.setText(self._port.order)
+        self.ui.labelPortGroup.setText(self._port.mdata_portgroup)
+        
+        if not (self._port.pretty_name or self._port.order
+                or self._port.mdata_portgroup):
+            self.ui.groupBoxMetadatas.setVisible(False)
+        

@@ -1262,12 +1262,6 @@ class MainWindow(QMainWindow):
             del self.script_action_dialog
             self.script_action_dialog = None
 
-    def show_canvas_port_info(self, port_full_name: str, port_uuid: int,
-                              port_type: str, port_flags: str):
-        dialog = child_dialogs.CanvasPortInfoDialog(self)
-        dialog.set_infos(port_full_name, port_uuid, port_type, port_flags)
-        dialog.show()
-
     def makeAllDialogsReappear(self):
         ok = QMessageBox.question(
             self,

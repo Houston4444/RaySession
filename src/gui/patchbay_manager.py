@@ -13,7 +13,7 @@ from gui_tools import RS
 
 from patchcanvas import patchcanvas
 from gui_server_thread import GUIServerThread
-from patchbay_tools import PatchbayToolsWidget, CanvasMenu
+from patchbay_tools import PatchbayToolsWidget, CanvasMenu, CanvasPortInfoDialog
 
 import canvas_options
 
@@ -1304,9 +1304,12 @@ class PatchbayManager:
                     flags_list.append(dict_flag_str[key])
 
             port_flags_str = ' | '.join(flags_list)
-
-            self.session._main_win.show_canvas_port_info(
-                port.full_name, port.uuid, port_type_str, port_flags_str)
+            
+            #def show_canvas_port_info(self, port_full_name: str, port_uuid: int,
+                              #port_type: str, port_flags: str):
+            dialog = CanvasPortInfoDialog(self.session._main_win)
+            dialog.set_port(port)
+            dialog.show()
 
         elif action == patchcanvas.ACTION_PORT_RENAME:
             pass
