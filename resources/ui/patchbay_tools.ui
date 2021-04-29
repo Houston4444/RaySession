@@ -290,7 +290,8 @@ QSlider::handle:horizontal{
       <string>Number of audio Xruns. Click on it to reset them.</string>
      </property>
      <property name="styleSheet">
-      <string notr="true">QPushButton{border:none; text-align:right}</string>
+      <string notr="true">QPushButton{border:none; text-align:right}
+QPushButton::hover{border: 1 px solid grey;text-align:right}</string>
      </property>
      <property name="text">
       <string>0 Xruns</string>

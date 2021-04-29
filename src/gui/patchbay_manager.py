@@ -1285,28 +1285,6 @@ class PatchbayManager:
             if port is None:
                 return
 
-            port_type_str = _translate('patchbay', "Audio")
-            if port.type == PORT_TYPE_MIDI:
-                port_type_str = _translate('patchbay', "MIDI")
-
-            flags_list = []
-
-            dict_flag_str = {
-                PORT_IS_INPUT: _translate('patchbay', 'Input'),
-                PORT_IS_OUTPUT: _translate('patchbay', 'Output'),
-                PORT_IS_PHYSICAL: _translate('patchbay', 'Physical'),
-                PORT_CAN_MONITOR: _translate('patchbay', 'Monitor'),
-                PORT_IS_TERMINAL: _translate('patchbay', 'Terminal'),
-                PORT_IS_CONTROL_VOLTAGE: _translate('patchbay', 'Control Voltage')}
-
-            for key in dict_flag_str.keys():
-                if port.flags & key:
-                    flags_list.append(dict_flag_str[key])
-
-            port_flags_str = ' | '.join(flags_list)
-            
-            #def show_canvas_port_info(self, port_full_name: str, port_uuid: int,
-                              #port_type: str, port_flags: str):
             dialog = CanvasPortInfoDialog(self.session._main_win)
             dialog.set_port(port)
             dialog.show()
