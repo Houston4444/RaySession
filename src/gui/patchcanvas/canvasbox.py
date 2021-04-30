@@ -739,7 +739,6 @@ class CanvasBox(QGraphicsItem):
         max_title_size = max_title_size_2
         
         if header_width_2 > self.p_width:
-            print('reok', self.m_group_name)
             # calculate most optimized splitted title disposition
             more_height = 0
             if self._title_lines[0].is_little:
@@ -750,9 +749,8 @@ class CanvasBox(QGraphicsItem):
             area_2 = header_width_2 * max(last_in_pos, last_out_pos)
             
             if area_1 < area_2:
-                print('monrougef', more_height, len(self._title_lines))
-                # 3 lines subtitle is choosen
-                self.splitTitle()
+                # splitted title (or subtitle) is choosen
+                self.splitTitle(maxi_split=True)
                 
                 if more_height:
                     # down ports

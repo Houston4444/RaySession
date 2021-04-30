@@ -812,7 +812,7 @@ class OscServerThread(ClientCommunicating):
         # here send to others GUI the new group position
         for gui_addr in self.gui_list:
             if not ray.areSameOscPort(gui_addr.url, src_addr.url):
-                self.send(gui_addr, '/ray/gui/patchbay/group_position_info',
+                self.send(gui_addr, '/ray/gui/patchbay/update_group_position',
                           *args)
 
     @ray_method('/ray/server/patchbay/save_portgroup', None)
@@ -820,7 +820,6 @@ class OscServerThread(ClientCommunicating):
         # args must be group_name, port_type, port_mode, above_metadatas, *port_names
         # where port_names are all strings
         # so types must start with 'siiis' and may continue with strings only
-        print('ofkezfe', args)
         if not types.startswith('siiis'):
             self.unknownMessage(path, types, src_addr)
             return False

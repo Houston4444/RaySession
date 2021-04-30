@@ -115,8 +115,8 @@ def CanvasGetNewGroupPositions()->tuple:
     y = rect.bottom()
 
     return (get_middle_empty_positions(rect),
-            (400, y),
-            (0, y))
+            (400, int(y)),
+            (0, int(y)))
 
 def CanvasGetNewGroupPos(horizontal):
     if canvas.debug:
