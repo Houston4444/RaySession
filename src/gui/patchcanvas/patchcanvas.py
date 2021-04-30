@@ -848,17 +848,16 @@ def setGroupPosFull(group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group
 
 # ------------------------------------------------------------------------------------------------------------
 
-def setGroupIcon(group_id, icon_type):
+def setGroupIcon(group_id, icon_type: int, icon_name: str):
     if canvas.debug:
         print("PatchCanvas::setGroupIcon(%i, %s)" % (group_id, icon2str(icon_type)))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
             group.icon_type = icon_type
-            group.widgets[0].setIcon(icon_type)
-
-            if group.split and group.widgets[1]:
-                group.widgets[1].setIcon(icon_type)
+            for widget in group.widgets:
+                if widget is not None:
+                    widget.setIcon(icon_type, icon_name)
 
             QTimer.singleShot(0, canvas.scene.update)
             return

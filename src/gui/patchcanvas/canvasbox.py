@@ -201,8 +201,7 @@ class CanvasBox(QGraphicsItem):
                 self.top_icon = CanvasSvgIcon(
                     icon_type, icon_name, port_mode, self)
             else:
-                self.top_icon = CanvasIconPixmap(
-                    icon_type, icon_name, self.m_group_name, self)
+                self.top_icon = CanvasIconPixmap(icon_type, icon_name, self)
                 if self.top_icon.is_null():
                     top_icon = self.top_icon
                     self.top_icon = None
@@ -295,6 +294,10 @@ class CanvasBox(QGraphicsItem):
 
         if self.top_icon is not None:
             self.top_icon.setIcon(icon_type, icon_name, self.m_group_name)
+        else:
+            self.top_icon = CanvasIconPixmap(icon_type, icon_name, self)
+
+        self.updatePositions()
 
     def has_top_icon(self)->bool:
         if self.top_icon is None:
@@ -310,7 +313,7 @@ class CanvasBox(QGraphicsItem):
         if self._is_hardware:
             self.setIcon(ICON_HARDWARE, self._icon_name)
 
-    def splitTitle(self, subtitle_one_line=False):
+    def splitTitle(self, maxi_split=True):
         title_lines = []
 
         title, slash, subtitle = self.m_group_name.partition('/')
@@ -318,7 +321,7 @@ class CanvasBox(QGraphicsItem):
             # if there is a subtitle, title is not bold when subtitle is.
             # so title is 'little'
             title_lines.append(TitleLine(title, little=True))
-            if len(subtitle) > 12 and not subtitle_one_line:
+            if maxi_split:
                 subtitle_1, subtitle_2 = self.split_in_two(subtitle)
                 title_lines.append(TitleLine(subtitle_1))
                 if subtitle_2:
@@ -326,7 +329,7 @@ class CanvasBox(QGraphicsItem):
             else:
                 title_lines.append(TitleLine(subtitle))
         else:
-            if len(self.m_group_name) > 12:
+            if maxi_split:
                 title_1, title_2 = self.split_in_two(self.m_group_name)
                 title_lines.append(TitleLine(title_1))
                 if title_2:
@@ -338,7 +341,6 @@ class CanvasBox(QGraphicsItem):
 
     def setGroupName(self, group_name):
         self.m_group_name = group_name
-        self.splitTitle()
         self.updatePositions()
 
     def setShadowOpacity(self, opacity):
@@ -702,7 +704,7 @@ class CanvasBox(QGraphicsItem):
         
         # check the header width with title splitted
         max_title_size_1 = 0
-        self.splitTitle()
+        self.splitTitle(maxi_split=True)
         
         for title_line in self._title_lines:
             max_title_size_1 = max(max_title_size_1, title_line.size)
@@ -714,11 +716,12 @@ class CanvasBox(QGraphicsItem):
         else:
             header_width_1 += 16
 
-        header_width_1 = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50, header_width_1)
+        header_width_1 = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
+                             header_width_1)
         
         # check the header width with title unsplitted
         max_title_size_2 = 0
-        self.splitTitle(subtitle_one_line=True)
+        self.splitTitle(maxi_split=False)
         
         for title_line in self._title_lines:
             max_title_size_2 = max(max_title_size_2, title_line.size)
@@ -730,33 +733,41 @@ class CanvasBox(QGraphicsItem):
         else:
             header_width_2 += 16
         
-        header_width_2 = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50, header_width_2)
+        header_width_2 = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
+                             header_width_2)
         
         max_title_size = max_title_size_2
         
         if header_width_2 > self.p_width:
+            print('reok', self.m_group_name)
             # calculate most optimized splitted title disposition
+            more_height = 0
+            if self._title_lines[0].is_little:
+                more_height = 14
+            
             area_1 = max(self.p_width, header_width_1) \
-                     * (max(last_in_pos, last_out_pos) + 14)
+                     * (max(last_in_pos, last_out_pos) + more_height)
             area_2 = header_width_2 * max(last_in_pos, last_out_pos)
             
             if area_1 < area_2:
+                print('monrougef', more_height, len(self._title_lines))
                 # 3 lines subtitle is choosen
                 self.splitTitle()
                 
-                # down ports
-                for port in port_list:
-                    port.widget.setY(port.widget.y() + 14)
-                
-                # down portgroups
-                for portgrp in canvas.portgrp_list:
-                    if (portgrp.group_id == self.m_group_id
-                            and self.m_current_port_mode & portgrp.port_mode):
-                        if portgrp.widget is not None:
-                            portgrp.widget.setY(portgrp.widget.y() + 14)
-                
-                last_in_pos += 14
-                last_out_pos += 14
+                if more_height:
+                    # down ports
+                    for port in port_list:
+                        port.widget.setY(port.widget.y() + more_height)
+                    
+                    # down portgroups
+                    for portgrp in canvas.portgrp_list:
+                        if (portgrp.group_id == self.m_group_id
+                                and self.m_current_port_mode & portgrp.port_mode):
+                            if portgrp.widget is not None:
+                                portgrp.widget.setY(portgrp.widget.y() + more_height)
+                    
+                    last_in_pos += more_height
+                    last_out_pos += more_height
                 
                 self.p_width = max(self.p_width, header_width_1)
                 max_title_size = max_title_size_1
@@ -766,7 +777,8 @@ class CanvasBox(QGraphicsItem):
         # Horizontal ports re-positioning
         inX = canvas.theme.port_offset
         outX = self.p_width - max_out_width - canvas.theme.port_offset - 12
-        out_in_portgrpX = self.p_width - canvas.theme.port_offset - 12 - canvas.theme.port_in_portgrp_width
+        out_in_portgrpX = (self.p_width - canvas.theme.port_offset - 12
+                           - canvas.theme.port_in_portgrp_width)
 
         for port in port_list:
             if port.port_mode == PORT_MODE_INPUT:

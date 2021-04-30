@@ -518,6 +518,9 @@ class Group:
 
     def set_client_icon(self, icon_name:str):
         self.client_icon = icon_name
+        if self.in_canvas:
+            patchcanvas.setGroupIcon(
+                self.group_id, patchcanvas.ICON_CLIENT, icon_name)
 
     def get_pretty_client(self):
         for client_name in ('firewire_pcm', 'a2j',
@@ -666,6 +669,7 @@ class Group:
         elif client_name == 'rakarrack-plus':
             if display_name.startswith('rakarrack-plus '):
                 display_name = display_name.replace('rakarrack-plus ', '', 1)
+            display_name = display_name.replace('_', ' ')
 
         elif not client_name:
             display_name = display_name.replace('_', ' ')

@@ -80,7 +80,7 @@ def getAppIcon(icon_name):
     return icon
 
 class CanvasIconPixmap(QGraphicsPixmapItem):
-    def __init__(self, icon_type, icon_name, name, parent):
+    def __init__(self, icon_type, icon_name, parent):
         QGraphicsPixmapItem.__init__(self)
         self.setParentItem(parent)
 
@@ -97,7 +97,6 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
             pixmap = self.icon.pixmap(24, 24)
             self.setPixmap(pixmap)
             self.setOffset(4, 4)
-        #icon_path = ":/app_icons/gx_head.png"
 
     def update_zoom(self, scale: float):
         if self.icon is None or scale <= 0.0:
