@@ -368,7 +368,7 @@ class SignaledSession(OperatingSession):
                 # save template client properties only for GUI call
                 # to optimize ray_control answer speed
                 template_client = None
-                if src_addr_is_gui or True:
+                if src_addr_is_gui:
                     template_client = Client(self)
                     template_client.readXmlProperties(ct)
                     template_client.client_id = ct.attribute('client_id')

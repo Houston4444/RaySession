@@ -477,7 +477,7 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.__init__(self, parent, client)
 
         self.ray_net_frame = QFrame()
-        self.rnet = ui_ray_net_properties.Ui_Frame()
+        self.rnet = ui.ray_net_properties.Ui_Frame()
         self.rnet.setupUi(self.ray_net_frame)
 
         self.ui.groupBoxSnapshots.setVisible(False)

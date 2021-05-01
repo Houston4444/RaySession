@@ -21,7 +21,9 @@ import nsm_child
 import ui.raysession
 import ui.patchbay_tools
 
-
+UI_PATCHBAY_UNDEF = 0
+UI_PATCHBAY_HIDDEN = 1
+UI_PATCHBAY_SHOWN = 2
 
 
 class MainWindow(QMainWindow):
@@ -824,7 +826,8 @@ class MainWindow(QMainWindow):
                       int(via_proxy), prefix_mode, prefix, client_id)
 
     def showJackPatchbay(self, yesno: bool):
-        self.saveWindowSettings(not yesno)
+        self.saveWindowSettings(
+            UI_PATCHBAY_HIDDEN if yesno else UI_PATCHBAY_SHOWN)
 
         if self.canvas_tools_action is not None:
             self.canvas_tools_action.setVisible(yesno)
@@ -1290,9 +1293,15 @@ class MainWindow(QMainWindow):
                 'errors', "ray-daemon crashed, sorry !"))
         QApplication.quit()
 
-    def saveWindowSettings(self, with_patchbay: bool):
+    def saveWindowSettings(self, patchbay_mode=UI_PATCHBAY_UNDEF):
         if self.isFullScreen():
             return
+
+        with_patchbay = False
+        if patchbay_mode == UI_PATCHBAY_UNDEF:
+            with_patchbay = self.ui.actionShowJackPatchbay.isChecked()
+        elif patchbay_mode == UI_PATCHBAY_SHOWN:
+            with_patchbay = True
 
         geom_path = 'MainWindow/geometry'
         if with_patchbay:
@@ -1316,7 +1325,7 @@ class MainWindow(QMainWindow):
     # Reimplemented Functions
 
     def closeEvent(self, event):
-        self.saveWindowSettings(self.ui.actionShowJackPatchbay.isChecked())
+        self.saveWindowSettings()
 
         if self.quitApp():
             QMainWindow.closeEvent(self, event)
