@@ -478,7 +478,7 @@ class MainWindow(QMainWindow):
         self.ui.actionCloseSession.setEnabled(not nsm_locked)
         self.ui.actionAbortSession.setEnabled(not nsm_locked)
 
-        self.ui.toolBar.setVisible(not nsm_locked)
+        self.ui.toolBar.setVisible(True)
         self.ui.toolButtonNoRole.setVisible(nsm_locked)
         self.ui.toolButtonAbortSession.setVisible(not nsm_locked)
         self.ui.closeButton.setVisible(not nsm_locked)
@@ -490,6 +490,18 @@ class MainWindow(QMainWindow):
             nsm_locked and not CommandLineArgs.out_daemon)
         self.ui.actionRenameSession_2.setEnabled(
             nsm_locked and not CommandLineArgs.out_daemon)
+        
+        frame_style_sheet = "SessionFrame{border-radius:4px;"
+        
+        if nsm_locked and CommandLineArgs.out_daemon:
+            frame_style_sheet += "background-color: rgba(100, 181, 100, 35)}"
+        elif nsm_locked:
+            frame_style_sheet += "background-color: rgba(100, 100, 181, 35)}"
+        else:
+            frame_style_sheet += "background-color: rgba(127, 127, 127, 35)}"
+
+        self.ui.frameCurrentSession.setStyleSheet(frame_style_sheet)
+            
 
     def setDaemonOptions(self, options):
         self.ui.actionBookmarkSessionFolder.setChecked(
