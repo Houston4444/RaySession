@@ -2115,7 +2115,7 @@ for better organization.""")
                     #needed-version not writed correctly, ignores it
                     needed_version = ''
 
-                if factory and needed_version:
+                if needed_version:
                     version_process = QProcess()
                     version_process.start(client.executable_path,
                                           ['--version'])
@@ -2158,22 +2158,16 @@ for better organization.""")
                         progvss.append(int(n))
 
                     if neededs > progvss:
-                        node = node.nextSibling()
                         continue
 
                 full_name_files = []
 
-                if not needed_version:
-                    # if there is a needed version,
-                    # then files are ignored because factory templates with
-                    # version must be NSM compatible
-                    # and dont need files (factory)
-                    template_path = "%s/%s" % (search_path, template_name)
+                template_path = "%s/%s" % (search_path, template_name)
 
-                    if os.path.isdir(template_path):
-                        for file in os.listdir(template_path):
-                            full_name_files.append("%s/%s"
-                                                    % (template_path, file))
+                if os.path.isdir(template_path):
+                    for file in os.listdir(template_path):
+                        full_name_files.append("%s/%s"
+                                                % (template_path, file))
 
                 if not self.addClient(client):
                     self.answer(src_addr, src_path,

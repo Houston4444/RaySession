@@ -329,12 +329,11 @@ class SignaledSession(OperatingSession):
                 if not template_name or template_name in template_list:
                     continue
 
+                executable = ct.attribute('executable')
                 protocol = ray.protocolFromStr(ct.attribute('protocol'))
 
                 if protocol != ray.Protocol.RAY_NET:
                     # check if needed executables are present
-                    executable = ct.attribute('executable')
-
                     if not executable:
                         continue
 
@@ -363,6 +362,63 @@ class SignaledSession(OperatingSession):
                         'grep', ['-q', '/nsm/server/announce',
                                  shutil.which(executable)])
                     if result:
+                        continue
+
+                # check if a version is at least required for this template
+                # don't use needed-version without check how the program acts !
+                needed_version = ct.attribute('needed-version')
+
+                if (needed_version.startswith('.')
+                        or needed_version.endswith('.')
+                        or not needed_version.replace('.', '').isdigit()):
+                    #needed-version not writed correctly, ignores it
+                    needed_version = ''
+
+                if needed_version:
+                    version_process = QProcess()
+                    version_process.start(executable, ['--version'])
+                    version_process.waitForFinished(500)
+
+                    # do not allow program --version to be longer than 500ms
+
+                    if version_process.state():
+                        version_process.terminate()
+                        version_process.waitForFinished(500)
+                        continue
+
+                    full_program_version = str(
+                        version_process.readAllStandardOutput(),
+                        encoding='utf-8')
+
+                    previous_is_digit = False
+                    program_version = ''
+
+                    for character in full_program_version:
+                        if character.isdigit():
+                            program_version += character
+                            previous_is_digit = True
+                        elif character == '.':
+                            if previous_is_digit:
+                                program_version += character
+                            previous_is_digit = False
+                        else:
+                            if program_version:
+                                break
+
+                    if not program_version:
+                        continue
+
+                    neededs = []
+                    progvss = []
+
+                    for n in needed_version.split('.'):
+                        neededs.append(int(n))
+
+                    for n in program_version.split('.'):
+                        progvss.append(int(n))
+
+                    if neededs > progvss:
+                        # program is too old, ignore this template
                         continue
 
                 # save template client properties only for GUI call
@@ -395,7 +451,7 @@ class SignaledSession(OperatingSession):
 
         if tmp_template_list:
             self.send(src_addr, '/reply', path,
-                    *[t[0] for t in tmp_template_list])
+                      *[t[0] for t in tmp_template_list])
 
             if src_addr_is_gui:
                 for template_name, template_client in tmp_template_list:
@@ -469,8 +525,7 @@ class SignaledSession(OperatingSession):
 
                     if n >= 10000 or time.time() - last_sent_time > 0.300:
                         last_sent_time = time.time()
-                        self.send(src_addr, "/reply", path,
-                                    *session_list)
+                        self.send(src_addr, "/reply", path, *session_list)
 
                         session_list.clear()
                         n = 0

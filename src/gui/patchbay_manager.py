@@ -1496,6 +1496,26 @@ class PatchbayManager:
         self.optimize_operation(False)
         patchcanvas.redrawAllGroups()
 
+    def get_json_contents_from_path(self, file_path: str)->dict:
+        if not os.path.exists(file_path):
+            return {}
+        
+        if not os.access(file_path, os.R_OK):
+            return {}
+        
+        try:
+            file = open(file_path, 'r')
+        except IOError:
+            return {}
+        
+        try:
+            new_dict = json.load(file)
+        except ImportError:
+            return {}
+        
+        file.close()
+        return new_dict
+
     def client_name_and_uuid(self, client_name: str, uuid: int):
         for group in self.groups:
             if group.name == client_name:
@@ -1772,9 +1792,12 @@ class PatchbayManager:
             patchcanvas.redrawAllGroups()
 
     def fast_temp_file_memory(self, temp_path):
-        canvas_data = {}
-        with open(temp_path, 'r') as file:
-            canvas_data = json.load(file)
+        canvas_data = self.get_json_contents_from_path(temp_path)
+        if not canvas_data:
+            sys.stderr.write(
+                "RaySession::Failed to load tmp file %s to get canvas positions\n"
+                % temp_path)
+            return
 
         for key in canvas_data.keys():
             if key == 'group_positions':
@@ -1792,9 +1815,13 @@ class PatchbayManager:
         os.remove(temp_path)
 
     def fast_temp_file_running(self, temp_path):
-        file = open(temp_path, 'r')
-        patchbay_data = json.load(file)
-
+        patchbay_data = self.get_json_contents_from_path(temp_path)
+        if not patchbay_data:
+            sys.stderr.write(
+                "RaySession::Failed to load tmp file %s to get JACK ports\n"
+                % temp_path)
+            return
+        
         # optimize_operation allow to not redraw group at each port added.
         # however, if there is no group position
         # (i.e. if there is no config at all), it is prefferable to
