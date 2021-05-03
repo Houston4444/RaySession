@@ -3,7 +3,7 @@ from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
 from PyQt5.QtCore import pyqtSlot, QSize
 
 import ray
-from gui_server_thread import GUIServerThread
+from gui_server_thread import GuiServerThread
 from gui_tools import clientStatusString, _translate, isDarkTheme, RayIcon
 import child_dialogs
 import snapshots_dialog
@@ -50,10 +50,10 @@ class ClientSlot(QFrame):
         return (string[:best_index], string[best_index:])
 
     @classmethod
-    def toDaemon(cls, *args):
-        server = GUIServerThread.instance()
+    def to_daemon(cls, *args):
+        server = GuiServerThread.instance()
         if server:
-            server.toDaemon(*args)
+            server.to_daemon(*args)
 
     def __init__(self, list_widget, list_widget_item, client):
         QFrame.__init__(self)
@@ -135,11 +135,11 @@ class ClientSlot(QFrame):
         return self.client.client_id
 
     def startClient(self):
-        self.toDaemon('/ray/client/resume', self.clientId())
+        self.to_daemon('/ray/client/resume', self.clientId())
 
     def stopClient(self):
         if self._stop_is_kill:
-            self.toDaemon('/ray/client/kill', self.clientId())
+            self.to_daemon('/ray/client/kill', self.clientId())
             return
 
         # we need to prevent accidental stop with a window confirmation
@@ -147,10 +147,10 @@ class ClientSlot(QFrame):
         self.main_win.stopClient(self.clientId())
 
     def saveClient(self):
-        self.toDaemon('/ray/client/save', self.clientId())
+        self.to_daemon('/ray/client/save', self.clientId())
 
     def trashClient(self):
-        self.toDaemon('/ray/client/trash', self.clientId())
+        self.to_daemon('/ray/client/trash', self.clientId())
 
     def abortCopy(self):
         self.main_win.abortCopyClient(self.clientId())
@@ -163,7 +163,7 @@ class ClientSlot(QFrame):
             return
 
         template_name = dialog.getTemplateName()
-        self.toDaemon('/ray/client/save_as_template',
+        self.to_daemon('/ray/client/save_as_template',
                       self.clientId(), template_name)
 
     def openSnapshotsDialog(self):
@@ -172,7 +172,7 @@ class ClientSlot(QFrame):
         dialog.exec()
         if dialog.result():
             snapshot = dialog.getSelectedSnapshot()
-            self.toDaemon('/ray/client/open_snapshot',
+            self.to_daemon('/ray/client/open_snapshot',
                           self.clientId(), snapshot)
 
     def renameDialog(self):
@@ -446,9 +446,9 @@ class ClientSlot(QFrame):
 
     def changeGuiState(self):
         if self.gui_state:
-            self.toDaemon('/ray/client/hide_optional_gui', self.clientId())
+            self.to_daemon('/ray/client/hide_optional_gui', self.clientId())
         else:
-            self.toDaemon('/ray/client/show_optional_gui', self.clientId())
+            self.to_daemon('/ray/client/show_optional_gui', self.clientId())
 
     def orderHackVisibility(self, state):
         if self.client.protocol != ray.Protocol.RAY_HACK:
@@ -514,10 +514,10 @@ class ClientItem(QListWidgetItem):
 
 class ListWidgetClients(QListWidget):
     @classmethod
-    def toDaemon(self, *args):
-        server = GUIServerThread.instance()
+    def to_daemon(self, *args):
+        server = GuiServerThread.instance()
         if server:
-            server.toDaemon(*args)
+            server.to_daemon(*args)
 
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
@@ -576,7 +576,7 @@ class ListWidgetClients(QListWidget):
     @pyqtSlot()
     def launchFavorite(self):
         template_name, factory = self.sender().data()
-        self.toDaemon('/ray/session/add_client_template',
+        self.to_daemon('/ray/session/add_client_template',
                       int(factory),
                       template_name)
 
@@ -591,9 +591,9 @@ class ListWidgetClients(QListWidget):
             client_id = item.getClientId()
             client_ids_list.append(client_id)
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if server:
-            server.toDaemon('/ray/session/reorder_clients', *client_ids_list)
+            server.to_daemon('/ray/session/reorder_clients', *client_ids_list)
 
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):

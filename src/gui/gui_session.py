@@ -9,7 +9,7 @@ from patchcanvas import patchcanvas
 from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
 from gui_signaler import Signaler
-from gui_server_thread import GUIServerThread
+from gui_server_thread import GuiServerThread
 from gui_tools import CommandLineArgs, RS
 from main_window import MainWindow
 from nsm_child import NSMChild, NSMChildOutside
@@ -24,7 +24,6 @@ class Session:
         self.name = ''
         self.path = ''
         self.notes = ''
-        self.is_running = False
         self.server_status = ray.ServerStatus.OFF
 
         self.is_renameable = True
@@ -32,16 +31,16 @@ class Session:
         self.signaler = Signaler()
         self.patchbay_manager = PatchbayManager(self)
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         server.start()
 
         self.daemon_manager = DaemonManager(self)
         if CommandLineArgs.daemon_url:
-            self.daemon_manager.setOscAddress(CommandLineArgs.daemon_url)
+            self.daemon_manager.set_osc_address(CommandLineArgs.daemon_url)
         elif CommandLineArgs.daemon_port:
-            self.daemon_manager.setOscAddress(CommandLineArgs.daemon_port)
+            self.daemon_manager.set_osc_address(CommandLineArgs.daemon_port)
         elif not CommandLineArgs.out_daemon:
-            self.daemon_manager.setNewOscAddress()
+            self.daemon_manager.set_new_osc_address()
 
         # build nsm_child if NSM_URL in env
         self._nsm_child = None
@@ -49,20 +48,20 @@ class Session:
         if CommandLineArgs.under_nsm:
             if CommandLineArgs.out_daemon:
                 self._nsm_child = NSMChildOutside(self)
-                self.daemon_manager.setExternal()
+                self.daemon_manager.set_external()
             else:
                 self._nsm_child = NSMChild(self)
 
         # build and show Main UI
         self.main_win = MainWindow(self)
-        self.daemon_manager.finishInit()
+        self.daemon_manager.finish_init()
         self.patchbay_manager.finish_init()
-        server.finishInit(self)
+        server.finish_init(self)
 
         self.main_win.show()
 
         # display donations dialog under conditions
-        if not RS.isHidden(RS.HD_Donations):
+        if not RS.is_hidden(RS.HD_Donations):
             coreff_counter = RS.settings.value('coreff_counter', 0, type=int)
             coreff_counter += 1
             RS.settings.setValue('coreff_counter', coreff_counter)
@@ -75,29 +74,26 @@ class Session:
         self.main_win.hide()
         del self.main_win
 
-    def setRunning(self, running: bool):
-        self.is_running = running
-
-    def isRunning(self):
+    def is_running(self)->bool:
         return bool(self.server_status != ray.ServerStatus.OFF)
 
-    def updateServerStatus(self, server_status):
+    def update_server_status(self, server_status: int):
         self.server_status = server_status
 
-    def setName(self, session_name):
+    def _set_name(self, session_name: str):
         self.name = session_name
 
-    def setPath(self, session_path):
+    def _set_path(self, session_path: str):
         self.path = session_path
 
-    def getShortPath(self):
+    def get_short_path(self):
         if self.path.startswith(CommandLineArgs.session_root):
             return self.path.replace(
                 '%s/' % CommandLineArgs.session_root, '', 1)
 
         return self.path
 
-    def getClient(self, client_id)->Client:
+    def get_client(self, client_id: str)->Client:
         for client in self.client_list:
             if client.client_id == client_id:
                 return client
@@ -107,31 +103,28 @@ class Session:
                              % client_id)
         return None
 
-    def removeAllClients(self):
-        self.client_list.clear()
-
-    def addFavorite(self, template_name: str, icon_name: str, factory: bool):
-        server = GUIServerThread.instance()
+    def add_favorite(self, template_name: str, icon_name: str, factory: bool):
+        server = GuiServerThread.instance()
         if server:
-            server.toDaemon('/ray/favorites/add', template_name,
+            server.to_daemon('/ray/favorites/add', template_name,
                             icon_name, int(factory))
 
-    def removeFavorite(self, template_name: str, factory: bool):
+    def remove_favorite(self, template_name: str, factory: bool):
         for favorite in self.favorite_list:
             if favorite.name == template_name and favorite.factory == factory:
                 break
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if server:
-            server.toDaemon('/ray/favorites/remove', template_name, int(factory))
+            server.to_daemon('/ray/favorites/remove', template_name, int(factory))
 
-    def isFavorite(self, template_name: str, factory: bool):
+    def is_favorite(self, template_name: str, factory: bool):
         for favorite in self.favorite_list:
             if favorite.name == template_name and favorite.factory == factory:
                 return True
         return False
 
-    def setDaemonOptions(self, options):
+    def set_daemon_options(self, options):
         self.main_win.setDaemonOptions(options)
         for client in self.client_list:
             client.widget.setDaemonOptions(options)
@@ -139,14 +132,14 @@ class Session:
 class SignaledSession(Session):
     def __init__(self):
         Session.__init__(self)
-        self.signaler.osc_receive.connect(self.oscReceive)
+        self.signaler.osc_receive.connect(self._osc_receive)
         self.daemon_manager.start()
 
         self.canvas_groups = []
         self.canvas_ports = []
         self.next_canvas_port_id = -1
 
-    def oscReceive(self, path, args):
+    def _osc_receive(self, path, args):
         func_path = path
         func_name = func_path.replace('/', '_')
 
@@ -201,12 +194,12 @@ class SignaledSession(Session):
 
     def _ray_gui_server_options(self, path, args):
         options = args[0]
-        self.setDaemonOptions(options)
+        self.set_daemon_options(options)
 
     def _ray_gui_session_name(self, path, args):
         sname, spath = args
-        self.setName(sname)
-        self.setPath(spath)
+        self._set_name(sname)
+        self._set_path(spath)
         self.main_win.renameSession(sname, spath)
 
     def _ray_gui_session_is_nsm(self, path, args):
@@ -235,7 +228,7 @@ class SignaledSession(Session):
     def _ray_gui_session_sort_clients(self, path, args):
         new_client_list = []
         for client_id in args:
-            client = self.getClient(client_id)
+            client = self.get_client(client_id)
 
             if not client:
                 return
@@ -261,19 +254,19 @@ class SignaledSession(Session):
 
     def _ray_gui_client_update(self, path, args):
         client_id = args[0]
-        client = self.getClient(client_id)
+        client = self.get_client(client_id)
         if client:
             client.update_properties(*args)
 
     def _ray_gui_client_ray_hack_update(self, path, args):
         client_id = args.pop(0)
-        client = self.getClient(client_id)
+        client = self.get_client(client_id)
         if client and client.protocol == ray.Protocol.RAY_HACK:
             client.update_ray_hack(*args)
 
     def _ray_gui_client_ray_net_update(self, path, args):
         client_id = args.pop(0)
-        client = self.getClient(client_id)
+        client = self.get_client(client_id)
         if client and client.protocol == ray.Protocol.RAY_NET:
             client.update_ray_net(*args)
 
@@ -286,7 +279,7 @@ class SignaledSession(Session):
 
     def _ray_gui_client_status(self, path, args):
         client_id, status = args
-        client = self.getClient(client_id)
+        client = self.get_client(client_id)
         if client:
             client.set_status(status)
 
@@ -301,39 +294,39 @@ class SignaledSession(Session):
     def _ray_gui_client_progress(self, path, args):
         client_id, progress = args
 
-        client = self.getClient(client_id)
+        client = self.get_client(client_id)
         if client:
             client.set_progress(progress)
 
     def _ray_gui_client_dirty(self, path, args):
         client_id, int_dirty = args
-        client = self.getClient(client_id)
+        client = self.get_client(client_id)
         if client:
             client.set_dirty_state(bool(int_dirty))
 
     def _ray_gui_client_has_optional_gui(self, path, args):
         client_id = args[0]
-        client = self.getClient(client_id)
+        client = self.get_client(client_id)
 
         if client:
             client.set_gui_enabled()
 
     def _ray_gui_client_gui_visible(self, path, args):
         client_id, int_state = args
-        client = self.getClient(client_id)
+        client = self.get_client(client_id)
         if client:
             client.set_gui_state(bool(int_state))
 
     def _ray_gui_client_still_running(self, path, args):
         client_id = args[0]
-        client = self.getClient(client_id)
+        client = self.get_client(client_id)
         if client:
             client.allow_kill()
 
     def _ray_gui_client_no_save_level(self, path, args):
         client_id, no_save_level = args
 
-        client = self.getClient(client_id)
+        client = self.get_client(client_id)
         if client:
             client.set_no_save_level(no_save_level)
 

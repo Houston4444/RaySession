@@ -454,7 +454,7 @@ class SnapshotsDialog(ChildDialog):
     def showEvent(self, event):
         ChildDialog.showEvent(self, event)
 
-        if RS.isHidden(RS.HD_SnapshotsInfo):
+        if RS.is_hidden(RS.HD_SnapshotsInfo):
             return
 
         info_dialog = SnapshotsInfoDialog(self)
@@ -479,7 +479,7 @@ class SessionSnapshotsDialog(SnapshotsDialog):
 
         self.ui.pushButtonSnapshotNow.clicked.connect(self.takeSnapshot)
 
-        self.toDaemon('/ray/session/list_snapshots')
+        self.to_daemon('/ray/session/list_snapshots')
 
         self.ui.checkBoxAutoSnapshot.stateChanged.connect(
             self.setAutoSnapshot)
@@ -490,13 +490,13 @@ class SessionSnapshotsDialog(SnapshotsDialog):
         if dialog.result():
             snapshot_label = dialog.getSnapshotName()
             with_save = dialog.saveAsked()
-            self.toDaemon('/ray/session/take_snapshot', snapshot_label,
+            self.to_daemon('/ray/session/take_snapshot', snapshot_label,
                           int(with_save))
             self.ui.snapshotsList.setVisible(True)
             self.ui.label.setText(self._original_label)
 
     def setAutoSnapshot(self, bool_snapshot):
-        self.toDaemon('/ray/session/set_auto_snapshot', int(bool_snapshot))
+        self.to_daemon('/ray/session/set_auto_snapshot', int(bool_snapshot))
 
     def noSnapshotFound(self):
         self.ui.label.setText(
@@ -512,7 +512,7 @@ class ClientSnapshotsDialog(SnapshotsDialog):
 
         self.client = client
 
-        self.toDaemon('/ray/client/list_snapshots', client.client_id)
+        self.to_daemon('/ray/client/list_snapshots', client.client_id)
         self.resize(0, 0)
 
     def noSnapshotFound(self):

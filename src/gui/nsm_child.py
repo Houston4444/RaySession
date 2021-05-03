@@ -2,7 +2,7 @@
 import ray
 import nsm_client
 from gui_tools import CommandLineArgs, _translate
-from gui_server_thread import GUIServerThread
+from gui_server_thread import GuiServerThread
 
 class NSMChild:
     @classmethod
@@ -34,9 +34,9 @@ class NSMChild:
         self.session.signaler.daemon_announce_ok.connect(
             self.announceToParent)
         self.session.signaler.server_status_changed.connect(
-            self.serverStatusChanged)
+            self.server_status_changed)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         if server_status == ray.ServerStatus.READY:
             serverNSM = nsm_client.NSMThread.instance()
             if not serverNSM:
@@ -54,9 +54,9 @@ class NSMChild:
         self.wait_for_open = True
         self.project_path = project_path
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if server:
-            server.openSession(project_path, 0)
+            server.open_session(project_path, 0)
 
         self.sendGuiState(self.session.main_win.isVisible())
 
@@ -66,9 +66,9 @@ class NSMChild:
 
         self.wait_for_save = True
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if server:
-            server.saveSession()
+            server.save_session()
 
     def showOptionalGui(self):
         if self.session.main_win:
@@ -125,9 +125,9 @@ class NSMChildOutside(NSMChild):
         #Here project_path is used for template if needed
         template_name = jack_client_name
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if server:
-            server.openSession(project_path, 0, template_name)
+            server.open_session(project_path, 0, template_name)
 
         #self.session.main_win.hide()
         self.sendGuiState(self.session.main_win.isVisible())
@@ -135,6 +135,6 @@ class NSMChildOutside(NSMChild):
     def closeSession(self):
         self.wait_for_close = True
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if server:
-            server.closeSession()
+            server.close_session()

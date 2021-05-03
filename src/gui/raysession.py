@@ -11,7 +11,7 @@ from PyQt5.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
 
 #local imports
 from gui_tools import ArgParser, CommandLineArgs, initGuiTools, getCodeRoot
-from gui_server_thread import GUIServerThread
+from gui_server_thread import GuiServerThread
 from gui_session import SignaledSession
 import ray
 
@@ -23,9 +23,9 @@ def signalHandler(sig, frame):
                     and session.server_status != ray.ServerStatus.OFF):
                 session.main_win.terminate_request = True
 
-                l_server = GUIServerThread.instance()
+                l_server = GuiServerThread.instance()
                 if l_server:
-                    l_server.abortSession()
+                    l_server.abort_session()
             else:
                 session.daemon_manager.stop()
             return
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     timer.timeout.connect(lambda: None)
 
     #build session
-    server = GUIServerThread()
+    server = GuiServerThread()
     session = SignaledSession()
 
     app.exec()

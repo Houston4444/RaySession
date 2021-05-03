@@ -22,17 +22,17 @@ class RS:
     HD_SessionScripts = 0x020
 
     @classmethod
-    def setSettings(cls, settings):
+    def set_settings(cls, settings):
         del cls.settings
         cls.settings = settings
 
     @classmethod
-    def isHidden(cls, hideable_dialog: int)->bool:
+    def is_hidden(cls, hideable_dialog: int)->bool:
         hidden_dialogs = cls.settings.value('hidden_dialogs', 0, type=int)
         return bool(hidden_dialogs & hideable_dialog)
 
     @classmethod
-    def setHidden(cls, hiddeable_dialog: int, hide=True):
+    def set_hidden(cls, hiddeable_dialog: int, hide=True):
         hidden_dialogs = cls.settings.value('hidden_dialogs', 0, type=int)
 
         if hide:
@@ -43,7 +43,7 @@ class RS:
         cls.settings.setValue('hidden_dialogs', hidden_dialogs)
 
     @classmethod
-    def resetHiddens(cls):
+    def reset_hiddens(cls):
         cls.settings.setValue('hidden_dialogs', 0)
 
 
@@ -177,7 +177,7 @@ def initGuiTools():
     else:
         settings = QSettings()
 
-    RS.setSettings(settings)
+    RS.set_settings(settings)
 
     if not CommandLineArgs.session_root:
         CommandLineArgs.changeSessionRoot(

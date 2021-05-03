@@ -2,12 +2,12 @@
 import os
 import socket
 import sys
-from liblo import Address
 from PyQt5.QtCore import QObject, QProcess, QTimer
 from PyQt5.QtWidgets import QApplication
+from liblo import Address
 
 import ray
-from gui_server_thread import GUIServerThread
+from gui_server_thread import GuiServerThread
 from gui_tools import CommandLineArgs, ErrDaemon, _translate
 
 class DaemonManager(QObject):
@@ -15,57 +15,55 @@ class DaemonManager(QObject):
         QObject.__init__(self)
         self.session = session
         self.signaler = self.session.signaler
+        self.main_win = None
 
-        self.executable = 'ray-daemon'
-        self.process = QProcess()
+        self._process = QProcess()
 
         if ray.QT_VERSION >= (5, 6):
-            self.process.errorOccurred.connect(self.errorInProcess)
-        self.process.setProcessChannelMode(QProcess.ForwardedChannels)
+            self._process.errorOccurred.connect(self._error_in_process)
+        self._process.setProcessChannelMode(QProcess.ForwardedChannels)
 
-        self.announce_timer = QTimer()
-        self.announce_timer.setInterval(2000)
-        self.announce_timer.setSingleShot(True)
-        self.announce_timer.timeout.connect(self.announceTimerOut)
+        self._announce_timer = QTimer()
+        self._announce_timer.setInterval(2000)
+        self._announce_timer.setSingleShot(True)
+        self._announce_timer.timeout.connect(self._announce_timer_out)
 
-        self.stopped_yet = False
+        self._port = None
+        self._is_announced = False
+        self._is_nsm_locked = False
+
         self.is_local = True
         self.launched_before = False
         self.address = None
-        self.port = None
         self.url = ''
-
-        self.is_announced = False
-        self.is_nsm_locked = False
-
         self.session_root = ""
 
-        self.signaler.daemon_announce.connect(self.receiveAnnounce)
-        self.signaler.daemon_url_changed.connect(self.changeUrl)
+        self.signaler.daemon_announce.connect(self._receive_announce)
+        self.signaler.daemon_url_changed.connect(self._change_url)
 
-    def finishInit(self):
-        self.main_win = self.session.main_win
+    def _error_in_process(self, error):
+        if self.main_win is None:
+            return
 
-    def errorInProcess(self, error):
         self.main_win.daemonCrash()
 
-    def changeUrl(self, new_url):
+    def _change_url(self, new_url: str):
         try:
-            self.setOscAddress(ray.getLibloAddress(new_url))
+            self.set_osc_address(ray.getLibloAddress(new_url))
         except BaseException:
             return
 
-        self.callDaemon()
+        self._call_daemon()
 
-    def callDaemon(self):
+    def _call_daemon(self):
         if not self.address:
             # I don't know really why, but it works only with a timer
-            QTimer.singleShot(5, self.showDaemonUrlWindow)
+            QTimer.singleShot(5, self._show_daemon_url_window)
             return
 
-        self.announce_timer.start()
+        self._announce_timer.start()
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if not server:
             sys.stderr.write(
                 'GUI can not call daemon, GUI OSC server is missing.\n')
@@ -73,10 +71,10 @@ class DaemonManager(QObject):
 
         server.announce()
 
-    def showDaemonUrlWindow(self):
+    def _show_daemon_url_window(self):
         self.signaler.daemon_url_request.emit(ErrDaemon.NO_ERROR, self.url)
 
-    def announceTimerOut(self):
+    def _announce_timer_out(self):
         if self.launched_before:
             self.signaler.daemon_url_request.emit(
                 ErrDaemon.NO_ANNOUNCE, self.url)
@@ -87,15 +85,10 @@ class DaemonManager(QObject):
                     "No announce from ray-daemon. RaySession can't works. Sorry.\n"))
             QApplication.quit()
 
-    def receiveAnnounce(
-            self,
-            src_addr,
-            version,
-            server_status,
-            options,
-            session_root,
-            is_net_free):
-        self.announce_timer.stop()
+    def _receive_announce(
+            self, src_addr, version, server_status,
+            options, session_root, is_net_free):
+        self._announce_timer.stop()
 
         if version.split('.')[:1] != ray.VERSION.split('.')[:1]:
             # works only if the two firsts digits are the same (ex: 0.6)
@@ -123,68 +116,67 @@ class DaemonManager(QObject):
             self.disannounce(src_addr)
             return
 
-        self.is_announced = True
+        self._is_announced = True
         self.address = src_addr
-        self.port = src_addr.port
+        self._port = src_addr.port
         self.url = src_addr.url
         self.session_root = session_root
         CommandLineArgs.changeSessionRoot(self.session_root)
 
-        self.is_nsm_locked = options & ray.Option.NSM_LOCKED
+        self._is_nsm_locked = options & ray.Option.NSM_LOCKED
 
-        if self.is_nsm_locked:
-            #self.signaler.daemon_nsm_locked.emit(True)
-            self.session.main_win.setNsmLocked(True)
+        if self._is_nsm_locked:
+            if self.main_win is not None:
+                self.main_win.setNsmLocked(True)
         elif CommandLineArgs.under_nsm:
-            server = GUIServerThread.instance()
-            server.toDaemon('/ray/server/set_nsm_locked')
+            server = GuiServerThread.instance()
+            server.to_daemon('/ray/server/set_nsm_locked')
 
-        if self.session.main_win.waiting_for_patchbay:
-            self.session.main_win.waiting_for_patchbay = False
-            server = GUIServerThread.instance()
-            server.toDaemon('/ray/server/ask_for_patchbay')
+        if self.main_win is not None and self.main_win.waiting_for_patchbay:
+            self.main_win.waiting_for_patchbay = False
+            server = GuiServerThread.instance()
+            server.to_daemon('/ray/server/ask_for_patchbay')
 
         self.signaler.daemon_announce_ok.emit()
-        self.session.setDaemonOptions(options)
+        self.session.set_daemon_options(options)
+
+    def finish_init(self):
+        self.main_win = self.session.main_win
 
     def disannounce(self, address=None):
         if not address:
             address = self.address
 
         if address:
-            server = GUIServerThread.instance()
+            server = GuiServerThread.instance()
             server.disannounce(address)
 
-        self.port = None
+        self._port = None
         self.url = ''
         del self.address
         self.address = None
-        self.is_announced = False
+        self._is_announced = False
 
-    def setExternal(self):
+    def set_external(self):
         self.launched_before = True
 
-    def setOscAddress(self, address):
+    def set_osc_address(self, address):
         self.address = address
         self.launched_before = True
-        self.port = self.address.port
+        self._port = self.address.port
         self.url = self.address.url
 
         self.is_local = bool(self.address.hostname == socket.gethostname())
 
-    def setOscAddressViaUrl(self, url):
-        self.setOscAddress(ray.getLibloAddress(url))
-
     def start(self):
         if self.launched_before:
-            self.callDaemon()
+            self._call_daemon()
             return
 
         if not CommandLineArgs.force_new_daemon:
             ray_control_process = QProcess()
-            ray_control_process.start("ray_control",
-                                    ['get_port_gui_free',
-                                    CommandLineArgs.session_root])
+            ray_control_process.start(
+                "ray_control", ['get_port_gui_free', CommandLineArgs.session_root])
             ray_control_process.waitForFinished(2000)
 
             if ray_control_process.exitCode() == 0:
@@ -194,24 +186,25 @@ class DaemonManager(QObject):
 
                 if port_str and port_str.isdigit():
                     self.address = Address(int(port_str))
-                    self.port = self.address.port
+                    self._port = self.address.port
                     self.url = self.address.url
                     self.launched_before = True
                     self.is_local = True
-                    self.callDaemon()
+                    self._call_daemon()
                     sys.stderr.write(
-                        "\033[92m%s\033[0m\n" % (_translate('GUI_daemon',
-                                            "Connecting GUI to existing ray-daemon port %i")
-                                    % self.port))
+                        "\033[92m%s\033[0m\n" % (
+                            _translate('GUI_daemon',
+                                       "Connecting GUI to existing ray-daemon port %i")
+                            % self._port))
 
                     if CommandLineArgs.start_session:
-                        server = GUIServerThread.instance()
+                        server = GuiServerThread.instance()
                         if server:
                             server.send(self.address, '/ray/server/open_session',
                                         CommandLineArgs.start_session)
                     return
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if not server:
             sys.stderr.write(
                 "impossible for GUI to launch daemon. server missing.\n")
@@ -219,7 +212,7 @@ class DaemonManager(QObject):
         # start process
         arguments = ['--gui-url', str(server.url),
                      '--gui-pid', str(os.getpid()),
-                     '--osc-port', str(self.port),
+                     '--osc-port', str(self._port),
                      '--session-root', CommandLineArgs.session_root]
 
         if CommandLineArgs.start_session:
@@ -237,7 +230,7 @@ class DaemonManager(QObject):
             arguments.append('--config-dir')
             arguments.append(CommandLineArgs.config_dir)
 
-        self.process.startDetached('ray-daemon', arguments)
+        self._process.startDetached('ray-daemon', arguments)
         #self.process.start('konsole', ['-e', 'ray-daemon'] + arguments)
 
     def stop(self):
@@ -246,37 +239,14 @@ class DaemonManager(QObject):
             QTimer.singleShot(10, QApplication.quit)
             return
 
-        server = GUIServerThread.instance()
-        server.toDaemon('/ray/server/quit')
+        server = GuiServerThread.instance()
+        server.to_daemon('/ray/server/quit')
         QTimer.singleShot(50, QApplication.quit)
 
-    def notEndedAfterWait(self):
-        sys.stderr.write('ray-daemon is still running, sorry !\n')
-        QApplication.quit()
+    def set_new_osc_address(self):
+        if not (self.address or self._port):
+            self._port = ray.getFreeOscPort()
+            self.address = Address(self._port)
 
-    def setNewOscAddress(self):
-        if not (self.address or self.port):
-            self.port = ray.getFreeOscPort()
-            self.address = Address(self.port)
-
-    def setNsmLocked(self):
-        self.is_nsm_locked = True
-
-    def isAnnounced(self):
-        return self.is_announced
-
-    def setDisannounced(self):
-        server = GUIServerThread.instance()
-        server.disannounce()
-
-        self.port = None
-        self.url = ''
-        del self.address
-        self.address = None
-        self.is_announced = False
-
-    def getUrl(self):
-        if self.address:
-            return self.address.url
-
-        return ''
+    def is_announced(self):
+        return self._is_announced

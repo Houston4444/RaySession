@@ -308,9 +308,9 @@ class favoriteToolButton(QToolButton):
             return
 
         if self.m_state:
-            self.session.removeFavorite(self.template_name, self.factory)
+            self.session.remove_favorite(self.template_name, self.factory)
         else:
-            self.session.addFavorite(self.template_name, self.template_icon,
+            self.session.add_favorite(self.template_name, self.template_icon,
                                      self.factory)
 
 # taken from carla (falktx)

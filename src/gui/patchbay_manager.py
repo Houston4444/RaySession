@@ -12,7 +12,7 @@ import ray
 from gui_tools import RS
 
 from patchcanvas import patchcanvas
-from gui_server_thread import GUIServerThread
+from gui_server_thread import GuiServerThread
 from patchbay_tools import PatchbayToolsWidget, CanvasMenu, CanvasPortInfoDialog
 
 import canvas_options
@@ -1120,7 +1120,7 @@ class PatchbayManager:
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if not server:
             return
 
@@ -1131,10 +1131,10 @@ class PatchbayManager:
 
     @staticmethod
     def send_to_daemon(*args):
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if not server:
             return
-        server.toDaemon(*args)
+        server.to_daemon(*args)
 
     @classmethod
     def set_use_graceful_names(cls, yesno: bool):

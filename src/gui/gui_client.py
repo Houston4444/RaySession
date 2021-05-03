@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtCore import QObject, pyqtSignal
 
 import ray
-from gui_server_thread import GUIServerThread
+from gui_server_thread import GuiServerThread
 from client_properties_dialog import ClientPropertiesDialog
 
 class Client(QObject, ray.ClientData):
@@ -15,7 +15,7 @@ class Client(QObject, ray.ClientData):
 
         self.session = session
         self.main_win = self.session.main_win
-        
+
         self._previous_status = ray.ClientStatus.STOPPED
         self._has_gui = False
 
@@ -44,7 +44,7 @@ class Client(QObject, ray.ClientData):
             self.last_save = time.time()
 
         self.widget.updateStatus(status)
-        self.properties_dialog.updateStatus(status)
+        self.properties_dialog.update_status(status)
 
     def set_gui_enabled(self):
         self._has_gui = True
@@ -91,25 +91,25 @@ class Client(QObject, ray.ClientData):
         return self.executable_path
 
     def send_properties_to_daemon(self):
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if not server:
             sys.stderr.write(
                 'Server not found. Client %s can not send its properties\n'
                 % self.client_id)
             return
 
-        server.toDaemon('/ray/client/update_properties',
+        server.to_daemon('/ray/client/update_properties',
                         *ray.ClientData.spreadClient(self))
 
     def send_ray_hack(self):
         if self.protocol != ray.Protocol.RAY_HACK:
             return
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if not server:
             return
 
-        server.toDaemon('/ray/client/update_ray_hack_properties',
+        server.to_daemon('/ray/client/update_ray_hack_properties',
                         self.client_id,
                         *self.ray_hack.spread())
 
@@ -117,20 +117,20 @@ class Client(QObject, ray.ClientData):
         if self.protocol != ray.Protocol.RAY_NET:
             return
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if not server:
             return
 
-        server.toDaemon('/ray/client/update_ray_net_properties',
+        server.to_daemon('/ray/client/update_ray_net_properties',
                         self.client_id,
                         *self.ray_net.spread())
 
     def show_properties_dialog(self, second_tab=False):
-        self.properties_dialog.updateContents()
+        self.properties_dialog.update_contents()
         if second_tab:
             if self.protocol == ray.Protocol.RAY_HACK:
-                self.properties_dialog.enableTestZone(True)
-            self.properties_dialog.setOnSecondTab()
+                self.properties_dialog.enable_test_zone(True)
+            self.properties_dialog.set_on_second_tab()
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()
 

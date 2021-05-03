@@ -10,7 +10,7 @@ from PyQt5.QtCore import Qt, QTimer
 
 import client_properties_dialog
 import ray
-from gui_server_thread import GUIServerThread
+from gui_server_thread import GuiServerThread
 from gui_tools import (ErrDaemon, _translate,
                        CommandLineArgs, RS, isDarkTheme)
 
@@ -49,7 +49,7 @@ class ChildDialog(QDialog):
 
         self.daemon_manager = self.session.daemon_manager
 
-        self.signaler.server_status_changed.connect(self.serverStatusChanged)
+        self.signaler.server_status_changed.connect(self.server_status_changed)
         self.signaler.server_copying.connect(self.serverCopying)
 
         self.root_folder_file_dialog = None
@@ -63,20 +63,20 @@ class ChildDialog(QDialog):
         self.server_copying = parent.server_copying
 
     @classmethod
-    def toDaemon(cls, *args):
-        server = GUIServerThread.instance()
+    def to_daemon(cls, *args):
+        server = GuiServerThread.instance()
         if server:
-            server.toDaemon(*args)
+            server.to_daemon(*args)
         else:
             sys.stderr.write('Error No GUI OSC Server, can not send %s.\n'
                              % args)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         pass
 
     def serverCopying(self, bool_copying):
         self.server_copying = bool_copying
-        self.serverStatusChanged(self.session.server_status)
+        self.server_status_changed(self.session.server_status)
 
     def changeRootFolder(self):
         # construct this here only because it can be quite long
@@ -123,7 +123,7 @@ class ChildDialog(QDialog):
             return
 
         RS.settings.setValue('default_session_root', root_folder)
-        self.toDaemon('/ray/server/change_root', root_folder)
+        self.to_daemon('/ray/server/change_root', root_folder)
 
     def leaveEvent(self, event):
         if self.isActiveWindow():
@@ -232,7 +232,7 @@ class OpenSessionDialog(ChildDialog):
         self.signaler.add_sessions_to_list.connect(self.addSessions)
         self.signaler.root_changed.connect(self.rootChanged)
 
-        self.toDaemon('/ray/server/list_sessions', 0)
+        self.to_daemon('/ray/server/list_sessions', 0)
 
         if not self.daemon_manager.is_local:
             self.ui.toolButtonFolder.setVisible(False)
@@ -242,7 +242,7 @@ class OpenSessionDialog(ChildDialog):
         self.server_will_accept = False
         self.has_selection = False
 
-        self.serverStatusChanged(self.session.server_status)
+        self.server_status_changed(self.session.server_status)
 
         self.folders = []
         self.all_items = []
@@ -252,7 +252,7 @@ class OpenSessionDialog(ChildDialog):
 
         self.ui.filterBar.setFocus(Qt.OtherFocusReason)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
             bool(server_status in (ray.ServerStatus.OFF,
                                    ray.ServerStatus.READY,
@@ -283,7 +283,7 @@ class OpenSessionDialog(ChildDialog):
         self.ui.currentSessionsFolder.setText(session_root)
         self.ui.sessionList.clear()
         self.folders.clear()
-        self.toDaemon('/ray/server/list_sessions', 0)
+        self.to_daemon('/ray/server/list_sessions', 0)
 
     def addSessions(self, session_names):
         if not session_names:
@@ -428,12 +428,12 @@ class NewSessionDialog(ChildDialog):
         self.template_list = []
         self.sub_folders = []
 
-        self.signaler.server_status_changed.connect(self.serverStatusChanged)
+        self.signaler.server_status_changed.connect(self.server_status_changed)
         self.signaler.add_sessions_to_list.connect(self.addSessionsToList)
         self.signaler.session_template_found.connect(self.addTemplatesToList)
         self.signaler.root_changed.connect(self.rootChanged)
 
-        self.toDaemon('/ray/server/list_sessions', 1)
+        self.to_daemon('/ray/server/list_sessions', 1)
 
         if self.is_duplicate:
             self.ui.labelTemplate.setVisible(False)
@@ -442,7 +442,7 @@ class NewSessionDialog(ChildDialog):
                 _translate('Duplicate', 'Duplicated session name :'))
             self.setWindowTitle(_translate('Duplicate', 'Duplicate Session'))
         else:
-            self.toDaemon('/ray/server/list_session_templates')
+            self.to_daemon('/ray/server/list_session_templates')
 
         if not self.daemon_manager.is_local:
             self.ui.toolButtonFolder.setVisible(False)
@@ -458,9 +458,9 @@ class NewSessionDialog(ChildDialog):
         self.completer = QCompleter(self.sub_folders)
         self.ui.lineEdit.setCompleter(self.completer)
 
-        self.serverStatusChanged(self.session.server_status)
+        self.server_status_changed(self.session.server_status)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
             bool(server_status == ray.ServerStatus.OFF))
 
@@ -483,7 +483,7 @@ class NewSessionDialog(ChildDialog):
         self.ui.currentSessionsFolder.setText(session_root)
         self.session_list.clear()
         self.sub_folders.clear()
-        self.toDaemon('/ray/server/list_sessions', 1)
+        self.to_daemon('/ray/server/list_sessions', 1)
 
     def initTemplatesComboBox(self):
         self.ui.comboBoxTemplate.clear()
@@ -658,11 +658,11 @@ class SaveTemplateSessionDialog(AbstractSaveTemplateDialog):
         self.template_list = []
 
         self.signaler.session_template_found.connect(self.addTemplatesToList)
-        self.toDaemon('/ray/server/list_session_templates')
+        self.to_daemon('/ray/server/list_session_templates')
 
-        self.serverStatusChanged(self.session.server_status)
+        self.server_status_changed(self.session.server_status)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         self.server_will_accept = bool(server_status == ray.ServerStatus.READY)
 
         if server_status == ray.ServerStatus.OFF:
@@ -691,13 +691,13 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
         self.signaler.user_client_template_found.connect(
             self.addTemplatesToList)
 
-        self.toDaemon('/ray/server/list_user_client_templates')
+        self.to_daemon('/ray/server/list_user_client_templates')
         self.ui.lineEdit.setText(client.template_origin)
         self.ui.lineEdit.selectAll()
         self.ui.lineEdit.setFocus()
-        self.serverStatusChanged(self.session.server_status)
+        self.server_status_changed(self.session.server_status)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         self.server_will_accept = bool(
             server_status not in (
                 ray.ServerStatus.OFF,
@@ -738,7 +738,7 @@ class ClientTrashDialog(ChildDialog):
             )
         self.remove_client_message_box.setDefaultButton(QMessageBox.Cancel)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         if server_status in (ray.ServerStatus.CLOSE,
                              ray.ServerStatus.OFF,
                              ray.ServerStatus.OUT_SAVE,
@@ -754,7 +754,7 @@ class ClientTrashDialog(ChildDialog):
                 != self.remove_client_message_box.button(QMessageBox.Ok)):
             return
 
-        self.toDaemon(
+        self.to_daemon(
             '/ray/trashed_client/remove_definitely',
             self.client_data.client_id)
         self.reject()
@@ -762,8 +762,8 @@ class ClientTrashDialog(ChildDialog):
     def showProperties(self):
         properties_dialog = client_properties_dialog.ClientPropertiesDialog.create(
             self, self.client_data)
-        properties_dialog.updateContents()
-        properties_dialog.lockWidgets()
+        properties_dialog.update_contents()
+        properties_dialog.lock_widgets()
         properties_dialog.show()
 
 class AbortSessionDialog(ChildDialog):
@@ -776,9 +776,9 @@ class AbortSessionDialog(ChildDialog):
         self.ui.pushButtonCancel.clicked.connect(self.reject)
         self.ui.pushButtonCancel.setFocus(Qt.OtherFocusReason)
 
-        self.serverStatusChanged(self.session.server_status)
+        self.server_status_changed(self.session.server_status)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         self.ui.pushButtonAbort.setEnabled(
             not bool(
                 server_status in (
@@ -797,9 +797,9 @@ class AbortServerCopyDialog(ChildDialog):
 
         self.signaler.server_progress.connect(self.setProgress)
 
-        self.serverStatusChanged(self.session.server_status)
+        self.server_status_changed(self.session.server_status)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         if server_status not in (
                 ray.ServerStatus.PRECOPY,
                 ray.ServerStatus.COPY):
@@ -825,7 +825,7 @@ class AbortClientCopyDialog(ChildDialog):
 
         self.ui.progressBar.setValue(progress * 100)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         if not self.server_copying:
             self.reject()
 
@@ -857,7 +857,7 @@ class SessionNotesDialog(ChildDialog):
         self.anti_timer = False
         self.notesUpdated()
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         if server_status == ray.ServerStatus.OFF:
             self.server_off = True
             if self.message_box is not None:
@@ -891,7 +891,7 @@ class SessionNotesDialog(ChildDialog):
             return
 
         self.session.notes = notes
-        self.toDaemon('/ray/session/set_notes', self.session.notes)
+        self.to_daemon('/ray/session/set_notes', self.session.notes)
 
     def notesUpdated(self):
         self.anti_timer = True
@@ -901,7 +901,7 @@ class SessionNotesDialog(ChildDialog):
         RS.settings.setValue('SessionNotes/geometry', self.saveGeometry())
         RS.settings.setValue('SessionNotes/position', self.pos())
         if not self.server_off:
-            self.toDaemon('/ray/session/hide_notes')
+            self.to_daemon('/ray/session/hide_notes')
         ChildDialog.closeEvent(self, event)
 
 class OpenNsmSessionInfoDialog(ChildDialog):
@@ -913,7 +913,7 @@ class OpenNsmSessionInfoDialog(ChildDialog):
 
     @classmethod
     def showThis(cls, state):
-        RS.setHidden(RS.HD_OpenNsmSession, bool(state))
+        RS.set_hidden(RS.HD_OpenNsmSession, bool(state))
 
 
 class QuitAppDialog(ChildDialog):
@@ -934,9 +934,9 @@ class QuitAppDialog(ChildDialog):
 
         if CommandLineArgs.under_nsm:
             self.ui.pushButtonDaemon.setVisible(False)
-        self.serverStatusChanged(self.session.server_status)
+        self.server_status_changed(self.session.server_status)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         if server_status == ray.ServerStatus.OFF:
             self.accept()
             return
@@ -947,10 +947,10 @@ class QuitAppDialog(ChildDialog):
             bool(server_status != ray.ServerStatus.CLOSE))
 
     def closeSession(self):
-        self.toDaemon('/ray/session/close')
+        self.to_daemon('/ray/session/close')
 
     def abortSession(self):
-        self.toDaemon('/ray/session/abort')
+        self.to_daemon('/ray/session/abort')
 
     def leaveDaemonRunning(self):
         if CommandLineArgs.under_nsm:
@@ -1002,7 +1002,7 @@ class NewExecutableDialog(ChildDialog):
             self.prefixModeChanged)
 
         self.signaler.new_executable.connect(self.addExecutableToCompleter)
-        self.toDaemon('/ray/server/list_path')
+        self.to_daemon('/ray/server/list_path')
 
         self.exec_list = []
 
@@ -1011,7 +1011,7 @@ class NewExecutableDialog(ChildDialog):
 
         self.ui.lineEdit.returnPressed.connect(self.closeNow)
 
-        self.serverStatusChanged(self.session.server_status)
+        self.server_status_changed(self.session.server_status)
 
         self.text_will_accept = False
 
@@ -1056,7 +1056,7 @@ class NewExecutableDialog(ChildDialog):
         if self.isAllowed():
             self.accept()
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         if server_status in (ray.ServerStatus.OUT_SAVE,
                              ray.ServerStatus.OUT_SNAPSHOT,
                              ray.ServerStatus.WAIT_USER,
@@ -1074,7 +1074,7 @@ class StopClientDialog(ChildDialog):
         self.client_id = client_id
         self.wait_for_save = False
 
-        self.client = self.session.getClient(client_id)
+        self.client = self.session.get_client(client_id)
 
         if self.client:
             text = self.ui.label.text() % self.client.prettier_name()
@@ -1095,7 +1095,7 @@ class StopClientDialog(ChildDialog):
 
     def saveAndStop(self):
         self.wait_for_save = True
-        self.toDaemon('/ray/client/save', self.client_id)
+        self.to_daemon('/ray/client/save', self.client_id)
 
     def checkBoxClicked(self, state):
         self.client.check_last_save = not bool(state)
@@ -1118,7 +1118,7 @@ class StopClientNoSaveDialog(ChildDialog):
         self.ui.setupUi(self)
 
         self.client_id = client_id
-        self.client = self.session.getClient(client_id)
+        self.client = self.session.get_client(client_id)
 
         if self.client:
             text = self.ui.label.text() % self.client.prettier_name()
@@ -1162,7 +1162,7 @@ class SnapShotProgressDialog(ChildDialog):
         self.ui.setupUi(self)
         self.signaler.server_progress.connect(self.serverProgress)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         self.close()
 
     def serverProgress(self, value):
@@ -1203,13 +1203,13 @@ class ScriptUserActionDialog(ChildDialog):
         self.ui.infoLine.setVisible(True)
 
     def validate(self):
-        self.toDaemon('/reply', '/ray/gui/script_user_action',
+        self.to_daemon('/reply', '/ray/gui/script_user_action',
                       'Dialog window validated')
         self._is_terminated = True
         self.accept()
 
     def abort(self):
-        self.toDaemon('/error', '/ray/gui/script_user_action',
+        self.to_daemon('/error', '/ray/gui/script_user_action',
                       ray.Err.ABORT_ORDERED, 'Script user action aborted!')
         self._is_terminated = True
         self.accept()
@@ -1346,21 +1346,21 @@ class WaitingCloseUserDialog(ChildDialog):
         self.ui.pushButtonOk.setFocus(True)
         self.ui.pushButtonUndo.clicked.connect(self.undoClose)
         self.ui.pushButtonSkip.clicked.connect(self.skip)
-        self.ui.checkBox.setChecked(not RS.isHidden(RS.HD_WaitCloseUser))
+        self.ui.checkBox.setChecked(not RS.is_hidden(RS.HD_WaitCloseUser))
         self.ui.checkBox.clicked.connect(self.checkBoxClicked)
 
-    def serverStatusChanged(self, server_status):
+    def server_status_changed(self, server_status):
         if server_status != ray.ServerStatus.WAIT_USER:
             self.accept()
 
     def undoClose(self):
-        self.toDaemon('/ray/session/cancel_close')
+        self.to_daemon('/ray/session/cancel_close')
 
     def skip(self):
-        self.toDaemon('/ray/session/skip_wait_user')
+        self.to_daemon('/ray/session/skip_wait_user')
 
     def checkBoxClicked(self, state):
-        RS.setHidden(RS.HD_WaitCloseUser, bool(state))
+        RS.set_hidden(RS.HD_WaitCloseUser, bool(state))
 
 
 class CanvasPortInfoDialog(ChildDialog):
@@ -1397,7 +1397,7 @@ class DonationsDialog(ChildDialog):
         self.ui.checkBox.clicked.connect(self.checkBoxClicked)
 
     def checkBoxClicked(self, state):
-        RS.setHidden(RS.HD_Donations, state)
+        RS.set_hidden(RS.HD_Donations, state)
 
 
 class ErrorDialog(ChildDialog):

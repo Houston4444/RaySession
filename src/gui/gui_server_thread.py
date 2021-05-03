@@ -31,7 +31,7 @@ def ray_method(path, types):
     return decorated
 
 
-class GUIServerThread(liblo.ServerThread):
+class GuiServerThread(liblo.ServerThread):
     def __init__(self):
         liblo.ServerThread.__init__(self)
 
@@ -52,7 +52,7 @@ class GUIServerThread(liblo.ServerThread):
 
         liblo.ServerThread.stop(self)
 
-    def finishInit(self, session):
+    def finish_init(self, session):
         self.session = session
         self.signaler = self.session.signaler
         self.daemon_manager = self.session.daemon_manager
@@ -76,18 +76,18 @@ class GUIServerThread(liblo.ServerThread):
             ('/ray/gui/patchbay/fast_temp_file_running', 's'),
             ('/ray/gui/patchbay/client_name_and_uuid', 'sh')):
                 self.add_method(path_types[0], path_types[1],
-                                self.generic_callback)
+                                self._generic_callback)
 
-        self.direct_to_session('/ray/gui/patchbay/port_added', 'siih')
+        self._direct_to_session('/ray/gui/patchbay/port_added', 'siih')
 
-    def direct_to_session(self, path: str, types: str):
-        self.add_method(path, types, self.generic_callback)
+    def _direct_to_session(self, path: str, types: str):
+        self.add_method(path, types, self._generic_callback)
 
     @staticmethod
     def instance():
         return _instance
 
-    def generic_callback(self, path, args, types, src_addr):
+    def _generic_callback(self, path, args, types, src_addr):
         if self.stopping:
             return
 
@@ -132,7 +132,7 @@ class GUIServerThread(liblo.ServerThread):
 
     @ray_method('/ray/gui/server/announce', 'siisi')
     def _server_announce(self, path, args, types, src_addr):
-        if self.daemon_manager.isAnnounced():
+        if self.daemon_manager.is_announced():
             return
 
         version, server_status, options, session_root, is_net_free = args
@@ -365,7 +365,7 @@ class GUIServerThread(liblo.ServerThread):
 
         liblo.ServerThread.send(self, *args)
 
-    def toDaemon(self, *args):
+    def to_daemon(self, *args):
         self.send(self.daemon_manager.address, *args)
 
     def announce(self):
@@ -384,15 +384,15 @@ class GUIServerThread(liblo.ServerThread):
     def disannounce(self, src_addr):
         self.send(src_addr, '/ray/server/gui_disannounce')
 
-    def openSession(self, session_name, save_previous=1, session_template=''):
-        self.toDaemon('/ray/server/open_session', session_name,
+    def open_session(self, session_name, save_previous=1, session_template=''):
+        self.to_daemon('/ray/server/open_session', session_name,
                       save_previous, session_template)
 
-    def saveSession(self):
-        self.toDaemon('/ray/session/save')
+    def save_session(self):
+        self.to_daemon('/ray/session/save')
 
-    def closeSession(self):
-        self.toDaemon('/ray/session/close')
+    def close_session(self):
+        self.to_daemon('/ray/session/close')
 
-    def abortSession(self):
-        self.toDaemon('/ray/session/abort')
+    def abort_session(self):
+        self.to_daemon('/ray/session/abort')
