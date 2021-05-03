@@ -9,19 +9,20 @@ from client_properties_dialog import ClientPropertiesDialog
 class Client(QObject, ray.ClientData):
     status_changed = pyqtSignal(int)
 
-    def __init__(self, session, client_id, protocol, trashed=False):
+    def __init__(self, session, client_id: str, protocol: int, trashed=False):
         QObject.__init__(self)
         ray.ClientData.gui_init(self, client_id, protocol)
 
         self._session = session
         self._main_win = self._session._main_win
 
+        self._has_gui = False
+
         self.ray_hack = ray.RayHack()
         self.ray_net = ray.RayNet()
 
         self.status = ray.ClientStatus.STOPPED
         self.previous_status = ray.ClientStatus.STOPPED
-        self.hasGui = False
         self.gui_state = False
         self.gui_visible = False
         self.has_dirty = False
@@ -30,10 +31,9 @@ class Client(QObject, ray.ClientData):
         self.last_save = time.time()
 
         self.widget = self._main_win.createClientWidget(self)
-        self.properties_dialog = ClientPropertiesDialog.create(self._main_win,
-                                                               self)
+        self.properties_dialog = ClientPropertiesDialog.create(self._main_win, self)
 
-    def setStatus(self, status):
+    def set_status(self, status: int):
         self.previous_status = self.status
         self.status = status
         self.status_changed.emit(status)
@@ -47,42 +47,42 @@ class Client(QObject, ray.ClientData):
         self.widget.updateStatus(status)
         self.properties_dialog.updateStatus(status)
 
-    def setGuiEnabled(self):
-        self.hasGui = True
+    def set_gui_enabled(self):
+        self._has_gui = True
         self.widget.showGuiButton()
 
-    def setGuiState(self, state: bool):
+    def set_gui_state(self, state: bool):
         self.gui_state = state
         self.widget.setGuiState(state)
 
-    def setDirtyState(self, dirty: bool):
+    def set_dirty_state(self, dirty: bool):
         self.has_dirty = True
         self.dirty_state = dirty
         self.widget.setDirtyState(dirty)
 
-    def setNoSaveLevel(self, no_save_level):
+    def set_no_save_level(self, no_save_level: int):
         self.no_save_level = no_save_level
         self.widget.setNoSaveLevel(no_save_level)
 
-    def setProgress(self, progress):
+    def set_progress(self, progress: float):
         self.widget.setProgress(progress)
 
-    def allowKill(self):
+    def allow_kill(self):
         self.widget.allowKill()
 
-    def updateClientProperties(self, *args):
+    def update_properties(self, *args):
         self.update(*args)
         self.widget.updateClientData()
 
-    def updateRayHack(self, *args):
+    def update_ray_hack(self, *args):
         self.ray_hack.update(*args)
         self.widget.updateClientData()
 
-    def updateRayNet(self, *args):
+    def update_ray_net(self, *args):
         self.ray_net.update(*args)
         self.widget.updateClientData()
 
-    def prettierName(self):
+    def prettier_name(self):
         if self.label:
             return self.label
 
@@ -91,7 +91,7 @@ class Client(QObject, ray.ClientData):
 
         return self.executable_path
 
-    def sendPropertiesToDaemon(self):
+    def send_properties_to_daemon(self):
         server = GUIServerThread.instance()
         if not server:
             sys.stderr.write(
@@ -102,7 +102,7 @@ class Client(QObject, ray.ClientData):
         server.toDaemon('/ray/client/update_properties',
                         *ray.ClientData.spreadClient(self))
 
-    def sendRayHack(self):
+    def send_ray_hack(self):
         if self.protocol != ray.Protocol.RAY_HACK:
             return
 
@@ -114,7 +114,7 @@ class Client(QObject, ray.ClientData):
                         self.client_id,
                         *self.ray_hack.spread())
 
-    def sendRayNet(self):
+    def send_ray_net(self):
         if self.protocol != ray.Protocol.RAY_NET:
             return
 
@@ -126,7 +126,7 @@ class Client(QObject, ray.ClientData):
                         self.client_id,
                         *self.ray_net.spread())
 
-    def showPropertiesDialog(self, second_tab=False):
+    def show_properties_dialog(self, second_tab=False):
         self.properties_dialog.updateContents()
         if second_tab:
             if self.protocol == ray.Protocol.RAY_HACK:
@@ -135,22 +135,16 @@ class Client(QObject, ray.ClientData):
         self.properties_dialog.show()
         self.properties_dialog.activateWindow()
 
-    def reCreateWidget(self):
+    def re_create_widget(self):
         del self.widget
         self.widget = self._main_win.createClientWidget(self)
         self.widget.updateClientData()
 
-        if self.hasGui:
-            self.setGuiEnabled()
+        if self._has_gui:
+            self.set_gui_enabled()
 
-    def hasBeenRecentlySaved(self):
-        if (time.time() - self.last_save) >= 60:
-            # last save more than 60 seconds ago
-            return False
-
-        return True
-
-    def getProjectPath(self)->str:
+    # method not used yet
+    def get_project_path(self)->str:
         if not self._session.path:
             return ''
 
@@ -163,11 +157,12 @@ class Client(QObject, ray.ClientData):
 
         return "%s/%s.%s" % (self._session.path, prefix, self.client_id)
 
-    def getIconSearchPath(self)->list:
+    # method not used yet
+    def get_icon_search_path(self)->list:
         if not self._session._daemon_manager.is_local:
             return []
 
-        project_path = self.getProjectPath()
+        project_path = self.get_project_path()
         if not project_path:
             return []
 
@@ -185,5 +180,5 @@ class TrashedClient(ray.ClientData):
     def __init__(self):
         self.menu_action = None
 
-    def setMenuAction(self, menu_action):
+    def set_menu_action(self, menu_action):
         self.menu_action = menu_action

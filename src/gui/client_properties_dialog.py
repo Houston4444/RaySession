@@ -126,7 +126,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.ignored_extensions = \
                                     self.ui.lineEditIgnoredExtensions.text()
 
-        self.client.sendPropertiesToDaemon()
+        self.client.send_properties_to_daemon()
 
         # better for user to wait a little before close the window
         QTimer.singleShot(150, self.accept)
@@ -346,7 +346,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         #self.client.ray_hack.close_gracefully = \
             #self.rhack.checkBoxCloseGracefully.isChecked()
 
-        self.client.sendRayHack()
+        self.client.send_ray_hack()
 
         self.client.executable_path = self.rhack.lineEditExecutable.text()
         self.client.arguments = self.rhack.lineEditArguments.text()
@@ -442,14 +442,14 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.client.arguments = self.rhack.lineEditArguments.text()
         self.client.ray_hack.config_file = self.rhack.lineEditConfigFile.text()
 
-        self.client.sendPropertiesToDaemon()
+        self.client.send_properties_to_daemon()
         self.toDaemon('/ray/client/resume', self.client.client_id)
 
         self.client.executable_path = executable
         self.client.arguments = arguments
         self.client.ray_hack.config_file = config_file
 
-        self.client.sendPropertiesToDaemon()
+        self.client.send_properties_to_daemon()
 
     def stopClient(self):
         self.toDaemon('/ray/client/send_signal', self.client.client_id,
@@ -511,7 +511,7 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         if '/' not in new_template:
             self.client.ray_net.session_template = new_template
 
-        self.client.sendRayNet()
+        self.client.send_ray_net()
         ClientPropertiesDialog.saveChanges(self)
 
     def changeIconwithText(self, text):

@@ -1077,14 +1077,14 @@ class StopClientDialog(ChildDialog):
         self.client = self._session.getClient(client_id)
 
         if self.client:
-            text = self.ui.label.text() % self.client.prettierName()
+            text = self.ui.label.text() % self.client.prettier_name()
 
             if not self.client.has_dirty:
                 minutes = int((time.time() - self.client.last_save) / 60)
                 text = _translate(
                     'client_stop',
                     "<strong>%s</strong> seems to has not been saved for %i minute(s).<br />Do you really want to stop it ?") \
-                        % (self.client.prettierName(), minutes)
+                        % (self.client.prettier_name(), minutes)
 
             self.ui.label.setText(text)
 
@@ -1099,7 +1099,7 @@ class StopClientDialog(ChildDialog):
 
     def checkBoxClicked(self, state):
         self.client.check_last_save = not bool(state)
-        self.client.sendPropertiesToDaemon()
+        self.client.send_properties_to_daemon()
 
     def serverUpdatesClientStatus(self, status):
         if status in (ray.ClientStatus.STOPPED, ray.ClientStatus.REMOVED):
@@ -1121,7 +1121,7 @@ class StopClientNoSaveDialog(ChildDialog):
         self.client = self._session.getClient(client_id)
 
         if self.client:
-            text = self.ui.label.text() % self.client.prettierName()
+            text = self.ui.label.text() % self.client.prettier_name()
             self.ui.label.setText(text)
             self.client.status_changed.connect(self.serverUpdatesClientStatus)
 
@@ -1135,7 +1135,7 @@ class StopClientNoSaveDialog(ChildDialog):
 
     def checkBoxClicked(self, state):
         self.client.check_last_save = not bool(state)
-        self.client.sendPropertiesToDaemon()
+        self.client.send_properties_to_daemon()
 
 
 class ClientRenameDialog(ChildDialog):

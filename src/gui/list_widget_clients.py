@@ -92,7 +92,7 @@ class ClientSlot(QFrame):
         self.ui.actionReturnToAPreviousState.triggered.connect(
             self.openSnapshotsDialog)
         self.ui.actionProperties.triggered.connect(
-            self.client.showPropertiesDialog)
+            self.client.show_properties_dialog)
 
         self.menu = QMenu(self)
 
@@ -181,7 +181,7 @@ class ClientSlot(QFrame):
         dialog.exec()
         if dialog.result():
             self.client.label = dialog.getNewLabel()
-            self.client.sendPropertiesToDaemon()
+            self.client.send_properties_to_daemon()
 
     def set_very_short(self, yesno: bool):
         self._very_short = yesno
@@ -455,7 +455,7 @@ class ClientSlot(QFrame):
             return
 
         if state:
-            self.client.showPropertiesDialog(second_tab=True)
+            self.client.show_properties_dialog(second_tab=True)
         else:
             self.client.properties_dialog.hide()
 

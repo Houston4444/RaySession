@@ -97,7 +97,7 @@ class Session:
 
         return self.path
 
-    def getClient(self, client_id):
+    def getClient(self, client_id)->Client:
         for client in self.client_list:
             if client.client_id == client_id:
                 return client
@@ -162,7 +162,7 @@ class SignaledSession(Session):
                 for client in self.client_list:
                     if (client.client_id == client_id
                             and client.protocol == ray.Protocol.RAY_HACK):
-                        client.showPropertiesDialog(second_tab=True)
+                        client.show_properties_dialog(second_tab=True)
                         break
 
 
@@ -251,34 +251,31 @@ class SignaledSession(Session):
 
         self.client_list = new_client_list
         for client in self.client_list:
-            client.reCreateWidget()
+            client.re_create_widget()
             client.widget.updateStatus(client.status)
 
     def _ray_gui_client_new(self, path, args):
         client = Client(self, *args[:2])
-        client.updateClientProperties(*args)
+        client.update_properties(*args)
         self.client_list.append(client)
-
-        #client = Client(self, ray.ClientData.newFrom(*args))
-        #self.client_list.append(client)
 
     def _ray_gui_client_update(self, path, args):
         client_id = args[0]
         client = self.getClient(client_id)
         if client:
-            client.updateClientProperties(*args)
+            client.update_properties(*args)
 
     def _ray_gui_client_ray_hack_update(self, path, args):
         client_id = args.pop(0)
         client = self.getClient(client_id)
         if client and client.protocol == ray.Protocol.RAY_HACK:
-            client.updateRayHack(*args)
+            client.update_ray_hack(*args)
 
     def _ray_gui_client_ray_net_update(self, path, args):
         client_id = args.pop(0)
         client = self.getClient(client_id)
         if client and client.protocol == ray.Protocol.RAY_NET:
-            client.updateRayNet(*args)
+            client.update_ray_net(*args)
 
     def  _ray_gui_client_switch(self, path, args):
         old_id, new_id = args
@@ -291,7 +288,7 @@ class SignaledSession(Session):
         client_id, status = args
         client = self.getClient(client_id)
         if client:
-            client.setStatus(status)
+            client.set_status(status)
 
             if status == ray.ClientStatus.REMOVED:
                 self._main_win.removeClient(client_id)
@@ -306,45 +303,45 @@ class SignaledSession(Session):
 
         client = self.getClient(client_id)
         if client:
-            client.setProgress(progress)
+            client.set_progress(progress)
 
     def _ray_gui_client_dirty(self, path, args):
         client_id, int_dirty = args
         client = self.getClient(client_id)
         if client:
-            client.setDirtyState(bool(int_dirty))
+            client.set_dirty_state(bool(int_dirty))
 
     def _ray_gui_client_has_optional_gui(self, path, args):
         client_id = args[0]
         client = self.getClient(client_id)
 
         if client:
-            client.setGuiEnabled()
+            client.set_gui_enabled()
 
     def _ray_gui_client_gui_visible(self, path, args):
         client_id, int_state = args
         client = self.getClient(client_id)
         if client:
-            client.setGuiState(bool(int_state))
+            client.set_gui_state(bool(int_state))
 
     def _ray_gui_client_still_running(self, path, args):
         client_id = args[0]
         client = self.getClient(client_id)
         if client:
-            client.allowKill()
+            client.allow_kill()
 
     def _ray_gui_client_no_save_level(self, path, args):
         client_id, no_save_level = args
 
         client = self.getClient(client_id)
         if client:
-            client.setNoSaveLevel(no_save_level)
+            client.set_no_save_level(no_save_level)
 
     def _ray_gui_trash_add(self, path, args):
         trashed_client = TrashedClient()
         trashed_client.update(*args)
         trash_action = self._main_win.trashAdd(trashed_client)
-        trashed_client.setMenuAction(trash_action)
+        trashed_client.set_menu_action(trash_action)
         self.trashed_clients.append(trashed_client)
 
     def _ray_gui_trash_ray_hack_update(self, path, args):
