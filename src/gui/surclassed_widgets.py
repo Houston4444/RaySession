@@ -465,6 +465,3 @@ class ProgressBarDsp(QProgressBar):
             + "stop:0.5 " + color_center + ','
             + "stop:1 " + color_border + ',' + ')}')
         QProgressBar.setValue(self, value)
-        
-        
-        
