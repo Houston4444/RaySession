@@ -38,9 +38,8 @@ class MainWindow(QMainWindow):
         self.ui = ui.raysession.Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self._session = session
-        self._signaler = self._session._signaler
-        self._daemon_manager = self._session._daemon_manager
+        self.session = session
+        self.daemon_manager = self.session.daemon_manager
 
         self.mouse_is_inside = False
         self.terminate_request = False
@@ -243,7 +242,7 @@ class MainWindow(QMainWindow):
         self.ui.trashButton.setMenu(self.trashMenu)
 
         # connect OSC signals from daemon
-        sg = self._signaler
+        sg = self.session.signaler
         sg.server_progress.connect(self.serverProgress)
         sg.server_status_changed.connect(self.serverChangeServerStatus)
         sg.server_copying.connect(self.serverCopying)
@@ -251,7 +250,7 @@ class MainWindow(QMainWindow):
         sg.client_properties_state_changed.connect(
             self.clientPropertiesStateChanged)
         sg.canvas_callback.connect(
-            self._session.patchbay_manager.canvas_callbacks)
+            self.session.patchbay_manager.canvas_callbacks)
 
         # set spare icons if system icons not avalaible
         dark = isDarkTheme(self)
@@ -304,7 +303,7 @@ class MainWindow(QMainWindow):
 
         self.ui.toolButtonSessionMenu.setIcon(RayIcon('application-menu', dark))
 
-        self.ui.listWidget.setSession(self._session)
+        self.ui.listWidget.setSession(self.session)
 
         # prevent to hide the session frame with splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
@@ -325,7 +324,7 @@ class MainWindow(QMainWindow):
 
         # disable "keep focus" if daemon is not on this machine (it takes no
         # sense in this case)
-        if not self._daemon_manager.is_local:
+        if not self.daemon_manager.is_local:
             self.ui.actionKeepFocus.setChecked(False)
             self.ui.actionKeepFocus.setEnabled(False)
 
@@ -468,7 +467,7 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setUniformItemSizes(False)
         self.ui.listWidget.setBatchSize(80)
         self.ui.listWidget.setObjectName("listWidget")
-        self.ui.listWidget.setSession(self._session)
+        self.ui.listWidget.setSession(self.session)
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
 
     def setNsmLocked(self, nsm_locked):
@@ -533,7 +532,7 @@ class MainWindow(QMainWindow):
 
     def canvas_callback(self, action:int, value1: int,
                         value2: int, value_str: str):
-        self._session._signaler.canvas_callback.emit(
+        self.session.signaler.canvas_callback.emit(
             action, value1, value2, value_str)
 
     def setupCanvas(self):
@@ -578,7 +577,7 @@ class MainWindow(QMainWindow):
 
     def toggleKeepFocus(self, keep_focus: bool):
         self.keep_focus = keep_focus
-        if self._daemon_manager.is_local:
+        if self.daemon_manager.is_local:
             RS.settings.setValue('keepfocus', self.keep_focus)
         if not keep_focus:
             self.timer_raisewin.stop()
@@ -604,14 +603,14 @@ class MainWindow(QMainWindow):
         self.toDaemon('/ray/server/set_option', option)
 
     def flashOpen(self):
-        for client in self._session.client_list:
+        for client in self.session.client_list:
             if client.status == ray.ClientStatus.OPEN:
                 client.widget.flashIfOpen(self.flash_open_bool)
 
         self.flash_open_bool = not self.flash_open_bool
 
     def quitApp(self):
-        if self._session.isRunning():
+        if self.session.isRunning():
             dialog = child_dialogs.QuitAppDialog(self)
             dialog.exec()
             if not dialog.result():
@@ -621,7 +620,7 @@ class MainWindow(QMainWindow):
         return True
 
     def quitAppNow(self):
-        self._daemon_manager.stop()
+        self.daemon_manager.stop()
 
     def createNewSession(self):
         dialog = child_dialogs.NewSessionDialog(self)
@@ -635,9 +634,9 @@ class MainWindow(QMainWindow):
 
         RS.settings.setValue('last_used_template', template_name)
         RS.settings.setValue('last_subfolder', subfolder)
-        if self._session.isRunning():
+        if self.session.isRunning():
             # remember the running session as last session (if any)
-            short_path = self._session.getShortPath()
+            short_path = self.session.getShortPath()
             if not short_path.startswith('/'):
                 RS.settings.setValue('last_session', short_path)
 
@@ -692,14 +691,14 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        if self._session.isRunning():
-            RS.settings.setValue('last_session', self._session.getShortPath())
+        if self.session.isRunning():
+            RS.settings.setValue('last_session', self.session.getShortPath())
 
         session_name = dialog.getSelectedSession()
         self.toDaemon('/ray/server/open_session', session_name)
 
     def closeSession(self):
-        RS.settings.setValue('last_session', self._session.getShortPath())
+        RS.settings.setValue('last_session', self.session.getShortPath())
         self.toDaemon('/ray/session/close')
 
     def abortSession(self):
@@ -707,11 +706,11 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
         if dialog.result():
-            RS.settings.setValue('last_session', self._session.getShortPath())
+            RS.settings.setValue('last_session', self.session.getShortPath())
             self.toDaemon('/ray/session/abort')
 
     def renameSessionAction(self):
-        if not self._session.is_renameable:
+        if not self.session.is_renameable:
             QMessageBox.information(
                 self,
                 _translate("rename_session", "Rename Session"),
@@ -729,9 +728,9 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        if self._session.isRunning():
+        if self.session.isRunning():
             # remember the running session as last session (if any)
-            short_path = self._session.getShortPath()
+            short_path = self.session.getShortPath()
             if not short_path.startswith('/'):
                 RS.settings.setValue('last_session', short_path)
 
@@ -791,7 +790,7 @@ class MainWindow(QMainWindow):
     def editNotes(self, close=False):
         icon_str = 'notes'
         if close:
-            if self._session.notes:
+            if self.session.notes:
                 icon_str = 'notes-nonempty'
             if self.notes_dialog is not None and self.notes_dialog.isVisible():
                 self.notes_dialog.close()
@@ -804,7 +803,7 @@ class MainWindow(QMainWindow):
         self.ui.actionSessionNotes.setIcon(RayIcon(icon_str, isDarkTheme(self)))
 
     def addApplication(self):
-        if self._session.server_status in (
+        if self.session.server_status in (
                 ray.ServerStatus.CLOSE,
                 ray.ServerStatus.OFF):
             return
@@ -821,7 +820,7 @@ class MainWindow(QMainWindow):
                 template_name)
 
     def addExecutable(self):
-        if self._session.server_status in (
+        if self.session.server_status in (
                 ray.ServerStatus.CLOSE,
                 ray.ServerStatus.OFF):
             return
@@ -866,7 +865,7 @@ class MainWindow(QMainWindow):
                 self.ui.splitterMainVsCanvas.setSizes([int(s) for s in sizes])
 
         else:
-            self._session.patchbay_manager.disannounce()
+            self.session.patchbay_manager.disannounce()
 
             if self.isMaximized():
                 self.showNormal()
@@ -882,7 +881,7 @@ class MainWindow(QMainWindow):
         self.ui.splitterMainVsCanvas.set_active(yesno)
 
     def stopClient(self, client_id):
-        client = self._session.getClient(client_id)
+        client = self.session.getClient(client_id)
         if not client:
             return
 
@@ -913,7 +912,7 @@ class MainWindow(QMainWindow):
         self.toDaemon('/ray/client/stop', client_id)
 
     def statusBarPressed(self):
-        status = self._session.server_status
+        status = self.session.server_status
 
         if status not in (
                 ray.ServerStatus.PRECOPY,
@@ -947,7 +946,7 @@ class MainWindow(QMainWindow):
         if not self.server_copying:
             return
 
-        client = self._session.getClient(client_id)
+        client = self.session.getClient(client_id)
         if not client or client.status not in (
                 ray.ClientStatus.COPY, ray.ClientStatus.PRECOPY):
             return
@@ -984,7 +983,7 @@ class MainWindow(QMainWindow):
         dialog.exec()
         if not dialog.result():
             if (CommandLineArgs.under_nsm
-                    and self._daemon_manager.launched_before):
+                    and self.daemon_manager.launched_before):
                 QApplication.quit()
             return
 
@@ -997,7 +996,7 @@ class MainWindow(QMainWindow):
         RS.settings.setValue('network/tried_urls', tried_urls)
         RS.settings.setValue('network/last_tried_url', new_url)
 
-        self._signaler.daemon_url_changed.emit(new_url)
+        self.session.signaler.daemon_url_changed.emit(new_url)
 
     def clientPropertiesStateChanged(self, client_id, bool_visible):
         self.ui.listWidget.clientPropertiesStateChanged(client_id,
@@ -1010,7 +1009,7 @@ class MainWindow(QMainWindow):
 
     def clientStatusChanged(self, client_id, status):
         # launch/stop flashing status if 'open'
-        for client in self._session.client_list:
+        for client in self.session.client_list:
             if client.status == ray.ClientStatus.OPEN:
                 if not self.timer_flicker_open.isActive():
                     self.timer_flicker_open.start()
@@ -1020,7 +1019,7 @@ class MainWindow(QMainWindow):
 
         # launch/stop timer_raisewin if keep focus
         if self.keep_focus:
-            for client in self._session.client_list:
+            for client in self.session.client_list:
                 if client.status == ray.ClientStatus.OPEN:
                     if not self.timer_raisewin.isActive():
                         self.timer_raisewin.start()
@@ -1067,10 +1066,10 @@ class MainWindow(QMainWindow):
 
     def serverCopying(self, copying):
         self.server_copying = copying
-        self.serverChangeServerStatus(self._session.server_status)
+        self.serverChangeServerStatus(self.session.server_status)
 
     def serverChangeServerStatus(self, server_status):
-        self._session.updateServerStatus(server_status)
+        self.session.updateServerStatus(server_status)
 
         self.ui.lineEditServerStatus.setText(
             serverStatusString(server_status))
@@ -1129,24 +1128,24 @@ class MainWindow(QMainWindow):
         self.ui.actionAddApplication.setEnabled(not close_or_off)
         self.ui.actionAddExecutable.setEnabled(not close_or_off)
         self.ui.toolButtonFavorites.setEnabled(
-            bool(self._session.favorite_list and not close_or_off))
+            bool(self.session.favorite_list and not close_or_off))
         self.favorites_menu.setEnabled(
-            bool(self._session.favorite_list and not close_or_off))
+            bool(self.session.favorite_list and not close_or_off))
         self.ui.actionOpenSessionFolder.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
         self.ui.actionSessionNotes.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
 
         self.ui.stackedWidgetSessionName.setEditable(
-            ready and self._session.is_renameable)
+            ready and self.session.is_renameable)
 
-        self.ui.trashButton.setEnabled(bool(self._session.trashed_clients)
+        self.ui.trashButton.setEnabled(bool(self.session.trashed_clients)
                                        and not close_or_off)
 
         if (CommandLineArgs.under_nsm
                 and not CommandLineArgs.out_daemon
                 and ready
-                and self._session.is_renameable):
+                and self.session.is_renameable):
             self.ui.stackedWidgetSessionName.setOnEdit()
 
         if self.server_copying:
@@ -1162,7 +1161,7 @@ class MainWindow(QMainWindow):
 
         if server_status == ray.ServerStatus.OFF:
             if self.terminate_request:
-                self._daemon_manager.stop()
+                self.daemon_manager.stop()
 
         if server_status == ray.ServerStatus.WAIT_USER:
             if not RS.isHidden(RS.HD_WaitCloseUser):
@@ -1177,7 +1176,7 @@ class MainWindow(QMainWindow):
         act_x_trashed.triggered.connect(self.showClientTrashDialog)
 
         self.ui.trashButton.setEnabled(
-            bool(not self._session.server_status in (
+            bool(not self.session.server_status in (
                         ray.ServerStatus.OFF,
                         ray.ServerStatus.OUT_SAVE,
                         ray.ServerStatus.WAIT_USER,
@@ -1189,7 +1188,7 @@ class MainWindow(QMainWindow):
     def trashRemove(self, menu_action):
         self.trashMenu.removeAction(menu_action)
 
-        if not self._session.trashed_clients:
+        if not self.session.trashed_clients:
             self.ui.trashButton.setEnabled(False)
 
     def trashClear(self):
@@ -1203,7 +1202,7 @@ class MainWindow(QMainWindow):
         except BaseException:
             return
 
-        for trashed_client in self._session.trashed_clients:
+        for trashed_client in self.session.trashed_clients:
             if trashed_client.client_id == client_id:
                 break
         else:
@@ -1226,8 +1225,8 @@ class MainWindow(QMainWindow):
     def updateFavoritesMenu(self):
         self.favorites_menu.clear()
 
-        enable = bool(self._session.favorite_list
-                      and not self._session.server_status in (
+        enable = bool(self.session.favorite_list
+                      and not self.session.server_status in (
                         ray.ServerStatus.OFF,
                         ray.ServerStatus.CLOSE,
                         ray.ServerStatus.OUT_SAVE,
@@ -1235,7 +1234,7 @@ class MainWindow(QMainWindow):
 
         self.ui.toolButtonFavorites.setEnabled(enable)
 
-        for favorite in self._session.favorite_list:
+        for favorite in self.session.favorite_list:
             act_app = self.favorites_menu.addAction(
                         ray.getAppIcon(favorite.icon, self), favorite.name)
             act_app.setData([favorite.name, favorite.factory])
@@ -1355,12 +1354,12 @@ class MainWindow(QMainWindow):
 
     def showEvent(self, event):
         if CommandLineArgs.under_nsm:
-            if self._session._nsm_child is not None:
-                self._session._nsm_child.sendGuiState(True)
+            if self.session._nsm_child is not None:
+                self.session._nsm_child.sendGuiState(True)
         QMainWindow.showEvent(self, event)
 
     def hideEvent(self, event):
         if CommandLineArgs.under_nsm:
-            if self._session._nsm_child is not None:
-                self._session._nsm_child.sendGuiState(False)
+            if self.session._nsm_child is not None:
+                self.session._nsm_child.sendGuiState(False)
         QMainWindow.hideEvent(self, event)

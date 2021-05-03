@@ -349,9 +349,9 @@ class SnapshotsDialog(ChildDialog):
         self.ui.setupUi(self)
 
         self._original_label = self.ui.label.text()
-        self._signaler.reply_auto_snapshot.connect(
+        self.signaler.reply_auto_snapshot.connect(
             self.ui.checkBoxAutoSnapshot.setChecked)
-        self._signaler.snapshots_found.connect(self.addSnapshots)
+        self.signaler.snapshots_found.connect(self.addSnapshots)
 
         self.snapshots = []
         self.main_snap_group = SnapGroup()

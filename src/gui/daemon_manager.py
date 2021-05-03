@@ -13,8 +13,8 @@ from gui_tools import CommandLineArgs, ErrDaemon, _translate
 class DaemonManager(QObject):
     def __init__(self, session):
         QObject.__init__(self)
-        self._session = session
-        self._signaler = self._session._signaler
+        self.session = session
+        self.signaler = self.session.signaler
 
         self.executable = 'ray-daemon'
         self.process = QProcess()
@@ -40,14 +40,14 @@ class DaemonManager(QObject):
 
         self.session_root = ""
 
-        self._signaler.daemon_announce.connect(self.receiveAnnounce)
-        self._signaler.daemon_url_changed.connect(self.changeUrl)
+        self.signaler.daemon_announce.connect(self.receiveAnnounce)
+        self.signaler.daemon_url_changed.connect(self.changeUrl)
 
     def finishInit(self):
-        self._main_win = self._session._main_win
+        self.main_win = self.session.main_win
 
     def errorInProcess(self, error):
-        self._main_win.daemonCrash()
+        self.main_win.daemonCrash()
 
     def changeUrl(self, new_url):
         try:
@@ -74,11 +74,11 @@ class DaemonManager(QObject):
         server.announce()
 
     def showDaemonUrlWindow(self):
-        self._signaler.daemon_url_request.emit(ErrDaemon.NO_ERROR, self.url)
+        self.signaler.daemon_url_request.emit(ErrDaemon.NO_ERROR, self.url)
 
     def announceTimerOut(self):
         if self.launched_before:
-            self._signaler.daemon_url_request.emit(
+            self.signaler.daemon_url_request.emit(
                 ErrDaemon.NO_ANNOUNCE, self.url)
         else:
             sys.stderr.write(
@@ -99,27 +99,27 @@ class DaemonManager(QObject):
 
         if version.split('.')[:1] != ray.VERSION.split('.')[:1]:
             # works only if the two firsts digits are the same (ex: 0.6)
-            self._signaler.daemon_url_request.emit(
+            self.signaler.daemon_url_request.emit(
                 ErrDaemon.WRONG_VERSION, self.url)
             self.disannounce(src_addr)
             return
 
         if (CommandLineArgs.net_session_root
                 and session_root != CommandLineArgs.net_session_root):
-            self._signaler.daemon_url_request.emit(
+            self.signaler.daemon_url_request.emit(
                 ErrDaemon.WRONG_ROOT, self.url)
             self.disannounce(src_addr)
             return
 
         if not is_net_free:
-            self._signaler.daemon_url_request.emit(
+            self.signaler.daemon_url_request.emit(
                 ErrDaemon.FORBIDDEN_ROOT, self.url)
             self.disannounce(src_addr)
             return
 
         if (CommandLineArgs.out_daemon
                 and server_status != ray.ServerStatus.OFF):
-            self._signaler.daemon_url_request.emit(ErrDaemon.NOT_OFF, self.url)
+            self.signaler.daemon_url_request.emit(ErrDaemon.NOT_OFF, self.url)
             self.disannounce(src_addr)
             return
 
@@ -133,19 +133,19 @@ class DaemonManager(QObject):
         self.is_nsm_locked = options & ray.Option.NSM_LOCKED
 
         if self.is_nsm_locked:
-            #self._signaler.daemon_nsm_locked.emit(True)
-            self._session._main_win.setNsmLocked(True)
+            #self.signaler.daemon_nsm_locked.emit(True)
+            self.session.main_win.setNsmLocked(True)
         elif CommandLineArgs.under_nsm:
             server = GUIServerThread.instance()
             server.toDaemon('/ray/server/set_nsm_locked')
 
-        if self._session._main_win.waiting_for_patchbay:
-            self._session._main_win.waiting_for_patchbay = False
+        if self.session.main_win.waiting_for_patchbay:
+            self.session.main_win.waiting_for_patchbay = False
             server = GUIServerThread.instance()
             server.toDaemon('/ray/server/ask_for_patchbay')
 
-        self._signaler.daemon_announce_ok.emit()
-        self._session.setDaemonOptions(options)
+        self.signaler.daemon_announce_ok.emit()
+        self.session.setDaemonOptions(options)
 
     def disannounce(self, address=None):
         if not address:

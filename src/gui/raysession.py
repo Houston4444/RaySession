@@ -18,20 +18,20 @@ import ray
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
-        if session._daemon_manager.launched_before:
+        if session.daemon_manager.launched_before:
             if (CommandLineArgs.under_nsm
                     and session.server_status != ray.ServerStatus.OFF):
-                session._main_win.terminate_request = True
+                session.main_win.terminate_request = True
 
                 l_server = GUIServerThread.instance()
                 if l_server:
                     l_server.abortSession()
             else:
-                session._daemon_manager.stop()
+                session.daemon_manager.stop()
             return
 
-        session._main_win.terminate_request = True
-        session._daemon_manager.stop()
+        session.main_win.terminate_request = True
+        session.daemon_manager.stop()
 
 if __name__ == '__main__':
     # set Qt Application

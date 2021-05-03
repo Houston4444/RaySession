@@ -64,7 +64,7 @@ class ClientSlot(QFrame):
         self.list_widget = list_widget
         self.list_widget_item = list_widget_item
         self.client = client
-        self._main_win = self.client._session._main_win
+        self.main_win = self.client.session.main_win
         self.gui_state = False
         self._stop_is_kill = False
         self._very_short = False
@@ -102,7 +102,7 @@ class ClientSlot(QFrame):
         self.menu.addAction(self.ui.actionProperties)
 
         self.ui.actionReturnToAPreviousState.setVisible(
-            self._main_win.has_git)
+            self.main_win.has_git)
 
         self.ui.iconButton.setMenu(self.menu)
 
@@ -144,7 +144,7 @@ class ClientSlot(QFrame):
 
         # we need to prevent accidental stop with a window confirmation
         # under conditions
-        self._main_win.stopClient(self.clientId())
+        self.main_win.stopClient(self.clientId())
 
     def saveClient(self):
         self.toDaemon('/ray/client/save', self.clientId())
@@ -153,21 +153,21 @@ class ClientSlot(QFrame):
         self.toDaemon('/ray/client/trash', self.clientId())
 
     def abortCopy(self):
-        self._main_win.abortCopyClient(self.clientId())
+        self.main_win.abortCopyClient(self.clientId())
 
     def saveAsApplicationTemplate(self):
         dialog = child_dialogs.SaveTemplateClientDialog(
-            self._main_win, self.client)
+            self.main_win, self.client)
         dialog.exec()
         if not dialog.result():
             return
 
         template_name = dialog.getTemplateName()
-        self.toDaemon('/ray/client/save_as_template', self.clientId(),
-                      template_name)
+        self.toDaemon('/ray/client/save_as_template',
+                      self.clientId(), template_name)
 
     def openSnapshotsDialog(self):
-        dialog = snapshots_dialog.ClientSnapshotsDialog(self._main_win,
+        dialog = snapshots_dialog.ClientSnapshotsDialog(self.main_win,
                                                         self.client)
         dialog.exec()
         if dialog.result():
@@ -176,7 +176,7 @@ class ClientSlot(QFrame):
                           self.clientId(), snapshot)
 
     def renameDialog(self):
-        dialog = child_dialogs.ClientRenameDialog(self._main_win,
+        dialog = child_dialogs.ClientRenameDialog(self.main_win,
                                                   self.client)
         dialog.exec()
         if dialog.result():
@@ -522,7 +522,7 @@ class ListWidgetClients(QListWidget):
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
         self.last_n = 0
-        self._session = None
+        self.session = None
 
     def createClientWidget(self, client_data):
         item = ClientItem(self, client_data)
@@ -571,7 +571,7 @@ class ListWidgetClients(QListWidget):
                 break
 
     def setSession(self, session):
-        self._session = session
+        self.session = session
 
     @pyqtSlot()
     def launchFavorite(self):
@@ -605,8 +605,8 @@ class ListWidgetClients(QListWidget):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
 
-            if (self._session is not None
-                    and not self._session.server_status in (
+            if (self.session is not None
+                    and not self.session.server_status in (
                         ray.ServerStatus.OFF,
                         ray.ServerStatus.CLOSE,
                         ray.ServerStatus.OUT_SAVE,
@@ -616,7 +616,7 @@ class ListWidgetClients(QListWidget):
                 fav_menu = QMenu(_translate('menu', 'Favorites'), menu)
                 fav_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
 
-                for favorite in self._session.favorite_list:
+                for favorite in self.session.favorite_list:
                     act_app = fav_menu.addAction(
                         ray.getAppIcon(favorite.icon, self), favorite.name)
                     act_app.setData([favorite.name, favorite.factory])
@@ -625,8 +625,8 @@ class ListWidgetClients(QListWidget):
                 menu.addMenu(fav_menu)
 
                 menu.addAction(
-                    self._session._main_win.ui.actionAddApplication)
-                menu.addAction(self._session._main_win.ui.actionAddExecutable)
+                    self.session.main_win.ui.actionAddApplication)
+                menu.addAction(self.session.main_win.ui.actionAddExecutable)
 
                 act_selected = menu.exec(self.mapToGlobal(event.pos()))
             event.accept()

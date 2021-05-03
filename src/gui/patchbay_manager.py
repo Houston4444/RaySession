@@ -1106,7 +1106,7 @@ class PatchbayManager:
     def finish_init(self):
         self.canvas_menu = CanvasMenu(self)
         self.options_dialog = canvas_options.CanvasOptionsDialog(
-            self.session._main_win)
+            self.session.main_win)
         self.options_dialog.gracious_names_checked.connect(
             self.set_graceful_names)
         self.options_dialog.a2j_grouped_checked.connect(
@@ -1286,7 +1286,7 @@ class PatchbayManager:
             if port is None:
                 return
 
-            dialog = CanvasPortInfoDialog(self.session._main_win)
+            dialog = CanvasPortInfoDialog(self.session.main_win)
             dialog.set_port(port)
             dialog.show()
 
@@ -1366,7 +1366,7 @@ class PatchbayManager:
             group.update_ports_in_canvas()
 
     def toggle_full_screen(self):
-        self.session._main_win.toggleSceneFullScreen()
+        self.session.main_win.toggleSceneFullScreen()
 
     def refresh(self):
         self.clear_all()
@@ -1766,7 +1766,7 @@ class PatchbayManager:
         self.clear_all()
 
         ret = QMessageBox.critical(
-            self.session._main_win,
+            self.session.main_win,
             _translate('patchbay', "JACK server lose"),
             _translate('patchbay', "JACK server seems to be totally busy... ;("))
 
@@ -1859,5 +1859,5 @@ class PatchbayManager:
         self.tools_widget.set_samplerate(samplerate)
         self.tools_widget.set_buffer_size(buffer_size)
         self.tools_widget.set_jack_running(jack_running)
-        self.session._main_win.add_patchbay_tools(
+        self.session.main_win.add_patchbay_tools(
             self.tools_widget, self.canvas_menu)

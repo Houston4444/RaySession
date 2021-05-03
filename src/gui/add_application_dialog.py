@@ -24,7 +24,7 @@ class TemplateSlot(QFrame):
 
         self.list_widget = list_widget
         self.item = item
-        self._session = session
+        self.session = session
         self.name = name
         self.factory = factory
         self.client_data = client_data
@@ -44,7 +44,7 @@ class TemplateSlot(QFrame):
 
         self.is_favorite = False
 
-        self.ui.toolButtonFavorite.setSession(self._session)
+        self.ui.toolButtonFavorite.setSession(self.session)
         self.ui.toolButtonFavorite.setTemplate(
             name, self.client_data.icon, self.factory)
 
@@ -140,7 +140,7 @@ class AddApplicationDialog(ChildDialog):
         self.ui = ui.add_application.Ui_DialogAddApplication()
         self.ui.setupUi(self)
 
-        self._session = parent._session
+        self.session = parent.session
 
         self.ui.checkBoxFactory.setChecked(RS.settings.value(
             'AddApplication/factory_box', True, type=bool))
@@ -169,7 +169,7 @@ class AddApplicationDialog(ChildDialog):
         act_remove_template.triggered.connect(self.removeCurrentTemplate)
         self.user_menu.addAction(act_remove_template)
         self.ui.toolButtonUser.setMenu(self.user_menu)
-        self.ui.toolButtonFavorite.setSession(self._session)
+        self.ui.toolButtonFavorite.setSession(self.session)
         self.ui.widgetNonSaveable.setVisible(False)
         self.ui.toolButtonAdvanced.clicked.connect(self.toolButtonAdvancedClicked)
 
@@ -180,18 +180,18 @@ class AddApplicationDialog(ChildDialog):
             self.ui.toolButtonNoSave.setIcon(
                 QIcon(':scalable/breeze-dark/document-nosave.svg'))
 
-        self._signaler.user_client_template_found.connect(
+        self.signaler.user_client_template_found.connect(
             self.addUserTemplates)
-        self._signaler.factory_client_template_found.connect(
+        self.signaler.factory_client_template_found.connect(
             self.addFactoryTemplates)
-        self._signaler.client_template_update.connect(
+        self.signaler.client_template_update.connect(
             self.updateClientTemplate)
-        self._signaler.client_template_ray_hack_update.connect(
+        self.signaler.client_template_ray_hack_update.connect(
             self.updateClientTemplateRayHack)
-        self._signaler.client_template_ray_net_update.connect(
+        self.signaler.client_template_ray_net_update.connect(
             self.updateClientTemplateRayNet)
-        self._signaler.favorite_added.connect(self.favoriteAdded)
-        self._signaler.favorite_removed.connect(self.favoriteRemoved)
+        self.signaler.favorite_added.connect(self.favoriteAdded)
+        self.signaler.favorite_removed.connect(self.favoriteRemoved)
 
         self.toDaemon('/ray/server/list_user_client_templates')
         self.toDaemon('/ray/server/list_factory_client_templates')
@@ -203,7 +203,7 @@ class AddApplicationDialog(ChildDialog):
         self.server_will_accept = False
         self.has_selection = False
 
-        self.serverStatusChanged(self._session.server_status)
+        self.serverStatusChanged(self.session.server_status)
 
         self.ui.filterBar.setFocus()
 
@@ -279,11 +279,11 @@ class AddApplicationDialog(ChildDialog):
             self.user_template_list.append(template_name)
 
             list_widget = TemplateItem(self.ui.templateList,
-                                       self._session,
+                                       self.session,
                                        icon_name,
                                        template_name,
                                        False)
-            if self._session.isFavorite(template_name, False):
+            if self.session.isFavorite(template_name, False):
                 list_widget.setAsFavorite(True)
             self.ui.templateList.addItem(list_widget)
 
@@ -305,11 +305,11 @@ class AddApplicationDialog(ChildDialog):
             self.factory_template_list.append(template_name)
 
             list_widget = TemplateItem(self.ui.templateList,
-                                       self._session,
+                                       self.session,
                                        icon_name,
                                        template_name,
                                        True)
-            if self._session.isFavorite(template_name, True):
+            if self.session.isFavorite(template_name, True):
                 list_widget.setAsFavorite(True)
             self.ui.templateList.addItem(list_widget)
             self.ui.templateList.sortItems()
@@ -458,7 +458,7 @@ class AddApplicationDialog(ChildDialog):
         self.ui.toolButtonUser.setVisible(not item.f_factory)
         self.ui.toolButtonFavorite.setTemplate(
             item.data(Qt.UserRole), cdata.icon, item.f_factory)
-        self.ui.toolButtonFavorite.setAsFavorite(self._session.isFavorite(
+        self.ui.toolButtonFavorite.setAsFavorite(self.session.isFavorite(
             item.data(Qt.UserRole), item.f_factory))
 
         self.ui.widgetNonSaveable.setVisible(bool(

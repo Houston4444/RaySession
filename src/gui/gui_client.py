@@ -9,39 +9,38 @@ from client_properties_dialog import ClientPropertiesDialog
 class Client(QObject, ray.ClientData):
     status_changed = pyqtSignal(int)
 
-    def __init__(self, session, client_id: str, protocol: int, trashed=False):
+    def __init__(self, session, client_id: str, protocol: int):
         QObject.__init__(self)
         ray.ClientData.gui_init(self, client_id, protocol)
 
-        self._session = session
-        self._main_win = self._session._main_win
-
+        self.session = session
+        self.main_win = self.session.main_win
+        
+        self._previous_status = ray.ClientStatus.STOPPED
         self._has_gui = False
 
         self.ray_hack = ray.RayHack()
         self.ray_net = ray.RayNet()
-
         self.status = ray.ClientStatus.STOPPED
-        self.previous_status = ray.ClientStatus.STOPPED
         self.gui_state = False
-        self.gui_visible = False
         self.has_dirty = False
         self.dirty_state = True
         self.no_save_level = 0
         self.last_save = time.time()
+        self.check_last_save = True
 
-        self.widget = self._main_win.createClientWidget(self)
-        self.properties_dialog = ClientPropertiesDialog.create(self._main_win, self)
+        self.widget = self.main_win.createClientWidget(self)
+        self.properties_dialog = ClientPropertiesDialog.create(self.main_win, self)
 
     def set_status(self, status: int):
-        self.previous_status = self.status
+        self._previous_status = self.status
         self.status = status
         self.status_changed.emit(status)
 
         if (not self.has_dirty
-            and self.status == ray.ClientStatus.READY
-            and self.previous_status in (ray.ClientStatus.OPEN,
-                                         ray.ClientStatus.SAVE)):
+                and self.status == ray.ClientStatus.READY
+                and self._previous_status in (
+                    ray.ClientStatus.OPEN, ray.ClientStatus.SAVE)):
             self.last_save = time.time()
 
         self.widget.updateStatus(status)
@@ -96,7 +95,7 @@ class Client(QObject, ray.ClientData):
         if not server:
             sys.stderr.write(
                 'Server not found. Client %s can not send its properties\n'
-                    % self.client_id)
+                % self.client_id)
             return
 
         server.toDaemon('/ray/client/update_properties',
@@ -137,7 +136,7 @@ class Client(QObject, ray.ClientData):
 
     def re_create_widget(self):
         del self.widget
-        self.widget = self._main_win.createClientWidget(self)
+        self.widget = self.main_win.createClientWidget(self)
         self.widget.updateClientData()
 
         if self._has_gui:
@@ -145,7 +144,7 @@ class Client(QObject, ray.ClientData):
 
     # method not used yet
     def get_project_path(self)->str:
-        if not self._session.path:
+        if not self.session.path:
             return ''
 
         prefix = self.session.name
@@ -155,11 +154,11 @@ class Client(QObject, ray.ClientData):
         elif self.prefix_mode == ray.PrefixMode.CUSTOM:
             prefix = self.custom_prefix
 
-        return "%s/%s.%s" % (self._session.path, prefix, self.client_id)
+        return "%s/%s.%s" % (self.session.path, prefix, self.client_id)
 
     # method not used yet
     def get_icon_search_path(self)->list:
-        if not self._session._daemon_manager.is_local:
+        if not self.session.daemon_manager.is_local:
             return []
 
         project_path = self.get_project_path()

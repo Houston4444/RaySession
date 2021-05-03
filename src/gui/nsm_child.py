@@ -14,7 +14,7 @@ class NSMChild:
                                ':switch:optional-gui:', 'raysession')
 
     def __init__(self, session):
-        self._session = session
+        self.session = session
         self.nsm_signaler = nsm_client.NSMSignaler()
         self.nsm_signaler.server_sends_open.connect(self.open)
         self.nsm_signaler.server_sends_save.connect(self.save)
@@ -31,9 +31,9 @@ class NSMChild:
                                          CommandLineArgs.debug)
         serverNSM.start()
 
-        self._session._signaler.daemon_announce_ok.connect(
+        self.session.signaler.daemon_announce_ok.connect(
             self.announceToParent)
-        self._session._signaler.server_status_changed.connect(
+        self.session.signaler.server_status_changed.connect(
             self.serverStatusChanged)
 
     def serverStatusChanged(self, server_status):
@@ -58,11 +58,11 @@ class NSMChild:
         if server:
             server.openSession(project_path, 0)
 
-        self.sendGuiState(self._session._main_win.isVisible())
+        self.sendGuiState(self.session.main_win.isVisible())
 
     def save(self):
-        if self._session._main_win:
-            self._session._main_win.saveWindowSettings()
+        if self.session.main_win:
+            self.session.main_win.saveWindowSettings()
 
         self.wait_for_save = True
 
@@ -71,14 +71,14 @@ class NSMChild:
             server.saveSession()
 
     def showOptionalGui(self):
-        if self._session._main_win:
-            self._session._main_win.show()
+        if self.session.main_win:
+            self.session.main_win.show()
 
         #self.sendGuiState(True)
 
     def hideOptionalGui(self):
-        if self._session._main_win:
-            self._session._main_win.hide()
+        if self.session.main_win:
+            self.session.main_win.hide()
 
         #self.sendGuiState(False)
 
@@ -104,9 +104,9 @@ class NSMChildOutside(NSMChild):
 
             serverNSM.sendToDaemon(
                 '/nsm/client/network_properties',
-                self._session._daemon_manager.url,
-                self._session._daemon_manager.session_root)
-        self._session._main_win.hide()
+                self.session.daemon_manager.url,
+                self.session.daemon_manager.session_root)
+        self.session.main_win.hide()
 
     def save(self):
         serverNSM = nsm_client.NSMThread.instance()
@@ -114,8 +114,8 @@ class NSMChildOutside(NSMChild):
         if serverNSM:
             serverNSM.sendToDaemon(
                 '/nsm/client/network_properties',
-                self._session._daemon_manager.url,
-                self._session._daemon_manager.session_root)
+                self.session.daemon_manager.url,
+                self.session.daemon_manager.session_root)
 
         NSMChild.save(self)
 
@@ -129,8 +129,8 @@ class NSMChildOutside(NSMChild):
         if server:
             server.openSession(project_path, 0, template_name)
 
-        #self._session._main_win.hide()
-        self.sendGuiState(self._session._main_win.isVisible())
+        #self.session.main_win.hide()
+        self.sendGuiState(self.session.main_win.isVisible())
 
     def closeSession(self):
         self.wait_for_close = True

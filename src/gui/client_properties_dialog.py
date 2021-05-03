@@ -184,7 +184,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
         self.ui.tabWidget.setTabText(1, 'Ray-Hack')
         self.rhack.labelWorkingDir.setText(self.getWorkDirBase())
-        self.rhack.toolButtonBrowse.setEnabled(self._daemon_manager.is_local)
+        self.rhack.toolButtonBrowse.setEnabled(self.daemon_manager.is_local)
 
         self.rhack.toolButtonBrowse.clicked.connect(self.browseConfigFile)
         self.rhack.lineEditExecutable.textEdited.connect(
@@ -353,7 +353,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.saveChanges(self)
 
     def getWorkDirBase(self)->str:
-        prefix = self._session.name
+        prefix = self.session.name
         if self.client.prefix_mode == ray.PrefixMode.CLIENT_NAME:
             prefix = self.client.name
         elif self.client.prefix_mode == ray.PrefixMode.CUSTOM:
@@ -363,7 +363,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
     def browseConfigFile(self):
         work_dir_base = self.getWorkDirBase()
-        work_dir = "%s/%s" % (self._session.path, work_dir_base)
+        work_dir = "%s/%s" % (self.session.path, work_dir_base)
 
         config_file, ok = QFileDialog.getOpenFileName(
             self,
@@ -385,10 +385,10 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
                         base, pt, extension = os.path.basename(
                             config_file).rpartition('.')
 
-                        config_file = "%s.%s" % (self._session.name,
+                        config_file = "%s.%s" % (self.session.name,
                                                  extension)
                         if not base:
-                            config_file = self._session.name
+                            config_file = self.session.name
                     else:
                         config_file = os.path.basename(config_file)
 
@@ -396,10 +396,10 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
         self.config_file = os.path.relpath(config_file, work_dir)
 
-        if (self._session.name
-            and (self.config_file == self._session.name
-                 or self.config_file.startswith("%s." % self._session.name))):
-            self.config_file = self.config_file.replace(self._session.name,
+        if (self.session.name
+            and (self.config_file == self.session.name
+                 or self.config_file.startswith("%s." % self.session.name))):
+            self.config_file = self.config_file.replace(self.session.name,
                                                         "$RAY_SESSION_NAME")
         self.rhack.lineEditConfigFile.setText(self.config_file)
 
@@ -464,12 +464,12 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
     def hideEvent(self, event):
         ClientPropertiesDialog.hideEvent(self, event)
-        self._signaler.client_properties_state_changed.emit(
+        self.signaler.client_properties_state_changed.emit(
             self.client.client_id, False)
 
     def showEvent(self, event):
         ClientPropertiesDialog.showEvent(self, event)
-        self._signaler.client_properties_state_changed.emit(
+        self.signaler.client_properties_state_changed.emit(
             self.client.client_id, True)
 
 class RayNetClientPropertiesDialog(ClientPropertiesDialog):
