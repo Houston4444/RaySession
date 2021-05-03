@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
                              QFrame, QGraphicsView, QSplitter, QSplitterHandle,
-                             QSlider, QToolTip, QApplication)
+                             QSlider, QToolTip, QApplication, QProgressBar)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QCursor, QMouseEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint, QPointF, QRectF, QSizeF
@@ -449,4 +449,22 @@ class ZoomSlider(QSlider):
     def mouseMoveEvent(self, event):
         QSlider.mouseMoveEvent(self, event)
         self.show_tool_tip()
+        
+
+class ProgressBarDsp(QProgressBar):
+    def __init__(self, parent):
+        QProgressBar.__init__(self)
+    
+    def setValue(self, value):
+        color_border = "rgba(%i%%, %i%%, 0, 55%%)" % (value, 100 - value)
+        color_center = "rgba(%i%%, %i%%, 0, 45%%)" % (value, 100 - value)
+        self.setStyleSheet(
+            "QProgressBar:chunk{background-color: "
+            + "qlineargradient(x1:0, y1:0, x2:0, y1:1, "
+            + "stop:0 " + color_border + ',' 
+            + "stop:0.5 " + color_center + ','
+            + "stop:1 " + color_border + ',' + ')}')
+        QProgressBar.setValue(self, value)
+        
+        
         

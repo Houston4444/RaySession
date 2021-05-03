@@ -13,6 +13,13 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QProgressBar{
+border-radius: 0px;
+text-align:center;
+background-color:  rgba(50%, 50%, 50%, 25%);
+}</string>
+  </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="spacing">
     <number>0</number>
@@ -315,10 +322,10 @@ QPushButton::hover{border: 1 px solid grey;text-align:right}</string>
     </spacer>
    </item>
    <item>
-    <widget class="QProgressBar" name="progressBarDsp">
+    <widget class="ProgressBarDsp" name="progressBarDsp">
      <property name="maximumSize">
       <size>
-       <width>100</width>
+       <width>80</width>
        <height>16777215</height>
       </size>
      </property>
@@ -328,17 +335,7 @@ QPushButton::hover{border: 1 px solid grey;text-align:right}</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">QProgressBar{
-border: 1px solid;
-border-radius: 0px;
-text-align:center;
-background-color:black;
-}
-
-QProgressBar:chunk {
-background-color: #404040;
-width: 20px;
-}</string>
+      <string notr="true"/>
      </property>
      <property name="value">
       <number>0</number>
@@ -361,6 +358,11 @@ width: 20px;
   <customwidget>
    <class>ZoomSlider</class>
    <extends>QSlider</extends>
+   <header>surclassed_widgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ProgressBarDsp</class>
+   <extends>QProgressBar</extends>
    <header>surclassed_widgets</header>
   </customwidget>
  </customwidgets>
