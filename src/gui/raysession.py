@@ -10,7 +10,7 @@ from PyQt5.QtGui import QIcon, QFontDatabase
 from PyQt5.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
 
 #local imports
-from gui_tools import ArgParser, CommandLineArgs, initGuiTools, getCodeRoot
+from gui_tools import ArgParser, CommandLineArgs, init_gui_tools, get_code_root
 from gui_server_thread import GuiServerThread
 from gui_session import SignaledSession
 import ray
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     appTranslator = QTranslator()
     if appTranslator.load(QLocale(), ray.APP_TITLE.lower(),
-                          '_', "%s/locale" % getCodeRoot()):
+                          '_', "%s/locale" % get_code_root()):
         app.installTranslator(appTranslator)
 
     sysTranslator = QTranslator()
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     # get arguments
     parser = ArgParser()
 
-    initGuiTools()
+    init_gui_tools()
 
     # Add raysession/src/bin to $PATH
     # to can use raysession after make, whitout install

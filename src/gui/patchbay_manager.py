@@ -1366,7 +1366,7 @@ class PatchbayManager:
             group.update_ports_in_canvas()
 
     def toggle_full_screen(self):
-        self.session.main_win.toggleSceneFullScreen()
+        self.session.main_win.toggle_scene_full_screen()
 
     def refresh(self):
         self.clear_all()

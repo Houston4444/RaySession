@@ -82,7 +82,7 @@ from .utils import (CanvasItemFX,
                     CanvasCallback,
                     CanvasConnectionConcerns,
                     CanvasGetIcon,
-                    isDarkTheme)
+                    is_dark_theme)
 
 _translate = QApplication.translate
 
@@ -878,7 +878,7 @@ class CanvasBox(QGraphicsItem):
         menu = QMenu()
 
         dark = ''
-        if isDarkTheme(menu):
+        if is_dark_theme(menu):
             dark = '-dark'
 
         # Disconnect menu stuff

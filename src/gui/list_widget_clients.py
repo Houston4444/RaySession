@@ -4,7 +4,8 @@ from PyQt5.QtCore import pyqtSlot, QSize
 
 import ray
 from gui_server_thread import GuiServerThread
-from gui_tools import clientStatusString, _translate, isDarkTheme, RayIcon
+from gui_tools import (client_status_string, _translate, is_dark_theme,
+                       RayIcon, split_in_two)
 import child_dialogs
 import snapshots_dialog
 
@@ -12,62 +13,21 @@ import ui.client_slot
 
 
 class ClientSlot(QFrame):
-    @staticmethod
-    def split_in_two(string: str)->tuple:
-        middle = int(len(string)/2)
-        sep_indexes = []
-        last_was_digit = False
-
-        for sep in (' ', '-', '_', 'capital'):
-            for i in range(len(string)):
-                c = string[i]
-                if sep == 'capital':
-                    if c.upper() == c:
-                        if not c.isdigit() or not last_was_digit:
-                            sep_indexes.append(i)
-                        last_was_digit = c.isdigit()
-
-                elif c == sep:
-                    sep_indexes.append(i)
-
-            if sep_indexes:
-                break
-
-        if not sep_indexes or sep_indexes == [0]:
-            return (string, '')
-
-        best_index = 0
-        best_dif = middle
-
-        for s in sep_indexes:
-            dif = abs(middle - s)
-            if dif < best_dif:
-                best_index = s
-                best_dif = dif
-
-        if sep == ' ':
-            return (string[:best_index], string[best_index+1:])
-        return (string[:best_index], string[best_index:])
-
-    @classmethod
-    def to_daemon(cls, *args):
-        server = GuiServerThread.instance()
-        if server:
-            server.to_daemon(*args)
-
     def __init__(self, list_widget, list_widget_item, client):
         QFrame.__init__(self)
         self.ui = ui.client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
 
-        # needed variables
-        self.list_widget = list_widget
-        self.list_widget_item = list_widget_item
         self.client = client
         self.main_win = self.client.session.main_win
-        self.gui_state = False
+
+        self._list_widget = list_widget
+        self._list_widget_item = list_widget_item
+        self._gui_state = False
         self._stop_is_kill = False
         self._very_short = False
+        self._icon_on = QIcon()
+        self._icon_off = QIcon()
 
         self.ui.toolButtonGUI.setVisible(False)
         if client.protocol != ray.Protocol.RAY_HACK:
@@ -75,115 +35,130 @@ class ClientSlot(QFrame):
 
         # connect buttons to functions
         self.ui.toolButtonHack.orderHackVisibility.connect(
-            self.orderHackVisibility)
-        self.ui.toolButtonGUI.clicked.connect(self.changeGuiState)
-        self.ui.startButton.clicked.connect(self.startClient)
-        self.ui.stopButton.clicked.connect(self.stopClient)
-        self.ui.saveButton.clicked.connect(self.saveClient)
-        self.ui.closeButton.clicked.connect(self.trashClient)
-        self.ui.lineEditClientStatus.statusPressed.connect(self.abortCopy)
-
-        self.icon_on = QIcon()
-        self.icon_off = QIcon()
+            self._order_hack_visibility)
+        self.ui.toolButtonGUI.clicked.connect(self._change_gui_state)
+        self.ui.startButton.clicked.connect(self._start_client)
+        self.ui.stopButton.clicked.connect(self._stop_client)
+        self.ui.saveButton.clicked.connect(self._save_client)
+        self.ui.closeButton.clicked.connect(self._trash_client)
+        self.ui.lineEditClientStatus.statusPressed.connect(self._abort_copy)
 
         self.ui.actionSaveAsApplicationTemplate.triggered.connect(
-            self.saveAsApplicationTemplate)
-        self.ui.actionRename.triggered.connect(self.renameDialog)
+            self._save_as_application_template)
+        self.ui.actionRename.triggered.connect(self._rename_dialog)
         self.ui.actionReturnToAPreviousState.triggered.connect(
-            self.openSnapshotsDialog)
+            self._open_snapshots_dialog)
         self.ui.actionProperties.triggered.connect(
             self.client.show_properties_dialog)
 
-        self.menu = QMenu(self)
+        self._menu = QMenu(self)
 
-        self.menu.addAction(self.ui.actionSaveAsApplicationTemplate)
-        self.menu.addAction(self.ui.actionRename)
-        self.menu.addAction(self.ui.actionReturnToAPreviousState)
-        self.menu.addAction(self.ui.actionProperties)
+        self._menu.addAction(self.ui.actionSaveAsApplicationTemplate)
+        self._menu.addAction(self.ui.actionRename)
+        self._menu.addAction(self.ui.actionReturnToAPreviousState)
+        self._menu.addAction(self.ui.actionProperties)
 
         self.ui.actionReturnToAPreviousState.setVisible(
             self.main_win.has_git)
 
-        self.ui.iconButton.setMenu(self.menu)
+        self.ui.iconButton.setMenu(self._menu)
 
-        dark = isDarkTheme(self)
+        dark = is_dark_theme(self)
 
-        self.save_icon = RayIcon('document-save', dark)
-        self.saved_icon = RayIcon('document-saved', dark)
-        self.unsaved_icon = RayIcon('document-unsaved', dark)
-        self.no_save_icon = RayIcon('document-nosave', dark)
-        self.icon_visible = RayIcon('visibility', dark)
-        self.icon_invisible = RayIcon('hint', dark)
-        self.stop_icon = RayIcon('media-playback-stop', dark)
-        self.kill_icon = RayIcon('media-playback-stop_red', dark)
+        self._save_icon = RayIcon('document-save', dark)
+        self._saved_icon = RayIcon('document-saved', dark)
+        self._unsaved_icon = RayIcon('document-unsaved', dark)
+        self._no_save_icon = RayIcon('document-nosave', dark)
+        self._icon_visible = RayIcon('visibility', dark)
+        self._icon_invisible = RayIcon('hint', dark)
+        self._stop_icon = RayIcon('media-playback-stop', dark)
+        self._kill_icon = RayIcon('media-playback-stop_red', dark)
 
         self.ui.startButton.setIcon(RayIcon('media-playback-start', dark))
         self.ui.closeButton.setIcon(RayIcon('window-close', dark))
-        self.ui.saveButton.setIcon(self.save_icon)
-        self.ui.stopButton.setIcon(self.stop_icon)
+        self.ui.saveButton.setIcon(self._save_icon)
+        self.ui.stopButton.setIcon(self._stop_icon)
 
         if ':optional-gui:' in self.client.capabilities:
-            self.setGuiState(self.client.gui_state)
+            self.set_gui_state(self.client.gui_state)
             self.ui.toolButtonGUI.setVisible(True)
 
         if self.client.has_dirty:
-            self.setDirtyState(self.client.dirty_state)
+            self.set_dirty_state(self.client.dirty_state)
 
-        self.updateClientData()
+        self.update_client_data()
 
-    def clientId(self):
-        return self.client.client_id
+    @classmethod
+    def to_daemon(cls, *args):
+        server = GuiServerThread.instance()
+        if server:
+            server.to_daemon(*args)
 
-    def startClient(self):
-        self.to_daemon('/ray/client/resume', self.clientId())
+    def _change_gui_state(self):
+        if self._gui_state:
+            self.to_daemon('/ray/client/hide_optional_gui', self.get_client_id())
+        else:
+            self.to_daemon('/ray/client/show_optional_gui', self.get_client_id())
 
-    def stopClient(self):
+    def _order_hack_visibility(self, state):
+        if self.client.protocol != ray.Protocol.RAY_HACK:
+            return
+
+        if state:
+            self.client.show_properties_dialog(second_tab=True)
+        else:
+            self.client.properties_dialog.hide()
+
+    def _start_client(self):
+        self.to_daemon('/ray/client/resume', self.get_client_id())
+
+    def _stop_client(self):
         if self._stop_is_kill:
-            self.to_daemon('/ray/client/kill', self.clientId())
+            self.to_daemon('/ray/client/kill', self.get_client_id())
             return
 
         # we need to prevent accidental stop with a window confirmation
         # under conditions
-        self.main_win.stopClient(self.clientId())
+        self.main_win.stop_client(self.get_client_id())
 
-    def saveClient(self):
-        self.to_daemon('/ray/client/save', self.clientId())
+    def _save_client(self):
+        self.to_daemon('/ray/client/save', self.get_client_id())
 
-    def trashClient(self):
-        self.to_daemon('/ray/client/trash', self.clientId())
+    def _trash_client(self):
+        self.to_daemon('/ray/client/trash', self.get_client_id())
 
-    def abortCopy(self):
-        self.main_win.abortCopyClient(self.clientId())
+    def _abort_copy(self):
+        self.main_win.abort_copy_client(self.get_client_id())
 
-    def saveAsApplicationTemplate(self):
+    def _save_as_application_template(self):
         dialog = child_dialogs.SaveTemplateClientDialog(
             self.main_win, self.client)
         dialog.exec()
         if not dialog.result():
             return
 
-        template_name = dialog.getTemplateName()
+        template_name = dialog.get_template_name()
         self.to_daemon('/ray/client/save_as_template',
-                      self.clientId(), template_name)
+                       self.get_client_id(), template_name)
 
-    def openSnapshotsDialog(self):
+    def _open_snapshots_dialog(self):
         dialog = snapshots_dialog.ClientSnapshotsDialog(self.main_win,
                                                         self.client)
         dialog.exec()
         if dialog.result():
             snapshot = dialog.getSelectedSnapshot()
             self.to_daemon('/ray/client/open_snapshot',
-                          self.clientId(), snapshot)
+                          self.get_client_id(), snapshot)
 
-    def renameDialog(self):
+    def _rename_dialog(self):
         dialog = child_dialogs.ClientRenameDialog(self.main_win,
                                                   self.client)
         dialog.exec()
         if dialog.result():
-            self.client.label = dialog.getNewLabel()
+            self.client.label = dialog.get_new_label()
             self.client.send_properties_to_daemon()
 
-    def set_very_short(self, yesno: bool):
+    def _set_very_short(self, yesno: bool):
         self._very_short = yesno
 
         if yesno:
@@ -202,27 +177,36 @@ class ClientSlot(QFrame):
             self.ui.toolButtonHack.setVisible(
                 self.client.protocol == ray.Protocol.RAY_HACK)
 
-    def set_fat(self, yesno: bool, very_fat=False):
+    def _set_fat(self, yesno: bool, very_fat=False):
         if yesno:
             self.ui.mainLayout.setDirection(QBoxLayout.TopToBottom)
             self.ui.spacerLeftOfDown.setVisible(True)
-            self.list_widget_item.setSizeHint(
+            self._list_widget_item.setSizeHint(
                 QSize(100, 80 if very_fat else 70))
         else:
             self.ui.spacerLeftOfDown.setVisible(False)
             self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
-            self.list_widget_item.setSizeHint(QSize(100, 45))
+            self._list_widget_item.setSizeHint(QSize(100, 45))
+
+    def _gray_icon(self, gray: bool):
+        if gray:
+            self.ui.iconButton.setIcon(self._icon_off)
+        else:
+            self.ui.iconButton.setIcon(self._icon_on)
+
+    def get_client_id(self):
+        return self.client.client_id
 
     def update_disposition(self):
         default_font_size = 13
         font = self.ui.ClientName.font()
         main_size = QFontMetrics(font).width(self.client.prettier_name())
 
-        layout_width = self.list_widget.width()
+        layout_width = self._list_widget.width()
 
-        self.set_very_short(layout_width < 233)
+        self._set_very_short(layout_width < 233)
 
-        scroll_bar = self.list_widget.verticalScrollBar()
+        scroll_bar = self._list_widget.verticalScrollBar()
         if scroll_bar.isVisible():
             layout_width -= scroll_bar.width()
 
@@ -235,11 +219,11 @@ class ClientSlot(QFrame):
 
         if main_size <= max_label_width:
             self.ui.ClientName.setText(self.client.prettier_name())
-            self.set_fat(False)
+            self._set_fat(False)
             return
 
         # split title in two lines
-        top, bottom = self.split_in_two(self.client.prettier_name())
+        top, bottom = split_in_two(self.client.prettier_name())
 
         max_size = 0
 
@@ -252,7 +236,7 @@ class ClientSlot(QFrame):
 
         if max_size <= max_label_width:
             self.ui.ClientName.setText('\n'.join((top, bottom)))
-            self.set_fat(False)
+            self._set_fat(False)
             return
 
         # responsive design, put label at top of the controls
@@ -261,16 +245,16 @@ class ClientSlot(QFrame):
         max_label_width = layout_width - 50
 
         if main_size <= max_label_width:
-            self.set_fat(True)
+            self._set_fat(True)
             self.ui.ClientName.setText(self.client.prettier_name())
             return
 
-        self.set_fat(True, very_fat=True)
+        self._set_fat(True, very_fat=True)
 
-        top, bottom = self.split_in_two(self.client.prettier_name())
+        top, bottom = split_in_two(self.client.prettier_name())
         self.ui.ClientName.setText('\n'.join((top, bottom)))
 
-    def updateClientData(self):
+    def update_client_data(self):
         # set main label and main disposition
         self.update_disposition()
 
@@ -294,12 +278,11 @@ class ClientSlot(QFrame):
         self.ui.ClientName.setToolTip(tool_tip)
 
         # set icon
-        self.icon_on = ray.getAppIcon(self.client.icon, self)
-        self.icon_off = QIcon(self.icon_on.pixmap(32, 32, QIcon.Disabled))
+        self._icon_on = ray.getAppIcon(self.client.icon, self)
+        self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Disabled))
 
-        self.grayIcon(
-            bool(
-                self.client.status in (
+        self._gray_icon(
+            bool(self.client.status in (
                     ray.ClientStatus.STOPPED,
                     ray.ClientStatus.PRECOPY)))
 
@@ -307,38 +290,32 @@ class ClientSlot(QFrame):
             bool(':optional-gui:' in self.client.capabilities))
 
         if self.client.executable_path in ('ray-proxy', 'nsm-proxy'):
-            if isDarkTheme(self):
-                self.icon_visible = QIcon()
-                self.icon_visible.addPixmap(
+            if is_dark_theme(self):
+                self._icon_visible = QIcon()
+                self._icon_visible.addPixmap(
                     QPixmap(':scalable/breeze-dark/emblem-symbolic-link'),
                     QIcon.Normal, QIcon.Off)
-                self.icon_invisible = QIcon()
-                self.icon_invisible.addPixmap(
+                self._icon_invisible = QIcon()
+                self._icon_invisible.addPixmap(
                     QPixmap(':scalable/breeze-dark/link'),
                     QIcon.Normal, QIcon.Off)
-                self.icon_invisible.addPixmap(
+                self._icon_invisible.addPixmap(
                     QPixmap(':scalable/breeze-dark/disabled/link'),
                     QIcon.Disabled, QIcon.Off)
             else:
-                self.icon_visible = QIcon()
-                self.icon_visible.addPixmap(
+                self._icon_visible = QIcon()
+                self._icon_visible.addPixmap(
                     QPixmap(':scalable/breeze/emblem-symbolic-link'),
                     QIcon.Normal, QIcon.Off)
-                self.icon_invisible = QIcon()
-                self.icon_invisible.addPixmap(
+                self._icon_invisible = QIcon()
+                self._icon_invisible.addPixmap(
                     QPixmap(':scalable/breeze/link'), QIcon.Normal, QIcon.Off)
-                self.icon_invisible.addPixmap(
+                self._icon_invisible.addPixmap(
                     QPixmap(':scalable/breeze/disabled/link'),
                     QIcon.Disabled, QIcon.Off)
 
-    def grayIcon(self, gray):
-        if gray:
-            self.ui.iconButton.setIcon(self.icon_off)
-        else:
-            self.ui.iconButton.setIcon(self.icon_on)
-
-    def updateStatus(self, status):
-        self.ui.lineEditClientStatus.setText(clientStatusString(status))
+    def update_status(self, status: int):
+        self.ui.lineEditClientStatus.setText(client_status_string(status))
         self.ui.lineEditClientStatus.setEnabled(
             status != ray.ClientStatus.STOPPED)
         
@@ -356,7 +333,7 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
             self.ui.ClientName.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
-            self.grayIcon(False)
+            self._gray_icon(False)
 
             if self._very_short:
                 self.ui.startButton.setVisible(False)
@@ -370,7 +347,7 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setEnabled(True)
             self.ui.toolButtonGUI.setEnabled(True)
             self.ui.saveButton.setEnabled(True)
-            self.grayIcon(False)
+            self._gray_icon(False)
 
             if self._very_short:
                 self.ui.startButton.setVisible(False)
@@ -384,18 +361,18 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
-            self.grayIcon(True)
+            self._gray_icon(True)
 
             if self._very_short:
                 self.ui.startButton.setVisible(True)
                 self.ui.stopButton.setVisible(False)
 
-            self.ui.saveButton.setIcon(self.save_icon)
-            self.ui.stopButton.setIcon(self.stop_icon)
+            self.ui.saveButton.setIcon(self._save_icon)
+            self.ui.stopButton.setIcon(self._stop_icon)
             self._stop_is_kill = False
 
             if not ray_hack:
-                self.setGuiState(False)
+                self.set_gui_state(False)
 
         elif status == ray.ClientStatus.PRECOPY:
             self.ui.startButton.setEnabled(False)
@@ -405,180 +382,128 @@ class ClientSlot(QFrame):
             self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
             self.ui.ClientName.setEnabled(False)
             self.ui.toolButtonGUI.setEnabled(False)
-            self.grayIcon(True)
+            self._gray_icon(True)
 
             if self._very_short:
                 self.ui.startButton.setVisible(True)
                 self.ui.stopButton.setVisible(False)
 
-            self.ui.saveButton.setIcon(self.save_icon)
-            self.ui.stopButton.setIcon(self.stop_icon)
+            self.ui.saveButton.setIcon(self._save_icon)
+            self.ui.stopButton.setIcon(self._stop_icon)
             self._stop_is_kill = False
 
         elif status == ray.ClientStatus.COPY:
             self.ui.saveButton.setEnabled(False)
 
-    def allowKill(self):
+    def allow_kill(self):
         self._stop_is_kill = True
-        self.ui.stopButton.setIcon(self.kill_icon)
+        self.ui.stopButton.setIcon(self._kill_icon)
 
-    def flashIfOpen(self, boolflash):
-        if boolflash:
+    def flash_if_open(self, flash: bool):
+        if flash:
             self.ui.lineEditClientStatus.setText(
-                clientStatusString(ray.ClientStatus.OPEN))
+                client_status_string(ray.ClientStatus.OPEN))
         else:
             self.ui.lineEditClientStatus.setText('')
 
-    def setHackButtonState(self, state: bool):
+    def set_hack_button_state(self, state: bool):
         self.ui.toolButtonHack.setChecked(state)
 
-    def showGuiButton(self):
-        self.ui.toolButtonGUI.setIcon(self.icon_invisible)
+    def show_gui_button(self):
+        self.ui.toolButtonGUI.setIcon(self._icon_invisible)
         self.ui.toolButtonGUI.setVisible(True)
 
-    def setGuiState(self, state: bool):
+    def set_gui_state(self, state: bool):
         if state:
-            self.ui.toolButtonGUI.setIcon(self.icon_visible)
+            self.ui.toolButtonGUI.setIcon(self._icon_visible)
         else:
-            self.ui.toolButtonGUI.setIcon(self.icon_invisible)
+            self.ui.toolButtonGUI.setIcon(self._icon_invisible)
 
-        self.gui_state = state
+        self._gui_state = state
 
-    def changeGuiState(self):
-        if self.gui_state:
-            self.to_daemon('/ray/client/hide_optional_gui', self.clientId())
-        else:
-            self.to_daemon('/ray/client/show_optional_gui', self.clientId())
-
-    def orderHackVisibility(self, state):
-        if self.client.protocol != ray.Protocol.RAY_HACK:
-            return
-
-        if state:
-            self.client.show_properties_dialog(second_tab=True)
-        else:
-            self.client.properties_dialog.hide()
-
-    def setDirtyState(self, bool_dirty):
+    def set_dirty_state(self, dirty: bool):
         self.ui.saveButton.setIcon(
-            self.unsaved_icon if bool_dirty else self.saved_icon)
+            self._unsaved_icon if dirty else self._saved_icon)
 
-    def setNoSaveLevel(self, no_save_level):
+    def set_no_save_level(self, no_save_level: int):
         self.ui.saveButton.setIcon(
-            self.no_save_icon if no_save_level else self.save_icon)
+            self._no_save_icon if no_save_level else self._save_icon)
 
-    def setProgress(self, progress):
+    def set_progress(self, progress: float):
         self.ui.lineEditClientStatus.setProgress(progress)
 
-    def setDaemonOptions(self, options):
+    def set_daemon_options(self, options):
         has_git = bool(options & ray.Option.HAS_GIT)
         self.ui.actionReturnToAPreviousState.setVisible(has_git)
 
     def contextMenuEvent(self, event):
-        act_selected = self.menu.exec(self.mapToGlobal(event.pos()))
+        act_selected = self._menu.exec(self.mapToGlobal(event.pos()))
         event.accept()
 
 
 class ClientItem(QListWidgetItem):
     def __init__(self, parent, client_data):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
-        self.f_widget = ClientSlot(parent, self, client_data)
-        parent.setItemWidget(self, self.f_widget)
+        
+        self.sort_number = 0
+        self.widget = ClientSlot(parent, self, client_data)
+        
+        parent.setItemWidget(self, self.widget)
         self.setSizeHint(QSize(100, 45))
 
-        #self.setSizeHint(QSize(100, 70))
-        self.sort_number = 0
-
     def __lt__(self, other):
-        result = bool(self.sort_number < other.sort_number)
-        return result
+        return self.sort_number < other.sort_number
 
     def __gt__(self, other):
         return self.sort_number > other.sort_number
 
-    def setSortNumber(self, sort_number):
-        self.sort_number = sort_number
-
-    def getClientId(self):
-        return self.f_widget.clientId()
-
-    def reCreateWidget(self, parent, big_label=False):
-        client_data = self.f_widget.client
-        del self.f_widget
-        #self.close()
-        self.f_widget = ClientSlot(parent, self, client_data)
-        self.setSizeHint(QSize(100, 70 if big_label else 45))
-        parent.setItemWidget(self, self.f_widget)
-
+    def get_client_id(self):
+        return self.widget.get_client_id()
 
 
 class ListWidgetClients(QListWidget):
+    def __init__(self, parent):
+        QListWidget.__init__(self, parent)
+        self._last_n = 0
+        self.session = None
+
     @classmethod
     def to_daemon(self, *args):
         server = GuiServerThread.instance()
         if server:
             server.to_daemon(*args)
 
-    def __init__(self, parent):
-        QListWidget.__init__(self, parent)
-        self.last_n = 0
-        self.session = None
+    @pyqtSlot()
+    def _launch_favorite(self):
+        template_name, factory = self.sender().data()
+        self.to_daemon('/ray/session/add_client_template',
+                       int(factory), template_name)
 
-    def createClientWidget(self, client_data):
+    def create_client_widget(self, client_data):
         item = ClientItem(self, client_data)
-        item.setSortNumber(self.last_n)
-        self.last_n += 1
-        return item.f_widget
+        item.sort_number = self._last_n
+        self._last_n += 1
+        return item.widget
 
-    def removeClientWidget(self, client_id):
+    def remove_client_widget(self, client_id):
         for i in range(self.count()):
             item = self.item(i)
-            if item.getClientId() == client_id:
-                widget = item.f_widget
+            if item.get_client_id() == client_id:
+                widget = item.widget
                 self.takeItem(i)
                 del item
                 break
 
-    def reOrderClients(self, client_id_list):
-        # when re_order comes from ray-daemon (loading session)
-        if len(client_id_list) != self.count():
-            return
-
-        for client_id in client_id_list:
-            for i in range(self.count()):
-                if self.item(i).getClientId() == client_id:
-                    break
-            else:
-                return
-
-        n = 0
-
-        for client_id in client_id_list:
-            for i in range(self.count()):
-                if self.item(i).getClientId() == client_id:
-                    self.item(i).setSortNumber(n)
-                    break
-            n += 1
-
-        self.sortItems()
-
-    def clientPropertiesStateChanged(self, client_id, bool_visible):
+    def client_properties_state_changed(self, client_id: str, visible: bool):
         for i in range(self.count()):
             item = self.item(i)
-            if item.getClientId() == client_id:
-                widget = item.f_widget
-                widget.setHackButtonState(bool_visible)
+            if item.get_client_id() == client_id:
+                widget = item.widget
+                widget.set_hack_button_state(visible)
                 break
 
-    def setSession(self, session):
+    def set_session(self, session):
         self.session = session
-
-    @pyqtSlot()
-    def launchFavorite(self):
-        template_name, factory = self.sender().data()
-        self.to_daemon('/ray/session/add_client_template',
-                      int(factory),
-                      template_name)
 
     def dropEvent(self, event):
         QListWidget.dropEvent(self, event)
@@ -588,7 +513,7 @@ class ListWidgetClients(QListWidget):
         for i in range(self.count()):
             item = self.item(i)
             #widget = self.itemWidget(item)
-            client_id = item.getClientId()
+            client_id = item.get_client_id()
             client_ids_list.append(client_id)
 
         server = GuiServerThread.instance()
@@ -620,7 +545,7 @@ class ListWidgetClients(QListWidget):
                     act_app = fav_menu.addAction(
                         ray.getAppIcon(favorite.icon, self), favorite.name)
                     act_app.setData([favorite.name, favorite.factory])
-                    act_app.triggered.connect(self.launchFavorite)
+                    act_app.triggered.connect(self._launch_favorite)
 
                 menu.addMenu(fav_menu)
 

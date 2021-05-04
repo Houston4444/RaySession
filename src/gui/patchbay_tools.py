@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QWidget, QComboBox, QMenu, QApplication, QDialog
 
 import patchcanvas
 
-from gui_tools import isDarkTheme
+from gui_tools import is_dark_theme
 
 import ui.canvas_port_info
 import ui.patchbay_tools
@@ -37,7 +37,7 @@ class PatchbayToolsWidget(QWidget):
         self.ui = ui.patchbay_tools.Ui_Form()
         self.ui.setupUi(self)
 
-        if isDarkTheme(self):
+        if is_dark_theme(self):
             self.ui.sliderZoom.setStyleSheet(
                 self.ui.sliderZoom.styleSheet().replace('/breeze/', '/breeze-dark/'))
 

@@ -45,7 +45,7 @@ class DaemonManager(QObject):
         if self.main_win is None:
             return
 
-        self.main_win.daemonCrash()
+        self.main_win.daemon_crash()
 
     def _change_url(self, new_url: str):
         try:
@@ -121,13 +121,13 @@ class DaemonManager(QObject):
         self._port = src_addr.port
         self.url = src_addr.url
         self.session_root = session_root
-        CommandLineArgs.changeSessionRoot(self.session_root)
+        CommandLineArgs.change_session_root(self.session_root)
 
         self._is_nsm_locked = options & ray.Option.NSM_LOCKED
 
         if self._is_nsm_locked:
             if self.main_win is not None:
-                self.main_win.setNsmLocked(True)
+                self.main_win.set_nsm_locked(True)
         elif CommandLineArgs.under_nsm:
             server = GuiServerThread.instance()
             server.to_daemon('/ray/server/set_nsm_locked')

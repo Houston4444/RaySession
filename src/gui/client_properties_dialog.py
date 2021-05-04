@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QFileDialog, QFrame
 
 import ray
 
-from gui_tools import _translate, clientStatusString
+from gui_tools import _translate, client_status_string
 from child_dialogs import ChildDialog
 
 import ui.ray_hack_copy
@@ -130,7 +130,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.lineEditIgnoredExtensions.setText(
             self.client.ignored_extensions)
 
-        self.changeIconwithText(self.client.icon)
+        self._change_icon_with_text(self.client.icon)
 
 
 class NsmClientPropertiesDialog(ClientPropertiesDialog):
@@ -242,6 +242,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             self.rhack.checkBoxWaitWindow.isChecked()
 
         no_save_level = 0
+
         if self.rhack.checkBoxCloseGracefully.isChecked():
             no_save_level = 2
         elif self.rhack.checkBoxTellUser.isChecked():
@@ -381,7 +382,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
     def update_status(self, status):
         self._current_status = status
-        self.rhack.lineEditClientStatus.setText(clientStatusString(status))
+        self.rhack.lineEditClientStatus.setText(client_status_string(status))
 
         if status in (ray.ClientStatus.LAUNCH,
                       ray.ClientStatus.OPEN,

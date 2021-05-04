@@ -683,7 +683,7 @@ class ClientData:
         return self.executable_path
 
 
-class RayHack():
+class RayHack:
     config_file = ""
     save_sig = 0
     stop_sig = 15
@@ -727,7 +727,8 @@ class RayHack():
                 int(self.wait_win), self.no_save_level,
                 self.useless_str, self.useless_int)
 
-class RayNet():
+
+class RayNet:
     daemon_url = ''
     session_root = ''
     session_template = ''

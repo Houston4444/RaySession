@@ -28,7 +28,7 @@ from .utils import(
     CanvasGetPortGroupPortList,
     CanvasConnectPortGroups,
     CanvasPortGroupConnectionState,
-    isDarkTheme)
+    is_dark_theme)
 
 
 _translate = QCoreApplication.translate
@@ -639,7 +639,7 @@ class MainPortContextMenu(QMenu):
                              port_mode, portgrp_id, is_alternate)
 
         dark = ''
-        if isDarkTheme(self):
+        if is_dark_theme(self):
             dark = '-dark'
 
         self.connect_menu = ConnectMenu(port_data, self)

@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint, QPointF, QRectF, QSizeF
 import time
 import ray
 
-from gui_tools import isDarkTheme
+from gui_tools import is_dark_theme
 from gui_signaler import Signaler
 
 class RayHackButton(QToolButton):

@@ -6,7 +6,7 @@ from PyQt5.QtGui import QIcon
 import client_properties_dialog
 import ray
 
-from gui_tools import RS, _translate, isDarkTheme
+from gui_tools import RS, _translate, is_dark_theme
 from child_dialogs import ChildDialog
 
 import ui.add_application
@@ -45,7 +45,7 @@ class TemplateSlot(QFrame):
         self.ui.toolButtonFavorite.setTemplate(
             self._name, self.client_data.icon, self._factory)
 
-        if isDarkTheme(self):
+        if is_dark_theme(self):
             self.ui.toolButtonUser.setIcon(
                 QIcon(':scalable/breeze-dark/im-user.svg'))
             self.ui.toolButtonFavorite.setDarkTheme()
@@ -114,8 +114,11 @@ class TemplateItem(QListWidgetItem):
     def update_ray_hack_data(self, *args):
         self._widget.update_ray_hack_data(*args)
 
+    def update_ray_net_data(self, *args):
+        self._widget.update_ray_net_data(*args)
+
     def set_as_favorite(self, yesno: bool):
-        self._widget.setAsFavorite(yesno)
+        self._widget.set_as_favorite(yesno)
 
 
 class RemoveTemplateDialog(ChildDialog):
@@ -172,7 +175,7 @@ class AddApplicationDialog(ChildDialog):
         self.ui.toolButtonAdvanced.clicked.connect(
             self._tool_button_advanced_clicked)
 
-        if isDarkTheme(self):
+        if is_dark_theme(self):
             self.ui.toolButtonUser.setIcon(
                 QIcon(':scalable/breeze-dark/im-user.svg'))
             self.ui.toolButtonFavorite.setDarkTheme()
@@ -199,10 +202,10 @@ class AddApplicationDialog(ChildDialog):
         self.user_template_list = []
         self.factory_template_list = []
 
-        self.server_will_accept = False
+        self._server_will_accept = False
         self.has_selection = False
 
-        self.server_status_changed(self.session.server_status)
+        self._server_status_changed(self.session.server_status)
 
         self.ui.filterBar.setFocus()
 
@@ -215,7 +218,7 @@ class AddApplicationDialog(ChildDialog):
 
             if (item.data(Qt.UserRole) == template_name
                     and item.is_factory == factory):
-                item.setAsFavorite(True)
+                item.set_as_favorite(True)
                 if item == self.ui.templateList.currentItem():
                     self.ui.toolButtonFavorite.setAsFavorite(True)
                 break
@@ -228,7 +231,7 @@ class AddApplicationDialog(ChildDialog):
 
             if (item.data(Qt.UserRole) == template_name
                     and item.is_factory == factory):
-                item.setAsFavorite(False)
+                item.set_as_favorite(False)
                 if item == self.ui.templateList.currentItem():
                     self.ui.toolButtonFavorite.setAsFavorite(False)
                 break
@@ -270,14 +273,12 @@ class AddApplicationDialog(ChildDialog):
 
             self.user_template_list.append(template_name)
 
-            list_widget = TemplateItem(self.ui.templateList,
-                                       self.session,
-                                       icon_name,
-                                       template_name,
-                                       False)
+            item = TemplateItem(
+                self.ui.templateList, self.session, icon_name,
+                template_name, False)
             if self.session.is_favorite(template_name, False):
-                list_widget.setAsFavorite(True)
-            self.ui.templateList.addItem(list_widget)
+                item.set_as_favorite(True)
+            self.ui.templateList.addItem(item)
 
             self.ui.templateList.sortItems()
 
@@ -296,14 +297,14 @@ class AddApplicationDialog(ChildDialog):
 
             self.factory_template_list.append(template_name)
 
-            list_widget = TemplateItem(self.ui.templateList,
-                                       self.session,
-                                       icon_name,
-                                       template_name,
-                                       True)
+            item = TemplateItem(
+                self.ui.templateList, self.session, icon_name,
+                template_name, True)
+
             if self.session.is_favorite(template_name, True):
-                list_widget.setAsFavorite(True)
-            self.ui.templateList.addItem(list_widget)
+                item.set_as_favorite(True)
+
+            self.ui.templateList.addItem(item)
             self.ui.templateList.sortItems()
 
         self._update_filtered_list()
@@ -474,7 +475,7 @@ class AddApplicationDialog(ChildDialog):
         item = self.ui.templateList.currentItem()
         if item is None:
             return
-
+        print('yapou', item.client_data.spread(), item.client_data.ray_hack)
         properties_dialog = client_properties_dialog.ClientPropertiesDialog.create(
             self, item.client_data)
         properties_dialog.update_contents()
@@ -483,7 +484,7 @@ class AddApplicationDialog(ChildDialog):
 
     def _prevent_ok(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
-            bool(self.server_will_accept and self.has_selection))
+            bool(self._server_will_accept and self.has_selection))
 
     def _remove_current_template(self):
         item = self.ui.templateList.currentItem()
@@ -492,8 +493,8 @@ class AddApplicationDialog(ChildDialog):
 
         self.remove_template(item.data(Qt.UserRole), False)
 
-    def server_status_changed(self, server_status):
-        self.server_will_accept = bool(
+    def _server_status_changed(self, server_status):
+        self._server_will_accept = bool(
             server_status not in (
                 ray.ServerStatus.OFF,
                 ray.ServerStatus.CLOSE) and not self.server_copying)

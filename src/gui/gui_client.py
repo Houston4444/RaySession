@@ -29,7 +29,7 @@ class Client(QObject, ray.ClientData):
         self.last_save = time.time()
         self.check_last_save = True
 
-        self.widget = self.main_win.createClientWidget(self)
+        self.widget = self.main_win.create_client_widget(self)
         self.properties_dialog = ClientPropertiesDialog.create(self.main_win, self)
 
     def set_status(self, status: int):
@@ -43,43 +43,44 @@ class Client(QObject, ray.ClientData):
                     ray.ClientStatus.OPEN, ray.ClientStatus.SAVE)):
             self.last_save = time.time()
 
-        self.widget.updateStatus(status)
+        self.widget.update_status(status)
         self.properties_dialog.update_status(status)
 
     def set_gui_enabled(self):
         self._has_gui = True
-        self.widget.showGuiButton()
+        self.widget.show_gui_button()
 
     def set_gui_state(self, state: bool):
         self.gui_state = state
-        self.widget.setGuiState(state)
+        self.widget.set_gui_state(state)
 
     def set_dirty_state(self, dirty: bool):
         self.has_dirty = True
         self.dirty_state = dirty
-        self.widget.setDirtyState(dirty)
+        self.widget.set_dirty_state(dirty)
 
     def set_no_save_level(self, no_save_level: int):
         self.no_save_level = no_save_level
-        self.widget.setNoSaveLevel(no_save_level)
+        self.widget.set_no_save_level(no_save_level)
 
     def set_progress(self, progress: float):
-        self.widget.setProgress(progress)
+        self.widget.set_progress(progress)
 
     def allow_kill(self):
-        self.widget.allowKill()
+        self.widget.allow_kill()
 
     def update_properties(self, *args):
         self.update(*args)
-        self.widget.updateClientData()
+        self.widget.update_client_data()
 
     def update_ray_hack(self, *args):
         self.ray_hack.update(*args)
-        self.widget.updateClientData()
+        self.widget.update_client_data()
 
     def update_ray_net(self, *args):
+        print('zoulkakzk')
         self.ray_net.update(*args)
-        self.widget.updateClientData()
+        self.widget.update_client_data()
 
     def prettier_name(self):
         if self.label:
@@ -136,8 +137,8 @@ class Client(QObject, ray.ClientData):
 
     def re_create_widget(self):
         del self.widget
-        self.widget = self.main_win.createClientWidget(self)
-        self.widget.updateClientData()
+        self.widget = self.main_win.create_client_widget(self)
+        self.widget.update_client_data()
 
         if self._has_gui:
             self.set_gui_enabled()

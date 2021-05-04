@@ -85,7 +85,7 @@ class CommandLineArgs(argparse.Namespace):
     force_new_daemon = False
 
     @classmethod
-    def eatAttributes(cls, parsed_args):
+    def eat_attributes(cls, parsed_args):
         for attr_name in dir(parsed_args):
             if not attr_name.startswith('_'):
                 setattr(cls, attr_name, getattr(parsed_args, attr_name))
@@ -117,7 +117,7 @@ class CommandLineArgs(argparse.Namespace):
             cls.session_root = cls.session_root[:-1]
 
     @classmethod
-    def changeSessionRoot(cls, path: str):
+    def change_session_root(cls, path: str):
         cls.session_root = path
 
 
@@ -165,10 +165,10 @@ class ArgParser(argparse.ArgumentParser):
                           version=ray.VERSION)
 
         parsed_args = argparse.ArgumentParser.parse_args(self)
-        CommandLineArgs.eatAttributes(parsed_args)
+        CommandLineArgs.eat_attributes(parsed_args)
 
 
-def initGuiTools():
+def init_gui_tools():
     if CommandLineArgs.under_nsm:
         settings = QSettings('%s/child_sessions'
                              % QApplication.organizationName())
@@ -180,23 +180,59 @@ def initGuiTools():
     RS.set_settings(settings)
 
     if not CommandLineArgs.session_root:
-        CommandLineArgs.changeSessionRoot(
+        CommandLineArgs.change_session_root(
             settings.value('default_session_root',
                            ray.DEFAULT_SESSION_ROOT,
                            type=str))
 
-def isDarkTheme(widget)->bool:
+def is_dark_theme(widget)->bool:
     return bool(
         widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
         > 128)
 
+def split_in_two(string: str)->tuple:
+        middle = int(len(string)/2)
+        sep_indexes = []
+        last_was_digit = False
+
+        for sep in (' ', '-', '_', 'capital'):
+            for i in range(len(string)):
+                c = string[i]
+                if sep == 'capital':
+                    if c.upper() == c:
+                        if not c.isdigit() or not last_was_digit:
+                            sep_indexes.append(i)
+                        last_was_digit = c.isdigit()
+
+                elif c == sep:
+                    sep_indexes.append(i)
+
+            if sep_indexes:
+                break
+
+        if not sep_indexes or sep_indexes == [0]:
+            return (string, '')
+
+        best_index = 0
+        best_dif = middle
+
+        for s in sep_indexes:
+            dif = abs(middle - s)
+            if dif < best_dif:
+                best_index = s
+                best_dif = dif
+
+        if sep == ' ':
+            return (string[:best_index], string[best_index+1:])
+        return (string[:best_index], string[best_index:])
+
 def dirname(*args)->str:
     return os.path.dirname(*args)
 
-def getCodeRoot()->str:
+def get_code_root()->str:
     return dirname(dirname(dirname(os.path.realpath(__file__))))
 
-def serverStatusString(server_status: int)->str:
+def server_status_string(server_status: int)->str:
     server_status_strings = {
         ray.ServerStatus.OFF     : _translate('server status', "off"),
         ray.ServerStatus.NEW     : _translate('server status', "new"),
@@ -221,7 +257,7 @@ def serverStatusString(server_status: int)->str:
 
     return server_status_strings[server_status]
 
-def clientStatusString(client_status: int)->str:
+def client_status_string(client_status: int)->str:
     client_status_strings = {
         ray.ClientStatus.STOPPED: _translate('client status', "stopped"),
         ray.ClientStatus.LAUNCH : _translate('client status', "launch"),

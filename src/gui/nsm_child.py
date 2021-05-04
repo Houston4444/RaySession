@@ -36,7 +36,7 @@ class NSMChild:
         self.session.signaler.server_status_changed.connect(
             self.server_status_changed)
 
-    def server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status):
         if server_status == ray.ServerStatus.READY:
             serverNSM = nsm_client.NSMThread.instance()
             if not serverNSM:
@@ -62,7 +62,7 @@ class NSMChild:
 
     def save(self):
         if self.session.main_win:
-            self.session.main_win.saveWindowSettings()
+            self.session.main_win.save_window_settings()
 
         self.wait_for_save = True
 

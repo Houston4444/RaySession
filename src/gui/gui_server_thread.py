@@ -152,7 +152,7 @@ class GuiServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/server/root', 's')
     def _server_root(self, path, args, types, src_addr):
         session_root = args[0]
-        CommandLineArgs.changeSessionRoot(session_root)
+        CommandLineArgs.change_session_root(session_root)
         self.signaler.root_changed.emit(session_root)
 
     @ray_method('/ray/gui/server/options', 'i')

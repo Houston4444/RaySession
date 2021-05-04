@@ -125,9 +125,9 @@ class Session:
         return False
 
     def set_daemon_options(self, options):
-        self.main_win.setDaemonOptions(options)
+        self.main_win.set_daemon_options(options)
         for client in self.client_list:
-            client.widget.setDaemonOptions(options)
+            client.widget.set_daemon_options(options)
 
 class SignaledSession(Session):
     def __init__(self):
@@ -168,7 +168,7 @@ class SignaledSession(Session):
                         ray.Err.COPY_ABORTED):
             return
 
-        self.main_win.errorMessage(err_message)
+        self.main_win.error_message(err_message)
 
     def _minor_error(self, path, args):
         err_path, err_code, err_message = args
@@ -178,7 +178,7 @@ class SignaledSession(Session):
         if err_code in (ray.Err.OK, ray.Err.UNKNOWN_MESSAGE):
             return
 
-        self.main_win.errorMessage(err_message)
+        self.main_win.error_message(err_message)
 
 
     def _ray_gui_server_disannounce(self, path, args):
@@ -186,11 +186,11 @@ class SignaledSession(Session):
 
     def _ray_gui_server_nsm_locked(self, path, args):
         nsm_locked = bool(args[0])
-        self.main_win.setNsmLocked(nsm_locked)
+        self.main_win.set_nsm_locked(nsm_locked)
 
     def _ray_gui_server_message(self, path, args):
         message = args[0]
-        self.main_win.printMessage(message)
+        self.main_win.print_message(message)
 
     def _ray_gui_server_options(self, path, args):
         options = args[0]
@@ -200,10 +200,10 @@ class SignaledSession(Session):
         sname, spath = args
         self._set_name(sname)
         self._set_path(spath)
-        self.main_win.renameSession(sname, spath)
+        self.main_win.rename_session(sname, spath)
 
     def _ray_gui_session_is_nsm(self, path, args):
-        self.main_win.openingNsmSession()
+        self.main_win.opening_nsm_session()
 
     def _ray_gui_session_renameable(self, path, args):
         self.is_renameable = bool(args[0])
@@ -212,18 +212,18 @@ class SignaledSession(Session):
                              and self.server_status == ray.ServerStatus.READY
                              and not CommandLineArgs.out_daemon)
 
-        self.main_win.setSessionNameEditable(bool_set_edit)
+        self.main_win.set_session_name_editable(bool_set_edit)
 
     def _ray_gui_session_notes(self, path, args):
         self.notes = args[0]
         if self.main_win.notes_dialog is not None:
-            self.main_win.notes_dialog.notesUpdated()
+            self.main_win.notes_dialog.notes_updated()
 
     def _ray_gui_session_notes_shown(self, path, args):
-        self.main_win.editNotes()
+        self.main_win.edit_notes()
 
     def _ray_gui_session_notes_hidden(self, path, args):
-        self.main_win.editNotes(close=True)
+        self.main_win.edit_notes(close=True)
 
     def _ray_gui_session_sort_clients(self, path, args):
         new_client_list = []
@@ -240,12 +240,12 @@ class SignaledSession(Session):
             return
 
         self.client_list.clear()
-        self.main_win.reCreateListWidget()
+        self.main_win.re_create_list_widget()
 
         self.client_list = new_client_list
         for client in self.client_list:
             client.re_create_widget()
-            client.widget.updateStatus(client.status)
+            client.widget.update_status(client.status)
 
     def _ray_gui_client_new(self, path, args):
         client = Client(self, *args[:2])
@@ -284,12 +284,12 @@ class SignaledSession(Session):
             client.set_status(status)
 
             if status == ray.ClientStatus.REMOVED:
-                self.main_win.removeClient(client_id)
+                self.main_win.remove_client(client_id)
                 client.properties_dialog.close()
                 self.client_list.remove(client)
                 del client
 
-        self.main_win.clientStatusChanged(client_id, status)
+        self.main_win.client_status_changed(client_id, status)
 
     def _ray_gui_client_progress(self, path, args):
         client_id, progress = args
@@ -333,7 +333,7 @@ class SignaledSession(Session):
     def _ray_gui_trash_add(self, path, args):
         trashed_client = TrashedClient()
         trashed_client.update(*args)
-        trash_action = self.main_win.trashAdd(trashed_client)
+        trash_action = self.main_win.trash_add(trashed_client)
         trashed_client.set_menu_action(trash_action)
         self.trashed_clients.append(trashed_client)
 
@@ -361,11 +361,11 @@ class SignaledSession(Session):
             return
 
         self.trashed_clients.remove(trashed_client)
-        self.main_win.trashRemove(trashed_client.menu_action)
+        self.main_win.trash_remove(trashed_client.menu_action)
 
     def _ray_gui_trash_clear(self, path, args):
         self.trashed_clients.clear()
-        self.main_win.trashClear()
+        self.main_win.trash_clear()
 
     def _ray_gui_favorites_added(self, path, args):
         template_name, icon_name, int_factory = args
@@ -381,7 +381,7 @@ class SignaledSession(Session):
             self.favorite_list.append(fav)
             self.signaler.favorite_added.emit(
                 template_name, icon_name, bool(int_factory))
-        self.main_win.updateFavoritesMenu()
+        self.main_win.update_favorites_menu()
 
     def _ray_gui_favorites_removed(self, path, args):
         template_name, int_factory = args
@@ -395,21 +395,21 @@ class SignaledSession(Session):
 
         self.favorite_list.remove(favorite)
         self.signaler.favorite_removed.emit(template_name, bool(int_factory))
-        self.main_win.updateFavoritesMenu()
+        self.main_win.update_favorites_menu()
 
     def _ray_gui_script_info(self, path, args):
         text = args[0]
-        self.main_win.showScriptInfo(text)
+        self.main_win.show_script_info(text)
 
     def _ray_gui_hide_script_info(self, path, args):
-        self.main_win.hideScriptInfoDialog()
+        self.main_win.hide_script_info_dialog()
 
     def _ray_gui_script_user_action(self, path, args):
         text = args[0]
-        self.main_win.showScriptUserActionDialog(text)
+        self.main_win.show_script_user_action_dialog(text)
 
     def _ray_gui_hide_script_user_action(self, path, args):
-        self.main_win.hideScriptUserActionDialog()
+        self.main_win.hide_script_user_action_dialog()
 
     def _ray_gui_patchbay_announce(self, path, args):
         self.patchbay_manager.patchbay_announce(*args)

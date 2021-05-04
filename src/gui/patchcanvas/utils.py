@@ -561,7 +561,7 @@ def CanvasRemoveItemFX(item):
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def isDarkTheme(widget)->bool:
+def is_dark_theme(widget)->bool:
     return bool(
         widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
         > 128)
