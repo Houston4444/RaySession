@@ -233,7 +233,11 @@ class SignaledSession(OperatingSession):
 
     def _ray_server_ask_for_patchbay(self, path, args, src_addr):
         # if we are here, this means we need a patchbay to osc to run
-        QProcess.startDetached('ray-jackpatch_to_osc', [src_addr.url])
+        server = self.getServer()
+        if server is None:
+            return
+        QProcess.startDetached('ray-jackpatch_to_osc',
+                               [str(server.port), src_addr.url])
 
     def _ray_server_abort_copy(self, path, args, src_addr):
         self.file_copier.abort()

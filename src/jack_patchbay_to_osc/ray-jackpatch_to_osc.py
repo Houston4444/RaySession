@@ -16,7 +16,7 @@ PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
 PORT_TYPE_MIDI = 2
 
-EXISTENCE_PATH = '/tmp/RaySession/patchbay_infos'
+EXISTENCE_PATH = '/tmp/RaySession/patchbay_daemons/'
 
 
 
@@ -97,14 +97,15 @@ class MainObject:
     samplerate = 48000
     buffer_size = 1024
     
-    def __init__(self, gui_url):
+    def __init__(self, daemon_port: str, gui_url: str):
+        self._daemon_port = daemon_port
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
         self._waiting_jack_client_open = True
 
         self.osc_server = osc_server.OscJackPatch(self)
         self.osc_server.set_tmp_gui_url(gui_url)
-        self.write_existence_file(self.osc_server.port)
+        self.write_existence_file()
         
         self.start_jack_client()
     
@@ -122,51 +123,33 @@ class MainObject:
                 return ''
         return value
     
-    @staticmethod
-    def c_char_p_p_to_list(c_char_p_p):
-        i = 0
-        return_list = []
-
-        if not c_char_p_p:
-            return return_list
-
-        while True:
-            new_char_p = c_char_p_p[i]
-            if new_char_p:
-                return_list.append(str(new_char_p, encoding="utf-8"))
-                i += 1
-            else:
-                break
-
-        jacklib.free(c_char_p_p)
-        return return_list
-    
-    @staticmethod
-    def write_existence_file(port: int):
+    def write_existence_file(self):
+        if not os.path.isdir(EXISTENCE_PATH):
+            os.makedirs(EXISTENCE_PATH)
+        
         try:
-            file = open(EXISTENCE_PATH, 'w')
+            file = open(EXISTENCE_PATH + self._daemon_port, 'w')
         except PermissionError:
             sys.stderr.write(
                 'ray-patchbay_to_osc: Error, no permission for existence file\n')
             sys.exit(1)
 
         contents = 'pid:%i\n' % os.getpid()
-        contents += 'port:%i\n' % port
+        contents += 'port:%i\n' % self.osc_server.port
 
         file.write(contents)
         file.close()
     
-    @staticmethod
-    def remove_existence_file():
-        if not os.path.exists(EXISTENCE_PATH):
+    def remove_existence_file(self):
+        if not os.path.exists(EXISTENCE_PATH + self._daemon_port):
             return 
 
         try:
-            os.remove(EXISTENCE_PATH)
+            os.remove(EXISTENCE_PATH + self._daemon_port)
         except PermissionError:
             sys.stderr.write(
                 'ray-patchbay_to_osc: Error, unable to remove %s\n'
-                % EXISTENCE_PATH)
+                % EXISTENCE_PATH + self._daemon_port)
     
     @classmethod
     def signal_handler(cls, sig: int, frame):
@@ -467,18 +450,27 @@ class MainObject:
 
 
 def main_process():
+    args = sys.argv.copy()
+    daemon_port = ''
     gui_url = ''
-    if len(sys.argv) > 1:
-        gui_url = sys.argv[1]
-    
-    main_object = MainObject(gui_url)
 
-    if len(sys.argv) > 1:
-        for gui_url in sys.argv[1:]:
-            main_object.add_gui(gui_url)
+    if args:
+        this_exec = args.pop(0)
+
+    if args:
+        daemon_port = args.pop(0)
+    
+    if args:
+        gui_url = args[0]
+    
+    main_object = MainObject(daemon_port, gui_url)
+
+    for gui_url in args:
+        main_object.add_gui(gui_url)
     
     main_object.start_loop()
     main_object.exit()
+
 
 if __name__ == '__main__':
     # prevent deprecation warnings python messages

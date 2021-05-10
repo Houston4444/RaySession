@@ -296,6 +296,9 @@ class OscJackPatch(Server):
                   self.main_object.samplerate,
                   self.main_object.buffer_size)
 
+        self.send(gui_addr, '/ray/gui/patchbay/dsp_load',
+                  self.main_object.last_sent_dsp_load)
+
         if areOnSameMachine(gui_url, self.url):
             self.send_local_data([gui_addr])
         else:

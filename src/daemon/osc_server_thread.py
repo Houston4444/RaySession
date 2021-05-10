@@ -414,7 +414,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/ask_for_patchbay', '')
     def rayServerGetPatchbayPort(self, path, args, types, src_addr):
-        patchbay_file = '/tmp/RaySession/patchbay_infos'
+        patchbay_file = '/tmp/RaySession/patchbay_daemons/' + str(self.port)
         patchbay_port = 0
 
         if not os.path.exists(patchbay_file):
