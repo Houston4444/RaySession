@@ -41,20 +41,20 @@ class TemplateSlot(QFrame):
         self._user_menu.addAction(act_remove_template)
         self.ui.toolButtonUser.setMenu(self._user_menu)
 
-        self.ui.toolButtonFavorite.setSession(self.session)
-        self.ui.toolButtonFavorite.setTemplate(
+        self.ui.toolButtonFavorite.set_session(self.session)
+        self.ui.toolButtonFavorite.set_template(
             self._name, self.client_data.icon, self._factory)
 
         if is_dark_theme(self):
             self.ui.toolButtonUser.setIcon(
                 QIcon(':scalable/breeze-dark/im-user.svg'))
-            self.ui.toolButtonFavorite.setDarkTheme()
+            self.ui.toolButtonFavorite.set_dark_theme()
 
     def update_client_data(self, *args):
         self.client_data.update(*args)
         self.ui.toolButtonIcon.setIcon(
             ray.getAppIcon(self.client_data.icon, self))
-        self.ui.toolButtonFavorite.setTemplate(
+        self.ui.toolButtonFavorite.set_template(
             self._name, self.client_data.icon, self._factory)
 
     def update_ray_hack_data(self, *args):
@@ -72,7 +72,7 @@ class TemplateSlot(QFrame):
         add_app_dialog.remove_template(self._name, self._factory)
 
     def set_as_favorite(self, yesno: bool):
-        self.ui.toolButtonFavorite.setAsFavorite(yesno)
+        self.ui.toolButtonFavorite.set_as_favorite(yesno)
 
     def mouseDoubleClickEvent(self, event):
         self._list_widget.parent().accept()
@@ -160,7 +160,7 @@ class AddApplicationDialog(ChildDialog):
             self._current_item_changed)
         self.ui.templateList.setFocus(Qt.OtherFocusReason)
         self.ui.filterBar.textEdited.connect(self._update_filtered_list)
-        self.ui.filterBar.updownpressed.connect(self._up_down_pressed)
+        self.ui.filterBar.up_down_pressed.connect(self._up_down_pressed)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
         self.user_menu = QMenu()
@@ -170,7 +170,7 @@ class AddApplicationDialog(ChildDialog):
         act_remove_template.triggered.connect(self._remove_current_template)
         self.user_menu.addAction(act_remove_template)
         self.ui.toolButtonUser.setMenu(self.user_menu)
-        self.ui.toolButtonFavorite.setSession(self.session)
+        self.ui.toolButtonFavorite.set_session(self.session)
         self.ui.widgetNonSaveable.setVisible(False)
         self.ui.toolButtonAdvanced.clicked.connect(
             self._tool_button_advanced_clicked)
@@ -178,7 +178,7 @@ class AddApplicationDialog(ChildDialog):
         if is_dark_theme(self):
             self.ui.toolButtonUser.setIcon(
                 QIcon(':scalable/breeze-dark/im-user.svg'))
-            self.ui.toolButtonFavorite.setDarkTheme()
+            self.ui.toolButtonFavorite.set_dark_theme()
             self.ui.toolButtonNoSave.setIcon(
                 QIcon(':scalable/breeze-dark/document-nosave.svg'))
 
@@ -220,7 +220,7 @@ class AddApplicationDialog(ChildDialog):
                     and item.is_factory == factory):
                 item.set_as_favorite(True)
                 if item == self.ui.templateList.currentItem():
-                    self.ui.toolButtonFavorite.setAsFavorite(True)
+                    self.ui.toolButtonFavorite.set_as_favorite(True)
                 break
 
     def _favorite_removed(self, template_name: str, factory: bool):
@@ -233,7 +233,7 @@ class AddApplicationDialog(ChildDialog):
                     and item.is_factory == factory):
                 item.set_as_favorite(False)
                 if item == self.ui.templateList.currentItem():
-                    self.ui.toolButtonFavorite.setAsFavorite(False)
+                    self.ui.toolButtonFavorite.set_as_favorite(False)
                 break
 
     def _factory_box_changed(self, state):
@@ -449,9 +449,9 @@ class AddApplicationDialog(ChildDialog):
             widget.setVisible(bool(cdata.protocol == ray.Protocol.NSM))
 
         self.ui.toolButtonUser.setVisible(not item.is_factory)
-        self.ui.toolButtonFavorite.setTemplate(
+        self.ui.toolButtonFavorite.set_template(
             item.data(Qt.UserRole), cdata.icon, item.is_factory)
-        self.ui.toolButtonFavorite.setAsFavorite(self.session.is_favorite(
+        self.ui.toolButtonFavorite.set_as_favorite(self.session.is_favorite(
             item.data(Qt.UserRole), item.is_factory))
 
         self.ui.widgetNonSaveable.setVisible(bool(

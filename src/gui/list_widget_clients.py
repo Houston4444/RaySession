@@ -34,14 +34,14 @@ class ClientSlot(QFrame):
             self.ui.toolButtonHack.setVisible(False)
 
         # connect buttons to functions
-        self.ui.toolButtonHack.orderHackVisibility.connect(
+        self.ui.toolButtonHack.order_hack_visibility.connect(
             self._order_hack_visibility)
         self.ui.toolButtonGUI.clicked.connect(self._change_gui_state)
         self.ui.startButton.clicked.connect(self._start_client)
         self.ui.stopButton.clicked.connect(self._stop_client)
         self.ui.saveButton.clicked.connect(self._save_client)
         self.ui.closeButton.clicked.connect(self._trash_client)
-        self.ui.lineEditClientStatus.statusPressed.connect(self._abort_copy)
+        self.ui.lineEditClientStatus.status_pressed.connect(self._abort_copy)
 
         self.ui.actionSaveAsApplicationTemplate.triggered.connect(
             self._save_as_application_template)
@@ -430,7 +430,7 @@ class ClientSlot(QFrame):
             self._no_save_icon if no_save_level else self._save_icon)
 
     def set_progress(self, progress: float):
-        self.ui.lineEditClientStatus.setProgress(progress)
+        self.ui.lineEditClientStatus.set_progress(progress)
 
     def set_daemon_options(self, options):
         has_git = bool(options & ray.Option.HAS_GIT)

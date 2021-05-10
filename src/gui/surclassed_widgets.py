@@ -12,7 +12,7 @@ from gui_tools import is_dark_theme
 from gui_signaler import Signaler
 
 class RayHackButton(QToolButton):
-    orderHackVisibility = pyqtSignal(bool)
+    order_hack_visibility = pyqtSignal(bool)
 
     def __init__(self, parent):
         QToolButton.__init__(self, parent)
@@ -53,13 +53,13 @@ class RayHackButton(QToolButton):
         self.setStyleSheet(style)
 
     def mousePressEvent(self, event):
-        self.orderHackVisibility.emit(not self.isChecked())
+        self.order_hack_visibility.emit(not self.isChecked())
         # and not toggle button, the client will emit a gui state that will
         # toggle this button
 
 
 class OpenSessionFilterBar(QLineEdit):
-    updownpressed = pyqtSignal(int)
+    up_down_pressed = pyqtSignal(int)
     key_event = pyqtSignal(object)
 
     def __init__(self, parent):
@@ -67,7 +67,7 @@ class OpenSessionFilterBar(QLineEdit):
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Up, Qt.Key_Down):
-            self.updownpressed.emit(event.key())
+            self.up_down_pressed.emit(event.key())
             self.key_event.emit(event)
         QLineEdit.keyPressEvent(self, event)
 
@@ -105,137 +105,137 @@ class StackedSessionName(QStackedWidget):
 
     def __init__(self, parent):
         QStackedWidget.__init__(self)
-        self.is_editable = True
+        self._is_editable = True
 
-        self.label_widget = QLabel()
-        self.label_widget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-        self.label_widget.setStyleSheet("QLabel {font-weight : bold}")
+        self._label_widget = QLabel()
+        self._label_widget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self._label_widget.setStyleSheet("QLabel {font-weight : bold}")
 
-        self.line_edit_widget = CustomLineEdit(self)
-        self.line_edit_widget.setAlignment(Qt.AlignHCenter)
+        self._line_edit_widget = CustomLineEdit(self)
+        self._line_edit_widget.setAlignment(Qt.AlignHCenter)
 
-        self.addWidget(self.label_widget)
-        self.addWidget(self.line_edit_widget)
+        self.addWidget(self._label_widget)
+        self.addWidget(self._line_edit_widget)
 
         self.setCurrentIndex(0)
 
     def mouseDoubleClickEvent(self, event):
         if self.currentIndex() == 1:
             self.setCurrentIndex(0)
-            self.name_changed.emit(self.line_edit_widget.text())
+            self.name_changed.emit(self._line_edit_widget.text())
             return
 
-        if self.currentIndex() == 0 and self.is_editable:
+        if self.currentIndex() == 0 and self._is_editable:
             self.setCurrentIndex(1)
             return
 
         QStackedWidget.mouseDoubleClickEvent(self, event)
 
-    def setEditable(self, editable):
-        self.is_editable = editable
+    def set_editable(self, yesno: bool):
+        self._is_editable = yesno
 
-        if not editable:
+        if not yesno:
             self.setCurrentIndex(0)
 
-    def setText(self, text):
-        self.label_widget.setText(text)
-        self.line_edit_widget.setText(text)
+    def set_text(self, text: str):
+        self._label_widget.setText(text)
+        self._line_edit_widget.setText(text)
 
         self.setCurrentIndex(0)
 
-    def toggleEdit(self):
-        if not self.is_editable:
+    def toggle_edit(self):
+        if not self._is_editable:
             self.setCurrentIndex(0)
             return
 
         if self.currentIndex() == 0:
             self.setCurrentIndex(1)
-            self.line_edit_widget.setFocus(Qt.OtherFocusReason)
+            self._line_edit_widget.setFocus(Qt.OtherFocusReason)
         else:
             self.setCurrentIndex(0)
 
-    def setOnEdit(self):
-        if not self.is_editable:
+    def set_on_edit(self):
+        if not self._is_editable:
             return
 
         self.setCurrentIndex(1)
 
 
 class StatusBar(QLineEdit):
-    statusPressed = pyqtSignal()
+    status_pressed = pyqtSignal()
 
     def __init__(self, parent):
         QLineEdit.__init__(self)
-        self.next_texts = []
-        self.timer = QTimer()
-        self.timer.setInterval(350)
-        self.timer.timeout.connect(self.showNextText)
+        self._next_texts = []
+        self._timer = QTimer()
+        self._timer.setInterval(350)
+        self._timer.timeout.connect(self._show_next_text)
 
-        self.ubuntu_font = QFont(
+        self._ubuntu_font = QFont(
             QFontDatabase.applicationFontFamilies(0)[0], 8)
-        self.ubuntu_font_cond = QFont(
+        self._ubuntu_font_cond = QFont(
             QFontDatabase.applicationFontFamilies(1)[0], 8)
-        self.ubuntu_font.setBold(True)
-        self.ubuntu_font_cond.setBold(True)
+        self._ubuntu_font.setBold(True)
+        self._ubuntu_font_cond.setBold(True)
 
-        self.basecolor = self.palette().base().color().name()
-        self.bluecolor = self.palette().highlight().color().name()
+        self._basecolor = self.palette().base().color().name()
+        self._bluecolor = self.palette().highlight().color().name()
 
-        self.last_status_time = 0.0
+        self._last_status_time = 0.0
 
         # ui_client_slot.py will display "stopped" status.
         # we need to not stay on this status text
         # especially at client switch because widget is recreated.
         self._first_text_done = False
 
-    def showNextText(self):
-        if self.next_texts:
-            if len(self.next_texts) >= 4:
-                interval = int(1000 / len(self.next_texts))
-                self.timer.setInterval(interval)
-            elif len(self.next_texts) == 3:
-                self.timer.setInterval(350)
-            self.setText(self.next_texts.pop(0), True)
+    def _show_next_text(self):
+        if self._next_texts:
+            if len(self._next_texts) >= 4:
+                interval = int(1000 / len(self._next_texts))
+                self._timer.setInterval(interval)
+            elif len(self._next_texts) == 3:
+                self._timer.setInterval(350)
+            self.setText(self._next_texts.pop(0), True)
         else:
-            self.timer.stop()
+            self._timer.stop()
 
-    def setFontForText(self, text):
-        if QFontMetrics(self.ubuntu_font).width(text) >= (self.width() - 16):
-            self.setFont(self.ubuntu_font_cond)
+    def _set_font_for_text(self, text):
+        if QFontMetrics(self._ubuntu_font).width(text) >= (self.width() - 16):
+            self.setFont(self._ubuntu_font_cond)
         else:
-            self.setFont(self.ubuntu_font)
+            self.setFont(self._ubuntu_font)
 
     def setText(self, text, from_timer=False):
-        self.last_status_time = time.time()
+        self._last_status_time = time.time()
 
         if not self._first_text_done:
-            self.setFontForText(text)
+            self._set_font_for_text(text)
             QLineEdit.setText(self, text)
             self._first_text_done = True
             return
 
         if text and not from_timer:
-            if self.timer.isActive():
-                self.next_texts.append(text)
+            if self._timer.isActive():
+                self._next_texts.append(text)
                 return
 
-            self.timer.start()
+            self._timer.start()
 
         if not text:
-            self.next_texts.clear()
+            self._next_texts.clear()
 
-        self.setFontForText(text)
+        self._set_font_for_text(text)
 
         self.setStyleSheet('')
 
         QLineEdit.setText(self, text)
 
-    def setProgress(self, progress):
+    def set_progress(self, progress: float):
         if not 0.0 <= progress <= 1.0:
             return
 
         # no progress display in the first second
-        if time.time() - self.last_status_time < 1.0:
+        if time.time() - self._last_status_time < 1.0:
             return
 
         pre_progress = progress - 0.03
@@ -245,18 +245,19 @@ class StatusBar(QLineEdit):
         style = "QLineEdit{background-color: " \
                 + "qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0," \
                 + "stop:0 %s, stop:%f %s, stop:%f %s, stop:1 %s)}" \
-                    % (self.bluecolor, pre_progress, self.bluecolor,
-                       progress, self.basecolor, self.basecolor)
+                    % (self._bluecolor, pre_progress, self._bluecolor,
+                       progress, self._basecolor, self._basecolor)
 
         self.setStyleSheet(style)
 
     def mousePressEvent(self, event):
-        self.statusPressed.emit()
+        self.status_pressed.emit()
 
 
 class StatusBarNegativ(StatusBar):
     def __init__(self, parent):
         StatusBar.__init__(self, parent)
+
 
 class FakeToolButton(QToolButton):
     def __init__(self, parent):
@@ -267,71 +268,66 @@ class FakeToolButton(QToolButton):
         self.parent().mousePressEvent(event)
 
 
-class favoriteToolButton(QToolButton):
+class FavoriteToolButton(QToolButton):
     def __init__(self, parent):
         QToolButton.__init__(self, parent)
-        self.favorite_list = []
-        self.template_name = ""
-        self.template_icon = ""
-        self.factory = True
+        self._template_name = ""
+        self._template_icon = ""
+        self._factory = True
+        self._state = False
+        self._favicon_not = QIcon(':scalable/breeze/draw-star.svg')
+        self._favicon_yes = QIcon(':scalable/breeze/star-yellow.svg')
+
         self.session = None
 
-        self.m_state = False
-        self.favicon_not = QIcon(':scalable/breeze/draw-star.svg')
-        self.favicon_yes = QIcon(':scalable/breeze/star-yellow.svg')
-        self.setIcon(self.favicon_not)
+        self.setIcon(self._favicon_not)
 
-    def setDarkTheme(self):
-        self.favicon_not = QIcon(':scalable/breeze-dark/draw-star.svg')
-        if not self.m_state:
-            self.setIcon(self.favicon_not)
+    def set_dark_theme(self):
+        self._favicon_not = QIcon(':scalable/breeze-dark/draw-star.svg')
+        if not self._state:
+            self.setIcon(self._favicon_not)
 
-    def setSession(self, session):
+    def set_session(self, session):
         self.session = session
 
-    def setTemplate(self, template_name: str,
+    def set_template(self, template_name: str,
                     template_icon: str, factory: bool):
-        self.template_name = template_name
-        self.template_icon = template_icon
-        self.factory = factory
+        self._template_name = template_name
+        self._template_icon = template_icon
+        self._factory = factory
 
-    def setAsFavorite(self, bool_favorite: bool):
-        self.m_state = bool_favorite
-        if bool_favorite:
-            self.setIcon(self.favicon_yes)
-        else:
-            self.setIcon(self.favicon_not)
+    def set_as_favorite(self, yesno: bool):
+        self._state = yesno
+        self.setIcon(self._favicon_yes if yesno else self._favicon_not)
 
     def mouseReleaseEvent(self, event):
         QToolButton.mouseReleaseEvent(self, event)
         if self.session is None:
             return
 
-        if self.m_state:
-            self.session.remove_favorite(self.template_name, self.factory)
+        if self._state:
+            self.session.remove_favorite(self._template_name, self._factory)
         else:
-            self.session.add_favorite(self.template_name, self.template_icon,
-                                     self.factory)
+            self.session.add_favorite(
+                self._template_name, self._template_icon, self._factory)
+
 
 # taken from carla (falktx)
 class DraggableGraphicsView(QGraphicsView):
     def __init__(self, parent):
         QGraphicsView.__init__(self, parent)
 
-        self.fPanning = False
-        self.fCtrlDown = False
+        self._panning = False
 
         try:
-            self.fMiddleButton = Qt.MiddleButton
+            self._middle_button = Qt.MiddleButton
         except:
-            self.fMiddleButton = Qt.MidButton
-
-        self.h_scroll_visible = False
-        self.v_scroll_visible = False
+            self._middle_button = Qt.MidButton
 
     def mousePressEvent(self, event):
-        if event.button() == self.fMiddleButton and not self.fCtrlDown:
-            self.fPanning = True
+        if (event.button() == self._middle_button
+                and not QApplication.keyboardModifiers() & Qt.ControlModifier):
+            self._panning = True
             self.setDragMode(QGraphicsView.ScrollHandDrag)
             event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton,
                                 Qt.LeftButton, event.modifiers())
@@ -341,22 +337,12 @@ class DraggableGraphicsView(QGraphicsView):
     def mouseReleaseEvent(self, event):
         QGraphicsView.mouseReleaseEvent(self, event)
 
-        if not self.fPanning:
+        if not self._panning:
             return
 
-        self.fPanning = False
+        self._panning = False
         self.setDragMode(QGraphicsView.NoDrag)
         self.setCursor(QCursor(Qt.ArrowCursor))
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Control:
-            self.fCtrlDown = True
-        QGraphicsView.keyPressEvent(self, event)
-
-    def keyReleaseEvent(self, event):
-        if event.key() == Qt.Key_Control:
-            self.fCtrlDown = False
-        QGraphicsView.keyReleaseEvent(self, event)
 
 
 class CanvasSplitterHandle(QSplitterHandle):
@@ -388,7 +374,7 @@ class CanvasSplitter(QSplitter):
         handle = self.handle(1)
         if handle:
             handle.set_active(yesno)
-
+            
     def createHandle(self):
         return CanvasSplitterHandle(self)
 
@@ -404,6 +390,13 @@ class ZoomSlider(QSlider):
         if max_a == min_a:
             return min_b
         return min_b + ((x - min_a) / (max_a - min_a)) * (max_b - min_b)
+    
+    def _show_tool_tip(self):
+        win = QApplication.activeWindow()
+        if win and win.isFullScreen():
+            return
+        string = "  Zoom: %i%%  " % int(self.zoom_percent())
+        QToolTip.showText(self.mapToGlobal(QPoint(0, 12)), string)
 
     def zoom_percent(self)->int:
         percent = 100.0
@@ -420,21 +413,14 @@ class ZoomSlider(QSlider):
             self.setValue(self.map_float_to(percent, 20, 100, 0, 500))
         else:
             self.setValue(self.map_float_to(percent, 100, 300, 500, 1000))
-        self.show_tool_tip()
-
-    def show_tool_tip(self):
-        win = QApplication.activeWindow()
-        if win and win.isFullScreen():
-            return
-        string = "  Zoom: %i%%  " % int(self.zoom_percent())
-        QToolTip.showText(self.mapToGlobal(QPoint(0, 12)), string)
+        self._show_tool_tip()
 
     def mouseDoubleClickEvent(self, event):
         self.zoom_fit_asked.emit()
     
     def contextMenuEvent(self, event):
         self.setValue(500)
-        self.show_tool_tip()
+        self._show_tool_tip()
     
     def wheelEvent(self, event):
         direction = 1 if event.angleDelta().y() > 0 else -1
@@ -444,11 +430,11 @@ class ZoomSlider(QSlider):
         else:
             self.set_percent(self.zoom_percent() + direction * 5)
             #QSlider.wheelEvent(self, event)
-        self.show_tool_tip()
+        self._show_tool_tip()
         
     def mouseMoveEvent(self, event):
         QSlider.mouseMoveEvent(self, event)
-        self.show_tool_tip()
+        self._show_tool_tip()
         
 
 class ProgressBarDsp(QProgressBar):

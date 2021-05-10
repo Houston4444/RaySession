@@ -191,7 +191,7 @@ class MainWindow(QMainWindow):
         self.ui.actionMakeReappearDialogs.triggered.connect(
             self._make_all_dialogs_reappear)
 
-        self.ui.lineEditServerStatus.statusPressed.connect(
+        self.ui.lineEditServerStatus.status_pressed.connect(
             self._status_bar_pressed)
         self.ui.stackedWidgetSessionName.name_changed.connect(
             self._rename_session_conditionnaly)
@@ -591,7 +591,7 @@ class MainWindow(QMainWindow):
                            + "then, double click on session name.</p>"))
             return
 
-        self.ui.stackedWidgetSessionName.toggleEdit()
+        self.ui.stackedWidgetSessionName.toggle_edit()
 
     def _duplicate_session(self):
         dialog = child_dialogs.NewSessionDialog(self, True)
@@ -808,7 +808,7 @@ class MainWindow(QMainWindow):
 
     def _server_progress(self, progress: float):
         self.server_progress = progress
-        self.ui.lineEditServerStatus.setProgress(progress)
+        self.ui.lineEditServerStatus.set_progress(progress)
 
     def _server_copying(self, copying: bool):
         self.server_copying = copying
@@ -882,7 +882,7 @@ class MainWindow(QMainWindow):
         self.ui.actionSessionNotes.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
 
-        self.ui.stackedWidgetSessionName.setEditable(
+        self.ui.stackedWidgetSessionName.set_editable(
             ready and self.session.is_renameable)
 
         self.ui.trashButton.setEnabled(bool(self.session.trashed_clients)
@@ -892,7 +892,7 @@ class MainWindow(QMainWindow):
                 and not CommandLineArgs.out_daemon
                 and ready
                 and self.session.is_renameable):
-            self.ui.stackedWidgetSessionName.setOnEdit()
+            self.ui.stackedWidgetSessionName.set_on_edit()
 
         if self.server_copying:
             self.ui.actionSaveSession.setEnabled(False)
@@ -1012,7 +1012,7 @@ class MainWindow(QMainWindow):
         self.ui.closeButton.setVisible(not nsm_locked)
         self.ui.toolButtonControl2.setVisible(nsm_locked)
 
-        self.ui.stackedWidgetSessionName.setEditable(
+        self.ui.stackedWidgetSessionName.set_editable(
             nsm_locked and not CommandLineArgs.out_daemon)
         self.ui.actionRenameSession.setEnabled(
             nsm_locked and not CommandLineArgs.out_daemon)
@@ -1157,18 +1157,18 @@ class MainWindow(QMainWindow):
     def rename_session(self, session_name, session_path):
         if session_name:
             self.setWindowTitle('%s - %s' % (ray.APP_TITLE, session_name))
-            self.ui.stackedWidgetSessionName.setText(session_name)
+            self.ui.stackedWidgetSessionName.set_text(session_name)
             if self.notes_dialog is not None:
                 self.notes_dialog.update_session()
         else:
             self.setWindowTitle(ray.APP_TITLE)
-            self.ui.stackedWidgetSessionName.setText(
+            self.ui.stackedWidgetSessionName.set_text(
                 _translate('main view', 'No Session Loaded'))
             if self.notes_dialog is not None:
                 self.notes_dialog.hide()
 
     def set_session_name_editable(self, set_edit: bool):
-        self.ui.stackedWidgetSessionName.setEditable(set_edit)
+        self.ui.stackedWidgetSessionName.set_editable(set_edit)
 
     def error_message(self, message: str):
         error_dialog = child_dialogs.ErrorDialog(self, message)
