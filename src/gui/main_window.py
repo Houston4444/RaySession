@@ -3,7 +3,7 @@ import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView,
                              QBoxLayout)
-from PyQt5.QtGui import QIcon, QDesktopServices
+from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
@@ -66,6 +66,15 @@ class MainWindow(QMainWindow):
         if ray.getWindowManager() == ray.WindowManager.WAYLAND:
             self._keep_focus = False
             self.ui.actionKeepFocus.setEnabled(False)
+
+        # calculate tool button size with action labels
+        self._tool_bar_main_actions_width = 0
+        for action in (self.ui.actionNewSession, self.ui.actionOpenSession,
+                       self.ui.actionControlMenu):
+            button = self.ui.toolBar.widgetForAction(action)
+            self._tool_bar_main_actions_width += button.iconSize().width()
+            self._tool_bar_main_actions_width += QFontMetrics(button.font()).width(button.text())
+            self._tool_bar_main_actions_width += 6
 
         # manage geometry depending of use of embedded jack patchbay
         show_patchbay = RS.settings.value(
@@ -328,6 +337,7 @@ class MainWindow(QMainWindow):
         self._were_visible_before_fullscreen = 0
         self._geom_before_fullscreen = None
         self._splitter_pos_before_fullscreen = [100, 100]
+        self._fullscreen_patchbay = False
 
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
         self.ui.actionToggleShowMessages.setChecked(
@@ -357,6 +367,8 @@ class MainWindow(QMainWindow):
             # and snapshots buttons
             self.ui.widgetPreRewindSpacer.setVisible(True)
         else:
+            #self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            
             self.ui.layoutSessionDown.setDirection(QBoxLayout.LeftToRight)
             self.ui.layoutSessionDown.removeWidget(
                 self.ui.stackedWidgetSessionName)
@@ -611,7 +623,7 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        snapshot = dialog.getSelectedSnapshot()
+        snapshot = dialog.get_selected_snapshot()
         self.to_daemon('/ray/session/open_snapshot', snapshot)
 
     def _about_raysession(self):
@@ -715,7 +727,7 @@ class MainWindow(QMainWindow):
                 self.restoreGeometry(geom)
             else:
                 self.setGeometry(x, y, 460, height)
-            self.ui.splitterMainVsCanvas.setSizes([10, 0])
+            self.ui.splitterMainVsCanvas.setSizes([100, 0])
 
         self.ui.graphicsView.setVisible(yesno)
         self.ui.splitterMainVsCanvas.set_active(yesno)
@@ -918,10 +930,9 @@ class MainWindow(QMainWindow):
 
     def toggle_scene_full_screen(self):
         visible_maximized = 0x1
-        visible_messages = 0x2
-        visible_menubar = 0x4
+        visible_menubar = 0x2
 
-        if self.isFullScreen():
+        if self._fullscreen_patchbay:
             self.ui.toolBar.setVisible(True)
             if self._were_visible_before_fullscreen & visible_menubar:
                 self.ui.menuBar.setVisible(True)
@@ -931,14 +942,16 @@ class MainWindow(QMainWindow):
                 self.showMaximized()
             else:
                 self.showNormal()
-                self.setGeometry(self._geom_before_fullscreen)
+                if self._geom_before_fullscreen is not None:
+                    self.setGeometry(self._geom_before_fullscreen)
 
             self.ui.splitterMainVsCanvas.setSizes(
                 self._splitter_pos_before_fullscreen)
+            
+            self._fullscreen_patchbay = False
         else:
             self._were_visible_before_fullscreen = \
                 visible_maximized * int(self.isMaximized()) \
-                + visible_messages * int(True) \
                 + visible_menubar * int(self.ui.menuBar.isVisible())
 
             self._geom_before_fullscreen = self.geometry()
@@ -948,6 +961,7 @@ class MainWindow(QMainWindow):
             self._splitter_pos_before_fullscreen = \
                 self.ui.splitterMainVsCanvas.sizes()
             self.ui.splitterMainVsCanvas.setSizes([0, 100])
+            self._fullscreen_patchbay = True
             self.showFullScreen()
 
     def add_patchbay_tools(self, tools_widget, canvas_menu):
@@ -1327,12 +1341,31 @@ class MainWindow(QMainWindow):
 
     def showEvent(self, event):
         if CommandLineArgs.under_nsm:
-            if self.session._nsm_child is not None:
-                self.session._nsm_child.sendGuiState(True)
+            if self.session.nsm_child is not None:
+                self.session.nsm_child.send_gui_state(True)
         QMainWindow.showEvent(self, event)
 
     def hideEvent(self, event):
         if CommandLineArgs.under_nsm:
-            if self.session._nsm_child is not None:
-                self.session._nsm_child.sendGuiState(False)
+            if self.session.nsm_child is not None:
+                self.session.nsm_child.send_gui_state(False)
         QMainWindow.hideEvent(self, event)
+    
+    def resizeEvent(self, event):
+        if self._fullscreen_patchbay and not self.isFullScreen():
+            self.toggle_scene_full_screen()
+        
+        QMainWindow.resizeEvent(self, event)
+        
+        new_button = self.ui.toolBar.widgetForAction(self.ui.actionNewSession)
+        open_button = self.ui.toolBar.widgetForAction(self.ui.actionOpenSession)
+        
+        if self.width() > 410:
+            for button in (new_button, open_button):
+                button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        elif self.width() > 310:
+            new_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        else:
+            new_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            open_button.setToolButtonStyle(Qt.ToolButtonIconOnly)

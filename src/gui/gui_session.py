@@ -12,7 +12,7 @@ from gui_signaler import Signaler
 from gui_server_thread import GuiServerThread
 from gui_tools import CommandLineArgs, RS
 from main_window import MainWindow
-from nsm_child import NSMChild, NSMChildOutside
+from nsm_child import NsmChild, NsmChildOutside
 from patchbay_manager import PatchbayManager
 
 
@@ -43,14 +43,14 @@ class Session:
             self.daemon_manager.set_new_osc_address()
 
         # build nsm_child if NSM_URL in env
-        self._nsm_child = None
+        self.nsm_child = None
 
         if CommandLineArgs.under_nsm:
             if CommandLineArgs.out_daemon:
-                self._nsm_child = NSMChildOutside(self)
+                self.nsm_child = NsmChildOutside(self)
                 self.daemon_manager.set_external()
             else:
-                self._nsm_child = NSMChild(self)
+                self.nsm_child = NsmChild(self)
 
         # build and show Main UI
         self.main_win = MainWindow(self)

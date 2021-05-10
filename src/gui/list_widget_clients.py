@@ -146,7 +146,7 @@ class ClientSlot(QFrame):
                                                         self.client)
         dialog.exec()
         if dialog.result():
-            snapshot = dialog.getSelectedSnapshot()
+            snapshot = dialog.get_selected_snapshot()
             self.to_daemon('/ray/client/open_snapshot',
                           self.get_client_id(), snapshot)
 

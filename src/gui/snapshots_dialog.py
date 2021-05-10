@@ -31,10 +31,10 @@ class Snapshot:
         self.date_time = date_time
 
     def __lt__(self, other):
-        if not other.isValid():
+        if not other.is_valid():
             return True
 
-        if not self.isValid():
+        if not self.is_valid():
             return False
 
         return self.date_time < other.date_time
@@ -48,35 +48,32 @@ class Snapshot:
     def day(self):
         return self.date_time.date().day()
 
-    def isValid(self):
+    def is_valid(self):
         if not self.date_time:
             return False
 
         return self.date_time.isValid()
 
-    def isToday(self):
+    def is_today(self):
         if not self.date_time:
             return False
 
         return bool(self.date_time.date() == QDate.currentDate())
 
-    def isYesterday(self):
+    def is_yesterday(self):
         if not self.date_time:
             return False
 
         return bool(self.date_time.date() == QDate.currentDate().addDays(-1))
 
-    def canTake(self, other):
+    def can_take(self, other):
         return False
 
-    def reOrganize(self):
+    def add(self, other):
         pass
 
-    def add(self):
-        pass
-
-    def commonGroup(self, other):
-        if not (self.isValid() and other.isValid()):
+    def common_group(self, other):
+        if not (self.is_valid() and other.is_valid()):
             return GROUP_MAIN
 
         common_group = GROUP_MAIN
@@ -93,18 +90,15 @@ class Snapshot:
 
         return common_group
 
-
-
-    def makeItem(self, sub_type):
-        if self.isToday():
+    def make_item(self, sub_type):
+        if self.is_today():
             day_string = _translate('snapshots', 'Today')
-        elif self.isYesterday():
+        elif self.is_yesterday():
             day_string = _translate('snapshots', 'Yesterday')
-        elif self.isValid():
+        elif self.is_valid():
             day_string = self.date_time.toString('dddd d MMMM yyyy')
 
-
-        if not self.isValid():
+        if not self.is_valid():
             display_text = self.text
         else:
             display_text = _translate('snapshots', "%s at %s") % (
@@ -112,7 +106,7 @@ class Snapshot:
                             self.date_time.toString('HH:mm'))
 
             if sub_type in (GROUP_YEAR, GROUP_MONTH):
-                if not self.isToday() or self.isYesterday():
+                if not self.is_today() or self.is_yesterday():
                     day_string = self.date_time.toString('dddd d MMMM')
 
                 display_text = _translate('snapshots', "%s at %s") % (
@@ -156,7 +150,7 @@ class SnapGroup(Snapshot):
         self.valid = True
         self.snapshots = []
 
-    def canTake(self, other):
+    def can_take(self, other):
         if self.sub_type <= other.sub_type:
             return False
 
@@ -181,7 +175,7 @@ class SnapGroup(Snapshot):
         return True
 
     def add(self, new_snapshot):
-        if not new_snapshot.isValid():
+        if not new_snapshot.is_valid():
             self.snapshots.append(new_snapshot)
             return
 
@@ -191,7 +185,7 @@ class SnapGroup(Snapshot):
             return
 
         for snapshot in self.snapshots:
-            if snapshot.canTake(new_snapshot):
+            if snapshot.can_take(new_snapshot):
                 # if a snapgroup can take this snapshot,
                 # just add this snapshot to this snapgroup.
                 snapshot.add(new_snapshot)
@@ -201,14 +195,14 @@ class SnapGroup(Snapshot):
 
         # find the smallest common group with any other
         for snapshot in self.snapshots:
-            common_group = snapshot.commonGroup(new_snapshot)
+            common_group = snapshot.common_group(new_snapshot)
             if common_group < smallest_cg:
                 smallest_cg = common_group
 
         # check if there are snaps not common
         # with the smallest common group find above (smallest_cg)
         for snapshot in self.snapshots:
-            common_group = snapshot.commonGroup(new_snapshot)
+            common_group = snapshot.common_group(new_snapshot)
             if common_group != smallest_cg:
                 break
         else:
@@ -242,14 +236,14 @@ class SnapGroup(Snapshot):
                         if snapshot.sub_type >= cg:
                             continue
 
-                        if (snapshot.commonGroup(compare_snap) == cg
-                                and snapshot.commonGroup(new_snapshot) > cg):
+                        if (snapshot.common_group(compare_snap) == cg
+                                and snapshot.common_group(new_snapshot) > cg):
                             cg_final = cg
                             break
 
             if cg_final:
                 snap_group = SnapGroup(compare_snap.date_time, cg_final)
-                self.addGroup(snap_group)
+                self.add_group(snap_group)
 
             self.snapshots.append(new_snapshot)
             return
@@ -257,14 +251,14 @@ class SnapGroup(Snapshot):
         # create group and add to this all snaps which have to.
         snap_group = SnapGroup(new_snapshot.date_time, smallest_cg)
         snap_group.add(new_snapshot)
-        self.addGroup(snap_group)
+        self.add_group(snap_group)
 
-    def addGroup(self, snap_group):
+    def add_group(self, snap_group):
         to_rem = []
 
         for i in range(len(self.snapshots)):
             snapshot = self.snapshots[i]
-            if snap_group.canTake(snapshot):
+            if snap_group.can_take(snapshot):
                 snap_group.add(snapshot)
                 to_rem.append(i)
 
@@ -282,7 +276,7 @@ class SnapGroup(Snapshot):
         self.snapshots.sort()
         self.snapshots.reverse()
 
-    def makeItem(self, sub_type=GROUP_MAIN):
+    def make_item(self, sub_type=GROUP_MAIN):
         display_text = ''
 
         if self.sub_type == GROUP_MAIN:
@@ -296,15 +290,15 @@ class SnapGroup(Snapshot):
             display_text = self.date_time.toString('MMMM yyyy')
         elif self.sub_type == GROUP_DAY:
             display_text = self.date_time.toString('dddd d MMMM yyyy')
-            if self.isToday():
+            if self.is_today():
                 display_text = _translate('snapshots', 'Today')
-            elif self.isYesterday():
+            elif self.is_yesterday():
                 display_text = _translate('snapshots', 'Yesterday')
 
         item = QTreeWidgetItem([display_text])
 
         for snapshot in self.snapshots:
-            sub_item = snapshot.makeItem(self.sub_type)
+            sub_item = snapshot.make_item(self.sub_type)
             item.addChild(sub_item)
 
         # set this group item not selectable
@@ -318,28 +312,28 @@ class TakeSnapshotDialog(ChildDialog):
         self.ui = ui.snapshot_name.Ui_Dialog()
         self.ui.setupUi(self)
 
-        self.ui.lineEdit.textChanged.connect(self.textChanged)
+        self.ui.lineEdit.textChanged.connect(self._text_changed)
         #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.pushButtonSave.setEnabled(False)
         self.ui.pushButtonSnapshot.setEnabled(False)
 
-        self.__save_asked = False
-        self.ui.pushButtonSave.clicked.connect(self.acceptWithSave)
+        self._save_asked = False
+        self.ui.pushButtonSave.clicked.connect(self._accept_with_save)
 
-    def textChanged(self, text):
+    def _text_changed(self, text):
         #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(text))
         self.ui.pushButtonSave.setEnabled(bool(text))
         self.ui.pushButtonSnapshot.setEnabled(bool(text))
 
-    def getSnapshotName(self):
+    def _accept_with_save(self):
+        self._save_asked = True
+        self.accept()
+
+    def get_snapshot_name(self):
         return self.ui.lineEdit.text()
 
-    def saveAsked(self):
-        return self.__save_asked
-
-    def acceptWithSave(self):
-        self.__save_asked = True
-        self.accept()
+    def save_asked(self):
+        return self._save_asked
 
 
 class SnapshotsDialog(ChildDialog):
@@ -351,47 +345,25 @@ class SnapshotsDialog(ChildDialog):
         self._original_label = self.ui.label.text()
         self.signaler.reply_auto_snapshot.connect(
             self.ui.checkBoxAutoSnapshot.setChecked)
-        self.signaler.snapshots_found.connect(self.addSnapshots)
+        self.signaler.snapshots_found.connect(self._add_snapshots)
 
         self.snapshots = []
         self.main_snap_group = SnapGroup()
 
         self.ui.snapshotsList.setHeaderHidden(True)
         self.ui.snapshotsList.currentItemChanged.connect(
-            self.currentItemChanged)
+            self._current_item_changed)
 
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
-    def currentItemChanged(self, current, previous):
+    def _current_item_changed(self, current, previous):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
            bool(current and current.data(0, Qt.UserRole)))
 
-    def decodeTimeString(self, time_str):
-        while time_str.endswith('_'):
-            time_str = time_str[:-1]
-
-        label = ''
-        strs = time_str.split('_')
-
-        if len(strs) > 6:
-            time_str = ''
-            i = 0
-            for stri in strs:
-                if i < 6:
-                    time_str += "%s_" % stri
-                else:
-                    label += "%s_" % stri
-                i += 1
-
-            time_str = time_str[:-1]
-            label = label[:-1]
-
-        return (time_str, label)
-
-    def addSnapshots(self, snaptexts):
+    def _add_snapshots(self, snaptexts):
         if not snaptexts and not self.main_snap_group.snapshots:
             # Snapshot list finished without any snapshot
-            self.noSnapshotFound()
+            self._no_snapshot_found()
             return
 
         for snaptext in snaptexts:
@@ -435,21 +407,21 @@ class SnapshotsDialog(ChildDialog):
         self.ui.snapshotsList.clear()
 
         for snapshot in self.main_snap_group.snapshots:
-            item = snapshot.makeItem(GROUP_MAIN)
+            item = snapshot.make_item(GROUP_MAIN)
             self.ui.snapshotsList.addTopLevelItem(item)
 
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.snapshotsList.clearSelection()
 
-    def getSelectedSnapshot(self):
+    def _no_snapshot_found(self):
+        pass
+
+    def get_selected_snapshot(self):
         item = self.ui.snapshotsList.currentItem()
         full_str = item.data(0, Qt.UserRole)
         snapshot_ref = full_str.partition('\n')[0].partition(':')[0]
 
         return snapshot_ref
-
-    def noSnapshotFound(self):
-        pass
 
     def showEvent(self, event):
         ChildDialog.showEvent(self, event)
@@ -460,7 +432,7 @@ class SnapshotsDialog(ChildDialog):
         info_dialog = SnapshotsInfoDialog(self)
         info_dialog.exec()
 
-        if info_dialog.hasToBeHiddenNextTime():
+        if info_dialog.has_to_be_hidden_next_time():
             RS.setHidden(RS.HD_SnapshotsInfo)
 
 
@@ -470,39 +442,40 @@ class SnapshotsInfoDialog(ChildDialog):
         self.ui = ui.snapshots_info.Ui_Dialog()
         self.ui.setupUi(self)
 
-    def hasToBeHiddenNextTime(self):
+    def has_to_be_hidden_next_time(self):
         return self.ui.checkBox.isChecked()
 
 class SessionSnapshotsDialog(SnapshotsDialog):
     def __init__(self, parent):
         SnapshotsDialog.__init__(self, parent)
 
-        self.ui.pushButtonSnapshotNow.clicked.connect(self.takeSnapshot)
+        self.ui.pushButtonSnapshotNow.clicked.connect(self._take_snapshot)
 
         self.to_daemon('/ray/session/list_snapshots')
 
         self.ui.checkBoxAutoSnapshot.stateChanged.connect(
-            self.setAutoSnapshot)
+            self._set_auto_snapshot)
 
-    def takeSnapshot(self):
+    def _take_snapshot(self):
         dialog = TakeSnapshotDialog(self)
         dialog.exec()
         if dialog.result():
-            snapshot_label = dialog.getSnapshotName()
-            with_save = dialog.saveAsked()
+            snapshot_label = dialog.get_snapshot_name()
+            with_save = dialog.save_asked()
             self.to_daemon('/ray/session/take_snapshot', snapshot_label,
                           int(with_save))
             self.ui.snapshotsList.setVisible(True)
             self.ui.label.setText(self._original_label)
 
-    def setAutoSnapshot(self, bool_snapshot):
+    def _set_auto_snapshot(self, bool_snapshot):
         self.to_daemon('/ray/session/set_auto_snapshot', int(bool_snapshot))
 
-    def noSnapshotFound(self):
+    def _no_snapshot_found(self):
         self.ui.label.setText(
             _translate('snapshots',
                        "This session does not contains any snapshot."))
         self.ui.snapshotsList.setVisible(False)
+
 
 class ClientSnapshotsDialog(SnapshotsDialog):
     def __init__(self, parent, client):
@@ -515,7 +488,7 @@ class ClientSnapshotsDialog(SnapshotsDialog):
         self.to_daemon('/ray/client/list_snapshots', client.client_id)
         self.resize(0, 0)
 
-    def noSnapshotFound(self):
+    def _no_snapshot_found(self):
         self.ui.label.setText(
             _translate('snapshots',
                        'There is no existing snapshot for this client.'))

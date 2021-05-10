@@ -3,7 +3,6 @@
 #libs
 import signal
 import sys
-import time
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon, QFontDatabase
@@ -16,7 +15,7 @@ from gui_session import SignaledSession
 import ray
 
 
-def signalHandler(sig, frame):
+def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         if session.daemon_manager.launched_before:
             if (CommandLineArgs.under_nsm
@@ -40,22 +39,21 @@ if __name__ == '__main__':
     app.setApplicationVersion(ray.VERSION)
     app.setOrganizationName(ray.APP_TITLE)
     app.setWindowIcon(QIcon(':/scalable/%s.svg' % ray.APP_TITLE.lower()))
-    #app.setWindowIcon(QIcon(':/scalable/test_icon.svg'))
     app.setQuitOnLastWindowClosed(False)
     app.setDesktopFileName(ray.APP_TITLE.lower())
 
     ### Translation process
     locale = QLocale.system().name()
 
-    appTranslator = QTranslator()
-    if appTranslator.load(QLocale(), ray.APP_TITLE.lower(),
-                          '_', "%s/locale" % get_code_root()):
-        app.installTranslator(appTranslator)
+    app_translator = QTranslator()
+    if app_translator.load(QLocale(), ray.APP_TITLE.lower(),
+                           '_', "%s/locale" % get_code_root()):
+        app.installTranslator(app_translator)
 
-    sysTranslator = QTranslator()
-    pathSysTranslations = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
-    if sysTranslator.load(QLocale(), 'qt', '_', pathSysTranslations):
-        app.installTranslator(sysTranslator)
+    sys_translator = QTranslator()
+    path_sys_translations = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+    if sys_translator.load(QLocale(), 'qt', '_', path_sys_translations):
+        app.installTranslator(sys_translator)
 
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
@@ -70,8 +68,8 @@ if __name__ == '__main__':
     ray.addSelfBinToPath()
 
     #connect signals
-    signal.signal(signal.SIGINT, signalHandler)
-    signal.signal(signal.SIGTERM, signalHandler)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     #needed for signals SIGINT, SIGTERM
     timer = QTimer()

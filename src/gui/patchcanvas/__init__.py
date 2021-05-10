@@ -159,7 +159,8 @@ class Canvas(object):
         self.is_line_mov = False
 
     def callback(self, action, value1, value2, value_str):
-        print("Canvas::callback({}, {}, {}, {})".format(action, value1, value2, value_str))
+        print("Canvas::callback({}, {}, {}, {})".format(
+            action, value1, value2, value_str))
 
 # ------------------------------------------------------------------------------------------------------------
 

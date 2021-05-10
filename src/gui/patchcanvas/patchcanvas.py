@@ -167,7 +167,8 @@ def getStoredCanvasSplit(group_name, fallback_split_mode):
 
 def init(appName, scene, callback, debug=False):
     if debug:
-        print("PatchCanvas::init(\"%s\", %s, %s, %s)" % (appName, scene, callback, bool2str(debug)))
+        print("PatchCanvas::init(\"%s\", %s, %s, %s)"
+              % (appName, scene, callback, bool2str(debug)))
 
     if canvas.initiated:
         qCritical("PatchCanvas::init() - already initiated")

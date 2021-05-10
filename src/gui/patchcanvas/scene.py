@@ -455,18 +455,6 @@ class PatchScene(QGraphicsScene):
                         and top_left_vw.y() > self.m_view.height() / 4):
                     return
 
-
-
-                #top_left_sc = self.m_view.mapToScene(QPoint(0, 0))
-                #bottom_right_sc = self.m_view.mapToScene(
-                    #QPoint(self.m_view.width(), self.m_view.height()))
-                #margin = 100
-                #if (top_left_sc.x() < rect.left() - margin
-                        #and top_left_sc.y() < rect.top() - margin
-                        #and bottom_right_sc.x() > rect.right() + margin
-                        #and bottom_right_sc.y() > rect.bottom() + margin):
-                    #return
-
             # Apply scale
             factor = 1.4142135623730951 ** (delta / 240.0)
             transform.scale(factor, factor)
@@ -483,8 +471,17 @@ class PatchScene(QGraphicsScene):
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            canvas.callback(ACTION_DOUBLE_CLICK, 0, 0, "")
-            return
+            # parse items under mouse to prevent ACTION_DOUBLE_CLICK
+            # if mouse is on a box
+            items = self.items(
+                event.scenePos(), Qt.ContainsItemShape, Qt.AscendingOrder)
+            
+            for item in items:
+                if item.type() == CanvasBoxType:
+                    break
+            else:
+                canvas.callback(ACTION_DOUBLE_CLICK, 0, 0, "")
+                return
 
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 
