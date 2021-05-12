@@ -16,7 +16,7 @@ for file in *.ui;do
 done
 
 
-for dir in daemon gui shared;do
+for dir in daemon gui gui/patchcanvas shared;do
     cd "$code_root/src/$dir"
     
     for file in *.py;do

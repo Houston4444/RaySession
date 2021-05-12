@@ -2,24 +2,16 @@
 import ray
 import nsm_client
 from gui_tools import CommandLineArgs, _translate
-from gui_server_thread import GUIServerThread
+from gui_server_thread import GuiServerThread
 
-class NSMChild:
-    @classmethod
-    def announceToParent(cls):
-        serverNSM = nsm_client.NSMThread.instance()
-
-        if serverNSM:
-            serverNSM.announce(_translate('child_session', 'Child Session'),
-                               ':switch:optional-gui:', 'raysession')
-
+class NsmChild:
     def __init__(self, session):
-        self._session = session
+        self.session = session
         self.nsm_signaler = nsm_client.NSMSignaler()
-        self.nsm_signaler.server_sends_open.connect(self.open)
-        self.nsm_signaler.server_sends_save.connect(self.save)
-        self.nsm_signaler.show_optional_gui.connect(self.showOptionalGui)
-        self.nsm_signaler.hide_optional_gui.connect(self.hideOptionalGui)
+        self.nsm_signaler.server_sends_open.connect(self._open)
+        self.nsm_signaler.server_sends_save.connect(self._save)
+        self.nsm_signaler.show_optional_gui.connect(self._show_optional_gui)
+        self.nsm_signaler.hide_optional_gui.connect(self._hide_optional_gui)
 
         self.wait_for_open = False
         self.wait_for_save = False
@@ -31,110 +23,105 @@ class NSMChild:
                                          CommandLineArgs.debug)
         serverNSM.start()
 
-        self._session._signaler.daemon_announce_ok.connect(
-            self.announceToParent)
-        self._session._signaler.server_status_changed.connect(
-            self.serverStatusChanged)
+        self.session.signaler.daemon_announce_ok.connect(
+            self._announce_to_parent)
+        self.session.signaler.server_status_changed.connect(
+            self._server_status_changed)
 
-    def serverStatusChanged(self, server_status):
+    def _announce_to_parent(self):
+        server_nsm = nsm_client.NSMThread.instance()
+
+        if server_nsm:
+            server_nsm.announce(_translate('child_session', 'Child Session'),
+                                ':switch:optional-gui:', 'raysession')
+
+    def _server_status_changed(self, server_status: int):
         if server_status == ray.ServerStatus.READY:
-            serverNSM = nsm_client.NSMThread.instance()
-            if not serverNSM:
+            server_nsm = nsm_client.NSMThread.instance()
+            if not server_nsm:
                 return
 
             if self.wait_for_open:
-                serverNSM.openReply()
+                server_nsm.openReply()
                 self.wait_for_open = False
 
             elif self.wait_for_save:
-                serverNSM.saveReply()
+                server_nsm.saveReply()
                 self.wait_for_save = False
 
-    def open(self, project_path, session_name, jack_client_name):
+    def _open(self, project_path: str, session_name: str, jack_client_name: str):
         self.wait_for_open = True
         self.project_path = project_path
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if server:
-            server.openSession(project_path, 0)
+            server.open_session(project_path, 0)
 
-        self.sendGuiState(self._session._main_win.isVisible())
+        self.send_gui_state(self.session.main_win.isVisible())
 
-    def save(self):
-        if self._session._main_win:
-            self._session._main_win.saveWindowSettings()
+    def _save(self):
+        if self.session.main_win:
+            self.session.main_win.save_window_settings()
 
         self.wait_for_save = True
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if server:
-            server.saveSession()
+            server.save_session()
 
-    def showOptionalGui(self):
-        if self._session._main_win:
-            self._session._main_win.show()
+    def _show_optional_gui(self):
+        if self.session.main_win:
+            self.session.main_win.show()
 
-        #self.sendGuiState(True)
+    def _hide_optional_gui(self):
+        if self.session.main_win:
+            self.session.main_win.hide()
 
-    def hideOptionalGui(self):
-        if self._session._main_win:
-            self._session._main_win.hide()
-
-        #self.sendGuiState(False)
-
-    def sendGuiState(self, state: bool):
+    def send_gui_state(self, state: bool):
         serverNSM = nsm_client.NSMThread.instance()
 
         if serverNSM:
             serverNSM.sendGuiState(state)
 
-class NSMChildOutside(NSMChild):
+
+class NsmChildOutside(NsmChild):
     def __init__(self, session):
-        NSMChild.__init__(self, session)
+        NsmChild.__init__(self, session)
         self.wait_for_close = False
 
-    def announceToParent(self):
-        serverNSM = nsm_client.NSMThread.instance()
+    def _announce_to_parent(self):
+        server_nsm = nsm_client.NSMThread.instance()
 
-        if serverNSM:
-            serverNSM.announce(_translate('network_session',
-                                           'Network Session'),
-                                ':switch:optional-gui:ray-network:',
-                                ray.RAYNET_BIN)
+        if server_nsm:
+            server_nsm.announce(
+                _translate('network_session', 'Network Session'),
+                ':switch:optional-gui:ray-network:', ray.RAYNET_BIN)
 
-            serverNSM.sendToDaemon(
+            server_nsm.sendToDaemon(
                 '/nsm/client/network_properties',
-                self._session._daemon_manager.url,
-                self._session._daemon_manager.session_root)
-        self._session._main_win.hide()
+                self.session.daemon_manager.url,
+                self.session.daemon_manager.session_root)
+        self.session.main_win.hide()
 
-    def save(self):
-        serverNSM = nsm_client.NSMThread.instance()
+    def _save(self):
+        server_nsm = nsm_client.NSMThread.instance()
 
-        if serverNSM:
-            serverNSM.sendToDaemon(
+        if server_nsm:
+            server_nsm.sendToDaemon(
                 '/nsm/client/network_properties',
-                self._session._daemon_manager.url,
-                self._session._daemon_manager.session_root)
+                self.session.daemon_manager.url,
+                self.session.daemon_manager.session_root)
 
-        NSMChild.save(self)
+        NsmChild._save(self)
 
-    def open(self, project_path, session_name, jack_client_name):
+    def _open(self, project_path: str, session_name: str, jack_client_name: str):
         self.wait_for_open = True
 
         #Here project_path is used for template if needed
         template_name = jack_client_name
 
-        server = GUIServerThread.instance()
+        server = GuiServerThread.instance()
         if server:
-            server.openSession(project_path, 0, template_name)
+            server.open_session(project_path, 0, template_name)
 
-        #self._session._main_win.hide()
-        self.sendGuiState(self._session._main_win.isVisible())
-
-    def closeSession(self):
-        self.wait_for_close = True
-
-        server = GUIServerThread.instance()
-        if server:
-            server.closeSession()
+        self.send_gui_state(self.session.main_win.isVisible())

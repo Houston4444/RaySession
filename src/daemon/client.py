@@ -128,6 +128,15 @@ class Client(ServerSender, ray.ClientData):
 
         self.ray_hack_waiting_win = False
 
+    def showOptionalGuiWithRememberOption(self):
+        if self.hasServerOption(ray.Option.GUI_STATES):
+            if (self.session.wait_for == ray.WaitFor.NONE
+                    and self.isCapableOf(':optional-gui:')
+                    and not self.start_gui_hidden
+                    and not self.gui_visible
+                    and not self.gui_has_been_visible):
+                self.sendToSelfAddress('/nsm/client/show_optional_gui')
+
     def isRayHack(self)->bool:
         return bool(self.protocol == ray.Protocol.RAY_HACK)
 
@@ -426,6 +435,7 @@ class Client(ServerSender, ray.ClientData):
                 self.sendReplyToCaller(OSC_SRC_OPEN, 'client opened')
 
                 if self.hasServerOption(ray.Option.GUI_STATES):
+                    #QTimer.singleShot(200, self.showOptionalGuiWithRememberOption)
                     if (self.session.wait_for == ray.WaitFor.NONE
                             and self.isCapableOf(':optional-gui:')
                             and not self.start_gui_hidden

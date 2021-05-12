@@ -231,6 +231,14 @@ class SignaledSession(OperatingSession):
             self.sendGui('/ray/gui/client/no_save_level',
                          client.client_id, client.no_save_level)
 
+    def _ray_server_ask_for_patchbay(self, path, args, src_addr):
+        # if we are here, this means we need a patchbay to osc to run
+        server = self.getServer()
+        if server is None:
+            return
+        QProcess.startDetached('ray-jackpatch_to_osc',
+                               [str(server.port), src_addr.url])
+
     def _ray_server_abort_copy(self, path, args, src_addr):
         self.file_copier.abort()
 
@@ -325,12 +333,11 @@ class SignaledSession(OperatingSession):
                 if not template_name or template_name in template_list:
                     continue
 
+                executable = ct.attribute('executable')
                 protocol = ray.protocolFromStr(ct.attribute('protocol'))
 
                 if protocol != ray.Protocol.RAY_NET:
                     # check if needed executables are present
-                    executable = ct.attribute('executable')
-
                     if not executable:
                         continue
 
@@ -361,10 +368,67 @@ class SignaledSession(OperatingSession):
                     if result:
                         continue
 
+                # check if a version is at least required for this template
+                # don't use needed-version without check how the program acts !
+                needed_version = ct.attribute('needed-version')
+
+                if (needed_version.startswith('.')
+                        or needed_version.endswith('.')
+                        or not needed_version.replace('.', '').isdigit()):
+                    #needed-version not writed correctly, ignores it
+                    needed_version = ''
+
+                if needed_version:
+                    version_process = QProcess()
+                    version_process.start(executable, ['--version'])
+                    version_process.waitForFinished(500)
+
+                    # do not allow program --version to be longer than 500ms
+
+                    if version_process.state():
+                        version_process.terminate()
+                        version_process.waitForFinished(500)
+                        continue
+
+                    full_program_version = str(
+                        version_process.readAllStandardOutput(),
+                        encoding='utf-8')
+
+                    previous_is_digit = False
+                    program_version = ''
+
+                    for character in full_program_version:
+                        if character.isdigit():
+                            program_version += character
+                            previous_is_digit = True
+                        elif character == '.':
+                            if previous_is_digit:
+                                program_version += character
+                            previous_is_digit = False
+                        else:
+                            if program_version:
+                                break
+
+                    if not program_version:
+                        continue
+
+                    neededs = []
+                    progvss = []
+
+                    for n in needed_version.split('.'):
+                        neededs.append(int(n))
+
+                    for n in program_version.split('.'):
+                        progvss.append(int(n))
+
+                    if neededs > progvss:
+                        # program is too old, ignore this template
+                        continue
+
                 # save template client properties only for GUI call
                 # to optimize ray_control answer speed
                 template_client = None
-                if src_addr_is_gui or True:
+                if src_addr_is_gui:
                     template_client = Client(self)
                     template_client.readXmlProperties(ct)
                     template_client.client_id = ct.attribute('client_id')
@@ -386,12 +450,16 @@ class SignaledSession(OperatingSession):
                                 self.sendGui('/ray/gui/client_template_ray_hack_update',
                                              int(factory), template_name,
                                              *template_client.ray_hack.spread())
+                            elif template_client.protocol == ray.Protocol.RAY_NET:
+                                self.sendGui('/ray/gui/client_template_ray_net_update',
+                                             int(factory), template_name,
+                                             *template_client.ray_net.spread())
 
                     tmp_template_list.clear()
 
         if tmp_template_list:
             self.send(src_addr, '/reply', path,
-                    *[t[0] for t in tmp_template_list])
+                      *[t[0] for t in tmp_template_list])
 
             if src_addr_is_gui:
                 for template_name, template_client in tmp_template_list:
@@ -402,6 +470,10 @@ class SignaledSession(OperatingSession):
                         self.sendGui('/ray/gui/client_template_ray_hack_update',
                                         int(factory), template_name,
                                         *template_client.ray_hack.spread())
+                    elif template_client.protocol == ray.Protocol.RAY_NET:
+                        self.sendGui('/ray/gui/client_template_ray_net_update',
+                                        int(factory), template_name,
+                                        *template_client.ray_net.spread())
 
 
         # send a last empty reply to say list is finished
@@ -465,8 +537,7 @@ class SignaledSession(OperatingSession):
 
                     if n >= 10000 or time.time() - last_sent_time > 0.300:
                         last_sent_time = time.time()
-                        self.send(src_addr, "/reply", path,
-                                    *session_list)
+                        self.send(src_addr, "/reply", path, *session_list)
 
                         session_list.clear()
                         n = 0
@@ -631,6 +702,12 @@ class SignaledSession(OperatingSession):
                     self.bookmarker.makeAll(self.path)
                 else:
                     self.bookmarker.removeAll(self.path)
+
+    def _ray_server_patchbay_save_group_position(self, path, args, src_addr):
+        self.canvas_saver.save_group_position(*args)
+
+    def _ray_server_patchbay_save_portgroup(self, path, args, src_addr):
+        self.canvas_saver.save_portgroup(*args)
 
     @session_operation
     def _ray_session_save(self, path, args, src_addr):

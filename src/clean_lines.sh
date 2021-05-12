@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd $(dirname "$0")
-for py_file in daemon/*.py gui/*.py;do
+for py_file in daemon/*.py gui/*.py gui/patchcanvas/*.py ;do
     case "$py_file" in
         ui_*.py|resources_rc.py)
             continue

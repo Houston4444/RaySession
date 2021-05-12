@@ -12,15 +12,16 @@ from PyQt5.QtXml  import QDomDocument
 
 import ray
 
-from bookmarker        import BookMarker
-from desktops_memory   import DesktopsMemory
-from snapshoter        import Snapshoter
+from bookmarker import BookMarker
+from desktops_memory import DesktopsMemory
+from snapshoter import Snapshoter
 from multi_daemon_file import MultiDaemonFile
-from signaler          import Signaler
-from server_sender     import ServerSender
-from file_copier       import FileCopier
-from client            import Client
-from scripter          import StepScripter
+from signaler import Signaler
+from server_sender import ServerSender
+from file_copier import FileCopier
+from client import Client
+from scripter import StepScripter
+from canvas_saver import CanvasSaver
 from daemon_tools import (TemplateRoots, RS, Terminal,
                           getGitDefaultUnAndIgnored)
 
@@ -64,6 +65,7 @@ class Session(ServerSender):
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
+        self.canvas_saver = CanvasSaver()
 
     #############
     def oscReply(self, *args):
@@ -936,6 +938,8 @@ class OperatingSession(Session):
         xml_cls = xml.createElement('Clients')
         xml_rmcls = xml.createElement('RemovedClients')
         xml_wins = xml.createElement('Windows')
+
+        # save clients attributes
         for client in self.clients:
             cl = xml.createElement('client')
             cl.setAttribute('id', client.client_id)
@@ -950,6 +954,7 @@ class OperatingSession(Session):
 
             xml_cls.appendChild(cl)
 
+        # save trashed clients attributes
         for client in self.trashed_clients:
             cl = xml.createElement('client')
             cl.setAttribute('id', client.client_id)
@@ -958,6 +963,7 @@ class OperatingSession(Session):
 
             xml_rmcls.appendChild(cl)
 
+        # save desktop memory of windows if needed
         if (self.hasServer()
                 and self.getServer().options & ray.Option.DESKTOPS_MEMORY):
             self.desktops_memory.save()
@@ -972,7 +978,6 @@ class OperatingSession(Session):
         p.appendChild(xml_cls)
         p.appendChild(xml_rmcls)
         p.appendChild(xml_wins)
-
         xml.appendChild(p)
 
         contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"
@@ -987,6 +992,8 @@ class OperatingSession(Session):
             self.saveError(ray.Err.CREATE_FAILED)
 
         file.close()
+
+        self.canvas_saver.save_json_session_canvas(self.path)
 
         full_notes_path = "%s/%s" % (self.path, ray.NOTES_PATH)
 
@@ -1721,6 +1728,9 @@ for better organization."""))
                     if self.hasServerOption(ray.Option.DESKTOPS_MEMORY):
                         self.desktops_memory.readXml(node.toElement())
 
+                #elif tag_name == "Canvas":
+                    #self.canvas_saver.load_session_canvas(node.toElement())
+
             ray_file.close()
 
         else:
@@ -1745,6 +1755,8 @@ for better organization."""))
 
             file.close()
             self.sendGui('/ray/gui/session/is_nsm')
+
+        self.canvas_saver.load_json_session_canvas(spath)
 
         full_notes_path = "%s/%s" % (spath, ray.NOTES_PATH)
 
@@ -1782,6 +1794,7 @@ for better organization."""))
         else:
             self.sendGui('/ray/gui/session/notes_hidden')
 
+        self.canvas_saver.send_session_group_positions()
         self.load_locked = True
 
         self.nextFunction()
@@ -2102,7 +2115,7 @@ for better organization.""")
                     #needed-version not writed correctly, ignores it
                     needed_version = ''
 
-                if factory and needed_version:
+                if needed_version:
                     version_process = QProcess()
                     version_process.start(client.executable_path,
                                           ['--version'])
@@ -2145,22 +2158,16 @@ for better organization.""")
                         progvss.append(int(n))
 
                     if neededs > progvss:
-                        node = node.nextSibling()
                         continue
 
                 full_name_files = []
 
-                if not needed_version:
-                    # if there is a needed version,
-                    # then files are ignored because factory templates with
-                    # version must be NSM compatible
-                    # and dont need files (factory)
-                    template_path = "%s/%s" % (search_path, template_name)
+                template_path = "%s/%s" % (search_path, template_name)
 
-                    if os.path.isdir(template_path):
-                        for file in os.listdir(template_path):
-                            full_name_files.append("%s/%s"
-                                                    % (template_path, file))
+                if os.path.isdir(template_path):
+                    for file in os.listdir(template_path):
+                        full_name_files.append("%s/%s"
+                                                % (template_path, file))
 
                 if not self.addClient(client):
                     self.answer(src_addr, src_path,

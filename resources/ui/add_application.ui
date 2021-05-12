@@ -243,7 +243,7 @@
                     </widget>
                    </item>
                    <item>
-                    <widget class="favoriteToolButton" name="toolButtonFavorite">
+                    <widget class="FavoriteToolButton" name="toolButtonFavorite">
                      <property name="toolTip">
                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add this template to favorites / Remove this template from favorites&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                      </property>
@@ -628,12 +628,12 @@
    <header>surclassed_widgets</header>
   </customwidget>
   <customwidget>
-   <class>favoriteToolButton</class>
+   <class>FakeToolButton</class>
    <extends>QToolButton</extends>
    <header>surclassed_widgets</header>
   </customwidget>
   <customwidget>
-   <class>FakeToolButton</class>
+   <class>FavoriteToolButton</class>
    <extends>QToolButton</extends>
    <header>surclassed_widgets</header>
   </customwidget>

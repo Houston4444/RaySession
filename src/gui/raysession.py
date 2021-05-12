@@ -3,35 +3,34 @@
 #libs
 import signal
 import sys
-import time
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon, QFontDatabase
 from PyQt5.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
 
 #local imports
-from gui_tools import ArgParser, CommandLineArgs, initGuiTools, getCodeRoot
-from gui_server_thread import GUIServerThread
+from gui_tools import ArgParser, CommandLineArgs, init_gui_tools, get_code_root
+from gui_server_thread import GuiServerThread
 from gui_session import SignaledSession
 import ray
 
 
-def signalHandler(sig, frame):
+def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
-        if session._daemon_manager.launched_before:
+        if session.daemon_manager.launched_before:
             if (CommandLineArgs.under_nsm
                     and session.server_status != ray.ServerStatus.OFF):
-                session._main_win.terminate_request = True
+                session.main_win.terminate_request = True
 
-                l_server = GUIServerThread.instance()
+                l_server = GuiServerThread.instance()
                 if l_server:
-                    l_server.abortSession()
+                    l_server.abort_session()
             else:
-                session._daemon_manager.stop()
+                session.daemon_manager.stop()
             return
 
-        session._main_win.terminate_request = True
-        session._daemon_manager.stop()
+        session.main_win.terminate_request = True
+        session.daemon_manager.stop()
 
 if __name__ == '__main__':
     # set Qt Application
@@ -45,15 +44,16 @@ if __name__ == '__main__':
 
     ### Translation process
     locale = QLocale.system().name()
-    appTranslator = QTranslator()
-    if appTranslator.load(QLocale(), ray.APP_TITLE.lower(),
-                          '_', "%s/locale" % getCodeRoot()):
-        app.installTranslator(appTranslator)
 
-    sysTranslator = QTranslator()
-    pathSysTranslations = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
-    if sysTranslator.load(QLocale(), 'qt', '_', pathSysTranslations):
-        app.installTranslator(sysTranslator)
+    app_translator = QTranslator()
+    if app_translator.load(QLocale(), ray.APP_TITLE.lower(),
+                           '_', "%s/locale" % get_code_root()):
+        app.installTranslator(app_translator)
+
+    sys_translator = QTranslator()
+    path_sys_translations = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+    if sys_translator.load(QLocale(), 'qt', '_', path_sys_translations):
+        app.installTranslator(sys_translator)
 
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
@@ -61,15 +61,15 @@ if __name__ == '__main__':
     # get arguments
     parser = ArgParser()
 
-    initGuiTools()
+    init_gui_tools()
 
     # Add raysession/src/bin to $PATH
     # to can use raysession after make, whitout install
     ray.addSelfBinToPath()
 
     #connect signals
-    signal.signal(signal.SIGINT, signalHandler)
-    signal.signal(signal.SIGTERM, signalHandler)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     #needed for signals SIGINT, SIGTERM
     timer = QTimer()
@@ -77,13 +77,13 @@ if __name__ == '__main__':
     timer.timeout.connect(lambda: None)
 
     #build session
-    server = GUIServerThread()
+    server = GuiServerThread()
     session = SignaledSession()
 
     app.exec()
 
     # TODO find something better, sometimes program never ends without.
-    time.sleep(0.002)
+    #time.sleep(0.002)
 
     server.stop()
     session.quit()

@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import time
 import liblo
+
+from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtXml import QDomDocument
 
 import ray
@@ -15,7 +17,7 @@ from daemon_tools import (TemplateRoots, CommandLineArgs, Terminal, RS,
 
 instance = None
 signaler = Signaler.instance()
-
+_translate = QCoreApplication.translate
 
 def pathIsValid(path: str)->bool:
     if path.startswith(('./', '../')):
@@ -410,6 +412,55 @@ class OscServerThread(ClientCommunicating):
         if multi_daemon_file:
             multi_daemon_file.update()
 
+    @ray_method('/ray/server/ask_for_patchbay', '')
+    def rayServerGetPatchbayPort(self, path, args, types, src_addr):
+        patchbay_file = '/tmp/RaySession/patchbay_daemons/' + str(self.port)
+        patchbay_port = 0
+
+        if not os.path.exists(patchbay_file):
+            return True
+
+        with open(patchbay_file, 'r') as file:
+            file = open(patchbay_file, 'r')
+            contents = file.read()
+            #file.close()
+            for line in contents.splitlines():
+                if line.startswith('pid:'):
+                    pid_str = line.rpartition(':')[2]
+                    if pid_str.isdigit():
+                        pid = int(pid_str)
+                        try:
+                            os.kill(pid, 0)
+                        except OSError:
+                            # go to main thread (session_signaled.py)
+                            return True
+                        else:
+                            # pid is okay, let check the osc port next
+                            continue
+                    else:
+                        return True
+
+                if line.startswith('port:'):
+                    port_str = line.rpartition(':')[2]
+                    good_port = False
+
+                    try:
+                        patchbay_addr = liblo.Address(int(port_str))
+                        good_port = True
+                    except:
+                        patchbay_addr = None
+                        sys.stderr.write(
+                            'port given for patchbay %s is not a valid osc port')
+
+                    if good_port:
+                        self.send(patchbay_addr, '/ray/patchbay/add_gui',
+                                  src_addr.url)
+                        return False
+                    break
+
+        # continue in main thread if patchbay_to_osc is not started yet
+        # see session_signaled.py -> _ray_server_ask_for_patchbay
+
     @ray_method('/ray/server/controller_announce', 'i')
     def rayServerControllerAnnounce(self, path, args, types, src_addr):
         controller = Controller()
@@ -754,6 +805,30 @@ class OscServerThread(ClientCommunicating):
 
         elif action == 'unset_jack_checker_autostart':
             os.remove("%s/%s" % (autostart_dir, desk_file))
+
+    @ray_method('/ray/server/patchbay/save_group_position',
+                ray.GroupPosition.sisi())
+    def rayServerPatchbaySaveCoordinates(self, path, args, types, src_addr):
+        # here send to others GUI the new group position
+        for gui_addr in self.gui_list:
+            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                self.send(gui_addr, '/ray/gui/patchbay/update_group_position',
+                          *args)
+
+    @ray_method('/ray/server/patchbay/save_portgroup', None)
+    def rayServerPatchbaySavePortGroup(self, path, args, types, src_addr):
+        # args must be group_name, port_type, port_mode, above_metadatas, *port_names
+        # where port_names are all strings
+        # so types must start with 'siiis' and may continue with strings only
+        if not types.startswith('siiis'):
+            self.unknownMessage(path, types, src_addr)
+            return False
+
+        other_types = types.replace('siiis', '', 1)
+        for t in other_types:
+            if t != 's':
+                self.unknownMessage(path, types, src_addr)
+                return False
 
     @ray_method('/ray/session/save', '')
     def raySessionSave(self, path, args, types, src_addr):
@@ -1210,7 +1285,6 @@ class OscServerThread(ClientCommunicating):
     def informCopytoGui(self, copy_state):
         self.sendGui('/ray/gui/server/copying', int(copy_state))
 
-
     def sendRenameable(self, renameable):
         if not renameable:
             self.sendGui('/ray/gui/session/renameable', 0)
@@ -1238,6 +1312,8 @@ class OscServerThread(ClientCommunicating):
                   self.session.name, self.session.path)
         self.send(gui_addr, '/ray/gui/session/notes', self.session.notes)
 
+        self.session.canvas_saver.send_all_group_positions(gui_addr)
+
         for favorite in RS.favorites:
             self.send(gui_addr, "/ray/gui/favorites/added",
                       favorite.name, favorite.icon, int(favorite.factory))
@@ -1262,9 +1338,6 @@ class OscServerThread(ClientCommunicating):
                       client.client_id, client.status)
 
             if client.isCapableOf(':optional-gui:'):
-                #self.send(gui_addr, '/ray/gui/client/has_optional_gui',
-                          #client.client_id)
-
                 self.send(gui_addr, '/ray/gui/client/gui_visible',
                           client.client_id, int(client.gui_visible))
 
@@ -1283,6 +1356,9 @@ class OscServerThread(ClientCommunicating):
                 self.send(gui_addr, '/ray/gui/trash/ray_net_update',
                           trashed_client.client_id,
                           *trashed_client.ray_net.spread())
+
+        self.send(gui_addr, '/ray/gui/server/message',
+                  _translate('daemon', "daemon runs at %s") % self.url)
 
         self.gui_list.append(gui_addr)
 
@@ -1304,7 +1380,7 @@ class OscServerThread(ClientCommunicating):
         for controller in self.controller_list:
             self.send(controller.addr, '/ray/control/message', message)
 
-    def getControllerPid(self, addr):
+    def getControllerPid(self, addr)->int:
         for controller in self.controller_list:
             if controller.addr == addr:
                 return controller.pid
@@ -1336,7 +1412,7 @@ class OscServerThread(ClientCommunicating):
                 pid_list.append(str(gui_addr.gui_pid))
         return ':'.join(pid_list)
 
-    def isGuiAddress(self, addr):
+    def isGuiAddress(self, addr)->bool:
         for gui_addr in self.gui_list:
             if ray.areSameOscPort(gui_addr.url, addr.url):
                 return True
