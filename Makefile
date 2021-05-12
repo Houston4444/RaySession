@@ -38,8 +38,7 @@ src/gui/resources_rc.py: resources/resources.qrc
 UI: mkdir_ui raysession ray_proxy
 
 mkdir_ui:
-	mkdir -p src/gui/ui
-# -----------------------------------------------------------------------------------------------------------------------------------------
+	@if ! [ -e src/gui/ui ];then mkdir -p src/gui/ui; fi
 
 raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/abort_session.py \
@@ -178,6 +177,9 @@ install:
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_config_script  $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray-pulse2jack          $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray_git                 $(DESTDIR)$(PREFIX)/bin/
+	
+	# install local manual
+	cp -r manual $(DEST_RAY)/
 	
 	# install main bash scripts to bin
 	install -m 755 data/raysession  $(DESTDIR)$(PREFIX)/bin/
