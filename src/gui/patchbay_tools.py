@@ -148,7 +148,8 @@ class PatchbayToolsWidget(QWidget):
                 self.ui.pushButtonXruns,
                 self.ui.progressBarDsp,
                 self.ui.lineSep1,
-                self.ui.lineSep2):
+                self.ui.lineSep2,
+                self.ui.lineSep3):
             widget.setVisible(yesno)
 
         self.ui.labelJackNotStarted.setVisible(not yesno)

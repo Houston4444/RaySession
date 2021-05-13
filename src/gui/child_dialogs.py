@@ -1269,7 +1269,7 @@ class DaemonUrlWindow(ChildDialog):
         elif err_code == ErrDaemon.NOT_OFF:
             error_text = _translate(
                 "url_window",
-                "<p>daemon at<br><strong>%s</strong><br>has a loaded self.session.<br>It can't be used for slave session</p>") % ex_url
+                "<p>daemon at<br><strong>%s</strong><br>has a loaded session.<br>It can't be used for slave session</p>") % ex_url
         elif err_code == ErrDaemon.WRONG_ROOT:
             error_text = _translate(
                 "url_window",
