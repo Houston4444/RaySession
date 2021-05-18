@@ -20,9 +20,14 @@ ifeq (, $(shell which $(LRELEASE)))
  LRELEASE := lrelease-qt4
 endif
 
+PYTHON := python3
+ifeq (, $(shell which $(PYTHON)))
+ PYTHON := python
+endif
+
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
-all: RES UI LOCALE
+all: RES UI LOCALE PY_CACHE
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # Resources
@@ -88,6 +93,10 @@ ray_proxy: src/clients/proxy/ui_proxy_copy.py \
 	
 src/clients/proxy/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
+	
+PY_CACHE:
+	$(PYTHON) -m compileall src/
+	
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # # Translations Files
 
