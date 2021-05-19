@@ -526,12 +526,6 @@ class Client(ServerSender, ray.ClientData):
             self.sendGui("/ray/gui/client/status", self.client_id,
                          ray.ClientStatus.COPY)
 
-    def hasNSMClientId(self)->bool:
-        return bool(len(self.client_id) == 5
-                    and self.client_id[0] == 'n'
-                    and self.client_id[1:4].isalpha()
-                    and self.client_id[1:4].isupper())
-
     def getJackClientName(self):
         if self.protocol == ray.Protocol.RAY_NET:
             # ray-net will use jack_client_name for template
@@ -560,6 +554,14 @@ class Client(ServerSender, ray.ClientData):
             jack_client_name += numid
 
         return jack_client_name
+
+    def getLinksDir(self)->str:
+        ''' returns the dir path used by carla for links such as
+        audio convolutions or soundfonts '''
+        links_dir = self.getJackClientName()
+        for c in ('-', '.'):
+            links_dir = links_dir.replace(c, '_')
+        return links_dir
 
     def getPrefixString(self):
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
@@ -1395,6 +1397,10 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         if os.path.exists(scripts_dir):
             client_files.append(scripts_dir)
+        
+        full_links_dir = os.path.join(self.session.path, self.getLinksDir())
+        if os.path.exists(full_links_dir):
+            client_files.append(full_links_dir)
 
         return client_files
 
@@ -1678,10 +1684,13 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         elif prefix_mode == ray.PrefixMode.CUSTOM:
             new_prefix = custom_prefix
 
+        links_dir = self.getLinksDir()
+
         self.renameFiles(self.session.path,
                          self.session.name, self.session.name,
                          old_prefix, new_prefix,
-                         self.client_id, self.client_id)
+                         self.client_id, self.client_id,
+                         links_dir, links_dir)
 
         self.prefix_mode = prefix_mode
         self.custom_prefix = custom_prefix
@@ -1694,8 +1703,12 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         new_session_name = basename(new_session_full_name)
         new_client_id = self.client_id
         old_client_id = self.client_id
+        new_client_links_dir = self.getLinksDir()
+        old_client_links_dir = new_client_links_dir
+        
         xsessionx = "XXX_SESSION_NAME_XXX"
         xclient_idx = "XXX_CLIENT_ID_XXX"
+        x_client_links_dirx = "XXX_CLIENT_LINKS_DIR_XXX" # used for Carla links dir
 
         if template_save == ray.Template.NONE:
             if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
@@ -1730,11 +1743,13 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                                new_session_full_name)
             new_session_name = xsessionx
             new_client_id = xclient_idx
+            new_client_links_dir = x_client_links_dirx
 
         elif template_save == ray.Template.CLIENT_LOAD:
             spath = self.session.path
             old_session_name = xsessionx
             old_client_id = xclient_idx
+            old_client_links_dir = x_client_links_dirx
 
         old_prefix = old_session_name
         new_prefix = new_session_name
@@ -1746,12 +1761,14 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         self.renameFiles(spath, old_session_name, new_session_name,
                          old_prefix, new_prefix,
-                         old_client_id, new_client_id)
+                         old_client_id, new_client_id,
+                         old_client_links_dir, new_client_links_dir)
 
     def renameFiles(self, spath,
                     old_session_name, new_session_name,
                     old_prefix, new_prefix,
-                    old_client_id, new_client_id):
+                    old_client_id, new_client_id,
+                    old_client_links_dir, new_client_links_dir):
         scripts_dir = "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, old_client_id)
         if os.access(scripts_dir, os.W_OK):
             os.rename(scripts_dir,
@@ -1798,12 +1815,11 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                         do_rename = False
                         break
 
-                    endfile = file_path.replace("%s.%s."
-                                            % (old_prefix, old_client_id),
-                                            '', 1)
+                    endfile = file_path.replace(
+                        "%s.%s." % (old_prefix, old_client_id), '', 1)
 
                     next_path = "%s/%s.%s.%s" % (spath, new_prefix,
-                                                    new_client_id, endfile)
+                                                 new_client_id, endfile)
                     if os.path.exists(next_path):
                         do_rename = False
                         break
@@ -1895,7 +1911,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
                         files_to_rename.append((ardour_audio, new_ardour_audio))
 
-                    #for Vee One Suite
+                    # for Vee One Suite
                     for extfile in ('samplv1', 'synthv1', 'padthv1', 'drumkv1'):
                         old_veeone_file = "%s/%s.%s" % (project_path,
                                             old_session_name, extfile)
@@ -1967,6 +1983,26 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                     files_to_rename.append(("%s/%s" % (spath, file_path),
                                             next_path))
 
+                elif file_path == old_client_links_dir:
+                    # this section only concerns Carla links dir
+                    # used to save links for convolutions files or soundfonts
+                    # or any other linked resource.
+                    if old_client_links_dir == new_client_links_dir:
+                        continue
+
+                    full_old_client_links_dir = os.path.join(spath, file_path)
+
+                    if not os.path.isdir(full_old_client_links_dir):
+                        continue
+                    
+                    if not os.access(full_old_client_links_dir, os.W_OK):
+                        do_rename = False
+                        break
+
+                    files_to_rename.append(
+                        (full_old_client_links_dir,
+                         os.path.join(spath, new_client_links_dir)))
+                    
         if not do_rename:
             self.prefix_mode = ray.PrefixMode.CUSTOM
             self.custom_prefix = old_prefix
