@@ -7,7 +7,7 @@ PREFIX  = /usr/local
 DESTDIR =
 DEST_RAY := $(DESTDIR)$(PREFIX)/share/raysession
 
-LINK = ln -s
+LINK = ln -s -f
 PYUIC := pyuic5
 PYRCC := pyrcc5
 
@@ -27,7 +27,7 @@ endif
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
-all: RES UI LOCALE PY_CACHE
+all: RES UI LOCALE
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # Resources
@@ -121,9 +121,6 @@ debug:
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
 install:
-	#clean unwanted __pycache__ folders
-	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__
-	
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
@@ -141,7 +138,6 @@ install:
 	install -d $(DESTDIR)/etc/xdg/
 	install -d $(DESTDIR)/etc/xdg/raysession/
 	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
-	
 	
 	# Copy Templates Factory
 	cp -r client_templates/40_ray_nsm  $(DESTDIR)/etc/xdg/raysession/client_templates/
@@ -186,6 +182,9 @@ install:
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_config_script  $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray-pulse2jack          $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray_git                 $(DESTDIR)$(PREFIX)/bin/
+	
+	# compile python files
+	$(PYTHON) -m compileall $(DEST_RAY)/src/
 	
 	# install local manual
 	cp -r manual $(DEST_RAY)/
