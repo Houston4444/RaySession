@@ -60,7 +60,7 @@ class Snapshoter(QObject):
 
     def changesCheckerStandardOutput(self):
         standard_output = self.changes_checker.readAllStandardOutput().data()
-        self._n_file_changed += len(standard_output.decode().split('\n')) -1
+        self._n_file_changed += len(standard_output.splitlines()) -1
 
     def adderStandardOutput(self):
         standard_output = self.adder_process.readAllStandardOutput().data()
@@ -69,7 +69,7 @@ class Snapshoter(QObject):
         if not self._n_file_changed:
             return
 
-        self._n_file_treated += len(standard_output.decode().split('\n')) -1
+        self._n_file_treated += len(standard_output.splitlines()) -1
 
         self.session.sendGui('/ray/gui/server/progress',
                              self._n_file_treated / self._n_file_changed)
