@@ -1391,11 +1391,10 @@ for better organization.""")
 
         self.sendGuiMessage(_translate('GUIMSG', 'start session copy...'))
 
-        self.file_copier.startSessionCopy(self.path,
-                                          spath,
-                                          self.duplicate_substep2,
-                                          self.duplicateAborted,
-                                          [new_session_full_name])
+        self.file_copier.startSessionCopy(
+            self.path, spath,
+            self.duplicate_substep2, self.duplicateAborted,
+            [new_session_full_name])
 
     def duplicate_substep2(self, new_session_full_name):
         self.cleanExpected()
@@ -1423,7 +1422,8 @@ for better organization.""")
         self.steps_order.clear()
 
         self.sendError(ray.Err.NO_SUCH_FILE, "No such file.")
-        self.send(self.osc_src_addr, '/ray/net_daemon/duplicate_state', 1)
+        if self.osc_src_addr is not None:
+            self.send(self.osc_src_addr, '/ray/net_daemon/duplicate_state', 1)
 
         self.setServerStatus(ray.ServerStatus.READY)
         self.forgetOscArgs()

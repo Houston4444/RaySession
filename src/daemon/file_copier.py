@@ -1,5 +1,7 @@
 import os
 import subprocess
+import warnings
+
 from PyQt5.QtCore import QProcess, QTimer
 from osc_server_thread import OscServerThread
 from server_sender import ServerSender
@@ -52,6 +54,7 @@ class FileCopier(ServerSender):
             du_full = subprocess.check_output(
                 ['nice', '-n', '15', 'du', '-sb', filepath]).decode()
         except:
+            warnings.warn('unable to decode size of file %s' % filepath)
             du_full = ""
 
         if not du_full:
@@ -236,6 +239,7 @@ class FileCopier(ServerSender):
             self.next_args = next_args
 
         self.timer.stop()
+
         if self.process.state() == QProcess.Running:
             self.aborted = True
             self.process.terminate()

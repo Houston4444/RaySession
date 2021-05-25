@@ -475,7 +475,7 @@ class AddApplicationDialog(ChildDialog):
         item = self.ui.templateList.currentItem()
         if item is None:
             return
-        print('yapou', item.client_data.spread(), item.client_data.ray_hack)
+
         properties_dialog = client_properties_dialog.ClientPropertiesDialog.create(
             self, item.client_data)
         properties_dialog.update_contents()

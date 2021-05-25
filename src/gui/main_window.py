@@ -734,7 +734,7 @@ class MainWindow(QMainWindow):
 
     def _status_bar_pressed(self):
         status = self.session.server_status
-
+        
         if status not in (
                 ray.ServerStatus.PRECOPY,
                 ray.ServerStatus.COPY,

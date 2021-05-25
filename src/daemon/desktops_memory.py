@@ -3,6 +3,7 @@
 import os
 import subprocess
 import sys
+import warnings
 
 from PyQt5.QtCore import QProcess
 
@@ -70,7 +71,7 @@ class DesktopsMemory:
             wmctrl_all = subprocess.check_output(['wmctrl', '-l',
                                                   '-p', '-x']).decode()
         except:
-            sys.stderr.write('unable to use wmctrl\n')
+            warnings.warn('unable to use wmctrl')
             return
 
         self.active_window_list.clear()

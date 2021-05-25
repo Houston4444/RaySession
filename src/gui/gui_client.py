@@ -78,7 +78,6 @@ class Client(QObject, ray.ClientData):
         self.widget.update_client_data()
 
     def update_ray_net(self, *args):
-        print('zoulkakzk')
         self.ray_net.update(*args)
         self.widget.update_client_data()
 
