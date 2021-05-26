@@ -1,0 +1,122 @@
+
+= Manuel de la baie de brassage de RaySession
+:toc: left
+:toc-title: Table des matières
+:toclevels: 2
+:imagesdir: images
+
+[.text-right]
+image:flag_en.jpeg[EN, 30, 20, link=../en/patchbay_manual.html] image:flag_fr.jpeg[FR, 40, 30, link=../fr/patchbay_manual.html] image:flag_de.jpeg[DE, 30, 20, link=../de/patchbay_manual.html]
+
+_pour la version 0.11.0_
+
+== Introduction
+
+Dans RaySession, la baie de brassage de JACK n'est pas affichée par défaut. Vous pouvez l'afficher en cliquant sur *Contrôle* puis *Afficher la baie de brassage de JACK* (__ou Ctrl+J__). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.
+
+Évidemment, si JACK n'est pas démarré, cette baie de brassage sera vide.
+
+Il est conseillé d'avoir le pont A2J lancé si vous voulez travailler correctement avec le MIDI. Vous pouvez configurer celà via *Cadence*, *Studio Control*, ou via l'utilitaire en ligne de commande `a2j_control`.
+
+RaySession n'inclut pas d'outils pour configurer le serveur JACK, *QJackCtl*, *Studio Control*, *Cadence*, ou l'utilitaire en ligne de commande `jack_control` font très bien ce travail. Notez qu'il n'y a pas de raison pour que cette baie de brassage ne fonctionne pas avec PipeWire plutôt que JACK, même si celà n'a pas été testé.
+
+== Vue d'ensemble
+
+image::patchbay_base.png[Vue d'ensemble de la baie de brassage]
+
+Voilà à quoi peut ressembler votre baie de brassage. Ici il y a 7 boîtes :
+
+* une boîte *system* comprenant vos ports correspondant aux entrées matérielles
+* une boîte *a2j* comprenant vos ports correspondant aux entrées MIDI
+* une boîte *PulseAudio JACK Source*
+* une boîte *Guitarix*
+* une boîte *PulseAudio JACK Sink*
+* une boîte *system* comprenant vos ports correspondant aux sorties matérielles (enceintes, casque)
+* une boîte *a2j* comprenant vos ports correspondant aux sorties MIDI
+
+Ici les ponts A2J et pulse2jack sont lancés.
+Vous observez que 4 de ces boîtes sont entourées d'une décoration (2 *system* et 2 *a2j*), ce sont les boîtes qui contiennent les ports matériels (votre interface audio, votre piano USB, n'importe quel contrôleur...).
+
+'''
+
+Certains ports audios sont regroupés en sous-groupes, que l'on appellera portgroups. Ces portgroups sont pour la plupart des paires stéréo détectées automatiquement par le nom des ports. C'est le cas ici pour :
+
+* system:capture 1/2
+* system:playback 1/2
+* PulseAudio JACK Source:front L/R
+* PulseAudio JACK Sink:front L/R
+* Guitarix:out 0/1
+
+Ces portgroups facilitent les connexions et permettent une meilleur lisibilité générale.
+
+'''
+
+Les lignes incurvées bleues correspondent aux connexions audios. Vous pouvez observer que :
+
+* les ports audio d'entrées matérielles sont connectés à *PulseAudio JACK Source*
+* les ports de *PulseAudio JACK Sink* sont connectés aux sorties matérielles
+* seul le premier port de *system* est connecté à l'entrée (__in 0__) du logiciel *Guitarix*
+* les ports audios de *Guitarix* sont connectés aux sorties matérielles
+
+== Faire et défaire une connexion
+
+Vous pouvez établir une connexion entre 2 ports pourvu qu'ils remplissent les conditions suivantes :
+
+* les ports sont du même type (on ne peut pas connecter un port audio à un port MIDI)
+* l'un est un port d'entrée, l'autre est un port de sortie
+
+=== Méthode Intuitive
+
+Pour connecter ou déconnecter deux ports, cliquez sur un port sans relâcher le bouton de la souris, glissez le curseur jusqu'au port désiré puis relachez le bouton de la souris.
+
+=== Méthode Alternative
+
+Faites un clic droit sur un port, celà affichera un menu déroulant, choisissez *Connecter* puis le port désiré. Cliquez ailleurs pour faire disparaître ce menu. L'avantage de cette méthode est qu'elle permet de connecter rapidement un port à plusieurs autres, le menu restant affiché pendant les connexions.
+
+video::video/patchbay_simple_connect.mp4[width=640]
+
+== Les Options
+
+Un clic droit n'importe où sur la baie de brassage permet d'en afficher le menu. Ce menu est également présent dans le menu de RaySession (menu *Baie de brassage*).
+Il vous permettra de :
+
+* basculer la baie de brassage en plein écran
+* Filtrer les ports: n'afficher que les ports AUDIO ou MIDI ou les deux
+* régler le niveau de zoom
+* rafraîchir le canevas: redemander à JACK la liste des ports existants et leurs connexions
+* Préférences du canevas: afficher une fenêtre d'options +
+    Tous les changements dans cette fenêtre prennent effet immédiatement. Survolez les cases pour afficher les infobulles.
+
+== Raccourcis à connaître
+
+* Un double clic n'importe où permet de basculer la baie de brassage en plein écran.
+* __Ctrl+Molette de la souris__ permet de zoomer/dézoomer.
+* __Alt+Molette de la souris__ permet déplacer la vue horizontallement.
+* Le bouton de la molette permet de déplacer la vue
+* __Ctrl+bouton du milieu de la souris__ permet de couper toutes les connexions passant sous le curseur
+
+=== Connexions en rafale
+
+Il est possible de connecter un port ou un portgroup à différents ports assez rapidement. Il suffit de terminer ses connexions par un clic droit. Une video sera bien plus explicite.
+
+video::video/patchbay_rafal_connections.mp4[width=640]
+
+Ici nous voulons connecter les multiple sorties d'Hydrogen à des tranches de Jack-Mixer. Dans la video les ronds bleus apparaissent avec un clic droit.
+
+=== Passer les connexions d'un port à un autre
+
+Il est parfois moins fastidieux de passer des connexions d'un port à un autre plutôt que de tout défaire pour tout refaire. Pour ce faire, partez du port qui contient les connexions et faites comme si vous vouliez faire une connexion, mais allez vers le port vers lequel vous souhaitez basculer les connexions.
+
+* Celà ne fonctionne que si le port de destination ne contient aucune connexion
+* Celà fonctionne de port à port ou de portgroup à portgroup mais pas de port à portgroup
+
+video::video/patchbay_fast_cut_paste.mp4[width=640]
+
+Dans cette video nous avons un cas assez complexe où la source est branchée dans *3 Band Splitter*.
+Les basses et les aigües (_Output 1_ et _Output 5_) sont envoyés directement dans *EQ6Q Mono* tandis que les medium (_Output 3_) passent d'abord par la distortion *GxTubeScreamer*. Nous voulons insérer la reverb *Dragonfly Room Reverb* avant l'égualisation *EQ6Q Mono*.
+
+'''
+
+Notez qu'avec la connexion par clic droit et le passage de connexions d'un port à l'autre, il est très rapide d'intégrer un nouveau greffon dans une chaîne, comme ici où nous branchons *Plujain Ramp Live* entre *Dragonfly Room Reverb* et *EQ6Q Mono*.
+
+video::video/fast_new_plugin.mp4[width=640]

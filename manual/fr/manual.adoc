@@ -7,7 +7,7 @@
 [.text-right]
 image:flag_en.jpeg[EN, 30, 20, link=../en/manual.html] image:flag_fr.jpeg[FR, 40, 30, link=../fr/manual.html] image:flag_de.jpeg[DE, 30, 20, link=../de/manual.html]
 
-_pour la version 0.10.0_
+_pour la version 0.11.0_
 
 == Introduction
 RaySession est un gestionnaire de session audio pour GNU/Linux. Il permet de démarrer dans une même session plusieurs programmes audio, de sauvegarder leurs projets ensemble et ainsi d’éviter de multiples manipulations pour retourner à une configuration donnée.
@@ -63,10 +63,11 @@ Dans Ardour, ajoutez une piste (Menu: Piste -> Ajouter une piste), dans la fenê
 [caption="Figure 1: ",link=images/exemple_ardour_piste.png]
 image::exemple_ardour_piste.png[Ajouter une piste Ardour pour Guitarix, 640, 480]
 
-Dans votre baie de brassage (Catia, QJackCtl ou autre) ou dans Ardour, connectez l'entrée de Guitarix à une entrée matérielle et  les sorties de Guitarix vers les entrées de cette nouvelle piste Ardour. Assurez vous que les entrées de votre piste *Guitare* ne sont pas connectées aux entrées matérielles.
+Vous allez maintenant afficher la baie de brassage de JACK. Pour celà, dans RaySession, appuyez sur *Contrôle* puis *Afficher la baie de brassage de JACK* (_ou Ctrl+J_). La baie de brassage est apparue sur la partie droite de la fenêtre.
+Connectez l'entrée de Guitarix à une entrée matérielle et les sorties de Guitarix vers les entrées de cette nouvelle piste Ardour. Assurez vous que les entrées de votre piste *Guitare* ne sont pas connectées aux entrées matérielles.
 
-[caption="Figure 1: ",link=images/exemple_catia.png]
-image::exemple_catia.png[Baie de brassage avec Catia]
+[caption="Figure 1: ",link=images/exemple_patchbay.png]
+image::exemple_patchbay.png[Baie de brassage de ma session]
 
 Voilà, vous avez une configuration où vous pouvez enregistrer directement le son de votre guitare traité par Guitarix dans Ardour. Si vous n'avez pas de guitare, vous n'avez qu'à chanter faux dans un micro ou taper sur un coussin, ce n'est ici qu'un exemple.
 
