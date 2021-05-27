@@ -249,7 +249,8 @@ class GuiServerThread(liblo.ServerThread):
 
     @ray_method('/ray/gui/client/progress', 'sf')
     def _client_progress(self, path, args, types, src_addr):
-        pass
+        self.signaler.client_progress.emit(*args)
+        return True
 
     @ray_method('/ray/gui/client/dirty', 'si')
     def _client_dirty(self, path, args, types, src_addr):

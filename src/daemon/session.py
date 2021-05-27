@@ -1428,7 +1428,7 @@ for better organization.""")
         self.setServerStatus(ray.ServerStatus.READY)
         self.forgetOscArgs()
 
-    def saveSessionTemplate(self, template_name, net=False):
+    def saveSessionTemplate(self, template_name: str, net=False):
         template_root = TemplateRoots.user_sessions
 
         if net:
@@ -1483,7 +1483,7 @@ for better organization.""")
                                           self.saveSessionTemplateAborted,
                                           [template_name, net])
 
-    def saveSessionTemplate_substep_1(self, template_name, net):
+    def saveSessionTemplate_substep_1(self, template_name: str, net: bool):
         tp_mode = ray.Template.SESSION_SAVE
         if net:
             tp_mode = ray.Template.SESSION_SAVE_NET
@@ -1499,7 +1499,7 @@ for better organization.""")
         self.sendReply("Saved as template.")
         self.setServerStatus(ray.ServerStatus.READY)
 
-    def saveSessionTemplateAborted(self, template_name):
+    def saveSessionTemplateAborted(self, template_name: str, net: bool):
         self.steps_order.clear()
         self.sendReply("Session template aborted")
         self.setServerStatus(ray.ServerStatus.READY)

@@ -81,15 +81,6 @@ class Client(QObject, ray.ClientData):
         self.ray_net.update(*args)
         self.widget.update_client_data()
 
-    def prettier_name(self):
-        if self.label:
-            return self.label
-
-        if self.name:
-            return self.name
-
-        return self.executable_path
-
     def send_properties_to_daemon(self):
         server = GuiServerThread.instance()
         if not server:
