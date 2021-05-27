@@ -444,13 +444,15 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_méthode_alternative">Méthode Alternative</a></li>
 </ul>
 </li>
-<li><a href="#_les_options">Les Options</a></li>
+<li><a href="#_les_options">Les options</a></li>
 <li><a href="#_raccourcis_à_connaître">Raccourcis à connaître</a>
 <ul class="sectlevel2">
 <li><a href="#_connexions_en_rafale">Connexions en rafale</a></li>
 <li><a href="#_passer_les_connexions_dun_port_à_un_autre">Passer les connexions d&#8217;un port à un autre</a></li>
 </ul>
 </li>
+<li><a href="#_les_ports_a2j">Les ports A2J</a></li>
+<li><a href="#_les_ports_de_tension_de_contrôle_ports_cv">Les ports de tension de contrôle (ports CV)</a></li>
 </ul>
 </div>
 </div>
@@ -608,7 +610,7 @@ Your browser does not support the video tag.
 </div>
 </div>
 <div class="sect1">
-<h2 id="_les_options">Les Options</h2>
+<h2 id="_les_options">Les options</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Un clic droit n&#8217;importe où sur la baie de brassage permet d&#8217;en afficher le menu. Ce menu est également présent dans le menu de RaySession (menu <strong>Baie de brassage</strong>).
@@ -714,10 +716,41 @@ Your browser does not support the video tag.
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_les_ports_a2j">Les ports A2J</h2>
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="images/patchbay_a2j.png" alt="ports a2j">
+</div>
+</div>
+<div class="paragraph">
+<p>Les ports MIDI fournis par le pont A2J (Alsa To Jack) présentent un trou à leur extrêmité pour les reconnaître. Leur véritable nom est un nom à ralonges, mais c&#8217;est à peu près la seule chose qui diffère avec les autres ports MIDI.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_les_ports_de_tension_de_contrôle_ports_cv">Les ports de tension de contrôle (ports CV)</h2>
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="images/patchbay_CV.png" alt="ports CV">
+</div>
+</div>
+<div class="paragraph">
+<p>les ports de tension de contrôle, appellés communément ports CV (Control Voltage) ont le même fonctionnement que les ports audio classiques, cependant, ils sont faits pour piloter un ou plusieurs paramètres avec une précision bien plus importante que les ports MIDI. Comme leur flux n&#8217;est pas fait pour être écouté, il n&#8217;est pas possible de connecter simplement un port CV de sortie vers une entrée audio classique, celà pourrait endommager votre casque, vos enceintes, et peut-être même bien vos oreilles.<br>
+Si vous souhaitez quand même le faire, faites un clic droit sur l&#8217;un des ports, puis <strong>Connecter</strong>, puis le menu <strong>DANGEREUX</strong>.<br>
+Vous ne pourrez pas dire que vous n&#8217;étiez pas prévenu, et il est quasiment impossible de faire ça par erreur.</p>
+</div>
+<div class="paragraph">
+<p>En revanche, connecter un port de sortie audio classique vers un port CV d&#8217;entrée est tout à fait possible, ça ne pose aucun problème.</p>
+</div>
+</div>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-05-26 17:18:13 +0200
+Last updated 2021-05-27 09:41:45 +0200
 </div>
 </div>
 </body>
