@@ -631,7 +631,15 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def _online_manual(self):
-        QDesktopServices.openUrl(QUrl('http://raysession.tuxfamily.org/manual'))
+        short_locale = 'en'
+        locale_str = QLocale.system().name()
+        if (len(locale_str) > 2 and '_' in locale_str
+                and locale_str[:2] in ('en', 'fr', 'de')):
+            short_locale = locale_str[:2]
+
+        QDesktopServices.openUrl(
+            QUrl('http://raysession.tuxfamily.org/%s/manual.html'
+                 % short_locale))
 
     def _internal_manual(self):
         short_locale = 'en'
