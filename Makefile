@@ -3,7 +3,7 @@
 # ---------------------- #
 # Created by houston4444
 #
-PREFIX  = /usr/local
+PREFIX := /usr/local
 DESTDIR =
 DEST_RAY := $(DESTDIR)$(PREFIX)/share/raysession
 
