@@ -285,7 +285,7 @@ class SignaledSession(OperatingSession):
         if server:
             src_addr_is_gui = bool(server.isGuiAddress(src_addr))
 
-        template_list = [] # list of template names
+        template_names = set()
 
         # list of (template_name, client_template)
         # where client_template is a fake client with all template properties
@@ -330,7 +330,7 @@ class SignaledSession(OperatingSession):
 
                 template_name = ct.attribute('template-name')
 
-                if not template_name or template_name in template_list:
+                if not template_name or template_name in template_names:
                     continue
 
                 executable = ct.attribute('executable')
@@ -412,14 +412,8 @@ class SignaledSession(OperatingSession):
                     if not program_version:
                         continue
 
-                    neededs = []
-                    progvss = []
-
-                    for n in needed_version.split('.'):
-                        neededs.append(int(n))
-
-                    for n in program_version.split('.'):
-                        progvss.append(int(n))
+                    neededs = [int(s) for s in needed_version.split('.')]
+                    progvss = [int(s) for s in program_version.split('.')]
 
                     if neededs > progvss:
                         # program is too old, ignore this template
@@ -434,7 +428,7 @@ class SignaledSession(OperatingSession):
                     template_client.client_id = ct.attribute('client_id')
                     template_client.updateInfosFromDesktopFile()
 
-                template_list.append(template_name)
+                template_names.add(template_name)
                 tmp_template_list.append((template_name, template_client))
 
                 if len(tmp_template_list) == 20:
