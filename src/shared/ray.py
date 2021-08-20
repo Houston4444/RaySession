@@ -421,31 +421,28 @@ def areOnSameMachine(url1, url2):
                 address2.hostname):
             return True
 
-    except BaseException:
-        try:
-            ip = Machine192.get()
+        ip = Machine192.get()
 
-            if ip not in (address1.hostname, address2.hostname):
-                return False
-
-            try:
-                if socket.gethostbyname(
-                        address1.hostname) in (
-                        '127.0.0.1',
-                        '127.0.1.1'):
-                    if address2.hostname == ip:
-                        return True
-            except BaseException:
-                if socket.gethostbyname(
-                        address2.hostname) in (
-                        '127.0.0.1',
-                        '127.0.1.1'):
-                    if address1.hostname == ip:
-                        return True
-
-        except BaseException:
+        if ip not in (address1.hostname, address2.hostname):
             return False
 
+        if (ip == socket.gethostbyname(address1.hostname)
+                == socket.gethostbyname(address2.hostname)):
+            # on some systems (as fedora),
+            # socket.gethostbyname returns a 192.168.. url
+            return True
+
+        if (socket.gethostbyname(address1.hostname)
+                in ('127.0.0.1', '127.0.1.1')):
+            if address2.hostname == ip:
+                return True
+
+        if (socket.gethostbyname(address2.hostname)
+                in ('127.0.0.1', '127.0.1.1')):
+            if address1.hostname == ip:
+                return True
+
+    except BaseException:
         return False
 
     return False

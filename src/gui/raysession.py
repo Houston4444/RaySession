@@ -42,6 +42,10 @@ if __name__ == '__main__':
     app.setQuitOnLastWindowClosed(False)
     app.setDesktopFileName(ray.APP_TITLE.lower())
 
+    # with some themes (GNOME fedora 34)
+    # QGroupBox are not really visible
+    app.setStyleSheet("QGroupBox{background-color: #15888888}")
+
     ### Translation process
     locale = QLocale.system().name()
 

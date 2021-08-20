@@ -165,6 +165,18 @@ class CanvasMenu(QMenu):
         QMenu.__init__(self, _translate('patchbay', 'Patchbay'))
         self.patchbay_manager = patchbay_manager
         
+        # fix wrong menu position with Wayland,
+        # see https://community.kde.org/Guidelines_and_HOWTOs/Wayland_Porting_Notes
+        self.winId()
+        main_win = self.patchbay_manager.session.main_win
+        main_win.winId()
+        parent_window_handle = main_win.windowHandle()
+        if not parent_window_handle:
+            native_parent_widget = main_win.nativeParentWidget()
+            if native_parent_widget:
+                parent_window_handle = native_parent_widget.windowHandle()
+        self.windowHandle().setTransientParent(parent_window_handle)
+
         self.action_fullscreen = self.addAction(
             _translate('patchbay', "Toggle Full Screen"))
         self.action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
@@ -174,7 +186,7 @@ class CanvasMenu(QMenu):
         port_types_view = patchbay_manager.port_types_view & (
             GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
 
-        self.port_types_menu = QMenu(_translate('patchbay', 'Type filter'))
+        self.port_types_menu = QMenu(_translate('patchbay', 'Type filter'), self)
         self.port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
         self.action_audio_midi = self.port_types_menu.addAction(
             _translate('patchbay', 'Audio + Midi'))
@@ -201,7 +213,7 @@ class CanvasMenu(QMenu):
 
         self.addMenu(self.port_types_menu)
 
-        self.zoom_menu = QMenu(_translate('patchbay', 'Zoom'))
+        self.zoom_menu = QMenu(_translate('patchbay', 'Zoom'), self)
         self.zoom_menu.setIcon(QIcon.fromTheme('zoom'))
 
         self.autofit = self.zoom_menu.addAction(

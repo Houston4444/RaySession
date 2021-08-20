@@ -621,7 +621,8 @@ class PatchScene(QGraphicsScene):
 
         if len(self.selectedItems()) == 0:
             event.accept()
-            canvas.callback(ACTION_BG_RIGHT_CLICK, 0, 0, "")
+            x, y = event.screenPos().x(), event.screenPos().y()
+            canvas.callback(ACTION_BG_RIGHT_CLICK, x, y, "")
             return
 
         QGraphicsScene.contextMenuEvent(self, event)

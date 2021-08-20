@@ -433,7 +433,7 @@ class SnapshotsDialog(ChildDialog):
         info_dialog.exec()
 
         if info_dialog.has_to_be_hidden_next_time():
-            RS.setHidden(RS.HD_SnapshotsInfo)
+            RS.set_hidden(RS.HD_SnapshotsInfo)
 
 
 class SnapshotsInfoDialog(ChildDialog):

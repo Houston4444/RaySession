@@ -1,0 +1,581 @@
+diff --git a/src/gui/gui_client.py b/src/gui/gui_client.py
+index 0551366..6b5ff2a 100644
+--- a/src/gui/gui_client.py
++++ b/src/gui/gui_client.py
+@@ -123,7 +123,8 @@ class Client(QObject, ray.ClientData):
+                 self.properties_dialog.enable_test_zone(True)
+             self.properties_dialog.set_on_second_tab()
+         self.properties_dialog.show()
+-        self.properties_dialog.activateWindow()
++        if ray.getWindowManager() != ray.WindowManager.WAYLAND:
++            self.properties_dialog.activateWindow()
+ 
+     def re_create_widget(self):
+         del self.widget
+diff --git a/src/gui/patchbay_manager.py b/src/gui/patchbay_manager.py
+index d7f6164..1b2b4fb 100644
+--- a/src/gui/patchbay_manager.py
++++ b/src/gui/patchbay_manager.py
+@@ -5,7 +5,7 @@ import sys
+ 
+ from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
+ from PyQt5.QtWidgets import QMenu, QAction, QLabel, QMessageBox
+-from PyQt5.QtCore import pyqtSlot, QTimer
++from PyQt5.QtCore import pyqtSlot, QTimer, QPoint
+ 
+ import ray
+ 
+@@ -132,6 +132,10 @@ class Port:
+             long_name = self.full_name.partition(':')[2]
+             return long_name.partition(': ')[2]
+ 
++        if self.full_name.startswith('Midi-Bridge:'):
++            long_name = self.full_name.partition(':')[2]
++            return long_name.partition(') ')[2]
++
+         return self.full_name.partition(':')[2]
+ 
+     def add_the_last_digit(self):
+@@ -328,7 +332,7 @@ class Group:
+ 
+         if self._is_hardware:
+             icon_type = patchcanvas.ICON_HARDWARE
+-            if self.a2j_group:
++            if self.a2j_group or self.display_name == "Midi-Bridge":
+                 icon_name = "a2j"
+ 
+         if self.client_icon:
+@@ -561,9 +565,15 @@ class Group:
+ 
+         # same graceful names for physical a2j ports
+         # if they are grouped or not
++        #if (not client_name
++                #and port.full_name.startswith('a2j:')
++                #and port.flags & PORT_IS_PHYSICAL):
++            #client_name = 'a2j'
++
+         if (not client_name
+-                and port.full_name.startswith('a2j:')
++                and port.full_name.startswith(('a2j:', 'Midi-Bridge:'))
+                 and port.flags & PORT_IS_PHYSICAL):
++            #client_name = port.full_name.partition(':')[0]
+             client_name = 'a2j'
+ 
+         display_name = port.short_name()
+@@ -1317,7 +1327,8 @@ class PatchbayManager:
+                     break
+ 
+         elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
+-            self.canvas_menu.exec(QCursor.pos())
++            x, y = value1, value2
++            self.canvas_menu.exec(QPoint(x, y))
+ 
+         elif action == patchcanvas.ACTION_DOUBLE_CLICK:
+             self.toggle_full_screen()
+@@ -1532,11 +1543,12 @@ class PatchbayManager:
+         a2j_group = False
+         group_is_new = False
+ 
+-        if (full_port_name.startswith('a2j:')
++        if (full_port_name.startswith(('a2j:', 'Midi-Bridge:'))
+                 and (not self.group_a2j_hw
+                      or not port.flags & PORT_IS_PHYSICAL)):
+             group_name, colon, port_name = port_name.partition(':')
+-            group_name = group_name.rpartition(' [')[0]
++            if full_port_name.startswith('a2j:'):
++                group_name = group_name.rpartition(' [')[0]
+             if port.flags & PORT_IS_PHYSICAL:
+                 a2j_group = True
+ 
+diff --git a/src/gui/patchbay_tools.py b/src/gui/patchbay_tools.py
+index 290a9c3..3aeb658 100644
+--- a/src/gui/patchbay_tools.py
++++ b/src/gui/patchbay_tools.py
+@@ -165,6 +165,18 @@ class CanvasMenu(QMenu):
+         QMenu.__init__(self, _translate('patchbay', 'Patchbay'))
+         self.patchbay_manager = patchbay_manager
+         
++        # fix wrong menu position with Wayland,
++        # see https://community.kde.org/Guidelines_and_HOWTOs/Wayland_Porting_Notes
++        self.winId()
++        main_win = self.patchbay_manager.session.main_win
++        main_win.winId()
++        parent_window_handle = main_win.windowHandle()
++        if not parent_window_handle:
++            native_parent_widget = main_win.nativeParentWidget()
++            if native_parent_widget:
++                parent_window_handle = native_parent_widget.windowHandle()
++        self.windowHandle().setTransientParent(parent_window_handle)
++
+         self.action_fullscreen = self.addAction(
+             _translate('patchbay', "Toggle Full Screen"))
+         self.action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
+@@ -174,7 +186,7 @@ class CanvasMenu(QMenu):
+         port_types_view = patchbay_manager.port_types_view & (
+             GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+ 
+-        self.port_types_menu = QMenu(_translate('patchbay', 'Type filter'))
++        self.port_types_menu = QMenu(_translate('patchbay', 'Type filter'), self)
+         self.port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
+         self.action_audio_midi = self.port_types_menu.addAction(
+             _translate('patchbay', 'Audio + Midi'))
+@@ -201,7 +213,7 @@ class CanvasMenu(QMenu):
+ 
+         self.addMenu(self.port_types_menu)
+ 
+-        self.zoom_menu = QMenu(_translate('patchbay', 'Zoom'))
++        self.zoom_menu = QMenu(_translate('patchbay', 'Zoom'), self)
+         self.zoom_menu.setIcon(QIcon.fromTheme('zoom'))
+ 
+         self.autofit = self.zoom_menu.addAction(
+diff --git a/src/gui/patchcanvas/canvasbox.py b/src/gui/patchcanvas/canvasbox.py
+index 331c5dc..a86335f 100644
+--- a/src/gui/patchcanvas/canvasbox.py
++++ b/src/gui/patchcanvas/canvasbox.py
+@@ -113,6 +113,10 @@ class TitleLine:
+             self.font.setWeight(QFont.Bold)
+ 
+         self.size = QFontMetrics(self.font).width(text)
++        
++    def reduce_pixel(self, reduce):
++        self.font.setPixelSize(canvas.theme.box_font_size - reduce)
++        self.size = QFontMetrics(self.font).width(self.text)
+ 
+ # ------------------------------------------------------------------------------------------------------------
+ 
+@@ -130,7 +134,7 @@ class CanvasBox(QGraphicsItem):
+         self.m_group_id = group_id
+         self.m_group_name = group_name
+ 
+-        self.splitTitle()
++        self._title_lines = [TitleLine(group_name)]
+ 
+         # plugin Id, < 0 if invalid
+         self.m_plugin_id = -1
+@@ -313,31 +317,30 @@ class CanvasBox(QGraphicsItem):
+         if self._is_hardware:
+             self.setIcon(ICON_HARDWARE, self._icon_name)
+ 
+-    def splitTitle(self, maxi_split=True):
+-        title_lines = []
+-
++    def splitTitle(self, n_lines=True)->tuple:
+         title, slash, subtitle = self.m_group_name.partition('/')
+         if subtitle:
+             # if there is a subtitle, title is not bold when subtitle is.
+             # so title is 'little'
+-            title_lines.append(TitleLine(title, little=True))
+-            if maxi_split:
+-                subtitle_1, subtitle_2 = self.split_in_two(subtitle)
+-                title_lines.append(TitleLine(subtitle_1))
+-                if subtitle_2:
+-                    title_lines.append(TitleLine(subtitle_2))
++            title_lines = [TitleLine(title, little=True)]
++            if n_lines >= 3:
++                title_lines += [TitleLine(subtt)
++                                for subtt in self.split_in_two(subtitle, 2) if subtt]
+             else:
+                 title_lines.append(TitleLine(subtitle))
+         else:
+-            if maxi_split:
+-                title_1, title_2 = self.split_in_two(self.m_group_name)
+-                title_lines.append(TitleLine(title_1))
+-                if title_2:
+-                    title_lines.append(TitleLine(title_2))
++            if n_lines >= 2:
++                title_lines = [
++                    TitleLine(tt)
++                    for tt in self.split_in_two(self.m_group_name, n_lines) if tt]
+             else:
+-                title_lines.append(TitleLine(self.m_group_name))
++                title_lines= [TitleLine(self.m_group_name)]
+ 
+-        self._title_lines = tuple(title_lines)
++            if len(title_lines) >= 4:
++                for title_line in title_lines:
++                    title_line.reduce_pixel(2)
++        
++        return tuple(title_lines)
+ 
+     def setGroupName(self, group_name):
+         self.m_group_name = group_name
+@@ -482,8 +485,7 @@ class CanvasBox(QGraphicsItem):
+         return QFontMetrics(self.m_font_name).width(string)
+ 
+     @staticmethod
+-    def split_in_two(string: str)->tuple:
+-        middle = int(len(string)/2)
++    def split_in_two(string: str, n_lines=2)->tuple:
+         sep_indexes = []
+         last_was_digit = False
+ 
+@@ -503,20 +505,64 @@ class CanvasBox(QGraphicsItem):
+                 break
+ 
+         if not sep_indexes:
+-            return (string, '')
++            # no available separator in given text
++            return_list = [string] + ['' for n in range(1, n_lines)]
++            return tuple(return_list)
++
++        if len(sep_indexes) + 1 <= n_lines:
++            return_list = []
++            last_index = 0
++            
++            for sep_index in sep_indexes:
++                return_list.append(string[last_index:sep_index])
++                last_index = sep_index
++                if sep == ' ':
++                    last_index += 1
++                
++            return_list.append(string[last_index:])
+ 
+-        best_index = 0
+-        best_dif = middle
++            return_list += ['' for n in range(n_lines - len(sep_indexes) - 1)]
++            return tuple(return_list)
+ 
+-        for s in sep_indexes:
+-            dif = abs(middle - s)
+-            if dif < best_dif:
+-                best_index = s
+-                best_dif = dif
++        best_indexes = [0]
++        string_rest = string
++        string_list = []
+ 
+-        if sep == ' ':
+-            return (string[:best_index], string[best_index+1:])
+-        return (string[:best_index], string[best_index:])
++        for i in range(n_lines, 1, -1):
++            target = best_indexes[-1] + int(len(string_rest)/i)
++            best_index = 0
++            best_dif = len(string)
++
++            for s in sep_indexes:
++                if s <= best_indexes[-1]:
++                    continue
++                
++                dif = abs(target - s)
++                if dif < best_dif:
++                    best_index = s
++                    best_dif = dif
++                else:
++                    break
++
++            if sep == ' ':
++                string_rest = string[best_index+1:]
++            else:
++                string_rest = string[best_index:]
++
++            best_indexes.append(best_index)
++
++        best_indexes = best_indexes[1:]
++        last_index = 0
++        return_list = []
++
++        for i in best_indexes:
++            return_list.append(string[last_index:i])
++            last_index = i
++            if sep == ' ':
++                last_index += 1
++
++        return_list.append(string[last_index:])
++        return tuple(return_list)
+ 
+     def updatePositions(self):
+         self.prepareGeometryChange()
+@@ -541,9 +587,6 @@ class CanvasBox(QGraphicsItem):
+         last_in_alter = last_out_alter = False
+         last_in_pos = last_out_pos = (canvas.theme.box_header_height
+                                       + canvas.theme.box_header_spacing)
+-        #if len(self._title_lines) == 3:
+-            #last_in_pos += 14
+-            #last_out_pos += 14
+ 
+         wrapped_port_pos = last_in_pos
+         last_of_portgrp = True
+@@ -701,76 +744,87 @@ class CanvasBox(QGraphicsItem):
+         self.p_width_out = max_out_width
+         
+         # Check Text Name size
++        title_template = {"title_width": 0, "header_width": 0}
++        all_title_templates = [title_template.copy() for i in range(5)]
+         
+-        # check the header width with title splitted
+-        max_title_size_1 = 0
+-        self.splitTitle(maxi_split=True)
+-        
+-        for title_line in self._title_lines:
+-            max_title_size_1 = max(max_title_size_1, title_line.size)
++        for i in range(1, 5):
++            max_title_size = 0
++            title_lines = self.splitTitle(i)
++            
++            for title_line in title_lines:
++                max_title_size = max(max_title_size, title_line.size)
+ 
+-        header_width_1 = max_title_size_1
++            all_title_templates[i]
++            header_width = max_title_size
+ 
+-        if self.has_top_icon():
+-            header_width_1 += 37
+-        else:
+-            header_width_1 += 16
++            if self.has_top_icon():
++                header_width += 37
++            else:
++                header_width += 16
+ 
+-        header_width_1 = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
+-                             header_width_1)
+-        
+-        # check the header width with title unsplitted
+-        max_title_size_2 = 0
+-        self.splitTitle(maxi_split=False)
+-        
+-        for title_line in self._title_lines:
+-            max_title_size_2 = max(max_title_size_2, title_line.size)
++            header_width =  max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
++                                header_width)
++            
++            new_title_template = title_template.copy()
++            new_title_template['title_width'] = max_title_size
++            new_title_template['header_width'] = header_width
++            all_title_templates[i] = new_title_template
++            
++            if header_width < self.p_width:
++                break
+         
+-        header_width_2 = max_title_size_2
++        more_height = 0
++        lines_choice = 1
+         
+-        if self.has_top_icon():
+-            header_width_2 += 37
++        if all_title_templates[1]['header_width'] <= self.p_width:
++            # One line title is shorter than the box, choose it
++            lines_choice = 1
++        elif all_title_templates[2]['header_width'] <= self.p_width:
++            # Two lines title is shorter than the box, choose it
++            lines_choice = 2
+         else:
+-            header_width_2 += 16
+-        
+-        header_width_2 = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
+-                             header_width_2)
+-        
+-        max_title_size = max_title_size_2
+-        
+-        if header_width_2 > self.p_width:
+-            # calculate most optimized splitted title disposition
+-            more_height = 0
+-            if self._title_lines[0].is_little:
+-                more_height = 14
+-            
+-            area_1 = max(self.p_width, header_width_1) \
+-                     * (max(last_in_pos, last_out_pos) + more_height)
+-            area_2 = header_width_2 * max(last_in_pos, last_out_pos)
++            more_height = 14
++            area_2 = all_title_templates[2]['header_width'] * max(last_in_pos, last_out_pos)
++            area_3 = max(self.p_width, all_title_templates[3]['header_width']) \
++                         * (max(last_in_pos, last_out_pos) + more_height)
+             
+-            if area_1 < area_2:
+-                # splitted title (or subtitle) is choosen
+-                self.splitTitle(maxi_split=True)
++            if area_2 <= area_3:
++                # Box area is smaller with 2 lines titles than with 3 lines title
++                # choose 2 lines title
++                lines_choice = 2
++                more_height = 0
+                 
+-                if more_height:
+-                    # down ports
+-                    for port in port_list:
+-                        port.widget.setY(port.widget.y() + more_height)
+-                    
+-                    # down portgroups
+-                    for portgrp in canvas.portgrp_list:
+-                        if (portgrp.group_id == self.m_group_id
+-                                and self.m_current_port_mode & portgrp.port_mode):
+-                            if portgrp.widget is not None:
+-                                portgrp.widget.setY(portgrp.widget.y() + more_height)
++            elif all_title_templates[3]['header_width'] <= self.p_width:
++                # 3 lines title is shorter than the box, choose it
++                lines_choice = 3
++            else:
++                area_4 = max(self.p_width, all_title_templates[4]['header_width']) \
++                            * (max(last_in_pos, last_out_pos) + more_height)
++                
++                if area_3 - area_4 >= 5000:
++                    lines_choice = 4
++                else:
++                    lines_choice = 3
+                     
+-                    last_in_pos += more_height
+-                    last_out_pos += more_height
++        self._title_lines = self.splitTitle(lines_choice)
++        self.p_width = max(self.p_width,
++                           all_title_templates[lines_choice]['header_width'])
++        max_title_size = all_title_templates[lines_choice]['title_width']
+                 
+-                self.p_width = max(self.p_width, header_width_1)
+-                max_title_size = max_title_size_1
+-            else:
+-                self.p_width = header_width_2
++        if more_height:
++            # down ports
++            for port in port_list:
++                port.widget.setY(port.widget.y() + more_height)
++            
++            # down portgroups
++            for portgrp in canvas.portgrp_list:
++                if (portgrp.group_id == self.m_group_id
++                        and self.m_current_port_mode & portgrp.port_mode):
++                    if portgrp.widget is not None:
++                        portgrp.widget.setY(portgrp.widget.y() + more_height)
++            
++            last_in_pos += more_height
++            last_out_pos += more_height
+ 
+         # Horizontal ports re-positioning
+         inX = canvas.theme.port_offset
+@@ -815,7 +869,7 @@ class CanvasBox(QGraphicsItem):
+ 
+         normal_height = max(last_in_pos, last_out_pos)
+         wrapped_height = wrapped_port_pos + canvas.theme.port_height
+-        if len(self._title_lines) == 3:
++        if len(self._title_lines) >= 3:
+             wrapped_height += 14
+ 
+         if self._wrapping:
+@@ -1130,7 +1184,7 @@ class CanvasBox(QGraphicsItem):
+                 if self._wrapped:
+                     # unwrap the box if event is one of the triangles zones
+                     ypos = canvas.theme.box_header_height
+-                    if len(self._title_lines) == 3:
++                    if len(self._title_lines) >= 3:
+                         ypos += 14
+ 
+                     triangle_rect_out = QRectF(
+@@ -1365,11 +1419,19 @@ class CanvasBox(QGraphicsItem):
+             if self._title_lines[0].is_little:
+                 self._title_lines[0].y -= 7
+                 self._title_lines[1].y += 9
+-                if len(self._title_lines) == 3:
++                if len(self._title_lines) >= 3:
+                     self._title_lines[2].y += 24
+             else:
+-                self._title_lines[0].y -= 6
+-                self._title_lines[1].y += 9
++                if len(self._title_lines) == 4:
++                    self._title_lines[0].y -= 9
++                    self._title_lines[1].y += 2
++                    self._title_lines[2].y += 13
++                    self._title_lines[3].y += 24
++                else:
++                    self._title_lines[0].y -= 6
++                    self._title_lines[1].y += 9
++                    if len(self._title_lines) >= 3:
++                        self._title_lines[2].y += 24
+ 
+ 
+         max_title_size = 0
+diff --git a/src/gui/patchcanvas/scene.py b/src/gui/patchcanvas/scene.py
+index 0daeb67..44db978 100644
+--- a/src/gui/patchcanvas/scene.py
++++ b/src/gui/patchcanvas/scene.py
+@@ -621,7 +621,8 @@ class PatchScene(QGraphicsScene):
+ 
+         if len(self.selectedItems()) == 0:
+             event.accept()
+-            canvas.callback(ACTION_BG_RIGHT_CLICK, 0, 0, "")
++            x, y = event.screenPos().x(), event.screenPos().y()
++            canvas.callback(ACTION_BG_RIGHT_CLICK, x, y, "")
+             return
+ 
+         QGraphicsScene.contextMenuEvent(self, event)
+diff --git a/src/gui/raysession.py b/src/gui/raysession.py
+index 1b23ca1..0c737aa 100755
+--- a/src/gui/raysession.py
++++ b/src/gui/raysession.py
+@@ -42,6 +42,10 @@ if __name__ == '__main__':
+     app.setQuitOnLastWindowClosed(False)
+     app.setDesktopFileName(ray.APP_TITLE.lower())
+ 
++    # with some themes (GNOME fedora 34)
++    # QGroupBox are not really visible
++    app.setStyleSheet("QGroupBox{background-color: #15888888}")
++
+     ### Translation process
+     locale = QLocale.system().name()
+ 
+diff --git a/src/gui/snapshots_dialog.py b/src/gui/snapshots_dialog.py
+index 57aa669..2017416 100644
+--- a/src/gui/snapshots_dialog.py
++++ b/src/gui/snapshots_dialog.py
+@@ -433,7 +433,7 @@ class SnapshotsDialog(ChildDialog):
+         info_dialog.exec()
+ 
+         if info_dialog.has_to_be_hidden_next_time():
+-            RS.setHidden(RS.HD_SnapshotsInfo)
++            RS.set_hidden(RS.HD_SnapshotsInfo)
+ 
+ 
+ class SnapshotsInfoDialog(ChildDialog):
+diff --git a/src/shared/ray.py b/src/shared/ray.py
+index 9df02bf..ff60909 100644
+--- a/src/shared/ray.py
++++ b/src/shared/ray.py
+@@ -421,31 +421,28 @@ def areOnSameMachine(url1, url2):
+                 address2.hostname):
+             return True
+ 
+-    except BaseException:
+-        try:
+-            ip = Machine192.get()
++        ip = Machine192.get()
+ 
+-            if ip not in (address1.hostname, address2.hostname):
+-                return False
++        if ip not in (address1.hostname, address2.hostname):
++            return False
+ 
+-            try:
+-                if socket.gethostbyname(
+-                        address1.hostname) in (
+-                        '127.0.0.1',
+-                        '127.0.1.1'):
+-                    if address2.hostname == ip:
+-                        return True
+-            except BaseException:
+-                if socket.gethostbyname(
+-                        address2.hostname) in (
+-                        '127.0.0.1',
+-                        '127.0.1.1'):
+-                    if address1.hostname == ip:
+-                        return True
++        if (ip == socket.gethostbyname(address1.hostname)
++                == socket.gethostbyname(address2.hostname)):
++            # on some systems (as fedora),
++            # socket.gethostbyname returns a 192.168.. url
++            return True
+ 
+-        except BaseException:
+-            return False
++        if (socket.gethostbyname(address1.hostname)
++                in ('127.0.0.1', '127.0.1.1')):
++            if address2.hostname == ip:
++                return True
+ 
++        if (socket.gethostbyname(address2.hostname)
++                in ('127.0.0.1', '127.0.1.1')):
++            if address1.hostname == ip:
++                return True
++
++    except BaseException:
+         return False
+ 
+     return False

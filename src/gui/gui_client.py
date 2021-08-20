@@ -123,7 +123,8 @@ class Client(QObject, ray.ClientData):
                 self.properties_dialog.enable_test_zone(True)
             self.properties_dialog.set_on_second_tab()
         self.properties_dialog.show()
-        self.properties_dialog.activateWindow()
+        if ray.getWindowManager() != ray.WindowManager.WAYLAND:
+            self.properties_dialog.activateWindow()
 
     def re_create_widget(self):
         del self.widget

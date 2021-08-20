@@ -5,7 +5,7 @@ import sys
 
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QMessageBox
-from PyQt5.QtCore import pyqtSlot, QTimer
+from PyQt5.QtCore import pyqtSlot, QTimer, QPoint
 
 import ray
 
@@ -131,6 +131,10 @@ class Port:
         if self.full_name.startswith('a2j:'):
             long_name = self.full_name.partition(':')[2]
             return long_name.partition(': ')[2]
+
+        if self.full_name.startswith('Midi-Bridge:'):
+            long_name = self.full_name.partition(':')[2]
+            return long_name.partition(') ')[2]
 
         return self.full_name.partition(':')[2]
 
@@ -328,7 +332,7 @@ class Group:
 
         if self._is_hardware:
             icon_type = patchcanvas.ICON_HARDWARE
-            if self.a2j_group:
+            if self.a2j_group or self.display_name == "Midi-Bridge":
                 icon_name = "a2j"
 
         if self.client_icon:
@@ -561,9 +565,15 @@ class Group:
 
         # same graceful names for physical a2j ports
         # if they are grouped or not
+        #if (not client_name
+                #and port.full_name.startswith('a2j:')
+                #and port.flags & PORT_IS_PHYSICAL):
+            #client_name = 'a2j'
+
         if (not client_name
-                and port.full_name.startswith('a2j:')
+                and port.full_name.startswith(('a2j:', 'Midi-Bridge:'))
                 and port.flags & PORT_IS_PHYSICAL):
+            #client_name = port.full_name.partition(':')[0]
             client_name = 'a2j'
 
         display_name = port.short_name()
@@ -1317,7 +1327,8 @@ class PatchbayManager:
                     break
 
         elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
-            self.canvas_menu.exec(QCursor.pos())
+            x, y = value1, value2
+            self.canvas_menu.exec(QPoint(x, y))
 
         elif action == patchcanvas.ACTION_DOUBLE_CLICK:
             self.toggle_full_screen()
@@ -1532,11 +1543,12 @@ class PatchbayManager:
         a2j_group = False
         group_is_new = False
 
-        if (full_port_name.startswith('a2j:')
+        if (full_port_name.startswith(('a2j:', 'Midi-Bridge:'))
                 and (not self.group_a2j_hw
                      or not port.flags & PORT_IS_PHYSICAL)):
             group_name, colon, port_name = port_name.partition(':')
-            group_name = group_name.rpartition(' [')[0]
+            if full_port_name.startswith('a2j:'):
+                group_name = group_name.rpartition(' [')[0]
             if port.flags & PORT_IS_PHYSICAL:
                 a2j_group = True
 

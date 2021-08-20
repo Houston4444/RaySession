@@ -113,6 +113,10 @@ class TitleLine:
             self.font.setWeight(QFont.Bold)
 
         self.size = QFontMetrics(self.font).width(text)
+        
+    def reduce_pixel(self, reduce):
+        self.font.setPixelSize(canvas.theme.box_font_size - reduce)
+        self.size = QFontMetrics(self.font).width(self.text)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -130,7 +134,7 @@ class CanvasBox(QGraphicsItem):
         self.m_group_id = group_id
         self.m_group_name = group_name
 
-        self.splitTitle()
+        self._title_lines = [TitleLine(group_name)]
 
         # plugin Id, < 0 if invalid
         self.m_plugin_id = -1
@@ -313,31 +317,30 @@ class CanvasBox(QGraphicsItem):
         if self._is_hardware:
             self.setIcon(ICON_HARDWARE, self._icon_name)
 
-    def splitTitle(self, maxi_split=True):
-        title_lines = []
-
+    def splitTitle(self, n_lines=True)->tuple:
         title, slash, subtitle = self.m_group_name.partition('/')
         if subtitle:
             # if there is a subtitle, title is not bold when subtitle is.
             # so title is 'little'
-            title_lines.append(TitleLine(title, little=True))
-            if maxi_split:
-                subtitle_1, subtitle_2 = self.split_in_two(subtitle)
-                title_lines.append(TitleLine(subtitle_1))
-                if subtitle_2:
-                    title_lines.append(TitleLine(subtitle_2))
+            title_lines = [TitleLine(title, little=True)]
+            if n_lines >= 3:
+                title_lines += [TitleLine(subtt)
+                                for subtt in self.split_in_two(subtitle, 2) if subtt]
             else:
                 title_lines.append(TitleLine(subtitle))
         else:
-            if maxi_split:
-                title_1, title_2 = self.split_in_two(self.m_group_name)
-                title_lines.append(TitleLine(title_1))
-                if title_2:
-                    title_lines.append(TitleLine(title_2))
+            if n_lines >= 2:
+                title_lines = [
+                    TitleLine(tt)
+                    for tt in self.split_in_two(self.m_group_name, n_lines) if tt]
             else:
-                title_lines.append(TitleLine(self.m_group_name))
+                title_lines= [TitleLine(self.m_group_name)]
 
-        self._title_lines = tuple(title_lines)
+            if len(title_lines) >= 4:
+                for title_line in title_lines:
+                    title_line.reduce_pixel(2)
+        
+        return tuple(title_lines)
 
     def setGroupName(self, group_name):
         self.m_group_name = group_name
@@ -482,8 +485,7 @@ class CanvasBox(QGraphicsItem):
         return QFontMetrics(self.m_font_name).width(string)
 
     @staticmethod
-    def split_in_two(string: str)->tuple:
-        middle = int(len(string)/2)
+    def split_in_two(string: str, n_lines=2)->tuple:
         sep_indexes = []
         last_was_digit = False
 
@@ -503,20 +505,64 @@ class CanvasBox(QGraphicsItem):
                 break
 
         if not sep_indexes:
-            return (string, '')
+            # no available separator in given text
+            return_list = [string] + ['' for n in range(1, n_lines)]
+            return tuple(return_list)
 
-        best_index = 0
-        best_dif = middle
+        if len(sep_indexes) + 1 <= n_lines:
+            return_list = []
+            last_index = 0
+            
+            for sep_index in sep_indexes:
+                return_list.append(string[last_index:sep_index])
+                last_index = sep_index
+                if sep == ' ':
+                    last_index += 1
+                
+            return_list.append(string[last_index:])
 
-        for s in sep_indexes:
-            dif = abs(middle - s)
-            if dif < best_dif:
-                best_index = s
-                best_dif = dif
+            return_list += ['' for n in range(n_lines - len(sep_indexes) - 1)]
+            return tuple(return_list)
 
-        if sep == ' ':
-            return (string[:best_index], string[best_index+1:])
-        return (string[:best_index], string[best_index:])
+        best_indexes = [0]
+        string_rest = string
+        string_list = []
+
+        for i in range(n_lines, 1, -1):
+            target = best_indexes[-1] + int(len(string_rest)/i)
+            best_index = 0
+            best_dif = len(string)
+
+            for s in sep_indexes:
+                if s <= best_indexes[-1]:
+                    continue
+                
+                dif = abs(target - s)
+                if dif < best_dif:
+                    best_index = s
+                    best_dif = dif
+                else:
+                    break
+
+            if sep == ' ':
+                string_rest = string[best_index+1:]
+            else:
+                string_rest = string[best_index:]
+
+            best_indexes.append(best_index)
+
+        best_indexes = best_indexes[1:]
+        last_index = 0
+        return_list = []
+
+        for i in best_indexes:
+            return_list.append(string[last_index:i])
+            last_index = i
+            if sep == ' ':
+                last_index += 1
+
+        return_list.append(string[last_index:])
+        return tuple(return_list)
 
     def updatePositions(self):
         self.prepareGeometryChange()
@@ -541,9 +587,6 @@ class CanvasBox(QGraphicsItem):
         last_in_alter = last_out_alter = False
         last_in_pos = last_out_pos = (canvas.theme.box_header_height
                                       + canvas.theme.box_header_spacing)
-        #if len(self._title_lines) == 3:
-            #last_in_pos += 14
-            #last_out_pos += 14
 
         wrapped_port_pos = last_in_pos
         last_of_portgrp = True
@@ -701,76 +744,87 @@ class CanvasBox(QGraphicsItem):
         self.p_width_out = max_out_width
         
         # Check Text Name size
+        title_template = {"title_width": 0, "header_width": 0}
+        all_title_templates = [title_template.copy() for i in range(5)]
         
-        # check the header width with title splitted
-        max_title_size_1 = 0
-        self.splitTitle(maxi_split=True)
-        
-        for title_line in self._title_lines:
-            max_title_size_1 = max(max_title_size_1, title_line.size)
-
-        header_width_1 = max_title_size_1
-
-        if self.has_top_icon():
-            header_width_1 += 37
-        else:
-            header_width_1 += 16
-
-        header_width_1 = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
-                             header_width_1)
-        
-        # check the header width with title unsplitted
-        max_title_size_2 = 0
-        self.splitTitle(maxi_split=False)
-        
-        for title_line in self._title_lines:
-            max_title_size_2 = max(max_title_size_2, title_line.size)
-        
-        header_width_2 = max_title_size_2
-        
-        if self.has_top_icon():
-            header_width_2 += 37
-        else:
-            header_width_2 += 16
-        
-        header_width_2 = max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
-                             header_width_2)
-        
-        max_title_size = max_title_size_2
-        
-        if header_width_2 > self.p_width:
-            # calculate most optimized splitted title disposition
-            more_height = 0
-            if self._title_lines[0].is_little:
-                more_height = 14
+        for i in range(1, 5):
+            max_title_size = 0
+            title_lines = self.splitTitle(i)
             
-            area_1 = max(self.p_width, header_width_1) \
-                     * (max(last_in_pos, last_out_pos) + more_height)
-            area_2 = header_width_2 * max(last_in_pos, last_out_pos)
-            
-            if area_1 < area_2:
-                # splitted title (or subtitle) is choosen
-                self.splitTitle(maxi_split=True)
-                
-                if more_height:
-                    # down ports
-                    for port in port_list:
-                        port.widget.setY(port.widget.y() + more_height)
-                    
-                    # down portgroups
-                    for portgrp in canvas.portgrp_list:
-                        if (portgrp.group_id == self.m_group_id
-                                and self.m_current_port_mode & portgrp.port_mode):
-                            if portgrp.widget is not None:
-                                portgrp.widget.setY(portgrp.widget.y() + more_height)
-                    
-                    last_in_pos += more_height
-                    last_out_pos += more_height
-                
-                self.p_width = max(self.p_width, header_width_1)
-                max_title_size = max_title_size_1
+            for title_line in title_lines:
+                max_title_size = max(max_title_size, title_line.size)
+
+            all_title_templates[i]
+            header_width = max_title_size
+
+            if self.has_top_icon():
+                header_width += 37
             else:
-                self.p_width = header_width_2
+                header_width += 16
+
+            header_width =  max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
+                                header_width)
+            
+            new_title_template = title_template.copy()
+            new_title_template['title_width'] = max_title_size
+            new_title_template['header_width'] = header_width
+            all_title_templates[i] = new_title_template
+            
+            if header_width < self.p_width:
+                break
+        
+        more_height = 0
+        lines_choice = 1
+        
+        if all_title_templates[1]['header_width'] <= self.p_width:
+            # One line title is shorter than the box, choose it
+            lines_choice = 1
+        elif all_title_templates[2]['header_width'] <= self.p_width:
+            # Two lines title is shorter than the box, choose it
+            lines_choice = 2
+        else:
+            more_height = 14
+            area_2 = all_title_templates[2]['header_width'] * max(last_in_pos, last_out_pos)
+            area_3 = max(self.p_width, all_title_templates[3]['header_width']) \
+                         * (max(last_in_pos, last_out_pos) + more_height)
+            
+            if area_2 <= area_3:
+                # Box area is smaller with 2 lines titles than with 3 lines title
+                # choose 2 lines title
+                lines_choice = 2
+                more_height = 0
+                
+            elif all_title_templates[3]['header_width'] <= self.p_width:
+                # 3 lines title is shorter than the box, choose it
+                lines_choice = 3
+            else:
+                area_4 = max(self.p_width, all_title_templates[4]['header_width']) \
+                            * (max(last_in_pos, last_out_pos) + more_height)
+                
+                if area_3 - area_4 >= 5000:
+                    lines_choice = 4
+                else:
+                    lines_choice = 3
+                    
+        self._title_lines = self.splitTitle(lines_choice)
+        self.p_width = max(self.p_width,
+                           all_title_templates[lines_choice]['header_width'])
+        max_title_size = all_title_templates[lines_choice]['title_width']
+                
+        if more_height:
+            # down ports
+            for port in port_list:
+                port.widget.setY(port.widget.y() + more_height)
+            
+            # down portgroups
+            for portgrp in canvas.portgrp_list:
+                if (portgrp.group_id == self.m_group_id
+                        and self.m_current_port_mode & portgrp.port_mode):
+                    if portgrp.widget is not None:
+                        portgrp.widget.setY(portgrp.widget.y() + more_height)
+            
+            last_in_pos += more_height
+            last_out_pos += more_height
 
         # Horizontal ports re-positioning
         inX = canvas.theme.port_offset
@@ -815,7 +869,7 @@ class CanvasBox(QGraphicsItem):
 
         normal_height = max(last_in_pos, last_out_pos)
         wrapped_height = wrapped_port_pos + canvas.theme.port_height
-        if len(self._title_lines) == 3:
+        if len(self._title_lines) >= 3:
             wrapped_height += 14
 
         if self._wrapping:
@@ -1130,7 +1184,7 @@ class CanvasBox(QGraphicsItem):
                 if self._wrapped:
                     # unwrap the box if event is one of the triangles zones
                     ypos = canvas.theme.box_header_height
-                    if len(self._title_lines) == 3:
+                    if len(self._title_lines) >= 3:
                         ypos += 14
 
                     triangle_rect_out = QRectF(
@@ -1365,11 +1419,19 @@ class CanvasBox(QGraphicsItem):
             if self._title_lines[0].is_little:
                 self._title_lines[0].y -= 7
                 self._title_lines[1].y += 9
-                if len(self._title_lines) == 3:
+                if len(self._title_lines) >= 3:
                     self._title_lines[2].y += 24
             else:
-                self._title_lines[0].y -= 6
-                self._title_lines[1].y += 9
+                if len(self._title_lines) == 4:
+                    self._title_lines[0].y -= 9
+                    self._title_lines[1].y += 2
+                    self._title_lines[2].y += 13
+                    self._title_lines[3].y += 24
+                else:
+                    self._title_lines[0].y -= 6
+                    self._title_lines[1].y += 9
+                    if len(self._title_lines) >= 3:
+                        self._title_lines[2].y += 24
 
 
         max_title_size = 0
