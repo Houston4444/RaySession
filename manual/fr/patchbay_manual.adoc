@@ -18,7 +18,7 @@ Dans RaySession, la baie de brassage de JACK n'est pas affichée par défaut. Vo
 
 Il est conseillé d'avoir le pont A2J lancé si vous voulez travailler correctement avec le MIDI. Vous pouvez configurer celà via *Cadence*, *Studio Control*, ou via l'utilitaire en ligne de commande `a2j_control`.
 
-RaySession n'inclut pas d'outils pour configurer le serveur JACK, *QJackCtl*, *Studio Control*, *Cadence*, ou l'utilitaire en ligne de commande `jack_control` font très bien ce travail. Notez qu'il n'y a pas de raison pour que cette baie de brassage ne fonctionne pas avec PipeWire plutôt que JACK, même si celà n'a pas été testé.
+RaySession n'inclut pas d'outils pour configurer le serveur JACK, *QJackCtl*, *Studio Control*, *Cadence*, ou l'utilitaire en ligne de commande `jack_control` font très bien ce travail. Notez que cette baie de brassage fonctionne également avec PipeWire.
 
 == Vue d'ensemble
 
@@ -27,12 +27,14 @@ image::patchbay_base.png[Vue d'ensemble de la baie de brassage]
 Voilà à quoi peut ressembler votre baie de brassage. Ici il y a 7 boîtes :
 
 * une boîte *system* comprenant vos ports correspondant aux entrées matérielles
-* une boîte *a2j* comprenant vos ports correspondant aux entrées MIDI
-* une boîte *PulseAudio JACK Source*
-* une boîte *Guitarix*
-* une boîte *PulseAudio JACK Sink*
 * une boîte *system* comprenant vos ports correspondant aux sorties matérielles (enceintes, casque)
+* une boîte *a2j* comprenant vos ports correspondant aux entrées MIDI
 * une boîte *a2j* comprenant vos ports correspondant aux sorties MIDI
+* une boîte *PulseAudio JACK Source*
+* une boîte *PulseAudio JACK Sink*
+* une boîte *Guitarix*
+
+
 
 Ici les ponts A2J et pulse2jack sont lancés.
 Vous observez que 4 de ces boîtes sont entourées d'une décoration (2 *system* et 2 *a2j*), ce sont les boîtes qui contiennent les ports matériels (votre interface audio, votre piano USB, n'importe quel contrôleur...).
