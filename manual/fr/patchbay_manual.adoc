@@ -4,11 +4,17 @@
 :toc-title: Table des matières
 :toclevels: 2
 :imagesdir: images
+:stylesheet: rs_manual.css
 
 [.text-right]
-image:flag_en.jpeg[EN, 30, 20, link=../en/patchbay_manual.html] image:flag_fr.jpeg[FR, 40, 30, link=../fr/patchbay_manual.html] image:flag_de.jpeg[DE, 30, 20, link=../de/patchbay_manual.html]
+link:manual.html[manuel principal]
+image:flags/en.jpeg[EN, 30, 20, link=../en/patchbay_manual.html] image:flags/fr.jpeg[FR, 40, 30, link=../fr/patchbay_manual.html]
+
+
 
 _pour la version 0.11.0_
+
+
 
 == Introduction
 
@@ -138,3 +144,6 @@ Si vous souhaitez quand même le faire, faites un clic droit sur l'un des ports,
 Vous ne pourrez pas dire que vous n'étiez pas prévenu, et il est quasiment impossible de faire ça par erreur.
 
 En revanche, connecter un port de sortie audio classique vers un port CV d'entrée est tout à fait possible, ça ne pose aucun problème.
+
+[.text-right]
+retour au link:manual.html[manuel principal]

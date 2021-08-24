@@ -2,11 +2,12 @@
 :toc: left
 :toclevels: 2
 :imagesdir: images
+:stylesheet: rs_manual.css
 
 [.text-right]
-image:flag_en.jpeg[EN, 30, 20, link=../en/manual.html] image:flag_fr.jpeg[FR, 30, 20, link=../fr/manual.html] image:flag_de.jpeg[DE, 40, 30, link=../de/manual.html]
+image:flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:flags/fr.jpeg[FR, 30, 20, link=../fr/manual.html] image:flags/de.jpeg[DE, 40, 30, link=../de/manual.html]
 
-
+image::raysession.svg["icon", 100, 100]
 _für Version 0.10.0_
 
 == Einführung

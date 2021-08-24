@@ -4,9 +4,11 @@
 :toc-title: Table of contents
 :toclevels: 2
 :imagesdir: images
+:stylesheet: rs_manual.css
 
 [.text-right]
-image:flag_en.jpeg[EN, 40, 20, link=../en/patchbay_manual.html] image:flag_fr.jpeg[FR, 30, 30, link=../fr/patchbay_manual.html]
+link:manual.html[main manual]
+image:flags/en.jpeg[EN, 40, 20, link=../en/patchbay_manual.html] image:flags/fr.jpeg[FR, 30, 30, link=../fr/patchbay_manual.html]
 
 _for the version 0.11.0_
 

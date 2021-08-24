@@ -1,11 +1,14 @@
-= Manuel de RaySession
+= Manuel de *RaySession*
 :toc: left
 :toc-title: Table des matières
 :toclevels: 2
 :imagesdir: images
+:stylesheet: rs_manual.css
 
 [.text-right]
-image:flag_en.jpeg[EN, 30, 20, link=../en/manual.html] image:flag_fr.jpeg[FR, 40, 30, link=../fr/manual.html] image:flag_de.jpeg[DE, 30, 20, link=../de/manual.html]
+image:flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:flags/fr.jpeg[FR, 40, 30, link=../fr/manual.html] image:flags/de.jpeg[DE, 30, 20, link=../de/manual.html]
+
+image::raysession.svg["icon", 100, 100]
 
 _pour la version 0.11.0_
 
@@ -70,6 +73,8 @@ Connectez l'entrée de Guitarix à une entrée matérielle et les sorties de Gui
 image::exemple_patchbay.png[Baie de brassage de ma session]
 
 Voilà, vous avez une configuration où vous pouvez enregistrer directement le son de votre guitare traité par Guitarix dans Ardour. Si vous n'avez pas de guitare, vous n'avez qu'à chanter faux dans un micro ou taper sur un coussin, ce n'est ici qu'un exemple.
+
+Vous pouvez consultez le link:patchbay_manual.html[Manuel de la baie de brassage] pour apprendre à la maîtriser correctement.
 
 Retournez maintenant à la fenêtre de RaySession, et sauvegardez la session en cours en cliquant sur le bouton en forme de disquette vers le haut à droite (_ou Ctrl+S_). Il est vivement recommandé car très pratique d'affecter un raccourci clavier global de votre système à la sauvegarde de la session en cours. Celà dependra de votre environnement de bureau, mais il suffit d'affecter le raccourci _Ctrl+Meta+S_ à la commande `ray_control save` (Meta est la touche Windows), ainsi vous n'aurez pas à retourner à la fenêtre de RaySession pour sauvegarder la session.
 
@@ -146,6 +151,7 @@ Une fenêtre d'information ou de progression s'affiche si vous cliquez sur cet i
     
 * le bouton de sauvegarde de la session
 * la corbeille, vous trouverez ici les clients que vous avez supprimés. Vous pourrez alors les restaurer dans la session ou supprimer définitivement tous les fichiers qu'ils ont créé dans le dossier de la session.
+
 
 == Vue d'ensemble d'un client
 
@@ -263,6 +269,11 @@ image::ajout_executable_plus.png[Fenêtre d'ajout d'exécutable avancé]
 * le champ *ID du client* (identifiant du client). Ne rentrez ici que des caractères alphanumériques ou des '_'. +
     Celà est utile si vous voulez attraper et lancer des projets existants dans la session avec un exécutable. C'est pratique si vous voulez charger dans la session des projets créés en dehors d'une session. Aucune méthode ne permet de rendre la chose plus simple, celà dépend énormément du programme utilisé. RaySession vous insultera si vous rentrez un identifiant de client qui existe déjà dans la session.
 
+[#patchbay]
+== Baie de brassage
+
+Consultez le link:patchbay_manual.html[Manuel de la baie de brassage] pour mieux la maîtriser.
+    
 [#proprietes_de_client]
 == Fenêtre de propriétés d'un client
 
