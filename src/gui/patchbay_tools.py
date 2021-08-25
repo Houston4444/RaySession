@@ -1,11 +1,13 @@
 
-from PyQt5.QtCore import pyqtSignal, QTimer
-from PyQt5.QtGui import QIcon
+import os
+
+from PyQt5.QtCore import pyqtSignal, QTimer, QLocale, QUrl
+from PyQt5.QtGui import QIcon, QDesktopServices
 from PyQt5.QtWidgets import QWidget, QComboBox, QMenu, QApplication, QDialog
 
 import patchcanvas
 
-from gui_tools import is_dark_theme
+from gui_tools import is_dark_theme, get_code_root
 
 import ui.canvas_port_info
 import ui.patchbay_tools
@@ -247,6 +249,11 @@ class CanvasMenu(QMenu):
         self.action_refresh.setIcon(QIcon.fromTheme('view-refresh'))
         self.action_refresh.triggered.connect(patchbay_manager.refresh)
 
+        self.action_manual = self.addAction(
+            _translate('patchbay', "Patchbay manual"))
+        self.action_manual.setIcon(QIcon.fromTheme('system-help'))
+        self.action_manual.triggered.connect(self.internal_manual)
+
         self.action_options = self.addAction(
             _translate('patchbay', "Canvas options"))
         self.action_options.setIcon(QIcon.fromTheme("configure"))
@@ -275,29 +282,19 @@ class CanvasMenu(QMenu):
         self.patchbay_manager.change_port_types_view(
             GROUP_CONTEXT_MIDI)
 
-        #act_sel = menu.exec(QCursor.pos())
+    def internal_manual(self):
+        short_locale = 'en'
+        manual_dir = "%s/manual" % get_code_root()
+        locale_str = QLocale.system().name()
+        if (len(locale_str) > 2 and '_' in locale_str
+                and os.path.isfile(
+                    "%s/%s/manual.html" % (manual_dir, locale_str[:2]))):
+            short_locale = locale_str[:2]
 
-        #if act_sel == action_fullscreen:
-            #self.toggle_full_screen()
-        #elif act_sel == action_audio_midi:
-            #self.change_port_types_view(
-                #GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
-        #elif act_sel == action_audio:
-            #self.change_port_types_view(GROUP_CONTEXT_AUDIO)
-        #elif act_sel == action_midi:
-            #self.change_port_types_view(GROUP_CONTEXT_MIDI)
-        #elif act_sel == autofit:
-            #patchcanvas.canvas.scene.zoom_fit()
-        #elif act_sel == zoom_in:
-            #patchcanvas.canvas.scene.zoom_in()
-        #elif act_sel == zoom_out:
-            #patchcanvas.canvas.scene.zoom_out()
-        #elif act_sel == zoom_orig:
-            #patchcanvas.canvas.scene.zoom_reset()
-        #elif act_sel == action_refresh:
-            #self.refresh()
-        #elif act_sel == action_options:
-            #self.show_options_dialog()
+        url = QUrl("file://%s/%s/manual.html#patchbay" % (manual_dir, short_locale))
+        #url.setFragment("patchbay")
+        print(url, url.toString())
+        QDesktopServices.openUrl(url)
 
 
 class CanvasPortInfoDialog(QDialog):
