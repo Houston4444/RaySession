@@ -249,17 +249,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/list_snapshots.ui" line="61"/>
+        <location filename="../resources/ui/list_snapshots.ui" line="64"/>
         <source>Take a snapshot now !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/list_snapshots.ui" line="108"/>
+        <location filename="../resources/ui/list_snapshots.ui" line="111"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Make a snapshot at each session save.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/list_snapshots.ui" line="111"/>
+        <location filename="../resources/ui/list_snapshots.ui" line="114"/>
         <source>Auto snapshot at save for this session</source>
         <translation type="unfinished"></translation>
     </message>
@@ -589,7 +589,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/client_properties_dialog.py" line="275"/>
+        <location filename="../src/gui/client_properties_dialog.py" line="274"/>
         <source>Select File to use as CONFIG_FILE</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1103,12 +1103,12 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Duplicate</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="440"/>
+        <location filename="../src/gui/child_dialogs.py" line="438"/>
         <source>Duplicated session name :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="442"/>
+        <location filename="../src/gui/child_dialogs.py" line="440"/>
         <source>Duplicate Session</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1412,292 +1412,292 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>GUIMSG</name>
     <message>
-        <location filename="../src/daemon/session.py" line="1043"/>
+        <location filename="../src/daemon/session.py" line="1030"/>
         <source>Can&apos;t save session, session file is unwriteable !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1302"/>
+        <location filename="../src/daemon/session.py" line="1289"/>
         <source>Creating new session &quot;%s&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1327"/>
+        <location filename="../src/daemon/session.py" line="1314"/>
         <source>Session is ready</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="945"/>
+        <location filename="../src/daemon/session_signaled.py" line="931"/>
         <source>Stop all clients before rename session !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="965"/>
+        <location filename="../src/daemon/session_signaled.py" line="951"/>
         <source>Session %s has been renamed to %s .</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="959"/>
+        <location filename="../src/daemon/session_signaled.py" line="945"/>
         <source>Session directory is now: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="187"/>
+        <location filename="../src/daemon/client.py" line="181"/>
         <source>%s is started but not active</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="418"/>
+        <location filename="../src/daemon/client.py" line="409"/>
         <source>%s failed to save!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="422"/>
+        <location filename="../src/daemon/client.py" line="413"/>
         <source>%s failed to open!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="1095"/>
+        <location filename="../src/daemon/client.py" line="1081"/>
         <source>  %s: saved</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="438"/>
+        <location filename="../src/daemon/client.py" line="429"/>
         <source>  %s: project loaded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="679"/>
+        <location filename="../src/daemon/client.py" line="665"/>
         <source>can&apos;t start %s, it is a dummy client !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="796"/>
+        <location filename="../src/daemon/client.py" line="782"/>
         <source>%s is exiting.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="800"/>
+        <location filename="../src/daemon/client.py" line="786"/>
         <source>%s seems to can not open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="875"/>
+        <location filename="../src/daemon/client.py" line="861"/>
         <source>  %s: launched</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="894"/>
+        <location filename="../src/daemon/client.py" line="880"/>
         <source>  %s: terminated by server instruction</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="898"/>
+        <location filename="../src/daemon/client.py" line="884"/>
         <source>  %s: terminated itself.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="979"/>
+        <location filename="../src/daemon/client.py" line="965"/>
         <source>  %s: project probably loaded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="995"/>
+        <location filename="../src/daemon/client.py" line="981"/>
         <source>  %s: Failed to start !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="1014"/>
+        <location filename="../src/daemon/client.py" line="1000"/>
         <source>%s failed to launch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="1060"/>
+        <location filename="../src/daemon/client.py" line="1046"/>
         <source>%s is already saving, please wait!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="1114"/>
+        <location filename="../src/daemon/client.py" line="1100"/>
         <source>  %s: stopping</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="1588"/>
+        <location filename="../src/daemon/client.py" line="1559"/>
         <source>impossible to remove %s !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="1626"/>
+        <location filename="../src/daemon/client.py" line="1597"/>
         <source>%s is not writeable !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2237"/>
+        <location filename="../src/daemon/session.py" line="2221"/>
         <source>Copy has been aborted !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/scripter.py" line="32"/>
+        <location filename="../src/daemon/scripter.py" line="31"/>
         <source>script %s failed to start !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/scripter.py" line="36"/>
+        <location filename="../src/daemon/scripter.py" line="35"/>
         <source>script %s terminated with exit code %i</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/scripter.py" line="43"/>
+        <location filename="../src/daemon/scripter.py" line="42"/>
         <source>...script %s finished. ---</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/scripter.py" line="146"/>
+        <location filename="../src/daemon/scripter.py" line="142"/>
         <source>--- Custom step script %s started...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/scripter.py" line="233"/>
+        <location filename="../src/daemon/scripter.py" line="228"/>
         <source>--- Custom script %s started...%s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="642"/>
+        <location filename="../src/daemon/session.py" line="629"/>
         <source>%s didn&apos;t announce.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="647"/>
+        <location filename="../src/daemon/session.py" line="634"/>
         <source>%s still alive !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="895"/>
+        <location filename="../src/daemon/session.py" line="882"/>
         <source>-- Saving session %s --</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="905"/>
+        <location filename="../src/daemon/session.py" line="892"/>
         <source>waiting for %s to save...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="909"/>
+        <location filename="../src/daemon/session.py" line="896"/>
         <source>waiting for %i clients to save...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1027"/>
+        <location filename="../src/daemon/session.py" line="1014"/>
         <source>Session &apos;%s&apos; saved.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1068"/>
+        <location filename="../src/daemon/session.py" line="1055"/>
         <source>snapshot started...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1075"/>
+        <location filename="../src/daemon/session.py" line="1062"/>
         <source>Snapshot aborted!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1077"/>
+        <location filename="../src/daemon/session.py" line="1064"/>
         <source>...snapshot finished.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1128"/>
+        <location filename="../src/daemon/session.py" line="1115"/>
         <source>waiting for no saveable clients to be closed gracefully...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1149"/>
+        <location filename="../src/daemon/session.py" line="1136"/>
         <source>waiting you to close yourself unsaveable clients...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1242"/>
+        <location filename="../src/daemon/session.py" line="1229"/>
         <source>waiting for %s to quit...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1247"/>
+        <location filename="../src/daemon/session.py" line="1234"/>
         <source>waiting for %i clients to quit...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1365"/>
+        <location filename="../src/daemon/session.py" line="1352"/>
         <source>-- Duplicating session %s to %s --</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1393"/>
+        <location filename="../src/daemon/session.py" line="1380"/>
         <source>waiting for network daemons to start duplicate...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1405"/>
+        <location filename="../src/daemon/session.py" line="1392"/>
         <source>start session copy...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1416"/>
+        <location filename="../src/daemon/session.py" line="1402"/>
         <source>...session copy finished.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1423"/>
+        <location filename="../src/daemon/session.py" line="1409"/>
         <source>waiting for network daemons to finish duplicate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1490"/>
+        <location filename="../src/daemon/session.py" line="1477"/>
         <source>start session copy to template...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1508"/>
+        <location filename="../src/daemon/session.py" line="1495"/>
         <source>...session saved as template named %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1562"/>
+        <location filename="../src/daemon/session.py" line="1549"/>
         <source>start copy from template to session folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1852"/>
+        <location filename="../src/daemon/session.py" line="1838"/>
         <source>-- Opening session %s --</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1975"/>
+        <location filename="../src/daemon/session.py" line="1961"/>
         <source>waiting for %s to load its project...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1980"/>
+        <location filename="../src/daemon/session.py" line="1966"/>
         <source>waiting for %s clients to load their project...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1999"/>
+        <location filename="../src/daemon/session.py" line="1985"/>
         <source>session %s is loaded.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2080"/>
+        <location filename="../src/daemon/session.py" line="2066"/>
         <source>%s is missing or corrupted !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2087"/>
+        <location filename="../src/daemon/session.py" line="2073"/>
         <source>%s has no RAY-CLIENT-TEMPLATES top element !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2221"/>
+        <location filename="../src/daemon/session.py" line="2205"/>
         <source>%s is not an existing template !</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1712,77 +1712,77 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="632"/>
+        <location filename="../src/daemon/session_signaled.py" line="621"/>
         <source>session %s is already opened !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="643"/>
+        <location filename="../src/daemon/session_signaled.py" line="632"/>
         <source>session %s is already used by another daemon !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="789"/>
+        <location filename="../src/daemon/session_signaled.py" line="777"/>
         <source>abort ordered from elsewhere, sorry !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="880"/>
+        <location filename="../src/daemon/session_signaled.py" line="866"/>
         <source>%s already exists !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="852"/>
+        <location filename="../src/daemon/session_signaled.py" line="839"/>
         <source>session %s is already used by this or another daemon !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1156"/>
+        <location filename="../src/daemon/session_signaled.py" line="1140"/>
         <source>No session to list clients !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1276"/>
+        <location filename="../src/daemon/session_signaled.py" line="1260"/>
         <source>client %s is already running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1297"/>
+        <location filename="../src/daemon/session_signaled.py" line="1281"/>
         <source>client %s is already active.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1314"/>
+        <location filename="../src/daemon/session_signaled.py" line="1298"/>
         <source>%s is not saveable.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1447"/>
+        <location filename="../src/daemon/session_signaled.py" line="1428"/>
         <source>%s seems to not be a proxy client !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1480"/>
+        <location filename="../src/daemon/session_signaled.py" line="1461"/>
         <source>impossible to read %s correctly !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1438"/>
+        <location filename="../src/daemon/session_signaled.py" line="1419"/>
         <source>Impossible to set proxy properties while client is running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1500"/>
+        <location filename="../src/daemon/session_signaled.py" line="1481"/>
         <source>%s is not writeable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1565"/>
+        <location filename="../src/daemon/session_signaled.py" line="1546"/>
         <source>%s is not running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/client.py" line="686"/>
+        <location filename="../src/daemon/client.py" line="672"/>
         <source>Impossible to run Ray-Net client when session is not in root folder</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1790,7 +1790,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>GUI_daemon</name>
     <message>
-        <location filename="../src/gui/daemon_manager.py" line="196"/>
+        <location filename="../src/gui/daemon_manager.py" line="193"/>
         <source>Connecting GUI to existing ray-daemon port %i</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1798,32 +1798,32 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Load Error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="2025"/>
+        <location filename="../src/daemon/session.py" line="2011"/>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2027"/>
+        <location filename="../src/daemon/session.py" line="2013"/>
         <source>Could not create session file!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2029"/>
+        <location filename="../src/daemon/session.py" line="2015"/>
         <source>Session is locked by another process!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2032"/>
+        <location filename="../src/daemon/session.py" line="2018"/>
         <source>The named session does not exist.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2034"/>
+        <location filename="../src/daemon/session.py" line="2020"/>
         <source>Could not load session file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2036"/>
+        <location filename="../src/daemon/session.py" line="2022"/>
         <source>Can&apos;t create session in a dir containing a session
 for better organization.</source>
         <translation type="unfinished"></translation>
@@ -2325,53 +2325,53 @@ for better organization.</source>
 <context>
     <name>Snapshot Error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="1085"/>
+        <location filename="../src/daemon/session.py" line="1072"/>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1087"/>
+        <location filename="../src/daemon/session.py" line="1074"/>
         <source>git didn&apos;t stop normally.
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1090"/>
+        <location filename="../src/daemon/session.py" line="1077"/>
         <source>git crashes.
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1093"/>
+        <location filename="../src/daemon/session.py" line="1080"/>
         <source>git exit with an error code.
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2263"/>
+        <location filename="../src/daemon/session.py" line="2247"/>
         <source>Snapshot error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2265"/>
+        <location filename="../src/daemon/session.py" line="2249"/>
         <source>command didn&apos;t stop normally:
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2268"/>
+        <location filename="../src/daemon/session.py" line="2252"/>
         <source>command crashes:
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2271"/>
+        <location filename="../src/daemon/session.py" line="2255"/>
         <source>command exit with an error code:
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2274"/>
+        <location filename="../src/daemon/session.py" line="2258"/>
         <source>error reading file:
 %s</source>
         <translation type="unfinished"></translation>
@@ -2380,12 +2380,12 @@ for better organization.</source>
 <context>
     <name>actions</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="1048"/>
+        <location filename="../src/gui/main_window.py" line="1056"/>
         <source>Desktops Memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="1056"/>
+        <location filename="../src/gui/main_window.py" line="1064"/>
         <source>Auto Snapshot at Save</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2419,7 +2419,7 @@ for better organization.</source>
 <context>
     <name>child_session</name>
     <message>
-        <location filename="../src/gui/nsm_child.py" line="35"/>
+        <location filename="../src/gui/nsm_child.py" line="34"/>
         <source>Child Session</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2427,7 +2427,7 @@ for better organization.</source>
 <context>
     <name>client</name>
     <message>
-        <location filename="../src/daemon/client.py" line="1006"/>
+        <location filename="../src/daemon/client.py" line="992"/>
         <source>Failed to launch process !</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2435,57 +2435,57 @@ for better organization.</source>
 <context>
     <name>client status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="267"/>
+        <location filename="../src/gui/gui_tools.py" line="262"/>
         <source>stopped</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="268"/>
+        <location filename="../src/gui/gui_tools.py" line="263"/>
         <source>launch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="269"/>
+        <location filename="../src/gui/gui_tools.py" line="264"/>
         <source>open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="270"/>
+        <location filename="../src/gui/gui_tools.py" line="265"/>
         <source>ready</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="272"/>
+        <location filename="../src/gui/gui_tools.py" line="267"/>
         <source>copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="273"/>
+        <location filename="../src/gui/gui_tools.py" line="268"/>
         <source>save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="274"/>
+        <location filename="../src/gui/gui_tools.py" line="269"/>
         <source>switch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="275"/>
+        <location filename="../src/gui/gui_tools.py" line="270"/>
         <source>quit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="276"/>
+        <location filename="../src/gui/gui_tools.py" line="271"/>
         <source>noop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="277"/>
+        <location filename="../src/gui/gui_tools.py" line="272"/>
         <source>error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="278"/>
+        <location filename="../src/gui/gui_tools.py" line="273"/>
         <source>removed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2524,12 +2524,12 @@ for better organization.</source>
 <context>
     <name>client_status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="283"/>
+        <location filename="../src/gui/gui_tools.py" line="278"/>
         <source>invalid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="280"/>
+        <location filename="../src/gui/gui_tools.py" line="275"/>
         <source>script</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2537,7 +2537,7 @@ for better organization.</source>
 <context>
     <name>client_stop</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1084"/>
+        <location filename="../src/gui/child_dialogs.py" line="1081"/>
         <source>&lt;strong&gt;%s&lt;/strong&gt; seems to has not been saved for %i minute(s).&lt;br /&gt;Do you really want to stop it ?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2556,7 +2556,7 @@ for better organization.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/osc_server_thread.py" line="1364"/>
+        <location filename="../src/daemon/osc_server_thread.py" line="1360"/>
         <source>daemon runs at %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2564,51 +2564,51 @@ for better organization.</source>
 <context>
     <name>error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="832"/>
+        <location filename="../src/daemon/session.py" line="819"/>
         <source>impossible to read %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1360"/>
+        <location filename="../src/daemon/session.py" line="1347"/>
         <source>Some clients could not save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1456"/>
+        <location filename="../src/daemon/session.py" line="1443"/>
         <source>Impossible to save template, unwriteable file !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1536"/>
+        <location filename="../src/daemon/session.py" line="1523"/>
         <source>No template named %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/daemon_manager.py" line="83"/>
+        <location filename="../src/gui/daemon_manager.py" line="81"/>
         <source>No announce from ray-daemon. RaySession can&apos;t works. Sorry.
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1545"/>
+        <location filename="../src/daemon/session.py" line="1532"/>
         <source>Folder
 %s
 already exists</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1551"/>
+        <location filename="../src/daemon/session.py" line="1538"/>
         <source>Can&apos;t create session in a dir containing a session
 for better organization.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1040"/>
+        <location filename="../src/daemon/session_signaled.py" line="1024"/>
         <source>client_id %s is not alphanumeric</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session_signaled.py" line="1048"/>
+        <location filename="../src/daemon/session_signaled.py" line="1032"/>
         <source>client_id %s is already used</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2616,12 +2616,12 @@ for better organization.</source>
 <context>
     <name>errors</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="1289"/>
+        <location filename="../src/gui/main_window.py" line="1297"/>
         <source>daemon crash!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="1289"/>
+        <location filename="../src/gui/main_window.py" line="1297"/>
         <source>ray-daemon crashed, sorry !</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2629,52 +2629,52 @@ for better organization.</source>
 <context>
     <name>help</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="131"/>
+        <location filename="../src/gui/gui_tools.py" line="126"/>
         <source>A session manager based on the Non-Session-Manager API for sound applications.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="137"/>
+        <location filename="../src/gui/gui_tools.py" line="132"/>
         <source>connect to this daemon url</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="146"/>
+        <location filename="../src/gui/gui_tools.py" line="141"/>
         <source>Use this folder as root for sessions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="149"/>
+        <location filename="../src/gui/gui_tools.py" line="144"/>
         <source>Open this session at startup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="152"/>
+        <location filename="../src/gui/gui_tools.py" line="147"/>
         <source>use a custom config dir</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="154"/>
+        <location filename="../src/gui/gui_tools.py" line="149"/>
         <source>display OSC messages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="156"/>
+        <location filename="../src/gui/gui_tools.py" line="151"/>
         <source>debug without client messages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="140"/>
+        <location filename="../src/gui/gui_tools.py" line="135"/>
         <source>connect to this daemon port</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="159"/>
+        <location filename="../src/gui/gui_tools.py" line="154"/>
         <source>do not print client messages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="162"/>
+        <location filename="../src/gui/gui_tools.py" line="157"/>
         <source>prevent to attach to an already running daemon</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2682,12 +2682,12 @@ for better organization.</source>
 <context>
     <name>hidden_dialogs</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="918"/>
+        <location filename="../src/gui/main_window.py" line="926"/>
         <source>Make reappear dialog windows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/main_window.py" line="918"/>
+        <location filename="../src/gui/main_window.py" line="926"/>
         <source>Do you want to make reappear all dialogs you wanted to hide ?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2695,7 +2695,7 @@ for better organization.</source>
 <context>
     <name>main view</name>
     <message>
-        <location filename="../src/gui/main_window.py" line="1165"/>
+        <location filename="../src/gui/main_window.py" line="1173"/>
         <source>No Session Loaded</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2716,7 +2716,7 @@ for better organization.</source>
 <context>
     <name>message</name>
     <message>
-        <location filename="../src/daemon/client.py" line="1689"/>
+        <location filename="../src/daemon/client.py" line="1660"/>
         <source>Client template %s created</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2724,7 +2724,7 @@ for better organization.</source>
 <context>
     <name>network_session</name>
     <message>
-        <location filename="../src/gui/nsm_child.py" line="96"/>
+        <location filename="../src/gui/nsm_child.py" line="95"/>
         <source>Network Session</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2732,7 +2732,7 @@ for better organization.</source>
 <context>
     <name>new client template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="688"/>
+        <location filename="../src/gui/child_dialogs.py" line="685"/>
         <source>New application template name :</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2740,17 +2740,17 @@ for better organization.</source>
 <context>
     <name>new_executable</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="995"/>
+        <location filename="../src/gui/child_dialogs.py" line="992"/>
         <source>Custom</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="997"/>
+        <location filename="../src/gui/child_dialogs.py" line="994"/>
         <source>Client Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="999"/>
+        <location filename="../src/gui/child_dialogs.py" line="996"/>
         <source>Session Name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2758,7 +2758,7 @@ for better organization.</source>
 <context>
     <name>notes_dialog</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="895"/>
+        <location filename="../src/gui/child_dialogs.py" line="892"/>
         <source>%s Notes - %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2781,122 +2781,122 @@ for better organization.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="307"/>
+        <location filename="../src/gui/patchbay_tools.py" line="317"/>
         <source>Audio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="309"/>
+        <location filename="../src/gui/patchbay_tools.py" line="319"/>
         <source>MIDI</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="314"/>
+        <location filename="../src/gui/patchbay_tools.py" line="324"/>
         <source>Input</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="315"/>
+        <location filename="../src/gui/patchbay_tools.py" line="325"/>
         <source>Output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="316"/>
+        <location filename="../src/gui/patchbay_tools.py" line="326"/>
         <source>Physical</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="317"/>
+        <location filename="../src/gui/patchbay_tools.py" line="327"/>
         <source>Monitor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="318"/>
+        <location filename="../src/gui/patchbay_tools.py" line="328"/>
         <source>Terminal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="319"/>
+        <location filename="../src/gui/patchbay_tools.py" line="329"/>
         <source>Control Voltage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="166"/>
+        <location filename="../src/gui/patchbay_tools.py" line="181"/>
         <source>Toggle Full Screen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="175"/>
+        <location filename="../src/gui/patchbay_tools.py" line="190"/>
         <source>Type filter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="177"/>
+        <location filename="../src/gui/patchbay_tools.py" line="192"/>
         <source>Audio + Midi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="186"/>
+        <location filename="../src/gui/patchbay_tools.py" line="201"/>
         <source>Audio only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="193"/>
+        <location filename="../src/gui/patchbay_tools.py" line="208"/>
         <source>MIDI only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="202"/>
+        <location filename="../src/gui/patchbay_tools.py" line="217"/>
         <source>Zoom</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="205"/>
+        <location filename="../src/gui/patchbay_tools.py" line="220"/>
         <source>auto-fit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="211"/>
+        <location filename="../src/gui/patchbay_tools.py" line="226"/>
         <source>Zoom +</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="217"/>
+        <location filename="../src/gui/patchbay_tools.py" line="232"/>
         <source>Zoom -</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="223"/>
+        <location filename="../src/gui/patchbay_tools.py" line="238"/>
         <source>Zoom 100%</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="231"/>
+        <location filename="../src/gui/patchbay_tools.py" line="246"/>
         <source>Refresh the canvas</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="236"/>
+        <location filename="../src/gui/patchbay_tools.py" line="256"/>
         <source>Canvas options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_manager.py" line="1779"/>
+        <location filename="../src/gui/patchbay_manager.py" line="1786"/>
         <source>JACK server lose</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_manager.py" line="1779"/>
+        <location filename="../src/gui/patchbay_manager.py" line="1786"/>
         <source>JACK server seems to be totally busy... ;(</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/canvasbox.py" line="1002"/>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="1054"/>
         <source>Wrap</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/canvasbox.py" line="1005"/>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="1057"/>
         <source>Unwrap</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2906,62 +2906,62 @@ for better organization.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/connect_menu.py" line="378"/>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="377"/>
         <source>Disconnect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/connect_menu.py" line="382"/>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="381"/>
         <source>No connections</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/connect_menu.py" line="476"/>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="474"/>
         <source>Clipboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/connect_menu.py" line="479"/>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="477"/>
         <source>Cut connections</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/connect_menu.py" line="484"/>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="482"/>
         <source>Copy connections</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/connect_menu.py" line="505"/>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="503"/>
         <source>Paste connections</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/connect_menu.py" line="657"/>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="654"/>
         <source>Disconnect All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/canvasbox.py" line="986"/>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="1038"/>
         <source>Disconnect &amp;All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/canvasbox.py" line="991"/>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="1043"/>
         <source>Info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/canvasbox.py" line="992"/>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="1044"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/canvasbox.py" line="994"/>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="1046"/>
         <source>Split</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/canvasbox.py" line="997"/>
+        <location filename="../src/gui/patchcanvas/canvasbox.py" line="1049"/>
         <source>Join</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2986,25 +2986,30 @@ for better organization.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchbay_tools.py" line="163"/>
+        <location filename="../src/gui/patchbay_tools.py" line="166"/>
         <source>Patchbay</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/connect_menu.py" line="245"/>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="244"/>
         <source>Audio | DANGEROUS !!!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/patchcanvas/connect_menu.py" line="249"/>
+        <location filename="../src/gui/patchcanvas/connect_menu.py" line="248"/>
         <source>CV | DANGEROUS !!!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/gui/patchbay_tools.py" line="251"/>
+        <source>Patchbay manual</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ray_hack</name>
     <message>
-        <location filename="../src/gui/client_properties_dialog.py" line="202"/>
+        <location filename="../src/gui/client_properties_dialog.py" line="201"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3043,43 +3048,76 @@ for better organization.</source>
 <context>
     <name>server status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="242"/>
+        <location filename="../src/gui/gui_tools.py" line="237"/>
         <source>off</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="243"/>
+        <location filename="../src/gui/gui_tools.py" line="238"/>
         <source>new</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="244"/>
+        <location filename="../src/gui/gui_tools.py" line="239"/>
         <source>open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="245"/>
+        <location filename="../src/gui/gui_tools.py" line="240"/>
         <source>clear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="246"/>
+        <location filename="../src/gui/gui_tools.py" line="241"/>
         <source>switch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="247"/>
+        <location filename="../src/gui/gui_tools.py" line="242"/>
         <source>launch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="249"/>
+        <location filename="../src/gui/gui_tools.py" line="244"/>
         <source>copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="250"/>
+        <location filename="../src/gui/gui_tools.py" line="245"/>
         <source>ready</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/gui/gui_tools.py" line="246"/>
+        <source>save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/gui/gui_tools.py" line="247"/>
+        <source>close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/gui/gui_tools.py" line="256"/>
+        <source>invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>server_status</name>
+    <message>
+        <location filename="../src/gui/gui_tools.py" line="252"/>
+        <source>snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/gui/gui_tools.py" line="249"/>
+        <source>rewind</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/gui/gui_tools.py" line="250"/>
+        <source>waiting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3088,40 +3126,7 @@ for better organization.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="252"/>
-        <source>close</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/gui/gui_tools.py" line="261"/>
-        <source>invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>server_status</name>
-    <message>
-        <location filename="../src/gui/gui_tools.py" line="257"/>
-        <source>snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/gui/gui_tools.py" line="254"/>
-        <source>rewind</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/gui/gui_tools.py" line="255"/>
-        <source>waiting</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/gui/gui_tools.py" line="256"/>
-        <source>save</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/gui/gui_tools.py" line="258"/>
+        <location filename="../src/gui/gui_tools.py" line="253"/>
         <source>script</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3129,12 +3134,12 @@ for better organization.</source>
 <context>
     <name>session template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="599"/>
+        <location filename="../src/gui/child_dialogs.py" line="596"/>
         <source>Overwrite Template ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="596"/>
+        <location filename="../src/gui/child_dialogs.py" line="593"/>
         <source>Update the template</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3142,12 +3147,12 @@ for better organization.</source>
 <context>
     <name>session_notes</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="880"/>
+        <location filename="../src/gui/child_dialogs.py" line="877"/>
         <source>Too long notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="880"/>
+        <location filename="../src/gui/child_dialogs.py" line="877"/>
         <source>&lt;p&gt;Because notes are spread to the OSC server,&lt;br&gt;they can&apos;t be longer than 65000 characters.&lt;br&gt;Sorry !&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3155,28 +3160,28 @@ for better organization.</source>
 <context>
     <name>session_template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="489"/>
+        <location filename="../src/gui/child_dialogs.py" line="487"/>
         <source>empty</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="491"/>
+        <location filename="../src/gui/child_dialogs.py" line="489"/>
         <source>with JACK patch memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="630"/>
+        <location filename="../src/gui/child_dialogs.py" line="627"/>
         <source>Template &lt;strong&gt;%s&lt;/strong&gt; already exists.
 Overwrite it ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="493"/>
+        <location filename="../src/gui/child_dialogs.py" line="491"/>
         <source>with JACK config memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="495"/>
+        <location filename="../src/gui/child_dialogs.py" line="493"/>
         <source>with basic scripts</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3184,37 +3189,37 @@ Overwrite it ?</source>
 <context>
     <name>snapshots</name>
     <message>
-        <location filename="../src/gui/snapshots_dialog.py" line="301"/>
+        <location filename="../src/gui/snapshots_dialog.py" line="294"/>
         <source>Today</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/snapshots_dialog.py" line="303"/>
+        <location filename="../src/gui/snapshots_dialog.py" line="296"/>
         <source>Yesterday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/snapshots_dialog.py" line="118"/>
+        <location filename="../src/gui/snapshots_dialog.py" line="112"/>
         <source>%s at %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/snapshots_dialog.py" line="123"/>
+        <location filename="../src/gui/snapshots_dialog.py" line="117"/>
         <source>at %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/snapshots_dialog.py" line="128"/>
+        <location filename="../src/gui/snapshots_dialog.py" line="122"/>
         <source>before rewind to </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/snapshots_dialog.py" line="481"/>
+        <location filename="../src/gui/snapshots_dialog.py" line="474"/>
         <source>This session does not contains any snapshot.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/snapshots_dialog.py" line="499"/>
+        <location filename="../src/gui/snapshots_dialog.py" line="492"/>
         <source>There is no existing snapshot for this client.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3222,12 +3227,12 @@ Overwrite it ?</source>
 <context>
     <name>trashed_client</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="733"/>
+        <location filename="../src/gui/child_dialogs.py" line="730"/>
         <source>Remove definitely</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="733"/>
+        <location filename="../src/gui/child_dialogs.py" line="730"/>
         <source>Are you sure to want to remove definitely this client and all its files ?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3235,7 +3240,7 @@ Overwrite it ?</source>
 <context>
     <name>url window</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1290"/>
+        <location filename="../src/gui/child_dialogs.py" line="1286"/>
         <source>&lt;p align=&quot;left&quot;&gt;To run a network session,&lt;br&gt;open a terminal on another computer of this network.&lt;br&gt;Launch ray-daemon on port 1234 (for example)&lt;br&gt;by typing the command :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Then paste below the first url&lt;br&gt;that ray-daemon gives you at startup.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3243,27 +3248,27 @@ Overwrite it ?</source>
 <context>
     <name>url_window</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1270"/>
+        <location filename="../src/gui/child_dialogs.py" line="1266"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;didn&apos;t announce !&lt;br&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1278"/>
+        <location filename="../src/gui/child_dialogs.py" line="1274"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses an other session root folder !&lt;.p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1282"/>
+        <location filename="../src/gui/child_dialogs.py" line="1278"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses a forbidden session root folder !&lt;.p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1288"/>
+        <location filename="../src/gui/child_dialogs.py" line="1284"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses another %s version.&lt;.p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1274"/>
+        <location filename="../src/gui/child_dialogs.py" line="1270"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;has a loaded session.&lt;br&gt;It can&apos;t be used for slave session&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
