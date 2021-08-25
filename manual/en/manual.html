@@ -90,44 +90,19 @@ table {
 <ul class="sectlevel1">
 <li><a href="#_introduction">Introduction</a></li>
 <li><a href="#_simple_use_example">Simple use example</a></li>
-<li><a href="#_overview_of_session_tools">Overview of session tools</a>
-<ul class="sectlevel2">
-<li><a href="#_top_row">Top row</a></li>
-<li><a href="#_bottom_row">Bottom row</a></li>
-</ul>
-</li>
+<li><a href="#_overview_of_session_tools">Overview of session tools</a></li>
 <li><a href="#_overview_of_a_client">Overview of a client</a></li>
 <li><a href="#add_application">Add application window</a></li>
 <li><a href="#add_executable">Add executable window</a></li>
-<li><a href="#client_properties">Client Properties Window</a>
-<ul class="sectlevel2">
-<li><a href="#_general_tab"><strong>General</strong> tab</a></li>
-<li><a href="#_nsm_tab"><strong>NSM</strong> tab</a></li>
-<li><a href="#_ray_hack_tab"><strong>Ray-Hack</strong> tab</a></li>
-</ul>
-</li>
+<li><a href="#patchbay">Patchbay</a></li>
+<li><a href="#_client_properties_window">Client Properties Window</a></li>
 <li><a href="#_network_sessions">Network Sessions</a></li>
 <li><a href="#add_program_not_provided">Add a program not provided</a></li>
 <li><a href="#_import_an_nsm_session">Import an NSM session</a></li>
-<li><a href="#_the_daemons_options">The daemon&#8217;s options</a>
-<ul class="sectlevel2">
-<li><a href="#session_folder_shortcuts">Provide bookmarks for session folder</a></li>
-<li><a href="#_auto_snapshot_at_save">Auto Snapshot at Save</a></li>
-<li><a href="#_desktops_memory">Desktops Memory</a></li>
-<li><a href="#_session_scripts">Session scripts</a></li>
-<li><a href="#_remember_optional_gui_states">Remember optional GUI states</a></li>
-</ul>
-</li>
+<li><a href="#_the_daemons_options">The daemon&#8217;s options</a></li>
 <li><a href="#snapshots">Snapshots</a></li>
 <li><a href="#session_scripts">Session scripts</a></li>
-<li><a href="#jack_configuration_memory">JACK configuration memory</a>
-<ul class="sectlevel2">
-<li><a href="#_in_which_cases_to_use_it">In which cases to use it</a></li>
-<li><a href="#_usage">Usage</a></li>
-<li><a href="#_working_principle">Working principle</a></li>
-<li><a href="#_special_cases">Special cases</a></li>
-</ul>
-</li>
+<li><a href="#jack_configuration_memory">JACK configuration memory</a></li>
 <li><a href="#under_the_hood">Under the hood</a></li>
 <li><a href="#ray_control">Control RaySession from the command line</a></li>
 <li><a href="#_frequently_asked_questions">Frequently Asked Questions</a></li>
@@ -251,11 +226,14 @@ table {
 </div>
 </div>
 <div class="paragraph">
-<p>In your patchbay (Catia, QJackCtl or other) or in Ardour, connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.</p>
+<p>Open the JACK <a href="#patchbay">Patchbay</a>, for this go to <strong>Control</strong> &#8594; <strong>Show JACK Patchbay</strong> (<em>or Ctrl+J</em>). The patchbay appears at the right of the window.</p>
+</div>
+<div class="paragraph">
+<p>Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<a class="image" href="images/example_catia.png"><img src="images/example_catia.png" alt="JACK patchbay with Catia"></a>
+<a class="image" href="images/example_patchbay.png"><img src="images/example_patchbay.png" alt="My session patchbay"></a>
 </div>
 </div>
 <div class="paragraph">
@@ -588,7 +566,7 @@ If over this floppy you see</p>
 <p>If it is a user template, a <strong>User</strong> button allows you to delete this template</p>
 </li>
 <li>
-<p>the button at the bottom right of this block allows you to access all the properties of the template, as in the <a href="#client_properties">Client Properties Window</a>, except that nothing is editable.</p>
+<p>the button at the bottom right of this block allows you to access all the properties of the template, as in the <a href="#client_properties">[client_properties]</a>, except that nothing is editable.</p>
 </li>
 </ul>
 </div>
@@ -680,7 +658,277 @@ This is useful if you want to catch and launch existing projects in the session 
 </div>
 </div>
 <div class="sect1">
-<h2 id="client_properties">Client Properties Window</h2>
+<h2 id="patchbay">Patchbay</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The JACK patchbay is not displayed by default. You can display it by clicking on <strong>Control</strong> and then <strong>Show JACK Patchbay</strong> (<em>or Ctrl+J</em>). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.</p>
+</div>
+<div class="paragraph">
+<p>Obviously, if JACK is not started, this patchbay will be empty.</p>
+</div>
+<div class="paragraph">
+<p>It is advisable to have the A2J bridge running if you want to work properly with MIDI. You can configure this via <strong>Cadence</strong>, <strong>Studio Control</strong>, or via the command line utility <code>a2j_control</code>.</p>
+</div>
+<div class="paragraph">
+<p>RaySession does not include tools to configure the JACK server, <strong>QJackCtl</strong>, <strong>Studio Control</strong>, <strong>Cadence</strong>, or the command line utility <code>jack_control</code> do this job very well. Note that this patchbay also works with PipeWire.</p>
+</div>
+<div class="sect2">
+<h3 id="_overview">Overview</h3>
+<div class="imageblock">
+<div class="content">
+<img src="images/patchbay_base.png" alt="Patchbay overview">
+</div>
+</div>
+<div class="paragraph">
+<p>This is what your patchbay can look like. Here there are 7 boxes:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a <strong>system</strong> box with your ports corresponding to the hardware inputs (microphone, guitar&#8230;&#8203;)</p>
+</li>
+<li>
+<p>a <strong>system</strong> box with your ports corresponding to the hardware outputs (headphones, speakers&#8230;&#8203;)</p>
+</li>
+<li>
+<p>an <strong>a2j</strong> box with your ports corresponding to the MIDI hardware inputs</p>
+</li>
+<li>
+<p>an <strong>a2j</strong> box with your ports corresponding to the MIDI hardware outputs</p>
+</li>
+<li>
+<p>a <strong>PulseAudio JACK Source</strong> box</p>
+</li>
+<li>
+<p>a <strong>PulseAudio JACK Sink</strong> box, sound from firefox and all non JACK applications comes from theses ports</p>
+</li>
+<li>
+<p>a <strong>Guitarix</strong> box</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Here A2J and pulse2jack bridges are launched.</p>
+</div>
+<div class="paragraph">
+<p>You notice that 4 of these boxes are surrounded by a decoration (2 <strong>system</strong> and 2 <strong>a2j</strong>), these are the boxes that contain the hardware ports (your audio interface, your USB piano, any controller&#8230;&#8203;).</p>
+</div>
+<hr>
+<div class="paragraph">
+<p>Some audio ports are grouped into subgroups, which we will call portgroups. These portgroups are mostly stereo pairs automatically detected by the port names. This is the case here for :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>system:capture 1/2</p>
+</li>
+<li>
+<p>system:playback 1/2</p>
+</li>
+<li>
+<p>PulseAudio JACK Source:front L/R</p>
+</li>
+<li>
+<p>PulseAudio JACK Sink:front L/R</p>
+</li>
+<li>
+<p>Guitarix:out 0/1</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>These portgroups facilitate the connections and allow a better general readability.</p>
+</div>
+<hr>
+<div class="paragraph">
+<p>The blue curved lines correspond to the audio connections. You can observe that :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>hardware input audio ports are connected to <strong>PulseAudio JACK Source</strong>.</p>
+</li>
+<li>
+<p>the <strong>PulseAudio JACK Sink</strong> ports are connected to the hardware outputs</p>
+</li>
+<li>
+<p>only the first port of <strong>system</strong> is connected to the input (<em>in 0</em>) of the <strong>Guitarix</strong> software</p>
+</li>
+<li>
+<p>the audio ports of <strong>Guitarix</strong> are connected to the hardware outputs</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_make_and_break_a_connection">Make and break a connection</h3>
+<div class="paragraph">
+<p>You can establish a connection between 2 ports as long as they meet the following conditions:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>he ports are of the same type (you can&#8217;t connect an audio port to a MIDI port)</p>
+</li>
+<li>
+<p>one is an input port, the other is an output port</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_intuitive_method">Intuitive Method</h4>
+<div class="paragraph">
+<p>To connect or disconnect two ports, click on a port without releasing the mouse button, drag the cursor to the desired port and release the mouse button.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_alternative_method">Alternative method</h4>
+<div class="paragraph">
+<p>Right click on a port, it will display a drop down menu, choose <strong>Connect</strong> then the desired port. Click elsewhere to make this menu disappear. The advantage of this method is that it allows you to quickly connect a port to several others, the menu remaining displayed during the connections.</p>
+</div>
+<div class="videoblock">
+<div class="content">
+<video src="images/video/patchbay_simple_connect.mp4" width="640" controls>
+Your browser does not support the video tag.
+</video>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_options">Options</h3>
+<div class="paragraph">
+<p>Right click anywhere on the patchbay to display the menu. This menu is also present in the RaySession menu (<strong>Patchbay</strong> menu).
+It will allow you to :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>switch the patchbay to full screen</p>
+</li>
+<li>
+<p>Filter ports: show only AUDIO or MIDI ports or both</p>
+</li>
+<li>
+<p>adjust the zoom level</p>
+</li>
+<li>
+<p>refresh the canvas: ask JACK again for the list of existing ports and their connections</p>
+</li>
+<li>
+<p>Canvas Preferences: display a window of options<br>
+All changes in this window take effect immediately. Hover over the boxes to see the tooltips.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_shortcuts_you_should_know">Shortcuts you should know</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>A double click anywhere switches the patchbay to full screen.</p>
+</li>
+<li>
+<p><em>Ctrl+Mouse Wheel</em> allows you to zoom in/out.</p>
+</li>
+<li>
+<p><em>Alt+Mouse wheel</em> allows to move the view horizontally.</p>
+</li>
+<li>
+<p>The wheel button is used to move the view</p>
+</li>
+<li>
+<p><em>Ctrl+middle mouse button</em> cuts all connections passing under the cursor</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_burst_connections">Burst Connections</h4>
+<div class="paragraph">
+<p>It is possible to connect a port or a portgroup to different ports quite quickly. You just have to end your connections with a right click. A video will be much more explicit.</p>
+</div>
+<div class="videoblock">
+<div class="content">
+<video src="images/video/patchbay_rafal_connections.mp4" width="640" controls>
+Your browser does not support the video tag.
+</video>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we want to connect the multiple outputs of Hydrogen to the Jack-Mixer tracks. In the video the blue circles appear with a right click.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_passing_connections_from_one_port_to_another">Passing connections from one port to another</h4>
+<div class="paragraph">
+<p>Sometimes it is less tedious to switch connections from one port to another than to undo and redo everything. To do this, start from the port that contains the connections and act as if you wanted to make a connection, but go to the port to which you want to switch the connections.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>This only works if the destination port does not contain any connections</p>
+</li>
+<li>
+<p>It works from port to port or from portgroup to portgroup but not from port to portgroup</p>
+</li>
+</ul>
+</div>
+<div class="videoblock">
+<div class="content">
+<video src="images/video/patchbay_fast_cut_paste.mp4" width="640" controls>
+Your browser does not support the video tag.
+</video>
+</div>
+</div>
+<div class="paragraph">
+<p>In this video we have a rather complex case where the source is plugged into <strong>3 Band Splitter</strong>.
+The bass and treble (<em>Output 1</em> and <em>Output 5</em>) are sent directly to <strong>EQ6Q Mono</strong> while the midrange (<em>Output 3</em>) goes through the distortion <strong>GxTubeScreamer</strong> first. We want to insert the <strong>Dragonfly Room Reverb</strong> before the <strong>EQ6Q Mono</strong> equalization.</p>
+</div>
+<hr>
+<div class="paragraph">
+<p>Note that with the right-click connection and the switching of connections from one port to another, it is very quick to integrate a new plugin in a chain, as here where we plug <strong>Plujain Ramp Live</strong> between <strong>Dragonfly Room Reverb</strong> and <strong>EQ6Q Mono</strong>.</p>
+</div>
+<div class="videoblock">
+<div class="content">
+<video src="images/video/fast_new_plugin.mp4" width="640" controls>
+Your browser does not support the video tag.
+</video>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_a2j_ports">A2J ports</h3>
+<div class="imageblock">
+<div class="content">
+<img src="images/patchbay_a2j.png" alt="ports a2j">
+</div>
+</div>
+<div class="paragraph">
+<p>The MIDI ports provided by the A2J (Alsa To Jack) bridge have a hole at the end to identify them. Their real name is a long name, but that&#8217;s about the only thing that differs from the other MIDI ports.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_control_voltage_ports_cv_ports">Control Voltage ports (CV ports)</h3>
+<div class="imageblock">
+<div class="content">
+<img src="images/patchbay_CV.png" alt="ports CV">
+</div>
+</div>
+<div class="paragraph">
+<p>Control voltage ports, commonly called CV ports, work like regular audio ports, however, they can control one or more parameters with much more precision than MIDI ports. As their stream is not meant to be listened to, it is not possible to simply connect a CV output port to a regular audio input, as this could damage your headphones, your speakers, and maybe even your ears.<br>
+If you still want to do it, right click on one of the ports, then <strong>Connect</strong>, then the <strong>DANGEROUS</strong> menu.<br>
+You can&#8217;t say you weren&#8217;t warned, and it&#8217;s almost impossible to do this by mistake.</p>
+</div>
+<div class="paragraph">
+<p>On the other hand, connecting a classic audio output port to a CV input port is perfectly possible, no problem.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_client_properties_window">Client Properties Window</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>A client&#8217;s properties window opens from the client menu by clicking Properties.</p>
@@ -1071,7 +1319,7 @@ If despite everything the snapshot process turns out to be long, a window appear
 </div>
 <div class="paragraph">
 <p>It is also possible to return only a client to a previous state of the session by right-clicking on the client,then <strong>Return to a previous state</strong>.
-If you want you can edit for each client the files ignored by the snapshots in the <a href="#client_properties">Client Properties Window</a>.</p>
+If you want you can edit for each client the files ignored by the snapshots in the <a href="#client_properties">[client_properties]</a>.</p>
 </div>
 <div class="paragraph">
 <p>With the <strong>Automatic snapshot after save</strong> option, a snapshot is taken immediately after each backup of the session, unless there is no change since the previous snapshot. To take a snapshot at another time, click on the reverse icon to the right of the <strong>Executable</strong> button and on <strong>Take a snapshot now</strong>, this has the advantage of being able to name the snapshot and thus having a more meaningful time mark than the date and time of the snapshot.</p>
@@ -1321,7 +1569,7 @@ If you are using Ardour, always run it from RaySession, firstly, the automatic s
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-08-24 18:06:13 +0200
+Last updated 2021-08-25 11:55:06 +0200
 </div>
 </div>
 </body>

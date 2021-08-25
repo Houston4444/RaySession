@@ -84,51 +84,25 @@ table {
 </head>
 <body class="book toc2 toc-left">
 <div id="header">
-<h1>Manuel de RaySession</h1>
+<h1>Manuel de <strong>RaySession</strong></h1>
 <div id="toc" class="toc2">
 <div id="toctitle">Table des matières</div>
 <ul class="sectlevel1">
 <li><a href="#_introduction">Introduction</a></li>
 <li><a href="#_exemple_dutilisation_simple">Exemple d&#8217;utilisation simple</a></li>
-<li><a href="#_vue_densemble_des_outils_de_la_session">Vue d&#8217;ensemble des outils de la session</a>
-<ul class="sectlevel2">
-<li><a href="#_ligne_du_haut">Ligne du haut</a></li>
-<li><a href="#_ligne_du_bas">Ligne du bas</a></li>
-</ul>
-</li>
+<li><a href="#_vue_densemble_des_outils_de_la_session">Vue d&#8217;ensemble des outils de la session</a></li>
 <li><a href="#_vue_densemble_dun_client">Vue d&#8217;ensemble d&#8217;un client</a></li>
 <li><a href="#ajout_application">Fenêtre d&#8217;ajout d&#8217;application</a></li>
 <li><a href="#ajout_executable">Fenêtre d&#8217;ajout d&#8217;exécutable</a></li>
 <li><a href="#patchbay">Baie de brassage</a></li>
-<li><a href="#proprietes_de_client">Fenêtre de propriétés d&#8217;un client</a>
-<ul class="sectlevel2">
-<li><a href="#_onglet_général">Onglet <strong>Général</strong></a></li>
-<li><a href="#_onglet_nsm">Onglet <strong>NSM</strong></a></li>
-<li><a href="#_onglet_ray_hack">Onglet <strong>Ray-Hack</strong></a></li>
-</ul>
-</li>
+<li><a href="#proprietes_de_client">Fenêtre de propriétés d&#8217;un client</a></li>
 <li><a href="#_les_sessions_réseau">Les sessions réseau</a></li>
 <li><a href="#ajouter_un_programme_non_fourni">Ajouter un programme non fourni</a></li>
 <li><a href="#_importer_une_session_nsm">Importer une session NSM</a></li>
-<li><a href="#options_du_demon">Les options du démon</a>
-<ul class="sectlevel2">
-<li><a href="#raccourcis_dossier_de_session">Fournir des raccourcis du dossier de la session</a></li>
-<li><a href="#_cliché_automatique_à_la_sauvegarde">Cliché automatique à la sauvegarde</a></li>
-<li><a href="#_mémoire_des_bureaux">Mémoire des bureaux</a></li>
-<li><a href="#option_scripts_de_session">Scripts de session</a></li>
-<li><a href="#_se_souvenir_de_létat_des_igus">Se souvenir de l&#8217;état des IGUs</a></li>
-</ul>
-</li>
+<li><a href="#options_du_demon">Les options du démon</a></li>
 <li><a href="#cliches">Les clichés</a></li>
 <li><a href="#les_scripts_de_session">Les scripts de session</a></li>
-<li><a href="#memoire_de_la_configuration_de_jack">Mémoire de la configuration de JACK</a>
-<ul class="sectlevel2">
-<li><a href="#_dans_quels_cas_lutiliser">Dans quels cas l&#8217;utiliser</a></li>
-<li><a href="#_utilisation">Utilisation</a></li>
-<li><a href="#_principe_de_fonctionnement">Principe de fonctionnement</a></li>
-<li><a href="#_cas_particuliers">Cas particuliers</a></li>
-</ul>
-</li>
+<li><a href="#memoire_de_la_configuration_de_jack">Mémoire de la configuration de JACK</a></li>
 <li><a href="#sous_le_capot">Sous le capot</a></li>
 <li><a href="#ray_control">Contrôler RaySession en ligne de commande</a></li>
 <li><a href="#_foire_aux_questions">Foire aux questions</a></li>
@@ -252,19 +226,16 @@ table {
 </div>
 </div>
 <div class="paragraph">
-<p>Vous allez maintenant afficher la baie de brassage de JACK. Pour celà, dans RaySession, appuyez sur <strong>Contrôle</strong> puis <strong>Afficher la baie de brassage de JACK</strong> (<em>ou Ctrl+J</em>). La baie de brassage est apparue sur la partie droite de la fenêtre.
+<p>Vous allez maintenant afficher la <a href="#patchbay">Baie de brassage</a> de JACK. Pour celà, dans RaySession, appuyez sur <strong>Contrôle</strong> puis <strong>Afficher la baie de brassage de JACK</strong> (<em>ou Ctrl+J</em>). La baie de brassage est apparue sur la partie droite de la fenêtre.
 Connectez l&#8217;entrée de Guitarix à une entrée matérielle et les sorties de Guitarix vers les entrées de cette nouvelle piste Ardour. Assurez vous que les entrées de votre piste <strong>Guitare</strong> ne sont pas connectées aux entrées matérielles.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<a class="image" href="images/exemple_patchbay.png"><img src="images/exemple_patchbay.png" alt="Baie de brassage de ma session"></a>
+<a class="image" href="images/example_patchbay.png"><img src="images/example_patchbay.png" alt="Baie de brassage de ma session"></a>
 </div>
 </div>
 <div class="paragraph">
 <p>Voilà, vous avez une configuration où vous pouvez enregistrer directement le son de votre guitare traité par Guitarix dans Ardour. Si vous n&#8217;avez pas de guitare, vous n&#8217;avez qu&#8217;à chanter faux dans un micro ou taper sur un coussin, ce n&#8217;est ici qu&#8217;un exemple.</p>
-</div>
-<div class="paragraph">
-<p>Vous pouvez consultez le <a href="patchbay_manual.html">Manuel de la baie de brassage</a> pour apprendre à la maîtriser correctement.</p>
 </div>
 <div class="paragraph">
 <p>Retournez maintenant à la fenêtre de RaySession, et sauvegardez la session en cours en cliquant sur le bouton en forme de disquette vers le haut à droite (<em>ou Ctrl+S</em>). Il est vivement recommandé car très pratique d&#8217;affecter un raccourci clavier global de votre système à la sauvegarde de la session en cours. Celà dependra de votre environnement de bureau, mais il suffit d&#8217;affecter le raccourci <em>Ctrl+Meta+S</em> à la commande <code>ray_control save</code> (Meta est la touche Windows), ainsi vous n&#8217;aurez pas à retourner à la fenêtre de RaySession pour sauvegarder la session.</p>
@@ -681,7 +652,267 @@ Celà est utile si vous voulez attraper et lancer des projets existants dans la 
 <h2 id="patchbay">Baie de brassage</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Consultez le <a href="patchbay_manual.html">Manuel de la baie de brassage</a> pour mieux la maîtriser.</p>
+<p>la baie de brassage de JACK n&#8217;est pas affichée par défaut. Vous pouvez l&#8217;afficher en cliquant sur <strong>Contrôle</strong> puis <strong>Afficher la baie de brassage de JACK</strong> (<em>ou Ctrl+J</em>). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.</p>
+</div>
+<div class="paragraph">
+<p>Évidemment, si JACK n&#8217;est pas démarré, cette baie de brassage sera vide.</p>
+</div>
+<div class="paragraph">
+<p>Il est conseillé d&#8217;avoir le pont A2J lancé si vous voulez travailler correctement avec le MIDI. Vous pouvez configurer celà via <strong>Cadence</strong>, <strong>Studio Control</strong>, ou via l&#8217;utilitaire en ligne de commande <code>a2j_control</code>.</p>
+</div>
+<div class="paragraph">
+<p>RaySession n&#8217;inclut pas d&#8217;outils pour configurer le serveur JACK, <strong>QJackCtl</strong>, <strong>Studio Control</strong>, <strong>Cadence</strong>, ou l&#8217;utilitaire en ligne de commande <code>jack_control</code> font très bien ce travail. Notez que cette baie de brassage fonctionne également avec PipeWire.</p>
+</div>
+<div class="sect2">
+<h3 id="_vue_densemble">Vue d&#8217;ensemble</h3>
+<div class="imageblock">
+<div class="content">
+<img src="images/patchbay_base.png" alt="Vue d&#8217;ensemble de la baie de brassage">
+</div>
+</div>
+<div class="paragraph">
+<p>Voilà à quoi peut ressembler votre baie de brassage. Ici il y a 7 boîtes :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>une boîte <strong>system</strong> comprenant vos ports correspondant aux entrées matérielles</p>
+</li>
+<li>
+<p>une boîte <strong>system</strong> comprenant vos ports correspondant aux sorties matérielles (enceintes, casque)</p>
+</li>
+<li>
+<p>une boîte <strong>a2j</strong> comprenant vos ports correspondant aux entrées MIDI</p>
+</li>
+<li>
+<p>une boîte <strong>a2j</strong> comprenant vos ports correspondant aux sorties MIDI</p>
+</li>
+<li>
+<p>une boîte <strong>PulseAudio JACK Source</strong></p>
+</li>
+<li>
+<p>une boîte <strong>PulseAudio JACK Sink</strong></p>
+</li>
+<li>
+<p>une boîte <strong>Guitarix</strong></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Ici les ponts A2J et pulse2jack sont lancés.
+Vous observez que 4 de ces boîtes sont entourées d&#8217;une décoration (2 <strong>system</strong> et 2 <strong>a2j</strong>), ce sont les boîtes qui contiennent les ports matériels (votre interface audio, votre piano USB, n&#8217;importe quel contrôleur&#8230;&#8203;).</p>
+</div>
+<hr>
+<div class="paragraph">
+<p>Certains ports audios sont regroupés en sous-groupes, que l&#8217;on appellera portgroups. Ces portgroups sont pour la plupart des paires stéréo détectées automatiquement par le nom des ports. C&#8217;est le cas ici pour :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>system:capture 1/2</p>
+</li>
+<li>
+<p>system:playback 1/2</p>
+</li>
+<li>
+<p>PulseAudio JACK Source:front L/R</p>
+</li>
+<li>
+<p>PulseAudio JACK Sink:front L/R</p>
+</li>
+<li>
+<p>Guitarix:out 0/1</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Ces portgroups facilitent les connexions et permettent une meilleur lisibilité générale.</p>
+</div>
+<hr>
+<div class="paragraph">
+<p>Les lignes incurvées bleues correspondent aux connexions audios. Vous pouvez observer que :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>les ports audio d&#8217;entrées matérielles sont connectés à <strong>PulseAudio JACK Source</strong></p>
+</li>
+<li>
+<p>les ports de <strong>PulseAudio JACK Sink</strong> sont connectés aux sorties matérielles</p>
+</li>
+<li>
+<p>seul le premier port de <strong>system</strong> est connecté à l&#8217;entrée (<em>in 0</em>) du logiciel <strong>Guitarix</strong></p>
+</li>
+<li>
+<p>les ports audios de <strong>Guitarix</strong> sont connectés aux sorties matérielles</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_faire_et_défaire_une_connexion">Faire et défaire une connexion</h3>
+<div class="paragraph">
+<p>Vous pouvez établir une connexion entre 2 ports pourvu qu&#8217;ils remplissent les conditions suivantes :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>les ports sont du même type (on ne peut pas connecter un port audio à un port MIDI)</p>
+</li>
+<li>
+<p>l&#8217;un est un port d&#8217;entrée, l&#8217;autre est un port de sortie</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_méthode_intuitive">Méthode Intuitive</h4>
+<div class="paragraph">
+<p>Pour connecter ou déconnecter deux ports, cliquez sur un port sans relâcher le bouton de la souris, glissez le curseur jusqu&#8217;au port désiré puis relachez le bouton de la souris.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_méthode_alternative">Méthode Alternative</h4>
+<div class="paragraph">
+<p>Faites un clic droit sur un port, celà affichera un menu déroulant, choisissez <strong>Connecter</strong> puis le port désiré. Cliquez ailleurs pour faire disparaître ce menu. L&#8217;avantage de cette méthode est qu&#8217;elle permet de connecter rapidement un port à plusieurs autres, le menu restant affiché pendant les connexions.</p>
+</div>
+<div class="videoblock">
+<div class="content">
+<video src="images/video/patchbay_simple_connect.mp4" width="640" controls>
+Your browser does not support the video tag.
+</video>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_les_options">Les options</h3>
+<div class="paragraph">
+<p>Un clic droit n&#8217;importe où sur la baie de brassage permet d&#8217;en afficher le menu. Ce menu est également présent dans le menu de RaySession (menu <strong>Baie de brassage</strong>).
+Il vous permettra de :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>basculer la baie de brassage en plein écran</p>
+</li>
+<li>
+<p>Filtrer les ports: n&#8217;afficher que les ports AUDIO ou MIDI ou les deux</p>
+</li>
+<li>
+<p>régler le niveau de zoom</p>
+</li>
+<li>
+<p>rafraîchir le canevas: redemander à JACK la liste des ports existants et leurs connexions</p>
+</li>
+<li>
+<p>Préférences du canevas: afficher une fenêtre d&#8217;options<br>
+Tous les changements dans cette fenêtre prennent effet immédiatement. Survolez les cases pour afficher les infobulles.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_raccourcis_à_connaître">Raccourcis à connaître</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Un double clic n&#8217;importe où permet de basculer la baie de brassage en plein écran.</p>
+</li>
+<li>
+<p><em>Ctrl+Molette de la souris</em> permet de zoomer/dézoomer.</p>
+</li>
+<li>
+<p><em>Alt+Molette de la souris</em> permet déplacer la vue horizontallement.</p>
+</li>
+<li>
+<p>Le bouton de la molette permet de déplacer la vue</p>
+</li>
+<li>
+<p><em>Ctrl+bouton du milieu de la souris</em> permet de couper toutes les connexions passant sous le curseur</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_connexions_en_rafale">Connexions en rafale</h4>
+<div class="paragraph">
+<p>Il est possible de connecter un port ou un portgroup à différents ports assez rapidement. Il suffit de terminer ses connexions par un clic droit. Une video sera bien plus explicite.</p>
+</div>
+<div class="videoblock">
+<div class="content">
+<video src="images/video/patchbay_rafal_connections.mp4" width="640" controls>
+Your browser does not support the video tag.
+</video>
+</div>
+</div>
+<div class="paragraph">
+<p>Ici nous voulons connecter les multiple sorties d&#8217;Hydrogen à des tranches de Jack-Mixer. Dans la video les ronds bleus apparaissent avec un clic droit.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_passer_les_connexions_dun_port_à_un_autre">Passer les connexions d&#8217;un port à un autre</h4>
+<div class="paragraph">
+<p>Il est parfois moins fastidieux de passer des connexions d&#8217;un port à un autre plutôt que de tout défaire pour tout refaire. Pour ce faire, partez du port qui contient les connexions et faites comme si vous vouliez faire une connexion, mais allez vers le port vers lequel vous souhaitez basculer les connexions.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Celà ne fonctionne que si le port de destination ne contient aucune connexion</p>
+</li>
+<li>
+<p>Celà fonctionne de port à port ou de portgroup à portgroup mais pas de port à portgroup</p>
+</li>
+</ul>
+</div>
+<div class="videoblock">
+<div class="content">
+<video src="images/video/patchbay_fast_cut_paste.mp4" width="640" controls>
+Your browser does not support the video tag.
+</video>
+</div>
+</div>
+<div class="paragraph">
+<p>Dans cette video nous avons un cas assez complexe où la source est branchée dans <strong>3 Band Splitter</strong>.
+Les basses et les aigües (<em>Output 1</em> et <em>Output 5</em>) sont envoyés directement dans <strong>EQ6Q Mono</strong> tandis que les medium (<em>Output 3</em>) passent d&#8217;abord par la distortion <strong>GxTubeScreamer</strong>. Nous voulons insérer la reverb <strong>Dragonfly Room Reverb</strong> avant l&#8217;égualisation <strong>EQ6Q Mono</strong>.</p>
+</div>
+<hr>
+<div class="paragraph">
+<p>Notez qu&#8217;avec la connexion par clic droit et le passage de connexions d&#8217;un port à l&#8217;autre, il est très rapide d&#8217;intégrer un nouveau greffon dans une chaîne, comme ici où nous branchons <strong>Plujain Ramp Live</strong> entre <strong>Dragonfly Room Reverb</strong> et <strong>EQ6Q Mono</strong>.</p>
+</div>
+<div class="videoblock">
+<div class="content">
+<video src="images/video/fast_new_plugin.mp4" width="640" controls>
+Your browser does not support the video tag.
+</video>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_les_ports_a2j">Les ports A2J</h3>
+<div class="imageblock">
+<div class="content">
+<img src="images/patchbay_a2j.png" alt="ports a2j">
+</div>
+</div>
+<div class="paragraph">
+<p>Les ports MIDI fournis par le pont A2J (Alsa To Jack) présentent un trou à leur extrêmité pour les reconnaître. Leur véritable nom est un nom à ralonges, mais c&#8217;est à peu près la seule chose qui diffère avec les autres ports MIDI.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_les_ports_de_tension_de_contrôle_ports_cv">Les ports de tension de contrôle (ports CV)</h3>
+<div class="imageblock">
+<div class="content">
+<img src="images/patchbay_CV.png" alt="ports CV">
+</div>
+</div>
+<div class="paragraph">
+<p>les ports de tension de contrôle, appellés communément ports CV (Control Voltage) ont le même fonctionnement que les ports audio classiques, cependant, ils sont faits pour piloter un ou plusieurs paramètres avec une précision bien plus importante que les ports MIDI. Comme leur flux n&#8217;est pas fait pour être écouté, il n&#8217;est pas possible de connecter simplement un port CV de sortie vers une entrée audio classique, celà pourrait endommager votre casque, vos enceintes, et peut-être même bien vos oreilles.<br>
+Si vous souhaitez quand même le faire, faites un clic droit sur l&#8217;un des ports, puis <strong>Connecter</strong>, puis le menu <strong>DANGEREUX</strong>.<br>
+Vous ne pourrez pas dire que vous n&#8217;étiez pas prévenu, et il est quasiment impossible de faire ça par erreur.</p>
+</div>
+<div class="paragraph">
+<p>En revanche, connecter un port de sortie audio classique vers un port CV d&#8217;entrée est tout à fait possible, ça ne pose aucun problème.</p>
+</div>
 </div>
 </div>
 </div>
@@ -1337,7 +1568,7 @@ Téléchargez ce fichier, mettez le exécutable et exécutez le avec un fichier 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-08-24 18:01:01 +0200
+Last updated 2021-08-25 11:42:41 +0200
 </div>
 </div>
 </body>
