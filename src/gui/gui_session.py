@@ -12,7 +12,6 @@ from gui_signaler import Signaler
 from gui_server_thread import GuiServerThread
 from gui_tools import CommandLineArgs, RS
 from main_window import MainWindow
-from systray import SystemTray
 from nsm_child import NsmChild, NsmChildOutside
 from patchbay_manager import PatchbayManager
 
