@@ -629,15 +629,22 @@ class Group:
                         display_name += ' ' + num
 
         elif client_name in ('ardour', 'Ardour'):
-            display_name, num = split_end_digits(display_name)
-            if num:
-                display_name = cut_end(display_name,
-                                       '/audio_out ', '/audio_in ',
-                                       '/midi_out ', '/midi_in ')
-                if num == '1':
-                    port.last_digit_to_add = '1'
-                else:
-                    display_name += ' ' + num
+            print('vkorv', display_name)
+            for pt in ('audio', 'midi'):
+                if display_name == "physical_%s_input_monitor_enable" % pt:
+                    print('tchaaa')
+                    display_name = "physical monitor"
+                    break
+            else:
+                display_name, num = split_end_digits(display_name)
+                if num:
+                    display_name = cut_end(display_name,
+                                        '/audio_out ', '/audio_in ',
+                                        '/midi_out ', '/midi_in ')
+                    if num == '1':
+                        port.last_digit_to_add = '1'
+                    else:
+                        display_name += ' ' + num
 
         elif client_name == 'Qtractor':
             display_name, num = split_end_digits(display_name)
