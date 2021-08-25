@@ -2,7 +2,7 @@ import time
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView,
-                             QBoxLayout)
+                             QBoxLayout, QSystemTrayIcon)
 from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
@@ -338,6 +338,21 @@ class MainWindow(QMainWindow):
         self._geom_before_fullscreen = None
         self._splitter_pos_before_fullscreen = [100, 100]
         self._fullscreen_patchbay = False
+        self.hidden_maximized = False
+
+        self._systray = QSystemTrayIcon(self)
+        self._systray.activated.connect(self._systray_activated)
+        #self._systray.setIcon(QIcon.fromTheme(ray.APP_TITLE.lower()))
+        self._systray.setIcon(QIcon(':48x48/raysession'))
+        self._systray.setToolTip(ray.APP_TITLE)
+
+        self._systray_menu = QMenu()
+        self._systray_menu.addAction(self.ui.actionSaveSession)
+        self._systray_menu.addAction(self.ui.actionCloseSession)
+        self._systray_menu.addAction(self.ui.actionAbortSession)
+        self._systray_menu.addAction(self.ui.actionQuit)
+        self._systray.setContextMenu(self._systray_menu)
+        self._systray.show()
 
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
         self.ui.actionToggleShowMessages.setChecked(
@@ -483,6 +498,7 @@ class MainWindow(QMainWindow):
 
     def _quit_app(self):
         if self.session.is_running():
+            self.show()
             dialog = child_dialogs.QuitAppDialog(self)
             dialog.exec()
             if not dialog.result():
@@ -573,6 +589,7 @@ class MainWindow(QMainWindow):
         self.to_daemon('/ray/session/close')
 
     def _abort_session(self):
+        self.show()
         dialog = child_dialogs.AbortSessionDialog(self)
         dialog.exec()
 
@@ -933,6 +950,21 @@ class MainWindow(QMainWindow):
             return
 
         RS.reset_hiddens()
+
+    def _systray_activated(self):
+        if self.isMinimized():
+            if self.hidden_maximized:
+                self.showMaximized()
+            else:
+                self.showNormal()
+        elif self.isHidden():
+            self.show()
+        elif self.isActiveWindow():
+            self.hide()
+
+        if (not self.isHidden()
+                and ray.getWindowManager() == ray.WindowManager.X):
+            self.activateWindow()
 
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
 
@@ -1332,6 +1364,22 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         self.save_window_settings()
+        self.hidden_maximized = self.isMaximized()
+
+        if self._systray.isVisible() and self.session.is_running():
+            if not RS.is_hidden(RS.HD_SystrayClose):
+                dialog = child_dialogs.SystrayCloseDialog(self)
+                dialog.exec()
+
+                if not dialog.result():
+                    event.ignore()
+                    return
+
+                if dialog.not_again():
+                    RS.set_hidden(RS.HD_SystrayClose)
+
+            self.hide()
+            return
 
         if self._quit_app():
             QMainWindow.closeEvent(self, event)
@@ -1354,6 +1402,8 @@ class MainWindow(QMainWindow):
         QMainWindow.showEvent(self, event)
 
     def hideEvent(self, event):
+        self.hidden_maximized = self.isMaximized()
+
         if CommandLineArgs.under_nsm:
             if self.session.nsm_child is not None:
                 self.session.nsm_child.send_gui_state(False)

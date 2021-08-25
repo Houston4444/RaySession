@@ -13,6 +13,7 @@ from gui_tools import ArgParser, CommandLineArgs, init_gui_tools, get_code_root
 from gui_server_thread import GuiServerThread
 from gui_session import SignaledSession
 import ray
+import resources_rc
 
 
 def signal_handler(sig, frame):

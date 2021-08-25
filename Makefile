@@ -80,6 +80,7 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/snapshot_name.py \
 	    src/gui/ui/snapshots_info.py \
 	    src/gui/ui/snapshot_progress.py \
+	    src/gui/ui/systray_close.py \
 	    src/gui/ui/stop_client.py \
 	    src/gui/ui/stop_client_no_save.py \
 	    src/gui/ui/template_slot.py \

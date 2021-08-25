@@ -40,6 +40,7 @@ import ui.snapshot_progress
 import ui.waiting_close_user
 import ui.client_rename
 import ui.canvas_port_info
+import ui.systray_close
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -1382,6 +1383,16 @@ class DonationsDialog(ChildDialog):
 
     def _check_box_clicked(self, state):
         RS.set_hidden(RS.HD_Donations, state)
+
+
+class SystrayCloseDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui.systray_close.Ui_Dialog()
+        self.ui.setupUi(self)
+
+    def not_again(self):
+        return self.ui.checkBox.isChecked()
 
 
 class ErrorDialog(ChildDialog):
