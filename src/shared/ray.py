@@ -170,6 +170,10 @@ class WindowManager:
     X = 1
     WAYLAND = 2
 
+class Systray:
+    OFF = 0
+    SESSION_ONLY = 1
+    ALWAYS = 2
 
 class Favorite():
     def __init__(self, name, icon, factory):
