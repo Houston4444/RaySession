@@ -629,10 +629,8 @@ class Group:
                         display_name += ' ' + num
 
         elif client_name in ('ardour', 'Ardour'):
-            print('vkorv', display_name)
             for pt in ('audio', 'midi'):
                 if display_name == "physical_%s_input_monitor_enable" % pt:
-                    print('tchaaa')
                     display_name = "physical monitor"
                     break
             else:
