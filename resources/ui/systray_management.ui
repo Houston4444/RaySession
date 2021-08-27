@@ -7,22 +7,52 @@
     <x>0</x>
     <y>0</y>
     <width>331</width>
-    <height>151</height>
+    <height>145</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Tray Icon Options</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="label">
+    <widget class="QCheckBox" name="checkBoxProvideSystray">
      <property name="text">
-      <string>Keep main window in the system tray :</string>
+      <string>Provide system tray icon</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QComboBox" name="comboBox"/>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkBoxOnlySessionRunning">
+       <property name="text">
+        <string>Only when session is running</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <spacer name="verticalSpacer">
@@ -38,14 +68,27 @@
     </spacer>
    </item>
    <item>
-    <widget class="QCheckBox" name="checkBox">
+    <widget class="QCheckBox" name="checkBoxShutdown">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When checked, if a session is running, a pop up dialog will be shown when you try to close the main window, asking you if you want to save and close or abort session.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Else, the GUI process will be closed but rest assured, you just have to launch RaySession once again and you will be able to manage the running session. This method uses less RAM than keeping window in system tray.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Never ask what to do and close GUI process&lt;br/&gt;if you close RaySession while a session is running. &lt;/p&gt;&lt;p&gt;The session will still running and you just have&lt;br/&gt;to restart RaySession to manage it.&lt;/p&gt;&lt;p&gt;This method uses less RAM than&lt;br/&gt;keeping window in system tray.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>Ask what to do when the main window is closed</string>
+      <string>Quit shutdowns the GUI</string>
      </property>
     </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">

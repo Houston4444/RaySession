@@ -879,6 +879,7 @@ QToolButton {border: none}</string>
     <addaction name="separator"/>
     <addaction name="actionKeepFocus"/>
     <addaction name="separator"/>
+    <addaction name="actionSystemTrayIconOptions"/>
     <addaction name="actionMakeReappearDialogs"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
@@ -1401,6 +1402,15 @@ QToolButton {border: none}</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+J</string>
+   </property>
+  </action>
+  <action name="actionSystemTrayIconOptions">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/scalable/raysession.svg</normaloff>:/scalable/raysession.svg</iconset>
+   </property>
+   <property name="text">
+    <string>System tray icon options</string>
    </property>
   </action>
  </widget>

@@ -188,6 +188,8 @@ class MainWindow(QMainWindow):
         self.ui.actionOnlineManual.triggered.connect(self._online_manual)
         self.ui.actionInternalManual.triggered.connect(self._internal_manual)
         self.ui.actionDonate.triggered.connect(self.donate)
+        self.ui.actionSystemTrayIconOptions.triggered.connect(
+            self._open_systray_options)
         self.ui.actionMakeReappearDialogs.triggered.connect(
             self._make_all_dialogs_reappear)
 
@@ -340,19 +342,21 @@ class MainWindow(QMainWindow):
         self._fullscreen_patchbay = False
         self.hidden_maximized = False
 
+        self._wild_shutdown = RS.settings.value(
+            'wild_shutdown', False, type=bool)
+        self._systray_mode = RS.settings.value(
+            'systray_mode', ray.Systray.SESSION_ONLY, type=int)
         self._systray = QSystemTrayIcon(self)
         self._systray.activated.connect(self._systray_activated)
-        #self._systray.setIcon(QIcon.fromTheme(ray.APP_TITLE.lower()))
         self._systray.setIcon(QIcon(':48x48/raysession'))
         self._systray.setToolTip(ray.APP_TITLE)
 
-        self._systray_menu = QMenu()
-        self._systray_menu.addAction(self.ui.actionSaveSession)
-        self._systray_menu.addAction(self.ui.actionCloseSession)
-        self._systray_menu.addAction(self.ui.actionAbortSession)
-        self._systray_menu.addAction(self.ui.actionQuit)
-        self._systray.setContextMenu(self._systray_menu)
-        self._systray.show()
+        self._build_systray_menu()
+
+        if (self._systray_mode == ray.Systray.ALWAYS
+                or (self._systray_mode == ray.Systray.SESSION_ONLY
+                        and self.session.server_status != ray.ServerStatus.OFF)):
+            self._systray.show()
 
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
         self.ui.actionToggleShowMessages.setChecked(
@@ -458,6 +462,30 @@ class MainWindow(QMainWindow):
     def _open_file_manager(self):
         self.to_daemon('/ray/session/open_folder')
 
+    def _open_systray_options(self):
+        dialog = child_dialogs.SystrayManagement(self)
+        dialog.set_systray_mode(self._systray_mode)
+        dialog.set_wild_shutdown(self._wild_shutdown)
+
+        dialog.exec()
+        if not dialog.result():
+            return
+
+        self._systray_mode = dialog.get_systray_mode()
+        self._wild_shutdown = dialog.wild_shutdown()
+        RS.settings.setValue('systray_mode', self._systray_mode)
+        RS.settings.setValue('wild_shutdown', self._wild_shutdown)
+
+        if self._systray_mode == ray.Systray.OFF:
+            self._systray.hide()
+        elif self._systray_mode == ray.Systray.SESSION_ONLY:
+            if self.session.server_status == ray.ServerStatus.OFF:
+                self._systray.hide()
+            else:
+                self._systray.show()
+        elif self._systray_mode == ray.Systray.ALWAYS:
+            self._systray.show()
+
     def _raise_window(self):
         if self.mouse_is_inside:
             self.activateWindow()
@@ -497,6 +525,11 @@ class MainWindow(QMainWindow):
         self._flash_open_bool = not self._flash_open_bool
 
     def _quit_app(self):
+        if self._wild_shutdown and not CommandLineArgs.under_nsm:
+            self.daemon_manager.disannounce()
+            QTimer.singleShot(10, QApplication.quit)
+            return
+
         if self.session.is_running():
             self.show()
             dialog = child_dialogs.QuitAppDialog(self)
@@ -511,6 +544,10 @@ class MainWindow(QMainWindow):
         self.daemon_manager.stop()
 
     def _create_new_session(self):
+        # from systray, better to show main window in the background
+        # before open dialog
+        self.show()
+
         dialog = child_dialogs.NewSessionDialog(self)
         dialog.exec()
         if not dialog.result():
@@ -573,6 +610,10 @@ class MainWindow(QMainWindow):
         self.to_daemon('/ray/server/new_session', session_short_path, template_name)
 
     def _open_session(self, action):
+        # from systray, better to show main window in the background
+        # before open dialog
+        self.show()
+
         dialog = child_dialogs.OpenSessionDialog(self)
         dialog.exec()
         if not dialog.result():
@@ -847,6 +888,12 @@ class MainWindow(QMainWindow):
         self.ui.frameCurrentSession.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
 
+        if self._systray_mode == ray.Systray.SESSION_ONLY:
+            if server_status == ray.ServerStatus.OFF:
+                self._systray.hide()
+            else:
+                self._systray.show()
+
         if server_status in (ray.ServerStatus.SNAPSHOT,
                              ray.ServerStatus.OUT_SNAPSHOT):
             self._timer_snapshot.start()
@@ -913,6 +960,8 @@ class MainWindow(QMainWindow):
         self.ui.trashButton.setEnabled(bool(self.session.trashed_clients)
                                        and not close_or_off)
 
+        self._systray_menu_add.setEnabled(not close_or_off)
+
         if (CommandLineArgs.under_nsm
                 and not CommandLineArgs.out_daemon
                 and ready
@@ -951,19 +1000,52 @@ class MainWindow(QMainWindow):
 
         RS.reset_hiddens()
 
+    def _build_systray_menu(self):
+        self._systray_menu = QMenu()
+        self._systray_menu.addAction(self.ui.actionSaveSession)
+
+        self._systray_menu_add = QMenu(
+            _translate('menu', 'Add'), self._systray_menu)
+        self._systray_menu_add.addMenu(self._favorites_menu)
+        self._systray_menu_add.addAction(self.ui.actionAddApplication)
+        self._systray_menu_add.addAction(self.ui.actionAddExecutable)
+        self._systray_menu_add.setIcon(QIcon.fromTheme('list-add'))
+        self._systray_menu_add.setEnabled(
+            self.session.server_status not in
+                (ray.ServerStatus.OFF, ray.ServerStatus.CLOSE,
+                 ray.ServerStatus.WAIT_USER, ray.ServerStatus.OUT_SAVE,
+                 ray.ServerStatus.OUT_SNAPSHOT))
+        self._systray_menu.addMenu(self._systray_menu_add)
+        self._systray_menu.addAction(self.ui.actionCloseSession)
+        self._systray_menu.addAction(self.ui.actionAbortSession)
+        self._systray_menu.addSeparator()
+        self._systray_menu.addAction(self.ui.actionNewSession)
+        self._systray_menu.addAction(self.ui.actionOpenSession)
+        self._systray_menu.addSeparator()
+        self._systray_menu.addAction(self.ui.actionSystemTrayIconOptions)
+        self._systray_menu.addSeparator()
+        self._systray_menu.addAction(self.ui.actionQuit)
+        self._systray.setContextMenu(self._systray_menu)
+
     def _systray_activated(self):
+        wayland = bool(ray.getWindowManager() == ray.WindowManager.WAYLAND)
+
         if self.isMinimized():
             if self.hidden_maximized:
                 self.showMaximized()
             else:
                 self.showNormal()
+            if not wayland:
+                self.activateWindow()
         elif self.isHidden():
             self.show()
+            if not wayland:
+                self.activateWindow()
         elif self.isActiveWindow():
             self.hide()
-
-        if (not self.isHidden()
-                and ray.getWindowManager() == ray.WindowManager.X):
+        elif wayland:
+            self.hide()
+        else:
             self.activateWindow()
 
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
@@ -1288,6 +1370,10 @@ class MainWindow(QMainWindow):
                 ray.getAppIcon(favorite.icon, self), favorite.name)
             act_app.setData([favorite.name, favorite.factory])
             act_app.triggered.connect(self.launch_favorite)
+
+        self._favorites_menu.setEnabled(
+            bool(enable and self.session.favorite_list))
+        self._build_systray_menu()
 
     def show_script_info(self, text):
         if self._script_info_dialog and self._script_info_dialog.should_be_removed():

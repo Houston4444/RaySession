@@ -41,6 +41,7 @@ import ui.waiting_close_user
 import ui.client_rename
 import ui.canvas_port_info
 import ui.systray_close
+import ui.systray_management
 
 class ChildDialog(QDialog):
     def __init__(self, parent):
@@ -1393,6 +1394,35 @@ class SystrayCloseDialog(ChildDialog):
 
     def not_again(self):
         return self.ui.checkBox.isChecked()
+
+
+class SystrayManagement(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui.systray_management.Ui_Dialog()
+        self.ui.setupUi(self)
+
+        self.ui.checkBoxProvideSystray.stateChanged.connect(
+            self.ui.checkBoxOnlySessionRunning.setEnabled)
+
+    def set_systray_mode(self, systray_mode):
+        self.ui.checkBoxProvideSystray.setChecked(
+            systray_mode != ray.Systray.OFF)
+        self.ui.checkBoxOnlySessionRunning.setChecked(
+            systray_mode == ray.Systray.SESSION_ONLY)
+
+    def set_wild_shutdown(self, wild_shutdown):
+        self.ui.checkBoxShutdown.setChecked(wild_shutdown)
+
+    def get_systray_mode(self)->int:
+        if self.ui.checkBoxProvideSystray.isChecked():
+            if self.ui.checkBoxOnlySessionRunning.isChecked():
+                return ray.Systray.SESSION_ONLY
+            return ray.Systray.ALWAYS
+        return ray.Systray.OFF
+
+    def wild_shutdown(self)->bool:
+        return self.ui.checkBoxShutdown.isChecked()
 
 
 class ErrorDialog(ChildDialog):
