@@ -178,6 +178,12 @@ class GuiServerThread(liblo.ServerThread):
     def _server_message(self, path, args, types, src_addr):
         pass
 
+    @ray_method('/ray/gui/server/recent_sessions', None)
+    def _server_recent_sessions(self, path, args, types, src_addr):
+        for t in types:
+            if t != 's':
+                return False
+
     @ray_method('/ray/gui/session/name', 'ss')
     def _session_name(self, path, args, types, src_addr):
         pass

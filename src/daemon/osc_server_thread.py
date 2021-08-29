@@ -1357,6 +1357,13 @@ class OscServerThread(ClientCommunicating):
                           trashed_client.client_id,
                           *trashed_client.ray_net.spread())
 
+        if self.session.root in self.session.recent_sessions.keys():
+            #for sess in self.session.recent_sessions[self.session.root]:
+                #self.send(gui_addr, '/ray/gui/server/recent_sessions', sess)
+            self.send(gui_addr, '/ray/gui/server/recent_sessions',
+                      *self.session.recent_sessions[self.session.root])
+            #self.send(gui_addr, '/ray/gui/server/recent_sessions', '')
+
         self.send(gui_addr, '/ray/gui/server/message',
                   _translate('daemon', "daemon runs at %s") % self.url)
 

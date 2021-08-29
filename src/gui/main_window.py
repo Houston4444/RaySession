@@ -2,7 +2,7 @@ import time
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView,
-                             QBoxLayout, QSystemTrayIcon)
+                             QBoxLayout, QSystemTrayIcon, QAction)
 from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
@@ -341,6 +341,9 @@ class MainWindow(QMainWindow):
         self._splitter_pos_before_fullscreen = [100, 100]
         self._fullscreen_patchbay = False
         self.hidden_maximized = False
+
+        #self.recent_sessions_menu = QMenu(
+            #_translate('systray', 'Recent sessions'))
 
         self._wild_shutdown = RS.settings.value(
             'wild_shutdown', False, type=bool)
@@ -1021,6 +1024,7 @@ class MainWindow(QMainWindow):
         self._systray_menu.addSeparator()
         self._systray_menu.addAction(self.ui.actionNewSession)
         self._systray_menu.addAction(self.ui.actionOpenSession)
+        self._systray_menu.addMenu(self.ui.menuRecentSessions)
         self._systray_menu.addSeparator()
         self._systray_menu.addAction(self.ui.actionSystemTrayIconOptions)
         self._systray_menu.addSeparator()
@@ -1289,8 +1293,25 @@ class MainWindow(QMainWindow):
             if self.notes_dialog is not None:
                 self.notes_dialog.hide()
 
+        self.update_recent_sessions_menu()
+
     def set_session_name_editable(self, set_edit: bool):
         self.ui.stackedWidgetSessionName.set_editable(set_edit)
+
+    def update_recent_sessions_menu(self):
+        self.ui.menuRecentSessions.clear()
+
+        for sess in self.session.recent_sessions:
+            sess_action = self.ui.menuRecentSessions.addAction(sess)
+            print(sess, self.session.get_short_path())
+            if sess == self.session.get_short_path():
+                # disable running session
+                sess_action.setEnabled(False)
+            sess_action.setData(sess)
+            sess_action.triggered.connect(self.launch_recent_session)
+
+        self.ui.menuRecentSessions.setEnabled(bool(self.session.recent_sessions))
+        self._build_systray_menu()
 
     def error_message(self, message: str):
         error_dialog = child_dialogs.ErrorDialog(self, message)
@@ -1327,6 +1348,17 @@ class MainWindow(QMainWindow):
     def trash_clear(self):
         self._trash_menu.clear()
         self.ui.trashButton.setEnabled(False)
+
+    @pyqtSlot()
+    def launch_recent_session(self):
+        print('launch reieicn')
+        print(self.sender().data())
+        try:
+            session_name = str(self.sender().data())
+        except BaseException:
+            return
+
+        self.to_daemon('/ray/server/open_session', session_name)
 
     @pyqtSlot()
     def show_client_trash_dialog(self):

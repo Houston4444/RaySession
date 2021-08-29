@@ -136,6 +136,7 @@ if __name__ == '__main__':
     #save RS.settings
     RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
     RS.settings.setValue('daemon/favorites', RS.favorites)
+    RS.settings.setValue('daemon/recent_sessions', session.recent_sessions)
     if not CommandLineArgs.no_options:
         RS.settings.setValue('daemon/options', server.options)
 

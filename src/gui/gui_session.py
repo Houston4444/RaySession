@@ -21,6 +21,7 @@ class Session:
         self.client_list = []
         self.trashed_clients = []
         self.favorite_list = []
+        self.recent_sessions = []
         self.name = ''
         self.path = ''
         self.notes = ''
@@ -195,6 +196,10 @@ class SignaledSession(Session):
     def _ray_gui_server_options(self, path, args):
         options = args[0]
         self.set_daemon_options(options)
+
+    def _ray_gui_server_recent_sessions(self, path, args):
+        self.recent_sessions = args
+        self.main_win.update_recent_sessions_menu()
 
     def _ray_gui_session_name(self, path, args):
         sname, spath = args

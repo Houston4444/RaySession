@@ -47,6 +47,8 @@ class Session(ServerSender):
         self.future_trashed_clients = []
         self.new_client_exec_args = []
         self.favorites = []
+        self.recent_sessions = {}
+
         self.name = ""
         self.path = ""
         self.future_session_path = ""
@@ -164,6 +166,21 @@ class Session(ServerSender):
             spath = spath[:-1]
 
         return spath
+
+    def remember_as_recent(self):
+        # put loaded session (if exists) in recent sessions
+        if self.name:
+            long_name = self.path.replace(self.root + '/', '', 1)
+
+            if not self.root in self.recent_sessions.keys():
+                self.recent_sessions[self.root] = []
+            if long_name in self.recent_sessions[self.root]:
+                self.recent_sessions[self.root].remove(long_name)
+            self.recent_sessions[self.root].insert(0, long_name)
+            if len(self.recent_sessions[self.root]) > 7:
+                self.recent_sessions[self.root] = self.recent_sessions[self.root][:7]
+            self.sendGui('/ray/gui/server/recent_sessions',
+                         *self.recent_sessions[self.root])
 
     def getClient(self, client_id):
         for client in self.clients:
@@ -1255,6 +1272,8 @@ class OperatingSession(Session):
 
     def close_substep2(self, clear_all_clients=False):
         self.cleanExpected()
+        self.remember_as_recent()
+
         if clear_all_clients:
             self.setPath('')
         self.nextFunction()

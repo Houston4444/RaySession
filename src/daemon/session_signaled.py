@@ -13,7 +13,7 @@ import ray
 from client import Client
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
-from daemon_tools import Terminal
+from daemon_tools import Terminal, RS
 from session import OperatingSession
 
 _translate = QCoreApplication.translate
@@ -78,8 +78,20 @@ class SignaledSession(OperatingSession):
         OperatingSession.__init__(self, root)
 
         signaler.osc_recv.connect(self.oscReceive)
-        #signaler.script_finished.connect(self.scriptFinished)
         signaler.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
+
+        self.recent_sessions = RS.settings.value(
+            'daemon/recent_sessions', {}, type=dict)
+
+        # check here if recent sessions still exist
+        if self.root in self.recent_sessions.keys():
+            to_remove_list = []
+            for sess in self.recent_sessions[self.root]:
+                if not os.path.exists(
+                        "%s/%s/raysession.xml" % (self.root, sess)):
+                    to_remove_list.append(sess)
+            for sess in to_remove_list:
+                self.recent_sessions[self.root].remove(sess)
 
     def oscReceive(self, path, args, types, src_addr):
         nsm_equivs = {"/nsm/server/add" : "/ray/session/add_executable",

@@ -848,9 +848,15 @@ QToolButton {border: none}</string>
     <property name="title">
      <string>Fi&amp;le</string>
     </property>
+    <widget class="QMenu" name="menuRecentSessions">
+     <property name="title">
+      <string>Recent sessions</string>
+     </property>
+    </widget>
     <addaction name="actionNewSession"/>
     <addaction name="actionOpenSession"/>
     <addaction name="separator"/>
+    <addaction name="menuRecentSessions"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
