@@ -195,6 +195,8 @@ class CanvasBox(QGraphicsItem):
         self._wrapping_timer.timeout.connect(self.animateWrapping)
         self._wrapping_n = 0
         self._wrapping_max = 5
+        
+        self._last_move_time = time.time()
 
         # Icon
         if canvas.theme.box_use_icon:
@@ -1231,12 +1233,16 @@ class CanvasBox(QGraphicsItem):
                 canvas.scene.fix_temporary_scroll_bars()
 
             self.repaintLines()
-            canvas.scene.resize_the_scene()
+            #print('jiresize', self.m_group_name, self.m_splitted_mode, time.time())
+            if time.time() - self._last_move_time > 0.020:
+                self._last_move_time = time.time()
+                canvas.scene.resize_the_scene()
         QGraphicsItem.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
             self.unsetCursor()
+            canvas.scene.resize_the_scene()
             canvas.scene.reset_scroll_bars()
             QTimer.singleShot(0, self.fixPosAfterMove)
             QTimer.singleShot(0, canvas.scene.update)
