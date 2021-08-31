@@ -20,6 +20,7 @@
 # Imports (Global)
 import sys
 import time
+import inspect
 
 from sip import voidptr
 from struct import pack
@@ -196,7 +197,7 @@ class CanvasBox(QGraphicsItem):
         self._wrapping_n = 0
         self._wrapping_max = 5
         
-        self._last_move_time = time.time()
+        self._ensuring_visible = False
 
         # Icon
         if canvas.theme.box_use_icon:
@@ -904,11 +905,11 @@ class CanvasBox(QGraphicsItem):
         self.p_ex_height = self.p_height
         self.p_ex_scene_pos = self.scenePos()
 
-        self.repaintLines(True)
+        self.repaintLines(forced=True)
         self.update()
 
     def repaintLines(self, forced=False):
-        if self.pos() != self.m_last_pos or forced:
+        if forced or self.pos() != self.m_last_pos:
             for connection in self.m_connection_lines:
                 connection.line.updateLinePos()
 
@@ -1226,23 +1227,30 @@ class CanvasBox(QGraphicsItem):
         QGraphicsItem.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
+        if canvas.scene.resizing_scene:
+            # QGraphicsScene.setSceneRect calls this method
+            # and resize_the_scene can be called from this method
+            # So, here we avoid a RecursionError
+            return
+
         if self.m_mouse_down:
             if not self.m_cursor_moving:
                 self.setCursor(QCursor(Qt.SizeAllCursor))
                 self.m_cursor_moving = True
                 canvas.scene.fix_temporary_scroll_bars()
 
+            QGraphicsItem.mouseMoveEvent(self, event)
+
             self.repaintLines()
-            #print('jiresize', self.m_group_name, self.m_splitted_mode, time.time())
-            if time.time() - self._last_move_time > 0.020:
-                self._last_move_time = time.time()
-                canvas.scene.resize_the_scene()
+            canvas.scene.resize_the_scene()
+            return
+
         QGraphicsItem.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         if self.m_cursor_moving:
             self.unsetCursor()
-            canvas.scene.resize_the_scene()
+            self.repaintLines(forced=True)
             canvas.scene.reset_scroll_bars()
             QTimer.singleShot(0, self.fixPosAfterMove)
             QTimer.singleShot(0, canvas.scene.update)

@@ -20,6 +20,7 @@
 # Imports (Global)
 
 from math import floor
+import time
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
                           Qt, QPoint, QPointF, QRectF, QTimer, QSizeF, QMarginsF)
@@ -99,6 +100,7 @@ class PatchScene(QGraphicsScene):
         self.move_box_n_max = 8 # 10 animations steps (40ms * 8 = 320ms)
 
         self.elastic_scene = True
+        self.resizing_scene = False
 
         self.selectionChanged.connect(self.slot_selectionChanged)
         #self.setSceneRect(-10000, -10000, 20000, 20000)
@@ -260,10 +262,12 @@ class PatchScene(QGraphicsScene):
     def resize_the_scene(self):
         if not options.elastic:
             return
-
+        
         scene_rect = self.get_new_scene_rect()
         if not scene_rect.isNull():
-            self.setSceneRect(self.get_new_scene_rect())
+            self.resizing_scene = True
+            self.setSceneRect(scene_rect)
+            self.resizing_scene = False
 
     def set_elastic(self, yesno: bool):
         options.elastic = True
