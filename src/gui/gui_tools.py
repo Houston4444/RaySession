@@ -21,6 +21,7 @@ class RS:
     HD_JackConfigScript = 0x010
     HD_SessionScripts = 0x020
     HD_SystrayClose = 0x040
+    HD_StartupRecentSessions = 0x080
 
     @classmethod
     def set_settings(cls, settings):

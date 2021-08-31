@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import (QLineEdit, QStackedWidget, QLabel, QToolButton,
-                             QFrame, QGraphicsView, QSplitter, QSplitterHandle,
-                             QSlider, QToolTip, QApplication, QProgressBar)
+from PyQt5.QtWidgets import (
+    QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame, QGraphicsView,
+    QSplitter, QSplitterHandle, QSlider, QToolTip, QApplication, QProgressBar,
+    QDialogButtonBox)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QCursor, QMouseEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint, QPointF, QRectF, QSizeF
@@ -451,3 +452,17 @@ class ProgressBarDsp(QProgressBar):
             + "stop:0.5 " + color_center + ','
             + "stop:1 " + color_border + ',' + ')}')
         QProgressBar.setValue(self, value)
+        
+        
+class StartupDialogButtonBox(QDialogButtonBox):
+    key_event = pyqtSignal(object)
+    
+    def __init__(self, parent):
+        QDialogButtonBox.__init__(self, parent)
+        
+    def keyPressEvent(self, event):
+        if event.key in (Qt.Key_Up, Qt.Key_Down):
+            self.key_event.emit(event)
+            return
+
+        QDialogButtonBox.keyPressEvent(self, event)

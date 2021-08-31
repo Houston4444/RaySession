@@ -4,7 +4,7 @@ import time
 
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QTreeWidget, QTreeWidgetItem,
-    QCompleter, QMessageBox, QFileDialog)
+    QCompleter, QMessageBox, QFileDialog, QApplication)
 from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
 from PyQt5.QtCore import Qt, QTimer
 
@@ -40,6 +40,7 @@ import ui.snapshot_progress
 import ui.waiting_close_user
 import ui.client_rename
 import ui.canvas_port_info
+import ui.startup_dialog
 import ui.systray_close
 import ui.systray_management
 
@@ -1392,7 +1393,7 @@ class SystrayCloseDialog(ChildDialog):
         self.ui = ui.systray_close.Ui_Dialog()
         self.ui.setupUi(self)
 
-    def not_again(self):
+    def not_again(self)->bool:
         return self.ui.checkBox.isChecked()
 
 
@@ -1423,6 +1424,66 @@ class SystrayManagement(ChildDialog):
 
     def wild_shutdown(self)->bool:
         return self.ui.checkBoxShutdown.isChecked()
+
+
+class StartupDialog(ChildDialog):
+    ACTION_NO = 0
+    ACTION_NEW = 1
+    ACTION_OPEN = 2
+    
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui.startup_dialog.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self._clicked_action = self.ACTION_NO
+        
+        
+        self.ui.listWidgetRecentSessions.itemDoubleClicked.connect(
+            self.accept)
+        self.ui.listWidgetRecentSessions.addItems(
+            self.session.recent_sessions)
+        self.ui.listWidgetRecentSessions.setMinimumHeight(
+            30 * len(self.session.recent_sessions))
+        self.ui.listWidgetRecentSessions.setCurrentRow(0)
+        self.ui.pushButtonNewSession.clicked.connect(
+            self._new_session_clicked)
+        self.ui.pushButtonOpenSession.clicked.connect(
+            self._open_session_clicked)
+        self.ui.buttonBox.key_event.connect(self._up_down_pressed)
+    
+    def _server_status_changed(self, server_status):
+        if server_status != ray.ServerStatus.OFF:
+            self.reject()
+    
+    def _new_session_clicked(self):
+        self._clicked_action = self.ACTION_NEW
+        self.reject()
+    
+    def _open_session_clicked(self):
+        self._clicked_action = self.ACTION_OPEN
+        self.reject()
+    
+    def _up_down_pressed(self, event):
+        self.ui.comboBoxRecentSessions.keyPressEvent(event)
+    
+    def not_again_value(self)->bool:
+        return not self.ui.checkBox.isChecked()
+    
+    def get_selected_session(self)->str:
+        return self.ui.listWidgetRecentSessions.currentItem().text()
+
+    def get_clicked_action(self)->int:
+        return self._clicked_action
+    
+    def keyPressEvent(self, event):
+        if QApplication.keyboardModifiers() & Qt.ControlModifier:
+            if event.key() == Qt.Key_N:
+                self._new_session_clicked()
+            elif event.key() == Qt.Key_O:
+                self._open_session_clicked()
+            
+        ChildDialog.keyPressEvent(self, event)
 
 
 class ErrorDialog(ChildDialog):

@@ -20,7 +20,6 @@
 # Imports (Global)
 import sys
 import time
-import inspect
 
 from sip import voidptr
 from struct import pack

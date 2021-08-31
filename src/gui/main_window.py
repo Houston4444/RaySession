@@ -1,5 +1,6 @@
 import time
 import os
+
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView,
                              QBoxLayout, QSystemTrayIcon, QAction)
@@ -342,9 +343,6 @@ class MainWindow(QMainWindow):
         self._fullscreen_patchbay = False
         self.hidden_maximized = False
 
-        #self.recent_sessions_menu = QMenu(
-            #_translate('systray', 'Recent sessions'))
-
         self._wild_shutdown = RS.settings.value(
             'wild_shutdown', False, type=bool)
         self._systray_mode = RS.settings.value(
@@ -353,6 +351,8 @@ class MainWindow(QMainWindow):
         self._systray.activated.connect(self._systray_activated)
         self._systray.setIcon(QIcon(':48x48/raysession'))
         self._systray.setToolTip(ray.APP_TITLE)
+        self._systray_menu = QMenu()
+        self._systray_menu_add = QMenu(self._systray_menu)
 
         self._build_systray_menu()
 
@@ -360,6 +360,8 @@ class MainWindow(QMainWindow):
                 or (self._systray_mode == ray.Systray.SESSION_ONLY
                         and self.session.server_status != ray.ServerStatus.OFF)):
             self._systray.show()
+        
+        self._startup_time = time.time()
 
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
         self.ui.actionToggleShowMessages.setChecked(
@@ -612,7 +614,7 @@ class MainWindow(QMainWindow):
 
         self.to_daemon('/ray/server/new_session', session_short_path, template_name)
 
-    def _open_session(self, action):
+    def _open_session(self):
         # from systray, better to show main window in the background
         # before open dialog
         self.show()
@@ -1004,6 +1006,11 @@ class MainWindow(QMainWindow):
         RS.reset_hiddens()
 
     def _build_systray_menu(self):
+        self._systray_menu.hide()
+        
+        del self._systray_menu
+        del self._systray_menu_add
+
         self._systray_menu = QMenu()
         self._systray_menu.addAction(self.ui.actionSaveSession)
 
@@ -1303,15 +1310,36 @@ class MainWindow(QMainWindow):
 
         for sess in self.session.recent_sessions:
             sess_action = self.ui.menuRecentSessions.addAction(sess)
-            print(sess, self.session.get_short_path())
+
             if sess == self.session.get_short_path():
                 # disable running session
                 sess_action.setEnabled(False)
+
             sess_action.setData(sess)
             sess_action.triggered.connect(self.launch_recent_session)
 
         self.ui.menuRecentSessions.setEnabled(bool(self.session.recent_sessions))
         self._build_systray_menu()
+        
+        # here we start the startup dialog
+        # FIXME - not a good place
+        if (not RS.is_hidden(RS.HD_StartupRecentSessions)
+                and time.time() - self._startup_time < 5
+                and self.session.recent_sessions
+                and self.session.server_status == ray.ServerStatus.OFF):
+            dialog = child_dialogs.StartupDialog(self)
+            dialog.exec()
+
+            if dialog.result():
+                self.to_daemon('/ray/server/open_session',
+                               dialog.get_selected_session())
+            elif dialog.get_clicked_action() == dialog.ACTION_NEW:
+                self._create_new_session()
+            elif dialog.get_clicked_action() == dialog.ACTION_OPEN:
+                self._open_session()
+            
+            if dialog.not_again_value():
+                RS.set_hidden(RS.HD_StartupRecentSessions)
 
     def error_message(self, message: str):
         error_dialog = child_dialogs.ErrorDialog(self, message)
@@ -1351,8 +1379,6 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def launch_recent_session(self):
-        print('launch reieicn')
-        print(self.sender().data())
         try:
             session_name = str(self.sender().data())
         except BaseException:
