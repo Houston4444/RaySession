@@ -169,7 +169,7 @@ class Session(ServerSender):
 
     def remember_as_recent(self):
         # put loaded session (if exists) in recent sessions
-        if self.name:
+        if self.name and not self.is_dummy:
             long_name = self.path.replace(self.root + '/', '', 1)
 
             if not self.root in self.recent_sessions.keys():
@@ -1162,11 +1162,6 @@ class OperatingSession(Session):
         if not self.path:
             self.nextFunction()
             return
-
-        #byebye_client_list = []
-        #future_clients_exec_args = []
-
-
 
         keep_client_list = [] # clients we will keep alive
         byebye_client_list = [] # stopped clients we will remove immediately

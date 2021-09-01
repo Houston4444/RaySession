@@ -262,7 +262,7 @@ class SignaledSession(OperatingSession):
         if self.path:
             self.send(src_addr, '/error', path, ray.Err.SESSION_LOCKED,
                       "impossible to change root. session %s is loaded"
-                        % self.path)
+                      % self.path)
             return
 
         if not os.path.exists(session_root):
@@ -287,6 +287,11 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path,
                   "root folder changed to %s" % self.root)
         self.sendGui('/ray/gui/server/root', self.root)
+        
+        if self.root not in self.recent_sessions.keys():
+            self.recent_sessions[self.root] = []
+        self.sendGui('/ray/gui/server/recent_sessions',
+                     *self.recent_sessions[self.root])
 
     def _ray_server_list_client_templates(self, path, args, src_addr):
         # if src_addr is an announced ray GUI
