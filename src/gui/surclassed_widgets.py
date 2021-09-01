@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
     QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame, QGraphicsView,
     QSplitter, QSplitterHandle, QSlider, QToolTip, QApplication, QProgressBar,
-    QDialogButtonBox)
+    QDialogButtonBox, QPushButton)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QCursor, QMouseEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint, QPointF, QRectF, QSizeF
@@ -466,3 +466,35 @@ class StartupDialogButtonBox(QDialogButtonBox):
             return
 
         QDialogButtonBox.keyPressEvent(self, event)
+        
+class StartupDialogPushButtonNew(QPushButton):
+    focus_on_list = pyqtSignal()
+    focus_on_open = pyqtSignal()
+    
+    def __init__(self, parent):
+        QPushButton.__init__(self, parent)
+        
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key_Down, Qt.Key_Up):
+            self.focus_on_open.emit()
+            return
+        
+        if event.key() in (Qt.Key_Left, Qt.Key_Right):
+            self.focus_on_list.emit()
+            return
+    
+        QPushButton.keyPressEvent(self, event)
+
+
+class StartupDialogPushButtonOpen(StartupDialogPushButtonNew):
+    focus_on_new = pyqtSignal()
+    
+    def __init__(self, parent):
+        StartupDialogPushButtonNew.__init__(self, parent)
+        
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key_Down, Qt.Key_Up):
+            self.focus_on_new.emit()
+            return
+        
+        StartupDialogPushButtonNew.keyPressEvent(self, event)

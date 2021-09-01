@@ -1450,7 +1450,17 @@ class StartupDialog(ChildDialog):
             self._new_session_clicked)
         self.ui.pushButtonOpenSession.clicked.connect(
             self._open_session_clicked)
-        self.ui.buttonBox.key_event.connect(self._up_down_pressed)
+        #self.ui.buttonBox.key_event.connect(self._up_down_pressed)
+        self.ui.pushButtonNewSession.focus_on_list.connect(
+            self._focus_on_list)
+        self.ui.pushButtonOpenSession.focus_on_list.connect(
+            self._focus_on_list)
+        self.ui.pushButtonNewSession.focus_on_open.connect(
+            self._focus_on_open)
+        self.ui.pushButtonOpenSession.focus_on_new.connect(
+            self._focus_on_new)
+
+        self.ui.listWidgetRecentSessions.setFocus(Qt.OtherFocusReason)
     
     def _server_status_changed(self, server_status):
         if server_status != ray.ServerStatus.OFF:
@@ -1464,8 +1474,14 @@ class StartupDialog(ChildDialog):
         self._clicked_action = self.ACTION_OPEN
         self.reject()
     
-    def _up_down_pressed(self, event):
-        self.ui.comboBoxRecentSessions.keyPressEvent(event)
+    def _focus_on_list(self):
+        self.ui.listWidgetRecentSessions.setFocus(Qt.OtherFocusReason)
+        
+    def _focus_on_new(self):
+        self.ui.pushButtonNewSession.setFocus(Qt.OtherFocusReason)
+    
+    def _focus_on_open(self):
+        self.ui.pushButtonOpenSession.setFocus(Qt.OtherFocusReason)
     
     def not_again_value(self)->bool:
         return not self.ui.checkBox.isChecked()
@@ -1477,12 +1493,19 @@ class StartupDialog(ChildDialog):
         return self._clicked_action
     
     def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Left:
+            self.ui.pushButtonNewSession.setFocus(Qt.OtherFocusReason)
+        elif event.key() == Qt.Key_Right:
+            self.ui.pushButtonOpenSession.setFocus(Qt.OtherFocusReason)
+        elif event.key() in (Qt.Key_Up, Qt.Key_Down):
+            self.ui.listWidgetRecentSessions.setFocus(Qt.OtherFocusReason)
+        
         if QApplication.keyboardModifiers() & Qt.ControlModifier:
             if event.key() == Qt.Key_N:
                 self._new_session_clicked()
             elif event.key() == Qt.Key_O:
                 self._open_session_clicked()
-            
+
         ChildDialog.keyPressEvent(self, event)
 
 
