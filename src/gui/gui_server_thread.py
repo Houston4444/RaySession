@@ -57,13 +57,54 @@ class GuiServerThread(liblo.ServerThread):
         self.signaler = self.session.signaler
         self.daemon_manager = self.session.daemon_manager
 
+        # all theses OSC messages are directly treated by
+        # SignaledSession in gui_session.py
+        # in the function with the the name of the message
+        # with '/' replaced with '_'
+        # for example /ray/gui/session/name goes to
+        # _ray_gui_session_name
+
         for path_types in (
+            ('/error', 'sis'),
+            ('/minor_error', 'sis'),
             ('/ray/gui/server/disannounce', ''),
             ('/ray/gui/server/nsm_locked', 'i'),
             ('/ray/gui/server/options', 'i'),
             ('/ray/gui/server/message', 's'),
             ('/ray/gui/session/name', 'ss'),
             ('/ray/gui/session/notes', 's'),
+            ('/ray/gui/session/notes_shown', ''),
+            ('/ray/gui/session/notes_hidden', ''),
+            ('/ray/gui/session/is_nsm', ''),
+            ('/ray/gui/session/renameable', 'i'),
+            ('/ray/gui/client/new', ray.ClientData.sisi()),
+            ('/ray/gui/client/update', ray.ClientData.sisi()),
+            ('/ray/gui/client/ray_hack_update', 's' + ray.RayHack.sisi()),
+            ('/ray/gui/client/switch', 'ss'),
+            ('/ray/gui/client/status', 'si'),
+            ('/ray/gui/client/dirty', 'si'),
+            ('/ray/gui/client/has_optional_gui', 's'),
+            ('/ray/gui/client/gui_visible', 'si'),
+            ('/ray/gui/client/still_running', 's'),
+            ('/ray/gui/client/no_save_level', 'si'),
+            ('/ray/gui/trash/add', ray.ClientData.sisi()),
+            ('/ray/gui/trash/ray_hack_update', 's' + ray.RayHack.sisi()),
+            ('/ray/gui/trash/ray_net_update', 's' + ray.RayNet.sisi()),
+            ('/ray/gui/trash/remove', 's'),
+            ('/ray/gui/trash/clear', ''),
+            ('/ray/gui/favorites/added', 'ssi'),
+            ('/ray/gui/favorites/removed', 'si'),
+            ('/ray/gui/script_info', 's'),
+            ('/ray/gui/hide_script_info', ''),
+            ('/ray/gui/script_user_action', 's'),
+            ('/ray/gui/hide_script_user_action', ''),
+            ('/ray/gui/patchbay/port_added', 'siih'),
+            ('/ray/gui/patchbay/port_renamed', 'ss'),
+            ('/ray/gui/patchbay/port_removed', 's'),
+            ('/ray/gui/patchbay/connection_added', 'ss'),
+            ('/ray/gui/patchbay/connection_removed', 'ss'),
+            ('/ray/gui/patchbay/server_stopped', ''),
+            ('/ray/gui/patchbay/update_group_position', ray.GroupPosition.sisi()),
             ('/ray/gui/patchbay/metadata_updated', 'hss'),
             ('/ray/gui/patchbay/dsp_load', 'i'),
             ('/ray/gui/patchbay/add_xrun', ''),
@@ -78,11 +119,6 @@ class GuiServerThread(liblo.ServerThread):
                 self.add_method(path_types[0], path_types[1],
                                 self._generic_callback)
 
-        self._direct_to_session('/ray/gui/patchbay/port_added', 'siih')
-
-    def _direct_to_session(self, path: str, types: str):
-        self.add_method(path, types, self._generic_callback)
-
     @staticmethod
     def instance():
         return _instance
@@ -96,14 +132,6 @@ class GuiServerThread(liblo.ServerThread):
                              % (path, args, types))
 
         self.signaler.osc_receive.emit(path, args)
-
-    @ray_method('/error', 'sis')
-    def _error(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/minor_error', 'sis')
-    def _minor_error(self, path, args, types, src_addr):
-        pass
 
     @ray_method('/reply', None)
     def _reply(self, path, args, types, src_addr):
@@ -141,23 +169,11 @@ class GuiServerThread(liblo.ServerThread):
             src_addr, version, server_status,
             options, session_root, is_net_free)
 
-    @ray_method('/ray/gui/server/disannounce', '')
-    def _server_disannounce(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/server/nsm_locked', 'i')
-    def _server_nsm_locked(self, path, args, types, src_addr):
-        pass
-
     @ray_method('/ray/gui/server/root', 's')
     def _server_root(self, path, args, types, src_addr):
         session_root = args[0]
         CommandLineArgs.change_session_root(session_root)
         self.signaler.root_changed.emit(session_root)
-
-    @ray_method('/ray/gui/server/options', 'i')
-    def _server_options(self, path, args, types, src_addr):
-        pass
 
     @ray_method('/ray/gui/server/status', 'i')
     def _server_status(self, path, args, types, src_addr):
@@ -174,43 +190,15 @@ class GuiServerThread(liblo.ServerThread):
         progress = args[0]
         self.signaler.server_progress.emit(progress)
 
-    @ray_method('/ray/gui/server/message', 's')
-    def _server_message(self, path, args, types, src_addr):
-        pass
-
     @ray_method('/ray/gui/server/recent_sessions', None)
     def _server_recent_sessions(self, path, args, types, src_addr):
         for t in types:
             if t != 's':
                 return False
 
-    @ray_method('/ray/gui/session/name', 'ss')
-    def _session_name(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/session/notes', 's')
-    def _session_notes(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/session/notes_shown', '')
-    def _session_notes_shown(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/session/notes_hidden', '')
-    def _session_notes_hidden(self, path, args, types, src_addr):
-        pass
-
     @ray_method('/ray/gui/session/auto_snapshot', 'i')
     def _session_auto_snapshot(self, path, args, types, src_addr):
         self.signaler.reply_auto_snapshot.emit(bool(args[0]))
-
-    @ray_method('/ray/gui/session/is_nsm', '')
-    def _session_is_nsm(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/session/renameable', 'i')
-    def _session_renameable(self, path, args, types, src_addr):
-        pass
 
     @ray_method('/ray/gui/session/sort_clients', None)
     def _session_sort_clients(self, path, args, types, src_addr):
@@ -229,131 +217,14 @@ class GuiServerThread(liblo.ServerThread):
     def _client_template_ray_net_update(self, path, args, types, src_addr):
         self.signaler.client_template_ray_net_update.emit(args)
 
-    @ray_method('/ray/gui/client/new', ray.ClientData.sisi())
-    def _client_new(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/client/update', ray.ClientData.sisi())
-    def _client_update(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/client/ray_hack_update', 's' + ray.RayHack.sisi())
-    def _client_ray_hack_update(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/client/ray_net_update', 's' + ray.RayNet.sisi())
-    def _client_ray_net_update(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/client/switch', 'ss')
-    def _client_switch(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/client/status', 'si')
-    def _client_status(self, path, args, types, src_addr):
-        pass
-
     @ray_method('/ray/gui/client/progress', 'sf')
     def _client_progress(self, path, args, types, src_addr):
         self.signaler.client_progress.emit(*args)
         return True
 
-    @ray_method('/ray/gui/client/dirty', 'si')
-    def _client_dirty(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/client/has_optional_gui', 's')
-    def _client_has_optional_gui(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/client/gui_visible', 'si')
-    def _client_gui_visible(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/client/still_running', 's')
-    def _client_still_running(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/client/no_save_level', 'si')
-    def _client_no_save_level(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/trash/add', ray.ClientData.sisi())
-    def _trash_add(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/trash/ray_hack_update', 's' + ray.RayHack.sisi())
-    def _trash_update_ray_hack(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/trash/ray_net_update', 's' + ray.RayNet.sisi())
-    def _trash_update_ray_net(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/trash/remove', 's')
-    def _trash_remove(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/trash/clear', '')
-    def _trash_clear(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/favorites/added', 'ssi')
-    def _favorites_added(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/favorites/removed', 'si')
-    def _favorites_removed(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/script_info', 's')
-    def _script_info(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/hide_script_info', '')
-    def _hide_script_info(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/script_user_action', 's')
-    def _script_user_action(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/hide_script_user_action', '')
-    def _hide_script_user_action(self, path, args, types, src_addr):
-        pass
-
     @ray_method('/ray/gui/patchbay/announce', 'iii')
     def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
         self.patchbay_addr = src_addr
-
-    #@ray_method('/ray/gui/patchbay/port_added', 'sssiis')
-    #def _patchbay_port_added(self, path, args, types, src_addr):
-        #pass
-
-    @ray_method('/ray/gui/patchbay/port_renamed', 'ss')
-    def _patchbay_port_renamed(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/patchbay/port_removed', 's')
-    def _patchbay_port_removed(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/patchbay/connection_added', 'ss')
-    def _patchbay_connection_added(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/patchbay/connection_removed', 'ss')
-    def _patchbay_connection_removed(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/patchbay/server_stopped', '')
-    def _patchbay_server_stopped(self, path, args, types, src_addr):
-        pass
-
-    @ray_method('/ray/gui/patchbay/update_group_position',
-                ray.GroupPosition.sisi())
-    def _patchbay_group_position(self, path, args, types, src_addr):
-        pass
 
     @ray_method('/ray/gui/patchbay/update_portgroup', None)
     def _patchbay_update_portgroup(self, path, args, types, src_addr):
