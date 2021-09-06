@@ -9,7 +9,7 @@ from PyQt5.QtCore import QProcess
 
 import ray
 
-def moveWin(win_id, desktop_from, desktop_to):
+def move_win(win_id, desktop_from, desktop_to):
     if desktop_from == desktop_to:
         return
 
@@ -34,39 +34,41 @@ class WindowProperties:
 class DesktopsMemory:
     def __init__(self, session):
         self.session = session
-        self.saved_windows = []
-        self.active_window_list = []
-        self.daemon_pids = []
-        self.non_daemon_pids = []
 
-    def isChildOfDaemon(self, pid):
-        if pid in self.daemon_pids:
+        self._active_window_list = []
+        self._daemon_pids = []
+        self._non_daemon_pids = []
+
+        self.saved_windows = []
+
+    def _is_child_of_daemon(self, pid)->bool:
+        if pid in self._daemon_pids:
             return True
 
-        if pid in self.non_daemon_pids:
+        if pid in self._non_daemon_pids:
             return False
 
         daemon_pid = os.getpid()
 
         if pid < daemon_pid:
-            self.non_daemon_pids.append(pid)
+            self._non_daemon_pids.append(pid)
             return False
 
         if ray.isPidChildOf(pid, daemon_pid):
-            self.daemon_pids.append(pid)
+            self._daemon_pids.append(pid)
             return True
 
-        self.non_daemon_pids.append(pid)
+        self._non_daemon_pids.append(pid)
         return False
 
-    def isNameInSession(self, name: str)->bool:
+    def _is_name_in_session(self, name: str)->bool:
         for client in self.session.clients:
             if client.name == name and client.active:
                 return True
 
         return False
 
-    def setActiveWindowList(self):
+    def set_active_window_list(self):
         try:
             wmctrl_all = subprocess.check_output(['wmctrl', '-l',
                                                   '-p', '-x']).decode()
@@ -74,7 +76,7 @@ class DesktopsMemory:
             warnings.warn('unable to use wmctrl')
             return
 
-        self.active_window_list.clear()
+        self._active_window_list.clear()
 
         all_lines = wmctrl_all.split('\n')
 
@@ -111,10 +113,10 @@ class DesktopsMemory:
                                   'Non-Timeline' : 'Non-Timeline'}
 
                     if class_name in exceptions:
-                        if self.isNameInSession(exceptions[class_name]):
+                        if self._is_name_in_session(exceptions[class_name]):
                             ignore_pid = True
 
-                if not (ignore_pid or self.isChildOfDaemon(pid)):
+                if not (ignore_pid or self._is_child_of_daemon(pid)):
                     continue
 
                 name = ""
@@ -130,14 +132,14 @@ class DesktopsMemory:
                 awin.wclass = wclass
                 awin.name = name
 
-                self.active_window_list.append(awin)
+                self._active_window_list.append(awin)
 
     def save(self):
-        self.setActiveWindowList()
-        if not self.active_window_list:
+        self.set_active_window_list()
+        if not self._active_window_list:
             return
 
-        for awin in self.active_window_list:
+        for awin in self._active_window_list:
             for win in self.saved_windows:
                 if win.wclass == awin.wclass and win.name == awin.name:
                     win.desktop = awin.desktop
@@ -155,15 +157,15 @@ class DesktopsMemory:
         if not self.saved_windows:
             return
 
-        self.setActiveWindowList()
-        if not self.active_window_list:
+        self.set_active_window_list()
+        if not self._active_window_list:
             return
 
-        for awin in self.active_window_list:
+        for awin in self._active_window_list:
             for win in self.saved_windows:
                 if win.wclass == awin.wclass and win.name == awin.name:
                     win.id = awin.id
-                    moveWin(awin.id, awin.desktop, win.desktop)
+                    move_win(awin.id, awin.desktop, win.desktop)
                     break
 
                 elif win.wclass == awin.wclass:
@@ -173,10 +175,10 @@ class DesktopsMemory:
                         if (len(win_name_sps) == 2
                                 and awin.name.startswith(win_name_sps[0])
                                 and awin.name.endswith(win_name_sps[1])):
-                            moveWin(awin.id, awin.desktop, win.desktop)
+                            move_win(awin.id, awin.desktop, win.desktop)
                             break
 
-    def readXml(self, xml_element):
+    def read_xml(self, xml_element):
         self.saved_windows.clear()
 
         nodes = xml_element.childNodes()
@@ -198,19 +200,19 @@ class DesktopsMemory:
 
             self.saved_windows.append(win)
 
-    def hasWindow(self, pid)->bool:
-        if not self.active_window_list:
+    def has_window(self, pid)->bool:
+        if not self._active_window_list:
             # here fo ray_hack check window
             # if window manager doesn't supports wmctrl
             # lie saying there is a window
             return True
 
-        for awin in self.active_window_list:
+        for awin in self._active_window_list:
             if ray.isPidChildOf(awin.pid, pid):
                 return True
         return False
 
-    def findAndClose(self, pid):
-        for awin in self.active_window_list:
+    def find_and_close(self, pid):
+        for awin in self._active_window_list:
             if ray.isPidChildOf(awin.pid, pid):
                 QProcess.startDetached('wmctrl', ['-i', '-c', awin.id])

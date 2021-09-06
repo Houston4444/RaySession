@@ -892,10 +892,10 @@ class OperatingSession(Session):
             return
 
         if self.hasServerOption(ray.Option.HAS_WMCTRL):
-            self.desktops_memory.setActiveWindowList()
+            self.desktops_memory.set_active_window_list()
             for client in self.clients:
                 if client.ray_hack_waiting_win:
-                    if self.desktops_memory.hasWindow(client.pid):
+                    if self.desktops_memory.has_window(client.pid):
                         client.ray_hack_waiting_win = False
                         client.rayHackReady()
 
@@ -1255,11 +1255,11 @@ class OperatingSession(Session):
                     break
 
             if has_nosave_clients:
-                self.desktops_memory.setActiveWindowList()
+                self.desktops_memory.set_active_window_list()
                 for client in self.clients:
                     if client.isRunning() and client.noSaveLevel() == 2:
                         self.expected_clients.append(client)
-                        self.desktops_memory.findAndClose(client.pid)
+                        self.desktops_memory.find_and_close(client.pid)
 
         if self.expected_clients:
             self.sendGuiMessage(
@@ -1842,7 +1842,7 @@ for better organization."""))
 
                 elif tag_name == "Windows":
                     if self.hasServerOption(ray.Option.DESKTOPS_MEMORY):
-                        self.desktops_memory.readXml(node.toElement())
+                        self.desktops_memory.read_xml(node.toElement())
 
                 #elif tag_name == "Canvas":
                     #self.canvas_saver.load_session_canvas(node.toElement())
