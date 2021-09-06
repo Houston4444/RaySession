@@ -1507,7 +1507,7 @@ for better organization.""")
 
         self.sendGuiMessage(_translate('GUIMSG', 'start session copy...'))
 
-        self.file_copier.startSessionCopy(
+        self.file_copier.start_session_copy(
             self.path, spath,
             self.duplicate_substep2, self.duplicateAborted,
             [new_session_full_name])
@@ -1593,7 +1593,7 @@ for better organization.""")
         self.sendGuiMessage(
             _translate('GUIMSG', 'start session copy to template...'))
 
-        self.file_copier.startSessionCopy(self.path,
+        self.file_copier.start_session_copy(self.path,
                                           spath,
                                           self.saveSessionTemplate_substep_1,
                                           self.saveSessionTemplateAborted,
@@ -1666,7 +1666,7 @@ for better organization."""))
             _translate('GUIMSG',
                        'start copy from template to session folder'))
 
-        self.file_copier.startSessionCopy(template_path,
+        self.file_copier.start_session_copy(template_path,
                                           spath,
                                           self.prepareTemplate_substep1,
                                           self.prepareTemplateAborted,
@@ -2234,7 +2234,7 @@ for better organization.""")
 
                 if full_name_files:
                     client.setStatus(ray.ClientStatus.PRECOPY)
-                    self.file_copier.startClientCopy(
+                    self.file_copier.start_client_copy(
                         client.client_id, full_name_files, self.path,
                         self.addClientTemplate_step_1,
                         self.addClientTemplateAborted,

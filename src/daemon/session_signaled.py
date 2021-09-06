@@ -31,7 +31,7 @@ def session_operation(func):
                       "An operation pending.")
             return
 
-        if sess.file_copier.isActive():
+        if sess.file_copier.is_active():
             if path.startswith('/nsm/server/'):
                 sess.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
                       "An operation pending.")
@@ -729,7 +729,7 @@ class SignaledSession(OperatingSession):
         self.rememberOscArgs(path, args, src_addr)
         self.steps_order = [(self.close, True), self.abortDone]
 
-        if self.file_copier.isActive():
+        if self.file_copier.is_active():
             self.file_copier.abort(self.nextFunction, [])
         else:
             self.nextFunction()
@@ -739,7 +739,7 @@ class SignaledSession(OperatingSession):
         self.steps_order = [self.terminateStepScripter,
                             self.close, self.exitNow]
 
-        if self.file_copier.isActive():
+        if self.file_copier.is_active():
             self.file_copier.abort(self.nextFunction, [])
         else:
             self.nextFunction()
@@ -818,7 +818,7 @@ class SignaledSession(OperatingSession):
 
         if sess_root == self.root and session_to_load == self.getShortPath():
             if (self.steps_order
-                    or self.file_copier.isActive()):
+                    or self.file_copier.is_active()):
                 self.send(src_addr, '/ray/net_daemon/duplicate_state', 1)
                 return
 
@@ -862,7 +862,7 @@ class SignaledSession(OperatingSession):
         if not self.path:
             return
 
-        if self.file_copier.isActive():
+        if self.file_copier.is_active():
             return
 
         if new_session_name == self.name:
@@ -1189,7 +1189,7 @@ class SignaledSession(OperatingSession):
                         "Stop client before to trash it !")
             return
 
-        if self.file_copier.isActive(client.client_id):
+        if self.file_copier.is_active(client.client_id):
             self.file_copier.abort()
             self.send(src_addr, '/error', path, ray.Err.COPY_RUNNING,
                         "Files were copying for this client.")
@@ -1213,7 +1213,7 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, '/reply', path, 'client running')
             return
 
-        if self.file_copier.isActive(client.client_id):
+        if self.file_copier.is_active(client.client_id):
             self.sendErrorCopyRunning(src_addr, path)
             return
 
@@ -1221,7 +1221,7 @@ class SignaledSession(OperatingSession):
 
     @client_action
     def _ray_client_open(self, path, args, src_addr, client):
-        if self.file_copier.isActive(client.client_id):
+        if self.file_copier.is_active(client.client_id):
             self.sendErrorCopyRunning(src_addr, path)
             return
 
@@ -1238,7 +1238,7 @@ class SignaledSession(OperatingSession):
     @client_action
     def _ray_client_save(self, path, args, src_addr, client):
         if client.canSaveNow():
-            if self.file_copier.isActive(client.client_id):
+            if self.file_copier.is_active(client.client_id):
                 self.sendErrorCopyRunning(src_addr, path)
                 return
             client.save(src_addr, path)
@@ -1251,7 +1251,7 @@ class SignaledSession(OperatingSession):
     def _ray_client_save_as_template(self, path, args, src_addr, client):
         template_name = args[0]
 
-        if self.file_copier.isActive():
+        if self.file_copier.is_active():
             self.sendErrorCopyRunning(src_addr, path)
             return
 
@@ -1643,7 +1643,7 @@ class SignaledSession(OperatingSession):
         if self.terminated_yet:
             return
 
-        if self.file_copier.isActive():
+        if self.file_copier.is_active():
             self.file_copier.abort()
 
         self.terminated_yet = True

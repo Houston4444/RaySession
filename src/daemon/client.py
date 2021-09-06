@@ -522,7 +522,7 @@ class Client(ServerSender, ray.ClientData):
             self.sendStatusToGui()
 
         if (status == ray.ClientStatus.COPY
-                or self.session.file_copier.isActive(self.client_id)):
+                or self.session.file_copier.is_active(self.client_id)):
             self.sendGui("/ray/gui/client/status", self.client_id,
                          ray.ClientStatus.COPY)
 
@@ -1574,11 +1574,10 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         if client_files:
             self.setStatus(ray.ClientStatus.COPY)
-            fc = self.session.file_copier
-            fc.startClientCopy(self.client_id, client_files, template_dir,
-                                self.saveAsTemplate_substep1,
-                                self.saveAsTemplateAborted,
-                                [template_name])
+            self.session.file_copier.start_client_copy(
+                self.client_id, client_files, template_dir,
+                self.saveAsTemplate_substep1, self.saveAsTemplateAborted,
+                [template_name])
         else:
             self.saveAsTemplate_substep1(template_name)
 

@@ -17,36 +17,36 @@ class FileCopier(ServerSender):
     def __init__(self, session):
         ServerSender.__init__(self)
         self.session = session
-        self.client_id = ''
-        self.next_function = None
-        self.abort_function = None
-        self.next_args = []
-        self.copy_files = []
-        self.copy_size = 0
-        self.aborted = False
-        self.is_active = False
+        self._client_id = ''
+        self._next_function = None
+        self._abort_function = None
+        self._next_args = []
+        self._copy_files = []
+        self._copy_size = 0
+        self._aborted = False
+        self._is_active = False
 
-        self.process = QProcess()
-        self.process.finished.connect(self.processFinished)
+        self._process = QProcess()
+        self._process.finished.connect(self._process_finished)
         if ray.QT_VERSION >= (5, 6):
-            self.process.errorOccurred.connect(self.errorOccurred)
+            self._process.errorOccurred.connect(self._error_occurred)
 
-        self.timer = QTimer()
-        self.timer.setInterval(250)
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(self.checkProgressSize)
+        self._timer = QTimer()
+        self._timer.setInterval(250)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect(self._check_progress_size)
 
         self._abort_src_addr = None
         self._abort_src_path = ''
 
-    def informCopytoGui(self, copy_state):
+    def _inform_copy_to_gui(self, copy_state):
         server = OscServerThread.getInstance()
         if not server:
             return
 
-        server.informCopytoGui(copy_state)
+        server.inform_copy_to_gui(copy_state)
 
-    def getFileSize(self, filepath):
+    def _get_file_size(self, filepath):
         if not os.path.exists(filepath):
             return 0
 
@@ -66,40 +66,40 @@ class FileCopier(ServerSender):
 
         return int(du_str)
 
-    def checkProgressSize(self):
+    def _check_progress_size(self):
         current_size = 0
-        self.timer.stop()
+        self._timer.stop()
 
-        for copy_file in self.copy_files:
+        for copy_file in self._copy_files:
             if copy_file.state == 2:
                 current_size += copy_file.size
             elif copy_file.state == 1:
-                current_size += self.getFileSize(copy_file.dest_path)
+                current_size += self._get_file_size(copy_file.dest_path)
                 break
 
-        if current_size and self.copy_size:
-            progress = float(current_size/self.copy_size)
+        if current_size and self._copy_size:
+            progress = float(current_size/self._copy_size)
 
-            if self.client_id:
-                self.sendGui('/ray/gui/client/progress', self.client_id, progress)
+            if self._client_id:
+                self.sendGui('/ray/gui/client/progress', self._client_id, progress)
             else:
                 self.sendGui('/ray/gui/server/progress', progress)
 
             self.session.oscReply('/ray/net_daemon/duplicate_state', progress)
 
-        self.timer.start()
+        self._timer.start()
 
-    def processFinished(self, exit_code, exit_status):
-        self.timer.stop()
+    def _process_finished(self, exit_code, exit_status):
+        self._timer.stop()
 
-        for copy_file in self.copy_files:
+        for copy_file in self._copy_files:
             if copy_file.state == 1:
                 copy_file.state = 2
                 break
 
-        if self.aborted:
+        if self._aborted:
             ##remove all created files
-            for copy_file in self.copy_files:
+            for copy_file in self._copy_files:
                 if copy_file.state > 0:
                     file_to_remove = copy_file.dest_path
 
@@ -115,58 +115,58 @@ class FileCopier(ServerSender):
                                           "%s hasn't been removed !")
 
 
-            self.is_active = False
-            self.informCopytoGui(False)
-            self.abort_function(*self.next_args)
+            self._is_active = False
+            self._inform_copy_to_gui(False)
+            self._abort_function(*self._next_args)
             return
 
         #run next_function if copy is terminated
-        for copy_file in self.copy_files:
+        for copy_file in self._copy_files:
             if copy_file.state != 2:
                 break
         else:
-            self.is_active = False
-            self.informCopytoGui(False)
+            self._is_active = False
+            self._inform_copy_to_gui(False)
 
-            if self.next_function:
-                self.next_function(*self.next_args)
+            if self._next_function:
+                self._next_function(*self._next_args)
 
             return
 
-        self.nextProcess()
+        self._next_process()
 
-    def errorOccurred(self):
+    def _error_occurred(self):
         #todo make something else
-        self.processFinished(0, 0)
+        self._process_finished(0, 0)
 
-    def nextProcess(self):
-        self.is_active = True
+    def _next_process(self):
+        self._is_active = True
 
-        for copy_file in self.copy_files:
+        for copy_file in self._copy_files:
             if copy_file.state == 0:
                 copy_file.state = 1
-                self.process.start('nice',
+                self._process.start('nice',
                                    ['-n', '+15', 'cp', '-R',
                                     copy_file.orig_path, copy_file.dest_path])
                 break
 
-        self.timer.start()
+        self._timer.start()
 
-    def start(self, src_list, dest_dir, next_function,
+    def _start(self, src_list, dest_dir, next_function,
               abort_function, next_args=[]):
-        self.abort_function = abort_function
-        self.next_function = next_function
-        self.next_args = next_args
+        self._abort_function = abort_function
+        self._next_function = next_function
+        self._next_args = next_args
 
-        self.aborted = False
-        self.copy_size = 0
-        self.copy_files.clear()
+        self._aborted = False
+        self._copy_size = 0
+        self._copy_files.clear()
 
         dest_path_exists = bool(os.path.exists(dest_dir))
         if dest_path_exists:
             if not os.path.isdir(dest_dir):
                 #TODO send error, but it should not append
-                self.abort_function(*self.next_args)
+                self._abort_function(*self._next_args)
                 return
 
         if isinstance(src_list, str):
@@ -174,13 +174,13 @@ class FileCopier(ServerSender):
             src_list = []
 
             if not os.path.isdir(src_dir):
-                self.abort_function(*self.next_args)
+                self._abort_function(*self._next_args)
                 return
 
             try:
                 tmp_list = os.listdir(src_dir)
             except:
-                self.abort_function(*self.next_args)
+                self._abort_function(*self._next_args)
                 return
 
             for path in tmp_list:
@@ -194,16 +194,16 @@ class FileCopier(ServerSender):
                 try:
                     os.makedirs(dest_dir)
                 except:
-                    self.abort_function(*self.next_args)
+                    self._abort_function(*self._next_args)
                     return
 
         for orig_path in src_list:
             copy_file = CopyFile()
             copy_file.state = 0
             copy_file.orig_path = orig_path
-            copy_file.size = self.getFileSize(orig_path)
+            copy_file.size = self._get_file_size(orig_path)
 
-            self.copy_size += copy_file.size
+            self._copy_size += copy_file.size
 
             if dest_path_exists:
                 copy_file.dest_path = "%s/%s" % (dest_dir,
@@ -212,43 +212,40 @@ class FileCopier(ServerSender):
                 #WARNING works only with one file !!!
                 copy_file.dest_path = dest_dir
 
-            self.copy_files.append(copy_file)
+            self._copy_files.append(copy_file)
 
 
-        if self.copy_files:
-            self.informCopytoGui(True)
-            self.nextProcess()
+        if self._copy_files:
+            self._inform_copy_to_gui(True)
+            self._next_process()
         else:
-            self.next_function(*self.next_args)
+            self._next_function(*self._next_args)
 
-    def startClientCopy(self, client_id, src_list, dest_dir, next_function,
+    def start_client_copy(self, client_id, src_list, dest_dir, next_function,
                         abort_function, next_args=[]):
-        self.client_id = client_id
-        self.start(src_list, dest_dir, next_function,
+        self._client_id = client_id
+        self._start(src_list, dest_dir, next_function,
                    abort_function, next_args)
 
-    def startSessionCopy(self, src_dir, dest_dir, next_function,
+    def start_session_copy(self, src_dir, dest_dir, next_function,
                          abort_function, next_args=[]):
-        self.client_id = ''
-        self.start(src_dir, dest_dir, next_function,
+        self._client_id = ''
+        self._start(src_dir, dest_dir, next_function,
                    abort_function, next_args)
 
     def abort(self, abort_function=None, next_args=[]):
         if abort_function:
-            self.abort_function = abort_function
-            self.next_args = next_args
+            self._abort_function = abort_function
+            self._next_args = next_args
 
-        self.timer.stop()
+        self._timer.stop()
 
-        if self.process.state() == QProcess.Running:
-            self.aborted = True
-            self.process.terminate()
+        if self._process.state() == QProcess.Running:
+            self._aborted = True
+            self._process.terminate()
 
-    def abortFrom(self, src_addr, src_path):
-        self.abort()
-
-    def isActive(self, client_id=''):
-        if client_id and client_id != self.client_id:
+    def is_active(self, client_id=''):
+        if client_id and client_id != self._client_id:
             return False
 
-        return self.is_active
+        return self._is_active

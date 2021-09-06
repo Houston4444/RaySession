@@ -1252,7 +1252,7 @@ class OscServerThread(ClientCommunicating):
                   "unknown osc message: %s %s" % (path, types))
 
     def isOperationPending(self, src_addr, path):
-        if self.session.file_copier.isActive():
+        if self.session.file_copier.is_active():
             self.send(src_addr, "/error", path, ray.Err.COPY_RUNNING,
                       "ray-daemon is copying files. "
                         + "Wait copy finish or abort copy, "
@@ -1287,7 +1287,7 @@ class OscServerThread(ClientCommunicating):
     def getServerStatus(self):
         return self.server_status
 
-    def informCopytoGui(self, copy_state):
+    def inform_copy_to_gui(self, copy_state):
         self.sendGui('/ray/gui/server/copying', int(copy_state))
 
     def sendRenameable(self, renameable):
