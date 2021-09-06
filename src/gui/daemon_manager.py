@@ -250,3 +250,6 @@ class DaemonManager(QObject):
 
     def is_announced(self):
         return self._is_announced
+
+    def get_port(self):
+        return self._port

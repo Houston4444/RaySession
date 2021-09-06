@@ -1216,7 +1216,7 @@ class Client(ServerSender, ray.ClientData):
         self.sent_to_gui = True
 
     def setPropertiesFromMessage(self, message):
-        for line in message.split('\n'):
+        for line in message.splitlines():
             prop, colon, value = line.partition(':')
 
             if prop == 'client_id':

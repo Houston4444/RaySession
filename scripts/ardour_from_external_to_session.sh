@@ -1,13 +1,17 @@
 #!/bin/bash
 
-PATH="$HOME/RaySession/src/bin:$PATH"
-
 # pass as argument to this script a *.ardour session file or an ardour session dir
 # if it has been made with ardour not launched from RaySession.
 # It will create (or load) a RaySession session with the same name
 # and move (or copy) the ardour session files to the new RaySession session
 
 executable=ardour
+
+if [[ "$1" == "--executable" ]];then
+    shift
+    executable="$1"
+    shift
+fi
 
 if [ -f "$1" ] && [[ "$1" =~ ".ardour"$ ]];then
     # argument is a file and an ardour session
@@ -46,7 +50,9 @@ if ! ray_control open_session_off "$ardour_session_name";then
     exit 3
 fi
 
-client_id=`ray_control add_executable $executable not_auto_start`
+ray_control add_factory_client_template "JACK Connections"
+client_id=`ray_control add_executable $executable not_start`
+
 if [ -z "$client_id" ];then
     echo "impossible to add $executable to session $ardour_session_name. abort."
     exit 4
@@ -77,7 +83,6 @@ if ! mv "$new_ardour_session_dir/interchange/$ardour_session_name" \
     ray_control client $client_id trash
     exit 5
 fi
-
 
 
 echo "Done. Open RaySession if not done and start the ardour client to start the ardour session."

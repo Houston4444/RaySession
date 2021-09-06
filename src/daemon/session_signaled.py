@@ -71,8 +71,6 @@ def client_action(func):
     return wrapper
 
 
-
-
 class SignaledSession(OperatingSession):
     def __init__(self, root):
         OperatingSession.__init__(self, root)
@@ -303,6 +301,7 @@ class SignaledSession(OperatingSession):
             src_addr_is_gui = bool(server.isGuiAddress(src_addr))
 
         template_names = set()
+        filters = args
 
         # list of (template_name, client_template)
         # where client_template is a fake client with all template properties
@@ -350,100 +349,32 @@ class SignaledSession(OperatingSession):
                 if not template_name or template_name in template_names:
                     continue
 
-                executable = ct.attribute('executable')
-                protocol = ray.protocolFromStr(ct.attribute('protocol'))
-
-                if protocol != ray.Protocol.RAY_NET:
-                    # check if needed executables are present
-                    if not executable:
-                        continue
-
-                    try_exec_line = ct.attribute('try-exec')
-
-                    try_exec_list = []
-                    if try_exec_line:
-                        try_exec_list = ct.attribute('try-exec').split(';')
-
-                    try_exec_list.append(executable)
-                    try_exec_ok = True
-
-                    for try_exec in try_exec_list:
-                        exec_path = shutil.which(try_exec)
-                        if not exec_path:
-                            try_exec_ok = False
-                            break
-
-                    if not try_exec_ok:
-                        continue
-
-                # search for '/nsm/server/announce' in executable binary
-                # if it is asked by "check_nsm_bin" key
-                if ct.attribute('check_nsm_bin') in  ("1", "true"):
-                    result = QProcess.execute(
-                        'grep', ['-q', '/nsm/server/announce',
-                                 shutil.which(executable)])
-                    if result:
-                        continue
-
-                # check if a version is at least required for this template
-                # don't use needed-version without check how the program acts !
-                needed_version = ct.attribute('needed-version')
-
-                if (needed_version.startswith('.')
-                        or needed_version.endswith('.')
-                        or not needed_version.replace('.', '').isdigit()):
-                    #needed-version not writed correctly, ignores it
-                    needed_version = ''
-
-                if needed_version:
-                    version_process = QProcess()
-                    version_process.start(executable, ['--version'])
-                    version_process.waitForFinished(500)
-
-                    # do not allow program --version to be longer than 500ms
-
-                    if version_process.state():
-                        version_process.terminate()
-                        version_process.waitForFinished(500)
-                        continue
-
-                    full_program_version = str(
-                        version_process.readAllStandardOutput(),
-                        encoding='utf-8')
-
-                    previous_is_digit = False
-                    program_version = ''
-
-                    for character in full_program_version:
-                        if character.isdigit():
-                            program_version += character
-                            previous_is_digit = True
-                        elif character == '.':
-                            if previous_is_digit:
-                                program_version += character
-                            previous_is_digit = False
-                        else:
-                            if program_version:
-                                break
-
-                    if not program_version:
-                        continue
-
-                    neededs = [int(s) for s in needed_version.split('.')]
-                    progvss = [int(s) for s in program_version.split('.')]
-
-                    if neededs > progvss:
-                        # program is too old, ignore this template
-                        continue
+                if not self.is_template_acceptable(ct):
+                    continue
 
                 # save template client properties only for GUI call
                 # to optimize ray_control answer speed
                 template_client = None
-                if src_addr_is_gui:
+                if src_addr_is_gui or filters:
                     template_client = Client(self)
                     template_client.readXmlProperties(ct)
                     template_client.client_id = ct.attribute('client_id')
                     template_client.updateInfosFromDesktopFile()
+
+                    if filters:
+                        skipped_by_filter = False
+                        message = template_client.getPropertiesMessage()
+
+                        for filter in filters:
+                            for line in message.splitlines():
+                                if line == filter:
+                                    break
+                            else:
+                                skipped_by_filter = True
+                                break
+
+                        if skipped_by_filter:
+                            continue
 
                 template_names.add(template_name)
                 tmp_template_list.append((template_name, template_client))
@@ -485,7 +416,6 @@ class SignaledSession(OperatingSession):
                         self.sendGui('/ray/gui/client_template_ray_net_update',
                                         int(factory), template_name,
                                         *template_client.ray_net.spread())
-
 
         # send a last empty reply to say list is finished
         self.send(src_addr, '/reply', path)
@@ -710,9 +640,9 @@ class SignaledSession(OperatingSession):
         if abs(option) == ray.Option.BOOKMARK_SESSION:
             if self.path:
                 if option > 0:
-                    self.bookmarker.makeAll(self.path)
+                    self.bookmarker.make_all(self.path)
                 else:
-                    self.bookmarker.removeAll(self.path)
+                    self.bookmarker.remove_all(self.path)
 
     def _ray_server_patchbay_save_group_position(self, path, args, src_addr):
         self.canvas_saver.save_group_position(*args)

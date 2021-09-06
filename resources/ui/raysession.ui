@@ -852,12 +852,25 @@ QToolButton {border: none}</string>
      <property name="title">
       <string>Recent sessions</string>
      </property>
+     <property name="icon">
+      <iconset theme="document-open-recent"/>
+     </property>
+    </widget>
+    <widget class="QMenu" name="menuUtilities">
+     <property name="title">
+      <string>Utilities</string>
+     </property>
+     <property name="icon">
+      <iconset theme="utilities-terminal"/>
+     </property>
+     <addaction name="actionConvertArdourSession"/>
     </widget>
     <addaction name="actionNewSession"/>
     <addaction name="actionOpenSession"/>
     <addaction name="separator"/>
     <addaction name="menuRecentSessions"/>
     <addaction name="separator"/>
+    <addaction name="menuUtilities"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuSession">
@@ -1417,6 +1430,19 @@ QToolButton {border: none}</string>
    </property>
    <property name="text">
     <string>System tray icon options</string>
+   </property>
+  </action>
+  <action name="actionezf">
+   <property name="text">
+    <string>ezf</string>
+   </property>
+  </action>
+  <action name="actionConvertArdourSession">
+   <property name="icon">
+    <iconset theme="ardour"/>
+   </property>
+   <property name="text">
+    <string>Convert an Ardour session to a Ray session</string>
    </property>
   </action>
  </widget>

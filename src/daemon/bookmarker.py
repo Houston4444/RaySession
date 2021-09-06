@@ -16,13 +16,7 @@ class PickerType:
         self.config_path = config_path
         self.written = False
 
-    def makeBookmark(self, spath):
-        pass
-
-    def removeBookmark(self, spath):
-        pass
-
-    def getContents(self):
+    def _get_contents(self):
         if os.path.exists(self.config_path):
             try:
                 file = open(self.config_path, 'r')
@@ -34,7 +28,7 @@ class PickerType:
         else:
             return ""
 
-    def printContents(self, contents):
+    def _print_contents(self, contents):
         try:
             file = open(self.config_path, 'w')
         except:
@@ -45,8 +39,14 @@ class PickerType:
 
         return True
 
+    def make_bookmark(self, spath):
+        pass
+
+    def remove_bookmark(self, spath):
+        pass
+
 class PickerTypeGtk(PickerType):
-    def makeBookmark(self, spath):
+    def make_bookmark(self, spath):
         if self.written:
             return
 
@@ -60,7 +60,7 @@ class PickerTypeGtk(PickerType):
             except:
                 return
 
-        contents = self.getContents()
+        contents = self._get_contents()
         if contents is None:
             return
 
@@ -71,16 +71,16 @@ class PickerTypeGtk(PickerType):
 
         contents += "%s\n" % url
 
-        if self.printContents(contents):
+        if self._print_contents(contents):
             self.written = True
 
-    def removeBookmark(self, spath):
+    def remove_bookmark(self, spath):
         if not self.written:
             return
 
         url = pathlib.Path(spath).as_uri()
 
-        contents = self.getContents()
+        contents = self._get_contents()
         if not contents:
             self.written = False
             return
@@ -98,15 +98,15 @@ class PickerTypeGtk(PickerType):
             if url:
                 contents += "%s\n" % url
 
-        self.printContents(contents)
+        self._print_contents(contents)
         self.written = False
 
 class PickerTypeFltk(PickerType):
-    def makeBookmark(self, spath):
+    def make_bookmark(self, spath):
         if self.written:
             return
 
-        contents = self.getContents()
+        contents = self._get_contents()
         if not contents:
             #we won't write a file for fltk if file doesn't already exists
             return
@@ -141,14 +141,14 @@ class PickerTypeFltk(PickerType):
             num += 1
             contents += "favorite%.2d:%s" % (num, spath)
 
-        if self.printContents(contents):
+        if self._print_contents(contents):
             self.written = True
 
-    def removeBookmark(self, spath):
+    def remove_bookmark(self, spath):
         if not self.written:
             return
 
-        contents = self.getContents()
+        contents = self._get_contents()
         if not contents:
             self.written = False
             return
@@ -180,11 +180,11 @@ class PickerTypeFltk(PickerType):
             else:
                 contents += "%s\n" % line
 
-        self.printContents(contents)
+        self._print_contents(contents)
         self.written = False
 
 class PickerTypeQt4(PickerType):
-    def makeBookmark(self, spath):
+    def make_bookmark(self, spath):
         if self.written:
             return
 
@@ -256,7 +256,7 @@ class PickerTypeQt4(PickerType):
 
         self.written = True
 
-    def removeBookmark(self, spath):
+    def remove_bookmark(self, spath):
         if not self.written:
             return
 
@@ -334,7 +334,7 @@ class PickerTypeQt4(PickerType):
         self.written = False
 
 class PickerTypeQt5(PickerType):
-    def makeBookmark(self, spath):
+    def make_bookmark(self, spath):
         if self.written:
             return
 
@@ -361,7 +361,7 @@ class PickerTypeQt5(PickerType):
         settings_qt5.sync()
         self.written = True
 
-    def removeBookmark(self, spath):
+    def remove_bookmark(self, spath):
         if not self.written:
             return
 
@@ -387,11 +387,11 @@ class PickerTypeQt5(PickerType):
         self.written = False
 
 class PickerTypeKde5(PickerType):
-    def makeBookmark(self, spath):
+    def make_bookmark(self, spath):
         if self.written:
             return
 
-        contents = self.getContents()
+        contents = self._get_contents()
         if not contents:
             #we won't write a file for kde5 if file doesn't already exists
             return
@@ -422,15 +422,15 @@ class PickerTypeKde5(PickerType):
         bk.appendChild(title)
         content.appendChild(bk)
 
-        if self.printContents(xml.toString()):
+        if self._print_contents(xml.toString()):
             self.written = True
 
 
-    def removeBookmark(self, spath):
+    def remove_bookmark(self, spath):
         if not self.written:
             return
 
-        contents = self.getContents()
+        contents = self._get_contents()
         if not contents:
             self.written = False
             return
@@ -457,7 +457,7 @@ class PickerTypeKde5(PickerType):
             self.written = False
             return
 
-        self.printContents(xml.toString())
+        self._print_contents(xml.toString())
         self.written = False
 
 
@@ -476,10 +476,7 @@ class BookMarker:
         self.qt4 = PickerTypeQt4("%s/.config/Trolltech.conf" % HOME)
         self.qt5 = PickerTypeQt5("%s/.config/QtProject.conf" % HOME)
 
-    def setDaemonPort(self, port):
-        self.daemon_port = port
-
-    def getXml(self):
+    def _get_xml(self):
         xml = QDomDocument()
         file_exists = False
 
@@ -500,14 +497,14 @@ class BookMarker:
 
         return xml
 
-    def writeXmlFile(self, xml):
+    def _write_xml_file(self, xml):
         try:
             file = open(self.bookmarks_memory, 'w')
             file.write(xml.toString())
         except:
             return
 
-    def getPickersForXml(self):
+    def _get_pickers_for_xml(self):
         string = ":"
         if self.gtk2.written:
             string += "gtk2:"
@@ -524,12 +521,15 @@ class BookMarker:
 
         return string
 
-    def makeAll(self, spath):
+    def set_daemon_port(self, port):
+        self.daemon_port = port
+
+    def make_all(self, spath):
         for picker in (self.gtk2, self.gtk3, self.fltk,
                        self.kde5, self.qt4, self.qt5):
-            picker.makeBookmark(spath)
+            picker.make_bookmark(spath)
 
-        xml = self.getXml()
+        xml = self._get_xml()
         if not xml:
             return
 
@@ -538,18 +538,18 @@ class BookMarker:
         bke = xml.createElement('bookmarker')
         bke.setAttribute('port', self.daemon_port)
         bke.setAttribute('session_path', spath)
-        bke.setAttribute('pickers', self.getPickersForXml())
+        bke.setAttribute('pickers', self._get_pickers_for_xml())
 
         xml_content.appendChild(bke)
 
-        self.writeXmlFile(xml)
+        self._write_xml_file(xml)
 
-    def removeAll(self, spath):
+    def remove_all(self, spath):
         for picker in (self.gtk2, self.gtk3, self.fltk,
                        self.kde5, self.qt4, self.qt5):
-            picker.removeBookmark(spath)
+            picker.remove_bookmark(spath)
 
-        xml = self.getXml()
+        xml = self._get_xml()
         if not xml:
             return
 
@@ -568,11 +568,11 @@ class BookMarker:
                 xml_content.removeChild(node)
                 break
 
-        self.writeXmlFile(xml)
+        self._write_xml_file(xml)
 
 
     def clean(self, all_session_paths):
-        xml = self.getXml()
+        xml = self._get_xml()
         if not xml:
             return
 
@@ -593,30 +593,30 @@ class BookMarker:
             if not spath in all_session_paths:
                 if ":gtk2:" in pickers:
                     self.gtk2.written = True
-                    self.gtk2.removeBookmark(spath)
+                    self.gtk2.remove_bookmark(spath)
                 if ":gtk3:" in pickers:
                     self.gtk3.written = True
-                    self.gtk3.removeBookmark(spath)
+                    self.gtk3.remove_bookmark(spath)
                 if ":fltk:" in pickers:
                     self.fltk.written = True
-                    self.fltk.removeBookmark(spath)
+                    self.fltk.remove_bookmark(spath)
                 if ":kde5:" in pickers:
                     self.kde5.written = True
-                    self.kde5.removeBookmark(spath)
+                    self.kde5.remove_bookmark(spath)
                 if ":qt4:" in pickers:
                     self.qt4.written = True
-                    self.qt4.removeBookmark(spath)
+                    self.qt4.remove_bookmark(spath)
                 if ":qt5:" in pickers:
                     self.qt5.written = True
-                    self.qt5.removeBookmark(spath)
+                    self.qt5.remove_bookmark(spath)
 
                 nodes_to_remove.append(node)
 
         for node in nodes_to_remove:
             xml_content.removeChild(node)
 
-        self.writeXmlFile(xml)
+        self._write_xml_file(xml)
 
 if __name__ == '__main__':
     bm_maker = BookMarker()
-    bm_maker.makeAll(sys.argv[1])
+    bm_maker.make_all(sys.argv[1])

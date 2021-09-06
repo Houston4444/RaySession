@@ -6,6 +6,7 @@ import shutil
 import string
 import subprocess
 import sys
+import time
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QTimer, QProcess
 from PyQt5.QtXml  import QDomDocument
@@ -120,7 +121,7 @@ class Session(ServerSender):
     def setPath(self, session_path, session_name=''):
         if not self.is_dummy:
             if self.path:
-                self.bookmarker.removeAll(self.path)
+                self.bookmarker.remove_all(self.path)
 
         self.path = session_path
 
@@ -139,8 +140,8 @@ class Session(ServerSender):
         if self.path:
             server = self.getServer()
             if server and server.options & ray.Option.BOOKMARK_SESSION:
-                self.bookmarker.setDaemonPort(server.port)
-                self.bookmarker.makeAll(self.path)
+                self.bookmarker.set_daemon_port(server.port)
+                self.bookmarker.make_all(self.path)
 
     def noFuture(self):
         self.future_clients.clear()
@@ -310,6 +311,96 @@ class Session(ServerSender):
             return []
 
         return [TemplateRoots.user_clients]
+
+    def is_template_acceptable(self, ct)->bool:
+        executable = ct.attribute('executable')
+        protocol = ray.protocolFromStr(ct.attribute('protocol'))
+
+        if protocol != ray.Protocol.RAY_NET:
+            # check if needed executables are present
+            if not executable:
+                return False
+
+            try_exec_line = ct.attribute('try-exec')
+
+            try_exec_list = []
+            if try_exec_line:
+                try_exec_list = try_exec_line.split(';')
+
+            try_exec_list.append(executable)
+            try_exec_ok = True
+
+            for try_exec in try_exec_list:
+                exec_path = shutil.which(try_exec)
+                if not exec_path:
+                    try_exec_ok = False
+                    break
+
+            if not try_exec_ok:
+                return False
+
+        # search for '/nsm/server/announce' in executable binary
+        # if it is asked by "check_nsm_bin" key
+        if ct.attribute('check_nsm_bin') in  ("1", "true"):
+            result = QProcess.execute(
+                'grep', ['-q', '/nsm/server/announce',
+                            shutil.which(executable)])
+            if result:
+                return False
+
+        # check if a version is at least required for this template
+        # don't use needed-version without check how the program acts !
+        needed_version = ct.attribute('needed-version')
+
+        if (needed_version.startswith('.')
+                or needed_version.endswith('.')
+                or not needed_version.replace('.', '').isdigit()):
+            #needed-version not writed correctly, ignores it
+            needed_version = ''
+
+        if not needed_version:
+            return True
+
+        version_process = QProcess()
+        version_process.start(executable, ['--version'])
+        version_process.waitForFinished(500)
+
+        # do not allow program --version to be longer than 500ms
+        if version_process.state():
+            version_process.terminate()
+            version_process.waitForFinished(500)
+            return False
+
+        full_program_version = str(
+            version_process.readAllStandardOutput(),
+            encoding='utf-8')
+
+        previous_is_digit = False
+        program_version = ''
+
+        for character in full_program_version:
+            if character.isdigit():
+                program_version += character
+                previous_is_digit = True
+            elif character == '.':
+                if previous_is_digit:
+                    program_version += character
+                previous_is_digit = False
+            else:
+                if program_version:
+                    break
+
+        if not program_version:
+            return False
+
+        neededs = [int(s) for s in needed_version.split('.')]
+        progvss = [int(s) for s in program_version.split('.')]
+
+        if neededs > progvss:
+            # program is too old, ignore this template
+            return False
+
+        return True
 
     def generateClientIdAsNsm(self):
         client_id = 'n'
@@ -493,6 +584,48 @@ class Session(ServerSender):
                 ct.setAttribute('unignored_extensions', " ".join(unign_list))
 
         return True
+    
+    def export_user_client_template(self, src_addr, template_name:str,
+                                    export_path:str)->bool:
+        # still work in progress and not used function
+        # will see later if it is really useful
+        templates_file = "%s/%s" % (
+            TemplateRoots.user_clients, 'client_templates.xml')
+
+        if not os.path.isfile(templates_file):
+            return False
+
+        if not os.access(templates_file, os.R_OK):
+            return False
+
+        file = open(templates_file, 'r')
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        file.close()
+
+        new_xml = QDomDocument()
+
+        content = xml.documentElement()
+
+        if content.tagName() != "RAY-CLIENT-TEMPLATES":
+            return False
+
+        nodes = content.childNodes()
+
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            ct = node.toElement()
+            tag_name = ct.tagName()
+            if tag_name != 'Client-Template':
+                continue
+
+            if ct.attribute('template-name') == template_name:
+                
+                break
+        else:
+            return False
+        
+        
 
 
 class OperatingSession(Session):
@@ -1194,42 +1327,6 @@ class OperatingSession(Session):
         else:
             self.setServerStatus(ray.ServerStatus.CLOSE)
 
-
-
-
-        #if not clear_all_clients:
-            #for future_client in self.future_clients:
-                #if future_client.auto_start:
-                    #future_clients_exec_args.append(
-                     #(future_client.executable_path, future_client.arguments))
-
-        #has_keep_alive = False
-
-        #for client in self.clients:
-            #if (not clear_all_clients
-                #and (client.active and client.isCapableOf(':switch:')
-                     #or (client.isDumbClient() and client.isRunning()))
-                #and ((client.running_executable, client.running_arguments)
-                     #in future_clients_exec_args)):
-                ## client will switch
-                ## or keep alive if non active and running
-                #has_keep_alive = True
-                #client.switch_state = ray.SwitchState.RESERVED
-                #future_clients_exec_args.remove(
-                    #(client.running_executable, client.running_arguments))
-            #else:
-                ## client is not capable of switch, or is not wanted
-                ## in the new session
-                #if client.isRunning():
-                    #self.expected_clients.append(client)
-                #else:
-                    #byebye_client_list.append(client)
-
-        #if has_keep_alive:
-            #self.setServerStatus(ray.ServerStatus.CLEAR)
-        #else:
-            #self.setServerStatus(ray.ServerStatus.CLOSE)
-
         for client in byebye_client_list:
             if client in self.clients:
                 self.removeClient(client)
@@ -1267,7 +1364,12 @@ class OperatingSession(Session):
 
     def close_substep2(self, clear_all_clients=False):
         self.cleanExpected()
-        self.remember_as_recent()
+
+        # remember in recent sessions
+        # only if session has been open at least 30 seconds
+        # to prevent remember when session is open just for a little script
+        if time.time() - self._time_at_open > 30:
+            self.remember_as_recent()
 
         if clear_all_clients:
             self.setPath('')
@@ -1811,6 +1913,8 @@ for better organization."""))
         self.canvas_saver.send_session_group_positions()
         self.load_locked = True
 
+        self._time_at_open = time.time()
+
         self.nextFunction()
 
     def load(self, open_off=False):
@@ -2106,73 +2210,8 @@ for better organization.""")
                 client = Client(self)
                 client.readXmlProperties(ct)
 
-                # search for '/nsm/server/announce' in executable binary
-                # if it is asked by "check_nsm_bin" key
-                if ct.attribute('check_nsm_bin') in  ("1", "true"):
-                    if not client.executable_path:
-                        continue
-
-                    which_exec = shutil.which(client.executable_path)
-                    if not which_exec:
-                        continue
-
-                    result = QProcess.execute(
-                        'grep', ['-q', '/nsm/server/announce', which_exec])
-                    if result:
-                        continue
-
-                needed_version = ct.attribute('needed-version')
-
-                if (needed_version.startswith('.')
-                        or needed_version.endswith('.')
-                        or not needed_version.replace('.', '').isdigit()):
-                    #needed-version not writed correctly, ignores it
-                    needed_version = ''
-
-                if needed_version:
-                    version_process = QProcess()
-                    version_process.start(client.executable_path,
-                                          ['--version'])
-                    version_process.waitForFinished(500)
-
-                    if version_process.state():
-                        version_process.terminate()
-                        version_process.waitForFinished(500)
-                        continue
-
-                    full_program_version = str(
-                        version_process.readAllStandardOutput(),
-                        encoding='utf-8')
-
-                    previous_is_digit = False
-                    program_version = ''
-
-                    for character in full_program_version:
-                        if character.isdigit():
-                            program_version += character
-                            previous_is_digit = True
-                        elif character == '.':
-                            if previous_is_digit:
-                                program_version += character
-                            previous_is_digit = False
-                        else:
-                            if program_version:
-                                break
-
-                    if not program_version:
-                        continue
-
-                    neededs = []
-                    progvss = []
-
-                    for n in needed_version.split('.'):
-                        neededs.append(int(n))
-
-                    for n in program_version.split('.'):
-                        progvss.append(int(n))
-
-                    if neededs > progvss:
-                        continue
+                if not self.is_template_acceptable(ct):
+                    continue
 
                 full_name_files = []
 

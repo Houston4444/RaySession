@@ -14,6 +14,7 @@ import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GuiServerThread
 from patchcanvas import patchcanvas
+from utility_scripts import UtilityScriptLauncher
 import ray
 import list_widget_clients
 
@@ -38,6 +39,8 @@ class MainWindow(QMainWindow):
         self.terminate_request = False
 
         self.notes_dialog = None
+
+        self.util_script_launcher = UtilityScriptLauncher(self, session)
 
         # timer for keep focus while client opening
         self._timer_raisewin = QTimer()
@@ -148,6 +151,8 @@ class MainWindow(QMainWindow):
         # connect actions
         self.ui.actionNewSession.triggered.connect(self._create_new_session)
         self.ui.actionOpenSession.triggered.connect(self._open_session)
+        self.ui.actionConvertArdourSession.triggered.connect(
+            self.util_script_launcher.convert_ardour_to_session)
         self.ui.actionQuit.triggered.connect(self._quit_app)
         self.ui.actionSaveSession.triggered.connect(self._save_session)
         self.ui.actionCloseSession.triggered.connect(self._close_session)
@@ -1327,6 +1332,9 @@ class MainWindow(QMainWindow):
                 and time.time() - self._startup_time < 5
                 and self.session.recent_sessions
                 and self.session.server_status == ray.ServerStatus.OFF):
+            # ahah, dirty way to prevent a dialog once again
+            self._startup_time -= 5
+
             dialog = child_dialogs.StartupDialog(self)
             dialog.exec()
 
