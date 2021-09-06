@@ -1192,8 +1192,8 @@ class OperatingSession(Session):
                  force=False, outing=False):
         if not force:
             if not (self.hasServerOption(ray.Option.SNAPSHOTS)
-                    and not self.snapshoter.isAutoSnapshotPrevented()
-                    and self.snapshoter.hasChanges()):
+                    and not self.snapshoter.is_auto_snapshot_prevented()
+                    and self.snapshoter.has_changes()):
                 self.nextFunction()
                 return
 
@@ -2291,8 +2291,8 @@ for better organization.""")
 
     def loadClientSnapshot(self, client_id, snapshot):
         self.setServerStatus(ray.ServerStatus.REWIND)
-        if self.snapshoter.loadClientExclusive(client_id, snapshot,
-                                               self.loadClientSnapshotError):
+        if self.snapshoter.load_client_exclusive(
+                client_id, snapshot, self.loadClientSnapshotError):
             self.setServerStatus(ray.ServerStatus.READY)
             self.nextFunction()
 

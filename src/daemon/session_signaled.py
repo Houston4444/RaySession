@@ -1057,8 +1057,7 @@ class SignaledSession(OperatingSession):
                       "no session to list snapshots")
             return
 
-        auto_snapshot = not bool(
-            self.snapshoter.isAutoSnapshotPrevented())
+        auto_snapshot = not self.snapshoter.is_auto_snapshot_prevented()
         self.sendGui('/ray/gui/session/auto_snapshot', int(auto_snapshot))
 
         snapshots = self.snapshoter.list(client_id)
@@ -1081,7 +1080,7 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
 
     def _ray_session_set_auto_snapshot(self, path, args, src_addr):
-        self.snapshoter.setAutoSnapshot(bool(args[0]))
+        self.snapshoter.set_auto_snapshot(bool(args[0]))
 
     def _ray_session_list_clients(self, path, args, src_addr):
         if not self.path:

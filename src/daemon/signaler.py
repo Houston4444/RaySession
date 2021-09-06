@@ -4,7 +4,6 @@ instance = None
 
 class Signaler(QObject):
     osc_recv = pyqtSignal(str, list, str, object)
-    #script_finished = pyqtSignal(str, int, str)
     dummy_load_and_template = pyqtSignal(str, str, str)
 
     @staticmethod

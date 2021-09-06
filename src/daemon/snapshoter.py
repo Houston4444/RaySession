@@ -7,7 +7,8 @@ from PyQt5.QtXml import QDomDocument
 import ray
 from daemon_tools import Terminal
 
-def gitStringer(string):
+
+def git_stringer(string:str)->str:
     for char in (' ', '*', '?', '[', ']', '(', ')'):
         string = string.replace(char, "\\" + char)
 
@@ -17,53 +18,54 @@ def gitStringer(string):
 
     return string
 
-def fullRefForGui(ref, name, rw_ref, rw_name='', ss_name=''):
+def full_ref_for_gui(ref, name, rw_ref, rw_name='', ss_name=''):
     if ss_name:
         return "%s:%s\n%s:%s\n%s" % (ref, name, rw_ref, rw_name, ss_name)
     return "%s:%s\n%s:%s" % (ref, name, rw_ref, rw_name)
+
 
 class Snapshoter(QObject):
     def __init__(self, session):
         QObject.__init__(self)
         self.session = session
-        self.git_exec = 'git'
-        self.gitdir = '.ray-snapshots'
-        self.exclude_path = 'info/exclude'
-        self.history_path = "session_history.xml"
-        self.max_file_size = 50 #in Mb
+        self._git_exec = 'git'
+        self._gitdir = '.ray-snapshots'
+        self._exclude_path = 'info/exclude'
+        self._history_path = "session_history.xml"
+        self._max_file_size = 50 #in Mb
 
-        self.next_snapshot_name = ''
+        self._next_snapshot_name = ''
         self._rw_snapshot = ''
 
-        self.changes_checker = QProcess()
-        self.changes_checker.readyReadStandardOutput.connect(
-            self.changesCheckerStandardOutput)
+        self._changes_checker = QProcess()
+        self._changes_checker.readyReadStandardOutput.connect(
+            self._changes_checker_standard_output)
 
-        self.adder_process = QProcess()
-        self.adder_process.finished.connect(self.save_step_1)
-        self.adder_process.readyReadStandardOutput.connect(
-            self.adderStandardOutput)
+        self._adder_process = QProcess()
+        self._adder_process.finished.connect(self._save_step_1)
+        self._adder_process.readyReadStandardOutput.connect(
+            self._adder_standard_output)
 
         self._adder_aborted = False
 
-        self.git_process = QProcess()
-        self.git_process.readyReadStandardOutput.connect(self.standardOutput)
-        self.git_process.readyReadStandardError.connect(self.standardError)
-        self.git_command = ''
+        self._git_process = QProcess()
+        self._git_process.readyReadStandardOutput.connect(self._standard_output)
+        self._git_process.readyReadStandardError.connect(self._standard_error)
+        self._git_command = ''
 
         self._n_file_changed = 0
         self._n_file_treated = 0
         self._changes_counted = False
 
-        self.next_function = None
-        self.error_function = None
+        self._next_function = None
+        self._error_function = None
 
-    def changesCheckerStandardOutput(self):
-        standard_output = self.changes_checker.readAllStandardOutput().data()
+    def _changes_checker_standard_output(self):
+        standard_output = self._changes_checker.readAllStandardOutput().data()
         self._n_file_changed += len(standard_output.splitlines()) -1
 
-    def adderStandardOutput(self):
-        standard_output = self.adder_process.readAllStandardOutput().data()
+    def _adder_standard_output(self):
+        standard_output = self._adder_process.readAllStandardOutput().data()
         Terminal.snapshoterMessage(standard_output, ' add -A -v')
 
         if not self._n_file_changed:
@@ -74,64 +76,58 @@ class Snapshoter(QObject):
         self.session.sendGui('/ray/gui/server/progress',
                              self._n_file_treated / self._n_file_changed)
 
-    def standardError(self):
-        standard_error = self.git_process.readAllStandardError().data()
-        Terminal.snapshoterMessage(standard_error, self.git_command)
+    def _standard_error(self):
+        standard_error = self._git_process.readAllStandardError().data()
+        Terminal.snapshoterMessage(standard_error, self._git_command)
 
-    def standardOutput(self):
-        standard_output = self.git_process.readAllStandardOutput().data()
-        Terminal.snapshoterMessage(standard_output, self.git_command)
+    def _standard_output(self):
+        standard_output = self._git_process.readAllStandardOutput().data()
+        Terminal.snapshoterMessage(standard_output, self._git_command)
 
-    def getGitDir(self):
-        if not self.session.path:
-            raise NameError("attempting to save with no session path !!!")
+    def _run_git_process(self, *all_args):
+        return self._run_git_process_at(self.session.path, *all_args)
 
-        return "%s/%s" % (self.session.path, self.gitdir)
-
-    def runGitProcess(self, *all_args):
-        return self.runGitProcessAt(self.session.path, *all_args)
-
-    def runGitProcessAt(self, spath, *all_args):
-        self.git_command = ''
+    def _run_git_process_at(self, spath, *all_args):
+        self._git_command = ''
         for arg in all_args:
-            self.git_command += ' %s' % arg
+            self._git_command += ' %s' % arg
 
         err = ray.Err.OK
 
-        git_args = self.getGitCommandListAt(spath, *all_args)
-        self.git_process.start(self.git_exec, git_args)
-        if not self.git_process.waitForFinished(2000):
-            self.git_process.kill()
+        git_args = self._get_git_command_list_at(spath, *all_args)
+        self._git_process.start(self._git_exec, git_args)
+        if not self._git_process.waitForFinished(2000):
+            self._git_process.kill()
             err = ray.Err.SUBPROCESS_UNTERMINATED
         else:
-            if self.git_process.exitStatus():
+            if self._git_process.exitStatus():
                 err = ray.Err.SUBPROCESS_CRASH
-            elif self.git_process.exitCode():
+            elif self._git_process.exitCode():
                 err = ray.Err.SUBPROCESS_EXITCODE
 
-        if err and self.error_function:
-            self.error_function(err, ' '.join(all_args))
+        if err and self._error_function:
+            self._error_function(err, ' '.join(all_args))
 
         return not bool(err)
 
-    def getGitCommandList(self, *args):
-        return self.getGitCommandListAt(self.session.path, *args)
+    def _get_git_command_list(self, *args):
+        return self._get_git_command_list_at(self.session.path, *args)
 
-    def getGitCommandListAt(self, spath, *args):
+    def _get_git_command_list_at(self, spath, *args):
         first_args = ['--work-tree', spath, '--git-dir',
-                      "%s/%s" % (spath, self.gitdir)]
+                      "%s/%s" % (spath, self._gitdir)]
 
         return first_args + list(args)
 
-    def getHistoryFullPath(self):
+    def _get_history_full_path(self):
         return "%s/%s/%s" % (
-                        self.session.path, self.gitdir, self.history_path)
+                        self.session.path, self._gitdir, self._history_path)
 
-    def getHistoryXmlDocumentElement(self):
-        if not self.isInit():
+    def _get_history_xml_document_element(self):
+        if not self._is_init():
             return None
 
-        file_path = self.getHistoryFullPath()
+        file_path = self._get_history_full_path()
 
         xml = QDomDocument()
 
@@ -148,8 +144,268 @@ class Snapshoter(QObject):
 
         return SNS_xml
 
+    def _get_tag_date(self)->str:
+        date_time = QDateTime.currentDateTimeUtc()
+        date = date_time.date()
+        time = date_time.time()
+
+        tagdate = "%s_%s_%s_%s_%s_%s" % (
+                    date.year(), date.month(), date.day(),
+                    time.hour(), time.minute(), time.second())
+
+        return tagdate
+
+    def _write_history_file(self, date_str, snapshot_name='', rewind_snapshot=''):
+        if not self.session.path:
+            return ray.Err.NO_SESSION_OPEN
+
+        file_path = self._get_history_full_path()
+
+        xml = QDomDocument()
+
+        try:
+            history_file = open(file_path, 'r')
+            xml.setContent(history_file.read())
+            history_file.close()
+        except:
+            pass
+
+        if xml.firstChild().isNull():
+            SNS_xml = xml.createElement('SNAPSHOTS')
+            xml.appendChild(SNS_xml)
+        else:
+            SNS_xml = xml.firstChild()
+
+        snapshot_el = xml.createElement('Snapshot')
+        snapshot_el.setAttribute('ref', date_str)
+        snapshot_el.setAttribute('name', snapshot_name)
+        snapshot_el.setAttribute('rewind_snapshot', rewind_snapshot)
+        snapshot_el.setAttribute('session_name', self.session.name)
+        snapshot_el.setAttribute('VERSION', ray.VERSION)
+
+        for client in self.session.clients + self.session.trashed_clients:
+            client_el = xml.createElement('client')
+            client.writeXmlProperties(client_el)
+            client_el.setAttribute('client_id', client.client_id)
+
+            for client_file_path in client.getProjectFiles():
+                base_path = client_file_path.replace(
+                    "%s/" % self.session.path, '', 1)
+                file_xml = xml.createElement('file')
+                file_xml.setAttribute('path', base_path)
+                client_el.appendChild(file_xml)
+
+            snapshot_el.appendChild(client_el)
+
+        SNS_xml.appendChild(snapshot_el)
+
+        try:
+            history_file = open(file_path, 'w')
+            history_file.write(xml.toString())
+            history_file.close()
+        except:
+            return ray.Err.CREATE_FAILED
+
+        return ray.Err.OK
+
+    def _get_exclude_file_full_path(self)->str:
+        return "%s/%s/%s" % (
+                        self.session.path, self._gitdir, self._exclude_path)
+
+    def _write_exclude_file(self)->int:
+        file_path = self._get_exclude_file_full_path()
+
+        try:
+            exclude_file = open(file_path, 'w')
+        except:
+            return ray.Err.CREATE_FAILED
+
+        contents = ""
+        contents += "# This file is generated by ray-daemon at each snapshot\n"
+        contents += "# Don't edit this file.\n"
+        contents += "# If you want to add/remove files managed by git\n"
+        contents += "# Create/Edit .gitignore in the session folder\n"
+        contents += "\n"
+        contents += "%s\n" % self._gitdir
+        contents += "\n"
+        contents += "# Globally ignored extensions\n"
+
+        session_ignored_extensions = ray.getGitIgnoredExtensions()
+        session_ign_list = session_ignored_extensions.split(' ')
+        session_ign_list = tuple(filter(bool, session_ign_list))
+
+        # write global ignored extensions
+        for extension in session_ign_list:
+            contents += "*%s\n" % extension
+
+            for client in self.session.clients:
+                cext_list = client.ignored_extensions.split(' ')
+
+                if not extension in cext_list:
+                    contents += "!%s.%s/**/*%s\n" % (
+                        git_stringer(client.getPrefixString()),
+                        git_stringer(client.client_id),
+                        extension)
+                    contents += "!%s.%s.**/*%s\n" % (
+                        git_stringer(client.getPrefixString()),
+                        git_stringer(client.client_id),
+                        extension)
+
+        contents += '\n'
+        contents += "# Extensions ignored by clients\n"
+
+        # write client specific ignored extension
+        for client in self.session.clients:
+            cext_list = client.ignored_extensions.split(' ')
+            for extension in cext_list:
+                if not extension:
+                    continue
+
+                if extension in session_ignored_extensions:
+                    continue
+
+                contents += "%s.%s/**/*%s\n" % (
+                    git_stringer(client.getPrefixString()),
+                    git_stringer(client.client_id),
+                    extension)
+
+                contents += "%s.%s.**/*%s\n" % (
+                    git_stringer(client.getPrefixString()),
+                    git_stringer(client.client_id),
+                    extension)
+
+        contents += '\n'
+        contents += "# Too big Files\n"
+
+        no_check_list = (self._gitdir)
+        # check too big files
+        for foldername, subfolders, filenames in os.walk(self.session.path):
+            subfolders[:] = [d for d in subfolders if d not in no_check_list]
+
+            if foldername == "%s/%s" % (self.session.path, self._gitdir):
+                continue
+
+            for filename in filenames:
+                if filename.endswith(session_ign_list):
+                    if os.path.islink(filename):
+                        short_folder = foldername.replace(
+                                        self.session.path + '/', '', 1)
+                        line = git_stringer("%s/%s" % (short_folder, filename))
+                        contents += '!%s\n' % line
+                    # file with extension globally ignored but
+                    # unignored by its client will not be ignored
+                    # and that is well as this.
+                    continue
+
+                if os.path.islink(filename):
+                    continue
+
+                try:
+                    file_size = os.path.getsize(os.path.join(foldername,
+                                                             filename))
+                except:
+                    continue
+
+                if file_size > self._max_file_size*1024**2:
+                    if foldername == self.session.path:
+                        line = git_stringer(filename)
+                    else:
+                        short_folder = foldername.replace(
+                                        self.session.path + '/', '', 1)
+                        line = git_stringer("%s/%s" % (short_folder, filename))
+
+                    contents += "%s\n" % line
+
+        try:
+            exclude_file.write(contents)
+            exclude_file.close()
+        except:
+            return ray.Err.CREATE_FAILED
+
+        return ray.Err.OK
+
+    def _is_init(self)->bool:
+        if not self.session.path:
+            return False
+
+        return os.path.isfile("%s/%s/%s" % (
+                self.session.path, self._gitdir, self._exclude_path))
+
+    def _can_save(self):
+        if not self.session.path:
+            return False
+
+        if not self._is_init():
+            if not self._run_git_process('init'):
+                return False
+
+            user_name = os.getenv('USER')
+            if not user_name:
+                user_name = 'someone'
+
+            machine_name = socket.gethostname()
+            if not machine_name:
+                machine_name = 'somewhere'
+
+            if not self._run_git_process('config', 'user.email',
+                                      '%s@%s' % (user_name, machine_name)):
+                return False
+
+            user_name = os.getenv('USER')
+            if not user_name:
+                user_name = 'someone'
+
+            if not self._run_git_process('config', 'user.name', user_name):
+                return False
+
+        if not self._is_init():
+            return False
+
+        return True
+
+    def _error_quit(self, err):
+        if self._error_function:
+            self._error_function(err)
+        self._error_function = None
+
+    def _save_step_1(self):
+        if self._adder_aborted:
+            if self._next_function:
+                self._next_function(aborted=True)
+            return
+
+        if self._n_file_changed:
+            if not self._run_git_process('commit', '-m', 'ray'):
+                return
+
+
+
+        if (self._n_file_changed
+                or self._next_snapshot_name or self._rw_snapshot):
+            ref = self._get_tag_date()
+
+            if not self._run_git_process('tag', '-a', ref, '-m', 'ray'):
+                return
+
+            err = self._write_history_file(ref, self._next_snapshot_name,
+                                    self._rw_snapshot)
+            if err:
+                if self._error_function:
+                    self._error_function(err)
+
+            # not really a reply, not strong.
+            self.session.sendGui('/reply', '/ray/session/list_snapshots',
+                                full_ref_for_gui(ref, self._next_snapshot_name,
+                                            self._rw_snapshot))
+        self._error_function = None
+        self._next_snapshot_name = ''
+        self._rw_snapshot = ''
+
+        if self._next_function:
+            self._next_function()
+
     def list(self, client_id=""):
-        SNS_xml = self.getHistoryXmlDocumentElement()
+        SNS_xml = self._get_history_xml_document_element()
         if not SNS_xml:
             return []
 
@@ -209,345 +465,83 @@ class Snapshoter(QObject):
                         break
 
             all_snaps.append((ref, name))
-            snapsss = fullRefForGui(ref, name, rw_sn, rw_name, ss_name)
+            snapsss = full_ref_for_gui(ref, name, rw_sn, rw_name, ss_name)
             all_tags.append(snapsss)
 
         all_tags.reverse()
-
-        #return all_tags.__reversed__()
         return all_tags
 
-    def getTagDate(self):
-        date_time = QDateTime.currentDateTimeUtc()
-        date = date_time.date()
-        time = date_time.time()
-
-        tagdate = "%s_%s_%s_%s_%s_%s" % (
-                    date.year(), date.month(), date.day(),
-                    time.hour(), time.minute(), time.second())
-
-        return tagdate
-
-    def writeHistoryFile(self, date_str, snapshot_name='', rewind_snapshot=''):
-        if not self.session.path:
-            return ray.Err.NO_SESSION_OPEN
-
-        file_path = self.getHistoryFullPath()
-
-        xml = QDomDocument()
-
-        try:
-            history_file = open(file_path, 'r')
-            xml.setContent(history_file.read())
-            history_file.close()
-        except:
-            pass
-
-        if xml.firstChild().isNull():
-            SNS_xml = xml.createElement('SNAPSHOTS')
-            xml.appendChild(SNS_xml)
-        else:
-            SNS_xml = xml.firstChild()
-
-        snapshot_el = xml.createElement('Snapshot')
-        snapshot_el.setAttribute('ref', date_str)
-        snapshot_el.setAttribute('name', snapshot_name)
-        snapshot_el.setAttribute('rewind_snapshot', rewind_snapshot)
-        snapshot_el.setAttribute('session_name', self.session.name)
-        snapshot_el.setAttribute('VERSION', ray.VERSION)
-
-        for client in self.session.clients + self.session.trashed_clients:
-            client_el = xml.createElement('client')
-            client.writeXmlProperties(client_el)
-            client_el.setAttribute('client_id', client.client_id)
-
-            for client_file_path in client.getProjectFiles():
-                base_path = client_file_path.replace(
-                    "%s/" % self.session.path, '', 1)
-                file_xml = xml.createElement('file')
-                file_xml.setAttribute('path', base_path)
-                client_el.appendChild(file_xml)
-
-            snapshot_el.appendChild(client_el)
-
-        SNS_xml.appendChild(snapshot_el)
-
-        try:
-            history_file = open(file_path, 'w')
-            history_file.write(xml.toString())
-            history_file.close()
-        except:
-            return ray.Err.CREATE_FAILED
-
-        return ray.Err.OK
-
-    def getExcludeFileFullPath(self):
-        return "%s/%s/%s" % (
-                        self.session.path, self.gitdir, self.exclude_path)
-
-    def writeExcludeFile(self):
-        file_path = self.getExcludeFileFullPath()
-
-        try:
-            exclude_file = open(file_path, 'w')
-        except:
-            return ray.Err.CREATE_FAILED
-
-        contents = ""
-        contents += "# This file is generated by ray-daemon at each snapshot\n"
-        contents += "# Don't edit this file.\n"
-        contents += "# If you want to add/remove files managed by git\n"
-        contents += "# Create/Edit .gitignore in the session folder\n"
-        contents += "\n"
-        contents += "%s\n" % self.gitdir
-        contents += "\n"
-        contents += "# Globally ignored extensions\n"
-
-        session_ignored_extensions = ray.getGitIgnoredExtensions()
-        session_ign_list = session_ignored_extensions.split(' ')
-        session_ign_list = tuple(filter(bool, session_ign_list))
-
-        # write global ignored extensions
-        for extension in session_ign_list:
-            contents += "*%s\n" % extension
-
-            for client in self.session.clients:
-                cext_list = client.ignored_extensions.split(' ')
-
-                if not extension in cext_list:
-                    contents += "!%s.%s/**/*%s\n" % (
-                        gitStringer(client.getPrefixString()),
-                        gitStringer(client.client_id),
-                        extension)
-                    contents += "!%s.%s.**/*%s\n" % (
-                        gitStringer(client.getPrefixString()),
-                        gitStringer(client.client_id),
-                        extension)
-
-        contents += '\n'
-        contents += "# Extensions ignored by clients\n"
-
-        # write client specific ignored extension
-        for client in self.session.clients:
-            cext_list = client.ignored_extensions.split(' ')
-            for extension in cext_list:
-                if not extension:
-                    continue
-
-                if extension in session_ignored_extensions:
-                    continue
-
-                contents += "%s.%s/**/*%s\n" % (
-                    gitStringer(client.getPrefixString()),
-                    gitStringer(client.client_id),
-                    extension)
-
-                contents += "%s.%s.**/*%s\n" % (
-                    gitStringer(client.getPrefixString()),
-                    gitStringer(client.client_id),
-                    extension)
-
-        contents += '\n'
-        contents += "# Too big Files\n"
-
-        no_check_list = (self.gitdir)
-        # check too big files
-        for foldername, subfolders, filenames in os.walk(self.session.path):
-            subfolders[:] = [d for d in subfolders if d not in no_check_list]
-
-            if foldername == "%s/%s" % (self.session.path, self.gitdir):
-                continue
-
-            for filename in filenames:
-                if filename.endswith(session_ign_list):
-                    if os.path.islink(filename):
-                        short_folder = foldername.replace(
-                                        self.session.path + '/', '', 1)
-                        line = gitStringer("%s/%s" % (short_folder, filename))
-                        contents += '!%s\n' % line
-                    # file with extension globally ignored but
-                    # unignored by its client will not be ignored
-                    # and that is well as this.
-                    continue
-
-                if os.path.islink(filename):
-                    continue
-
-                try:
-                    file_size = os.path.getsize(os.path.join(foldername,
-                                                             filename))
-                except:
-                    continue
-
-                if file_size > self.max_file_size*1024**2:
-                    if foldername == self.session.path:
-                        line = gitStringer(filename)
-                    else:
-                        short_folder = foldername.replace(
-                                        self.session.path + '/', '', 1)
-                        line = gitStringer("%s/%s" % (short_folder, filename))
-
-                    contents += "%s\n" % line
-
-        try:
-            exclude_file.write(contents)
-            exclude_file.close()
-        except:
-            return ray.Err.CREATE_FAILED
-
-        return ray.Err.OK
-
-    def isInit(self):
+    def has_changes(self):
         if not self.session.path:
             return False
 
-        return os.path.isfile("%s/%s/%s" % (
-                self.session.path, self.gitdir, self.exclude_path))
-
-    def hasChanges(self):
-        if not self.session.path:
-            return False
-
-        if not self.isInit():
+        if not self._is_init():
             return True
 
-        if self.changes_checker.state():
-            self.changes_checker.kill()
+        if self._changes_checker.state():
+            self._changes_checker.kill()
 
         self._n_file_changed = 0
         self._n_file_treated = 0
         self._changes_counted = True
 
-        args = self.getGitCommandList('ls-files', '--exclude-standard',
-                                      '--others', '--modified')
-        self.changes_checker.start(self.git_exec, args)
-        self.changes_checker.waitForFinished(2000)
+        args = self._get_git_command_list(
+            'ls-files', '--exclude-standard', '--others', '--modified')
+        self._changes_checker.start(self._git_exec, args)
+        self._changes_checker.waitForFinished(2000)
 
         return bool(self._n_file_changed)
 
-    def canSave(self):
-        if not self.session.path:
-            return False
-
-        if not self.isInit():
-            if not self.runGitProcess('init'):
-                return False
-
-            user_name = os.getenv('USER')
-            if not user_name:
-                user_name = 'someone'
-
-            machine_name = socket.gethostname()
-            if not machine_name:
-                machine_name = 'somewhere'
-
-            if not self.runGitProcess('config', 'user.email',
-                                      '%s@%s' % (user_name, machine_name)):
-                return False
-
-            user_name = os.getenv('USER')
-            if not user_name:
-                user_name = 'someone'
-
-            if not self.runGitProcess('config', 'user.name', user_name):
-                return False
-
-        if not self.isInit():
-            return False
-
-        return True
-
-    def errorQuit(self, err):
-        if self.error_function:
-            self.error_function(err)
-        self.error_function = None
-
     def save(self, name='', rewind_snapshot='',
              next_function=None, error_function=None):
-        self.next_snapshot_name = name
+        self._next_snapshot_name = name
         self._rw_snapshot = rewind_snapshot
-        self.next_function = next_function
-        self.error_function = error_function
+        self._next_function = next_function
+        self._error_function = error_function
 
-        if not self.canSave():
+        if not self._can_save():
             Terminal.message("can't snapshot")
             return
 
-        err = self.writeExcludeFile()
+        err = self._write_exclude_file()
         if err:
-            self.errorQuit(err)
+            self._error_quit(err)
             return
 
         self._adder_aborted = False
 
         if not self._changes_counted:
-            self.hasChanges()
+            self.has_changes()
 
         self._changes_counted = False
 
         if self._n_file_changed:
             all_args = self.getGitCommandList('add', '-A', '-v')
-            self.adder_process.start(self.git_exec, all_args)
+            self._adder_process.start(self._git_exec, all_args)
         else:
             self.save_step_1()
 
-        # self.adder_process.finished is connected to self.save_step_1
-
-    def save_step_1(self):
-        if self._adder_aborted:
-            if self.next_function:
-                self.next_function(aborted=True)
-            return
-
-        if self._n_file_changed:
-            if not self.runGitProcess('commit', '-m', 'ray'):
-                return
-
-
-
-        if (self._n_file_changed
-                or self.next_snapshot_name or self._rw_snapshot):
-            ref = self.getTagDate()
-
-            if not self.runGitProcess('tag', '-a', ref, '-m', 'ray'):
-                return
-
-            err = self.writeHistoryFile(ref, self.next_snapshot_name,
-                                    self._rw_snapshot)
-            if err:
-                if self.error_function:
-                    self.error_function(err)
-
-            # not really a reply, not strong.
-            self.session.sendGui('/reply', '/ray/session/list_snapshots',
-                                fullRefForGui(ref, self.next_snapshot_name,
-                                            self._rw_snapshot))
-        self.error_function = None
-        self.next_snapshot_name = ''
-        self._rw_snapshot = ''
-
-        if self.next_function:
-            self.next_function()
+        # self.adder_process.finished is connected to self._save_step_1
 
     def load(self, spath, snapshot, error_function):
-        self.error_function = error_function
+        self._error_function = error_function
 
         snapshot_ref = snapshot.partition('\n')[0].partition(':')[0]
 
-        if not self.runGitProcessAt(spath, 'reset', '--hard'):
+        if not self._run_git_process_at(spath, 'reset', '--hard'):
             return False
 
-        if not self.runGitProcessAt(spath, 'checkout', snapshot_ref):
+        if not self._run_git_process_at(spath, 'checkout', snapshot_ref):
             return False
         return True
 
-    def loadClientExclusive(self, client_id, snapshot, error_function):
-        self.error_function = error_function
+    def load_client_exclusive(self, client_id, snapshot, error_function):
+        self._error_function = error_function
 
-        SNS_xml = self.getHistoryXmlDocumentElement()
+        SNS_xml = self._get_history_xml_document_element()
         if not SNS_xml:
-            self.error_function(ray.Err.NO_SUCH_FILE,
-                                self.getHistoryFullPath())
+            self._error_function(ray.Err.NO_SUCH_FILE,
+                                self._get_history_full_path())
             return False
 
         nodes = SNS_xml.childNodes()
@@ -579,26 +573,26 @@ class Snapshoter(QObject):
                     if file_path:
                         client_path_list.append(file_path)
 
-        if not self.runGitProcess('reset', '--hard'):
+        if not self._run_git_process('reset', '--hard'):
             return False
 
-        if not self.runGitProcess('checkout', snapshot, '--',
+        if not self._run_git_process('checkout', snapshot, '--',
                                   *client_path_list):
             return False
         return True
 
     def abort(self):
-        if not self.adder_process.state():
+        if not self._adder_process.state():
             return
 
-        self.setAutoSnapshot(False)
+        self.set_auto_snapshot(False)
 
         self._adder_aborted = True
-        self.adder_process.terminate()
+        self._adder_process.terminate()
 
-    def setAutoSnapshot(self, bool_snapshot):
+    def set_auto_snapshot(self, bool_snapshot):
         auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path,
-                                                          self.gitdir)
+                                                          self._gitdir)
         file_exists = bool(os.path.exists(auto_snap_file))
 
         if bool_snapshot:
@@ -619,7 +613,6 @@ class Snapshoter(QObject):
                 except PermissionError:
                     return
 
-    def isAutoSnapshotPrevented(self):
-        auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path, self.gitdir)
-
+    def is_auto_snapshot_prevented(self)->bool:
+        auto_snap_file = "%s/%s/prevent_auto_snapshot" % (self.session.path, self._gitdir)
         return bool(os.path.exists(auto_snap_file))
