@@ -111,7 +111,7 @@ class Session(ServerSender):
 
         self.root = session_root
 
-        multi_daemon_file = MultiDaemonFile.getInstance()
+        multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.update()
 
@@ -133,7 +133,7 @@ class Session(ServerSender):
         if self.is_dummy:
             return
 
-        multi_daemon_file = MultiDaemonFile.getInstance()
+        multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.update()
 
@@ -702,7 +702,7 @@ class OperatingSession(Session):
                 follow = functools.partial(follow[0], *follow[1:])
 
         if wait_for == ray.WaitFor.SCRIPT_QUIT:
-            if self.step_scripter.isRunning():
+            if self.step_scripter.is_running():
                 self.wait_for = wait_for
                 self.timer.setSingleShot(True)
                 self.timer.timeout.connect(follow)
@@ -763,7 +763,7 @@ class OperatingSession(Session):
 
     def endTimerIfScriptFinished(self):
         if (self.wait_for == ray.WaitFor.SCRIPT_QUIT
-                and not self.step_scripter.isRunning()):
+                and not self.step_scripter.is_running()):
             self.timer.setSingleShot(True)
             self.timer.stop()
             self.timer.start(0)
@@ -811,7 +811,7 @@ class OperatingSession(Session):
                 arguments = next_item[1:]
 
         if (self.hasServerOption(ray.Option.SESSION_SCRIPTS)
-                and not self.step_scripter.isRunning()
+                and not self.step_scripter.is_running()
                 and self.path and not from_run_step):
             for step_string in ('load', 'save', 'close'):
                 if next_function == self.__getattribute__(step_string):
@@ -829,11 +829,11 @@ class OperatingSession(Session):
                     break
 
         if (from_run_step and next_function
-                and self.step_scripter.isRunning()):
+                and self.step_scripter.is_running()):
             if (next_function
                     == self.__getattribute__(
-                                self.step_scripter.getStep())):
-                self.step_scripter.setStepperHasCall(True)
+                                self.step_scripter.get_step())):
+                self.step_scripter.set_stepper_has_call(True)
 
             if next_function == self.load:
                 if 'open_off' in run_step_args:
@@ -934,10 +934,10 @@ class OperatingSession(Session):
             self.timer.start(0)
             return
 
-        if not self.step_scripter.stepperHasCalled():
+        if not self.step_scripter.stepper_has_called():
             # script has not call
             # the next_function (save, close, load)
-            if self.step_scripter.getStep() in ('load', 'close'):
+            if self.step_scripter.get_step() in ('load', 'close'):
                 self.steps_order.clear()
                 self.steps_order = [(self.close, True),
                                     self.abortDone]
@@ -1735,9 +1735,9 @@ for better organization."""))
                 self.loadError(ray.Err.CREATE_FAILED)
                 return
 
-        multi_daemon_file = MultiDaemonFile.getInstance()
+        multi_daemon_file = MultiDaemonFile.get_instance()
         if (multi_daemon_file
-                and not multi_daemon_file.isFreeForSession(spath)):
+                and not multi_daemon_file.is_free_for_session(spath)):
             Terminal.warning("Session %s is used by another daemon")
             self.loadError(ray.Err.SESSION_LOCKED)
             return
@@ -2326,14 +2326,14 @@ for better organization.""")
                   'Client snapshot loaded')
 
     def terminateStepScripter(self):
-        if self.step_scripter.isRunning():
+        if self.step_scripter.is_running():
             self.step_scripter.terminate()
 
         self.waitAndGoTo(5000, self.terminateStepScripter_substep2,
                          ray.WaitFor.SCRIPT_QUIT)
 
     def terminateStepScripter_substep2(self):
-        if self.step_scripter.isRunning():
+        if self.step_scripter.is_running():
             self.step_scripter.kill()
 
         self.waitAndGoTo(1000, self.terminateStepScripter_substep3,

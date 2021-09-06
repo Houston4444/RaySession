@@ -157,9 +157,9 @@ class Client(ServerSender, ray.ClientData):
             self.send(src_addr, '/reply', src_path, message)
             self._osc_srcs[slot] = (None, '')
 
-            if (self.scripter.isRunning()
-                    and self.scripter.pendingCommand() == self.pending_command):
-                self._osc_srcs[slot] = self.scripter.initialCaller()
+            if (self.scripter.is_running()
+                    and self.scripter.pending_command() == self.pending_command):
+                self._osc_srcs[slot] = self.scripter.initial_caller()
 
         if slot == OSC_SRC_OPEN:
             self._open_timer.stop()
@@ -170,9 +170,9 @@ class Client(ServerSender, ray.ClientData):
             self.send(src_addr, '/error', src_path, err, message)
             self._osc_srcs[slot] = (None, '')
 
-            if (self.scripter.isRunning()
-                    and self.scripter.pendingCommand() == self.pending_command):
-                self._osc_srcs[slot] = self.scripter.initialCaller()
+            if (self.scripter.is_running()
+                    and self.scripter.pending_command() == self.pending_command):
+                self._osc_srcs[slot] = self.scripter.initial_caller()
 
         if slot == OSC_SRC_OPEN:
             self._open_timer.stop()
@@ -447,8 +447,8 @@ class Client(ServerSender, ray.ClientData):
             #self.message( "Client \"%s\" replied with: %s in %fms"
                             #% (client.name, message,
                                 #client.milliseconds_since_last_command()))
-        if (self.scripter.isRunning()
-                and self.scripter.pendingCommand() == self.pending_command):
+        if (self.scripter.is_running()
+                and self.scripter.pending_command() == self.pending_command):
             return
 
         self.pending_command = ray.Command.NONE
@@ -900,23 +900,23 @@ class Client(ServerSender, ray.ClientData):
 
         self.session.setRenameable(True)
 
-        if self.scripter.pendingCommand() == ray.Command.STOP:
+        if self.scripter.pending_command() == ray.Command.STOP:
             return
 
         if self.session.wait_for:
             self.session.endTimerIfLastExpected(self)
 
     def scriptFinished(self, exit_code):
-        if self.scripter.isAskedForTerminate():
+        if self.scripter.is_asked_for_terminate():
             if self.session.wait_for == ray.WaitFor.QUIT:
                 self.session.endTimerIfLastExpected(self)
             return
 
-        scripter_pending_command = self.scripter.pendingCommand()
+        scripter_pending_command = self.scripter.pending_command()
 
         if exit_code:
             error_text = "script %s ended with an error code" \
-                            % self.scripter.getPath()
+                            % self.scripter.get_path()
             if scripter_pending_command == ray.Command.SAVE:
                 self.sendErrorToCaller(OSC_SRC_SAVE, - exit_code,
                                         error_text)

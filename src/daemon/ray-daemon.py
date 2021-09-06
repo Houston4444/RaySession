@@ -110,7 +110,7 @@ if __name__ == '__main__':
     multi_daemon_file.update()
 
     #clean bookmarks created by crashed daemons
-    session.bookmarker.clean(multi_daemon_file.getAllSessionPaths())
+    session.bookmarker.clean(multi_daemon_file.get_all_session_paths())
 
     #load session asked from command line
     if CommandLineArgs.session:

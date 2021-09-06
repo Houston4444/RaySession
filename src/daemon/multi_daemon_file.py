@@ -21,16 +21,16 @@ class MultiDaemonFile:
         self.session = session
         self.server = server
 
-        self.xml = QDomDocument()
+        self._xml = QDomDocument()
 
         global instance
         instance = self
 
     @staticmethod
-    def getInstance():
+    def get_instance():
         return instance
 
-    def pidExists(self, pid):
+    def _pid_exists(self, pid)->bool:
         if isinstance(pid, str):
             pid = int(pid)
 
@@ -41,13 +41,13 @@ class MultiDaemonFile:
         else:
             return True
 
-    def removeFile(self):
+    def _remove_file(self):
         try:
             os.remove(self.file_path)
         except:
             return
 
-    def openFile(self):
+    def _open_file(self)->bool:
         if not os.path.exists(self.file_path):
             dir_path = os.path.dirname(self.file_path)
             if not os.path.exists(dir_path):
@@ -59,23 +59,23 @@ class MultiDaemonFile:
 
         try:
             file = open(self.file_path, 'r')
-            self.xml.setContent(file.read())
+            self._xml.setContent(file.read())
             file.close()
             return True
 
         except:
-            self.removeFile()
+            self._remove_file()
             return False
 
-    def writeFile(self):
+    def _write_file(self):
         try:
             file = open(self.file_path, 'w')
-            file.write(self.xml.toString())
+            file.write(self._xml.toString())
             file.close()
         except:
             return
 
-    def setAttributes(self, element):
+    def _set_attributes(self, element):
         element.setAttribute('net_daemon_id', self.server.net_daemon_id)
         element.setAttribute('root', self.session.root)
         element.setAttribute('session_path', self.session.path)
@@ -88,21 +88,36 @@ class MultiDaemonFile:
         element.setAttribute('version', ray.VERSION)
         element.setAttribute('local_gui_pids', self.server.getLocalGuiPidList())
 
+    def _clean_dirty_pids(self):
+        xml_content = self._xml.documentElement()
+        nodes = xml_content.childNodes()
+        rm_nodes = []
+
+        for i in range(nodes.count()):
+            node = nodes.at(i)
+            dxe = node.toElement()
+            pid = dxe.attribute('pid')
+            if not pid.isdigit() or not self._pid_exists(int(pid)):
+                rm_nodes.append(node)
+
+        for node in rm_nodes:
+            xml_content.removeChild(node)
+
     def update(self):
         has_dirty_pid = False
 
-        if not self.openFile():
-            ds = self.xml.createElement('Daemons')
-            dm_xml = self.xml.createElement('Daemon')
+        if not self._open_file():
+            ds = self._xml.createElement('Daemons')
+            dm_xml = self._xml.createElement('Daemon')
 
-            self.setAttributes(dm_xml)
+            self._set_attributes(dm_xml)
 
             ds.appendChild(dm_xml)
-            self.xml.appendChild(ds)
+            self._xml.appendChild(ds)
 
         else:
             found = False
-            xml_content = self.xml.documentElement()
+            xml_content = self._xml.documentElement()
 
             nodes = xml_content.childNodes()
             for i in range(nodes.count()):
@@ -111,26 +126,26 @@ class MultiDaemonFile:
                 pid = dxe.attribute('pid')
 
                 if pid.isdigit() and pid == str(os.getpid()):
-                    self.setAttributes(dxe)
+                    self._set_attributes(dxe)
                     found = True
-                elif not pid.isdigit() or not self.pidExists(int(pid)):
+                elif not pid.isdigit() or not self._pid_exists(int(pid)):
                     has_dirty_pid = True
 
             if not found:
-                dm_xml = self.xml.createElement('Daemon')
-                self.setAttributes(dm_xml)
-                self.xml.firstChild().appendChild(dm_xml)
+                dm_xml = self._xml.createElement('Daemon')
+                self._set_attributes(dm_xml)
+                self._xml.firstChild().appendChild(dm_xml)
 
         if has_dirty_pid:
-            self.cleanDirtyPids()
+            self._clean_dirty_pids()
 
-        self.writeFile()
+        self._write_file()
 
     def quit(self):
-        if not self.openFile():
+        if not self._open_file():
             return
 
-        xml_content = self.xml.documentElement()
+        xml_content = self._xml.documentElement()
         nodes = xml_content.childNodes()
 
         for i in range(nodes.count()):
@@ -144,13 +159,13 @@ class MultiDaemonFile:
             return
 
         xml_content.removeChild(node)
-        self.writeFile()
+        self._write_file()
 
-    def isFreeForRoot(self, daemon_id, root_path):
-        if not self.openFile():
+    def is_free_for_root(self, daemon_id, root_path)->bool:
+        if not self._open_file():
             return True
 
-        xml_content = self.xml.documentElement()
+        xml_content = self._xml.documentElement()
         nodes = xml_content.childNodes()
 
         for i in range(nodes.count()):
@@ -159,16 +174,16 @@ class MultiDaemonFile:
             if (dxe.attribute('net_daemon_id') == str(daemon_id)
                     and dxe.attribute('root') == root_path):
                 pid = dxe.attribute('pid')
-                if pid.isdigit() and self.pidExists(int(pid)):
+                if pid.isdigit() and self._pid_exists(int(pid)):
                     return False
 
         return True
 
-    def isFreeForSession(self, session_path):
-        if not self.openFile():
+    def is_free_for_session(self, session_path)->bool:
+        if not self._open_file():
             return True
 
-        xml_content = self.xml.documentElement()
+        xml_content = self._xml.documentElement()
         nodes = xml_content.childNodes()
 
         for i in range(nodes.count()):
@@ -176,18 +191,18 @@ class MultiDaemonFile:
             dxe = node.toElement()
             if dxe.attribute('session_path') == session_path:
                 pid = dxe.attribute('pid')
-                if pid.isdigit() and self.pidExists(int(pid)):
+                if pid.isdigit() and self._pid_exists(int(pid)):
                     return False
 
         return True
 
-    def getAllSessionPaths(self):
-        if not self.openFile():
+    def get_all_session_paths(self)->list:
+        if not self._open_file():
             return []
 
         all_session_paths = []
 
-        xml_content = self.xml.documentElement()
+        xml_content = self._xml.documentElement()
         nodes = xml_content.childNodes()
 
         for i in range(nodes.count()):
@@ -195,34 +210,19 @@ class MultiDaemonFile:
             dxe = node.toElement()
             spath = dxe.attribute('session_path')
             pid = dxe.attribute('pid')
-            if spath and pid.isdigit() and self.pidExists(int(pid)):
+            if spath and pid.isdigit() and self._pid_exists(int(pid)):
                 all_session_paths.append(spath)
 
         return all_session_paths
 
-    def cleanDirtyPids(self):
-        xml_content = self.xml.documentElement()
-        nodes = xml_content.childNodes()
-        rm_nodes = []
-
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            dxe = node.toElement()
-            pid = dxe.attribute('pid')
-            if not pid.isdigit() or not self.pidExists(int(pid)):
-                rm_nodes.append(node)
-
-        for node in rm_nodes:
-            xml_content.removeChild(node)
-
-    def getDaemonList(self):
+    def get_daemon_list(self)->list:
         daemon_list = []
         has_dirty_pid = False
 
-        if not self.openFile():
+        if not self._open_file():
             return daemon_list
 
-        xml_content = self.xml.documentElement()
+        xml_content = self._xml.documentElement()
         nodes = xml_content.childNodes()
 
         for i in range(nodes.count()):
@@ -245,7 +245,7 @@ class MultiDaemonFile:
             if port.isdigit():
                 daemon.port = port
 
-            if not self.pidExists(daemon.pid):
+            if not self._pid_exists(daemon.pid):
                 has_dirty_pid = True
                 continue
 
@@ -257,6 +257,6 @@ class MultiDaemonFile:
             daemon_list.append(daemon)
 
         if has_dirty_pid:
-            self.cleanDirtyPids()
+            self._clean_dirty_pids()
 
         return daemon_list

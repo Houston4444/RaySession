@@ -382,10 +382,9 @@ class OscServerThread(ClientCommunicating):
 
             self.net_daemon_id = net_daemon_id
 
-            multi_daemon_file = MultiDaemonFile.getInstance()
-
+            multi_daemon_file = MultiDaemonFile.get_instance()
             if multi_daemon_file:
-                is_net_free = multi_daemon_file.isFreeForRoot(
+                is_net_free = multi_daemon_file.is_free_for_root(
                     self.net_daemon_id, self.session.root)
 
         self.announceGui(src_addr.url, nsm_locked, is_net_free, gui_pid)
@@ -408,7 +407,7 @@ class OscServerThread(ClientCommunicating):
             self.nsm_locker_url = ''
             self.sendGui('/ray/gui/server/nsm_locked', 0)
 
-        multi_daemon_file = MultiDaemonFile.getInstance()
+        multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.update()
 
@@ -1374,7 +1373,7 @@ class OscServerThread(ClientCommunicating):
 
         self.gui_list.append(gui_addr)
 
-        multi_daemon_file = MultiDaemonFile.getInstance()
+        multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.update()
 

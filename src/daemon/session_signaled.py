@@ -278,7 +278,7 @@ class SignaledSession(OperatingSession):
 
         self.root = session_root
 
-        multi_daemon_file = MultiDaemonFile.getInstance()
+        multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.update()
 
@@ -571,9 +571,9 @@ class SignaledSession(OperatingSession):
                     % ray.highlightText(session_name))
             return
 
-        multi_daemon_file = MultiDaemonFile.getInstance()
+        multi_daemon_file = MultiDaemonFile.get_instance()
         if (multi_daemon_file
-                and not multi_daemon_file.isFreeForSession(spath)):
+                and not multi_daemon_file.is_free_for_session(spath)):
             Terminal.warning("Session %s is used by another daemon"
                               % ray.highlightText(spath))
 
@@ -779,9 +779,9 @@ class SignaledSession(OperatingSession):
                     % ray.highlightText(spath))
             return
 
-        multi_daemon_file = MultiDaemonFile.getInstance()
+        multi_daemon_file = MultiDaemonFile.get_instance()
         if (multi_daemon_file
-                and not multi_daemon_file.isFreeForSession(spath)):
+                and not multi_daemon_file.is_free_for_session(spath)):
             Terminal.warning("Session %s is used by another daemon"
                              % ray.highlightText(new_session_full_name))
             self.sendError(ray.Err.SESSION_LOCKED,
@@ -1155,12 +1155,12 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
 
     def _ray_session_run_step(self, path, args, src_addr):
-        if not self.step_scripter.isRunning():
+        if not self.step_scripter.is_running():
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
               'No stepper script running, run run_step from session scripts')
             return
 
-        if self.step_scripter.stepperHasCalled():
+        if self.step_scripter.stepper_has_called():
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
              'step already done. Run run_step only one time in the script')
             return
