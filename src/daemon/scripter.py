@@ -110,8 +110,7 @@ class StepScripter(Scripter):
 
     def _process_finished(self, exit_code, exit_status):
         Scripter._process_finished(self, exit_code, exit_status)
-        #self.session.endTimerIfScriptFinished()
-        self.session.stepScripterFinished()
+        self.session.step_scripter_finished()
         self._stepper_has_call = False
 
     def start(self, step_str, arguments, src_addr=None, src_path=''):

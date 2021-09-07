@@ -42,10 +42,10 @@ def session_operation(func):
                             + "and restart operation !\n")
             return
 
-        sess.rememberOscArgs(path, osc_args, src_addr)
+        sess.remember_osc_args(path, osc_args, src_addr)
 
         response = func(*args)
-        sess.nextFunction()
+        sess.next_function()
 
         return response
     return wrapper
@@ -150,7 +150,7 @@ class SignaledSession(OperatingSession):
             else:
                 # Client launched externally from daemon
                 # by command : $:NSM_URL=url executable
-                client = self.newClient(executable_path)
+                client = self._new_client(executable_path)
                 self.externals_timer.start()
                 client.server_announce(path, args, src_addr, True)
 
@@ -167,7 +167,7 @@ class SignaledSession(OperatingSession):
             #if n == 0:
                 ## Client launched externally from daemon
                 ## by command : $:NSM_URL=url executable
-                #client = self.newClient(args[2])
+                #client = self._new_client(args[2])
                 #client.is_external = True
                 #self.externals_timer.start()
                 #client.server_announce(path, args, src_addr, True)
@@ -191,14 +191,14 @@ class SignaledSession(OperatingSession):
                                 #break
 
         if self.wait_for == ray.WaitFor.ANNOUNCE:
-            self.endTimerIfLastExpected(client)
+            self.end_timer_if_last_expected(client)
 
     def _reply(self, path, args, src_addr):
         if self.wait_for == ray.WaitFor.QUIT:
             return
 
         message = args[1]
-        client = self.getClientByAddress(src_addr)
+        client = self.get_client_by_address(src_addr)
         if client:
             client.set_reply(ray.Err.OK, message)
 
@@ -213,28 +213,28 @@ class SignaledSession(OperatingSession):
     def _error(self, path, args, src_addr):
         path, errcode, message = args
 
-        client = self.getClientByAddress(src_addr)
+        client = self.get_client_by_address(src_addr)
         if client:
             client.set_reply(errcode, message)
 
             if self.wait_for == ray.WaitFor.REPLY:
-                self.endTimerIfLastExpected(client)
+                self.end_timer_if_last_expected(client)
         else:
             self.message("error from unknown client")
 
     def _nsm_client_label(self, path, args, src_addr):
-        client = self.getClientByAddress(src_addr)
+        client = self.get_client_by_address(src_addr)
         if client:
             client.set_label(args[0])
 
     def _nsm_client_network_properties(self, path, args, src_addr):
-        client = self.getClientByAddress(src_addr)
+        client = self.get_client_by_address(src_addr)
         if client:
             net_daemon_url, net_session_root = args
             client.set_network_properties(net_daemon_url, net_session_root)
 
     def _nsm_client_no_save_level(self, path, args, src_addr):
-        client = self.getClientByAddress(src_addr)
+        client = self.get_client_by_address(src_addr)
         if client and client.is_capable_of(':warning-no-save:'):
             client.no_save_level = args[0]
 
@@ -308,7 +308,7 @@ class SignaledSession(OperatingSession):
         tmp_template_list = []
 
         factory = bool('factory' in path)
-        search_paths = self.getSearchTemplateDirs(factory)
+        search_paths = self._get_search_template_dirs(factory)
         file_rewritten = False
 
         for search_path in search_paths:
@@ -332,7 +332,7 @@ class SignaledSession(OperatingSession):
 
             if not factory:
                 if content.attribute('VERSION') != ray.VERSION:
-                    file_rewritten = self.rewriteUserTemplatesFile(
+                    file_rewritten = self._rewrite_user_templates_file(
                                         content, templates_file)
 
             nodes = content.childNodes()
@@ -551,12 +551,12 @@ class SignaledSession(OperatingSession):
         if (not session_name
                 or '//' in session_name
                 or session_name.startswith(('../', '.ray-', 'ray-'))):
-            self.sendError(ray.Err.CREATE_FAILED, 'invalid session name.')
+            self._send_error(ray.Err.CREATE_FAILED, 'invalid session name.')
             return
 
         if template_name:
             if '/' in template_name:
-                self.sendError(ray.Err.CREATE_FAILED, 'invalid template name')
+                self._send_error(ray.Err.CREATE_FAILED, 'invalid template name')
                 return
 
         spath = ''
@@ -566,7 +566,7 @@ class SignaledSession(OperatingSession):
             spath = "%s/%s" % (self.root, session_name)
 
         if spath == self.path:
-            self.sendError(ray.Err.SESSION_LOCKED,
+            self._send_error(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG', 'session %s is already opened !')
                     % ray.highlightText(session_name))
             return
@@ -577,7 +577,7 @@ class SignaledSession(OperatingSession):
             Terminal.warning("Session %s is used by another daemon"
                               % ray.highlightText(spath))
 
-            self.sendError(ray.Err.SESSION_LOCKED,
+            self._send_error(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG',
                     'session %s is already used by another daemon !')
                         % ray.highlightText(session_name))
@@ -624,7 +624,7 @@ class SignaledSession(OperatingSession):
             net = True
 
         if (sess_root != self.root
-                or session_name != self.getShortPath()):
+                or session_name != self.get_short_path()):
             tmp_session = DummySession(sess_root)
             tmp_session.ray_server_save_session_template(path,
                                 [session_name, template_name, net],
@@ -711,7 +711,7 @@ class SignaledSession(OperatingSession):
                 elif short_path == 'open':
                     self.loadError(ray.Err.SESSION_LOCKED)
                 elif short_path == 'new':
-                    self.sendError(ray.Err.CREATE_FAILED,
+                    self._send_error(ray.Err.CREATE_FAILED,
                                 "Could not create the session directory")
                 elif short_path == 'duplicate':
                     self.duplicateAborted(self.osc_args[0])
@@ -722,27 +722,27 @@ class SignaledSession(OperatingSession):
                               "An operation pending.")
                     return
             else:
-                self.sendError(ray.Err.ABORT_ORDERED,
+                self._send_error(ray.Err.ABORT_ORDERED,
                                _translate('GUIMSG',
                                     'abort ordered from elsewhere, sorry !'))
 
-        self.rememberOscArgs(path, args, src_addr)
+        self.remember_osc_args(path, args, src_addr)
         self.steps_order = [(self.close, True), self.abortDone]
 
         if self.file_copier.is_active():
-            self.file_copier.abort(self.nextFunction, [])
+            self.file_copier.abort(self.next_function, [])
         else:
-            self.nextFunction()
+            self.next_function()
 
     def _ray_server_quit(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
+        self.remember_osc_args(path, args, src_addr)
         self.steps_order = [self.terminateStepScripter,
                             self.close, self.exitNow]
 
         if self.file_copier.is_active():
-            self.file_copier.abort(self.nextFunction, [])
+            self.file_copier.abort(self.next_function, [])
         else:
-            self.nextFunction()
+            self.next_function()
 
     def _ray_session_cancel_close(self, path, args, src_addr):
         if not self.steps_order:
@@ -751,7 +751,7 @@ class SignaledSession(OperatingSession):
         self.timer.stop()
         self.timer_waituser_progress.stop()
         self.steps_order.clear()
-        self.cleanExpected()
+        self._clean_expected()
         self.set_server_status(ray.ServerStatus.READY)
 
     def _ray_session_skip_wait_user(self, path, args, src_addr):
@@ -760,8 +760,8 @@ class SignaledSession(OperatingSession):
 
         self.timer.stop()
         self.timer_waituser_progress.stop()
-        self.cleanExpected()
-        self.nextFunction()
+        self._clean_expected()
+        self.next_function()
 
     @session_operation
     def _ray_session_duplicate(self, path, args, src_addr):
@@ -774,7 +774,7 @@ class SignaledSession(OperatingSession):
             spath = "%s/%s" % (self.root, new_session_full_name)
 
         if os.path.exists(spath):
-            self.sendError(ray.Err.CREATE_FAILED,
+            self._send_error(ray.Err.CREATE_FAILED,
                 _translate('GUIMSG', "%s already exists !")
                     % ray.highlightText(spath))
             return
@@ -784,7 +784,7 @@ class SignaledSession(OperatingSession):
                 and not multi_daemon_file.is_free_for_session(spath)):
             Terminal.warning("Session %s is used by another daemon"
                              % ray.highlightText(new_session_full_name))
-            self.sendError(ray.Err.SESSION_LOCKED,
+            self._send_error(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG',
                     'session %s is already used by this or another daemon !')
                         % ray.highlightText(new_session_full_name))
@@ -816,20 +816,20 @@ class SignaledSession(OperatingSession):
                         % ray.highlightText(spath))
             return
 
-        if sess_root == self.root and session_to_load == self.getShortPath():
+        if sess_root == self.root and session_to_load == self.get_short_path():
             if (self.steps_order
                     or self.file_copier.is_active()):
                 self.send(src_addr, '/ray/net_daemon/duplicate_state', 1)
                 return
 
-            self.rememberOscArgs(path, args, src_addr)
+            self.remember_osc_args(path, args, src_addr)
 
             self.steps_order = [self.save,
                                   self.snapshot,
                                   (self.duplicate, new_session),
                                   self.duplicateOnlyDone]
 
-            self.nextFunction()
+            self.next_function()
 
         else:
             tmp_session = DummySession(sess_root)
@@ -888,7 +888,7 @@ class SignaledSession(OperatingSession):
             try:
                 spath = "%s/%s" % (dirname(self.path), new_session_name)
                 subprocess.run(['mv', self.path, spath])
-                self.setPath(spath)
+                self._set_path(spath)
 
                 self.send_gui_message(
                     _translate('GUIMSG', 'Session directory is now: %s')
@@ -984,7 +984,7 @@ class SignaledSession(OperatingSession):
                         return
 
         if not client_id:
-            client_id = self.generateClientId(executable)
+            client_id = self.generate_client_id(executable)
 
         client = Client(self)
 
@@ -999,7 +999,7 @@ class SignaledSession(OperatingSession):
         client.custom_prefix = custom_prefix
         client.set_default_git_ignored(executable)
 
-        if self.addClient(client):
+        if self._add_client(client):
             if start_it:
                 client.start()
 
@@ -1041,7 +1041,7 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, '/reply', path, "clients reordered")
             return
 
-        self.reOrderClients(client_ids_list, src_addr, path)
+        self._re_order_clients(client_ids_list, src_addr, path)
 
     def _ray_session_clear_clients(self, path, args, src_addr):
         if not self.load_locked:
@@ -1170,7 +1170,7 @@ class SignaledSession(OperatingSession):
             return
 
         self.run_step_addr = src_addr
-        self.nextFunction(True, args)
+        self.next_function(True, args)
 
     @client_action
     def _ray_client_stop(self, path, args, src_addr, client):
@@ -1194,7 +1194,7 @@ class SignaledSession(OperatingSession):
                         "Files were copying for this client.")
             return
 
-        self.trashClient(client)
+        self._trash_client(client)
 
         self.send(src_addr, "/reply", path, "Client removed.")
 
@@ -1567,7 +1567,7 @@ class SignaledSession(OperatingSession):
 
         for client in self.trashed_clients:
             if client.client_id == args[0]:
-                if self.restoreClient(client):
+                if self._restore_client(client):
                     self.send(src_addr, '/reply', path, "client restored")
                 else:
                     self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
@@ -1618,11 +1618,11 @@ class SignaledSession(OperatingSession):
 
         if state == 1:
             if self.wait_for == ray.WaitFor.DUPLICATE_FINISH:
-                self.endTimerIfLastExpected(client)
+                self.end_timer_if_last_expected(client)
             return
 
         if (self.wait_for == ray.WaitFor.DUPLICATE_START and state == 0):
-            self.endTimerIfLastExpected(client)
+            self.end_timer_if_last_expected(client)
 
         client.net_daemon_copy_timer.start()
 
@@ -1631,7 +1631,7 @@ class SignaledSession(OperatingSession):
                             self.takePlace,
                             self.load,
                             self.loadDone]
-        self.nextFunction()
+        self.next_function()
 
     def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
         tmp_session = DummySession(sess_root)
@@ -1647,7 +1647,7 @@ class SignaledSession(OperatingSession):
         self.terminated_yet = True
         self.steps_order = [self.terminateStepScripter,
                             self.close, self.exitNow]
-        self.nextFunction()
+        self.next_function()
 
 
 class DummySession(OperatingSession):
@@ -1660,7 +1660,7 @@ class DummySession(OperatingSession):
                             self.takePlace,
                             self.load,
                             (self.saveSessionTemplate, template_name, True)]
-        self.nextFunction()
+        self.next_function()
 
     def dummyDuplicate(self, session_to_load, new_session_full_name):
         self.steps_order = [(self.preload, session_to_load),
@@ -1668,19 +1668,19 @@ class DummySession(OperatingSession):
                             self.load,
                             (self.duplicate, new_session_full_name),
                             self.duplicateOnlyDone]
-        self.nextFunction()
+        self.next_function()
 
     def ray_server_save_session_template(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
+        self.remember_osc_args(path, args, src_addr)
         session_name, template_name, net = args
         self.steps_order = [(self.preload, session_name),
                             self.takePlace,
                             self.load,
                             (self.saveSessionTemplate, template_name, net)]
-        self.nextFunction()
+        self.next_function()
 
     def ray_server_rename_session(self, path, args, src_addr):
-        self.rememberOscArgs(path, args, src_addr)
+        self.remember_osc_args(path, args, src_addr)
         full_session_name, new_session_name = args
 
         self.steps_order = [(self.preload, full_session_name),
@@ -1689,4 +1689,4 @@ class DummySession(OperatingSession):
                             (self.rename, new_session_name),
                             self.save,
                             (self.renameDone, new_session_name)]
-        self.nextFunction()
+        self.next_function()

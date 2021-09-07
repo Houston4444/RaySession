@@ -182,13 +182,13 @@ class Client(ServerSender, ray.ClientData):
         self.pid = 0
         self.addr = None
 
-        self.session.setRenameable(True)
+        self.session.set_renameable(True)
 
         if self.scripter.pending_command() == ray.Command.STOP:
             return
 
         if self.session.wait_for:
-            self.session.endTimerIfLastExpected(self)
+            self.session.end_timer_if_last_expected(self)
 
     def _error_in_process(self, error):
         if error == QProcess.FailedToStart:
@@ -206,9 +206,9 @@ class Client(ServerSender, ray.ClientData):
                     error_message = _translate('client',
                                                "Failed to launch process !")
 
-                self.session.oscReply("/error", self.session.osc_path,
-                                      ray.Err.LAUNCH_FAILED,
-                                      error_message)
+                self.session.osc_reply(
+                    "/error", self.session.osc_path,
+                    ray.Err.LAUNCH_FAILED, error_message)
 
             for osc_slot in (OSC_SRC_START, OSC_SRC_OPEN):
                 self._send_error_to_caller(osc_slot, ray.Err.LAUNCH_FAILED,
@@ -216,8 +216,8 @@ class Client(ServerSender, ray.ClientData):
                         % self.gui_msg_style())
 
             if self.session.wait_for:
-                self.session.endTimerIfLastExpected(self)
-        self.session.setRenameable(True)
+                self.session.end_timer_if_last_expected(self)
+        self.session.set_renameable(True)
 
     def _stopped_since_long(self):
         self._stopped_since_long_ = True
@@ -262,7 +262,7 @@ class Client(ServerSender, ray.ClientData):
         self.ray_net.duplicate_state = -1
 
         if self.session.wait_for == ray.WaitFor.DUPLICATE_FINISH:
-            self.session.endTimerIfLastExpected(self)
+            self.session.end_timer_if_last_expected(self)
 
     def _get_jack_client_name(self):
         if self.protocol == ray.Protocol.RAY_NET:
@@ -383,7 +383,7 @@ class Client(ServerSender, ray.ClientData):
             self._send_reply_to_caller(OSC_SRC_SAVE, 'client saved.')
 
         if self.session.wait_for == ray.WaitFor.REPLY:
-            self.session.endTimerIfLastExpected(self)
+            self.session.end_timer_if_last_expected(self)
 
     def _set_infos_from_desktop_contents(self, contents: str):
         lang = os.getenv('LANG')
@@ -904,12 +904,12 @@ class Client(ServerSender, ray.ClientData):
                 self.arguments = self.get_ray_net_arguments_line()
 
         if ctx.attribute('id'):
-            #session use "id" for absolutely needed client_id
+            # session uses "id" for absolutely needed client_id
             self.client_id = ctx.attribute('id')
         else:
-            #template use "client_id" for wanted client_id
-            self.client_id = self.session.generateClientId(
-                                                ctx.attribute('client_id'))
+            # template uses "client_id" for wanted client_id
+            self.client_id = self.session.generate_client_id(
+                ctx.attribute('client_id'))
 
         nodes = ctx.childNodes()
         for i in range(nodes.count()):
@@ -1066,7 +1066,7 @@ class Client(ServerSender, ray.ClientData):
         self.pending_command = ray.Command.NONE
 
         if self.session.wait_for == ray.WaitFor.REPLY:
-            self.session.endTimerIfLastExpected(self)
+            self.session.end_timer_if_last_expected(self)
 
     def set_label(self, label:str):
         self.label = label
@@ -1136,7 +1136,7 @@ class Client(ServerSender, ray.ClientData):
 
     def get_project_path(self):
         if self.protocol == ray.Protocol.RAY_NET:
-            return self.session.getShortPath()
+            return self.session.get_short_path()
 
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
             return "%s/%s.%s" % (self.session.path, self.session.name,
@@ -1179,7 +1179,7 @@ class Client(ServerSender, ray.ClientData):
         if src_addr and not wait_open_to_reply:
             self._osc_srcs[OSC_SRC_START] = (src_addr, src_path)
 
-        self.session.setRenameable(False)
+        self.session.set_renameable(False)
 
         self.last_dirty = 0.00
         self.gui_has_been_visible = False
@@ -1373,7 +1373,7 @@ class Client(ServerSender, ray.ClientData):
     def script_finished(self, exit_code):
         if self.scripter.is_asked_for_terminate():
             if self.session.wait_for == ray.WaitFor.QUIT:
-                self.session.endTimerIfLastExpected(self)
+                self.session.end_timer_if_last_expected(self)
             return
 
         scripter_pending_command = self.scripter.pending_command()
@@ -1408,7 +1408,7 @@ class Client(ServerSender, ray.ClientData):
             self.stop()
 
         if self.session.wait_for:
-            self.session.endTimerIfLastExpected(self)
+            self.session.end_timer_if_last_expected(self)
 
     def ray_hack_ready(self):
         self.send_gui_message(
@@ -1420,7 +1420,7 @@ class Client(ServerSender, ray.ClientData):
         self.set_status(ray.ClientStatus.READY)
 
         if self.session.wait_for == ray.WaitFor.REPLY:
-            self.session.endTimerIfLastExpected(self)
+            self.session.end_timer_if_last_expected(self)
 
     def terminate_scripts(self):
         self.scripter.terminate()
@@ -1950,7 +1950,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
                 return
 
-            spath = ray.getFullPath(self.session.root, new_session_full_name)
+            spath = self.session.get_full_path(new_session_full_name)
 
         elif template_save == ray.Template.RENAME:
             spath = self.session.path
@@ -1967,11 +1967,11 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             new_session_name = xsessionx
 
         elif template_save == ray.Template.SESSION_LOAD:
-            spath = ray.getFullPath(self.session.root, new_session_full_name)
+            spath = self.session.get_full_path(new_session_full_name)
             old_session_name = xsessionx
 
         elif template_save == ray.Template.SESSION_LOAD_NET:
-            spath = ray.getFullPath(self.session.root, new_session_full_name)
+            spath = self.session.get_full_path(new_session_full_name)
             old_session_name = xsessionx
 
         elif template_save == ray.Template.CLIENT_SAVE:
@@ -2063,7 +2063,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         jack_client_name = self._get_jack_client_name()
 
         if self.protocol == ray.Protocol.RAY_NET:
-            client_project_path = self.session.getShortPath()
+            client_project_path = self.session.get_short_path()
             jack_client_name = self.ray_net.session_template
 
         self.send(src_addr, "/nsm/client/open", client_project_path,

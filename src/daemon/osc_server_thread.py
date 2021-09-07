@@ -237,7 +237,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/nsm/client/progress', 'f')
     def nsmClientProgress(self, path, args, types, src_addr):
-        client = self.session.getClientByAddress(src_addr)
+        client = self.session.get_client_by_address(src_addr)
         if not client:
             return False
 
@@ -247,7 +247,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/nsm/client/is_dirty', '')
     def nsmClientIs_dirty(self, path, args, types, src_addr):
-        client = self.session.getClientByAddress(src_addr)
+        client = self.session.get_client_by_address(src_addr)
         if not client:
             return False
 
@@ -260,7 +260,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/nsm/client/is_clean', '')
     def nsmClientIs_clean(self, path, args, types, src_addr):
-        client = self.session.getClientByAddress(src_addr)
+        client = self.session.get_client_by_address(src_addr)
         if not client:
             return False
 
@@ -273,7 +273,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/nsm/client/message', 'is')
     def nsmClientMessage(self, path, args, types, src_addr):
-        client = self.session.getClientByAddress(src_addr)
+        client = self.session.get_client_by_address(src_addr)
         if not client:
             return False
 
@@ -282,7 +282,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/nsm/client/gui_is_hidden', '')
     def nsmClientGui_is_hidden(self, path, args, types, src_addr):
-        client = self.session.getClientByAddress(src_addr)
+        client = self.session.get_client_by_address(src_addr)
         if not client:
             return False
 
@@ -295,7 +295,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/nsm/client/gui_is_shown', '')
     def nsmClientGui_is_shown(self, path, args, types, src_addr):
-        client = self.session.getClientByAddress(src_addr)
+        client = self.session.get_client_by_address(src_addr)
         if not client:
             return False
 

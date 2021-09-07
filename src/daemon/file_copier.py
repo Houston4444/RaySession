@@ -81,11 +81,11 @@ class FileCopier(ServerSender):
             progress = float(current_size/self._copy_size)
 
             if self._client_id:
-                self._send_gui('/ray/gui/client/progress', self._client_id, progress)
+                self.send_gui('/ray/gui/client/progress', self._client_id, progress)
             else:
-                self._send_gui('/ray/gui/server/progress', progress)
+                self.send_gui('/ray/gui/server/progress', progress)
 
-            self.session.oscReply('/ray/net_daemon/duplicate_state', progress)
+            self.session.osc_reply('/ray/net_daemon/duplicate_state', progress)
 
         self._timer.start()
 
