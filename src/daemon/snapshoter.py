@@ -73,8 +73,8 @@ class Snapshoter(QObject):
 
         self._n_file_treated += len(standard_output.splitlines()) -1
 
-        self.session.sendGui('/ray/gui/server/progress',
-                             self._n_file_treated / self._n_file_changed)
+        self.session.send_gui('/ray/gui/server/progress',
+                              self._n_file_treated / self._n_file_changed)
 
     def _standard_error(self):
         standard_error = self._git_process.readAllStandardError().data()
@@ -185,10 +185,10 @@ class Snapshoter(QObject):
 
         for client in self.session.clients + self.session.trashed_clients:
             client_el = xml.createElement('client')
-            client.writeXmlProperties(client_el)
+            client.write_xml_properties(client_el)
             client_el.setAttribute('client_id', client.client_id)
 
-            for client_file_path in client.getProjectFiles():
+            for client_file_path in client.get_project_files():
                 base_path = client_file_path.replace(
                     "%s/" % self.session.path, '', 1)
                 file_xml = xml.createElement('file')
@@ -243,11 +243,11 @@ class Snapshoter(QObject):
 
                 if not extension in cext_list:
                     contents += "!%s.%s/**/*%s\n" % (
-                        git_stringer(client.getPrefixString()),
+                        git_stringer(client.get_prefix_string()),
                         git_stringer(client.client_id),
                         extension)
                     contents += "!%s.%s.**/*%s\n" % (
-                        git_stringer(client.getPrefixString()),
+                        git_stringer(client.get_prefix_string()),
                         git_stringer(client.client_id),
                         extension)
 
@@ -265,12 +265,12 @@ class Snapshoter(QObject):
                     continue
 
                 contents += "%s.%s/**/*%s\n" % (
-                    git_stringer(client.getPrefixString()),
+                    git_stringer(client.get_prefix_string()),
                     git_stringer(client.client_id),
                     extension)
 
                 contents += "%s.%s.**/*%s\n" % (
-                    git_stringer(client.getPrefixString()),
+                    git_stringer(client.get_prefix_string()),
                     git_stringer(client.client_id),
                     extension)
 
@@ -394,7 +394,7 @@ class Snapshoter(QObject):
                     self._error_function(err)
 
             # not really a reply, not strong.
-            self.session.sendGui('/reply', '/ray/session/list_snapshots',
+            self.session.send_gui('/reply', '/ray/session/list_snapshots',
                                 full_ref_for_gui(ref, self._next_snapshot_name,
                                             self._rw_snapshot))
         self._error_function = None
@@ -516,10 +516,10 @@ class Snapshoter(QObject):
         self._changes_counted = False
 
         if self._n_file_changed:
-            all_args = self.getGitCommandList('add', '-A', '-v')
+            all_args = self._get_git_command_list('add', '-A', '-v')
             self._adder_process.start(self._git_exec, all_args)
         else:
-            self.save_step_1()
+            self._save_step_1()
 
         # self.adder_process.finished is connected to self._save_step_1
 

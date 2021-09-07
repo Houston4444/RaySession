@@ -10,7 +10,7 @@ class ServerSender(QObject):
         QObject.__init__(self)
         self.is_dummy = False
 
-    def hasServer(self):
+    def has_server(self):
         if not OscServerThread.getInstance():
             return False
 
@@ -26,14 +26,14 @@ class ServerSender(QObject):
 
         server.send(*args)
 
-    def sendEvenDummy(self, *args):
+    def send_even_dummy(self, *args):
         server = OscServerThread.getInstance()
         if not server:
             return
 
         server.send(*args)
 
-    def sendGui(self, *args):
+    def send_gui(self, *args):
         if self.is_dummy:
             return
 
@@ -43,14 +43,14 @@ class ServerSender(QObject):
 
         server.sendGui(*args)
 
-    def sendGuiMessage(self, message):
-        self.sendGui('/ray/gui/server/message', message)
+    def send_gui_message(self, message:str):
+        self.send_gui('/ray/gui/server/message', message)
 
         server = OscServerThread.getInstance()
         if server:
             server.sendControllerMessage(message)
 
-    def setServerStatus(self, server_status):
+    def set_server_status(self, server_status:int):
         if self.is_dummy:
             return
 
@@ -60,7 +60,7 @@ class ServerSender(QObject):
 
         server.setServerStatus(server_status)
 
-    def getServerStatus(self):
+    def get_server_status(self):
         if self.is_dummy:
             return -1
 
@@ -70,7 +70,7 @@ class ServerSender(QObject):
 
         return server.server_status
 
-    def isNsmLocked(self):
+    def is_nsm_locked(self):
         if self.is_dummy:
             return False
 
@@ -80,17 +80,17 @@ class ServerSender(QObject):
 
         return server.is_nsm_locked
 
-    def getServer(self):
+    def get_server(self):
         return OscServerThread.getInstance()
 
-    def getServerUrl(self):
+    def get_server_url(self):
         server = OscServerThread.getInstance()
         if server:
             return server.url
 
         return ''
 
-    def getServerPort(self):
+    def get_server_port(self):
         server = OscServerThread.getInstance()
         if server:
             return server.port
@@ -103,7 +103,7 @@ class ServerSender(QObject):
         else:
             self.send(src_addr, '/error', src_path, err, message)
 
-    def hasServerOption(self, option: int)->bool:
+    def has_server_option(self, option: int)->bool:
         server = OscServerThread.getInstance()
         if not server:
             return False

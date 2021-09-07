@@ -1341,11 +1341,11 @@ class OscServerThread(ClientCommunicating):
             self.send(gui_addr, "/ray/gui/client/status",
                       client.client_id, client.status)
 
-            if client.isCapableOf(':optional-gui:'):
+            if client.is_capable_of(':optional-gui:'):
                 self.send(gui_addr, '/ray/gui/client/gui_visible',
                           client.client_id, int(client.gui_visible))
 
-            if client.isCapableOf(':dirty:'):
+            if client.is_capable_of(':dirty:'):
                 self.send(gui_addr, '/ray/gui/is_dirty', client.dirty)
 
         for trashed_client in self.session.trashed_clients:

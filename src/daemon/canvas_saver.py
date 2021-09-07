@@ -57,7 +57,7 @@ class CanvasSaver(ServerSender):
         return self.group_positions_session + group_positions_config_exclu
 
     def send_session_group_positions(self):
-        server = self.getServer()
+        server = self.get_server()
         if not server:
             return
 
@@ -90,7 +90,7 @@ class CanvasSaver(ServerSender):
                               *gpos.spread())
 
     def send_all_group_positions(self, src_addr):
-        if ray.areOnSameMachine(self.getServerUrl(), src_addr.url):
+        if ray.areOnSameMachine(self.get_server_url(), src_addr.url):
             canvas_dict = {'group_positions': [], 'portgroups': []}
             for gpos in self.group_positions_session:
                 canvas_dict['group_positions'].append(gpos.to_dict())

@@ -39,7 +39,7 @@ class Scripter(ServerSender):
                 self.send(self._src_addr, '/error', self._src_path,
                           - exit_code, message)
         else:
-            self.sendGuiMessage(
+            self.send_gui_message(
                 _translate('GUIMSG', '...script %s finished. ---')
                     % ray.highlightText(self.get_path()))
 
@@ -136,12 +136,12 @@ class StepScripter(Scripter):
         self._stepper_has_call = False
         self._step_str = step_str
 
-        self.sendGuiMessage(_translate('GUIMSG',
+        self.send_gui_message(_translate('GUIMSG',
                             '--- Custom step script %s started...')
                             % ray.highlightText(script_path))
 
         process_env = QProcessEnvironment.systemEnvironment()
-        process_env.insert('RAY_CONTROL_PORT', str(self.getServerPort()))
+        process_env.insert('RAY_CONTROL_PORT', str(self.get_server_port()))
         process_env.insert('RAY_SCRIPTS_DIR', scripts_dir)
         process_env.insert('RAY_PARENT_SCRIPTS_DIR', parent_scripts_dir)
         process_env.insert('RAY_FUTURE_SESSION_PATH',
@@ -174,7 +174,7 @@ class ClientScripter(Scripter):
 
     def _process_finished(self, exit_code, exit_status):
         Scripter._process_finished(self, exit_code, exit_status)
-        self._client.scriptFinished(exit_code)
+        self._client.script_finished(exit_code)
         self._pending_command = ray.Command.NONE
         self._initial_caller = (None, '')
         self._src_addr = None
@@ -211,7 +211,7 @@ class ClientScripter(Scripter):
         self._src_addr = src_addr
 
         process_env = QProcessEnvironment.systemEnvironment()
-        process_env.insert('RAY_CONTROL_PORT', str(self.getServerPort()))
+        process_env.insert('RAY_CONTROL_PORT', str(self.get_server_port()))
         process_env.insert('RAY_CLIENT_SCRIPTS_DIR', scripts_dir)
         process_env.insert('RAY_CLIENT_ID', self._client.client_id)
         process_env.insert('RAY_CLIENT_EXECUTABLE',
@@ -219,7 +219,7 @@ class ClientScripter(Scripter):
         process_env.insert('RAY_CLIENT_ARGUMENTS', self._client.arguments)
         self._process.setProcessEnvironment(process_env)
 
-        self._client.sendGuiMessage(
+        self.send_gui_message(
             _translate('GUIMSG', '--- Custom script %s started...%s')
                     % (ray.highlightText(script_path), self._client.client_id))
 
