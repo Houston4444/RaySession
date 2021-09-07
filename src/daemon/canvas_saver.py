@@ -6,7 +6,7 @@ import time
 
 import ray
 
-from daemon_tools import RS
+from daemon_tools import RS, dirname
 from server_sender import ServerSender
 
 JSON_PATH = 'ray_canvas.json'
@@ -18,7 +18,7 @@ class CanvasSaver(ServerSender):
         self.group_positions_config = []
         self.portgroups = []
         self._config_json_path = "%s/%s" % (
-            os.path.dirname(RS.settings.fileName()), JSON_PATH)
+            dirname(RS.settings.fileName()), JSON_PATH)
 
         if not os.path.exists(self._config_json_path):
             return

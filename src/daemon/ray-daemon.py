@@ -8,7 +8,7 @@ from PyQt5.QtCore import (QCoreApplication, QTimer,
                           QLocale, QTranslator)
 
 import ray
-from daemon_tools import (initDaemonTools, RS, getCodeRoot,
+from daemon_tools import (init_daemon_tools, RS, get_code_root,
                           CommandLineArgs, ArgParser, Terminal)
 from osc_server_thread import OscServerThread
 from multi_daemon_file import MultiDaemonFile
@@ -28,14 +28,14 @@ if __name__ == '__main__':
     app.setApplicationName("RaySession")
     app.setOrganizationName("RaySession")
 
-    initDaemonTools()
+    init_daemon_tools()
 
     ### Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
 
     if appTranslator.load("%s/locale/raysession_%s"
-                          % (getCodeRoot(), locale)):
+                          % (get_code_root(), locale)):
         app.installTranslator(appTranslator)
 
     _translate = app.translate
@@ -86,19 +86,19 @@ if __name__ == '__main__':
     server.start()
 
     if CommandLineArgs.hidden:
-        server.setAsNotDefault()
+        server.not_default = True
 
     #announce server to GUI
     if CommandLineArgs.gui_url:
-        server.announceGui(CommandLineArgs.gui_url.url,
-                           gui_pid=CommandLineArgs.gui_pid)
+        server.announce_gui(CommandLineArgs.gui_url.url,
+                            gui_pid=CommandLineArgs.gui_pid)
     elif CommandLineArgs.gui_port:
-        server.announceGui(CommandLineArgs.gui_port.url,
-                           gui_pid=CommandLineArgs.gui_pid)
+        server.announce_gui(CommandLineArgs.gui_port.url,
+                            gui_pid=CommandLineArgs.gui_pid)
 
     # announce to ray_control if launched from it.
     if CommandLineArgs.control_url:
-        server.announceController(CommandLineArgs.control_url)
+        server.announce_controller(CommandLineArgs.control_url)
 
     #print server url
     Terminal.message('URL : %s' % ray.getNetUrl(server.port))

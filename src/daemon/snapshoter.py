@@ -66,7 +66,7 @@ class Snapshoter(QObject):
 
     def _adder_standard_output(self):
         standard_output = self._adder_process.readAllStandardOutput().data()
-        Terminal.snapshoterMessage(standard_output, ' add -A -v')
+        Terminal.snapshoter_message(standard_output, ' add -A -v')
 
         if not self._n_file_changed:
             return
@@ -78,11 +78,11 @@ class Snapshoter(QObject):
 
     def _standard_error(self):
         standard_error = self._git_process.readAllStandardError().data()
-        Terminal.snapshoterMessage(standard_error, self._git_command)
+        Terminal.snapshoter_message(standard_error, self._git_command)
 
     def _standard_output(self):
         standard_output = self._git_process.readAllStandardOutput().data()
-        Terminal.snapshoterMessage(standard_output, self._git_command)
+        Terminal.snapshoter_message(standard_output, self._git_command)
 
     def _run_git_process(self, *all_args):
         return self._run_git_process_at(self.session.path, *all_args)

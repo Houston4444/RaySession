@@ -13,7 +13,7 @@ import ray
 from client import Client
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
-from daemon_tools import Terminal, RS
+from daemon_tools import Terminal, RS, dirname
 from session import OperatingSession
 
 _translate = QCoreApplication.translate
@@ -298,7 +298,7 @@ class SignaledSession(OperatingSession):
         src_addr_is_gui = False
         server = self.get_server()
         if server:
-            src_addr_is_gui = bool(server.isGuiAddress(src_addr))
+            src_addr_is_gui = server.is_gui_address(src_addr)
 
         template_names = set()
         filters = args
@@ -869,7 +869,7 @@ class SignaledSession(OperatingSession):
             return
 
         if not self.is_nsm_locked():
-            for filename in os.listdir(os.path.dirname(self.path)):
+            for filename in os.listdir(dirname(self.path)):
                 if filename == new_session_name:
                     # another directory exists with new session name
                     return
@@ -886,7 +886,7 @@ class SignaledSession(OperatingSession):
 
         if not self.is_nsm_locked():
             try:
-                spath = "%s/%s" % (os.path.dirname(self.path), new_session_name)
+                spath = "%s/%s" % (dirname(self.path), new_session_name)
                 subprocess.run(['mv', self.path, spath])
                 self.setPath(spath)
 

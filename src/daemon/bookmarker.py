@@ -7,7 +7,7 @@ import sys
 from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
 from PyQt5.QtXml  import QDomDocument
 import ray
-from daemon_tools import getAppConfigPath
+from daemon_tools import get_app_config_path, dirname
 
 QFileDialogMagic = 190
 
@@ -52,7 +52,7 @@ class PickerTypeGtk(PickerType):
 
         url = pathlib.Path(spath).as_uri()
 
-        config_dir = os.path.dirname(self.config_path)
+        config_dir = dirname(self.config_path)
 
         if not os.path.exists(config_dir):
             try:
@@ -463,7 +463,7 @@ class PickerTypeKde5(PickerType):
 
 class BookMarker:
     def __init__(self):
-        self._bookmarks_memory = "%s/bookmarks.xml" % getAppConfigPath()
+        self._bookmarks_memory = "%s/bookmarks.xml" % get_app_config_path()
         self._daemon_port = 0
 
         home = os.getenv('HOME')

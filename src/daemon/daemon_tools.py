@@ -1,38 +1,38 @@
 import argparse
 import os
 import sys
-from PyQt5.QtCore import QCoreApplication, QStandardPaths, QSettings, QDateTime, QLocale
+from PyQt5.QtCore import (QCoreApplication, QStandardPaths, QSettings,
+                          QDateTime, QLocale)
 
 import ray
 
 settings = QSettings()
-#non_active_clients = []
 
-def dirname(*args):
+def dirname(*args)->str:
     return os.path.dirname(*args)
 
-def getAppConfigPath():
+def get_app_config_path()->str:
     return "%s/%s" % (
             QStandardPaths.writableLocation(QStandardPaths.ConfigLocation),
             QCoreApplication.organizationName())
 
-def getCodeRoot():
+def get_code_root()->str:
     return dirname(dirname(dirname(os.path.realpath(__file__))))
 
-def initDaemonTools():
+def init_daemon_tools():
     if CommandLineArgs.config_dir:
         l_settings = QSettings(CommandLineArgs.config_dir)
     else:
         l_settings = QSettings()
 
-    RS.setSettings(l_settings)
+    RS.set_settings(l_settings)
 
-    RS.setNonActiveClients(ray.getListInSettings(l_settings,
-                                                 'daemon/non_active_list'))
-    RS.setFavorites(ray.getListInSettings(l_settings, 'daemon/favorites'))
-    TemplateRoots.initConfig()
+    RS.set_non_active_clients(
+        ray.getListInSettings(l_settings, 'daemon/non_active_list'))
+    RS.set_favorites(ray.getListInSettings(l_settings, 'daemon/favorites'))
+    TemplateRoots.init_config()
 
-def getGitDefaultUnAndIgnored(executable):
+def get_git_default_un_and_ignored(executable:str)->tuple:
     ignored = []
     unignored = []
 
@@ -50,32 +50,32 @@ class RS:
     favorites = []
 
     @classmethod
-    def setSettings(cls, settings):
+    def set_settings(cls, settings):
         del cls.settings
         cls.settings = settings
 
     @classmethod
-    def setNonActiveClients(cls, nalist):
+    def set_non_active_clients(cls, nalist):
         del cls.non_active_clients
         cls.non_active_clients = nalist
 
     @classmethod
-    def setFavorites(cls, favorites):
+    def set_favorites(cls, favorites):
         cls.favorites = favorites
 
 
 class TemplateRoots:
     net_session_name = ".ray-net-session-templates"
-    factory_sessions = "%s/session_templates" % getCodeRoot()
-    factory_clients = "%s/client_templates"  % getCodeRoot()
+    factory_sessions = "%s/session_templates" % get_code_root()
+    factory_clients = "%s/client_templates"  % get_code_root()
     factory_clients_xdg = "/etc/xdg/raysession/client_templates"
 
     @classmethod
-    def initConfig(cls):
+    def init_config(cls):
         if CommandLineArgs.config_dir:
             app_config_path = CommandLineArgs.config_dir
         else:
-            app_config_path = getAppConfigPath()
+            app_config_path = get_app_config_path()
 
         cls.user_sessions = "%s/session_templates" % app_config_path
         cls.user_clients = "%s/client_templates"  % app_config_path
@@ -92,7 +92,7 @@ class Terminal:
         sys.stderr.write('[\033[90mray-daemon\033[0m]\033[92m%s\033[0m\n'
                             % string)
 
-        log_dir = "%s/logs" % getAppConfigPath()
+        log_dir = "%s/logs" % get_app_config_path()
         if server_port:
             log_file_path = "%s/%i" % (log_dir, server_port)
         else:
@@ -112,7 +112,7 @@ class Terminal:
         cls._last_client_name = 'daemon'
 
     @classmethod
-    def snapshoterMessage(cls, byte_string, command=''):
+    def snapshoter_message(cls, byte_string, command=''):
         snapshoter_str = "snapshoter:.%s" % command
 
         if cls._last_client_name != snapshoter_str:
@@ -123,7 +123,7 @@ class Terminal:
         cls._last_client_name = snapshoter_str
 
     @classmethod
-    def scripterMessage(cls, byte_string, command=''):
+    def scripter_message(cls, byte_string, command=''):
         scripter_str = "scripter:.%s" % command
 
         if cls._last_client_name != scripter_str:
@@ -134,7 +134,7 @@ class Terminal:
         cls._last_client_name = scripter_str
 
     @classmethod
-    def clientMessage(cls, byte_string, client_name, client_id):
+    def client_message(cls, byte_string, client_name, client_id):
         client_str = "%s.%s" % (client_name, client_id)
 
         if (not CommandLineArgs.debug_only
@@ -166,7 +166,7 @@ class CommandLineArgs(argparse.Namespace):
     session = ''
 
     @classmethod
-    def eatAttributes(cls, parsed_args):
+    def eat_attributes(cls, parsed_args):
         for attr_name in dir(parsed_args):
             if not attr_name.startswith('_'):
                 setattr(cls, attr_name, getattr(parsed_args, attr_name))
@@ -189,9 +189,9 @@ class ArgParser(argparse.ArgumentParser):
         argparse.ArgumentParser.__init__(self)
         _translate = QCoreApplication.translate
 
-        default_root = "%s/%s" % (os.getenv('HOME'),
-                                  _translate('daemon',
-                                             'Ray Network Sessions'))
+        default_root = "%s/%s" % (
+            os.getenv('HOME'),
+            _translate('daemon', 'Ray Network Sessions'))
 
         self.add_argument('--session-root', '-r', type=str,
                           default=default_root,
@@ -228,4 +228,4 @@ class ArgParser(argparse.ArgumentParser):
                           version=ray.VERSION)
 
         parsed_args = argparse.ArgumentParser.parse_args(self)
-        CommandLineArgs.eatAttributes(parsed_args)
+        CommandLineArgs.eat_attributes(parsed_args)

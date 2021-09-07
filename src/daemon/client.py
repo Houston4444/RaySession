@@ -11,7 +11,7 @@ from PyQt5.QtXml import QDomDocument
 
 import ray
 from server_sender import ServerSender
-from daemon_tools  import TemplateRoots, Terminal, RS, getCodeRoot
+from daemon_tools  import TemplateRoots, Terminal, RS, get_code_root
 from signaler import Signaler
 from scripter import ClientScripter
 
@@ -128,11 +128,11 @@ class Client(ServerSender, ray.ClientData):
 
     def _standard_error(self):
         standard_error = self._process.readAllStandardError().data()
-        Terminal.clientMessage(standard_error, self.name, self.client_id)
+        Terminal.client_message(standard_error, self.name, self.client_id)
 
     def _standard_output(self):
         standard_output = self._process.readAllStandardOutput().data()
-        Terminal.clientMessage(standard_output, self.name, self.client_id)
+        Terminal.client_message(standard_output, self.name, self.client_id)
 
     def _process_started(self):
         self.has_been_started = True
@@ -256,11 +256,7 @@ class Client(ServerSender, ray.ClientData):
                 % self.gui_msg_style())
 
     def _send_status_to_gui(self):
-        server = self.get_server()
-        if not server:
-            return
-
-        server.sendClientStatusToGui(self)
+        self.send_gui('/ray/gui/client/status', self.client_id, self.status)
 
     def _net_daemon_out_of_time(self):
         self.ray_net.duplicate_state = -1
@@ -1782,7 +1778,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             return
 
         desk_path_list = (
-            '%s/data' % getCodeRoot(),
+            '%s/data' % get_code_root(),
             '%s/.local' % os.getenv('HOME'),
             '/usr/local',
             '/usr')

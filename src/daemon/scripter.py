@@ -2,7 +2,7 @@ import os
 from PyQt5.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 import ray
-from daemon_tools import Terminal
+from daemon_tools import Terminal, dirname
 from server_sender import ServerSender
 
 _translate = QCoreApplication.translate
@@ -49,11 +49,11 @@ class Scripter(ServerSender):
 
     def _standard_error(self):
         standard_error = self._process.readAllStandardError().data()
-        Terminal.scripterMessage(standard_error, self._get_command_name())
+        Terminal.scripter_message(standard_error, self._get_command_name())
 
     def _standard_output(self):
         standard_output = self._process.readAllStandardOutput().data()
-        Terminal.scripterMessage(standard_output, self._get_command_name())
+        Terminal.scripter_message(standard_output, self._get_command_name())
 
     def is_running(self):
         return bool(self._process.state())
@@ -101,7 +101,7 @@ class StepScripter(Scripter):
                     parent_scripts_dir = tmp_scripts_dir
                     break
 
-            base_path = os.path.dirname(base_path)
+            base_path = dirname(base_path)
 
         return (scripts_dir, parent_scripts_dir)
 

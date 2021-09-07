@@ -1,0 +1,5 @@
+client noSavelLevel gardé comme ça pour l'instant parce client.no_save_level existe
+
+-> Déprecier no_save_level de l'exterieur, uniquement en RayHack
+
+essayer MultiDaemonFile qu'avec des méthodes de classe

@@ -24,13 +24,10 @@ from client import Client
 from scripter import StepScripter
 from canvas_saver import CanvasSaver
 from daemon_tools import (TemplateRoots, RS, Terminal,
-                          getGitDefaultUnAndIgnored)
+                          get_git_default_un_and_ignored, dirname)
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
-
-def dirname(*args):
-    return os.path.dirname(*args)
 
 def basename(*args):
     return os.path.basename(*args)
@@ -78,11 +75,13 @@ class Session(ServerSender):
         self.send(self.osc_src_addr, *args)
 
     def setRenameable(self, renameable):
+        server = self.get_server()
+
         if not renameable:
             if self.is_renameable:
                 self.is_renameable = False
-                if self.has_server():
-                    self.get_server().sendRenameable(False)
+                if server:
+                    server.send_renameable(False)
             return
 
         for client in self.clients:
@@ -90,8 +89,8 @@ class Session(ServerSender):
                 return
 
         self.is_renameable = True
-        if self.has_server():
-            self.get_server().sendRenameable(True)
+        if server:
+            server.send_renameable(True)
 
     def message(self, string, even_dummy=False):
         if self.is_dummy and not even_dummy:
@@ -545,7 +544,7 @@ class Session(ServerSender):
 
         base_path = spath
         while not base_path in ('/', ''):
-            base_path = os.path.dirname(base_path)
+            base_path = dirname(base_path)
             if os.path.isfile("%s/raysession.xml" % base_path):
                 return True
 
@@ -577,7 +576,7 @@ class Session(ServerSender):
             if not executable:
                 continue
 
-            ign_list, unign_list = getGitDefaultUnAndIgnored(executable)
+            ign_list, unign_list = get_git_default_un_and_ignored(executable)
             if ign_list:
                 ct.setAttribute('ignored_extensions', " ".join(ign_list))
             if unign_list:

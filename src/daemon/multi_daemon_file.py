@@ -84,9 +84,9 @@ class MultiDaemonFile:
         element.setAttribute('user', os.getenv('USER'))
         element.setAttribute('not_default',
             int(bool(self.server.is_nsm_locked or self.server.not_default)))
-        element.setAttribute('has_gui', int(self.server.hasGui()))
+        element.setAttribute('has_gui', int(self.server.has_gui()))
         element.setAttribute('version', ray.VERSION)
-        element.setAttribute('local_gui_pids', self.server.getLocalGuiPidList())
+        element.setAttribute('local_gui_pids', self.server.get_local_gui_pid_list())
 
     def _clean_dirty_pids(self):
         xml_content = self._xml.documentElement()

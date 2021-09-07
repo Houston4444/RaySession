@@ -41,14 +41,14 @@ class ServerSender(QObject):
         if not server:
             return
 
-        server.sendGui(*args)
+        server.send_gui(*args)
 
     def send_gui_message(self, message:str):
         self.send_gui('/ray/gui/server/message', message)
 
         server = OscServerThread.getInstance()
         if server:
-            server.sendControllerMessage(message)
+            server.send_controller_message(message)
 
     def set_server_status(self, server_status:int):
         if self.is_dummy:
@@ -58,7 +58,7 @@ class ServerSender(QObject):
         if not server:
             return
 
-        server.setServerStatus(server_status)
+        server.set_server_status(server_status)
 
     def get_server_status(self):
         if self.is_dummy:
