@@ -898,7 +898,7 @@ class OperatingSession(Session):
             if self.step_scripter.get_step() in ('load', 'close'):
                 self.steps_order.clear()
                 self.steps_order = [(self.close, True),
-                                    self.abortDone]
+                                    self.abort_done]
 
                 # Fake the next_function to come from run_step message
                 # This way, we are sure the close step
@@ -938,7 +938,7 @@ class OperatingSession(Session):
 
         if content.tagName() != "RAYSESSION":
             ray_file.close()
-            self.loadError(ray.Err.BAD_PROJECT)
+            self.load_error(ray.Err.BAD_PROJECT)
             return
 
         content.setAttribute('name', new_session_name)
@@ -1027,13 +1027,13 @@ class OperatingSession(Session):
 
         if (os.path.isfile(session_file)
                 and not os.access(session_file, os.W_OK)):
-            self.saveError(ray.Err.CREATE_FAILED)
+            self.save_error(ray.Err.CREATE_FAILED)
             return
 
         try:
             file = open(session_file, 'w')
         except:
-            self.saveError(ray.Err.CREATE_FAILED)
+            self.save_error(ray.Err.CREATE_FAILED)
             return
 
         xml = QDomDocument()
@@ -1097,7 +1097,7 @@ class OperatingSession(Session):
             file.write(contents)
         except:
             file.close()
-            self.saveError(ray.Err.CREATE_FAILED)
+            self.save_error(ray.Err.CREATE_FAILED)
 
         file.close()
 
@@ -1125,12 +1125,12 @@ class OperatingSession(Session):
 
         self.next_function()
 
-    def saveDone(self):
+    def save_done(self):
         self.message("Done.")
         self._send_reply("Saved.")
         self.set_server_status(ray.ServerStatus.READY)
 
-    def saveError(self, err_saving):
+    def save_error(self, err_saving):
         self.message("Failed")
         m = _translate('Load Error', "Unknown error")
 
@@ -1162,21 +1162,21 @@ class OperatingSession(Session):
 
         self.send_gui_message(_translate('GUIMSG', "snapshot started..."))
         self.snapshoter.save(snapshot_name, rewind_snapshot,
-                             self.snapshot_substep1, self.snapshotError)
+                             self.snapshot_substep1, self.snapshot_error)
 
     def snapshot_substep1(self, aborted=False):
         if aborted:
             self.message('Snapshot aborted')
             self.send_gui_message(_translate('GUIMSG', 'Snapshot aborted!'))
 
-        self.send_gui_message(_translate('GUIMSG', '...snapshot finished.'))
+        self.send_gui_message(_translate('GUIMSG', '...Snapshot finished.'))
         self.next_function()
 
-    def snapshotDone(self):
+    def snapshot_done(self):
         self.set_server_status(ray.ServerStatus.READY)
         self._send_reply("Snapshot taken.")
 
-    def snapshotError(self, err_snapshot, info_str=''):
+    def snapshot_error(self, err_snapshot, info_str=''):
         m = _translate('Snapshot Error', "Unknown error")
         if err_snapshot == ray.Err.SUBPROCESS_UNTERMINATED:
             m = _translate('Snapshot Error',
@@ -1194,7 +1194,7 @@ class OperatingSession(Session):
         # minor error is not a fatal error
         # it's important for ray_control to not stop
         # if operation is not snapshot (ex: close or save)
-        if self.next_function.__name__ == 'snapshotDone':
+        if self.next_function.__name__ == 'snapshot_done':
             self._send_error(err_snapshot, m)
             self._forget_osc_args()
             return
@@ -1202,7 +1202,7 @@ class OperatingSession(Session):
         self._send_minor_error(err_snapshot, m)
         self.next_function()
 
-    def closeNoSaveClients(self):
+    def close_no_save_clients(self):
         self._clean_expected()
 
         if self.has_server_option(ray.Option.HAS_WMCTRL):
@@ -1225,10 +1225,10 @@ class OperatingSession(Session):
                 'waiting for no saveable clients to be closed gracefully...'))
 
         duration = int(1000 * math.sqrt(len(self.expected_clients)))
-        self._wait_and_go_to(duration, self.closeNoSaveClients_substep1,
+        self._wait_and_go_to(duration, self.close_no_save_clients_substep1,
                          ray.WaitFor.QUIT)
 
-    def closeNoSaveClients_substep1(self):
+    def close_no_save_clients_substep1(self):
         self._clean_expected()
         has_nosave_clients = False
 
@@ -1333,7 +1333,7 @@ class OperatingSession(Session):
             self._set_path('')
         self.next_function()
 
-    def closeDone(self):
+    def close_done(self):
         self._clean_expected()
         self.clients.clear()
         self._set_path('')
@@ -1346,7 +1346,7 @@ class OperatingSession(Session):
         self.set_server_status(ray.ServerStatus.OFF)
         self._forget_osc_args()
 
-    def abortDone(self):
+    def abort_done(self):
         self._clean_expected()
         self.clients.clear()
         self._set_path('')
@@ -1366,8 +1366,9 @@ class OperatingSession(Session):
         spath = self.get_full_path(new_session_name)
 
         if self._is_path_in_a_session_dir(spath):
-            self._send_error(ray.Err.SESSION_IN_SESSION_DIR,
-                           """Can't create session in a dir containing a session
+            self._send_error(
+                ray.Err.SESSION_IN_SESSION_DIR,
+                """Can't create session in a dir containing a session
 for better organization.""")
             return
 
@@ -1384,18 +1385,18 @@ for better organization.""")
                      self.name, self.path)
         self.next_function()
 
-    def newDone(self):
+    def new_done(self):
         self.send_gui_message(_translate('GUIMSG', 'Session is ready'))
         self._send_reply("Created.")
         self.set_server_status(ray.ServerStatus.READY)
         self._forget_osc_args()
 
-    def initSnapshot(self, spath, snapshot):
+    def init_snapshot(self, spath, snapshot):
         self.set_server_status(ray.ServerStatus.REWIND)
-        if self.snapshoter.load(spath, snapshot, self.initSnapshotError):
+        if self.snapshoter.load(spath, snapshot, self.init_snapshot_error):
             self.next_function()
 
-    def initSnapshotError(self, err, info_str=''):
+    def init_snapshot_error(self, err, info_str=''):
         m = _translate('Snapshot Error', "Snapshot error")
         if err == ray.Err.SUBPROCESS_UNTERMINATED:
             m = _translate('Snapshot Error',
@@ -1467,7 +1468,7 @@ for better organization.""")
 
         self.file_copier.start_session_copy(
             self.path, spath,
-            self.duplicate_substep2, self.duplicateAborted,
+            self.duplicate_substep2, self.duplicate_aborted,
             [new_session_full_name])
 
     def duplicate_substep2(self, new_session_full_name):
@@ -1492,7 +1493,7 @@ for better organization.""")
         self.adjust_files_after_copy(new_session_full_name, ray.Template.NONE)
         self.next_function()
 
-    def duplicateAborted(self, new_session_full_name):
+    def duplicate_aborted(self, new_session_full_name):
         self.steps_order.clear()
 
         self._send_error(ray.Err.NO_SUCH_FILE, "No such file.")
@@ -1502,7 +1503,7 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.READY)
         self._forget_osc_args()
 
-    def saveSessionTemplate(self, template_name: str, net=False):
+    def save_session_template(self, template_name: str, net=False):
         template_root = TemplateRoots.user_sessions
 
         if net:
@@ -1553,11 +1554,11 @@ for better organization.""")
 
         self.file_copier.start_session_copy(self.path,
                                           spath,
-                                          self.saveSessionTemplate_substep_1,
-                                          self.saveSessionTemplateAborted,
+                                          self.save_session_template_substep_1,
+                                          self.save_session_template_aborted,
                                           [template_name, net])
 
-    def saveSessionTemplate_substep_1(self, template_name: str, net: bool):
+    def save_session_template_substep_1(self, template_name: str, net: bool):
         tp_mode = ray.Template.SESSION_SAVE
         if net:
             tp_mode = ray.Template.SESSION_SAVE_NET
@@ -1573,12 +1574,12 @@ for better organization.""")
         self._send_reply("Saved as template.")
         self.set_server_status(ray.ServerStatus.READY)
 
-    def saveSessionTemplateAborted(self, template_name: str, net: bool):
+    def save_session_template_aborted(self, template_name: str, net: bool):
         self.steps_order.clear()
         self._send_reply("Session template aborted")
         self.set_server_status(ray.ServerStatus.READY)
 
-    def prepareTemplate(self, new_session_full_name,
+    def prepare_template(self, new_session_full_name,
                         template_name, net=False):
         template_root = TemplateRoots.user_sessions
 
@@ -1626,16 +1627,16 @@ for better organization."""))
 
         self.file_copier.start_session_copy(template_path,
                                           spath,
-                                          self.prepareTemplate_substep1,
-                                          self.prepareTemplateAborted,
+                                          self.prepare_template_substep1,
+                                          self.prepare_template_aborted,
                                           [new_session_full_name])
 
-    def prepareTemplate_substep1(self, new_session_full_name):
+    def prepare_template_substep1(self, new_session_full_name):
         self.adjust_files_after_copy(new_session_full_name,
                                   ray.Template.SESSION_LOAD)
         self.next_function()
 
-    def prepareTemplateAborted(self, new_session_full_name):
+    def prepare_template_aborted(self, new_session_full_name):
         self.steps_order.clear()
         if self.path:
             self.set_server_status(ray.ServerStatus.READY)
@@ -1662,7 +1663,7 @@ for better organization."""))
 
         self.next_function()
 
-    def renameDone(self, new_session_name):
+    def rename_done(self, new_session_name):
         self.send_gui_message(
             _translate('GUIMSG', 'Session %s has been renamed to %s .')
             % (self.name, new_session_name))
@@ -1677,27 +1678,27 @@ for better organization."""))
         spath = self.get_full_path(session_full_name)
 
         if spath == self.path:
-            self.loadError(ray.Err.SESSION_LOCKED)
+            self.load_error(ray.Err.SESSION_LOCKED)
             return
 
         if not os.path.exists(spath):
             if self._is_path_in_a_session_dir(spath):
                 # prevent to create a session in a session directory
                 # for better user organization
-                self.loadError(ray.Err.SESSION_IN_SESSION_DIR)
+                self.load_error(ray.Err.SESSION_IN_SESSION_DIR)
                 return
 
             try:
                 os.makedirs(spath)
             except:
-                self.loadError(ray.Err.CREATE_FAILED)
+                self.load_error(ray.Err.CREATE_FAILED)
                 return
 
         multi_daemon_file = MultiDaemonFile.get_instance()
         if (multi_daemon_file
                 and not multi_daemon_file.is_free_for_session(spath)):
             Terminal.warning("Session %s is used by another daemon")
-            self.loadError(ray.Err.SESSION_LOCKED)
+            self.load_error(ray.Err.SESSION_LOCKED)
             return
 
         self.message("Attempting to open %s" % spath)
@@ -1743,7 +1744,7 @@ for better organization."""))
                     is_ray_file = True
 
                 except:
-                    self.loadError(ray.Err.CREATE_FAILED)
+                    self.load_error(ray.Err.CREATE_FAILED)
                     return
 
         self._no_future()
@@ -1754,14 +1755,14 @@ for better organization."""))
             try:
                 xml.setContent(ray_file.read())
             except:
-                self.loadError(ray.Err.BAD_PROJECT)
+                self.load_error(ray.Err.BAD_PROJECT)
                 return
 
             content = xml.documentElement()
 
             if content.tagName() != "RAYSESSION":
                 ray_file.close()
-                self.loadError(ray.Err.BAD_PROJECT)
+                self.load_error(ray.Err.BAD_PROJECT)
                 return
 
             sess_name = content.attribute('name')
@@ -1811,7 +1812,7 @@ for better organization."""))
             # prevent to load a locked NSM session
             if os.path.isfile(spath + '/.lock'):
                 Terminal.warning("Session %s is locked by another process")
-                self.loadError(ray.Err.SESSION_LOCKED)
+                self.load_error(ray.Err.SESSION_LOCKED)
                 return
 
             for line in file.read().split('\n'):
@@ -1847,7 +1848,7 @@ for better organization."""))
 
         self.next_function()
 
-    def takePlace(self):
+    def take_place(self):
         self._set_path(self.future_session_path, self.future_session_name)
 
         if (self.name and self.name != basename(self.path)):
@@ -2079,13 +2080,13 @@ for better organization."""))
 
         self.next_function()
 
-    def loadDone(self):
+    def load_done(self):
         self._send_reply("Loaded.")
         self.message("Done")
         self.set_server_status(ray.ServerStatus.READY)
         self._forget_osc_args()
 
-    def loadError(self, err_loading):
+    def load_error(self, err_loading):
         self.message("Failed")
         m = _translate('Load Error', "Unknown error")
         if err_loading == ray.Err.CREATE_FAILED:
@@ -2111,17 +2112,17 @@ for better organization.""")
 
         self.steps_order.clear()
 
-    def duplicateOnlyDone(self):
+    def duplicate_only_done(self):
         self.send(self.osc_src_addr, '/ray/net_daemon/duplicate_state', 1)
         self._forget_osc_args()
 
-    def duplicateDone(self):
+    def duplicate_done(self):
         self.message("Done")
         self._send_reply("Duplicated.")
         self.set_server_status(ray.ServerStatus.READY)
         self._forget_osc_args()
 
-    def exitNow(self):
+    def exit_now(self):
         self.set_server_status(ray.ServerStatus.OFF)
         self._set_path('')
         self.message("Bye Bye...")
@@ -2129,8 +2130,8 @@ for better organization.""")
         self.send_gui('/ray/gui/server/disannounce')
         QCoreApplication.quit()
 
-    def addClientTemplate(self, src_addr, src_path,
-                          template_name, factory=False, auto_start=True):
+    def add_client_template(self, src_addr, src_path,
+                            template_name, factory=False, auto_start=True):
         search_paths = self._get_search_template_dirs(factory)
 
         for search_path in search_paths:
@@ -2197,11 +2198,11 @@ for better organization.""")
                     client.set_status(ray.ClientStatus.PRECOPY)
                     self.file_copier.start_client_copy(
                         client.client_id, full_name_files, self.path,
-                        self.addClientTemplate_step_1,
-                        self.addClientTemplateAborted,
+                        self.add_client_template_step_1,
+                        self.add_client_template_aborted,
                         [src_addr, src_path, client])
                 else:
-                    self.addClientTemplate_step_1(src_addr, src_path,
+                    self.add_client_template_step_1(src_addr, src_path,
                                                     client)
 
                 return
@@ -2220,7 +2221,7 @@ for better organization.""")
                     _translate('GUIMSG', "%s is not an existing template !")
                     % ray.highlightText(template_name))
 
-    def addClientTemplate_step_1(self, src_addr, src_path, client):
+    def add_client_template_step_1(self, src_addr, src_path, client):
         client.adjust_files_after_copy(self.name, ray.Template.CLIENT_LOAD)
 
         if client.auto_start:
@@ -2230,34 +2231,34 @@ for better organization.""")
 
         self.answer(src_addr, src_path, client.client_id)
 
-    def addClientTemplateAborted(self, src_addr, src_path, client):
+    def add_client_template_aborted(self, src_addr, src_path, client):
         self._remove_client(client)
         self.send(src_addr, '/error', src_path, ray.Err.COPY_ABORTED,
                   _translate('GUIMSG', 'Copy has been aborted !'))
 
-    def closeClient(self, client):
+    def close_client(self, client):
         self.set_server_status(ray.ServerStatus.READY)
 
         self.expected_clients.append(client)
         client.stop()
 
-        self._wait_and_go_to(30000, (self.closeClient_substep1, client),
+        self._wait_and_go_to(30000, (self.close_client_substep1, client),
                          ray.WaitFor.STOP_ONE)
 
-    def closeClient_substep1(self, client):
+    def close_client_substep1(self, client):
         if client in self.expected_clients:
             client.kill()
 
         self._wait_and_go_to(1000, self.next_function, ray.WaitFor.STOP_ONE)
 
-    def loadClientSnapshot(self, client_id, snapshot):
+    def load_client_snapshot(self, client_id, snapshot):
         self.set_server_status(ray.ServerStatus.REWIND)
         if self.snapshoter.load_client_exclusive(
-                client_id, snapshot, self.loadClientSnapshotError):
+                client_id, snapshot, self.load_client_snapshot_error):
             self.set_server_status(ray.ServerStatus.READY)
             self.next_function()
 
-    def loadClientSnapshotError(self, err, info_str=''):
+    def load_client_snapshot_error(self, err, info_str=''):
         m = _translate('Snapshot Error', "Snapshot error")
         if err == ray.Err.SUBPROCESS_UNTERMINATED:
             m = _translate('Snapshot Error',
@@ -2278,32 +2279,32 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.OFF)
         self.steps_order.clear()
 
-    def startClient(self, client):
-        client.start()
-        self.next_function()
-
-    def loadClientSnapshotDone(self):
+    def load_client_snapshot_done(self):
         self.send(self.osc_src_addr, '/reply', self.osc_path,
                   'Client snapshot loaded')
 
-    def terminateStepScripter(self):
+    def start_client(self, client):
+        client.start()
+        self.next_function()
+
+    def terminate_step_scripter(self):
         if self.step_scripter.is_running():
             self.step_scripter.terminate()
 
-        self._wait_and_go_to(5000, self.terminateStepScripter_substep2,
+        self._wait_and_go_to(5000, self.terminate_step_scripter_substep2,
                          ray.WaitFor.SCRIPT_QUIT)
 
-    def terminateStepScripter_substep2(self):
+    def terminate_step_scripter_substep2(self):
         if self.step_scripter.is_running():
             self.step_scripter.kill()
 
-        self._wait_and_go_to(1000, self.terminateStepScripter_substep3,
+        self._wait_and_go_to(1000, self.terminate_step_scripter_substep3,
                          ray.WaitFor.SCRIPT_QUIT)
 
-    def terminateStepScripter_substep3(self):
+    def terminate_step_scripter_substep3(self):
         self.next_function()
 
-    def clearClients(self, src_addr, src_path, *client_ids):
+    def clear_clients(self, src_addr, src_path, *client_ids):
         self.clients_to_quit.clear()
         self.expected_clients.clear()
 
@@ -2315,16 +2316,16 @@ for better organization.""")
         self.timer_quit.start()
 
         self._wait_and_go_to(5000,
-                         (self.clearClients_substep2, src_addr, src_path),
+                         (self.clear_clients_substep2, src_addr, src_path),
                          ray.WaitFor.QUIT)
 
-    def clearClients_substep2(self, src_addr, src_path):
+    def clear_clients_substep2(self, src_addr, src_path):
         for client in self.expected_clients:
             client.kill()
 
         self._wait_and_go_to(1000,
-                         (self.clearClients_substep3, src_addr, src_path),
+                         (self.clear_clients_substep3, src_addr, src_path),
                          ray.WaitFor.QUIT)
 
-    def clearClients_substep3(self, src_addr, src_path):
+    def clear_clients_substep3(self, src_addr, src_path):
         self.answer(src_addr, src_path, 'Clients cleared')
