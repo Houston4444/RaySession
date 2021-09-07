@@ -13,7 +13,8 @@ import ray
 from client import Client
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
-from daemon_tools import Terminal, RS, dirname
+from daemon_tools import (Terminal, RS, dirname,
+                          is_pid_child_of, highlight_text)
 from session import OperatingSession
 
 _translate = QCoreApplication.translate
@@ -144,7 +145,7 @@ class SignaledSession(OperatingSession):
         else:
             for client in self.clients:
                 if (not client.active and client.is_running()
-                        and ray.isPidChildOf(pid, client.pid)):
+                        and is_pid_child_of(pid, client.pid)):
                     client.server_announce(path, args, src_addr, False)
                     break
             else:
@@ -185,7 +186,7 @@ class SignaledSession(OperatingSession):
                 #for client in self.clients:
                     #if (not client.active
                         #and client.pending_command == ray.Command.START):
-                            #if ray.isPidChildOf(pid, client.pid):
+                            #if is_pid_child_of(pid, client.pid):
                                 #client.server_announce(path, args,
                                                       #src_addr, False)
                                 #break
@@ -365,9 +366,9 @@ class SignaledSession(OperatingSession):
                         skipped_by_filter = False
                         message = template_client.get_properties_message()
 
-                        for filter in filters:
+                        for filt in filters:
                             for line in message.splitlines():
-                                if line == filter:
+                                if line == filt:
                                     break
                             else:
                                 skipped_by_filter = True
@@ -573,19 +574,19 @@ class SignaledSession(OperatingSession):
         if spath == self.path:
             self._send_error(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG', 'session %s is already opened !')
-                    % ray.highlightText(session_name))
+                    % highlight_text(session_name))
             return
 
         multi_daemon_file = MultiDaemonFile.get_instance()
         if (multi_daemon_file
                 and not multi_daemon_file.is_free_for_session(spath)):
             Terminal.warning("Session %s is used by another daemon"
-                              % ray.highlightText(spath))
+                              % highlight_text(spath))
 
             self._send_error(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG',
                     'session %s is already used by another daemon !')
-                        % ray.highlightText(session_name))
+                        % highlight_text(session_name))
             return
 
         # don't use template if session folder already exists
@@ -781,18 +782,18 @@ class SignaledSession(OperatingSession):
         if os.path.exists(spath):
             self._send_error(ray.Err.CREATE_FAILED,
                 _translate('GUIMSG', "%s already exists !")
-                    % ray.highlightText(spath))
+                    % highlight_text(spath))
             return
 
         multi_daemon_file = MultiDaemonFile.get_instance()
         if (multi_daemon_file
                 and not multi_daemon_file.is_free_for_session(spath)):
             Terminal.warning("Session %s is used by another daemon"
-                             % ray.highlightText(new_session_full_name))
+                             % highlight_text(new_session_full_name))
             self._send_error(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG',
                     'session %s is already used by this or another daemon !')
-                        % ray.highlightText(new_session_full_name))
+                        % highlight_text(new_session_full_name))
             return
 
         self.steps_order = [self.save,
@@ -818,7 +819,7 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, '/ray/net_daemon/duplicate_state', 1)
             self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
                       _translate('GUIMSG', "%s already exists !")
-                        % ray.highlightText(spath))
+                        % highlight_text(spath))
             return
 
         if sess_root == self.root and session_to_load == self.get_short_path():
@@ -1178,16 +1179,16 @@ class SignaledSession(OperatingSession):
         self.next_function(True, args)
 
     @client_action
-    def _ray_client_stop(self, path, args, src_addr, client):
+    def _ray_client_stop(self, path, args, src_addr, client:Client):
         client.stop(src_addr, path)
 
     @client_action
-    def _ray_client_kill(self, path, args, src_addr, client):
+    def _ray_client_kill(self, path, args, src_addr, client:Client):
         client.kill()
         self.send(src_addr, "/reply", path, "Client killed.")
 
     @client_action
-    def _ray_client_trash(self, path, args, src_addr, client):
+    def _ray_client_trash(self, path, args, src_addr, client:Client):
         if client.is_running():
             self.send(src_addr, '/error', path, ray.Err.OPERATION_PENDING,
                         "Stop client before to trash it !")
@@ -1207,7 +1208,7 @@ class SignaledSession(OperatingSession):
         self._ray_client_resume(path, args, src_addr)
 
     @client_action
-    def _ray_client_resume(self, path, args, src_addr, client):
+    def _ray_client_resume(self, path, args, src_addr, client:Client):
         if client.is_running():
             self.send_gui_message(
                 _translate('GUIMSG', 'client %s is already running.')
@@ -1224,7 +1225,7 @@ class SignaledSession(OperatingSession):
         client.start(src_addr, path)
 
     @client_action
-    def _ray_client_open(self, path, args, src_addr, client):
+    def _ray_client_open(self, path, args, src_addr, client:Client):
         if self.file_copier.is_active(client.client_id):
             self.send_error_copy_running(src_addr, path)
             return
@@ -1240,7 +1241,7 @@ class SignaledSession(OperatingSession):
             client.load(src_addr, path)
 
     @client_action
-    def _ray_client_save(self, path, args, src_addr, client):
+    def _ray_client_save(self, path, args, src_addr, client:Client):
         if client.can_save_now():
             if self.file_copier.is_active(client.client_id):
                 self.send_error_copy_running(src_addr, path)
@@ -1252,7 +1253,7 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, '/reply', path, 'client saved')
 
     @client_action
-    def _ray_client_save_as_template(self, path, args, src_addr, client):
+    def _ray_client_save_as_template(self, path, args, src_addr, client:Client):
         template_name = args[0]
 
         if self.file_copier.is_active():
@@ -1262,18 +1263,18 @@ class SignaledSession(OperatingSession):
         client.save_as_template(template_name, src_addr, path)
 
     @client_action
-    def _ray_client_show_optional_gui(self, path, args, src_addr, client):
+    def _ray_client_show_optional_gui(self, path, args, src_addr, client:Client):
         client.send_to_self_address("/nsm/client/show_optional_gui")
         client.show_gui_ordered = True
         self.send(src_addr, '/reply', path, 'show optional GUI asked')
 
     @client_action
-    def _ray_client_hide_optional_gui(self, path, args, src_addr, client):
+    def _ray_client_hide_optional_gui(self, path, args, src_addr, client:Client):
         client.send_to_self_address("/nsm/client/hide_optional_gui")
         self.send(src_addr, '/reply', path, 'hide optional GUI asked')
 
     @client_action
-    def _ray_client_update_properties(self, path, args, src_addr, client):
+    def _ray_client_update_properties(self, path, args, src_addr, client:Client):
         client.updateSecure(client.client_id, *args)
         client.send_gui_client_properties()
         self.send(src_addr, '/reply', path,
@@ -1281,7 +1282,7 @@ class SignaledSession(OperatingSession):
 
     @client_action
     def _ray_client_update_ray_hack_properties(self, path, args,
-                                               src_addr, client):
+                                               src_addr, client:Client):
         ex_no_save_level = client.noSaveLevel()
 
         if client.is_ray_hack():
@@ -1297,13 +1298,13 @@ class SignaledSession(OperatingSession):
 
     @client_action
     def _ray_client_update_ray_net_properties(self, path, args,
-                                              src_addr, client):
+                                              src_addr, client:Client):
         if client.protocol == ray.Protocol.RAY_NET:
             client.ray_net.update(*args)
         self.send(src_addr, '/reply', path, 'ray_net updated')
 
     @client_action
-    def _ray_client_set_properties(self, path, args, src_addr, client):
+    def _ray_client_set_properties(self, path, args, src_addr, client:Client):
         message = ''
         for arg in args:
             message += "%s\n" % arg
@@ -1313,13 +1314,14 @@ class SignaledSession(OperatingSession):
                     'client properties updated')
 
     @client_action
-    def _ray_client_get_properties(self, path, args, src_addr, client):
+    def _ray_client_get_properties(self, path, args, src_addr, client:Client):
         message = client.get_properties_message()
         self.send(src_addr, '/reply', path, message)
         self.send(src_addr, '/reply', path)
 
     @client_action
-    def _ray_client_get_proxy_properties(self, path, args, src_addr, client):
+    def _ray_client_get_proxy_properties(self, path, args, src_addr,
+                                         client:Client):
         proxy_file = '%s/ray-proxy.xml' % client.get_project_path()
 
         if not os.path.isfile(proxy_file):
@@ -1361,7 +1363,8 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
 
     @client_action
-    def _ray_client_set_proxy_properties(self, path, args, src_addr, client):
+    def _ray_client_set_proxy_properties(self, path, args, src_addr,
+                                         client:Client):
         message = ''
         for arg in args:
             message += "%s\n" % arg
@@ -1438,23 +1441,23 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
 
     @client_action
-    def _ray_client_get_description(self, path, args, src_addr, client):
+    def _ray_client_get_description(self, path, args, src_addr, client:Client):
         self.send(src_addr, '/reply', path, client.description)
         self.send(src_addr, '/reply', path)
 
     @client_action
-    def _ray_client_set_description(self, path, args, src_addr, client):
+    def _ray_client_set_description(self, path, args, src_addr, client:Client):
         client.description = args[0]
         self.send(src_addr, '/reply', path, 'Description updated')
 
     @client_action
-    def _ray_client_list_files(self, path, args, src_addr, client):
+    def _ray_client_list_files(self, path, args, src_addr, client:Client):
         client_files = client.get_project_files()
         self.send(src_addr, '/reply', path, *client_files)
         self.send(src_addr, '/reply', path)
 
     @client_action
-    def _ray_client_get_pid(self, path, args, src_addr, client):
+    def _ray_client_get_pid(self, path, args, src_addr, client:Client):
         if client.is_running():
             self.send(src_addr, '/reply', path, str(client.pid))
             self.send(src_addr, '/reply', path)

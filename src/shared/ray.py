@@ -189,11 +189,7 @@ def ifDebug(string):
     if debug:
         sys.stderr.write("%s\n" % string)
 
-def setDebug(bool_debug: bool):
-    global debug
-    debug = bool_debug
-
-def versionToTuple(version_str):
+def version_to_tuple(version_str):
     version_list = []
     for c in version_str.split('.'):
         if not c.isdigit():
@@ -202,7 +198,7 @@ def versionToTuple(version_str):
 
     return tuple(version_list)
 
-def addSelfBinToPath():
+def add_self_bin_to_path():
     # Add raysession/src/bin to $PATH to can use ray executables after make
     # Warning, will works only if link to this file is in RaySession/*/*/*.py
     this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
@@ -211,7 +207,7 @@ def addSelfBinToPath():
         os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
 
 
-def getListInSettings(settings, path):
+def get_list_in_settings(settings, path):
     # getting a QSettings value of list type seems to not works the same way
     # on all machines
     try:
@@ -224,44 +220,8 @@ def getListInSettings(settings, path):
 
     return settings_list
 
-def getGitIgnoredExtensions():
-    return ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
-
-def isPidChildOf(child_pid, parent_pid):
-    if child_pid < parent_pid:
-        return False
-
-    ppid = child_pid
-
-    while ppid > parent_pid:
-        try:
-            proc_file = open('/proc/%i/status' % ppid, 'r')
-            proc_contents = proc_file.read()
-        except BaseException:
-            return False
-
-        for line in proc_contents.split('\n'):
-            if line.startswith('PPid:'):
-                ppid_str = line.rpartition('\t')[2]
-                if ppid_str.isdigit():
-                    ppid = int(ppid_str)
-                    break
-        else:
-            return False
-
-    #while ppid != parent_pid and ppid > 1 and ppid != this_pid:
-        #try:
-            #ppid = int(subprocess.check_output(
-                #['ps', '-o', 'ppid=', '-p', str(ppid)]))
-        #except BaseException:
-            #return False
-
-    if ppid == parent_pid:
-        return True
-
-    return False
-
-def isGitTaggable(string):
+def is_git_taggable(string)->bool:
+    ''' know if a string can be a git tag, not used currently '''
     if not string:
         return False
 
@@ -283,11 +243,6 @@ def isGitTaggable(string):
         return False
 
     return True
-
-def highlightText(string):
-    if "'" in string:
-        return '"%s"' % string
-    return "'%s'" % string
 
 def isValidFullPath(path: str)->bool:
     if not path.startswith('/'):

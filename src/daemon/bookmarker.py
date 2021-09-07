@@ -348,7 +348,8 @@ class PickerTypeQt5(PickerType):
         if not settings_qt5.isWritable():
             return
 
-        shortcuts = ray.getListInSettings(settings_qt5, 'FileDialog/shortcuts')
+        shortcuts = ray.get_list_in_settings(settings_qt5,
+                                             'FileDialog/shortcuts')
 
         for sc in shortcuts:
             sc_url = QUrl(sc)
@@ -370,8 +371,8 @@ class PickerTypeQt5(PickerType):
             return
 
         settings_qt5 = QSettings(self.config_path, QSettings.IniFormat)
-        shortcuts = ray.getListInSettings(settings_qt5,
-                                          'FileDialog/shortcuts')
+        shortcuts = ray.get_list_in_settings(settings_qt5,
+                                             'FileDialog/shortcuts')
 
         for sc in shortcuts:
             sc_url = QUrl(sc)

@@ -8,6 +8,7 @@ import warnings
 from PyQt5.QtCore import QProcess
 
 import ray
+from daemon_tools import is_pid_child_of
 
 def move_win(win_id, desktop_from, desktop_to):
     if desktop_from == desktop_to:
@@ -54,7 +55,7 @@ class DesktopsMemory:
             self._non_daemon_pids.append(pid)
             return False
 
-        if ray.isPidChildOf(pid, daemon_pid):
+        if is_pid_child_of(pid, daemon_pid):
             self._daemon_pids.append(pid)
             return True
 
@@ -208,11 +209,11 @@ class DesktopsMemory:
             return True
 
         for awin in self._active_window_list:
-            if ray.isPidChildOf(awin.pid, pid):
+            if is_pid_child_of(awin.pid, pid):
                 return True
         return False
 
     def find_and_close(self, pid):
         for awin in self._active_window_list:
-            if ray.isPidChildOf(awin.pid, pid):
+            if is_pid_child_of(awin.pid, pid):
                 QProcess.startDetached('wmctrl', ['-i', '-c', awin.id])

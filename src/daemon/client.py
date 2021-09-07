@@ -11,9 +11,11 @@ from PyQt5.QtXml import QDomDocument
 
 import ray
 from server_sender import ServerSender
-from daemon_tools  import TemplateRoots, Terminal, RS, get_code_root
+from daemon_tools  import (TemplateRoots, Terminal, RS,
+                           get_code_root, highlight_text)
 from signaler import Signaler
 from scripter import ClientScripter
+from snapshoter import GIT_IGNORED_EXTENSIONS
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -63,7 +65,7 @@ class Client(ServerSender, ray.ClientData):
     sent_to_gui = False
     switch_state = ray.SwitchState.NONE
 
-    ignored_extensions = ray.getGitIgnoredExtensions()
+    ignored_extensions = GIT_IGNORED_EXTENSIONS
 
     last_save_time = 0.00
     last_dirty = 0.00
@@ -823,7 +825,7 @@ class Client(ServerSender, ray.ClientData):
         ign_exts = ctx.attribute('ignored_extensions').split(' ')
         unign_exts = ctx.attribute('unignored_extensions').split(' ')
 
-        global_exts = ray.getGitIgnoredExtensions().split(' ')
+        global_exts = GIT_IGNORED_EXTENSIONS.split(' ')
         self.ignored_extensions = ""
 
         for ext in global_exts:
@@ -973,12 +975,11 @@ class Client(ServerSender, ray.ClientData):
                 ctx.setAttribute('net_session_template',
                                  self.ray_net.session_template)
 
-        if self.ignored_extensions != ray.getGitIgnoredExtensions():
+        if self.ignored_extensions != GIT_IGNORED_EXTENSIONS:
             ignored = ""
             unignored = ""
             client_exts = [e for e in self.ignored_extensions.split(' ') if e]
-            global_exts = [e for e in
-                           ray.getGitIgnoredExtensions().split(' ') if e]
+            global_exts = [e for e in GIT_IGNORED_EXTENSIONS.split(' ') if e]
 
             for cext in client_exts:
                 if not cext in global_exts:
@@ -1881,7 +1882,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             else:
                 self._send_error_to_caller(OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
                             _translate('GUIMSG', 'impossible to remove %s !')
-                                % ray.highlightText(template_dir))
+                                % highlight_text(template_dir))
                 return
 
         os.makedirs(template_dir)

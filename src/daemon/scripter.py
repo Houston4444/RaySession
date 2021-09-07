@@ -2,7 +2,7 @@ import os
 from PyQt5.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 import ray
-from daemon_tools import Terminal, dirname
+from daemon_tools import Terminal, dirname, highlight_text
 from server_sender import ServerSender
 
 _translate = QCoreApplication.translate
@@ -29,11 +29,11 @@ class Scripter(ServerSender):
             if exit_code == 101:
                 message = _translate('GUIMSG',
                             'script %s failed to start !') % (
-                                ray.highlightText(self.get_path()))
+                                highlight_text(self.get_path()))
             else:
                 message = _translate('GUIMSG',
                         'script %s terminated with exit code %i') % (
-                            ray.highlightText(self.get_path()), exit_code)
+                            highlight_text(self.get_path()), exit_code)
 
             if self._src_addr:
                 self.send(self._src_addr, '/error', self._src_path,
@@ -41,7 +41,7 @@ class Scripter(ServerSender):
         else:
             self.send_gui_message(
                 _translate('GUIMSG', '...script %s finished. ---')
-                    % ray.highlightText(self.get_path()))
+                    % highlight_text(self.get_path()))
 
             if self._src_addr:
                 self.send(self._src_addr, '/reply',
@@ -135,9 +135,9 @@ class StepScripter(Scripter):
         self._stepper_has_call = False
         self._step_str = step_str
 
-        self.send_gui_message(_translate('GUIMSG',
-                            '--- Custom step script %s started...')
-                            % ray.highlightText(script_path))
+        self.send_gui_message(
+            _translate('GUIMSG', '--- Custom step script %s started...')
+            % highlight_text(script_path))
 
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('RAY_CONTROL_PORT', str(self.get_server_port()))
@@ -220,7 +220,7 @@ class ClientScripter(Scripter):
 
         self.send_gui_message(
             _translate('GUIMSG', '--- Custom script %s started...%s')
-                    % (ray.highlightText(script_path), self._client.client_id))
+                    % (highlight_text(script_path), self._client.client_id))
 
         self._process.start(script_path, [])
         return True

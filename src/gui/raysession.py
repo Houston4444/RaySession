@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     # Add raysession/src/bin to $PATH
     # to can use raysession after make, whitout install
-    ray.addSelfBinToPath()
+    ray.add_self_bin_to_path()
 
     #connect signals
     signal.signal(signal.SIGINT, signal_handler)

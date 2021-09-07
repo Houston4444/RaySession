@@ -1291,7 +1291,7 @@ class DaemonUrlWindow(ChildDialog):
         self.ui.labelError.setText(error_text)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
-        self.tried_urls = ray.getListInSettings(RS.settings, 'network/tried_urls')
+        self.tried_urls = ray.get_list_in_settings(RS.settings, 'network/tried_urls')
         last_tried_url = RS.settings.value('network/last_tried_url', '', type=str)
 
         self._completer = QCompleter(self.tried_urls)

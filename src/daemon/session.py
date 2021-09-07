@@ -25,7 +25,7 @@ from scripter import StepScripter
 from canvas_saver import CanvasSaver
 from daemon_tools import (
     TemplateRoots, RS, Terminal, get_git_default_un_and_ignored,
-    dirname, basename)
+    dirname, basename, highlight_text)
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -525,11 +525,11 @@ class Session(ServerSender):
 
         file_version = content.attribute('VERSION')
 
-        if ray.versionToTuple(file_version) >= ray.versionToTuple(ray.VERSION):
+        if ray.version_to_tuple(file_version) >= ray.version_to_tuple(ray.VERSION):
             return False
 
         content.setAttribute('VERSION', ray.VERSION)
-        if ray.versionToTuple(file_version) >= (0, 8, 0):
+        if ray.version_to_tuple(file_version) >= (0, 8, 0):
             return True
 
         nodes = content.childNodes()
@@ -988,7 +988,7 @@ class OperatingSession(Session):
             self.set_server_status(ray.ServerStatus.SAVE)
 
         self.send_gui_message(_translate('GUIMSG', '-- Saving session %s --')
-                                % ray.highlightText(self.get_short_path()))
+                                % highlight_text(self.get_short_path()))
 
         for client in self.clients:
             if client.can_save_now():
@@ -1426,8 +1426,8 @@ for better organization.""")
         self.send_gui('/ray/gui/trash/clear')
         self.send_gui_message(
             _translate('GUIMSG', '-- Duplicating session %s to %s --')
-                % (ray.highlightText(self.get_short_path()),
-                   ray.highlightText(new_session_full_name)))
+                % (highlight_text(self.get_short_path()),
+                   highlight_text(new_session_full_name)))
 
         for client in self.clients:
             if client.protocol == ray.Protocol.RAY_NET:
@@ -1569,7 +1569,7 @@ for better organization.""")
         self.message("Done")
         self.send_gui_message(
             _translate('GUIMSG', "...session saved as template named %s")
-                % ray.highlightText(template_name))
+                % highlight_text(template_name))
 
         self._send_reply("Saved as template.")
         self.set_server_status(ray.ServerStatus.READY)
@@ -1913,7 +1913,7 @@ for better organization."""))
 
         self.load_locked = False
         self.send_gui_message(_translate('GUIMSG', "-- Opening session %s --")
-                                % ray.highlightText(self.get_short_path()))
+                                % highlight_text(self.get_short_path()))
 
         for trashed_client in self.future_trashed_clients:
             self.trashed_clients.append(trashed_client)
@@ -2064,7 +2064,7 @@ for better organization."""))
         self.message('Loaded')
         self.send_gui_message(
             _translate('GUIMSG', 'session %s is loaded.')
-                % ray.highlightText(self.get_short_path()))
+                % highlight_text(self.get_short_path()))
         self.send_gui("/ray/gui/session/name", self.name, self.path)
 
         self.switching_session = False
@@ -2219,7 +2219,7 @@ for better organization.""")
 
         self.send(src_addr, '/error', src_path, ray.Err.NO_SUCH_FILE,
                     _translate('GUIMSG', "%s is not an existing template !")
-                    % ray.highlightText(template_name))
+                    % highlight_text(template_name))
 
     def add_client_template_step_1(self, src_addr, src_path, client):
         client.adjust_files_after_copy(self.name, ray.Template.CLIENT_LOAD)

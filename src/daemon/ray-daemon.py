@@ -21,7 +21,7 @@ def signalHandler(sig, frame):
 
 if __name__ == '__main__':
     #add RaySession/src/bin to $PATH
-    ray.addSelfBinToPath()
+    ray.add_self_bin_to_path()
 
     #create app
     app = QCoreApplication(sys.argv)

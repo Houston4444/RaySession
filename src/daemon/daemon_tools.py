@@ -22,6 +22,45 @@ def get_app_config_path()->str:
 def get_code_root()->str:
     return dirname(dirname(dirname(os.path.realpath(__file__))))
 
+def is_pid_child_of(child_pid, parent_pid)->bool:
+    if child_pid < parent_pid:
+        return False
+
+    ppid = child_pid
+
+    while ppid > parent_pid:
+        try:
+            proc_file = open('/proc/%i/status' % ppid, 'r')
+            proc_contents = proc_file.read()
+        except BaseException:
+            return False
+
+        for line in proc_contents.split('\n'):
+            if line.startswith('PPid:'):
+                ppid_str = line.rpartition('\t')[2]
+                if ppid_str.isdigit():
+                    ppid = int(ppid_str)
+                    break
+        else:
+            return False
+
+    #while ppid != parent_pid and ppid > 1 and ppid != this_pid:
+        #try:
+            #ppid = int(subprocess.check_output(
+                #['ps', '-o', 'ppid=', '-p', str(ppid)]))
+        #except BaseException:
+            #return False
+
+    if ppid == parent_pid:
+        return True
+
+    return False
+
+def highlight_text(string)->str:
+    if "'" in string:
+        return '"%s"' % string
+    return "'%s'" % string
+
 def init_daemon_tools():
     if CommandLineArgs.config_dir:
         l_settings = QSettings(CommandLineArgs.config_dir)
@@ -31,8 +70,8 @@ def init_daemon_tools():
     RS.set_settings(l_settings)
 
     RS.set_non_active_clients(
-        ray.getListInSettings(l_settings, 'daemon/non_active_list'))
-    RS.set_favorites(ray.getListInSettings(l_settings, 'daemon/favorites'))
+        ray.get_list_in_settings(l_settings, 'daemon/non_active_list'))
+    RS.set_favorites(ray.get_list_in_settings(l_settings, 'daemon/favorites'))
     TemplateRoots.init_config()
 
 def get_git_default_un_and_ignored(executable:str)->tuple:

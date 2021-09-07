@@ -869,7 +869,7 @@ class MainWindow(QMainWindow):
 
         new_url = dialog.get_url()
 
-        tried_urls = ray.getListInSettings(RS.settings, 'network/tried_urls')
+        tried_urls = ray.get_list_in_settings(RS.settings, 'network/tried_urls')
         if new_url not in tried_urls:
             tried_urls.append(new_url)
 
