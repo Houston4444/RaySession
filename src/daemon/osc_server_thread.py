@@ -46,7 +46,7 @@ def ray_method(path, types):
 
             response = func(*args[:-1], **kwargs)
             if response != False:
-                signaler.osc_recv.emit(t_path, t_args, t_types, src_addr)
+                Signaler._osc_recv.emit(t_path, t_args, t_types, src_addr)
 
             return response
         return wrapper

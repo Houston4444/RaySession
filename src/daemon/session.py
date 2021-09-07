@@ -952,7 +952,7 @@ class OperatingSession(Session):
 
         self.nextFunction()
 
-    def adjustFilesAfterCopy(self, new_session_full_name, template_mode):
+    def adjust_files_after_copy(self, new_session_full_name, template_mode):
         new_session_name = basename(new_session_full_name)
 
         spath = "%s/%s" % (self.root, new_session_full_name)
@@ -1008,7 +1008,7 @@ class OperatingSession(Session):
 
 
         for client in tmp_clients:
-            client.adjustFilesAfterCopy(new_session_full_name, template_mode)
+            client.adjust_files_after_copy(new_session_full_name, template_mode)
 
 
     ############################## COMPLEX OPERATIONS ###################
@@ -1530,7 +1530,7 @@ for better organization.""")
                          ray.WaitFor.DUPLICATE_FINISH)
 
     def duplicate_substep3(self, new_session_full_name):
-        self.adjustFilesAfterCopy(new_session_full_name, ray.Template.NONE)
+        self.adjust_files_after_copy(new_session_full_name, ray.Template.NONE)
         self.nextFunction()
 
     def duplicateAborted(self, new_session_full_name):
@@ -1604,7 +1604,7 @@ for better organization.""")
             tp_mode = ray.Template.SESSION_SAVE_NET
 
         for client in self.clients + self.trashed_clients:
-            client.adjustFilesAfterCopy(template_name, tp_mode)
+            client.adjust_files_after_copy(template_name, tp_mode)
 
         self.message("Done")
         self.send_gui_message(
@@ -1672,7 +1672,7 @@ for better organization."""))
                                           [new_session_full_name])
 
     def prepareTemplate_substep1(self, new_session_full_name):
-        self.adjustFilesAfterCopy(new_session_full_name,
+        self.adjust_files_after_copy(new_session_full_name,
                                   ray.Template.SESSION_LOAD)
         self.nextFunction()
 
@@ -1688,7 +1688,7 @@ for better organization."""))
 
     def rename(self, new_session_name):
         for client in self.clients + self.trashed_clients:
-            client.adjustFilesAfterCopy(new_session_name, ray.Template.RENAME)
+            client.adjust_files_after_copy(new_session_name, ray.Template.RENAME)
 
         try:
             spath = "%s/%s" % (dirname(self.path), new_session_name)
@@ -1895,7 +1895,7 @@ for better organization."""))
             # session folder has been renamed
             # so rename session to it
             for client in self.future_clients + self.future_trashed_clients:
-                client.adjustFilesAfterCopy(self.path, ray.Template.RENAME)
+                client.adjust_files_after_copy(self.path, ray.Template.RENAME)
             self.setPath(self.future_session_path)
 
         self.send_gui("/ray/gui/session/name", self.name, self.path)
@@ -2259,7 +2259,7 @@ for better organization.""")
                     % ray.highlightText(template_name))
 
     def addClientTemplate_step_1(self, src_addr, src_path, client):
-        client.adjustFilesAfterCopy(self.name, ray.Template.CLIENT_LOAD)
+        client.adjust_files_after_copy(self.name, ray.Template.CLIENT_LOAD)
 
         if client.auto_start:
             client.start()

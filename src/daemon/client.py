@@ -28,9 +28,6 @@ _translate = QCoreApplication.translate
 signaler = Signaler.instance()
 
 
-def dirname(*args):
-    return os.path.dirname(*args)
-
 def basename(*args):
     return os.path.basename(*args)
 
@@ -92,22 +89,22 @@ class Client(ServerSender, ray.ClientData):
         self.custom_data = {}
         self.custom_tmp_data = {}
 
-        self.process = QProcess()
-        self.process.started.connect(self._process_started)
+        self._process = QProcess()
+        self._process.started.connect(self._process_started)
         if ray.QT_VERSION >= (5, 6):
-            self.process.errorOccurred.connect(self._error_in_process)
-        self.process.finished.connect(self._process_finished)
-        self.process.readyReadStandardError.connect(self._standard_error)
-        self.process.readyReadStandardOutput.connect(self._standard_output)
-        self.process.setProcessEnvironment(process_env)
+            self._process.errorOccurred.connect(self._error_in_process)
+        self._process.finished.connect(self._process_finished)
+        self._process.readyReadStandardError.connect(self._standard_error)
+        self._process.readyReadStandardOutput.connect(self._standard_output)
+        self._process.setProcessEnvironment(process_env)
 
         #if client is'n't stopped 2secs after stop,
         #another stop becames a kill!
-        self.stopped_since_long = False
-        self.stopped_timer = QTimer()
-        self.stopped_timer.setSingleShot(True)
-        self.stopped_timer.setInterval(2000) #2sec
-        self.stopped_timer.timeout.connect(self._stopped_since_long)
+        self._stopped_since_long_ = False
+        self._stopped_timer = QTimer()
+        self._stopped_timer.setSingleShot(True)
+        self._stopped_timer.setInterval(2000) #2sec
+        self._stopped_timer.timeout.connect(self._stopped_since_long)
 
         self.net_daemon_copy_timer = QTimer()
         self.net_daemon_copy_timer.setSingleShot(True)
@@ -129,19 +126,102 @@ class Client(ServerSender, ray.ClientData):
 
         self.ray_hack_waiting_win = False
 
-    def is_ray_hack(self)->bool:
-        return bool(self.protocol == ray.Protocol.RAY_HACK)
+    def _standard_error(self):
+        standard_error = self._process.readAllStandardError().data()
+        Terminal.clientMessage(standard_error, self.name, self.client_id)
 
-    def send_to_self_address(self, *args):
-        if not self.addr:
+    def _standard_output(self):
+        standard_output = self._process.readAllStandardOutput().data()
+        Terminal.clientMessage(standard_output, self.name, self.client_id)
+
+    def _process_started(self):
+        self.has_been_started = True
+        self._stopped_since_long_ = False
+        self.pid = self._process.pid()
+        self.set_status(ray.ClientStatus.LAUNCH)
+
+        #Terminal.message("Process has pid: %i" % self.pid)
+
+        self.send_gui_message(_translate("GUIMSG", "  %s: launched")
+                            % self.gui_msg_style())
+
+        self._send_reply_to_caller(OSC_SRC_START, 'client started')
+
+        if self.is_ray_hack():
+            if self.noSaveLevel():
+                self.send_gui('/ray/gui/client/no_save_level',
+                               self.client_id, self.noSaveLevel())
+            if self.ray_hack.config_file:
+                self.pending_command = ray.Command.OPEN
+                self.set_status(ray.ClientStatus.OPEN)
+                QTimer.singleShot(500, self._ray_hack_near_ready)
+
+    def _process_finished(self, exit_code, exit_status):
+        self._stopped_timer.stop()
+        self.is_external = False
+
+        if self.pending_command == ray.Command.STOP:
+            self.send_gui_message(_translate('GUIMSG',
+                                    "  %s: terminated by server instruction")
+                                    % self.gui_msg_style())
+        else:
+            self.send_gui_message(_translate('GUIMSG',
+                                           "  %s: terminated itself.")
+                                    % self.gui_msg_style())
+
+        self._send_reply_to_caller(OSC_SRC_STOP, 'client stopped')
+
+        for osc_src in (OSC_SRC_OPEN, OSC_SRC_SAVE):
+            self._send_error_to_caller(osc_src, ray.Err.GENERAL_ERROR,
+                    _translate('GUIMSG', '%s died !' % self.gui_msg_style()))
+
+        self.set_status(ray.ClientStatus.STOPPED)
+
+        self.pending_command = ray.Command.NONE
+        self.active = False
+        self.pid = 0
+        self.addr = None
+
+        self.session.setRenameable(True)
+
+        if self.scripter.pending_command() == ray.Command.STOP:
             return
 
-        self.send(self.addr, *args)
+        if self.session.wait_for:
+            self.session.endTimerIfLastExpected(self)
 
-    def message(self, message: str):
-        if self.session is None:
-            return
-        self.session.message(message)
+    def _error_in_process(self, error):
+        if error == QProcess.FailedToStart:
+            self.send_gui_message(
+                _translate('GUIMSG', "  %s: Failed to start !")
+                    % self.gui_msg_style())
+            self.active = False
+            self.pid = 0
+            self.set_status(ray.ClientStatus.STOPPED)
+            self.pending_command = ray.Command.NONE
+
+            if self.session.osc_src_addr:
+                error_message = "Failed to launch process!"
+                if not self.session.osc_path.startswith('/nsm/server/'):
+                    error_message = _translate('client',
+                                               "Failed to launch process !")
+
+                self.session.oscReply("/error", self.session.osc_path,
+                                      ray.Err.LAUNCH_FAILED,
+                                      error_message)
+
+            for osc_slot in (OSC_SRC_START, OSC_SRC_OPEN):
+                self._send_error_to_caller(osc_slot, ray.Err.LAUNCH_FAILED,
+                    _translate('GUIMSG', '%s failed to launch')
+                        % self.gui_msg_style())
+
+            if self.session.wait_for:
+                self.session.endTimerIfLastExpected(self)
+        self.session.setRenameable(True)
+
+    def _stopped_since_long(self):
+        self._stopped_since_long_ = True
+        self.send_gui('/ray/gui/client/still_running', self.client_id)
 
     def _send_reply_to_caller(self, slot, message):
         src_addr, src_path = self._osc_srcs[slot]
@@ -181,6 +261,551 @@ class Client(ServerSender, ray.ClientData):
             return
 
         server.sendClientStatusToGui(self)
+
+    def _net_daemon_out_of_time(self):
+        self.ray_net.duplicate_state = -1
+
+        if self.session.wait_for == ray.WaitFor.DUPLICATE_FINISH:
+            self.session.endTimerIfLastExpected(self)
+
+    def _get_jack_client_name(self):
+        if self.protocol == ray.Protocol.RAY_NET:
+            # ray-net will use jack_client_name for template
+            # quite dirty, but this is the easier way
+            return self.ray_net.session_template
+
+        # return same jack_client_name as NSM does
+        # if client seems to have been made by NSM itself
+        # else, jack connections could be lose
+        # at NSM session import
+        if self._from_nsm_file:
+            return "%s.%s" % (self.name, self.client_id)
+
+        jack_client_name = self.name
+
+        # Mostly for ray_hack
+        if not jack_client_name:
+            jack_client_name = os.path.basename(self.executable_path)
+            jack_client_name.capitalize()
+
+        numid = ''
+        if '_' in self.client_id:
+            numid = self.client_id.rpartition('_')[2]
+        if numid.isdigit():
+            jack_client_name += '_'
+            jack_client_name += numid
+
+        return jack_client_name
+
+    def _get_links_dir(self)->str:
+        ''' returns the dir path used by carla for links such as
+        audio convolutions or soundfonts '''
+        links_dir = self._get_jack_client_name()
+        for c in ('-', '.'):
+            links_dir = links_dir.replace(c, '_')
+        return links_dir
+
+    def _pretty_client_id(self):
+        wanted = self.client_id
+
+        if self.executable_path == 'ray-proxy':
+            proxy_file = "%s/ray-proxy.xml" % self.get_project_path()
+
+            if os.path.exists(proxy_file):
+                file = open(proxy_file, 'r')
+                xml = QDomDocument()
+                xml.setContent(file.read())
+                file.close()
+
+                content = xml.documentElement()
+                if content.tagName() == 'RAY-PROXY':
+                    executable = content.attribute('executable')
+                    if executable:
+                        wanted = executable
+
+        if '_' in wanted:
+            begin, udsc, end = wanted.rpartition('_')
+
+            if not end:
+                return wanted
+
+            if not end.isdigit():
+                return wanted
+
+            return begin
+
+        return wanted
+
+    def _get_proxy_executable(self):
+        if os.path.basename(self.executable_path) != 'ray-proxy':
+            return ""
+        xml_file = "%s/ray-proxy.xml" % self.get_project_path()
+        xml = QDomDocument()
+        try:
+            file = open(xml_file, 'r')
+            xml.setContent(file.read())
+        except:
+            return ""
+
+        content = xml.documentElement()
+        if content.tagName() != "RAY-PROXY":
+            file.close()
+            return ""
+
+        executable = content.attribute('executable')
+        file.close()
+        return executable
+
+    def _ray_hack_near_ready(self):
+        if not self.is_ray_hack():
+            return
+
+        if not self.is_running():
+            return
+
+        if self.ray_hack.wait_win:
+            self.ray_hack_waiting_win = True
+            if not self.session.window_waiter.isActive():
+                self.session.window_waiter.start()
+        else:
+            self.ray_hack_ready()
+
+    def _ray_hack_saved(self):
+        if not self.is_ray_hack():
+            return
+
+        if self.pending_command == ray.Command.SAVE:
+            self.pending_command = ray.Command.NONE
+            self.set_status(ray.ClientStatus.READY)
+
+            self.last_save_time = time.time()
+
+            self.send_gui_message(
+                _translate('GUIMSG', '  %s: saved')
+                    % self.gui_msg_style())
+
+            self._send_reply_to_caller(OSC_SRC_SAVE, 'client saved.')
+
+        if self.session.wait_for == ray.WaitFor.REPLY:
+            self.session.endTimerIfLastExpected(self)
+
+    def _set_infos_from_desktop_contents(self, contents: str):
+        lang = os.getenv('LANG')
+        lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
+        all_data = {"Comment": ['', '', ''],
+                    "Name":    ['', '', ''],
+                    "Icon":    ['', '', '']}
+
+        for line in contents.split('\n'):
+            if line.startswith('[') and line != "[Desktop Entry]":
+                break
+
+            if '=' not in line:
+                continue
+
+            var, egal, value = line.partition('=')
+            found = False
+
+            for searched in all_data:
+                for i in range(len(lang_strs)):
+                    lang_str = lang_strs[i]
+                    if var == searched + lang_str:
+                        all_data[searched][i] = value
+                        found = True
+                        break
+
+                if found:
+                    break
+
+        for data in all_data:
+            for str_value in all_data[data]:
+                if data == "Comment":
+                    if str_value and not self.description:
+                        self._desktop_description = str_value
+                        self.description = str_value
+                        break
+                elif data == "Name":
+                    if str_value and not self.label:
+                        self._desktop_label = str_value
+                        self.label = str_value
+                        break
+                elif data == "Icon":
+                    if str_value and not self.icon:
+                        self._desktop_icon = str_value
+                        self.icon = str_value
+                        break
+
+    def _rename_files(
+            self, spath, old_session_name, new_session_name,
+            old_prefix, new_prefix, old_client_id, new_client_id,
+            old_client_links_dir, new_client_links_dir):
+        scripts_dir = "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, old_client_id)
+        if os.access(scripts_dir, os.W_OK):
+            os.rename(scripts_dir,
+                      "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, new_client_id))
+
+        project_path = "%s/%s.%s" % (spath, old_prefix, old_client_id)
+
+        files_to_rename = []
+        do_rename = True
+
+        if self.is_ray_hack():
+            if os.path.isdir(project_path):
+                if not os.access(project_path, os.W_OK):
+                    do_rename = False
+                else:
+                    os.environ['RAY_SESSION_NAME'] = old_session_name
+                    os.environ['RAY_CLIENT_ID'] = old_client_id
+                    pre_config_file = os.path.expandvars(
+                                                    self.ray_hack.config_file)
+
+                    os.environ['RAY_SESSION_NAME'] = new_session_name
+                    os.environ['RAY_CLIENT_ID'] = new_client_id
+                    post_config_file = os.path.expandvars(
+                                                    self.ray_hack.config_file)
+
+                    os.unsetenv('RAY_SESSION_NAME')
+                    os.unsetenv('RAY_CLIENT_ID')
+
+                    full_pre_config_file = "%s/%s" % (project_path,
+                                                 pre_config_file)
+                    full_post_config_file = "%s/%s" % (project_path,
+                                                 post_config_file)
+
+                    if os.path.exists(full_pre_config_file):
+                        files_to_rename.append((full_pre_config_file,
+                                                full_post_config_file))
+
+                    files_to_rename.append((project_path,
+                        "%s/%s.%s" % (spath, new_prefix, new_client_id)))
+        else:
+            for file_path in os.listdir(spath):
+                if file_path.startswith("%s.%s." % (old_prefix, old_client_id)):
+                    if not os.access("%s/%s" % (spath, file_path), os.W_OK):
+                        do_rename = False
+                        break
+
+                    endfile = file_path.replace(
+                        "%s.%s." % (old_prefix, old_client_id), '', 1)
+
+                    next_path = "%s/%s.%s.%s" % (spath, new_prefix,
+                                                 new_client_id, endfile)
+                    if os.path.exists(next_path):
+                        do_rename = False
+                        break
+
+                    files_to_rename.append(("%s/%s" % (spath, file_path),
+                                            next_path))
+
+                elif file_path == "%s.%s" % (old_prefix, old_client_id):
+                    if not os.access("%s/%s" % (spath, file_path), os.W_OK):
+                        do_rename = False
+                        break
+
+                    next_path = "%s/%s.%s" % (spath, new_prefix, new_client_id)
+
+                    if os.path.exists(next_path):
+                        do_rename = False
+                        break
+
+                    # only for hydrogen
+                    hydrogen_file = "%s/%s.%s.h2song" % (
+                        project_path, old_prefix, old_client_id)
+                    hydrogen_autosave = "%s/%s.%s.autosave.h2song" % (
+                        project_path, old_prefix, old_client_id)
+
+                    if (os.path.isfile(hydrogen_file)
+                            and os.access(hydrogen_file, os.W_OK)):
+                        new_hydro_file = "%s/%s.%s.h2song" % (
+                            project_path, new_prefix, new_client_id)
+                        if os.path.exists(new_hydro_file):
+                            do_rename = False
+                            break
+
+                        files_to_rename.append((hydrogen_file, new_hydro_file))
+
+                    if (os.path.isfile(hydrogen_autosave)
+                            and os.access(hydrogen_autosave, os.W_OK)):
+                        new_hydro_autosave = "%s/%s.%s.autosave.h2song" % (
+                            project_path, new_prefix, new_client_id)
+                        if os.path.exists(new_hydro_autosave):
+                            do_rename = False
+                            break
+
+                        files_to_rename.append((hydrogen_autosave, new_hydro_autosave))
+
+                    # only for ardour
+                    ardour_file = "%s/%s.ardour" % (project_path, old_prefix)
+                    ardour_bak = "%s/%s.ardour.bak" % (project_path, old_prefix)
+                    ardour_audio = "%s/interchange/%s.%s" % (project_path,
+                                                old_prefix, old_client_id)
+
+                    if os.path.isfile(ardour_file) and os.access(ardour_file, os.W_OK):
+                        new_ardour_file = "%s/%s.ardour" % (project_path, new_prefix)
+                        if os.path.exists(new_ardour_file):
+                            do_rename = False
+                            break
+
+                        files_to_rename.append((ardour_file, new_ardour_file))
+
+                     # change Session name
+                    try:
+                        file = open(ardour_file, 'r')
+                        xml = QDomDocument()
+                        xml.setContent(file.read())
+                        file.close()
+                        root = xml.documentElement()
+
+                        if root.tagName() == 'Session':
+                            root.setAttribute('name', new_prefix)
+                            file = open(ardour_file, 'w')
+                            file.write(xml.toString())
+
+                    except:
+                        False
+
+                    if os.path.isfile(ardour_bak) and os.access(ardour_bak, os.W_OK):
+                        new_ardour_bak = "%s/%s.ardour.bak" % (project_path, new_prefix)
+                        if os.path.exists(new_ardour_bak):
+                            do_rename = False
+                            break
+
+                        files_to_rename.append((ardour_bak, new_ardour_bak))
+
+                    if os.path.isdir(ardour_audio) and os.access(ardour_audio, os.W_OK):
+                        new_ardour_audio = "%s/interchange/%s.%s" % (project_path,
+                                                        new_prefix, new_client_id)
+                        if os.path.exists(new_ardour_audio):
+                            do_rename = False
+                            break
+
+                        files_to_rename.append((ardour_audio, new_ardour_audio))
+
+                    # for Vee One Suite
+                    for extfile in ('samplv1', 'synthv1', 'padthv1', 'drumkv1'):
+                        old_veeone_file = "%s/%s.%s" % (project_path,
+                                            old_session_name, extfile)
+                        new_veeone_file = "%s/%s.%s" % (project_path,
+                                            new_session_name, extfile)
+                        if (os.path.isfile(old_veeone_file)
+                                and os.access(old_veeone_file, os.W_OK)):
+                            if os.path.exists(new_veeone_file):
+                                do_rename = False
+                                break
+
+                            files_to_rename.append((old_veeone_file,
+                                                    new_veeone_file))
+
+                    # for ray-proxy, change config_file name
+                    proxy_file = "%s/ray-proxy.xml" % project_path
+                    if os.path.isfile(proxy_file):
+                        try:
+                            file = open(proxy_file, 'r')
+                            xml = QDomDocument()
+                            xml.setContent(file.read())
+                            file.close()
+                            content = xml.documentElement()
+
+                            if content.tagName() == "RAY-PROXY":
+                                cte = content.toElement()
+                                config_file = cte.attribute('config_file')
+
+                                if (('$RAY_SESSION_NAME' or '${RAY_SESSION_NAME}')
+                                        in config_file):
+                                    for env in ('"$RAY_SESSION_NAME"',
+                                                '"${RAY_SESSION_NAME}"',
+                                                "$RAY_SESSION_NAME",
+                                                "${RAY_SESSION_NAME}"):
+                                        config_file = \
+                                            config_file.replace(env,
+                                                                old_session_name)
+
+                                    if (config_file
+                                            and (config_file.split('.')[0]
+                                                    == old_session_name)):
+                                        config_file_path = "%s/%s" % (
+                                                        project_path, config_file)
+
+                                        new_config_file_path = "%s/%s" % (
+                                            project_path,
+                                            config_file.replace(old_session_name,
+                                                                new_session_name))
+
+                                        if os.path.exists(new_config_file_path):
+                                            # replace config_file attribute
+                                            # with variable replaced
+                                            cte.setAttribute('config_file',
+                                                            config_file)
+                                            try:
+                                                file = open(proxy_file, 'w')
+                                                file.write(xml.toString())
+                                            except:
+                                                False
+                                        elif (os.path.exists(config_file_path)
+                                            and os.access(config_file_path,
+                                                            os.W_OK)):
+                                            files_to_rename.append(
+                                                (config_file_path,
+                                                new_config_file_path))
+                        except:
+                            False
+
+                    files_to_rename.append(("%s/%s" % (spath, file_path),
+                                            next_path))
+
+                elif file_path == old_client_links_dir:
+                    # this section only concerns Carla links dir
+                    # used to save links for convolutions files or soundfonts
+                    # or any other linked resource.
+                    if old_client_links_dir == new_client_links_dir:
+                        continue
+
+                    full_old_client_links_dir = os.path.join(spath, file_path)
+
+                    if not os.path.isdir(full_old_client_links_dir):
+                        continue
+
+                    if not os.access(full_old_client_links_dir, os.W_OK):
+                        do_rename = False
+                        break
+
+                    files_to_rename.append(
+                        (full_old_client_links_dir,
+                         os.path.join(spath, new_client_links_dir)))
+
+        if not do_rename:
+            self.prefix_mode = ray.PrefixMode.CUSTOM
+            self.custom_prefix = old_prefix
+            # it should not be a client_id problem here
+            return
+
+        # change last_used snapshot of ardour
+        instant_file = "%s/instant.xml" % project_path
+        if os.path.isfile(instant_file) and os.access(instant_file, os.W_OK):
+            try:
+                file = open(instant_file, 'r')
+                xml = QDomDocument()
+                xml.setContent(file.read())
+                file.close()
+                content = xml.documentElement()
+
+                if content.tagName() == 'instant':
+                    node = content.firstChild()
+                    while not node.isNull():
+                        tag = node.toElement()
+                        if tag.tagName() == 'LastUsedSnapshot':
+                            if tag.attribute('name') == old_prefix:
+                                tag.setAttribute('name', new_prefix)
+                                file = open(instant_file, 'w')
+                                file.write(xml.toString())
+                            break
+
+                        node = node.nextSibling()
+            except:
+                False
+
+        for now_path, next_path in files_to_rename:
+            os.rename(now_path, next_path)
+
+    def _save_as_template_substep1(self, template_name):
+        self.set_status(self.status) # see set_status to see why
+
+        if self.prefix_mode != ray.PrefixMode.CUSTOM:
+            self.adjust_files_after_copy(template_name, ray.Template.CLIENT_SAVE)
+
+        xml_file = "%s/%s" % (TemplateRoots.user_clients,
+                              'client_templates.xml')
+
+        # security check
+        if os.path.exists(xml_file):
+            if not os.access(xml_file, os.W_OK):
+                self._send_error_to_caller(OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                                _translate('GUIMSG', '%s is not writeable !')
+                                    % xml_file)
+                return
+
+            if os.path.isdir(xml_file):
+                #should not be a dir, remove it !
+                subprocess.run('rm', '-R', xml_file)
+
+        if not os.path.isdir(TemplateRoots.user_clients):
+            os.makedirs(TemplateRoots.user_clients)
+
+        #create client_templates.xml if not exists
+        if not os.path.isfile(xml_file):
+            file = open(xml_file, 'w')
+
+            xml = QDomDocument()
+            rct = xml.createElement('RAY-CLIENT-TEMPLATES')
+            xml.appendChild(rct)
+            file.write(xml.toString())
+            file.close()
+            del xml
+
+        file = open(xml_file, 'r')
+        xml = QDomDocument()
+        xml.setContent(file.read())
+        file.close()
+        content = xml.documentElement()
+
+        if not content.tagName() == 'RAY-CLIENT-TEMPLATES':
+            return
+
+        # remove existing template if it has the same name as the new one
+        node = content.firstChild()
+        while not node.isNull():
+            if node.toElement().tagName() != 'Client-Template':
+                node = node.nextSibling()
+                continue
+
+            if node.toElement().attribute('template-name') == template_name:
+                content.removeChild(node)
+
+            node = node.nextSibling()
+
+        #create template
+        rct = xml.createElement('Client-Template')
+
+        self.write_xml_properties(rct)
+        rct.setAttribute('template-name', template_name)
+        rct.setAttribute('client_id', self._pretty_client_id())
+
+        if not self.is_running():
+            rct.setAttribute('launched', False)
+
+        content.appendChild(rct)
+
+        file = open(xml_file, 'w')
+        file.write(xml.toString())
+        file.close()
+
+        self.template_origin = template_name
+        self.send_gui_client_properties()
+
+        self.send_gui_message(
+            _translate('message', 'Client template %s created')
+                % template_name)
+
+        self._send_reply_to_caller(OSC_SRC_SAVE_TP, 'client template created')
+
+    def _save_as_template_aborted(self, template_name):
+        self.set_status(self.status)
+        self._send_error_to_caller(OSC_SRC_SAVE_TP, ray.Err.COPY_ABORTED,
+            _translate('GUIMSG', 'Copy has been aborted !'))
+
+    def is_ray_hack(self)->bool:
+        return bool(self.protocol == ray.Protocol.RAY_HACK)
+
+    def send_to_self_address(self, *args):
+        if not self.addr:
+            return
+
+        self.send(self.addr, *args)
+
+    def message(self, message: str):
+        if self.session is None:
+            return
+        self.session.message(message)
 
     def read_xml_properties(self, ctx):
         #ctx is an xml sibling for client
@@ -486,12 +1111,6 @@ class Client(ServerSender, ray.ClientData):
                 self.ray_net.daemon_url,
                 self.ray_net.session_root.replace('"', '\\"'))
 
-    def _net_daemon_out_of_time(self):
-        self.ray_net.duplicate_state = -1
-
-        if self.session.wait_for == ray.WaitFor.DUPLICATE_FINISH:
-            self.session.endTimerIfLastExpected(self)
-
     def set_status(self, status):
         # ray.ClientStatus.COPY is not a status as the other ones.
         # GUI needs to know if client is started/open/stopped while files are
@@ -506,43 +1125,6 @@ class Client(ServerSender, ray.ClientData):
                 or self.session.file_copier.is_active(self.client_id)):
             self.send_gui("/ray/gui/client/status", self.client_id,
                           ray.ClientStatus.COPY)
-
-    def _get_jack_client_name(self):
-        if self.protocol == ray.Protocol.RAY_NET:
-            # ray-net will use jack_client_name for template
-            # quite dirty, but this is the easier way
-            return self.ray_net.session_template
-
-        # return same jack_client_name as NSM does
-        # if client seems to have been made by NSM itself
-        # else, jack connections could be lose
-        # at NSM session import
-        if self._from_nsm_file:
-            return "%s.%s" % (self.name, self.client_id)
-
-        jack_client_name = self.name
-
-        # Mostly for ray_hack
-        if not jack_client_name:
-            jack_client_name = os.path.basename(self.executable_path)
-            jack_client_name.capitalize()
-
-        numid = ''
-        if '_' in self.client_id:
-            numid = self.client_id.rpartition('_')[2]
-        if numid.isdigit():
-            jack_client_name += '_'
-            jack_client_name += numid
-
-        return jack_client_name
-
-    def _get_links_dir(self)->str:
-        ''' returns the dir path used by carla for links such as
-        audio convolutions or soundfonts '''
-        links_dir = self._get_jack_client_name()
-        for c in ('-', '.'):
-            links_dir = links_dir.replace(c, '_')
-        return links_dir
 
     def get_prefix_string(self):
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
@@ -573,26 +1155,6 @@ class Client(ServerSender, ray.ClientData):
         # should not happens
         return "%s/%s.%s" % (self.session.path, self.session.name,
                              self.client_id)
-
-    def _get_proxy_executable(self):
-        if os.path.basename(self.executable_path) != 'ray-proxy':
-            return ""
-        xml_file = "%s/ray-proxy.xml" % self.get_project_path()
-        xml = QDomDocument()
-        try:
-            file = open(xml_file, 'r')
-            xml.setContent(file.read())
-        except:
-            return ""
-
-        content = xml.documentElement()
-        if content.tagName() != "RAY-PROXY":
-            file.close()
-            return ""
-
-        executable = content.attribute('executable')
-        file.close()
-        return executable
 
     def set_default_git_ignored(self, executable=""):
         executable = executable if executable else self.executable_path
@@ -662,7 +1224,7 @@ class Client(ServerSender, ray.ClientData):
                     arguments += ['--session-root', self.ray_net.session_root]
             self.ray_net.running_daemon_url = self.ray_net.daemon_url
             self.ray_net.running_session_root = self.ray_net.session_root
-            self.process.start(ray.RAYNET_BIN, arguments)
+            self._process.start(ray.RAYNET_BIN, arguments)
             return
 
         if self.tmp_arguments:
@@ -722,13 +1284,13 @@ class Client(ServerSender, ray.ClientData):
         self.running_arguments = self.arguments
 
         if self.is_ray_hack():
-            self.process.setWorkingDirectory(ray_hack_pwd)
+            self._process.setWorkingDirectory(ray_hack_pwd)
             process_env = QProcessEnvironment.systemEnvironment()
             process_env.insert('RAY_SESSION_NAME', self.session.name)
             process_env.insert('RAY_CLIENT_ID', self.client_id)
-            self.process.setProcessEnvironment(process_env)
+            self._process.setProcessEnvironment(process_env)
 
-        self.process.start(self.executable_path, arguments)
+        self._process.start(self.executable_path, arguments)
 
         ## Here for another way to debug clients.
         ## Konsole is a terminal software.
@@ -775,7 +1337,7 @@ class Client(ServerSender, ray.ClientData):
             if self.is_external:
                 os.kill(self.pid, 15) # 15 means signal.SIGTERM
             else:
-                self.process.terminate()
+                self._process.terminate()
 
     def kill(self):
         if self.is_external:
@@ -783,7 +1345,7 @@ class Client(ServerSender, ray.ClientData):
             return
 
         if self.is_running():
-            self.process.kill()
+            self._process.kill()
 
     def send_signal(self, sig: int, src_addr=None, src_path=""):
         try:
@@ -807,71 +1369,7 @@ class Client(ServerSender, ray.ClientData):
     def is_running(self):
         if self.is_external:
             return True
-        return bool(self.process.state() == 2)
-
-    def _standard_error(self):
-        standard_error = self.process.readAllStandardError().data()
-        Terminal.clientMessage(standard_error, self.name, self.client_id)
-
-    def _standard_output(self):
-        standard_output = self.process.readAllStandardOutput().data()
-        Terminal.clientMessage(standard_output, self.name, self.client_id)
-
-    def _process_started(self):
-        self.has_been_started = True
-        self.stopped_since_long = False
-        self.pid = self.process.pid()
-        self.set_status(ray.ClientStatus.LAUNCH)
-
-        #Terminal.message("Process has pid: %i" % self.pid)
-
-        self.send_gui_message(_translate("GUIMSG", "  %s: launched")
-                            % self.gui_msg_style())
-
-        self._send_reply_to_caller(OSC_SRC_START, 'client started')
-
-        if self.is_ray_hack():
-            if self.noSaveLevel():
-                self.send_gui('/ray/gui/client/no_save_level',
-                               self.client_id, self.noSaveLevel())
-            if self.ray_hack.config_file:
-                self.pending_command = ray.Command.OPEN
-                self.set_status(ray.ClientStatus.OPEN)
-                QTimer.singleShot(500, self._ray_hack_near_ready)
-
-    def _process_finished(self, exit_code, exit_status):
-        self.stopped_timer.stop()
-        self.is_external = False
-
-        if self.pending_command == ray.Command.STOP:
-            self.send_gui_message(_translate('GUIMSG',
-                                    "  %s: terminated by server instruction")
-                                    % self.gui_msg_style())
-        else:
-            self.send_gui_message(_translate('GUIMSG',
-                                           "  %s: terminated itself.")
-                                    % self.gui_msg_style())
-
-        self._send_reply_to_caller(OSC_SRC_STOP, 'client stopped')
-
-        for osc_src in (OSC_SRC_OPEN, OSC_SRC_SAVE):
-            self._send_error_to_caller(osc_src, ray.Err.GENERAL_ERROR,
-                    _translate('GUIMSG', '%s died !' % self.gui_msg_style()))
-
-        self.set_status(ray.ClientStatus.STOPPED)
-
-        self.pending_command = ray.Command.NONE
-        self.active = False
-        self.pid = 0
-        self.addr = None
-
-        self.session.setRenameable(True)
-
-        if self.scripter.pending_command() == ray.Command.STOP:
-            return
-
-        if self.session.wait_for:
-            self.session.endTimerIfLastExpected(self)
+        return bool(self._process.state() == 2)
 
     def external_finished(self):
         self._process_finished(0, 0)
@@ -916,21 +1414,6 @@ class Client(ServerSender, ray.ClientData):
         if self.session.wait_for:
             self.session.endTimerIfLastExpected(self)
 
-    def _ray_hack_near_ready(self):
-        if not self.is_ray_hack():
-            return
-
-        if not self.is_running():
-            # TODO send to GUI to show exproxy dialog
-            return
-
-        if self.ray_hack.wait_win:
-            self.ray_hack_waiting_win = True
-            if not self.session.window_waiter.isActive():
-                self.session.window_waiter.start()
-        else:
-            self.ray_hack_ready()
-
     def ray_hack_ready(self):
         self.send_gui_message(
             _translate('GUIMSG', '  %s: project probably loaded')
@@ -945,39 +1428,6 @@ class Client(ServerSender, ray.ClientData):
 
     def terminate_scripts(self):
         self.scripter.terminate()
-
-    def _error_in_process(self, error):
-        if error == QProcess.FailedToStart:
-            self.send_gui_message(
-                _translate('GUIMSG', "  %s: Failed to start !")
-                    % self.gui_msg_style())
-            self.active = False
-            self.pid = 0
-            self.set_status(ray.ClientStatus.STOPPED)
-            self.pending_command = ray.Command.NONE
-
-            if self.session.osc_src_addr:
-                error_message = "Failed to launch process!"
-                if not self.session.osc_path.startswith('/nsm/server/'):
-                    error_message = _translate('client',
-                                               "Failed to launch process !")
-
-                self.session.oscReply("/error", self.session.osc_path,
-                                      ray.Err.LAUNCH_FAILED,
-                                      error_message)
-
-            for osc_slot in (OSC_SRC_START, OSC_SRC_OPEN):
-                self._send_error_to_caller(osc_slot, ray.Err.LAUNCH_FAILED,
-                    _translate('GUIMSG', '%s failed to launch')
-                        % self.gui_msg_style())
-
-            if self.session.wait_for:
-                self.session.endTimerIfLastExpected(self)
-        self.session.setRenameable(True)
-
-    def _stopped_since_long(self):
-        self.stopped_since_long = True
-        self.send_gui('/ray/gui/client/still_running', self.client_id)
 
     def tell_client_session_is_loaded(self):
         if self.active and not self.is_dumb_client():
@@ -1022,7 +1472,7 @@ class Client(ServerSender, ray.ClientData):
                 self.pending_command = ray.Command.SAVE
                 self.set_status(ray.ClientStatus.SAVE)
                 if self.ray_hack.save_sig > 0:
-                    os.kill(self.process.processId(), self.ray_hack.save_sig)
+                    os.kill(self._process.processId(), self.ray_hack.save_sig)
                 QTimer.singleShot(300, self._ray_hack_saved)
 
             elif self.can_save_now():
@@ -1037,25 +1487,6 @@ class Client(ServerSender, ray.ClientData):
 
             if self.is_capable_of(':optional-gui:'):
                 self.start_gui_hidden = not bool(self.gui_visible)
-
-    def _ray_hack_saved(self):
-        if not self.is_ray_hack():
-            return
-
-        if self.pending_command == ray.Command.SAVE:
-            self.pending_command = ray.Command.NONE
-            self.set_status(ray.ClientStatus.READY)
-
-            self.last_save_time = time.time()
-
-            self.send_gui_message(
-                _translate('GUIMSG', '  %s: saved')
-                    % self.gui_msg_style())
-
-            self._send_reply_to_caller(OSC_SRC_SAVE, 'client saved.')
-
-        if self.session.wait_for == ray.WaitFor.REPLY:
-            self.session.endTimerIfLastExpected(self)
 
     def stop(self, src_addr=None, src_path=''):
         if self.switch_state == ray.SwitchState.NEEDED:
@@ -1079,15 +1510,15 @@ class Client(ServerSender, ray.ClientData):
             self.pending_command = ray.Command.STOP
             self.set_status(ray.ClientStatus.QUIT)
 
-            if not self.stopped_timer.isActive():
-                self.stopped_timer.start()
+            if not self._stopped_timer.isActive():
+                self._stopped_timer.start()
 
             if self.is_external:
                 os.kill(self.pid, 15) # 15 means signal.SIGTERM
             elif self.is_ray_hack() and self.ray_hack.stop_sig != 15:
-                os.kill(self.process.pid(), self.ray_hack.stop_sig)
+                os.kill(self._process.pid(), self.ray_hack.stop_sig)
             else:
-                self.process.terminate()
+                self._process.terminate()
         else:
             self._send_reply_to_caller(OSC_SRC_STOP, 'client stopped.')
 
@@ -1303,45 +1734,17 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                               self.ray_net.session_template)
         return message
 
-    def _pretty_client_id(self):
-        wanted = self.client_id
-
-        if self.executable_path == 'ray-proxy':
-            proxy_file = "%s/ray-proxy.xml" % self.get_project_path()
-
-            if os.path.exists(proxy_file):
-                file = open(proxy_file, 'r')
-                xml = QDomDocument()
-                xml.setContent(file.read())
-                file.close()
-
-                content = xml.documentElement()
-                if content.tagName() == 'RAY-PROXY':
-                    executable = content.attribute('executable')
-                    if executable:
-                        wanted = executable
-
-        if '_' in wanted:
-            begin, udsc, end = wanted.rpartition('_')
-
-            if not end:
-                return wanted
-
-            if not end.isdigit():
-                return wanted
-
-            return begin
-
-        return wanted
-
     def noSaveLevel(self)->int:
+        ''' This method will be renamed or deleted later
+        no_save_level will be deprecated for NSM client
+        it will applies only on Ray-Hack clients '''
         if self.is_ray_hack():
             return self.ray_hack.noSaveLevel()
 
         return self.no_save_level
 
     def get_project_files(self):
-        # returns a list of full filenames
+        ''' returns a list of full filenames '''
         client_files = []
 
         project_path = self.get_project_path()
@@ -1373,52 +1776,6 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             client_files.append(full_links_dir)
 
         return client_files
-
-    def _set_infos_from_desktop_contents(self, contents: str):
-        lang = os.getenv('LANG')
-        lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
-        all_data = {"Comment": ['', '', ''],
-                    "Name":    ['', '', ''],
-                    "Icon":    ['', '', '']}
-
-        for line in contents.split('\n'):
-            if line.startswith('[') and line != "[Desktop Entry]":
-                break
-
-            if '=' not in line:
-                continue
-
-            var, egal, value = line.partition('=')
-            found = False
-
-            for searched in all_data:
-                for i in range(len(lang_strs)):
-                    lang_str = lang_strs[i]
-                    if var == searched + lang_str:
-                        all_data[searched][i] = value
-                        found = True
-                        break
-
-                if found:
-                    break
-
-        for data in all_data:
-            for str_value in all_data[data]:
-                if data == "Comment":
-                    if str_value and not self.description:
-                        self._desktop_description = str_value
-                        self.description = str_value
-                        break
-                elif data == "Name":
-                    if str_value and not self.label:
-                        self._desktop_label = str_value
-                        self.label = str_value
-                        break
-                elif data == "Icon":
-                    if str_value and not self.icon:
-                        self._desktop_icon = str_value
-                        self.icon = str_value
-                        break
 
     def update_infos_from_desktop_file(self):
         if self.icon and self.description and self.label:
@@ -1513,7 +1870,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             else:
                 self.desktop_file = '//not_found'
 
-    def saveAsTemplate(self, template_name, src_addr=None, src_path=''):
+    def save_as_template(self, template_name, src_addr=None, src_path=''):
         if src_addr:
             self._osc_srcs[OSC_SRC_SAVE_TP] = (src_addr, src_path)
         #copy files
@@ -1546,98 +1903,12 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             self.set_status(ray.ClientStatus.COPY)
             self.session.file_copier.start_client_copy(
                 self.client_id, client_files, template_dir,
-                self.saveAsTemplate_substep1, self.saveAsTemplateAborted,
+                self._save_as_template_substep1, self._save_as_template_aborted,
                 [template_name])
         else:
-            self.saveAsTemplate_substep1(template_name)
+            self._save_as_template_substep1(template_name)
 
-    def saveAsTemplate_substep1(self, template_name):
-        self.set_status(self.status) # see set_status to see why
-
-        if self.prefix_mode != ray.PrefixMode.CUSTOM:
-            self.adjustFilesAfterCopy(template_name, ray.Template.CLIENT_SAVE)
-
-        xml_file = "%s/%s" % (TemplateRoots.user_clients,
-                              'client_templates.xml')
-
-        # security check
-        if os.path.exists(xml_file):
-            if not os.access(xml_file, os.W_OK):
-                self._send_error_to_caller(OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
-                                _translate('GUIMSG', '%s is not writeable !')
-                                    % xml_file)
-                return
-
-            if os.path.isdir(xml_file):
-                #should not be a dir, remove it !
-                subprocess.run('rm', '-R', xml_file)
-
-        if not os.path.isdir(TemplateRoots.user_clients):
-            os.makedirs(TemplateRoots.user_clients)
-
-        #create client_templates.xml if not exists
-        if not os.path.isfile(xml_file):
-            file = open(xml_file, 'w')
-
-            xml = QDomDocument()
-            rct = xml.createElement('RAY-CLIENT-TEMPLATES')
-            xml.appendChild(rct)
-            file.write(xml.toString())
-            file.close()
-            del xml
-
-        file = open(xml_file, 'r')
-        xml = QDomDocument()
-        xml.setContent(file.read())
-        file.close()
-        content = xml.documentElement()
-
-        if not content.tagName() == 'RAY-CLIENT-TEMPLATES':
-            return
-
-        # remove existing template if it has the same name as the new one
-        node = content.firstChild()
-        while not node.isNull():
-            if node.toElement().tagName() != 'Client-Template':
-                node = node.nextSibling()
-                continue
-
-            if node.toElement().attribute('template-name') == template_name:
-                content.removeChild(node)
-
-            node = node.nextSibling()
-
-        #create template
-        rct = xml.createElement('Client-Template')
-
-        self.write_xml_properties(rct)
-        rct.setAttribute('template-name', template_name)
-        rct.setAttribute('client_id', self._pretty_client_id())
-
-        if not self.is_running():
-            rct.setAttribute('launched', False)
-
-        content.appendChild(rct)
-
-        file = open(xml_file, 'w')
-        file.write(xml.toString())
-        file.close()
-
-        self.template_origin = template_name
-        self.send_gui_client_properties()
-
-        self.send_gui_message(
-            _translate('message', 'Client template %s created')
-                % template_name)
-
-        self._send_reply_to_caller(OSC_SRC_SAVE_TP, 'client template created')
-
-    def saveAsTemplateAborted(self, template_name):
-        self.set_status(self.status)
-        self._send_error_to_caller(OSC_SRC_SAVE_TP, ray.Err.COPY_ABORTED,
-            _translate('GUIMSG', 'Copy has been aborted !'))
-
-    def changePrefix(self, prefix_mode: int, custom_prefix: str):
+    def change_prefix(self, prefix_mode: int, custom_prefix: str):
         if self.is_running():
             return
 
@@ -1655,7 +1926,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         links_dir = self._get_links_dir()
 
-        self.renameFiles(self.session.path,
+        self._rename_files(self.session.path,
                          self.session.name, self.session.name,
                          old_prefix, new_prefix,
                          self.client_id, self.client_id,
@@ -1665,7 +1936,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.custom_prefix = custom_prefix
         self.send_gui_client_properties()
 
-    def adjustFilesAfterCopy(self, new_session_full_name,
+    def adjust_files_after_copy(self, new_session_full_name,
                              template_save=ray.Template.NONE):
         spath = self.session.path
         old_session_name = self.session.name
@@ -1674,7 +1945,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         old_client_id = self.client_id
         new_client_links_dir = self._get_links_dir()
         old_client_links_dir = new_client_links_dir
-        
+
         xsessionx = "XXX_SESSION_NAME_XXX"
         xclient_idx = "XXX_CLIENT_ID_XXX"
         x_client_links_dirx = "XXX_CLIENT_LINKS_DIR_XXX" # used for Carla links dir
@@ -1728,285 +1999,12 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         elif self.prefix_mode == ray.PrefixMode.CUSTOM:
             old_prefix = new_prefix = self.custom_prefix
 
-        self.renameFiles(spath, old_session_name, new_session_name,
+        self._rename_files(spath, old_session_name, new_session_name,
                          old_prefix, new_prefix,
                          old_client_id, new_client_id,
                          old_client_links_dir, new_client_links_dir)
 
-    def renameFiles(self, spath,
-                    old_session_name, new_session_name,
-                    old_prefix, new_prefix,
-                    old_client_id, new_client_id,
-                    old_client_links_dir, new_client_links_dir):
-        scripts_dir = "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, old_client_id)
-        if os.access(scripts_dir, os.W_OK):
-            os.rename(scripts_dir,
-                      "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, new_client_id))
-
-        project_path = "%s/%s.%s" % (spath, old_prefix, old_client_id)
-
-        files_to_rename = []
-        do_rename = True
-
-        if self.is_ray_hack():
-            if os.path.isdir(project_path):
-                if not os.access(project_path, os.W_OK):
-                    do_rename = False
-                else:
-                    os.environ['RAY_SESSION_NAME'] = old_session_name
-                    os.environ['RAY_CLIENT_ID'] = old_client_id
-                    pre_config_file = os.path.expandvars(
-                                                    self.ray_hack.config_file)
-
-                    os.environ['RAY_SESSION_NAME'] = new_session_name
-                    os.environ['RAY_CLIENT_ID'] = new_client_id
-                    post_config_file = os.path.expandvars(
-                                                    self.ray_hack.config_file)
-
-                    os.unsetenv('RAY_SESSION_NAME')
-                    os.unsetenv('RAY_CLIENT_ID')
-
-                    full_pre_config_file = "%s/%s" % (project_path,
-                                                 pre_config_file)
-                    full_post_config_file = "%s/%s" % (project_path,
-                                                 post_config_file)
-
-                    if os.path.exists(full_pre_config_file):
-                        files_to_rename.append((full_pre_config_file,
-                                                full_post_config_file))
-
-                    files_to_rename.append((project_path,
-                        "%s/%s.%s" % (spath, new_prefix, new_client_id)))
-        else:
-            for file_path in os.listdir(spath):
-                if file_path.startswith("%s.%s." % (old_prefix, old_client_id)):
-                    if not os.access("%s/%s" % (spath, file_path), os.W_OK):
-                        do_rename = False
-                        break
-
-                    endfile = file_path.replace(
-                        "%s.%s." % (old_prefix, old_client_id), '', 1)
-
-                    next_path = "%s/%s.%s.%s" % (spath, new_prefix,
-                                                 new_client_id, endfile)
-                    if os.path.exists(next_path):
-                        do_rename = False
-                        break
-
-                    files_to_rename.append(("%s/%s" % (spath, file_path),
-                                            next_path))
-
-                elif file_path == "%s.%s" % (old_prefix, old_client_id):
-                    if not os.access("%s/%s" % (spath, file_path), os.W_OK):
-                        do_rename = False
-                        break
-
-                    next_path = "%s/%s.%s" % (spath, new_prefix, new_client_id)
-
-                    if os.path.exists(next_path):
-                        do_rename = False
-                        break
-
-                    # only for hydrogen
-                    hydrogen_file = "%s/%s.%s.h2song" % (
-                        project_path, old_prefix, old_client_id)
-                    hydrogen_autosave = "%s/%s.%s.autosave.h2song" % (
-                        project_path, old_prefix, old_client_id)
-
-                    if (os.path.isfile(hydrogen_file)
-                            and os.access(hydrogen_file, os.W_OK)):
-                        new_hydro_file = "%s/%s.%s.h2song" % (
-                            project_path, new_prefix, new_client_id)
-                        if os.path.exists(new_hydro_file):
-                            do_rename = False
-                            break
-
-                        files_to_rename.append((hydrogen_file, new_hydro_file))
-
-                    if (os.path.isfile(hydrogen_autosave)
-                            and os.access(hydrogen_autosave, os.W_OK)):
-                        new_hydro_autosave = "%s/%s.%s.autosave.h2song" % (
-                            project_path, new_prefix, new_client_id)
-                        if os.path.exists(new_hydro_autosave):
-                            do_rename = False
-                            break
-
-                        files_to_rename.append((hydrogen_autosave, new_hydro_autosave))
-
-                    # only for ardour
-                    ardour_file = "%s/%s.ardour" % (project_path, old_prefix)
-                    ardour_bak = "%s/%s.ardour.bak" % (project_path, old_prefix)
-                    ardour_audio = "%s/interchange/%s.%s" % (project_path,
-                                                old_prefix, old_client_id)
-
-                    if os.path.isfile(ardour_file) and os.access(ardour_file, os.W_OK):
-                        new_ardour_file = "%s/%s.ardour" % (project_path, new_prefix)
-                        if os.path.exists(new_ardour_file):
-                            do_rename = False
-                            break
-
-                        files_to_rename.append((ardour_file, new_ardour_file))
-
-                     # change Session name
-                    try:
-                        file = open(ardour_file, 'r')
-                        xml = QDomDocument()
-                        xml.setContent(file.read())
-                        file.close()
-                        root = xml.documentElement()
-
-                        if root.tagName() == 'Session':
-                            root.setAttribute('name', new_prefix)
-                            file = open(ardour_file, 'w')
-                            file.write(xml.toString())
-
-                    except:
-                        False
-
-                    if os.path.isfile(ardour_bak) and os.access(ardour_bak, os.W_OK):
-                        new_ardour_bak = "%s/%s.ardour.bak" % (project_path, new_prefix)
-                        if os.path.exists(new_ardour_bak):
-                            do_rename = False
-                            break
-
-                        files_to_rename.append((ardour_bak, new_ardour_bak))
-
-                    if os.path.isdir(ardour_audio) and os.access(ardour_audio, os.W_OK):
-                        new_ardour_audio = "%s/interchange/%s.%s" % (project_path,
-                                                        new_prefix, new_client_id)
-                        if os.path.exists(new_ardour_audio):
-                            do_rename = False
-                            break
-
-                        files_to_rename.append((ardour_audio, new_ardour_audio))
-
-                    # for Vee One Suite
-                    for extfile in ('samplv1', 'synthv1', 'padthv1', 'drumkv1'):
-                        old_veeone_file = "%s/%s.%s" % (project_path,
-                                            old_session_name, extfile)
-                        new_veeone_file = "%s/%s.%s" % (project_path,
-                                            new_session_name, extfile)
-                        if (os.path.isfile(old_veeone_file)
-                                and os.access(old_veeone_file, os.W_OK)):
-                            if os.path.exists(new_veeone_file):
-                                do_rename = False
-                                break
-
-                            files_to_rename.append((old_veeone_file,
-                                                    new_veeone_file))
-
-                    # for ray-proxy, change config_file name
-                    proxy_file = "%s/ray-proxy.xml" % project_path
-                    if os.path.isfile(proxy_file):
-                        try:
-                            file = open(proxy_file, 'r')
-                            xml = QDomDocument()
-                            xml.setContent(file.read())
-                            file.close()
-                            content = xml.documentElement()
-
-                            if content.tagName() == "RAY-PROXY":
-                                cte = content.toElement()
-                                config_file = cte.attribute('config_file')
-
-                                if (('$RAY_SESSION_NAME' or '${RAY_SESSION_NAME}')
-                                        in config_file):
-                                    for env in ('"$RAY_SESSION_NAME"',
-                                                '"${RAY_SESSION_NAME}"',
-                                                "$RAY_SESSION_NAME",
-                                                "${RAY_SESSION_NAME}"):
-                                        config_file = \
-                                            config_file.replace(env,
-                                                                old_session_name)
-
-                                    if (config_file
-                                            and (config_file.split('.')[0]
-                                                    == old_session_name)):
-                                        config_file_path = "%s/%s" % (
-                                                        project_path, config_file)
-
-                                        new_config_file_path = "%s/%s" % (
-                                            project_path,
-                                            config_file.replace(old_session_name,
-                                                                new_session_name))
-
-                                        if os.path.exists(new_config_file_path):
-                                            # replace config_file attribute
-                                            # with variable replaced
-                                            cte.setAttribute('config_file',
-                                                            config_file)
-                                            try:
-                                                file = open(proxy_file, 'w')
-                                                file.write(xml.toString())
-                                            except:
-                                                False
-                                        elif (os.path.exists(config_file_path)
-                                            and os.access(config_file_path,
-                                                            os.W_OK)):
-                                            files_to_rename.append(
-                                                (config_file_path,
-                                                new_config_file_path))
-                        except:
-                            False
-
-                    files_to_rename.append(("%s/%s" % (spath, file_path),
-                                            next_path))
-
-                elif file_path == old_client_links_dir:
-                    # this section only concerns Carla links dir
-                    # used to save links for convolutions files or soundfonts
-                    # or any other linked resource.
-                    if old_client_links_dir == new_client_links_dir:
-                        continue
-
-                    full_old_client_links_dir = os.path.join(spath, file_path)
-
-                    if not os.path.isdir(full_old_client_links_dir):
-                        continue
-                    
-                    if not os.access(full_old_client_links_dir, os.W_OK):
-                        do_rename = False
-                        break
-
-                    files_to_rename.append(
-                        (full_old_client_links_dir,
-                         os.path.join(spath, new_client_links_dir)))
-                    
-        if not do_rename:
-            self.prefix_mode = ray.PrefixMode.CUSTOM
-            self.custom_prefix = old_prefix
-            # it should not be a client_id problem here
-            return
-
-        # change last_used snapshot of ardour
-        instant_file = "%s/instant.xml" % project_path
-        if os.path.isfile(instant_file) and os.access(instant_file, os.W_OK):
-            try:
-                file = open(instant_file, 'r')
-                xml = QDomDocument()
-                xml.setContent(file.read())
-                file.close()
-                content = xml.documentElement()
-
-                if content.tagName() == 'instant':
-                    node = content.firstChild()
-                    while not node.isNull():
-                        tag = node.toElement()
-                        if tag.tagName() == 'LastUsedSnapshot':
-                            if tag.attribute('name') == old_prefix:
-                                tag.setAttribute('name', new_prefix)
-                                file = open(instant_file, 'w')
-                                file.write(xml.toString())
-                            break
-
-                        node = node.nextSibling()
-            except:
-                False
-
-        for now_path, next_path in files_to_rename:
-            os.rename(now_path, next_path)
-
-    def serverAnnounce(self, path, args, src_addr, is_new):
+    def server_announce(self, path, args, src_addr, is_new):
         client_name, capabilities, executable_path, major, minor, pid = args
 
         if self.pending_command == ray.Command.STOP:

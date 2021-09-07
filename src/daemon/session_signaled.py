@@ -139,20 +139,20 @@ class SignaledSession(OperatingSession):
         #we can be sure of which client is announcing
         for client in self.clients:
             if client.pid == pid and not client.active and client.is_running():
-                client.serverAnnounce(path, args, src_addr, False)
+                client.server_announce(path, args, src_addr, False)
                 break
         else:
             for client in self.clients:
                 if (not client.active and client.is_running()
                         and ray.isPidChildOf(pid, client.pid)):
-                    client.serverAnnounce(path, args, src_addr, False)
+                    client.server_announce(path, args, src_addr, False)
                     break
             else:
                 # Client launched externally from daemon
                 # by command : $:NSM_URL=url executable
                 client = self.newClient(executable_path)
                 self.externals_timer.start()
-                client.serverAnnounce(path, args, src_addr, True)
+                client.server_announce(path, args, src_addr, True)
 
             #n = 0
             #for client in self.clients:
@@ -170,7 +170,7 @@ class SignaledSession(OperatingSession):
                 #client = self.newClient(args[2])
                 #client.is_external = True
                 #self.externals_timer.start()
-                #client.serverAnnounce(path, args, src_addr, True)
+                #client.server_announce(path, args, src_addr, True)
                 #return
 
             #elif n == 1:
@@ -179,14 +179,14 @@ class SignaledSession(OperatingSession):
                             #== os.path.basename(executable_path)
                         #and not client.active
                         #and client.pending_command == ray.Command.START):
-                            #client.serverAnnounce(path, args, src_addr, False)
+                            #client.server_announce(path, args, src_addr, False)
                             #break
             #else:
                 #for client in self.clients:
                     #if (not client.active
                         #and client.pending_command == ray.Command.START):
                             #if ray.isPidChildOf(pid, client.pid):
-                                #client.serverAnnounce(path, args,
+                                #client.server_announce(path, args,
                                                       #src_addr, False)
                                 #break
 
@@ -882,7 +882,7 @@ class SignaledSession(OperatingSession):
                 return
 
         for client in self.clients + self.trashed_clients:
-            client.adjustFilesAfterCopy(new_session_name, ray.Template.RENAME)
+            client.adjust_files_after_copy(new_session_name, ray.Template.RENAME)
 
         if not self.is_nsm_locked():
             try:
@@ -1254,7 +1254,7 @@ class SignaledSession(OperatingSession):
             self.sendErrorCopyRunning(src_addr, path)
             return
 
-        client.saveAsTemplate(template_name, src_addr, path)
+        client.save_as_template(template_name, src_addr, path)
 
     @client_action
     def _ray_client_show_optional_gui(self, path, args, src_addr, client):
@@ -1556,7 +1556,7 @@ class SignaledSession(OperatingSession):
         if prefix_mode == ray.PrefixMode.CUSTOM:
             custom_prefix = args[1]
 
-        client.changePrefix(prefix_mode, custom_prefix)
+        client.change_prefix(prefix_mode, custom_prefix)
         self.send(src_addr, '/reply', path, 'prefix changed')
 
     def _ray_trashed_client_restore(self, path, args, src_addr):
