@@ -199,29 +199,29 @@ class Port:
 
         patchcanvas.changePortProperties(self.group_id, self.port_id,
                                          self.portgroup_id, display_name)
-        
+
     def __lt__(self, other):
         if self.type < other.type:
             return True
-        
+
         if (self.flags & PORT_IS_CONTROL_VOLTAGE
                 !=  other.flags & PORT_IS_CONTROL_VOLTAGE):
             return not self.flags & PORT_IS_CONTROL_VOLTAGE
-        
+
         if (self.full_name.startswith('a2j:')
                 != other.full_name.startswith('a2j:')):
             return not self.full_name.startswith('a2j:')
-        
+
         if self.mode() < other.mode():
             return True
-        
+
         if self.order is None and other.order is None:
             return self.port_id < other.port_id
         if self.order is None:
             return False
         if other.order is None:
             return True
-        
+
         return self.order < other.order
 
 
@@ -234,12 +234,12 @@ class Portgroup:
         self.portgroup_id = portgroup_id
         self.port_mode = port_mode
         self.ports = tuple(ports)
-        
+
         self.mdata_portgroup = ''
         self.above_metadatas = False
-        
+
         self.in_canvas = False
-        
+
 
         for port in self.ports:
             port.portgroup_id = portgroup_id
@@ -308,7 +308,7 @@ class Group:
         self.in_canvas = False
         self.current_position = group_position
         self.uuid = 0
-        
+
         self._timer_port_order = QTimer()
         self._timer_port_order.setInterval(20)
         self._timer_port_order.setSingleShot(True)
@@ -549,7 +549,7 @@ class Group:
             while name and name[-1].isdigit():
                 num = name[-1] + num
                 name = name[:-1]
-            
+
             if num.startswith('0') and num not in ('0', '09'):
                 num = num[1:]
 
@@ -909,29 +909,29 @@ class Group:
                                  and last_digit == '2')):
                         port.add_the_last_digit()
                 break
-            
+
     def sort_ports_in_canvas(self):
         self.ports.sort()
 
         PatchbayManager.optimize_operation(True)
-        
+
         conn_list = []
-        
+
         for conn in PatchbayManager.connections:
             for port in self.ports:
                 if (port in (conn.port_out, conn.port_in)
                         and conn not in conn_list):
                     conn_list.append(conn)
-        
+
         for connection in conn_list:
             connection.remove_from_canvas()
-        
+
         for portgroup in self.portgroups:
             portgroup.remove_from_canvas()
-        
+
         for port in self.ports:
             port.remove_from_canvas()
-        
+
         # search and remove existing portgroups with non consecutive ports
         portgroups_to_remove = []
 
@@ -939,14 +939,14 @@ class Group:
             search_index = 0
             previous_port = None
             seems_ok = False
-            
+
             for port in self.ports:
                 if not seems_ok and port is portgroup.ports[search_index]:
                     if (port.mdata_portgroup != portgroup.mdata_portgroup
                             and not portgroup.above_metadatas):
                         portgroups_to_remove.append(portgroup)
                         break
-                    
+
                     if (not portgroup.above_metadatas and not search_index
                             and previous_port is not None
                             and previous_port.mdata_portgroup
@@ -955,7 +955,7 @@ class Group:
                         # that this port. we need to remove this portgroup.
                         portgroups_to_remove.append(portgroup)
                         break
-                    
+
                     search_index += 1
                     if search_index == len(portgroup.ports):
                         # all ports of portgroup are consecutive
@@ -965,7 +965,7 @@ class Group:
                         if (portgroup.above_metadatas
                                 or not portgroup.mdata_portgroup):
                             break
-                
+
                 elif search_index:
                     if (seems_ok
                             and (port.mdata_portgroup != previous_port.mdata_portgroup
@@ -974,36 +974,36 @@ class Group:
                         # port after the portgroup has not to make
                         # the portgroup higher. We keep this portgroup
                         break
-                    
+
                     # this port breaks portgroup ports consecutivity.
                     # note that ports have been just sorted by type and mode
                     # so no risk that this port is falsely breaking portgroup
                     portgroups_to_remove.append(portgroup)
                     break
-                
+
                 previous_port = port
             else:
                 if not seems_ok:
                     portgroups_to_remove.append(portgroup)
-        
+
         for portgroup in portgroups_to_remove:
             self.remove_portgroup(portgroup)
-        
+
         # add missing portgroups aboving metadatas from portgroup memory
         for portgroup_mem in PatchbayManager.portgroups_memory:
             if not portgroup_mem.above_metadatas:
                 continue
-            
+
             if portgroup_mem.group_name != self.name:
                 continue
 
             founded_ports = []
-            
+
             for port in self.ports:
                 if (not port.portgroup_id
                         and port.type == portgroup_mem.port_type
                         and port.mode() == portgroup_mem.port_mode
-                        and port.short_name() 
+                        and port.short_name()
                             == portgroup_mem.port_names[len(founded_ports)]):
                     founded_ports.append(port)
                     if len(founded_ports) == len(portgroup_mem.port_names):
@@ -1011,21 +1011,21 @@ class Group:
                             self.group_id, port.mode(), founded_ports)
                         self.portgroups.append(new_portgroup)
                         break
-                
+
                 elif founded_ports:
                     break
-        
+
         # detect and add portgroups given from metadatas
         portgroups_mdata = [] # list of dicts
-        
+
         for port in self.ports:
             if port.mdata_portgroup:
                 pg_mdata = None
                 if portgroups_mdata:
                     pg_mdata = portgroups_mdata[-1]
-                
+
                 if not port.portgroup_id:
-                    if (pg_mdata is not None 
+                    if (pg_mdata is not None
                             and pg_mdata['pg_name'] == port.mdata_portgroup
                             and pg_mdata['port_type'] == port.type
                             and pg_mdata['port_mode'] == port.mode()):
@@ -1036,7 +1036,7 @@ class Group:
                             'port_type': port.type,
                             'port_mode': port.mode(),
                             'ports':[port]})
-        
+
         for pg_mdata in portgroups_mdata:
             if len(pg_mdata['ports']) < 2:
                 continue
@@ -1045,22 +1045,22 @@ class Group:
                 self.group_id, pg_mdata['port_mode'], pg_mdata['ports'])
             new_portgroup.mdata_portgroup = pg_mdata['pg_name']
             self.portgroups.append(new_portgroup)
-        
+
         # add missing portgroups from portgroup memory
         for portgroup_mem in PatchbayManager.portgroups_memory:
             if portgroup_mem.above_metadatas:
                 continue
-            
+
             if portgroup_mem.group_name != self.name:
                 continue
-            
+
             founded_ports = []
-            
+
             for port in self.ports:
                 if (not port.portgroup_id
                         and port.type == portgroup_mem.port_type
                         and port.mode() == portgroup_mem.port_mode
-                        and port.short_name() 
+                        and port.short_name()
                             == portgroup_mem.port_names[len(founded_ports)]):
                     founded_ports.append(port)
                     if len(founded_ports) == len(portgroup_mem.port_names):
@@ -1068,23 +1068,23 @@ class Group:
                             self.group_id, port.mode(), founded_ports)
                         self.portgroups.append(new_portgroup)
                         break
-                
+
                 elif founded_ports:
                     break
-        
+
         # ok for re-adding all items to canvas
         for port in self.ports:
             port.add_to_canvas()
-        
+
         for portgroup in self.portgroups:
             portgroup.add_to_canvas()
-        
+
         for connection in conn_list:
             connection.add_to_canvas()
-        
+
         PatchbayManager.optimize_operation(False)
         patchcanvas.redrawGroup(self.group_id)
-        
+
     def sort_ports_later(self):
         self._timer_port_order.start()
 
@@ -1244,7 +1244,7 @@ class PatchbayManager:
                 port_list.append(port)
 
             portgroup = self.new_portgroup(g_id, p_mode, port_list)
-    
+
             for group in self.groups:
                 if group.group_id == g_id:
                     group.add_portgroup(portgroup)
@@ -1276,7 +1276,7 @@ class PatchbayManager:
                                 # it will be considered as a forced mono port
                                 # (no stereo detection)
                                 above_metadatas = bool(port.mdata_portgroup)
-                                
+
                                 new_portgroup_mem = ray.PortGroupMemory.new_from(
                                     group.name, portgroup.port_type(),
                                     portgroup.port_mode, int(above_metadatas),
@@ -1488,7 +1488,7 @@ class PatchbayManager:
             return
 
         self.port_types_view = port_types_view
-        
+
         # Prevent visual update at each canvas item creation
         # because we may create a lot of ports here
         self.optimize_operation(True)
@@ -1515,20 +1515,20 @@ class PatchbayManager:
     def get_json_contents_from_path(self, file_path: str)->dict:
         if not os.path.exists(file_path):
             return {}
-        
+
         if not os.access(file_path, os.R_OK):
             return {}
-        
+
         try:
             file = open(file_path, 'r')
         except IOError:
             return {}
-        
+
         try:
             new_dict = json.load(file)
         except ImportError:
             return {}
-        
+
         file.close()
         return new_dict
 
@@ -1666,7 +1666,7 @@ class PatchbayManager:
             port = self.get_port_from_uuid(uuid)
             if port is None:
                 return
-            
+
             try:
                 port_order = int(value)
             except:
@@ -1674,7 +1674,7 @@ class PatchbayManager:
                     "RaySession:PatchbayManager::JACK_METADATA_ORDER "
                     + "value is not an int (%i,%s)\n" % (uuid, value))
                 return
-            
+
             port.order = value
 
             # we may receive this message as many times as there are ports.
@@ -1691,7 +1691,7 @@ class PatchbayManager:
 
             port.pretty_name = value
             port.change_canvas_properties()
-        
+
         elif key == JACK_METADATA_PORT_GROUP:
             port = self.get_port_from_uuid(uuid)
             if port is None:
@@ -1703,7 +1703,7 @@ class PatchbayManager:
                 if group.group_id == port.group_id:
                     group.sort_ports_later()
                     break
-        
+
         elif key == JACK_METADATA_ICON_NAME:
             for group in self.groups:
                 if group.uuid == uuid:
@@ -1838,7 +1838,7 @@ class PatchbayManager:
                 "RaySession::Failed to load tmp file %s to get JACK ports\n"
                 % temp_path)
             return
-        
+
         # optimize_operation allow to not redraw group at each port added.
         # however, if there is no group position
         # (i.e. if there is no config at all), it is prefferable to
@@ -1860,7 +1860,7 @@ class PatchbayManager:
                 for c in patchbay_data[key]:
                     self.add_connection(c.get('port_out_name'),
                                         c.get('port_in_name'))
-            
+
             elif key == 'metadatas':
                 for m in patchbay_data[key]:
                     self.metadata_update(

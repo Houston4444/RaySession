@@ -262,7 +262,7 @@ class PatchScene(QGraphicsScene):
     def resize_the_scene(self):
         if not options.elastic:
             return
-        
+
         scene_rect = self.get_new_scene_rect()
         if not scene_rect.isNull():
             self.resizing_scene = True
@@ -292,7 +292,7 @@ class PatchScene(QGraphicsScene):
         transform.reset()
         transform.scale(ratio, ratio)
         self.m_view.setTransform(transform)
-        
+
         for group in canvas.group_list:
             for widget in group.widgets:
                 if widget and widget.top_icon:
@@ -327,7 +327,7 @@ class PatchScene(QGraphicsScene):
                 self.m_view.fitInView(min_x, min_y, abs(max_x - min_x),
                                       abs(max_y - min_y), Qt.KeepAspectRatio)
                 self.fixScaleFactor()
-        
+
         if self.m_view:
             self.scaleChanged.emit(self.m_view.transform().m11())
 
@@ -479,7 +479,7 @@ class PatchScene(QGraphicsScene):
             # if mouse is on a box
             items = self.items(
                 event.scenePos(), Qt.ContainsItemShape, Qt.AscendingOrder)
-            
+
             for item in items:
                 if item.type() == CanvasBoxType:
                     break

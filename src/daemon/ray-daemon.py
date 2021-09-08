@@ -14,7 +14,7 @@ from osc_server_thread import OscServerThread
 from multi_daemon_file import MultiDaemonFile
 from session_signaled import SignaledSession
 
-def signalHandler(sig, frame):
+def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         session.terminate()
 
@@ -117,8 +117,8 @@ if __name__ == '__main__':
         session.server_open_session_at_start(CommandLineArgs.session)
 
     #connect SIGINT and SIGTERM
-    signal.signal(signal.SIGINT, signalHandler)
-    signal.signal(signal.SIGTERM, signalHandler)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     #needed for SIGINT and SIGTERM
     timer = QTimer()

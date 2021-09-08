@@ -281,6 +281,17 @@ def client_status_string(client_status: int)->str:
 
     return client_status_strings[client_status]
 
+def error_text(error:int)->str:
+    text = ''
+    
+    if error == ray.Err.SESSION_IN_SESSION_DIR:
+        text = _translate(
+            'guimsg', 
+            """Can't create session in a dir containing a session"
+for better organization.""")
+    
+    return text
+
 def get_app_icon(icon_name, widget):
     dark = bool(
         widget.palette().brush(

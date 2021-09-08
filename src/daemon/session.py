@@ -406,7 +406,7 @@ class Session(ServerSender):
                 new_wanted_id = ''
                 seplist = wanted_id.split('-')
                 for sep in seplist[:-1]:
-                    if len(sep) > 0:
+                    if sep:
                         new_wanted_id += (sep[0] + '_')
                 new_wanted_id += seplist[-1]
                 wanted_id = new_wanted_id
@@ -552,7 +552,7 @@ class Session(ServerSender):
                 ct.setAttribute('unignored_extensions', " ".join(unign_list))
 
         return True
-    
+
     def export_user_client_template(self, src_addr, template_name:str,
                                     export_path:str)->bool:
         # still work in progress and not used function
@@ -588,11 +588,11 @@ class Session(ServerSender):
                 continue
 
             if ct.attribute('template-name') == template_name:
-                
+
                 break
         else:
             return False
-        
+
 
 class OperatingSession(Session):
     def __init__(self, root):
@@ -662,7 +662,8 @@ class OperatingSession(Session):
         if type(follow) in (list, tuple):
             if len(follow) == 0:
                 return
-            elif len(follow) == 1:
+
+            if len(follow) == 1:
                 follow = follow[0]
             else:
                 follow = functools.partial(follow[0], *follow[1:])
@@ -754,7 +755,7 @@ class OperatingSession(Session):
             self.run_step_addr = None
             return
 
-        if len(self.steps_order) == 0:
+        if not self.steps_order:
             return
 
         next_item = self.steps_order[0]
@@ -1376,13 +1377,13 @@ for better organization.""")
             os.makedirs(spath)
         except:
             self._send_error(ray.Err.CREATE_FAILED,
-                           "Could not create the session directory")
+                             "Could not create the session directory")
             return
 
         self.set_server_status(ray.ServerStatus.NEW)
         self._set_path(spath)
         self.send_gui("/ray/gui/session/name",
-                     self.name, self.path)
+                      self.name, self.path)
         self.next_function()
 
     def new_done(self):
@@ -1419,15 +1420,16 @@ for better organization.""")
 
     def duplicate(self, new_session_full_name):
         if self._clients_have_errors():
-            self._send_error(ray.Err.GENERAL_ERROR,
-                           _translate('error', "Some clients could not save"))
+            self._send_error(
+                ray.Err.GENERAL_ERROR,
+                _translate('error', "Some clients could not save"))
             return
 
         self.send_gui('/ray/gui/trash/clear')
         self.send_gui_message(
             _translate('GUIMSG', '-- Duplicating session %s to %s --')
-                % (highlight_text(self.get_short_path()),
-                   highlight_text(new_session_full_name)))
+            % (highlight_text(self.get_short_path()),
+               highlight_text(new_session_full_name)))
 
         for client in self.clients:
             if client.protocol == ray.Protocol.RAY_NET:
@@ -1454,11 +1456,12 @@ for better organization.""")
         if self.expected_clients:
             self.send_gui_message(
                 _translate('GUIMSG',
-                    'waiting for network daemons to start duplicate...'))
+                           'waiting for network daemons to start duplicate...'))
 
-        self._wait_and_go_to(2000,
-                         (self.duplicate_substep1, new_session_full_name),
-                         ray.WaitFor.DUPLICATE_START)
+        self._wait_and_go_to(
+            2000,
+            (self.duplicate_substep1, new_session_full_name),
+            ray.WaitFor.DUPLICATE_START)
 
     def duplicate_substep1(self, new_session_full_name):
         spath = "%s/%s" % (self.root, new_session_full_name)
@@ -1483,11 +1486,12 @@ for better organization.""")
         if self.expected_clients:
             self.send_gui_message(
                 _translate('GUIMSG',
-                    'waiting for network daemons to finish duplicate'))
+                           'waiting for network daemons to finish duplicate'))
 
-        self._wait_and_go_to(3600000,  #1Hour
-                         (self.duplicate_substep3, new_session_full_name),
-                         ray.WaitFor.DUPLICATE_FINISH)
+        self._wait_and_go_to(
+            3600000,  #1Hour
+            (self.duplicate_substep3, new_session_full_name),
+            ray.WaitFor.DUPLICATE_FINISH)
 
     def duplicate_substep3(self, new_session_full_name):
         self.adjust_files_after_copy(new_session_full_name, ray.Template.NONE)
@@ -1552,11 +1556,11 @@ for better organization.""")
         self.send_gui_message(
             _translate('GUIMSG', 'start session copy to template...'))
 
-        self.file_copier.start_session_copy(self.path,
-                                          spath,
-                                          self.save_session_template_substep_1,
-                                          self.save_session_template_aborted,
-                                          [template_name, net])
+        self.file_copier.start_session_copy(
+            self.path, spath,
+            self.save_session_template_substep_1,
+            self.save_session_template_aborted,
+            [template_name, net])
 
     def save_session_template_substep_1(self, template_name: str, net: bool):
         tp_mode = ray.Template.SESSION_SAVE
@@ -1569,7 +1573,7 @@ for better organization.""")
         self.message("Done")
         self.send_gui_message(
             _translate('GUIMSG', "...session saved as template named %s")
-                % highlight_text(template_name))
+            % highlight_text(template_name))
 
         self._send_reply("Saved as template.")
         self.set_server_status(ray.ServerStatus.READY)
@@ -1580,7 +1584,7 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.READY)
 
     def prepare_template(self, new_session_full_name,
-                        template_name, net=False):
+                         template_name, net=False):
         template_root = TemplateRoots.user_sessions
 
         if net:
@@ -1597,8 +1601,8 @@ for better organization.""")
 
         if not os.path.isdir(template_path):
             self._send_minor_error(ray.Err.GENERAL_ERROR,
-                           _translate("error", "No template named %s")
-                           % template_name)
+                                   _translate("error", "No template named %s")
+                                   % template_name)
             self.next_function()
             return
 
@@ -1606,15 +1610,16 @@ for better organization.""")
 
         if os.path.exists(spath):
             self._send_error(ray.Err.CREATE_FAILED,
-                           _translate("error", "Folder\n%s\nalready exists")
-                           % spath)
+                             _translate("error", "Folder\n%s\nalready exists")
+                             % spath)
             return
 
         if self._is_path_in_a_session_dir(spath):
-            self._send_error(ray.Err.SESSION_IN_SESSION_DIR,
-                           _translate("error",
-                """Can't create session in a dir containing a session
-for better organization."""))
+            self._send_error(
+                ray.Err.SESSION_IN_SESSION_DIR,
+                _translate("error",
+                "Can't create session in a dir containing a session\n"
+                + "for better organization."))
             return
 
         if self.path:
@@ -1626,15 +1631,15 @@ for better organization."""))
             _translate('GUIMSG',
                        'start copy from template to session folder'))
 
-        self.file_copier.start_session_copy(template_path,
-                                          spath,
-                                          self.prepare_template_substep1,
-                                          self.prepare_template_aborted,
-                                          [new_session_full_name])
+        self.file_copier.start_session_copy(
+            template_path, spath,
+            self.prepare_template_substep1,
+            self.prepare_template_aborted,
+            [new_session_full_name])
 
     def prepare_template_substep1(self, new_session_full_name):
         self.adjust_files_after_copy(new_session_full_name,
-                                  ray.Template.SESSION_LOAD)
+                                     ray.Template.SESSION_LOAD)
         self.next_function()
 
     def prepare_template_aborted(self, new_session_full_name):
@@ -1669,7 +1674,7 @@ for better organization."""))
             _translate('GUIMSG', 'Session %s has been renamed to %s .')
             % (self.name, new_session_name))
         self._send_reply("Session '%s' has been renamed to '%s' ."
-                        % (self.name, new_session_name))
+                         % (self.name, new_session_name))
         self._forget_osc_args()
 
     def preload(self, session_full_name):
@@ -1682,7 +1687,29 @@ for better organization."""))
             self.load_error(ray.Err.SESSION_LOCKED)
             return
 
-        if not os.path.exists(spath):
+        session_ray_file = "%s/raysession.xml" % spath
+        session_nsm_file = "%s/session.nsm" % spath
+
+        if os.path.exists(spath):
+            for sess_file in session_ray_file, session_nsm_file:
+                if os.path.exists(sess_file):
+                    break
+            else:
+                for root, dirs, files in os.walk(spath):
+                    #exclude hidden files and dirs
+                    files = [f for f in files if not f.startswith('.')]
+                    dirs[:] = [d for d in dirs  if not d.startswith('.')]
+
+                    if root == spath:
+                        continue
+
+                    for file in files:
+                        if file in ('raysession.xml', 'session.nsm'):
+                            # dir contains a session inside,
+                            # do not try to load it
+                            self.load_error(ray.Err.SESSION_IN_SESSION_DIR)
+                            return
+        else:
             if self._is_path_in_a_session_dir(spath):
                 # prevent to create a session in a session directory
                 # for better user organization
@@ -1703,9 +1730,6 @@ for better organization."""))
             return
 
         self.message("Attempting to open %s" % spath)
-
-        session_ray_file = "%s/raysession.xml" % spath
-        session_nsm_file = "%s/session.nsm" % spath
 
         # change session file only for raysession launched with NSM_URL env
         # Not sure that this feature is really useful.
@@ -1914,7 +1938,7 @@ for better organization."""))
 
         self.load_locked = False
         self.send_gui_message(_translate('GUIMSG', "-- Opening session %s --")
-                                % highlight_text(self.get_short_path()))
+                              % highlight_text(self.get_short_path()))
 
         for trashed_client in self.future_trashed_clients:
             self.trashed_clients.append(trashed_client)
@@ -2038,13 +2062,13 @@ for better organization."""))
             if n_expected == 1:
                 self.send_gui_message(
                     _translate('GUIMSG',
-                            'waiting for %s to load its project...')
-                        % self.expected_clients[0].gui_msg_style())
+                               'waiting for %s to load its project...')
+                    % self.expected_clients[0].gui_msg_style())
             else:
                 self.send_gui_message(
                     _translate('GUIMSG',
-                            'waiting for %s clients to load their project...')
-                        % n_expected)
+                               'waiting for %s clients to load their project...')
+                    % n_expected)
 
         wait_time = 8000 + len(self.expected_clients) * 2000
         for client in self.expected_clients:
@@ -2065,7 +2089,7 @@ for better organization."""))
         self.message('Loaded')
         self.send_gui_message(
             _translate('GUIMSG', 'session %s is loaded.')
-                % highlight_text(self.get_short_path()))
+            % highlight_text(self.get_short_path()))
         self.send_gui("/ray/gui/session/name", self.name, self.path)
 
         self.switching_session = False
@@ -2100,9 +2124,10 @@ for better organization."""))
         elif err_loading == ray.Err.BAD_PROJECT:
             m = _translate('Load Error', "Could not load session file.")
         elif err_loading == ray.Err.SESSION_IN_SESSION_DIR:
-            m = _translate('Load Error',
-                """Can't create session in a dir containing a session
-for better organization.""")
+            m = _translate(
+                'Load Error',
+                "Can't create session in a dir containing a session\n"
+                + "for better organization.")
 
         self._send_error(err_loading, m)
 
@@ -2146,16 +2171,17 @@ for better organization.""")
             except:
                 self.answer(src_addr, src_path,
                             _translate('GUIMSG', '%s is missing or corrupted !')
-                                % xml_file,
+                            % xml_file,
                             ray.Err.NO_SUCH_FILE)
                 return
 
             if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
-                self.answer(src_addr, src_path,
-                            _translate('GUIMSG',
-                                '%s has no RAY-CLIENT-TEMPLATES top element !')
-                                    % xml_file,
-                            ray.Err.BAD_PROJECT)
+                self.answer(
+                    src_addr, src_path,
+                    _translate('GUIMSG',
+                               '%s has no RAY-CLIENT-TEMPLATES top element !')
+                    % xml_file,
+                    ray.Err.BAD_PROJECT)
                 return
 
             nodes = xml.documentElement().childNodes()
@@ -2182,8 +2208,8 @@ for better organization.""")
 
                 if os.path.isdir(template_path):
                     for file in os.listdir(template_path):
-                        full_name_files.append("%s/%s"
-                                                % (template_path, file))
+                        full_name_files.append(
+                            "%s/%s" % (template_path, file))
 
                 if not self._add_client(client):
                     self.answer(src_addr, src_path,
@@ -2213,14 +2239,13 @@ for better organization.""")
             if (favorite.name == template_name
                     and favorite.factory == factory):
                 self.send_gui('/ray/gui/favorites/removed',
-                                favorite.name,
-                                int(favorite.factory))
+                              favorite.name, int(favorite.factory))
                 RS.favorites.remove(favorite)
                 break
 
         self.send(src_addr, '/error', src_path, ray.Err.NO_SUCH_FILE,
-                    _translate('GUIMSG', "%s is not an existing template !")
-                    % highlight_text(template_name))
+                  _translate('GUIMSG', "%s is not an existing template !")
+                  % highlight_text(template_name))
 
     def add_client_template_step_1(self, src_addr, src_path, client):
         client.adjust_files_after_copy(self.name, ray.Template.CLIENT_LOAD)
@@ -2244,7 +2269,7 @@ for better organization.""")
         client.stop()
 
         self._wait_and_go_to(30000, (self.close_client_substep1, client),
-                         ray.WaitFor.STOP_ONE)
+                             ray.WaitFor.STOP_ONE)
 
     def close_client_substep1(self, client):
         if client in self.expected_clients:
@@ -2293,14 +2318,14 @@ for better organization.""")
             self.step_scripter.terminate()
 
         self._wait_and_go_to(5000, self.terminate_step_scripter_substep2,
-                         ray.WaitFor.SCRIPT_QUIT)
+                             ray.WaitFor.SCRIPT_QUIT)
 
     def terminate_step_scripter_substep2(self):
         if self.step_scripter.is_running():
             self.step_scripter.kill()
 
         self._wait_and_go_to(1000, self.terminate_step_scripter_substep3,
-                         ray.WaitFor.SCRIPT_QUIT)
+                             ray.WaitFor.SCRIPT_QUIT)
 
     def terminate_step_scripter_substep3(self):
         self.next_function()
@@ -2316,17 +2341,19 @@ for better organization.""")
 
         self.timer_quit.start()
 
-        self._wait_and_go_to(5000,
-                         (self.clear_clients_substep2, src_addr, src_path),
-                         ray.WaitFor.QUIT)
+        self._wait_and_go_to(
+            5000,
+            (self.clear_clients_substep2, src_addr, src_path),
+            ray.WaitFor.QUIT)
 
     def clear_clients_substep2(self, src_addr, src_path):
         for client in self.expected_clients:
             client.kill()
 
-        self._wait_and_go_to(1000,
-                         (self.clear_clients_substep3, src_addr, src_path),
-                         ray.WaitFor.QUIT)
+        self._wait_and_go_to(
+            1000,
+            (self.clear_clients_substep3, src_addr, src_path),
+            ray.WaitFor.QUIT)
 
     def clear_clients_substep3(self, src_addr, src_path):
         self.answer(src_addr, src_path, 'Clients cleared')

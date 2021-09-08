@@ -715,7 +715,7 @@ def redrawAllGroups():
         for box in group.widgets:
             if box is not None:
                 box.updatePositions()
-                
+
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -726,7 +726,7 @@ def redrawGroup(group_id: int):
                 if box is not None:
                     box.updatePositions()
             break
-        
+
     QTimer.singleShot(0, canvas.scene.update)
 
 def animateBeforeJoin(group_id: int):

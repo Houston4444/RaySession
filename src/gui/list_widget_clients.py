@@ -318,7 +318,7 @@ class ClientSlot(QFrame):
         self.ui.lineEditClientStatus.setText(client_status_string(status))
         self.ui.lineEditClientStatus.setEnabled(
             status != ray.ClientStatus.STOPPED)
-        
+
         ray_hack = bool(self.client.protocol == ray.Protocol.RAY_HACK)
 
         if status in (
@@ -444,10 +444,10 @@ class ClientSlot(QFrame):
 class ClientItem(QListWidgetItem):
     def __init__(self, parent, client_data):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
-        
+
         self.sort_number = 0
         self.widget = ClientSlot(parent, self, client_data)
-        
+
         parent.setItemWidget(self, self.widget)
         self.setSizeHint(QSize(100, 45))
 

@@ -245,7 +245,7 @@ class OpenSessionDialog(ChildDialog):
         self._has_selection = False
         self._last_mouse_click = 0
         self._last_session_item = None
-        
+
         self._server_status_changed(self.session.server_status)
 
         self.folders = []
@@ -1052,7 +1052,7 @@ class NewExecutableDialog(ChildDialog):
     def _close_now(self):
         if self._is_allowed():
             self.accept()
-    
+
     def get_selection(self)->tuple:
         return (self.ui.lineEdit.text(),
                 self.ui.checkBoxStartClient.isChecked(),
@@ -1358,7 +1358,7 @@ class CanvasPortInfoDialog(ChildDialog):
         self.ui = ui.canvas_port_info.Ui_Dialog()
         self.ui.setupUi(self)
 
-    def set_infos(self, port_full_name: str, port_uuid: int, 
+    def set_infos(self, port_full_name: str, port_uuid: int,
                   port_type: str, port_flags: str,
                   pretty_name: str, port_order: int,
                   portgroup_name: str):
@@ -1372,7 +1372,7 @@ class CanvasPortInfoDialog(ChildDialog):
 
         if not (pretty_name or port_order or portgroup_name):
             self.ui.groupBoxMetadatas.setVisible(False)
-        
+
 
 class DonationsDialog(ChildDialog):
     def __init__(self, parent, display_no_again):
@@ -1430,15 +1430,15 @@ class StartupDialog(ChildDialog):
     ACTION_NO = 0
     ACTION_NEW = 1
     ACTION_OPEN = 2
-    
+
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
         self.ui = ui.startup_dialog.Ui_Dialog()
         self.ui.setupUi(self)
-        
+
         self._clicked_action = self.ACTION_NO
-        
-        
+
+
         self.ui.listWidgetRecentSessions.itemDoubleClicked.connect(
             self.accept)
         self.ui.listWidgetRecentSessions.addItems(
@@ -1461,37 +1461,37 @@ class StartupDialog(ChildDialog):
             self._focus_on_new)
 
         self.ui.listWidgetRecentSessions.setFocus(Qt.OtherFocusReason)
-    
+
     def _server_status_changed(self, server_status):
         if server_status != ray.ServerStatus.OFF:
             self.reject()
-    
+
     def _new_session_clicked(self):
         self._clicked_action = self.ACTION_NEW
         self.reject()
-    
+
     def _open_session_clicked(self):
         self._clicked_action = self.ACTION_OPEN
         self.reject()
-    
+
     def _focus_on_list(self):
         self.ui.listWidgetRecentSessions.setFocus(Qt.OtherFocusReason)
-        
+
     def _focus_on_new(self):
         self.ui.pushButtonNewSession.setFocus(Qt.OtherFocusReason)
-    
+
     def _focus_on_open(self):
         self.ui.pushButtonOpenSession.setFocus(Qt.OtherFocusReason)
-    
+
     def not_again_value(self)->bool:
         return not self.ui.checkBox.isChecked()
-    
+
     def get_selected_session(self)->str:
         return self.ui.listWidgetRecentSessions.currentItem().text()
 
     def get_clicked_action(self)->int:
         return self._clicked_action
-    
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Left:
             self.ui.pushButtonNewSession.setFocus(Qt.OtherFocusReason)
@@ -1499,7 +1499,7 @@ class StartupDialog(ChildDialog):
             self.ui.pushButtonOpenSession.setFocus(Qt.OtherFocusReason)
         elif event.key() in (Qt.Key_Up, Qt.Key_Down):
             self.ui.listWidgetRecentSessions.setFocus(Qt.OtherFocusReason)
-        
+
         if QApplication.keyboardModifiers() & Qt.ControlModifier:
             if event.key() == Qt.Key_N:
                 self._new_session_clicked()

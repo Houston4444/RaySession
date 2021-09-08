@@ -113,11 +113,11 @@ class CanvasPortGroup(QGraphicsItem):
     def is_connectable_to(self, other, accept_same_port_mode=False)->bool:
         if self.m_port_type != other.getPortType():
             return False
-        
+
         if not accept_same_port_mode:
             if self.m_port_mode == other.getPortMode():
                 return False
-        
+
         if self.m_port_type == PORT_TYPE_AUDIO_JACK:
             if other.getPortMode() == self.m_port_mode:
                 return bool(self.isAlternate() == other.isAlternate())
@@ -128,12 +128,12 @@ class CanvasPortGroup(QGraphicsItem):
                 if self.isAlternate():
                     return other.isAlternate()
                 return True
-            
+
             if self.m_port_mode == PORT_MODE_INPUT:
                 if self.isAlternate():
                     return True
                 return not other.isAlternate()
-        
+
         return True
 
     def getGroupId(self):

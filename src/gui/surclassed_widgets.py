@@ -375,14 +375,14 @@ class CanvasSplitter(QSplitter):
         handle = self.handle(1)
         if handle:
             handle.set_active(yesno)
-            
+
     def createHandle(self):
         return CanvasSplitterHandle(self)
 
 
 class ZoomSlider(QSlider):
     zoom_fit_asked = pyqtSignal()
-    
+
     def __init__(self, parent):
         QSlider.__init__(self, parent)
 
@@ -391,7 +391,7 @@ class ZoomSlider(QSlider):
         if max_a == min_a:
             return min_b
         return min_b + ((x - min_a) / (max_a - min_a)) * (max_b - min_b)
-    
+
     def _show_tool_tip(self):
         win = QApplication.activeWindow()
         if win and win.isFullScreen():
@@ -418,83 +418,83 @@ class ZoomSlider(QSlider):
 
     def mouseDoubleClickEvent(self, event):
         self.zoom_fit_asked.emit()
-    
+
     def contextMenuEvent(self, event):
         self.setValue(500)
         self._show_tool_tip()
-    
+
     def wheelEvent(self, event):
         direction = 1 if event.angleDelta().y() > 0 else -1
-        
+
         if QApplication.keyboardModifiers() & Qt.ControlModifier:
             self.set_percent(self.zoom_percent() + direction)
         else:
             self.set_percent(self.zoom_percent() + direction * 5)
             #QSlider.wheelEvent(self, event)
         self._show_tool_tip()
-        
+
     def mouseMoveEvent(self, event):
         QSlider.mouseMoveEvent(self, event)
         self._show_tool_tip()
-        
+
 
 class ProgressBarDsp(QProgressBar):
     def __init__(self, parent):
         QProgressBar.__init__(self)
-    
+
     def setValue(self, value):
         color_border = "rgba(%i%%, %i%%, 0, 55%%)" % (value, 100 - value)
         color_center = "rgba(%i%%, %i%%, 0, 45%%)" % (value, 100 - value)
         self.setStyleSheet(
             "QProgressBar:chunk{background-color: "
             + "qlineargradient(x1:0, y1:0, x2:0, y1:1, "
-            + "stop:0 " + color_border + ',' 
+            + "stop:0 " + color_border + ','
             + "stop:0.5 " + color_center + ','
             + "stop:1 " + color_border + ',' + ')}')
         QProgressBar.setValue(self, value)
-        
-        
+
+
 class StartupDialogButtonBox(QDialogButtonBox):
     key_event = pyqtSignal(object)
-    
+
     def __init__(self, parent):
         QDialogButtonBox.__init__(self, parent)
-        
+
     def keyPressEvent(self, event):
         if event.key in (Qt.Key_Up, Qt.Key_Down):
             self.key_event.emit(event)
             return
 
         QDialogButtonBox.keyPressEvent(self, event)
-        
+
 class StartupDialogPushButtonNew(QPushButton):
     focus_on_list = pyqtSignal()
     focus_on_open = pyqtSignal()
-    
+
     def __init__(self, parent):
         QPushButton.__init__(self, parent)
-        
+
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Down, Qt.Key_Up):
             self.focus_on_open.emit()
             return
-        
+
         if event.key() in (Qt.Key_Left, Qt.Key_Right):
             self.focus_on_list.emit()
             return
-    
+
         QPushButton.keyPressEvent(self, event)
 
 
 class StartupDialogPushButtonOpen(StartupDialogPushButtonNew):
     focus_on_new = pyqtSignal()
-    
+
     def __init__(self, parent):
         StartupDialogPushButtonNew.__init__(self, parent)
-        
+
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Down, Qt.Key_Up):
             self.focus_on_new.emit()
             return
-        
+
         StartupDialogPushButtonNew.keyPressEvent(self, event)

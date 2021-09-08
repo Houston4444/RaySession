@@ -10,7 +10,7 @@ from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
 from gui_signaler import Signaler
 from gui_server_thread import GuiServerThread
-from gui_tools import CommandLineArgs, RS
+from gui_tools import CommandLineArgs, RS, error_text
 from main_window import MainWindow
 from nsm_child import NsmChild, NsmChildOutside
 from patchbay_manager import PatchbayManager
@@ -168,6 +168,10 @@ class SignaledSession(Session):
         if err_code in (ray.Err.OK, ray.Err.ABORT_ORDERED,
                         ray.Err.COPY_ABORTED):
             return
+
+        message = error_text(err_code)
+        if message:
+            err_message = message
 
         self.main_win.error_message(err_message)
 

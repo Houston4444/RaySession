@@ -113,7 +113,7 @@ class TitleLine:
             self.font.setWeight(QFont.Bold)
 
         self.size = QFontMetrics(self.font).width(text)
-        
+
     def reduce_pixel(self, reduce):
         self.font.setPixelSize(canvas.theme.box_font_size - reduce)
         self.size = QFontMetrics(self.font).width(self.text)
@@ -195,7 +195,7 @@ class CanvasBox(QGraphicsItem):
         self._wrapping_timer.timeout.connect(self.animateWrapping)
         self._wrapping_n = 0
         self._wrapping_max = 5
-        
+
         self._ensuring_visible = False
 
         # Icon
@@ -341,7 +341,7 @@ class CanvasBox(QGraphicsItem):
             if len(title_lines) >= 4:
                 for title_line in title_lines:
                     title_line.reduce_pixel(2)
-        
+
         return tuple(title_lines)
 
     def setGroupName(self, group_name):
@@ -514,13 +514,13 @@ class CanvasBox(QGraphicsItem):
         if len(sep_indexes) + 1 <= n_lines:
             return_list = []
             last_index = 0
-            
+
             for sep_index in sep_indexes:
                 return_list.append(string[last_index:sep_index])
                 last_index = sep_index
                 if sep == ' ':
                     last_index += 1
-                
+
             return_list.append(string[last_index:])
 
             return_list += ['' for n in range(n_lines - len(sep_indexes) - 1)]
@@ -538,7 +538,7 @@ class CanvasBox(QGraphicsItem):
             for s in sep_indexes:
                 if s <= best_indexes[-1]:
                     continue
-                
+
                 dif = abs(target - s)
                 if dif < best_dif:
                     best_index = s
@@ -595,13 +595,13 @@ class CanvasBox(QGraphicsItem):
 
         align_port_types = True
         port_types_aligner = []
-        
+
         for port_type in port_types:
             aligner_item = []
             for alternate in (False, True):
                 n_ins = 0
                 n_outs = 0
-                
+
                 for port in port_list:
                     if (port.port_type == port_type
                             and port.is_alternate == alternate):
@@ -609,17 +609,17 @@ class CanvasBox(QGraphicsItem):
                             n_ins += 1
                         elif port.port_mode == PORT_MODE_OUTPUT:
                             n_outs += 1
-                
+
                 port_types_aligner.append((n_ins, n_outs))
-        
+
         winner = PORT_MODE_NULL
-        
+
         for n_ins, n_outs in port_types_aligner:
             if ((winner == PORT_MODE_INPUT and n_outs > n_ins)
                     or (winner == PORT_MODE_OUTPUT and n_ins > n_outs)):
                 align_port_types = False
                 break
-            
+
             if n_ins > n_outs:
                 winner = PORT_MODE_INPUT
             elif n_outs > n_ins:
@@ -726,7 +726,7 @@ class CanvasBox(QGraphicsItem):
                             last_out_pos += port_spacing
                         else:
                             last_out_pos += canvas.theme.port_height
-                
+
                 if align_port_types:
                     # align port types horizontally
                     if last_in_pos > last_out_pos:
@@ -744,15 +744,15 @@ class CanvasBox(QGraphicsItem):
         self.p_width += max_in_width + max_out_width
         self.p_width_in = max_in_width
         self.p_width_out = max_out_width
-        
+
         # Check Text Name size
         title_template = {"title_width": 0, "header_width": 0}
         all_title_templates = [title_template.copy() for i in range(5)]
-        
+
         for i in range(1, 5):
             max_title_size = 0
             title_lines = self.splitTitle(i)
-            
+
             for title_line in title_lines:
                 max_title_size = max(max_title_size, title_line.size)
 
@@ -766,18 +766,18 @@ class CanvasBox(QGraphicsItem):
 
             header_width =  max(200 if self.m_plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
                                 header_width)
-            
+
             new_title_template = title_template.copy()
             new_title_template['title_width'] = max_title_size
             new_title_template['header_width'] = header_width
             all_title_templates[i] = new_title_template
-            
+
             if header_width < self.p_width:
                 break
-        
+
         more_height = 0
         lines_choice = 1
-        
+
         if all_title_templates[1]['header_width'] <= self.p_width:
             # One line title is shorter than the box, choose it
             lines_choice = 1
@@ -789,42 +789,42 @@ class CanvasBox(QGraphicsItem):
             area_2 = all_title_templates[2]['header_width'] * max(last_in_pos, last_out_pos)
             area_3 = max(self.p_width, all_title_templates[3]['header_width']) \
                          * (max(last_in_pos, last_out_pos) + more_height)
-            
+
             if area_2 <= area_3:
                 # Box area is smaller with 2 lines titles than with 3 lines title
                 # choose 2 lines title
                 lines_choice = 2
                 more_height = 0
-                
+
             elif all_title_templates[3]['header_width'] <= self.p_width:
                 # 3 lines title is shorter than the box, choose it
                 lines_choice = 3
             else:
                 area_4 = max(self.p_width, all_title_templates[4]['header_width']) \
                             * (max(last_in_pos, last_out_pos) + more_height)
-                
+
                 if area_3 - area_4 >= 5000:
                     lines_choice = 4
                 else:
                     lines_choice = 3
-                    
+
         self._title_lines = self.splitTitle(lines_choice)
         self.p_width = max(self.p_width,
                            all_title_templates[lines_choice]['header_width'])
         max_title_size = all_title_templates[lines_choice]['title_width']
-                
+
         if more_height:
             # down ports
             for port in port_list:
                 port.widget.setY(port.widget.y() + more_height)
-            
+
             # down portgroups
             for portgrp in canvas.portgrp_list:
                 if (portgrp.group_id == self.m_group_id
                         and self.m_current_port_mode & portgrp.port_mode):
                     if portgrp.widget is not None:
                         portgrp.widget.setY(portgrp.widget.y() + more_height)
-            
+
             last_in_pos += more_height
             last_out_pos += more_height
 
@@ -1396,7 +1396,7 @@ class CanvasBox(QGraphicsItem):
             box_gradient.setColorAt(0, canvas.theme.box_bg_1)
             box_gradient.setColorAt(1, canvas.theme.box_bg_2)
             painter.setBrush(box_gradient)
-            
+
         else:
             painter.setBrush(canvas.theme.box_bg_1)
 

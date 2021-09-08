@@ -366,7 +366,7 @@ class MainWindow(QMainWindow):
                 or (self._systray_mode == ray.Systray.SESSION_ONLY
                         and self.session.server_status != ray.ServerStatus.OFF)):
             self._systray.show()
-        
+
         self._startup_time = time.time()
 
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
@@ -398,7 +398,7 @@ class MainWindow(QMainWindow):
             self.ui.widgetPreRewindSpacer.setVisible(True)
         else:
             #self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            
+
             self.ui.layoutSessionDown.setDirection(QBoxLayout.LeftToRight)
             self.ui.layoutSessionDown.removeWidget(
                 self.ui.stackedWidgetSessionName)
@@ -811,7 +811,7 @@ class MainWindow(QMainWindow):
 
     def _status_bar_pressed(self):
         status = self.session.server_status
-        
+
         if status not in (
                 ray.ServerStatus.PRECOPY,
                 ray.ServerStatus.COPY,
@@ -1013,7 +1013,7 @@ class MainWindow(QMainWindow):
 
     def _build_systray_menu(self):
         self._systray_menu.hide()
-        
+
         del self._systray_menu
         del self._systray_menu_add
 
@@ -1086,7 +1086,7 @@ class MainWindow(QMainWindow):
 
             self.ui.splitterMainVsCanvas.setSizes(
                 self._splitter_pos_before_fullscreen)
-            
+
             self._fullscreen_patchbay = False
         else:
             self._were_visible_before_fullscreen = \
@@ -1157,9 +1157,9 @@ class MainWindow(QMainWindow):
             nsm_locked and not CommandLineArgs.out_daemon)
         self.ui.actionRenameSession_2.setEnabled(
             nsm_locked and not CommandLineArgs.out_daemon)
-        
+
         frame_style_sheet = "SessionFrame{border-radius:4px;"
-        
+
         if nsm_locked and CommandLineArgs.out_daemon:
             frame_style_sheet += "background-color: rgba(100, 181, 100, 35)}"
         elif nsm_locked:
@@ -1326,7 +1326,7 @@ class MainWindow(QMainWindow):
 
         self.ui.menuRecentSessions.setEnabled(bool(self.session.recent_sessions))
         self._build_systray_menu()
-        
+
         # here we start the startup dialog
         # FIXME - not a good place
         if (not RS.is_hidden(RS.HD_StartupRecentSessions)
@@ -1346,7 +1346,7 @@ class MainWindow(QMainWindow):
                 self._create_new_session()
             elif dialog.get_clicked_action() == dialog.ACTION_OPEN:
                 self._open_session()
-            
+
             if dialog.not_again_value():
                 RS.set_hidden(RS.HD_StartupRecentSessions)
 
@@ -1561,16 +1561,16 @@ class MainWindow(QMainWindow):
             if self.session.nsm_child is not None:
                 self.session.nsm_child.send_gui_state(False)
         QMainWindow.hideEvent(self, event)
-    
+
     def resizeEvent(self, event):
         if self._fullscreen_patchbay and not self.isFullScreen():
             self.toggle_scene_full_screen()
-        
+
         QMainWindow.resizeEvent(self, event)
-        
+
         new_button = self.ui.toolBar.widgetForAction(self.ui.actionNewSession)
         open_button = self.ui.toolBar.widgetForAction(self.ui.actionOpenSession)
-        
+
         if self.width() > 410:
             for button in (new_button, open_button):
                 button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)

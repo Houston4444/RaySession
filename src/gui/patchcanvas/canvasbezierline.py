@@ -141,10 +141,10 @@ class CanvasBezierLine(QGraphicsPathItem):
 
             if diffxy > 0 or item1_x > item2_x:
                 mid_x = min(mid_x, 200)
-            
+
             item1_new_x = item1_x + mid_x
             item2_new_x = item2_x - mid_x
-                
+
             path = QPainterPath(QPointF(item1_x, item1_y))
             path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y, item2_x, item2_y)
             self.setPath(path)

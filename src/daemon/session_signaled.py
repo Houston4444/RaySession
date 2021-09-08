@@ -286,7 +286,7 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path,
                   "root folder changed to %s" % self.root)
         self.send_gui('/ray/gui/server/root', self.root)
-        
+
         if self.root not in self.recent_sessions.keys():
             self.recent_sessions[self.root] = []
         self.send_gui('/ray/gui/server/recent_sessions',

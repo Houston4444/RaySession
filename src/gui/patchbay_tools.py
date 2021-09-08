@@ -47,7 +47,7 @@ class PatchbayToolsWidget(QWidget):
         self._buffer_change_from_osc = False
 
         self.ui.sliderZoom.valueChanged.connect(self.set_zoom)
-            
+
         self.ui.pushButtonXruns.clicked.connect(
             self.reset_xruns)
         self.ui.comboBoxBuffer.currentIndexChanged.connect(
@@ -65,11 +65,11 @@ class PatchbayToolsWidget(QWidget):
 
     def zoom_changed_from_canvas(self, ratio):
         self.ui.sliderZoom.set_percent(ratio * 100)
-    
+
     def set_zoom(self, value):
         percent = self.ui.sliderZoom.zoom_percent()
         patchcanvas.canvas.scene.zoom_ratio(percent)
-    
+
     def set_samplerate(self, samplerate: int):
         str_sr = str(samplerate)
         str_samplerate = str_sr
@@ -166,7 +166,7 @@ class CanvasMenu(QMenu):
     def __init__(self, patchbay_manager):
         QMenu.__init__(self, _translate('patchbay', 'Patchbay'))
         self.patchbay_manager = patchbay_manager
-        
+
         # fix wrong menu position with Wayland,
         # see https://community.kde.org/Guidelines_and_HOWTOs/Wayland_Porting_Notes
         self.winId()
@@ -198,7 +198,7 @@ class CanvasMenu(QMenu):
                                      | GROUP_CONTEXT_MIDI)))
         self.action_audio_midi.triggered.connect(
             self.port_types_view_audio_midi_choice)
-        
+
         self.action_audio = self.port_types_menu.addAction(
             _translate('patchbay', 'Audio only'))
         self.action_audio.setCheckable(True)
@@ -264,17 +264,17 @@ class CanvasMenu(QMenu):
         self.action_audio_midi.setChecked(True)
         self.action_audio.setChecked(False)
         self.action_midi.setChecked(False)
-        
+
         self.patchbay_manager.change_port_types_view(
             GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
-    
+
     def port_types_view_audio_choice(self):
         self.action_audio_midi.setChecked(False)
         self.action_audio.setChecked(True)
         self.action_midi.setChecked(False)
         self.patchbay_manager.change_port_types_view(
             GROUP_CONTEXT_AUDIO)
-    
+
     def port_types_view_midi_choice(self):
         self.action_audio_midi.setChecked(False)
         self.action_audio.setChecked(False)
@@ -301,7 +301,7 @@ class CanvasPortInfoDialog(QDialog):
         QDialog.__init__(self, parent)
         self.ui = ui.canvas_port_info.Ui_Dialog()
         self.ui.setupUi(self)
-        
+
         self._port = None
         self.ui.toolButtonRefresh.clicked.connect(
             self.update_contents)
@@ -309,11 +309,11 @@ class CanvasPortInfoDialog(QDialog):
     def set_port(self, port):
         self._port = port
         self.update_contents()
-    
+
     def update_contents(self):
         if self._port is None:
             return
-        
+
         port_type_str = _translate('patchbay', "Audio")
         if self._port.type == PORT_TYPE_MIDI:
             port_type_str = _translate('patchbay', "MIDI")
@@ -333,7 +333,7 @@ class CanvasPortInfoDialog(QDialog):
                 flags_list.append(dict_flag_str[key])
 
         port_flags_str = ' | '.join(flags_list)
-        
+
         self.ui.lineEditFullPortName.setText(self._port.full_name)
         self.ui.lineEditUuid.setText(str(self._port.uuid))
         self.ui.labelPortType.setText(port_type_str)
@@ -341,9 +341,9 @@ class CanvasPortInfoDialog(QDialog):
         self.ui.labelPrettyName.setText(self._port.pretty_name)
         self.ui.labelPortOrder.setText(self._port.order)
         self.ui.labelPortGroup.setText(self._port.mdata_portgroup)
-        
+
         self.ui.groupBoxMetadatas.setVisible(bool(
             self._port.pretty_name
             or self._port.order
             or self._port.mdata_portgroup))
-        
+

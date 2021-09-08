@@ -1764,7 +1764,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         if os.path.exists(scripts_dir):
             client_files.append(scripts_dir)
-        
+
         full_links_dir = os.path.join(self.session.path, self._get_links_dir())
         if os.path.exists(full_links_dir):
             client_files.append(full_links_dir)
