@@ -49,7 +49,7 @@ class DaemonManager(QObject):
 
     def _change_url(self, new_url: str):
         try:
-            self.set_osc_address(ray.getLibloAddress(new_url))
+            self.set_osc_address(ray.get_liblo_address(new_url))
         except BaseException:
             return
 
@@ -245,7 +245,7 @@ class DaemonManager(QObject):
 
     def set_new_osc_address(self):
         if not (self.address or self._port):
-            self._port = ray.getFreeOscPort()
+            self._port = ray.get_free_osc_port()
             self.address = Address(self._port)
 
     def is_announced(self):

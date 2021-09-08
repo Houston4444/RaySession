@@ -84,7 +84,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/reply', None)
     def reply(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
+        if not ray.types_are_all_strings(types):
             self._unknown_message(path, types, src_addr)
 
         if not len(args) >= 1:
@@ -225,7 +225,7 @@ class ClientCommunicating(liblo.ServerThread):
             if not client.addr:
                 continue
 
-            if not ray.areSameOscPort(client.addr.url, src_addr.url):
+            if not ray.are_same_osc_port(client.addr.url, src_addr.url):
                 self.send(client.addr, liblo.Message(*args))
 
             # TODO broadcast to slave daemons
@@ -378,7 +378,7 @@ class OscServerThread(ClientCommunicating):
             self._nsm_locker_url = src_addr.url
 
             for gui_addr in self.gui_list:
-                if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+                if not ray.are_same_osc_port(gui_addr.url, src_addr.url):
                     self.send(gui_addr, '/ray/gui/server/nsm_locked', 1)
 
             self.net_daemon_id = net_daemon_id
@@ -393,7 +393,7 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/gui_disannounce', '')
     def rayGuiGui_disannounce(self, path, args, types, src_addr):
         for addr in self.gui_list:
-            if ray.areSameOscPort(addr.url, src_addr.url):
+            if ray.are_same_osc_port(addr.url, src_addr.url):
                 break
         else:
             return False
@@ -644,7 +644,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/new_session', None)
     def rayServerNewSession(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
+        if not ray.types_are_all_strings(types):
             self._unknown_message(path, types, src_addr)
             return False
 
@@ -735,13 +735,13 @@ class OscServerThread(ClientCommunicating):
         self._set_option(option)
 
         for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+            if not ray.are_same_osc_port(gui_addr.url, src_addr.url):
                 self.send(gui_addr, '/ray/gui/server/options', self.options)
 
     # set options from ray_control
     @ray_method('/ray/server/set_options', None)
     def rayServerSetOptions(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
+        if not ray.types_are_all_strings(types):
             self._unknown_message(path, types, src_addr)
             return False
 
@@ -770,7 +770,7 @@ class OscServerThread(ClientCommunicating):
                 self._set_option(option)
 
         for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+            if not ray.are_same_osc_port(gui_addr.url, src_addr.url):
                 self.send(gui_addr, '/ray/gui/server/options', self.options)
 
         self.send(src_addr, '/reply', path, 'Options set')
@@ -815,7 +815,7 @@ class OscServerThread(ClientCommunicating):
     def rayServerPatchbaySaveCoordinates(self, path, args, types, src_addr):
         # here send to others GUI the new group position
         for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+            if not ray.are_same_osc_port(gui_addr.url, src_addr.url):
                 self.send(gui_addr, '/ray/gui/patchbay/update_group_position',
                           *args)
 
@@ -843,7 +843,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/run_step', None)
     def raySessionProcessStep(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
+        if not ray.types_are_all_strings(types):
             self._unknown_message(path, types, src_addr)
             return False
 
@@ -926,7 +926,7 @@ class OscServerThread(ClientCommunicating):
             if not NSM_URL:
                 return False
 
-            if not ray.areSameOscPort(self._nsm_locker_url, NSM_URL):
+            if not ray.are_same_osc_port(self._nsm_locker_url, NSM_URL):
                 return False
 
         if '/' in new_session_name:
@@ -947,7 +947,7 @@ class OscServerThread(ClientCommunicating):
         self.session.notes = args[0]
 
         for gui_addr in self.gui_list:
-            if not ray.areSameOscPort(gui_addr.url, src_addr.url):
+            if not ray.are_same_osc_port(gui_addr.url, src_addr.url):
                 self.send(gui_addr, '/ray/gui/session/notes',
                           self.session.notes)
 
@@ -972,7 +972,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/add_executable', None)
     def raySessionAddExecutableStrings(self, path, args, types, src_addr):
-        if not (args and ray.areTheyAllString(args)):
+        if not (types and ray.types_are_all_strings(types)):
             self._unknown_message(path, types, src_addr)
             return False
 
@@ -996,19 +996,19 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/add_factory_client_template', None)
     def raySessionAddFactoryClientTemplate(self, path, args, types, src_addr):
-        if not (args and ray.areTheyAllString(args)):
+        if not (types and ray.types_are_all_strings(types)):
             self._unknown_message(path, types, src_addr)
             return False
 
     @ray_method('/ray/session/add_user_client_template', None)
     def raySessionAddUserClientTemplate(self, path, args, types, src_addr):
-        if not (args and ray.areTheyAllString(args)):
+        if not (types and ray.types_are_all_strings(types)):
             self._unknown_message(path, types, src_addr)
             return False
 
     @ray_method('/ray/session/reorder_clients', None)
     def rayServerReorderClients(self, path, args, types, src_addr):
-        if not (args and ray.areTheyAllString(args)):
+        if not (types and ray.types_are_all_strings(types)):
             self._unknown_message(path, types, src_addr)
             return False
 
@@ -1027,7 +1027,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/clear_clients', None)
     def raySessionStopClients(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
+        if not ray.types_are_all_strings(types):
             self._unknown_message(path, types, src_addr)
             return False
 
@@ -1055,7 +1055,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/list_clients', None)
     def raySessionListClients(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
+        if not ray.types_are_all_strings(types):
             self._unknown_message(path, types, src_addr)
             return False
 
@@ -1121,7 +1121,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/client/set_properties', None)
     def rayGuiClientSetProperties(self, path, args, types, src_addr):
-        if not (len(args) >= 2 and ray.areTheyAllString(args)):
+        if not (len(args) >= 2 and ray.types_are_all_strings(types)):
             self._unknown_message(path, types, src_addr)
             return
 
@@ -1131,7 +1131,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/client/set_proxy_properties', None)
     def rayClientSetProxyProperties(self, path, args, types, src_addr):
-        if not (len(args) >= 2 and ray.areTheyAllString(args)):
+        if not (len(args) >= 2 and ray.types_are_all_strings(types)):
             self._unknown_message(path, types, src_addr)
             return
 
@@ -1294,7 +1294,7 @@ class OscServerThread(ClientCommunicating):
             nsm_url = os.getenv('NSM_URL')
             if not nsm_url:
                 return
-            if not ray.areSameOscPort(self._nsm_locker_url, nsm_url):
+            if not ray.are_same_osc_port(self._nsm_locker_url, nsm_url):
                 return
 
         self.send_gui('/ray/gui/session/renameable', 1)
@@ -1391,7 +1391,7 @@ class OscServerThread(ClientCommunicating):
         has_gui = False
 
         for gui_addr in self.gui_list:
-            if ray.areOnSameMachine(self.url, gui_addr.url):
+            if ray.are_on_same_machine(self.url, gui_addr.url):
                 # we've got a local GUI
                 return 3
 
@@ -1405,12 +1405,12 @@ class OscServerThread(ClientCommunicating):
     def get_local_gui_pid_list(self)->str:
         pid_list = []
         for gui_addr in self.gui_list:
-            if ray.areOnSameMachine(gui_addr.url, self.url):
+            if ray.are_on_same_machine(gui_addr.url, self.url):
                 pid_list.append(str(gui_addr.gui_pid))
         return ':'.join(pid_list)
 
     def is_gui_address(self, addr)->bool:
         for gui_addr in self.gui_list:
-            if ray.areSameOscPort(gui_addr.url, addr.url):
+            if ray.are_same_osc_port(gui_addr.url, addr.url):
                 return True
         return False

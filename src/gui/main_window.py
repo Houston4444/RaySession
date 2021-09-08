@@ -7,8 +7,9 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
 from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
-from gui_tools import (RS, RayIcon, CommandLineArgs, _translate,
-                       server_status_string, is_dark_theme, get_code_root)
+from gui_tools import (
+    RS, RayIcon, CommandLineArgs, _translate, server_status_string,
+    is_dark_theme, get_code_root, get_app_icon)
 import add_application_dialog
 import child_dialogs
 import snapshots_dialog
@@ -67,7 +68,7 @@ class MainWindow(QMainWindow):
 
         # do not enable keep focus option under Wayland
         # because activate a window from it self on Wayland not allowed
-        if ray.getWindowManager() == ray.WindowManager.WAYLAND:
+        if ray.get_window_manager() == ray.WindowManager.WAYLAND:
             self._keep_focus = False
             self.ui.actionKeepFocus.setEnabled(False)
 
@@ -580,7 +581,7 @@ class MainWindow(QMainWindow):
             return
 
         if template_name.startswith('///'):
-            if template_name == '///' + ray.factory_session_templates[1]:
+            if template_name == '///' + ray.FACTORY_SESSION_TEMPLATES[1]:
                 if not RS.is_hidden(RS.HD_JackConfigScript):
                     # display jack_config_script info dialog
                     # and manage ray-jack_checker auto_start
@@ -603,7 +604,7 @@ class MainWindow(QMainWindow):
 
                     self.to_daemon('/ray/server/exotic_action', action)
 
-            elif template_name == '///' + ray.factory_session_templates[2]:
+            elif template_name == '///' + ray.FACTORY_SESSION_TEMPLATES[2]:
                 if not RS.is_hidden(RS.HD_SessionScripts):
                     # display session scripts info dialog
                     session_path = "%s/%s" % (CommandLineArgs.session_root,
@@ -1044,7 +1045,7 @@ class MainWindow(QMainWindow):
         self._systray.setContextMenu(self._systray_menu)
 
     def _systray_activated(self):
-        wayland = bool(ray.getWindowManager() == ray.WindowManager.WAYLAND)
+        wayland = bool(ray.get_window_manager() == ray.WindowManager.WAYLAND)
 
         if self.isMinimized():
             if self.hidden_maximized:
@@ -1362,7 +1363,7 @@ class MainWindow(QMainWindow):
 
     def trash_add(self, trashed_client):
         act_x_trashed = self._trash_menu.addAction(
-            ray.getAppIcon(trashed_client.icon, self),
+            get_app_icon(trashed_client.icon, self),
             trashed_client.prettier_name())
         act_x_trashed.setData(trashed_client.client_id)
         act_x_trashed.triggered.connect(self.show_client_trash_dialog)
@@ -1433,7 +1434,7 @@ class MainWindow(QMainWindow):
 
         for favorite in self.session.favorite_list:
             act_app = self._favorites_menu.addAction(
-                ray.getAppIcon(favorite.icon, self), favorite.name)
+                get_app_icon(favorite.icon, self), favorite.name)
             act_app.setData([favorite.name, favorite.factory])
             act_app.triggered.connect(self.launch_favorite)
 

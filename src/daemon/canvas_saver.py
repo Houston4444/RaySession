@@ -64,7 +64,7 @@ class CanvasSaver(ServerSender):
         local_guis = []
         distant_guis = []
         for gui_addr in server.gui_list:
-            if ray.areOnSameMachine(server.url, gui_addr.url):
+            if ray.are_on_same_machine(server.url, gui_addr.url):
                 local_guis.append(gui_addr)
             else:
                 distant_guis.append(gui_addr)
@@ -90,7 +90,10 @@ class CanvasSaver(ServerSender):
                               *gpos.spread())
 
     def send_all_group_positions(self, src_addr):
-        if ray.areOnSameMachine(self.get_server_url(), src_addr.url):
+        if ray.are_on_same_machine(self.get_server_url(), src_addr.url):
+            # GUI is on the same machine than the daemon
+            # send group positions via a tmp file because they can be many
+            # it can be faster, it also prevents to lose packets
             canvas_dict = {'group_positions': [], 'portgroups': []}
             for gpos in self.group_positions_session:
                 canvas_dict['group_positions'].append(gpos.to_dict())
@@ -149,7 +152,7 @@ class CanvasSaver(ServerSender):
                 time.sleep(0.020)
 
     def save_group_position(self, *args):
-        gp = ray.GroupPosition.newFrom(*args)
+        gp = ray.GroupPosition.new_from(*args)
         for group_positions in (self.group_positions_session,
                                 self.group_positions_config):
             for gpos in group_positions:
@@ -206,7 +209,7 @@ class CanvasSaver(ServerSender):
             json.dump(json_contents, f, indent=2)
 
     def save_portgroup(self, *args):
-        new_portgroup = ray.PortGroupMemory.newFrom(*args)
+        new_portgroup = ray.PortGroupMemory.new_from(*args)
 
         remove_list = []
 

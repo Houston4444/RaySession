@@ -29,10 +29,11 @@ APP_TITLE = 'RaySession'
 DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.getenv('HOME')
 SCRIPTS_DIR = 'ray-scripts'
 NOTES_PATH = 'ray-notes'
-factory_session_templates = (
+FACTORY_SESSION_TEMPLATES = (
     'with_jack_patch', 'with_jack_config', 'scripted')
 RAYNET_BIN = 'ray-network'
 
+GIT_IGNORED_EXTENSIONS = ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
 
 GROUP_CONTEXT_AUDIO = 0x01
 GROUP_CONTEXT_MIDI = 0x02
@@ -244,7 +245,7 @@ def is_git_taggable(string)->bool:
 
     return True
 
-def isValidFullPath(path: str)->bool:
+def is_valid_full_path(path: str)->bool:
     if not path.startswith('/'):
         return False
 
@@ -256,7 +257,7 @@ def isValidFullPath(path: str)->bool:
         return False
     return True
 
-def isOscPortFree(port):
+def is_osc_port_free(port:int):
     try:
         testport = Server(port)
     except BaseException:
@@ -266,35 +267,35 @@ def isOscPortFree(port):
     return True
 
 
-def getFreeOscPort(default=16187):
-    # get a free OSC port for daemon, start from default
+def get_free_osc_port(default=16187):
+    ''' get a free OSC port for daemon, start from default '''
 
     if default >= 65536:
         default = 16187
 
     daemon_port = default
-    UsedPort = True
+    used_port = True
     testport = None
 
-    while UsedPort:
+    while used_port:
         try:
             testport = Server(daemon_port)
-            UsedPort = False
+            used_port = False
         except BaseException:
             daemon_port += 1
-            UsedPort = True
+            used_port = True
 
     del testport
     return daemon_port
 
-def isValidOscUrl(url):
+def is_valid_osc_url(url:str):
     try:
         address = liblo.Address(url)
         return True
     except BaseException:
         return False
 
-def getLibloAddress(url):
+def get_liblo_address(url):
     valid_url = False
     try:
         address = liblo.Address(url)
@@ -312,7 +313,7 @@ def getLibloAddress(url):
             msg = "%r is an unknown osc url" % url
             raise argparse.ArgumentTypeError(msg)
 
-def getLibloAddressFromPort(port):
+def get_liblo_address_from_port(port:int):
     try:
         port = int(port)
     except:
@@ -337,7 +338,7 @@ def getLibloAddressFromPort(port):
             msg = "%i is an unknown osc port" % port
             raise argparse.ArgumentTypeError(msg)
 
-def areSameOscPort(url1, url2):
+def are_same_osc_port(url1, url2):
     if url1 == url2:
         return True
     try:
@@ -349,13 +350,12 @@ def areSameOscPort(url1, url2):
     if address1.port != address2.port:
         return False
 
-    if areOnSameMachine(url1, url2):
+    if are_on_same_machine(url1, url2):
         return True
 
     return False
 
-
-def areOnSameMachine(url1, url2):
+def are_on_same_machine(url1, url2):
     if url1 == url2:
         return True
 
@@ -406,14 +406,14 @@ def areOnSameMachine(url1, url2):
 
     return False
 
-def getNetUrl(port)->str:
+def get_net_url(port)->str:
     ip = Machine192.get()
     if not ip:
         return ''
 
     return "osc.udp://%s:%i/" % (ip, port)
 
-def shellLineToArgs(string):
+def shell_line_to_args(string:str)->list:
     try:
         args = shlex.split(string)
     except BaseException:
@@ -421,46 +421,19 @@ def shellLineToArgs(string):
 
     return args
 
-def areTheyAllString(args):
+def types_are_all_strings(types:str)->bool:
+    for char in types:
+        if char != 's':
+            return False
+    return True
+
+def are_they_all_strings(args:list)->bool:
     for arg in args:
         if not isinstance(arg, str):
             return False
     return True
 
-def getAppIcon(icon_name, widget):
-    dark = bool(
-        widget.palette().brush(
-            2, QPalette.WindowText).color().lightness() > 128)
-
-    icon = QIcon.fromTheme(icon_name)
-
-    if icon.isNull():
-        for ext in ('svg', 'svgz', 'png'):
-            filename = ":app_icons/%s.%s" % (icon_name, ext)
-            darkname = ":app_icons/dark/%s.%s" % (icon_name, ext)
-
-            if dark and QFile.exists(darkname):
-                filename = darkname
-
-            if QFile.exists(filename):
-                del icon
-                icon = QIcon()
-                icon.addFile(filename)
-                break
-            
-    if icon.isNull():
-        for path in ('/usr/local', '/usr', '%s/.local' % os.getenv('HOME')):
-            for ext in ('png', 'svg', 'svgz', 'xpm'):
-                filename = "%s/share/pixmaps/%s.%s" % (path, icon_name, ext)
-                if QFile.exists(filename):
-                    del icon
-                    icon = QIcon()
-                    icon.addFile(filename)
-                    break
-
-    return icon
-
-def getWindowManager():
+def get_window_manager():
     if os.getenv('WAYLAND_DISPLAY'):
         return WindowManager.WAYLAND
 
@@ -469,7 +442,7 @@ def getWindowManager():
 
     return WindowManager.NONE
 
-def getFullPath(root, session_name):
+def get_full_path(root, session_name):
     spath = "%s%s%s" % (root, os.sep, session_name)
 
     if session_name.startswith(os.sep):
@@ -480,14 +453,14 @@ def getFullPath(root, session_name):
 
     return spath
 
-def protocolToStr(protocol: int)->str:
+def protocol_to_str(protocol: int)->str:
     if protocol == Protocol.RAY_HACK:
         return "Ray-Hack"
     if protocol == Protocol.RAY_NET:
         return "Ray-Net"
     return "NSM"
 
-def protocolFromStr(protocol_str: str)->int:
+def protocol_from_str(protocol_str: str)->int:
     if protocol_str.lower() in ('ray_hack', 'ray-hack'):
         return Protocol.RAY_HACK
     elif protocol_str.lower() in ('ray_net', 'ray-net'):
@@ -546,7 +519,7 @@ class ClientData:
     icon = ''
     capabilities = ''
     check_last_save = True
-    ignored_extensions = getGitIgnoredExtensions()
+    ignored_extensions = GIT_IGNORED_EXTENSIONS
     template_origin = ''
     useless_int = 0
     ray_hack = None
@@ -557,13 +530,13 @@ class ClientData:
         return 'sissssissssssissi'
 
     @staticmethod
-    def newFrom(*args):
+    def new_from(*args):
         client_data = ClientData()
         client_data.update(*args)
         return client_data
 
     @staticmethod
-    def spreadClient(client)->tuple:
+    def spread_client(client)->tuple:
         return (client.client_id, client.protocol,
                 client.executable_path, client.arguments, client.pre_env,
                 client.name, client.prefix_mode, client.custom_prefix,
@@ -624,11 +597,11 @@ class ClientData:
 
         self.capabilities = str(capabilities)
 
-    def updateSecure(self, *args):
+    def update_secure(self, *args):
         self.update(*args, secure=True)
 
     def spread(self)->tuple:
-        return ClientData.spreadClient(self)
+        return ClientData.spread_client(self)
     
     def prettier_name(self)->str:
         if self.label:
@@ -654,7 +627,7 @@ class RayHack:
         return 'siiiisi'
 
     @staticmethod
-    def newFrom(*args):
+    def new_from(*args):
         ray_hack = RayHack()
         ray_hack.update(*args)
         return ray_hack
@@ -697,7 +670,7 @@ class RayNet:
         return 'sss'
 
     @staticmethod
-    def newFrom(*args):
+    def new_from(*args):
         ray_net = RayNet()
         ray_net.update(*args)
         return ray_net
@@ -734,7 +707,7 @@ class GroupPosition:
         return 'issssiiiiiii'
     
     @staticmethod
-    def newFrom(*args):
+    def new_from(*args):
         group_position = GroupPosition()
         group_position.update(*args)
         return group_position
@@ -835,7 +808,7 @@ class PortGroupMemory:
                 'above_metadatas', 'port_names')
     
     @staticmethod
-    def newFrom(*args):
+    def new_from(*args):
         portgrp_memory = PortGroupMemory()
         portgrp_memory.update(*args)
         return portgrp_memory

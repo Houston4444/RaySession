@@ -52,7 +52,7 @@ class GeneralObject(QObject):
         self.sl_process.setProcessChannelMode(QProcess.ForwardedChannels)
         self.sl_process.finished.connect(self.slProcessFinished)
 
-        self.sl_port = ray.getFreeOscPort(9951)
+        self.sl_port = ray.get_free_osc_port(9951)
         self.sl_url = Address(self.sl_port)
 
 
@@ -312,7 +312,7 @@ if __name__ == '__main__':
         sys.stderr.write('Could not register as NSM client.\n')
         sys.exit()
 
-    daemon_address = ray.getLibloAddress(NSM_URL)
+    daemon_address = ray.get_liblo_address(NSM_URL)
 
     signal.signal(signal.SIGINT, signalHandler)
     signal.signal(signal.SIGTERM, signalHandler)

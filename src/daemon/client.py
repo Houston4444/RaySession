@@ -15,7 +15,6 @@ from daemon_tools  import (TemplateRoots, Terminal, RS,
                            get_code_root, highlight_text)
 from signaler import Signaler
 from scripter import ClientScripter
-from snapshoter import GIT_IGNORED_EXTENSIONS
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -64,8 +63,6 @@ class Client(ServerSender, ray.ClientData):
     is_external = False
     sent_to_gui = False
     switch_state = ray.SwitchState.NONE
-
-    ignored_extensions = GIT_IGNORED_EXTENSIONS
 
     last_save_time = 0.00
     last_dirty = 0.00
@@ -825,7 +822,7 @@ class Client(ServerSender, ray.ClientData):
         ign_exts = ctx.attribute('ignored_extensions').split(' ')
         unign_exts = ctx.attribute('unignored_extensions').split(' ')
 
-        global_exts = GIT_IGNORED_EXTENSIONS.split(' ')
+        global_exts = ray.GIT_IGNORED_EXTENSIONS.split(' ')
         self.ignored_extensions = ""
 
         for ext in global_exts:
@@ -848,7 +845,7 @@ class Client(ServerSender, ray.ClientData):
             if self.prefix_mode == ray.PrefixMode.CUSTOM:
                 self.custom_prefix = ctx.attribute('custom_prefix')
 
-        self.protocol = ray.protocolFromStr(ctx.attribute('protocol'))
+        self.protocol = ray.protocol_from_str(ctx.attribute('protocol'))
 
         if self.protocol == ray.Protocol.RAY_HACK:
             self.ray_hack.config_file = ctx.attribute('config_file')
@@ -959,7 +956,7 @@ class Client(ServerSender, ray.ClientData):
             ctx.setAttribute('template_origin', self.template_origin)
 
         if self.protocol != ray.Protocol.NSM:
-            ctx.setAttribute('protocol', ray.protocolToStr(self.protocol))
+            ctx.setAttribute('protocol', ray.protocol_to_str(self.protocol))
 
             if self.protocol == ray.Protocol.RAY_HACK:
                 ctx.setAttribute('config_file', self.ray_hack.config_file)
@@ -975,11 +972,11 @@ class Client(ServerSender, ray.ClientData):
                 ctx.setAttribute('net_session_template',
                                  self.ray_net.session_template)
 
-        if self.ignored_extensions != GIT_IGNORED_EXTENSIONS:
+        if self.ignored_extensions != ray.GIT_IGNORED_EXTENSIONS:
             ignored = ""
             unignored = ""
             client_exts = [e for e in self.ignored_extensions.split(' ') if e]
-            global_exts = [e for e in GIT_IGNORED_EXTENSIONS.split(' ') if e]
+            global_exts = [e for e in ray.GIT_IGNORED_EXTENSIONS.split(' ') if e]
 
             for cext in client_exts:
                 if not cext in global_exts:
@@ -1601,7 +1598,7 @@ class Client(ServerSender, ray.ClientData):
             hack_ad = '/ray/gui/trash/ray_hack_update'
             net_ad = '/ray/gui/trash/ray_net_update'
 
-        self.send_gui(ad, *ray.ClientData.spreadClient(self))
+        self.send_gui(ad, *ray.ClientData.spread_client(self))
 
         if self.protocol == ray.Protocol.RAY_HACK:
             self.send_gui(
@@ -1699,7 +1696,7 @@ label:%s
 icon:%s
 check_last_save:%i
 ignored_extensions:%s""" % (self.client_id,
-                            ray.protocolToStr(self.protocol),
+                            ray.protocol_to_str(self.protocol),
                             self.executable_path,
                             self.arguments,
                             self.name,
@@ -1957,8 +1954,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             spath = self.session.path
 
         elif template_save == ray.Template.SESSION_SAVE:
-            spath = ray.getFullPath(TemplateRoots.user_sessions,
-                                    new_session_full_name)
+            spath = ray.get_full_path(TemplateRoots.user_sessions,
+                                      new_session_full_name)
             new_session_name = xsessionx
 
         elif template_save == ray.Template.SESSION_SAVE_NET:

@@ -5,7 +5,7 @@ from PyQt5.QtCore import pyqtSlot, QSize
 import ray
 from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
-                       RayIcon, split_in_two)
+                       RayIcon, split_in_two, get_app_icon)
 import child_dialogs
 import snapshots_dialog
 
@@ -267,7 +267,7 @@ class ClientSlot(QFrame):
         tool_tip += "<p></p>"
         tool_tip += "<p>%s : %s<br>" \
             % (_translate('client_slot', 'Protocol'),
-               ray.protocolToStr(self.client.protocol))
+               ray.protocol_to_str(self.client.protocol))
         tool_tip += "%s : %s<br>" \
             % (_translate('client_slot', 'Executable'),
                self.client.executable_path)
@@ -278,7 +278,7 @@ class ClientSlot(QFrame):
         self.ui.ClientName.setToolTip(tool_tip)
 
         # set icon
-        self._icon_on = ray.getAppIcon(self.client.icon, self)
+        self._icon_on = get_app_icon(self.client.icon, self)
         self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Disabled))
 
         self._gray_icon(
@@ -543,7 +543,7 @@ class ListWidgetClients(QListWidget):
 
                 for favorite in self.session.favorite_list:
                     act_app = fav_menu.addAction(
-                        ray.getAppIcon(favorite.icon, self), favorite.name)
+                        get_app_icon(favorite.icon, self), favorite.name)
                     act_app.setData([favorite.name, favorite.factory])
                     act_app.triggered.connect(self._launch_favorite)
 

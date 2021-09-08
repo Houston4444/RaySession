@@ -135,10 +135,7 @@ class GuiServerThread(liblo.ServerThread):
 
     @ray_method('/reply', None)
     def _reply(self, path, args, types, src_addr):
-        if len(args) == 0:
-            return False
-
-        if not ray.areTheyAllString(args):
+        if not (types and ray.types_are_all_strings(types)):
             return False
 
         new_args = args.copy()
@@ -202,7 +199,7 @@ class GuiServerThread(liblo.ServerThread):
 
     @ray_method('/ray/gui/session/sort_clients', None)
     def _session_sort_clients(self, path, args, types, src_addr):
-        if not ray.areTheyAllString(args):
+        if not ray.types_are_all_strings(types):
             return False
 
     @ray_method('/ray/gui/client_template_update', 'is' + ray.ClientData.sisi())

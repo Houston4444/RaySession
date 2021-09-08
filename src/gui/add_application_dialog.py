@@ -6,7 +6,7 @@ from PyQt5.QtGui import QIcon
 import client_properties_dialog
 import ray
 
-from gui_tools import RS, _translate, is_dark_theme
+from gui_tools import RS, _translate, is_dark_theme, get_app_icon
 from child_dialogs import ChildDialog
 
 import ui.add_application
@@ -30,7 +30,7 @@ class TemplateSlot(QFrame):
         self.client_data = client_data
 
         self.ui.toolButtonIcon.setIcon(
-            ray.getAppIcon(self.client_data.icon, self))
+            get_app_icon(self.client_data.icon, self))
         self.ui.label.setText(name)
         self.ui.toolButtonUser.setVisible(not factory)
 
@@ -53,18 +53,18 @@ class TemplateSlot(QFrame):
     def update_client_data(self, *args):
         self.client_data.update(*args)
         self.ui.toolButtonIcon.setIcon(
-            ray.getAppIcon(self.client_data.icon, self))
+            get_app_icon(self.client_data.icon, self))
         self.ui.toolButtonFavorite.set_template(
             self._name, self.client_data.icon, self._factory)
 
     def update_ray_hack_data(self, *args):
         if self.client_data.ray_hack is None:
-            self.client_data.ray_hack = ray.RayHack.newFrom(*args)
+            self.client_data.ray_hack = ray.RayHack.new_from(*args)
         self.client_data.ray_hack.update(*args)
 
     def update_ray_net_data(self, *args):
         if self.client_data.ray_net is None:
-            self.client_data.ray_net = ray.RayNet.newFrom(*args)
+            self.client_data.ray_net = ray.RayNet.new_from(*args)
         self.client_data.ray_net.update(*args)
 
     def remove_template(self):
@@ -425,10 +425,10 @@ class AddApplicationDialog(ChildDialog):
 
         cdata = item.client_data
         self.ui.toolButtonIcon.setIcon(
-            ray.getAppIcon(cdata.icon, self))
+            get_app_icon(cdata.icon, self))
         self.ui.labelTemplateName.setText(item.data(Qt.UserRole))
         self.ui.labelDescription.setText(cdata.description)
-        self.ui.labelProtocol.setText(ray.protocolToStr(cdata.protocol))
+        self.ui.labelProtocol.setText(ray.protocol_to_str(cdata.protocol))
         self.ui.labelExecutable.setText(cdata.executable_path)
         self.ui.labelLabel.setText(cdata.label)
         self.ui.labelName.setText(cdata.name)

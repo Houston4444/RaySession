@@ -72,10 +72,10 @@ if __name__ == '__main__':
     #create and start server
     if CommandLineArgs.findfreeport:
         server = OscServerThread(session,
-                                 ray.getFreeOscPort(
+                                 ray.get_free_osc_port(
                                      CommandLineArgs.osc_port))
     else:
-        if ray.isOscPortFree(CommandLineArgs.osc_port):
+        if ray.is_osc_port_free(CommandLineArgs.osc_port):
             server = OscServerThread(session, CommandLineArgs.osc_port)
         else:
             sys.stderr.write(
@@ -101,7 +101,7 @@ if __name__ == '__main__':
         server.announce_controller(CommandLineArgs.control_url)
 
     #print server url
-    Terminal.message('URL : %s' % ray.getNetUrl(server.port))
+    Terminal.message('URL : %s' % ray.get_net_url(server.port))
     Terminal.message('      %s' % server.url)
     Terminal.message('ROOT: %s' % CommandLineArgs.session_root)
 
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     #load session asked from command line
     if CommandLineArgs.session:
-        session.serverOpenSessionAtStart(CommandLineArgs.session)
+        session.server_open_session_at_start(CommandLineArgs.session)
 
     #connect SIGINT and SIGTERM
     signal.signal(signal.SIGINT, signalHandler)

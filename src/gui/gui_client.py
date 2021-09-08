@@ -90,7 +90,7 @@ class Client(QObject, ray.ClientData):
             return
 
         server.to_daemon('/ray/client/update_properties',
-                        *ray.ClientData.spreadClient(self))
+                         *ray.ClientData.spread_client(self))
 
     def send_ray_hack(self):
         if self.protocol != ray.Protocol.RAY_HACK:
@@ -123,7 +123,7 @@ class Client(QObject, ray.ClientData):
                 self.properties_dialog.enable_test_zone(True)
             self.properties_dialog.set_on_second_tab()
         self.properties_dialog.show()
-        if ray.getWindowManager() != ray.WindowManager.WAYLAND:
+        if ray.get_window_manager() != ray.WindowManager.WAYLAND:
             self.properties_dialog.activateWindow()
 
     def re_create_widget(self):

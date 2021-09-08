@@ -245,13 +245,13 @@ class ArgParser(argparse.ArgumentParser):
                           help='select OSC port for the daemon')
         self.add_argument('--findfreeport', action='store_true',
                           help='find another port if port is not free')
-        self.add_argument('--gui-url', type=ray.getLibloAddress,
+        self.add_argument('--gui-url', type=ray.get_liblo_address,
                           help=argparse.SUPPRESS)
-        self.add_argument('--gui-port', type=ray.getLibloAddressFromPort,
+        self.add_argument('--gui-port', type=ray.get_liblo_address_from_port,
                           help=argparse.SUPPRESS)
         self.add_argument('--gui-pid', type=int,
                           help=argparse.SUPPRESS)
-        self.add_argument('--control-url', type=ray.getLibloAddress,
+        self.add_argument('--control-url', type=ray.get_liblo_address,
                           help=argparse.SUPPRESS)
         self.add_argument('--no-options', action='store_true',
             help='start without any option and do not save options at quit')

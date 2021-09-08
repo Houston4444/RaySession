@@ -1249,7 +1249,7 @@ class PatchbayManager:
                 if group.group_id == g_id:
                     group.add_portgroup(portgroup)
 
-                    new_portgroup_mem = ray.PortGroupMemory.newFrom(
+                    new_portgroup_mem = ray.PortGroupMemory.new_from(
                         group.name, portgroup.port_type(),
                         portgroup.port_mode, int(above_metadatas),
                         *[port.short_name() for port in port_list])
@@ -1277,7 +1277,7 @@ class PatchbayManager:
                                 # (no stereo detection)
                                 above_metadatas = bool(port.mdata_portgroup)
                                 
-                                new_portgroup_mem = ray.PortGroupMemory.newFrom(
+                                new_portgroup_mem = ray.PortGroupMemory.new_from(
                                     group.name, portgroup.port_type(),
                                     portgroup.port_mode, int(above_metadatas),
                                     port.short_name())
@@ -1433,7 +1433,7 @@ class PatchbayManager:
         for group in self.groups:
             if group.name == group_name:
                 # copy the group_position
-                gpos = ray.GroupPosition.newFrom(
+                gpos = ray.GroupPosition.new_from(
                     *group.current_position.spread())
                 gpos.port_types_view = self.port_types_view
                 self.group_positions.append(gpos)
@@ -1641,7 +1641,7 @@ class PatchbayManager:
                 # copy the group_position to not move the group
                 # because group has been renamed
                 orig_gpos = self.get_group_position(group_name)
-                gpos = ray.GroupPosition.newFrom(*orig_gpos.spread())
+                gpos = ray.GroupPosition.new_from(*orig_gpos.spread())
                 gpos.group_name = new_group_name
 
                 group = Group(self._next_group_id, new_group_name, gpos)
@@ -1743,7 +1743,7 @@ class PatchbayManager:
 
     def update_group_position(self, *args):
         # remember group position and move boxes if needed
-        gpos = ray.GroupPosition.newFrom(*args)
+        gpos = ray.GroupPosition.new_from(*args)
 
         for group_position in self.group_positions:
             if (group_position.port_types_view == gpos.port_types_view
@@ -1759,7 +1759,7 @@ class PatchbayManager:
                     break
 
     def update_portgroup(self, *args):
-        portgroup_mem = ray.PortGroupMemory.newFrom(*args)
+        portgroup_mem = ray.PortGroupMemory.new_from(*args)
         self.add_portgroup_memory(portgroup_mem)
 
         for group in self.groups:

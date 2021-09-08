@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt, QTimer
 import client_properties_dialog
 import ray
 from gui_server_thread import GuiServerThread
-from gui_tools import (ErrDaemon, _translate,
+from gui_tools import (ErrDaemon, _translate, get_app_icon,
                        CommandLineArgs, RS, is_dark_theme)
 
 from patchcanvas import patchcanvas
@@ -497,13 +497,13 @@ class NewSessionDialog(ChildDialog):
             _translate('session_template', "with basic scripts"))
 
         misscount = self.ui.comboBoxTemplate.count()  - 1 - len(
-                                                ray.factory_session_templates)
+                                                ray.FACTORY_SESSION_TEMPLATES)
         for i in range(misscount):
             self.ui.comboBoxTemplate.addItem(
-                ray.factory_session_templates[-i])
+                ray.FACTORY_SESSION_TEMPLATES[-i])
 
         self.ui.comboBoxTemplate.insertSeparator(
-                                    len(ray.factory_session_templates) + 1)
+                                    len(ray.FACTORY_SESSION_TEMPLATES) + 1)
 
     def _set_last_template_selected(self):
         last_used_template = RS.settings.value('last_used_template', type=str)
@@ -511,8 +511,8 @@ class NewSessionDialog(ChildDialog):
         if last_used_template.startswith('///'):
             last_factory_template = last_used_template.replace('///', '', 1)
 
-            for i in range(len(ray.factory_session_templates)):
-                factory_template = ray.factory_session_templates[i]
+            for i in range(len(ray.FACTORY_SESSION_TEMPLATES)):
+                factory_template = ray.FACTORY_SESSION_TEMPLATES[i]
                 if factory_template == last_factory_template:
                     self.ui.comboBoxTemplate.setCurrentIndex(i+1)
                     break
@@ -580,8 +580,8 @@ class NewSessionDialog(ChildDialog):
         if index == 0:
             return ""
 
-        if index <= len(ray.factory_session_templates):
-            return '///' + ray.factory_session_templates[index-1]
+        if index <= len(ray.FACTORY_SESSION_TEMPLATES):
+            return '///' + ray.FACTORY_SESSION_TEMPLATES[index-1]
 
         return self.ui.comboBoxTemplate.currentText()
 
@@ -679,7 +679,7 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
         AbstractSaveTemplateDialog.__init__(self, parent)
         self.ui.labelSessionTitle.setVisible(False)
         self.ui.toolButtonClientIcon.setIcon(
-            ray.getAppIcon(client.icon, self))
+            get_app_icon(client.icon, self))
         self.ui.labelLabel.setText(client.prettier_name())
 
         self.template_list = []
@@ -1141,7 +1141,7 @@ class ClientRenameDialog(ChildDialog):
         self.ui.setupUi(self)
 
         self.client = client
-        self.ui.toolButtonIcon.setIcon(ray.getAppIcon(client.icon, self))
+        self.ui.toolButtonIcon.setIcon(get_app_icon(client.icon, self))
         self.ui.labelClientLabel.setText(client.prettier_name())
         self.ui.lineEdit.setText(client.prettier_name())
         self.ui.lineEdit.selectAll()
@@ -1313,7 +1313,7 @@ class DaemonUrlWindow(ChildDialog):
             return
 
         try:
-            addr = ray.getLibloAddress(text)
+            addr = ray.get_liblo_address(text)
             self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
         except BaseException:
             self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)

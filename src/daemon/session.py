@@ -294,7 +294,7 @@ class Session(ServerSender):
 
     def is_template_acceptable(self, ct)->bool:
         executable = ct.attribute('executable')
-        protocol = ray.protocolFromStr(ct.attribute('protocol'))
+        protocol = ray.protocol_from_str(ct.attribute('protocol'))
 
         if protocol != ray.Protocol.RAY_NET:
             # check if needed executables are present
@@ -1433,7 +1433,7 @@ for better organization.""")
             if client.protocol == ray.Protocol.RAY_NET:
                 client.ray_net.duplicate_state = -1
                 if (client.ray_net.daemon_url
-                        and ray.isValidOscUrl(client.ray_net.daemon_url)):
+                        and ray.is_valid_osc_url(client.ray_net.daemon_url)):
                     self.send(Address(client.ray_net.daemon_url),
                               '/ray/session/duplicate_only',
                               self.get_short_path(),
@@ -1442,7 +1442,7 @@ for better organization.""")
             #client.net_duplicate_state = -1
 
             #if (client.net_daemon_url
-                    #and ray.isValidOscUrl(client.net_daemon_url)):
+                    #and ray.is_valid_osc_url(client.net_daemon_url)):
                 #self.send(Address(client.net_daemon_url),
                           #'/ray/session/duplicate_only',
                           #self.get_short_path(),
@@ -1590,6 +1590,7 @@ for better organization.""")
         template_path = "%s/%s" % (template_root, template_name)
 
         if template_name.startswith('///'):
+            # we use here a factory session template
             template_name = template_name.replace('///', '')
             template_path = "%s/%s" \
                             % (TemplateRoots.factory_sessions, template_name)

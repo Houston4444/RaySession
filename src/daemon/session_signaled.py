@@ -77,7 +77,7 @@ class SignaledSession(OperatingSession):
         OperatingSession.__init__(self, root)
 
         signaler.osc_recv.connect(self.osc_receive)
-        signaler.dummy_load_and_template.connect(self.dummyLoadAndTemplate)
+        signaler.dummy_load_and_template.connect(self.dummy_load_and_template)
 
         self.recent_sessions = RS.settings.value(
             'daemon/recent_sessions', {}, type=dict)
@@ -840,7 +840,7 @@ class SignaledSession(OperatingSession):
         else:
             tmp_session = DummySession(sess_root)
             tmp_session.osc_src_addr = src_addr
-            tmp_session.dummyDuplicate(session_to_load, new_session)
+            tmp_session.dummy_duplicate(session_to_load, new_session)
 
     @session_operation
     def _ray_session_open_snapshot(self, path, args, src_addr):
@@ -927,7 +927,7 @@ class SignaledSession(OperatingSession):
         if len(args) == 1:
             pass
 
-        elif ray.areTheyAllString(args):
+        elif ray.are_they_all_strings(args):
             via_proxy = int(bool('via_proxy' in args[1:]))
             start_it = int(bool('not_start' not in args[1:]))
             if 'ray_hack' in args[1:]:
@@ -1275,7 +1275,7 @@ class SignaledSession(OperatingSession):
 
     @client_action
     def _ray_client_update_properties(self, path, args, src_addr, client:Client):
-        client.updateSecure(client.client_id, *args)
+        client.update_secure(client.client_id, *args)
         client.send_gui_client_properties()
         self.send(src_addr, '/reply', path,
                           'client properties updated')
@@ -1616,8 +1616,8 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if (client.protocol == ray.Protocol.RAY_NET
                     and client.ray_net.daemon_url
-                    and ray.areSameOscPort(client.ray_net.daemon_url,
-                                           src_addr.url)):
+                    and ray.are_same_osc_port(client.ray_net.daemon_url,
+                                              src_addr.url)):
                 client.ray_net.duplicate_state = state
                 client.net_daemon_copy_timer.stop()
                 break
@@ -1634,16 +1634,16 @@ class SignaledSession(OperatingSession):
 
         client.net_daemon_copy_timer.start()
 
-    def serverOpenSessionAtStart(self, session_name):
+    def server_open_session_at_start(self, session_name):
         self.steps_order = [(self.preload, session_name),
                             self.take_place,
                             self.load,
                             self.load_done]
         self.next_function()
 
-    def dummyLoadAndTemplate(self, session_name, template_name, sess_root):
+    def dummy_load_and_template(self, session_name, template_name, sess_root):
         tmp_session = DummySession(sess_root)
-        tmp_session.dummyLoadAndTemplate(session_name, template_name)
+        tmp_session.dummy_load_and_template(session_name, template_name)
 
     def terminate(self):
         if self.terminated_yet:
@@ -1663,14 +1663,14 @@ class DummySession(OperatingSession):
         OperatingSession.__init__(self, root)
         self.is_dummy = True
 
-    def dummyLoadAndTemplate(self, session_full_name, template_name):
+    def dummy_load_and_template(self, session_full_name, template_name):
         self.steps_order = [(self.preload, session_full_name),
                             self.take_place,
                             self.load,
                             (self.save_session_template, template_name, True)]
         self.next_function()
 
-    def dummyDuplicate(self, session_to_load, new_session_full_name):
+    def dummy_duplicate(self, session_to_load, new_session_full_name):
         self.steps_order = [(self.preload, session_to_load),
                             self.take_place,
                             self.load,

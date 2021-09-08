@@ -133,7 +133,7 @@ class ProxyDialog(QMainWindow):
         if not self.ui.lineEditExecutable.text():
             self.fields_allow_start = False
 
-        if ray.shellLineToArgs(self.ui.lineEditArguments.text()) is None:
+        if ray.shell_line_to_args(self.ui.lineEditArguments.text()) is None:
             self.fields_allow_start = False
 
         self.ui.pushButtonStart.setEnabled(
@@ -196,7 +196,7 @@ class ProxyDialog(QMainWindow):
 
     def lineEditArgumentsChanged(self, text):
         self.checkAllowStart()
-        if ray.shellLineToArgs(text) is not None:
+        if ray.shell_line_to_args(text) is not None:
             self.ui.lineEditArguments.setStyleSheet('')
         else:
             self.ui.lineEditArguments.setStyleSheet(
@@ -468,7 +468,7 @@ class Proxy(QObject):
         if not self.executable:
             return
 
-        arguments = ray.shellLineToArgs(self.arguments_line)
+        arguments = ray.shell_line_to_args(self.arguments_line)
         if arguments is None:
             return
 
@@ -689,7 +689,7 @@ class Proxy(QObject):
         os.unsetenv('NSM_URL')
 
         arguments_line = os.path.expandvars(self.arguments_line)
-        arguments = ray.shellLineToArgs(arguments_line)
+        arguments = ray.shell_line_to_args(arguments_line)
 
         self._config_file_used = bool(config_file
                                       and config_file in arguments)
@@ -756,17 +756,13 @@ class ProxyFile:
         self.wait_window = False
 
 
-
-
-
-
 if __name__ == '__main__':
     NSM_URL = os.getenv('NSM_URL')
     if not NSM_URL:
         sys.stderr.write('Could not register as NSM client.\n')
         sys.exit()
 
-    daemon_address = ray.getLibloAddress(NSM_URL)
+    daemon_address = ray.get_liblo_address(NSM_URL)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--executable', default='')

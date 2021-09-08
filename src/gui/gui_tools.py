@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-from PyQt5.QtCore import QSettings, QSize
+from PyQt5.QtCore import QSettings, QSize, QFile
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon, QPixmap, QPalette
 
@@ -106,7 +106,7 @@ class CommandLineArgs(argparse.Namespace):
 
         if os.getenv('NSM_URL'):
             try:
-                cls.NSM_URL = ray.getLibloAddress(os.getenv('NSM_URL'))
+                cls.NSM_URL = ray.get_liblo_address(os.getenv('NSM_URL'))
             except BaseException:
                 sys.stderr.write('%s is not a valid NSM_URL\n'
                                  % os.getenv('NSM_URL'))
@@ -131,11 +131,11 @@ class ArgParser(argparse.ArgumentParser):
                 'help',
                 'A session manager based on the Non-Session-Manager API '
                 + 'for sound applications.'))
-        self.add_argument('--daemon-url', '-u', type=ray.getLibloAddress,
+        self.add_argument('--daemon-url', '-u', type=ray.get_liblo_address,
                           help=_translate('help',
                                           'connect to this daemon url'))
         self.add_argument('--daemon-port', '-p',
-                          type=ray.getLibloAddressFromPort,
+                          type=ray.get_liblo_address_from_port,
                           help=_translate('help',
                                           'connect to this daemon port'))
         self.add_argument('--out-daemon', action='store_true',
@@ -280,3 +280,36 @@ def client_status_string(client_status: int)->str:
         return _translate('client_status', 'invalid')
 
     return client_status_strings[client_status]
+
+def get_app_icon(icon_name, widget):
+    dark = bool(
+        widget.palette().brush(
+            2, QPalette.WindowText).color().lightness() > 128)
+
+    icon = QIcon.fromTheme(icon_name)
+
+    if icon.isNull():
+        for ext in ('svg', 'svgz', 'png'):
+            filename = ":app_icons/%s.%s" % (icon_name, ext)
+            darkname = ":app_icons/dark/%s.%s" % (icon_name, ext)
+
+            if dark and QFile.exists(darkname):
+                filename = darkname
+
+            if QFile.exists(filename):
+                del icon
+                icon = QIcon()
+                icon.addFile(filename)
+                break
+
+    if icon.isNull():
+        for path in ('/usr/local', '/usr', '%s/.local' % os.getenv('HOME')):
+            for ext in ('png', 'svg', 'svgz', 'xpm'):
+                filename = "%s/share/pixmaps/%s.%s" % (path, icon_name, ext)
+                if QFile.exists(filename):
+                    del icon
+                    icon = QIcon()
+                    icon.addFile(filename)
+                    break
+
+    return icon

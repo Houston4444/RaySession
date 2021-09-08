@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QFileDialog, QFrame
 
 import ray
 
-from gui_tools import _translate, client_status_string
+from gui_tools import _translate, client_status_string, get_app_icon
 from child_dialogs import ChildDialog
 
 import ui.ray_hack_copy
@@ -56,7 +56,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.tabWidget.setCurrentIndex(0)
 
     def _change_icon_with_text(self, text: str):
-        icon = ray.getAppIcon(text, self)
+        icon = get_app_icon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)
 
     def _get_capacities_line(self):
@@ -122,7 +122,7 @@ class ClientPropertiesDialog(ChildDialog):
 
     def update_contents(self):
         self.ui.labelId.setText(self.client.client_id)
-        self.ui.labelProtocol.setText(ray.protocolToStr(self.client.protocol))
+        self.ui.labelProtocol.setText(ray.protocol_to_str(self.client.protocol))
         self.ui.lineEditIcon.setText(self.client.icon)
         self.ui.lineEditLabel.setText(self.client.label)
         self.ui.plainTextEditDescription.setPlainText(self.client.description)
@@ -150,7 +150,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog._save_changes(self)
 
     def _change_icon_with_text(self, text: str):
-        icon = ray.getAppIcon(text, self)
+        icon = get_app_icon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)
         self.nsmui.toolButtonIcon.setIcon(icon)
 
@@ -230,7 +230,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.update_status(self._current_status)
 
     def _change_icon_with_text(self, text: str):
-        icon = ray.getAppIcon(text, self)
+        icon = get_app_icon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)
         self.rhack.toolButtonIcon.setIcon(icon)
 
@@ -313,7 +313,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         return self._acceptable_arguments
 
     def _line_edit_arguments_changed(self, text: str):
-        if ray.shellLineToArgs(text) is not None:
+        if ray.shell_line_to_args(text) is not None:
             self._acceptable_arguments = True
             self.rhack.lineEditArguments.setStyleSheet('')
         else:
@@ -495,9 +495,9 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         new_root = self.rnet.lineEditSessionRoot.text()
         new_template = self.rnet.lineEditTemplate.text()
 
-        if ray.isValidOscUrl(new_url):
+        if ray.is_valid_osc_url(new_url):
             self.client.ray_net.daemon_url = new_url
-        if ray.isValidFullPath(new_root):
+        if ray.is_valid_full_path(new_root):
             self.client.ray_net.session_root = new_root
         if '/' not in new_template:
             self.client.ray_net.session_template = new_template
@@ -506,6 +506,6 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog._save_changes(self)
 
     def _change_icon_with_text(self, text: str):
-        icon = ray.getAppIcon(text, self)
+        icon = get_app_icon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)
         self.rnet.toolButtonIcon.setIcon(icon)

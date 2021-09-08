@@ -438,7 +438,7 @@ if __name__ == '__main__':
         sys.stderr.write('Could not register as NSM client.\n')
         sys.exit()
 
-    daemon_address = ray.getLibloAddress(NSM_URL)
+    daemon_address = ray.get_liblo_address(NSM_URL)
 
     jack_client = jacklib.client_open(
         "ray-patcher",

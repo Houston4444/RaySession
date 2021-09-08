@@ -7,8 +7,6 @@ from PyQt5.QtXml import QDomDocument
 import ray
 from daemon_tools import Terminal
 
-GIT_IGNORED_EXTENSIONS = ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
-
 def git_stringer(string:str)->str:
     for char in (' ', '*', '?', '[', ']', '(', ')'):
         string = string.replace(char, "\\" + char)
@@ -231,7 +229,7 @@ class Snapshoter(QObject):
         contents += "\n"
         contents += "# Globally ignored extensions\n"
 
-        session_ignored_extensions = GIT_IGNORED_EXTENSIONS
+        session_ignored_extensions = ray.GIT_IGNORED_EXTENSIONS
         session_ign_list = session_ignored_extensions.split(' ')
         session_ign_list = tuple(filter(bool, session_ign_list))
 
@@ -348,8 +346,8 @@ class Snapshoter(QObject):
             if not machine_name:
                 machine_name = 'somewhere'
 
-            if not self._run_git_process('config', 'user.email',
-                                      '%s@%s' % (user_name, machine_name)):
+            if not self._run_git_process(
+                'config', 'user.email', '%s@%s' % (user_name, machine_name)):
                 return False
 
             user_name = os.getenv('USER')
