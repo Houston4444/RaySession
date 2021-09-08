@@ -4,7 +4,7 @@ import time
 
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QTreeWidget, QTreeWidgetItem,
-    QCompleter, QMessageBox, QFileDialog, QApplication)
+    QCompleter, QMessageBox, QFileDialog, QApplication, QListWidgetItem)
 from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
 from PyQt5.QtCore import Qt, QTimer
 
@@ -1438,11 +1438,15 @@ class StartupDialog(ChildDialog):
 
         self._clicked_action = self.ACTION_NO
 
-
         self.ui.listWidgetRecentSessions.itemDoubleClicked.connect(
             self.accept)
-        self.ui.listWidgetRecentSessions.addItems(
-            self.session.recent_sessions)
+
+        for recent_session in self.session.recent_sessions:
+            session_item = QListWidgetItem(recent_session.replace('/', ' / '),
+                                           self.ui.listWidgetRecentSessions)
+            session_item.setData(Qt.UserRole, recent_session)
+            self.ui.listWidgetRecentSessions.addItem(session_item)
+
         self.ui.listWidgetRecentSessions.setMinimumHeight(
             30 * len(self.session.recent_sessions))
         self.ui.listWidgetRecentSessions.setCurrentRow(0)
@@ -1487,7 +1491,10 @@ class StartupDialog(ChildDialog):
         return not self.ui.checkBox.isChecked()
 
     def get_selected_session(self)->str:
-        return self.ui.listWidgetRecentSessions.currentItem().text()
+        current_item = self.ui.listWidgetRecentSessions.currentItem()
+        if current_item:
+            return current_item.data(Qt.UserRole)
+        return ''
 
     def get_clicked_action(self)->int:
         return self._clicked_action
