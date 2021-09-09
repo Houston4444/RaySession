@@ -82,7 +82,7 @@ class UtilityScriptLauncher:
     def _get_scripts_path(self)->str:
         code_root = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-        return os.path.join(code_root, 'scripts')
+        return os.path.join(code_root, 'utility-scripts')
 
     def _start_process(self, script_name, terminal_title, *args):
         process_env = QProcessEnvironment.systemEnvironment()

@@ -207,15 +207,6 @@ def add_self_bin_to_path():
     if not os.environ['PATH'].startswith("%s:" % bin_path):
         os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
 
-def error_text(error:int)->str:
-    text = 'Unknown error'
-    
-    if error == Err.SESSION_IN_SESSION_DIR:
-        text = "Can't create session in a dir containing a session\n"
-        text += "for better organization."
-    
-    return text
-
 def get_list_in_settings(settings, path):
     # getting a QSettings value of list type seems to not works the same way
     # on all machines

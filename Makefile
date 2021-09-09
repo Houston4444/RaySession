@@ -58,6 +58,7 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/donations.py \
 	    src/gui/ui/daemon_url.py \
 	    src/gui/ui/error_dialog.py \
+	    src/gui/ui/hydro_rh_nsm.py \
 	    src/gui/ui/jack_config_info.py \
 	    src/gui/ui/list_snapshots.py \
 	    src/gui/ui/new_executable.py \
