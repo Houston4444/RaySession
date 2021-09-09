@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QApplication, QFileDialog
 from PyQt5.QtCore import QProcess, QProcessEnvironment
 
 import ray
+from gui_tools import CommandLineArgs
 from child_dialogs import ChildDialog
 import ui.hydro_rh_nsm
 
@@ -58,6 +59,9 @@ class HydrogenRhNsmDialog(ChildDialog):
         if self.ui.checkBoxSessionTemplates.isChecked():
             args.append('session_templates')
         return args
+
+    def rename_for_other_app(self, name:str):
+        self.ui.label.setText(self.ui.label.text().replace('Hydrogen', name))
 
 
 class UtilityScriptLauncher:
@@ -134,6 +138,11 @@ class UtilityScriptLauncher:
         return os.path.join(code_root, 'utility-scripts')
 
     def _start_process(self, script_name, terminal_title, *args):
+        if not self.daemon_manager.is_local or CommandLineArgs.under_nsm:
+            # utility scripts are not available if daemon is not
+            # on the same machine, or if current session is a subsession
+            return
+
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert(
             'RAY_CONTROL_PORT', str(self.daemon_manager.get_port()))
@@ -192,6 +201,15 @@ class UtilityScriptLauncher:
         args = dialog.get_check_arguments()
         self._start_process(script_name, terminal_title, *args)
 
+    def convert_ray_hack_to_nsm_jack_mixer(self):
+        script_name = 'all_ray_hack_to_nsm_jack_mixer.sh'
+        terminal_title = _translate('utilities', 'Jack Mixer Ray-Hack->NSM')
 
+        dialog = HydrogenRhNsmDialog(self.main_win)
+        dialog.rename_for_other_app('Jack Mixer')
+        dialog.exec()
+        if not dialog.result():
+            return
 
-
+        args = dialog.get_check_arguments()
+        self._start_process(script_name, terminal_title, *args)

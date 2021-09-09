@@ -867,6 +867,7 @@ QToolButton {border: none}</string>
      </property>
      <addaction name="actionConvertArdourSession"/>
      <addaction name="actionConvertHydrogenRhNsm"/>
+     <addaction name="actionConvertJackMixerRhNsm"/>
     </widget>
     <addaction name="actionNewSession"/>
     <addaction name="actionOpenSession"/>
@@ -1451,10 +1452,19 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionConvertHydrogenRhNsm">
    <property name="icon">
-    <iconset theme="org.hydrogenmusic.Hydrogen"/>
+    <iconset theme="org.hydrogenmusic.Hydrogen">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Convert all Hydrogen Ray-Hack clients to NSM</string>
+   </property>
+  </action>
+  <action name="actionConvertJackMixerRhNsm">
+   <property name="icon">
+    <iconset theme="jack_mixer"/>
+   </property>
+   <property name="text">
+    <string>Convert all Jack Mixer Ray-Hack clients to NSM</string>
    </property>
   </action>
  </widget>

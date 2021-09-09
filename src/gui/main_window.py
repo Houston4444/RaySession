@@ -156,6 +156,8 @@ class MainWindow(QMainWindow):
             self.util_script_launcher.convert_ardour_to_session)
         self.ui.actionConvertHydrogenRhNsm.triggered.connect(
             self.util_script_launcher.convert_ray_hack_to_nsm_hydrogen)
+        self.ui.actionConvertJackMixerRhNsm.triggered.connect(
+            self.util_script_launcher.convert_ray_hack_to_nsm_jack_mixer)
         self.ui.actionQuit.triggered.connect(self._quit_app)
         self.ui.actionSaveSession.triggered.connect(self._save_session)
         self.ui.actionCloseSession.triggered.connect(self._close_session)
