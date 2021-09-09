@@ -1570,7 +1570,7 @@ class SignaledSession(OperatingSession):
     def _ray_trashed_client_restore(self, path, args, src_addr):
         if not self.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
+                      "Nothing in trash because no session is loaded.")
             return
 
         for client in self.trashed_clients:
@@ -1587,7 +1587,7 @@ class SignaledSession(OperatingSession):
     def _ray_trashed_client_remove_definitely(self, path, args, src_addr):
         if not self.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
+                      "Nothing in trash because no session is loaded.")
             return
 
         for client in self.trashed_clients:
@@ -1610,6 +1610,25 @@ class SignaledSession(OperatingSession):
         self.trashed_clients.remove(client)
 
         self.send(src_addr, '/reply', path, "client definitely removed")
+
+    def _ray_trashed_client_remove_keep_files(self, path, args, src_addr):
+        if not self.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "Nothing in trash because no session is loaded.")
+            return
+
+        for client in self.trashed_clients:
+            if client.client_id == args[0]:
+                break
+        else:
+            self.send(src_addr, "/error", path, -10, "No such client.")
+            return
+
+        self.send_gui('/ray/gui/trash/remove', client.client_id)
+
+        self.trashed_clients.remove(client)
+
+        self.send(src_addr, '/reply', path, "client removed")
 
     def _ray_net_daemon_duplicate_state(self, path, args, src_addr):
         state = args[0]

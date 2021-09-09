@@ -247,4 +247,6 @@ contrôle les démons de RaySession
         Restaure le client dans la session.
         Le client est restauré arrêté.
     remove_definitely
-        Supprime définitivement le client et tous ses fichiers et dossiers
+        Supprime définitivement le client et tous ses fichiers et dossiers.
+    remove_keep_files
+        Supprime le client de la corbeille, mais ne supprime pas ses fichiers.

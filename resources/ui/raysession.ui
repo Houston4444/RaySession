@@ -853,7 +853,8 @@ QToolButton {border: none}</string>
       <string>Recent sessions</string>
      </property>
      <property name="icon">
-      <iconset theme="document-open-recent"/>
+      <iconset theme="document-open-recent">
+       <normaloff>.</normaloff>.</iconset>
      </property>
     </widget>
     <widget class="QMenu" name="menuUtilities">
@@ -861,9 +862,11 @@ QToolButton {border: none}</string>
       <string>Utilities</string>
      </property>
      <property name="icon">
-      <iconset theme="utilities-terminal"/>
+      <iconset theme="utilities-terminal">
+       <normaloff>.</normaloff>.</iconset>
      </property>
      <addaction name="actionConvertArdourSession"/>
+     <addaction name="actionConvertHydrogenRhNsm"/>
     </widget>
     <addaction name="actionNewSession"/>
     <addaction name="actionOpenSession"/>
@@ -1439,10 +1442,19 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionConvertArdourSession">
    <property name="icon">
-    <iconset theme="ardour"/>
+    <iconset theme="ardour">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Convert an Ardour session to a Ray session</string>
+   </property>
+  </action>
+  <action name="actionConvertHydrogenRhNsm">
+   <property name="icon">
+    <iconset theme="org.hydrogenmusic.Hydrogen"/>
+   </property>
+   <property name="text">
+    <string>Convert all Hydrogen Ray-Hack clients to NSM</string>
    </property>
   </action>
  </widget>

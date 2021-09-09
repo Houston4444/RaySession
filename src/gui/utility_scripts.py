@@ -6,10 +6,46 @@ import sys
 from PyQt5.QtWidgets import QApplication, QFileDialog
 from PyQt5.QtCore import QProcess, QProcessEnvironment
 
+from child_dialogs import ChildDialog
+import ui.hydro_rh_nsm
+
 _translate = QApplication.translate
+
+
 
 UTIL_SCRIPT_NONE = 0
 UTIL_SCRIPT_CONVERT_ARDOUR_TO_SESSION = 1
+
+class HydrogenRhNsmDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui.hydro_rh_nsm.Ui_Dialog()
+        self.ui.setupUi(self)
+        self._check_boxes = (self.ui.checkBoxAllSessions,
+                             self.ui.checkBoxClientTemplates,
+                             self.ui.checkBoxSessionTemplates)
+
+        for check_box in self._check_boxes:
+            check_box.stateChanged.connect(self._one_state_changed)
+
+    def _one_state_changed(self):
+        for check_box in self._check_boxes:
+            if check_box.isChecked():
+                break
+        else:
+            for check_box in self._check_boxes:
+                check_box.setChecked(True)
+
+    def get_check_arguments(self)->list:
+        args = []
+        if self.ui.checkBoxAllSessions.isChecked():
+            args.append('sessions')
+        if self.ui.checkBoxClientTemplates.isChecked():
+            args.append('client_templates')
+        if self.ui.checkBoxSessionTemplates.isChecked():
+            args.append('session_templates')
+        return args
+
 
 class UtilityScriptLauncher:
     def __init__(self, main_win, session):
@@ -130,6 +166,19 @@ class UtilityScriptLauncher:
         args = ["--executable", executable, ardour_session]
 
         self._start_process(script_name, terminal_title, *args)
+
+    def convert_ray_hack_to_nsm_hydrogen(self):
+        script_name = 'all_ray_hack_to_nsm_hydrogen.sh'
+        terminal_title = _translate('utilities', 'Hydrogen Ray-Hack->NSM')
+
+        dialog = HydrogenRhNsmDialog(self.main_win)
+        dialog.exec()
+        if not dialog.result():
+            return
+
+        args = dialog.get_check_arguments()
+        self._start_process(script_name, terminal_title, *args)
+
 
 
 

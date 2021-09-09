@@ -1207,6 +1207,10 @@ class OscServerThread(ClientCommunicating):
     def rayTrashedClientRemoveDefinitely(self, path, args, types, src_addr):
         pass
 
+    @ray_method('/ray/trashed_client/remove_keep_files', 's')
+    def rayTrashedClientRemoveKeepFiles(self, path, args, types, src_addr):
+        pass
+
     @ray_method('/ray/net_daemon/duplicate_state', 'f')
     def rayDuplicateState(self, path, args, types, src_addr):
         pass
@@ -1262,10 +1266,10 @@ class OscServerThread(ClientCommunicating):
         return False
 
     def _set_option(self, option: int):
-        if option > 0:
+        if option >= 0:
             self.options |= option
         else:
-            self.options &= ~option
+            self.options &= ~-option
 
     def send(self, *args):
         if CommandLineArgs.debug:
