@@ -6,6 +6,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QFileDialog
 from PyQt5.QtCore import QProcess, QProcessEnvironment
 
+import ray
 from child_dialogs import ChildDialog
 import ui.hydro_rh_nsm
 
@@ -21,12 +22,21 @@ class HydrogenRhNsmDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui.hydro_rh_nsm.Ui_Dialog()
         self.ui.setupUi(self)
+        self.ui.checkBoxCurrentSession.stateChanged.connect(
+            self._current_session_check)
         self._check_boxes = (self.ui.checkBoxAllSessions,
                              self.ui.checkBoxClientTemplates,
                              self.ui.checkBoxSessionTemplates)
 
         for check_box in self._check_boxes:
             check_box.stateChanged.connect(self._one_state_changed)
+
+        if self.session.server_status != ray.ServerStatus.READY:
+            self.ui.checkBoxCurrentSession.setEnabled(False)
+
+    def _current_session_check(self, state:bool):
+        for check_box in self._check_boxes:
+            check_box.setEnabled(not state)
 
     def _one_state_changed(self):
         for check_box in self._check_boxes:
@@ -38,6 +48,9 @@ class HydrogenRhNsmDialog(ChildDialog):
 
     def get_check_arguments(self)->list:
         args = []
+        if self.ui.checkBoxCurrentSession.isChecked():
+            return args
+
         if self.ui.checkBoxAllSessions.isChecked():
             args.append('sessions')
         if self.ui.checkBoxClientTemplates.isChecked():

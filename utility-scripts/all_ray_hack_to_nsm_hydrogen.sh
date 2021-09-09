@@ -21,10 +21,13 @@ hydro_rh_to_nsm(){
     # trash and remove hydrogen Ray-Hack client
     ray_control client $client_id trash
     ray_control trashed_client $client_id remove_keep_files
+
+    # add the new hydrogen NSM client
     ray_control add_executable $executable client_id:$client_id not_start
 }
 
 # check what to do with arguments
+convert_current_session=false
 convert_sessions=false
 convert_client_templates=false
 convert_session_templates=false
@@ -36,14 +39,18 @@ for arg in "$@";do
 done
 
 if ! ($convert_sessions || $convert_client_templates || $convert_session_templates);then
-    echo "nothing to do, use arguments"
-    exit 0
+    convert_current_session=true
 fi
 
 executable=hydrogen
 config_file="\$RAY_SESSION_NAME.h2song"
 arguments="-n -s \"\$CONFIG_FILE\""
 
+list_filters[0]="executable:$executable"
+list_filters[1]="protocol:Ray-Hack"
+list_filters[2]="prefix_mode:2"
+list_filters[3]="config_file:$config_file"
+list_filters[4]="arguments:$arguments"
 
 # check if hydrogen factory template uses NSM
 hydro_nsm_templates=$(ray_control list_factory_client_templates executable:$executable protocol:NSM)
@@ -53,15 +60,44 @@ if [ -z "$hydro_nsm_templates" ];then
     exit 1
 fi
 
-
-# better to not use session_scripts and bookmark options for performance
+# better to not use session_scripts and bookmark options
+# for performance and security
 # during the execution of this script
-# first, remember if script has to reput them once done
 reput_session_scripts=false
 reput_bookmarks=false
-ray_control has_option session_scripts && reput_session_scripts=true
-ray_control has_option bookmark_session_folder && reput_bookmarks=true
-ray_control set_options not_session_scripts not_bookmark_session_folder
+
+if ! $convert_current_session;then
+    # no need to unset session_scripts and bookmarks
+    # if we only work in the current session
+    # because, in this case, session will not be saved or closed
+    ray_control has_option session_scripts && reput_session_scripts=true
+    ray_control has_option bookmark_session_folder && reput_bookmarks=true
+    ray_control set_options not_session_scripts not_bookmark_session_folder
+fi
+
+if $convert_current_session;then
+    echo "proceed in the current session"
+    session=$(ray_control get_session_path)
+    if [ -z "$session" ];then
+        echo "no arguments, no running session, nothing to do !"
+        exit 1
+    fi
+
+    clients=$(ray_control list_clients "${list_filters[@]}")
+
+    if [ -z "$clients" ];then
+        echo "no matching client in the current session, nothing to do !"
+        exit 1
+    fi
+
+    cd "$session"
+
+    for client_id in $clients;do
+        echo "    client:$client_id"
+        ray_control client $client_id stop
+        hydro_rh_to_nsm
+    done
+fi
 
 if $convert_sessions;then
     echo "proceed in all sessions"
@@ -72,12 +108,7 @@ if $convert_sessions;then
 
         ray_control open_session_off "$session" 2>/dev/null
         
-        clients=$(ray_control list_clients \
-                    executable:$executable \
-                    protocol:Ray-Hack \
-                    prefix_mode:2 \
-                    config_file:"\$RAY_SESSION_NAME.h2song" \
-                    arguments:"-n -s \"\$CONFIG_FILE\"")
+        clients=$(ray_control list_clients "${list_filters[@]}")
         
         if [ -z "$clients" ];then
             ray_control abort 2>/dev/null
@@ -101,12 +132,7 @@ if $convert_client_templates;then
     echo "proceed in all client templates"
 
     IFS=$'\n'
-    for template in $(ray_control list_user_client_templates \
-                        executable:$executable \
-                        protocol:Ray-Hack \
-                        prefix_mode:2 \
-                        config_file:"\$RAY_SESSION_NAME.h2song" \
-                        arguments:"-n -s \"\$CONFIG_FILE\"");do
+    for template in $(ray_control list_user_client_templates "${list_filters[@]}");do
         unset IFS
         session=$(mktemp -u)
         ray_control open_session_off "$session"
@@ -124,17 +150,12 @@ if $convert_session_templates;then
 
     IFS=$'\n'
     for session_template in $(ray_control list_session_templates);do
-        tmp_session=$(mktemp -u)
-        ray_control open_session_off "$tmp_session"
-        cd "$tmp_session"
+        session=$(mktemp -u)
+        ray_control open_session_off "$session"
+        cd "$session"
         echo cd $PWD
 
-        clients=$(ray_control list_clients \
-                    executable:$executable \
-                    protocol:Ray-Hack \
-                    prefix_mode:2 \
-                    config_file:"\$RAY_SESSION_NAME.h2song" \
-                    arguments:"-n -s \"\$CONFIG_FILE\"")
+        clients=$(ray_control list_clients "${list_filters[@]}")
         
         if [ -z "$clients" ];then
             ray_control abort 2>/dev/null
@@ -142,7 +163,7 @@ if $convert_session_templates;then
         fi
 
         echo "    treating session template:$session"
-        
+
         for client_id in $clients;do
             echo "        client:$client_id"
             hydro_rh_to_nsm

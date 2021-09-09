@@ -1269,7 +1269,7 @@ class OscServerThread(ClientCommunicating):
         if option >= 0:
             self.options |= option
         else:
-            self.options &= ~-option
+            self.options &= ~abs(option)
 
     def send(self, *args):
         if CommandLineArgs.debug:
