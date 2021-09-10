@@ -295,6 +295,9 @@ class Session(ServerSender):
     def is_template_acceptable(self, ct)->bool:
         executable = ct.attribute('executable')
         protocol = ray.protocol_from_str(ct.attribute('protocol'))
+        
+        if not executable:
+            return False
 
         if protocol != ray.Protocol.RAY_NET:
             # check if needed executables are present
@@ -382,14 +385,14 @@ class Session(ServerSender):
 
         return True
 
-    def _generate_client_id_as_nsm(self):
+    def _generate_client_id_as_nsm(self)->str:
         client_id = 'n'
         for i in range(4):
             client_id += random.choice(string.ascii_uppercase)
 
         return client_id
 
-    def generate_client_id(self, wanted_id=""):
+    def generate_client_id(self, wanted_id="")->str:
         self._update_forbidden_ids_List()
         wanted_id = basename(wanted_id)
 
@@ -919,7 +922,7 @@ class OperatingSession(Session):
         if new_session_full_name.startswith('/'):
             spath = new_session_full_name
 
-        # create tmp clients from raysession.xml to adjust Files after copy
+        # create tmp clients from raysession.xml to adjust files after copy
         session_file = "%s/%s" % (spath, "raysession.xml")
 
         try:
@@ -957,6 +960,8 @@ class OperatingSession(Session):
                     client = Client(self)
                     cx = client_xml.toElement()
                     client.read_xml_properties(cx)
+                    if not client.executable_path:
+                        continue
 
                     tmp_clients.append(client)
 
@@ -966,10 +971,8 @@ class OperatingSession(Session):
         ray_file_w.write(xml.toString())
         ray_file_w.close()
 
-
         for client in tmp_clients:
             client.adjust_files_after_copy(new_session_full_name, template_mode)
-
 
     ############################## COMPLEX OPERATIONS ###################
     # All functions are splitted when we need to wait clients
@@ -1810,6 +1813,9 @@ for better organization.""")
                         cx = client_xml.toElement()
                         client.read_xml_properties(cx)
 
+                        if not client.executable_path:
+                            continue
+
                         if client.client_id in client_id_list:
                             # prevent double same id
                             continue
@@ -1849,7 +1855,7 @@ for better organization.""")
                     client.client_id = elements[2]
                     client.prefix_mode = ray.PrefixMode.CLIENT_NAME
                     client.auto_start = True
-                    client._from_nsm_file = True
+                    client.long_jack_naming = True
 
                     self.future_clients.append(client)
 

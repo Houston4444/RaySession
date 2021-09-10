@@ -75,7 +75,7 @@ class Client(ServerSender, ray.ClientData):
     _desktop_icon = ""
     _desktop_description = ""
 
-    _from_nsm_file = False
+    long_jack_naming = False
 
     def __init__(self, parent_session):
         ServerSender.__init__(self)
@@ -263,39 +263,10 @@ class Client(ServerSender, ray.ClientData):
         if self.session.wait_for == ray.WaitFor.DUPLICATE_FINISH:
             self.session.end_timer_if_last_expected(self)
 
-    def _get_jack_client_name(self):
-        if self.protocol == ray.Protocol.RAY_NET:
-            # ray-net will use jack_client_name for template
-            # quite dirty, but this is the easier way
-            return self.ray_net.session_template
-
-        # return same jack_client_name as NSM does
-        # if client seems to have been made by NSM itself
-        # else, jack connections could be lose
-        # at NSM session import
-        if self._from_nsm_file:
-            return "%s.%s" % (self.name, self.client_id)
-
-        jack_client_name = self.name
-
-        # Mostly for ray_hack
-        if not jack_client_name:
-            jack_client_name = os.path.basename(self.executable_path)
-            jack_client_name.capitalize()
-
-        numid = ''
-        if '_' in self.client_id:
-            numid = self.client_id.rpartition('_')[2]
-        if numid.isdigit():
-            jack_client_name += '_'
-            jack_client_name += numid
-
-        return jack_client_name
-
     def _get_links_dir(self)->str:
         ''' returns the dir path used by carla for links such as
         audio convolutions or soundfonts '''
-        links_dir = self._get_jack_client_name()
+        links_dir = self.get_jack_client_name()
         for c in ('-', '.'):
             links_dir = links_dir.replace(c, '_')
         return links_dir
@@ -802,6 +773,35 @@ class Client(ServerSender, ray.ClientData):
             return
         self.session.message(message)
 
+    def get_jack_client_name(self):
+        if self.protocol == ray.Protocol.RAY_NET:
+            # ray-net will use jack_client_name for template
+            # quite dirty, but this is the easier way
+            return self.ray_net.session_template
+
+        # return same jack_client_name as NSM does
+        # if client seems to have been made by NSM itself
+        # else, jack connections could be lose
+        # at NSM session import
+        if self.long_jack_naming:
+            return "%s.%s" % (self.name, self.client_id)
+
+        jack_client_name = self.name
+
+        # Mostly for ray_hack
+        if not jack_client_name:
+            jack_client_name = os.path.basename(self.executable_path)
+            jack_client_name.capitalize()
+
+        numid = ''
+        if '_' in self.client_id:
+            numid = self.client_id.rpartition('_')[2]
+        if numid.isdigit():
+            jack_client_name += '_'
+            jack_client_name += numid
+
+        return jack_client_name
+
     def read_xml_properties(self, ctx):
         #ctx is an xml sibling for client
         self.executable_path = ctx.attribute('executable')
@@ -815,7 +815,11 @@ class Client(ServerSender, ray.ClientData):
         self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         self.template_origin = ctx.attribute('template_origin')
-        self._from_nsm_file = bool(ctx.attribute('from_nsm_file') == '1')
+        self.long_jack_naming = bool(ctx.attribute('from_nsm_file') == '1')
+
+        # ensure client has a name
+        if not self.name:
+            self.name = basename(self.executable_path)
 
         self.update_infos_from_desktop_file()
 
@@ -949,7 +953,7 @@ class Client(ServerSender, ray.ClientData):
             ctx.setAttribute('gui_visible',
                              str(int(not self.start_gui_hidden)))
 
-        if self._from_nsm_file:
+        if self.long_jack_naming:
             ctx.setAttribute('from_nsm_file', 1)
 
         if self.template_origin:
@@ -1238,7 +1242,7 @@ class Client(ServerSender, ray.ClientData):
                                          self.client_id)
             all_envs['RAY_JACK_CLIENT_NAME'] = (
                 os.getenv('RAY_JACK_CLIENT_NAME'),
-                self._get_jack_client_name())
+                self.get_jack_client_name())
 
             for env in all_envs:
                 os.environ[env] = all_envs[env][1]
@@ -1542,7 +1546,7 @@ class Client(ServerSender, ray.ClientData):
         self.ignored_extensions = new_client.ignored_extensions
         self.custom_data = new_client.custom_data
         self.description = new_client.description
-        self._from_nsm_file = new_client._from_nsm_file
+        self.long_jack_naming = new_client.long_jack_naming
 
         self._desktop_label = new_client._desktop_label
         self._desktop_description = new_client._desktop_description
@@ -1552,7 +1556,7 @@ class Client(ServerSender, ray.ClientData):
         self.gui_has_been_visible = self.gui_visible
 
     def switch(self):
-        jack_client_name = self._get_jack_client_name()
+        jack_client_name = self.get_jack_client_name()
         client_project_path = self.get_project_path()
 
         self.message("Commanding %s to switch \"%s\""
@@ -1630,6 +1634,12 @@ class Client(ServerSender, ray.ClientData):
                     self.prefix_mode = int(value)
             elif prop == 'custom_prefix':
                 self.custom_prefix = value
+            elif prop == 'long_jack_naming':
+                self.long_jack_naming = bool(value.lower() == 'true')
+            elif prop == 'jack_name':
+                # do not change jack name
+                # only allow to change long_jack_naming
+                continue
             elif prop == 'label':
                 self.label = value
             elif prop == 'desktop_file':
@@ -1691,6 +1701,8 @@ arguments:%s
 name:%s
 prefix_mode:%i
 custom_prefix:%s
+long_jack_naming:%s
+jack_name:%s
 desktop_file:%s
 label:%s
 icon:%s
@@ -1702,6 +1714,8 @@ ignored_extensions:%s""" % (self.client_id,
                             self.name,
                             self.prefix_mode,
                             self.custom_prefix,
+                            str(self.long_jack_naming).lower(),
+                            self.get_jack_client_name(),
                             self.desktop_file,
                             self.label,
                             self.icon,
@@ -1920,11 +1934,12 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         links_dir = self._get_links_dir()
 
-        self._rename_files(self.session.path,
-                         self.session.name, self.session.name,
-                         old_prefix, new_prefix,
-                         self.client_id, self.client_id,
-                         links_dir, links_dir)
+        self._rename_files(
+            self.session.path,
+            self.session.name, self.session.name,
+            old_prefix, new_prefix,
+            self.client_id, self.client_id,
+            links_dir, links_dir)
 
         self.prefix_mode = prefix_mode
         self.custom_prefix = custom_prefix
@@ -2058,7 +2073,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.set_status(ray.ClientStatus.OPEN)
 
         client_project_path = self.get_project_path()
-        jack_client_name = self._get_jack_client_name()
+        jack_client_name = self.get_jack_client_name()
 
         if self.protocol == ray.Protocol.RAY_NET:
             client_project_path = self.session.get_short_path()

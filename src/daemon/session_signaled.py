@@ -1277,8 +1277,7 @@ class SignaledSession(OperatingSession):
     def _ray_client_update_properties(self, path, args, src_addr, client:Client):
         client.update_secure(client.client_id, *args)
         client.send_gui_client_properties()
-        self.send(src_addr, '/reply', path,
-                          'client properties updated')
+        self.send(src_addr, '/reply', path, 'client properties updated')
 
     @client_action
     def _ray_client_update_ray_hack_properties(self, path, args,

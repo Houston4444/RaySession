@@ -241,3 +241,5 @@ control RaySession daemons
         client is restored stopped.
     remove_definitely
         remove all client files and directories.
+    remove_keep_files
+        remove client from trash, but do not remove its files.
