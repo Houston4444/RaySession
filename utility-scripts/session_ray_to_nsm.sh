@@ -2,7 +2,7 @@
 
 get_property(){
 # $properties must be set before
-line=$(echo "$properties"|grep ^"$1:")
+line=$(echo "$properties"|grep -m 1 ^"$1:")
 echo "${line#*:}"
 }
 
@@ -15,6 +15,8 @@ if [ -z "$session_path" ];then
 fi
 
 cd "$session_path" || exit 1
+
+ray_control take_snapshot "Just before NSM conversion"
 
 nsm_file_contents=""
 connections_file_old=""
@@ -59,9 +61,12 @@ stop signal
 label
 	$label
 "
-            mv "$client_name.$client_id" "NSM Proxy.$client_id"
-            echo "$proxy_contents" > "NSM Proxy.$client_id/nsm-proxy.config"
-            nsm_file_contents+="NSM Proxy:nsm-proxy:$client_id\n"
+            if mv "$client_name.$client_id" "NSM Proxy.$client_id";then
+                echo "$proxy_contents" > "NSM Proxy.$client_id/nsm-proxy.config"
+                nsm_file_contents+="NSM Proxy:nsm-proxy:$client_id\n"
+            else
+                echo "impossible to move $client_name.$client_id to NSM Proxy.$client_id"
+            fi
             ;;
     esac
     

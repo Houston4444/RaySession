@@ -675,7 +675,13 @@ class SignaledSession(OperatingSession):
 
     @session_operation
     def _ray_session_take_snapshot(self, path, args, src_addr):
-        snapshot_name, with_save = args
+        snapshot_name = ''
+        with_save = 0
+        
+        if len(args) == 2:
+            snapshot_name, with_save = args
+        else:
+            snapshot_name = args[0]
 
         self.steps_order.clear()
 

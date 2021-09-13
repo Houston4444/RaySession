@@ -339,9 +339,9 @@ class OscServerThread(ClientCommunicating):
         self.options = RS.settings.value(
             'daemon/options',
             ray.Option.BOOKMARK_SESSION
-                + ray.Option.SNAPSHOTS
-                + ray.Option.SESSION_SCRIPTS
-                + ray.Option.GUI_STATES,
+            + ray.Option.SNAPSHOTS
+            + ray.Option.SESSION_SCRIPTS
+            + ray.Option.GUI_STATES,
             type=int)
 
         if CommandLineArgs.no_options:
@@ -349,13 +349,13 @@ class OscServerThread(ClientCommunicating):
 
         if shutil.which('wmctrl'):
             self.options |= ray.Option.HAS_WMCTRL
-        elif self.options & ray.Option.HAS_WMCTRL:
-            self.options -= ray.Option.HAS_WMCTRL
+        else:
+            self.options &= ~ray.Option.HAS_WMCTRL
 
         if shutil.which('git'):
             self.options |= ray.Option.HAS_GIT
-        elif self.options & ray.Option.HAS_GIT:
-            self.options -= ray.Option.HAS_GIT
+        else:
+            self.options &= ~ray.Option.HAS_GIT
 
         global instance
         instance = self
@@ -866,9 +866,19 @@ class OscServerThread(ClientCommunicating):
         self.send(src_addr, '/reply', path)
         return False
 
+    @ray_method('/ray/session/take_snapshot', 's')
+    def raySessionTakeSnapshotOnly(self, path, args, types, src_addr):
+        if not self.options & ray.Option.HAS_GIT:
+            self.send(src_addr, '/error', path,
+                      "snapshot impossible because git is not installed")
+            return False
+
     @ray_method('/ray/session/take_snapshot', 'si')
     def raySessionTakeSnapshot(self, path, args, types, src_addr):
-        pass
+        if not self.options & ray.Option.HAS_GIT:
+            self.send(src_addr, '/error', path,
+                      "snapshot impossible because git is not installed")
+            return False
 
     @ray_method('/ray/session/close', '')
     def raySessionClose(self, path, args, types, src_addr):
