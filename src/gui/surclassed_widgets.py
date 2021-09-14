@@ -498,3 +498,7 @@ class StartupDialogPushButtonOpen(StartupDialogPushButtonNew):
             return
 
         StartupDialogPushButtonNew.keyPressEvent(self, event)
+
+class PreviewFrame(QFrame):
+    def __init__(self, parent):
+        QFrame.__init__(self, parent)

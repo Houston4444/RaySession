@@ -219,6 +219,10 @@ class OpenSessionDialog(ChildDialog):
 
         self.ui.widgetSpacer.setVisible(False)
 
+        self.ui.labelSessionName.setText('')
+        self.ui.tabWidget.setEnabled(False)
+        self.ui.tabWidget.tabBar().setExpanding(True)
+        
         self.ui.toolButtonFolder.clicked.connect(self._change_root_folder)
         self.ui.sessionList.currentItemChanged.connect(
             self._current_item_changed)
@@ -381,6 +385,9 @@ class OpenSessionDialog(ChildDialog):
 
     def _current_item_changed(self, item, previous_item):
         self._has_selection = bool(item and item.data(0, Qt.UserRole))
+        self.ui.labelSessionName.setText(
+            os.path.basename(item.data(0, Qt.UserRole)))
+        self.ui.tabWidget.setEnabled(bool(item.data(0, Qt.UserRole)))
         self._prevent_ok()
 
     def _prevent_ok(self):
