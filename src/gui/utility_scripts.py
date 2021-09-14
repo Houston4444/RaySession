@@ -3,13 +3,17 @@ import os
 import shutil
 import sys
 
-from PyQt5.QtWidgets import QApplication, QFileDialog
-from PyQt5.QtCore import QProcess, QProcessEnvironment
+from PyQt5.QtWidgets import (QApplication, QFileDialog, QMessageBox,
+                             QPushButton, QDialogButtonBox)
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QProcess, QProcessEnvironment, Qt
+
 
 import ray
 from gui_tools import CommandLineArgs
-from child_dialogs import ChildDialog
+from child_dialogs import ChildDialog, OpenSessionDialog
 import ui.hydro_rh_nsm
+import ui.ray_to_nsm
 
 _translate = QApplication.translate
 
@@ -62,6 +66,39 @@ class HydrogenRhNsmDialog(ChildDialog):
 
     def rename_for_other_app(self, name:str):
         self.ui.label.setText(self.ui.label.text().replace('Hydrogen', name))
+
+
+class RayToNsmDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui.ray_to_nsm.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+        self.choose_current_session = False
+        #self.choose_session
+        choose_button = self.ui.buttonBox.addButton(
+            _translate('utilities', 'Choose a session'),
+            QDialogButtonBox.AcceptRole)
+        choose_button.setIcon(QIcon.fromTheme('folder-open'))
+
+        this_session_button = self.ui.buttonBox.addButton(
+            _translate('utilities', 'Convert the current session'),
+            QDialogButtonBox.AcceptRole)
+        
+        if not self.session.path:
+            this_session_button.setVisible(False)
+            
+        this_session_button.clicked.connect(
+            self._set_on_choose_current_session)
+    
+    def _set_on_choose_current_session(self):
+        self.choose_current_session = True
+    
+    def get_check_arguments(self)->list:
+        if self.ui.checkBoxJackPatch.isChecked():
+            return ['--replace-jackpatch']
+        
+        return ['']
 
 
 class UtilityScriptLauncher:
@@ -143,6 +180,15 @@ class UtilityScriptLauncher:
             # on the same machine, or if current session is a subsession
             return
 
+        if self._process.state():
+            QMessageBox.critical(
+                self.main_win,
+                _translate('utilities', 'Other script running'),
+                _translate('utilities',
+                           "An utility script is already running,\n"
+                           "please close its terminal and start again !"))
+            return
+
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert(
             'RAY_CONTROL_PORT', str(self.daemon_manager.get_port()))
@@ -212,4 +258,30 @@ class UtilityScriptLauncher:
             return
 
         args = dialog.get_check_arguments()
+        self._start_process(script_name, terminal_title, *args)
+        
+    def convert_to_nsm_file_format(self):
+        script_name = 'session_ray_to_nsm.sh'
+        terminal_title = _translate('utilities', 'Session to NSM file format')
+        
+        dialog = RayToNsmDialog(self.main_win)
+
+        dialog.exec()
+        if not dialog.result():
+            return
+
+        args = dialog.get_check_arguments()
+        
+        if not dialog.choose_current_session:
+            open_dialog = OpenSessionDialog(self.main_win)
+            open_dialog.setWindowTitle(
+                _translate('utilities', 'Choose a session to convert to NSM'))
+            open_dialog.exec()
+            if not open_dialog.result():
+                return
+
+            session_path = open_dialog.get_selected_session()
+            print('shoulbi', session_path)
+            args.append(session_path)
+
         self._start_process(script_name, terminal_title, *args)

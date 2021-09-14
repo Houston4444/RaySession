@@ -44,6 +44,10 @@ class PrefixMode:
     SESSION_NAME = 2
 
 
+class JackNaming:
+    SHORT = 0
+    LONG = 1
+
 class ClientStatus:
     STOPPED = 0
     LAUNCH = 1

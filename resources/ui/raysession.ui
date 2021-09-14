@@ -850,7 +850,7 @@ QToolButton {border: none}</string>
     </property>
     <widget class="QMenu" name="menuRecentSessions">
      <property name="title">
-      <string>Recent sessions</string>
+      <string>&amp;Recent sessions</string>
      </property>
      <property name="icon">
       <iconset theme="document-open-recent">
@@ -859,7 +859,7 @@ QToolButton {border: none}</string>
     </widget>
     <widget class="QMenu" name="menuUtilities">
      <property name="title">
-      <string>Utilities</string>
+      <string>&amp;Utilities</string>
      </property>
      <property name="icon">
       <iconset theme="utilities-terminal">
@@ -868,6 +868,7 @@ QToolButton {border: none}</string>
      <addaction name="actionConvertArdourSession"/>
      <addaction name="actionConvertHydrogenRhNsm"/>
      <addaction name="actionConvertJackMixerRhNsm"/>
+     <addaction name="actionConvertToNsmFileFormat"/>
     </widget>
     <addaction name="actionNewSession"/>
     <addaction name="actionOpenSession"/>
@@ -1433,7 +1434,7 @@ QToolButton {border: none}</string>
      <normaloff>:/scalable/raysession.svg</normaloff>:/scalable/raysession.svg</iconset>
    </property>
    <property name="text">
-    <string>System tray icon options</string>
+    <string>System tray &amp;icon options</string>
    </property>
   </action>
   <action name="actionezf">
@@ -1447,7 +1448,7 @@ QToolButton {border: none}</string>
      <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Convert an Ardour session to a Ray session</string>
+    <string>&amp;Convert an Ardour session to a Ray session</string>
    </property>
   </action>
   <action name="actionConvertHydrogenRhNsm">
@@ -1456,15 +1457,24 @@ QToolButton {border: none}</string>
      <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Convert all Hydrogen Ray-Hack clients to NSM</string>
+    <string>Convert all &amp;Hydrogen Ray-Hack clients to NSM</string>
    </property>
   </action>
   <action name="actionConvertJackMixerRhNsm">
    <property name="icon">
-    <iconset theme="jack_mixer"/>
+    <iconset theme="jack_mixer">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Convert all Jack Mixer Ray-Hack clients to NSM</string>
+    <string>Convert all &amp;Jack Mixer Ray-Hack clients to NSM</string>
+   </property>
+  </action>
+  <action name="actionConvertToNsmFileFormat">
+   <property name="icon">
+    <iconset theme="nsm-legacy-gui"/>
+   </property>
+   <property name="text">
+    <string>Convert session to NSM file format</string>
    </property>
   </action>
  </widget>

@@ -71,6 +71,7 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/quit_app.py \
 	    src/gui/ui/ray_hack_properties.py \
 	    src/gui/ui/ray_net_properties.py \
+	    src/gui/ui/ray_to_nsm.py \
 	    src/gui/ui/raysession.py \
 	    src/gui/ui/remove_template.py \
 	    src/gui/ui/save_template_session.py \

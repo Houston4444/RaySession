@@ -7,8 +7,4 @@ case $LANG in
         ;;
 esac
 
-if ! "$@";then
-   read -n 1 -s -r -p "$message"
-fi
-
-read -n 1 -s -r -p "$message"
+"$@" && read -n 1 -s -r -p "$message"

@@ -75,7 +75,7 @@ class Client(ServerSender, ray.ClientData):
     _desktop_icon = ""
     _desktop_description = ""
 
-    long_jack_naming = False
+    jack_naming = ray.JackNaming.SHORT
 
     def __init__(self, parent_session):
         ServerSender.__init__(self)
@@ -783,7 +783,7 @@ class Client(ServerSender, ray.ClientData):
         # if client seems to have been made by NSM itself
         # else, jack connections could be lose
         # at NSM session import
-        if self.long_jack_naming:
+        if self.jack_naming == ray.JackNaming.LONG:
             return "%s.%s" % (self.name, self.client_id)
 
         jack_client_name = self.name
@@ -815,7 +815,9 @@ class Client(ServerSender, ray.ClientData):
         self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         self.template_origin = ctx.attribute('template_origin')
-        self.long_jack_naming = bool(ctx.attribute('from_nsm_file') == '1')
+        
+        if ctx.attribute('from_nsm_file') == '1':
+            self.jack_naming = ray.JackNaming.LONG
 
         # ensure client has a name
         if not self.name:
@@ -953,7 +955,7 @@ class Client(ServerSender, ray.ClientData):
             ctx.setAttribute('gui_visible',
                              str(int(not self.start_gui_hidden)))
 
-        if self.long_jack_naming:
+        if self.jack_naming == ray.JackNaming.LONG:
             ctx.setAttribute('from_nsm_file', 1)
 
         if self.template_origin:
@@ -1546,7 +1548,7 @@ class Client(ServerSender, ray.ClientData):
         self.ignored_extensions = new_client.ignored_extensions
         self.custom_data = new_client.custom_data
         self.description = new_client.description
-        self.long_jack_naming = new_client.long_jack_naming
+        self.jack_naming = new_client.jack_naming
 
         self._desktop_label = new_client._desktop_label
         self._desktop_description = new_client._desktop_description
@@ -1634,11 +1636,12 @@ class Client(ServerSender, ray.ClientData):
                     self.prefix_mode = int(value)
             elif prop == 'custom_prefix':
                 self.custom_prefix = value
-            elif prop == 'long_jack_naming':
-                self.long_jack_naming = bool(value.lower() == 'true')
+            elif prop == 'jack_naming':
+                if value.isdigit() and 0 <= int(value) <= 1:
+                    self.jack_naming = int(value)
             elif prop == 'jack_name':
                 # do not change jack name
-                # only allow to change long_jack_naming
+                # only allow to change jack_naming
                 continue
             elif prop == 'label':
                 self.label = value
@@ -1701,7 +1704,7 @@ arguments:%s
 name:%s
 prefix_mode:%i
 custom_prefix:%s
-long_jack_naming:%s
+jack_naming:%i
 jack_name:%s
 desktop_file:%s
 label:%s
@@ -1714,7 +1717,7 @@ ignored_extensions:%s""" % (self.client_id,
                             self.name,
                             self.prefix_mode,
                             self.custom_prefix,
-                            str(self.long_jack_naming).lower(),
+                            self.jack_naming,
                             self.get_jack_client_name(),
                             self.desktop_file,
                             self.label,

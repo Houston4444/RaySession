@@ -1855,7 +1855,7 @@ for better organization.""")
                     client.client_id = elements[2]
                     client.prefix_mode = ray.PrefixMode.CLIENT_NAME
                     client.auto_start = True
-                    client.long_jack_naming = True
+                    client.jack_naming = ray.JackNaming.LONG
 
                     self.future_clients.append(client)
 

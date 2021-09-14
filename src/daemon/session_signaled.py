@@ -675,6 +675,11 @@ class SignaledSession(OperatingSession):
 
     @session_operation
     def _ray_session_take_snapshot(self, path, args, src_addr):
+        if not self.path:
+            self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
+                      'No session is loaded, impossible to take snapshot')
+            return
+        
         snapshot_name = ''
         with_save = 0
         
@@ -803,14 +808,14 @@ class SignaledSession(OperatingSession):
             return
 
         self.steps_order = [self.save,
-                              self.close_no_save_clients,
-                              self.snapshot,
-                              (self.duplicate, new_session_full_name),
-                              (self.preload, new_session_full_name),
-                              self.close,
-                              self.take_place,
-                              self.load,
-                              self.duplicate_done]
+                            self.close_no_save_clients,
+                            self.snapshot,
+                            (self.duplicate, new_session_full_name),
+                            (self.preload, new_session_full_name),
+                            self.close,
+                            self.take_place,
+                            self.load,
+                            self.duplicate_done]
 
     def _ray_session_duplicate_only(self, path, args, src_addr):
         session_to_load, new_session, sess_root = args
@@ -837,9 +842,9 @@ class SignaledSession(OperatingSession):
             self.remember_osc_args(path, args, src_addr)
 
             self.steps_order = [self.save,
-                                  self.snapshot,
-                                  (self.duplicate, new_session),
-                                  self.duplicate_only_done]
+                                self.snapshot,
+                                (self.duplicate, new_session),
+                                self.duplicate_only_done]
 
             self.next_function()
 

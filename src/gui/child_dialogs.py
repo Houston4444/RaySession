@@ -58,9 +58,7 @@ class ChildDialog(QDialog):
         self._root_folder_message_box = QMessageBox(
             QMessageBox.Critical,
             _translate('root_folder_dialogs', 'unwritable dir'),
-            '',
-            QMessageBox.NoButton,
-            self)
+            '', QMessageBox.NoButton, self)
 
         self.server_copying = parent.server_copying
 
