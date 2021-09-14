@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
 
         self.server_copying = False
 
-        self._keep_focus = RS.settings.value('keepfocus', True, type=bool)
+        self._keep_focus = RS.settings.value('keepfocus', False, type=bool)
         self.ui.actionKeepFocus.setChecked(self._keep_focus)
 
         # do not enable keep focus option under Wayland
@@ -84,7 +84,7 @@ class MainWindow(QMainWindow):
 
         # manage geometry depending of use of embedded jack patchbay
         show_patchbay = RS.settings.value(
-            'MainWindow/show_patchbay', False, type=bool)
+            'MainWindow/show_patchbay', True, type=bool)
         self.ui.actionShowJackPatchbay.setChecked(show_patchbay)
         self.waiting_for_patchbay = show_patchbay
 
