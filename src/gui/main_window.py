@@ -1,5 +1,6 @@
 import time
 import os
+import subprocess
 
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView,
@@ -866,6 +867,27 @@ class MainWindow(QMainWindow):
         self.to_daemon('/ray/server/abort_snapshot')
 
     def _show_daemon_url_window(self, err_code, ex_url=''):
+        if not CommandLineArgs.under_nsm:
+            server = GuiServerThread.instance()
+            if server and ray.are_on_same_machine(server.url, ex_url):
+                # here we are in the case daemon and GUI have not the same VERSION
+                # If a session is running, inform user
+                # else, just stop the daemon and quit
+                
+                session_path = subprocess.run(
+                    ['ray_control', 'get_session_path'], capture_output=True)
+                if session_path.stdout:
+                    dialog = child_dialogs.WrongVersionLocalDialog(self)
+                    dialog.exec()
+                    if dialog.result():
+                        subprocess.run(['ray_control', 'quit'])
+                        self._quit_app_now()
+                    
+                else:
+                    subprocess.run(['ray_control', 'quit'])
+                    self._quit_app_now()
+                return
+        
         dialog = child_dialogs.DaemonUrlWindow(self, err_code, ex_url)
         dialog.exec()
         if not dialog.result():

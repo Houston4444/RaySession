@@ -18,10 +18,6 @@ import ui.ray_to_nsm
 _translate = QApplication.translate
 
 
-
-UTIL_SCRIPT_NONE = 0
-UTIL_SCRIPT_CONVERT_ARDOUR_TO_SESSION = 1
-
 class HydrogenRhNsmDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)

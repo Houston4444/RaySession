@@ -21,7 +21,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="labelExecutable">
+    <widget class="QLabel" name="labelMainText">
      <property name="text">
       <string>&lt;p&gt;Session &lt;bold&gt;%s&lt;/bold&gt; is running.&lt;/p&gt;&lt;p&gt;RaySession will be closed.&lt;/p&gt;&lt;p&gt;Do you want to save session ?</string>
      </property>
@@ -60,7 +60,8 @@
         <string>Keep Daemon Running</string>
        </property>
        <property name="icon">
-        <iconset theme="daemon"/>
+        <iconset theme="daemon">
+         <normaloff>.</normaloff>.</iconset>
        </property>
       </widget>
      </item>

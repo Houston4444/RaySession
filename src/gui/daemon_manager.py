@@ -90,7 +90,7 @@ class DaemonManager(QObject):
             options, session_root, is_net_free):
         self._announce_timer.stop()
 
-        if version.split('.')[:1] != ray.VERSION.split('.')[:1]:
+        if version.split('.')[:2] != ray.VERSION.split('.')[:2]:
             # works only if the two firsts digits are the same (ex: 0.6)
             self.signaler.daemon_url_request.emit(
                 ErrDaemon.WRONG_VERSION, self.url)
