@@ -478,6 +478,9 @@ class SignaledSession(OperatingSession):
                     if already_sent:
                         continue
 
+                    # prevent search in sub directories
+                    dirs.clear()
+
                     basefolder = root.replace(self.root + '/', '', 1)
                     session_list.append(basefolder)
                     n += len(basefolder)
