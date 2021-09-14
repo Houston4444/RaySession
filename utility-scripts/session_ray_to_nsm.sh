@@ -20,7 +20,6 @@ bash_dir=`realpath "$(dirname "${BASH_SOURCE[0]}")"`
 # get the session to convert
 # if no argument, the current session is choose
 session="$1"
-echo paozdkddo $1
 if [ -z "$session" ];then
     session=$(ray_control get_session_path)
     if [ -z "$session" ];then

@@ -280,8 +280,6 @@ class UtilityScriptLauncher:
             if not open_dialog.result():
                 return
 
-            session_path = open_dialog.get_selected_session()
-            print('shoulbi', session_path)
-            args.append(session_path)
+            args.append(open_dialog.get_selected_session())
 
         self._start_process(script_name, terminal_title, *args)
