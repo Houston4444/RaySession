@@ -643,6 +643,11 @@ class SignaledSession(OperatingSession):
         self._ray_session_save_as_template(
             path, [template_name, net], src_addr)
 
+    def _ray_server_get_session_preview(self, path, args, src_addr):
+        print('erjoogjgojgjojggjgj', path, args)
+        tmp_session = DummySession(self.root)
+        tmp_session.ray_server_get_session_preview(path, args, src_addr)
+
     def _ray_server_set_option(self, path, args, src_addr):
         option = args[0]
 
@@ -1729,4 +1734,12 @@ class DummySession(OperatingSession):
                             (self.rename, new_session_name),
                             self.save,
                             (self.rename_done, new_session_name)]
+        self.next_function()
+    
+    def ray_server_get_session_preview(self, path, args, src_addr):
+        session_name = args[0]
+        self.steps_order = [(self.preload, session_name),
+                            self.take_place,
+                            self.load,
+                            (self.send_preview, src_addr)]
         self.next_function()

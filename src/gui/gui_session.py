@@ -139,6 +139,9 @@ class SignaledSession(Session):
         self.canvas_groups = []
         self.canvas_ports = []
         self.next_canvas_port_id = -1
+        
+        self.preview_notes = ''
+        self.preview_client_list = []
 
     def _osc_receive(self, path, args):
         func_path = path
@@ -405,6 +408,19 @@ class SignaledSession(Session):
         self.favorite_list.remove(favorite)
         self.signaler.favorite_removed.emit(template_name, bool(int_factory))
         self.main_win.update_favorites_menu()
+
+    def _ray_gui_preview_notes(self, path, args):
+        self.preview_notes = args[0]
+        self.signaler.session_preview_update.emit()
+    
+    def _ray_gui_preview_client_update(self, path, args):
+        client = ray.ClientData.new_from(*args)
+        for pv_client in self.preview_client_list:
+            if pv_client.client_id == client.client_id:
+                pv_client.update(*args)
+                break
+        else:
+            self.preview_client_list.append(client)
 
     def _ray_gui_script_info(self, path, args):
         text = args[0]

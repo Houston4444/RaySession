@@ -2363,3 +2363,10 @@ for better organization.""")
 
     def clear_clients_substep3(self, src_addr, src_path):
         self.answer(src_addr, src_path, 'Clients cleared')
+        
+    def send_preview(self, src_addr):
+        self.send_even_dummy(src_addr, '/ray/gui/preview/notes', self.notes)
+        for client in self.clients:
+            self.send_even_dummy(
+                src_addr, '/ray/gui/preview/client/update',
+                *client.spread())

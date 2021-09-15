@@ -236,6 +236,8 @@ class OpenSessionDialog(ChildDialog):
 
         self.signaler.add_sessions_to_list.connect(self._add_sessions)
         self.signaler.root_changed.connect(self._root_changed)
+        self.signaler.session_preview_update.connect(
+            self._session_preview_update)
 
         self.to_daemon('/ray/server/list_sessions', 0)
 
@@ -385,9 +387,15 @@ class OpenSessionDialog(ChildDialog):
 
     def _current_item_changed(self, item, previous_item):
         self._has_selection = bool(item and item.data(0, Qt.UserRole))
-        self.ui.labelSessionName.setText(
-            os.path.basename(item.data(0, Qt.UserRole)))
-        self.ui.tabWidget.setEnabled(bool(item.data(0, Qt.UserRole)))
+
+        if item is not None:
+            session_full_name = item.data(0, Qt.UserRole)
+            self.ui.labelSessionName.setText(
+                os.path.basename(session_full_name))
+            self.ui.tabWidget.setEnabled(bool(session_full_name))
+            if session_full_name:
+                self.to_daemon('/ray/server/get_session_preview', session_full_name)
+
         self._prevent_ok()
 
     def _prevent_ok(self):
@@ -410,6 +418,10 @@ class OpenSessionDialog(ChildDialog):
         if (self._server_will_accept and self._has_selection
                 and self.ui.sessionList.currentItem().data(0, Qt.UserRole)):
             self.accept()
+
+    def _session_preview_update(self):
+        self.ui.plainTextEditNotes.setPlainText(self.session.preview_notes)
+        self.ui.tabWidget.setTabEnabled(1, bool(self.session.preview_notes))
 
     def get_selected_session(self)->str:
         if self.ui.sessionList.currentItem():

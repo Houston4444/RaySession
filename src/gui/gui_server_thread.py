@@ -94,6 +94,8 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/trash/clear', ''),
             ('/ray/gui/favorites/added', 'ssi'),
             ('/ray/gui/favorites/removed', 'si'),
+            ('/ray/gui/preview/notes', 's'),
+            ('/ray/gui/preview/client/update', ray.ClientData.sisi()),
             ('/ray/gui/script_info', 's'),
             ('/ray/gui/hide_script_info', ''),
             ('/ray/gui/script_user_action', 's'),

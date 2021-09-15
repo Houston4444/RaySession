@@ -25,7 +25,7 @@
      <item>
       <widget class="PreviewFrame" name="previewFrame">
        <property name="styleSheet">
-        <string notr="true">PreviewFrame{background:#30777777;border-radius:6px}</string>
+        <string notr="true">PreviewFrame{background-color: rgba(127, 127, 127, 35);border-radius:4px}</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
@@ -47,7 +47,7 @@
         <item>
          <widget class="QTabWidget" name="tabWidget">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab">
            <attribute name="title">
@@ -65,7 +65,11 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
-             <widget class="QPlainTextEdit" name="plainTextEditNotes"/>
+             <widget class="QPlainTextEdit" name="plainTextEditNotes">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>

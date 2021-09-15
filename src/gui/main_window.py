@@ -12,6 +12,7 @@ from gui_tools import (
     RS, RayIcon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
 import add_application_dialog
+import open_session_dialog
 import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GuiServerThread
@@ -632,7 +633,7 @@ class MainWindow(QMainWindow):
         # before open dialog
         self.show()
 
-        dialog = child_dialogs.OpenSessionDialog(self)
+        dialog = open_session_dialog.OpenSessionDialog(self)
         dialog.exec()
         if not dialog.result():
             return

@@ -8,10 +8,11 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QMessageBox,
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QProcess, QProcessEnvironment, Qt
 
-
 import ray
 from gui_tools import CommandLineArgs
-from child_dialogs import ChildDialog, OpenSessionDialog
+from open_session_dialog import OpenSessionDialog
+from child_dialogs import ChildDialog
+
 import ui.hydro_rh_nsm
 import ui.ray_to_nsm
 

@@ -29,6 +29,8 @@ class Signaler(QObject):
 
     root_changed = pyqtSignal(str)
 
+    session_preview_update = pyqtSignal()
+
     client_added_reply = pyqtSignal(str)
 
     client_properties_state_changed = pyqtSignal(str, bool)
