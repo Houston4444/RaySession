@@ -107,7 +107,7 @@ class ServerSender(QObject):
             self.send(src_addr, '/error', src_path, err, message)
 
     def has_server_option(self, option: int)->bool:
-        server = OscServerThread.getInstance()
+        server = self.get_server()
         if not server:
             return False
 

@@ -429,13 +429,11 @@ class SignaledSession(Session):
 
     def _ray_gui_preview_client_is_started(self, path, args):
         client_id, is_started = args
-        print('sokdfejd', client_id, is_started)
-        print(self.preview_started_clients)
+
         for pv_client in self.preview_client_list:
             if pv_client.client_id == client_id:
                 if is_started:
                     self.preview_started_clients.add(client_id)
-                    print('vfjif', client_id in self.preview_started_clients)
                 break
 
     def _ray_gui_script_info(self, path, args):

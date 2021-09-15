@@ -60,6 +60,7 @@ class SessionItem(QTreeWidgetItem):
 
         return item
 
+
 class SessionFolder:
     name = ""
     has_session = True
@@ -88,6 +89,7 @@ class SessionFolder:
 
         return item
 
+
 class OpenSessionDialog(ChildDialog):
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
@@ -100,8 +102,6 @@ class OpenSessionDialog(ChildDialog):
         self._timer_progress.timeout.connect(self._timer_progress_timeout)
         self._timer_progress.start()
         self._progress_inverted = False
-
-        self.ui.widgetSpacer.setVisible(False)
 
         self.ui.labelSessionName.setText('')
         self.ui.tabWidget.setEnabled(False)
@@ -180,7 +180,6 @@ class OpenSessionDialog(ChildDialog):
             self._timer_progress.stop()
             height = self.ui.progressBar.size().height()
             self.ui.progressBar.setVisible(False)
-            self.ui.widgetSpacer.setVisible(True)
 
             # Try to select last used session
             root_item = self.ui.sessionList.invisibleRootItem()

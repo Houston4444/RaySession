@@ -124,8 +124,7 @@ class Session(ServerSender):
             multi_daemon_file.update()
 
         if self.path:
-            if (self.has_server()
-                    and self.has_server_option(ray.Option.BOOKMARK_SESSION)):
+            if (self.has_server_option(ray.Option.BOOKMARK_SESSION)):
                 self.bookmarker.set_daemon_port(self.get_server_port())
                 self.bookmarker.make_all(self.path)
 
@@ -755,7 +754,7 @@ class OperatingSession(Session):
     def next_function(self, from_run_step=False, run_step_args=[]):
         if self.run_step_addr and not from_run_step:
             self.answer(self.run_step_addr, '/ray/session/run_step',
-                         'step done')
+                        'step done')
             self.run_step_addr = None
             return
 
@@ -787,7 +786,8 @@ class OperatingSession(Session):
                         break
 
                     if self.step_scripter.start(step_string, arguments,
-                                    self.osc_src_addr, self.osc_path):
+                                                self.osc_src_addr,
+                                                self.osc_path):
                         self.set_server_status(ray.ServerStatus.SCRIPT)
                         return
                     break
@@ -1077,8 +1077,7 @@ class OperatingSession(Session):
             xml_rmcls.appendChild(cl)
 
         # save desktop memory of windows if needed
-        if (self.has_server()
-                and self.has_server_option(ray.Option.DESKTOPS_MEMORY)):
+        if self.has_server_option(ray.Option.DESKTOPS_MEMORY):
             self.desktops_memory.save()
 
         for win in self.desktops_memory.saved_windows:
@@ -1226,12 +1225,13 @@ class OperatingSession(Session):
 
         if self.expected_clients:
             self.send_gui_message(
-              _translate('GUIMSG',
-                'waiting for no saveable clients to be closed gracefully...'))
+                _translate(
+                    'GUIMSG',
+                    'waiting for no saveable clients to be closed gracefully...'))
 
         duration = int(1000 * math.sqrt(len(self.expected_clients)))
         self._wait_and_go_to(duration, self.close_no_save_clients_substep1,
-                         ray.WaitFor.QUIT)
+                             ray.WaitFor.QUIT)
 
     def close_no_save_clients_substep1(self):
         self._clean_expected()
@@ -1834,9 +1834,6 @@ for better organization.""")
                 elif tag_name == "Windows":
                     if self.has_server_option(ray.Option.DESKTOPS_MEMORY):
                         self.desktops_memory.read_xml(node.toElement())
-
-                #elif tag_name == "Canvas":
-                    #self.canvas_saver.load_session_canvas(node.toElement())
 
             ray_file.close()
 
