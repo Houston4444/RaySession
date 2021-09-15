@@ -12,8 +12,10 @@ from server_sender import ServerSender
 JSON_PATH = 'ray_canvas.json'
 
 class CanvasSaver(ServerSender):
-    def __init__(self):
+    def __init__(self, session):
         ServerSender.__init__(self)
+        self.session = session
+
         self.group_positions_session = []
         self.group_positions_config = []
         self.portgroups = []
@@ -57,10 +59,11 @@ class CanvasSaver(ServerSender):
         return self.group_positions_session + group_positions_config_exclu
 
     def send_session_group_positions(self):
+        print('seennd session gorup positionns', self.is_dummy)
         server = self.get_server()
         if not server:
             return
-
+        print('onyvaaoao')
         local_guis = []
         distant_guis = []
         for gui_addr in server.gui_list:

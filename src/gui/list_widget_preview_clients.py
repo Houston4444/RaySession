@@ -9,13 +9,13 @@ from gui_tools import (client_status_string, _translate, is_dark_theme,
 import child_dialogs
 import snapshots_dialog
 
-import ui.client_slot
+import ui.preview_client_slot
 
 
 class ClientSlot(QFrame):
     def __init__(self, list_widget, list_widget_item, client):
         QFrame.__init__(self)
-        self.ui = ui.client_slot.Ui_ClientSlotWidget()
+        self.ui = ui.preview_client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
 
         self.client = client
@@ -26,14 +26,6 @@ class ClientSlot(QFrame):
         self._icon_on = QIcon()
         self._icon_off = QIcon()
 
-        #self.ui.widgetRunningTools.setVisible(False)
-        self.ui.toolButtonGUI.setVisible(False)
-        self.ui.toolButtonHack.setVisible(False)
-        self.ui.startButton.setVisible(False)
-        self.ui.stopButton.setVisible(False)
-        self.ui.lineEditClientStatus.setVisible(False)
-        self.ui.saveButton.setVisible(False)
-        self.ui.closeButton.setVisible(False)
         #self.ui.actionProperties.triggered.connect(
             #self.client.show_properties_dialog)
 
@@ -53,43 +45,14 @@ class ClientSlot(QFrame):
         if server:
             server.to_daemon(*args)
 
-    def _order_hack_visibility(self, state):
-        if self.client.protocol != ray.Protocol.RAY_HACK:
-            return
-
-        if state:
-            self.client.show_properties_dialog(second_tab=True)
-        else:
-            self.client.properties_dialog.hide()
-
     def _set_very_short(self, yesno: bool):
         self._very_short = yesno
 
-        #if yesno:
-            #if not (self.ui.startButton.isEnabled()
-                    #or self.ui.stopButton.isEnabled()):
-                #self.ui.startButton.setVisible(True)
-                #self.ui.stopButton.setVisible(False)
-            #else:
-                #self.ui.startButton.setVisible(
-                    #self.ui.startButton.isEnabled())
-                #self.ui.stopButton.setVisible(self.ui.stopButton.isEnabled())
-            #self.ui.toolButtonHack.setVisible(False)
-        #else:
-            #self.ui.startButton.setVisible(True)
-            #self.ui.stopButton.setVisible(True)
-            #self.ui.toolButtonHack.setVisible(
-                #self.client.protocol == ray.Protocol.RAY_HACK)
-
     def _set_fat(self, yesno: bool, very_fat=False):
         if yesno:
-            self.ui.mainLayout.setDirection(QBoxLayout.TopToBottom)
-            self.ui.spacerLeftOfDown.setVisible(True)
             self._list_widget_item.setSizeHint(
                 QSize(100, 60 if very_fat else 50))
         else:
-            self.ui.spacerLeftOfDown.setVisible(False)
-            self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
             self._list_widget_item.setSizeHint(QSize(100, 30))
 
     def _gray_icon(self, gray: bool):
@@ -97,6 +60,11 @@ class ClientSlot(QFrame):
             self.ui.iconButton.setIcon(self._icon_off)
         else:
             self.ui.iconButton.setIcon(self._icon_on)
+
+    def set_launched(self, launched: bool):
+        print('youbbr', self.client.client_id)
+        self._gray_icon(not launched)
+        self.ui.ClientName.setEnabled(launched)
 
     def get_client_id(self):
         return self.client.client_id
@@ -115,11 +83,6 @@ class ClientSlot(QFrame):
             layout_width -= scroll_bar.width()
 
         max_label_width = layout_width - 231
-
-        if self.ui.toolButtonGUI.isVisible():
-            max_label_width -= self.ui.toolButtonGUI.width()
-        if self.ui.toolButtonHack.isVisible():
-            max_label_width -= self.ui.toolButtonHack.width()
 
         if main_size <= max_label_width:
             self.ui.ClientName.setText(self.client.prettier_name())
@@ -184,15 +147,8 @@ class ClientSlot(QFrame):
         # set icon
         self._icon_on = get_app_icon(self.client.icon, self)
         self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Disabled))
-        print('rojicon', self.client.client_id, self._icon_on, self._icon_on.isNull())
         self._gray_icon(False)
-        #self._gray_icon(
-            #bool(self.client.status in (
-                    #ray.ClientStatus.STOPPED,
-                    #ray.ClientStatus.PRECOPY)))
 
-    def set_hack_button_state(self, state: bool):
-        self.ui.toolButtonHack.setChecked(state)
 
     def contextMenuEvent(self, event):
         act_selected = self._menu.exec(self.mapToGlobal(event.pos()))

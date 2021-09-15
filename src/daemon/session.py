@@ -63,7 +63,7 @@ class Session(ServerSender):
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
-        self.canvas_saver = CanvasSaver()
+        self.canvas_saver = CanvasSaver(self)
 
     #############
     def osc_reply(self, *args):
@@ -74,6 +74,8 @@ class Session(ServerSender):
 
     def set_renameable(self, renameable:bool):
         server = self.get_server()
+        if server is None:
+            return
 
         if not renameable:
             if self.is_renameable:
@@ -87,15 +89,14 @@ class Session(ServerSender):
                 return
 
         self.is_renameable = True
-        if server:
-            server.send_renameable(True)
+        server.send_renameable(True)
 
     def message(self, string, even_dummy=False):
         if self.is_dummy and not even_dummy:
             return
 
         server = self.get_server()
-        if server:
+        if server is not None:
             Terminal.message(string, server.port)
         else:
             Terminal.message(string)
@@ -2365,12 +2366,17 @@ for better organization.""")
         self.answer(src_addr, src_path, 'Clients cleared')
         
     def send_preview(self, src_addr):
+        self.send_even_dummy(src_addr, '/ray/gui/preview/clear')
         self.send_even_dummy(src_addr, '/ray/gui/preview/notes', self.notes)
 
         for client in self.clients:
             self.send_even_dummy(
                 src_addr, '/ray/gui/preview/client/update',
                 *client.spread())
+            
+            self.send_even_dummy(
+                src_addr, '/ray/gui/preview/client/is_started',
+                client.client_id, int(client.auto_start))
 
         self.send_even_dummy(
             src_addr, '/reply', '/ray/server/get_session_preview')

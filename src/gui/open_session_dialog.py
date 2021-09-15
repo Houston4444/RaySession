@@ -271,7 +271,9 @@ class OpenSessionDialog(ChildDialog):
 
     def _current_item_changed(self, item, previous_item):
         self._has_selection = bool(item and item.data(0, Qt.UserRole))
-
+        
+        self.ui.listWidgetPreview.clear()
+        
         if item is not None:
             session_full_name = item.data(0, Qt.UserRole)
             self.ui.labelSessionName.setText(
@@ -307,9 +309,10 @@ class OpenSessionDialog(ChildDialog):
         self.ui.plainTextEditNotes.setPlainText(self.session.preview_notes)
         self.ui.tabWidget.setTabEnabled(1, bool(self.session.preview_notes))
 
-        for client in self.session.preview_client_list:
-            self.ui.listWidgetPreview.create_client_widget(client)
-        self.ui.listWidgetPreview.resizeEvent(None)
+        for pv_client in self.session.preview_client_list:
+            client_slot = self.ui.listWidgetPreview.create_client_widget(pv_client)
+            client_slot.set_launched(
+                pv_client.client_id in self.session.preview_started_clients)
 
     def get_selected_session(self)->str:
         if self.ui.sessionList.currentItem():

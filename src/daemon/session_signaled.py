@@ -204,7 +204,7 @@ class SignaledSession(OperatingSession):
             client.set_reply(ray.Err.OK, message)
 
             server = self.get_server()
-            if (server
+            if (server is not None
                     and server.server_status == ray.ServerStatus.READY
                     and server.options & ray.Option.DESKTOPS_MEMORY):
                 self.desktops_memory.replace()
@@ -298,7 +298,7 @@ class SignaledSession(OperatingSession):
         # else, server replies only templates names
         src_addr_is_gui = False
         server = self.get_server()
-        if server:
+        if server is not None:
             src_addr_is_gui = server.is_gui_address(src_addr)
 
         template_names = set()
@@ -1699,6 +1699,7 @@ class DummySession(OperatingSession):
     def __init__(self, root):
         OperatingSession.__init__(self, root)
         self.is_dummy = True
+        self.canvas_saver.is_dummy = True
 
     def dummy_load_and_template(self, session_full_name, template_name):
         self.steps_order = [(self.preload, session_full_name),

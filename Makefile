@@ -68,6 +68,7 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/nsm_open_info.py \
 	    src/gui/ui/open_session.py \
 	    src/gui/ui/patchbay_tools.py \
+	    src/gui/ui/preview_client_slot.py \
 	    src/gui/ui/quit_app.py \
 	    src/gui/ui/ray_hack_properties.py \
 	    src/gui/ui/ray_net_properties.py \

@@ -84,6 +84,7 @@ class StepScripter(Scripter):
     def __init__(self, session):
         Scripter.__init__(self)
         self.session = session
+        self.is_dummy = self.session.is_dummy
         self._step_str = ''
         self._stepper_has_call = False
 

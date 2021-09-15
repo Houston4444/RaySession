@@ -142,6 +142,7 @@ class SignaledSession(Session):
         
         self.preview_notes = ''
         self.preview_client_list = []
+        self.preview_started_clients = set()
 
     def _osc_receive(self, path, args):
         func_path = path
@@ -409,6 +410,11 @@ class SignaledSession(Session):
         self.signaler.favorite_removed.emit(template_name, bool(int_factory))
         self.main_win.update_favorites_menu()
 
+    def _ray_gui_preview_clear(self, path, args):
+        self.preview_notes = ''
+        self.preview_client_list.clear()
+        self.preview_started_clients.clear()
+
     def _ray_gui_preview_notes(self, path, args):
         self.preview_notes = args[0]
     
@@ -420,6 +426,17 @@ class SignaledSession(Session):
                 break
         else:
             self.preview_client_list.append(client)
+
+    def _ray_gui_preview_client_is_started(self, path, args):
+        client_id, is_started = args
+        print('sokdfejd', client_id, is_started)
+        print(self.preview_started_clients)
+        for pv_client in self.preview_client_list:
+            if pv_client.client_id == client_id:
+                if is_started:
+                    self.preview_started_clients.add(client_id)
+                    print('vfjif', client_id in self.preview_started_clients)
+                break
 
     def _ray_gui_script_info(self, path, args):
         text = args[0]
