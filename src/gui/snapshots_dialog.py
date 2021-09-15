@@ -39,6 +39,39 @@ class Snapshot:
 
         return self.date_time < other.date_time
 
+    @staticmethod
+    def new_from_snaptext(snaptext:str):
+        time_str_full, line_change, rw_time_str_full_sess = \
+            snaptext.partition('\n')
+        rw_time_str_full, line_change, session_name = \
+            rw_time_str_full_sess.partition('\n')
+
+        time_str, two_points, label = time_str_full.partition(':')
+        rw_time_str, two_points, rw_label = rw_time_str_full.partition(':')
+
+        utc_date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
+        utc_rw_date_time = QDateTime.fromString(rw_time_str,
+                                                'yyyy_M_d_h_m_s')
+        utc_date_time.setTimeSpec(Qt.OffsetFromUTC)
+        utc_rw_date_time.setTimeSpec(Qt.OffsetFromUTC)
+
+        date_time = None
+        rw_date_time = None
+
+        if utc_date_time.isValid():
+            date_time = utc_date_time.toLocalTime()
+
+        if utc_rw_date_time.isValid():
+            rw_date_time = utc_rw_date_time.toLocalTime()
+
+        snapshot = Snapshot(date_time)
+        snapshot.text = snaptext
+        snapshot.label = label
+        snapshot.rewind_date_time = rw_date_time
+        snapshot.rewind_label = rw_label
+        snapshot.session_name = session_name
+        return snapshot
+
     def year(self):
         return self.date_time.date().year()
 
@@ -313,7 +346,6 @@ class TakeSnapshotDialog(ChildDialog):
         self.ui.setupUi(self)
 
         self.ui.lineEdit.textChanged.connect(self._text_changed)
-        #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.pushButtonSave.setEnabled(False)
         self.ui.pushButtonSnapshot.setEnabled(False)
 
@@ -321,7 +353,6 @@ class TakeSnapshotDialog(ChildDialog):
         self.ui.pushButtonSave.clicked.connect(self._accept_with_save)
 
     def _text_changed(self, text):
-        #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(bool(text))
         self.ui.pushButtonSave.setEnabled(bool(text))
         self.ui.pushButtonSnapshot.setEnabled(bool(text))
 
@@ -370,35 +401,36 @@ class SnapshotsDialog(ChildDialog):
             if not snaptext:
                 continue
 
-            time_str_full, line_change, rw_time_str_full_sess = \
-                snaptext.partition('\n')
-            rw_time_str_full, line_change, session_name = \
-                rw_time_str_full_sess.partition('\n')
+            snapshot = Snapshot.new_from_snaptext(snaptext)
+            #time_str_full, line_change, rw_time_str_full_sess = \
+                #snaptext.partition('\n')
+            #rw_time_str_full, line_change, session_name = \
+                #rw_time_str_full_sess.partition('\n')
 
-            time_str, two_points, label = time_str_full.partition(':')
-            rw_time_str, two_points, rw_label = rw_time_str_full.partition(':')
+            #time_str, two_points, label = time_str_full.partition(':')
+            #rw_time_str, two_points, rw_label = rw_time_str_full.partition(':')
 
-            utc_date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
-            utc_rw_date_time = QDateTime.fromString(rw_time_str,
-                                                'yyyy_M_d_h_m_s')
-            utc_date_time.setTimeSpec(Qt.OffsetFromUTC)
-            utc_rw_date_time.setTimeSpec(Qt.OffsetFromUTC)
+            #utc_date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
+            #utc_rw_date_time = QDateTime.fromString(rw_time_str,
+                                                    #'yyyy_M_d_h_m_s')
+            #utc_date_time.setTimeSpec(Qt.OffsetFromUTC)
+            #utc_rw_date_time.setTimeSpec(Qt.OffsetFromUTC)
 
-            date_time = None
-            rw_date_time = None
+            #date_time = None
+            #rw_date_time = None
 
-            if utc_date_time.isValid():
-                date_time = utc_date_time.toLocalTime()
+            #if utc_date_time.isValid():
+                #date_time = utc_date_time.toLocalTime()
 
-            if utc_rw_date_time.isValid():
-                rw_date_time = utc_rw_date_time.toLocalTime()
+            #if utc_rw_date_time.isValid():
+                #rw_date_time = utc_rw_date_time.toLocalTime()
 
-            snapshot = Snapshot(date_time)
-            snapshot.text = snaptext
-            snapshot.label = label
-            snapshot.rewind_date_time = rw_date_time
-            snapshot.rewind_label = rw_label
-            snapshot.session_name = session_name
+            #snapshot = Snapshot(date_time)
+            #snapshot.text = snaptext
+            #snapshot.label = label
+            #snapshot.rewind_date_time = rw_date_time
+            #snapshot.rewind_label = rw_label
+            #snapshot.session_name = session_name
 
             self.main_snap_group.add(snapshot)
 

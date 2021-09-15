@@ -2374,6 +2374,10 @@ for better organization.""")
             self.send_even_dummy(
                 src_addr, '/ray/gui/preview/client/is_started',
                 client.client_id, int(client.auto_start))
+        
+        for snapshot in self.snapshoter.list():
+            self.send_even_dummy(
+                src_addr, '/ray/gui/preview/snapshot', snapshot)
 
         self.send_even_dummy(
             src_addr, '/reply', '/ray/server/get_session_preview')

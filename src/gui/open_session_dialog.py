@@ -4,13 +4,15 @@ import time
 
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QDialogButtonBox
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QDateTime
 
 import ray
 
 from gui_tools import CommandLineArgs, RS
 from child_dialogs import ChildDialog
 from client_properties_dialog import ClientPropertiesDialog
+from snapshots_dialog import (
+    Snapshot, SnapGroup, GROUP_MAIN)
 
 import ui.open_session
 
@@ -141,6 +143,9 @@ class OpenSessionDialog(ChildDialog):
         self.all_items = []
 
         self.ui.filterBar.setFocus(Qt.OtherFocusReason)
+        
+        # snapshots related
+        self.main_snap_group = SnapGroup()
 
     def _server_status_changed(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
@@ -272,6 +277,7 @@ class OpenSessionDialog(ChildDialog):
         self._has_selection = bool(item and item.data(0, Qt.UserRole))
         
         self.ui.listWidgetPreview.clear()
+        self.ui.treeWidgetSnapshots.clear()
         
         if item is not None:
             session_full_name = item.data(0, Qt.UserRole)
@@ -312,6 +318,63 @@ class OpenSessionDialog(ChildDialog):
             client_slot = self.ui.listWidgetPreview.create_client_widget(pv_client)
             client_slot.set_launched(
                 pv_client.client_id in self.session.preview_started_clients)
+        
+        self.main_snap_group.snapshots.clear()
+        self._add_snapshots(self.session.preview_snapshots)
+
+    def _add_snapshots(self, snaptexts):
+        if not snaptexts and not self.main_snap_group.snapshots:
+            # Snapshot list finished without any snapshot
+            #self._no_snapshot_found()
+            return
+
+        for snaptext in snaptexts:
+            if not snaptext:
+                continue
+
+            snapshot = Snapshot.new_from_snaptext(snaptext)
+            #time_str_full, line_change, rw_time_str_full_sess = \
+                #snaptext.partition('\n')
+            #rw_time_str_full, line_change, session_name = \
+                #rw_time_str_full_sess.partition('\n')
+
+            #time_str, two_points, label = time_str_full.partition(':')
+            #rw_time_str, two_points, rw_label = rw_time_str_full.partition(':')
+
+            #utc_date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
+            #utc_rw_date_time = QDateTime.fromString(rw_time_str,
+                                                    #'yyyy_M_d_h_m_s')
+            #utc_date_time.setTimeSpec(Qt.OffsetFromUTC)
+            #utc_rw_date_time.setTimeSpec(Qt.OffsetFromUTC)
+
+            #date_time = None
+            #rw_date_time = None
+
+            #if utc_date_time.isValid():
+                #date_time = utc_date_time.toLocalTime()
+
+            #if utc_rw_date_time.isValid():
+                #rw_date_time = utc_rw_date_time.toLocalTime()
+
+            #snapshot = Snapshot(date_time)
+            #snapshot.text = snaptext
+            #snapshot.label = label
+            #snapshot.rewind_date_time = rw_date_time
+            #snapshot.rewind_label = rw_label
+            #snapshot.session_name = session_name
+
+            self.main_snap_group.add(snapshot)
+
+        self.main_snap_group.sort()
+
+        self.ui.treeWidgetSnapshots.clear()
+
+        for snapshot in self.main_snap_group.snapshots:
+            item = snapshot.make_item(GROUP_MAIN)
+            self.ui.treeWidgetSnapshots.addTopLevelItem(item)
+
+        #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.ui.treeWidgetSnapshots.clearSelection()
 
     def get_selected_session(self)->str:
         if self.ui.sessionList.currentItem():

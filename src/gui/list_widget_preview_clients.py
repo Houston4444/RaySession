@@ -51,9 +51,9 @@ class ClientSlot(QFrame):
     def _set_fat(self, yesno: bool, very_fat=False):
         if yesno:
             self._list_widget_item.setSizeHint(
-                QSize(100, 60 if very_fat else 50))
+                QSize(100, 45 if very_fat else 45))
         else:
-            self._list_widget_item.setSizeHint(QSize(100, 30))
+            self._list_widget_item.setSizeHint(QSize(100, 45))
 
     def _gray_icon(self, gray: bool):
         if gray:

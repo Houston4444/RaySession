@@ -143,6 +143,7 @@ class SignaledSession(Session):
         self.preview_notes = ''
         self.preview_client_list = []
         self.preview_started_clients = set()
+        self.preview_snapshots = []
 
     def _osc_receive(self, path, args):
         func_path = path
@@ -414,6 +415,7 @@ class SignaledSession(Session):
         self.preview_notes = ''
         self.preview_client_list.clear()
         self.preview_started_clients.clear()
+        self.preview_snapshots.clear()
 
     def _ray_gui_preview_notes(self, path, args):
         self.preview_notes = args[0]
@@ -435,6 +437,10 @@ class SignaledSession(Session):
                 if is_started:
                     self.preview_started_clients.add(client_id)
                 break
+
+    def _ray_gui_preview_snapshot(self, path, args):
+        print('jrif', args[0])
+        self.preview_snapshots.append(args[0])
 
     def _ray_gui_script_info(self, path, args):
         text = args[0]

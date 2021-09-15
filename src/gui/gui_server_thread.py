@@ -98,6 +98,7 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/preview/notes', 's'),
             ('/ray/gui/preview/client/update', ray.ClientData.sisi()),
             ('/ray/gui/preview/client/is_started', 'si'),
+            ('/ray/gui/preview/snapshot', 's'),
             ('/ray/gui/script_info', 's'),
             ('/ray/gui/hide_script_info', ''),
             ('/ray/gui/script_user_action', 's'),
