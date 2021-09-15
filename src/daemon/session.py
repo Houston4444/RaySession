@@ -2366,7 +2366,11 @@ for better organization.""")
         
     def send_preview(self, src_addr):
         self.send_even_dummy(src_addr, '/ray/gui/preview/notes', self.notes)
+
         for client in self.clients:
             self.send_even_dummy(
                 src_addr, '/ray/gui/preview/client/update',
                 *client.spread())
+
+        self.send_even_dummy(
+            src_addr, '/reply', '/ray/server/get_session_preview')

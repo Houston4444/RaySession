@@ -10,8 +10,15 @@ import ray
 
 from gui_tools import CommandLineArgs, RS
 from child_dialogs import ChildDialog
+from client_properties_dialog import ClientPropertiesDialog
 
 import ui.open_session
+
+class PreviewClient(ray.ClientData):
+    def __init__(self):
+        ray.ClientData.__init__(self)
+        self.properties_dialog = ClientPropertiesDialog.create(self)
+
 
 class SessionItem(QTreeWidgetItem):
     def __init__(self, l_list):
@@ -299,6 +306,10 @@ class OpenSessionDialog(ChildDialog):
     def _session_preview_update(self):
         self.ui.plainTextEditNotes.setPlainText(self.session.preview_notes)
         self.ui.tabWidget.setTabEnabled(1, bool(self.session.preview_notes))
+
+        for client in self.session.preview_client_list:
+            self.ui.listWidgetPreview.create_client_widget(client)
+        self.ui.listWidgetPreview.resizeEvent(None)
 
     def get_selected_session(self)->str:
         if self.ui.sessionList.currentItem():

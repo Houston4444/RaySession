@@ -411,7 +411,6 @@ class SignaledSession(Session):
 
     def _ray_gui_preview_notes(self, path, args):
         self.preview_notes = args[0]
-        self.signaler.session_preview_update.emit()
     
     def _ray_gui_preview_client_update(self, path, args):
         client = ray.ClientData.new_from(*args)

@@ -156,6 +156,8 @@ class GuiServerThread(liblo.ServerThread):
         elif reply_path in ('/ray/session/list_snapshots',
                             '/ray/client/list_snapshots'):
             self.signaler.snapshots_found.emit(new_args)
+        elif reply_path == '/ray/server/get_session_preview':
+            self.signaler.session_preview_update.emit()
 
     @ray_method('/ray/gui/server/announce', 'siisi')
     def _server_announce(self, path, args, types, src_addr):

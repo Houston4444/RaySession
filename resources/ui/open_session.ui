@@ -47,7 +47,7 @@
         <item>
          <widget class="QTabWidget" name="tabWidget">
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab">
            <attribute name="title">
@@ -55,7 +55,14 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <item>
-             <widget class="QListWidget" name="listWidgetPreview"/>
+             <widget class="ListWidgetPreviewClients" name="listWidgetPreview">
+              <property name="styleSheet">
+               <string notr="true">QFrame{border:none}</string>
+              </property>
+              <property name="batchSize">
+               <number>80</number>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -79,7 +86,7 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_7">
             <item>
-             <widget class="QListWidget" name="listWidget"/>
+             <widget class="QListWidget" name="listWidgetSnapshots"/>
             </item>
            </layout>
           </widget>
@@ -270,6 +277,11 @@
    <extends>QFrame</extends>
    <header>surclassed_widgets</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ListWidgetPreviewClients</class>
+   <extends>QListWidget</extends>
+   <header>list_widget_preview_clients</header>
   </customwidget>
  </customwidgets>
  <resources/>
