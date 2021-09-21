@@ -4,11 +4,11 @@ import time
 
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QDialogButtonBox
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QTimer, QDateTime
+from PyQt5.QtCore import Qt, QTimer, QDateTime, QSize
 
 import ray
 
-from gui_tools import CommandLineArgs, RS
+from gui_tools import CommandLineArgs, RS, RayIcon, is_dark_theme
 from child_dialogs import ChildDialog
 from client_properties_dialog import ClientPropertiesDialog
 from snapshots_dialog import (
@@ -23,8 +23,9 @@ class PreviewClient(ray.ClientData):
 
 
 class SessionItem(QTreeWidgetItem):
-    def __init__(self, l_list):
+    def __init__(self, l_list, is_session=False):
         QTreeWidgetItem.__init__(self, l_list)
+        self.is_session = is_session
 
     def __lt__(self, other):
         if self.childCount() and not other.childCount():
@@ -61,28 +62,46 @@ class SessionItem(QTreeWidgetItem):
                 break
 
         return item
+    
+    def set_notes_icon(self, icon):
+        self.setIcon(1, icon)
+
+    def set_scripted(self, script_flags:int, for_child=False):
+        if script_flags == ray.ScriptFile.PREVENT:
+            self.setText(2, "")
+        else:
+            if for_child:
+                self.setText(2, "^_")
+            else:
+                self.setText(2, ">_")
+
+        for i in range(self.childCount()):
+            item = self.child(i)
+            item.set_scripted(script_flags, for_child=True)
+            
 
 
 class SessionFolder:
     name = ""
-    has_session = True
     path = ""
+    is_session = False
 
-    def __init__(self, name):
+    def __init__(self, name, notes_icon):
         self.name = name
         self.subfolders = []
+        self.notes_icon = notes_icon
 
     def set_path(self, path):
         self.path = path
 
     def make_item(self):
-        item = SessionItem([self.name])
-
+        item = SessionItem([self.name, "", ""], self.is_session)
         item.setData(0, Qt.UserRole, self.path)
+
         if self.subfolders:
             item.setIcon(0, QIcon.fromTheme('folder'))
 
-        if not self.path:
+        if not self.is_session:
             item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
 
         for folder in self.subfolders:
@@ -124,6 +143,10 @@ class OpenSessionDialog(ChildDialog):
         self.signaler.root_changed.connect(self._root_changed)
         self.signaler.session_preview_update.connect(
             self._session_preview_update)
+        self.signaler.session_details.connect(
+            self._update_session_details)
+        self.signaler.scripted_dir.connect(
+            self._scripted_dir)
 
         self.to_daemon('/ray/server/list_sessions', 0)
 
@@ -146,6 +169,16 @@ class OpenSessionDialog(ChildDialog):
         
         # snapshots related
         self.main_snap_group = SnapGroup()
+        self.ui.sessionList.setColumnWidth(0, 100)
+        self.ui.sessionList.setColumnWidth(1, 20)
+        self.ui.sessionList.setColumnWidth(2, 20)
+        #header_item = self.ui.sessionList.headerItem()
+        #header_item.setSizeHint(0, QSize(200, 0))
+        #header_item.setSizeHint(1, QSize(20, 0))
+        #header_item.setSizeHint(2, QSize(20, 0))
+        
+        #self.setIcon(1, QIcon.fromTheme('application-pdf'))
+        self.notes_icon = RayIcon('notes', is_dark_theme(self))
 
     def _server_status_changed(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
@@ -197,25 +230,33 @@ class OpenSessionDialog(ChildDialog):
                     self.ui.sessionList.setCurrentItem(last_session_item)
                     self.ui.sessionList.scrollToItem(last_session_item)
                     break
+                
+            QTimer.singleShot(20, self._resize_session_names_column)
             return
 
         for session_name in session_names:
             folder_div = session_name.split('/')
             folders = self.folders
+            #folder_path_list = []
 
             for i in range(len(folder_div)):
                 f = folder_div[i]
                 for g in folders:
                     if g.name == f:
-                        if i+1 == len(folder_div):
+                        if i + 1 == len(folder_div):
                             g.set_path(session_name)
+                            g.is_session = True
 
                         folders = g.subfolders
                         break
                 else:
-                    new_folder = SessionFolder(f)
-                    if i+1 == len(folder_div):
+                    new_folder = SessionFolder(f, self.notes_icon)
+                    if i + 1 == len(folder_div):
                         new_folder.set_path(session_name)
+                        new_folder.is_session = True
+                    else:
+                        new_folder.set_path('/'.join(folder_div[:i+1]))
+
                     folders.append(new_folder)
                     folders = new_folder.subfolders
 
@@ -279,13 +320,16 @@ class OpenSessionDialog(ChildDialog):
         self.ui.listWidgetPreview.clear()
         self.ui.treeWidgetSnapshots.clear()
         
-        if item is not None:
+        if item is not None and item.is_session:
             session_full_name = item.data(0, Qt.UserRole)
             self.ui.labelSessionName.setText(
                 os.path.basename(session_full_name))
-            self.ui.tabWidget.setEnabled(bool(session_full_name))
+            self.ui.tabWidget.setEnabled(True)
             if session_full_name:
                 self.to_daemon('/ray/server/get_session_preview', session_full_name)
+        else:
+            self.ui.labelSessionName.setText('')
+            self.ui.tabWidget.setEnabled(False)
 
         self._prevent_ok()
 
@@ -312,7 +356,7 @@ class OpenSessionDialog(ChildDialog):
 
     def _session_preview_update(self):
         self.ui.plainTextEditNotes.setPlainText(self.session.preview_notes)
-        self.ui.tabWidget.setTabEnabled(1, bool(self.session.preview_notes))
+        #self.ui.tabWidget.setTabEnabled(1, bool(self.session.preview_notes))
 
         for pv_client in self.session.preview_client_list:
             client_slot = self.ui.listWidgetPreview.create_client_widget(pv_client)
@@ -333,36 +377,6 @@ class OpenSessionDialog(ChildDialog):
                 continue
 
             snapshot = Snapshot.new_from_snaptext(snaptext)
-            #time_str_full, line_change, rw_time_str_full_sess = \
-                #snaptext.partition('\n')
-            #rw_time_str_full, line_change, session_name = \
-                #rw_time_str_full_sess.partition('\n')
-
-            #time_str, two_points, label = time_str_full.partition(':')
-            #rw_time_str, two_points, rw_label = rw_time_str_full.partition(':')
-
-            #utc_date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
-            #utc_rw_date_time = QDateTime.fromString(rw_time_str,
-                                                    #'yyyy_M_d_h_m_s')
-            #utc_date_time.setTimeSpec(Qt.OffsetFromUTC)
-            #utc_rw_date_time.setTimeSpec(Qt.OffsetFromUTC)
-
-            #date_time = None
-            #rw_date_time = None
-
-            #if utc_date_time.isValid():
-                #date_time = utc_date_time.toLocalTime()
-
-            #if utc_rw_date_time.isValid():
-                #rw_date_time = utc_rw_date_time.toLocalTime()
-
-            #snapshot = Snapshot(date_time)
-            #snapshot.text = snaptext
-            #snapshot.label = label
-            #snapshot.rewind_date_time = rw_date_time
-            #snapshot.rewind_label = rw_label
-            #snapshot.session_name = session_name
-
             self.main_snap_group.add(snapshot)
 
         self.main_snap_group.sort()
@@ -375,6 +389,46 @@ class OpenSessionDialog(ChildDialog):
 
         #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.treeWidgetSnapshots.clearSelection()
+
+    def _update_session_details(self, session_name:str,
+                                has_notes:str, modified:str):
+        for i in range(self.ui.sessionList.topLevelItemCount()):
+            item = self.ui.sessionList.topLevelItem(i)
+            session_item = item.find_item_with(session_name)
+            if session_item is not None:
+                if has_notes:
+                    session_item.set_notes_icon(
+                        RayIcon('notes', is_dark_theme(self)))
+                break
+
+    def _scripted_dir(self, dir_name, script_flags):
+        if dir_name == '':
+            # means that all the session root directory is scripted
+            for i in range(self.ui.sessionList.topLevelItemCount()):
+                item = self.ui.sessionList.topLevelItem(i)
+                item.set_scripted(script_flags)
+            return
+
+        for i in range(self.ui.sessionList.topLevelItemCount()):
+            item = self.ui.sessionList.topLevelItem(i)
+            scripted_item = item.find_item_with(dir_name)
+            if scripted_item is not None:
+                scripted_item.set_scripted(script_flags)
+
+    def _resize_session_names_column(self):
+        width = self.ui.sessionList.width() - 45
+        
+        scroll_bar = self.ui.sessionList.verticalScrollBar()
+        if scroll_bar.isVisible():
+            width -= scroll_bar.width()
+        
+        width = max(width, 40)
+
+        self.ui.sessionList.setColumnWidth(0, width)
+
+    def resizeEvent(self, event):
+        ChildDialog.resizeEvent(self, event)
+        self._resize_session_names_column()
 
     def get_selected_session(self)->str:
         if self.ui.sessionList.currentItem():

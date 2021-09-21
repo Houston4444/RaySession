@@ -357,6 +357,8 @@ class OscServerThread(ClientCommunicating):
         else:
             self.options &= ~ray.Option.HAS_GIT
 
+        self.session_to_preview = ''
+
         global instance
         instance = self
 
@@ -712,7 +714,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/get_session_preview', 's')
     def rayServerGetSessionPreview(self, path, args, types, src_addr):
-        pass
+        self.session_to_preview = args[0]
     
     @ray_method('/ray/server/script_info', 's')
     def rayServerScriptInfo(self, path, args, types, src_addr):

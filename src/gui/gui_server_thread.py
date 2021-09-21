@@ -209,6 +209,14 @@ class GuiServerThread(liblo.ServerThread):
         if not ray.types_are_all_strings(types):
             return False
 
+    @ray_method('/ray/gui/listed_session/details', 'sii')
+    def _listed_session_details(self, path, args, types, src_addr):
+        self.signaler.session_details.emit(*args)
+
+    @ray_method('/ray/gui/listed_session/scripted_dir', 'si')
+    def _listed_session_scripted_dir(self, path, args, types, src_addr):
+        self.signaler.scripted_dir.emit(*args)
+
     @ray_method('/ray/gui/client_template_update', 'is' + ray.ClientData.sisi())
     def _client_template_update(self, path, args, types, src_addr):
         self.signaler.client_template_update.emit(args)

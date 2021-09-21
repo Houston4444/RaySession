@@ -402,36 +402,6 @@ class SnapshotsDialog(ChildDialog):
                 continue
 
             snapshot = Snapshot.new_from_snaptext(snaptext)
-            #time_str_full, line_change, rw_time_str_full_sess = \
-                #snaptext.partition('\n')
-            #rw_time_str_full, line_change, session_name = \
-                #rw_time_str_full_sess.partition('\n')
-
-            #time_str, two_points, label = time_str_full.partition(':')
-            #rw_time_str, two_points, rw_label = rw_time_str_full.partition(':')
-
-            #utc_date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
-            #utc_rw_date_time = QDateTime.fromString(rw_time_str,
-                                                    #'yyyy_M_d_h_m_s')
-            #utc_date_time.setTimeSpec(Qt.OffsetFromUTC)
-            #utc_rw_date_time.setTimeSpec(Qt.OffsetFromUTC)
-
-            #date_time = None
-            #rw_date_time = None
-
-            #if utc_date_time.isValid():
-                #date_time = utc_date_time.toLocalTime()
-
-            #if utc_rw_date_time.isValid():
-                #rw_date_time = utc_rw_date_time.toLocalTime()
-
-            #snapshot = Snapshot(date_time)
-            #snapshot.text = snaptext
-            #snapshot.label = label
-            #snapshot.rewind_date_time = rw_date_time
-            #snapshot.rewind_label = rw_label
-            #snapshot.session_name = session_name
-
             self.main_snap_group.add(snapshot)
 
         self.main_snap_group.sort()

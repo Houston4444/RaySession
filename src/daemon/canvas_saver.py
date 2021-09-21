@@ -59,11 +59,10 @@ class CanvasSaver(ServerSender):
         return self.group_positions_session + group_positions_config_exclu
 
     def send_session_group_positions(self):
-        print('seennd session gorup positionns', self.is_dummy)
         server = self.get_server()
         if not server:
             return
-        print('onyvaaoao')
+
         local_guis = []
         distant_guis = []
         for gui_addr in server.gui_list:

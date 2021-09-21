@@ -3,3 +3,12 @@ client noSavelLevel gardé comme ça pour l'instant parce client.no_save_level e
 -> Déprecier no_save_level de l'exterieur, uniquement en RayHack
 
 essayer MultiDaemonFile qu'avec des méthodes de classe
+
+limiter la charge preview en défilement rapide
+léger bug notes : saturation messages snapshot
+afficher le sous dossier -> preview ; session en cours
+
+réécrire le fichier de session systématiquement après modif importante:
+* suppression totale d'un client
+* changement de préfix d'un client
+* renommage de la session

@@ -30,6 +30,8 @@ class Signaler(QObject):
     root_changed = pyqtSignal(str)
 
     session_preview_update = pyqtSignal()
+    session_details = pyqtSignal(str, int, int)
+    scripted_dir = pyqtSignal(str, int)
 
     client_added_reply = pyqtSignal(str)
 

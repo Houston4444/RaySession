@@ -2363,6 +2363,11 @@ for better organization.""")
         self.answer(src_addr, src_path, 'Clients cleared')
         
     def send_preview(self, src_addr):
+        # prevent long list of OSC sends if preview order already changed
+        server = self.get_server_even_dummy()
+        if server and server.session_to_preview != self.get_short_path():
+            return
+        
         self.send_even_dummy(src_addr, '/ray/gui/preview/clear')
         self.send_even_dummy(src_addr, '/ray/gui/preview/notes', self.notes)
 

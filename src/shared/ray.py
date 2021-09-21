@@ -164,27 +164,39 @@ class Template:
     CLIENT_SAVE = 6
     CLIENT_LOAD = 7
 
+
 class SwitchState:
     NONE = 0
     RESERVED = 1
     NEEDED = 2
     DONE = 3
 
+
 class WindowManager:
     NONE = 0
     X = 1
     WAYLAND = 2
+
 
 class Systray:
     OFF = 0
     SESSION_ONLY = 1
     ALWAYS = 2
 
+
 class Favorite():
     def __init__(self, name, icon, factory):
         self.name = name
         self.icon = icon
         self.factory = factory
+
+
+class ScriptFile:
+    PREVENT = 0x0
+    PARENT = 0x1
+    LOAD = 0x2
+    SAVE = 0x4
+    CLOSE = 0x8
 
 
 debug = False

@@ -461,6 +461,7 @@ class SignaledSession(OperatingSession):
             return
 
         session_list = []
+        sessions_set = set()
         n = 0
 
         for root, dirs, files in os.walk(self.root):
@@ -471,18 +472,14 @@ class SignaledSession(OperatingSession):
             if root == self.root:
                 continue
 
-            already_sent = False
-
             for file in files:
                 if file in ('raysession.xml', 'session.nsm'):
-                    if already_sent:
-                        continue
-
                     # prevent search in sub directories
                     dirs.clear()
 
                     basefolder = root.replace(self.root + '/', '', 1)
                     session_list.append(basefolder)
+                    sessions_set.add(basefolder)
                     n += len(basefolder)
 
                     if n >= 10000 or time.time() - last_sent_time > 0.300:
@@ -491,12 +488,65 @@ class SignaledSession(OperatingSession):
 
                         session_list.clear()
                         n = 0
-                    already_sent = True
+                    break
 
         if session_list:
             self.send(src_addr, "/reply", path, *session_list)
 
         self.send(src_addr, "/reply", path)
+        
+        search_scripts_dir = self.root
+        has_general_scripts = False
+        
+        while search_scripts_dir and not search_scripts_dir != '/':
+            if os.path.isdir(search_scripts_dir + '/' + ray.SCRIPTS_DIR):
+                has_general_scripts = True
+                break
+            search_scripts_dir = dirname(search_scripts_dir)
+
+        print('koeffokeff', has_general_scripts)
+
+        for root, dirs, files in os.walk(self.root):
+            #exclude hidden files and dirs
+            files = [f for f in files if not f.startswith('.')]
+            dirs[:] = [d for d in dirs  if not d.startswith('.')]
+
+            if root == self.root:
+                if has_general_scripts:
+                    self.send(src_addr, '/ray/gui/listed_session/scripted_dir',
+                              '', ray.ScriptFile.PARENT)
+                continue
+            
+            basefolder = root.replace(self.root + '/', '', 1)
+            
+            if ray.SCRIPTS_DIR in dirs:
+                script_files = ray.ScriptFile.PREVENT
+                
+                for action in ('load', 'save', 'close'):
+                    if os.access(
+                            "%s/%s/%s.sh" % (root, ray.SCRIPTS_DIR, action),
+                            os.X_OK):
+                        if action == 'load':
+                            script_files += ray.ScriptFile.LOAD
+                        elif action == 'save':
+                            script_files += ray.ScriptFile.SAVE
+                        elif action == 'close':
+                            script_files += ray.ScriptFile.CLOSE
+
+                self.send(src_addr, '/ray/gui/listed_session/scripted_dir',
+                          basefolder, script_files)
+            
+            if basefolder not in sessions_set:
+                continue
+            
+            has_notes = bool(ray.NOTES_PATH in files)
+            last_modified = int(os.path.getmtime(root))
+
+            self.send(src_addr, '/ray/gui/listed_session/details',
+                      basefolder, int(has_notes), last_modified)
+
+            # prevent search in sub directories
+            dirs.clear()        
 
     def _nsm_server_list(self, path, args, src_addr):
         if self.root:
@@ -644,7 +694,6 @@ class SignaledSession(OperatingSession):
             path, [template_name, net], src_addr)
 
     def _ray_server_get_session_preview(self, path, args, src_addr):
-        print('erjoogjgojgjojggjgj', path, args)
         tmp_session = DummySession(self.root)
         tmp_session.ray_server_get_session_preview(path, args, src_addr)
 

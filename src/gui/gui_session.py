@@ -439,8 +439,10 @@ class SignaledSession(Session):
                 break
 
     def _ray_gui_preview_snapshot(self, path, args):
-        print('jrif', args[0])
         self.preview_snapshots.append(args[0])
+
+    #def _ray_gui_listed_session_details(self, path, args):
+        #pass
 
     def _ray_gui_script_info(self, path, args):
         text = args[0]
