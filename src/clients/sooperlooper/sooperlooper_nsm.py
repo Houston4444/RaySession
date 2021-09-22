@@ -39,7 +39,7 @@ class SlOSCThread(nsm_client.NSMThread):
             
     @make_method('/loop_add', 'if')
     def loopAdd(self, path, args):
-        print('gjirjiji', args)
+        pass
 
 
 class GeneralObject(QObject):

@@ -292,7 +292,6 @@ class CanvasMenu(QMenu):
             short_locale = locale_str[:2]
 
         url = QUrl("file://%s/%s/manual.html#patchbay" % (manual_dir, short_locale))
-        print(url, url.toString())
         QDesktopServices.openUrl(url)
 
 

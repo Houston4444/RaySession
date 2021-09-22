@@ -136,10 +136,9 @@ class SessionFolder:
     path = ""
     is_session = False
 
-    def __init__(self, name, notes_icon):
+    def __init__(self, name):
         self.name = name
         self.subfolders = []
-        self.notes_icon = notes_icon
 
     def set_path(self, path):
         self.path = path
@@ -227,11 +226,9 @@ class OpenSessionDialog(ChildDialog):
         
         # snapshots related
         self.main_snap_group = SnapGroup()
-        self.ui.sessionList.setColumnWidth(0, 100)
-        self.ui.sessionList.setColumnWidth(1, 20)
-        self.ui.sessionList.setColumnWidth(2, 20)
-
-        self.notes_icon = RayIcon('notes', is_dark_theme(self))
+        #self.ui.sessionList.setColumnWidth(0, 100)
+        #self.ui.sessionList.setColumnWidth(1, 20)
+        #self.ui.sessionList.setColumnWidth(2, 20)
         
         self._full_view = True
         
@@ -325,7 +322,7 @@ class OpenSessionDialog(ChildDialog):
                         folders = g.subfolders
                         break
                 else:
-                    new_folder = SessionFolder(f, self.notes_icon)
+                    new_folder = SessionFolder(f)
                     if i + 1 == len(folder_div):
                         new_folder.set_path(session_name)
                         new_folder.is_session = True
@@ -478,10 +475,8 @@ class OpenSessionDialog(ChildDialog):
                 # we add directly date to top item
                 # this way folder also read the last date
                 item.add_modified_date(session_name, modified)
-                if locked:
-                    print('lockeddd', session_name)
+
                 session_item.set_locked(bool(locked))
-                
                 break
 
     def _scripted_dir(self, dir_name, script_flags):

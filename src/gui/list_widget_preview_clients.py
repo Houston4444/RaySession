@@ -22,7 +22,6 @@ class ClientSlot(QFrame):
 
         self._list_widget = list_widget
         self._list_widget_item = list_widget_item
-        self._very_short = False
         self._icon_on = QIcon()
         self._icon_off = QIcon()
 
@@ -45,15 +44,12 @@ class ClientSlot(QFrame):
         if server:
             server.to_daemon(*args)
 
-    def _set_very_short(self, yesno: bool):
-        self._very_short = yesno
-
-    def _set_fat(self, yesno: bool, very_fat=False):
-        if yesno:
-            self._list_widget_item.setSizeHint(
-                QSize(100, 45 if very_fat else 45))
-        else:
-            self._list_widget_item.setSizeHint(QSize(100, 45))
+    #def _set_fat(self, yesno: bool, very_fat=False):
+        #if yesno:
+            #self._list_widget_item.setSizeHint(
+                #QSize(100, 45 if very_fat else 45))
+        #else:
+            #self._list_widget_item.setSizeHint(QSize(100, 45))
 
     def _gray_icon(self, gray: bool):
         if gray:
@@ -62,7 +58,6 @@ class ClientSlot(QFrame):
             self.ui.iconButton.setIcon(self._icon_on)
 
     def set_launched(self, launched: bool):
-        print('youbbr', self.client.client_id)
         self._gray_icon(not launched)
         self.ui.ClientName.setEnabled(launched)
 
@@ -76,17 +71,15 @@ class ClientSlot(QFrame):
 
         layout_width = self._list_widget.width()
 
-        self._set_very_short(layout_width < 233)
-
         scroll_bar = self._list_widget.verticalScrollBar()
         if scroll_bar.isVisible():
             layout_width -= scroll_bar.width()
 
-        max_label_width = layout_width - 231
+        max_label_width = layout_width - 50
 
         if main_size <= max_label_width:
             self.ui.ClientName.setText(self.client.prettier_name())
-            self._set_fat(False)
+            #self._set_fat(False)
             return
 
         # split title in two lines
@@ -103,7 +96,7 @@ class ClientSlot(QFrame):
 
         if max_size <= max_label_width:
             self.ui.ClientName.setText('\n'.join((top, bottom)))
-            self._set_fat(False)
+            #self._set_fat(False)
             return
 
         # responsive design, put label at top of the controls
@@ -112,11 +105,11 @@ class ClientSlot(QFrame):
         max_label_width = layout_width - 50
 
         if main_size <= max_label_width:
-            self._set_fat(True)
+            #self._set_fat(True)
             self.ui.ClientName.setText(self.client.prettier_name())
             return
 
-        self._set_fat(True, very_fat=True)
+        #self._set_fat(True, very_fat=True)
 
         top, bottom = split_in_two(self.client.prettier_name())
         self.ui.ClientName.setText('\n'.join((top, bottom)))

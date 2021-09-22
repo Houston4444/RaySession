@@ -981,6 +981,12 @@ class SignaledSession(OperatingSession):
             except:
                 pass
 
+        # we need to save the session file here
+        # because session just has been renamed
+        # and clients dependant of the session name
+        # would not find there files if session is aborted just after
+        self._save_session_file()
+
         self.send_gui_message(
             _translate('GUIMSG', 'Session %s has been renamed to %s .')
             % (self.name, new_session_name))
@@ -1571,7 +1577,7 @@ class SignaledSession(OperatingSession):
             self.send_error_no_client(src_addr, path, client_id)
 
     @client_action
-    def _ray_client_is_started(self, path, args, src_addr, client):
+    def _ray_client_is_started(self, path, args, src_addr, client:Client):
         if client.is_running():
             self.send(src_addr, '/reply', path, 'client running')
         else:
@@ -1580,18 +1586,18 @@ class SignaledSession(OperatingSession):
                         % client.gui_msg_style())
 
     @client_action
-    def _ray_client_send_signal(self, path, args, src_addr, client):
+    def _ray_client_send_signal(self, path, args, src_addr, client:Client):
         sig = args[0]
         client.send_signal(sig, src_addr, path)
 
     @client_action
-    def _ray_client_set_custom_data(self, path, args, src_addr, client):
+    def _ray_client_set_custom_data(self, path, args, src_addr, client:Client):
         data, value = args
         client.custom_data[data] = value
         self.send(src_addr, '/reply', path, 'custom data set')
 
     @client_action
-    def _ray_client_get_custom_data(self, path, args, src_addr, client):
+    def _ray_client_get_custom_data(self, path, args, src_addr, client:Client):
         data = args[0]
 
         if data not in client.custom_data:
@@ -1604,13 +1610,13 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
 
     @client_action
-    def _ray_client_set_tmp_data(self, path, args, src_addr, client):
+    def _ray_client_set_tmp_data(self, path, args, src_addr, client:Client):
         data, value = args
         client.custom_tmp_data[data] = value
         self.send(src_addr, '/reply', path, 'custom tmp data set')
 
     @client_action
-    def _ray_client_get_tmp_data(self, path, args, src_addr, client):
+    def _ray_client_get_tmp_data(self, path, args, src_addr, client:Client):
         data = args[0]
 
         if data not in client.custom_tmp_data:
@@ -1623,7 +1629,7 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
 
     @client_action
-    def _ray_client_change_prefix(self, path, args, src_addr, client):
+    def _ray_client_change_prefix(self, path, args, src_addr, client:Client):
         if client.is_running():
             self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
                       "impossible to change prefix while client is running")
@@ -1641,8 +1647,19 @@ class SignaledSession(OperatingSession):
 
         if prefix_mode == ray.PrefixMode.CUSTOM:
             custom_prefix = args[1]
+            if not custom_prefix:
+                self.send(
+                    src_addr, '/error', path, ray.err.GENERAL_ERROR,
+                    "You need to specify a custom prefix as 2nd argument")
+                return
 
         client.change_prefix(prefix_mode, custom_prefix)
+        
+        # we need to save session file here
+        # else, if session is aborted
+        # client won't find its files at next restart
+        self._save_session_file()
+
         self.send(src_addr, '/reply', path, 'prefix changed')
 
     def _ray_trashed_client_restore(self, path, args, src_addr):
@@ -1686,6 +1703,7 @@ class SignaledSession(OperatingSession):
                 continue
 
         self.trashed_clients.remove(client)
+        self._save_session_file()
 
         self.send(src_addr, '/reply', path, "client definitely removed")
 
