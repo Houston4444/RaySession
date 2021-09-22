@@ -98,7 +98,7 @@ label
 	$label
 "
             linkdir="NSM Proxy.$client_id"
-            if [ -d "$linkdir" && -L "$linkdir" ] && [[ "$(readlink "$linkdir")" == "$client_name.$client_id" ]];then
+            if [ -d "$linkdir" ] && [ -L "$linkdir" ] && [[ "$(readlink "$linkdir")" == "$client_name.$client_id" ]];then
                 echo "$linkdir already linked, keep it"
             
                 # link the NSM Proxy new directory to the Ray-Hack client dir
