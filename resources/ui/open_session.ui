@@ -50,13 +50,13 @@
           <bool>false</bool>
          </property>
          <property name="headerHidden">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
          <property name="columnCount">
-          <number>3</number>
+          <number>4</number>
          </property>
          <attribute name="headerVisible">
-          <bool>false</bool>
+          <bool>true</bool>
          </attribute>
          <attribute name="headerDefaultSectionSize">
           <number>20</number>
@@ -69,19 +69,34 @@
          </attribute>
          <column>
           <property name="text">
-           <string notr="true">1</string>
+           <string>Name</string>
           </property>
          </column>
          <column>
           <property name="text">
-           <string notr="true">2</string>
+           <string notr="true">Notes</string>
           </property>
          </column>
          <column>
           <property name="text">
-           <string notr="true">3</string>
+           <string notr="true">Scripts</string>
           </property>
          </column>
+         <column>
+          <property name="text">
+           <string>Date</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBoxShowDates">
+         <property name="layoutDirection">
+          <enum>Qt::RightToLeft</enum>
+         </property>
+         <property name="text">
+          <string>Sort by dates</string>
+         </property>
         </widget>
        </item>
       </layout>

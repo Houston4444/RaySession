@@ -694,6 +694,19 @@ class SignaledSession(OperatingSession):
             path, [template_name, net], src_addr)
 
     def _ray_server_get_session_preview(self, path, args, src_addr):
+        session_name = args[0]
+        server = self.get_server()
+        if server is None:
+            return
+        
+        if server.session_to_preview != session_name:
+            # prevent to open a dummy session
+            # in case user change preview so fastly
+            # that this thread is late and user already
+            # changed the session to preview
+            print('skipp session', session_name, server.session_to_preview)
+            return
+
         tmp_session = DummySession(self.root)
         tmp_session.ray_server_get_session_preview(path, args, src_addr)
 

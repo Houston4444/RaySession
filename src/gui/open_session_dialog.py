@@ -3,8 +3,8 @@ import os
 import time
 
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QDialogButtonBox
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QTimer, QDateTime, QSize
+from PyQt5.QtGui import QIcon, QColor
+from PyQt5.QtCore import Qt, QTimer, QDateTime, QSize, QLocale
 
 import ray
 
@@ -26,6 +26,7 @@ class SessionItem(QTreeWidgetItem):
     def __init__(self, l_list, is_session=False):
         QTreeWidgetItem.__init__(self, l_list)
         self.is_session = is_session
+        self.setTextAlignment(3, Qt.AlignRight | Qt.AlignVCenter)
 
     def __lt__(self, other):
         if self.childCount() and not other.childCount():
@@ -33,6 +34,19 @@ class SessionItem(QTreeWidgetItem):
 
         if other.childCount() and not self.childCount():
             return False
+
+        if OpenSessionDialog.sort_by_date:
+            self_date_int = self.data(3, Qt.UserRole)
+            other_date_int = other.data(3, Qt.UserRole)
+            if self_date_int is None:
+                if other_date_int is None:
+                    return bool(self.text(0).lower() < other.text(0).lower())
+                return False
+            
+            if other_date_int is None:
+                return True
+            
+            return self_date_int > other_date_int
 
         return bool(self.text(0).lower() < other.text(0).lower())
 
@@ -78,6 +92,37 @@ class SessionItem(QTreeWidgetItem):
         for i in range(self.childCount()):
             item = self.child(i)
             item.set_scripted(script_flags, for_child=True)
+    
+    def set_modified_date(self, date_int:int):
+        self.setData(3, Qt.UserRole, date_int)
+
+        date = QDateTime.fromSecsSinceEpoch(date_int)
+        date_string =  date.toString("dd/MM/yy hh:mm")
+        if QLocale.system().country() == QLocale.UnitedStates:
+            date_string = date.toString("MM/dd/yy hh:mm")
+
+        self.setText(3, date_string)
+            
+    def add_modified_date(self, path:str, date_int:int):
+        self_path = self.data(0, Qt.UserRole)
+        if not self_path:
+            return
+        
+        if path == self_path:
+            self.set_modified_date(date_int)
+            return
+        
+        if path.startswith(self_path + '/'):
+            current_data_date = self.data(3, Qt.UserRole)
+            if current_data_date is None:
+                current_data_date = 0
+            
+            if date_int > current_data_date:
+                self.set_modified_date(date_int)
+                
+            for i in range(self.childCount()):
+                child_item = self.child(i)
+                child_item.add_modified_date(path, date_int)
             
 
 
@@ -95,7 +140,7 @@ class SessionFolder:
         self.path = path
 
     def make_item(self):
-        item = SessionItem([self.name, "", ""], self.is_session)
+        item = SessionItem([self.name, "", "", ""], self.is_session)
         item.setData(0, Qt.UserRole, self.path)
 
         if self.subfolders:
@@ -112,6 +157,12 @@ class SessionFolder:
 
 
 class OpenSessionDialog(ChildDialog):
+    sort_by_date = False
+    
+    @classmethod
+    def set_sort_by_date(cls, sort_by_date:bool):
+        cls.sort_by_date = sort_by_date
+    
     def __init__(self, parent):
         ChildDialog.__init__(self, parent)
         self.ui = ui.open_session.Ui_DialogOpenSession()
@@ -138,6 +189,8 @@ class OpenSessionDialog(ChildDialog):
         self.ui.filterBar.key_event.connect(self._up_down_pressed)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
+        self.ui.checkBoxShowDates.stateChanged.connect(
+            self._set_full_sessions_view)
 
         self.signaler.add_sessions_to_list.connect(self._add_sessions)
         self.signaler.root_changed.connect(self._root_changed)
@@ -172,14 +225,31 @@ class OpenSessionDialog(ChildDialog):
         self.ui.sessionList.setColumnWidth(0, 100)
         self.ui.sessionList.setColumnWidth(1, 20)
         self.ui.sessionList.setColumnWidth(2, 20)
-        #header_item = self.ui.sessionList.headerItem()
-        #header_item.setSizeHint(0, QSize(200, 0))
-        #header_item.setSizeHint(1, QSize(20, 0))
-        #header_item.setSizeHint(2, QSize(20, 0))
-        
-        #self.setIcon(1, QIcon.fromTheme('application-pdf'))
-        self.notes_icon = RayIcon('notes', is_dark_theme(self))
 
+        self.notes_icon = RayIcon('notes', is_dark_theme(self))
+        
+        self._full_view = True
+        
+        self._set_full_sessions_view(False)
+    
+    def _set_full_sessions_view(self, full_view:bool):
+        self.ui.sessionList.setHeaderHidden(not full_view)
+        
+        if full_view:
+            self.ui.sessionList.setColumnCount(4)
+        else:
+            self.ui.sessionList.setColumnCount(3)
+            
+        self._full_view = full_view
+        self._resize_session_names_column()
+        
+        OpenSessionDialog.set_sort_by_date(full_view)
+        root_item = self.ui.sessionList.invisibleRootItem()
+        root_item.sortChildren(0, Qt.AscendingOrder)
+        #for i in range(self.ui.sessionList.topLevelItemCount()):
+            #item = self.ui.sessionList.topLevelItem(i)
+            #item.sortChildren(0, Qt.AscendingOrder)
+        
     def _server_status_changed(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
             bool(server_status in (ray.ServerStatus.OFF,
@@ -399,6 +469,11 @@ class OpenSessionDialog(ChildDialog):
                 if has_notes:
                     session_item.set_notes_icon(
                         RayIcon('notes', is_dark_theme(self)))
+                
+                # we add directly date to top item
+                # this way folder also read the last date
+                item.add_modified_date(session_name, modified)
+                
                 break
 
     def _scripted_dir(self, dir_name, script_flags):
@@ -416,13 +491,26 @@ class OpenSessionDialog(ChildDialog):
                 scripted_item.set_scripted(script_flags)
 
     def _resize_session_names_column(self):
-        width = self.ui.sessionList.width() - 45
-        
+        self.ui.sessionList.setColumnWidth(1, 20)
+        self.ui.sessionList.setColumnWidth(2, 20)
         scroll_bar = self.ui.sessionList.verticalScrollBar()
-        if scroll_bar.isVisible():
-            width -= scroll_bar.width()
+        width = 20
         
-        width = max(width, 40)
+        if self._full_view:
+            self.ui.sessionList.setColumnWidth(3, 105)
+
+            width = self.ui.sessionList.width() - 150
+            if scroll_bar.isVisible():
+                width -= scroll_bar.width()
+            
+            width = max(width, 20)
+            
+        else:
+            width = self.ui.sessionList.width() - 45            
+            if scroll_bar.isVisible():
+                width -= scroll_bar.width()
+            
+            width = max(width, 40)
 
         self.ui.sessionList.setColumnWidth(0, width)
 
