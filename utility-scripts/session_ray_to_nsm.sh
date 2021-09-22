@@ -97,8 +97,12 @@ stop signal
 label
 	$label
 "
-            # link the NSM Proxy new directory to the Ray-Hack client dir
-            if ln -s -r "$client_name.$client_id" "NSM Proxy.$client_id";then
+            linkdir="NSM Proxy.$client_id"
+            if [ -d "$linkdir" && -L "$linkdir" ] && [[ "$(readlink "$linkdir")" == "$client_name.$client_id" ]];then
+                echo "$linkdir already linked, keep it"
+            
+                # link the NSM Proxy new directory to the Ray-Hack client dir
+            elif ln -s -r "$client_name.$client_id" "NSM Proxy.$client_id";then
                 echo "$proxy_contents" > "NSM Proxy.$client_id/nsm-proxy.config"
                 nsm_file_contents+="NSM Proxy:nsm-proxy:$client_id\n"
             else
