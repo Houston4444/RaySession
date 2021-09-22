@@ -441,9 +441,6 @@ class SignaledSession(Session):
     def _ray_gui_preview_snapshot(self, path, args):
         self.preview_snapshots.append(args[0])
 
-    #def _ray_gui_listed_session_details(self, path, args):
-        #pass
-
     def _ray_gui_script_info(self, path, args):
         text = args[0]
         self.main_win.show_script_info(text)

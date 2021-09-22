@@ -123,7 +123,12 @@ class SessionItem(QTreeWidgetItem):
             for i in range(self.childCount()):
                 child_item = self.child(i)
                 child_item.add_modified_date(path, date_int)
-            
+
+    def set_locked(self, locked:bool):
+        if locked:
+            self.setFlags(self.flags() & ~Qt.ItemIsEnabled)
+        else:
+            self.setFlags(self.flags() | Qt.ItemIsEnabled)
 
 
 class SessionFolder:
@@ -461,7 +466,7 @@ class OpenSessionDialog(ChildDialog):
         self.ui.treeWidgetSnapshots.clearSelection()
 
     def _update_session_details(self, session_name:str,
-                                has_notes:str, modified:str):
+                                has_notes:int, modified:int, locked:int):
         for i in range(self.ui.sessionList.topLevelItemCount()):
             item = self.ui.sessionList.topLevelItem(i)
             session_item = item.find_item_with(session_name)
@@ -473,6 +478,9 @@ class OpenSessionDialog(ChildDialog):
                 # we add directly date to top item
                 # this way folder also read the last date
                 item.add_modified_date(session_name, modified)
+                if locked:
+                    print('lockeddd', session_name)
+                session_item.set_locked(bool(locked))
                 
                 break
 

@@ -198,6 +198,15 @@ class ScriptFile:
     SAVE = 0x4
     CLOSE = 0x8
 
+    @classmethod
+    def by_string(cls, action:str)->int:
+        if action == 'load':
+            return cls.LOAD
+        if action == 'save':
+            return cls.SAVE
+        if action == 'close':
+            return cls.CLOSE
+        return cls.PREVENT
 
 debug = False
 

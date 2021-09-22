@@ -504,7 +504,10 @@ class SignaledSession(OperatingSession):
                 break
             search_scripts_dir = dirname(search_scripts_dir)
 
-        print('koeffokeff', has_general_scripts)
+        locked_sessions = []
+        multi_daemon_file = MultiDaemonFile.get_instance()
+        if multi_daemon_file is not None:
+            locked_sessions = multi_daemon_file.get_all_session_paths()
 
         for root, dirs, files in os.walk(self.root):
             #exclude hidden files and dirs
@@ -526,24 +529,20 @@ class SignaledSession(OperatingSession):
                     if os.access(
                             "%s/%s/%s.sh" % (root, ray.SCRIPTS_DIR, action),
                             os.X_OK):
-                        if action == 'load':
-                            script_files += ray.ScriptFile.LOAD
-                        elif action == 'save':
-                            script_files += ray.ScriptFile.SAVE
-                        elif action == 'close':
-                            script_files += ray.ScriptFile.CLOSE
+                        script_files += ray.ScriptFile.by_string(action)
 
                 self.send(src_addr, '/ray/gui/listed_session/scripted_dir',
                           basefolder, script_files)
             
             if basefolder not in sessions_set:
                 continue
-            
+
             has_notes = bool(ray.NOTES_PATH in files)
             last_modified = int(os.path.getmtime(root))
+            locked = bool(root in locked_sessions)
 
             self.send(src_addr, '/ray/gui/listed_session/details',
-                      basefolder, int(has_notes), last_modified)
+                      basefolder, int(has_notes), last_modified, int(locked))
 
             # prevent search in sub directories
             dirs.clear()        
@@ -704,7 +703,6 @@ class SignaledSession(OperatingSession):
             # in case user change preview so fastly
             # that this thread is late and user already
             # changed the session to preview
-            print('skipp session', session_name, server.session_to_preview)
             return
 
         tmp_session = DummySession(self.root)

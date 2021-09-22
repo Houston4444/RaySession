@@ -209,7 +209,7 @@ class GuiServerThread(liblo.ServerThread):
         if not ray.types_are_all_strings(types):
             return False
 
-    @ray_method('/ray/gui/listed_session/details', 'sih')
+    @ray_method('/ray/gui/listed_session/details', 'sihi')
     def _listed_session_details(self, path, args, types, src_addr):
         self.signaler.session_details.emit(*args)
 
