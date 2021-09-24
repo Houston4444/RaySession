@@ -13,6 +13,17 @@ if [[ "$1" == "--executable" ]];then
     shift
 fi
 
+current_session=false
+if [[ "$1" == "--current-session" ]];then
+    shift
+    current_session=true
+    session_path=$(ray_control get_session_path)
+    if [ -z "$session_path" ];then
+        echo "option --current-session without running Ray session, abort."
+        exit 7
+    fi
+fi
+
 if [ -f "$1" ] && [[ "$1" =~ ".ardour"$ ]];then
     # argument is a file and an ardour session
     ardour_session_dir=`dirname "$1"`
@@ -38,21 +49,29 @@ else
     fi
 fi
 
-if ! ray_control start;then
-    echo "can not start ray_control. abort."
-    exit 2
+if ! $current_session;then
+    if ! ray_control start;then
+        echo "can not start ray_control. abort."
+        exit 2
+    fi
+        
+    ray_root=`ray_control get_root`
+
+    if ! ray_control open_session_off "$ardour_session_name";then
+        echo "impossible to load $ardour_session_name with RaySession. abort."
+        exit 3
+    fi
+
+    ray_control add_factory_client_template "JACK Connections"
+    session_path="$ray_root/$ardour_session_name"
+fi
+
+if $current_session;then
+    client_id=`ray_control add_executable $executable "prefix:$ardour_session_name" not_start`
+else
+    client_id=`ray_control add_executable $executable not_start`
 fi
     
-ray_root=`ray_control get_root`
-
-if ! ray_control open_session_off "$ardour_session_name";then
-    echo "impossible to load $ardour_session_name with RaySession. abort."
-    exit 3
-fi
-
-ray_control add_factory_client_template "JACK Connections"
-client_id=`ray_control add_executable $executable not_start`
-
 if [ -z "$client_id" ];then
     echo "impossible to add $executable to session $ardour_session_name. abort."
     exit 4
@@ -63,9 +82,9 @@ echo "client_id:$client_id"
 # check if we move or copy the ardour session folder
 # if session is on the same partition than RaySession root folder -> move, else copy
 move_or_copy=mv
-[ `stat -c '%d' "$ardour_session_dir"` == `stat -c '%d' "$ray_root"` ] || move_or_copy="cp -R -v"
+[[ `stat -c '%d' "$ardour_session_dir"` == `stat -c '%d' "$ray_root"` ]] || move_or_copy="cp -R -v"
 
-new_ardour_session_dir="$ray_root/$ardour_session_name/$ardour_session_name.$client_id"
+new_ardour_session_dir="$session_path/$ardour_session_name.$client_id"
 
 if [[ "$move_or_copy" == mv ]];then
     echo -n "moving "
