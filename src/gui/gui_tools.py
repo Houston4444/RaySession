@@ -22,6 +22,7 @@ class RS:
     HD_SessionScripts = 0x020
     HD_SystrayClose = 0x040
     HD_StartupRecentSessions = 0x080
+    HD_ArdourConversion = 0x100
 
     @classmethod
     def set_settings(cls, settings):

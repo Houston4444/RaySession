@@ -9,14 +9,26 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QProcess, QProcessEnvironment, Qt
 
 import ray
-from gui_tools import CommandLineArgs
+from gui_tools import CommandLineArgs, RS
 from open_session_dialog import OpenSessionDialog
 from child_dialogs import ChildDialog
 
+import ui.ardour_convert
 import ui.hydro_rh_nsm
 import ui.ray_to_nsm
 
+
 _translate = QApplication.translate
+
+
+class ArdourConversionDialog(ChildDialog):
+    def __init__(self, parent):
+        ChildDialog.__init__(self, parent)
+        self.ui = ui.ardour_convert.Ui_Dialog()
+        self.ui.setupUi(self)
+        
+    def not_again_value(self)->bool:
+        return self.ui.checkBoxNotAgain.isChecked()
 
 
 class HydrogenRhNsmDialog(ChildDialog):
@@ -208,6 +220,15 @@ class UtilityScriptLauncher:
     def convert_ardour_to_session(self):
         script_name = 'ardour_from_external_to_session.sh'
         terminal_title = _translate('utilities', 'Convert Ardour session to Ray')
+
+        if not RS.is_hidden(RS.HD_ArdourConversion):
+            dialog = ArdourConversionDialog(self.main_win)
+            dialog.exec()
+            if not dialog.result():
+                return
+            
+            if dialog.not_again_value():
+                RS.set_hidden(RS.HD_ArdourConversion)
 
         ardour_session , filter = QFileDialog.getOpenFileName(
             self.main_win,
