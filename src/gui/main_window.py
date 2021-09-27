@@ -370,9 +370,10 @@ class MainWindow(QMainWindow):
 
         self._build_systray_menu()
 
-        if (self._systray_mode == ray.Systray.ALWAYS
-                or (self._systray_mode == ray.Systray.SESSION_ONLY
-                        and self.session.server_status != ray.ServerStatus.OFF)):
+        if (not CommandLineArgs.under_nsm
+            and (self._systray_mode == ray.Systray.ALWAYS
+                    or (self._systray_mode == ray.Systray.SESSION_ONLY
+                        and self.session.server_status != ray.ServerStatus.OFF))):
             self._systray.show()
 
         self._startup_time = time.time()

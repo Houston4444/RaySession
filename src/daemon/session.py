@@ -296,7 +296,8 @@ class Session(ServerSender):
         executable = ct.attribute('executable')
         protocol = ray.protocol_from_str(ct.attribute('protocol'))
         
-        if not executable:
+        if (protocol in (ray.Protocol.NSM, ray.Protocol.RAY_HACK)
+                and not executable):
             return False
 
         if protocol != ray.Protocol.RAY_NET:
@@ -327,7 +328,7 @@ class Session(ServerSender):
         if ct.attribute('check_nsm_bin') in  ("1", "true"):
             result = QProcess.execute(
                 'grep', ['-q', '/nsm/server/announce',
-                            shutil.which(executable)])
+                         shutil.which(executable)])
             if result:
                 return False
 
@@ -1703,10 +1704,15 @@ for better organization.""")
         session_nsm_file = "%s/session.nsm" % spath
 
         if os.path.exists(spath):
+            # session directory exists
             for sess_file in session_ray_file, session_nsm_file:
                 if os.path.exists(sess_file):
                     break
             else:
+
+                # session directory doesn't contains session file.
+                # Check if it contains another session file in a subfolder
+                # and in this case, prevent to create this session
                 for root, dirs, files in os.walk(spath):
                     #exclude hidden files and dirs
                     files = [f for f in files if not f.startswith('.')]
@@ -1722,6 +1728,10 @@ for better organization.""")
                             self.load_error(ray.Err.SESSION_IN_SESSION_DIR)
                             return
         else:
+
+            # session directory doesn't exists,
+            # create this session.
+
             if self._is_path_in_a_session_dir(spath):
                 # prevent to create a session in a session directory
                 # for better user organization
@@ -1894,6 +1904,11 @@ for better organization.""")
             for client in self.future_clients + self.future_trashed_clients:
                 client.adjust_files_after_copy(self.path, ray.Template.RENAME)
             self._set_path(self.future_session_path)
+            
+            # session has been renamed and client files have been moved
+            # save session file is required here, else clients could not
+            # find their files at reload (after session abort).
+            self._save_session_file()
 
         self.send_gui("/ray/gui/session/name", self.name, self.path)
         self.trashed_clients.clear()
