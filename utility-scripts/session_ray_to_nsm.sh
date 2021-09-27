@@ -100,7 +100,9 @@ label
             linkdir="NSM Proxy.$client_id"
             if [ -d "$linkdir" ] && [ -L "$linkdir" ] && [[ "$(readlink "$linkdir")" == "$client_name.$client_id" ]];then
                 echo "$linkdir already linked, keep it"
-            
+                echo "$proxy_contents" > "NSM Proxy.$client_id/nsm-proxy.config"
+                nsm_file_contents+="NSM Proxy:nsm-proxy:$client_id\n"
+
                 # link the NSM Proxy new directory to the Ray-Hack client dir
             elif ln -s -r "$client_name.$client_id" "NSM Proxy.$client_id";then
                 echo "$proxy_contents" > "NSM Proxy.$client_id/nsm-proxy.config"
