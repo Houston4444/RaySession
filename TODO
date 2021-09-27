@@ -6,9 +6,4 @@ client noSavelLevel gardé comme ça pour l'instant parce client.no_save_level e
 léger bug notes : saturation messages snapshot
 afficher le sous dossier -> preview ; session en cours
 
-fenêtre prépa ardour script
-
-trouver:
-Cannot callback the server in notification thread!
-
 Attention session fille réseau et systray

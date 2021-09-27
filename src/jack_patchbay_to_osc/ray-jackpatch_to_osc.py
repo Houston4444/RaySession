@@ -90,6 +90,7 @@ class MainObject:
     connection_list = []
     metadata_list = []
     client_list = [] # list of dicts {'name': client_name, 'uuid': client_uuid}
+    client_names_queue = []
     jack_running = False
     osc_server = None
     terminate = False
@@ -155,6 +156,17 @@ class MainObject:
     def signal_handler(cls, sig: int, frame):
         if sig in (signal.SIGINT, signal.SIGTERM):
             cls.terminate = True
+            
+    def eat_client_names_queue(self):
+        while self.client_names_queue:
+            client_name = self.client_names_queue.pop(0)
+            uuid = jacklib.get_uuid_for_client_name(self.jack_client, client_name)
+            for client_dict in self.client_list:
+                if client_dict['name'] == client_name:
+                    client_dict['uuid'] = uuid
+                    break
+            else:
+                self.client_list.append({'name': client_name, 'uuid': uuid})
     
     def add_gui(self, gui_url: str):
         self.osc_server.add_gui(gui_url)
@@ -205,6 +217,8 @@ class MainObject:
                     self.remember_dsp_load()
                 if n % 20 == 0:
                     self.send_dsp_load()
+                
+                self.eat_client_names_queue()
 
             else:
                 if n % 10 == 0:
@@ -354,15 +368,11 @@ class MainObject:
         return 0
 
     def jack_client_registration_callback(self, client_name: bytes,
-                                          register: int, arg=None):
+                                          register: int, arg=None)->int:
+        
         client_name = client_name.decode()
-        uuid = jacklib.get_uuid_for_client_name(self.jack_client, client_name)
-        for client_dict in self.client_list:
-            if client_dict['name'] == client_name:
-                client_dict['uuid'] = uuid
-                break
-        else:
-            self.client_list.append({'name': client_name, 'uuid': uuid})
+        self.client_names_queue.append(client_name)
+        return 0
         
     def jack_port_registration_callback(self, port_id: int, register: bool,
                                         arg=None)->int:
