@@ -185,6 +185,8 @@ class NewSessionDialog(ChildDialog):
         self.ui.lineEdit.setCompleter(self._completer)
 
         self._server_status_changed(self.session.server_status)
+        
+        self._text_was_empty = True
 
     def _server_status_changed(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
@@ -222,8 +224,9 @@ class NewSessionDialog(ChildDialog):
         self.ui.comboBoxTemplate.addItem(
             _translate('session_template', "with basic scripts"))
 
-        misscount = self.ui.comboBoxTemplate.count()  - 1 - len(
-                                                ray.FACTORY_SESSION_TEMPLATES)
+        misscount = self.ui.comboBoxTemplate.count() \
+                    - 1 - len(ray.FACTORY_SESSION_TEMPLATES)
+
         for i in range(misscount):
             self.ui.comboBoxTemplate.addItem(
                 ray.FACTORY_SESSION_TEMPLATES[-i])
@@ -250,7 +253,16 @@ class NewSessionDialog(ChildDialog):
             self.ui.comboBoxTemplate.setCurrentIndex(1)
 
     def _set_last_sub_folder_selected(self):
-        last_subfolder = RS.settings.value('last_subfolder', type=str)
+        last_subfolder = ''
+
+        for sess in self.session.recent_sessions:
+            if sess.startswith('/'):
+                continue
+
+            if '/' in sess:
+                last_subfolder, sep, sess_name = sess.rpartition('/')
+            break
+
         if last_subfolder and not self.ui.lineEdit.text():
             self.ui.lineEdit.setText(last_subfolder + '/')
 
@@ -292,6 +304,31 @@ class NewSessionDialog(ChildDialog):
                                    and not text.endswith('/')
                                    and text not in self.session_list)
         self._prevent_ok()
+
+        if self._text_was_empty:
+            if text:
+                self._completer.setCompletionMode(QCompleter.PopupCompletion)
+                self._completer.complete()
+                self._text_was_empty = False
+        
+        elif not text:
+            QTimer.singleShot(50, self._set_completer_for_empty_text)
+            self._text_was_empty = True
+
+    def _set_completer_for_empty_text(self):
+        #print('set currow', self._completer.setCurrentIndex(0))
+        del self._completer
+        self._completer = QCompleter([f + '/' for f in self.sub_folders])
+        self._completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+        self.ui.lineEdit.setCompleter(self._completer)
+        QTimer.singleShot(50, self._completer.complete)
+
+    def _show_completer_at_start(self):
+        self._completer.complete()
+
+    def showEvent(self, event):
+        ChildDialog.showEvent(self, event)
+        QTimer.singleShot(800, self._show_completer_at_start)
 
     def _prevent_ok(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(

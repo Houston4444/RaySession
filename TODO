@@ -6,4 +6,6 @@ client noSavelLevel gardé comme ça pour l'instant parce client.no_save_level e
 léger bug notes : saturation messages snapshot
 afficher le sous dossier -> preview ; session en cours
 
-Attention session fille réseau et systray
+Display server address in window title (network session).
+Icons with multiple possibilities ???
+Start/Stop all clients f

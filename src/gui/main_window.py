@@ -564,7 +564,7 @@ class MainWindow(QMainWindow):
         self.daemon_manager.stop()
 
     def _create_new_session(self):
-        # from systray, better to show main window in the background
+        # from systray menu, better to show main window in the background
         # before open dialog
         self.show()
 
@@ -578,12 +578,6 @@ class MainWindow(QMainWindow):
         subfolder = session_short_path.rpartition('/')[0]
 
         RS.settings.setValue('last_used_template', template_name)
-        RS.settings.setValue('last_subfolder', subfolder)
-        if self.session.is_running():
-            # remember the running session as last session (if any)
-            short_path = self.session.get_short_path()
-            if not short_path.startswith('/'):
-                RS.settings.setValue('last_session', short_path)
 
         if not template_name:
             self.to_daemon('/ray/server/new_session', session_short_path)
@@ -639,14 +633,10 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        if self.session.is_running():
-            RS.settings.setValue('last_session', self.session.get_short_path())
-
         session_name = dialog.get_selected_session()
         self.to_daemon('/ray/server/open_session', session_name)
 
     def _close_session(self):
-        RS.settings.setValue('last_session', self.session.get_short_path())
         self.to_daemon('/ray/session/close')
 
     def _abort_session(self):
@@ -655,7 +645,6 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
         if dialog.result():
-            RS.settings.setValue('last_session', self.session.get_short_path())
             self.to_daemon('/ray/session/abort')
 
     def _rename_session_action(self):
@@ -676,12 +665,6 @@ class MainWindow(QMainWindow):
         dialog.exec()
         if not dialog.result():
             return
-
-        if self.session.is_running():
-            # remember the running session as last session (if any)
-            short_path = self.session.get_short_path()
-            if not short_path.startswith('/'):
-                RS.settings.setValue('last_session', short_path)
 
         session_name = dialog.get_session_short_path()
         self.to_daemon('/ray/session/duplicate', session_name)

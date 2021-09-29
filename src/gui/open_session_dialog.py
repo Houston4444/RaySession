@@ -291,16 +291,22 @@ class OpenSessionDialog(ChildDialog):
             height = self.ui.progressBar.size().height()
             self.ui.progressBar.setVisible(False)
 
-            # Try to select last used session
             root_item = self.ui.sessionList.invisibleRootItem()
-            for i in range(root_item.childCount()):
-                item = root_item.child(i)
-                last_session_item = item.find_item_with(
-                    RS.settings.value('last_session', type=str))
+            sess_item = None
 
-                if last_session_item:
-                    self.ui.sessionList.setCurrentItem(last_session_item)
-                    self.ui.sessionList.scrollToItem(last_session_item)
+            for sess in self.session.recent_sessions:
+                if sess == self.session.get_short_path():
+                    continue
+
+                for i in range(root_item.childCount()):
+                    item = root_item.child(i)
+                    sess_item = item.find_item_with(sess)
+                    if sess_item is not None:
+                        break
+                
+                if sess_item is not None:
+                    self.ui.sessionList.setCurrentItem(sess_item)
+                    self.ui.sessionList.scrollToItem(sess_item)
                     break
                 
             QTimer.singleShot(20, self._resize_session_names_column)
@@ -410,6 +416,10 @@ class OpenSessionDialog(ChildDialog):
             bool(self._server_will_accept and self._has_selection))
 
     def _deploy_item(self, item, column):
+        if column == 1 and not item.icon(1).isNull():
+            # set preview tab to 'Notes' tab if user clicked on a notes icon 
+            self.ui.tabWidget.setCurrentIndex(1)
+
         if not item.childCount():
             return
 
