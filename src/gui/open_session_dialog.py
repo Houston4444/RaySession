@@ -16,6 +16,13 @@ from snapshots_dialog import (
 
 import ui.open_session
 
+
+COLUMN_NAME = 0
+COLUMN_NOTES = 1
+COLUMN_SCRIPTS = 2
+COLUMN_DATE = 3
+
+
 class PreviewClient(ray.ClientData):
     def __init__(self):
         ray.ClientData.__init__(self)
@@ -36,11 +43,12 @@ class SessionItem(QTreeWidgetItem):
             return False
 
         if OpenSessionDialog.sort_by_date:
-            self_date_int = self.data(3, Qt.UserRole)
-            other_date_int = other.data(3, Qt.UserRole)
+            self_date_int = self.data(COLUMN_DATE, Qt.UserRole)
+            other_date_int = other.data(COLUMN_DATE, Qt.UserRole)
             if self_date_int is None:
                 if other_date_int is None:
-                    return bool(self.text(0).lower() < other.text(0).lower())
+                    return bool(self.text(COLUMN_NAME).lower()
+                                < other.text(COLUMN_NAME).lower())
                 return False
             
             if other_date_int is None:
@@ -48,10 +56,12 @@ class SessionItem(QTreeWidgetItem):
             
             return self_date_int > other_date_int
 
-        return bool(self.text(0).lower() < other.text(0).lower())
+        return bool(self.text(COLUMN_NAME).lower()
+                    < other.text(COLUMN_NAME).lower())
 
     def show_conditionnaly(self, string: str)->bool:
-        show = bool(string.lower() in self.data(0, Qt.UserRole).lower())
+        show = bool(
+            string.lower() in self.data(COLUMN_NAME, Qt.UserRole).lower())
 
         n = 0
         for i in range(self.childCount()):
@@ -65,7 +75,7 @@ class SessionItem(QTreeWidgetItem):
         return show
 
     def find_item_with(self, string):
-        if self.data(0, Qt.UserRole) == string:
+        if self.data(COLUMN_NAME, Qt.UserRole) == string:
             return self
 
         item = None
@@ -78,33 +88,33 @@ class SessionItem(QTreeWidgetItem):
         return item
     
     def set_notes_icon(self, icon):
-        self.setIcon(1, icon)
+        self.setIcon(COLUMN_NOTES, icon)
 
     def set_scripted(self, script_flags:int, for_child=False):
         if script_flags == ray.ScriptFile.PREVENT:
-            self.setText(2, "")
+            self.setText(COLUMN_SCRIPTS, "")
         else:
             if for_child:
-                self.setText(2, "^_")
+                self.setText(COLUMN_SCRIPTS, "^_")
             else:
-                self.setText(2, ">_")
+                self.setText(COLUMN_SCRIPTS, ">_")
 
         for i in range(self.childCount()):
             item = self.child(i)
             item.set_scripted(script_flags, for_child=True)
     
     def set_modified_date(self, date_int:int):
-        self.setData(3, Qt.UserRole, date_int)
+        self.setData(COLUMN_DATE, Qt.UserRole, date_int)
 
         date = QDateTime.fromSecsSinceEpoch(date_int)
         date_string =  date.toString("dd/MM/yy hh:mm")
         if QLocale.system().country() == QLocale.UnitedStates:
             date_string = date.toString("MM/dd/yy hh:mm")
 
-        self.setText(3, date_string)
+        self.setText(COLUMN_DATE, date_string)
             
     def add_modified_date(self, path:str, date_int:int):
-        self_path = self.data(0, Qt.UserRole)
+        self_path = self.data(COLUMN_NAME, Qt.UserRole)
         if not self_path:
             return
         
@@ -113,7 +123,7 @@ class SessionItem(QTreeWidgetItem):
             return
         
         if path.startswith(self_path + '/'):
-            current_data_date = self.data(3, Qt.UserRole)
+            current_data_date = self.data(COLUMN_DATE, Qt.UserRole)
             if current_data_date is None:
                 current_data_date = 0
             
@@ -145,10 +155,10 @@ class SessionFolder:
 
     def make_item(self):
         item = SessionItem([self.name, "", "", ""], self.is_session)
-        item.setData(0, Qt.UserRole, self.path)
+        item.setData(COLUMN_NAME, Qt.UserRole, self.path)
 
         if self.subfolders:
-            item.setIcon(0, QIcon.fromTheme('folder'))
+            item.setIcon(COLUMN_NAME, QIcon.fromTheme('folder'))
 
         if not self.is_session:
             item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
@@ -247,10 +257,7 @@ class OpenSessionDialog(ChildDialog):
         
         OpenSessionDialog.set_sort_by_date(full_view)
         root_item = self.ui.sessionList.invisibleRootItem()
-        root_item.sortChildren(0, Qt.AscendingOrder)
-        #for i in range(self.ui.sessionList.topLevelItemCount()):
-            #item = self.ui.sessionList.topLevelItem(i)
-            #item.sortChildren(0, Qt.AscendingOrder)
+        root_item.sortChildren(COLUMN_NAME, Qt.AscendingOrder)
         
     def _server_status_changed(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
@@ -344,7 +351,7 @@ class OpenSessionDialog(ChildDialog):
             item = folder.make_item()
             self.ui.sessionList.addTopLevelItem(item)
 
-        self.ui.sessionList.sortByColumn(0, Qt.AscendingOrder)
+        self.ui.sessionList.sortByColumn(COLUMN_NAME, Qt.AscendingOrder)
 
     def _update_filtered_list(self, filt):
         filter_text = self.ui.filterBar.displayText()
@@ -393,13 +400,13 @@ class OpenSessionDialog(ChildDialog):
                 return
 
     def _current_item_changed(self, item, previous_item):
-        self._has_selection = bool(item and item.data(0, Qt.UserRole))
+        self._has_selection = bool(item and item.data(COLUMN_NAME, Qt.UserRole))
         
         self.ui.listWidgetPreview.clear()
         self.ui.treeWidgetSnapshots.clear()
         
         if item is not None and item.is_session:
-            session_full_name = item.data(0, Qt.UserRole)
+            session_full_name = item.data(COLUMN_NAME, Qt.UserRole)
             self.ui.labelSessionName.setText(
                 os.path.basename(session_full_name))
             self.ui.tabWidget.setEnabled(True)
@@ -416,7 +423,7 @@ class OpenSessionDialog(ChildDialog):
             bool(self._server_will_accept and self._has_selection))
 
     def _deploy_item(self, item, column):
-        if column == 1 and not item.icon(1).isNull():
+        if column == COLUMN_NOTES and not item.icon(COLUMN_NOTES).isNull():
             # set preview tab to 'Notes' tab if user clicked on a notes icon 
             self.ui.tabWidget.setCurrentIndex(1)
 
@@ -433,7 +440,8 @@ class OpenSessionDialog(ChildDialog):
             return
 
         if (self._server_will_accept and self._has_selection
-                and self.ui.sessionList.currentItem().data(0, Qt.UserRole)):
+                and self.ui.sessionList.currentItem().data(
+                    COLUMN_NAME, Qt.UserRole)):
             self.accept()
 
     def _session_preview_update(self):
@@ -504,13 +512,13 @@ class OpenSessionDialog(ChildDialog):
                 scripted_item.set_scripted(script_flags)
 
     def _resize_session_names_column(self):
-        self.ui.sessionList.setColumnWidth(1, 20)
-        self.ui.sessionList.setColumnWidth(2, 20)
+        self.ui.sessionList.setColumnWidth(COLUMN_NOTES, 20)
+        self.ui.sessionList.setColumnWidth(COLUMN_SCRIPTS, 20)
         scroll_bar = self.ui.sessionList.verticalScrollBar()
         width = 20
         
         if self._full_view:
-            self.ui.sessionList.setColumnWidth(3, 105)
+            self.ui.sessionList.setColumnWidth(COLUMN_DATE, 105)
 
             width = self.ui.sessionList.width() - 150
             if scroll_bar.isVisible():
@@ -525,7 +533,7 @@ class OpenSessionDialog(ChildDialog):
             
             width = max(width, 40)
 
-        self.ui.sessionList.setColumnWidth(0, width)
+        self.ui.sessionList.setColumnWidth(COLUMN_NAME, width)
 
     def resizeEvent(self, event):
         ChildDialog.resizeEvent(self, event)
@@ -533,4 +541,5 @@ class OpenSessionDialog(ChildDialog):
 
     def get_selected_session(self)->str:
         if self.ui.sessionList.currentItem():
-            return self.ui.sessionList.currentItem().data(0, Qt.UserRole)
+            return self.ui.sessionList.currentItem().data(
+                COLUMN_NAME, Qt.UserRole)
