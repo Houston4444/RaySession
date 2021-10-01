@@ -65,6 +65,9 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
+      <property name="handleWidth">
+       <number>0</number>
+      </property>
       <property name="childrenCollapsible">
        <bool>true</bool>
       </property>
@@ -1471,10 +1474,11 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionConvertToNsmFileFormat">
    <property name="icon">
-    <iconset theme="nsm-legacy-gui"/>
+    <iconset theme="nsm-legacy-gui">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Convert session to NSM file format</string>
+    <string>Convert &amp;session to NSM file format</string>
    </property>
   </action>
  </widget>
