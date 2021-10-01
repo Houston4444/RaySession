@@ -950,7 +950,7 @@ class OperatingSession(Session):
             return
 
         self.send_even_dummy(self.osc_src_addr, '/reply',
-                              self.osc_path, *messages)
+                             self.osc_path, *messages)
 
     def _send_error(self, err, error_message):
         #clear process order to allow other new operations
@@ -1666,19 +1666,32 @@ for better organization.""")
             self.send_gui('/ray/gui/session/name', '', '')
 
     def rename(self, new_session_name):
-        for client in self.clients + self.trashed_clients:
-            client.adjust_files_after_copy(new_session_name, ray.Template.RENAME)
-
+        spath = "%s/%s" % (dirname(self.path), new_session_name)
+        if os.path.exists(spath):
+            self._send_error(
+                ray.Err.CREATE_FAILED,
+                _translate('rename', "Folder %s already exists,\n")
+                % new_session_name
+                + _translate('rename', 'Impossible to rename session.'))
+            return
+        
         try:
-            spath = "%s/%s" % (dirname(self.path), new_session_name)
             subprocess.run(['mv', self.path, spath])
-            self._set_path(spath)
-
-            self.send_gui_message(
-                _translate('GUIMSG', 'Session directory is now: %s')
-                % self.path)
         except:
-            pass
+            self._send_error(
+                ray.Err.GENERAL_ERROR,
+                "failed to rename session")
+            return
+        
+        self._set_path(spath)
+
+        self.send_gui_message(
+            _translate('GUIMSG', 'Session directory is now: %s')
+            % self.path)
+        
+        for client in self.clients + self.trashed_clients:
+            client.adjust_files_after_copy(
+                new_session_name, ray.Template.RENAME)
 
         self.next_function()
 

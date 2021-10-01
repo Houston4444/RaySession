@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>533</width>
-    <height>487</height>
+    <height>446</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -213,21 +213,27 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
-           <widget class="QLabel" name="labelSessionName">
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Session Name</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
+                      <widget class="StackedSessionName" name="stackedWidgetSessionName">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>16777215</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="lineWidth">
+                        <number>0</number>
+                       </property>
+                       <property name="currentIndex">
+                        <number>-1</number>
+                       </property>
+                      </widget>
+                     </item>
           <item>
            <widget class="QTabWidget" name="tabWidget">
             <property name="currentIndex">
@@ -320,6 +326,12 @@
    <class>ListWidgetPreviewClients</class>
    <extends>QListWidget</extends>
    <header>list_widget_preview_clients</header>
+  </customwidget>
+  <customwidget>
+   <class>StackedSessionName</class>
+   <extends>QStackedWidget</extends>
+   <header>surclassed_widgets</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

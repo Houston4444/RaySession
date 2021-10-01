@@ -669,6 +669,22 @@ class SignaledSession(OperatingSession):
         self._ray_server_open_session(path, args, src_addr, True)
 
     def _ray_server_rename_session(self, path, args, src_addr):
+        old_session_name, new_session_name = args
+        spath = self.get_full_path(old_session_name)
+
+        for f in 'raysession.xml', 'session.nsm':
+            if os.path.isfile("%s/%s" % (spath, f)):
+                break
+        else:
+            self.send(src_addr, '/error', ray.Err.BAD_PROJECT,
+                      "%s is not an existing session, can't rename !"
+                      % old_session_name)
+
+        if '/' in new_session_name:
+            self.send(src_addr, '/error', ray.Err.BAD_PROJECT,
+                      "'/' is not allowed in new_session_name")
+            return False
+
         tmp_session = DummySession(self.root)
         tmp_session.ray_server_rename_session(path, args, src_addr)
 

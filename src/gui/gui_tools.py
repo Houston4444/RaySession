@@ -232,6 +232,9 @@ def split_in_two(string: str)->tuple:
 def dirname(*args)->str:
     return os.path.dirname(*args)
 
+def basename(*args)->str:
+    return os.path.basename(*args)
+
 def get_code_root()->str:
     return dirname(dirname(dirname(os.path.realpath(__file__))))
 

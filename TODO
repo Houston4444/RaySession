@@ -9,3 +9,7 @@ afficher le sous dossier -> preview ; session en cours
 Display server address in window title (network session).
 Icons with multiple possibilities ???
 Start/Stop all clients f
+
+Empêcher renommer session avec /
+faire fenêtre propriétés client
+faire menu session preview: renommer, dupliquer, sauver comme modèle, supprimer

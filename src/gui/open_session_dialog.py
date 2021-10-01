@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt, QTimer, QDateTime, QSize, QLocale
 
 import ray
 
-from gui_tools import CommandLineArgs, RS, RayIcon, is_dark_theme
+from gui_tools import CommandLineArgs, RS, RayIcon, is_dark_theme, basename
 from child_dialogs import ChildDialog
 from client_properties_dialog import ClientPropertiesDialog
 from snapshots_dialog import (
@@ -182,6 +182,8 @@ class OpenSessionDialog(ChildDialog):
         self.ui = ui.open_session.Ui_DialogOpenSession()
         self.ui.setupUi(self)
 
+        self._session_renaming = ('', '')
+
         self._timer_progress_n = 0
         self._timer_progress = QTimer()
         self._timer_progress.setInterval(50)
@@ -189,11 +191,13 @@ class OpenSessionDialog(ChildDialog):
         self._timer_progress.start()
         self._progress_inverted = False
 
-        self.ui.labelSessionName.setText('')
+        self.ui.stackedWidgetSessionName.set_text('')
         self.ui.tabWidget.setEnabled(False)
         self.ui.tabWidget.tabBar().setExpanding(True)
-        
         self.ui.toolButtonFolder.clicked.connect(self._change_root_folder)
+        
+        self.ui.stackedWidgetSessionName.name_changed.connect(
+            self._session_name_changed)
         self.ui.sessionList.currentItemChanged.connect(
             self._current_item_changed)
         self.ui.sessionList.setFocus(Qt.OtherFocusReason)
@@ -214,6 +218,8 @@ class OpenSessionDialog(ChildDialog):
             self._update_session_details)
         self.signaler.scripted_dir.connect(
             self._scripted_dir)
+        self.signaler.other_session_renamed.connect(
+            self._session_renamed_by_server)
 
         self.to_daemon('/ray/server/list_sessions', 0)
 
@@ -404,16 +410,17 @@ class OpenSessionDialog(ChildDialog):
         
         self.ui.listWidgetPreview.clear()
         self.ui.treeWidgetSnapshots.clear()
+
+        self._session_renaming = ('', '')
         
         if item is not None and item.is_session:
             session_full_name = item.data(COLUMN_NAME, Qt.UserRole)
-            self.ui.labelSessionName.setText(
-                os.path.basename(session_full_name))
+            self.ui.stackedWidgetSessionName.set_text(basename(session_full_name))
             self.ui.tabWidget.setEnabled(True)
             if session_full_name:
                 self.to_daemon('/ray/server/get_session_preview', session_full_name)
         else:
-            self.ui.labelSessionName.setText('')
+            self.ui.stackedWidgetSessionName.set_text('')
             self.ui.tabWidget.setEnabled(False)
 
         self._prevent_ok()
@@ -421,6 +428,41 @@ class OpenSessionDialog(ChildDialog):
     def _prevent_ok(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
             bool(self._server_will_accept and self._has_selection))
+
+    def _session_name_changed(self, new_name:str):
+        item = self.ui.sessionList.currentItem()
+        if item is None:
+            return
+
+        old_name = item.data(COLUMN_NAME, Qt.UserRole)
+
+        # prevent accidental renaming to same name
+        if basename(old_name) == new_name:
+            return
+        
+        self._session_renaming = (old_name, new_name)
+        self.to_daemon('/ray/server/rename_session', old_name, new_name)
+
+    def _session_renamed_by_server(self):
+        old_name, new_name = self._session_renaming
+        self._session_renaming = ('', '')
+        
+        item = self.ui.sessionList.currentItem()
+        if item is None:
+            return
+
+        current_name = item.data(COLUMN_NAME, Qt.UserRole)
+
+        if current_name != old_name:
+            return
+        
+        new_long_name = new_name
+        if '/' in old_name:
+            new_long_name = old_name.rpartition('/')[0] + '/' + new_name
+        
+        item.setData(COLUMN_NAME, Qt.UserRole, new_long_name)
+        item.setText(COLUMN_NAME, new_name)
+        self.ui.stackedWidgetSessionName.set_text(new_name)
 
     def _deploy_item(self, item, column):
         if column == COLUMN_NOTES and not item.icon(COLUMN_NOTES).isNull():
