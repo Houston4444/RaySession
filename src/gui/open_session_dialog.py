@@ -149,25 +149,36 @@ class SessionFolder:
     def __init__(self, name):
         self.name = name
         self.subfolders = []
+        self.item = None
 
     def set_path(self, path):
         self.path = path
 
     def make_item(self):
-        item = SessionItem([self.name, "", "", ""], self.is_session)
-        item.setData(COLUMN_NAME, Qt.UserRole, self.path)
+        self.item = SessionItem([self.name, "", "", ""], self.is_session)
+        self.item.setData(COLUMN_NAME, Qt.UserRole, self.path)
 
         if self.subfolders:
-            item.setIcon(COLUMN_NAME, QIcon.fromTheme('folder'))
+            self.item.setIcon(COLUMN_NAME, QIcon.fromTheme('folder'))
 
         if not self.is_session:
-            item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
+            self.item.setFlags(self.item.flags() & ~Qt.ItemIsSelectable)
 
         for folder in self.subfolders:
             sub_item = folder.make_item()
-            item.addChild(sub_item)
+            self.item.addChild(sub_item)
 
-        return item
+        return self.item
+
+    def sort_childrens(self):
+        if self.item is None:
+            return
+        
+        self.item.sortChildren(COLUMN_NAME, Qt.AscendingOrder)
+        
+        for folder in self.subfolders:
+            folder.sort_childrens()
+            
 
 
 class OpenSessionDialog(ChildDialog):
@@ -264,6 +275,8 @@ class OpenSessionDialog(ChildDialog):
         OpenSessionDialog.set_sort_by_date(full_view)
         root_item = self.ui.sessionList.invisibleRootItem()
         root_item.sortChildren(COLUMN_NAME, Qt.AscendingOrder)
+        for folder in self.folders:
+            folder.sort_childrens()
         
     def _server_status_changed(self, server_status):
         self.ui.toolButtonFolder.setEnabled(
