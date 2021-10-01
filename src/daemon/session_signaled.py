@@ -676,12 +676,12 @@ class SignaledSession(OperatingSession):
             if os.path.isfile("%s/%s" % (spath, f)):
                 break
         else:
-            self.send(src_addr, '/error', ray.Err.BAD_PROJECT,
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
                       "%s is not an existing session, can't rename !"
                       % old_session_name)
 
         if '/' in new_session_name:
-            self.send(src_addr, '/error', ray.Err.BAD_PROJECT,
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
                       "'/' is not allowed in new_session_name")
             return False
 

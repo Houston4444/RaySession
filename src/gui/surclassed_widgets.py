@@ -128,6 +128,8 @@ class StackedSessionName(QStackedWidget):
 
         if self.currentIndex() == 0 and self._is_editable:
             self.setCurrentIndex(1)
+            self._line_edit_widget.setText(self._label_widget.text())
+            self._line_edit_widget.selectAll()
             return
 
         QStackedWidget.mouseDoubleClickEvent(self, event)
