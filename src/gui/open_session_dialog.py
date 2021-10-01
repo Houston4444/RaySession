@@ -2,7 +2,8 @@
 import os
 import time
 
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QDialogButtonBox
+from PyQt5.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
+                             QDialogButtonBox, QMenu)
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtCore import Qt, QTimer, QDateTime, QSize, QLocale
 
@@ -16,6 +17,7 @@ from snapshots_dialog import (
 
 import ui.open_session
 
+_translate = QApplication.translate
 
 COLUMN_NAME = 0
 COLUMN_NOTES = 1
@@ -202,8 +204,17 @@ class OpenSessionDialog(ChildDialog):
         self._timer_progress.start()
         self._progress_inverted = False
 
+        self.session_menu = QMenu()
+        self.action_rename = self.session_menu.addAction(
+            QIcon.fromTheme('edit-rename'),
+            _translate('session_menu', 'Rename session'))
+        
+        self.action_rename.triggered.connect(self._ask_for_session_rename)
+        self.ui.toolButtonSessionMenu.setMenu(self.session_menu)
+
+        self.ui.splitterMain.setSizes([240, 800])
         self.ui.stackedWidgetSessionName.set_text('')
-        self.ui.tabWidget.setEnabled(False)
+        self.ui.previewFrame.setEnabled(False)
         self.ui.tabWidget.tabBar().setExpanding(True)
         self.ui.toolButtonFolder.clicked.connect(self._change_root_folder)
         
@@ -431,18 +442,24 @@ class OpenSessionDialog(ChildDialog):
         if item is not None and item.is_session:
             session_full_name = item.data(COLUMN_NAME, Qt.UserRole)
             self.ui.stackedWidgetSessionName.set_text(basename(session_full_name))
-            self.ui.tabWidget.setEnabled(True)
+            self.ui.previewFrame.setEnabled(True)
             if session_full_name:
                 self.to_daemon('/ray/server/get_session_preview', session_full_name)
         else:
             self.ui.stackedWidgetSessionName.set_text('')
-            self.ui.tabWidget.setEnabled(False)
+            self.ui.previewFrame.setEnabled(False)
 
         self._prevent_ok()
 
     def _prevent_ok(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
             bool(self._server_will_accept and self._has_selection))
+
+    def _ask_for_session_rename(self):
+        if not self.ui.previewFrame.isEnabled():
+            return
+
+        self.ui.stackedWidgetSessionName.toggle_edit()
 
     def _session_name_changed(self, new_name:str):
         item = self.ui.sessionList.currentItem()
