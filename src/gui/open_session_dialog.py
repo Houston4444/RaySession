@@ -207,6 +207,8 @@ class OpenSessionDialog(ChildDialog):
         self.ui.tabWidget.tabBar().setExpanding(True)
         self.ui.toolButtonFolder.clicked.connect(self._change_root_folder)
         
+        self.ui.splitterMain.splitterMoved.connect(
+            self._splitter_moved)
         self.ui.stackedWidgetSessionName.name_changed.connect(
             self._session_name_changed)
         self.ui.sessionList.currentItemChanged.connect(
@@ -589,6 +591,9 @@ class OpenSessionDialog(ChildDialog):
             width = max(width, 40)
 
         self.ui.sessionList.setColumnWidth(COLUMN_NAME, width)
+
+    def _splitter_moved(self, pos:int, index:int):
+        self._resize_session_names_column()
 
     def resizeEvent(self, event):
         ChildDialog.resizeEvent(self, event)
