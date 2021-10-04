@@ -99,6 +99,7 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/preview/client/update', ray.ClientData.sisi()),
             ('/ray/gui/preview/client/is_started', 'si'),
             ('/ray/gui/preview/snapshot', 's'),
+            ('/ray/gui/preview/session_size', 'h'),
             ('/ray/gui/script_info', 's'),
             ('/ray/gui/hide_script_info', ''),
             ('/ray/gui/script_user_action', 's'),
@@ -163,6 +164,8 @@ class GuiServerThread(liblo.ServerThread):
             self.signaler.session_preview_update.emit()
         elif reply_path == '/ray/server/rename_session':
             self.signaler.other_session_renamed.emit()
+        elif reply_path == '/ray/session/duplicate_only':
+            self.signaler.other_session_duplicated.emit()
 
     @ray_method('/ray/gui/server/announce', 'siisi')
     def _server_announce(self, path, args, types, src_addr):

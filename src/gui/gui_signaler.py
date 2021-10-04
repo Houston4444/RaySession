@@ -33,6 +33,7 @@ class Signaler(QObject):
     session_details = pyqtSignal(str, int, int, int)
     scripted_dir = pyqtSignal(str, int)
     other_session_renamed = pyqtSignal()
+    other_session_duplicated = pyqtSignal()
 
     client_added_reply = pyqtSignal(str)
 

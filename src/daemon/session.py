@@ -1454,15 +1454,6 @@ for better organization.""")
                               self.get_short_path(),
                               new_session_full_name,
                               client.ray_net.session_root)
-            #client.net_duplicate_state = -1
-
-            #if (client.net_daemon_url
-                    #and ray.is_valid_osc_url(client.net_daemon_url)):
-                #self.send(Address(client.net_daemon_url),
-                          #'/ray/session/duplicate_only',
-                          #self.get_short_path(),
-                          #new_session_full_name,
-                          #client.net_session_root)
 
                 self.expected_clients.append(client)
 
@@ -1665,7 +1656,7 @@ for better organization.""")
             self._set_path('')
             self.send_gui('/ray/gui/session/name', '', '')
 
-    def rename(self, new_session_name):
+    def rename(self, new_session_name:str):
         spath = "%s/%s" % (dirname(self.path), new_session_name)
         if os.path.exists(spath):
             self._send_error(
@@ -2180,6 +2171,7 @@ for better organization.""")
 
     def duplicate_only_done(self):
         self.send(self.osc_src_addr, '/ray/net_daemon/duplicate_state', 1)
+        self._send_reply("Duplicated only done.")
         self._forget_osc_args()
 
     def duplicate_done(self):
@@ -2419,6 +2411,48 @@ for better organization.""")
         for snapshot in self.snapshoter.list():
             self.send_even_dummy(
                 src_addr, '/ray/gui/preview/snapshot', snapshot)
+
+        # re check here if preview didn't change before calculate session size
+        if server and server.session_to_preview != self.get_short_path():
+            return
+
+        # calculate session size
+        total_size = 0
+        size_unreadable = False
+
+        for root, dirs, files in os.walk(self.path):
+            # check each loop if it is still pertinent to walk
+            if server and server.session_to_preview != self.get_short_path():
+                return
+
+            # exclude symlinks directories from count
+            dirs[:] = [dir for dir in dirs
+                       if not os.path.islink(os.path.join(root, dir))]
+
+            for file_path in files:
+                full_file_path = os.path.join(root, file_path)
+                
+                # ignore file if it is a symlink
+                if os.path.islink(os.path.join(root, file_path)):
+                    continue
+
+                file_size = 0
+                try:
+                    file_size = os.path.getsize(full_file_path)
+                except:
+                    sys.stderr.write("Unable to read %s size\n"
+                                     % full_file_path)
+                    size_unreadable = True
+                    break
+
+                total_size += os.path.getsize(full_file_path)
+            
+            if size_unreadable:
+                total_size = -1
+                break
+        
+        self.send_even_dummy(src_addr, '/ray/gui/preview/session_size',
+                             total_size)
 
         self.send_even_dummy(
             src_addr, '/reply', '/ray/server/get_session_preview')

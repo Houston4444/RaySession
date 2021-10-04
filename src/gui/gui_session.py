@@ -144,6 +144,7 @@ class SignaledSession(Session):
         self.preview_client_list = []
         self.preview_started_clients = set()
         self.preview_snapshots = []
+        self.preview_size = -1
 
     def _osc_receive(self, path, args):
         func_path = path
@@ -416,6 +417,7 @@ class SignaledSession(Session):
         self.preview_client_list.clear()
         self.preview_started_clients.clear()
         self.preview_snapshots.clear()
+        self.preview_size = -1
 
     def _ray_gui_preview_notes(self, path, args):
         self.preview_notes = args[0]
@@ -440,6 +442,9 @@ class SignaledSession(Session):
 
     def _ray_gui_preview_snapshot(self, path, args):
         self.preview_snapshots.append(args[0])
+
+    def _ray_gui_preview_session_size(self, path, args):
+        self.preview_size = args[0]
 
     def _ray_gui_script_info(self, path, args):
         text = args[0]

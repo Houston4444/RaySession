@@ -3,10 +3,11 @@ import os
 import time
 
 from PyQt5.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
-                             QDialogButtonBox, QMenu)
+                             QDialogButtonBox, QMenu, QInputDialog)
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtCore import Qt, QTimer, QDateTime, QSize, QLocale
 
+import child_dialogs
 import ray
 
 from gui_tools import CommandLineArgs, RS, RayIcon, is_dark_theme, basename
@@ -181,6 +182,11 @@ class SessionFolder:
         for folder in self.subfolders:
             folder.sort_childrens()
             
+    def find_item_with(self, sess_name:str):
+        if self.item is None:
+            return None
+        
+        return self.item.find_item_with(sess_name)
 
 
 class OpenSessionDialog(ChildDialog):
@@ -196,6 +202,7 @@ class OpenSessionDialog(ChildDialog):
         self.ui.setupUi(self)
 
         self._session_renaming = ('', '')
+        self._session_duplicating = ('', '')
 
         self._timer_progress_n = 0
         self._timer_progress = QTimer()
@@ -208,8 +215,12 @@ class OpenSessionDialog(ChildDialog):
         self.action_rename = self.session_menu.addAction(
             QIcon.fromTheme('edit-rename'),
             _translate('session_menu', 'Rename session'))
+        self.action_duplicate = self.session_menu.addAction(
+            QIcon.fromTheme('duplicate'),
+            _translate('session_menu', 'Duplicate session'))
         
         self.action_rename.triggered.connect(self._ask_for_session_rename)
+        self.action_duplicate.triggered.connect(self._ask_for_session_duplicate)
         self.ui.toolButtonSessionMenu.setMenu(self.session_menu)
 
         self.ui.splitterMain.setSizes([240, 800])
@@ -244,6 +255,8 @@ class OpenSessionDialog(ChildDialog):
             self._scripted_dir)
         self.signaler.other_session_renamed.connect(
             self._session_renamed_by_server)
+        self.signaler.other_session_duplicated.connect(
+            self._session_duplicated_by_server)
 
         self.to_daemon('/ray/server/list_sessions', 0)
 
@@ -436,8 +449,7 @@ class OpenSessionDialog(ChildDialog):
         
         self.ui.listWidgetPreview.clear()
         self.ui.treeWidgetSnapshots.clear()
-
-        self._session_renaming = ('', '')
+        self.ui.labelSessionSize.setText('')
         
         if item is not None and item.is_session:
             session_full_name = item.data(COLUMN_NAME, Qt.UserRole)
@@ -461,6 +473,28 @@ class OpenSessionDialog(ChildDialog):
 
         self.ui.stackedWidgetSessionName.toggle_edit()
 
+    def _ask_for_session_duplicate(self):
+        item = self.ui.sessionList.currentItem()
+        if item is None:
+            return
+        
+        old_session_name = item.data(COLUMN_NAME, Qt.UserRole)
+        
+        new_session_name, ok = QInputDialog.getText(
+            self,
+            _translate('session_menu', 'Duplicate a session'),
+            _translate('session_menu', 'Type a name for the new session name'))
+        if not ok:
+            return
+        
+        if '/' in old_session_name:
+            new_session_name = old_session_name.rpartition('/')[0] \
+                               + '/' + new_session_name
+        
+        self._session_duplicating = (old_session_name, new_session_name)
+        self.to_daemon('/ray/session/duplicate_only', old_session_name,
+                       new_session_name, CommandLineArgs.session_root)
+
     def _session_name_changed(self, new_name:str):
         item = self.ui.sessionList.currentItem()
         if item is None:
@@ -475,27 +509,61 @@ class OpenSessionDialog(ChildDialog):
         self._session_renaming = (old_name, new_name)
         self.to_daemon('/ray/server/rename_session', old_name, new_name)
 
+    def _server_copying(self, copying):
+        ChildDialog._server_copying(self, copying)
+        self.ui.progressBar.setVisible(bool(copying))
+
     def _session_renamed_by_server(self):
         old_name, new_name = self._session_renaming
         self._session_renaming = ('', '')
-        
+
+        current_name = ''
+
         item = self.ui.sessionList.currentItem()
-        if item is None:
-            return
+        if item is not None:
+            current_name = item.data(COLUMN_NAME, Qt.UserRole)
 
-        current_name = item.data(COLUMN_NAME, Qt.UserRole)
-
-        if current_name != old_name:
-            return
-        
         new_long_name = new_name
         if '/' in old_name:
             new_long_name = old_name.rpartition('/')[0] + '/' + new_name
+
+        if current_name != old_name:
+            # should rarely happens because rename session is very fast
+            # in case session has been renamed but is not selected anymore
+            for i in range(self.ui.sessionList.topLevelItemCount()):
+                item = self.ui.sessionList.topLevelItem(i)
+                session_item = item.find_item_with(old_name)
+                if session_item is not None:
+                    session_item.setData(COLUMN_NAME, Qt.UserRole, new_long_name)
+                    session_item.setText(COLUMN_DATE, new_name)
+                    break
+            return
         
+        if item is None:
+            return
+
         item.setData(COLUMN_NAME, Qt.UserRole, new_long_name)
         item.setText(COLUMN_NAME, new_name)
         self.ui.stackedWidgetSessionName.set_text(new_name)
 
+    def _session_duplicated_by_server(self):
+        old_name, new_name = self._session_duplicating
+        self._session_duplicating = ('', '')
+        
+        self._add_sessions([new_name])
+
+        for folder in self.folders:
+            item = folder.find_item_with(new_name)
+            if item is not None:
+                self.ui.sessionList.setCurrentItem(item)
+                filter_text = self.ui.filterBar.text()
+                if filter_text.lower() in new_name.lower():
+                    self._update_filtered_list('')
+                else:
+                    self.ui.filterBar.setText('')
+                self.ui.sessionList.scrollToItem(item)
+                break
+            
     def _deploy_item(self, item, column):
         if column == COLUMN_NOTES and not item.icon(COLUMN_NOTES).isNull():
             # set preview tab to 'Notes' tab if user clicked on a notes icon 
@@ -529,6 +597,10 @@ class OpenSessionDialog(ChildDialog):
         
         self.main_snap_group.snapshots.clear()
         self._add_snapshots(self.session.preview_snapshots)
+        
+        locale = QLocale()
+        self.ui.labelSessionSize.setText(
+            locale.formattedDataSize(self.session.preview_size))
 
     def _add_snapshots(self, snaptexts):
         if not snaptexts and not self.main_snap_group.snapshots:

@@ -81,7 +81,8 @@ class FileCopier(ServerSender):
             progress = float(current_size/self._copy_size)
 
             if self._client_id:
-                self.send_gui('/ray/gui/client/progress', self._client_id, progress)
+                self.send_gui('/ray/gui/client/progress',
+                              self._client_id, progress)
             else:
                 self.send_gui('/ray/gui/server/progress', progress)
 
@@ -153,7 +154,7 @@ class FileCopier(ServerSender):
         self._timer.start()
 
     def _start(self, src_list, dest_dir, next_function,
-              abort_function, next_args=[]):
+               abort_function, next_args=[]):
         self._abort_function = abort_function
         self._next_function = next_function
         self._next_args = next_args
@@ -231,7 +232,7 @@ class FileCopier(ServerSender):
                          abort_function, next_args=[]):
         self._client_id = ''
         self._start(src_dir, dest_dir, next_function,
-                   abort_function, next_args)
+                    abort_function, next_args)
 
     def abort(self, abort_function=None, next_args=[]):
         if abort_function:

@@ -85,7 +85,7 @@ class ServerSender(QObject):
             return None
         
         return OscServerThread.getInstance()
-    
+
     def get_server_even_dummy(self):
         return OscServerThread.getInstance()
 

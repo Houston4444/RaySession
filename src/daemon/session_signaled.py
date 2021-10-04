@@ -935,7 +935,7 @@ class SignaledSession(OperatingSession):
         else:
             tmp_session = DummySession(sess_root)
             tmp_session.osc_src_addr = src_addr
-            tmp_session.dummy_duplicate(session_to_load, new_session)
+            tmp_session.dummy_duplicate(path, args, src_addr)
 
     @session_operation
     def _ray_session_open_snapshot(self, path, args, src_addr):
@@ -1802,7 +1802,9 @@ class DummySession(OperatingSession):
                             (self.save_session_template, template_name, True)]
         self.next_function()
 
-    def dummy_duplicate(self, session_to_load, new_session_full_name):
+    def dummy_duplicate(self, path, args, src_addr):
+        self.remember_osc_args(path, args, src_addr)
+        session_to_load, new_session_full_name, sess_root = args
         self.steps_order = [(self.preload, session_to_load),
                             self.take_place,
                             self.load,
