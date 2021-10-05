@@ -1904,11 +1904,14 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if self.protocol == ray.Protocol.RAY_NET:
             if self.ray_net.daemon_url:
                 self.ray_net.session_template = template_name
+                net_session_root = self.ray_net.session_root
+                if self.is_running():
+                    net_session_root = self.ray_net.running_session_root
                 self.send(Address(self.ray_net.daemon_url),
                           '/ray/server/save_session_template',
                           self.session.name,
                           template_name,
-                          self.net_session_root)
+                          net_session_root)
 
         if client_files:
             self.set_status(ray.ClientStatus.COPY)
