@@ -204,11 +204,11 @@ class OpenSessionDialog(ChildDialog):
         self._session_renaming = ('', '')
         self._session_duplicating = ('', '')
 
-        self._timer_progress_n = 0
-        self._timer_progress = QTimer()
-        self._timer_progress.setInterval(50)
-        self._timer_progress.timeout.connect(self._timer_progress_timeout)
-        self._timer_progress.start()
+        self._listing_timer_progress_n = 0
+        self._listing_timer_progress = QTimer()
+        self._listing_timer_progress.setInterval(50)
+        self._listing_timer_progress.timeout.connect(self._listing_timer_progress_timeout)
+        self._listing_timer_progress.start()
         self._progress_inverted = False
 
         self.session_menu = QMenu()
@@ -259,6 +259,8 @@ class OpenSessionDialog(ChildDialog):
             self._session_duplicated_by_server)
 
         self.to_daemon('/ray/server/list_sessions', 0)
+        
+        self.ui.groupBoxProgress.setVisible(False)
 
         if not self.daemon_manager.is_local:
             self.ui.toolButtonFolder.setVisible(False)
@@ -279,12 +281,8 @@ class OpenSessionDialog(ChildDialog):
         
         # snapshots related
         self.main_snap_group = SnapGroup()
-        #self.ui.sessionList.setColumnWidth(0, 100)
-        #self.ui.sessionList.setColumnWidth(1, 20)
-        #self.ui.sessionList.setColumnWidth(2, 20)
-        
-        self._full_view = True
-        
+
+        self._full_view = True        
         self._set_full_sessions_view(False)
     
     def _set_full_sessions_view(self, full_view:bool):
@@ -322,14 +320,21 @@ class OpenSessionDialog(ChildDialog):
 
         self._prevent_ok()
 
-    def _timer_progress_timeout(self):
-        self.ui.progressBar.setValue(self._timer_progress_n)
-        if self._timer_progress_n >= 100:
-            self._timer_progress_n = 0
+    def _listing_timer_progress_timeout(self):
+        # server is listing sessions
+        if self._listing_timer_progress_n >= 10: # 10 x 50ms = 500 ms
+            # display groupBoxProgress only if listing takes at least 500ms
+            # to prevent flircks
+            self.ui.groupBoxProgress.setVisible(True)
+            self.ui.pushButtonCancelProgress.setVisible(False)
+        
+        self.ui.progressBar.setValue(self._listing_timer_progress_n)
+        if self._listing_timer_progress_n >= 100:
+            self._listing_timer_progress_n = 0
             self._progress_inverted = not self._progress_inverted
             self.ui.progressBar.setInvertedAppearance(
                 self._progress_inverted)
-        self._timer_progress_n += 5
+        self._listing_timer_progress_n += 5
 
     def _root_changed(self, session_root):
         self.ui.currentSessionsFolder.setText(session_root)
@@ -339,9 +344,11 @@ class OpenSessionDialog(ChildDialog):
 
     def _add_sessions(self, session_names):
         if not session_names:
-            self._timer_progress.stop()
-            height = self.ui.progressBar.size().height()
-            self.ui.progressBar.setVisible(False)
+            # there are no session_names here if session listing
+            # is finished.
+            self._listing_timer_progress.stop()
+            height = self.ui.groupBoxProgress.size().height()
+            self.ui.groupBoxProgress.setVisible(False)
 
             root_item = self.ui.sessionList.invisibleRootItem()
             sess_item = None
@@ -511,7 +518,7 @@ class OpenSessionDialog(ChildDialog):
 
     def _server_copying(self, copying):
         ChildDialog._server_copying(self, copying)
-        self.ui.progressBar.setVisible(bool(copying))
+        self.ui.groupBoxProgress.setVisible(bool(copying))
 
     def _session_renamed_by_server(self):
         old_name, new_name = self._session_renaming

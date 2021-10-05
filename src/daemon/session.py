@@ -32,10 +32,11 @@ signaler = Signaler.instance()
 
 
 class Session(ServerSender):
-    def __init__(self, root):
+    def __init__(self, root, session_id=0):
         ServerSender.__init__(self)
         self.root = root
         self.is_dummy = False
+        self.session_id = session_id
 
         self.clients = []
         self.future_clients = []
@@ -681,8 +682,8 @@ class Session(ServerSender):
 
 
 class OperatingSession(Session):
-    def __init__(self, root):
-        Session.__init__(self, root)
+    def __init__(self, root, session_id=0):
+        Session.__init__(self, root, session_id)
         self.wait_for = ray.WaitFor.NONE
 
         self.timer = QTimer()
@@ -2456,3 +2457,4 @@ for better organization.""")
 
         self.send_even_dummy(
             src_addr, '/reply', '/ray/server/get_session_preview')
+        del self

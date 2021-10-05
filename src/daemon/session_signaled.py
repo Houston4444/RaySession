@@ -91,6 +91,20 @@ class SignaledSession(OperatingSession):
                     to_remove_list.append(sess)
             for sess in to_remove_list:
                 self.recent_sessions[self.root].remove(sess)
+        
+        self.preview_dummy_session = None
+        self.dummy_sessions = []
+        self._next_session_id = 1
+    
+    def _get_new_dummy_session_id(self)->int:
+        to_return = self._next_session_id
+        self._next_session_id += 1
+        return to_return
+
+    def _new_dummy_session(self, root:str):
+        new_dummy = DummySession(root, self._get_new_dummy_session_id())
+        self.dummy_sessions.append(new_dummy)
+        return new_dummy
 
     def osc_receive(self, path, args, types, src_addr):
         nsm_equivs = {"/nsm/server/add" : "/ray/session/add_executable",
@@ -685,7 +699,7 @@ class SignaledSession(OperatingSession):
                       "'/' is not allowed in new_session_name")
             return False
 
-        tmp_session = DummySession(self.root)
+        tmp_session = self._new_dummy_session(self.root)
         tmp_session.ray_server_rename_session(path, args, src_addr)
 
     def _ray_server_save_session_template(self, path, args, src_addr):
@@ -699,10 +713,9 @@ class SignaledSession(OperatingSession):
 
         if (sess_root != self.root
                 or session_name != self.get_short_path()):
-            tmp_session = DummySession(sess_root)
-            tmp_session.ray_server_save_session_template(path,
-                                [session_name, template_name, net],
-                                src_addr)
+            tmp_session = self._new_dummy_session(sess_root)
+            tmp_session.ray_server_save_session_template(
+                path, [session_name, template_name, net], src_addr)
             return
 
         self._ray_session_save_as_template(
@@ -721,8 +734,10 @@ class SignaledSession(OperatingSession):
             # changed the session to preview
             return
 
-        tmp_session = DummySession(self.root)
-        tmp_session.ray_server_get_session_preview(path, args, src_addr)
+        del self.preview_dummy_session
+        self.preview_dummy_session = DummySession(self.root)
+        self.preview_dummy_session.ray_server_get_session_preview(
+            path, args, src_addr)
 
     def _ray_server_set_option(self, path, args, src_addr):
         option = args[0]
@@ -933,7 +948,7 @@ class SignaledSession(OperatingSession):
             self.next_function()
 
         else:
-            tmp_session = DummySession(sess_root)
+            tmp_session = self._new_dummy_session(sess_root)
             tmp_session.osc_src_addr = src_addr
             tmp_session.dummy_duplicate(path, args, src_addr)
 
@@ -1773,7 +1788,7 @@ class SignaledSession(OperatingSession):
         self.next_function()
 
     def dummy_load_and_template(self, session_name, template_name, sess_root):
-        tmp_session = DummySession(sess_root)
+        tmp_session = self._new_dummy_session(sess_root)
         tmp_session.dummy_load_and_template(session_name, template_name)
 
     def terminate(self):
@@ -1790,8 +1805,16 @@ class SignaledSession(OperatingSession):
 
 
 class DummySession(OperatingSession):
-    def __init__(self, root):
-        OperatingSession.__init__(self, root)
+    ''' A dummy session allows to make such operations on not current session
+        It is used for session preview, or duplicate a session for example.
+        When a session is dummy, it has no server options
+        (bookmarks, snapshots, session scripts...).
+        All clients are dummy and can't be started.
+        Their file copier is not dummy, it can send OSC messages to gui,
+        That is why we need a session_id to find it '''
+
+    def __init__(self, root, session_id=0):
+        OperatingSession.__init__(self, root, session_id)
         self.is_dummy = True
         self.canvas_saver.is_dummy = True
 

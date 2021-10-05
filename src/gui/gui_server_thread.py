@@ -191,8 +191,18 @@ class GuiServerThread(liblo.ServerThread):
 
     @ray_method('/ray/gui/server/copying', 'i')
     def _server_copying(self, path, args, types, src_addr):
-        copying = bool(int(args[0]))
-        self.signaler.server_copying.emit(copying)
+        copying = args[0]
+        self.signaler.server_copying.emit(bool(copying))
+
+    @ray_method('/ray/gui/server/parrallel_copy_state', 'ii')
+    def _server_parrallel_copy_state(self, path, args, types, src_addr):
+        session_id, state = args
+        self.signaler.parrallel_copy_state.emit(args)
+
+    @ray_method('/ray/gui/server/parrallel_copy_progress', 'if')
+    def _server_copy_progress(self, path, args, types, src_addr):
+        session_copier_id, progress = args
+        self.signaler.parrallel_copy_progress.emit(args)
 
     @ray_method('/ray/gui/server/progress', 'f')
     def _server_progress(self, path, args, types, src_addr):

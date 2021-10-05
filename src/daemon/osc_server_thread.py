@@ -1302,9 +1302,6 @@ class OscServerThread(ClientCommunicating):
         self.server_status = server_status
         self.send_gui('/ray/gui/server/status', server_status)
 
-    def inform_copy_to_gui(self, copy_state):
-        self.send_gui('/ray/gui/server/copying', int(copy_state))
-
     def send_renameable(self, renameable:bool):
         if not renameable:
             self.send_gui('/ray/gui/session/renameable', 0)

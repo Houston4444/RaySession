@@ -32,6 +32,8 @@ class Signaler(QObject):
     session_preview_update = pyqtSignal()
     session_details = pyqtSignal(str, int, int, int)
     scripted_dir = pyqtSignal(str, int)
+    parrallel_copy_state = pyqtSignal(int, int)
+    parrallel_copy_progress = pyqtSignal(int, float)
     other_session_renamed = pyqtSignal()
     other_session_duplicated = pyqtSignal()
 

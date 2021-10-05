@@ -17,6 +17,7 @@ class FileCopier(ServerSender):
     def __init__(self, session):
         ServerSender.__init__(self)
         self.session = session
+
         self._client_id = ''
         self._next_function = None
         self._abort_function = None
@@ -38,13 +39,6 @@ class FileCopier(ServerSender):
 
         self._abort_src_addr = None
         self._abort_src_path = ''
-
-    def _inform_copy_to_gui(self, copy_state):
-        server = OscServerThread.getInstance()
-        if not server:
-            return
-
-        server.inform_copy_to_gui(copy_state)
 
     def _get_file_size(self, filepath):
         if not os.path.exists(filepath):
@@ -83,6 +77,9 @@ class FileCopier(ServerSender):
             if self._client_id:
                 self.send_gui('/ray/gui/client/progress',
                               self._client_id, progress)
+            elif self.session.session_id:
+                self.send_gui('/ray/gui/server/parrallel_copy_progress',
+                              self.session.session_id, progress)
             else:
                 self.send_gui('/ray/gui/server/progress', progress)
 
@@ -115,19 +112,18 @@ class FileCopier(ServerSender):
                                           ray.Err.SUBPROCESS_CRASH,
                                           "%s hasn't been removed !")
 
-
             self._is_active = False
-            self._inform_copy_to_gui(False)
+            self._send_copy_state_to_gui(0)
             self._abort_function(*self._next_args)
             return
 
-        #run next_function if copy is terminated
+        # run next_function if copy is terminated
         for copy_file in self._copy_files:
             if copy_file.state != 2:
                 break
         else:
             self._is_active = False
-            self._inform_copy_to_gui(False)
+            self._send_copy_state_to_gui(0)
 
             if self._next_function:
                 self._next_function(*self._next_args)
@@ -215,21 +211,27 @@ class FileCopier(ServerSender):
 
             self._copy_files.append(copy_file)
 
-
         if self._copy_files:
-            self._inform_copy_to_gui(True)
+            self._send_copy_state_to_gui(1)
             self._next_process()
         else:
             self._next_function(*self._next_args)
 
+    def _send_copy_state_to_gui(self, state:int):
+        if self.session.session_id:
+            self.send_gui('/ray/gui/server/parrallel_copy_state',
+                          self.session.session_id, state)
+        else:
+            self.send_gui('/ray/gui/server/copying', state)
+
     def start_client_copy(self, client_id, src_list, dest_dir, next_function,
-                        abort_function, next_args=[]):
+                          abort_function, next_args=[]):
         self._client_id = client_id
         self._start(src_list, dest_dir, next_function,
                    abort_function, next_args)
 
     def start_session_copy(self, src_dir, dest_dir, next_function,
-                         abort_function, next_args=[]):
+                           abort_function, next_args=[]):
         self._client_id = ''
         self._start(src_dir, dest_dir, next_function,
                     abort_function, next_args)
