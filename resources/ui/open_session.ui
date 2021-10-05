@@ -327,6 +327,9 @@ QToolButton {border: none}</string>
             <string/>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_10">
+            <property name="spacing">
+             <number>2</number>
+            </property>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>

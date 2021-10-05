@@ -267,6 +267,14 @@ class SignaledSession(OperatingSession):
     def _ray_server_abort_copy(self, path, args, src_addr):
         self.file_copier.abort()
 
+    def _ray_server_abort_parrallel_copy(self, path, args, src_addr):
+        session_id = args[0]
+        
+        for dummy_session in self.dummy_sessions:
+            if dummy_session.session_id == session_id:
+                dummy_session.file_copier.abort()
+                break
+
     def _ray_server_abort_snapshot(self, path, args, src_addr):
         self.snapshoter.abort()
 

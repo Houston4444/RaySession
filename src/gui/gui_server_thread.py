@@ -43,6 +43,9 @@ class GuiServerThread(liblo.ServerThread):
         # Try to prevent impossibility to stop server
         # while receiving messages
         self.stopping = False
+        
+        self._parrallel_copy_id_queue = []
+        
 
     def stop(self):
         self.stopping = True
@@ -197,12 +200,30 @@ class GuiServerThread(liblo.ServerThread):
     @ray_method('/ray/gui/server/parrallel_copy_state', 'ii')
     def _server_parrallel_copy_state(self, path, args, types, src_addr):
         session_id, state = args
-        self.signaler.parrallel_copy_state.emit(args)
+
+        if state:
+            # copy is starting
+            if self._parrallel_copy_id_queue:
+                if session_id not in self._parrallel_copy_id_queue:
+                    self._parrallel_copy_id_queue.append(session_id)
+            else:
+                self._parrallel_copy_id_queue.append(session_id)
+                self.signaler.parrallel_copy_state.emit(*args)
+        else:
+            # copy is finished
+            if session_id in self._parrallel_copy_id_queue:
+                self._parrallel_copy_id_queue.remove(session_id)
+                self.signaler.parrallel_copy_state.emit(*args)
 
     @ray_method('/ray/gui/server/parrallel_copy_progress', 'if')
     def _server_copy_progress(self, path, args, types, src_addr):
-        session_copier_id, progress = args
-        self.signaler.parrallel_copy_progress.emit(args)
+        session_id, progress = args
+
+        if not self._parrallel_copy_id_queue:
+            return
+        
+        if session_id == self._parrallel_copy_id_queue[0]:
+            self.signaler.parrallel_copy_progress.emit(*args)
 
     @ray_method('/ray/gui/server/progress', 'f')
     def _server_progress(self, path, args, types, src_addr):

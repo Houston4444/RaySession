@@ -244,6 +244,8 @@ class OpenSessionDialog(ChildDialog):
         self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
         self.ui.checkBoxShowDates.stateChanged.connect(
             self._set_full_sessions_view)
+        self.ui.pushButtonCancelProgress.clicked.connect(
+            self._abort_parrallel_copy)
 
         self.signaler.add_sessions_to_list.connect(self._add_sessions)
         self.signaler.root_changed.connect(self._root_changed)
@@ -253,6 +255,10 @@ class OpenSessionDialog(ChildDialog):
             self._update_session_details)
         self.signaler.scripted_dir.connect(
             self._scripted_dir)
+        self.signaler.parrallel_copy_state.connect(
+            self._parrallel_copy_state)
+        self.signaler.parrallel_copy_progress.connect(
+            self._parrallel_copy_progress)
         self.signaler.other_session_renamed.connect(
             self._session_renamed_by_server)
         self.signaler.other_session_duplicated.connect(
@@ -284,6 +290,8 @@ class OpenSessionDialog(ChildDialog):
 
         self._full_view = True        
         self._set_full_sessions_view(False)
+        
+        self._current_parrallel_copy_id = 0
     
     def _set_full_sessions_view(self, full_view:bool):
         self.ui.sessionList.setHeaderHidden(not full_view)
@@ -516,9 +524,30 @@ class OpenSessionDialog(ChildDialog):
         self._session_renaming = (old_name, new_name)
         self.to_daemon('/ray/server/rename_session', old_name, new_name)
 
-    def _server_copying(self, copying):
-        ChildDialog._server_copying(self, copying)
-        self.ui.groupBoxProgress.setVisible(bool(copying))
+    def _parrallel_copy_state(self, session_id:int, state:int):
+        if state and self._current_parrallel_copy_id:
+            return
+        
+        self._current_parrallel_copy_id = session_id if state else 0
+        
+        self.ui.groupBoxProgress.setVisible(bool(state))
+        self.ui.pushButtonCancelProgress.setVisible(bool(state))
+        self.ui.progressBar.setValue(0)
+        self.ui.labelProgress.setText(
+            _translate('open_session', 'Session copy'))
+    
+    def _parrallel_copy_progress(self, session_id:int, progress:float):
+        if session_id != self._current_parrallel_copy_id:
+            return
+
+        self.ui.progressBar.setValue(int(progress * 100)) 
+
+    def _abort_parrallel_copy(self):
+        if not self._current_parrallel_copy_id:
+            return
+        
+        self.to_daemon('/ray/server/abort_parrallel_copy',
+                       self._current_parrallel_copy_id)
 
     def _session_renamed_by_server(self):
         old_name, new_name = self._session_renaming

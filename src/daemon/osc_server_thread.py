@@ -497,6 +497,10 @@ class OscServerThread(ClientCommunicating):
     def rayServerAbortCopy(self, path, args, types, src_addr):
         pass
 
+    @ray_method('/ray/server/abort_parrallel_copy', 'i')
+    def rayServerAbortParrallelCopy(self, path, args, types, src_addr):
+        pass
+
     @ray_method('/ray/server/abort_snapshot', '')
     def rayServerAbortSnapshot(self, path, args, types, src_addr):
         pass

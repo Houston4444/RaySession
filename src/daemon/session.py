@@ -1505,7 +1505,12 @@ for better organization.""")
     def duplicate_aborted(self, new_session_full_name):
         self.steps_order.clear()
 
-        self._send_error(ray.Err.NO_SUCH_FILE, "No such file.")
+        if self.osc_path == '/nsm/server/duplicate':
+            # for nsm server control API compatibility
+            # abort duplication is not possible in Non/New NSM
+            # so, send the only known error
+            self._send_error(ray.Err.NO_SUCH_FILE, "No such file.")
+
         if self.osc_src_addr is not None:
             self.send(self.osc_src_addr, '/ray/net_daemon/duplicate_state', 1)
 
