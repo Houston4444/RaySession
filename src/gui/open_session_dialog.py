@@ -203,6 +203,7 @@ class OpenSessionDialog(ChildDialog):
 
         self._session_renaming = ('', '')
         self._session_duplicating = ('', '')
+        self._session_templating = ('', '')
 
         self._listing_timer_progress_n = 0
         self._listing_timer_progress = QTimer()
@@ -218,9 +219,20 @@ class OpenSessionDialog(ChildDialog):
         self.action_duplicate = self.session_menu.addAction(
             QIcon.fromTheme('duplicate'),
             _translate('session_menu', 'Duplicate session'))
+        self.action_save_as_template = self.session_menu.addAction(
+            QIcon.fromTheme('template'),
+            _translate('session_menu', 'Save session as template'))
         
+        dark = is_dark_theme(self)
+        self.action_duplicate.setIcon(
+            RayIcon('xml-node-duplicate', dark))
+        self.action_save_as_template.setIcon(
+            RayIcon('document-save-as-template', dark))
+
         self.action_rename.triggered.connect(self._ask_for_session_rename)
         self.action_duplicate.triggered.connect(self._ask_for_session_duplicate)
+        self.action_save_as_template.triggered.connect(
+            self._ask_for_session_save_as_template)
         self.ui.toolButtonSessionMenu.setMenu(self.session_menu)
 
         self.ui.splitterMain.setSizes([240, 800])
@@ -263,6 +275,8 @@ class OpenSessionDialog(ChildDialog):
             self._session_renamed_by_server)
         self.signaler.other_session_duplicated.connect(
             self._session_duplicated_by_server)
+        self.signaler.other_session_templated.connect(
+            self._session_templated_by_server)
 
         self.to_daemon('/ray/server/list_sessions', 0)
         
@@ -510,6 +524,27 @@ class OpenSessionDialog(ChildDialog):
         self.to_daemon('/ray/session/duplicate_only', old_session_name,
                        new_session_name, CommandLineArgs.session_root)
 
+    def _ask_for_session_save_as_template(self):
+        item = self.ui.sessionList.currentItem()
+        if item is None:
+            return
+        
+        session_name = item.data(COLUMN_NAME, Qt.UserRole)
+        
+        template_name, ok = QInputDialog.getText(
+            self,
+            _translate('session_menu', 'Duplicate a session'),
+            _translate('session_menu', 'Type a name for the new session name'))
+        if not ok:
+            return
+        
+        if '/' in template_name:
+            return
+        
+        self._session_templating = (session_name, template_name)
+        self.to_daemon('/ray/server/save_session_template',
+                       session_name, template_name)
+
     def _session_name_changed(self, new_name:str):
         item = self.ui.sessionList.currentItem()
         if item is None:
@@ -599,7 +634,11 @@ class OpenSessionDialog(ChildDialog):
                     self.ui.filterBar.setText('')
                 self.ui.sessionList.scrollToItem(item)
                 break
-            
+    
+    def _session_templated_by_server(self):
+        session_name, template_name = self._session_templating
+        self._session_templating = ('', '')
+    
     def _deploy_item(self, item, column):
         if column == COLUMN_NOTES and not item.icon(COLUMN_NOTES).isNull():
             # set preview tab to 'Notes' tab if user clicked on a notes icon 

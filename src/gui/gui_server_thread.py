@@ -169,6 +169,8 @@ class GuiServerThread(liblo.ServerThread):
             self.signaler.other_session_renamed.emit()
         elif reply_path == '/ray/session/duplicate_only':
             self.signaler.other_session_duplicated.emit()
+        elif reply_path == '/ray/server/save_session_template':
+            self.signaler.other_session_templated.emit()
 
     @ray_method('/ray/gui/server/announce', 'siisi')
     def _server_announce(self, path, args, types, src_addr):

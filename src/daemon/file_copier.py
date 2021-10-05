@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import warnings
 
@@ -103,7 +104,10 @@ class FileCopier(ServerSender):
 
                     if os.path.exists(file_to_remove):
                         try:
-                            subprocess.run(['rm', '-R', file_to_remove])
+                            if os.path.isfile(file_to_remove):
+                                os.remove(file_to_remove)
+                            elif os.path.isdir(file_to_remove):
+                                shutil.rmtree(file_to_remove)
                         except:
                             if self._abort_src_addr and self._abort_src_path:
                                 self.send(self._abort_src_addr,

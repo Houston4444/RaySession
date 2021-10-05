@@ -36,6 +36,7 @@ class Signaler(QObject):
     parrallel_copy_progress = pyqtSignal(int, float)
     other_session_renamed = pyqtSignal()
     other_session_duplicated = pyqtSignal()
+    other_session_templated = pyqtSignal()
 
     client_added_reply = pyqtSignal(str)
 
