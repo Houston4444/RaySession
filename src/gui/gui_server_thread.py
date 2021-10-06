@@ -45,7 +45,7 @@ class GuiServerThread(liblo.ServerThread):
         self.stopping = False
         
         self._parrallel_copy_id_queue = []
-        
+        self._parrallel_new_session_name = ''
 
     def stop(self):
         self.stopping = True
@@ -171,6 +171,8 @@ class GuiServerThread(liblo.ServerThread):
             self.signaler.other_session_duplicated.emit()
         elif reply_path == '/ray/server/save_session_template':
             self.signaler.other_session_templated.emit()
+        elif reply_path == '/ray/server/abort_parrallel_copy':
+            self.signaler.parrallel_copy_aborted.emit()
 
     @ray_method('/ray/gui/server/announce', 'siisi')
     def _server_announce(self, path, args, types, src_addr):
@@ -324,3 +326,21 @@ class GuiServerThread(liblo.ServerThread):
 
     def abort_session(self):
         self.to_daemon('/ray/session/abort')
+
+    def duplicate_a_session(self, session_name:str, new_session_name:str):
+        self._parrallel_new_session_name = new_session_name
+        self.to_daemon('/ray/gui/session/duplicate_only',
+                       session_name, new_session_name,
+                       CommandLineArgs.session_root)
+
+    def get_parrallel_copy_id(self)->int:
+        ''' used by open session dialog to know
+        if a parrallel copy is running '''
+        if not self._parrallel_copy_id_queue:
+            return 0
+
+        return self._parrallel_copy_id_queue[0]
+
+    def get_parrallel_new_session_name(self)->str:
+        return self._parrallel_new_session_name
+

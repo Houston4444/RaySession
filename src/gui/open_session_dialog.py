@@ -25,6 +25,15 @@ COLUMN_NOTES = 1
 COLUMN_SCRIPTS = 2
 COLUMN_DATE = 3
 
+PENDING_ACTION_NONE = 0
+PENDING_ACTION_RENAME = 1
+PENDING_ACTION_DUPLICATE = 2
+PENDING_ACTION_TEMPLATE = 3
+
+CORNER_HIDDEN = 0
+CORNER_LISTING = 1
+CORNER_COPY = 2
+CORNER_NOTIFICATION = 3
 
 class PreviewClient(ray.ClientData):
     def __init__(self):
@@ -201,6 +210,7 @@ class OpenSessionDialog(ChildDialog):
         self.ui = ui.open_session.Ui_DialogOpenSession()
         self.ui.setupUi(self)
 
+        self._pending_action = PENDING_ACTION_NONE
         self._session_renaming = ('', '')
         self._session_duplicating = ('', '')
         self._session_templating = ('', '')
@@ -257,7 +267,7 @@ class OpenSessionDialog(ChildDialog):
         self.ui.checkBoxShowDates.stateChanged.connect(
             self._set_full_sessions_view)
         self.ui.pushButtonCancelProgress.clicked.connect(
-            self._abort_parrallel_copy)
+            self._cancel_copy_clicked)
 
         self.signaler.add_sessions_to_list.connect(self._add_sessions)
         self.signaler.root_changed.connect(self._root_changed)
@@ -271,6 +281,8 @@ class OpenSessionDialog(ChildDialog):
             self._parrallel_copy_state)
         self.signaler.parrallel_copy_progress.connect(
             self._parrallel_copy_progress)
+        self.signaler.parrallel_copy_aborted.connect(
+            self._parrallel_copy_aborted)
         self.signaler.other_session_renamed.connect(
             self._session_renamed_by_server)
         self.signaler.other_session_duplicated.connect(
@@ -306,6 +318,8 @@ class OpenSessionDialog(ChildDialog):
         self._set_full_sessions_view(False)
         
         self._current_parrallel_copy_id = 0
+        self._corner_mode = CORNER_HIDDEN
+        self._set_corner_group(CORNER_HIDDEN)
     
     def _set_full_sessions_view(self, full_view:bool):
         self.ui.sessionList.setHeaderHidden(not full_view)
@@ -347,8 +361,7 @@ class OpenSessionDialog(ChildDialog):
         if self._listing_timer_progress_n >= 10: # 10 x 50ms = 500 ms
             # display groupBoxProgress only if listing takes at least 500ms
             # to prevent flircks
-            self.ui.groupBoxProgress.setVisible(True)
-            self.ui.pushButtonCancelProgress.setVisible(False)
+            self._set_corner_group(CORNER_LISTING)
         
         self.ui.progressBar.setValue(self._listing_timer_progress_n)
         if self._listing_timer_progress_n >= 100:
@@ -370,7 +383,7 @@ class OpenSessionDialog(ChildDialog):
             # is finished.
             self._listing_timer_progress.stop()
             height = self.ui.groupBoxProgress.size().height()
-            self.ui.groupBoxProgress.setVisible(False)
+            self._set_corner_group(CORNER_HIDDEN)
 
             root_item = self.ui.sessionList.invisibleRootItem()
             sess_item = None
@@ -496,6 +509,27 @@ class OpenSessionDialog(ChildDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
             bool(self._server_will_accept and self._has_selection))
 
+    def _set_corner_group(self, corner_mode:int):
+        self._corner_mode = corner_mode
+        self.ui.groupBoxProgress.setVisible(corner_mode != CORNER_HIDDEN)
+        self.ui.pushButtonCancelProgress.setVisible(corner_mode != CORNER_LISTING)
+
+        if corner_mode == CORNER_LISTING:
+            self.ui.labelProgress.setText(
+                _translate('open_session', 'Listing sessions'))
+        elif corner_mode == CORNER_COPY:
+            self.ui.pushButtonCancelProgress.setText(
+                _translate('open_session', 'Cancel'))
+            self.ui.labelProgress.setText(
+                _translate('open_session', 'Session copy'))
+            self.ui.progressBar.setValue(0)
+        elif corner_mode == CORNER_NOTIFICATION:
+            self.ui.pushButtonCancelProgress.setText(
+                _translate('open_session', 'Ok'))
+            self.ui.labelProgress.setText(
+                _translate('open_session', 'Session saved as template'))
+            self.ui.progressBar.setValue(100)
+
     def _ask_for_session_rename(self):
         if not self.ui.previewFrame.isEnabled():
             return
@@ -509,6 +543,9 @@ class OpenSessionDialog(ChildDialog):
         
         old_session_name = item.data(COLUMN_NAME, Qt.UserRole)
         
+        if self._pending_action:
+            return
+
         new_session_name, ok = QInputDialog.getText(
             self,
             _translate('session_menu', 'Duplicate a session'),
@@ -519,7 +556,8 @@ class OpenSessionDialog(ChildDialog):
         if '/' in old_session_name:
             new_session_name = old_session_name.rpartition('/')[0] \
                                + '/' + new_session_name
-        
+
+        self._pending_action = PENDING_ACTION_DUPLICATE
         self._session_duplicating = (old_session_name, new_session_name)
         self.to_daemon('/ray/session/duplicate_only', old_session_name,
                        new_session_name, CommandLineArgs.session_root)
@@ -528,19 +566,23 @@ class OpenSessionDialog(ChildDialog):
         item = self.ui.sessionList.currentItem()
         if item is None:
             return
-        
+
+        if self._pending_action:
+            return
+
         session_name = item.data(COLUMN_NAME, Qt.UserRole)
-        
+
         template_name, ok = QInputDialog.getText(
             self,
             _translate('session_menu', 'Duplicate a session'),
             _translate('session_menu', 'Type a name for the new session name'))
         if not ok:
             return
-        
+
         if '/' in template_name:
             return
         
+        self._pending_action = PENDING_ACTION_TEMPLATE
         self._session_templating = (session_name, template_name)
         self.to_daemon('/ray/server/save_session_template',
                        session_name, template_name)
@@ -556,6 +598,10 @@ class OpenSessionDialog(ChildDialog):
         if basename(old_name) == new_name:
             return
         
+        if self._pending_action:
+            return
+
+        self._pending_action = PENDING_ACTION_RENAME
         self._session_renaming = (old_name, new_name)
         self.to_daemon('/ray/server/rename_session', old_name, new_name)
 
@@ -564,21 +610,27 @@ class OpenSessionDialog(ChildDialog):
             return
         
         self._current_parrallel_copy_id = session_id if state else 0
-        
-        self.ui.groupBoxProgress.setVisible(bool(state))
-        self.ui.pushButtonCancelProgress.setVisible(bool(state))
-        self.ui.progressBar.setValue(0)
-        self.ui.labelProgress.setText(
-            _translate('open_session', 'Session copy'))
-    
+        self.session_menu.setEnabled(not bool(state))
+
+        if not state:
+            self._set_corner_group(CORNER_HIDDEN)
+            #self._pending_action = PENDING_ACTION_NONE
+
     def _parrallel_copy_progress(self, session_id:int, progress:float):
         if session_id != self._current_parrallel_copy_id:
             return
 
-        self.ui.progressBar.setValue(int(progress * 100)) 
+        self._set_corner_group(CORNER_COPY)
+        self.ui.progressBar.setValue(int(progress * 100))
 
-    def _abort_parrallel_copy(self):
+    def _parrallel_copy_aborted(self):
+        self._set_corner_group(CORNER_HIDDEN)
+        self._pending_action = PENDING_ACTION_NONE
+
+    def _cancel_copy_clicked(self):
         if not self._current_parrallel_copy_id:
+            if self._corner_mode == CORNER_NOTIFICATION:
+                self._set_corner_group(CORNER_HIDDEN)
             return
         
         self.to_daemon('/ray/server/abort_parrallel_copy',
@@ -616,11 +668,13 @@ class OpenSessionDialog(ChildDialog):
         item.setData(COLUMN_NAME, Qt.UserRole, new_long_name)
         item.setText(COLUMN_NAME, new_name)
         self.ui.stackedWidgetSessionName.set_text(new_name)
+        self._pending_action = PENDING_ACTION_NONE
 
     def _session_duplicated_by_server(self):
         old_name, new_name = self._session_duplicating
         self._session_duplicating = ('', '')
-        
+        self._pending_action = PENDING_ACTION_NONE
+
         self._add_sessions([new_name])
 
         for folder in self.folders:
@@ -634,10 +688,14 @@ class OpenSessionDialog(ChildDialog):
                     self.ui.filterBar.setText('')
                 self.ui.sessionList.scrollToItem(item)
                 break
+        self._set_corner_group(CORNER_HIDDEN)
     
     def _session_templated_by_server(self):
         session_name, template_name = self._session_templating
         self._session_templating = ('', '')
+        if self._pending_action == PENDING_ACTION_TEMPLATE:
+            self._set_corner_group(CORNER_NOTIFICATION)
+        self._pending_action = PENDING_ACTION_NONE
     
     def _deploy_item(self, item, column):
         if column == COLUMN_NOTES and not item.icon(COLUMN_NOTES).isNull():
@@ -762,6 +820,10 @@ class OpenSessionDialog(ChildDialog):
     def resizeEvent(self, event):
         ChildDialog.resizeEvent(self, event)
         self._resize_session_names_column()
+
+    def closeEvent(self, event):
+        self._cancel_copy_clicked()
+        ChildDialog.closeEvent(self, event)
 
     def get_selected_session(self)->str:
         if self.ui.sessionList.currentItem():

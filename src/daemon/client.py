@@ -677,7 +677,8 @@ class Client(ServerSender, ray.ClientData):
         self.set_status(self.status) # see set_status to see why
 
         if self.prefix_mode != ray.PrefixMode.CUSTOM:
-            self.adjust_files_after_copy(template_name, ray.Template.CLIENT_SAVE)
+            self.adjust_files_after_copy(template_name,
+                                         ray.Template.CLIENT_SAVE)
 
         xml_file = "%s/%s" % (TemplateRoots.user_clients,
                               'client_templates.xml')
@@ -685,14 +686,14 @@ class Client(ServerSender, ray.ClientData):
         # security check
         if os.path.exists(xml_file):
             if not os.access(xml_file, os.W_OK):
-                self._send_error_to_caller(OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
-                                _translate('GUIMSG', '%s is not writeable !')
-                                    % xml_file)
+                self._send_error_to_caller(
+                    OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                    _translate('GUIMSG', '%s is not writeable !') % xml_file)
                 return
 
             if os.path.isdir(xml_file):
                 #should not be a dir, remove it !
-                subprocess.run('rm', '-R', xml_file)
+                shutil.rmtree(xml_file)
 
         if not os.path.isdir(TemplateRoots.user_clients):
             os.makedirs(TemplateRoots.user_clients)
@@ -1884,19 +1885,21 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
     def save_as_template(self, template_name, src_addr=None, src_path=''):
         if src_addr:
             self._osc_srcs[OSC_SRC_SAVE_TP] = (src_addr, src_path)
+
         #copy files
         client_files = self.get_project_files()
 
         template_dir = "%s/%s" % (TemplateRoots.user_clients,
-                                    template_name)
+                                  template_name)
 
         if os.path.exists(template_dir):
             if os.access(template_dir, os.W_OK):
                 shutil.rmtree(template_dir)
             else:
-                self._send_error_to_caller(OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
-                            _translate('GUIMSG', 'impossible to remove %s !')
-                                % highlight_text(template_dir))
+                self._send_error_to_caller(
+                    OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                    _translate('GUIMSG', 'impossible to remove %s !')
+                    % highlight_text(template_dir))
                 return
 
         os.makedirs(template_dir)
@@ -1907,6 +1910,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                 net_session_root = self.ray_net.session_root
                 if self.is_running():
                     net_session_root = self.ray_net.running_session_root
+
                 self.send(Address(self.ray_net.daemon_url),
                           '/ray/server/save_session_template',
                           self.session.name,
@@ -1917,7 +1921,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             self.set_status(ray.ClientStatus.COPY)
             self.session.file_copier.start_client_copy(
                 self.client_id, client_files, template_dir,
-                self._save_as_template_substep1, self._save_as_template_aborted,
+                self._save_as_template_substep1,
+                self._save_as_template_aborted,
                 [template_name])
         else:
             self._save_as_template_substep1(template_name)

@@ -402,13 +402,10 @@ class Session(ServerSender):
         if (os.path.isfile(session_file)
                 and not os.access(session_file, os.W_OK)):
             return ray.Err.CREATE_FAILED
-            #self.save_error(ray.Err.CREATE_FAILED)
-            return
 
         try:
             file = open(session_file, 'w')
         except:
-            #self.save_error(ray.Err.CREATE_FAILED)
             return ray.Err.CREATE_FAILED
 
         xml = QDomDocument()

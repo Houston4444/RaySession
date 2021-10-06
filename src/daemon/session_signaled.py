@@ -274,6 +274,7 @@ class SignaledSession(OperatingSession):
             if dummy_session.session_id == session_id:
                 dummy_session.file_copier.abort()
                 break
+        self.send(src_addr, '/reply', path, 'Parrallel copy aborted')
 
     def _ray_server_abort_snapshot(self, path, args, src_addr):
         self.snapshoter.abort()

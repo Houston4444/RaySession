@@ -1002,6 +1002,7 @@ class MainWindow(QMainWindow):
             self.ui.actionDuplicateSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(False)
+            self.ui.menuRecentSessions.setEnabled(False)
 
         if server_status == ray.ServerStatus.OFF:
             if self.terminate_request:
