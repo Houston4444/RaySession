@@ -320,6 +320,9 @@ class OpenSessionDialog(ChildDialog):
         self._current_parrallel_copy_id = 0
         self._corner_mode = CORNER_HIDDEN
         self._set_corner_group(CORNER_HIDDEN)
+        
+        self.ui.checkBoxSaveCurrentSession.setVisible(
+            self.session.server_status == ray.ServerStatus.READY)
     
     def _set_full_sessions_view(self, full_view:bool):
         self.ui.sessionList.setHeaderHidden(not full_view)
@@ -353,6 +356,9 @@ class OpenSessionDialog(ChildDialog):
             if self._root_folder_file_dialog is not None:
                 self._root_folder_file_dialog.reject()
             self._root_folder_message_box.reject()
+
+        self.ui.checkBoxSaveCurrentSession.setVisible(
+            server_status == ray.ServerStatus.READY)
 
         self._prevent_ok()
 
@@ -829,3 +835,9 @@ class OpenSessionDialog(ChildDialog):
         if self.ui.sessionList.currentItem():
             return self.ui.sessionList.currentItem().data(
                 COLUMN_NAME, Qt.UserRole)
+
+    def want_to_save_previous(self)->bool:
+        if self.ui.checkBoxSaveCurrentSession.isHidden():
+            return True
+
+        return self.ui.checkBoxSaveCurrentSession.isChecked()

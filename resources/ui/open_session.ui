@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>580</width>
-    <height>526</height>
+    <height>551</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -110,20 +110,32 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_5">
               <item>
-               <spacer name="horizontalSpacer">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
+               <widget class="QLabel" name="labelPreviewScript">
+                <property name="minimumSize">
                  <size>
                   <width>16</width>
-                  <height>20</height>
+                  <height>16</height>
                  </size>
                 </property>
-               </spacer>
+                <property name="maximumSize">
+                 <size>
+                  <width>16</width>
+                  <height>16</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QLabel{color:green}</string>
+                </property>
+                <property name="text">
+                 <string>&gt;_</string>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="StackedSessionName" name="stackedWidgetSessionName">
@@ -168,20 +180,46 @@ QToolButton {border: none}</string>
              </layout>
             </item>
             <item>
-             <widget class="QLabel" name="labelSessionSize">
-              <property name="font">
-               <font>
-                <pointsize>9</pointsize>
-                <italic>true</italic>
-               </font>
-              </property>
-              <property name="text">
-               <string>0 Mo</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
-              </property>
-             </widget>
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <widget class="QToolButton" name="toolButton">
+                <property name="styleSheet">
+                 <string notr="true">QToolButton{border:none}</string>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+                <property name="icon">
+                 <iconset theme="folder">
+                  <normaloff>.</normaloff>.</iconset>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>24</width>
+                  <height>24</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelSessionSize">
+                <property name="font">
+                 <font>
+                  <pointsize>9</pointsize>
+                  <weight>50</weight>
+                  <italic>true</italic>
+                  <bold>false</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>0 Mo</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <widget class="QTabWidget" name="tabWidget">
@@ -365,7 +403,8 @@ QToolButton {border: none}</string>
                  <string>Cancel</string>
                 </property>
                 <property name="icon">
-                 <iconset theme="dialog-cancel"/>
+                 <iconset theme="dialog-cancel">
+                  <normaloff>.</normaloff>.</iconset>
                 </property>
                </widget>
               </item>
@@ -460,17 +499,34 @@ QToolButton {border: none}</string>
     </layout>
    </item>
    <item>
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="enabled">
-      <bool>true</bool>
+    <layout class="QHBoxLayout" name="horizontalLayout_6">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetMinimumSize</enum>
      </property>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
+     <item>
+      <widget class="QCheckBox" name="checkBoxSaveCurrentSession">
+       <property name="text">
+        <string>Save the current session</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

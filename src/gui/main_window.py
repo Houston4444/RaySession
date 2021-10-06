@@ -634,7 +634,9 @@ class MainWindow(QMainWindow):
             return
 
         session_name = dialog.get_selected_session()
-        self.to_daemon('/ray/server/open_session', session_name)
+        save_previous = int(dialog.want_to_save_previous())
+
+        self.to_daemon('/ray/server/open_session', session_name, save_previous)
 
     def _close_session(self):
         self.to_daemon('/ray/session/close')

@@ -689,7 +689,7 @@ class SignaledSession(OperatingSession):
                              self.load_done]
 
     def _ray_server_open_session_off(self, path, args, src_addr):
-        self._ray_server_open_session(path, args, src_addr, True)
+        self._ray_server_open_session(path, args, src_addr, open_off=True)
 
     def _ray_server_rename_session(self, path, args, src_addr):
         old_session_name, new_session_name = args
