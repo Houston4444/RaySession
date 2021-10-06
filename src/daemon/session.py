@@ -1466,10 +1466,15 @@ for better organization.""")
             ray.WaitFor.DUPLICATE_START)
 
     def duplicate_substep1(self, new_session_full_name):
-        spath = "%s/%s" % (self.root, new_session_full_name)
+        spath = self.get_full_path(new_session_full_name)
         self.set_server_status(ray.ServerStatus.COPY)
 
         self.send_gui_message(_translate('GUIMSG', 'start session copy...'))
+
+        # lock the directory of the new session created
+        multi_daemon_file = MultiDaemonFile.get_instance()
+        if multi_daemon_file:
+            multi_daemon_file.add_locked_path(spath)
 
         self.file_copier.start_session_copy(
             self.path, spath,
@@ -1478,7 +1483,7 @@ for better organization.""")
 
     def duplicate_substep2(self, new_session_full_name):
         self._clean_expected()
-
+        
         self.send_gui_message(_translate('GUIMSG', '...session copy finished.'))
         for client in self.clients:
             if (client.protocol == ray.Protocol.RAY_NET
@@ -1497,10 +1502,23 @@ for better organization.""")
 
     def duplicate_substep3(self, new_session_full_name):
         self.adjust_files_after_copy(new_session_full_name, ray.Template.NONE)
+
+        # unlock the directory of the new session created
+        multi_daemon_file = MultiDaemonFile.get_instance()
+        if multi_daemon_file:
+            multi_daemon_file.unlock_path(
+                self.get_full_path(new_session_full_name))
+        
         self.next_function()
 
     def duplicate_aborted(self, new_session_full_name):
         self.steps_order.clear()
+
+        # unlock the directory of the aborted session
+        multi_daemon_file = MultiDaemonFile.get_instance()
+        if multi_daemon_file:
+            multi_daemon_file.unlock_path(
+                self.get_full_path(new_session_full_name))
 
         if self.osc_path == '/nsm/server/duplicate':
             # for nsm server control API compatibility
@@ -1754,7 +1772,7 @@ for better organization.""")
         multi_daemon_file = MultiDaemonFile.get_instance()
         if (multi_daemon_file
                 and not multi_daemon_file.is_free_for_session(spath)):
-            Terminal.warning("Session %s is used by another daemon")
+            Terminal.warning("Session %s is used by another daemon" % spath)
             self.load_error(ray.Err.SESSION_LOCKED)
             return
 

@@ -1,5 +1,5 @@
 import os
-from PyQt5.QtXml import QDomDocument
+from PyQt5.QtXml import QDomDocument, QDomElement
 
 import ray
 
@@ -25,6 +25,8 @@ class MultiDaemonFile:
 
         global instance
         instance = self
+
+        self._locked_session_paths = set()
 
     @staticmethod
     def get_instance():
@@ -83,10 +85,17 @@ class MultiDaemonFile:
         element.setAttribute('port', self.server.port)
         element.setAttribute('user', os.getenv('USER'))
         element.setAttribute('not_default',
-            int(bool(self.server.is_nsm_locked or self.server.not_default)))
+                             int(bool(self.server.is_nsm_locked
+                                      or self.server.not_default)))
         element.setAttribute('has_gui', int(self.server.has_gui()))
         element.setAttribute('version', ray.VERSION)
-        element.setAttribute('local_gui_pids', self.server.get_local_gui_pid_list())
+        element.setAttribute('local_gui_pids',
+                             self.server.get_local_gui_pid_list())
+
+        for locked_path in self._locked_session_paths:
+            locked_paths_xml = self._xml.createElement('locked_session')
+            locked_paths_xml.setAttribute('path', locked_path)
+            element.appendChild(locked_paths_xml)
 
     def _clean_dirty_pids(self):
         xml_content = self._xml.documentElement()
@@ -116,25 +125,26 @@ class MultiDaemonFile:
             self._xml.appendChild(ds)
 
         else:
-            found = False
             xml_content = self._xml.documentElement()
-
             nodes = xml_content.childNodes()
+            self_node = None
+
             for i in range(nodes.count()):
                 node = nodes.at(i)
                 dxe = node.toElement()
                 pid = dxe.attribute('pid')
 
                 if pid.isdigit() and pid == str(os.getpid()):
-                    self._set_attributes(dxe)
-                    found = True
+                    self_node = node
                 elif not pid.isdigit() or not self._pid_exists(int(pid)):
                     has_dirty_pid = True
+            
+            if self_node is not None:
+                xml_content.removeChild(self_node)
 
-            if not found:
-                dm_xml = self._xml.createElement('Daemon')
-                self._set_attributes(dm_xml)
-                self._xml.firstChild().appendChild(dm_xml)
+            dm_xml = self._xml.createElement('Daemon')
+            self._set_attributes(dm_xml)
+            self._xml.firstChild().appendChild(dm_xml)
 
         if has_dirty_pid:
             self._clean_dirty_pids()
@@ -189,10 +199,19 @@ class MultiDaemonFile:
         for i in range(nodes.count()):
             node = nodes.at(i)
             dxe = node.toElement()
-            if dxe.attribute('session_path') == session_path:
-                pid = dxe.attribute('pid')
+            pid = dxe.attribute('pid')
+
+            if dxe.attribute('session_path') == session_path:                
                 if pid.isdigit() and self._pid_exists(int(pid)):
                     return False
+            
+            sub_nodes = node.childNodes()
+            for j in range(sub_nodes.count()):
+                sub_node = sub_nodes.at(j)
+                sub_nod_el = sub_node.toElement()
+                if sub_nod_el.attribute('path') == session_path:
+                    if pid.isdigit() and self._pid_exists(int(pid)):
+                        return False
 
         return True
 
@@ -214,6 +233,16 @@ class MultiDaemonFile:
                 all_session_paths.append(spath)
 
         return all_session_paths
+
+    def add_locked_path(self, path:str):
+        self._locked_session_paths.add(path)
+        self.update()
+    
+    def unlock_path(self, path:str):
+        print('fji', self._locked_session_paths)
+        self._locked_session_paths.discard(path)
+        print('fko', self._locked_session_paths)
+        self.update()
 
     def get_daemon_list(self)->list:
         daemon_list = []
