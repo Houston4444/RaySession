@@ -1044,6 +1044,7 @@ class OscServerThread(ClientCommunicating):
     def rayServerOpenFolder(self, path, args, types, src_addr):
         if self.session.path:
             subprocess.Popen(['xdg-open', self.session.path])
+        self.send(src_addr, '/reply', path, '')
 
     @ray_method('/ray/session/clear_clients', None)
     def raySessionStopClients(self, path, args, types, src_addr):

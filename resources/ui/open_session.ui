@@ -182,7 +182,7 @@ QToolButton {border: none}</string>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
-               <widget class="QToolButton" name="toolButton">
+               <widget class="QToolButton" name="toolButtonFolderPreview">
                 <property name="styleSheet">
                  <string notr="true">QToolButton{border:none}</string>
                 </property>
@@ -461,10 +461,10 @@ QToolButton {border: none}</string>
            <attribute name="headerVisible">
             <bool>true</bool>
            </attribute>
-           <attribute name="headerDefaultSectionSize">
+           <attribute name="headerMinimumSectionSize">
             <number>20</number>
            </attribute>
-           <attribute name="headerMinimumSectionSize">
+           <attribute name="headerDefaultSectionSize">
             <number>20</number>
            </attribute>
            <attribute name="headerStretchLastSection">

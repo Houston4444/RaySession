@@ -505,9 +505,19 @@ class OpenSessionDialog(ChildDialog):
             self.ui.previewFrame.setEnabled(True)
             if session_full_name:
                 self.to_daemon('/ray/server/get_session_preview', session_full_name)
+
+            if item.text(COLUMN_SCRIPTS):
+                self.ui.labelPreviewScript.setText('>_')
+                self.ui.labelPreviewScript.setToolTip(
+                    _translate('open_session', 'This session is scripted'))
+            else:
+                self.ui.labelPreviewScript.setText('')
+                self.ui.labelPreviewScript.setToolTip('')
         else:
             self.ui.stackedWidgetSessionName.set_text('')
             self.ui.previewFrame.setEnabled(False)
+            self.ui.labelPreviewScript.setText('')
+            self.ui.labelPreviewScript.setToolTip('')
 
         self._prevent_ok()
 
