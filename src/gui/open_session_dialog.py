@@ -1,9 +1,10 @@
 
 import os
+import shutil
 import time
 
 from PyQt5.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
-                             QDialogButtonBox, QMenu, QInputDialog)
+                             QDialogButtonBox, QMenu, QInputDialog, QMessageBox)
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtCore import Qt, QTimer, QDateTime, QSize, QLocale
 
@@ -34,6 +35,8 @@ CORNER_HIDDEN = 0
 CORNER_LISTING = 1
 CORNER_COPY = 2
 CORNER_NOTIFICATION = 3
+
+DATA_SIZE = Qt.UserRole + 1
 
 class PreviewClient(ray.ClientData):
     def __init__(self):
@@ -152,7 +155,6 @@ class SessionItem(QTreeWidgetItem):
         else:
             self.setFlags(self.flags() | Qt.ItemIsEnabled)
 
-
 class SessionFolder:
     name = ""
     path = ""
@@ -270,7 +272,10 @@ class OpenSessionDialog(ChildDialog):
         self.action_rename = self.session_menu.addAction(
             QIcon.fromTheme('edit-rename'),
             _translate('session_menu', 'Rename session'))
-        
+        self.action_remove = self.session_menu.addAction(
+            QIcon.fromTheme('remove'),
+            _translate('session_menu', 'Remove session'))
+
         dark = is_dark_theme(self)
         self.action_duplicate.setIcon(
             RayIcon('xml-node-duplicate', dark))
@@ -281,8 +286,11 @@ class OpenSessionDialog(ChildDialog):
         self.action_duplicate.triggered.connect(self._ask_for_session_duplicate)
         self.action_save_as_template.triggered.connect(
             self._ask_for_session_save_as_template)
+        self.action_remove.triggered.connect(self._ask_for_session_remove)
         self.ui.toolButtonSessionMenu.setMenu(self.session_menu)
-
+        self.ui.toolButtonFolderPreview.clicked.connect(
+            self._open_preview_folder)
+        
         self.ui.splitterMain.setSizes([240, 800])
         self.ui.stackedWidgetSessionName.set_text('')
         self.ui.previewFrame.setEnabled(False)
@@ -431,7 +439,7 @@ class OpenSessionDialog(ChildDialog):
 
             root_item = self.ui.sessionList.invisibleRootItem()
             sess_item = None
-
+            
             for sess in self.session.recent_sessions:
                 if sess == self.session.get_short_path():
                     continue
@@ -567,6 +575,19 @@ class OpenSessionDialog(ChildDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
             bool(self._server_will_accept and self._has_selection))
 
+    def _set_pending_action(self, action:int):
+        self._pending_action = action
+        self._update_session_menu()
+
+    def _open_preview_folder(self):
+        item = self.ui.sessionList.currentItem()
+        if item is None:
+            return
+        
+        session_name = item.data(COLUMN_NAME, Qt.UserRole)
+        self.to_daemon('/ray/server/open_file_manager_at',
+                       os.path.join(CommandLineArgs.session_root, session_name))
+
     def _set_corner_group(self, corner_mode:int):
         self._corner_mode = corner_mode
         self.ui.groupBoxProgress.setVisible(corner_mode != CORNER_HIDDEN)
@@ -612,18 +633,7 @@ class OpenSessionDialog(ChildDialog):
         
         new_session_name = dialog.get_session_short_path()
 
-        #new_session_name, ok = QInputDialog.getText(
-            #self,
-            #_translate('session_menu', 'Duplicate a session'),
-            #_translate('session_menu', 'Type a name for the new session name'))
-        #if not ok:
-            #return
-        
-        #if '/' in old_session_name:
-            #new_session_name = old_session_name.rpartition('/')[0] \
-                               #+ '/' + new_session_name
-
-        self._pending_action = PENDING_ACTION_DUPLICATE
+        self._set_pending_action(PENDING_ACTION_DUPLICATE)
         self._session_duplicating = (old_session_name, new_session_name)
         self.to_daemon('/ray/session/duplicate_only', old_session_name,
                        new_session_name, CommandLineArgs.session_root)
@@ -645,11 +655,56 @@ class OpenSessionDialog(ChildDialog):
             return
         
         template_name = dialog.get_template_name()
-        
-        self._pending_action = PENDING_ACTION_TEMPLATE
+
+        self._set_pending_action(PENDING_ACTION_TEMPLATE)
         self._session_templating = (session_name, template_name)
         self.to_daemon('/ray/server/save_session_template',
                        session_name, template_name)
+
+    def _ask_for_session_remove(self):
+        # we won't call the server to remove a session
+        # because it would enable a very dangerous OSC path.
+        # we will remove it directly in the GUI process and thread
+        if CommandLineArgs.out_daemon:
+            return
+
+        # do not allow to remove from GUI a too big session
+        # totally arbitrary choice : 95.37 Mb
+        if self.session.preview_size >= 100000000:
+            return
+        
+        item = self.ui.sessionList.currentItem()
+        if item is None:
+            return
+        
+        session_name = item.data(COLUMN_NAME, Qt.UserRole)
+        full_path = os.path.join(CommandLineArgs.session_root, session_name)
+        if not os.path.isdir(full_path):
+            return
+        
+        ret = QMessageBox.critical(
+            self,
+            _translate('open_session', 'Remove session'),
+            _translate('open_session',
+                       '<p>Are you really sure to want to remove the  following session:</p>'
+                       + '<p><strong>%s</strong></p>'
+                       + '<p>This action is irreversible.')
+            % session_name,
+            QMessageBox.No | QMessageBox.Yes,
+            QMessageBox.No)
+        
+        if ret != QMessageBox.Yes:
+            return
+            
+        try:
+            shutil.rmtree(full_path)
+        except:
+            # TODO
+            return
+
+        parent = item.parent()
+        if parent is not None:
+            parent.removeChild(item)
 
     def _session_name_changed(self, new_name:str):
         item = self.ui.sessionList.currentItem()
@@ -665,7 +720,7 @@ class OpenSessionDialog(ChildDialog):
         if self._pending_action:
             return
 
-        self._pending_action = PENDING_ACTION_RENAME
+        self._set_pending_action(PENDING_ACTION_RENAME)
         self._session_renaming = (old_name, new_name)
         self.to_daemon('/ray/server/rename_session', old_name, new_name)
 
@@ -674,11 +729,9 @@ class OpenSessionDialog(ChildDialog):
             return
         
         self._current_parrallel_copy_id = session_id if state else 0
-        self.session_menu.setEnabled(not bool(state))
 
         if not state:
             self._set_corner_group(CORNER_HIDDEN)
-            #self._pending_action = PENDING_ACTION_NONE
 
     def _parrallel_copy_progress(self, session_id:int, progress:float):
         if session_id != self._current_parrallel_copy_id:
@@ -689,7 +742,7 @@ class OpenSessionDialog(ChildDialog):
 
     def _parrallel_copy_aborted(self):
         self._set_corner_group(CORNER_HIDDEN)
-        self._pending_action = PENDING_ACTION_NONE
+        self._set_pending_action(PENDING_ACTION_NONE)
 
     def _cancel_copy_clicked(self):
         if not self._current_parrallel_copy_id:
@@ -732,12 +785,12 @@ class OpenSessionDialog(ChildDialog):
         item.setData(COLUMN_NAME, Qt.UserRole, new_long_name)
         item.setText(COLUMN_NAME, new_name)
         self.ui.stackedWidgetSessionName.set_text(new_name)
-        self._pending_action = PENDING_ACTION_NONE
+        self._set_pending_action(PENDING_ACTION_NONE)
 
     def _session_duplicated_by_server(self):
         old_name, new_name = self._session_duplicating
         self._session_duplicating = ('', '')
-        self._pending_action = PENDING_ACTION_NONE
+        self._set_pending_action(PENDING_ACTION_NONE)
 
         self._add_sessions([new_name])
 
@@ -762,7 +815,7 @@ class OpenSessionDialog(ChildDialog):
         self._session_templating = ('', '')
         if self._pending_action == PENDING_ACTION_TEMPLATE:
             self._set_corner_group(CORNER_NOTIFICATION)
-        self._pending_action = PENDING_ACTION_NONE
+        self._set_pending_action(PENDING_ACTION_NONE)
     
     def _deploy_item(self, item, column):
         if column == COLUMN_NOTES and not item.icon(COLUMN_NOTES).isNull():
@@ -801,6 +854,37 @@ class OpenSessionDialog(ChildDialog):
         locale = QLocale()
         self.ui.labelSessionSize.setText(
             locale.formattedDataSize(self.session.preview_size))
+        
+        # store size in item
+        item = self.ui.sessionList.currentItem()
+        if item is not None:
+            item.setData(COLUMN_NAME, DATA_SIZE, self.session.preview_size)
+        self._update_session_menu()
+
+    def _update_session_menu(self):
+        item = self.ui.sessionList.currentItem()
+        if item is None:
+            self.session_menu.setEnabled(False)
+            return
+        
+        self.session_menu.setEnabled(True)
+        session_size = item.data(COLUMN_NAME, DATA_SIZE)
+        allow_remove = False
+        remove_title = _translate('session_menu', 'Remove session')
+        
+        if session_size is not None:
+            if session_size >= 100000000:
+                remove_title = _translate('session_menu', 'Remove session (too big)')
+            else:
+                allow_remove = True
+        
+        self.action_remove.setText(remove_title)
+        
+        ok = not bool(self._pending_action)
+        self.action_duplicate.setEnabled(ok)
+        self.action_rename.setEnabled(ok)
+        self.action_save_as_template.setEnabled(ok)
+        self.action_remove.setEnabled(ok and allow_remove)
 
     def _add_snapshots(self, snaptexts):
         if not snaptexts and not self.main_snap_group.snapshots:

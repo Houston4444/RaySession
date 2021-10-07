@@ -801,6 +801,13 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                       "Option %s is not currently used" % option_str)
 
+    @ray_method('/ray/server/open_file_manager_at', 's')
+    def rayServerOpenFileManagerAt(self, path, args, types, src_addr):
+        folder_path = args[0]
+        if os.path.isdir(folder_path):
+            subprocess.Popen(['xdg-open', folder_path])
+        self.send(src_addr, '/reply', path, '')
+
     @ray_method('/ray/server/exotic_action', 's')
     def rayServerExoticAction(self, path, args, types, src_addr):
         action = args[0]

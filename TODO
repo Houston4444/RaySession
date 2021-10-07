@@ -3,7 +3,7 @@ client noSavelLevel gardé comme ça pour l'instant parce client.no_save_level e
 -> Déprecier no_save_level de l'exterieur, uniquement en RayHack
 
 
-léger bug notes : saturation messages snapshot
+
 afficher le sous dossier -> preview ; session en cours
 
 Display server address in window title (network session).
@@ -13,3 +13,5 @@ Start/Stop all clients f
 Empêcher renommer session avec /
 faire fenêtre propriétés client
 faire menu session preview: renommer, dupliquer, sauver comme modèle, supprimer
+
+checker l'existence des sessions récentes à l'annonce GUI
