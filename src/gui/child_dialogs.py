@@ -164,10 +164,12 @@ class NewSessionDialog(ChildDialog):
         if self._is_duplicate:
             self.ui.labelTemplate.setVisible(False)
             self.ui.comboBoxTemplate.setVisible(False)
+            self.ui.labelOriginalSessionName.setText(self.session.get_short_path())
             self.ui.labelNewSessionName.setText(
                 _translate('Duplicate', 'Duplicated session name :'))
             self.setWindowTitle(_translate('Duplicate', 'Duplicate Session'))
         else:
+            self.ui.frameOriginalSession.setVisible(False)
             self.to_daemon('/ray/server/list_session_templates')
 
         if not self.daemon_manager.is_local:
@@ -280,7 +282,9 @@ class NewSessionDialog(ChildDialog):
         self._completer = QCompleter([f + '/' for f in self.sub_folders])
         self.ui.lineEdit.setCompleter(self._completer)
 
-        self._set_last_sub_folder_selected()
+        if not session_names:
+            # all sessions are listed, pre-fill last subfolder
+            self._set_last_sub_folder_selected()
 
     def _add_templates_to_list(self, template_list):
         for template in template_list:
@@ -419,8 +423,7 @@ class SaveTemplateSessionDialog(AbstractSaveTemplateDialog):
     def __init__(self, parent):
         AbstractSaveTemplateDialog.__init__(self, parent)
         self.ui.toolButtonClientIcon.setVisible(False)
-        self.ui.labelLabel.setText(self.session.path)
-        self.template_list = []
+        self.ui.labelLabel.setText(self.session.get_short_path())
 
         self.signaler.session_template_found.connect(self._add_templates_to_list)
         self.to_daemon('/ray/server/list_session_templates')
@@ -445,7 +448,6 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
             get_app_icon(client.icon, self))
         self.ui.labelLabel.setText(client.prettier_name())
 
-        self.template_list = []
         self.ui.pushButtonAccept.setEnabled(False)
 
         self.ui.labelNewTemplateName.setText(

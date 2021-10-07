@@ -198,6 +198,44 @@ class SessionFolder:
         return self.item.find_item_with(sess_name)
 
 
+class SaveSessionTemplateDialog(child_dialogs.SaveTemplateSessionDialog):
+    def __init__(self, parent):
+        child_dialogs.SaveTemplateSessionDialog.__init__(self, parent)
+        self._server_will_accept = True
+
+    def _server_status_changed(self, server_status):
+        # server will always accept, whatever the status
+        pass
+    
+    def set_original_session_name(self, session_name:str):
+        self.ui.labelLabel.setText(session_name)
+
+
+class DuplicateDialog(child_dialogs.NewSessionDialog):
+    def __init__(self, parent):
+        child_dialogs.NewSessionDialog.__init__(
+            self, parent, duplicate_window=True)
+        self._server_will_accept = True
+        self.ui.toolButtonFolder.setEnabled(False)
+        self.ui.toolButtonFolder.setVisible(False)
+        self._original_session_name = ''
+    
+    def _server_status_changed(self, server_status):
+        # server will always accept, whatever the status
+        pass
+    
+    def _add_sessions_to_list(self, session_names: list):
+        child_dialogs.NewSessionDialog._add_sessions_to_list(self, session_names)
+        if not session_names:
+            subfolder, sep, after = self._original_session_name.rpartition('/')
+            
+            self.ui.lineEdit.setText(subfolder + sep)
+    
+    def set_original_session_name(self, session_name:str):
+        self._original_session_name = session_name
+        self.ui.labelOriginalSessionName.setText(session_name)
+
+
 class OpenSessionDialog(ChildDialog):
     sort_by_date = False
     
@@ -223,15 +261,15 @@ class OpenSessionDialog(ChildDialog):
         self._progress_inverted = False
 
         self.session_menu = QMenu()
-        self.action_rename = self.session_menu.addAction(
-            QIcon.fromTheme('edit-rename'),
-            _translate('session_menu', 'Rename session'))
         self.action_duplicate = self.session_menu.addAction(
             QIcon.fromTheme('duplicate'),
             _translate('session_menu', 'Duplicate session'))
         self.action_save_as_template = self.session_menu.addAction(
             QIcon.fromTheme('template'),
             _translate('session_menu', 'Save session as template'))
+        self.action_rename = self.session_menu.addAction(
+            QIcon.fromTheme('edit-rename'),
+            _translate('session_menu', 'Rename session'))
         
         dark = is_dark_theme(self)
         self.action_duplicate.setIcon(
@@ -510,14 +548,18 @@ class OpenSessionDialog(ChildDialog):
                 self.ui.labelPreviewScript.setText('>_')
                 self.ui.labelPreviewScript.setToolTip(
                     _translate('open_session', 'This session is scripted'))
+                self.ui.labelPreviewScript.setStyleSheet(
+                    'QLabel{color:green;background-color:black}')
             else:
                 self.ui.labelPreviewScript.setText('')
                 self.ui.labelPreviewScript.setToolTip('')
+                self.ui.labelPreviewScript.setStyleSheet('')
         else:
             self.ui.stackedWidgetSessionName.set_text('')
             self.ui.previewFrame.setEnabled(False)
             self.ui.labelPreviewScript.setText('')
             self.ui.labelPreviewScript.setToolTip('')
+            self.ui.labelPreviewScript.setStyleSheet('')
 
         self._prevent_ok()
 
@@ -562,16 +604,24 @@ class OpenSessionDialog(ChildDialog):
         if self._pending_action:
             return
 
-        new_session_name, ok = QInputDialog.getText(
-            self,
-            _translate('session_menu', 'Duplicate a session'),
-            _translate('session_menu', 'Type a name for the new session name'))
-        if not ok:
+        dialog = DuplicateDialog(self)
+        dialog.set_original_session_name(old_session_name)
+        dialog.exec()
+        if not dialog.result():
             return
         
-        if '/' in old_session_name:
-            new_session_name = old_session_name.rpartition('/')[0] \
-                               + '/' + new_session_name
+        new_session_name = dialog.get_session_short_path()
+
+        #new_session_name, ok = QInputDialog.getText(
+            #self,
+            #_translate('session_menu', 'Duplicate a session'),
+            #_translate('session_menu', 'Type a name for the new session name'))
+        #if not ok:
+            #return
+        
+        #if '/' in old_session_name:
+            #new_session_name = old_session_name.rpartition('/')[0] \
+                               #+ '/' + new_session_name
 
         self._pending_action = PENDING_ACTION_DUPLICATE
         self._session_duplicating = (old_session_name, new_session_name)
@@ -588,15 +638,13 @@ class OpenSessionDialog(ChildDialog):
 
         session_name = item.data(COLUMN_NAME, Qt.UserRole)
 
-        template_name, ok = QInputDialog.getText(
-            self,
-            _translate('session_menu', 'Duplicate a session'),
-            _translate('session_menu', 'Type a name for the new session name'))
-        if not ok:
+        dialog = SaveSessionTemplateDialog(self)
+        dialog.set_original_session_name(session_name)
+        dialog.exec()
+        if not dialog.result():
             return
-
-        if '/' in template_name:
-            return
+        
+        template_name = dialog.get_template_name()
         
         self._pending_action = PENDING_ACTION_TEMPLATE
         self._session_templating = (session_name, template_name)
@@ -698,12 +746,15 @@ class OpenSessionDialog(ChildDialog):
             if item is not None:
                 self.ui.sessionList.setCurrentItem(item)
                 filter_text = self.ui.filterBar.text()
+
                 if filter_text.lower() in new_name.lower():
                     self._update_filtered_list('')
                 else:
                     self.ui.filterBar.setText('')
+
                 self.ui.sessionList.scrollToItem(item)
                 break
+
         self._set_corner_group(CORNER_HIDDEN)
     
     def _session_templated_by_server(self):

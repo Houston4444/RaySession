@@ -130,7 +130,7 @@
                  </font>
                 </property>
                 <property name="styleSheet">
-                 <string notr="true">QLabel{color:green}</string>
+                 <string notr="true">QLabel{color:green;background-color:black}</string>
                 </property>
                 <property name="text">
                  <string>&gt;_</string>
@@ -461,10 +461,10 @@ QToolButton {border: none}</string>
            <attribute name="headerVisible">
             <bool>true</bool>
            </attribute>
-           <attribute name="headerMinimumSectionSize">
+           <attribute name="headerDefaultSectionSize">
             <number>20</number>
            </attribute>
-           <attribute name="headerDefaultSectionSize">
+           <attribute name="headerMinimumSectionSize">
             <number>20</number>
            </attribute>
            <attribute name="headerStretchLastSection">

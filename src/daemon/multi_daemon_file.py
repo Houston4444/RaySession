@@ -239,9 +239,7 @@ class MultiDaemonFile:
         self.update()
     
     def unlock_path(self, path:str):
-        print('fji', self._locked_session_paths)
         self._locked_session_paths.discard(path)
-        print('fko', self._locked_session_paths)
         self.update()
 
     def get_daemon_list(self)->list:
