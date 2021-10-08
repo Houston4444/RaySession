@@ -5,8 +5,8 @@ import time
 
 from PyQt5.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
                              QDialogButtonBox, QMenu, QInputDialog, QMessageBox)
-from PyQt5.QtGui import QIcon, QColor
-from PyQt5.QtCore import Qt, QTimer, QDateTime, QSize, QLocale
+from PyQt5.QtGui import QIcon, QColor, QCursor
+from PyQt5.QtCore import Qt, QTimer, QDateTime, QSize, QLocale, QPoint
 
 import child_dialogs
 import ray
@@ -306,6 +306,8 @@ class OpenSessionDialog(ChildDialog):
         self.ui.sessionList.setFocus(Qt.OtherFocusReason)
         self.ui.sessionList.itemDoubleClicked.connect(self._go_if_any)
         self.ui.sessionList.itemClicked.connect(self._deploy_item)
+        self.ui.sessionList.customContextMenuRequested.connect(
+            self._show_context_menu)
         self.ui.filterBar.textEdited.connect(self._update_filtered_list)
         self.ui.filterBar.key_event.connect(self._up_down_pressed)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -605,6 +607,20 @@ class OpenSessionDialog(ChildDialog):
     def _prevent_ok(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
             bool(self._server_will_accept and self._has_selection))
+
+    def _show_context_menu(self):
+        item = self.ui.sessionList.currentItem()
+        if item is None:
+            return
+        
+        if not item.is_session:
+            return
+        
+        x = QCursor.pos().x()
+        rect = self.ui.sessionList.visualItemRect(item)
+        y = self.ui.sessionList.mapToGlobal(rect.bottomLeft()).y()
+        
+        self.session_menu.exec(QPoint(x, y+1))
 
     def _set_pending_action(self, action:int):
         self._pending_action = action
