@@ -1152,19 +1152,13 @@ class SignaledSession(OperatingSession):
     def _ray_session_add_user_client_template(self, path, args, src_addr):
         self._ray_session_add_client_template(path, [0] + args, src_addr)
 
-    def _ray_session_eat_other_session_client(self, path, args, src_addr):
+    def _ray_session_add_other_session_client(self, path, args, src_addr):
         other_session, client_id = args
         
         if not self.path:
             self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
                       "No session open")
             return
-        
-        #for client in self.clients + self.trashed_clients:
-            #if client.client_id == client_id:
-                #self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
-                          #"Client id %s already exists in the session" % client_id)
-                #return
         
         dummy_session = DummySession(self.root)
         dummy_session.dummy_load(other_session)

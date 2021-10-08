@@ -312,6 +312,8 @@ class OpenSessionDialog(ChildDialog):
         self.ui.filterBar.key_event.connect(self._up_down_pressed)
         self.ui.listWidgetPreview.properties_request.connect(
             self._show_client_properties)
+        self.ui.listWidgetPreview.add_to_session_request.connect(
+            self._add_client_to_current_session)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
         self.ui.checkBoxShowDates.stateChanged.connect(
@@ -1029,6 +1031,16 @@ class OpenSessionDialog(ChildDialog):
                 properties_dialog.lock_widgets()
                 properties_dialog.show()
                 break
+
+    def _add_client_to_current_session(self, client_id:str):
+        item = self.ui.sessionList.currentItem()
+        if item is None:
+            return
+        
+        session_name = item.data(COLUMN_NAME, Qt.UserRole)
+        self.to_daemon('/ray/session/add_other_session_client',
+                       session_name, client_id)
+        self.reject()
 
     def _splitter_moved(self, pos:int, index:int):
         self._resize_session_names_column()

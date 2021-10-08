@@ -1033,7 +1033,7 @@ class OscServerThread(ClientCommunicating):
             self._unknown_message(path, types, src_addr)
             return False
 
-    @ray_method('/ray/session/eat_other_session_client', 'ss')
+    @ray_method('/ray/session/add_other_session_client', 'ss')
     def raySessionEatOtherSessionClient(self, path, args, types, src_addr):
         pass
 

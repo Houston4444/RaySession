@@ -218,15 +218,6 @@ QToolButton {border: none}</string>
     </spacer>
    </item>
   </layout>
-  <action name="actionSaveAsApplicationTemplate">
-   <property name="icon">
-    <iconset theme="document-save-as-template">
-     <normaloff>../../../../../.designer/backup</normaloff>../../../../../.designer/backup</iconset>
-   </property>
-   <property name="text">
-    <string>Save As Application Template</string>
-   </property>
-  </action>
   <action name="actionProperties">
    <property name="icon">
     <iconset theme="document-properties">
@@ -236,22 +227,12 @@ QToolButton {border: none}</string>
     <string>Properties</string>
    </property>
   </action>
-  <action name="actionReturnToAPreviousState">
+  <action name="actionAddToTheCurrentSession">
    <property name="icon">
-    <iconset theme="media-seek-backward">
-     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
+    <iconset theme="list-add"/>
    </property>
    <property name="text">
-    <string>Return To A Previous State</string>
-   </property>
-  </action>
-  <action name="actionRename">
-   <property name="icon">
-    <iconset theme="edit-rename">
-     <normaloff>../../../.designer/backup</normaloff>../../../.designer/backup</iconset>
-   </property>
-   <property name="text">
-    <string>Rename</string>
+    <string>Add to the current session</string>
    </property>
   </action>
  </widget>

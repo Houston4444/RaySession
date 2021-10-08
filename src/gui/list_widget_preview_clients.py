@@ -25,11 +25,13 @@ class ClientSlot(QFrame):
         self._icon_on = QIcon()
         self._icon_off = QIcon()
 
+        self.ui.actionAddToTheCurrentSession.triggered.connect(
+            self._add_to_the_current_session)
         self.ui.actionProperties.triggered.connect(
             self._properties_request)
 
         self._menu = QMenu(self)
-
+        self._menu.addAction(self.ui.actionAddToTheCurrentSession)
         self._menu.addAction(self.ui.actionProperties)
 
         self.ui.iconButton.setMenu(self._menu)
@@ -52,6 +54,9 @@ class ClientSlot(QFrame):
 
     def _properties_request(self):
         self._list_widget.properties_request.emit(self.get_client_id())
+
+    def _add_to_the_current_session(self):
+        self._list_widget.add_to_session_request.emit(self.get_client_id())
 
     def set_launched(self, launched: bool):
         self._gray_icon(not launched)
@@ -165,7 +170,8 @@ class ClientItem(QListWidgetItem):
 
 class ListWidgetPreviewClients(QListWidget):
     properties_request = pyqtSignal(str)
-    
+    add_to_session_request = pyqtSignal(str)
+
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
         self._last_n = 0
