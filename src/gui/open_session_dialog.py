@@ -310,6 +310,8 @@ class OpenSessionDialog(ChildDialog):
             self._show_context_menu)
         self.ui.filterBar.textEdited.connect(self._update_filtered_list)
         self.ui.filterBar.key_event.connect(self._up_down_pressed)
+        self.ui.listWidgetPreview.properties_request.connect(
+            self._show_client_properties)
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
         self.ui.checkBoxShowDates.stateChanged.connect(
@@ -612,10 +614,10 @@ class OpenSessionDialog(ChildDialog):
         item = self.ui.sessionList.currentItem()
         if item is None:
             return
-        
+
         if not item.is_session:
             return
-        
+
         x = QCursor.pos().x()
         rect = self.ui.sessionList.visualItemRect(item)
         y = self.ui.sessionList.mapToGlobal(rect.bottomLeft()).y()
@@ -1015,6 +1017,16 @@ class OpenSessionDialog(ChildDialog):
             width = max(width, 40)
 
         self.ui.sessionList.setColumnWidth(COLUMN_NAME, width)
+
+    def _show_client_properties(self, client_id:str):
+        for pv_client in self.session.preview_client_list:
+            if pv_client.client_id == client_id:
+                properties_dialog = ClientPropertiesDialog.create(
+                    self, pv_client)
+                properties_dialog.update_contents()
+                properties_dialog.lock_widgets()
+                properties_dialog.show()
+                break
 
     def _splitter_moved(self, pos:int, index:int):
         self._resize_session_names_column()

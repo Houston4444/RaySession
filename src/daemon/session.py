@@ -2428,7 +2428,17 @@ for better organization.""")
             self.send_even_dummy(
                 src_addr, '/ray/gui/preview/client/is_started',
                 client.client_id, int(client.auto_start))
-        
+            
+            if client.protocol == ray.Protocol.RAY_HACK:
+                self.send_even_dummy(
+                    src_addr, '/ray/gui/preview/client/ray_hack_update',
+                    client.client_id, *client.ray_hack.spread())
+
+            elif client.protocol == ray.Protocol.RAY_NET:
+                self.send_even_dummy(
+                    src_addr, '/ray/gui/preview/client/ray_net_update',
+                    client.client_id, *client.ray_net.spread())
+
         for snapshot in self.snapshoter.list():
             self.send_even_dummy(
                 src_addr, '/ray/gui/preview/snapshot', snapshot)

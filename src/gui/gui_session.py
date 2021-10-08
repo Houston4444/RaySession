@@ -431,6 +431,20 @@ class SignaledSession(Session):
         else:
             self.preview_client_list.append(client)
 
+    def _ray_gui_preview_client_ray_hack_update(self, path, args):
+        client_id = args.pop(0)
+        for pv_client in self.preview_client_list:
+            if pv_client.client_id == client_id:
+                pv_client.set_ray_hack(ray.RayHack.new_from(*args))
+                break
+    
+    def _ray_gui_preview_client_ray_net_update(self, path, args):
+        client_id = args.pop(0)
+        for pv_client in self.preview_client_list:
+            if pv_client.client_id == client_id:
+                pv_client.set_ray_net(ray.RayNet.new_from(*args))
+                break
+
     def _ray_gui_preview_client_is_started(self, path, args):
         client_id, is_started = args
 

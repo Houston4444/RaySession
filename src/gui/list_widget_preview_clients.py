@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
 from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
-from PyQt5.QtCore import pyqtSlot, QSize
+from PyQt5.QtCore import pyqtSlot, QSize, pyqtSignal
 
 import ray
 from gui_server_thread import GuiServerThread
@@ -25,8 +25,8 @@ class ClientSlot(QFrame):
         self._icon_on = QIcon()
         self._icon_off = QIcon()
 
-        #self.ui.actionProperties.triggered.connect(
-            #self.client.show_properties_dialog)
+        self.ui.actionProperties.triggered.connect(
+            self._properties_request)
 
         self._menu = QMenu(self)
 
@@ -44,18 +44,14 @@ class ClientSlot(QFrame):
         if server:
             server.to_daemon(*args)
 
-    #def _set_fat(self, yesno: bool, very_fat=False):
-        #if yesno:
-            #self._list_widget_item.setSizeHint(
-                #QSize(100, 45 if very_fat else 45))
-        #else:
-            #self._list_widget_item.setSizeHint(QSize(100, 45))
-
     def _gray_icon(self, gray: bool):
         if gray:
             self.ui.iconButton.setIcon(self._icon_off)
         else:
             self.ui.iconButton.setIcon(self._icon_on)
+
+    def _properties_request(self):
+        self._list_widget.properties_request.emit(self.get_client_id())
 
     def set_launched(self, launched: bool):
         self._gray_icon(not launched)
@@ -142,7 +138,6 @@ class ClientSlot(QFrame):
         self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Disabled))
         self._gray_icon(False)
 
-
     def contextMenuEvent(self, event):
         act_selected = self._menu.exec(self.mapToGlobal(event.pos()))
         event.accept()
@@ -169,6 +164,8 @@ class ClientItem(QListWidgetItem):
 
 
 class ListWidgetPreviewClients(QListWidget):
+    properties_request = pyqtSignal(str)
+    
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
         self._last_n = 0

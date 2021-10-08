@@ -100,6 +100,8 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/preview/clear', ''),
             ('/ray/gui/preview/notes', 's'),
             ('/ray/gui/preview/client/update', ray.ClientData.sisi()),
+            ('/ray/gui/preview/client/ray_hack_update', 's' + ray.RayHack.sisi()),
+            ('/ray/gui/preview/client/ray_net_update', 's' + ray.RayNet.sisi()),
             ('/ray/gui/preview/client/is_started', 'si'),
             ('/ray/gui/preview/snapshot', 's'),
             ('/ray/gui/preview/session_size', 'h'),

@@ -81,17 +81,8 @@ class SignaledSession(OperatingSession):
 
         self.recent_sessions = RS.settings.value(
             'daemon/recent_sessions', {}, type=dict)
+        self.check_recent_sessions_existing()
 
-        # check here if recent sessions still exist
-        if self.root in self.recent_sessions.keys():
-            to_remove_list = []
-            for sess in self.recent_sessions[self.root]:
-                if not os.path.exists(
-                        "%s/%s/raysession.xml" % (self.root, sess)):
-                    to_remove_list.append(sess)
-            for sess in to_remove_list:
-                self.recent_sessions[self.root].remove(sess)
-        
         self.preview_dummy_session = None
         self.dummy_sessions = []
         self._next_session_id = 1
@@ -1788,6 +1779,17 @@ class SignaledSession(OperatingSession):
             self.end_timer_if_last_expected(client)
 
         client.net_daemon_copy_timer.start()
+
+    def check_recent_sessions_existing(self):
+        # check here if recent sessions still exist
+        if self.root in self.recent_sessions.keys():
+            to_remove_list = []
+            for sess in self.recent_sessions[self.root]:
+                if not os.path.exists(
+                        "%s/%s/raysession.xml" % (self.root, sess)):
+                    to_remove_list.append(sess)
+            for sess in to_remove_list:
+                self.recent_sessions[self.root].remove(sess)
 
     def server_open_session_at_start(self, session_name):
         self.steps_order = [(self.preload, session_name),
