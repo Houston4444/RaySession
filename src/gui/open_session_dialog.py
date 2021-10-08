@@ -728,6 +728,7 @@ class OpenSessionDialog(ChildDialog):
         
         session_name = item.data(COLUMN_NAME, Qt.UserRole)
         full_path = os.path.join(CommandLineArgs.session_root, session_name)
+
         if not os.path.isdir(full_path):
             return
         
@@ -752,8 +753,9 @@ class OpenSessionDialog(ChildDialog):
             return
 
         parent = item.parent()
-        if parent is not None:
-            parent.removeChild(item)
+        if parent is None:
+            parent = self.ui.sessionList.invisibleRootItem()
+        parent.removeChild(item)
 
     def _session_name_changed(self, new_name:str):
         item = self.ui.sessionList.currentItem()
