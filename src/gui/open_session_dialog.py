@@ -369,6 +369,9 @@ class OpenSessionDialog(ChildDialog):
         
         self.ui.checkBoxSaveCurrentSession.setVisible(
             self.session.server_status == ray.ServerStatus.READY)
+        
+        self._last_selected_session = ''
+        self._listing_sessions = False
     
     def _set_full_sessions_view(self, full_view:bool):
         self.ui.sessionList.setHeaderHidden(not full_view)
@@ -429,10 +432,22 @@ class OpenSessionDialog(ChildDialog):
         self.folders.clear()
         self.to_daemon('/ray/server/list_sessions', 0)
 
-    def _add_sessions(self, session_names):
+    def _add_sessions(self, session_names, out_of_listing=False):
+        if not self._listing_sessions and not out_of_listing:
+            # in case session server is listing sessions
+            # but they are already listed.
+            # Check which one is selected and clear all of them. 
+            item = self.ui.sessionList.currentItem()
+            if item is not None:
+                self._last_selected_session = item.data(COLUMN_NAME, Qt.UserRole)
+            
+            self.folders.clear()
+            self.ui.sessionList.clear()
+            
         if not session_names:
             # there are no session_names here if session listing
             # is finished.
+            self._listing_sessions = False
             self._listing_timer_progress.stop()
             height = self.ui.groupBoxProgress.size().height()
             self._set_corner_group(CORNER_HIDDEN)
@@ -440,20 +455,31 @@ class OpenSessionDialog(ChildDialog):
             root_item = self.ui.sessionList.invisibleRootItem()
             sess_item = None
             
-            for sess in self.session.recent_sessions:
-                if sess == self.session.get_short_path():
-                    continue
-
-                for i in range(root_item.childCount()):
-                    item = root_item.child(i)
-                    sess_item = item.find_item_with(sess)
-                    if sess_item is not None:
+            if self._last_selected_session:
+                for folder in self.folders:
+                    item = folder.find_item_with(self._last_selected_session)
+                    if item is not None:
+                        self.ui.sessionList.setCurrentItem(item)
+                        self.ui.sessionList.scrollToItem(item)
                         break
-                
-                if sess_item is not None:
-                    self.ui.sessionList.setCurrentItem(sess_item)
-                    self.ui.sessionList.scrollToItem(sess_item)
-                    break
+                else:
+                    self._last_selected_session = ''
+            
+            if not self._last_selected_session:
+                for sess in self.session.recent_sessions:
+                    if sess == self.session.get_short_path():
+                        continue
+
+                    for i in range(root_item.childCount()):
+                        item = root_item.child(i)
+                        sess_item = item.find_item_with(sess)
+                        if sess_item is not None:
+                            break
+                    
+                    if sess_item is not None:
+                        self.ui.sessionList.setCurrentItem(sess_item)
+                        self.ui.sessionList.scrollToItem(sess_item)
+                        break
                 
             QTimer.singleShot(20, self._resize_session_names_column)
             return
@@ -484,6 +510,8 @@ class OpenSessionDialog(ChildDialog):
                     folders.append(new_folder)
                     folders = new_folder.subfolders
 
+        if not out_of_listing:
+            self._listing_sessions = True
         self.ui.sessionList.clear()
 
         for folder in self.folders:
@@ -568,6 +596,9 @@ class OpenSessionDialog(ChildDialog):
             self.ui.labelPreviewScript.setText('')
             self.ui.labelPreviewScript.setToolTip('')
             self.ui.labelPreviewScript.setStyleSheet('')
+
+        if item is not None:
+            self._last_current_item = item
 
         self._prevent_ok()
 
@@ -792,7 +823,7 @@ class OpenSessionDialog(ChildDialog):
         self._session_duplicating = ('', '')
         self._set_pending_action(PENDING_ACTION_NONE)
 
-        self._add_sessions([new_name])
+        self._add_sessions([new_name], out_of_listing=True)
 
         for folder in self.folders:
             item = folder.find_item_with(new_name)
@@ -805,6 +836,10 @@ class OpenSessionDialog(ChildDialog):
                 else:
                     self.ui.filterBar.setText('')
 
+                parent_item = item.parent()
+                while parent_item is not None:
+                    parent_item.setExpanded(True)
+                    parent_item = parent_item.parent()
                 self.ui.sessionList.scrollToItem(item)
                 break
 

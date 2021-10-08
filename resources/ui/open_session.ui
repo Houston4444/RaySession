@@ -443,6 +443,9 @@ QToolButton {border: none}</string>
              <height>0</height>
             </size>
            </property>
+           <property name="contextMenuPolicy">
+            <enum>Qt::CustomContextMenu</enum>
+           </property>
            <property name="autoScrollMargin">
             <number>0</number>
            </property>
