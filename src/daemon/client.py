@@ -125,6 +125,21 @@ class Client(ServerSender, ray.ClientData):
 
         self.ray_hack_waiting_win = False
 
+    @staticmethod
+    def short_client_id(wanted:str)->str:
+        if '_' in wanted:
+            begin, udsc, end = wanted.rpartition('_')
+
+            if not end:
+                return wanted
+
+            if not end.isdigit():
+                return wanted
+
+            return begin
+
+        return wanted
+
     def _standard_error(self):
         standard_error = self._process.readAllStandardError().data()
         Terminal.client_message(standard_error, self.name, self.client_id)
@@ -289,18 +304,19 @@ class Client(ServerSender, ray.ClientData):
                     if executable:
                         wanted = executable
 
-        if '_' in wanted:
-            begin, udsc, end = wanted.rpartition('_')
+        return self.short_client_id(wanted)
+        #if '_' in wanted:
+            #begin, udsc, end = wanted.rpartition('_')
 
-            if not end:
-                return wanted
+            #if not end:
+                #return wanted
 
-            if not end.isdigit():
-                return wanted
+            #if not end.isdigit():
+                #return wanted
 
-            return begin
+            #return begin
 
-        return wanted
+        #return wanted
 
     def _get_proxy_executable(self):
         if os.path.basename(self.executable_path) != 'ray-proxy':
@@ -405,8 +421,9 @@ class Client(ServerSender, ray.ClientData):
             self, spath, old_session_name, new_session_name,
             old_prefix, new_prefix, old_client_id, new_client_id,
             old_client_links_dir, new_client_links_dir):
+        # rename client script dir
         scripts_dir = "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, old_client_id)
-        if os.access(scripts_dir, os.W_OK):
+        if os.access(scripts_dir, os.W_OK) and old_client_id != new_client_id:
             os.rename(scripts_dir,
                       "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, new_client_id))
 
@@ -514,7 +531,7 @@ class Client(ServerSender, ray.ClientData):
 
                         files_to_rename.append((ardour_file, new_ardour_file))
 
-                     # change Session name
+                     # change ardour session name
                     try:
                         file = open(ardour_file, 'r')
                         xml = QDomDocument()
@@ -1927,6 +1944,58 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         else:
             self._save_as_template_substep1(template_name)
 
+    def eat_other_session_client(self, src_addr, osc_path, client):
+        # eat attributes but keep client_id
+        self_client_id = self.client_id
+        self.eat_attributes(client)
+        self.client_id = self_client_id
+
+        self.send_gui_client_properties()
+        
+        tmp_basedir = ".tmp_ray_workdir"
+        while os.path.exists("%s/%s" % (self.session.path, tmp_basedir)):
+            tmp_basedir += 'X'
+    
+        tmp_work_dir = "%s/%s" % (self.session.path, tmp_basedir)
+        os.makedirs(tmp_work_dir)
+
+        self.set_status(ray.ClientStatus.PRECOPY)
+        
+        self.session.file_copier.start_client_copy(
+            self.client_id, client.get_project_files(), tmp_work_dir,
+            self.eat_other_session_client_step_1,
+            self.eat_other_session_client_aborted,
+            [src_addr, osc_path, client, tmp_work_dir])
+
+    def eat_other_session_client_step_1(self, src_addr, osc_path,
+                                        client, tmp_work_dir):
+        self._rename_files(
+            tmp_work_dir, client.session.name, self.session.name,
+            client.get_prefix_string(), self.get_prefix_string(),
+            client.client_id, self.client_id,
+            client._get_links_dir(), self._get_links_dir())
+
+        for file_path in os.listdir(tmp_work_dir):
+            print('new_file_path:', file_path)
+            os.rename("%s/%s" % (tmp_work_dir, file_path),
+                      "%s/%s" % (self.session.path, file_path))
+        
+        shutil.rmtree(tmp_work_dir)
+        self.send(src_addr, '/reply', osc_path,
+                  "Client copied from another session")
+
+        if self.auto_start:
+            self.start()
+        else:
+            self.set_status(ray.ClientStatus.STOPPED)
+
+    def eat_other_session_client_aborted(self, src_addr, osc_path,
+                                         client, tmp_work_dir):
+        shutil.rmtree(tmp_work_dir)
+        self.session._remove_client(self)
+        self.send(src_addr, '/error', osc_path, ray.Err.COPY_ABORTED,
+                  "Copy was aborted by user")
+
     def change_prefix(self, prefix_mode: int, custom_prefix: str):
         if self.is_running():
             return
@@ -2019,10 +2088,11 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         elif self.prefix_mode == ray.PrefixMode.CUSTOM:
             old_prefix = new_prefix = self.custom_prefix
 
-        self._rename_files(spath, old_session_name, new_session_name,
-                         old_prefix, new_prefix,
-                         old_client_id, new_client_id,
-                         old_client_links_dir, new_client_links_dir)
+        self._rename_files(
+            spath, old_session_name, new_session_name,
+            old_prefix, new_prefix,
+            old_client_id, new_client_id,
+            old_client_links_dir, new_client_links_dir)
 
     def server_announce(self, path, args, src_addr, is_new):
         client_name, capabilities, executable_path, major, minor, pid = args

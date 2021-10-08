@@ -562,7 +562,8 @@ class Session(ServerSender):
         client.update_infos_from_desktop_file()
         self.clients.append(client)
         client.send_gui_client_properties()
-
+        self._update_forbidden_ids_List()
+        
         return True
 
     def _re_order_clients(self, client_ids_list, src_addr=None, src_path=''):

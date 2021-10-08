@@ -1033,6 +1033,10 @@ class OscServerThread(ClientCommunicating):
             self._unknown_message(path, types, src_addr)
             return False
 
+    @ray_method('/ray/session/eat_other_session_client', 'ss')
+    def raySessionEatOtherSessionClient(self, path, args, types, src_addr):
+        pass
+
     @ray_method('/ray/session/reorder_clients', None)
     def rayServerReorderClients(self, path, args, types, src_addr):
         if not (types and ray.types_are_all_strings(types)):
