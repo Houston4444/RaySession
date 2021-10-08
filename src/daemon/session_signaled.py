@@ -1869,7 +1869,7 @@ class DummySession(OperatingSession):
     
     def ray_server_get_session_preview(self, path, args, src_addr):
         session_name = args[0]
-        self.steps_order = [(self.preload, session_name),
+        self.steps_order = [(self.preload, session_name, False),
                             self.take_place,
                             self.load,
                             (self.send_preview, src_addr)]

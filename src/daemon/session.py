@@ -1715,7 +1715,7 @@ for better organization.""")
                          % (self.name, new_session_name))
         self._forget_osc_args()
 
-    def preload(self, session_full_name):
+    def preload(self, session_full_name, auto_create=True):
         # load session data in self.future* (clients, trashed_clients,
         #                                    session_path, session_name)
 
@@ -1753,10 +1753,13 @@ for better organization.""")
                             self.load_error(ray.Err.SESSION_IN_SESSION_DIR)
                             return
         else:
-
+            if not auto_create:
+                self.load_error(ray.Err.NO_SUCH_FILE)
+                return
+            
             # session directory doesn't exists,
-            # create this session.
-
+            # create this session.            
+            
             if self._is_path_in_a_session_dir(spath):
                 # prevent to create a session in a session directory
                 # for better user organization
