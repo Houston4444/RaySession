@@ -305,18 +305,6 @@ class Client(ServerSender, ray.ClientData):
                         wanted = executable
 
         return self.short_client_id(wanted)
-        #if '_' in wanted:
-            #begin, udsc, end = wanted.rpartition('_')
-
-            #if not end:
-                #return wanted
-
-            #if not end.isdigit():
-                #return wanted
-
-            #return begin
-
-        #return wanted
 
     def _get_proxy_executable(self):
         if os.path.basename(self.executable_path) != 'ray-proxy':

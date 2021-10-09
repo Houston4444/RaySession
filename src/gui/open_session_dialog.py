@@ -38,11 +38,6 @@ CORNER_NOTIFICATION = 3
 
 DATA_SIZE = Qt.UserRole + 1
 
-class PreviewClient(ray.ClientData):
-    def __init__(self):
-        ray.ClientData.__init__(self)
-        self.properties_dialog = ClientPropertiesDialog.create(self)
-
 
 class SessionItem(QTreeWidgetItem):
     def __init__(self, l_list, is_session=False):
@@ -154,6 +149,7 @@ class SessionItem(QTreeWidgetItem):
             self.setFlags(self.flags() & ~Qt.ItemIsEnabled)
         else:
             self.setFlags(self.flags() | Qt.ItemIsEnabled)
+
 
 class SessionFolder:
     name = ""

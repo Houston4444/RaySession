@@ -1152,14 +1152,13 @@ class SignaledSession(OperatingSession):
     def _ray_session_add_user_client_template(self, path, args, src_addr):
         self._ray_session_add_client_template(path, [0] + args, src_addr)
 
+    @session_operation
     def _ray_session_add_other_session_client(self, path, args, src_addr):
-        other_session, client_id = args
+        other_session, client_id = args    
         
-        if not self.path:
-            self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
-                      "No session open")
-            return
-        
+        # @session_operation remember them but no need here
+        self._forget_osc_args()
+
         dummy_session = DummySession(self.root)
         dummy_session.dummy_load(other_session)
         
@@ -1169,7 +1168,8 @@ class SignaledSession(OperatingSession):
         
         if not dummy_session.path:
             self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
-                      "falied to load other session")
+                      "falied to load other session %s" % other_session)
+            return
         
         for client in dummy_session.clients:
             if client.client_id == client_id:
