@@ -1539,7 +1539,7 @@ class Client(ServerSender, ray.ClientData):
                            ray.ClientStatus.REMOVED)
 
     def eat_attributes(self, new_client):
-        self.client_id = new_client.client_id
+        #self.client_id = new_client.client_id
         self.executable_path = new_client.executable_path
         self.arguments = new_client.arguments
         self.name = new_client.name
@@ -1934,9 +1934,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
     def eat_other_session_client(self, src_addr, osc_path, client):
         # eat attributes but keep client_id
-        self_client_id = self.client_id
         self.eat_attributes(client)
-        self.client_id = self_client_id
 
         self.send_gui_client_properties()
         

@@ -57,7 +57,7 @@ class Session(ServerSender):
         self.load_locked = False
 
         self.is_renameable = True
-        self.forbidden_ids_list = []
+        self.forbidden_ids_set = set()
 
         self.file_copier = FileCopier(self)
         self.bookmarker = BookMarker()
@@ -254,26 +254,23 @@ class Session(ServerSender):
                 return True
         return False
 
-    def _update_forbidden_ids_List(self):
+    def _update_forbidden_ids_set(self):
         if not self.path:
             return
 
-        self.forbidden_ids_list.clear()
+        self.forbidden_ids_set.clear()
 
         for file in os.listdir(self.path):
             if os.path.isdir("%s/%s" % (self.path, file)) and '.' in file:
                 client_id = file.rpartition('.')[2]
-                if not client_id in self.forbidden_ids_list:
-                    self.forbidden_ids_list.append(client_id)
+                self.forbidden_ids_set.add(client_id)
 
             elif os.path.isfile("%s/%s" % (self.path, file)) and '.' in file:
                 for string in file.split('.')[1:]:
-                    if not string in self.forbidden_ids_list:
-                        self.forbidden_ids_list.append(string)
+                    self.forbidden_ids_set.add(string)
 
         for client in self.clients + self.trashed_clients:
-            if not client.client_id in self.forbidden_ids_list:
-                self.forbidden_ids_list.append(client.client_id)
+            self.forbidden_ids_set.add(client.client_id)
 
     def _get_search_template_dirs(self, factory)->list:
         if factory:
@@ -474,7 +471,7 @@ class Session(ServerSender):
         file.close()
 
     def generate_client_id(self, wanted_id="")->str:
-        self._update_forbidden_ids_List()
+        self._update_forbidden_ids_set()
         wanted_id = basename(wanted_id)
 
         if wanted_id:
@@ -517,34 +514,34 @@ class Session(ServerSender):
 
             if not wanted_id:
                 wanted_id = self._generate_client_id_as_nsm()
-                while wanted_id in self.forbidden_ids_list:
+                while wanted_id in self.forbidden_ids_set:
                     wanted_id = self._generate_client_id_as_nsm()
 
             #limit string to 10 characters
             if len(wanted_id) >= 11:
                 wanted_id = wanted_id[:10]
 
-            if not wanted_id in self.forbidden_ids_list:
-                self.forbidden_ids_list.append(wanted_id)
+            if not wanted_id in self.forbidden_ids_set:
+                self.forbidden_ids_set.add(wanted_id)
                 return wanted_id
 
             n = 2
-            while "%s_%i" % (wanted_id, n) in self.forbidden_ids_list:
+            while "%s_%i" % (wanted_id, n) in self.forbidden_ids_set:
                 n += 1
 
-            self.forbidden_ids_list.append(wanted_id)
+            self.forbidden_ids_set.add(wanted_id)
             return "%s_%i" % (wanted_id, n)
 
         client_id = 'n'
         for l in range(4):
             client_id += random.choice(string.ascii_uppercase)
 
-        while client_id in self.forbidden_ids_list:
+        while client_id in self.forbidden_ids_set:
             client_id = 'n'
             for l in range(4):
                 client_id += random.choice(string.ascii_uppercase)
 
-        self.forbidden_ids_list.append(client_id)
+        self.forbidden_ids_set.add(client_id)
         return client_id
 
     def _add_client(self, client)->bool:
@@ -562,7 +559,7 @@ class Session(ServerSender):
         client.update_infos_from_desktop_file()
         self.clients.append(client)
         client.send_gui_client_properties()
-        self._update_forbidden_ids_List()
+        self._update_forbidden_ids_set()
         
         return True
 
@@ -2052,6 +2049,7 @@ for better organization.""")
 
             if client:
                 client.switch_state = ray.SwitchState.DONE
+                client.client_id = future_client.client_id
                 client.eat_attributes(future_client)
                 has_switch = True
             else:
