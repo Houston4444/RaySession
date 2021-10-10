@@ -354,6 +354,8 @@ class OpenSessionDialog(ChildDialog):
 
         self._server_status_changed(self.session.server_status)
 
+        self._set_preview_scripted(False)
+
         self.folders = []
         self.all_items = []
 
@@ -587,26 +589,30 @@ class OpenSessionDialog(ChildDialog):
                 self.to_daemon('/ray/server/get_session_preview', session_full_name)
 
             if item.text(COLUMN_SCRIPTS):
-                self.ui.labelPreviewScript.setText('>_')
-                self.ui.labelPreviewScript.setToolTip(
-                    _translate('open_session', 'This session is scripted'))
-                self.ui.labelPreviewScript.setStyleSheet(
-                    'QLabel{color:green;background-color:black}')
+                self._set_preview_scripted(True)
             else:
-                self.ui.labelPreviewScript.setText('')
-                self.ui.labelPreviewScript.setToolTip('')
-                self.ui.labelPreviewScript.setStyleSheet('')
+                self._set_preview_scripted(False)
         else:
             self.ui.stackedWidgetSessionName.set_text('')
             self.ui.previewFrame.setEnabled(False)
-            self.ui.labelPreviewScript.setText('')
-            self.ui.labelPreviewScript.setToolTip('')
-            self.ui.labelPreviewScript.setStyleSheet('')
+            self._set_preview_scripted(False)
 
         if item is not None:
             self._last_current_item = item
 
         self._prevent_ok()
+
+    def _set_preview_scripted(self, scripted:bool):
+        if scripted:
+            self.ui.labelPreviewScript.setText('>_')
+            self.ui.labelPreviewScript.setToolTip(
+                _translate('open_session', 'This session is scripted'))
+            self.ui.labelPreviewScript.setStyleSheet(
+                'QLabel{color:green;background-color:black}')
+        else:
+            self.ui.labelPreviewScript.setText('')
+            self.ui.labelPreviewScript.setToolTip('')
+            self.ui.labelPreviewScript.setStyleSheet('')
 
     def _prevent_ok(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
@@ -898,7 +904,6 @@ class OpenSessionDialog(ChildDialog):
 
     def _session_preview_update(self):
         self.ui.plainTextEditNotes.setPlainText(self.session.preview_notes)
-        #self.ui.tabWidget.setTabEnabled(1, bool(self.session.preview_notes))
 
         for pv_client in self.session.preview_client_list:
             client_slot = self.ui.listWidgetPreview.create_client_widget(pv_client)
@@ -916,6 +921,11 @@ class OpenSessionDialog(ChildDialog):
         item = self.ui.sessionList.currentItem()
         if item is not None:
             item.setData(COLUMN_NAME, DATA_SIZE, self.session.preview_size)
+            self._set_preview_scripted(
+                bool(item.text(COLUMN_SCRIPTS)))
+        else:
+            self._set_preview_scripted(False)
+                
         self._update_session_menu()
 
     def _update_session_menu(self):
