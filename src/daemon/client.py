@@ -278,14 +278,6 @@ class Client(ServerSender, ray.ClientData):
         if self.session.wait_for == ray.WaitFor.DUPLICATE_FINISH:
             self.session.end_timer_if_last_expected(self)
 
-    def _get_links_dir(self)->str:
-        ''' returns the dir path used by carla for links such as
-        audio convolutions or soundfonts '''
-        links_dir = self.get_jack_client_name()
-        for c in ('-', '.'):
-            links_dir = links_dir.replace(c, '_')
-        return links_dir
-
     def _pretty_client_id(self):
         wanted = self.client_id
 
@@ -764,6 +756,14 @@ class Client(ServerSender, ray.ClientData):
         self.set_status(self.status)
         self._send_error_to_caller(OSC_SRC_SAVE_TP, ray.Err.COPY_ABORTED,
             _translate('GUIMSG', 'Copy has been aborted !'))
+
+    def get_links_dir(self)->str:
+        ''' returns the dir path used by carla for links such as
+        audio convolutions or soundfonts '''
+        links_dir = self.get_jack_client_name()
+        for c in ('-', '.'):
+            links_dir = links_dir.replace(c, '_')
+        return links_dir
 
     def is_ray_hack(self)->bool:
         return bool(self.protocol == ray.Protocol.RAY_HACK)
@@ -1788,7 +1788,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if os.path.exists(scripts_dir):
             client_files.append(scripts_dir)
 
-        full_links_dir = os.path.join(self.session.path, self._get_links_dir())
+        full_links_dir = os.path.join(self.session.path, self.get_links_dir())
         if os.path.exists(full_links_dir):
             client_files.append(full_links_dir)
 
@@ -1945,7 +1945,14 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             tmp_basedir += 'X'
     
         tmp_work_dir = "%s/%s" % (self.session.path, tmp_basedir)
-        os.makedirs(tmp_work_dir)
+        
+        try:
+            os.makedirs(tmp_work_dir)
+        except:
+            self.send(src_addr, '/error', osc_path, ray.Err.CREATE_FAILED,
+                      "impossible to make a tmp workdir at %s. Abort." % tmp_work_dir)
+            self.session._remove_client(self)
+            return
 
         self.set_status(ray.ClientStatus.PRECOPY)
         
@@ -1961,14 +1968,30 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             tmp_work_dir, client.session.name, self.session.name,
             client.get_prefix_string(), self.get_prefix_string(),
             client.client_id, self.client_id,
-            client._get_links_dir(), self._get_links_dir())
+            client.get_links_dir(), self.get_links_dir())
+
+        has_move_errors = False
 
         for file_path in os.listdir(tmp_work_dir):
-            print('new_file_path:', file_path)
-            os.rename("%s/%s" % (tmp_work_dir, file_path),
-                      "%s/%s" % (self.session.path, file_path))
+            try:
+                os.rename("%s/%s" % (tmp_work_dir, file_path),
+                          "%s/%s" % (self.session.path, file_path))
+            except:
+                Terminal.message(
+                    _translate(
+                        'client',
+                        'failed to move %s/%s to %s/%s, sorry.')
+                        % (tmp_work_dir, file_path, self.session.path, file_path))
+                has_move_errors = True
         
-        shutil.rmtree(tmp_work_dir)
+        if not has_move_errors:
+            try:
+                shutil.rmtree(tmp_work_dir)
+            except:
+                Terminal.message(
+                    'client'
+                    'fail to remove temp directory %s. sorry.' % tmp_work_dir)
+
         self.send(src_addr, '/reply', osc_path,
                   "Client copied from another session")
 
@@ -2000,7 +2023,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         elif prefix_mode == ray.PrefixMode.CUSTOM:
             new_prefix = custom_prefix
 
-        links_dir = self._get_links_dir()
+        links_dir = self.get_links_dir()
 
         self._rename_files(
             self.session.path,
@@ -2020,7 +2043,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         new_session_name = basename(new_session_full_name)
         new_client_id = self.client_id
         old_client_id = self.client_id
-        new_client_links_dir = self._get_links_dir()
+        new_client_links_dir = self.get_links_dir()
         old_client_links_dir = new_client_links_dir
 
         xsessionx = "XXX_SESSION_NAME_XXX"

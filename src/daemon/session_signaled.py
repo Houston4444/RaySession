@@ -1155,8 +1155,8 @@ class SignaledSession(OperatingSession):
     @session_operation
     def _ray_session_add_other_session_client(self, path, args, src_addr):
         other_session, client_id = args    
-        
-        # @session_operation remember them but no need here
+
+        # @session_operation remember them but this is not needed here
         self._forget_osc_args()
 
         dummy_session = DummySession(self.root)
@@ -1165,7 +1165,7 @@ class SignaledSession(OperatingSession):
         # hopefully for a dummy session,
         # there is nothing to wait to have a loaded session
         # This is quite dirty but so easier
-        
+
         if not dummy_session.path:
             self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
                       "falied to load other session %s" % other_session)
