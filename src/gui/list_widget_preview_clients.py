@@ -39,6 +39,8 @@ class ClientSlot(QFrame):
         dark = is_dark_theme(self)
 
         self.update_client_data()
+        
+        self._server_status = ray.ServerStatus.OFF
 
     @classmethod
     def to_daemon(cls, *args):
@@ -61,6 +63,10 @@ class ClientSlot(QFrame):
     def set_launched(self, launched: bool):
         self._gray_icon(not launched)
         self.ui.ClientName.setEnabled(launched)
+
+    def server_status_changed(self, server_status:int):
+        self.ui.actionAddToTheCurrentSession.setEnabled(
+            server_status == ray.ServerStatus.READY)
 
     def get_client_id(self):
         return self.client.client_id
@@ -176,6 +182,7 @@ class ListWidgetPreviewClients(QListWidget):
         QListWidget.__init__(self, parent)
         self._last_n = 0
         self.session = None
+        self.server_status = ray.ServerStatus.OFF
 
     @classmethod
     def to_daemon(self, *args):
@@ -183,15 +190,16 @@ class ListWidgetPreviewClients(QListWidget):
         if server:
             server.to_daemon(*args)
 
-    @pyqtSlot()
-    def _launch_favorite(self):
-        template_name, factory = self.sender().data()
-        self.to_daemon('/ray/session/add_client_template',
-                       int(factory), template_name)
+    def server_status_changed(self, server_status:int):
+        self.server_status = server_status
+        for i in range(self.count()):
+            item = self.item(i)
+            item.widget.server_status_changed(server_status)
 
     def create_client_widget(self, client_data):
         item = ClientItem(self, client_data)
         item.sort_number = self._last_n
+        item.widget.server_status_changed(self.server_status)
         self._last_n += 1
         return item.widget
 
@@ -204,68 +212,12 @@ class ListWidgetPreviewClients(QListWidget):
                 del item
                 break
 
-    def client_properties_state_changed(self, client_id: str, visible: bool):
-        for i in range(self.count()):
-            item = self.item(i)
-            if item.get_client_id() == client_id:
-                widget = item.widget
-                widget.set_hack_button_state(visible)
-                break
-
-    def set_session(self, session):
-        self.session = session
-
-    def dropEvent(self, event):
-        QListWidget.dropEvent(self, event)
-
-        client_ids_list = []
-
-        for i in range(self.count()):
-            item = self.item(i)
-            #widget = self.itemWidget(item)
-            client_id = item.get_client_id()
-            client_ids_list.append(client_id)
-
-        server = GuiServerThread.instance()
-        if server:
-            server.to_daemon('/ray/session/reorder_clients', *client_ids_list)
-
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
 
         QListWidget.mousePressEvent(self, event)
 
-    def contextMenuEvent(self, event):
-        if not self.itemAt(event.pos()):
-            self.setCurrentRow(-1)
-
-            if (self.session is not None
-                    and not self.session.server_status in (
-                        ray.ServerStatus.OFF,
-                        ray.ServerStatus.CLOSE,
-                        ray.ServerStatus.OUT_SAVE,
-                        ray.ServerStatus.WAIT_USER,
-                        ray.ServerStatus.OUT_SNAPSHOT)):
-                menu = QMenu()
-                fav_menu = QMenu(_translate('menu', 'Favorites'), menu)
-                fav_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
-
-                for favorite in self.session.favorite_list:
-                    act_app = fav_menu.addAction(
-                        get_app_icon(favorite.icon, self), favorite.name)
-                    act_app.setData([favorite.name, favorite.factory])
-                    act_app.triggered.connect(self._launch_favorite)
-
-                menu.addMenu(fav_menu)
-
-                menu.addAction(
-                    self.session.main_win.ui.actionAddApplication)
-                menu.addAction(self.session.main_win.ui.actionAddExecutable)
-
-                act_selected = menu.exec(self.mapToGlobal(event.pos()))
-            event.accept()
-            return
 
     def resizeEvent(self, event):
         QListWidget.resizeEvent(self, event)

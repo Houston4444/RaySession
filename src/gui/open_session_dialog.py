@@ -371,6 +371,8 @@ class OpenSessionDialog(ChildDialog):
         
         self.ui.checkBoxSaveCurrentSession.setVisible(
             self.session.server_status == ray.ServerStatus.READY)
+        self.ui.listWidgetPreview.server_status_changed(
+            self.session.server_status)
         
         self._last_selected_session = ''
         self._listing_sessions = False
@@ -410,6 +412,8 @@ class OpenSessionDialog(ChildDialog):
 
         self.ui.checkBoxSaveCurrentSession.setVisible(
             server_status == ray.ServerStatus.READY)
+        
+        self.ui.listWidgetPreview.server_status_changed(server_status)
 
         self._prevent_ok()
 

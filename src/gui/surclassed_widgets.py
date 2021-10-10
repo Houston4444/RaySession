@@ -10,7 +10,6 @@ import time
 import ray
 
 from gui_tools import is_dark_theme
-from gui_signaler import Signaler
 
 class RayHackButton(QToolButton):
     order_hack_visibility = pyqtSignal(bool)
