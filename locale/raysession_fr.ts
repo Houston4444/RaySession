@@ -3877,7 +3877,7 @@ dans un souci d&apos;organisation.</translation>
     <message>
         <location filename="../src/daemon/session.py" line="1681"/>
         <source>Folder %s already exists,</source>
-        <translation type="unfinished">Le dossier %s existe déjà,</translation>
+        <translation>Le dossier %s existe déjà,</translation>
     </message>
 </context>
 <context>
