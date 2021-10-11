@@ -92,8 +92,9 @@ class Connection:
         if not self.in_canvas:
             return
 
-        patchcanvas.disconnectPorts(self.connection_id,
-                                    fast=PatchbayManager.optimized_operation)
+        patchcanvas.disconnectPorts(
+            self.connection_id,
+            fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
 
@@ -1477,11 +1478,12 @@ class PatchbayManager:
         self.connections.clear()
         self.groups.clear()
 
+        patchcanvas.canvas.scene.clear()
+
         self._next_group_id = 0
         self._next_port_id = 0
         self._next_portgroup_id = 1
         self._next_connection_id = 0
-
 
     def change_port_types_view(self, port_types_view: int):
         if port_types_view == self.port_types_view:

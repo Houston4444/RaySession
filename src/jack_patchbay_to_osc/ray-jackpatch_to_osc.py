@@ -76,9 +76,7 @@ class JackPort:
             
         order_prop = jacklib.get_property(self.uuid,
                                           jacklib.JACK_METADATA_ORDER)
-        
-        
-        
+
         ret, alias_1, alias_2 = jacklib.port_get_aliases(port_ptr)
         if ret:
             self.alias_1 = alias_1
@@ -160,7 +158,18 @@ class MainObject:
     def eat_client_names_queue(self):
         while self.client_names_queue:
             client_name = self.client_names_queue.pop(0)
-            uuid = jacklib.get_uuid_for_client_name(self.jack_client, client_name)
+            b_uuid = jacklib.get_uuid_for_client_name(self.jack_client, client_name)
+
+            # convert bytes uuid to int
+            uuid = 0
+            if isinstance(b_uuid, bytes):
+                str_uuid = b_uuid.decode()
+                if str_uuid.isdigit():
+                    uuid = int(str_uuid)
+
+            if not uuid:
+                continue
+
             for client_dict in self.client_list:
                 if client_dict['name'] == client_name:
                     client_dict['uuid'] = uuid
