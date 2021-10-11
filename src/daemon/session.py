@@ -1641,7 +1641,7 @@ for better organization.""")
             self._send_error(
                 ray.Err.SESSION_IN_SESSION_DIR,
                 _translate("error",
-                "Can't create session in a dir containing a session\n"
+                "Can't create session in a dir containing a session" + '\n'
                 + "for better organization."))
             return
 
@@ -1680,8 +1680,9 @@ for better organization.""")
         if os.path.exists(spath):
             self._send_error(
                 ray.Err.CREATE_FAILED,
-                _translate('rename', "Folder %s already exists,\n")
+                _translate('rename', "Folder %s already exists,")
                 % new_session_name
+                + '\n'
                 + _translate('rename', 'Impossible to rename session.'))
             return
         

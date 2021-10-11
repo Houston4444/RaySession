@@ -1451,7 +1451,7 @@ QToolButton {border: none}</string>
      <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>&amp;Convert an Ardour session to a Ray session</string>
+    <string>Convert an &amp;Ardour session to a Ray session</string>
    </property>
   </action>
   <action name="actionConvertHydrogenRhNsm">
