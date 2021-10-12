@@ -105,6 +105,12 @@ class PatchScene(QGraphicsScene):
         self.selectionChanged.connect(self.slot_selectionChanged)
         #self.setSceneRect(-10000, -10000, 20000, 20000)
 
+    def clear(self):
+        # reimplement Qt function and fix missing rubberband after clear
+        QGraphicsScene.clear(self)
+        self.m_rubberband = RubberbandRect(self)
+        self.updateTheme()
+
     def getDevicePixelRatioF(self):
         if QT_VERSION < 0x50600:
             return 1.0
@@ -515,10 +521,11 @@ class PatchScene(QGraphicsScene):
         if self.m_mouse_down_init:
             self.m_mouse_down_init = False
             topmost = self.itemAt(event.scenePos(), self.m_view.transform())
-            self.m_mouse_rubberband = not (topmost and topmost.type() in (CanvasBoxType,
-                                                                          CanvasIconType,
-                                                                          CanvasPortType,
-                                                                          CanvasPortGroupType))
+            self.m_mouse_rubberband = not (
+                topmost and topmost.type() in (CanvasBoxType,
+                                               CanvasIconType,
+                                               CanvasPortType,
+                                               CanvasPortGroupType))
         if self.m_mouse_rubberband:
             event.accept()
             pos = event.scenePos()
