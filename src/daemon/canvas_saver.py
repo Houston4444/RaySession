@@ -6,7 +6,7 @@ import time
 
 import ray
 
-from daemon_tools import RS, dirname
+from daemon_tools import RS, dirname, Terminal
 from server_sender import ServerSender
 
 JSON_PATH = 'ray_canvas.json'
@@ -26,9 +26,15 @@ class CanvasSaver(ServerSender):
             return
 
         with open(self._config_json_path, 'r') as f:
-            json_contents = json.load(f)
+            json_contents = {}
             gpos_list = []
             pg_list = []
+
+            try:
+                json_contents = json.load(f)
+            except json.JSONDecodeError:
+                Terminal.message("Failed to load patchcanvas config file %s" % f)
+
             if type(json_contents) == dict:
                 if 'group_positions' in json_contents.keys():
                     gpos_list = json_contents['group_positions']
@@ -173,8 +179,14 @@ class CanvasSaver(ServerSender):
             return
 
         with open(session_canvas_file, 'r') as f:
-            json_contents = json.load(f)
+            json_contents = {}
             gpos_list = []
+
+            try:
+                json_contents = json.load(f)
+            except json.JSONDecodeError:
+                Terminal.message("Failed to load session canvas file %s" % f)
+
             if (type(json_contents) == dict
                     and 'group_positions' in json_contents.keys()):
                 gpos_list = json_contents['group_positions']
