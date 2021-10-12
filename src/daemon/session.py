@@ -2442,9 +2442,19 @@ for better organization.""")
                     src_addr, '/ray/gui/preview/client/ray_net_update',
                     client.client_id, *client.ray_net.spread())
 
+        i = 0
         for snapshot in self.snapshoter.list():
             self.send_even_dummy(
                 src_addr, '/ray/gui/preview/snapshot', snapshot)
+            
+            i += 1
+            if i == 100:
+                # slow package send to try to prevent UDP loss
+                # and check if preview is still wanted on this session
+                if server and server.session_to_preview != self.get_short_path():
+                    return
+                time.sleep(0.010)
+                i = 0
 
         # re check here if preview didn't change before calculate session size
         if server and server.session_to_preview != self.get_short_path():
@@ -2461,10 +2471,7 @@ for better organization.""")
         for folder_size in folder_sizes:
             if folder_size['path'] == self.path:
                 if folder_size['modified'] == modified:
-                    print('fouenze', folder_size)
                     total_size = folder_size['size']
-                else:
-                    print('erogj', folder_size['modified'], modified)
                 break
 
         # calculate session size
