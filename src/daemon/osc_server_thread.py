@@ -1375,7 +1375,8 @@ class OscServerThread(ClientCommunicating):
                           client.client_id, int(client.gui_visible))
 
             if client.is_capable_of(':dirty:'):
-                self.send(gui_addr, '/ray/gui/is_dirty', client.dirty)
+                self.send(gui_addr, '/ray/gui/client/dirty',
+                          client.client_id, client.dirty)
 
         for trashed_client in self.session.trashed_clients:
             self.send(gui_addr, '/ray/gui/trash/add',
