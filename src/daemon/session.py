@@ -2414,7 +2414,7 @@ for better organization.""")
     def clear_clients_substep3(self, src_addr, src_path):
         self.answer(src_addr, src_path, 'Clients cleared')
         
-    def send_preview(self, src_addr):
+    def send_preview(self, src_addr, folder_sizes:list):
         # prevent long list of OSC sends if preview order already changed
         server = self.get_server_even_dummy()
         if server and server.session_to_preview != self.get_short_path():
@@ -2450,43 +2450,67 @@ for better organization.""")
         if server and server.session_to_preview != self.get_short_path():
             return
 
-        # calculate session size
         total_size = 0
         size_unreadable = False
 
-        for root, dirs, files in os.walk(self.path):
-            # check each loop if it is still pertinent to walk
-            if server and server.session_to_preview != self.get_short_path():
-                return
+        # get last modified session folder to prevent recalculate
+        # if we already know its size
+        modified = int(os.path.getmtime(self.path))
 
-            # exclude symlinks directories from count
-            dirs[:] = [dir for dir in dirs
-                       if not os.path.islink(os.path.join(root, dir))]
-
-            for file_path in files:
-                full_file_path = os.path.join(root, file_path)
-                
-                # ignore file if it is a symlink
-                if os.path.islink(os.path.join(root, file_path)):
-                    continue
-
-                file_size = 0
-                try:
-                    file_size = os.path.getsize(full_file_path)
-                except:
-                    sys.stderr.write("Unable to read %s size\n"
-                                     % full_file_path)
-                    size_unreadable = True
-                    break
-
-                total_size += os.path.getsize(full_file_path)
-            
-            if size_unreadable:
-                total_size = -1
+        # check if size is already in memory
+        for folder_size in folder_sizes:
+            if folder_size['path'] == self.path:
+                if folder_size['modified'] == modified:
+                    print('fouenze', folder_size)
+                    total_size = folder_size['size']
+                else:
+                    print('erogj', folder_size['modified'], modified)
                 break
+
+        # calculate session size
+        if not total_size:
+            for root, dirs, files in os.walk(self.path):
+                # check each loop if it is still pertinent to walk
+                if server and server.session_to_preview != self.get_short_path():
+                    return
+
+                # exclude symlinks directories from count
+                dirs[:] = [dir for dir in dirs
+                        if not os.path.islink(os.path.join(root, dir))]
+
+                for file_path in files:
+                    full_file_path = os.path.join(root, file_path)
+                    
+                    # ignore file if it is a symlink
+                    if os.path.islink(os.path.join(root, file_path)):
+                        continue
+
+                    file_size = 0
+                    try:
+                        file_size = os.path.getsize(full_file_path)
+                    except:
+                        sys.stderr.write("Unable to read %s size\n"
+                                        % full_file_path)
+                        size_unreadable = True
+                        break
+
+                    total_size += os.path.getsize(full_file_path)
+                
+                if size_unreadable:
+                    total_size = -1
+                    break
         
-        self.send_even_dummy(src_addr, '/ray/gui/preview/session_size',
-                             total_size)
+        for folder_size in folder_sizes:
+            if folder_size['path'] == self.path:
+                folder_size['modified'] = modified
+                folder_size['size'] = total_size
+                break
+        else:
+            folder_sizes.append(
+                {'path': self.path, 'modified': modified, 'size': total_size})
+
+        self.send_even_dummy(
+            src_addr, '/ray/gui/preview/session_size', total_size)
 
         self.send_even_dummy(
             src_addr, '/reply', '/ray/server/get_session_preview')

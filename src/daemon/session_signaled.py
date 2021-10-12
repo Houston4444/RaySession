@@ -86,6 +86,8 @@ class SignaledSession(OperatingSession):
         self.preview_dummy_session = None
         self.dummy_sessions = []
         self._next_session_id = 1
+        
+        self._folder_sizes_and_dates = []
     
     def _get_new_dummy_session_id(self)->int:
         to_return = self._next_session_id
@@ -737,7 +739,7 @@ class SignaledSession(OperatingSession):
         del self.preview_dummy_session
         self.preview_dummy_session = DummySession(self.root)
         self.preview_dummy_session.ray_server_get_session_preview(
-            path, args, src_addr)
+            path, args, src_addr, self._folder_sizes_and_dates)
 
     def _ray_server_set_option(self, path, args, src_addr):
         option = args[0]
@@ -1904,12 +1906,13 @@ class DummySession(OperatingSession):
                             (self.rename_done, new_session_name)]
         self.next_function()
     
-    def ray_server_get_session_preview(self, path, args, src_addr):
+    def ray_server_get_session_preview(self, path, args, src_addr,
+                                       folder_sizes:list):
         session_name = args[0]
         self.steps_order = [(self.preload, session_name, False),
                             self.take_place,
                             self.load,
-                            (self.send_preview, src_addr)]
+                            (self.send_preview, src_addr, folder_sizes)]
         self.next_function()
     
     def dummy_load(self, session_name):
