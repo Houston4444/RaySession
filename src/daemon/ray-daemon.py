@@ -142,6 +142,9 @@ if __name__ == '__main__':
 
     # save JSON config group positions
     session.canvas_saver.save_config_file()
+    
+    # save sessions infos in cache
+    session.save_folder_sizes_cache_file()
 
     RS.settings.sync()
 

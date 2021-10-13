@@ -1,9 +1,11 @@
 
+import json
 import os
 import shutil
 import subprocess
 import sys
 import time
+import xdg.BaseDirectory
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QProcess
 from PyQt5.QtXml  import QDomDocument
@@ -88,6 +90,17 @@ class SignaledSession(OperatingSession):
         self._next_session_id = 1
         
         self._folder_sizes_and_dates = []
+        
+        self._cache_folder_sizes_path = \
+            xdg.BaseDirectory.xdg_cache_home + "/RaySession/folder_sizes.json"
+
+        if os.path.isfile(self._cache_folder_sizes_path):
+            try:
+                self._folder_sizes_and_dates = json.load(
+                    self._cache_folder_sizes_path)
+            except:
+                # cache file load failed and this is really not strong
+                pass
     
     def _get_new_dummy_session_id(self)->int:
         to_return = self._next_session_id
@@ -98,6 +111,23 @@ class SignaledSession(OperatingSession):
         new_dummy = DummySession(root, self._get_new_dummy_session_id())
         self.dummy_sessions.append(new_dummy)
         return new_dummy
+
+    def save_folder_sizes_cache_file(self):
+        cache_dir = dirname(self._cache_folder_sizes_path)
+        if not os.path.exists(cache_dir):
+            try:
+                os.makedirs(cache_dir)
+            except:
+                # can't save cache file, this is really not strong
+                return
+        
+        try:
+            file = open(self._cache_folder_sizes_path, 'w')
+            json.dump(self._folder_sizes_and_dates, file)
+            file.close()
+        except:
+            # cache file save failed, not strong
+            pass
 
     def osc_receive(self, path, args, types, src_addr):
         nsm_equivs = {"/nsm/server/add" : "/ray/session/add_executable",
