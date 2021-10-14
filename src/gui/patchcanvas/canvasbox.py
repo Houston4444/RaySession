@@ -935,6 +935,9 @@ class CanvasBox(QGraphicsItem):
             connection.widget.setZValue(z_value)
 
     def _deplace_other_boxes(self):
+        def rect_with_mergin(rect):
+            return rect.adjusted(-24, -6, 24, 6)
+        
         def repulse(direction: int, fixed_rect, item):
             ''' returns a qrect to be placed at left of fixed_rect
                 where fixed_rect is an already determinated futur place
@@ -943,15 +946,17 @@ class CanvasBox(QGraphicsItem):
             pos_offset = rect.topLeft()
             rect.translate(item.pos())
 
-            assert direction in (DIRECTION_DOWN, DIRECTION_LEFT, DIRECTION_UP, DIRECTION_RIGHT)
+            assert direction in (DIRECTION_DOWN, DIRECTION_LEFT,
+                                 DIRECTION_UP, DIRECTION_RIGHT)
+            
+            x = rect.left()
+            y = rect.top()
             
             if direction in (DIRECTION_LEFT, DIRECTION_RIGHT):
                 if direction == DIRECTION_LEFT:
-                    x = fixed_rect.left() - box_spacing - rect.width() - pos_offset.x()
+                    x = fixed_rect.left() - 4 * box_spacing - rect.width() - pos_offset.x()
                 else:
-                    x = fixed_rect.right() + box_spacing - pos_offset.x()
-    
-                y = rect.top()
+                    x = fixed_rect.right() + 4 * box_spacing - pos_offset.x()
 
                 top_diff = abs(fixed_rect.top() - rect.top())
                 bottom_diff = abs(fixed_rect.bottom() - rect.bottom())
@@ -968,8 +973,6 @@ class CanvasBox(QGraphicsItem):
                     y = fixed_rect.top() - box_spacing - rect.height() - pos_offset.y()
                 else:
                     y = fixed_rect.bottom() + box_spacing - pos_offset.y()
-            
-                x = rect.left()
                 
                 left_diff = abs(fixed_rect.left() - rect.left())
                 right_diff = abs(fixed_rect.right() - rect.right())
@@ -989,8 +992,7 @@ class CanvasBox(QGraphicsItem):
         srect = self.boundingRect()
         srect.translate(self.pos())
 
-        impacted_rect = srect.adjusted(
-            - box_spacing, - box_spacing, + box_spacing, + box_spacing)
+        impacted_rect = rect_with_mergin(srect)
 
         items_to_move = []
 
@@ -998,9 +1000,7 @@ class CanvasBox(QGraphicsItem):
             if item.type() == CanvasBoxType and item is not self:
                 items_to_move.append(item)
 
-        # will all contains tuples with (coordonate_value, item)
-        # to be easily sortable
-        left_list, right_list, up_list, down_list = [], [], [], []
+        items_to_move_dicts = []
 
         for item in items_to_move:
             # get item qrect
@@ -1010,371 +1010,78 @@ class CanvasBox(QGraphicsItem):
             # choose the direction the item has to take
             if (srect.right() < irect.center().x()
                     and srect.center().x() < irect.left()):
-                right_list.append(
-                    {'pos': irect.left(),
+                items_to_move_dicts.append(
+                    {'direction': DIRECTION_RIGHT,
+                     'pos': irect.left(),
                      'item': item,
                      'repulser': self})
             elif (srect.left() > irect.center().x()
                     and srect.center().x() > irect.right()):
-                left_list.append(
-                    {'pos': irect.right(),
+                items_to_move_dicts.append(
+                    {'direction': DIRECTION_LEFT,
+                     'pos': - irect.right(),
                      'item': item,
                      'repulser': self})
-            elif (srect.top() - irect.top()
-                    <= irect.height() - srect.height()):
-                down_list.append(
-                    {'pos': irect.top(),
+            elif srect.center().y() <= irect.center().y():
+                items_to_move_dicts.append(
+                    {'direction': DIRECTION_DOWN,
+                     'pos': irect.top(),
                      'item': item,
                      'repulser': self})
             else:
-                up_list.append(
-                    {'pos': irect.bottom(),
+                items_to_move_dicts.append(
+                    {'direction': DIRECTION_UP,
+                     'pos': - irect.bottom(),
                      'item': item,
                      'repulser': self})
 
-        # sort all the direction lists
-        left_list = sorted(left_list, key = lambda d: d['pos'])
-        right_list = sorted(right_list, key = lambda d: d['pos'])
-        up_list = sorted(up_list, key = lambda d: d['pos'])
-        down_list = sorted(down_list, key = lambda d: d['pos'])
-        left_list.reverse()
-        up_list.reverse()
+        items_to_move_dicts = sorted(
+            items_to_move_dicts, key = lambda d: d['pos'])
+        items_to_move_dicts = sorted(
+            items_to_move_dicts, key = lambda d: d['direction'])
 
         # here we stock only the rects of the definitely placed boxes
         definitive_list = []
+            
+        for pos_item_dict in items_to_move_dicts:
+            direction = pos_item_dict['direction']
+            item = pos_item_dict['item']
+            repulser_item = pos_item_dict['repulser']
+            
+            ref_rect = repulser_item.boundingRect().translated(repulser_item.pos())
+            new_rect = repulse(direction, ref_rect, item)
+            
+            for defi_rect in definitive_list:
+                imp_rect = rect_with_mergin(defi_rect)
+                if imp_rect.intersects(new_rect):
+                    ref_rect = defi_rect
+                    new_rect = repulse(direction, ref_rect, item)
 
+            definitive_list.append(new_rect)
+            
+            adding_list = []
+            
+            for mitem in canvas.scene.items(rect_with_mergin(new_rect)):
+                if (mitem.type() == CanvasBoxType
+                        and mitem is not self
+                        and mitem not in [d['item'] for d in items_to_move_dicts]):
+                    mirect = mitem.boundingRect().translated(mitem.pos())
+                    print(item.m_group_name, "moves", mitem.m_group_name)
+                    adding_list.append(
+                        {'direction': direction,
+                         'pos': mirect.right(),
+                         'item': mitem,
+                         'repulser': item})
+            
+            adding_list = sorted(adding_list, key = lambda d: d['pos'])
+            for adding in adding_list:
+                items_to_move_dicts.append(adding)
 
-        for direction in (DIRECTION_LEFT, DIRECTION_UP,
-                          DIRECTION_RIGHT, DIRECTION_DOWN):
-            direction_list = left_list
-            if direction == DIRECTION_UP:
-                direction_list = up_list
-            elif direction == DIRECTION_RIGHT:
-                direction_list = right_list
-            elif direction == DIRECTION_DOWN:
-                direction_list = down_list
-            
-            for pos_item_dict in direction_list:
-                item = pos_item_dict['item']
-                repulser_item = pos_item_dict['repulser']
-                ref_rect = repulser_item.boundingRect().translated(repulser_item.pos())
-                new_rect = repulse(direction, ref_rect, item)
-                
-                for defi_rect in definitive_list:
-                    imp_rect = defi_rect.adjusted(
-                        - box_spacing, - box_spacing, box_spacing, box_spacing)
-                    if imp_rect.intersects(new_rect):
-                        ref_rect = defi_rect
-                        new_rect = repulse(direction, ref_rect, item)
-
-                definitive_list.append(new_rect)
-                
-                adding_list = []
-                
-                for mitem in canvas.scene.items(new_rect):
-                    if (mitem.type() == CanvasBoxType
-                            and mitem is not self
-                            and mitem not in [d['item'] for d in direction_list]):
-                        mirect = mitem.boundingRect().translated(mitem.pos())
-                        adding_list.append(
-                            {'pos': mirect.right(),
-                            'item': mitem,
-                            'repulser': item})
-                
-                adding_list = sorted(adding_list, key = lambda d: d['pos'])
-                for adding in adding_list:
-                    direction_list.append(adding)
-
-                pos_offset = item.boundingRect().topLeft()
-                to_send_rect = new_rect.translated(- pos_offset)
-                canvas.scene.add_box_to_animation(item, to_send_rect.left(),
-                                                to_send_rect.top())
-
-        #for pos_item_dict in up_list:
-            #item = pos_item_dict['item']
-            #repulser_item = pos_item_dict['repulser']
-            #ref_rect = repulser_item.boundingRect().translated(repulser_item.pos())
-            #new_rect = at_left_of(ref_rect, item)
-            
-            #for defi_rect in definitive_list:
-                #imp_rect = defi_rect.adjusted(
-                    #- box_spacing, - box_spacing, box_spacing, box_spacing)
-                #if imp_rect.intersects(new_rect):
-                    #ref_rect = defi_rect
-                    #new_rect = at_left_of(ref_rect, item)
-
-            #definitive_list.append(new_rect)
-            
-            #adding_list = []
-            
-            #for mitem in canvas.scene.items(new_rect):
-                #if (mitem.type() == CanvasBoxType
-                        #and mitem is not self
-                        #and mitem not in [d['item'] for d in left_list]):
-                    #mirect = mitem.boundingRect().translated(mitem.pos())
-                    #adding_list.append(
-                        #{'pos': mirect.right(),
-                         #'item': mitem,
-                         #'repulser': item})
-            
-            #adding_list = sorted(adding_list, key = lambda d: d['pos'])
-            #for adding in adding_list:
-                #left_list.append(adding)
-
-            #pos_offset = item.boundingRect().topLeft()
-            #to_send_rect = new_rect.translated(- pos_offset)
-            #canvas.scene.add_box_to_animation(item, to_send_rect.left(),
-                                              #to_send_rect.top())
-
-
-
-
-    def prevent_collise(self):
-        self._already_deplaced_boxes = []
-        align = PORT_MODE_INPUT
-        box_spacing = canvas.theme.port_height /2
-        box_spacing_hor = canvas.theme.port_height
-
-        select_rect = QRectF(self.pos().x() - box_spacing, 
-                             self.pos().y() - box_spacing, 
-                             self.p_width + 2 * box_spacing, 
-                             self.p_height + 2 * box_spacing)
-        
-        tmp_list = []
-        for item in canvas.scene.items(select_rect):
-            if (item != self and item.type() == CanvasBoxType):
-                tmp_list.append(item)
-        
-        left_list, right_list, up_list, down_list = [], [], [], []
-
-        self_rect = self.boundingRect()
-        self_rect.translate(self.pos())
-        
-        for i in range(len(tmp_list)):
-            item = tmp_list[i]
-            item_rect = item.boundingRect()
-            item_rect.translate(item.pos())
-
-            if self_rect.right() < item_rect.center().x():
-                right_list.append((item_rect.left(), i, item))
-            elif self_rect.left() > item_rect.center().x():
-                left_list.append((item_rect.left(), i, item))
-            elif (self_rect.top() - item_rect.top()
-                    <= item_rect.height() - self_rect.height()):
-                down_list.append((item_rect.top(), i, item))
-            else:
-                up_list.append((item_rect.top(), i, item))
-                    
-        left_list.sort()
-        right_list.sort()
-        right_list.reverse()
-        up_list.sort()
-        down_list.sort()
-        down_list.reverse()
-        
-        for pos, index, item in left_list + right_list + up_list + down_list:
-            item_rect = item.boundingRect()
-            item_rect.translate(item.pos())
-            
-            self_split_mode = self.m_current_port_mode
-            item_split_mode = item.m_current_port_mode # TODO
-            
-            if self_split_mode == item_split_mode:
-                align = self_split_mode
-            elif self_split_mode & (PORT_MODE_INPUT | PORT_MODE_OUTPUT):
-                align = item_split_mode
-            elif item_split_mode & (PORT_MODE_INPUT | PORT_MODE_OUTPUT):
-                align = self_split_mode
-            else:
-                align = PORT_MODE_INPUT | PORT_MODE_OUTPUT
-                
-            if align & (PORT_MODE_OUTPUT | PORT_MODE_INPUT):
-                if (abs(self_rect.left() - item_rect.left()
-                        <= abs(self_rect.right() - item_rect.right()))):
-                    align = PORT_MODE_INPUT
-                else:
-                    align = PORT_MODE_OUTPUT
-            
-            abs_list = [
-                (abs(self_rect.top() - item_rect.top()),
-                 self_rect.top()),
-                (abs(self_rect.bottom() - item_rect.bottom()),
-                 self_rect.bottom() - item_rect.height()),
-                (abs(self_rect.top() - item_rect.bottom()),
-                 self_rect.top() - item_rect.height() - box_spacing),
-                (abs(self_rect.bottom() - item_rect.top()),
-                 self_rect.bottom() + box_spacing)]
-            abs_list.sort()
-            new_y = abs_list[0][1]
-            
-            futur_pos = QPointF(self_rect.topLeft())
-            direction = DIRECTION_DOWN
-            
-            if self_rect.right() < item_rect.center().x():
-                futur_pos = QPointF(self_rect.right() + box_spacing, new_y)
-                if new_y <= item_rect.top():
-                    direction = DIRECTION_UP
-                
-            elif self_rect.left() > item_rect.center().x():
-                futur_pos = QPointF(self_rect.left() - box_spacing - item_rect.width(), new_y)
-                if new_y <= item_rect.top():
-                    direction = DIRECTION_UP
-                
-            elif (self_rect.top() - item_rect.top()
-                    <= (item_rect.height() - self_rect.height()) / 2):
-                if align == PORT_MODE_INPUT:
-                    futur_pos = QPointF(self_rect.left(), self_rect.bottom() + box_spacing)
-                else:
-                    futur_pos = QPointF(self_rect.right() - item_rect.width(),
-                                        self_rect.bottom() + box_spacing)
-                direction = DIRECTION_DOWN
-
-            else:
-                if align == PORT_MODE_INPUT:
-                    futur_pos = QPointF(self_rect.left(),
-                                        self_rect.top() - item_rect.height() - box_spacing)
-                else:
-                    futur_pos = QPointF(self_rect.right() - item_rect.width(),
-                                        self_rect.top() - item_rect.height() - box_spacing)
-                direction = DIRECTION_UP
-        
-            # zreogzjoegjopjgojeoge continuer ici
-            
-            
-            #print('walou', item, futur_pos)
-            if item._is_hardware: # TODO
-                futur_pos += QPoint(6, 6)
-            
-            
-            canvas.scene.add_box_to_animation(item, futur_pos.x(), futur_pos.y())
-            self._already_deplaced_boxes.append(item)
-            #item.m_futur_pos  = sol
-            #item.m_futur_rect = QRectF(sol.x(), sol.y(), item.p_width, item.p_height)
-            #self.moved_boxes_list.append(item)
-            
-            #animation = CanvasBoxAnimation()
-            #animation.setItem(item)
-            #animation.setTimeLine(self.timer)
-            #animation.setPosAt(1.0, sol)
-            #self.anim_list.append(animation)
-            self.prevent_collise_child(item, futur_pos, direction)
-                    
-        #self.timer.start()
-
-    def prevent_collise_child(self, box_widget, start_pos, direction):
-        print('troak', self.m_group_name, box_widget.m_group_name)
-        box_spacing = canvas.theme.port_height / 2
-        
-        box_rect = box_widget.boundingRect()
-        box_rect.translate(box_widget.pos())
-        
-        #print( 'child', item.m_group_name)
-        select_rect = QRectF(start_pos.x() - box_spacing, 
-                             start_pos.y() - box_spacing, 
-                             box_rect.width() + 2 * box_spacing, 
-                             box_rect.height() + 2 * box_spacing)
-        
-        tmp_list = []
-        item_list = []
-        
-        i = 0
-        
-        moving_items = []
-        
-        for box_dict in canvas.scene.move_boxes:
-            item = box_dict['widget']
-            if item in (self, box_widget):
-                continue
-
-            moving_items.append(item)
-            futur_item_rect = item.boundingRect()
-            futur_item_rect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
-            
-            if select_rect.intersects(futur_item_rect):
-                tmp_list.append((box_dict['from_x'], i, item))
-            i += 1
-        
-        for item in canvas.scene.items(select_rect):
-            if (item not in (self, box_widget)
-                    and item.type() == CanvasBoxType
-                    and item not in moving_items):
-                item_rect = item.boundingRect()
-                item_rect.translate(item.pos())
-                tmp_list.append((item_rect.top(), i, item))
-                i += 1
-        
-        print('tmp_list', [t[2].m_group_name for t in tmp_list])
-        tmp_list.sort()
-        if direction == DIRECTION_DOWN:
-            tmp_list.reverse()
-            
-        #for pos_and_item in tmp_list:
-            #item_list.append(pos_and_item[2])
-        
-        self_rect = self.boundingRect()
-        self_rect.translate(start_pos)
-        #self_rect = QRectF(start_pos.x(), self.start_pos.y())
-        
-        for pos, index, item in tmp_list:
-            item_rect = item.boundingRect()
-            item_rect.translate(item.pos())
-            
-            if item in moving_items:
-                for box_dict in canvas.scene.move_boxes:
-                    if box_dict['widget'] == item:
-                        item_rect = item.boundingRect()
-                        item_rect.translate(
-                            QPoint(box_dict['to_x'], box_dict['to_y']))
-                        break
-            
-            self_split_mode = box_widget.m_current_port_mode
-            item_split_mode = item.m_current_port_mode
-            
-            align = PORT_MODE_OUTPUT | PORT_MODE_INPUT
-            
-            if self_split_mode == item_split_mode:
-                align = self_split_mode
-            elif self_split_mode == PORT_MODE_OUTPUT | PORT_MODE_INPUT:
-                align = item_split_mode
-            elif item_split_mode == PORT_MODE_OUTPUT | PORT_MODE_INPUT:
-                align = self_split_mode
-                
-            if align == PORT_MODE_OUTPUT | PORT_MODE_INPUT:
-                if (abs(self_rect.left() - item_rect.left())
-                        <= abs(self_rect.right() - item_rect.right())):
-                    align = PORT_MODE_INPUT
-                else:
-                    align = PORT_MODE_OUTPUT
-                    
-            abs_list = [
-                (abs(self_rect.top() - item_rect.top()),
-                 self_rect.top()),
-                (abs(self_rect.bottom() - item_rect.bottom()),
-                 self_rect.bottom() - item_rect.height()),
-                (abs(self_rect.top() - item_rect.bottom()),
-                 self_rect.top() - item_rect.height() - box_spacing),
-                (abs(self_rect.bottom() - item_rect.top()),
-                 self_rect.bottom() + box_spacing)]
-            abs_list.sort()
-            new_y = abs_list[0][1]
-                    
-            futur_x, futur_y = 0, 0
-            
-            if align == PORT_MODE_INPUT:
-                futur_x = self_rect.left()
-            else:
-                futur_x = self_rect.right() - item_rect.width()
-            
-            if direction == DIRECTION_DOWN:
-                futur_y = self_rect.bottom() + box_spacing
-            else:
-                futur_y = self_rect.top() - item_rect.height() - box_spacing
-            
-            if item in self._already_deplaced_boxes:
-                continue
-            
-            canvas.scene.add_box_to_animation(item, futur_x, futur_y)
-            self.prevent_collise_child(item, QPointF(futur_x, futur_y), direction)
+            # now we decide where the box is moved
+            pos_offset = item.boundingRect().topLeft()
+            to_send_rect = new_rect.translated(- pos_offset)
+            canvas.scene.add_box_to_animation(
+                item, to_send_rect.left(), to_send_rect.top())
 
     def type(self):
         return CanvasBoxType
