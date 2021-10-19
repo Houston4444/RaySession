@@ -496,6 +496,7 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
+        print('dokdokdok', event.button())
         self.m_mouse_down_init = (
             (event.button() == Qt.LeftButton)
             or ((event.button() == Qt.RightButton)
