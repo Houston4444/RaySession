@@ -87,6 +87,7 @@ from .utils import (CanvasItemFX,
 
 _translate = QApplication.translate
 
+DIRECTION_NONE = 0
 DIRECTION_LEFT = 1
 DIRECTION_RIGHT = 2
 DIRECTION_UP = 3
@@ -937,22 +938,12 @@ class CanvasBox(QGraphicsItem):
             connection.widget.setZValue(z_value)
 
     def _get_adjacent_boxes(self):
-        #rect = self.boundingRect()
-        #rect.translate(self.pos())
-        #rect.adjust(-25, -7, 25, 7)
-        
-        #item_list = []
-        
-        #for item in canvas.scene.items(rect):
-            #if item is not self and item.type() == CanvasBoxType:
-                #item_list.append(item)
-        
         item_list = [self]
         
         for item in item_list:
             rect = item.boundingRect()
             rect.translate(item.pos())
-            rect.adjust(-25, -7, 25, 7)
+            rect.adjust(0, -7, 0, 7)
             
             for litem in canvas.scene.items(rect):
                 if (litem.type() == CanvasBoxType
@@ -966,20 +957,28 @@ class CanvasBox(QGraphicsItem):
         def rect_with_mergin(rect):
             return rect.adjusted(-24, -6, 24, 6)
         
-        def get_default_direction(fixed_rect, moving_rect)->int:
+        def get_direction(fixed_rect, moving_rect, parent_directions=[])->int:
             if (moving_rect.top() <= fixed_rect.center().y() <= moving_rect.bottom()
                     or fixed_rect.top() <= moving_rect.center().y() <= fixed_rect.bottom()):
                 if (fixed_rect.right() < moving_rect.center().x()
                         and fixed_rect.center().x() < moving_rect.left()):
+                    if DIRECTION_LEFT in parent_directions:
+                        return DIRECTION_LEFT
                     return DIRECTION_RIGHT
                 
                 if (fixed_rect.left() > moving_rect.center().x()
                         and fixed_rect.center().x() > moving_rect.right()):
+                    if DIRECTION_RIGHT in parent_directions:
+                        return DIRECTION_RIGHT
                     return DIRECTION_LEFT
             
             if fixed_rect.center().y() <= moving_rect.center().y():
+                if DIRECTION_UP in parent_directions:
+                    return DIRECTION_UP
                 return DIRECTION_DOWN
             
+            if DIRECTION_DOWN in parent_directions:
+                return DIRECTION_DOWN
             return DIRECTION_UP
         
         def repulse(direction: int, fixed, moving):
@@ -1016,8 +1015,6 @@ class CanvasBox(QGraphicsItem):
                     y = fixed_rect.top()
                 elif bottom_diff <= 12:
                     y = fixed_rect.bottom() - rect.height()
-                    
-                #y -= pos_offset.y()
             
             elif direction in (DIRECTION_UP, DIRECTION_DOWN):
                 if direction == DIRECTION_UP:
@@ -1032,193 +1029,126 @@ class CanvasBox(QGraphicsItem):
                     x = fixed_rect.left()
                 elif right_diff <= 12:
                     x = fixed_rect.right() - rect.width()
-                
-                #x -= pos_offset.x()
+
             return QRectF(x, y, rect.width(), rect.height())
-            #return rect.translated(QPointF(x, y))
 
         box_spacing = 6
         magnet = 12
-
-        srect = self.boundingRect()
-        srect.translate(self.pos())
-
-        impacted_rect = rect_with_mergin(srect)
-
-        items_to_move = []
-
-        for item in canvas.scene.items(impacted_rect):
-            if item.type() == CanvasBoxType and item is not self:
-                items_to_move.append(item)
-                
-        if not items_to_move:
-            return
         
-        # here we are sure the box area with margins contains other boxes.
-        # Check if box area without margins contains others boxes,
-        # if not, then we will move this box at regular margin
-        # from the other boxes
-        for item in canvas.scene.items(srect):
-            if item.type() == CanvasBoxType and item is not self:
-                break
-        else:
-            print('on passe par la self repulsion')
-            
-            left_item = None
-            top_item = None
-            right_item = None
-            bottom_item = None
-            left_item_right = 0
-            top_item_bottom = 0
-            right_item_left = 0
-            bottom_item_top = 0
-            
-            for item in items_to_move:
-                irect = item.boundingRect()
-                irect.translate(item.pos())
-                
-                if irect.right() <= srect.left():
-                    if left_item is None or irect.right() > left_item_right:
-                        left_item = item
-                        left_item_right = irect.right()
+        # get all selected boxes
+        selected_boxes = []
+        for group in canvas.group_list:
+            for widget in group.widgets:
+                if widget is not None and widget.isSelected():
+                    selected_boxes.append(widget)
+        
+        if not self in selected_boxes:
+            selected_boxes.append(self)
+
+        to_move_boxes = []
+        repulsers = []
+        
+        for box in selected_boxes:
+            srect = box.boundingRect()
+            srect.translate(box.pos())
+
+            repulser = {'rect': srect,
+                        'item': box}
+            repulsers.append(repulser)
+
+            impacted_rect = rect_with_mergin(srect)
+
+            for item in canvas.scene.items(impacted_rect):
+                if (item.type() == CanvasBoxType
+                        and item not in selected_boxes
+                        and item not in [b['item'] for b in to_move_boxes]):
+                    irect = item.boundingRect()
+                    irect.translate(item.pos())
                     
-                if irect.bottom() <= srect.top():
-                    if top_item is None or irect.bottom() > top_item_bottom:
-                        top_item = item
-                        top_item_bottom = irect.bottom()
+                    direction = get_direction(srect, irect)
+                    to_move_box = {
+                        'directions': [direction],
+                        'pos': 0,
+                        'item': item,
+                        'repulser': repulser}
                     
-                if irect.left() >= srect.right():
-                    if right_item is None or irect.left() < right_item_left:
-                        right_item = item
-                        right_item_left = irect.left()
-                    
-                if irect.top() >= srect.bottom():
-                    if bottom_item is None or irect.top() < bottom_item_top:
-                        bottom_item = item
-                        bottom_item_top = irect.top()
-            
-            if not ((left_item and right_item) or (top_item and bottom_item)):
-                rect = None
-
-                if left_item is not None:
-                    rect = repulse(
-                        DIRECTION_RIGHT,
-                        left_item.boundingRect().translated(left_item.pos()),
-                        self)
-                if top_item is not None:
-                    rect = repulse(
-                        DIRECTION_DOWN,
-                        top_item.boundingRect().translated(top_item.pos()),
-                        self)
-                if right_item is not None:
-                    rect = repulse(
-                        DIRECTION_LEFT,
-                        right_item.boundingRect().translated(right_item.pos()),
-                        self)
-                if bottom_item is not None:
-                    rect = repulse(
-                        DIRECTION_UP,
-                        bottom_item.boundingRect().translated(bottom_item.pos()),
-                        self)
-                
-                pos_point = rect.topLeft()
-                pos_point -= self.boundingRect().topLeft()
-                
-                canvas.scene.add_box_to_animation(self, pos_point.x(), pos_point.y())
-                return
-
-        items_to_move_dicts = []
-
-        for item in items_to_move:
-            # get item qrect
-            irect = item.boundingRect()
-            irect.translate(item.pos())
-            
-            direction = get_default_direction(srect, irect)
-            pos_item_dict = {
-                'direction': direction,
-                'pos': 0,
-                'item': item,
-                'repulser': self}
-            
-            # stock a position only for sorting reason
-            if direction == DIRECTION_RIGHT:
-                pos_item_dict['pos'] = irect.left()
-            elif direction == DIRECTION_LEFT:
-                pos_item_dict['pos'] = - irect.right()
-            elif direction == DIRECTION_DOWN:
-                pos_item_dict['pos'] = irect.top()
-            elif direction == DIRECTION_UP:
-                pos_item_dict['pos'] = - irect.bottom()
-            
-            print('ji', item.m_group_name, direction)
-            
-            items_to_move_dicts.append(pos_item_dict)
-                
-        # sort the list of dicts
-        items_to_move_dicts = sorted(
-            items_to_move_dicts, key = lambda d: d['pos'])
-        items_to_move_dicts = sorted(
-            items_to_move_dicts, key = lambda d: d['direction'])
-
-        print('eorkg')
-        print(items_to_move_dicts)
-
-        # here we stock only the rects of the definitely placed boxes
-        definitive_list = [self.boundingRect().translated(self.pos())]
-        #definitive_list = []
-            
-        for pos_item_dict in items_to_move_dicts:
-            direction = pos_item_dict['direction']
-            item = pos_item_dict['item']
-            repulser_item = pos_item_dict['repulser']
-            
-            ref_rect = repulser_item.boundingRect().translated(repulser_item.pos())
-            
-            new_rect = repulse(direction, ref_rect, item)
-            print('replsi1', direction, item.m_group_name, item.boundingRect().translated(item.pos()), new_rect)
-            
-            for defi_rect in definitive_list:
-                imp_rect = rect_with_mergin(defi_rect)
-                if imp_rect.intersects(new_rect):
-                    ref_rect = defi_rect
-                    
-                    default_direction = get_default_direction(ref_rect, new_rect)
-                    if direction == DIRECTION_LEFT:
-                        if default_direction != DIRECTION_RIGHT:
-                            direction = default_direction
-                    elif direction == DIRECTION_UP:
-                        if default_direction != DIRECTION_DOWN:
-                            direction = default_direction
-                    elif direction == DIRECTION_RIGHT:
-                        if default_direction != DIRECTION_LEFT:
-                            direction = default_direction
+                    # stock a position only for sorting reason
+                    if direction == DIRECTION_RIGHT:
+                        to_move_box['pos'] = irect.left()
+                    elif direction == DIRECTION_LEFT:
+                        to_move_box['pos'] = - irect.right()
                     elif direction == DIRECTION_DOWN:
-                        if default_direction != DIRECTION_UP:
-                            direction = default_direction
+                        to_move_box['pos'] = irect.top()
+                    elif direction == DIRECTION_UP:
+                        to_move_box['pos'] = - irect.bottom()
                     
-                    print('reppluse', direction, item.m_group_name, new_rect)
-                    new_rect = repulse(direction, ref_rect, new_rect)
-                    print('r+', new_rect)
+                    to_move_boxes.append(to_move_box)        
 
-            definitive_list.append(new_rect)
+        # sort the list of dicts
+        to_move_boxes = sorted(to_move_boxes, key = lambda d: d['pos'])
+        to_move_boxes = sorted(to_move_boxes, key = lambda d: d['directions'])
+        
+        # the to_move_boxes list is dynamic
+        # elements can be added to the list while iteration
+        for to_move_box in to_move_boxes:
+            item = to_move_box['item']
+            repulser = to_move_box['repulser']
+            ref_rect = repulser['rect']
+            irect = item.boundingRect().translated(item.pos())
+
+            directions = to_move_box['directions'].copy()
+            new_direction = get_direction(repulser['rect'], irect, directions)
+            directions.append(new_direction)
             
+            # calculate the new position of the box repulsed by its repulser
+            new_rect = repulse(new_direction, repulser['rect'], item)
+            
+            # while there is a repulser rect at new box position
+            # move the future box position
+            while True:
+                # list just here to prevent infinite loop
+                # we save the repulsers that already have moved the rect
+                active_repulsers = []
+                
+                for repulser in repulsers:
+                    imp_rect = rect_with_mergin(repulser['rect'])
+                    if imp_rect.intersects(new_rect):
+                        # prevent infinite loop
+                        if repulser in active_repulsers:
+                            continue
+                        active_repulsers.append(repulser)
+                        
+                        new_direction = get_direction(
+                            repulser['rect'], new_rect, directions)
+                        new_rect = repulse(
+                            new_direction, repulser['rect'], new_rect)
+                        directions.append(new_direction)
+                        break
+                else:
+                    break
+
+            # Now we know where the box will be definitely positioned
+            # So, this is now a repulser for other boxes
+            repulser = {'rect': new_rect, 'item': item}
+            repulsers.append(repulser)
+            
+            # check which existing boxes exists at the new place of the box
+            # and add them to this to_move_boxes iteration
             adding_list = []
             
             for mitem in canvas.scene.items(rect_with_mergin(new_rect)):
                 if (mitem.type() == CanvasBoxType
-                        and mitem is not self
-                        and mitem not in [d['item'] for d in items_to_move_dicts]):
+                        and mitem not in selected_boxes
+                        and mitem not in [b['item'] for b in to_move_boxes]):
                     mirect = mitem.boundingRect().translated(mitem.pos())
                     adding_list.append(
-                        {'direction': direction,
+                        {'directions': directions,
                          'pos': mirect.right(),
                          'item': mitem,
-                         'repulser': item})
-            
-            adding_list = sorted(adding_list, key = lambda d: d['pos'])
-            for adding in adding_list:
-                items_to_move_dicts.append(adding)
+                         'repulser': repulser})
+
+            for to_move_box in adding_list:
+                to_move_boxes.append(to_move_box)
 
             # now we decide where the box is moved
             pos_offset = item.boundingRect().topLeft()
