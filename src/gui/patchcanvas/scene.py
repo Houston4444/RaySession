@@ -94,16 +94,17 @@ class PatchScene(QGraphicsScene):
 
         self.move_boxes = []
         self.move_box_timer = QTimer()
-        self.move_box_timer.setInterval(40) # 40 ms step animation (25 Hz)
+        self.move_box_timer.setInterval(30) # 40 ms step animation (25 Hz)
         self.move_box_timer.timeout.connect(self.move_boxes_animation)
         self.move_box_n = 0
-        self.move_box_n_max = 8 # 10 animations steps (40ms * 8 = 320ms)
+        self.move_box_n_max = 12 # 8 animations steps (40ms * 8 = 320ms)
 
         self.elastic_scene = True
         self.resizing_scene = False
 
         self.selectionChanged.connect(self.slot_selectionChanged)
-        #self.setSceneRect(-10000, -10000, 20000, 20000)
+        
+        self.prevent_box_move = False
 
     def clear(self):
         # reimplement Qt function and fix missing rubberband after clear
@@ -172,10 +173,10 @@ class PatchScene(QGraphicsScene):
 
                 x = box_dict['from_x'] \
                     + (box_dict['to_x'] - box_dict['from_x']) \
-                        * (n/total_n)
+                        * ((n/total_n) ** 0.6)
                 y = box_dict['from_y'] \
                     + (box_dict['to_y'] - box_dict['from_y']) \
-                        * (n/total_n)
+                        * ((n/total_n) ** 0.6)
 
                 box_dict['widget'].setPos(x, y)
 
@@ -496,7 +497,6 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
-        print('dokdokdok', event.button())
         self.m_mouse_down_init = (
             (event.button() == Qt.LeftButton)
             or ((event.button() == Qt.RightButton)

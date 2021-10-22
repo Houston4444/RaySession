@@ -918,6 +918,7 @@ class CanvasBox(QGraphicsItem):
         self.p_ex_scene_pos = self.scenePos()
 
         self.repaintLines(forced=True)
+        self._deplace_other_boxes()
         self.update()
 
     def repaintLines(self, forced=False):
@@ -943,19 +944,19 @@ class CanvasBox(QGraphicsItem):
         for item in item_list:
             rect = item.boundingRect()
             rect.translate(item.pos())
-            rect.adjust(0, -7, 0, 7)
+            rect.adjust(0, -5, 0, 5)
             
             for litem in canvas.scene.items(rect):
                 if (litem.type() == CanvasBoxType
                         and litem not in item_list):
                     item_list.append(litem)
-        print(item_list)
-        print([i.m_group_name for i in item_list])
+
         return item_list
 
-    def _deplace_other_boxes(self):
+    def _deplace_other_boxes(self, all_selected_boxes=False):
         def rect_with_mergin(rect):
-            return rect.adjusted(-24, -6, 24, 6)
+            return rect.adjusted(
+                - 4 * box_spacing, - box_spacing, 4 * box_spacing, box_spacing)
         
         def get_direction(fixed_rect, moving_rect, parent_directions=[])->int:
             if (moving_rect.top() <= fixed_rect.center().y() <= moving_rect.bottom()
@@ -1032,25 +1033,42 @@ class CanvasBox(QGraphicsItem):
 
             return QRectF(x, y, rect.width(), rect.height())
 
-        box_spacing = 6
+        if canvas.scene.prevent_box_move:
+            return
+        
+        box_spacing = 4
         magnet = 12
         
-        # get all selected boxes
-        selected_boxes = []
-        for group in canvas.group_list:
-            for widget in group.widgets:
-                if widget is not None and widget.isSelected():
-                    selected_boxes.append(widget)
+        # get all repulser boxes
+        # it is normally only this box,
+        # but it can be all selected boxes
+        repulser_boxes = [self]
+        #if self in [b['widget'] for b in canvas.scene.move_boxes]:
+            #return
         
-        if not self in selected_boxes:
-            selected_boxes.append(self)
+        if all_selected_boxes:
+            for group in canvas.group_list:
+                for widget in group.widgets:
+                    if widget is not None and widget.isSelected():
+                        repulser_boxes.append(widget)
+            
+            if not self in repulser_boxes:
+                repulser_boxes.append(self)
+                
 
         to_move_boxes = []
         repulsers = []
         
-        for box in selected_boxes:
+        for box in repulser_boxes:
             srect = box.boundingRect()
-            srect.translate(box.pos())
+            
+            # if box is already moving, consider its end position
+            for box_dict in canvas.scene.move_boxes:
+                if box_dict['widget'] == box:
+                    srect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
+                    break
+            else:
+                srect.translate(box.pos())
 
             repulser = {'rect': srect,
                         'item': box}
@@ -1058,31 +1076,49 @@ class CanvasBox(QGraphicsItem):
 
             impacted_rect = rect_with_mergin(srect)
 
+            items_to_move = []
+
             for item in canvas.scene.items(impacted_rect):
                 if (item.type() == CanvasBoxType
-                        and item not in selected_boxes
-                        and item not in [b['item'] for b in to_move_boxes]):
+                        and item not in repulser_boxes
+                        and item not in [b['item'] for b in to_move_boxes]
+                        and item not in [b['widget'] for b in canvas.scene.move_boxes]):
                     irect = item.boundingRect()
                     irect.translate(item.pos())
+                    items_to_move.append({'item': item, 'rect': irect})
+            
+            for box_dict in canvas.scene.move_boxes:
+                if box_dict['widget'] == self:
+                    continue
+
+                irect = box_dict['widget'].boundingRect()
+                irect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
+                if impacted_rect.intersects(irect):
+                    items_to_move.append({'item': box_dict['widget'], 'rect': irect})
+            
+            for item_to_move in items_to_move:
+                item = item_to_move['item']
+                irect = item_to_move['rect']
                     
-                    direction = get_direction(srect, irect)
-                    to_move_box = {
-                        'directions': [direction],
-                        'pos': 0,
-                        'item': item,
-                        'repulser': repulser}
-                    
-                    # stock a position only for sorting reason
-                    if direction == DIRECTION_RIGHT:
-                        to_move_box['pos'] = irect.left()
-                    elif direction == DIRECTION_LEFT:
-                        to_move_box['pos'] = - irect.right()
-                    elif direction == DIRECTION_DOWN:
-                        to_move_box['pos'] = irect.top()
-                    elif direction == DIRECTION_UP:
-                        to_move_box['pos'] = - irect.bottom()
-                    
-                    to_move_boxes.append(to_move_box)        
+                # evaluate in which direction should go the box
+                direction = get_direction(srect, irect)
+                to_move_box = {
+                    'directions': [direction],
+                    'pos': 0,
+                    'item': item,
+                    'repulser': repulser}
+                
+                # stock a position only for sorting reason
+                if direction == DIRECTION_RIGHT:
+                    to_move_box['pos'] = irect.left()
+                elif direction == DIRECTION_LEFT:
+                    to_move_box['pos'] = - irect.right()
+                elif direction == DIRECTION_DOWN:
+                    to_move_box['pos'] = irect.top()
+                elif direction == DIRECTION_UP:
+                    to_move_box['pos'] = - irect.bottom()
+                
+                to_move_boxes.append(to_move_box)
 
         # sort the list of dicts
         to_move_boxes = sorted(to_move_boxes, key = lambda d: d['pos'])
@@ -1138,13 +1174,30 @@ class CanvasBox(QGraphicsItem):
             
             for mitem in canvas.scene.items(rect_with_mergin(new_rect)):
                 if (mitem.type() == CanvasBoxType
-                        and mitem not in selected_boxes
-                        and mitem not in [b['item'] for b in to_move_boxes]):
+                        and mitem not in repulser_boxes
+                        and mitem not in [b['item'] for b in to_move_boxes]
+                        and mitem not in [b['widget'] for b in canvas.scene.move_boxes]):
                     mirect = mitem.boundingRect().translated(mitem.pos())
                     adding_list.append(
                         {'directions': directions,
                          'pos': mirect.right(),
                          'item': mitem,
+                         'repulser': repulser})
+            
+            for box_dict in canvas.scene.move_boxes:
+                mitem = box_dict['widget']
+                
+                if (mitem in repulser_boxes
+                        or mitem in [b['item'] for b in to_move_boxes]):
+                    continue
+                
+                rect = mitem.boundingRect()
+                rect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
+                if rect_with_mergin(new_rect).intersects(rect):
+                    adding_list.append(
+                        {'directions': directions,
+                         'pos': 0,
+                         'item': box_dict['widget'],
                          'repulser': repulser})
 
             for to_move_box in adding_list:
@@ -1402,7 +1455,6 @@ class CanvasBox(QGraphicsItem):
         QGraphicsItem.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
-        print('erkoogkokllddl', event.button(), Qt.MidButton, Qt.MiddleButton, Qt.LeftButton)
         canvas.last_z_value += 1
         self.setZValue(canvas.last_z_value)
         self.resetLinesZValue()
@@ -1492,7 +1544,7 @@ class CanvasBox(QGraphicsItem):
             self.repaintLines(forced=True)
             canvas.scene.reset_scroll_bars()
             self.fixPosAfterMove()
-            self._deplace_other_boxes()
+            self._deplace_other_boxes(all_selected_boxes=True)
             QTimer.singleShot(0, canvas.scene.update)
 
         self.m_mouse_down = False

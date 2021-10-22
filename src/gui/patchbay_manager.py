@@ -1159,6 +1159,7 @@ class PatchbayManager:
     @classmethod
     def optimize_operation(cls, yesno: bool):
         cls.optimized_operation = yesno
+        patchcanvas.canvas.scene.prevent_box_move = yesno
 
     @classmethod
     def new_portgroup(cls, group_id: int, port_mode: int, ports: tuple):
