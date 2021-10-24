@@ -93,6 +93,7 @@ class PatchScene(QGraphicsScene):
         self.curZoomArea = None
 
         self.move_boxes = []
+        self.wrapping_boxes = []
         self.move_box_timer = QTimer()
         self.move_box_timer.setInterval(30) # 40 ms step animation (25 Hz)
         self.move_box_timer.timeout.connect(self.move_boxes_animation)
@@ -180,26 +181,44 @@ class PatchScene(QGraphicsScene):
 
                 box_dict['widget'].setPos(x, y)
 
+        for wrap_dict in self.wrapping_boxes:
+            if wrap_dict['widget'] is not None:
+                if self.move_box_n == self.move_box_n_max:
+                    wrap_dict['widget'].animate_wrapping(1.00)
+                else:
+                    wrap_dict['widget'].animate_wrapping(
+                        float(self.move_box_n / self.move_box_n_max))
+
         self.resize_the_scene()
 
         if self.move_box_n == self.move_box_n_max:
             self.move_box_n = 0
             self.move_box_timer.stop()
+            
+            move_box_widgets = [b['widget'] for b in self.move_boxes]
             self.move_boxes.clear()
+            self.wrapping_boxes.clear()
             QTimer.singleShot(0, self.update)
 
             for box_dict in self.move_boxes:
                 if box_dict['widget'] is not None:
                     QTimer.singleShot(0, box_dict['widget'].repaintLines)
+                    
+            for box in move_box_widgets:
+                if box is not None:
+                    box.updatePositions()
+
             canvas.qobject.move_boxes_finished.emit()
 
         elif self.move_box_n % 5 == 4:
             self.update()
 
     def add_box_to_animation(self, box_widget, to_x: int, to_y: int,
-                             force_anim=True):
+                             force_anim=True, lock_position=False):
         for box_dict in self.move_boxes:
             if box_dict['widget'] == box_widget:
+                if box_dict['lock_position']:
+                    return
                 break
         else:
             if not force_anim:
@@ -218,7 +237,19 @@ class PatchScene(QGraphicsScene):
         box_dict['to_x'] = to_x
         box_dict['to_y'] = to_y
         box_dict['n_start'] = self.move_box_n
+        box_dict['lock_position'] = lock_position
 
+        if not self.move_box_timer.isActive():
+            self.move_box_timer.start()
+
+    def add_box_to_animation_wrapping(self, box_widget, wrap: bool):
+        for wrap_dict in self.wrapping_boxes:
+            if wrap_dict['widget'] == box_widget:
+                wrap_dict['wrap'] = wrap
+                break
+        else:
+            self.wrapping_boxes.append({'widget': box_widget, 'wrap': wrap})
+        
         if not self.move_box_timer.isActive():
             self.move_box_timer.start()
 
