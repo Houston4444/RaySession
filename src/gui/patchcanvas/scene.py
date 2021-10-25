@@ -44,9 +44,20 @@ from . import (
     ACTION_BG_RIGHT_CLICK,
     ACTION_DOUBLE_CLICK,
     MAX_PLUGIN_ID_ALLOWED,
+    PORT_MODE_INPUT,
+    PORT_MODE_OUTPUT
 )
 
+from .canvasbox import CanvasBox
+
 # ------------------------------------------------------------------------------------------------------------
+
+DIRECTION_NONE = 0
+DIRECTION_LEFT = 1
+DIRECTION_RIGHT = 2
+DIRECTION_UP = 3
+DIRECTION_DOWN = 4
+
 
 class RubberbandRect(QGraphicsRectItem):
     def __init__(self, scene):
@@ -214,11 +225,9 @@ class PatchScene(QGraphicsScene):
             self.update()
 
     def add_box_to_animation(self, box_widget, to_x: int, to_y: int,
-                             force_anim=True, lock_position=False):
+                             force_anim=True):
         for box_dict in self.move_boxes:
             if box_dict['widget'] == box_widget:
-                if box_dict['lock_position']:
-                    return
                 break
         else:
             if not force_anim:
@@ -237,7 +246,6 @@ class PatchScene(QGraphicsScene):
         box_dict['to_x'] = to_x
         box_dict['to_y'] = to_y
         box_dict['n_start'] = self.move_box_n
-        box_dict['lock_position'] = lock_position
 
         if not self.move_box_timer.isActive():
             self.move_box_timer.start()
@@ -252,6 +260,324 @@ class PatchScene(QGraphicsScene):
         
         if not self.move_box_timer.isActive():
             self.move_box_timer.start()
+
+    def deplace_boxes_from_repulsers(self, repulser_boxes: list,
+                                     wanted_direction=DIRECTION_NONE,
+                                     new_scene_rect=None):
+        box_spacing = canvas.theme.box_spacing
+        box_spacing_hor = canvas.theme.box_spacing_hor
+        magnet = canvas.theme.magnet
+        
+        def rect_with_mergin(rect, more_one=False):
+            more = 1 if more_one else 0
+            
+            return rect.adjusted(
+                - 4 * box_spacing - more, - box_spacing - more,
+                4 * box_spacing + more, box_spacing + more)
+        
+        def get_direction(fixed_rect, moving_rect, parent_directions=[])->int:
+            if (moving_rect.top() <= fixed_rect.center().y() <= moving_rect.bottom()
+                    or fixed_rect.top() <= moving_rect.center().y() <= fixed_rect.bottom()):
+                if (fixed_rect.right() < moving_rect.center().x()
+                        and fixed_rect.center().x() < moving_rect.left()):
+                    if DIRECTION_LEFT in parent_directions:
+                        return DIRECTION_LEFT
+                    return DIRECTION_RIGHT
+                
+                if (fixed_rect.left() > moving_rect.center().x()
+                        and fixed_rect.center().x() > moving_rect.right()):
+                    if DIRECTION_RIGHT in parent_directions:
+                        return DIRECTION_RIGHT
+                    return DIRECTION_LEFT
+            
+            if fixed_rect.center().y() <= moving_rect.center().y():
+                if DIRECTION_UP in parent_directions:
+                    return DIRECTION_UP
+                return DIRECTION_DOWN
+            
+            if DIRECTION_DOWN in parent_directions:
+                return DIRECTION_DOWN
+            return DIRECTION_UP
+        
+        def repulse(direction: int, fixed, moving,
+                    fixed_port_mode: int, moving_port_mode: int):
+            ''' returns a qrect to be placed at side of fixed_rect
+                where fixed_rect is an already determinated futur place
+                for a box '''
+                
+            if isinstance(fixed, CanvasBox):
+                fixed_rect = fixed.boundingRect().translated(fixed.pos())
+            else:
+                fixed_rect = fixed
+            
+            if isinstance(moving, CanvasBox):
+                rect = moving.boundingRect().translated(moving.pos())
+            else:
+                rect = moving
+
+            assert direction in (DIRECTION_DOWN, DIRECTION_LEFT,
+                                 DIRECTION_UP, DIRECTION_RIGHT)
+            
+            x = rect.left()
+            y = rect.top()
+            
+            if direction in (DIRECTION_LEFT, DIRECTION_RIGHT):
+                spacing = box_spacing
+
+                if direction == DIRECTION_LEFT:
+                    if (fixed_port_mode & PORT_MODE_INPUT
+                            or moving_port_mode & PORT_MODE_OUTPUT):
+                        spacing = box_spacing_hor
+                    x = fixed_rect.left() - spacing - rect.width()
+                else:
+                    if (fixed_port_mode & PORT_MODE_OUTPUT
+                            or moving_port_mode & PORT_MODE_INPUT):
+                        spacing = box_spacing_hor
+                    x = fixed_rect.right() + spacing
+
+                top_diff = abs(fixed_rect.top() - rect.top())
+                bottom_diff = abs(fixed_rect.bottom() - rect.bottom())
+
+                if bottom_diff > top_diff and top_diff <= 12:
+                    y = fixed_rect.top()
+                elif bottom_diff <= 12:
+                    y = fixed_rect.bottom() - rect.height()
+            
+            elif direction in (DIRECTION_UP, DIRECTION_DOWN):
+                if direction == DIRECTION_UP:
+                    y = fixed_rect.top() - box_spacing - rect.height()
+                else:
+                    y = fixed_rect.bottom() + box_spacing
+                
+                left_diff = abs(fixed_rect.left() - rect.left())
+                right_diff = abs(fixed_rect.right() - rect.right())
+                
+                if right_diff > left_diff and left_diff <= 12:
+                    x = fixed_rect.left()
+                elif right_diff <= 12:
+                    x = fixed_rect.right() - rect.width()
+
+            return QRectF(x, y, rect.width(), rect.height())
+
+        to_move_boxes = []
+        repulsers = []
+        wanted_directions = [wanted_direction]
+
+        for box in repulser_boxes:
+            srect = box.boundingRect()
+            
+            if new_scene_rect is not None:
+                srect = new_scene_rect
+            else:
+                # if box is already moving, consider its end position
+                for box_dict in self.move_boxes:
+                    if box_dict['widget'] == box:
+                        srect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
+                        break
+                else:
+                    srect.translate(box.pos())
+
+            repulser = {'rect': srect,
+                        'item': box}
+            repulsers.append(repulser)
+
+            impacted_rect = rect_with_mergin(srect)
+
+            items_to_move = []
+
+            for item in self.items(impacted_rect):
+                if (item.type() == CanvasBoxType
+                        and item not in repulser_boxes
+                        and item not in [b['item'] for b in to_move_boxes]
+                        and item not in [b['widget'] for b in self.move_boxes]):
+                    irect = item.boundingRect()
+                    irect.translate(item.pos())
+
+                    # not consider items in case they can be glued at side
+                    # because they both have no ports on that side
+                    if (not box.m_current_port_mode & PORT_MODE_INPUT
+                            and not item.m_current_port_mode & PORT_MODE_OUTPUT
+                            and irect.right() + box_spacing <= srect.left()):
+                        continue
+                    
+                    if (not box.m_current_port_mode & PORT_MODE_OUTPUT
+                            and not item.m_current_port_mode & PORT_MODE_INPUT
+                            and irect.left() - box_spacing >= srect.right()):
+                        continue
+
+                    items_to_move.append({'item': item, 'rect': irect})
+            
+            for box_dict in self.move_boxes:
+                if box_dict['widget'] in repulser_boxes:
+                    continue
+
+                irect = box_dict['widget'].boundingRect()
+                irect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
+                if impacted_rect.intersects(irect):
+                    if (not box.m_current_port_mode & PORT_MODE_INPUT
+                            and not box_dict['widget'].m_current_port_mode & PORT_MODE_OUTPUT
+                            and irect.right() + box_spacing < srect.left()):
+                        continue
+                    
+                    if (not box.m_current_port_mode & PORT_MODE_OUTPUT
+                            and not box_dict['widget'].m_current_port_mode & PORT_MODE_INPUT
+                            and irect.left() - box_spacing > srect.right()):
+                        continue
+
+                    items_to_move.append({'item': box_dict['widget'], 'rect': irect})
+            
+            for item_to_move in items_to_move:
+                item = item_to_move['item']
+                irect = item_to_move['rect']
+                    
+                # evaluate in which direction should go the box
+                direction = get_direction(srect, irect, wanted_directions)
+                to_move_box = {
+                    'directions': [direction],
+                    'pos': 0,
+                    'item': item,
+                    'repulser': repulser}
+                
+                # stock a position only for sorting reason
+                if direction == DIRECTION_RIGHT:
+                    to_move_box['pos'] = irect.left()
+                elif direction == DIRECTION_LEFT:
+                    to_move_box['pos'] = - irect.right()
+                elif direction == DIRECTION_DOWN:
+                    to_move_box['pos'] = irect.top()
+                elif direction == DIRECTION_UP:
+                    to_move_box['pos'] = - irect.bottom()
+
+                to_move_boxes.append(to_move_box)
+
+        # sort the list of dicts
+        to_move_boxes = sorted(to_move_boxes, key = lambda d: d['pos'])
+        to_move_boxes = sorted(to_move_boxes, key = lambda d: d['directions'])
+        
+        # the to_move_boxes list is dynamic
+        # elements can be added to the list while iteration
+        for to_move_box in to_move_boxes:
+            item = to_move_box['item']
+            repulser = to_move_box['repulser']
+            ref_rect = repulser['rect']
+            irect = item.boundingRect().translated(item.pos())
+
+            directions = to_move_box['directions'].copy()
+            new_direction = get_direction(repulser['rect'], irect, directions)
+            directions.append(new_direction)
+            
+            # calculate the new position of the box repulsed by its repulser
+            new_rect = repulse(new_direction, repulser['rect'], item,
+                               repulser['item'].m_current_port_mode,
+                               item.m_current_port_mode)
+            
+            # while there is a repulser rect at new box position
+            # move the future box position
+            active_repulsers = []
+            
+            while True:
+                # list just here to prevent infinite loop
+                # we save the repulsers that already have moved the rect
+                for repulser in repulsers:
+                    imp_rect = rect_with_mergin(repulser['rect'])
+                    if imp_rect.intersects(new_rect):
+                        # prevent infinite loop
+                        if repulser in active_repulsers:
+                            continue
+                        active_repulsers.append(repulser)
+                        
+                        new_direction = get_direction(
+                            repulser['rect'], new_rect, directions)
+                        new_rect = repulse(
+                            new_direction, repulser['rect'], new_rect,
+                            repulser['item'].m_current_port_mode,
+                            item.m_current_port_mode)
+                        directions.append(new_direction)
+                        break
+                else:
+                    break
+
+            # Now we know where the box will be definitely positioned
+            # So, this is now a repulser for other boxes
+            repulser = {'rect': new_rect, 'item': item}
+            repulsers.append(repulser)
+            
+            # check which existing boxes exists at the new place of the box
+            # and add them to this to_move_boxes iteration
+            adding_list = []
+            
+            for mitem in self.items(rect_with_mergin(new_rect)):
+                if (mitem.type() == CanvasBoxType
+                        and mitem not in repulser_boxes
+                        and mitem not in [b['item'] for b in to_move_boxes]
+                        and mitem not in [b['widget'] for b in self.move_boxes]):
+                    mirect = mitem.boundingRect().translated(mitem.pos())
+                    adding_list.append(
+                        {'directions': directions,
+                         'pos': mirect.right(),
+                         'item': mitem,
+                         'repulser': repulser})
+            
+            for box_dict in self.move_boxes:
+                mitem = box_dict['widget']
+                
+                if (mitem in repulser_boxes
+                        or mitem in [b['item'] for b in to_move_boxes]):
+                    continue
+                
+                rect = mitem.boundingRect()
+                rect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
+                if rect_with_mergin(new_rect).intersects(rect):
+                    adding_list.append(
+                        {'directions': directions,
+                         'pos': 0,
+                         'item': box_dict['widget'],
+                         'repulser': repulser})
+
+            for to_move_box in adding_list:
+                to_move_boxes.append(to_move_box)
+
+            # now we decide where the box is moved
+            pos_offset = item.boundingRect().topLeft()
+            to_send_rect = new_rect.translated(- pos_offset)
+            self.add_box_to_animation(
+                item, to_send_rect.left(), to_send_rect.top())
+
+    def bring_neighbors_and_deplace_boxes(self, box_widget, new_scene_rect):
+        neighbors = [box_widget]
+        limit_top = box_widget.pos().y()
+        
+        for neighbor in neighbors:
+            srect = neighbor.boundingRect()
+            for move_box in self.move_boxes:
+                if move_box['widget'] == neighbor:
+                    srect.translate(QPointF(move_box['to_x'], move_box['to_y']))
+                    break
+            else:
+                srect.translate(neighbor.pos())
+
+            for item in self.items(
+                    srect.adjusted(
+                        0, 0, 0,
+                        canvas.theme.box_spacing + 1)):
+                if item not in neighbors and item.type() == CanvasBoxType:
+                    nrect = item.boundingRect().translated(item.pos())
+                    if nrect.top() >= limit_top:
+                        neighbors.append(item)
+        
+        neighbors.remove(box_widget)
+        
+        less_y = box_widget.boundingRect().height() - new_scene_rect.height()
+
+        repulser_boxes = []
+
+        for neighbor in neighbors:
+            canvas.scene.add_box_to_animation(
+                neighbor, neighbor.pos().x(), neighbor.pos().y() - less_y)
+            repulser_boxes.append(neighbor)
+        repulser_boxes.append(box_widget)
+        
+        self.deplace_boxes_from_repulsers(repulser_boxes, wanted_direction=DIRECTION_UP)
 
     def removeItem(self, item):
         for child_item in item.childItems():
@@ -627,7 +953,7 @@ class PatchScene(QGraphicsScene):
                     self.sceneGroupMoved.emit(item.getGroupId(), item.getSplittedMode(), item.scenePos())
 
             if len(items_list) > 1:
-                canvas.scene.update()
+                self.update()
 
         self.m_mouse_down_init = False
         self.m_mouse_rubberband = False

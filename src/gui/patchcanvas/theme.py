@@ -69,6 +69,11 @@ class Theme(object):
         self.port_offset = 0
         self.port_spacing = 2
         self.port_spacingT = 2
+        
+        self.box_spacing = 4
+        self.box_spacing_hor = 24
+        self.magnet = 12
+        self.hardware_rack_width = 6
 
         self.setTheme(idx)
 
