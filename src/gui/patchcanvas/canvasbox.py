@@ -99,6 +99,11 @@ ALIGN_RIGHT = 2
 ALIGN_TOP = 3
 ALIGN_BOTTOM = 4
 
+UNWRAP_BUTTON_NONE = 0
+UNWRAP_BUTTON_LEFT = 1
+UNWRAP_BUTTON_CENTER = 2
+UNWRAP_BUTTON_RIGHT = 3
+
 # ------------------------------------------------------------------------------------------------------------
 
 class cb_line_t(object):
@@ -615,7 +620,7 @@ class CanvasBox(QGraphicsItem):
         for port in canvas.port_list:
             if port.group_id == self.m_group_id and port.port_id in self.m_port_list_ids:
                 port_list.append(port)
-                # used to know present port types
+                # used to know present port modes (INPUT or OUTPUT)
                 self.m_current_port_mode |= port.port_mode
 
         max_in_width = max_out_width = 0
@@ -628,6 +633,7 @@ class CanvasBox(QGraphicsItem):
         last_in_alter = last_out_alter = False
         last_in_pos = last_out_pos = (canvas.theme.box_header_height
                                       + canvas.theme.box_header_spacing)
+        final_last_in_pos = final_last_out_pos = last_in_pos
 
         wrapped_port_pos = last_in_pos
         last_of_portgrp = True
@@ -635,6 +641,8 @@ class CanvasBox(QGraphicsItem):
         align_port_types = True
         port_types_aligner = []
 
+        # check if we can align port types
+        # eg, align first midi input to first midi output
         for port_type in port_types:
             aligner_item = []
             for alternate in (False, True):
@@ -670,11 +678,11 @@ class CanvasBox(QGraphicsItem):
                     if (port.port_type != port_type
                             or port.is_alternate != alternate):
                         continue
-
+                    
                     port_pos, pg_len = CanvasGetPortGroupPosition(
                         self.m_group_id, port.port_id, port.portgrp_id)
                     first_of_portgrp = bool(port_pos == 0)
-                    last_of_portgrp = bool(port_pos+1 == pg_len)
+                    last_of_portgrp = bool(port_pos + 1 == pg_len)
 
                     size = QFontMetrics(self.m_font_port).width(port.port_name)
                     if port.portgrp_id:
@@ -765,7 +773,10 @@ class CanvasBox(QGraphicsItem):
                             last_out_pos += port_spacing
                         else:
                             last_out_pos += canvas.theme.port_height
-
+                
+                    final_last_in_pos = last_in_pos
+                    final_last_out_pos = last_out_pos
+                
                 if align_port_types:
                     # align port types horizontally
                     if last_in_pos > last_out_pos:
@@ -925,7 +936,16 @@ class CanvasBox(QGraphicsItem):
             self.p_height = wrapped_height
         else:
             self.p_height = max(last_in_pos, last_out_pos)
-        
+            
+            self.p_unwrap_triangle_pos = UNWRAP_BUTTON_NONE
+            if self.p_height >= 100:
+                if final_last_out_pos > final_last_in_pos:
+                    self.p_unwrap_triangle_pos = UNWRAP_BUTTON_LEFT
+                elif final_last_in_pos > final_last_out_pos:
+                    self.p_unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
+                else:
+                    self.p_unwrap_triangle_pos = UNWRAP_BUTTON_CENTER
+
         down_height = max(canvas.theme.port_spacing,
                           canvas.theme.port_spacingT) \
                         - canvas.theme.port_spacing \
@@ -1279,6 +1299,22 @@ class CanvasBox(QGraphicsItem):
                             ACTION_GROUP_WRAP, self.m_group_id,
                             self.m_splitted_mode, 'False')
                         return
+                    
+                elif self.p_unwrap_triangle_pos:
+                    trirect = QRectF(0, self.p_height - 16, 16, 16)
+                    
+                    if self.p_unwrap_triangle_pos == UNWRAP_BUTTON_CENTER:
+                        trirect = QRectF(self.p_width_in + 8, self.p_height - 16, 16, 16)
+                    elif self.p_unwrap_triangle_pos == UNWRAP_BUTTON_RIGHT:
+                        trirect = QRectF(self.p_width - 16, self.p_height -16, 16, 16)
+                        
+                    trirect.translate(self.scenePos())
+                    if trirect.contains(event.scenePos()):
+                        CanvasCallback(
+                            ACTION_GROUP_WRAP, self.m_group_id,
+                            self.m_splitted_mode, 'True')
+                        event.ignore()
+                        return
 
                 self.m_mouse_down = True
             else:
@@ -1581,10 +1617,11 @@ class CanvasBox(QGraphicsItem):
 
             painter.drawText(title_line.x, title_line.y, title_line.text)
 
-        if self._wrapped:
-            painter.setPen(canvas.theme.box_pen)
-            painter.setBrush(QColor(255, 192, 0, 80))
+        # draw (un)wrapper triangles
+        painter.setPen(canvas.theme.box_pen)
+        painter.setBrush(QColor(255, 192, 0, 80))
 
+        if self._wrapped:
             for port_mode in PORT_MODE_INPUT, PORT_MODE_OUTPUT:
                 if self.m_current_port_mode & port_mode:
                     side = 6
@@ -1602,6 +1639,39 @@ class CanvasBox(QGraphicsItem):
                     triangle += QPointF(x + 2 * side, ypos + 2)
                     triangle += QPointF(x + side, ypos + side + 2)
                     painter.drawPolygon(triangle)
+
+        elif self.p_unwrap_triangle_pos == UNWRAP_BUTTON_LEFT:
+            side = 6
+            x = 4
+            
+            ypos = self.p_height - 6
+            triangle = QPolygonF()
+            triangle += QPointF(x, ypos + 2)
+            triangle += QPointF(x + 2 * side, ypos + 2)
+            triangle += QPointF(x + side, ypos -side + 2)
+            painter.drawPolygon(triangle)
+        
+        elif self.p_unwrap_triangle_pos == UNWRAP_BUTTON_RIGHT:
+            side = 6
+            x = self.p_width - 2 * side - 4
+            
+            ypos = self.p_height - 6
+            triangle = QPolygonF()
+            triangle += QPointF(x, ypos + 2)
+            triangle += QPointF(x + 2 * side, ypos + 2)
+            triangle += QPointF(x + side, ypos -side + 2)
+            painter.drawPolygon(triangle)
+        
+        elif self.p_unwrap_triangle_pos == UNWRAP_BUTTON_CENTER:
+            side = 7
+            x = self.p_width_in + 8
+            
+            ypos = self.p_height - 3 + 0.5
+            triangle = QPolygonF()
+            triangle += QPointF(x, ypos + 2)
+            triangle += QPointF(x + 2 * side, ypos + 2)
+            triangle += QPointF(x + side, ypos -side + 2)
+            painter.drawPolygon(triangle)
 
         self.repaintLines()
 
