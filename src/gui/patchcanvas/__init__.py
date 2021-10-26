@@ -93,7 +93,16 @@ EYECANDY_NONE  = 0
 EYECANDY_SMALL = 1
 EYECANDY_FULL  = 2
 
+# For Repulsive boxes
+DIRECTION_NONE = 0
+DIRECTION_LEFT = 1
+DIRECTION_RIGHT = 2
+DIRECTION_UP = 3
+DIRECTION_DOWN = 4
+
 # ------------------------------------------------------------------------------------------------------------
+
+
 
 # object types
 CanvasBoxType           = QGraphicsItem.UserType + 1

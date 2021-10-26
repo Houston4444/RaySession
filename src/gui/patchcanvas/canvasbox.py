@@ -67,7 +67,8 @@ from . import (
     PORT_TYPE_PARAMETER,
     MAX_PLUGIN_ID_ALLOWED,
     ICON_HARDWARE,
-    ICON_INTERNAL
+    ICON_INTERNAL,
+    DIRECTION_DOWN
 )
 
 from .canvasboxshadow import CanvasBoxShadow
@@ -86,18 +87,6 @@ from .utils import (CanvasItemFX,
                     is_dark_theme)
 
 _translate = QApplication.translate
-
-DIRECTION_NONE = 0
-DIRECTION_LEFT = 1
-DIRECTION_RIGHT = 2
-DIRECTION_UP = 3
-DIRECTION_DOWN = 4
-
-ALIGN_NONE = 0
-ALIGN_LEFT = 1
-ALIGN_RIGHT = 2
-ALIGN_TOP = 3
-ALIGN_BOTTOM = 4
 
 UNWRAP_BUTTON_NONE = 0
 UNWRAP_BUTTON_LEFT = 1
@@ -272,6 +261,9 @@ class CanvasBox(QGraphicsItem):
 
     def getPortList(self):
         return self.m_port_list_ids
+
+    def get_current_port_mode(self):
+        return self.m_current_port_mode
 
     def redrawInlineDisplay(self):
         if self.m_plugin_inline == self.INLINE_DISPLAY_CACHED:
@@ -679,6 +671,8 @@ class CanvasBox(QGraphicsItem):
                             or port.is_alternate != alternate):
                         continue
                     
+                    #last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
+                    
                     port_pos, pg_len = CanvasGetPortGroupPosition(
                         self.m_group_id, port.port_id, port.portgrp_id)
                     first_of_portgrp = bool(port_pos == 0)
@@ -792,6 +786,7 @@ class CanvasBox(QGraphicsItem):
             self.p_width = 100
 
         self.p_width += max_in_width + max_out_width
+        #self.p_width += max(max_in_width, max_out_width)
         self.p_width_in = max_in_width
         self.p_width_out = max_out_width
 

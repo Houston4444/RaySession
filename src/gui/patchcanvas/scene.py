@@ -45,19 +45,17 @@ from . import (
     ACTION_DOUBLE_CLICK,
     MAX_PLUGIN_ID_ALLOWED,
     PORT_MODE_INPUT,
-    PORT_MODE_OUTPUT
+    PORT_MODE_OUTPUT,
+    DIRECTION_NONE,
+    DIRECTION_LEFT,
+    DIRECTION_RIGHT,
+    DIRECTION_UP,
+    DIRECTION_DOWN
 )
 
 from .canvasbox import CanvasBox
 
 # ------------------------------------------------------------------------------------------------------------
-
-DIRECTION_NONE = 0
-DIRECTION_LEFT = 1
-DIRECTION_RIGHT = 2
-DIRECTION_UP = 3
-DIRECTION_DOWN = 4
-
 
 class RubberbandRect(QGraphicsRectItem):
     def __init__(self, scene):
@@ -268,13 +266,6 @@ class PatchScene(QGraphicsScene):
         box_spacing_hor = canvas.theme.box_spacing_hor
         magnet = canvas.theme.magnet
         
-        def rect_with_mergin(rect, more_one=False):
-            more = 1 if more_one else 0
-            
-            return rect.adjusted(
-                - 4 * box_spacing - more, - box_spacing - more,
-                4 * box_spacing + more, box_spacing + more)
-        
         def get_direction(fixed_rect, moving_rect, parent_directions=[])->int:
             if (moving_rect.top() <= fixed_rect.center().y() <= moving_rect.bottom()
                     or fixed_rect.top() <= moving_rect.center().y() <= fixed_rect.bottom()):
@@ -338,9 +329,9 @@ class PatchScene(QGraphicsScene):
                 top_diff = abs(fixed_rect.top() - rect.top())
                 bottom_diff = abs(fixed_rect.bottom() - rect.bottom())
 
-                if bottom_diff > top_diff and top_diff <= 12:
+                if bottom_diff > top_diff and top_diff <= magnet:
                     y = fixed_rect.top()
-                elif bottom_diff <= 12:
+                elif bottom_diff <= magnet:
                     y = fixed_rect.bottom() - rect.height()
             
             elif direction in (DIRECTION_UP, DIRECTION_DOWN):
@@ -352,12 +343,31 @@ class PatchScene(QGraphicsScene):
                 left_diff = abs(fixed_rect.left() - rect.left())
                 right_diff = abs(fixed_rect.right() - rect.right())
                 
-                if right_diff > left_diff and left_diff <= 12:
+                if right_diff > left_diff and left_diff <= magnet:
                     x = fixed_rect.left()
-                elif right_diff <= 12:
+                elif right_diff <= magnet:
                     x = fixed_rect.right() - rect.width()
 
             return QRectF(x, y, rect.width(), rect.height())
+
+        def rect_has_to_move_from(
+                repulser_rect, rect,
+                repulser_port_mode: int, rect_port_mode: int)->bool:
+            left_spacing = right_spacing = box_spacing
+            
+            if (repulser_port_mode & PORT_MODE_INPUT
+                    or rect_port_mode & PORT_MODE_OUTPUT):
+                left_spacing = box_spacing_hor
+            
+            if (repulser_port_mode & PORT_MODE_OUTPUT
+                    or rect_port_mode & PORT_MODE_INPUT):
+                right_spacing = box_spacing_hor
+            
+            large_repulser_rect = repulser_rect.adjusted(
+                - left_spacing, - box_spacing,
+                right_spacing, box_spacing)
+
+            return rect.intersects(large_repulser_rect)
 
         to_move_boxes = []
         repulsers = []
@@ -381,50 +391,39 @@ class PatchScene(QGraphicsScene):
                         'item': box}
             repulsers.append(repulser)
 
-            impacted_rect = rect_with_mergin(srect)
-
             items_to_move = []
 
-            for item in self.items(impacted_rect):
-                if (item.type() == CanvasBoxType
-                        and item not in repulser_boxes
-                        and item not in [b['item'] for b in to_move_boxes]
-                        and item not in [b['widget'] for b in self.move_boxes]):
-                    irect = item.boundingRect()
-                    irect.translate(item.pos())
-
-                    # not consider items in case they can be glued at side
-                    # because they both have no ports on that side
-                    if (not box.m_current_port_mode & PORT_MODE_INPUT
-                            and not item.m_current_port_mode & PORT_MODE_OUTPUT
-                            and irect.right() + box_spacing <= srect.left()):
+            for group in canvas.group_list:
+                for widget in group.widgets:
+                    if (widget is None
+                            or widget in repulser_boxes
+                            or widget in [b['item'] for b in to_move_boxes]
+                            or widget in [b['widget'] for b in self.move_boxes]):
                         continue
                     
-                    if (not box.m_current_port_mode & PORT_MODE_OUTPUT
-                            and not item.m_current_port_mode & PORT_MODE_INPUT
-                            and irect.left() - box_spacing >= srect.right()):
-                        continue
+                    irect = widget.boundingRect()
+                    irect.translate(widget.pos())
 
-                    items_to_move.append({'item': item, 'rect': irect})
-            
+                    if rect_has_to_move_from(
+                            repulser['rect'], irect,
+                            repulser['item'].get_current_port_mode(),
+                            widget.get_current_port_mode()):
+                        items_to_move.append({'item': widget, 'rect': irect})
+                    
             for box_dict in self.move_boxes:
-                if box_dict['widget'] in repulser_boxes:
+                if (box_dict['widget'] in repulser_boxes
+                        or box_dict['widget'] in [b['item'] for b in to_move_boxes]):
                     continue
-
-                irect = box_dict['widget'].boundingRect()
+            
+                widget = box_dict['widget']
+                irect = widget.boundingRect()
                 irect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
-                if impacted_rect.intersects(irect):
-                    if (not box.m_current_port_mode & PORT_MODE_INPUT
-                            and not box_dict['widget'].m_current_port_mode & PORT_MODE_OUTPUT
-                            and irect.right() + box_spacing < srect.left()):
-                        continue
-                    
-                    if (not box.m_current_port_mode & PORT_MODE_OUTPUT
-                            and not box_dict['widget'].m_current_port_mode & PORT_MODE_INPUT
-                            and irect.left() - box_spacing > srect.right()):
-                        continue
-
-                    items_to_move.append({'item': box_dict['widget'], 'rect': irect})
+                
+                if rect_has_to_move_from(
+                        repulser['rect'], irect,
+                        repulser['item'].get_current_port_mode(),
+                        widget.get_current_port_mode()):
+                    items_to_move.append({'item': widget, 'rect': irect})
             
             for item_to_move in items_to_move:
                 item = item_to_move['item']
@@ -471,17 +470,19 @@ class PatchScene(QGraphicsScene):
                                repulser['item'].m_current_port_mode,
                                item.m_current_port_mode)
             
-            # while there is a repulser rect at new box position
-            # move the future box position
             active_repulsers = []
             
+            # while there is a repulser rect at new box position
+            # move the future box position
             while True:
                 # list just here to prevent infinite loop
                 # we save the repulsers that already have moved the rect
                 for repulser in repulsers:
-                    imp_rect = rect_with_mergin(repulser['rect'])
-                    if imp_rect.intersects(new_rect):
-                        # prevent infinite loop
+                    if rect_has_to_move_from(
+                            repulser['rect'], new_rect,
+                            repulser['item'].get_current_port_mode(),
+                            item.get_current_port_mode()):
+
                         if repulser in active_repulsers:
                             continue
                         active_repulsers.append(repulser)
@@ -506,17 +507,24 @@ class PatchScene(QGraphicsScene):
             # and add them to this to_move_boxes iteration
             adding_list = []
             
-            for mitem in self.items(rect_with_mergin(new_rect)):
-                if (mitem.type() == CanvasBoxType
-                        and mitem not in repulser_boxes
-                        and mitem not in [b['item'] for b in to_move_boxes]
-                        and mitem not in [b['widget'] for b in self.move_boxes]):
-                    mirect = mitem.boundingRect().translated(mitem.pos())
-                    adding_list.append(
-                        {'directions': directions,
-                         'pos': mirect.right(),
-                         'item': mitem,
-                         'repulser': repulser})
+            for group in canvas.group_list:
+                for widget in group.widgets:
+                    if (widget is None
+                            or widget in repulser_boxes
+                            or widget in [b['item'] for b in to_move_boxes]
+                            or widget in [b['widget'] for b in self.move_boxes]):
+                        continue
+                    
+                    mirect = widget.boundingRect().translated(widget.pos())
+                    if rect_has_to_move_from(
+                            new_rect, mirect,
+                            to_move_box['item'].get_current_port_mode(),
+                            widget.get_current_port_mode()):
+                        adding_list.append(
+                            {'directions': directions,
+                            'pos': mirect.right(),
+                            'item': widget,
+                            'repulser': repulser})
             
             for box_dict in self.move_boxes:
                 mitem = box_dict['widget']
@@ -527,7 +535,12 @@ class PatchScene(QGraphicsScene):
                 
                 rect = mitem.boundingRect()
                 rect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
-                if rect_with_mergin(new_rect).intersects(rect):
+                
+                if rect_has_to_move_from(
+                        new_rect, rect,
+                        to_move_box['item'].get_current_port_mode(),
+                        mitem.get_current_port_mode()):
+
                     adding_list.append(
                         {'directions': directions,
                          'pos': 0,
