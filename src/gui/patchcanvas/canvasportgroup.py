@@ -630,19 +630,21 @@ class CanvasPortGroup(QGraphicsItem):
 
             for port in canvas.port_list:
                 if port.port_id in self.m_port_id_list:
-                    port_print_name = CanvasGetPortPrintName(port.group_id,
-                                        port.port_id, self.m_portgrp_id)
+                    port_print_name = CanvasGetPortPrintName(
+                        port.group_id, port.port_id, self.m_portgrp_id)
                     port_in_p_width = QFontMetrics(self.m_portgrp_font).width(port_print_name) + 3
                     port_width = max(port_width, port_in_p_width)
 
-            text_pos = QPointF(port_width + 3, canvas.theme.port_text_ypos \
-                       + (canvas.theme.port_height * (len(self.m_port_id_list) -1)/2))
+            text_pos = QPointF(
+                port_width + 3,
+                canvas.theme.port_text_ypos
+                    + (canvas.theme.port_height * (len(self.m_port_id_list) -1)/2))
 
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
                 poly_locx[0] = canvas.theme.port_in_portgrp_width - lineHinting
-                poly_locx[1] = self.m_portgrp_width + 5 + lineHinting
-                poly_locx[2] = self.m_portgrp_width + 12 + lineHinting
-                poly_locx[3] = self.m_portgrp_width + 5 + lineHinting
+                poly_locx[1] = self.m_portgrp_width + 3 + lineHinting
+                poly_locx[2] = self.m_portgrp_width + 10 + lineHinting
+                poly_locx[3] = self.m_portgrp_width + 3 + lineHinting
                 poly_locx[4] = canvas.theme.port_in_portgrp_width - lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
                 poly_locx[0] = canvas.theme.port_in_portgrp_width - lineHinting
