@@ -597,13 +597,14 @@ class CanvasBox(QGraphicsItem):
         return_list.append(string[last_index:])
         return tuple(return_list)
 
-    def updatePositions(self):
-        self.prepareGeometryChange()
-        
-        if self in [b['widget'] for b in canvas.scene.move_boxes]:
-            # do not change box position while box is moved by animation
+    def updatePositions(self, even_animated=False):
+        if (not even_animated
+                and self in [b['widget'] for b in canvas.scene.move_boxes]):
+            # do not change box disposition while box is moved by animation
             # updatePositions will be called when animation is finished
             return
+
+        self.prepareGeometryChange()
 
         # Get Port List
         port_list = []
@@ -682,13 +683,13 @@ class CanvasBox(QGraphicsItem):
                     if port.portgrp_id:
                         size = 0
                         totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 3
-                        # FIXME
+
                         for portgrp in canvas.portgrp_list:
                             if portgrp.portgrp_id == port.portgrp_id:
                                 portgrp_name = CanvasGetPortGroupName(
                                     self.m_group_id, portgrp.port_id_list)
                                 size = QFontMetrics(self.m_font_port).width(portgrp_name) \
-                                        + canvas.theme.port_in_portgrp_width
+                                       + canvas.theme.port_in_portgrp_width
                                 break
                         size = max(size, totsize)
 

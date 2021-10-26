@@ -572,14 +572,7 @@ def splitGroup(group_id, on_place=False):
             for box in group.widgets:
                 if box is not None:
                     box.set_wrapped(wrap, animate=False)
-                    box.updatePositions()
-
-                    #if box.getSplittedMode() == PORT_MODE_OUTPUT:
-                        #canvas.scene.add_box_to_animation(
-                            #box, group_out_pos.x(), group_out_pos.y())
-                    #else:
-                        #canvas.scene.add_box_to_animation(
-                            #box, group_in_pos.x(), group_in_pos.y())
+                    box.updatePositions(even_animated=True)
 
     QTimer.singleShot(0, canvas.scene.update)
 

@@ -531,17 +531,31 @@ class Group:
         for client_name in ('firewire_pcm', 'a2j',
                             'Hydrogen', 'ardour', 'Ardour', 'Qtractor',
                             'SooperLooper', 'sooperlooper', 'Luppp',
-                            'seq64', 'calfjackhost', 'rakarrack-plus'):
+                            'seq64', 'calfjackhost', 'rakarrack-plus',
+                            'seq192', 'Non-Mixer', 'jack_mixer'):
             if self.name == client_name:
                 return client_name
 
-            if self.name.startswith(client_name + '_'):
-                if self.name.replace(client_name + '_', '', 1).isdigit():
-                    return client_name
-
             if self.name.startswith(client_name + '.'):
-                # TODO or to check what happens
                 return client_name
+            
+            name = self.name.partition('/')[0]
+            if name == client_name:
+                return client_name
+            
+            if name.startswith(client_name + '_'):
+                if name.replace(client_name + '_', '', 1).isdigit():
+                    return client_name
+            
+            if ' (' in name and name.endswith(')'):
+                name = name.partition(' (')[0]
+                if name == client_name:
+                    return client_name
+                
+                if name.startswith(client_name + '_'):
+                    if name.replace(client_name + '_', '', 1).isdigit():
+                        return client_name
+
         return ''
 
     def graceful_port(self, port):
@@ -564,17 +578,9 @@ class Group:
 
         client_name = self.get_pretty_client()
 
-        # same graceful names for physical a2j ports
-        # if they are grouped or not
-        #if (not client_name
-                #and port.full_name.startswith('a2j:')
-                #and port.flags & PORT_IS_PHYSICAL):
-            #client_name = 'a2j'
-
         if (not client_name
                 and port.full_name.startswith(('a2j:', 'Midi-Bridge:'))
                 and port.flags & PORT_IS_PHYSICAL):
-            #client_name = port.full_name.partition(':')[0]
             client_name = 'a2j'
 
         display_name = port.short_name()
@@ -654,7 +660,22 @@ class Group:
                     port.last_digit_to_add = '1'
                 else:
                     display_name += ' ' + num
-
+        
+        elif client_name == 'Non-Mixer':
+            display_name, num = split_end_digits(display_name)
+            if num:
+                display_name = cut_end(display_name, '/in-', '/out-')
+                
+                if num == '1':
+                    port.last_digit_to_add = '1'
+                else:
+                    display_name += ' ' + num
+        
+        elif client_name == 'jack_mixer':
+            prefix, out, side = display_name.rpartition(' Out')
+            if out and side in (' L', ' R', ''):
+                display_name = prefix + side
+                        
         elif client_name in ('SooperLooper', 'sooperlooper'):
             display_name, num = split_end_digits(display_name)
             if num:
@@ -673,6 +694,9 @@ class Group:
 
         elif client_name == 'seq64':
             display_name = display_name.replace('seq64 midi ', '', 1)
+
+        elif client_name == 'seq192':
+            display_name = display_name.replace('seq192 ', '', 1)
 
         elif client_name == 'calfjackhost':
             display_name, num = split_end_digits(display_name)
@@ -1411,7 +1435,11 @@ class PatchbayManager:
                 break
 
     def get_client_icon(self, group_name: str)->str:
-        group_name = group_name.partition('/')[0]
+        if '/' in group_name:
+            group_name = group_name.partition('/')[0]
+        elif ' (' in group_name and group_name.endswith(')'):
+            # mostly for Non Mixer when another DSP group is used
+            group_name = group_name.partition(' (')[0]
 
         for client in self.session.client_list:
             client_num = ''

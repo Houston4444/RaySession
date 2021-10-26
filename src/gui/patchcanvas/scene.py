@@ -216,6 +216,7 @@ class PatchScene(QGraphicsScene):
             for box in move_box_widgets:
                 if box is not None:
                     box.updatePositions()
+                    box.send_move_callback()
 
             canvas.qobject.move_boxes_finished.emit()
 
