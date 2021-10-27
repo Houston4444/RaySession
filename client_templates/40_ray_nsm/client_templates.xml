@@ -43,4 +43,5 @@
  <Client-Template template-name="Vico" executable="vico"  client_id="vico"/>
  <Client-Template template-name="Mamba" executable="mamba" client_id="mamba"/>
  <Client-Template template-name="XTuner" executable="xtuner" client_id="xtuner"/>
+ <Client-Template template-name="seq192" executable="seq192" client_id="seq192"/>
 </RAY-CLIENT-TEMPLATES>
