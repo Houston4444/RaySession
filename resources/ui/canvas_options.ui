@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>201</width>
-    <height>172</height>
+    <width>216</width>
+    <height>200</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -60,6 +60,19 @@
        </property>
        <property name="text">
         <string>Elastic canvas</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkBoxPreventOverlap">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When this option is active, boxes are automatically moved when another box has been moved over them.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>prevent overlapping of boxes</string>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
        </property>
       </widget>
      </item>

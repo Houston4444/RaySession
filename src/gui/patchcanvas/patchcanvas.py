@@ -1315,4 +1315,9 @@ def handleAllPluginsRemoved():
 def setElastic(yesno: bool):
     canvas.scene.set_elastic(yesno)
 
+def set_prevent_overlap(yesno: bool):
+    canvas.scene.set_prevent_overlap(yesno)
+    
+    if yesno:
+        redrawAllGroups()
 # ------------------------------------------------------------------------------------------------------------

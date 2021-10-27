@@ -114,7 +114,7 @@ class PatchScene(QGraphicsScene):
 
         self.selectionChanged.connect(self.slot_selectionChanged)
         
-        self.prevent_box_move = False
+        self._prevent_overlap = True
 
     def clear(self):
         # reimplement Qt function and fix missing rubberband after clear
@@ -263,6 +263,9 @@ class PatchScene(QGraphicsScene):
     def deplace_boxes_from_repulsers(self, repulser_boxes: list,
                                      wanted_direction=DIRECTION_NONE,
                                      new_scene_rect=None):
+        if not self._prevent_overlap:
+            return
+        
         box_spacing = canvas.theme.box_spacing
         box_spacing_hor = canvas.theme.box_spacing_hor
         magnet = canvas.theme.magnet
@@ -663,6 +666,9 @@ class PatchScene(QGraphicsScene):
             self.addItem(fake_item)
             self.update()
             self.removeItem(fake_item)
+
+    def set_prevent_overlap(self, yesno: bool):
+        self._prevent_overlap = yesno
 
     def zoom_ratio(self, percent: float):
         ratio = percent / 100.0

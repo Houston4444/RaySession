@@ -1157,6 +1157,8 @@ class PatchbayManager:
             self.change_theme)
         self.options_dialog.elastic_checked.connect(
             self.set_elastic_canvas)
+        self.options_dialog.prevent_overlap_checked.connect(
+            self.set_prevent_overlap)
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -1401,6 +1403,9 @@ class PatchbayManager:
 
     def set_elastic_canvas(self, yesno: int):
         patchcanvas.setElastic(yesno)
+
+    def set_prevent_overlap(self, yesno: int):
+        patchcanvas.set_prevent_overlap(yesno)
 
     def toggle_graceful_names(self):
         PatchbayManager.set_use_graceful_names(not self.use_graceful_names)
