@@ -263,7 +263,7 @@ class PatchScene(QGraphicsScene):
     def deplace_boxes_from_repulsers(self, repulser_boxes: list,
                                      wanted_direction=DIRECTION_NONE,
                                      new_scene_rect=None):
-        if not self._prevent_overlap:
+        if not options.prevent_overlap:
             return
         
         box_spacing = canvas.theme.box_spacing
@@ -668,7 +668,7 @@ class PatchScene(QGraphicsScene):
             self.removeItem(fake_item)
 
     def set_prevent_overlap(self, yesno: bool):
-        self._prevent_overlap = yesno
+        options.prevent_overlap = yesno
 
     def zoom_ratio(self, percent: float):
         ratio = percent / 100.0

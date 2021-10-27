@@ -465,6 +465,8 @@ class MainWindow(QMainWindow):
         options.inline_displays = False
         options.use_bezier_lines = True
         options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
+        options.prevent_overlap = RS.settings.value(
+            'Canvas/prevent_overlap', True, type=bool)
 
         features = patchcanvas.features_t()
         features.group_info = False

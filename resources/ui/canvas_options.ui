@@ -69,7 +69,7 @@
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When this option is active, boxes are automatically moved when another box has been moved over them.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
-        <string>prevent overlapping of boxes</string>
+        <string>Prevent overlapping of boxes</string>
        </property>
        <property name="checked">
         <bool>false</bool>

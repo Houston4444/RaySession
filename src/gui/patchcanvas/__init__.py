@@ -127,7 +127,8 @@ class options_t(object):
         'antialiasing',
         'eyecandy',
         'inline_displays',
-        'elastic'
+        'elastic',
+        'prevent_overlap'
     ]
 
 # Canvas features
@@ -316,6 +317,7 @@ options.antialiasing = ANTIALIASING_SMALL
 options.eyecandy = EYECANDY_SMALL
 options.inline_displays = False
 options.elastic = True
+options.prevent_overlap = True
 
 features = features_t()
 features.group_info   = False
@@ -335,6 +337,7 @@ def setOptions(new_options):
     options.eyecandy = new_options.eyecandy
     options.inline_displays = new_options.inline_displays
     options.elastic = new_options.elastic
+    options.prevent_overlap = new_options.prevent_overlap
 
 def setFeatures(new_features):
     if canvas.initiated: return
