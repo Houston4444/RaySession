@@ -1071,6 +1071,7 @@ class SignaledSession(OperatingSession):
         custom_prefix = ''
         client_id = ""
         start_it = 1
+        jack_naming = 0
 
         if len(args) == 1:
             pass
@@ -1114,9 +1115,14 @@ class SignaledSession(OperatingSession):
                                 "client_id %s is already used" % client_id)
                             return
 
+                elif arg.startswith('jack_naming:'):
+                    str_jack_naming = arg.partition(':')[2]
+                    if str_jack_naming.lower() in ('1', 'long'):
+                        jack_naming = 1
+
         else:
             executable, start_it, protocol, \
-                prefix_mode, custom_prefix, client_id = args
+                prefix_mode, custom_prefix, client_id, jack_naming = args
 
             if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
                 prefix_mode = ray.PrefixMode.SESSION_NAME
@@ -1152,6 +1158,7 @@ class SignaledSession(OperatingSession):
         client.prefix_mode = prefix_mode
         client.custom_prefix = custom_prefix
         client.set_default_git_ignored(executable)
+        client.jack_naming = jack_naming
 
         if self._add_client(client):
             if start_it:

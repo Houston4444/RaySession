@@ -862,7 +862,8 @@ class NewExecutableDialog(ChildDialog):
                 not self.ui.checkBoxNsm.isChecked(),
                 self.ui.comboBoxPrefixMode.currentIndex(),
                 self.ui.lineEditPrefix.text(),
-                self.ui.lineEditClientId.text())
+                self.ui.lineEditClientId.text(),
+                self.ui.checkBoxJackNaming.isChecked())
 
 
 class StopClientDialog(ChildDialog):

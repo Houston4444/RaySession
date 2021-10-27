@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>240</width>
-    <height>338</height>
+    <width>212</width>
+    <height>376</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -121,6 +121,16 @@
         </property>
         <property name="checked">
          <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="2">
+       <widget class="QCheckBox" name="checkBoxJackNaming">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;With this option checked, NSM programs should name their JACK client names starting with ClientName.ClientId (as in NSM), else it will be ClientName (with a digit suffix if needed).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Long JACK Naming</string>
         </property>
        </widget>
       </item>

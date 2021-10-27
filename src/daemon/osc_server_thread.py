@@ -982,10 +982,10 @@ class OscServerThread(ClientCommunicating):
     def raySessionGetNotes(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/session/add_executable', 'siiiss')
+    @ray_method('/ray/session/add_executable', 'siiissi')
     def raySessionAddExecutableAdvanced(self, path, args, types, src_addr):
         executable_path, auto_start, protocol, \
-            prefix_mode, prefix_pattern, client_id = args
+            prefix_mode, prefix_pattern, client_id, jack_naming = args
 
         if not self.session.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
