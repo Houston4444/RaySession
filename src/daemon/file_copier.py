@@ -147,7 +147,7 @@ class FileCopier(ServerSender):
             if copy_file.state == 0:
                 copy_file.state = 1
                 self._process.start('nice',
-                                   ['-n', '+15', 'cp', '-R',
+                                   ['-n', '+15', 'cp', '-R', '--no-preserve=mode,ownership',
                                     copy_file.orig_path, copy_file.dest_path])
                 break
 
