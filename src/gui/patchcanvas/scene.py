@@ -421,7 +421,7 @@ class PatchScene(QGraphicsScene):
             
                 widget = box_dict['widget']
                 irect = widget.boundingRect()
-                irect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
+                irect.translate(QPointF(box_dict['to_x'], box_dict['to_y']))
                 
                 if rect_has_to_move_from(
                         repulser['rect'], irect,
