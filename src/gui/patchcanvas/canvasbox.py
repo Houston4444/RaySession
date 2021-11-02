@@ -68,6 +68,7 @@ from . import (
     MAX_PLUGIN_ID_ALLOWED,
     ICON_HARDWARE,
     ICON_INTERNAL,
+    ICON_CLIENT,
     DIRECTION_DOWN
 )
 
@@ -140,6 +141,7 @@ class CanvasBox(QGraphicsItem):
         # Save Variables, useful for later
         self.m_group_id = group_id
         self.m_group_name = group_name
+        self.m_icon_type = icon_type
 
         self._title_lines = [TitleLine(group_name)]
 
@@ -327,7 +329,7 @@ class CanvasBox(QGraphicsItem):
 
     def splitTitle(self, n_lines=True)->tuple:
         title, slash, subtitle = self.m_group_name.partition('/')
-        if subtitle:
+        if self.m_icon_type == ICON_CLIENT and subtitle:
             # if there is a subtitle, title is not bold when subtitle is.
             # so title is 'little'
             title_lines = [TitleLine(title, little=True)]

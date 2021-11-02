@@ -166,7 +166,8 @@ class Port:
         is_alternate = False
         if self.flags & PORT_IS_CONTROL_VOLTAGE:
             is_alternate = True
-        if self.type == PORT_TYPE_MIDI and self.full_name.startswith('a2j:'):
+        if (self.type == PORT_TYPE_MIDI
+                and self.full_name.startswith(('a2j:', 'Midi-Bridge:'))):
             for group in PatchbayManager.groups:
                 if group.group_id == self.group_id:
                     is_alternate = True
@@ -1452,6 +1453,7 @@ class PatchbayManager:
                 client_num = '_' + client.client_id.rpartition('_')[2]
 
             if (group_name == client.name + client_num
+                    or group_name == client.name + client_num + '.0'
                     or group_name == client.name + '.' + client.client_id):
                 return client.icon
 
