@@ -1567,7 +1567,6 @@ class CanvasBox(QGraphicsItem):
                     if len(self._title_lines) >= 3:
                         self._title_lines[2].y += 24
 
-
         max_title_size = 0
         for title_line in self._title_lines:
             max_title_size = max(max_title_size, title_line.size)
@@ -1592,7 +1591,7 @@ class CanvasBox(QGraphicsItem):
             right_xpos = 0
 
             for title_line in self._title_lines:
-                title_line.x = (self.p_width - title_line.size) / 2
+                title_line.x = int((self.p_width - title_line.size) / 2)
                 left_xpos = min(left_xpos, title_line.x)
                 right_xpos = max(right_xpos, title_line.x + title_line.size)
 
@@ -1626,7 +1625,7 @@ class CanvasBox(QGraphicsItem):
                     x = 6
 
                     ypos = canvas.theme.box_header_height
-                    if len(self._title_lines) == 3:
+                    if len(self._title_lines) >= 3:
                         ypos += 14
 
                     if port_mode == PORT_MODE_OUTPUT:
