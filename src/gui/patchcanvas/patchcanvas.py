@@ -421,7 +421,9 @@ def removeGroup(group_id, save_positions=True, fast=False):
 
             if fast:
                 return
+
             QTimer.singleShot(0, canvas.scene.update)
+            QTimer.singleShot(0, canvas.scene.resize_the_scene)
             return
 
     qCritical("PatchCanvas::removeGroup(%i) - unable to find group to remove" % group_id)
