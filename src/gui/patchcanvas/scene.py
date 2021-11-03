@@ -234,7 +234,7 @@ class PatchScene(QGraphicsScene):
                 # and force_anim is False,
                 # then box position is directly changed
                 if box_widget is not None:
-                    box_widget.setPos(to_x, to_y)
+                    box_widget.setPos(int(to_x), int(to_y))
                 return
 
             box_dict = {'widget': box_widget}
@@ -242,8 +242,8 @@ class PatchScene(QGraphicsScene):
 
         box_dict['from_x'] = box_widget.pos().x()
         box_dict['from_y'] = box_widget.pos().y()
-        box_dict['to_x'] = to_x
-        box_dict['to_y'] = to_y
+        box_dict['to_x'] = int(to_x)
+        box_dict['to_y'] = int(to_y)
         box_dict['n_start'] = self.move_box_n
 
         if not self.move_box_timer.isActive():
@@ -421,7 +421,7 @@ class PatchScene(QGraphicsScene):
             
                 widget = box_dict['widget']
                 irect = widget.boundingRect()
-                irect.translate(QPointF(box_dict['to_x'], box_dict['to_y']))
+                irect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
                 
                 if rect_has_to_move_from(
                         repulser['rect'], irect,
@@ -589,7 +589,7 @@ class PatchScene(QGraphicsScene):
         repulser_boxes = []
 
         for neighbor in neighbors:
-            canvas.scene.add_box_to_animation(
+            self.add_box_to_animation(
                 neighbor, neighbor.pos().x(), neighbor.pos().y() - less_y)
             repulser_boxes.append(neighbor)
         repulser_boxes.append(box_widget)
