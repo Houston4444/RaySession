@@ -66,7 +66,7 @@ class Theme(object):
 
         self.port_mode = self.THEME_PORT_POLYGON
 
-        self.port_in_portgrp_width = 18
+        self.port_in_portgrp_width = 19
         self.port_height = 16
         self.port_offset = 0
         self.port_spacing = 2
@@ -88,7 +88,7 @@ class Theme(object):
             self.box_pen = QPen(QColor(76, 77, 78), 1, Qt.SolidLine)
             self.box_pen_sel = QPen(QColor(206, 207, 208), 1, Qt.DashLine)
             self.box_bg_1 = QColor(32, 34, 35)
-            self.box_bg_2 = QColor(43, 47, 48)
+            self.box_bg_2 = QColor(38, 40, 41)
             self.box_shadow = QColor(89, 89, 89, 180)
 
             self.box_text = QPen(QColor(240, 240, 240), 0)
@@ -165,7 +165,7 @@ class Theme(object):
             self.box_pen = QPen(QColor(76, 77, 78), 1, Qt.SolidLine)
             self.box_pen_sel = QPen(QColor(206, 207, 208), 1, Qt.DashLine)
             self.box_bg_1 = QColor(32, 34, 35)
-            self.box_bg_2 = QColor(43, 47, 48)
+            self.box_bg_2 = QColor(38, 40, 41)
             self.box_shadow = QColor(89, 89, 89, 180)
 
             self.box_text = QPen(QColor(210, 210, 210), 0)
@@ -247,7 +247,7 @@ class Theme(object):
             self.box_pen = QPen(QColor(76, 77, 78), 1, Qt.SolidLine)
             self.box_pen_sel = QPen(QColor(206, 207, 208), 1, Qt.DashLine)
             self.box_bg_1 = QColor(32, 34, 35)
-            self.box_bg_2 = QColor(43, 47, 48)
+            self.box_bg_2 = QColor(38, 40, 41)
             self.box_shadow = QColor(89, 89, 89, 180)
 
             self.box_text = QPen(QColor(240, 240, 240), 0)

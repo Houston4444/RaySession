@@ -1516,14 +1516,21 @@ class CanvasBox(QGraphicsItem):
 
         rect = QRectF(0, 0, self.p_width, self.p_height)
 
-        if self._is_hardware:
+        if canvas.theme.box_bg_type == Theme.THEME_BG_GRADIENT:
             max_size = max(self.p_height, self.p_width)
             box_gradient = QLinearGradient(0, 0, max_size, max_size)
-            color_main = QColor(20, 20, 20)
-            color_alter = QColor(26, 24, 21)
+            color_main = canvas.theme.box_bg_1
+            color_alter = canvas.theme.box_bg_2
+            gradient_size = 50
+
+            if self._is_hardware:
+                box_gradient = QLinearGradient(0, 0, max_size, max_size)
+                color_main = QColor(20, 20, 20)
+                color_alter = QColor(26, 24, 21)
+                gradient_size = 20
 
             box_gradient.setColorAt(0, color_main)
-            tot = int(max_size / 20)
+            tot = int(max_size / gradient_size)
             for i in range(tot):
                 if i % 2 == 0:
                     box_gradient.setColorAt(i/tot, color_main)
@@ -1531,11 +1538,6 @@ class CanvasBox(QGraphicsItem):
                     box_gradient.setColorAt(i/tot, color_alter)
 
             painter.setBrush(box_gradient)
-
-        elif canvas.theme.box_bg_type == Theme.THEME_BG_GRADIENT:
-            box_gradient = QLinearGradient(0, 0, 0, self.p_height)
-            box_gradient.setColorAt(0, canvas.theme.box_bg_1)
-            box_gradient.setColorAt(1, canvas.theme.box_bg_2)
             painter.setBrush(box_gradient)
 
         else:
@@ -1676,9 +1678,30 @@ class CanvasBox(QGraphicsItem):
             if title_line.is_little:
                 painter.setOpacity(0.5)
 
-            painter.drawText(float(title_line.x),
-                             float(title_line.y),
-                             title_line.text)
+            if (title_line == self._title_lines[-1]
+                    and self.m_group_name.endswith(' Monitor')):
+                # Title line endswith " Monitor"
+                # Draw "Monitor" in yellow
+                # but keep the rest in white
+                pre_text = title_line.text.rpartition(' Monitor')[0]
+                painter.drawText(
+                    int(title_line.x + 0.5),
+                    int(title_line.y + 0.5),
+                    pre_text)
+
+                x_pos = title_line.x
+                if pre_text:
+                    x_pos += QFontMetrics(title_line.font).width(pre_text)
+                    x_pos += QFontMetrics(title_line.font).width(' ')
+
+                painter.setPen(QPen(QColor(190, 158, 0), 0))
+                painter.drawText(int(x_pos + 0.5), int(title_line.y + 0.5),
+                                 'Monitor')
+            else:
+                painter.drawText(
+                    int(title_line.x + 0.5),
+                    int(title_line.y + 0.5),
+                    title_line.text)
 
         # draw (un)wrapper triangles
         painter.setPen(canvas.theme.box_pen)
