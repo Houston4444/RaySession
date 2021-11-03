@@ -55,7 +55,9 @@ class Theme(object):
         self.box_header_spacing = 0
 
         self.box_text_ypos = 20
+        self.box_text_hw = QPen(QColor(180, 180, 180), 0)
 
+        self.box_pen_hw = QPen(QColor(56, 57, 58), 1, Qt.SolidLine)
         self.box_bg_type = self.THEME_BG_GRADIENT
         self.box_use_icon = True
 
@@ -73,7 +75,7 @@ class Theme(object):
         self.box_spacing = 4
         self.box_spacing_hor = 24
         self.magnet = 12
-        self.hardware_rack_width = 6
+        self.hardware_rack_width = 5
 
         self.setTheme(idx)
 

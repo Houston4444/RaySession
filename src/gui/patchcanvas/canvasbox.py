@@ -966,7 +966,7 @@ class CanvasBox(QGraphicsItem):
         self.p_ex_scene_pos = self.scenePos()
 
         self.repaintLines(forced=True)
-        if not (self._wrapping or self._unwrapping):
+        if not (self._wrapping or self._unwrapping) and self.isVisible():
             canvas.scene.deplace_boxes_from_repulsers([self])
         self.update()
 
@@ -1420,19 +1420,23 @@ class CanvasBox(QGraphicsItem):
         pen.setWidthF(pen.widthF() + 0.00001)
         painter.setPen(pen)
         brush = painter.brush()
-        lineHinting = pen.widthF() / 2
+        pen_width = pen.widthF()
+        lineHinting = pen_width / 2
+
 
         if self._is_hardware:
-            d = 6
+            d = canvas.theme.hardware_rack_width
             hw_gradient = QLinearGradient(-d, -d, self.p_width +d, self.p_height +d)
-            hw_gradient.setColorAt(0, QColor(70, 70, 50))
-            hw_gradient.setColorAt(1, QColor(50, 50, 30))
+            hw_gradient.setColorAt(0, QColor(60, 60, 43))
+            hw_gradient.setColorAt(0.5, QColor(40, 40, 24))
+            hw_gradient.setColorAt(1, QColor(60, 60, 43))
+
             painter.setBrush(hw_gradient)
             painter.setPen(QPen(QColor(30, 30, 30), 1))
-            if self.m_splitted:
+            if self.m_current_port_mode != PORT_MODE_INPUT + PORT_MODE_OUTPUT:
                 hardware_poly = QPolygonF()
 
-                if self.m_splitted_mode == PORT_MODE_INPUT:
+                if self.m_current_port_mode == PORT_MODE_INPUT:
                     hardware_poly += QPointF(- lineHinting, - lineHinting)
                     hardware_poly += QPointF(- lineHinting, 34)
                     hardware_poly += QPointF(-d /2.0, 34)
@@ -1512,7 +1516,23 @@ class CanvasBox(QGraphicsItem):
 
         rect = QRectF(0, 0, self.p_width, self.p_height)
 
-        if canvas.theme.box_bg_type == Theme.THEME_BG_GRADIENT:
+        if self._is_hardware:
+            max_size = max(self.p_height, self.p_width)
+            box_gradient = QLinearGradient(0, 0, max_size, max_size)
+            color_main = QColor(20, 20, 20)
+            color_alter = QColor(26, 24, 21)
+
+            box_gradient.setColorAt(0, color_main)
+            tot = int(max_size / 20)
+            for i in range(tot):
+                if i % 2 == 0:
+                    box_gradient.setColorAt(i/tot, color_main)
+                else:
+                    box_gradient.setColorAt(i/tot, color_alter)
+
+            painter.setBrush(box_gradient)
+
+        elif canvas.theme.box_bg_type == Theme.THEME_BG_GRADIENT:
             box_gradient = QLinearGradient(0, 0, 0, self.p_height)
             box_gradient.setColorAt(0, canvas.theme.box_bg_1)
             box_gradient.setColorAt(1, canvas.theme.box_bg_2)
@@ -1526,6 +1546,48 @@ class CanvasBox(QGraphicsItem):
 
         # Draw plugin inline display if supported
         self.paintInlineDisplay(painter)
+
+        if self.m_group_name.endswith(' Monitor'):
+            bor_gradient = QLinearGradient(0, 0, self.p_height, self.p_height)
+            color_main = QColor(80, 80, 80)
+            color_alter = QColor(60, 60, 60)
+
+            tot = int(self.p_height / 20)
+            for i in range(tot):
+                if i % 2 == 0:
+                    bor_gradient.setColorAt(i/tot, color_main)
+                else:
+                    bor_gradient.setColorAt(i/tot, color_alter)
+
+            painter.setBrush(bor_gradient)
+            painter.setPen(Qt.NoPen)
+
+            border_rect = QRectF(0, 0, 11, self.p_height)
+            border_rect.adjust(lineHinting * 2, lineHinting * 2,
+                               -2 * lineHinting, -2 * lineHinting)
+            top_pol = QPolygonF()
+            top_pol += QPointF(11 - 2 * lineHinting, lineHinting * 2)
+            top_pol += QPointF(11 - 2 * lineHinting + 13, lineHinting  * 2)
+            top_pol += QPointF(11 - 2 * lineHinting, 13 + lineHinting * 2)
+
+            band_mon_larger = 9
+            triangle_mon_size_top = 7
+            triangle_mon_size_bottom = 0
+            if self.p_height >= 100 or self._wrapping or self._unwrapping:
+                triangle_mon_size_bottom = 13
+            bml = band_mon_larger
+            tms_top = triangle_mon_size_top
+            tms_bot = triangle_mon_size_bottom
+
+            mon_poly = QPolygonF()
+            mon_poly += QPointF(pen_width, pen_width)
+            mon_poly += QPointF(pen_width + bml + tms_top, pen_width)
+            mon_poly += QPointF(pen_width + bml, pen_width + tms_top)
+            mon_poly += QPointF(pen_width + bml, self.p_height - tms_bot - pen_width)
+            mon_poly += QPointF(pen_width + bml + tms_bot, self.p_height - pen_width)
+            mon_poly += QPointF(pen_width, self.p_height - pen_width)
+
+            painter.drawPolygon(mon_poly)
 
         # Draw pixmap header
         rect.setHeight(canvas.theme.box_header_height)
@@ -1591,7 +1653,7 @@ class CanvasBox(QGraphicsItem):
             right_xpos = 0
 
             for title_line in self._title_lines:
-                title_line.x = int((self.p_width - title_line.size) / 2)
+                title_line.x = (self.p_width - title_line.size) / 2
                 left_xpos = min(left_xpos, title_line.x)
                 right_xpos = max(right_xpos, title_line.x + title_line.size)
 
@@ -1600,7 +1662,9 @@ class CanvasBox(QGraphicsItem):
                 painter.drawLine(right_xpos + 5, 16,
                                  self.p_width - 5, 16)
 
-        if self.isSelected():
+        if self._is_hardware:
+            painter.setPen(canvas.theme.box_text_hw)
+        elif self.isSelected():
             painter.setPen(canvas.theme.box_text_sel)
         else:
             painter.setPen(canvas.theme.box_text)
@@ -1612,11 +1676,16 @@ class CanvasBox(QGraphicsItem):
             if title_line.is_little:
                 painter.setOpacity(0.5)
 
-            painter.drawText(title_line.x, title_line.y, title_line.text)
+            painter.drawText(float(title_line.x),
+                             float(title_line.y),
+                             title_line.text)
 
         # draw (un)wrapper triangles
         painter.setPen(canvas.theme.box_pen)
         painter.setBrush(QColor(255, 192, 0, 80))
+        if self._is_hardware:
+            painter.setPen(canvas.theme.box_pen_hw)
+            painter.setBrush(QColor(255, 192, 0, 60))
 
         if self._wrapped:
             for port_mode in PORT_MODE_INPUT, PORT_MODE_OUTPUT:

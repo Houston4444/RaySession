@@ -350,6 +350,11 @@ class Group:
                 icon_type = patchcanvas.ICON_INTERNAL
                 icon_name = "audio-input-microphone.svg"
 
+        elif (self.name.endswith(" Monitor")
+                and not self.client_icon):
+            icon_type = patchcanvas.ICON_INTERNAL
+            icon_name = "audio-volume-medium.svg"
+
         self.in_canvas = True
 
         gpos = self.current_position
