@@ -61,7 +61,9 @@ from .theme import Theme
 from .connect_menu import MainPortContextMenu
 from .utils import (
     CanvasGetFullPortName,
+    CanvasGetPortGroupPortList,
     CanvasGetPortConnectionList,
+    CanvasGetPortGroupName,
     CanvasGetPortGroupPosition,
     CanvasGetPortPrintName,
     CanvasConnectionMatches,
@@ -89,6 +91,7 @@ class CanvasPort(QGraphicsItem):
         self.m_is_alternate = is_alternate
 
         # Base Variables
+        self.port_in_portgrp_width = canvas.theme.port_in_portgrp_width
         self.m_port_width = 15
         self.m_port_height = canvas.theme.port_height
         self.m_port_font = QFont()
@@ -624,14 +627,17 @@ class CanvasPort(QGraphicsItem):
     def boundingRect(self):
         if self.m_portgrp_id:
             if self.m_port_mode == PORT_MODE_INPUT:
-                return QRectF(0, 0, canvas.theme.port_in_portgrp_width, self.m_port_height)
+                return QRectF(0, 0, self.port_in_portgrp_width, self.m_port_height)
             else:
-                return QRectF(self.m_port_width +12 - canvas.theme.port_in_portgrp_width,
-                              0, canvas.theme.port_in_portgrp_width, self.m_port_height)
+                return QRectF(self.m_port_width + 12 - self.port_in_portgrp_width,
+                              0, self.port_in_portgrp_width, self.m_port_height)
         else:
             return QRectF(0, 0, self.m_port_width + 12, self.m_port_height)
 
     def paint(self, painter, option, widget):
+        if self.m_port_name == 'front namiless':
+            print('ça pritnn')
+        
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
@@ -681,12 +687,25 @@ class CanvasPort(QGraphicsItem):
                           and self.m_is_alternate)
 
         port_in_portgrp_width = canvas.theme.port_in_portgrp_width
+
         if self.m_portgrp_id:
-            print_name = CanvasGetPortPrintName(
-                            self.m_group_id, self.m_port_id,
-                            self.m_portgrp_id)
-            print_name_size = QFontMetrics(self.m_port_font).width(print_name)
-            port_in_portgrp_width = max(port_in_portgrp_width, print_name_size + 4)
+            portgrp_name = CanvasGetPortGroupName(self.m_group_id, self.m_portgrp_id)
+            if portgrp_name:
+                print_name = CanvasGetPortPrintName(
+                    self.m_group_id, self.m_port_id, self.m_portgrp_id)
+                print_name_size = QFontMetrics(self.m_port_font).width(print_name)
+                port_in_portgrp_width = max(port_in_portgrp_width, print_name_size + 4)
+
+                for port in canvas.port_list:
+                    if (port.group_id == self.m_group_id
+                            and port.portgrp_id == self.m_portgrp_id
+                            and port.port_mode == self.m_port_mode
+                            and port.widget is not None
+                            and port.widget is not self):
+                        port_in_portgrp_width = max(port_in_portgrp_width,
+                                                    port.widget.port_in_portgrp_width)
+            
+            self.port_in_portgrp_width = port_in_portgrp_width
 
         if self.m_port_mode == PORT_MODE_INPUT:
             text_pos = QPointF(3, canvas.theme.port_text_ypos)

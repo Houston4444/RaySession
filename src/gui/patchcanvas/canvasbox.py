@@ -684,7 +684,7 @@ class CanvasBox(QGraphicsItem):
                     size = max(QFontMetrics(self.m_font_port).width(port.port_name), 20)
                     if port.portgrp_id:
                         size = 0
-                        totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 3
+                        totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 5
 
                         for portgrp in canvas.portgrp_list:
                             if portgrp.portgrp_id == port.portgrp_id:
@@ -1523,7 +1523,7 @@ class CanvasBox(QGraphicsItem):
             color_alter = canvas.theme.box_bg_2
             gradient_size = 50
 
-            if self._is_hardware:
+            if True or self._is_hardware:
                 box_gradient = QLinearGradient(0, 0, max_size, max_size)
                 color_main = QColor(20, 20, 20)
                 color_alter = QColor(26, 24, 21)
@@ -1533,9 +1533,9 @@ class CanvasBox(QGraphicsItem):
             tot = int(max_size / gradient_size)
             for i in range(tot):
                 if i % 2 == 0:
-                    box_gradient.setColorAt(i/tot, color_main)
+                    box_gradient.setColorAt((i/tot) ** 0.7, color_main)
                 else:
-                    box_gradient.setColorAt(i/tot, color_alter)
+                    box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
 
             painter.setBrush(box_gradient)
             painter.setBrush(box_gradient)
@@ -1551,8 +1551,8 @@ class CanvasBox(QGraphicsItem):
 
         if self.m_group_name.endswith(' Monitor'):
             bor_gradient = QLinearGradient(0, 0, self.p_height, self.p_height)
-            color_main = QColor(80, 80, 80)
-            color_alter = QColor(60, 60, 60)
+            color_main = QColor(70, 70, 70)
+            color_alter = QColor(45, 45, 45)
 
             tot = int(self.p_height / 20)
             for i in range(tot):

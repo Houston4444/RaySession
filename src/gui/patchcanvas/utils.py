@@ -193,6 +193,14 @@ def CanvasGetPortGroupPosition(group_id: int, port_id: int,
     return (0, 1)
 
 def CanvasGetPortGroupName(group_id: int, ports_ids_list: list)->str:
+    # accept portgrp_id instead of ports_ids_list as second argument
+    if isinstance(ports_ids_list, int):
+        for portgrp in canvas.portgrp_list:
+            if (portgrp.group_id == group_id
+                    and portgrp.portgrp_id == ports_ids_list):
+                ports_ids_list = portgrp.port_id_list
+                break
+    
     ports_names = []
 
     for port in canvas.port_list:
