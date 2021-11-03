@@ -1643,10 +1643,10 @@ class CanvasBox(QGraphicsItem):
             title_x_pos = 29 + (self.p_width - 29 - max_title_size) / 2
 
             if title_x_pos > 43:
-                painter.drawLine(5, 16, title_x_pos -29 -5, 16)
+                painter.drawLine(5, 16, int(title_x_pos -29 -5), 16)
                 painter.drawLine(
-                    title_x_pos + max_title_size + 5, 16,
-                    self.p_width -5, 16)
+                    int(title_x_pos + max_title_size + 5), 16,
+                    int(self.p_width -5), 16)
 
             for title_line in self._title_lines:
                 title_line.x = title_x_pos
@@ -1660,9 +1660,9 @@ class CanvasBox(QGraphicsItem):
                 right_xpos = max(right_xpos, title_line.x + title_line.size)
 
             if left_xpos > 10:
-                painter.drawLine(5, 16, left_xpos - 5, 16)
-                painter.drawLine(right_xpos + 5, 16,
-                                 self.p_width - 5, 16)
+                painter.drawLine(5, 16, int(left_xpos - 5), 16)
+                painter.drawLine(int(right_xpos + 5), 16,
+                                 int(self.p_width - 5), 16)
 
         if self._is_hardware:
             painter.setPen(canvas.theme.box_text_hw)
