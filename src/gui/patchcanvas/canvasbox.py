@@ -82,6 +82,7 @@ from .utils import (CanvasItemFX,
                     CanvasGetPortConnectionList,
                     CanvasGetPortGroupName,
                     CanvasGetPortGroupPosition,
+                    CanvasGetPortPrintName,
                     CanvasCallback,
                     CanvasConnectionConcerns,
                     CanvasGetIcon,
@@ -684,7 +685,7 @@ class CanvasBox(QGraphicsItem):
                     size = max(QFontMetrics(self.m_font_port).width(port.port_name), 20)
                     if port.portgrp_id:
                         size = 0
-                        totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 3
+                        totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 5
 
                         for portgrp in canvas.portgrp_list:
                             if portgrp.portgrp_id == port.portgrp_id:
@@ -879,44 +880,73 @@ class CanvasBox(QGraphicsItem):
         # Horizontal ports re-positioning
         inX = canvas.theme.port_offset
         outX = self.p_width - max_out_width - canvas.theme.port_offset - 12
-        out_in_portgrpX = (self.p_width - canvas.theme.port_offset - 12
-                           - canvas.theme.port_in_portgrp_width)
 
+        # Horizontal ports not in portgroup re-positioning
         for port in port_list:
+            if port.portgrp_id:
+                continue
+
             if port.port_mode == PORT_MODE_INPUT:
                 port.widget.setX(inX)
-                if port.portgrp_id:
-                    port.widget.setPortWidth(canvas.theme.port_in_portgrp_width)
-
-                    for portgrp in canvas.portgrp_list:
-                        if (portgrp.group_id == self.m_group_id
-                                and portgrp.port_id_list
-                                and portgrp.port_id_list[0] == port.port_id):
-                            if portgrp.widget:
-                                portgrp.widget.setPortGroupWidth(max_in_width)
-                                portgrp.widget.setX(canvas.theme.port_offset +1)
-                            break
-
-                else:
-                    port.widget.setPortWidth(max_in_width)
-
+                port.widget.setPortWidth(max_in_width)
             elif port.port_mode == PORT_MODE_OUTPUT:
-                if port.portgrp_id:
-                    port.widget.setX(out_in_portgrpX)
-                    port.widget.setPortWidth(canvas.theme.port_in_portgrp_width)
+                port.widget.setX(outX)
+                port.widget.setPortWidth(max_out_width)
 
-                    for portgrp in canvas.portgrp_list:
-                        if (portgrp.group_id == self.m_group_id
-                                and portgrp.port_id_list
-                                and portgrp.port_id_list[0] == port.port_id):
-                            if portgrp.widget:
-                                portgrp.widget.setX(outX)
-                                portgrp.widget.setPortGroupWidth(max_out_width)
-                            break
-                else:
-                    port.widget.setX(outX)
-                    port.widget.setPortWidth(max_out_width)
+        # Horizontal portgroups and ports in portgroup re-positioning
+        for portgrp in canvas.portgrp_list:
+            if (portgrp.group_id != self.m_group_id
+                    or not self.m_current_port_mode & portgrp.port_mode):
+                continue
 
+            if portgrp.widget is not None:
+                if portgrp.port_mode == PORT_MODE_INPUT:
+                    portgrp.widget.setPortGroupWidth(max_in_width)
+                    portgrp.widget.setX(canvas.theme.port_offset +1)
+                elif portgrp.port_mode == PORT_MODE_OUTPUT:
+                    portgrp.widget.setPortGroupWidth(max_out_width)
+                    portgrp.widget.setX(outX)
+
+            portgrp_name = CanvasGetPortGroupName(
+                portgrp.group_id, portgrp.port_id_list)
+            portgrp.widget.set_print_name(portgrp_name)
+
+            max_port_in_pg_width = canvas.theme.port_in_portgrp_width
+
+            for port in canvas.port_list:
+                if (port.group_id == self.m_group_id
+                        and port.port_id in portgrp.port_id_list
+                        and port.widget is not None):
+                    port_print_name = CanvasGetPortPrintName(
+                        self.m_group_id, port.port_id, portgrp.portgrp_id)
+                    port_print_width = port.widget.get_width_for_text(
+                        port_print_name)
+
+                    # change port in portgroup width only if
+                    # portgrp will have a name
+                    # to ensure that portgroup widget is large enough
+                    if portgrp_name:
+                        max_port_in_pg_width = max(max_port_in_pg_width,
+                                                port_print_width + 4)
+
+                    port.widget.set_port_print_name(port_print_name)
+
+            out_in_portgrpX = (self.p_width - canvas.theme.port_offset - 12
+                               - max_port_in_pg_width)
+
+            portgrp.widget.set_ports_width(max_port_in_pg_width)
+
+            for port in canvas.port_list:
+                if (port.group_id == self.m_group_id
+                        and port.port_id in portgrp.port_id_list
+                        and port.widget is not None):
+                    port.widget.setPortWidth(max_port_in_pg_width)
+                    if port.port_mode == PORT_MODE_INPUT:
+                        port.widget.setX(inX)
+                    elif port.port_mode == PORT_MODE_OUTPUT:
+                        port.widget.setX(out_in_portgrpX)
+
+        # wrapped/unwrapped sizes
         normal_height = max(last_in_pos, last_out_pos)
         wrapped_height = wrapped_port_pos + canvas.theme.port_height
         if len(self._title_lines) >= 3:
@@ -1523,7 +1553,7 @@ class CanvasBox(QGraphicsItem):
             color_alter = canvas.theme.box_bg_2
             gradient_size = 50
 
-            if self._is_hardware:
+            if True or self._is_hardware:
                 box_gradient = QLinearGradient(0, 0, max_size, max_size)
                 color_main = QColor(20, 20, 20)
                 color_alter = QColor(26, 24, 21)
@@ -1533,9 +1563,9 @@ class CanvasBox(QGraphicsItem):
             tot = int(max_size / gradient_size)
             for i in range(tot):
                 if i % 2 == 0:
-                    box_gradient.setColorAt(i/tot, color_main)
+                    box_gradient.setColorAt((i/tot) ** 0.7, color_main)
                 else:
-                    box_gradient.setColorAt(i/tot, color_alter)
+                    box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
 
             painter.setBrush(box_gradient)
             painter.setBrush(box_gradient)
@@ -1551,8 +1581,8 @@ class CanvasBox(QGraphicsItem):
 
         if self.m_group_name.endswith(' Monitor'):
             bor_gradient = QLinearGradient(0, 0, self.p_height, self.p_height)
-            color_main = QColor(80, 80, 80)
-            color_alter = QColor(60, 60, 60)
+            color_main = QColor(70, 70, 70)
+            color_alter = QColor(45, 45, 45)
 
             tot = int(self.p_height / 20)
             for i in range(tot):

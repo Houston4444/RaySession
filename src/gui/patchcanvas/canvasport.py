@@ -61,7 +61,9 @@ from .theme import Theme
 from .connect_menu import MainPortContextMenu
 from .utils import (
     CanvasGetFullPortName,
+    CanvasGetPortGroupPortList,
     CanvasGetPortConnectionList,
+    CanvasGetPortGroupName,
     CanvasGetPortGroupPosition,
     CanvasGetPortPrintName,
     CanvasConnectionMatches,
@@ -87,6 +89,7 @@ class CanvasPort(QGraphicsItem):
         self.m_port_name = port_name
         self.m_portgrp_id = 0
         self.m_is_alternate = is_alternate
+        self.m_port_print_name = port_name
 
         # Base Variables
         self.m_port_width = 15
@@ -173,7 +176,6 @@ class CanvasPort(QGraphicsItem):
 
     def setPortGroupId(self, portgrp_id):
         self.m_portgrp_id = portgrp_id
-        #self.update()
 
     def setPortName(self, port_name):
         if QFontMetrics(self.m_port_font).width(port_name) < QFontMetrics(self.m_port_font).width(self.m_port_name):
@@ -182,12 +184,18 @@ class CanvasPort(QGraphicsItem):
         self.m_port_name = port_name
         self.update()
 
+    def get_width_for_text(self, text: str):
+        return QFontMetrics(self.m_port_font).width(text)
+
     def setPortWidth(self, port_width):
-        if port_width < self.m_port_width:
-            QTimer.singleShot(0, canvas.scene.update)
+        #if port_width < self.m_port_width:
+            #QTimer.singleShot(0, canvas.scene.update)
 
         self.m_port_width = port_width
-        self.update()
+        #self.update()
+
+    def set_port_print_name(self, print_name:str):
+        self.m_port_print_name = print_name
 
     def resetLineMovPositions(self):
         for i in range(len(self.m_line_mov_list)):
@@ -222,6 +230,9 @@ class CanvasPort(QGraphicsItem):
                                    port_id_list[0], port_id_list[1])
 
         CanvasCallback(ACTION_PORTGROUP_ADD, 0, 0, data)
+
+    def set_paint_attributes(self, print_name:str, port_width:int):
+        pass
 
     def connectToHover(self):
         if self.m_hover_item:
@@ -624,16 +635,17 @@ class CanvasPort(QGraphicsItem):
     def boundingRect(self):
         if self.m_portgrp_id:
             if self.m_port_mode == PORT_MODE_INPUT:
-                return QRectF(0, 0, canvas.theme.port_in_portgrp_width, self.m_port_height)
+                return QRectF(0, 0, self.m_port_width, self.m_port_height)
             else:
-                return QRectF(self.m_port_width +12 - canvas.theme.port_in_portgrp_width,
-                              0, canvas.theme.port_in_portgrp_width, self.m_port_height)
+                return QRectF(12, 0,
+                              self.m_port_width, self.m_port_height)
         else:
             return QRectF(0, 0, self.m_port_width + 12, self.m_port_height)
 
     def paint(self, painter, option, widget):
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
+        painter.setRenderHint(QPainter.Antialiasing,
+                              bool(options.antialiasing == ANTIALIASING_FULL))
 
         selected = self.isSelected()
         theme = canvas.theme
@@ -673,7 +685,8 @@ class CanvasPort(QGraphicsItem):
         lineHinting = poly_pen.widthF() / 2
 
         poly_locx = [0, 0, 0, 0, 0, 0]
-        poly_corner_xhinting = (float(canvas.theme.port_height)/2) % floor(float(canvas.theme.port_height)/2)
+        poly_corner_xhinting = ((float(canvas.theme.port_height)/2)
+                                % floor(float(canvas.theme.port_height)/2))
         if poly_corner_xhinting == 0:
             poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
 
@@ -689,16 +702,17 @@ class CanvasPort(QGraphicsItem):
                 poly_locx[2] = self.m_port_width + 12 - poly_corner_xhinting
                 poly_locx[3] = self.m_port_width + 5 - lineHinting
                 poly_locx[4] = lineHinting
-                poly_locx[5] = canvas.theme.port_in_portgrp_width
+                poly_locx[5] = self.m_port_width
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE or is_cv_port:
                 poly_locx[0] = lineHinting
                 poly_locx[1] = self.m_port_width + 5 - lineHinting
                 poly_locx[2] = self.m_port_width + 5 - lineHinting
                 poly_locx[3] = self.m_port_width + 5 - lineHinting
                 poly_locx[4] = lineHinting
-                poly_locx[5] = canvas.theme.port_in_portgrp_width
+                poly_locx[5] = self.m_port_width
             else:
-                qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
+                qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'"
+                          % canvas.theme.port_mode)
                 return
 
         elif self.m_port_mode == PORT_MODE_OUTPUT:
@@ -710,30 +724,23 @@ class CanvasPort(QGraphicsItem):
                 poly_locx[2] = 0 + poly_corner_xhinting
                 poly_locx[3] = 7 + lineHinting
                 poly_locx[4] = self.m_port_width + 12 - lineHinting
-                poly_locx[5] = self.m_port_width + 12 - canvas.theme.port_in_portgrp_width - lineHinting
+                poly_locx[5] = 12 - lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE or is_cv_port:
                 poly_locx[0] = self.m_port_width + 12 - lineHinting
                 poly_locx[1] = 5 + lineHinting
                 poly_locx[2] = 5 + lineHinting
                 poly_locx[3] = 5 + lineHinting
                 poly_locx[4] = self.m_port_width + 12 - lineHinting
-                poly_locx[5] = self.m_port_width + 12 -canvas.theme.port_in_portgrp_width - lineHinting
+                poly_locx[5] = 12 - lineHinting
             else:
-                qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
+                qCritical("PatchCanvas::CanvasPort.paint() - invalid theme port mode '%s'"
+                          % canvas.theme.port_mode)
                 return
 
         else:
-            qCritical("PatchCanvas::CanvasPort.paint() - invalid port mode '%s'" % port_mode2str(self.m_port_mode))
+            qCritical("PatchCanvas::CanvasPort.paint() - invalid port mode '%s'"
+                      % port_mode2str(self.m_port_mode))
             return
-
-        #if is_cv_port and not selected:
-            #poly_color = QColor(170, 140, 150)
-
-        #if self.m_is_alternate:
-            #poly_color = poly_color.lighter(230)
-            #poly_pen.setColor(poly_pen.color().darker(110))
-            #text_pen.setColor(text_pen.color()) #.darker(150))
-            #conn_pen.setColor(conn_pen.color()) #.darker(150))
 
         polygon = QPolygonF()
 
@@ -741,6 +748,8 @@ class CanvasPort(QGraphicsItem):
             first_of_portgrp = False
             last_of_portgrp = False
 
+            # look in portgroup if port is the first,
+            # the last, or not.
             for portgrp in canvas.portgrp_list:
                 if portgrp.portgrp_id == self.m_portgrp_id:
                     if self.m_port_id == portgrp.port_id_list[0]:
@@ -774,7 +783,8 @@ class CanvasPort(QGraphicsItem):
             portRect = polygon.boundingRect().adjusted(
                 -lineHinting+1, -lineHinting+1, lineHinting-1, lineHinting-1)
             portPos = portRect.topLeft()
-            painter.drawTiledPixmap(portRect, canvas.theme.port_bg_pixmap, portPos)
+            painter.drawTiledPixmap(
+                portRect, canvas.theme.port_bg_pixmap, portPos)
         else:
             port_gradient = QLinearGradient(0, 0, 0, self.m_port_height)
 
@@ -803,9 +813,11 @@ class CanvasPort(QGraphicsItem):
                 if self.m_port_mode == PORT_MODE_OUTPUT:
                     painter.drawLine(0, y_line, poly_locx[1], y_line)
                 elif self.m_port_mode == PORT_MODE_INPUT:
-                    painter.drawLine(self.m_port_width + 5, y_line, self.m_port_width + 12, y_line)
+                    painter.drawLine(
+                        self.m_port_width + 5, y_line,
+                        self.m_port_width + 12, y_line)
             else:
-                # draw the little circle for a2j port
+                # draw the little circle for a2j (or MidiBridge) port
                 poly_pen.setWidthF(1.000001)
                 painter.setBrush(canvas.theme.box_bg_1)
 
@@ -822,20 +834,19 @@ class CanvasPort(QGraphicsItem):
         painter.setFont(self.m_port_font)
 
         if self.m_portgrp_id:
-            print_name = CanvasGetPortPrintName(
-                            self.m_group_id, self.m_port_id,
-                            self.m_portgrp_id)
-            print_name_size = QFontMetrics(self.m_port_font).width(print_name)
+            print_name_size = QFontMetrics(self.m_port_font).width(
+                self.m_port_print_name)
+
             if self.m_port_mode == PORT_MODE_OUTPUT:
+                text_pos = QPointF(self.m_port_width + 9 - print_name_size,
+                                   canvas.theme.port_text_ypos)
 
-                text_pos = QPointF(self.m_port_width + 9 - print_name_size, canvas.theme.port_text_ypos)
-
-            if print_name_size > (canvas.theme.port_in_portgrp_width - 4):
+            if print_name_size > (self.m_port_width - 4):
                 painter.setPen(QPen(port_gradient, 3))
                 painter.drawLine(poly_locx[5], 3, poly_locx[5], canvas.theme.port_height - 3)
                 painter.setPen(text_pen)
                 painter.setFont(self.m_port_font)
-            painter.drawText(text_pos, print_name)
+            painter.drawText(text_pos, self.m_port_print_name)
 
         else:
             painter.drawText(text_pos, self.m_port_name)

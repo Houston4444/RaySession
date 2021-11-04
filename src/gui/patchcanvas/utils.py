@@ -193,6 +193,14 @@ def CanvasGetPortGroupPosition(group_id: int, port_id: int,
     return (0, 1)
 
 def CanvasGetPortGroupName(group_id: int, ports_ids_list: list)->str:
+    # accept portgrp_id instead of ports_ids_list as second argument
+    if isinstance(ports_ids_list, int):
+        for portgrp in canvas.portgrp_list:
+            if (portgrp.group_id == group_id
+                    and portgrp.portgrp_id == ports_ids_list):
+                ports_ids_list = portgrp.port_id_list
+                break
+    
     ports_names = []
 
     for port in canvas.port_list:
@@ -203,35 +211,33 @@ def CanvasGetPortGroupName(group_id: int, ports_ids_list: list)->str:
         return ''
 
     portgrp_name_ends = (' ', '_', '.', '-', '#', ':', 'out', 'in', 'Out',
-                         'In', 'Output', 'Input', 'output', 'input' )
+                         'In', 'Output', 'Input', 'output', 'input')
 
     # set portgrp name
     portgrp_name = ''
-    check_character = True
 
     for c in ports_names[0]:
         for eachname in ports_names:
             if not eachname.startswith(portgrp_name + c):
-                check_character = False
                 break
-        if not check_character:
-            break
-        portgrp_name += c
+        else:
+            portgrp_name += c
 
     # reduce portgrp name until it ends with one of the characters
     # in portgrp_name_ends
-    check = False
-    while not check:
-        for x in portgrp_name_ends:
-            if portgrp_name.endswith(x):
+    if not portgrp_name.endswith((' AUX', '_AUX')):
+        check = False
+        while not check:
+            for x in portgrp_name_ends:
+                if portgrp_name.endswith(x):
+                    check = True
+                    break
+
+            if len(portgrp_name) == 0 or portgrp_name in ports_names:
                 check = True
-                break
 
-        if len(portgrp_name) == 0 or portgrp_name in ports_names:
-            check = True
-
-        if not check:
-            portgrp_name = portgrp_name[:-1]
+            if not check:
+                portgrp_name = portgrp_name[:-1]
 
     return portgrp_name
 
@@ -239,8 +245,9 @@ def CanvasGetPortPrintName(group_id, port_id, portgrp_id):
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
-            portgrp_name = CanvasGetPortGroupName(group_id,
-                                                     portgrp.port_id_list)
+            portgrp_name = CanvasGetPortGroupName(
+                group_id, portgrp.port_id_list)
+
             for port in canvas.port_list:
                 if port.group_id == group_id and port.port_id == port_id:
                     return port.port_name.replace(portgrp_name, '', 1)
