@@ -135,7 +135,9 @@ class Port:
 
         if self.full_name.startswith('Midi-Bridge:'):
             long_name = self.full_name.partition(':')[2]
-            return long_name.partition(') ')[2]
+            if ') ' in long_name:
+                return long_name.partition(') ')[2]
+            return long_name
 
         return self.full_name.partition(':')[2]
 
