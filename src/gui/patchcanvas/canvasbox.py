@@ -681,11 +681,10 @@ class CanvasBox(QGraphicsItem):
                         self.m_group_id, port.port_id, port.portgrp_id)
                     first_of_portgrp = bool(port_pos == 0)
                     last_of_portgrp = bool(port_pos + 1 == pg_len)
-
                     size = max(QFontMetrics(self.m_font_port).width(port.port_name), 20)
                     if port.portgrp_id:
                         size = 0
-                        totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 5
+                        totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 6
 
                         for portgrp in canvas.portgrp_list:
                             if portgrp.portgrp_id == port.portgrp_id:

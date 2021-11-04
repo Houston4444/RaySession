@@ -84,7 +84,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         QGraphicsPixmapItem.__init__(self)
         self.setParentItem(parent)
 
-        self.p_size = QRectF(0, 0, 24, 24)
+        self.p_size = QRectF(0.0, 0.0, 24.0, 24.0)
         self.icon = None
         self.x_offset = 4
 
@@ -96,16 +96,16 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         if not self.icon.isNull():
             pixmap = self.icon.pixmap(24, 24)
             self.setPixmap(pixmap)
-            self.setOffset(4, 4)
+            self.setOffset(4.0, 4.0)
 
     def update_zoom(self, scale: float):
         if self.icon is None or scale <= 0.0:
             return
 
-        pixmap = self.icon.pixmap(24 * scale, 24 * scale)
+        pixmap = self.icon.pixmap(int(0.5 + 24 * scale), int(0.5 + 24 * scale))
         self.setPixmap(pixmap)
         self.setScale(1.0 / scale)
-        self.setOffset(self.x_offset * scale, 4 * scale)
+        self.setOffset(float(self.x_offset * scale), float(4 * scale))
 
     def is_null(self)->bool:
         if self.icon is None:
@@ -115,11 +115,11 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
 
     def align_at(self, x_pos: int):
         self.x_offset = x_pos
-        self.setOffset(self.x_offset, 4)
+        self.setOffset(float(self.x_offset), 4.0)
 
     def align_right(self, width: int):
         self.x_offset = width - 28
-        self.setOffset(self.x_offset, 4)
+        self.setOffset(float(self.x_offset), 4.0)
 
     def boundingRect(self):
         return self.p_size
