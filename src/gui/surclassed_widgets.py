@@ -412,9 +412,9 @@ class ZoomSlider(QSlider):
         if 99.99999 < percent < 100.00001:
             self.setValue(500)
         elif percent < 100:
-            self.setValue(self.map_float_to(percent, 20, 100, 0, 500))
+            self.setValue(int(self.map_float_to(percent, 20, 100, 0, 500)))
         else:
-            self.setValue(self.map_float_to(percent, 100, 300, 500, 1000))
+            self.setValue(int(self.map_float_to(percent, 100, 300, 500, 1000)))
         self._show_tool_tip()
 
     def mouseDoubleClickEvent(self, event):
