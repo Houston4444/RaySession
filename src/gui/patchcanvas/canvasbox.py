@@ -82,6 +82,7 @@ from .utils import (CanvasItemFX,
                     CanvasGetPortConnectionList,
                     CanvasGetPortGroupName,
                     CanvasGetPortGroupPosition,
+                    CanvasGetPortPrintName,
                     CanvasCallback,
                     CanvasConnectionConcerns,
                     CanvasGetIcon,
@@ -879,44 +880,73 @@ class CanvasBox(QGraphicsItem):
         # Horizontal ports re-positioning
         inX = canvas.theme.port_offset
         outX = self.p_width - max_out_width - canvas.theme.port_offset - 12
-        out_in_portgrpX = (self.p_width - canvas.theme.port_offset - 12
-                           - canvas.theme.port_in_portgrp_width)
 
+        # Horizontal ports not in portgroup re-positioning
         for port in port_list:
+            if port.portgrp_id:
+                continue
+
             if port.port_mode == PORT_MODE_INPUT:
                 port.widget.setX(inX)
-                if port.portgrp_id:
-                    port.widget.setPortWidth(canvas.theme.port_in_portgrp_width)
-
-                    for portgrp in canvas.portgrp_list:
-                        if (portgrp.group_id == self.m_group_id
-                                and portgrp.port_id_list
-                                and portgrp.port_id_list[0] == port.port_id):
-                            if portgrp.widget:
-                                portgrp.widget.setPortGroupWidth(max_in_width)
-                                portgrp.widget.setX(canvas.theme.port_offset +1)
-                            break
-
-                else:
-                    port.widget.setPortWidth(max_in_width)
-
+                port.widget.setPortWidth(max_in_width)
             elif port.port_mode == PORT_MODE_OUTPUT:
-                if port.portgrp_id:
-                    port.widget.setX(out_in_portgrpX)
-                    port.widget.setPortWidth(canvas.theme.port_in_portgrp_width)
+                port.widget.setX(outX)
+                port.widget.setPortWidth(max_out_width)
 
-                    for portgrp in canvas.portgrp_list:
-                        if (portgrp.group_id == self.m_group_id
-                                and portgrp.port_id_list
-                                and portgrp.port_id_list[0] == port.port_id):
-                            if portgrp.widget:
-                                portgrp.widget.setX(outX)
-                                portgrp.widget.setPortGroupWidth(max_out_width)
-                            break
-                else:
-                    port.widget.setX(outX)
-                    port.widget.setPortWidth(max_out_width)
+        # Horizontal portgroups and ports in portgroup re-positioning
+        for portgrp in canvas.portgrp_list:
+            if (portgrp.group_id != self.m_group_id
+                    or not self.m_current_port_mode & portgrp.port_mode):
+                continue
 
+            if portgrp.widget is not None:
+                if portgrp.port_mode == PORT_MODE_INPUT:
+                    portgrp.widget.setPortGroupWidth(max_in_width)
+                    portgrp.widget.setX(canvas.theme.port_offset +1)
+                elif portgrp.port_mode == PORT_MODE_OUTPUT:
+                    portgrp.widget.setPortGroupWidth(max_out_width)
+                    portgrp.widget.setX(outX)
+
+            portgrp_name = CanvasGetPortGroupName(
+                portgrp.group_id, portgrp.port_id_list)
+            portgrp.widget.set_print_name(portgrp_name)
+
+            max_port_in_pg_width = canvas.theme.port_in_portgrp_width
+
+            for port in canvas.port_list:
+                if (port.group_id == self.m_group_id
+                        and port.port_id in portgrp.port_id_list
+                        and port.widget is not None):
+                    port_print_name = CanvasGetPortPrintName(
+                        self.m_group_id, port.port_id, portgrp.portgrp_id)
+                    port_print_width = port.widget.get_width_for_text(
+                        port_print_name)
+
+                    # change port in portgroup width only if
+                    # portgrp will have a name
+                    # to ensure that portgroup widget is large enough
+                    if portgrp_name:
+                        max_port_in_pg_width = max(max_port_in_pg_width,
+                                                port_print_width + 4)
+
+                    port.widget.set_port_print_name(port_print_name)
+
+            out_in_portgrpX = (self.p_width - canvas.theme.port_offset - 12
+                               - max_port_in_pg_width)
+
+            portgrp.widget.set_ports_width(max_port_in_pg_width)
+
+            for port in canvas.port_list:
+                if (port.group_id == self.m_group_id
+                        and port.port_id in portgrp.port_id_list
+                        and port.widget is not None):
+                    port.widget.setPortWidth(max_port_in_pg_width)
+                    if port.port_mode == PORT_MODE_INPUT:
+                        port.widget.setX(inX)
+                    elif port.port_mode == PORT_MODE_OUTPUT:
+                        port.widget.setX(out_in_portgrpX)
+
+        # wrapped/unwrapped sizes
         normal_height = max(last_in_pos, last_out_pos)
         wrapped_height = wrapped_port_pos + canvas.theme.port_height
         if len(self._title_lines) >= 3:

@@ -87,6 +87,9 @@ class CanvasPortGroup(QGraphicsItem):
         self.m_portgrp_font.setPixelSize(canvas.theme.port_font_size)
         self.m_portgrp_font.setWeight(canvas.theme.port_font_state)
 
+        self.m_ports_width = canvas.theme.port_in_portgrp_width
+        self.m_print_name = ''
+
         self.m_line_mov_list = []
         self.m_dotcon_list = []
         self.m_last_rclick_item = None
@@ -158,11 +161,17 @@ class CanvasPortGroup(QGraphicsItem):
         return CanvasPortGroupType
 
     def setPortGroupWidth(self, portgrp_width):
-        if portgrp_width < self.m_portgrp_width:
-            QTimer.singleShot(0, canvas.scene.update)
+        #if portgrp_width < self.m_portgrp_width:
+            #QTimer.singleShot(0, canvas.scene.update)
 
         self.m_portgrp_width = portgrp_width
-        self.update()
+        #self.update()
+
+    def set_ports_width(self, ports_width:int):
+        self.m_ports_width = ports_width
+
+    def set_print_name(self, print_name:str):
+        self.m_print_name = print_name
 
     def resetDotLines(self):
         for connection in self.m_dotcon_list:
@@ -636,22 +645,22 @@ class CanvasPortGroup(QGraphicsItem):
                     port_width = max(port_width, port_in_p_width)
 
             text_pos = QPointF(
-                port_width + 3,
+                self.m_ports_width + 3,
                 canvas.theme.port_text_ypos
                     + (canvas.theme.port_height * (len(self.m_port_id_list) -1)/2))
 
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
-                poly_locx[0] = canvas.theme.port_in_portgrp_width - lineHinting
+                poly_locx[0] = self.m_ports_width - lineHinting
                 poly_locx[1] = self.m_portgrp_width + 3 + lineHinting
                 poly_locx[2] = self.m_portgrp_width + 10 + lineHinting
                 poly_locx[3] = self.m_portgrp_width + 3 + lineHinting
-                poly_locx[4] = canvas.theme.port_in_portgrp_width - lineHinting
+                poly_locx[4] = self.m_ports_width - lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
-                poly_locx[0] = canvas.theme.port_in_portgrp_width - lineHinting
+                poly_locx[0] = self.m_ports_width - lineHinting
                 poly_locx[1] = self.m_portgrp_width + 5 + lineHinting
                 poly_locx[2] = self.m_portgrp_width + 5 + lineHinting
                 poly_locx[3] = self.m_portgrp_width + 5 + lineHinting
-                poly_locx[4] = canvas.theme.port_in_portgrp_width - lineHinting
+                poly_locx[4] = self.m_ports_width - lineHinting
             else:
                 qCritical("PatchCanvas::CanvasPortGroup.paint() - invalid theme port mode '%s'"
                           % canvas.theme.port_mode)
@@ -663,19 +672,21 @@ class CanvasPortGroup(QGraphicsItem):
 
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
                 poly_locx[0] = self.m_portgrp_width + 12 \
-                               - canvas.theme.port_in_portgrp_width - lineHinting
+                               - self.m_ports_width - lineHinting
                 poly_locx[1] = 7 + lineHinting
                 poly_locx[2] = 0 + lineHinting
                 poly_locx[3] = 7 + lineHinting
-                poly_locx[4] = self.m_portgrp_width + 12 - canvas.theme.port_in_portgrp_width - lineHinting
+                poly_locx[4] = self.m_portgrp_width + 12 - self.m_ports_width - lineHinting
             elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
-                poly_locx[0] = self.m_portgrp_width + 12 - canvas.theme.port_in_portgrp_width - lineHinting
+                poly_locx[0] = self.m_portgrp_width + 12 - self.m_ports_width - lineHinting
                 poly_locx[1] = 5 + lineHinting
                 poly_locx[2] = 5 + lineHinting
                 poly_locx[3] = 5 + lineHinting
-                poly_locx[4] = self.m_portgrp_width + 12 - canvas.theme.port_in_portgrp_width - lineHinting
+                poly_locx[4] = self.m_portgrp_width + 12 - self.m_ports_width - lineHinting
             else:
-                qCritical("PatchCanvas::CanvasPortGroup.paint() - invalid theme port mode '%s'" % canvas.theme.port_mode)
+                qCritical(
+                    "PatchCanvas::CanvasPortGroup.paint() - invalid theme port mode '%s'"
+                    % canvas.theme.port_mode)
                 return
 
         else:
@@ -714,9 +725,7 @@ class CanvasPortGroup(QGraphicsItem):
 
         painter.setPen(text_pen)
         painter.setFont(self.m_portgrp_font)
-        portgrp_name = CanvasGetPortGroupName(self.m_group_id,
-                                              self.m_port_id_list)
-        painter.drawText(text_pos, portgrp_name)
+        painter.drawText(text_pos, self.m_print_name)
 
         painter.restore()
 
