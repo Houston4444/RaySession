@@ -131,13 +131,21 @@ class Port:
     def short_name(self)->str:
         if self.full_name.startswith('a2j:'):
             long_name = self.full_name.partition(':')[2]
-            return long_name.partition(': ')[2]
+            if ': ' in long_name:
+                # normal case for a2j
+                return long_name.partition(': ')[2]
 
         if self.full_name.startswith('Midi-Bridge:'):
+            # supress 'Midi-Bridge:' at port name begginning
             long_name = self.full_name.partition(':')[2]
             if ') ' in long_name:
+                # normal case, name is after ') '
                 return long_name.partition(') ')[2]
-            return long_name
+
+            if ': ' in long_name:
+                # pipewire jack.filter_name = True
+                # Midi-bridge names starts with 'MidiBridge:ClientName:'
+                return long_name.partition(': ')[2]
 
         return self.full_name.partition(':')[2]
 
