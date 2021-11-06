@@ -745,6 +745,12 @@ class Group:
             if display_name.startswith('Audio'):
                 display_name = display_name.replace('Audio ', '')
 
+        # reduce graceful name for pipewire Midi-Bridge with
+        # option jack.filter_name = true
+        if (port.full_name.startswith('Midi-Bridge')
+                and display_name.startswith(('capture_', 'playback_'))):
+            display_name = display_name.partition('_')[2]
+
         port.display_name = display_name if display_name else s_display_name
 
     def add_portgroup(self, portgroup):
