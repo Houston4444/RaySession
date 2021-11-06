@@ -622,7 +622,7 @@ class PatchScene(QGraphicsScene):
 
         for group in canvas.group_list:
             for widget in group.widgets:
-                if widget is None:
+                if widget is None or not widget.isVisible():
                     continue
 
                 item_rect = widget.boundingRect().translated(widget.scenePos())
