@@ -90,6 +90,9 @@ class CanvasPort(QGraphicsItem):
         self.m_portgrp_id = 0
         self.m_is_alternate = is_alternate
         self.m_print_name = port_name
+        self.m_print_name_right = ''
+        self.m_name_truncked = False
+        self.m_trunck_sep = '⠿'
 
         # Base Variables
         self.m_port_width = 15
@@ -199,6 +202,7 @@ class CanvasPort(QGraphicsItem):
 
     def set_print_name(self, print_name:str, width_limited: int):
         self.m_print_name = print_name
+        self.m_name_truncked = False
 
         if width_limited:
             sizer = QFontMetrics(self.m_port_font)
@@ -207,7 +211,7 @@ class CanvasPort(QGraphicsItem):
                 name_len = len(self.m_print_name)
                 middle = int(name_len / 2)
                 left_text = self.m_print_name[:middle]
-                middle_text = '[..]'
+                middle_text = self.m_trunck_sep
                 right_text = self.m_print_name[middle + 1:]
                 left_size = sizer.width(left_text)
                 middle_size = sizer.width(middle_text)
@@ -224,10 +228,19 @@ class CanvasPort(QGraphicsItem):
                     if not (left_text or right_text):
                         break
 
-                self.m_print_name = left_text + middle_text + right_text
+                self.m_print_name = left_text
+                self.m_print_name_right = right_text
+                self.m_name_truncked = True
 
     def get_text_width(self):
-        return QFontMetrics(self.m_port_font).width(self.m_print_name)
+        sizer = QFontMetrics(self.m_port_font)
+
+        if self.m_name_truncked:
+            return (sizer.width(self.m_print_name)
+                    + sizer.width(self.m_trunck_sep)
+                    + sizer.width(self.m_print_name_right))
+            
+        return sizer.width(self.m_print_name)
 
     def resetLineMovPositions(self):
         for i in range(len(self.m_line_mov_list)):
@@ -865,9 +878,11 @@ class CanvasPort(QGraphicsItem):
         painter.setPen(text_pen)
         painter.setFont(self.m_port_font)
 
+        sizer = QFontMetrics(self.m_port_font)
+        sep_width = sizer.width(self.m_trunck_sep)
+
         if self.m_portgrp_id:
-            print_name_size = QFontMetrics(self.m_port_font).width(
-                self.m_print_name)
+            print_name_size = self.get_text_width()
 
             if self.m_port_mode == PORT_MODE_OUTPUT:
                 text_pos = QPointF(self.m_port_width + 9 - print_name_size,
@@ -878,10 +893,15 @@ class CanvasPort(QGraphicsItem):
                 painter.drawLine(poly_locx[5], 3, poly_locx[5], canvas.theme.port_height - 3)
                 painter.setPen(text_pen)
                 painter.setFont(self.m_port_font)
-            painter.drawText(text_pos, self.m_print_name)
 
-        else:
-            painter.drawText(text_pos, self.m_print_name)
+        painter.drawText(text_pos, self.m_print_name)
+        
+        if self.m_name_truncked:
+            sep_x = text_pos.x() + sizer.width(self.m_print_name)
+            
+            painter.drawText(QPointF(sep_x + sep_width, text_pos.y()), self.m_print_name_right)
+            painter.setPen(poly_pen)
+            painter.drawText(QPointF(sep_x, text_pos.y() + 1), self.m_trunck_sep)
 
         if canvas.theme.idx == Theme.THEME_OOSTUDIO and canvas.theme.port_bg_pixmap:
             painter.setPen(Qt.NoPen)

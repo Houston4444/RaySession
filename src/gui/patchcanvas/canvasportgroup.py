@@ -89,7 +89,10 @@ class CanvasPortGroup(QGraphicsItem):
 
         self.m_ports_width = canvas.theme.port_in_portgrp_width
         self.m_print_name = ''
-        self.m_normal_print_name = '' # same as m_print_name but not reduced 
+        self.m_normal_print_name = '' # same as m_print_name but not reduced
+        self.m_print_name_right = ''
+        self.m_name_truncked = False
+        self.m_trunck_sep = '⠿'
 
         self.m_line_mov_list = []
         self.m_dotcon_list = []
@@ -174,6 +177,7 @@ class CanvasPortGroup(QGraphicsItem):
     def set_print_name(self, print_name:str, width_limited: int):
         self.m_print_name = print_name
         self.m_normal_print_name = print_name
+        self.m_name_truncked = False
 
         if width_limited:
             sizer = QFontMetrics(self.m_portgrp_font)
@@ -182,7 +186,7 @@ class CanvasPortGroup(QGraphicsItem):
                 name_len = len(self.m_print_name)
                 middle = int(name_len / 2)
                 left_text = self.m_print_name[:middle]
-                middle_text = '[..]'
+                middle_text = self.m_trunck_sep
                 right_text = self.m_print_name[middle + 1:]
                 left_size = sizer.width(left_text)
                 middle_size = sizer.width(middle_text)
@@ -199,13 +203,22 @@ class CanvasPortGroup(QGraphicsItem):
                     if not (left_text or right_text):
                         break
 
-                self.m_print_name = left_text + middle_text + right_text
+                self.m_print_name = left_text
+                self.m_print_name_right = right_text
+                self.m_name_truncked = True
 
     def reduce_print_name(self, width_limited:int):
         self.set_print_name(self.m_normal_print_name, width_limited)
 
     def get_text_width(self):
-        return QFontMetrics(self.m_portgrp_font).width(self.m_print_name)
+        sizer = QFontMetrics(self.m_portgrp_font)
+
+        if self.m_name_truncked:
+            return (sizer.width(self.m_print_name)
+                    + sizer.width(self.m_trunck_sep)
+                    + sizer.width(self.m_print_name_right))
+            
+        return sizer.width(self.m_print_name)
 
     def resetDotLines(self):
         for connection in self.m_dotcon_list:
@@ -760,6 +773,15 @@ class CanvasPortGroup(QGraphicsItem):
         painter.setPen(text_pen)
         painter.setFont(self.m_portgrp_font)
         painter.drawText(text_pos, self.m_print_name)
+        if self.m_name_truncked:
+            sizer = QFontMetrics(self.m_portgrp_font)
+            sep_x = text_pos.x() + sizer.width(self.m_print_name)
+            sep_width = sizer.width(self.m_trunck_sep)
+
+            painter.drawText(QPointF(sep_x + sep_width, text_pos.y()),
+                             self.m_print_name_right)
+            painter.setPen(poly_pen)
+            painter.drawText(QPointF(sep_x, text_pos.y() + 1), self.m_trunck_sep)
 
         painter.restore()
 

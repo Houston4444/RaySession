@@ -209,8 +209,10 @@ class Port:
         if not PatchbayManager.use_graceful_names:
             display_name = self.short_name()
 
-        patchcanvas.changePortProperties(self.group_id, self.port_id,
-                                         self.portgroup_id, display_name)
+        patchcanvas.changePortProperties(
+            self.group_id, self.port_id,
+            self.portgroup_id, display_name,
+            fast=PatchbayManager.optimized_operation)
 
     def __lt__(self, other):
         if self.type < other.type:
@@ -1209,7 +1211,9 @@ class PatchbayManager:
     @classmethod
     def optimize_operation(cls, yesno: bool):
         cls.optimized_operation = yesno
-        patchcanvas.canvas.scene.prevent_box_move = yesno
+        if (patchcanvas.canvas is not None
+                and patchcanvas.canvas.scene is not None):
+            patchcanvas.canvas.scene.prevent_box_move = yesno
 
     @classmethod
     def new_portgroup(cls, group_id: int, port_mode: int, ports: tuple):
@@ -1433,8 +1437,11 @@ class PatchbayManager:
 
     def toggle_graceful_names(self):
         PatchbayManager.set_use_graceful_names(not self.use_graceful_names)
+        PatchbayManager.optimize_operation(True)
         for group in self.groups:
             group.update_ports_in_canvas()
+        PatchbayManager.optimize_operation(False)
+        patchcanvas.redrawAllGroups()
 
     def toggle_full_screen(self):
         self.session.main_win.toggle_scene_full_screen()

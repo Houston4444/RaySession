@@ -711,6 +711,9 @@ def redrawAllGroups():
             if box is not None:
                 box.updatePositions()
 
+    if canvas.scene is None:
+        return
+
     QTimer.singleShot(0, canvas.scene.update)
 
 def redrawGroup(group_id: int):
@@ -969,7 +972,7 @@ def removePort(group_id, port_id, fast=False):
 
     qCritical("PatchCanvas::removePort(%i, %i) - Unable to find port to remove" % (group_id, port_id))
 
-def changePortProperties(group_id, port_id, portgrp_id, new_port_name):
+def changePortProperties(group_id, port_id, portgrp_id, new_port_name, fast=False):
     if canvas.debug:
         print("PatchCanvas::renamePort(%i, %i, %s)" % (group_id, port_id, new_port_name.encode()))
 
@@ -978,6 +981,9 @@ def changePortProperties(group_id, port_id, portgrp_id, new_port_name):
             if new_port_name != port.port_name:
                 port.port_name = new_port_name
                 port.widget.setPortName(new_port_name)
+
+            if fast:
+                return
 
             port.widget.parentItem().updatePositions()
 

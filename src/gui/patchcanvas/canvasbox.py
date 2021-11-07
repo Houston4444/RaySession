@@ -701,7 +701,7 @@ class CanvasBox(QGraphicsItem):
                                 
                                 if portgrp_name:
                                     portgrp.widget.set_print_name(
-                                        portgrp_name, max_pwidth - canvas.theme.port_in_portgrp_width)
+                                        portgrp_name, max_pwidth - canvas.theme.port_in_portgrp_width - 5)
                                 else:
                                     portgrp.widget.set_print_name('', 0)
 
@@ -709,9 +709,9 @@ class CanvasBox(QGraphicsItem):
                                 CanvasGetPortPrintName(
                                     self.m_group_id, port.port_id, port.portgrp_id),
                                 int(max_pwidth/2))
-                                
-                            if portgrp.widget.get_text_width() > max_pwidth - port.widget.get_text_width():
-                                portgrp.widget.reduce_print_name(max_pwidth - port.widget.get_text_width())
+
+                            if portgrp.widget.get_text_width() + 5 > max_pwidth - port.widget.get_text_width():
+                                portgrp.widget.reduce_print_name(max_pwidth - port.widget.get_text_width() - 5)
 
                             size = portgrp.widget.get_text_width() \
                                    + max(port.widget.get_text_width() + 6,
@@ -1594,8 +1594,6 @@ class CanvasBox(QGraphicsItem):
                     box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
 
             painter.setBrush(box_gradient)
-            painter.setBrush(box_gradient)
-
         else:
             painter.setBrush(canvas.theme.box_bg_1)
 
