@@ -1322,4 +1322,8 @@ def set_prevent_overlap(yesno: bool):
     
     if yesno:
         redrawAllGroups()
+        
+def set_max_port_width(width: int):
+    options.max_port_width = width
+    redrawAllGroups()
 # ------------------------------------------------------------------------------------------------------------

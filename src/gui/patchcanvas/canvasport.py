@@ -89,7 +89,7 @@ class CanvasPort(QGraphicsItem):
         self.m_port_name = port_name
         self.m_portgrp_id = 0
         self.m_is_alternate = is_alternate
-        self.m_port_print_name = port_name
+        self.m_print_name = port_name
 
         # Base Variables
         self.m_port_width = 15
@@ -187,6 +187,9 @@ class CanvasPort(QGraphicsItem):
     def get_width_for_text(self, text: str):
         return QFontMetrics(self.m_port_font).width(text)
 
+    def reduce_print_text(self, print_text: str):
+        pass
+
     def setPortWidth(self, port_width):
         #if port_width < self.m_port_width:
             #QTimer.singleShot(0, canvas.scene.update)
@@ -194,8 +197,37 @@ class CanvasPort(QGraphicsItem):
         self.m_port_width = port_width
         #self.update()
 
-    def set_port_print_name(self, print_name:str):
-        self.m_port_print_name = print_name
+    def set_print_name(self, print_name:str, width_limited: int):
+        self.m_print_name = print_name
+
+        if width_limited:
+            sizer = QFontMetrics(self.m_port_font)
+
+            if sizer.width(self.m_print_name) > width_limited:
+                name_len = len(self.m_print_name)
+                middle = int(name_len / 2)
+                left_text = self.m_print_name[:middle]
+                middle_text = '[..]'
+                right_text = self.m_print_name[middle + 1:]
+                left_size = sizer.width(left_text)
+                middle_size = sizer.width(middle_text)
+                right_size = sizer.width(right_text)
+
+                while left_size + middle_size + right_size > width_limited:
+                    if left_size > right_size:
+                        left_text = left_text[:-1]
+                        left_size = sizer.width(left_text)
+                    else:
+                        right_text = right_text[1:]
+                        right_size = sizer.width(right_text)
+                        
+                    if not (left_text or right_text):
+                        break
+
+                self.m_print_name = left_text + middle_text + right_text
+
+    def get_text_width(self):
+        return QFontMetrics(self.m_port_font).width(self.m_print_name)
 
     def resetLineMovPositions(self):
         for i in range(len(self.m_line_mov_list)):
@@ -835,7 +867,7 @@ class CanvasPort(QGraphicsItem):
 
         if self.m_portgrp_id:
             print_name_size = QFontMetrics(self.m_port_font).width(
-                self.m_port_print_name)
+                self.m_print_name)
 
             if self.m_port_mode == PORT_MODE_OUTPUT:
                 text_pos = QPointF(self.m_port_width + 9 - print_name_size,
@@ -846,10 +878,10 @@ class CanvasPort(QGraphicsItem):
                 painter.drawLine(poly_locx[5], 3, poly_locx[5], canvas.theme.port_height - 3)
                 painter.setPen(text_pen)
                 painter.setFont(self.m_port_font)
-            painter.drawText(text_pos, self.m_port_print_name)
+            painter.drawText(text_pos, self.m_print_name)
 
         else:
-            painter.drawText(text_pos, self.m_port_name)
+            painter.drawText(text_pos, self.m_print_name)
 
         if canvas.theme.idx == Theme.THEME_OOSTUDIO and canvas.theme.port_bg_pixmap:
             painter.setPen(Qt.NoPen)

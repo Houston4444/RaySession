@@ -1181,6 +1181,8 @@ class PatchbayManager:
             self.set_elastic_canvas)
         self.options_dialog.prevent_overlap_checked.connect(
             self.set_prevent_overlap)
+        self.options_dialog.max_port_width_changed.connect(
+            patchcanvas.set_max_port_width)
 
     @staticmethod
     def send_to_patchbay_daemon(*args):

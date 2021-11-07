@@ -467,6 +467,8 @@ class MainWindow(QMainWindow):
         options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
         options.prevent_overlap = RS.settings.value(
             'Canvas/prevent_overlap', True, type=bool)
+        options.max_port_width = RS.settings.value(
+            'Canvas/max_port_width', 160, type=int)
 
         features = patchcanvas.features_t()
         features.group_info = False

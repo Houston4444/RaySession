@@ -82,6 +82,9 @@ class JackPort:
             self.alias_1 = alias_1
             self.alias_2 = alias_2
 
+    def __lt__(self, other):
+        return self.uuid < other.uuid
+
 
 class MainObject:
     port_list = []
@@ -354,6 +357,8 @@ class MainObject:
                 continue
 
             self.client_list.append({'name': client_name, 'uuid': int(uuid)})
+
+        #self.port_list.sort()
     
     def jack_shutdown_callback(self, arg=None)->int:
         self.jack_running = False

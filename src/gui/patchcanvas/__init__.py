@@ -128,7 +128,8 @@ class options_t(object):
         'eyecandy',
         'inline_displays',
         'elastic',
-        'prevent_overlap'
+        'prevent_overlap',
+        'max_port_width'
     ]
 
 # Canvas features
@@ -318,6 +319,7 @@ options.eyecandy = EYECANDY_SMALL
 options.inline_displays = False
 options.elastic = True
 options.prevent_overlap = True
+options.max_port_width = 160
 
 features = features_t()
 features.group_info   = False
@@ -338,6 +340,7 @@ def setOptions(new_options):
     options.inline_displays = new_options.inline_displays
     options.elastic = new_options.elastic
     options.prevent_overlap = new_options.prevent_overlap
+    options.max_port_width = new_options.max_port_width
 
 def setFeatures(new_features):
     if canvas.initiated: return

@@ -668,6 +668,7 @@ class CanvasBox(QGraphicsItem):
             elif n_outs > n_ins:
                 winner = PORT_MODE_OUTPUT
 
+        # ports Y positioning, and get width informations
         for port_type in port_types:
             for alternate in (False, True):
                 for port in port_list:
@@ -675,25 +676,50 @@ class CanvasBox(QGraphicsItem):
                             or port.is_alternate != alternate):
                         continue
                     
+                    ## uncomment this block to enable
+                    ## inputs and outputs in down order
+                    ## to win space in some cases
                     #last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
                     
                     port_pos, pg_len = CanvasGetPortGroupPosition(
                         self.m_group_id, port.port_id, port.portgrp_id)
                     first_of_portgrp = bool(port_pos == 0)
                     last_of_portgrp = bool(port_pos + 1 == pg_len)
-                    size = max(QFontMetrics(self.m_font_port).width(port.port_name), 20)
-                    if port.portgrp_id:
-                        size = 0
-                        totsize = QFontMetrics(self.m_font_port).width(port.port_name) + 6
+                    size = 0
 
+                    max_pwidth = options.max_port_width
+
+                    if port.portgrp_id:
                         for portgrp in canvas.portgrp_list:
-                            if portgrp.portgrp_id == port.portgrp_id:
+                            if not (portgrp.group_id == self.m_group_id
+                                    and portgrp.portgrp_id == port.portgrp_id):
+                                continue
+
+                            if port.port_id == portgrp.port_id_list[0]:
                                 portgrp_name = CanvasGetPortGroupName(
                                     self.m_group_id, portgrp.port_id_list)
-                                size = QFontMetrics(self.m_font_port).width(portgrp_name) \
-                                       + canvas.theme.port_in_portgrp_width
-                                break
-                        size = max(size, totsize)
+                                
+                                if portgrp_name:
+                                    portgrp.widget.set_print_name(
+                                        portgrp_name, max_pwidth - canvas.theme.port_in_portgrp_width)
+                                else:
+                                    portgrp.widget.set_print_name('', 0)
+
+                            port.widget.set_print_name(
+                                CanvasGetPortPrintName(
+                                    self.m_group_id, port.port_id, port.portgrp_id),
+                                int(max_pwidth/2))
+                                
+                            if portgrp.widget.get_text_width() > max_pwidth - port.widget.get_text_width():
+                                portgrp.widget.reduce_print_name(max_pwidth - port.widget.get_text_width())
+
+                            size = portgrp.widget.get_text_width() \
+                                   + max(port.widget.get_text_width() + 6,
+                                         canvas.theme.port_in_portgrp_width)
+                            break
+                    else:
+                        port.widget.set_print_name(port.port_name, max_pwidth)
+                        size = max(port.widget.get_text_width(), 20)
 
                     if port.port_mode == PORT_MODE_INPUT:
                         max_in_width = max(max_in_width, size)
@@ -906,9 +932,9 @@ class CanvasBox(QGraphicsItem):
                     portgrp.widget.setPortGroupWidth(max_out_width)
                     portgrp.widget.setX(outX)
 
-            portgrp_name = CanvasGetPortGroupName(
-                portgrp.group_id, portgrp.port_id_list)
-            portgrp.widget.set_print_name(portgrp_name)
+            #portgrp_name = CanvasGetPortGroupName(
+                #portgrp.group_id, portgrp.port_id_list)
+            #portgrp.widget.set_print_name(portgrp_name)
 
             max_port_in_pg_width = canvas.theme.port_in_portgrp_width
 
@@ -916,19 +942,20 @@ class CanvasBox(QGraphicsItem):
                 if (port.group_id == self.m_group_id
                         and port.port_id in portgrp.port_id_list
                         and port.widget is not None):
-                    port_print_name = CanvasGetPortPrintName(
-                        self.m_group_id, port.port_id, portgrp.portgrp_id)
-                    port_print_width = port.widget.get_width_for_text(
-                        port_print_name)
+                    #port_print_name = CanvasGetPortPrintName(
+                        #self.m_group_id, port.port_id, portgrp.portgrp_id)
+                    #port_print_width = port.widget.get_width_for_text(
+                        #port_print_name)
+                    port_print_width = port.widget.get_text_width()
 
                     # change port in portgroup width only if
                     # portgrp will have a name
                     # to ensure that portgroup widget is large enough
                     if portgrp_name:
                         max_port_in_pg_width = max(max_port_in_pg_width,
-                                                port_print_width + 4)
+                                                   port_print_width + 4)
 
-                    port.widget.set_port_print_name(port_print_name)
+                    #port.widget.set_print_name(port_print_name, 150)
 
             out_in_portgrpX = (self.p_width - canvas.theme.port_offset - 12
                                - max_port_in_pg_width)

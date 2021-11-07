@@ -26,6 +26,8 @@ class CanvasOptionsDialog(QDialog):
             'Canvas/elastic', True, type=bool)
         self.prevent_overlap = RS.settings.value(
             'Canvas/prevent_overlap', True, type=bool)
+        self.max_port_width = RS.settings.value(
+            'Canvas/max_port_width', 170, type=int)
 
         self.ui.checkBoxGracefulNames.setChecked(
             self.gracious_names)
@@ -47,6 +49,8 @@ class CanvasOptionsDialog(QDialog):
             self.ui.comboBoxTheme.setCurrentIndex(1)
         elif current_theme == "Modern Dark":
             self.ui.comboBoxTheme.setCurrentIndex(2)
+            
+        self.ui.spinBoxMaxPortWidth.setValue(self.max_port_width)
 
         self.gracious_names_checked = self.ui.checkBoxGracefulNames.stateChanged
         self.a2j_grouped_checked = self.ui.checkBoxA2J.stateChanged
@@ -54,6 +58,7 @@ class CanvasOptionsDialog(QDialog):
         self.theme_changed = self.ui.comboBoxTheme.currentIndexChanged
         self.elastic_checked = self.ui.checkBoxElastic.stateChanged
         self.prevent_overlap_checked = self.ui.checkBoxPreventOverlap.stateChanged
+        self.max_port_width_changed = self.ui.spinBoxMaxPortWidth.valueChanged
 
     def get_gracious_names(self)->bool:
         return self.ui.checkBoxGracefulNames.isChecked()
@@ -70,6 +75,9 @@ class CanvasOptionsDialog(QDialog):
     def get_prevent_overlap(self)->bool:
         return self.ui.checkBoxPreventOverlap.isChecked()
 
+    def get_max_port_width(self)->int:
+        return self.ui.spinBoxMaxPortWidth.value()
+
     def closeEvent(self, event):
         RS.settings.setValue('Canvas/use_graceful_names',
                              self.get_gracious_names())
@@ -81,4 +89,6 @@ class CanvasOptionsDialog(QDialog):
                              self.get_elastic())
         RS.settings.setValue('Canvas/prevent_overlap',
                              self.get_prevent_overlap())
+        RS.settings.setValue('Canvas/max_port_width',
+                             self.get_max_port_width())
         QDialog.closeEvent(self, event)
