@@ -34,7 +34,7 @@ The required build dependencies are: <i>(devel packages of these)</i>
  - qtchooser
 
 On Debian and Ubuntu, use these commands to install all build dependencies: <br/>
-`$ sudo apt-get install python3-pyqt5 pyqt5-dev-tools qtchooser`
+`$ sudo apt-get install python3-pyqt5 pyqt5-dev-tools qtchooser qttools5-dev-tools`
 
 To run it, you'll additionally need:
 
