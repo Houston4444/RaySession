@@ -4,7 +4,9 @@ server sends to it the following message
 
 /nsm/client/brother_client_state s:client_id i:is_started
 
-where is_started is set to 1 if client is started, else 0
+where 'is_started' is set to 1 if client is started, else 0
+
+This message is sent just before to send it the /nsm/client/open message.
 
 at each event, this monitor client will receive
 
@@ -30,3 +32,6 @@ from external, starting it with NSM_URL=server_url client_executable
 
 in RaySession, 'client_removed' event happens when a client
 is definitely removed from the trash.
+
+Note that a monitor client doesn't receives /nsm/client/monitor_event if the event
+concerns this monitor client.
