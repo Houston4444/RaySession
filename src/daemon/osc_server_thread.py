@@ -491,8 +491,8 @@ class OscServerThread(ClientCommunicating):
     def rayServerMonitorAnnounce(self, path, args, types, src_addr):
         monitor_addr = src_addr
         self.monitor_list.append(monitor_addr)
-        self.send(src_addr, '/reply', path, 'announced')
         self.session.send_initial_monitor(src_addr, monitor_is_client=False)
+        self.send(src_addr, '/reply', path, 'announced')
     
     @ray_method('/ray/server/monitor_disannounce', '')
     def rayServerMonitorDisannounce(self, path, args, types, src_addr):
