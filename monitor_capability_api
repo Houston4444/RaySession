@@ -2,7 +2,7 @@
 when a client informs NSM server it has ':monitor:' capability
 server sends to it the following message
 
-/nsm/client/brother_client_state s:client_id i:is_started
+/nsm/client/monitor_state s:client_id i:is_started
 
 where 'is_started' is set to 1 if client is started, else 0
 

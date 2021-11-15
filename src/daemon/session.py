@@ -682,14 +682,14 @@ class Session(ServerSender):
 
             self.send(
                 monitor_client.addr,
-                '/nsm/client/brother_client_state',
+                '/nsm/client/monitor_state',
                 client.client_id,
                 int(client.is_running()))
             
         for client in self.trashed_clients:
             self.send(
                 monitor_client.addr,
-                '/nsm/client/brother_client_state',
+                '/nsm/client/monitor_state',
                 client.client_id,
                 0)
             
