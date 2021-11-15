@@ -1,14 +1,23 @@
 
+when a client informs NSM server it has ':monitor:' capability
+server sends to it the following message
+
+/nsm/client/brother_client_state s:client_id i:is_started
+
+where is_started is set to 1 if client is started, else 0
+
+at each event, this monitor client will receive
+
 /nsm/client/monitor_event s:event s:client_id
 
 where 'event' can be
 
-client_stopped_by_server
-client_stopped_by_itself
 client_started
 client_joined
 client_ready
 client_saved
+client_stopped_by_server
+client_stopped_by_itself
 client_removed
 client_open_error
 client_save_error

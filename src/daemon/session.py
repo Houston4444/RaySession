@@ -681,15 +681,23 @@ class Session(ServerSender):
                 continue
 
             self.send(
-                monitor_client.src_addr,
+                monitor_client.addr,
                 '/nsm/client/brother_client_state',
                 client.client_id,
                 int(client.is_running()))
             
+        for client in self.trashed_clients:
+            self.send(
+                monitor_client.addr,
+                '/nsm/client/brother_client_state',
+                client.client_id,
+                0)
+            
     def send_monitor_event(self, event:str, client_id = ''):
         ''' send an event message to clients capable of ":monitor:" '''
         for client in self.clients:
-            if client.is_capable_of(':monitor:'):
+            if (client.client_id != client_id
+                    and client.is_capable_of(':monitor:')):
                 client.send_to_self_address(
                     '/nsm/client/monitor_event', event, client_id)
 

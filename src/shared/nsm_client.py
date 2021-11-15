@@ -77,6 +77,14 @@ class NSMThread(ServerThread):
             'serverOSC::%s_receives %s, %s' %
             (self.name, path, str(args)))
         self.signaler.hide_optional_gui.emit()
+    
+    @make_method('/nsm/client/brother_client_state', 'si')
+    def nsm_client_brother_client_state(self, path, args):
+        print('rale', args)
+    
+    @make_method('/nsm/client/monitor_event', 'ss')
+    def nsm_client_monitor_event(self, path, args):
+        print('nakumba', args)
 
     def getServerCapabilities(self):
         return self.server_capabilities
