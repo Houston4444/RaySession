@@ -1,0 +1,23 @@
+
+/nsm/client/monitor_event s:event s:client_id
+
+where 'event' can be
+
+client_stopped_by_server
+client_stopped_by_itself
+client_started
+client_joined
+client_ready
+client_saved
+client_removed
+client_open_error
+client_save_error
+client_start_request
+client_save_request
+client_stop_request
+
+'client_joined' event happens when client is joined to the session
+from external, starting it with NSM_URL=server_url client_executable
+
+in RaySession, 'client_removed' event happens when a client
+is definitely removed from the trash.

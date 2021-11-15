@@ -674,6 +674,24 @@ class Session(ServerSender):
                 break
         else:
             return False
+        
+    def send_initial_monitor(self, monitor_client: Client):
+        for client in self.clients:
+            if client is monitor_client:
+                continue
+
+            self.send(
+                monitor_client.src_addr,
+                '/nsm/client/brother_client_state',
+                client.client_id,
+                int(client.is_running()))
+            
+    def send_monitor_event(self, event:str, client_id = ''):
+        ''' send an event message to clients capable of ":monitor:" '''
+        for client in self.clients:
+            if client.is_capable_of(':monitor:'):
+                client.send_to_self_address(
+                    '/nsm/client/monitor_event', event, client_id)
 
 
 class OperatingSession(Session):

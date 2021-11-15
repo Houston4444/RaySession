@@ -159,6 +159,8 @@ class Client(ServerSender, ray.ClientData):
         self.send_gui_message(_translate("GUIMSG", "  %s: launched")
                             % self.gui_msg_style())
 
+        self.session.send_monitor_event('client_started', self.client_id)
+
         self._send_reply_to_caller(OSC_SRC_START, 'client started')
 
         if self.is_ray_hack():
@@ -178,10 +180,16 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui_message(_translate('GUIMSG',
                                     "  %s: terminated by server instruction")
                                     % self.gui_msg_style())
+            
+            self.session.send_monitor_event(
+                'client_stopped_by_server', self.client_id)
         else:
             self.send_gui_message(_translate('GUIMSG',
                                            "  %s: terminated itself.")
                                     % self.gui_msg_style())
+            
+            self.session.send_monitor_event(
+                'client_stopped_by_itself', self.client_id)
 
         self._send_reply_to_caller(OSC_SRC_STOP, 'client stopped')
 
@@ -1032,10 +1040,17 @@ class Client(ServerSender, ray.ClientData):
                 self._send_error_to_caller(OSC_SRC_SAVE, ray.Err.GENERAL_ERROR,
                                     _translate('GUIMSG', '%s failed to save!')
                                             % self.gui_msg_style())
+                
+                self.session.send_monitor_event(
+                    'client_save_error', self.client_id)
+
             elif self.pending_command == ray.Command.OPEN:
                 self._send_error_to_caller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
                                     _translate('GUIMSG', '%s failed to open!')
                                             % self.gui_msg_style())
+                
+                self.session.send_monitor_event(
+                    'client_open_error', self.client_id)
 
             self.set_status(ray.ClientStatus.ERROR)
         else:
@@ -1047,6 +1062,8 @@ class Client(ServerSender, ray.ClientData):
                         % self.gui_msg_style())
 
                 self._send_reply_to_caller(OSC_SRC_SAVE, 'client saved.')
+                self.session.send_monitor_event(
+                    'client_saved', self.client_id)
 
             elif self.pending_command == ray.Command.OPEN:
                 self.send_gui_message(
@@ -1055,7 +1072,11 @@ class Client(ServerSender, ray.ClientData):
 
                 self.last_open_duration = \
                                         time.time() - self._last_announce_time
+
                 self._send_reply_to_caller(OSC_SRC_OPEN, 'client opened')
+
+                self.session.send_monitor_event(
+                    'client_ready', self.client_id)
 
                 if self.has_server_option(ray.Option.GUI_STATES):
                     if (self.session.wait_for == ray.WaitFor.NONE
@@ -1296,6 +1317,9 @@ class Client(ServerSender, ray.ClientData):
             process_env.insert('RAY_CLIENT_ID', self.client_id)
             self._process.setProcessEnvironment(process_env)
 
+        self.session.send_monitor_event(
+            'client_start_request', self.client_id)
+
         self._process.start(self.executable_path, arguments)
 
         ## Here for another way to debug clients.
@@ -1474,6 +1498,9 @@ class Client(ServerSender, ray.ClientData):
                     % self.gui_msg_style())
 
         if self.is_running():
+            self.session.send_monitor_event(
+                'client_save_request', self.client_id)
+
             if self.is_ray_hack():
                 self.pending_command = ray.Command.SAVE
                 self.set_status(ray.ClientStatus.SAVE)
@@ -1518,6 +1545,9 @@ class Client(ServerSender, ray.ClientData):
 
             if not self._stopped_timer.isActive():
                 self._stopped_timer.start()
+
+            self.session.send_monitor_event(
+                'client_stop_request', self.client_id)
 
             if self.is_external:
                 os.kill(self.pid, 15) # 15 means signal.SIGTERM
@@ -2151,7 +2181,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         server_capabilities = ""
         if not server.is_nsm_locked:
             server_capabilities += ":server-control"
-        server_capabilities += ":broadcast:optional-gui:no-save-level:"
+        server_capabilities += ":broadcast:optional-gui:no-save-level:monitor:"
 
         self.send(src_addr, "/reply", path,
                   "Well hello, stranger. Welcome to the party."
@@ -2168,6 +2198,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if self.protocol == ray.Protocol.RAY_NET:
             client_project_path = self.session.get_short_path()
             jack_client_name = self.ray_net.session_template
+
+        if ':monitor:' in self.capabilities:
+            self.session.send_initial_monitor(self)
 
         self.send(src_addr, "/nsm/client/open", client_project_path,
                   self.session.name, jack_client_name)

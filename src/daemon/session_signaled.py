@@ -190,6 +190,7 @@ class SignaledSession(OperatingSession):
                 # by command : $:NSM_URL=url executable
                 client = self._new_client(executable_path)
                 self.externals_timer.start()
+                self.send_monitor_event('client_joined', client.client_id)
                 client.server_announce(path, args, src_addr, True)
 
             #n = 0
@@ -1792,8 +1793,10 @@ class SignaledSession(OperatingSession):
                       "Nothing in trash because no session is loaded.")
             return
 
+        client_id = args[0]
+
         for client in self.trashed_clients:
-            if client.client_id == args[0]:
+            if client.client_id == client_id:
                 break
         else:
             self.send(src_addr, "/error", path, -10, "No such client.")
@@ -1813,6 +1816,7 @@ class SignaledSession(OperatingSession):
         self._save_session_file()
 
         self.send(src_addr, '/reply', path, "client definitely removed")
+        self.send_monitor_event('client_removed', client_id)
 
     def _ray_trashed_client_remove_keep_files(self, path, args, src_addr):
         if not self.path:
@@ -1820,8 +1824,10 @@ class SignaledSession(OperatingSession):
                       "Nothing in trash because no session is loaded.")
             return
 
+        client_id = args[0]
+
         for client in self.trashed_clients:
-            if client.client_id == args[0]:
+            if client.client_id == client_id:
                 break
         else:
             self.send(src_addr, "/error", path, -10, "No such client.")
@@ -1832,6 +1838,7 @@ class SignaledSession(OperatingSession):
         self.trashed_clients.remove(client)
 
         self.send(src_addr, '/reply', path, "client removed")
+        self.send_monitor_event('client_removed', client_id)
 
     def _ray_net_daemon_duplicate_state(self, path, args, src_addr):
         state = args[0]
