@@ -78,11 +78,11 @@ class NSMThread(ServerThread):
             (self.name, path, str(args)))
         self.signaler.hide_optional_gui.emit()
     
-    @make_method('/nsm/client/brother_client_state', 'si')
+    @make_method('/nsm/client/monitor/client_state', 'si')
     def nsm_client_brother_client_state(self, path, args):
         print('rale', args)
     
-    @make_method('/nsm/client/monitor_event', 'ss')
+    @make_method('/nsm/client/monitor/client_event', 'ss')
     def nsm_client_monitor_event(self, path, args):
         print('nakumba', args)
 

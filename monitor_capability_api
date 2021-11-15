@@ -1,6 +1,6 @@
 
 when a client informs NSM server it has ':monitor:' capability
-server sends to it the following message
+server sends to it one following message per existing client.
 
 /nsm/client/monitor/client_state s:client_id i:is_started
 

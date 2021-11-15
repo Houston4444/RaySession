@@ -675,24 +675,28 @@ class Session(ServerSender):
         else:
             return False
         
-    def send_initial_monitor(self, monitor_client: Client):
+    def send_initial_monitor(self, monitor_addr):
+        ''' send clients states to a new monitor
+            note that monitor can be a client
+            or a Monitor from osc_server_thread '''
         for client in self.clients:
-            if client is monitor_client:
+            if (client.addr is not None
+                    and ray.are_same_osc_port(client.addr.url, monitor_addr.url)):
                 continue
 
             self.send(
-                monitor_client.addr,
+                monitor_addr,
                 '/nsm/client/monitor/client_state',
                 client.client_id,
                 int(client.is_running()))
             
         for client in self.trashed_clients:
             self.send(
-                monitor_client.addr,
+                monitor_addr,
                 '/nsm/client/monitor/client_state',
                 client.client_id,
                 0)
-            
+
     def send_monitor_event(self, event:str, client_id = ''):
         ''' send an event message to clients capable of ":monitor:" '''
         for client in self.clients:

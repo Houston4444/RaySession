@@ -2200,7 +2200,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             jack_client_name = self.ray_net.session_template
 
         if ':monitor:' in self.capabilities:
-            self.session.send_initial_monitor(self)
+            self.session.send_initial_monitor(self.addr)
 
         self.send(src_addr, "/nsm/client/open", client_project_path,
                   self.session.name, jack_client_name)

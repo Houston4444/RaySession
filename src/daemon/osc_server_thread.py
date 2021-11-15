@@ -53,6 +53,11 @@ class Controller:
     pid = 0
 
 
+class Monitor:
+    addr = None
+    pid = 0
+
+
 class GuiAdress(liblo.Address):
     gui_pid = 0
 
@@ -71,6 +76,7 @@ class ClientCommunicating(liblo.ServerThread):
 
         self.gui_list = []
         self.controller_list = []
+        self.monitor_list = []
         self.server_status = ray.ServerStatus.OFF
         self.is_nsm_locked = False
         self.not_default = False
@@ -234,6 +240,11 @@ class ClientCommunicating(liblo.ServerThread):
                 ##propagated to another NSMD instance
                 #if gui_addr.url != src_addr.url:
                     #self.send(gui_addr, Message(*args))
+
+    @ray_method('/nsm/server/monitor_reset', '')
+    def nsmServerGetAllStates(self, path, args, types, src_addr):
+        self.session.send_initial_monitor(src_addr)
+        self.send(src_addr, '/reply', path, 'monitor reset')
 
     @ray_method('/nsm/client/progress', 'f')
     def nsmClientProgress(self, path, args, types, src_addr):
@@ -479,6 +490,22 @@ class OscServerThread(ClientCommunicating):
             return
 
         self.controller_list.remove(controller)
+
+    @ray_method('/ray/server/monitor_announce', '')
+    def rayServerMonitorAnnounce(self, path, args, types, src_addr):
+        monitor_addr = src_addr
+        self.monitor_list.append(monitor_addr)
+        self.send(src_addr, '/reply', path, 'announced')
+    
+    @ray_method('/ray/server/monitor_disannounce', '')
+    def rayServerMonitorDisannounce(self, path, args, types, src_addr):
+        for monitor_addr in self.monitor_list:
+            if monitor_addr.url == src_addr.url:
+                break
+        else:
+            return
+        
+        self.monitor_list.remove(monitor_addr)
 
     @ray_method('/ray/server/set_nsm_locked', '')
     def rayServerSetNsmLocked(self, path, args, types, src_addr):
