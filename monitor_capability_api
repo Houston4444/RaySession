@@ -2,7 +2,7 @@
 when a client informs NSM server it has ':monitor:' capability
 server sends to it the following message
 
-/nsm/client/monitor_state s:client_id i:is_started
+/nsm/client/monitor/client_state s:client_id i:is_started
 
 where 'is_started' is set to 1 if client is started, else 0
 
@@ -10,7 +10,7 @@ This message is sent just before to send it the /nsm/client/open message.
 
 at each event, this monitor client will receive
 
-/nsm/client/monitor_event s:event s:client_id
+/nsm/client/monitor/client_event s:client_id s:event
 
 where 'event' can be
 

@@ -682,14 +682,14 @@ class Session(ServerSender):
 
             self.send(
                 monitor_client.addr,
-                '/nsm/client/monitor_state',
+                '/nsm/client/monitor/client_state',
                 client.client_id,
                 int(client.is_running()))
             
         for client in self.trashed_clients:
             self.send(
                 monitor_client.addr,
-                '/nsm/client/monitor_state',
+                '/nsm/client/monitor/client_state',
                 client.client_id,
                 0)
             
@@ -699,7 +699,7 @@ class Session(ServerSender):
             if (client.client_id != client_id
                     and client.is_capable_of(':monitor:')):
                 client.send_to_self_address(
-                    '/nsm/client/monitor_event', event, client_id)
+                    '/nsm/client/monitor/client_event', client_id, event)
 
 
 class OperatingSession(Session):
