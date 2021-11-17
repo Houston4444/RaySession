@@ -55,8 +55,7 @@ class GeneralObject(QObject):
         self.sl_port = ray.get_free_osc_port(9951)
         self.sl_url = Address(self.sl_port)
 
-
-        self.sl_process.start('sooperlooper', ['-p', str(self.sl_port)])
+        #self.sl_process.start('sooperlooper', ['-p', str(self.sl_port)])
 
         self.gui_process = QProcess()
         self.gui_process.setProcessChannelMode(QProcess.ForwardedChannels)
@@ -250,11 +249,24 @@ class GeneralObject(QObject):
     def initialize(self, project_path, session_name, full_client_id):
         self.project_path = project_path
         self.session_name = session_name
-        self.full_client_id = full_client_id
         self.session_file = "%s/session.slsess" % self.project_path
         self.session_bak = "%s/session.slsess.bak" % self.project_path
         self.midi_bindings_file = "%s/session.slb" % self.project_path
         #self.midi_bindings_bak = "%s/session.slb.bak" % self.project_path
+
+        if full_client_id != self.full_client_id:
+            self.full_client_id = full_client_id
+            
+            if self.gui_process.state():
+                self.gui_process.stop()
+                self.gui_process.waitForFinished(500)
+            
+            if self.sl_process.state():
+                self.sl_process.stop()
+                self.sl_process.waitForFinished(500)
+            self.sl_process.start(
+                'sooperlooper',
+                ['-p', str(self.sl_port), '-j', self.full_client_id])
 
         if not os.path.exists(self.project_path):
             os.makedirs(self.project_path)
@@ -271,6 +283,7 @@ class GeneralObject(QObject):
             self.transport_timer.start()
 
     def loadSession(self):
+        #self.sl_process.start('sooperlooper', ['-p', str(self.sl_port)])
         self.wait_for_load = False
         server.send(self.sl_url, '/load_session', self.session_file,
                     server.url, '/re-load')
@@ -330,7 +343,7 @@ if __name__ == '__main__':
 
     server = SlOSCThread('sooperlooper_nsm', signaler, daemon_address, False)
 
-    if len(sys.argv) > 1 and sys.argv[1] == '--transport_workaround':
+    if len(sys.argv) > 1 and '--transport_workaround' in sys.argv[1:]:
         jack_client = jacklib.client_open(
             "sooper_ray_wk",
             jacklib.JackNoStartServer | jacklib.JackSessionID,
@@ -341,7 +354,12 @@ if __name__ == '__main__':
     general_object = GeneralObject()
 
     server.start()
-    server.announce('SooperLooper', ':optional-gui:switch:', 'sooperlooper_nsm')
+    
+    capabilities = ':optional-gui:switch:'
+    if '--jack-name-fixed' in sys.argv[1:]:
+        capabilities = ':optional-gui:'
+    
+    server.announce('SooperLooper', capabilities, 'sooperlooper_nsm')
 
     app.exec()
 
