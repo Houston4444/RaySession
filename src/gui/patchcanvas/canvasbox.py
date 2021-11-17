@@ -201,6 +201,7 @@ class CanvasBox(QGraphicsItem):
         self._wrapping = False
         self._unwrapping = False
         self._wrapping_ratio = 1.0
+        self.p_unwrap_triangle_pos = UNWRAP_BUTTON_NONE
 
         self._ensuring_visible = False
 
@@ -601,6 +602,9 @@ class CanvasBox(QGraphicsItem):
         return tuple(return_list)
 
     def updatePositions(self, even_animated=False):
+        if canvas.scene.loading_items:
+            return
+        
         if (not even_animated
                 and self in [b['widget'] for b in canvas.scene.move_boxes]):
             # do not change box disposition while box is moved by animation
@@ -694,17 +698,17 @@ class CanvasBox(QGraphicsItem):
                             if not (portgrp.group_id == self.m_group_id
                                     and portgrp.portgrp_id == port.portgrp_id):
                                 continue
-
+                            
                             if port.port_id == portgrp.port_id_list[0]:
                                 portgrp_name = CanvasGetPortGroupName(
                                     self.m_group_id, portgrp.port_id_list)
-                                
+
                                 if portgrp_name:
                                     portgrp.widget.set_print_name(
                                         portgrp_name, max_pwidth - canvas.theme.port_in_portgrp_width - 5)
                                 else:
                                     portgrp.widget.set_print_name('', 0)
-
+                            
                             port.widget.set_print_name(
                                 CanvasGetPortPrintName(
                                     self.m_group_id, port.port_id, port.portgrp_id),
@@ -848,7 +852,7 @@ class CanvasBox(QGraphicsItem):
 
             if header_width < self.p_width:
                 break
-
+        
         more_height = 0
         lines_choice = 1
 
@@ -932,20 +936,12 @@ class CanvasBox(QGraphicsItem):
                     portgrp.widget.setPortGroupWidth(max_out_width)
                     portgrp.widget.setX(outX)
 
-            #portgrp_name = CanvasGetPortGroupName(
-                #portgrp.group_id, portgrp.port_id_list)
-            #portgrp.widget.set_print_name(portgrp_name)
-
             max_port_in_pg_width = canvas.theme.port_in_portgrp_width
 
             for port in canvas.port_list:
                 if (port.group_id == self.m_group_id
                         and port.port_id in portgrp.port_id_list
                         and port.widget is not None):
-                    #port_print_name = CanvasGetPortPrintName(
-                        #self.m_group_id, port.port_id, portgrp.portgrp_id)
-                    #port_print_width = port.widget.get_width_for_text(
-                        #port_print_name)
                     port_print_width = port.widget.get_text_width()
 
                     # change port in portgroup width only if
@@ -954,8 +950,6 @@ class CanvasBox(QGraphicsItem):
                     if portgrp_name:
                         max_port_in_pg_width = max(max_port_in_pg_width,
                                                    port_print_width + 4)
-
-                    #port.widget.set_print_name(port_print_name, 150)
 
             out_in_portgrpX = (self.p_width - canvas.theme.port_offset - 12
                                - max_port_in_pg_width)
@@ -1467,6 +1461,9 @@ class CanvasBox(QGraphicsItem):
         return QRectF(0, 0, self.p_width, self.p_height)
 
     def paint(self, painter, option, widget):
+        if canvas.scene.loading_items:
+            return
+        
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing,
                               bool(options.antialiasing == ANTIALIASING_FULL))

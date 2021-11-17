@@ -80,11 +80,11 @@ class NSMThread(ServerThread):
     
     @make_method('/nsm/client/monitor/client_state', 'si')
     def nsm_client_brother_client_state(self, path, args):
-        print('rale', args)
+        pass
     
     @make_method('/nsm/client/monitor/client_event', 'ss')
     def nsm_client_monitor_event(self, path, args):
-        print('nakumba', args)
+        pass
 
     def getServerCapabilities(self):
         return self.server_capabilities

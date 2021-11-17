@@ -35,3 +35,4 @@ is definitely removed from the trash.
 
 Note that a monitor client doesn't receives /nsm/client/monitor_event if the event
 concerns this monitor client.
+

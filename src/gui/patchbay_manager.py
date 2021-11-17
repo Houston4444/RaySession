@@ -371,8 +371,9 @@ class Group:
 
         gpos = self.current_position
 
-        self.display_name = self.display_name.replace('.0/', '/')
-        self.display_name = self.display_name.replace('_', ' ')
+        if PatchbayManager.use_graceful_names:
+            self.display_name = self.display_name.replace('.0/', '/')
+            self.display_name = self.display_name.replace('_', ' ')
 
         patchcanvas.addGroup(
             self.group_id, self.display_name, split,
@@ -1214,6 +1215,8 @@ class PatchbayManager:
         if (patchcanvas.canvas is not None
                 and patchcanvas.canvas.scene is not None):
             patchcanvas.canvas.scene.prevent_box_move = yesno
+            print('zumbaa', yesno)
+            patchcanvas.canvas.scene.loading_items = yesno
 
     @classmethod
     def new_portgroup(cls, group_id: int, port_mode: int, ports: tuple):
@@ -1470,13 +1473,13 @@ class PatchbayManager:
                         return port
                 break
 
-    def get_client_icon(self, group_name: str)->str:
+    def get_related_client(self, group_name:str):
         if '/' in group_name:
             group_name = group_name.partition('/')[0]
         elif ' (' in group_name and group_name.endswith(')'):
             # mostly for Non Mixer when another DSP group is used
             group_name = group_name.partition(' (')[0]
-
+        
         for client in self.session.client_list:
             client_num = ''
             if client.client_id and client.client_id[-1].isdigit():
@@ -1485,9 +1488,29 @@ class PatchbayManager:
             if (group_name == client.name + client_num
                     or group_name == client.name + client_num + '.0'
                     or group_name == client.name + '.' + client.client_id):
-                return client.icon
+                return client
+        
+        return None
 
-        return ''
+    #def get_client_icon(self, group_name: str)->str:
+        #if '/' in group_name:
+            #group_name = group_name.partition('/')[0]
+        #elif ' (' in group_name and group_name.endswith(')'):
+            ## mostly for Non Mixer when another DSP group is used
+            #group_name = group_name.partition(' (')[0]
+
+        
+        #for client in self.session.client_list:
+            #client_num = ''
+            #if client.client_id and client.client_id[-1].isdigit():
+                #client_num = '_' + client.client_id.rpartition('_')[2]
+
+            #if (group_name == client.name + client_num
+                    #or group_name == client.name + client_num + '.0'
+                    #or group_name == client.name + '.' + client.client_id):
+                #return client.icon
+
+        #return ''
 
     def get_group_position(self, group_name):
         for gpos in self.group_positions:
@@ -1633,7 +1656,11 @@ class PatchbayManager:
             gpos = self.get_group_position(group_name)
             group = Group(self._next_group_id, group_name, gpos)
             group.a2j_group = a2j_group
-            group.set_client_icon(self.get_client_icon(group_name))
+            client = self.get_related_client(group.name)
+            if client is not None:
+                group.set_client_icon(client.icon)
+                if group.name.startswith(client.name + '.'):
+                    group.display_name = group.display_name.partition('.')[2]
 
             self._next_group_id += 1
             self.groups.append(group)
@@ -1911,6 +1938,7 @@ class PatchbayManager:
         # however, if there is no group position
         # (i.e. if there is no config at all), it is prefferable to
         # know where finish the group boxes before to add another one.
+        
         if self.group_positions:
             self.optimize_operation(True)
 
@@ -1936,7 +1964,6 @@ class PatchbayManager:
 
         self.optimize_operation(False)
         patchcanvas.redrawAllGroups()
-
         os.remove(temp_path)
 
     def patchbay_announce(self, jack_running: int, samplerate: int,

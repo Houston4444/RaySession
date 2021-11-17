@@ -181,7 +181,7 @@ class CanvasPortGroup(QGraphicsItem):
 
         if width_limited:
             sizer = QFontMetrics(self.m_portgrp_font)
-
+            
             if sizer.width(self.m_print_name) > width_limited:
                 name_len = len(self.m_print_name)
                 middle = int(name_len / 2)
@@ -669,6 +669,9 @@ class CanvasPortGroup(QGraphicsItem):
                           canvas.theme.port_height * len(self.m_port_id_list))
 
     def paint(self, painter, option, widget):
+        if canvas.scene.loading_items:
+            return
+        
         painter.save()
         painter.setRenderHint(
             QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))

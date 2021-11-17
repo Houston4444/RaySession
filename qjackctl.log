@@ -1,0 +1,9 @@
+15:02:54.281 Journalisation démarrée --- mar. nov. 16 15:02:54 2021 ---
+15:02:54.512 Réinitialisation des statistiques.
+15:02:54.516 Changement des connexions ALSA.
+15:02:54.529 Changement des connexions JACK.
+15:02:54.541 Client activé.
+15:02:54.541 Baie de brassage désactivée.
+[31muint DBusMenuExporterDBus::GetLayout(int, int, const QStringList&, DBusMenuLayoutItem&)[0m: Condition failed: menu
+[31muint DBusMenuExporterDBus::GetLayout(int, int, const QStringList&, DBusMenuLayoutItem&)[0m: Condition failed: menu
+[31muint DBusMenuExporterDBus::GetLayout(int, int, const QStringList&, DBusMenuLayoutItem&)[0m: Condition failed: menu

@@ -688,6 +688,10 @@ class CanvasPort(QGraphicsItem):
             return QRectF(0, 0, self.m_port_width + 12, self.m_port_height)
 
     def paint(self, painter, option, widget):
+        if canvas.scene.loading_items:
+            print('rol', self.m_port_name)
+            return
+        
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing,
                               bool(options.antialiasing == ANTIALIASING_FULL))
