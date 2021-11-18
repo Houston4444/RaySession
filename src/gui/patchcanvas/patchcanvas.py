@@ -1332,4 +1332,20 @@ def set_prevent_overlap(yesno: bool):
 def set_max_port_width(width: int):
     options.max_port_width = width
     redrawAllGroups()
+    
+    
+def opacify_group(group_id: int, yesno:bool):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            for widget in group.widgets:
+                if widget is not None:
+                    widget.opacify(yesno)
+            break
+        
+def opacify_connection(connection_id: int, yesno:bool):
+    for connection in canvas.connection_list:
+        if connection.connection_id == connection_id:
+            if connection.widget is not None:
+                connection.widget.setOpacity(0.2 if yesno else 1.0)
+            break
 # ------------------------------------------------------------------------------------------------------------

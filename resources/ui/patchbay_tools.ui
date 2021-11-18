@@ -47,6 +47,13 @@ background-color:  rgba(50%, 50%, 50%, 25%);
     </spacer>
    </item>
    <item>
+    <widget class="QLineEdit" name="lineEditGroupFilter">
+     <property name="clearButtonEnabled">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="ZoomSlider" name="sliderZoom">
      <property name="maximumSize">
       <size>

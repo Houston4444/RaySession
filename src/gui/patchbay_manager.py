@@ -97,6 +97,12 @@ class Connection:
             fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
+    def opacify(self, yesno: bool):
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.opacify_connection(
+            self.connection_id, yesno)
 
 class Port:
     display_name = ''
@@ -404,6 +410,12 @@ class Group:
         patchcanvas.removeGroup(self.group_id,
                                 fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
+
+    def opacify(self, yesno: bool):
+        if not self.in_canvas:
+            return 
+        
+        patchcanvas.opacify_group(self.group_id, yesno)
 
     def remove_all_ports(self):
         if self.in_canvas:
@@ -1155,6 +1167,8 @@ class PatchbayManager:
         self.tools_widget = PatchbayToolsWidget()
         self.tools_widget.buffer_size_change_order.connect(
             self.change_buffersize)
+        self.tools_widget.filter_group_changed.connect(
+            self.filter_groups)
 
         self._next_group_id = 0
         self._next_port_id = 0
@@ -1890,6 +1904,19 @@ class PatchbayManager:
     def change_buffersize(self, buffer_size):
         self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',
                                      buffer_size)
+
+    def filter_groups(self, text):
+        opac_ids = set()
+        
+        for group in self.groups:
+            opac = bool(text.lower() not in group.name.lower())
+            if opac:
+                opac_ids.add(group.group_id)
+            group.opacify(opac)
+        
+        for conn in self.connections:
+            conn.opacify(bool(conn.port_out.group_id in opac_ids
+                              and conn.port_in.group_id in opac_ids))
 
     def buffer_size_changed(self, buffer_size):
         self.tools_widget.set_buffer_size(buffer_size)
