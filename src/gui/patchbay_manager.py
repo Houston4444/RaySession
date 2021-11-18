@@ -1215,7 +1215,6 @@ class PatchbayManager:
         if (patchcanvas.canvas is not None
                 and patchcanvas.canvas.scene is not None):
             patchcanvas.canvas.scene.prevent_box_move = yesno
-            print('zumbaa', yesno)
             patchcanvas.canvas.scene.loading_items = yesno
 
     @classmethod

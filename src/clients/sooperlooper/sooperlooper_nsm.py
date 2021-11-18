@@ -82,6 +82,7 @@ class GeneralObject(QObject):
 
         self.sl_ready.connect(self.loadSession)
 
+        self._switching = False
         self.leaving = False
         self.wait_for_load = False
 
@@ -98,6 +99,8 @@ class GeneralObject(QObject):
 
         self.transport_playing = False
         self.will_trig = False
+        
+        self.jack_follow_naming = False
 
     def JackShutdownCallback(self, arg=None):
         self.transport_timer.stop()
@@ -158,7 +161,8 @@ class GeneralObject(QObject):
         return bool(self.sl_process.state() == QProcess.Running)
 
     def slProcessFinished(self, exit_code):
-        app.quit()
+        if not self._switching:
+            app.quit()
 
     def guiProcessStarted(self):
         server.sendGuiState(True)
@@ -254,16 +258,26 @@ class GeneralObject(QObject):
         self.midi_bindings_file = "%s/session.slb" % self.project_path
         #self.midi_bindings_bak = "%s/session.slb.bak" % self.project_path
 
+        if not self.jack_follow_naming:
+            full_client_id = 'sooperlooper'
+
         if full_client_id != self.full_client_id:
             self.full_client_id = full_client_id
-            
+
             if self.gui_process.state():
-                self.gui_process.stop()
+                self.gui_process.terminate()
                 self.gui_process.waitForFinished(500)
+            else:
+                server.sendGuiState(False)
+            
+            self._switching = True
             
             if self.sl_process.state():
-                self.sl_process.stop()
+                self.sl_process.terminate()
                 self.sl_process.waitForFinished(500)
+            
+            self._switching = False
+            
             self.sl_process.start(
                 'sooperlooper',
                 ['-p', str(self.sl_port), '-j', self.full_client_id])
@@ -352,13 +366,12 @@ if __name__ == '__main__':
         jack_client = None
 
     general_object = GeneralObject()
+    if "--follow-jack-naming" in sys.argv[1:]:
+        general_object.jack_follow_naming = True
 
     server.start()
     
     capabilities = ':optional-gui:switch:'
-    if '--jack-name-fixed' in sys.argv[1:]:
-        capabilities = ':optional-gui:'
-    
     server.announce('SooperLooper', capabilities, 'sooperlooper_nsm')
 
     app.exec()
