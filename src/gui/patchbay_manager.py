@@ -1167,8 +1167,6 @@ class PatchbayManager:
         self.tools_widget = PatchbayToolsWidget()
         self.tools_widget.buffer_size_change_order.connect(
             self.change_buffersize)
-        self.tools_widget.filter_group_changed.connect(
-            self.filter_groups)
 
         self._next_group_id = 0
         self._next_port_id = 0
@@ -1200,6 +1198,9 @@ class PatchbayManager:
             self.set_prevent_overlap)
         self.options_dialog.max_port_width_changed.connect(
             patchcanvas.set_max_port_width)
+        
+        self.session.main_win.group_filter_edited.connect(
+            self.filter_groups)
 
     @staticmethod
     def send_to_patchbay_daemon(*args):

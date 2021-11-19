@@ -1346,6 +1346,6 @@ def opacify_connection(connection_id: int, yesno:bool):
     for connection in canvas.connection_list:
         if connection.connection_id == connection_id:
             if connection.widget is not None:
-                connection.widget.setOpacity(0.2 if yesno else 1.0)
+                connection.widget.opacify(yesno)
             break
 # ------------------------------------------------------------------------------------------------------------

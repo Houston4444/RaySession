@@ -33,7 +33,6 @@ _translate = QApplication.translate
 
 class PatchbayToolsWidget(QWidget):
     buffer_size_change_order = pyqtSignal(int)
-    filter_group_changed = pyqtSignal(str)
 
     def __init__(self):
         QWidget.__init__(self)
@@ -61,10 +60,6 @@ class PatchbayToolsWidget(QWidget):
             self.ui.comboBoxBuffer.addItem(str(size), size)
 
         self.current_buffer_size = self.ui.comboBoxBuffer.currentData()
-        
-        self.ui.lineEditGroupFilter.textEdited.connect(
-            self.filter_groups)
-
         self.xruns_counter = 0
 
     def zoom_changed_from_canvas(self, ratio):
@@ -143,9 +138,6 @@ class PatchbayToolsWidget(QWidget):
     def re_enable_buffer_combobox(self):
         if self._waiting_buffer_change:
             self.set_buffer_size(self.current_buffer_size)
-
-    def filter_groups(self, text):
-        self.filter_group_changed.emit(text.lower())
 
     def set_jack_running(self, yesno: bool):
         for widget in (

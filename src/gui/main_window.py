@@ -4,8 +4,8 @@ import subprocess
 
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView,
-                             QBoxLayout, QSystemTrayIcon, QAction)
-from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
+                             QBoxLayout, QSystemTrayIcon, QAction, QShortcut)
+from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics, QKeySequence
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 from gui_tools import (
@@ -322,7 +322,17 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSessionMenu.setIcon(RayIcon('application-menu', dark))
 
         self.ui.listWidget.set_session(self.session)
-
+        
+        # concerns patchbay filters bar (activable with Ctrl+F)
+        self.group_filter_edited = self.ui.lineEditGroupFilter.textEdited
+        self.ui.framePatchbayFilters.setVisible(False)
+        self.filter_shortcut = QShortcut(QKeySequence('Ctrl+F'), self)
+        self.filter_shortcut.activated.connect(
+            self._toggle_patchbay_filters_bar)
+        self.ui.toolButtonCloseFilterBar.clicked.connect(
+            self._toggle_patchbay_filters_bar)
+        
+        
         # prevent to hide the session frame with splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
         self.ui.splitterSessionVsMessages.splitterMoved.connect(
@@ -807,6 +817,17 @@ class MainWindow(QMainWindow):
 
         self.ui.graphicsView.setVisible(yesno)
         self.ui.splitterMainVsCanvas.set_active(yesno)
+
+    def _toggle_patchbay_filters_bar(self):
+        should_be_visible = not self.ui.framePatchbayFilters.isVisible()
+
+        self.ui.framePatchbayFilters.setVisible(should_be_visible)
+        
+        if should_be_visible:
+            self.ui.lineEditGroupFilter.setFocus()
+        else:
+            self.ui.lineEditGroupFilter.setText('')
+            self.group_filter_edited.emit('')
 
     def _status_bar_pressed(self):
         status = self.session.server_status
