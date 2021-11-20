@@ -17,6 +17,7 @@ import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GuiServerThread
 from patchcanvas import patchcanvas
+import patchbay_manager
 from utility_scripts import UtilityScriptLauncher
 import ray
 import list_widget_clients
@@ -331,8 +332,11 @@ class MainWindow(QMainWindow):
             self._toggle_patchbay_filters_bar)
         self.ui.toolButtonCloseFilterBar.clicked.connect(
             self._toggle_patchbay_filters_bar)
-        
-        
+        self.ui.checkBoxAudioFilter.stateChanged.connect(
+            self._check_box_audio_filter_checked)
+        self.ui.checkBoxMidiFilter.stateChanged.connect(
+            self._check_box_midi_filter_checked)
+
         # prevent to hide the session frame with splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
         self.ui.splitterSessionVsMessages.splitterMoved.connect(
@@ -820,6 +824,13 @@ class MainWindow(QMainWindow):
 
     def _toggle_patchbay_filters_bar(self):
         should_be_visible = not self.ui.framePatchbayFilters.isVisible()
+        
+        if should_be_visible:
+            port_types_view = self.session.patchbay_manager.port_types_view
+            self.ui.checkBoxAudioFilter.setChecked(
+                bool(port_types_view & patchbay_manager.PORT_TYPE_AUDIO))
+            self.ui.checkBoxMidiFilter.setChecked(
+                bool(port_types_view & patchbay_manager.PORT_TYPE_MIDI))
 
         self.ui.framePatchbayFilters.setVisible(should_be_visible)
         
@@ -828,6 +839,25 @@ class MainWindow(QMainWindow):
         else:
             self.ui.lineEditGroupFilter.setText('')
             self.group_filter_edited.emit('')
+
+    def _change_port_types_view(self):
+        port_types_view = (
+            int(self.ui.checkBoxAudioFilter.isChecked()) * patchbay_manager.PORT_TYPE_AUDIO
+            + int(self.ui.checkBoxMidiFilter.isChecked()) * patchbay_manager.PORT_TYPE_MIDI)
+        self.session.patchbay_manager.change_port_types_view(port_types_view)
+        self.group_filter_edited.emit(self.ui.lineEditGroupFilter.text())
+
+    def _check_box_audio_filter_checked(self, state: int):
+        if not state:
+            self.ui.checkBoxMidiFilter.setChecked(True)
+        
+        self._change_port_types_view()
+    
+    def _check_box_midi_filter_checked(self, state: bool):
+        if not state:
+            self.ui.checkBoxAudioFilter.setChecked(True)
+        
+        self._change_port_types_view()
 
     def _status_bar_pressed(self):
         status = self.session.server_status
