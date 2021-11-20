@@ -103,6 +103,12 @@ class Connection:
         
         patchcanvas.opacify_connection(
             self.connection_id, yesno)
+    
+    def set_in_front(self):
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.set_connection_in_front(self.connection_id)
 
 class Port:
     display_name = ''
@@ -416,6 +422,18 @@ class Group:
             return 
         
         patchcanvas.opacify_group(self.group_id, yesno)
+
+    def set_in_front(self):
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.set_group_in_front(self.group_id)
+
+    def get_number_of_boxes(self)->int:
+        if not self.in_canvas:
+            return 0
+
+        return patchcanvas.get_number_of_boxes(self.group_id)
 
     def remove_all_ports(self):
         if self.in_canvas:
@@ -1907,17 +1925,58 @@ class PatchbayManager:
                                      buffer_size)
 
     def filter_groups(self, text):
-        opac_ids = set()
+        if not text:
+            for group in self.groups:
+                group.opacify(False)
+            
+            for conn in self.connections:
+                conn.opacify(False)
+
+            return
+            
+        opac_grp_ids = set()
+        not_opac_grp_ids = set()
+        opac_conn_ids = set()
         
         for group in self.groups:
             opac = bool(text.lower() not in group.name.lower())
             if opac:
-                opac_ids.add(group.group_id)
+                opac_grp_ids.add(group.group_id)
+            else:
+                not_opac_grp_ids.add(group.group_id)
+
             group.opacify(opac)
         
         for conn in self.connections:
-            conn.opacify(bool(conn.port_out.group_id in opac_ids
-                              and conn.port_in.group_id in opac_ids))
+            opac_conn = bool(
+                conn.port_out.group_id in opac_grp_ids
+                and conn.port_in.group_id in opac_grp_ids)
+            
+            conn.opacify(opac_conn)
+            if opac_conn:
+                opac_conn_ids.add(conn.connection_id)
+            
+        for group in self.groups:
+            if group.group_id in opac_grp_ids:
+                group.set_in_front()
+        
+        for conn in self.connections:
+            if conn.connection_id in opac_conn_ids:
+                conn.set_in_front()
+        
+        for conn in self.connections:
+            if conn.connection_id not in opac_conn_ids:
+                conn.set_in_front()
+        
+        n_boxes = 0
+        
+        for group in self.groups:
+            if group.group_id not in opac_grp_ids:
+                group.set_in_front()
+                n_boxes += group.get_number_of_boxes()
+        
+        #print('number of boxess', n_boxes)
+        patchcanvas.ensure_group_visible(not_opac_grp_ids)
 
     def buffer_size_changed(self, buffer_size):
         self.tools_widget.set_buffer_size(buffer_size)
