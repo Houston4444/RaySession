@@ -435,6 +435,12 @@ class Group:
 
         return patchcanvas.get_number_of_boxes(self.group_id)
 
+    def select_filtered_box(self, n_select=0):
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.select_filtered_group_box(self.group_id, n_select)
+
     def remove_all_ports(self):
         if self.in_canvas:
             for portgroup in self.portgroups:
@@ -1216,9 +1222,6 @@ class PatchbayManager:
             self.set_prevent_overlap)
         self.options_dialog.max_port_width_changed.connect(
             patchcanvas.set_max_port_width)
-        
-        self.session.main_win.group_filter_edited.connect(
-            self.filter_groups)
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -1924,16 +1927,9 @@ class PatchbayManager:
         self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',
                                      buffer_size)
 
-    def filter_groups(self, text):
-        if not text:
-            for group in self.groups:
-                group.opacify(False)
-            
-            for conn in self.connections:
-                conn.opacify(False)
-
-            return
-            
+    def filter_groups(self, text, n_select=0)->int:
+        ''' semi hides groups not matching with text
+            and return number of matching boxes '''
         opac_grp_ids = set()
         not_opac_grp_ids = set()
         opac_conn_ids = set()
@@ -1973,10 +1969,13 @@ class PatchbayManager:
         for group in self.groups:
             if group.group_id not in opac_grp_ids:
                 group.set_in_front()
-                n_boxes += group.get_number_of_boxes()
-        
-        #print('number of boxess', n_boxes)
-        patchcanvas.ensure_group_visible(not_opac_grp_ids)
+                n_grp_boxes = group.get_number_of_boxes()
+
+                if n_select > n_boxes and n_select <= n_boxes + n_grp_boxes:
+                    group.select_filtered_box(n_select - n_boxes)
+                n_boxes += n_grp_boxes
+
+        return n_boxes
 
     def buffer_size_changed(self, buffer_size):
         self.tools_widget.set_buffer_size(buffer_size)

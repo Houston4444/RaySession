@@ -325,17 +325,19 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.set_session(self.session)
         
         # concerns patchbay filters bar (activable with Ctrl+F)
-        self.group_filter_edited = self.ui.lineEditGroupFilter.textEdited
+        self.ui.framePatchbayFilters.set_patchbay_manager(
+            self.session.patchbay_manager)
+        #self.group_filter_edited = self.ui.framePatchbayFilters.filter_text_changed
         self.ui.framePatchbayFilters.setVisible(False)
         self.filter_shortcut = QShortcut(QKeySequence('Ctrl+F'), self)
         self.filter_shortcut.activated.connect(
             self._toggle_patchbay_filters_bar)
-        self.ui.toolButtonCloseFilterBar.clicked.connect(
-            self._toggle_patchbay_filters_bar)
-        self.ui.checkBoxAudioFilter.stateChanged.connect(
-            self._check_box_audio_filter_checked)
-        self.ui.checkBoxMidiFilter.stateChanged.connect(
-            self._check_box_midi_filter_checked)
+        #self.ui.toolButtonCloseFilterBar.clicked.connect(
+            #self._toggle_patchbay_filters_bar)
+        #self.ui.checkBoxAudioFilter.stateChanged.connect(
+            #self._check_box_audio_filter_checked)
+        #self.ui.checkBoxMidiFilter.stateChanged.connect(
+            #self._check_box_midi_filter_checked)
 
         # prevent to hide the session frame with splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
@@ -825,39 +827,39 @@ class MainWindow(QMainWindow):
     def _toggle_patchbay_filters_bar(self):
         should_be_visible = not self.ui.framePatchbayFilters.isVisible()
         
-        if should_be_visible:
-            port_types_view = self.session.patchbay_manager.port_types_view
-            self.ui.checkBoxAudioFilter.setChecked(
-                bool(port_types_view & patchbay_manager.PORT_TYPE_AUDIO))
-            self.ui.checkBoxMidiFilter.setChecked(
-                bool(port_types_view & patchbay_manager.PORT_TYPE_MIDI))
+        #if should_be_visible:
+            #port_types_view = self.session.patchbay_manager.port_types_view
+            #self.ui.checkBoxAudioFilter.setChecked(
+                #bool(port_types_view & patchbay_manager.PORT_TYPE_AUDIO))
+            #self.ui.checkBoxMidiFilter.setChecked(
+                #bool(port_types_view & patchbay_manager.PORT_TYPE_MIDI))
 
         self.ui.framePatchbayFilters.setVisible(should_be_visible)
         
-        if should_be_visible:
-            self.ui.lineEditGroupFilter.setFocus()
-        else:
-            self.ui.lineEditGroupFilter.setText('')
-            self.group_filter_edited.emit('')
+        #if should_be_visible:
+            #self.ui.lineEditGroupFilter.setFocus()
+        #else:
+            #self.ui.lineEditGroupFilter.setText('')
+            #self.group_filter_edited.emit('')
 
-    def _change_port_types_view(self):
-        port_types_view = (
-            int(self.ui.checkBoxAudioFilter.isChecked()) * patchbay_manager.PORT_TYPE_AUDIO
-            + int(self.ui.checkBoxMidiFilter.isChecked()) * patchbay_manager.PORT_TYPE_MIDI)
-        self.session.patchbay_manager.change_port_types_view(port_types_view)
-        self.group_filter_edited.emit(self.ui.lineEditGroupFilter.text())
+    #def _change_port_types_view(self):
+        #port_types_view = (
+            #int(self.ui.checkBoxAudioFilter.isChecked()) * patchbay_manager.PORT_TYPE_AUDIO
+            #+ int(self.ui.checkBoxMidiFilter.isChecked()) * patchbay_manager.PORT_TYPE_MIDI)
+        #self.session.patchbay_manager.change_port_types_view(port_types_view)
+        #self.group_filter_edited.emit(self.ui.lineEditGroupFilter.text())
 
-    def _check_box_audio_filter_checked(self, state: int):
-        if not state:
-            self.ui.checkBoxMidiFilter.setChecked(True)
+    #def _check_box_audio_filter_checked(self, state: int):
+        #if not state:
+            #self.ui.checkBoxMidiFilter.setChecked(True)
         
-        self._change_port_types_view()
+        #self._change_port_types_view()
     
-    def _check_box_midi_filter_checked(self, state: bool):
-        if not state:
-            self.ui.checkBoxAudioFilter.setChecked(True)
+    #def _check_box_midi_filter_checked(self, state: bool):
+        #if not state:
+            #self.ui.checkBoxAudioFilter.setChecked(True)
         
-        self._change_port_types_view()
+        #self._change_port_types_view()
 
     def _status_bar_pressed(self):
         status = self.session.server_status

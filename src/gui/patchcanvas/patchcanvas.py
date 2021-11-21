@@ -1367,27 +1367,24 @@ def set_connection_in_front(connection_id: int):
             if conn.widget is not None:
                 conn.widget.setZValue(canvas.last_z_value)
             break
-        
-def ensure_group_visible(group_ids: set):
-    rectf = QRectF(0.0, 0.0, 0.0, 0.0)
-    
-    found = False
-    
+
+def select_filtered_group_box(group_id: int, n_select = 1):
     for group in canvas.group_list:
-        if group.group_id in group_ids:
-            found = True
+        if group.group_id == group_id:
+            n_widget = 1
+
             for widget in group.widgets:
-                if widget is None:
-                    continue
-                
-                box_rectf = widget.sceneBoundingRect()
-                rectf = rectf.united(box_rectf)
-    
-    if not found:
-        return
-    
-    canvas.scene.m_view.ensureVisible(rectf)
-    
+                if widget is not None and widget.isVisible():
+                    if n_select == n_widget:
+                        canvas.scene.clearSelection()
+                        widget.setSelected(True)
+                        canvas.scene.m_view.ensureVisible(
+                            widget.sceneBoundingRect())
+                        break
+
+                    n_widget += 1
+            break
+
 def get_number_of_boxes(group_id: int)->int:
     n = 0
     
