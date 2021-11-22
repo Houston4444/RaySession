@@ -47,6 +47,7 @@ class Signaler(QObject):
     favorite_removed = pyqtSignal(str, bool)
 
     canvas_callback = pyqtSignal(int, int, int, str)
+    port_types_view_changed = pyqtSignal(int)
 
     def __init__(self):
         QObject.__init__(self)

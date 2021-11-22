@@ -1637,6 +1637,8 @@ class PatchbayManager:
 
         self.optimize_operation(False)
         patchcanvas.redrawAllGroups()
+        self.session.signaler.port_types_view_changed.emit(
+            self.port_types_view)
 
     def get_json_contents_from_path(self, file_path: str)->dict:
         if not os.path.exists(file_path):

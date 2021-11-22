@@ -117,6 +117,12 @@ class CanvasFilterFrame(QFrame):
             
         self._change_port_types_view()
     
+    def _port_types_view_changed(self, port_types_view: int):
+        self.ui.checkBoxAudioFilter.setChecked(
+            bool(port_types_view & patchbay_manager.PORT_TYPE_AUDIO))
+        self.ui.checkBoxMidiFilter.setChecked(
+            bool(port_types_view & patchbay_manager.PORT_TYPE_MIDI))
+    
     def _set_semi_hide_opacity(self, value:int):
         if self.patchbay_manager is None:
             return
@@ -139,4 +145,6 @@ class CanvasFilterFrame(QFrame):
         
     def set_patchbay_manager(self, patchbay_manager):
         self.patchbay_manager = patchbay_manager
+        self.patchbay_manager.session.signaler.port_types_view_changed.connect(
+            self._port_types_view_changed)
         
