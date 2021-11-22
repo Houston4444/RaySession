@@ -243,7 +243,7 @@ class CanvasBox(QGraphicsItem):
         if options.auto_select_items:
             self.setAcceptHoverEvents(True)
 
-        self.m_global_opacity = 1.0
+        self.m_is_semi_hidden = False
 
         self.updatePositions()
 
@@ -1055,8 +1055,17 @@ class CanvasBox(QGraphicsItem):
         return item_list
 
     def semi_hide(self, yesno: bool):
-        self.m_global_opacity = 0.15 if yesno else 1.0
-        self.setOpacity(self.m_global_opacity)
+        self.m_is_semi_hidden = yesno
+        if yesno:
+            self.setOpacity(canvas.semi_hide_opacity)
+        else:
+            self.setOpacity(1.0)
+
+    def update_opacity(self):
+        if not self.m_is_semi_hidden:
+            return
+        
+        self.setOpacity(canvas.semi_hide_opacity)
 
     def type(self):
         return CanvasBoxType
@@ -1731,9 +1740,11 @@ class CanvasBox(QGraphicsItem):
         # draw title lines
         for title_line in self._title_lines:
             painter.setFont(title_line.font)
-            painter.setOpacity(self.m_global_opacity)
+            
+            global_opacity = canvas.semi_hide_opacity if self.m_is_semi_hidden else 1.0
+            painter.setOpacity(global_opacity)
             if title_line.is_little:
-                painter.setOpacity(0.5 * self.m_global_opacity)
+                painter.setOpacity(0.5 * global_opacity)
 
             if (title_line == self._title_lines[-1]
                     and self.m_group_name.endswith(' Monitor')):

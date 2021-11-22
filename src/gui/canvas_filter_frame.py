@@ -2,7 +2,10 @@
 from PyQt5.QtWidgets import QFrame
 from PyQt5.QtCore import pyqtSignal, Qt
 
+from gui_tools import RS
+
 import patchbay_manager
+import patchcanvas
 
 import ui.filter_frame
 
@@ -23,11 +26,16 @@ class CanvasFilterFrame(QFrame):
             self._check_box_audio_checked)
         self.ui.checkBoxMidiFilter.stateChanged.connect(
             self._check_box_midi_checked)
+        self.ui.spinBoxOpacity.valueChanged.connect(
+            self._set_semi_hide_opacity)
         self.ui.toolButtonCloseFilterBar.clicked.connect(
             self.hide)
         
         self._n_selected = 0
         self._n_boxes = 0
+        
+        self.ui.spinBoxOpacity.setValue(
+            int(RS.settings.value('Canvas/semi_hide_opacity', type=float) * 100))
     
     def _filter_groups(self):
         if self.patchbay_manager is None:
@@ -109,6 +117,12 @@ class CanvasFilterFrame(QFrame):
             
         self._change_port_types_view()
     
+    def _set_semi_hide_opacity(self, value:int):
+        if self.patchbay_manager is None:
+            return
+
+        self.patchbay_manager.set_semi_hide_opacity(float(value / 100))
+    
     def showEvent(self, event):
         self.ui.lineEditGroupFilter.setFocus()
         self.ui.toolButtonDown.setEnabled(False)
@@ -119,6 +133,9 @@ class CanvasFilterFrame(QFrame):
         self.ui.lineEditGroupFilter.setText('')
         self._n_selected = 0
         self._filter_groups()
+        RS.settings.setValue(
+            'Canvas/semi_hide_opacity',
+            float(self.ui.spinBoxOpacity.value() / 100))
         
     def set_patchbay_manager(self, patchbay_manager):
         self.patchbay_manager = patchbay_manager

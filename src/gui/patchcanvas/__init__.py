@@ -168,6 +168,7 @@ class Canvas(object):
         self.size_rect = QRectF()
 
         self.is_line_mov = False
+        self.semi_hide_opacity = 0.17
 
     def callback(self, action, value1, value2, value_str):
         print("Canvas::callback({}, {}, {}, {})".format(

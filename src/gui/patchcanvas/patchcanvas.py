@@ -1397,6 +1397,16 @@ def get_number_of_boxes(group_id: int)->int:
     
     return n
     
+def set_semi_hide_opacity(opacity: float):
+    canvas.semi_hide_opacity = opacity
+
+    for group in canvas.group_list:
+        for widget in group.widgets:
+            if widget is not None:
+                widget.update_opacity()
                 
+    for conn in canvas.connection_list:
+        if conn.widget is not None:
+            conn.widget.updateLineGradient()
     
 # ------------------------------------------------------------------------------------------------------------
