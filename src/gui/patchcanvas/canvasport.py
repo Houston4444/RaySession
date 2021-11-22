@@ -353,6 +353,11 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.hoverLeaveEvent(self, event)
 
     def mousePressEvent(self, event):
+        if canvas.scene.get_zoom_scale() <= 0.4:
+            # prefer move box if zoom is too low
+            event.ignore()
+            return
+        
         if event.button() == Qt.LeftButton:
             self.m_hover_item = None
             self.m_mouse_down = True
@@ -594,6 +599,11 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.mouseReleaseEvent(self, event)
 
     def contextMenuEvent(self, event):
+        if canvas.scene.get_zoom_scale() <= 0.4:
+            # prefer move box if zoom is too low
+            event.ignore()
+            return
+        
         if canvas.is_line_mov:
             return
 

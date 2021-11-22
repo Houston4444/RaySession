@@ -787,6 +787,9 @@ class PatchScene(QGraphicsScene):
             return
         canvas.qobject.zoom_changed.emit(self.m_view.transform().m11() * 100)
 
+    def get_zoom_scale(self):
+        return self.m_view.transform().m11()
+
     def keyPressEvent(self, event):
         if not self.m_view:
             event.ignore()
