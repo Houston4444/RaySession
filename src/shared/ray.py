@@ -545,13 +545,14 @@ class ClientData:
     check_last_save = True
     ignored_extensions = GIT_IGNORED_EXTENSIONS
     template_origin = ''
-    useless_int = 0
+    jack_client_name = ''
+    jack_naming = 0
     ray_hack = None
     ray_net = None
 
     @staticmethod
     def sisi():
-        return 'sissssissssssissi'
+        return 'sissssissssssisssi'
 
     @staticmethod
     def new_from(*args):
@@ -568,7 +569,8 @@ class ClientData:
                 client.icon,
                 client.capabilities, int(client.check_last_save),
                 client.ignored_extensions,
-                client.template_origin, client.useless_int)
+                client.template_origin,
+                client.jack_client_name, client.jack_naming)
 
     def gui_init(self, client_id, protocol):
         self.client_id = client_id
@@ -587,7 +589,8 @@ class ClientData:
                icon,
                capabilities, check_last_save,
                ignored_extensions,
-               template_origin, useless_int,
+               template_origin,
+               jack_client_name, jack_naming,
                secure=False):
         self.executable_path = str(executable)
         self.arguments = str(arguments)
@@ -601,6 +604,7 @@ class ClientData:
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
         self.template_origin = template_origin
+        self.jack_naming = jack_naming
 
         if secure:
             return
@@ -620,6 +624,7 @@ class ClientData:
                 self.prefix_mode = PrefixMode.SESSION_NAME
 
         self.capabilities = str(capabilities)
+        self.jack_client_name = jack_client_name
 
     def update_secure(self, *args):
         self.update(*args, secure=True)

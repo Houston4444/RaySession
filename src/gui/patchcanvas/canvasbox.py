@@ -333,6 +333,7 @@ class CanvasBox(QGraphicsItem):
 
     def splitTitle(self, n_lines=True)->tuple:
         title, slash, subtitle = self.m_group_name.partition('/')
+
         if self.m_icon_type == ICON_CLIENT and subtitle:
             # if there is a subtitle, title is not bold when subtitle is.
             # so title is 'little'

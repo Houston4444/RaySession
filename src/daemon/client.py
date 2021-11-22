@@ -1317,6 +1317,9 @@ class Client(ServerSender, ray.ClientData):
             process_env.insert('RAY_CLIENT_ID', self.client_id)
             self._process.setProcessEnvironment(process_env)
 
+            self.jack_client_name = self.get_jack_client_name()
+            self.send_gui_client_properties()
+
         self.session.send_monitor_event(
             'client_start_request', self.client_id)
 
@@ -2189,21 +2192,21 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                   ray.APP_TITLE,
                   server_capabilities)
 
-        self.send_gui_client_properties()
-        self.set_status(ray.ClientStatus.OPEN)
-
         client_project_path = self.get_project_path()
-        jack_client_name = self.get_jack_client_name()
+        self.jack_client_name = self.get_jack_client_name()
 
         if self.protocol == ray.Protocol.RAY_NET:
             client_project_path = self.session.get_short_path()
-            jack_client_name = self.ray_net.session_template
+            self.jack_client_name = self.ray_net.session_template
+
+        self.send_gui_client_properties()
+        self.set_status(ray.ClientStatus.OPEN)
 
         if ':monitor:' in self.capabilities:
             self.session.send_initial_monitor(self.addr)
 
         self.send(src_addr, "/nsm/client/open", client_project_path,
-                  self.session.name, jack_client_name)
+                  self.session.name, self.jack_client_name)
 
         self.pending_command = ray.Command.OPEN
 

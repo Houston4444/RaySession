@@ -56,6 +56,7 @@ class ClientSlot(QFrame):
         self._menu.addAction(self.ui.actionSaveAsApplicationTemplate)
         self._menu.addAction(self.ui.actionRename)
         self._menu.addAction(self.ui.actionReturnToAPreviousState)
+        #self._menu.addAction(self.ui.actionFindBoxesInPatchbay)
         self._menu.addAction(self.ui.actionProperties)
 
         self.ui.actionReturnToAPreviousState.setVisible(
