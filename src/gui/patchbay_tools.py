@@ -187,6 +187,13 @@ class CanvasMenu(QMenu):
         port_types_view = patchbay_manager.port_types_view & (
             GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
 
+        self.action_find_box = self.addAction(
+            _translate('patchbay', "Find a box..."))
+        self.action_find_box.setIcon(QIcon.fromTheme('edit-find'))
+        self.action_find_box.setShortcut('Ctrl+F')
+        self.action_find_box.triggered.connect(
+            main_win.toggle_patchbay_filters_bar)
+
         self.port_types_menu = QMenu(_translate('patchbay', 'Type filter'), self)
         self.port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
         self.action_audio_midi = self.port_types_menu.addAction(
