@@ -817,7 +817,9 @@ class MainWindow(QMainWindow):
             self.ui.splitterMainVsCanvas.setSizes([100, 0])
 
         self.ui.graphicsView.setVisible(yesno)
+        self.ui.framePatchbayFilters.setVisible(False)
         self.ui.splitterMainVsCanvas.set_active(yesno)
+        self.ui.listWidget.patchbay_is_shown(yesno)
 
     def _status_bar_pressed(self):
         status = self.session.server_status
@@ -1454,8 +1456,16 @@ class MainWindow(QMainWindow):
                        int(factory), template_name)
 
     def toggle_patchbay_filters_bar(self):
+        if not self.ui.graphicsView.isVisible():
+            return
+
         self.ui.framePatchbayFilters.setVisible(
             not self.ui.framePatchbayFilters.isVisible())
+
+    def set_patchbay_filter_text(self, text: str):
+        ''' used by client widget to find patchbay boxes '''
+        self.ui.framePatchbayFilters.setVisible(True)
+        self.ui.framePatchbayFilters.set_filter_text(text)
 
     def update_favorites_menu(self):
         self._favorites_menu.clear()

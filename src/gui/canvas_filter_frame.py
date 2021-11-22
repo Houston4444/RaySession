@@ -147,4 +147,14 @@ class CanvasFilterFrame(QFrame):
         self.patchbay_manager = patchbay_manager
         self.patchbay_manager.session.signaler.port_types_view_changed.connect(
             self._port_types_view_changed)
-        
+    
+    def set_filter_text(self, text: str):
+        ''' used to find client boxes from client widget '''
+        self.ui.lineEditGroupFilter.setText(text)
+
+        if text:
+            self._n_selected = 1
+        else:
+            self._n_selected = 0
+
+        self._filter_groups()
