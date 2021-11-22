@@ -1378,7 +1378,7 @@ def select_filtered_group_box(group_id: int, n_select = 1):
                     if n_select == n_widget:
                         canvas.scene.clearSelection()
                         widget.setSelected(True)
-                        canvas.scene.m_view.centerOn(widget)
+                        canvas.scene.center_view_on(widget)
                         break
 
                     n_widget += 1
