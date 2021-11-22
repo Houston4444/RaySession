@@ -95,7 +95,7 @@ class CanvasBezierLine(QGraphicsPathItem):
                 canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
                 break
 
-    def opacify(self, yesno: bool):
+    def semi_hide(self, yesno: bool):
         self.m_global_opacity = 0.15 if yesno else 1.0
         self.updateLineGradient()
 

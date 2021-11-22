@@ -1334,19 +1334,19 @@ def set_max_port_width(width: int):
     redrawAllGroups()
     
     
-def opacify_group(group_id: int, yesno:bool):
+def semi_hide_group(group_id: int, yesno:bool):
     for group in canvas.group_list:
         if group.group_id == group_id:
             for widget in group.widgets:
                 if widget is not None:
-                    widget.opacify(yesno)
+                    widget.semi_hide(yesno)
             break
 
-def opacify_connection(connection_id: int, yesno:bool):
+def semi_hide_connection(connection_id: int, yesno:bool):
     for connection in canvas.connection_list:
         if connection.connection_id == connection_id:
             if connection.widget is not None:
-                connection.widget.opacify(yesno)
+                connection.widget.semi_hide(yesno)
             break
 
 def set_group_in_front(group_id: int):

@@ -97,11 +97,11 @@ class Connection:
             fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
-    def opacify(self, yesno: bool):
+    def semi_hide(self, yesno: bool):
         if not self.in_canvas:
             return
         
-        patchcanvas.opacify_connection(
+        patchcanvas.semi_hide_connection(
             self.connection_id, yesno)
     
     def set_in_front(self):
@@ -417,11 +417,11 @@ class Group:
                                 fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
-    def opacify(self, yesno: bool):
+    def semi_hide(self, yesno: bool):
         if not self.in_canvas:
             return 
         
-        patchcanvas.opacify_group(self.group_id, yesno)
+        patchcanvas.semi_hide_group(self.group_id, yesno)
 
     def set_in_front(self):
         if not self.in_canvas:
@@ -1941,14 +1941,14 @@ class PatchbayManager:
             else:
                 not_opac_grp_ids.add(group.group_id)
 
-            group.opacify(opac)
+            group.semi_hide(opac)
         
         for conn in self.connections:
             opac_conn = bool(
                 conn.port_out.group_id in opac_grp_ids
                 and conn.port_in.group_id in opac_grp_ids)
             
-            conn.opacify(opac_conn)
+            conn.semi_hide(opac_conn)
             if opac_conn:
                 opac_conn_ids.add(conn.connection_id)
             

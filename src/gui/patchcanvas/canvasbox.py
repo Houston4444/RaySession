@@ -1054,7 +1054,7 @@ class CanvasBox(QGraphicsItem):
 
         return item_list
 
-    def opacify(self, yesno: bool):
+    def semi_hide(self, yesno: bool):
         self.m_global_opacity = 0.15 if yesno else 1.0
         self.setOpacity(self.m_global_opacity)
 
