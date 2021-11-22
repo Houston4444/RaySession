@@ -1,7 +1,7 @@
 
 import os
 
-from PyQt5.QtCore import pyqtSignal, QTimer, QLocale, QUrl
+from PyQt5.QtCore import pyqtSignal, QTimer, QLocale, QUrl, Qt
 from PyQt5.QtGui import QIcon, QDesktopServices
 from PyQt5.QtWidgets import QWidget, QComboBox, QMenu, QApplication, QDialog
 

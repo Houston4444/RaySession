@@ -328,6 +328,9 @@ class MainWindow(QMainWindow):
         self.ui.framePatchbayFilters.set_patchbay_manager(
             self.session.patchbay_manager)
         self.ui.framePatchbayFilters.setVisible(False)
+        filter_bar_shortcut = QShortcut('Ctrl+F', self)
+        filter_bar_shortcut.setContext(Qt.ApplicationShortcut)
+        filter_bar_shortcut.activated.connect(self.toggle_patchbay_filters_bar)
 
         # prevent to hide the session frame with splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
