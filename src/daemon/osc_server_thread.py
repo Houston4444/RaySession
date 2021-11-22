@@ -494,7 +494,7 @@ class OscServerThread(ClientCommunicating):
         self.session.send_initial_monitor(src_addr, monitor_is_client=False)
         self.send(src_addr, '/reply', path, 'announced')
     
-    @ray_method('/ray/server/monitor_disannounce', '')
+    @ray_method('/ray/server/monitor_quit', '')
     def rayServerMonitorDisannounce(self, path, args, types, src_addr):
         for monitor_addr in self.monitor_list:
             if monitor_addr.url == src_addr.url:
@@ -503,7 +503,7 @@ class OscServerThread(ClientCommunicating):
             return
         
         self.monitor_list.remove(monitor_addr)
-        self.send(src_addr, '/reply', path, 'disannounced')
+        self.send(src_addr, '/reply', path, 'monitor exit')
 
     @ray_method('/ray/server/set_nsm_locked', '')
     def rayServerSetNsmLocked(self, path, args, types, src_addr):

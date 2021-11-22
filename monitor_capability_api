@@ -1,21 +1,20 @@
 
-The NSM capability ':monitor:' gives informations about others running clients, especially their running state.
-Client MUST check if the server has the ':monitor:' capability.
+The ':monitor:' capability allows an NSM client to get informations from the NSM server about other clients in the session.
 
-when a client informs the NSM server that it has ':monitor:' capability,
-server sends to it one following message per existing client:
+To become a monitor client, the client MUST check if the NSM server has the ':monitor:' capability, and its capability string MUST contain ':monitor:'.
+
+Just before to receive the first /nsm/client/open message, the monitor client will receive for each client in the session the following status message:
 
 /nsm/client/monitor/client_state s:client_id i:is_started
 
-where 'is_started' is set to 1 if client is started, else 0
+'is_started' is 1 if the client is started or 0 if the client is stopped.
 
-This message is sent just before the /nsm/client/open message.
-If client wants to receive all these messages another time, it has to send to server :
+If the monitor client wants to receive all these messages another time, it has to send to server :
 
 /nsm/server/monitor_reset
 
 
-At each event, this monitor client will receive
+At each event, this monitor client will receive :
 
 /nsm/client/monitor/client_event s:client_id s:event
 
@@ -34,27 +33,25 @@ start_request
 save_request
 stop_request
 
-'joined' event happens when client is joined to the session
-from external, starting it with NSM_URL=server_url client_executable
+the 'joined' event happens when a client is started from the outside, for example when it is started from the shell with the command `NSM_URL=server_url executable`.
 
-in RaySession, 'removed' event happens when a client
-is definitely removed from the trash.
+in RaySession, the 'removed' event happens when a client is definitely removed from the trash.
 
-Note that a monitor client doesn't receives /nsm/client/monitor_event if the event
+Note that a monitor client does not receives /nsm/client/monitor_event if the event
 concerns this monitor client.
 
 
 -------------------------------------
 
 In RaySession, there is also the possibility for an external program to become a monitor.
-This allow to get informations on the session and be warned of session events without being a session client.
+This allows to get informations on the session clients and be warned of clients events without being a session client.
 The program becomes a ray-daemon monitor with:
 
 /ray/server/monitor_announce
 
-it MUST disannounce before to be stopped with:
+it MUST send to server the following message before to be stopped:
 
-/ray/server/monitor_disannounce
+/ray/server/monitor_quit
 
 
 It will receives the same messages than a monitor client, but for logical reasons,
