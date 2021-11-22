@@ -190,7 +190,7 @@ class SignaledSession(OperatingSession):
                 # by command : $:NSM_URL=url executable
                 client = self._new_client(executable_path)
                 self.externals_timer.start()
-                self.send_monitor_event('client_joined', client.client_id)
+                self.send_monitor_event('joined', client.client_id)
                 client.server_announce(path, args, src_addr, True)
 
             #n = 0
@@ -1816,7 +1816,7 @@ class SignaledSession(OperatingSession):
         self._save_session_file()
 
         self.send(src_addr, '/reply', path, "client definitely removed")
-        self.send_monitor_event('client_removed', client_id)
+        self.send_monitor_event('removed', client_id)
 
     def _ray_trashed_client_remove_keep_files(self, path, args, src_addr):
         if not self.path:
@@ -1838,7 +1838,7 @@ class SignaledSession(OperatingSession):
         self.trashed_clients.remove(client)
 
         self.send(src_addr, '/reply', path, "client removed")
-        self.send_monitor_event('client_removed', client_id)
+        self.send_monitor_event('removed', client_id)
 
     def _ray_net_daemon_duplicate_state(self, path, args, src_addr):
         state = args[0]

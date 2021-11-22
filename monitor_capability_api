@@ -1,6 +1,6 @@
 
 The NSM capability ':monitor:' gives informations about others running clients, especially their running state.
-Client MUST check if server has the ':monitor:' capability.
+Client MUST check if the server has the ':monitor:' capability.
 
 when a client informs the NSM server that it has ':monitor:' capability,
 server sends to it one following message per existing client:
@@ -21,23 +21,23 @@ At each event, this monitor client will receive
 
 where 'event' can be
 
-client_started
-client_joined
-client_ready
-client_saved
-client_stopped_by_server
-client_stopped_by_itself
-client_removed
-client_open_error
-client_save_error
-client_start_request
-client_save_request
-client_stop_request
+started
+joined
+ready
+saved
+stopped_by_server
+stopped_by_itself
+removed
+open_error
+save_error
+start_request
+save_request
+stop_request
 
-'client_joined' event happens when client is joined to the session
+'joined' event happens when client is joined to the session
 from external, starting it with NSM_URL=server_url client_executable
 
-in RaySession, 'client_removed' event happens when a client
+in RaySession, 'removed' event happens when a client
 is definitely removed from the trash.
 
 Note that a monitor client doesn't receives /nsm/client/monitor_event if the event

@@ -159,7 +159,7 @@ class Client(ServerSender, ray.ClientData):
         self.send_gui_message(_translate("GUIMSG", "  %s: launched")
                             % self.gui_msg_style())
 
-        self.session.send_monitor_event('client_started', self.client_id)
+        self.session.send_monitor_event('started', self.client_id)
 
         self._send_reply_to_caller(OSC_SRC_START, 'client started')
 
@@ -1042,7 +1042,7 @@ class Client(ServerSender, ray.ClientData):
                                             % self.gui_msg_style())
                 
                 self.session.send_monitor_event(
-                    'client_save_error', self.client_id)
+                    'save_error', self.client_id)
 
             elif self.pending_command == ray.Command.OPEN:
                 self._send_error_to_caller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
@@ -1050,7 +1050,7 @@ class Client(ServerSender, ray.ClientData):
                                             % self.gui_msg_style())
                 
                 self.session.send_monitor_event(
-                    'client_open_error', self.client_id)
+                    'open_error', self.client_id)
 
             self.set_status(ray.ClientStatus.ERROR)
         else:
@@ -1063,7 +1063,7 @@ class Client(ServerSender, ray.ClientData):
 
                 self._send_reply_to_caller(OSC_SRC_SAVE, 'client saved.')
                 self.session.send_monitor_event(
-                    'client_saved', self.client_id)
+                    'saved', self.client_id)
 
             elif self.pending_command == ray.Command.OPEN:
                 self.send_gui_message(
@@ -1076,7 +1076,7 @@ class Client(ServerSender, ray.ClientData):
                 self._send_reply_to_caller(OSC_SRC_OPEN, 'client opened')
 
                 self.session.send_monitor_event(
-                    'client_ready', self.client_id)
+                    'ready', self.client_id)
 
                 if self.has_server_option(ray.Option.GUI_STATES):
                     if (self.session.wait_for == ray.WaitFor.NONE
@@ -1318,7 +1318,7 @@ class Client(ServerSender, ray.ClientData):
             self._process.setProcessEnvironment(process_env)
 
         self.session.send_monitor_event(
-            'client_start_request', self.client_id)
+            'start_request', self.client_id)
 
         self._process.start(self.executable_path, arguments)
 
@@ -1499,7 +1499,7 @@ class Client(ServerSender, ray.ClientData):
 
         if self.is_running():
             self.session.send_monitor_event(
-                'client_save_request', self.client_id)
+                'save_request', self.client_id)
 
             if self.is_ray_hack():
                 self.pending_command = ray.Command.SAVE
@@ -1547,7 +1547,7 @@ class Client(ServerSender, ray.ClientData):
                 self._stopped_timer.start()
 
             self.session.send_monitor_event(
-                'client_stop_request', self.client_id)
+                'stop_request', self.client_id)
 
             if self.is_external:
                 os.kill(self.pid, 15) # 15 means signal.SIGTERM
