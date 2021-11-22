@@ -3,13 +3,13 @@ The ':monitor:' capability allows an NSM client to get informations from the NSM
 
 To become a monitor client, the client MUST check if the NSM server has the ':monitor:' capability, and its capability string MUST contain ':monitor:'.
 
-Just before to receive the first /nsm/client/open message, the monitor client will receive for each client in the session the following status message:
+Just before receiving the first /nsm/client/open message, the monitor client will receive for each client in the session the following status message:
 
 /nsm/client/monitor/client_state s:client_id i:is_started
 
 'is_started' is 1 if the client is started or 0 if the client is stopped.
 
-If the monitor client wants to receive all these messages another time, it has to send to server :
+A monitor client can query the state of the other clients at any time by sending this message to the server
 
 /nsm/server/monitor_reset
 
