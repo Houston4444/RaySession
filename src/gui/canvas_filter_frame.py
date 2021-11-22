@@ -50,7 +50,6 @@ class CanvasFilterFrame(QFrame):
             self.ui.lineEditGroupFilter.setStyleSheet(
                 'QLineEdit{background-color:#800000}')
             
-
         self.ui.toolButtonUp.setEnabled(self._n_boxes >= 2)
         self.ui.toolButtonDown.setEnabled(self._n_boxes >= 2)
 
