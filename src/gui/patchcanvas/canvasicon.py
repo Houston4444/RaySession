@@ -122,7 +122,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         self.setOffset(float(self.x_offset), 4.0)
 
     def boundingRect(self):
-        return self.p_size
+        return QRectF(float(self.x_offset), 4.0, 24.0, 24.0)
 
 
 class CanvasSvgIcon(QGraphicsSvgItem):

@@ -1306,6 +1306,12 @@ class CanvasBox(QGraphicsItem):
         QGraphicsItem.hoverEnterEvent(self, event)
 
     def mouseDoubleClickEvent(self, event):
+        if (self.m_icon_type == ICON_CLIENT
+                and self.top_icon is not None
+                and self.top_icon.boundingRect().contains(event.pos())):
+            # will try something here soon
+            pass
+
         if self.m_plugin_id >= 0:
             event.accept()
             canvas.callback(ACTION_PLUGIN_SHOW_UI if self.m_plugin_ui else ACTION_PLUGIN_EDIT, self.m_plugin_id, 0, "")
