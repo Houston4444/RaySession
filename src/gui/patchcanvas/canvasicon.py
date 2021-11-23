@@ -120,9 +120,9 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
     def align_right(self, width: int):
         self.x_offset = width - 28
         self.setOffset(float(self.x_offset), 4.0)
-
-    def boundingRect(self):
-        return QRectF(float(self.x_offset), 4.0, 24.0, 24.0)
+        
+    def type(self):
+        return CanvasIconType
 
 
 class CanvasSvgIcon(QGraphicsSvgItem):

@@ -416,7 +416,6 @@ class Group:
                 animate=False)
             
         if self.has_gui:
-            print('has__gui', self.name)
             patchcanvas.set_optional_gui_state(self.group_id, self.gui_visible)
 
     def remove_from_canvas(self):
