@@ -1033,8 +1033,8 @@ class CanvasBox(QGraphicsItem):
         if self.has_top_icon():
             self.top_icon.align_at((self.p_width - max_title_size - 29)/2)
         
-        if self.m_can_handle_gui:
-            self.top_icon.y_offset = 5
+            if self.m_can_handle_gui:
+                self.top_icon.y_offset = 6
 
         if (self.p_width != self.p_ex_width
                 or self.p_height != self.p_ex_height
@@ -1649,13 +1649,20 @@ class CanvasBox(QGraphicsItem):
         # Draw plugin inline display if supported
         self.paintInlineDisplay(painter)
 
+        # Draw toggle GUI client button
         if self.m_can_handle_gui:
-            header_color = QColor(255, 240, 180, 45 if self.m_gui_visible else 10)
-            painter.setBrush(header_color)
-            painter.setPen(Qt.NoPen)
-            header_rect = QRectF(3, 3, self.p_width - 6, self.p_header_height - 3)
-            header_rect.adjust(lineHinting * 2, lineHinting * 2,
-                               -2 * lineHinting, -2 * lineHinting)
+            header_rect = QRectF(3, 3, self.p_width - 6, self.p_header_height - 4)
+            
+            painter.setPen(QPen(QColor(255, 240, 180, 30), 1.000001))
+            painter.setBrush(Qt.NoBrush)
+            
+            if self.m_gui_visible:
+                header_color = QColor(255, 240, 180, 45)
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(header_color)
+                header_rect.adjust(lineHinting * 2, lineHinting * 2,
+                                   -2 * lineHinting, -2 * lineHinting)
+            
             painter.drawRect(header_rect)
 
         if self.m_group_name.endswith(' Monitor'):

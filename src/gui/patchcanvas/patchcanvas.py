@@ -310,7 +310,8 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     group_dict.plugin_id = -1
     group_dict.plugin_ui = False
     group_dict.plugin_inline = False
-    group_dict.ray_client_id = ''
+    group_dict.handle_client_gui = False
+    group_dict.gui_visible = False
     group_dict.null_pos = QPoint(*null_xy)
     group_dict.in_pos = QPoint(*in_xy)
     group_dict.out_pos = QPoint(*out_xy)
@@ -460,7 +461,8 @@ def splitGroup(group_id, on_place=False):
     plugin_id = -1
     plugin_ui = False
     plugin_inline = False
-    ray_client_id = ''
+    handle_client_gui = False
+    gui_visible = False
     portgrps_data = []
     ports_data = []
     conns_data = []
@@ -482,8 +484,9 @@ def splitGroup(group_id, on_place=False):
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
-            ray_client_id = group.ray_client_id
-
+            handle_client_gui = group.handle_client_gui
+            gui_visible = group.gui_visible
+            
             if on_place and item is not None:
                 pos = item.pos()
                 rect = item.boundingRect()
@@ -557,6 +560,9 @@ def splitGroup(group_id, on_place=False):
              out_xy=(group_out_pos.x(), group_out_pos.y()),
              split_animated=True)
 
+    if handle_client_gui:
+        set_optional_gui_state(group_id, gui_visible)
+
     if plugin_id >= 0:
         setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
 
@@ -596,7 +602,8 @@ def joinGroup(group_id):
     plugin_id = -1
     plugin_ui = False
     plugin_inline = False
-    ray_client_id = ''
+    handle_client_gui = False
+    gui_visible = False
     portgrps_data = []
     ports_data = []
     conns_data = []
@@ -619,7 +626,8 @@ def joinGroup(group_id):
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
-            ray_client_id = group.ray_client_id
+            handle_client_gui = group.handle_client_gui
+            gui_visible = group.gui_visible
             break
 
     # FIXME
@@ -683,6 +691,9 @@ def joinGroup(group_id):
              null_xy=(group_null_pos.x(), group_null_pos.y()),
              in_xy=(group_in_pos.x(), group_in_pos.y()),
              out_xy=(group_out_pos.x(), group_out_pos.y()))
+
+    if handle_client_gui:
+        set_optional_gui_state(group_id, gui_visible)
 
     if plugin_id >= 0:
         setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
@@ -1412,16 +1423,13 @@ def set_semi_hide_opacity(opacity: float):
     for conn in canvas.connection_list:
         if conn.widget is not None:
             conn.widget.updateLineGradient()
-            
-def set_group_ray_client_id(group_id: int, client_id:str):
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            group.ray_client_id = client_id
-            break
 
 def set_optional_gui_state(group_id: int, visible: bool):
     for group in canvas.group_list:
         if group.group_id == group_id:
+            group.handle_client_gui = True
+            group.gui_visible = visible
+
             for widget in group.widgets:
                 if widget is not None:
                     widget.set_optional_gui_state(visible)

@@ -191,7 +191,8 @@ class group_dict_t(object):
         'null_pos',
         'in_pos',
         'out_pos',
-        'ray_client_id',
+        'handle_client_gui',
+        'gui_visible',
         'widgets'
     ]
 
