@@ -331,6 +331,9 @@ class SignaledSession(Session):
         client = self.get_client(client_id)
         if client:
             client.set_gui_state(bool(int_state))
+            
+        self.patchbay_manager.optional_gui_state_changed(
+            client_id, bool(int_state))
 
     def _ray_gui_client_still_running(self, path, args):
         client_id = args[0]

@@ -56,6 +56,7 @@ from . import (
     ACTION_GROUP_WRAP,
     ACTION_PORTS_DISCONNECT,
     ACTION_INLINE_DISPLAY,
+    ACTION_CLIENT_SHOW_GUI,
     EYECANDY_FULL,
     PORT_MODE_NULL,
     PORT_MODE_INPUT,
@@ -158,6 +159,7 @@ class CanvasBox(QGraphicsItem):
         self.p_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
         self.p_ex_width = self.p_width
         self.p_ex_height = self.p_height
+        self.p_header_height = canvas.theme.box_header_height
         self.p_ex_scene_pos = self.scenePos()
 
         self.m_last_pos = QPointF()
@@ -244,6 +246,9 @@ class CanvasBox(QGraphicsItem):
             self.setAcceptHoverEvents(True)
 
         self.m_is_semi_hidden = False
+        
+        self.m_can_handle_gui = False # used for optional-gui switch
+        self.m_gui_visible = False
 
         self.updatePositions()
 
@@ -322,6 +327,10 @@ class CanvasBox(QGraphicsItem):
             return False
 
         return not self.top_icon.is_null()
+
+    def set_optional_gui_state(self, visible: bool):
+        self.m_can_handle_gui = True
+        self.m_gui_visible = visible
 
     def setSplit(self, split, mode=PORT_MODE_NULL):
         self.m_splitted = split
@@ -974,6 +983,9 @@ class CanvasBox(QGraphicsItem):
         wrapped_height = wrapped_port_pos + canvas.theme.port_height
         if len(self._title_lines) >= 3:
             wrapped_height += 14
+            self.p_header_height = canvas.theme.box_header_height + 14
+        else:
+            self.p_header_height = canvas.theme.box_header_height
 
         if self._wrapping:
             self.p_height = normal_height \
@@ -1306,15 +1318,16 @@ class CanvasBox(QGraphicsItem):
         QGraphicsItem.hoverEnterEvent(self, event)
 
     def mouseDoubleClickEvent(self, event):
-        if (self.m_icon_type == ICON_CLIENT
-                and self.top_icon is not None
-                and self.top_icon.boundingRect().contains(event.pos())):
-            # will try something here soon
-            pass
+        if self.m_can_handle_gui:
+            canvas.callback(
+                ACTION_CLIENT_SHOW_GUI, self.m_group_id,
+                int(not(self.m_gui_visible)), '')
 
         if self.m_plugin_id >= 0:
             event.accept()
-            canvas.callback(ACTION_PLUGIN_SHOW_UI if self.m_plugin_ui else ACTION_PLUGIN_EDIT, self.m_plugin_id, 0, "")
+            canvas.callback(
+                ACTION_PLUGIN_SHOW_UI if self.m_plugin_ui else ACTION_PLUGIN_EDIT,
+                self.m_plugin_id, 0, "")
             return
 
         QGraphicsItem.mouseDoubleClickEvent(self, event)
@@ -1498,7 +1511,6 @@ class CanvasBox(QGraphicsItem):
         pen_width = pen.widthF()
         lineHinting = pen_width / 2
 
-
         if self._is_hardware:
             d = canvas.theme.hardware_rack_width
             hw_gradient = QLinearGradient(-d, -d, self.p_width +d, self.p_height +d)
@@ -1621,6 +1633,15 @@ class CanvasBox(QGraphicsItem):
 
         # Draw plugin inline display if supported
         self.paintInlineDisplay(painter)
+
+        if self.m_can_handle_gui:
+            header_color = QColor(255, 240, 180, 45 if self.m_gui_visible else 10)
+            painter.setBrush(header_color)
+            painter.setPen(Qt.NoPen)
+            header_rect = QRectF(2, 2, self.p_width - 4, self.p_header_height -2 - 2)
+            header_rect.adjust(lineHinting * 2, lineHinting * 2,
+                               -2 * lineHinting, -2 * lineHinting)
+            painter.drawRect(header_rect)
 
         if self.m_group_name.endswith(' Monitor'):
             bor_gradient = QLinearGradient(0, 0, self.p_height, self.p_height)

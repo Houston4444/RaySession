@@ -67,6 +67,7 @@ ACTION_PLUGIN_SHOW_UI = 18 # plugin_id, N, N
 ACTION_BG_RIGHT_CLICK = 19 # N, N, N
 ACTION_DOUBLE_CLICK = 20 # N, N, N
 ACTION_INLINE_DISPLAY = 21 # plugin_id, N, N
+ACTION_CLIENT_SHOW_GUI = 22 # group_id, visible, N
 
 # Icon
 ICON_APPLICATION = 0
@@ -190,6 +191,7 @@ class group_dict_t(object):
         'null_pos',
         'in_pos',
         'out_pos',
+        'ray_client_id',
         'widgets'
     ]
 

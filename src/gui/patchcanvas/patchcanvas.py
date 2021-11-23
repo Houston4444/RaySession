@@ -310,6 +310,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     group_dict.plugin_id = -1
     group_dict.plugin_ui = False
     group_dict.plugin_inline = False
+    group_dict.ray_client_id = ''
     group_dict.null_pos = QPoint(*null_xy)
     group_dict.in_pos = QPoint(*in_xy)
     group_dict.out_pos = QPoint(*out_xy)
@@ -459,6 +460,7 @@ def splitGroup(group_id, on_place=False):
     plugin_id = -1
     plugin_ui = False
     plugin_inline = False
+    ray_client_id = ''
     portgrps_data = []
     ports_data = []
     conns_data = []
@@ -480,6 +482,7 @@ def splitGroup(group_id, on_place=False):
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
+            ray_client_id = group.ray_client_id
 
             if on_place and item is not None:
                 pos = item.pos()
@@ -593,6 +596,7 @@ def joinGroup(group_id):
     plugin_id = -1
     plugin_ui = False
     plugin_inline = False
+    ray_client_id = ''
     portgrps_data = []
     ports_data = []
     conns_data = []
@@ -615,6 +619,7 @@ def joinGroup(group_id):
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
+            ray_client_id = group.ray_client_id
             break
 
     # FIXME
@@ -1407,5 +1412,21 @@ def set_semi_hide_opacity(opacity: float):
     for conn in canvas.connection_list:
         if conn.widget is not None:
             conn.widget.updateLineGradient()
-    
+            
+def set_group_ray_client_id(group_id: int, client_id:str):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            group.ray_client_id = client_id
+            break
+
+def set_optional_gui_state(group_id: int, visible: bool):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            for widget in group.widgets:
+                if widget is not None:
+                    widget.set_optional_gui_state(visible)
+            break
+        
+    canvas.scene.update()
+
 # ------------------------------------------------------------------------------------------------------------

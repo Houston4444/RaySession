@@ -17,11 +17,11 @@ class Client(QObject, ray.ClientData):
         self.main_win = self.session.main_win
 
         self._previous_status = ray.ClientStatus.STOPPED
-        self._has_gui = False
 
         self.ray_hack = ray.RayHack()
         self.ray_net = ray.RayNet()
         self.status = ray.ClientStatus.STOPPED
+        self.has_gui = False
         self.gui_state = False
         self.has_dirty = False
         self.dirty_state = True
@@ -47,10 +47,11 @@ class Client(QObject, ray.ClientData):
         self.properties_dialog.update_status(status)
 
     def set_gui_enabled(self):
-        self._has_gui = True
+        self.has_gui = True
         self.widget.show_gui_button()
 
     def set_gui_state(self, state: bool):
+        self.set_gui_enabled()
         self.gui_state = state
         self.widget.set_gui_state(state)
 
@@ -131,7 +132,7 @@ class Client(QObject, ray.ClientData):
         self.widget = self.main_win.create_client_widget(self)
         self.widget.update_client_data()
 
-        if self._has_gui:
+        if self.has_gui:
             self.set_gui_enabled()
 
     # method not used yet
@@ -165,6 +166,30 @@ class Client(QObject, ray.ClientData):
             search_list.append("%s/%s/%s" % (project_path,
                                              main_icon_path, path))
         return search_list
+    
+    def can_be_own_jack_client(self, jack_client_name:str)->bool:
+        if self.status in (ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY):
+            return False
+        
+        if jack_client_name == self.jack_client_name:
+            return True
+
+        if jack_client_name.startswith(self.jack_client_name + '/'):
+            return True
+
+        if (jack_client_name.startswith(self.jack_client_name + ' (')
+                and ')' in jack_client_name):
+            return True
+
+        # Carla often puts a .0 at end of client name if it doesn't find
+        # any '.' in jack_client_name
+        jack_client_name = jack_client_name.partition('/')[0]
+
+        if (not self.jack_client_name.endswith('.' + self.client_id)
+                and jack_client_name == self.jack_client_name + '.0'):
+            return True
+
+        return False
 
 
 class TrashedClient(ray.ClientData):

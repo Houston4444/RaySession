@@ -334,6 +334,9 @@ class Group:
         self.in_canvas = False
         self.current_position = group_position
         self.uuid = 0
+        
+        self.has_gui = False
+        self.gui_visible = False
 
         self._timer_port_order = QTimer()
         self._timer_port_order.setInterval(20)
@@ -411,6 +414,10 @@ class Group:
                 bool(gpos.flags & GROUP_WRAPPED_INPUT
                      and gpos.flags & GROUP_WRAPPED_OUTPUT),
                 animate=False)
+            
+        if self.has_gui:
+            print('has__gui', self.name)
+            patchcanvas.set_optional_gui_state(self.group_id, self.gui_visible)
 
     def remove_from_canvas(self):
         if not self.in_canvas:
@@ -453,6 +460,15 @@ class Group:
             return
         
         patchcanvas.select_filtered_group_box(self.group_id, n_select)
+
+    def set_optional_gui_state(self, visible: bool):
+        self.has_gui = True
+        self.gui_visible = visible
+        
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.set_optional_gui_state(self.group_id, visible)
 
     def remove_all_ports(self):
         if self.in_canvas:
@@ -1444,6 +1460,19 @@ class PatchbayManager:
 
         elif action == patchcanvas.ACTION_DOUBLE_CLICK:
             self.toggle_full_screen()
+        
+        elif action == patchcanvas.ACTION_CLIENT_SHOW_GUI:
+            group_id, int_visible = value1, value2
+            for group in self.groups:
+                if group.group_id == group_id:
+                    for client in self.session.client_list:
+                        if client.can_be_own_jack_client(group.name):
+                            show = 'show' if int_visible else 'hide'
+                            self.send_to_daemon(
+                                '/ray/client/%s_optional_gui' % show,
+                                client.client_id)
+                            break
+                    break
 
     def show_options_dialog(self):
         self.options_dialog.move(QCursor.pos())
@@ -1521,34 +1550,6 @@ class PatchbayManager:
                     if port.port_id == port_id:
                         return port
                 break
-
-    def get_related_client(self, group_name:str):
-        if '/' in group_name:
-            group_name = group_name.partition('/')[0]
-        elif ' (' in group_name and group_name.endswith(')'):
-            # mostly for Non Mixer when another DSP group is used
-            group_name = group_name.partition(' (')[0]
-        
-        for client in self.session.client_list:
-            if client.status == ray.ClientStatus.STOPPED:
-                continue
-            
-            if (client.jack_client_name == group_name
-                    or (not client.jack_client_name.endswith('.' + client.client_id)
-                        and group_name == client.jack_client_name + '.0')):
-                return client
-        
-        #for client in self.session.client_list:
-            #client_num = ''
-            #if client.client_id and client.client_id[-1].isdigit():
-                #client_num = '_' + client.client_id.rpartition('_')[2]
-
-            #if (group_name == client.name + client_num
-                    #or group_name == client.name + client_num + '.0'
-                    #or group_name == client.name + '.' + client.client_id):
-                #return client
-        
-        return None
 
     def get_group_position(self, group_name):
         for gpos in self.group_positions:
@@ -1706,12 +1707,21 @@ class PatchbayManager:
             gpos = self.get_group_position(group_name)
             group = Group(self._next_group_id, group_name, gpos)
             group.a2j_group = a2j_group
-            client = self.get_related_client(group.name)
-            if client is not None:
-                group.set_client_icon(client.icon)
-                if (client.jack_client_name.endswith('.' + client.client_id)
-                        and group.name.startswith(client.jack_client_name)):
-                    group.display_name = group.display_name.partition('.')[2]
+            
+            for client in self.session.client_list:
+                if client.can_be_own_jack_client(group_name):
+                    group.set_client_icon(client.icon)
+                    
+                    # in case of long jack naming (ClientName.ClientId)
+                    # do not display ClientName if we have the icon
+                    if (client.icon
+                            and client.jack_client_name.endswith('.' + client.client_id)
+                            and group.name.startswith(client.jack_client_name)):
+                        group.display_name = group.display_name.partition('.')[2]
+
+                    if client.has_gui:
+                        group.set_optional_gui_state(client.gui_state)
+                    break
 
             self._next_group_id += 1
             self.groups.append(group)
@@ -1805,6 +1815,14 @@ class PatchbayManager:
                 port.full_name = new_name
                 group.graceful_port(port)
                 port.change_canvas_properties()
+                break
+
+    def optional_gui_state_changed(self, client_id: str, visible: bool):
+        for client in self.session.client_list:
+            if client.client_id == client_id:
+                for group in self.groups:
+                    if client.can_be_own_jack_client(group.name):
+                        group.set_optional_gui_state(visible)
                 break
 
     def metadata_update(self, uuid: int, key: str, value: str):
