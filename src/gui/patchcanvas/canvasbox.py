@@ -1653,7 +1653,7 @@ class CanvasBox(QGraphicsItem):
         if self.m_can_handle_gui:
             header_rect = QRectF(3, 3, self.p_width - 6, self.p_header_height - 4)
             
-            painter.setPen(QPen(QColor(255, 240, 180, 30), 1.000001))
+            painter.setPen(QPen(QColor(255, 240, 180, 15), 1.000001))
             painter.setBrush(Qt.NoBrush)
             
             if self.m_gui_visible:
