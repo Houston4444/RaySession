@@ -638,13 +638,20 @@ class CanvasBox(QGraphicsItem):
         max_in_width = max_out_width = 0
         port_spacing = canvas.theme.port_height + canvas.theme.port_spacing
 
+        more_height_for_gui = 0
+        if self.m_can_handle_gui:
+            more_height_for_gui = 2
+
         # Get Max Box Width, vertical ports re-positioning
         port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK,
                       PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
         last_in_type = last_out_type = PORT_TYPE_NULL
         last_in_alter = last_out_alter = False
+        
         last_in_pos = last_out_pos = (canvas.theme.box_header_height
+                                      + more_height_for_gui
                                       + canvas.theme.box_header_spacing)
+        
         final_last_in_pos = final_last_out_pos = last_in_pos
 
         wrapped_port_pos = last_in_pos
@@ -899,8 +906,13 @@ class CanvasBox(QGraphicsItem):
                     lines_choice = 3
 
         self._title_lines = self.splitTitle(lines_choice)
+        
+        more_width_for_gui = 0
+        if self.m_can_handle_gui:
+            more_width_for_gui = 2
+        
         self.p_width = max(self.p_width,
-                           all_title_templates[lines_choice]['header_width'])
+                           all_title_templates[lines_choice]['header_width'] + more_width_for_gui)
         max_title_size = all_title_templates[lines_choice]['title_width']
 
         if more_height:
@@ -1020,6 +1032,9 @@ class CanvasBox(QGraphicsItem):
 
         if self.has_top_icon():
             self.top_icon.align_at((self.p_width - max_title_size - 29)/2)
+        
+        if self.m_can_handle_gui:
+            self.top_icon.y_offset = 5
 
         if (self.p_width != self.p_ex_width
                 or self.p_height != self.p_ex_height
@@ -1638,7 +1653,7 @@ class CanvasBox(QGraphicsItem):
             header_color = QColor(255, 240, 180, 45 if self.m_gui_visible else 10)
             painter.setBrush(header_color)
             painter.setPen(Qt.NoPen)
-            header_rect = QRectF(2, 2, self.p_width - 4, self.p_header_height -2 - 2)
+            header_rect = QRectF(3, 3, self.p_width - 6, self.p_header_height - 3)
             header_rect.adjust(lineHinting * 2, lineHinting * 2,
                                -2 * lineHinting, -2 * lineHinting)
             painter.drawRect(header_rect)
@@ -1697,7 +1712,11 @@ class CanvasBox(QGraphicsItem):
 
             rect.adjust(1, 1, -1, 0)
             painter.drawTiledPixmap(rect, canvas.theme.box_header_pixmap, rect.topLeft())
-
+        
+        mh = 0
+        if self.m_can_handle_gui:
+            mh = 1
+        
         # Draw text
         title_x_pos = 8
         if self.has_top_icon():
@@ -1705,7 +1724,7 @@ class CanvasBox(QGraphicsItem):
 
         for title_line in self._title_lines:
             title_line.x = title_x_pos
-            title_line.y = canvas.theme.box_text_ypos
+            title_line.y = canvas.theme.box_text_ypos + mh
 
         if len(self._title_lines) >= 2:
             if self._title_lines[0].is_little:
@@ -1737,10 +1756,10 @@ class CanvasBox(QGraphicsItem):
             title_x_pos = 29 + (self.p_width - 29 - max_title_size) / 2
 
             if title_x_pos > 43:
-                painter.drawLine(5, 16, int(title_x_pos -29 -5), 16)
+                painter.drawLine(5, 16 + mh, int(title_x_pos -29 -5), 16 + mh)
                 painter.drawLine(
-                    int(title_x_pos + max_title_size + 5), 16,
-                    int(self.p_width -5), 16)
+                    int(title_x_pos + max_title_size + 5), 16 + mh,
+                    int(self.p_width -5), 16 + mh)
 
             for title_line in self._title_lines:
                 title_line.x = title_x_pos
@@ -1754,9 +1773,9 @@ class CanvasBox(QGraphicsItem):
                 right_xpos = max(right_xpos, title_line.x + title_line.size)
 
             if left_xpos > 10:
-                painter.drawLine(5, 16, int(left_xpos - 5), 16)
-                painter.drawLine(int(right_xpos + 5), 16,
-                                 int(self.p_width - 5), 16)
+                painter.drawLine(5, 16 + mh, int(left_xpos - 5), 16 + mh)
+                painter.drawLine(int(right_xpos + 5), 16 + mh,
+                                 int(self.p_width - 5), 16 + mh)
 
         if self._is_hardware:
             painter.setPen(canvas.theme.box_text_hw)
