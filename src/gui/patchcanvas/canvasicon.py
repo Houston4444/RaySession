@@ -87,6 +87,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         self.p_size = QRectF(0.0, 0.0, 24.0, 24.0)
         self.icon = None
         self.x_offset = 4
+        self.y_offset = 4
 
         if icon_type in (ICON_CLIENT, ICON_APPLICATION):
             self.setIcon(icon_type, icon_name)
@@ -105,7 +106,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         pixmap = self.icon.pixmap(int(0.5 + 24 * scale), int(0.5 + 24 * scale))
         self.setPixmap(pixmap)
         self.setScale(1.0 / scale)
-        self.setOffset(float(self.x_offset * scale), float(4 * scale))
+        self.setOffset(float(self.x_offset * scale), float(self.y_offset * scale))
 
     def is_null(self)->bool:
         if self.icon is None:
@@ -115,14 +116,14 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
 
     def align_at(self, x_pos: int):
         self.x_offset = x_pos
-        self.setOffset(float(self.x_offset), 4.0)
+        self.setOffset(float(self.x_offset), self.y_offset)
 
     def align_right(self, width: int):
         self.x_offset = width - 28
-        self.setOffset(float(self.x_offset), 4.0)
-
-    def boundingRect(self):
-        return self.p_size
+        self.setOffset(float(self.x_offset), self.y_offset)
+        
+    def type(self):
+        return CanvasIconType
 
 
 class CanvasSvgIcon(QGraphicsSvgItem):

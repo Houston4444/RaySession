@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>468</width>
+    <width>739</width>
     <height>589</height>
    </rect>
   </property>
@@ -832,6 +832,19 @@ QToolButton {border: none}</string>
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="CanvasFilterFrame" name="framePatchbayFilters">
+          <property name="styleSheet">
+           <string notr="true">QFrame{border:none}</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </widget>
@@ -843,7 +856,7 @@ QToolButton {border: none}</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>468</width>
+     <width>739</width>
      <height>30</height>
     </rect>
    </property>
@@ -1153,7 +1166,7 @@ QToolButton {border: none}</string>
     <string>&amp;Keep focus while opening clients</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+F</string>
+    <string>Ctrl+H</string>
    </property>
   </action>
   <action name="actionAboutQt">
@@ -1514,6 +1527,12 @@ QToolButton {border: none}</string>
    <class>CanvasSplitter</class>
    <extends>QSplitter</extends>
    <header>surclassed_widgets</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CanvasFilterFrame</class>
+   <extends>QFrame</extends>
+   <header>canvas_filter_frame</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -1,7 +1,7 @@
 
 import os
 
-from PyQt5.QtCore import pyqtSignal, QTimer, QLocale, QUrl
+from PyQt5.QtCore import pyqtSignal, QTimer, QLocale, QUrl, Qt
 from PyQt5.QtGui import QIcon, QDesktopServices
 from PyQt5.QtWidgets import QWidget, QComboBox, QMenu, QApplication, QDialog
 
@@ -60,7 +60,6 @@ class PatchbayToolsWidget(QWidget):
             self.ui.comboBoxBuffer.addItem(str(size), size)
 
         self.current_buffer_size = self.ui.comboBoxBuffer.currentData()
-
         self.xruns_counter = 0
 
     def zoom_changed_from_canvas(self, ratio):
@@ -179,6 +178,9 @@ class CanvasMenu(QMenu):
                 parent_window_handle = native_parent_widget.windowHandle()
         self.windowHandle().setTransientParent(parent_window_handle)
 
+        self.patchbay_manager.session.signaler.port_types_view_changed.connect(
+            self._port_types_view_changed)
+
         self.action_fullscreen = self.addAction(
             _translate('patchbay', "Toggle Full Screen"))
         self.action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
@@ -187,6 +189,13 @@ class CanvasMenu(QMenu):
 
         port_types_view = patchbay_manager.port_types_view & (
             GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+
+        self.action_find_box = self.addAction(
+            _translate('patchbay', "Find a box..."))
+        self.action_find_box.setIcon(QIcon.fromTheme('edit-find'))
+        self.action_find_box.setShortcut('Ctrl+F')
+        self.action_find_box.triggered.connect(
+            main_win.toggle_patchbay_filters_bar)
 
         self.port_types_menu = QMenu(_translate('patchbay', 'Type filter'), self)
         self.port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
@@ -260,25 +269,23 @@ class CanvasMenu(QMenu):
         self.action_options.triggered.connect(
             patchbay_manager.show_options_dialog)
 
-    def port_types_view_audio_midi_choice(self):
-        self.action_audio_midi.setChecked(True)
-        self.action_audio.setChecked(False)
-        self.action_midi.setChecked(False)
+    def _port_types_view_changed(self, port_types_view: int):
+        self.action_audio_midi.setChecked(
+            port_types_view == GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+        self.action_audio.setChecked(
+            port_types_view == GROUP_CONTEXT_AUDIO)
+        self.action_midi.setChecked(
+            port_types_view == GROUP_CONTEXT_MIDI)
 
+    def port_types_view_audio_midi_choice(self):
         self.patchbay_manager.change_port_types_view(
             GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
 
     def port_types_view_audio_choice(self):
-        self.action_audio_midi.setChecked(False)
-        self.action_audio.setChecked(True)
-        self.action_midi.setChecked(False)
         self.patchbay_manager.change_port_types_view(
             GROUP_CONTEXT_AUDIO)
 
     def port_types_view_midi_choice(self):
-        self.action_audio_midi.setChecked(False)
-        self.action_audio.setChecked(False)
-        self.action_midi.setChecked(True)
         self.patchbay_manager.change_port_types_view(
             GROUP_CONTEXT_MIDI)
 

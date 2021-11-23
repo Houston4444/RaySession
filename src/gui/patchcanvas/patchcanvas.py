@@ -310,6 +310,8 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     group_dict.plugin_id = -1
     group_dict.plugin_ui = False
     group_dict.plugin_inline = False
+    group_dict.handle_client_gui = False
+    group_dict.gui_visible = False
     group_dict.null_pos = QPoint(*null_xy)
     group_dict.in_pos = QPoint(*in_xy)
     group_dict.out_pos = QPoint(*out_xy)
@@ -459,6 +461,8 @@ def splitGroup(group_id, on_place=False):
     plugin_id = -1
     plugin_ui = False
     plugin_inline = False
+    handle_client_gui = False
+    gui_visible = False
     portgrps_data = []
     ports_data = []
     conns_data = []
@@ -480,7 +484,9 @@ def splitGroup(group_id, on_place=False):
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
-
+            handle_client_gui = group.handle_client_gui
+            gui_visible = group.gui_visible
+            
             if on_place and item is not None:
                 pos = item.pos()
                 rect = item.boundingRect()
@@ -554,6 +560,9 @@ def splitGroup(group_id, on_place=False):
              out_xy=(group_out_pos.x(), group_out_pos.y()),
              split_animated=True)
 
+    if handle_client_gui:
+        set_optional_gui_state(group_id, gui_visible)
+
     if plugin_id >= 0:
         setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
 
@@ -593,6 +602,8 @@ def joinGroup(group_id):
     plugin_id = -1
     plugin_ui = False
     plugin_inline = False
+    handle_client_gui = False
+    gui_visible = False
     portgrps_data = []
     ports_data = []
     conns_data = []
@@ -615,6 +626,8 @@ def joinGroup(group_id):
             plugin_id = group.plugin_id
             plugin_ui = group.plugin_ui
             plugin_inline = group.plugin_inline
+            handle_client_gui = group.handle_client_gui
+            gui_visible = group.gui_visible
             break
 
     # FIXME
@@ -678,6 +691,9 @@ def joinGroup(group_id):
              null_xy=(group_null_pos.x(), group_null_pos.y()),
              in_xy=(group_in_pos.x(), group_in_pos.y()),
              out_xy=(group_out_pos.x(), group_out_pos.y()))
+
+    if handle_client_gui:
+        set_optional_gui_state(group_id, gui_visible)
 
     if plugin_id >= 0:
         setGroupAsPlugin(group_id, plugin_id, plugin_ui, plugin_inline)
@@ -1332,4 +1348,93 @@ def set_prevent_overlap(yesno: bool):
 def set_max_port_width(width: int):
     options.max_port_width = width
     redrawAllGroups()
+    
+    
+def semi_hide_group(group_id: int, yesno:bool):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            for widget in group.widgets:
+                if widget is not None:
+                    widget.semi_hide(yesno)
+            break
+
+def semi_hide_connection(connection_id: int, yesno:bool):
+    for connection in canvas.connection_list:
+        if connection.connection_id == connection_id:
+            if connection.widget is not None:
+                connection.widget.semi_hide(yesno)
+            break
+
+def set_group_in_front(group_id: int):
+    canvas.last_z_value += 1
+    
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            for widget in group.widgets:
+                if widget is not None:
+                    widget.setZValue(canvas.last_z_value)
+            break
+
+def set_connection_in_front(connection_id: int):
+    canvas.last_z_value += 1
+    
+    for conn in canvas.connection_list:
+        if conn.connection_id == connection_id:
+            if conn.widget is not None:
+                conn.widget.setZValue(canvas.last_z_value)
+            break
+
+def select_filtered_group_box(group_id: int, n_select = 1):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            n_widget = 1
+
+            for widget in group.widgets:
+                if widget is not None and widget.isVisible():
+                    if n_select == n_widget:
+                        canvas.scene.clearSelection()
+                        widget.setSelected(True)
+                        canvas.scene.center_view_on(widget)
+                        break
+
+                    n_widget += 1
+            break
+
+def get_number_of_boxes(group_id: int)->int:
+    n = 0
+    
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            for widget in group.widgets:
+                if widget is not None and widget.isVisible():
+                    n += 1
+            break
+    
+    return n
+    
+def set_semi_hide_opacity(opacity: float):
+    canvas.semi_hide_opacity = opacity
+
+    for group in canvas.group_list:
+        for widget in group.widgets:
+            if widget is not None:
+                widget.update_opacity()
+                
+    for conn in canvas.connection_list:
+        if conn.widget is not None:
+            conn.widget.updateLineGradient()
+
+def set_optional_gui_state(group_id: int, visible: bool):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            group.handle_client_gui = True
+            group.gui_visible = visible
+
+            for widget in group.widgets:
+                if widget is not None:
+                    widget.set_optional_gui_state(visible)
+            break
+        
+    canvas.scene.update()
+
 # ------------------------------------------------------------------------------------------------------------

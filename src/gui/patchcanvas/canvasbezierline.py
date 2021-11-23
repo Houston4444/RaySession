@@ -55,6 +55,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         self.m_locked = False
         self.m_lineSelected = False
         self.m_ready_to_disc = False
+        self.m_is_semi_hidden = False
 
         self.setBrush(QColor(0, 0, 0, 0))
         self.setGraphicsEffect(None)
@@ -93,6 +94,10 @@ class CanvasBezierLine(QGraphicsPathItem):
             if (connection.port_out_id == self.item1.getPortId() and connection.port_in_id == self.item2.getPortId()):
                 canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
                 break
+
+    def semi_hide(self, yesno: bool):
+        self.m_is_semi_hidden = yesno
+        self.updateLineGradient()
 
     def updateLinePos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
@@ -195,6 +200,11 @@ class CanvasBezierLine(QGraphicsPathItem):
             base_color = canvas.theme.port_midi_jack_bg
             if self.m_lineSelected:
                 base_color = canvas.theme.port_midi_jack_bg_sel
+
+        if self.m_is_semi_hidden:
+            base_color = QColor(int(base_color.red() * canvas.semi_hide_opacity + 0.5),
+                                int(base_color.green() * canvas.semi_hide_opacity + 0.5),
+                                int(base_color.blue() * canvas.semi_hide_opacity + 0.5))
 
         if self.m_ready_to_disc:
             port_gradient.setColorAt(pos1, QColor(34, 34, 34))

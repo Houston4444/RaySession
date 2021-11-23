@@ -598,6 +598,9 @@ class PatchScene(QGraphicsScene):
         
         self.deplace_boxes_from_repulsers(repulser_boxes, wanted_direction=DIRECTION_UP)
 
+    def center_view_on(self, widget):
+        self.m_view.centerOn(widget)
+
     def removeItem(self, item):
         for child_item in item.childItems():
             QGraphicsScene.removeItem(self, child_item)
@@ -783,6 +786,9 @@ class PatchScene(QGraphicsScene):
         if not self.m_view:
             return
         canvas.qobject.zoom_changed.emit(self.m_view.transform().m11() * 100)
+
+    def get_zoom_scale(self):
+        return self.m_view.transform().m11()
 
     def keyPressEvent(self, event):
         if not self.m_view:

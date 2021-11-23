@@ -67,6 +67,7 @@ ACTION_PLUGIN_SHOW_UI = 18 # plugin_id, N, N
 ACTION_BG_RIGHT_CLICK = 19 # N, N, N
 ACTION_DOUBLE_CLICK = 20 # N, N, N
 ACTION_INLINE_DISPLAY = 21 # plugin_id, N, N
+ACTION_CLIENT_SHOW_GUI = 22 # group_id, visible, N
 
 # Icon
 ICON_APPLICATION = 0
@@ -168,6 +169,7 @@ class Canvas(object):
         self.size_rect = QRectF()
 
         self.is_line_mov = False
+        self.semi_hide_opacity = 0.17
 
     def callback(self, action, value1, value2, value_str):
         print("Canvas::callback({}, {}, {}, {})".format(
@@ -189,6 +191,8 @@ class group_dict_t(object):
         'null_pos',
         'in_pos',
         'out_pos',
+        'handle_client_gui',
+        'gui_visible',
         'widgets'
     ]
 

@@ -56,6 +56,7 @@ from . import (
     ACTION_GROUP_WRAP,
     ACTION_PORTS_DISCONNECT,
     ACTION_INLINE_DISPLAY,
+    ACTION_CLIENT_SHOW_GUI,
     EYECANDY_FULL,
     PORT_MODE_NULL,
     PORT_MODE_INPUT,
@@ -158,6 +159,7 @@ class CanvasBox(QGraphicsItem):
         self.p_height = canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
         self.p_ex_width = self.p_width
         self.p_ex_height = self.p_height
+        self.p_header_height = canvas.theme.box_header_height
         self.p_ex_scene_pos = self.scenePos()
 
         self.m_last_pos = QPointF()
@@ -243,6 +245,11 @@ class CanvasBox(QGraphicsItem):
         if options.auto_select_items:
             self.setAcceptHoverEvents(True)
 
+        self.m_is_semi_hidden = False
+        
+        self.m_can_handle_gui = False # used for optional-gui switch
+        self.m_gui_visible = False
+
         self.updatePositions()
 
         canvas.scene.addItem(self)
@@ -321,6 +328,10 @@ class CanvasBox(QGraphicsItem):
 
         return not self.top_icon.is_null()
 
+    def set_optional_gui_state(self, visible: bool):
+        self.m_can_handle_gui = True
+        self.m_gui_visible = visible
+
     def setSplit(self, split, mode=PORT_MODE_NULL):
         self.m_splitted = split
         self.m_splitted_mode = mode
@@ -331,6 +342,7 @@ class CanvasBox(QGraphicsItem):
 
     def splitTitle(self, n_lines=True)->tuple:
         title, slash, subtitle = self.m_group_name.partition('/')
+
         if self.m_icon_type == ICON_CLIENT and subtitle:
             # if there is a subtitle, title is not bold when subtitle is.
             # so title is 'little'
@@ -631,8 +643,10 @@ class CanvasBox(QGraphicsItem):
                       PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
         last_in_type = last_out_type = PORT_TYPE_NULL
         last_in_alter = last_out_alter = False
+        
         last_in_pos = last_out_pos = (canvas.theme.box_header_height
                                       + canvas.theme.box_header_spacing)
+        
         final_last_in_pos = final_last_out_pos = last_in_pos
 
         wrapped_port_pos = last_in_pos
@@ -887,6 +901,11 @@ class CanvasBox(QGraphicsItem):
                     lines_choice = 3
 
         self._title_lines = self.splitTitle(lines_choice)
+        
+        #more_width_for_gui = 0
+        #if self.m_can_handle_gui:
+            #more_width_for_gui = 2
+        
         self.p_width = max(self.p_width,
                            all_title_templates[lines_choice]['header_width'])
         max_title_size = all_title_templates[lines_choice]['title_width']
@@ -971,6 +990,9 @@ class CanvasBox(QGraphicsItem):
         wrapped_height = wrapped_port_pos + canvas.theme.port_height
         if len(self._title_lines) >= 3:
             wrapped_height += 14
+            self.p_header_height = canvas.theme.box_header_height + 14
+        else:
+            self.p_header_height = canvas.theme.box_header_height
 
         if self._wrapping:
             self.p_height = normal_height \
@@ -1005,6 +1027,9 @@ class CanvasBox(QGraphicsItem):
 
         if self.has_top_icon():
             self.top_icon.align_at((self.p_width - max_title_size - 29)/2)
+        
+            #if self.m_can_handle_gui:
+                #self.top_icon.y_offset = 6
 
         if (self.p_width != self.p_ex_width
                 or self.p_height != self.p_ex_height
@@ -1051,6 +1076,19 @@ class CanvasBox(QGraphicsItem):
                     item_list.append(litem)
 
         return item_list
+
+    def semi_hide(self, yesno: bool):
+        self.m_is_semi_hidden = yesno
+        if yesno:
+            self.setOpacity(canvas.semi_hide_opacity)
+        else:
+            self.setOpacity(1.0)
+
+    def update_opacity(self):
+        if not self.m_is_semi_hidden:
+            return
+        
+        self.setOpacity(canvas.semi_hide_opacity)
 
     def type(self):
         return CanvasBoxType
@@ -1290,9 +1328,16 @@ class CanvasBox(QGraphicsItem):
         QGraphicsItem.hoverEnterEvent(self, event)
 
     def mouseDoubleClickEvent(self, event):
+        if self.m_can_handle_gui:
+            canvas.callback(
+                ACTION_CLIENT_SHOW_GUI, self.m_group_id,
+                int(not(self.m_gui_visible)), '')
+
         if self.m_plugin_id >= 0:
             event.accept()
-            canvas.callback(ACTION_PLUGIN_SHOW_UI if self.m_plugin_ui else ACTION_PLUGIN_EDIT, self.m_plugin_id, 0, "")
+            canvas.callback(
+                ACTION_PLUGIN_SHOW_UI if self.m_plugin_ui else ACTION_PLUGIN_EDIT,
+                self.m_plugin_id, 0, "")
             return
 
         QGraphicsItem.mouseDoubleClickEvent(self, event)
@@ -1476,7 +1521,6 @@ class CanvasBox(QGraphicsItem):
         pen_width = pen.widthF()
         lineHinting = pen_width / 2
 
-
         if self._is_hardware:
             d = canvas.theme.hardware_rack_width
             hw_gradient = QLinearGradient(-d, -d, self.p_width +d, self.p_height +d)
@@ -1600,7 +1644,28 @@ class CanvasBox(QGraphicsItem):
         # Draw plugin inline display if supported
         self.paintInlineDisplay(painter)
 
-        if self.m_group_name.endswith(' Monitor'):
+        # Draw toggle GUI client button
+        if self.m_can_handle_gui:
+            header_rect = QRectF(3, 3, self.p_width - 6, self.p_header_height - 6)
+            header_rect.adjust(lineHinting * 2, lineHinting * 2,
+                               -2 * lineHinting, -2 * lineHinting)
+            
+            painter.setBrush(QColor(255, 240, 180, 10))
+            painter.setPen(Qt.NoPen)
+            
+            if self.m_gui_visible:
+                header_color = QColor(255, 240, 180, 45)
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(header_color)
+            
+            painter.drawRect(header_rect)
+            
+            if not self.m_gui_visible:
+                painter.setPen(QPen((QColor(255, 240, 180, 25)), 1.000001))
+                painter.drawLine(4.5, self.p_header_height - 3.5,
+                                 self.p_width - 3.5, self.p_header_height - 3.5)
+
+        elif self.m_group_name.endswith(' Monitor'):
             bor_gradient = QLinearGradient(0, 0, self.p_height, self.p_height)
             color_main = QColor(70, 70, 70)
             color_alter = QColor(45, 45, 45)
@@ -1654,7 +1719,7 @@ class CanvasBox(QGraphicsItem):
 
             rect.adjust(1, 1, -1, 0)
             painter.drawTiledPixmap(rect, canvas.theme.box_header_pixmap, rect.topLeft())
-
+        
         # Draw text
         title_x_pos = 8
         if self.has_top_icon():
@@ -1725,9 +1790,11 @@ class CanvasBox(QGraphicsItem):
         # draw title lines
         for title_line in self._title_lines:
             painter.setFont(title_line.font)
-            painter.setOpacity(1.0)
+            
+            global_opacity = canvas.semi_hide_opacity if self.m_is_semi_hidden else 1.0
+            painter.setOpacity(global_opacity)
             if title_line.is_little:
-                painter.setOpacity(0.5)
+                painter.setOpacity(0.5 * global_opacity)
 
             if (title_line == self._title_lines[-1]
                     and self.m_group_name.endswith(' Monitor')):

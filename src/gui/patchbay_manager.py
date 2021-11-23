@@ -97,6 +97,18 @@ class Connection:
             fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
+    def semi_hide(self, yesno: bool):
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.semi_hide_connection(
+            self.connection_id, yesno)
+    
+    def set_in_front(self):
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.set_connection_in_front(self.connection_id)
 
 class Port:
     display_name = ''
@@ -322,6 +334,9 @@ class Group:
         self.in_canvas = False
         self.current_position = group_position
         self.uuid = 0
+        
+        self.has_gui = False
+        self.gui_visible = False
 
         self._timer_port_order = QTimer()
         self._timer_port_order.setInterval(20)
@@ -371,12 +386,15 @@ class Group:
 
         gpos = self.current_position
 
+        self.display_name = self.display_name.replace('.0/', '/')
+        self.display_name = self.display_name.replace('_', ' ')
+        
+        display_name = self.name
         if PatchbayManager.use_graceful_names:
-            self.display_name = self.display_name.replace('.0/', '/')
-            self.display_name = self.display_name.replace('_', ' ')
-
+            display_name = self.display_name
+        
         patchcanvas.addGroup(
-            self.group_id, self.display_name, split,
+            self.group_id, display_name, split,
             icon_type, icon_name, fast=PatchbayManager.optimized_operation,
             null_xy=gpos.null_xy, in_xy=gpos.in_xy, out_xy=gpos.out_xy)
 
@@ -396,6 +414,9 @@ class Group:
                 bool(gpos.flags & GROUP_WRAPPED_INPUT
                      and gpos.flags & GROUP_WRAPPED_OUTPUT),
                 animate=False)
+            
+        if self.has_gui:
+            patchcanvas.set_optional_gui_state(self.group_id, self.gui_visible)
 
     def remove_from_canvas(self):
         if not self.in_canvas:
@@ -404,6 +425,49 @@ class Group:
         patchcanvas.removeGroup(self.group_id,
                                 fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
+
+    def update_name_in_canvas(self):
+        if not self.in_canvas:
+            return
+        
+        display_name = self.name
+        if PatchbayManager.use_graceful_names:
+            display_name = self.display_name
+        
+        patchcanvas.renameGroup(self.group_id, display_name)
+
+    def semi_hide(self, yesno: bool):
+        if not self.in_canvas:
+            return 
+        
+        patchcanvas.semi_hide_group(self.group_id, yesno)
+
+    def set_in_front(self):
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.set_group_in_front(self.group_id)
+
+    def get_number_of_boxes(self)->int:
+        if not self.in_canvas:
+            return 0
+
+        return patchcanvas.get_number_of_boxes(self.group_id)
+
+    def select_filtered_box(self, n_select=0):
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.select_filtered_group_box(self.group_id, n_select)
+
+    def set_optional_gui_state(self, visible: bool):
+        self.has_gui = True
+        self.gui_visible = visible
+        
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.set_optional_gui_state(self.group_id, visible)
 
     def remove_all_ports(self):
         if self.in_canvas:
@@ -1395,6 +1459,19 @@ class PatchbayManager:
 
         elif action == patchcanvas.ACTION_DOUBLE_CLICK:
             self.toggle_full_screen()
+        
+        elif action == patchcanvas.ACTION_CLIENT_SHOW_GUI:
+            group_id, int_visible = value1, value2
+            for group in self.groups:
+                if group.group_id == group_id:
+                    for client in self.session.client_list:
+                        if client.can_be_own_jack_client(group.name):
+                            show = 'show' if int_visible else 'hide'
+                            self.send_to_daemon(
+                                '/ray/client/%s_optional_gui' % show,
+                                client.client_id)
+                            break
+                    break
 
     def show_options_dialog(self):
         self.options_dialog.move(QCursor.pos())
@@ -1442,6 +1519,7 @@ class PatchbayManager:
         PatchbayManager.optimize_operation(True)
         for group in self.groups:
             group.update_ports_in_canvas()
+            group.update_name_in_canvas()
         PatchbayManager.optimize_operation(False)
         patchcanvas.redrawAllGroups()
 
@@ -1471,45 +1549,6 @@ class PatchbayManager:
                     if port.port_id == port_id:
                         return port
                 break
-
-    def get_related_client(self, group_name:str):
-        if '/' in group_name:
-            group_name = group_name.partition('/')[0]
-        elif ' (' in group_name and group_name.endswith(')'):
-            # mostly for Non Mixer when another DSP group is used
-            group_name = group_name.partition(' (')[0]
-        
-        for client in self.session.client_list:
-            client_num = ''
-            if client.client_id and client.client_id[-1].isdigit():
-                client_num = '_' + client.client_id.rpartition('_')[2]
-
-            if (group_name == client.name + client_num
-                    or group_name == client.name + client_num + '.0'
-                    or group_name == client.name + '.' + client.client_id):
-                return client
-        
-        return None
-
-    #def get_client_icon(self, group_name: str)->str:
-        #if '/' in group_name:
-            #group_name = group_name.partition('/')[0]
-        #elif ' (' in group_name and group_name.endswith(')'):
-            ## mostly for Non Mixer when another DSP group is used
-            #group_name = group_name.partition(' (')[0]
-
-        
-        #for client in self.session.client_list:
-            #client_num = ''
-            #if client.client_id and client.client_id[-1].isdigit():
-                #client_num = '_' + client.client_id.rpartition('_')[2]
-
-            #if (group_name == client.name + client_num
-                    #or group_name == client.name + client_num + '.0'
-                    #or group_name == client.name + '.' + client.client_id):
-                #return client.icon
-
-        #return ''
 
     def get_group_position(self, group_name):
         for gpos in self.group_positions:
@@ -1601,6 +1640,8 @@ class PatchbayManager:
 
         self.optimize_operation(False)
         patchcanvas.redrawAllGroups()
+        self.session.signaler.port_types_view_changed.emit(
+            self.port_types_view)
 
     def get_json_contents_from_path(self, file_path: str)->dict:
         if not os.path.exists(file_path):
@@ -1644,6 +1685,16 @@ class PatchbayManager:
             group_name, colon, port_name = port_name.partition(':')
             if full_port_name.startswith('a2j:'):
                 group_name = group_name.rpartition(' [')[0]
+                
+                # fix a2j wrongly substitute '.' with space
+                for client in self.session.client_list:
+                    if (client.status != ray.ClientStatus.STOPPED
+                            and '.' in client.jack_client_name
+                            and (client.jack_client_name.replace('.', ' ', 1)
+                                 == group_name)):
+                        group_name = group_name.replace(' ', '.' , 1)
+                        break
+
             if port.flags & PORT_IS_PHYSICAL:
                 a2j_group = True
 
@@ -1655,11 +1706,21 @@ class PatchbayManager:
             gpos = self.get_group_position(group_name)
             group = Group(self._next_group_id, group_name, gpos)
             group.a2j_group = a2j_group
-            client = self.get_related_client(group.name)
-            if client is not None:
-                group.set_client_icon(client.icon)
-                if group.name.startswith(client.name + '.'):
-                    group.display_name = group.display_name.partition('.')[2]
+            
+            for client in self.session.client_list:
+                if client.can_be_own_jack_client(group_name):
+                    group.set_client_icon(client.icon)
+                    
+                    # in case of long jack naming (ClientName.ClientId)
+                    # do not display ClientName if we have the icon
+                    if (client.icon
+                            and client.jack_client_name.endswith('.' + client.client_id)
+                            and group.name.startswith(client.jack_client_name)):
+                        group.display_name = group.display_name.partition('.')[2]
+
+                    if client.has_gui:
+                        group.set_optional_gui_state(client.gui_state)
+                    break
 
             self._next_group_id += 1
             self.groups.append(group)
@@ -1753,6 +1814,14 @@ class PatchbayManager:
                 port.full_name = new_name
                 group.graceful_port(port)
                 port.change_canvas_properties()
+                break
+
+    def optional_gui_state_changed(self, client_id: str, visible: bool):
+        for client in self.session.client_list:
+            if client.client_id == client_id:
+                for group in self.groups:
+                    if client.can_be_own_jack_client(group.name):
+                        group.set_optional_gui_state(visible)
                 break
 
     def metadata_update(self, uuid: int, key: str, value: str):
@@ -1890,6 +1959,83 @@ class PatchbayManager:
     def change_buffersize(self, buffer_size):
         self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',
                                      buffer_size)
+
+    def filter_groups(self, text: str, n_select=0)->int:
+        ''' semi hides groups not matching with text
+            and return number of matching boxes '''
+        opac_grp_ids = set()
+        opac_conn_ids = set()
+        
+        if text.startswith(('cl:', 'client:')):
+            client_ids = text.rpartition(':')[2].split(' ')
+            jack_client_names = []
+            
+            for client in self.session.client_list:
+                if (client.status != ray.ClientStatus.STOPPED
+                        and client.client_id in client_ids):
+                    jack_client_names.append(client.jack_client_name)
+                    if not client.jack_client_name.endswith('.' + client.client_id):
+                        jack_client_names.append(client.jack_client_name + '.0')
+            
+            for group in self.groups:
+                opac = False
+                for jack_client_name in jack_client_names:
+                    if (group.name == jack_client_name
+                            or group.name.startswith(jack_client_name + '/')
+                            or (group.name.startswith(jack_client_name + ' (')
+                                    and ')' in group.name)):
+                        break
+                else:
+                    opac = True
+                    opac_grp_ids.add(group.group_id)
+                
+                group.semi_hide(opac)
+
+        else:
+            for group in self.groups:
+                opac = bool(text.lower() not in group.name.lower()
+                            and text.lower() not in group.display_name.lower())
+                if opac:
+                    opac_grp_ids.add(group.group_id)
+
+                group.semi_hide(opac)
+        
+        for conn in self.connections:
+            opac_conn = bool(
+                conn.port_out.group_id in opac_grp_ids
+                and conn.port_in.group_id in opac_grp_ids)
+            
+            conn.semi_hide(opac_conn)
+            if opac_conn:
+                opac_conn_ids.add(conn.connection_id)
+            
+        for group in self.groups:
+            if group.group_id in opac_grp_ids:
+                group.set_in_front()
+        
+        for conn in self.connections:
+            if conn.connection_id in opac_conn_ids:
+                conn.set_in_front()
+        
+        for conn in self.connections:
+            if conn.connection_id not in opac_conn_ids:
+                conn.set_in_front()
+        
+        n_boxes = 0
+        
+        for group in self.groups:
+            if group.group_id not in opac_grp_ids:
+                group.set_in_front()
+                n_grp_boxes = group.get_number_of_boxes()
+
+                if n_select > n_boxes and n_select <= n_boxes + n_grp_boxes:
+                    group.select_filtered_box(n_select - n_boxes)
+                n_boxes += n_grp_boxes
+
+        return n_boxes
+
+    def set_semi_hide_opacity(self, opacity: float):
+        patchcanvas.set_semi_hide_opacity(opacity)
 
     def buffer_size_changed(self, buffer_size):
         self.tools_widget.set_buffer_size(buffer_size)

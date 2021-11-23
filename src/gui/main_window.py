@@ -4,8 +4,8 @@ import subprocess
 
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
                              QMessageBox, QToolButton, QAbstractItemView,
-                             QBoxLayout, QSystemTrayIcon, QAction)
-from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
+                             QBoxLayout, QSystemTrayIcon, QAction, QShortcut)
+from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics, QKeySequence
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 from gui_tools import (
@@ -17,6 +17,7 @@ import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GuiServerThread
 from patchcanvas import patchcanvas
+import patchbay_manager
 from utility_scripts import UtilityScriptLauncher
 import ray
 import list_widget_clients
@@ -322,6 +323,14 @@ class MainWindow(QMainWindow):
         self.ui.toolButtonSessionMenu.setIcon(RayIcon('application-menu', dark))
 
         self.ui.listWidget.set_session(self.session)
+        
+        # concerns patchbay filters bar (activable with Ctrl+F)
+        self.ui.framePatchbayFilters.set_patchbay_manager(
+            self.session.patchbay_manager)
+        self.ui.framePatchbayFilters.setVisible(False)
+        filter_bar_shortcut = QShortcut('Ctrl+F', self)
+        filter_bar_shortcut.setContext(Qt.ApplicationShortcut)
+        filter_bar_shortcut.activated.connect(self.toggle_patchbay_filters_bar)
 
         # prevent to hide the session frame with splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
@@ -482,6 +491,8 @@ class MainWindow(QMainWindow):
         patchcanvas.init(
             ray.APP_TITLE, self.scene,
             self.canvas_callback, False)
+        patchcanvas.set_semi_hide_opacity(RS.settings.value(
+            'Canvas/semi_hide_opacity', 0.17, type=float))
 
     def _open_file_manager(self):
         self.to_daemon('/ray/session/open_folder')
@@ -806,7 +817,9 @@ class MainWindow(QMainWindow):
             self.ui.splitterMainVsCanvas.setSizes([100, 0])
 
         self.ui.graphicsView.setVisible(yesno)
+        self.ui.framePatchbayFilters.setVisible(False)
         self.ui.splitterMainVsCanvas.set_active(yesno)
+        self.ui.listWidget.patchbay_is_shown(yesno)
 
     def _status_bar_pressed(self):
         status = self.session.server_status
@@ -1441,6 +1454,18 @@ class MainWindow(QMainWindow):
         template_name, factory = self.sender().data()
         self.to_daemon('/ray/session/add_client_template',
                        int(factory), template_name)
+
+    def toggle_patchbay_filters_bar(self):
+        if not self.ui.graphicsView.isVisible():
+            return
+
+        self.ui.framePatchbayFilters.setVisible(
+            not self.ui.framePatchbayFilters.isVisible())
+
+    def set_patchbay_filter_text(self, text: str):
+        ''' used by client widget to find patchbay boxes '''
+        self.ui.framePatchbayFilters.setVisible(True)
+        self.ui.framePatchbayFilters.set_filter_text(text)
 
     def update_favorites_menu(self):
         self._favorites_menu.clear()

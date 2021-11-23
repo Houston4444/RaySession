@@ -48,6 +48,8 @@ class ClientSlot(QFrame):
         self.ui.actionRename.triggered.connect(self._rename_dialog)
         self.ui.actionReturnToAPreviousState.triggered.connect(
             self._open_snapshots_dialog)
+        self.ui.actionFindBoxesInPatchbay.triggered.connect(
+            self._find_patchbay_boxes)
         self.ui.actionProperties.triggered.connect(
             self.client.show_properties_dialog)
 
@@ -56,6 +58,7 @@ class ClientSlot(QFrame):
         self._menu.addAction(self.ui.actionSaveAsApplicationTemplate)
         self._menu.addAction(self.ui.actionRename)
         self._menu.addAction(self.ui.actionReturnToAPreviousState)
+        self._menu.addAction(self.ui.actionFindBoxesInPatchbay)
         self._menu.addAction(self.ui.actionProperties)
 
         self.ui.actionReturnToAPreviousState.setVisible(
@@ -149,6 +152,11 @@ class ClientSlot(QFrame):
             snapshot = dialog.get_selected_snapshot()
             self.to_daemon('/ray/client/open_snapshot',
                           self.get_client_id(), snapshot)
+
+    def _find_patchbay_boxes(self):
+        self.main_win.set_patchbay_filter_text(
+            'client:' + self.get_client_id())
+        self._list_widget_item.setSelected(True)
 
     def _rename_dialog(self):
         dialog = child_dialogs.ClientRenameDialog(self.main_win,
@@ -318,6 +326,8 @@ class ClientSlot(QFrame):
         self.ui.lineEditClientStatus.setText(client_status_string(status))
         self.ui.lineEditClientStatus.setEnabled(
             status != ray.ClientStatus.STOPPED)
+        self.ui.actionFindBoxesInPatchbay.setEnabled(
+            status not in (ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY)) 
 
         ray_hack = bool(self.client.protocol == ray.Protocol.RAY_HACK)
 
@@ -436,6 +446,9 @@ class ClientSlot(QFrame):
         has_git = bool(options & ray.Option.HAS_GIT)
         self.ui.actionReturnToAPreviousState.setVisible(has_git)
 
+    def patchbay_is_shown(self, yesno: bool):
+        self.ui.actionFindBoxesInPatchbay.setVisible(yesno)
+
     def contextMenuEvent(self, event):
         act_selected = self._menu.exec(self.mapToGlobal(event.pos()))
         event.accept()
@@ -504,6 +517,12 @@ class ListWidgetClients(QListWidget):
 
     def set_session(self, session):
         self.session = session
+
+    def patchbay_is_shown(self, yesno: bool):
+        for i in range(self.count()):
+            item = self.item(i)
+            widget = item.widget
+            widget.patchbay_is_shown(yesno)
 
     def dropEvent(self, event):
         QListWidget.dropEvent(self, event)
