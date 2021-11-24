@@ -191,9 +191,8 @@ class CanvasMenu(QMenu):
             GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
 
         self.action_find_box = self.addAction(
-            _translate('patchbay', "Find a box..."))
+            _translate('patchbay', "Find a box...\tCtrl+F"))
         self.action_find_box.setIcon(QIcon.fromTheme('edit-find'))
-        self.action_find_box.setShortcut('Ctrl+F')
         self.action_find_box.triggered.connect(
             main_win.toggle_patchbay_filters_bar)
 
