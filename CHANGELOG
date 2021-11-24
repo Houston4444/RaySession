@@ -1,3 +1,110 @@
+0.12.0 / 2021-1?-??
+    Features:
+        Add "Startup" dialog which let you open a recent session. This way, just lanch RaySession and press Enter to load the last session.
+        
+        Add optional systray icon, activated only when a session is loaded, but user can also decide to use it always or never. 
+        
+        "Open Session" dialog largely improved, user can now see clients, notes and snapshots in the session to load. We can also see session folder size and date, and if session contains scripts. It is also now possible to rename, duplicate or save as template a not loaded session, or to load in the current session a client from another session.
+        add "long jack naming" checkbox in "add executable" dialog.
+        
+        Add "utility scripts" to menubar:
+            convert an ardour session to a Ray session (containing this ardour session)
+            Convert the current session to the NSM file format
+            Convert Ray-Hack clients to NSM, for Jack-Mixer and Hydrogen
+        Add "recent sessions" to menubar and to systray icon.
+        
+        Add "prevent overlap" default option, with this, when a box is moved on front of other ones, theses other boxes are moved elsewhere (near).
+        double click on patchbay box to show/hide optional-gui, if this box is recognized as a client box
+        Add 'Find a box' (Ctrl+F) filter bar, to highlight boxes matching with a given pattern
+        Add 'Find patchbay boxes' in client menu, it highlights boxes of the client (if recognized with their name)
+        Add box wrap button if box is fat.
+        Limit patchbay port width, truncking port name in the middle, the max width can be changed in canvas options dialog
+        Ports in portgroups can now be larger if their name requires that
+        Specific decorations for pipewire Monitor clients
+        
+        ray_control: trashed_client remove_keep_files option added.
+        
+        Add :monitor: NSM capability, a client can now be aware of other clients events.
+    
+    Behavior changes:
+        Patchbay is now shown by default.
+        "Keep Focus while opening clients" option is now de-activated by default, its shortcut has been changed to Ctrl+H.
+        In patchbay, if zoom is lower than 40%, a mouse click and drag anywhere in a box moves this box.
+        Session file is now automatically saved in case of consequent changes: session renamed, client prefix changed, client definitely removed.
+        Sessions in a session directory are not listed anymore, mostly for faster listing. 
+    
+    Bug Fixes:
+        Display true client names if "use graceful names" canvas option is unchecked
+        Remove the vertical white line on the left, in fullscreen patchbay
+        No more possibility to see boxes with no ports
+        Fix connections moving with a delay in case of fast box move.
+        Fix too long or empty Midi-Bridge port names with pipewire option jack.filter_name=true
+        fix crashes with recent versions of python or python-qt
+        consider '/' as box title divisor only if it seems to be a client of session, and this way prevent some pipewire titles to be wrongly splitted
+        fix crashes because of recursives error while moving a patchbay box.
+        
+        fix crash with Ray-Net (Network Session) save client template action
+        sooperlooper_nsm now follows given jack_client_name (with option, to prevent connections loses)
+        
+    New Templates:
+        seq192
+
+
+0.11.1 / 2021-08-27
+    Bug Fixes:
+        fix GUI crash when showing snapshots without config for info dialog
+        fix missing icons and applications infos in "Add Application" dialog under Fedora
+        fix patchbay context menu displayed at wrong place under Wayland
+        grey background for all QGroupBox, because some qt styles doesn't separate them from the rest of window (grrr...), and it becomes not understandable).
+        patchbay: ardour "physical_audio_input_monitor_enable" becomes "physical monitor" with graceful names enable, same for midi
+
+    Improvements:
+        Manual : style review and patchbay section added
+        Patchbay boxes allow 3 or 4 lines title, because PipeWire uses sometimes veryyyy long group names for hardware boxes
+
+0.11.0 / 2021-08-05
+    The most important new feature in this release is the apparition of the JACK patchbay. You also can press Ctrl+J to show/hide the patchbay.
+
+    The patchbay has been forked from Carla, with some improvements.
+    For the moment, there are only 3 advantages to have the patchbay directly in RaySession's GUI
+
+        Boxes positions are memorized and replaced per session
+        Boxes have icons of the corresponding NSM client
+        of course: only one window for two things you generally need in a session
+
+    Note that :
+
+        The session frame is now "responsive design" to be reduced in width and allow more space to the patchbay.
+        messages were moved from the right to the bottom left (under the session frame)
+
+    The list below concerns the improvements of patchbay:
+
+        Most important probably: portgroups and stereo detection. Ports are automatically grouped into a portgroup if they seems to form a stereo pair. This allows faster connections, and also a more readable canvas, with less and less useless text. This improve has been proposed for PR to Carla. Portgroups can be also set by JACK metadatas, and without limitation of number of ports.
+        wrap/unwrap boxes: you can hide all ports of a box, very useful for big groups as Ardour or Hydrogen boxes. Hide what you don't need let's you see better what you need !
+        hardware boxes have specific decorations
+        Port order follows JACK metadata "port-order"
+        Boxes have their application icon if possible. Box header is a little higher, but it allows box to be consequently shorter in width in case group name is long.
+        connect menu by right click: by right click on a port, you can directly connect the port to any connectable port of the canvas. Connect a port doesn't close the context menu, so you can connect to many ports quickly. It also works for portgroups.
+        Clipboard: cut/copy connections of a port to another port, in port context menu. Also works for portgroups.
+        filter ports: by right click in the background, you can display only Audio ports, or only MIDI ports, or all ports of course.
+        when you click and drag to connect 2 ports, you also can connect with right click (while keeping left mouse button down), this way you can connect quickly one port to many others.
+        with click and drag on a port, you can also move to a port with same mode (input/output), it will cut and copy connections from the first port to the second one. To prevent wrong movements, it works only if the second port has no connections
+        Beziers connections lines have been reviewed to be more visible when the ports are close in abscissa and distant in ordinate
+        canvas option window is a tool dialog where options take effect on place
+        graceful names (default option): port names are shortened with custom rules, it doesn't uses JACK aliases. Allow boxes to be less large.
+        elastic canvas (default option): the scene is automatically resized to the contents, so the view is directly optimized when group is added or moved
+        option to group or not hardware A2J ports
+        Box moves are animated when they are moved to their session position, when the port type filter change, or when they are joined/splitted
+        Double-click anywhere in patchbay to toggle fullscreen patchbay
+
+    Regressions:
+
+        No option to use straight lines instead of bezier lines, I find it very ugly and unusable
+        No option to animate box apparition
+        No theme support, only color scheme
+
+        
+
 0.10.1 / 2021-02-04
     Manual:
         Add a complete online and offline manual accessible from the help tab of the menu bar. It opens RaySession's manual in your web browser.
