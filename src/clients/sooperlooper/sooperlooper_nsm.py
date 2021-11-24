@@ -33,13 +33,6 @@ class SlOSCThread(nsm_client.NSMThread):
 
         if general_object.wait_for_load:
             general_object.sl_ready.emit()
-        
-        if jack_client is not None:
-            self.send(sl_url, '/register_update', 'loop_add', self.url, '/loop_add')  
-            
-    @make_method('/loop_add', 'if')
-    def loopAdd(self, path, args):
-        pass
 
 
 class GeneralObject(QObject):
@@ -54,8 +47,6 @@ class GeneralObject(QObject):
 
         self.sl_port = ray.get_free_osc_port(9951)
         self.sl_url = Address(self.sl_port)
-
-        #self.sl_process.start('sooperlooper', ['-p', str(self.sl_port)])
 
         self.gui_process = QProcess()
         self.gui_process.setProcessChannelMode(QProcess.ForwardedChannels)
@@ -85,8 +76,6 @@ class GeneralObject(QObject):
         self._switching = False
         self.leaving = False
         self.wait_for_load = False
-
-        #self.showOptionalGui()
 
         self.ping_timer = QTimer()
         self.ping_timer.setInterval(100)
