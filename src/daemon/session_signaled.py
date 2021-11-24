@@ -16,7 +16,8 @@ from client import Client
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
 from daemon_tools import (Terminal, RS, dirname,
-                          is_pid_child_of, highlight_text)
+                          is_pid_child_of, highlight_text,
+                          get_nsm_capable_execs_from_desktop_files)
 from session import OperatingSession
 
 _translate = QCoreApplication.translate
@@ -356,6 +357,11 @@ class SignaledSession(OperatingSession):
         tmp_template_list = []
 
         factory = bool('factory' in path)
+
+        from_desktop_execs = []
+        if factory:
+            from_desktop_execs = get_nsm_capable_execs_from_desktop_files()
+
         search_paths = self._get_search_template_dirs(factory)
         file_rewritten = False
 
@@ -366,6 +372,8 @@ class SignaledSession(OperatingSession):
                 continue
 
             if not os.access(templates_file, os.R_OK):
+                sys.stderr.write("ray-daemon:No access to %s in %s, ignore it"
+                                 % (templates_file, search_path))
                 continue
 
             file = open(templates_file, 'r')
@@ -395,6 +403,27 @@ class SignaledSession(OperatingSession):
                 template_name = ct.attribute('template-name')
 
                 if not template_name or template_name in template_names:
+                    continue
+
+                executable = ct.attribute('executable')
+                protocol = ray.protocol_from_str(ct.attribute('protocol'))
+                erased_by_nsm_desktop = False
+                
+                for fde in from_desktop_execs:
+                    if fde['executable'] == executable:
+                        if protocol == ray.Protocol.NSM:
+                            fde['skipped'] = True
+                            # we won't add template for this desktop_file
+                            # we use this one.
+                        elif protocol == ray.Protocol.RAY_HACK:
+                            erased_by_nsm_desktop = True
+                            # This is a factory Ray-Hack template
+                            # and we've got a mention that the executable
+                            # is NSM capable. Ignore it, we will use the
+                            # desktop file to create the template
+                        break
+
+                if erased_by_nsm_desktop:
                     continue
 
                 if not self.is_template_acceptable(ct):
@@ -449,6 +478,43 @@ class SignaledSession(OperatingSession):
                                     *template_client.ray_net.spread())
 
                     tmp_template_list.clear()
+                    
+        # add fake templates from desktop files
+        for fde in from_desktop_execs:
+            if fde['skipped']:
+                continue
+
+            template_name = fde['name']
+            template_client = None
+            if src_addr_is_gui or filters:
+                template_client = Client(self)
+                template_client.executable_path = fde['executable']
+                template_client.desktop_file = fde['desktop_file']
+                template_client.client_id = self.generate_client_id(fde['executable'])
+                
+                # this client has probably not been tested in RS
+                # let it behaves as in NSM
+                template_client.prefix_mode = ray.PrefixMode.CLIENT_NAME
+                template_client.jack_naming = ray.JackNaming.LONG
+                template_client.update_infos_from_desktop_file()
+
+                if filters:
+                    skipped_by_filter = False
+                    message = template_client.get_properties_message()
+
+                    for filt in filters:
+                        for line in message.splitlines():
+                            if line == filt:
+                                break
+                        else:
+                            skipped_by_filter = True
+                            break
+
+                    if skipped_by_filter:
+                        continue
+
+            template_names.add(template_name)
+            tmp_template_list.append((template_name, template_client))
 
         if tmp_template_list:
             self.send(src_addr, '/reply', path,

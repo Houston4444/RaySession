@@ -25,7 +25,8 @@ from scripter import StepScripter
 from canvas_saver import CanvasSaver
 from daemon_tools import (
     TemplateRoots, RS, Terminal, get_git_default_un_and_ignored,
-    dirname, basename, highlight_text)
+    dirname, basename, highlight_text,
+    get_nsm_capable_execs_from_desktop_files)
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -293,10 +294,6 @@ class Session(ServerSender):
     def is_template_acceptable(self, ct)->bool:
         executable = ct.attribute('executable')
         protocol = ray.protocol_from_str(ct.attribute('protocol'))
-        
-        if (protocol in (ray.Protocol.NSM, ray.Protocol.RAY_HACK)
-                and not executable):
-            return False
 
         if protocol != ray.Protocol.RAY_NET:
             # check if needed executables are present
@@ -2253,6 +2250,10 @@ for better organization.""")
     def add_client_template(self, src_addr, src_path,
                             template_name, factory=False, auto_start=True):
         search_paths = self._get_search_template_dirs(factory)
+
+        from_desktop_execs = []
+        if factory:
+            from_desktop_execs = get_nsm_capable_execs_from_desktop_files()
 
         for search_path in search_paths:
             xml_file = "%s/%s" % (search_path, 'client_templates.xml')
