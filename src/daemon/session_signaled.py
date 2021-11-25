@@ -74,7 +74,9 @@ def client_action(func):
         return response
     return wrapper
 
-
+# There is only one possible instance of SignaledSession
+# This is not the case for Session and OperatingSession.
+# This session receives signals from OSC server.
 class SignaledSession(OperatingSession):
     def __init__(self, root):
         OperatingSession.__init__(self, root)
@@ -478,11 +480,17 @@ class SignaledSession(OperatingSession):
                                     *template_client.ray_net.spread())
 
                     tmp_template_list.clear()
-                    
+        
+        # we refresh the apps detected with their desktop_file
+        self.nsm_execs_from_desktop_files.clear()
+        
         # add fake templates from desktop files
         for fde in from_desktop_execs:
             if fde['skipped']:
                 continue
+
+            #remember this template
+            self.nsm_execs_from_desktop_files.append(fde)
 
             template_name = fde['name']
             template_client = None
@@ -519,6 +527,7 @@ class SignaledSession(OperatingSession):
         if tmp_template_list:
             self.send(src_addr, '/reply', path,
                       *[t[0] for t in tmp_template_list])
+            print([t[0] for t in tmp_template_list])
 
             if src_addr_is_gui:
                 for template_name, template_client in tmp_template_list:

@@ -79,7 +79,7 @@ class TemplateSlot(QFrame):
 
 
 class TemplateItem(QListWidgetItem):
-    def __init__(self, parent, session, icon, name, factory):
+    def __init__(self, parent, session, name, factory):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
 
         self.client_data = ray.ClientData()
@@ -260,54 +260,30 @@ class AddApplicationDialog(ChildDialog):
 
         self._update_filtered_list()
 
-    def _add_user_templates(self, template_list):
-        for template in template_list:
-            template_name = template
-            icon_name = ''
-
-            if '/' in template:
-                template_name, slash, icon_name = template.partition('/')
-
+    def _add_templates(self, template_list, factory: bool):
+        for template_name in template_list:
             if template_name in self.user_template_list:
                 continue
 
             self.user_template_list.append(template_name)
 
             item = TemplateItem(
-                self.ui.templateList, self.session, icon_name,
-                template_name, False)
-            if self.session.is_favorite(template_name, False):
+                self.ui.templateList, self.session, template_name, factory)
+            
+            if self.session.is_favorite(template_name, factory):
                 item.set_as_favorite(True)
+
             self.ui.templateList.addItem(item)
 
             self.ui.templateList.sortItems()
 
         self._update_filtered_list()
+
+    def _add_user_templates(self, template_list):
+        self._add_templates(template_list, False)
 
     def _add_factory_templates(self, template_list):
-        for template in template_list:
-            template_name = template
-            icon_name = ''
-
-            if '/' in template:
-                template_name, slash, icon_name = template.partition('/')
-
-            if template_name in self.factory_template_list:
-                continue
-
-            self.factory_template_list.append(template_name)
-
-            item = TemplateItem(
-                self.ui.templateList, self.session, icon_name,
-                template_name, True)
-
-            if self.session.is_favorite(template_name, True):
-                item.set_as_favorite(True)
-
-            self.ui.templateList.addItem(item)
-            self.ui.templateList.sortItems()
-
-        self._update_filtered_list()
+        self._add_templates(template_list, True)
 
     def _update_client_template(self, args):
         factory = bool(args[0])

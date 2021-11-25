@@ -141,14 +141,15 @@ def get_nsm_capable_execs_from_desktop_files()->list:
                         
                     elif line.startswith('Name='):
                         name = line.partition('=')[2].strip()
-                
+
                 if has_nsm_mention and executable:
                     application_dicts.append(
                         {'executable': executable,
-                         'name': name if name else executable,
+                         'name': '/' + name if name else '/' + executable,
                          'desktop_file': f,
                          'nsm_capable': nsm_capable,
                          'skipped': False})
+                    print('ff', application_dicts[-1])
     
     return [a for a in application_dicts if a['nsm_capable']]
 

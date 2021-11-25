@@ -66,6 +66,11 @@ class Session(ServerSender):
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
         self.canvas_saver = CanvasSaver(self)
+        
+        ''' this list contains tuples
+            {'executable': str, 'name': str, 'desktop_file': str,
+             'nsm_capable': bool, 'skipped': bool} '''
+        self.nsm_execs_from_desktop_files = []
 
     #############
     def osc_reply(self, *args):
@@ -2251,9 +2256,30 @@ for better organization.""")
                             template_name, factory=False, auto_start=True):
         search_paths = self._get_search_template_dirs(factory)
 
-        from_desktop_execs = []
         if factory:
-            from_desktop_execs = get_nsm_capable_execs_from_desktop_files()
+            for fde in self.nsm_execs_from_desktop_files:
+                if fde['skipped']:
+                    continue
+
+                if fde['name'] == template_name:
+                    client = Client(self)
+                    client.executable_path = fde['executable']
+                    client.desktop_file = fde['desktop_file']
+                    client.client_id = self.generate_client_id(fde['executable'])
+                    client.jack_naming = ray.JackNaming.LONG
+                    client.prefix_mode = ray.PrefixMode.CLIENT_NAME
+
+                    if not self._add_client(client):
+                        self.answer(src_addr, src_path,
+                                    "Session does not accept any new client now",
+                                    ray.Err.NOT_NOW)
+                        return
+
+                    client.template_origin = fde['name']
+                    client.auto_start = auto_start
+
+                    self.add_client_template_step_1(src_addr, src_path, client)
+                    return
 
         for search_path in search_paths:
             xml_file = "%s/%s" % (search_path, 'client_templates.xml')
@@ -2313,8 +2339,7 @@ for better organization.""")
                     return
 
                 client.template_origin = template_name
-                if not auto_start:
-                    client.auto_start = False
+                client.auto_start = auto_start
 
                 if full_name_files:
                     client.set_status(ray.ClientStatus.PRECOPY)
