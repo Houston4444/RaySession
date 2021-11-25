@@ -2275,7 +2275,7 @@ for better organization.""")
                                     ray.Err.NOT_NOW)
                         return
 
-                    client.template_origin = fde['name']
+                    client.template_origin = fde['name'][1:]
                     client.auto_start = auto_start
 
                     self.add_client_template_step_1(src_addr, src_path, client)

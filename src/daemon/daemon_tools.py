@@ -149,7 +149,6 @@ def get_nsm_capable_execs_from_desktop_files()->list:
                          'desktop_file': f,
                          'nsm_capable': nsm_capable,
                          'skipped': False})
-                    print('ff', application_dicts[-1])
     
     return [a for a in application_dicts if a['nsm_capable']]
 
