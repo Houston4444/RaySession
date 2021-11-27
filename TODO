@@ -13,4 +13,5 @@ Start/Stop all clients f
 
 Patchbay
 clic droit pour emballer/déballer
-3 lignes : mauvaise position du deballeur
+
+ray_control doc /ray/server/clear_client_templates_database

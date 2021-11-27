@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (QDialogButtonBox, QListWidgetItem, QFrame,
-                             QMenu, QAction)
+                             QMenu, QAction, QShortcut)
 from PyQt5.QtGui import QIcon
 
 import client_properties_dialog
@@ -31,7 +31,12 @@ class TemplateSlot(QFrame):
 
         self.ui.toolButtonIcon.setIcon(
             get_app_icon(self.client_data.icon, self))
-        self.ui.label.setText(name)
+        
+        if name.startswith('/'):
+            self.ui.label.setText(name[1:])
+        else:
+            self.ui.label.setText(name)
+        
         self.ui.toolButtonUser.setVisible(not factory)
 
         act_remove_template = QAction(QIcon.fromTheme('edit-delete-remove'),
@@ -79,7 +84,7 @@ class TemplateSlot(QFrame):
 
 
 class TemplateItem(QListWidgetItem):
-    def __init__(self, parent, session, icon, name, factory):
+    def __init__(self, parent, session, name, factory):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
 
         self.client_data = ray.ClientData()
@@ -98,11 +103,17 @@ class TemplateItem(QListWidgetItem):
         if other_name is None:
             return False
 
+        if self_name.startswith('/'):
+            self_name = self_name[1:]
+
+        if other_name.startswith('/'):
+            other_name = other_name[1:]
+
         if self_name == other_name:
             # make the user template on top
             return not self.is_factory
 
-        return bool(self.data(Qt.UserRole).lower() < other.data(Qt.UserRole).lower())
+        return bool(self_name.lower() < other_name.lower())
 
     def matches_with(self, factory, name: str):
         return bool(bool(factory) == bool(self.is_factory)
@@ -155,12 +166,16 @@ class AddApplicationDialog(ChildDialog):
         self.ui.checkBoxUser.stateChanged.connect(self._user_box_changed)
         self.ui.checkBoxNsm.stateChanged.connect(self._nsm_box_changed)
         self.ui.checkBoxRayHack.stateChanged.connect(self._ray_hack_box_changed)
+        self.ui.pushButtonRefresh.clicked.connect(self._refresh_database)
+        self._refresh_shortcut = QShortcut('F5', self)
+        self._refresh_shortcut.activated.connect(self._refresh_database)
 
         self.ui.templateList.currentItemChanged.connect(
             self._current_item_changed)
         self.ui.templateList.setFocus(Qt.OtherFocusReason)
         self.ui.filterBar.textEdited.connect(self._update_filtered_list)
         self.ui.filterBar.up_down_pressed.connect(self._up_down_pressed)
+
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
         self.user_menu = QMenu()
@@ -260,54 +275,56 @@ class AddApplicationDialog(ChildDialog):
 
         self._update_filtered_list()
 
+    def _refresh_database(self):
+        self.ui.pushButtonRefresh.setEnabled(False)
+        self.ui.templateList.clear()
+        self.user_template_list.clear()
+        self.factory_template_list.clear()
+        self.to_daemon('/ray/server/clear_client_templates_database')
+        self.to_daemon('/ray/server/list_user_client_templates')
+        self.to_daemon('/ray/server/list_factory_client_templates')
+        
+
     def _add_user_templates(self, template_list):
-        for template in template_list:
-            template_name = template
-            icon_name = ''
-
-            if '/' in template:
-                template_name, slash, icon_name = template.partition('/')
-
+        for template_name in template_list:
             if template_name in self.user_template_list:
                 continue
 
             self.user_template_list.append(template_name)
 
             item = TemplateItem(
-                self.ui.templateList, self.session, icon_name,
-                template_name, False)
+                self.ui.templateList, self.session, template_name, False)
+            
             if self.session.is_favorite(template_name, False):
                 item.set_as_favorite(True)
+
             self.ui.templateList.addItem(item)
 
-            self.ui.templateList.sortItems()
+        self.ui.templateList.sortItems()
 
         self._update_filtered_list()
 
     def _add_factory_templates(self, template_list):
-        for template in template_list:
-            template_name = template
-            icon_name = ''
-
-            if '/' in template:
-                template_name, slash, icon_name = template.partition('/')
-
+        for template_name in template_list:
             if template_name in self.factory_template_list:
                 continue
 
             self.factory_template_list.append(template_name)
 
             item = TemplateItem(
-                self.ui.templateList, self.session, icon_name,
-                template_name, True)
-
+                self.ui.templateList, self.session, template_name, True)
+            
             if self.session.is_favorite(template_name, True):
                 item.set_as_favorite(True)
 
             self.ui.templateList.addItem(item)
-            self.ui.templateList.sortItems()
+
+        self.ui.templateList.sortItems()
 
         self._update_filtered_list()
+        
+        if not template_list:
+            self.ui.pushButtonRefresh.setEnabled(True)
 
     def _update_client_template(self, args):
         factory = bool(args[0])
@@ -426,7 +443,12 @@ class AddApplicationDialog(ChildDialog):
         cdata = item.client_data
         self.ui.toolButtonIcon.setIcon(
             get_app_icon(cdata.icon, self))
-        self.ui.labelTemplateName.setText(item.data(Qt.UserRole))
+
+        template_name = item.data(Qt.UserRole)
+        if template_name.startswith('/'):
+            template_name = template_name[1:]
+
+        self.ui.labelTemplateName.setText(template_name)
         self.ui.labelDescription.setText(cdata.description)
         self.ui.labelProtocol.setText(ray.protocol_to_str(cdata.protocol))
         self.ui.labelExecutable.setText(cdata.executable_path)
