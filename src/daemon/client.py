@@ -362,9 +362,9 @@ class Client(ServerSender, ray.ClientData):
     def _set_infos_from_desktop_contents(self, contents: str):
         lang = os.getenv('LANG')
         lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
-        all_data = {"Comment": ['', '', ''],
-                    "Name":    ['', '', ''],
-                    "Icon":    ['', '', '']}
+        all_data = {'Comment': ['', '', ''],
+                    'Name': ['', '', ''],
+                    'Icon': ['', '', '']}
 
         for line in contents.split('\n'):
             if line.startswith('[') and line != "[Desktop Entry]":
@@ -833,7 +833,8 @@ class Client(ServerSender, ray.ClientData):
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         self.template_origin = ctx.attribute('template_origin')
         
-        if ctx.attribute('from_nsm_file') == '1':
+        if (ctx.attribute('from_nsm_file') == '1'
+                or ctx.attribute('jack_naming') in ('1', 'long')):
             self.jack_naming = ray.JackNaming.LONG
 
         # ensure client has a name
@@ -973,7 +974,7 @@ class Client(ServerSender, ray.ClientData):
                              str(int(not self.start_gui_hidden)))
 
         if self.jack_naming == ray.JackNaming.LONG:
-            ctx.setAttribute('from_nsm_file', 1)
+            ctx.setAttribute('jack_naming', ray.JackNaming.LONG)
 
         if self.template_origin:
             ctx.setAttribute('template_origin', self.template_origin)

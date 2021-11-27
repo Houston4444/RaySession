@@ -600,6 +600,7 @@ class OscServerThread(ClientCommunicating):
     def rayServerListUserClientTemplates(self, path, args, types, src_addr):
         for a in types:
             if a != 's':
+                self._unknown_message(path, types, src_addr)
                 return False
 
     @ray_method('/ray/server/list_factory_client_templates', None)
@@ -607,6 +608,7 @@ class OscServerThread(ClientCommunicating):
                                             src_addr):
         for a in types:
             if a != 's':
+                self._unknown_message(path, types, src_addr)
                 return False
 
     @ray_method('/ray/server/remove_client_template', 's')
@@ -833,6 +835,7 @@ class OscServerThread(ClientCommunicating):
     def rayServerClearClientTemplatesDatabase(self, path, args, types, src_addr):
         self.client_templates_database['factory'].clear()
         self.client_templates_database['user'].clear()
+        self.send(src_addr, '/reply', path, 'database cleared')
 
     @ray_method('/ray/server/open_file_manager_at', 's')
     def rayServerOpenFileManagerAt(self, path, args, types, src_addr):

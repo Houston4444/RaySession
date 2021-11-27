@@ -16,8 +16,7 @@ from client import Client
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
 from daemon_tools import (Terminal, RS, dirname,
-                          is_pid_child_of, highlight_text,
-                          get_nsm_capable_execs_from_desktop_files)
+                          is_pid_child_of, highlight_text)
 from session import OperatingSession
 
 _translate = QCoreApplication.translate
@@ -359,6 +358,96 @@ class SignaledSession(OperatingSession):
                     int(factory), template_name,
                     *template_client.ray_net.spread())
         
+        def get_nsm_capable_execs_from_desktop_files()->list:
+            ''' returns a list of tuples 
+                {'executable': str, 'desktop_file': str, nsm_capable: bool} '''
+            desk_path_list = (
+                '%s/.local' % os.getenv('HOME'),
+                '/usr/local',
+                '/usr')
+
+            application_dicts = []
+            
+            lang = os.getenv('LANG')
+            lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
+
+            for desk_path in desk_path_list:
+                full_desk_path = "%s/share/applications" % desk_path
+
+                if not os.path.isdir(full_desk_path):
+                    # applications folder doesn't exists
+                    continue
+
+                if not os.access(full_desk_path, os.R_OK):
+                    # no permission to read this applications folder
+                    continue
+
+                for root, dirs, files in os.walk(full_desk_path):
+                    for f in files:
+                        if not f.endswith('.desktop'):
+                            continue
+
+                        if f in [apd['desktop_file'] for apd in application_dicts]:
+                            # desktop file already seen in a prior desk_path
+                            continue
+
+                        full_desk_file = os.path.join(root, f)
+                        
+                        try:
+                            file = open(full_desk_file, 'r')
+                            contents = file.read()
+                        except:
+                            continue
+
+                        executable = ''
+                        has_nsm_mention = False
+                        nsm_capable = True
+                        name = ''
+                        
+                        for line in contents.splitlines():
+                            if line.startswith('Exec='):
+                                executable_and_args = line.partition('=')[2].strip()
+                                executable = executable_and_args.partition(' ')[0]
+                            
+                            elif line.lower().startswith('x-nsm-capable='):
+                                has_nsm_mention = True
+                                value = line.partition('=')[2]
+                                nsm_capable = bool(value.strip().lower() == 'true')
+                            
+                            elif line.startswith('Name='):
+                                name = line.partition('=')[2].strip()
+
+                        if has_nsm_mention and executable:
+                            name = executable
+                            name_found = False
+                            
+                            for lang_str in lang_strs:
+                                for line in contents.splitlines():
+                                    if line.startswith('Name%s=' % lang_str):
+                                        name = line.partition('=')[2].strip()
+                                        name_found = True
+                                        break
+                                if name_found:
+                                    break
+
+                            # The 'name' key starts with a '/' because the given template name
+                            # will start with a '/', to prevent some conflicts with other template names.
+                            # Normally, '/' character is forbidden in a template_name because
+                            # template may contains a folder named as the template.
+                            # Here, the template created will be pure NSM, so without files.
+                            # 'skipped' key may be set to True later,
+                            # if a template does not want to be erased by the template created
+                            # with this .desktop file.
+                            
+                            application_dicts.append(
+                                {'executable': executable,
+                                'name': '/' + name,
+                                'desktop_file': f,
+                                'nsm_capable': nsm_capable,
+                                'skipped': False})
+            
+            return [a for a in application_dicts if a['nsm_capable']]
+        
         # if src_addr is an announced ray GUI
         # server will send it all templates properties
         # else, server replies only templates names
@@ -382,8 +471,26 @@ class SignaledSession(OperatingSession):
         # if templates database is not empty
         # we send the database and exit
         if templates_database:
-            self.send(src_addr, '/reply', path,
-                      *[t['template_name'] for t in templates_database])
+            for t in templates_database:
+                if filters:
+                    skipped_by_filter = False
+                    message = t['template_client'].get_properties_message()
+
+                    for filt in filters:
+                        for line in message.splitlines():
+                            if line == filt:
+                                break
+                        else:
+                            skipped_by_filter = True
+                            break
+
+                    if skipped_by_filter:
+                        continue
+                    
+                template_names.add(t['template_name'])
+            
+            #TODO send all template names
+            self.send(src_addr, '/reply', path, *template_names)
             
             if src_addr_is_gui:
                 for t in templates_database:
@@ -422,10 +529,14 @@ class SignaledSession(OperatingSession):
                 continue
 
             if not factory:
+                # we may rewrite user client templates file
                 if content.attribute('VERSION') != ray.VERSION:
                     file_rewritten = self._rewrite_user_templates_file(
                                         content, templates_file)
 
+            erased_by_nsm_desktop_global = bool(
+                content.attribute('erased_by_nsm_desktop_file').lower() == 'true')
+            
             nodes = content.childNodes()
 
             for i in range(nodes.count()):
@@ -442,23 +553,41 @@ class SignaledSession(OperatingSession):
 
                 executable = ct.attribute('executable')
                 protocol = ray.protocol_from_str(ct.attribute('protocol'))
-                erased_by_nsm_desktop = False
                 
+                # check if we wan't this template to be erased by a .desktop file
+                # with X-NSM-Capable=true
+                if ct.attribute('erased_by_nsm_desktop_file'):
+                    erased_by_nsm_desktop = bool(
+                        ct.attribute('erased_by_nsm_desktop_file').lower() == True)
+                else:
+                    erased_by_nsm_desktop = erased_by_nsm_desktop_global
+                
+                nsm_desktop_prior_found = False
+                
+                # With needs_nsm_desktop_file, this template will be provided only if
+                # a *.desktop file with the same executable contains X-NSM-Capable=true
+                needs_nsm_desktop_file = bool(
+                    ct.attribute('needs_nsm_desktop_file').lower() == True)
+                
+                # Parse .desktop files in memory
                 for fde in from_desktop_execs:
                     if fde['executable'] == executable:
-                        if protocol == ray.Protocol.NSM:
+                        if erased_by_nsm_desktop:
+                            # This template won't be provided
+                            nsm_desktop_prior_found = True
+                        else:
+                            # The .desktop file will be skipped,
+                            # we use this template instead
                             fde['skipped'] = True
-                            # we won't add template for this desktop_file
-                            # we use this one.
-                        elif protocol == ray.Protocol.RAY_HACK:
-                            erased_by_nsm_desktop = True
-                            # This is a factory Ray-Hack template
-                            # and we've got a mention that the executable
-                            # is NSM capable. Ignore it, we will use the
-                            # desktop file to create the template
                         break
+                else:
+                    # No *.desktop file with same executable as this template
+                    if needs_nsm_desktop_file:
+                        # This template needs a *.desktop file with X-NSM-Capable
+                        # and there is no one, skip this template
+                        continue
 
-                if erased_by_nsm_desktop:
+                if nsm_desktop_prior_found:
                     continue
 
                 if not self.is_template_acceptable(ct):
@@ -494,7 +623,6 @@ class SignaledSession(OperatingSession):
 
                 template_names.add(template_name)
                 tmp_template_list.append((template_name, template_client))
-                
 
                 if len(tmp_template_list) == 20:
                     self.send(src_addr, '/reply', path,
@@ -557,7 +685,6 @@ class SignaledSession(OperatingSession):
         if tmp_template_list:
             self.send(src_addr, '/reply', path,
                       *[t[0] for t in tmp_template_list])
-            print([t[0] for t in tmp_template_list])
 
             if src_addr_is_gui:
                 for template_name, template_client in tmp_template_list:
