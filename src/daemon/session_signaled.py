@@ -343,6 +343,22 @@ class SignaledSession(OperatingSession):
                        *self.recent_sessions[self.root])
 
     def _ray_server_list_client_templates(self, path, args, src_addr):
+        def send_gui_template_update(template_name: str, template_client):
+            self.send_gui(
+                '/ray/gui/client_template_update',
+                int(factory), template_name,
+                *template_client.spread())
+            if template_client.protocol == ray.Protocol.RAY_HACK:
+                self.send_gui(
+                    '/ray/gui/client_template_ray_hack_update',
+                    int(factory), template_name,
+                    *template_client.ray_hack.spread())
+            elif template_client.protocol == ray.Protocol.RAY_NET:
+                self.send_gui(
+                    '/ray/gui/client_template_ray_net_update',
+                    int(factory), template_name,
+                    *template_client.ray_net.spread())
+        
         # if src_addr is an announced ray GUI
         # server will send it all templates properties
         # else, server replies only templates names
@@ -359,6 +375,23 @@ class SignaledSession(OperatingSession):
         tmp_template_list = []
 
         factory = bool('factory' in path)
+        base = 'factory' if factory else 'user'
+
+        templates_database = self.get_client_templates_database(base)
+
+        # if templates database is not empty
+        # we send the database and exit
+        if templates_database:
+            self.send(src_addr, '/reply', path,
+                      *[t['template_name'] for t in templates_database])
+            
+            if src_addr_is_gui:
+                for t in templates_database:
+                    send_gui_template_update(
+                        t['template_name'], t['template_client'])
+
+            self.send(src_addr, '/reply', path)
+            return
 
         from_desktop_execs = []
         if factory:
@@ -440,6 +473,10 @@ class SignaledSession(OperatingSession):
                     template_client.client_id = ct.attribute('client_id')
                     template_client.update_infos_from_desktop_file()
 
+                    templates_database.append(
+                        {'template_name': template_name,
+                         'template_client': template_client})
+
                     if filters:
                         skipped_by_filter = False
                         message = template_client.get_properties_message()
@@ -457,6 +494,7 @@ class SignaledSession(OperatingSession):
 
                 template_names.add(template_name)
                 tmp_template_list.append((template_name, template_client))
+                
 
                 if len(tmp_template_list) == 20:
                     self.send(src_addr, '/reply', path,
@@ -464,20 +502,7 @@ class SignaledSession(OperatingSession):
 
                     if src_addr_is_gui:
                         for template_name, template_client in tmp_template_list:
-                            self.send_gui(
-                                '/ray/gui/client_template_update',
-                                int(factory), template_name,
-                                *template_client.spread())
-                            if template_client.protocol == ray.Protocol.RAY_HACK:
-                                self.send_gui(
-                                    '/ray/gui/client_template_ray_hack_update',
-                                    int(factory), template_name,
-                                    *template_client.ray_hack.spread())
-                            elif template_client.protocol == ray.Protocol.RAY_NET:
-                                self.send_gui(
-                                    '/ray/gui/client_template_ray_net_update',
-                                    int(factory), template_name,
-                                    *template_client.ray_net.spread())
+                            send_gui_template_update(template_name, template_client)
 
                     tmp_template_list.clear()
         
@@ -498,7 +523,8 @@ class SignaledSession(OperatingSession):
                 template_client = Client(self)
                 template_client.executable_path = fde['executable']
                 template_client.desktop_file = fde['desktop_file']
-                template_client.client_id = self.generate_client_id(fde['executable'])
+                template_client.client_id = self.generate_client_id(
+                    fde['executable'])
                 
                 # this client has probably not been tested in RS
                 # let it behaves as in NSM
@@ -520,6 +546,10 @@ class SignaledSession(OperatingSession):
 
                     if skipped_by_filter:
                         continue
+                
+                templates_database.append(
+                    {'template_name': template_name,
+                     'template_client': template_client})
 
             template_names.add(template_name)
             tmp_template_list.append((template_name, template_client))
@@ -531,19 +561,7 @@ class SignaledSession(OperatingSession):
 
             if src_addr_is_gui:
                 for template_name, template_client in tmp_template_list:
-                    self.send_gui('/ray/gui/client_template_update',
-                                  int(factory), template_name,
-                                  *template_client.spread())
-                    if template_client.protocol == ray.Protocol.RAY_HACK:
-                        self.send_gui(
-                            '/ray/gui/client_template_ray_hack_update',
-                            int(factory), template_name,
-                            *template_client.ray_hack.spread())
-                    elif template_client.protocol == ray.Protocol.RAY_NET:
-                        self.send_gui(
-                            '/ray/gui/client_template_ray_net_update',
-                            int(factory), template_name,
-                            *template_client.ray_net.spread())
+                    send_gui_template_update(template_name, template_client)
 
         # send a last empty reply to say list is finished
         self.send(src_addr, '/reply', path)

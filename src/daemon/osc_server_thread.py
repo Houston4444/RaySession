@@ -363,6 +363,9 @@ class OscServerThread(ClientCommunicating):
         else:
             self.options &= ~ray.Option.HAS_GIT
 
+        self.client_templates_database = {
+            'factory': [], 'user': []}
+
         self.session_to_preview = ''
 
         global instance
@@ -825,6 +828,11 @@ class OscServerThread(ClientCommunicating):
         else:
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                       "Option %s is not currently used" % option_str)
+
+    @ray_method('/ray/server/clear_client_templates_database', '')
+    def rayServerClearClientTemplatesDatabase(self, path, args, types, src_addr):
+        self.client_templates_database['factory'].clear()
+        self.client_templates_database['user'].clear()
 
     @ray_method('/ray/server/open_file_manager_at', 's')
     def rayServerOpenFileManagerAt(self, path, args, types, src_addr):

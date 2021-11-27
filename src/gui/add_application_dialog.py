@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (QDialogButtonBox, QListWidgetItem, QFrame,
-                             QMenu, QAction)
+                             QMenu, QAction, QShortcut)
 from PyQt5.QtGui import QIcon
 
 import client_properties_dialog
@@ -166,12 +166,16 @@ class AddApplicationDialog(ChildDialog):
         self.ui.checkBoxUser.stateChanged.connect(self._user_box_changed)
         self.ui.checkBoxNsm.stateChanged.connect(self._nsm_box_changed)
         self.ui.checkBoxRayHack.stateChanged.connect(self._ray_hack_box_changed)
+        self.ui.pushButtonRefresh.clicked.connect(self._refresh_database)
+        self._refresh_shortcut = QShortcut('F5', self)
+        self._refresh_shortcut.activated.connect(self._refresh_database)
 
         self.ui.templateList.currentItemChanged.connect(
             self._current_item_changed)
         self.ui.templateList.setFocus(Qt.OtherFocusReason)
         self.ui.filterBar.textEdited.connect(self._update_filtered_list)
         self.ui.filterBar.up_down_pressed.connect(self._up_down_pressed)
+
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
         self.user_menu = QMenu()
@@ -271,6 +275,16 @@ class AddApplicationDialog(ChildDialog):
 
         self._update_filtered_list()
 
+    def _refresh_database(self):
+        self.ui.pushButtonRefresh.setEnabled(False)
+        self.ui.templateList.clear()
+        self.user_template_list.clear()
+        self.factory_template_list.clear()
+        self.to_daemon('/ray/server/clear_client_templates_database')
+        self.to_daemon('/ray/server/list_user_client_templates')
+        self.to_daemon('/ray/server/list_factory_client_templates')
+        
+
     def _add_user_templates(self, template_list):
         for template_name in template_list:
             if template_name in self.user_template_list:
@@ -286,7 +300,7 @@ class AddApplicationDialog(ChildDialog):
 
             self.ui.templateList.addItem(item)
 
-            self.ui.templateList.sortItems()
+        self.ui.templateList.sortItems()
 
         self._update_filtered_list()
 
@@ -305,9 +319,12 @@ class AddApplicationDialog(ChildDialog):
 
             self.ui.templateList.addItem(item)
 
-            self.ui.templateList.sortItems()
+        self.ui.templateList.sortItems()
 
         self._update_filtered_list()
+        
+        if not template_list:
+            self.ui.pushButtonRefresh.setEnabled(True)
 
     def _update_client_template(self, args):
         factory = bool(args[0])

@@ -754,6 +754,9 @@ class Client(ServerSender, ray.ClientData):
         self.template_origin = template_name
         self.send_gui_client_properties()
 
+        template_data_base_users = self.get_client_templates_database('user')
+        template_data_base_users.clear()
+
         self.send_gui_message(
             _translate('message', 'Client template %s created')
                 % template_name)
