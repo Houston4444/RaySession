@@ -259,7 +259,7 @@ class GuiServerThread(liblo.ServerThread):
     def _listed_session_scripted_dir(self, path, args, types, src_addr):
         self.signaler.scripted_dir.emit(*args)
 
-    @ray_method('/ray/gui/client_template_update', 'is' + ray.ClientData.sisi())
+    @ray_method('/ray/gui/client_template_update', 'iss' + ray.ClientData.sisi())
     def _client_template_update(self, path, args, types, src_addr):
         self.signaler.client_template_update.emit(args)
 

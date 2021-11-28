@@ -31,8 +31,8 @@
  <Client-Template template-name="SooperLooper" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" unignored_extensions=".wav" arguments="--follow-jack-naming"/>
  <Client-Template template-name="SooperLooper + Transport" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" arguments="--transport_workaround --follow-jack-naming" unignored_extensions=".wav"/>
  <Client-Template template-name="Non-Sequencer" executable="non-sequencer" client_id="sequencer"/>
- <Client-Template template-name="JACK Connections" client_id="patch" executable="ray-jackpatch" name="Jack Connections" prefix_mode="1"/>
- <Client-Template template-name="Network Session" protocol="ray_net" client_id="network" desktop_file="ray-network"/>
+ <Client-Template template-name="JACK Connections" tp_display_name_is_label="true" client_id="patch" executable="ray-jackpatch" name="Jack Connections" prefix_mode="1"/>
+ <Client-Template template-name="Network Session" protocol="ray_net" tp_display_name_is_label="true" client_id="network" desktop_file="ray-network"/>
  <Client-Template template-name="ADLjack" executable="adljack" client_id="adl"/>
  <Client-Template template-name="ADLplug" executable="ADLplug" client_id="adlplug"/>
  <Client-Template template-name="OPNplug" executable="OPNplug" client_id="opnplug"/>

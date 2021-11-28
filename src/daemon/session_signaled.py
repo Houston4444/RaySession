@@ -342,10 +342,14 @@ class SignaledSession(OperatingSession):
                        *self.recent_sessions[self.root])
 
     def _ray_server_list_client_templates(self, path, args, src_addr):
-        def send_gui_template_update(template_name: str, template_client):
+        def send_gui_template_update(template_dict: dict):
+            template_name = template_dict['template_name']
+            template_client = template_dict['template_client']
+            display_name = template_dict['display_name']
+            
             self.send_gui(
                 '/ray/gui/client_template_update',
-                int(factory), template_name,
+                int(factory), template_name, display_name,
                 *template_client.spread())
             if template_client.protocol == ray.Protocol.RAY_HACK:
                 self.send_gui(
@@ -417,7 +421,8 @@ class SignaledSession(OperatingSession):
                             elif line.startswith('Name='):
                                 name = line.partition('=')[2].strip()
 
-                        if has_nsm_mention and executable:
+                        if (has_nsm_mention and executable
+                                and shutil.which(executable)):
                             name = executable
                             name_found = False
                             
@@ -430,21 +435,15 @@ class SignaledSession(OperatingSession):
                                 if name_found:
                                     break
 
-                            # The 'name' key starts with a '/' because the given template name
-                            # will start with a '/', to prevent some conflicts with other template names.
-                            # Normally, '/' character is forbidden in a template_name because
-                            # template may contains a folder named as the template.
-                            # Here, the template created will be pure NSM, so without files.
                             # 'skipped' key may be set to True later,
                             # if a template does not want to be erased by the template created
                             # with this .desktop file.
-                            
                             application_dicts.append(
                                 {'executable': executable,
-                                'name': '/' + name,
-                                'desktop_file': f,
-                                'nsm_capable': nsm_capable,
-                                'skipped': False})
+                                 'name': name,
+                                 'desktop_file': f,
+                                 'nsm_capable': nsm_capable,
+                                 'skipped': False})
             
             return [a for a in application_dicts if a['nsm_capable']]
         
@@ -488,18 +487,18 @@ class SignaledSession(OperatingSession):
                         continue
                     
                 template_names.add(t['template_name'])
-            
-            #TODO send all template names
+
             self.send(src_addr, '/reply', path, *template_names)
             
             if src_addr_is_gui:
-                for t in templates_database:
-                    send_gui_template_update(
-                        t['template_name'], t['template_client'])
+                for template_dict in templates_database:
+                    send_gui_template_update(template_dict)
 
             self.send(src_addr, '/reply', path)
             return
 
+        ###
+        # Here starts the discovery
         from_desktop_execs = []
         if factory:
             from_desktop_execs = get_nsm_capable_execs_from_desktop_files()
@@ -558,7 +557,7 @@ class SignaledSession(OperatingSession):
                 # with X-NSM-Capable=true
                 if ct.attribute('erased_by_nsm_desktop_file'):
                     erased_by_nsm_desktop = bool(
-                        ct.attribute('erased_by_nsm_desktop_file').lower() == True)
+                        ct.attribute('erased_by_nsm_desktop_file').lower() == 'true')
                 else:
                     erased_by_nsm_desktop = erased_by_nsm_desktop_global
                 
@@ -569,9 +568,13 @@ class SignaledSession(OperatingSession):
                 needs_nsm_desktop_file = bool(
                     ct.attribute('needs_nsm_desktop_file').lower() == True)
                 
+                has_nsm_desktop = False
+                
                 # Parse .desktop files in memory
                 for fde in from_desktop_execs:
                     if fde['executable'] == executable:
+                        has_nsm_desktop = True
+                        
                         if erased_by_nsm_desktop:
                             # This template won't be provided
                             nsm_desktop_prior_found = True
@@ -590,75 +593,24 @@ class SignaledSession(OperatingSession):
                 if nsm_desktop_prior_found:
                     continue
 
-                if not self.is_template_acceptable(ct):
+                if not self.is_template_acceptable(ct, has_nsm_desktop):
                     continue
 
-                # save template client properties only for GUI call
-                # to optimize ray_control answer speed
-                template_client = None
-                if src_addr_is_gui or filters:
-                    template_client = Client(self)
-                    template_client.read_xml_properties(ct)
-                    template_client.client_id = ct.attribute('client_id')
-                    template_client.update_infos_from_desktop_file()
+                display_name = ''
 
-                    templates_database.append(
-                        {'template_name': template_name,
-                         'template_client': template_client})
-
-                    if filters:
-                        skipped_by_filter = False
-                        message = template_client.get_properties_message()
-
-                        for filt in filters:
-                            for line in message.splitlines():
-                                if line == filt:
-                                    break
-                            else:
-                                skipped_by_filter = True
-                                break
-
-                        if skipped_by_filter:
-                            continue
-
-                template_names.add(template_name)
-                tmp_template_list.append((template_name, template_client))
-
-                if len(tmp_template_list) == 20:
-                    self.send(src_addr, '/reply', path,
-                            *[t[0] for t in tmp_template_list])
-
-                    if src_addr_is_gui:
-                        for template_name, template_client in tmp_template_list:
-                            send_gui_template_update(template_name, template_client)
-
-                    tmp_template_list.clear()
-        
-        # we refresh the apps detected with their desktop_file
-        self.nsm_execs_from_desktop_files.clear()
-        
-        # add fake templates from desktop files
-        for fde in from_desktop_execs:
-            if fde['skipped']:
-                continue
-
-            #remember this template
-            self.nsm_execs_from_desktop_files.append(fde)
-
-            template_name = fde['name']
-            template_client = None
-            if src_addr_is_gui or filters:
                 template_client = Client(self)
-                template_client.executable_path = fde['executable']
-                template_client.desktop_file = fde['desktop_file']
-                template_client.client_id = self.generate_client_id(
-                    fde['executable'])
-                
-                # this client has probably not been tested in RS
-                # let it behaves as in NSM
-                template_client.prefix_mode = ray.PrefixMode.CLIENT_NAME
-                template_client.jack_naming = ray.JackNaming.LONG
+                template_client.read_xml_properties(ct)
+                template_client.client_id = ct.attribute('client_id')
                 template_client.update_infos_from_desktop_file()
+                
+                if ct.attribute('tp_display_name_is_label') == 'true':
+                    display_name = template_client.label
+                
+                template_dict = {'template_name': template_name,
+                                 'template_client': template_client,
+                                 'display_name': display_name}
+                
+                templates_database.append(template_dict)
 
                 if filters:
                     skipped_by_filter = False
@@ -674,21 +626,82 @@ class SignaledSession(OperatingSession):
 
                     if skipped_by_filter:
                         continue
-                
-                templates_database.append(
-                    {'template_name': template_name,
-                     'template_client': template_client})
+
+                template_names.add(template_name)
+
+                tmp_template_list.append(template_dict)
+
+                if len(tmp_template_list) == 20:
+                    self.send(src_addr, '/reply', path,
+                              *[t['template_name'] for t in tmp_template_list])
+
+                    if src_addr_is_gui:
+                        for template_dict in tmp_template_list:
+                            send_gui_template_update(template_dict)
+
+                    tmp_template_list.clear()
+        
+        # we refresh the apps detected with their desktop_file
+        self.nsm_execs_from_desktop_files.clear()
+        
+        # add fake templates from desktop files
+        for fde in from_desktop_execs:
+            if fde['skipped']:
+                continue
+
+            #remember this template
+            self.nsm_execs_from_desktop_files.append(fde)
+
+            template_name = '/' + fde['executable']
+            template_client = None
+            display_name = fde['name']
+            
+            template_client = Client(self)
+            template_client.executable_path = fde['executable']
+            template_client.desktop_file = fde['desktop_file']
+            template_client.client_id = self.generate_client_id(
+                fde['executable'])
+            
+            # this client has probably not been tested in RS
+            # let it behaves as in NSM
+            template_client.prefix_mode = ray.PrefixMode.CLIENT_NAME
+            template_client.jack_naming = ray.JackNaming.LONG
+            template_client.update_infos_from_desktop_file()
+
+            if filters:
+                skipped_by_filter = False
+                message = template_client.get_properties_message()
+
+                for filt in filters:
+                    for line in message.splitlines():
+                        if line == filt:
+                            break
+                    else:
+                        skipped_by_filter = True
+                        break
+
+                if skipped_by_filter:
+                    continue
+            
+            templates_database.append(
+                {'template_name': template_name,
+                    'template_client': template_client,
+                    'display_name': fde['name']})
 
             template_names.add(template_name)
-            tmp_template_list.append((template_name, template_client))
+
+            tmp_template_list.append(
+                {'template_name': template_name,
+                 'template_client': template_client,
+                 'display_name': display_name})
 
         if tmp_template_list:
             self.send(src_addr, '/reply', path,
-                      *[t[0] for t in tmp_template_list])
+                      *[t['template_name'] for t in tmp_template_list])
 
             if src_addr_is_gui:
-                for template_name, template_client in tmp_template_list:
-                    send_gui_template_update(template_name, template_client)
+                for template_dict in tmp_template_list:
+                    send_gui_template_update(template_dict)
 
         # send a last empty reply to say list is finished
         self.send(src_addr, '/reply', path)

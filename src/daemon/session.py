@@ -296,7 +296,8 @@ class Session(ServerSender):
 
         return [TemplateRoots.user_clients]
 
-    def is_template_acceptable(self, ct)->bool:
+    def is_template_acceptable(self, ct, has_nsm_desktop=False)->bool:
+        # ct is a xml template element
         executable = ct.attribute('executable')
         protocol = ray.protocol_from_str(ct.attribute('protocol'))
 
@@ -306,22 +307,17 @@ class Session(ServerSender):
                 return False
 
             try_exec_line = ct.attribute('try-exec')
-
-            try_exec_list = []
-            if try_exec_line:
-                try_exec_list = try_exec_line.split(';')
-
-            try_exec_list.append(executable)
-            try_exec_ok = True
-
+            try_exec_list = try_exec_line.split(';') if try_exec_line else []
+            
+            if not has_nsm_desktop:
+                try_exec_list.append(executable)
+            
             for try_exec in try_exec_list:
-                exec_path = shutil.which(try_exec)
-                if not exec_path:
-                    try_exec_ok = False
-                    break
+                if not shutil.which(try_exec):
+                    return False
 
-            if not try_exec_ok:
-                return False
+        if has_nsm_desktop:
+            return True
 
         # search for '/nsm/server/announce' in executable binary
         # if it is asked by "check_nsm_bin" key
@@ -2261,7 +2257,7 @@ for better organization.""")
                 if fde['skipped']:
                     continue
 
-                if fde['name'] == template_name:
+                if '/' + fde['executable'] == template_name:
                     client = Client(self)
                     client.executable_path = fde['executable']
                     client.desktop_file = fde['desktop_file']
@@ -2275,7 +2271,7 @@ for better organization.""")
                                     ray.Err.NOT_NOW)
                         return
 
-                    client.template_origin = fde['name'][1:]
+                    client.template_origin = fde['name']
                     client.auto_start = auto_start
 
                     self.add_client_template_step_1(src_addr, src_path, client)
