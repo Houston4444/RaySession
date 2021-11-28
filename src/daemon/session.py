@@ -2314,6 +2314,31 @@ for better organization.""")
                     self.add_client_template_step_1(src_addr, src_path, client)
                     return
 
+        if factory:
+            for fde in self.nsm_execs_from_desktop_files:
+                if fde['skipped']:
+                    continue
+
+                if '/' + fde['executable'] == template_name:
+                    client = Client(self)
+                    client.executable_path = fde['executable']
+                    client.desktop_file = fde['desktop_file']
+                    client.client_id = self.generate_client_id(fde['executable'])
+                    client.jack_naming = ray.JackNaming.LONG
+                    client.prefix_mode = ray.PrefixMode.CLIENT_NAME
+
+                    if not self._add_client(client):
+                        self.answer(src_addr, src_path,
+                                    "Session does not accept any new client now",
+                                    ray.Err.NOT_NOW)
+                        return
+
+                    client.template_origin = fde['name']
+                    client.auto_start = auto_start
+
+                    self.add_client_template_step_1(src_addr, src_path, client)
+                    return
+
         for search_path in search_paths:
             xml_file = "%s/%s" % (search_path, 'client_templates.xml')
 

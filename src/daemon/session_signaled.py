@@ -369,6 +369,7 @@ class SignaledSession(OperatingSession):
                  'desktop_file': str,
                  'nsm_capable': True,
                  'skipped': False} '''
+
             desk_path_list = (
                 '%s/.local' % os.getenv('HOME'),
                 '/usr/local',
@@ -431,7 +432,7 @@ class SignaledSession(OperatingSession):
                             if executable in [apd['executable']
                                               for apd in application_dicts]:
                                 continue
-                            
+
                             name = executable
                             name_found = False
                             
@@ -619,7 +620,7 @@ class SignaledSession(OperatingSession):
                                  'template_client': template_client,
                                  'display_name': display_name,
                                  'templates_root': search_path}
-                
+
                 templates_database.append(template_dict)
 
                 if filters:
@@ -638,7 +639,6 @@ class SignaledSession(OperatingSession):
                         continue
 
                 template_names.add(template_name)
-
                 tmp_template_dicts.append(template_dict)
 
                 if len(tmp_template_dicts) == 20:
@@ -659,8 +659,17 @@ class SignaledSession(OperatingSession):
             if fde['skipped']:
                 continue
 
+
             template_name = '/' + fde['executable']
             display_name = fde['name']
+
+            #remember this template
+            self.nsm_execs_from_desktop_files.append(fde)
+
+            template_name = '/' + fde['executable']
+            template_client = None
+            display_name = fde['name']
+
             template_client = Client(self)
             template_client.executable_path = fde['executable']
             template_client.desktop_file = fde['desktop_file']
@@ -687,7 +696,7 @@ class SignaledSession(OperatingSession):
 
                 if skipped_by_filter:
                     continue
-            
+
             template_dict = {
                  'template_name': template_name,
                  'template_client': template_client,
