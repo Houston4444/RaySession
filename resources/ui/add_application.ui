@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>731</width>
-    <height>533</height>
+    <width>714</width>
+    <height>535</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,25 +46,19 @@
              </widget>
             </item>
             <item>
-             <widget class="OpenSessionFilterBar" name="filterBar"/>
+             <widget class="OpenSessionFilterBar" name="filterBar">
+              <property name="placeholderText">
+               <string>Filter application templates</string>
+              </property>
+              <property name="clearButtonEnabled">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
           <item>
            <layout class="QGridLayout" name="gridLayout">
-            <item row="0" column="0">
-             <spacer name="horizontalSpacer_3">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
             <item row="0" column="3" rowspan="2">
              <widget class="Line" name="line_6">
               <property name="orientation">
@@ -124,7 +118,25 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="1" rowspan="2">
+            <item row="0" column="6" rowspan="2">
+             <widget class="QPushButton" name="pushButtonRefresh">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Refresh
+Applications</string>
+              </property>
+              <property name="icon">
+               <iconset theme="view-refresh">
+                <normaloff>.</normaloff>.</iconset>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="5" rowspan="2">
              <widget class="Line" name="line_4">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -620,6 +632,14 @@
     </widget>
    </item>
   </layout>
+  <action name="actionRefreshApplications">
+   <property name="text">
+    <string>Refresh\nApplications</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

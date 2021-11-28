@@ -25,7 +25,8 @@ from scripter import StepScripter
 from canvas_saver import CanvasSaver
 from daemon_tools import (
     TemplateRoots, RS, Terminal, get_git_default_un_and_ignored,
-    dirname, basename, highlight_text)
+    dirname, basename, highlight_text,
+    get_nsm_capable_execs_from_desktop_files)
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -65,6 +66,11 @@ class Session(ServerSender):
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
         self.canvas_saver = CanvasSaver(self)
+        
+        ''' this list contains tuples
+            {'executable': str, 'name': str, 'desktop_file': str,
+             'nsm_capable': bool, 'skipped': bool} '''
+        self.nsm_execs_from_desktop_files = []
 
     #############
     def osc_reply(self, *args):
@@ -290,13 +296,10 @@ class Session(ServerSender):
 
         return [TemplateRoots.user_clients]
 
-    def is_template_acceptable(self, ct)->bool:
+    def is_template_acceptable(self, ct, has_nsm_desktop=False)->bool:
+        # ct is a xml template element
         executable = ct.attribute('executable')
         protocol = ray.protocol_from_str(ct.attribute('protocol'))
-        
-        if (protocol in (ray.Protocol.NSM, ray.Protocol.RAY_HACK)
-                and not executable):
-            return False
 
         if protocol != ray.Protocol.RAY_NET:
             # check if needed executables are present
@@ -304,22 +307,17 @@ class Session(ServerSender):
                 return False
 
             try_exec_line = ct.attribute('try-exec')
-
-            try_exec_list = []
-            if try_exec_line:
-                try_exec_list = try_exec_line.split(';')
-
-            try_exec_list.append(executable)
-            try_exec_ok = True
-
+            try_exec_list = try_exec_line.split(';') if try_exec_line else []
+            
+            if not has_nsm_desktop:
+                try_exec_list.append(executable)
+            
             for try_exec in try_exec_list:
-                exec_path = shutil.which(try_exec)
-                if not exec_path:
-                    try_exec_ok = False
-                    break
+                if not shutil.which(try_exec):
+                    return False
 
-            if not try_exec_ok:
-                return False
+        if has_nsm_desktop:
+            return True
 
         # search for '/nsm/server/announce' in executable binary
         # if it is asked by "check_nsm_bin" key
@@ -2253,6 +2251,65 @@ for better organization.""")
     def add_client_template(self, src_addr, src_path,
                             template_name, factory=False, auto_start=True):
         search_paths = self._get_search_template_dirs(factory)
+        base = 'factory' if factory else 'user'
+        templates_database = self.get_client_templates_database(base)
+        
+        if templates_database:
+            for t in templates_database:
+                if t['template_name'] == template_name:
+                    client = t['template_client']
+                    client.auto_start = auto_start
+                    
+                    full_name_files = []
+                    template_path = "%s/%s" % (t['templates_root'], template_name)
+
+                    if t['templates_root'] and os.path.isdir(template_path):
+                        for file in os.listdir(template_path):
+                            full_name_files.append(
+                                "%s/%s" % (template_path, file))
+
+                    if not self._add_client(client):
+                        self.answer(src_addr, src_path,
+                                    "Session does not accept any new client now",
+                                    ray.Err.NOT_NOW)
+                        return
+                    
+                    if full_name_files:
+                        client.set_status(ray.ClientStatus.PRECOPY)
+                        self.file_copier.start_client_copy(
+                            client.client_id, full_name_files, self.path,
+                            self.add_client_template_step_1,
+                            self.add_client_template_aborted,
+                            [src_addr, src_path, client])
+                    else:
+                        self.add_client_template_step_1(src_addr, src_path,
+                                                        client)
+                    return
+        
+        if factory:
+            for fde in self.nsm_execs_from_desktop_files:
+                if fde['skipped']:
+                    continue
+
+                if '/' + fde['executable'] == template_name:
+                    client = Client(self)
+                    client.executable_path = fde['executable']
+                    client.desktop_file = fde['desktop_file']
+                    client.client_id = self.generate_client_id(fde['executable'])
+                    client.jack_naming = ray.JackNaming.LONG
+                    client.prefix_mode = ray.PrefixMode.CLIENT_NAME
+
+                    if not self._add_client(client):
+                        self.answer(src_addr, src_path,
+                                    "Session does not accept any new client now",
+                                    ray.Err.NOT_NOW)
+                        return
+
+                    client.template_origin = fde['name']
+                    client.auto_start = auto_start
+
+                    self.add_client_template_step_1(src_addr, src_path, client)
+                    return
 
         for search_path in search_paths:
             xml_file = "%s/%s" % (search_path, 'client_templates.xml')
@@ -2312,8 +2369,7 @@ for better organization.""")
                     return
 
                 client.template_origin = template_name
-                if not auto_start:
-                    client.auto_start = False
+                client.auto_start = auto_start
 
                 if full_name_files:
                     client.set_status(ray.ClientStatus.PRECOPY)

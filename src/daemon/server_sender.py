@@ -115,3 +115,9 @@ class ServerSender(QObject):
             return False
 
         return bool(server.options & option)
+
+    def get_client_templates_database(self, base:str)->list:
+        server = OscServerThread.getInstance()
+        if server:
+            return server.client_templates_database[base]
+        return []
