@@ -2257,9 +2257,6 @@ for better organization.""")
         if templates_database:
             for t in templates_database:
                 if t['template_name'] == template_name:
-                    client = t['template_client']
-                    client.auto_start = auto_start
-                    
                     full_name_files = []
                     template_path = "%s/%s" % (t['templates_root'], template_name)
 
@@ -2268,6 +2265,12 @@ for better organization.""")
                             full_name_files.append(
                                 "%s/%s" % (template_path, file))
 
+                    template_client = t['template_client']
+                    client = Client(self)
+                    client.eat_attributes(template_client)
+                    client.auto_start = auto_start
+                    client.client_id = self.generate_client_id(template_client.client_id)
+                    
                     if not self._add_client(client):
                         self.answer(src_addr, src_path,
                                     "Session does not accept any new client now",
