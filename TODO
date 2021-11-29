@@ -17,9 +17,4 @@ clic droit pour emballer/déballer
 ray_control doc /ray/server/clear_client_templates_database
 
 
-is_template_acceptable
-generate_client_id
-abstract_client
-
 icône générique
-accepter '_' dans client_id (vérifier)
