@@ -2528,6 +2528,9 @@ for better organization.""")
                 client.protocol = template_client.protocol
                 client.ray_hack = template_client.ray_hack
                 client.ray_net = template_client.ray_net
+                client.template_origin = template_name
+                if t['display_name']:
+                    client.template_origin = t['display_name']
                 client.eat_attributes(template_client)
                 client.auto_start = auto_start
                 client.client_id = self.generate_client_id(template_client.client_id)

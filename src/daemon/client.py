@@ -832,7 +832,7 @@ class Client(ServerSender, ray.ClientData):
         self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
         self.template_origin = ctx.attribute('template_origin')
-        
+
         if (ctx.attribute('from_nsm_file') == '1'
                 or ctx.attribute('jack_naming') in ('1', 'long')):
             self.jack_naming = ray.JackNaming.LONG
@@ -1119,7 +1119,7 @@ class Client(ServerSender, ray.ClientData):
 
         return bool(not self.did_announce)
 
-    def is_capable_of(self, capability)->bool:
+    def is_capable_of(self, capability: str)->bool:
         return bool(capability in self.capabilities)
 
     def gui_msg_style(self)->str:
