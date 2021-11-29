@@ -66,11 +66,6 @@ class Session(ServerSender):
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
         self.canvas_saver = CanvasSaver(self)
-        
-        ''' this list contains tuples
-            {'executable': str, 'name': str, 'desktop_file': str,
-             'nsm_capable': bool, 'skipped': bool} '''
-        self.nsm_execs_from_desktop_files = []
 
     #############
     def osc_reply(self, *args):
@@ -468,56 +463,63 @@ class Session(ServerSender):
 
         file.close()
 
-    def generate_client_id(self, wanted_id="")->str:
+    def generate_abstract_client_id(self, wanted_id:str)->str:
+        ''' generates a client_id from wanted_id
+            not regarding the existing ids in the session
+            or session directory. Useful for templates '''
+        for to_rm in ('ray-', 'non-', 'carla-'):
+            if wanted_id.startswith(to_rm):
+                wanted_id = wanted_id.replace(to_rm, '', 1)
+                break
+
+        wanted_id = wanted_id.replace('jack', '')
+
+        #reduce string if contains '-'
+        if '-' in wanted_id:
+            new_wanted_id = ''
+            seplist = wanted_id.split('-')
+            for sep in seplist[:-1]:
+                if sep:
+                    new_wanted_id += (sep[0] + '_')
+            new_wanted_id += seplist[-1]
+            wanted_id = new_wanted_id
+
+        #prevent non alpha numeric characters
+        new_wanted_id = ''
+        last_is_ = False
+        for char in wanted_id:
+            if char.isalnum():
+                new_wanted_id += char
+            else:
+                if not last_is_:
+                    new_wanted_id += '_'
+                    last_is_ = True
+
+        wanted_id = new_wanted_id
+
+        while wanted_id and wanted_id.startswith('_'):
+            wanted_id = wanted_id[1:]
+
+        while wanted_id and wanted_id.endswith('_'):
+            wanted_id = wanted_id[:-1]
+
+        #limit string to 10 characters
+        if len(wanted_id) >= 11:
+            wanted_id = wanted_id[:10]
+            
+        return wanted_id
+
+    def generate_client_id(self, wanted_id="", abstract=False)->str:
         self._update_forbidden_ids_set()
         wanted_id = basename(wanted_id)
 
         if wanted_id:
-            for to_rm in ('ray-', 'non-', 'carla-'):
-                if wanted_id.startswith(to_rm):
-                    wanted_id = wanted_id.replace(to_rm, '', 1)
-                    break
-
-            wanted_id = wanted_id.replace('jack', '')
-
-            #reduce string if contains '-'
-            if '-' in wanted_id:
-                new_wanted_id = ''
-                seplist = wanted_id.split('-')
-                for sep in seplist[:-1]:
-                    if sep:
-                        new_wanted_id += (sep[0] + '_')
-                new_wanted_id += seplist[-1]
-                wanted_id = new_wanted_id
-
-
-            #prevent non alpha numeric characters
-            new_wanted_id = ''
-            last_is_ = False
-            for char in wanted_id:
-                if char.isalnum():
-                    new_wanted_id += char
-                else:
-                    if not last_is_:
-                        new_wanted_id += '_'
-                        last_is_ = True
-
-            wanted_id = new_wanted_id
-
-            while wanted_id and wanted_id.startswith('_'):
-                wanted_id = wanted_id[1:]
-
-            while wanted_id and wanted_id.endswith('_'):
-                wanted_id = wanted_id[:-1]
+            wanted_id = self.generate_abstract_client_id(wanted_id)
 
             if not wanted_id:
                 wanted_id = self._generate_client_id_as_nsm()
                 while wanted_id in self.forbidden_ids_set:
                     wanted_id = self._generate_client_id_as_nsm()
-
-            #limit string to 10 characters
-            if len(wanted_id) >= 11:
-                wanted_id = wanted_id[:10]
 
             if not wanted_id in self.forbidden_ids_set:
                 self.forbidden_ids_set.add(wanted_id)
@@ -710,6 +712,345 @@ class Session(ServerSender):
             for monitor_addr in server.monitor_list:
                 self.send(monitor_addr, '/ray/monitor/client_event',
                           client_id, event)
+    
+    def _rebuild_templates_database(self, base):        
+        def get_nsm_capable_execs_from_desktop_files()->list:
+            ''' returns a list of tuples 
+                {'executable': str,
+                 'name': str,
+                 'desktop_file': str,
+                 'nsm_capable': True,
+                 'skipped': False} '''
+
+            desk_path_list = (
+                '%s/.local' % os.getenv('HOME'),
+                '/usr/local',
+                '/usr')
+
+            application_dicts = []
+            
+            lang = os.getenv('LANG')
+            lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
+
+            for desk_path in desk_path_list:
+                full_desk_path = "%s/share/applications" % desk_path
+
+                if not os.path.isdir(full_desk_path):
+                    # applications folder doesn't exists
+                    continue
+
+                if not os.access(full_desk_path, os.R_OK):
+                    # no permission to read this applications folder
+                    continue
+
+                for root, dirs, files in os.walk(full_desk_path):
+                    for f in files:
+                        if not f.endswith('.desktop'):
+                            continue
+
+                        if f in [apd['desktop_file'] for apd in application_dicts]:
+                            # desktop file already seen in a prior desk_path
+                            continue
+
+                        full_desk_file = os.path.join(root, f)
+                        
+                        try:
+                            file = open(full_desk_file, 'r')
+                            contents = file.read()
+                        except:
+                            continue
+
+                        executable = ''
+                        has_nsm_mention = False
+                        nsm_capable = True
+                        name = ''
+                        
+                        for line in contents.splitlines():
+                            if line.startswith('Exec='):
+                                executable_and_args = line.partition('=')[2].strip()
+                                executable = executable_and_args.partition(' ')[0]
+                            
+                            elif line.lower().startswith('x-nsm-capable='):
+                                has_nsm_mention = True
+                                value = line.partition('=')[2]
+                                nsm_capable = bool(value.strip().lower() == 'true')
+                            
+                            elif line.startswith('Name='):
+                                name = line.partition('=')[2].strip()
+
+                        if (has_nsm_mention and executable
+                                and shutil.which(executable)):
+                            # prevent several desktop files with same executable
+                            if executable in [apd['executable']
+                                              for apd in application_dicts]:
+                                continue
+
+                            name = executable
+                            name_found = False
+                            
+                            for lang_str in lang_strs:
+                                for line in contents.splitlines():
+                                    if line.startswith('Name%s=' % lang_str):
+                                        name = line.partition('=')[2].strip()
+                                        name_found = True
+                                        break
+                                if name_found:
+                                    break
+
+                            # 'skipped' key may be set to True later,
+                            # if a template does not want to be erased
+                            # by the template created
+                            # with this .desktop file.
+                            application_dicts.append(
+                                {'executable': executable,
+                                 'name': name,
+                                 'desktop_file': f,
+                                 'nsm_capable': nsm_capable,
+                                 'skipped': False})
+            
+            return [a for a in application_dicts if a['nsm_capable']]
+        
+        # discovery start
+        factory = bool(base == 'factory')
+        templates_database = self.get_client_templates_database(base)
+        templates_database.clear()
+        
+        template_names = set()
+        
+        from_desktop_execs = []
+        if base == 'factory':
+            from_desktop_execs = get_nsm_capable_execs_from_desktop_files()
+
+        search_paths = self._get_search_template_dirs(factory)
+        file_rewritten = False
+
+        for search_path in search_paths:
+            templates_file = "%s/%s" % (search_path, 'client_templates.xml')
+
+            if not os.path.isfile(templates_file):
+                continue
+
+            if not os.access(templates_file, os.R_OK):
+                sys.stderr.write("ray-daemon:No access to %s in %s, ignore it"
+                                 % (templates_file, search_path))
+                continue
+
+            file = open(templates_file, 'r')
+            xml = QDomDocument()
+            xml.setContent(file.read())
+            file.close()
+
+            content = xml.documentElement()
+
+            if content.tagName() != "RAY-CLIENT-TEMPLATES":
+                continue
+
+            if not factory:
+                # we may rewrite user client templates file
+                if content.attribute('VERSION') != ray.VERSION:
+                    file_rewritten = self._rewrite_user_templates_file(
+                                        content, templates_file)
+
+            erased_by_nsm_desktop_global = bool(
+                content.attribute('erased_by_nsm_desktop_file').lower() == 'true')
+            
+            nodes = content.childNodes()
+
+            for i in range(nodes.count()):
+                node = nodes.at(i)
+                ct = node.toElement()
+                tag_name = ct.tagName()
+                if tag_name != 'Client-Template':
+                    continue
+
+                template_name = ct.attribute('template-name')
+
+                if (not template_name
+                        or '/' in template_name
+                        or template_name in template_names):
+                    continue
+
+                executable = ct.attribute('executable')
+                protocol = ray.protocol_from_str(ct.attribute('protocol'))
+                
+                # check if we wan't this template to be erased by a .desktop file
+                # with X-NSM-Capable=true
+                if ct.attribute('erased_by_nsm_desktop_file'):
+                    erased_by_nsm_desktop = bool(
+                        ct.attribute('erased_by_nsm_desktop_file').lower() == 'true')
+                else:
+                    erased_by_nsm_desktop = erased_by_nsm_desktop_global
+                
+                nsm_desktop_prior_found = False
+                
+                # With 'needs_nsm_desktop_file', this template will be provided only if
+                # a *.desktop file with the same executable contains X-NSM-Capable=true
+                needs_nsm_desktop_file = bool(
+                    ct.attribute('needs_nsm_desktop_file').lower() == True)
+
+                has_nsm_desktop = False
+
+                # Parse .desktop files in memory
+                for fde in from_desktop_execs:
+                    if fde['executable'] == executable:
+                        has_nsm_desktop = True
+                        
+                        if erased_by_nsm_desktop:
+                            # This template won't be provided
+                            nsm_desktop_prior_found = True
+                        else:
+                            # The .desktop file will be skipped,
+                            # we use this template instead
+                            fde['skipped'] = True
+                        break
+                else:
+                    # No *.desktop file with same executable as this template
+                    if needs_nsm_desktop_file:
+                        # This template needs a *.desktop file with X-NSM-Capable
+                        # and there is no one, skip this template
+                        continue
+
+                if nsm_desktop_prior_found:
+                    continue
+
+                # check if needed executables are present
+                if protocol != ray.Protocol.RAY_NET:
+                    if not executable:
+                        continue
+
+                    try_exec_line = ct.attribute('try-exec')
+                    try_exec_list = try_exec_line.split(';') if try_exec_line else []
+                    
+                    if not has_nsm_desktop:
+                        try_exec_list.append(executable)
+
+                    try_exec_ok = True
+
+                    for try_exec in try_exec_list:
+                        if not shutil.which(try_exec):
+                            try_exec_ok = False
+                            break
+                    
+                    if not try_exec_ok:
+                        continue
+
+                if not has_nsm_desktop:
+                    # search for '/nsm/server/announce' in executable binary
+                    # if it is asked by "check_nsm_bin" key
+                    if ct.attribute('check_nsm_bin') in  ("1", "true"):
+                        result = QProcess.execute(
+                            'grep', ['-q', '/nsm/server/announce',
+                                    shutil.which(executable)])
+                        if result:
+                            continue
+
+                    # check if a version is at least required for this template
+                    # don't use needed-version without check how the program acts !
+                    needed_version = ct.attribute('needed-version')
+
+                    if (needed_version.startswith('.')
+                            or needed_version.endswith('.')
+                            or not needed_version.replace('.', '').isdigit()):
+                        #needed-version not writed correctly, ignores it
+                        needed_version = ''
+
+                    if needed_version:
+                        version_process = QProcess()
+                        version_process.start(executable, ['--version'])
+                        version_process.waitForFinished(500)
+
+                        # do not allow program --version to be longer than 500ms
+                        if version_process.state():
+                            version_process.terminate()
+                            version_process.waitForFinished(500)
+                            continue
+
+                        full_program_version = str(
+                            version_process.readAllStandardOutput(),
+                            encoding='utf-8')
+
+                        previous_is_digit = False
+                        program_version = ''
+
+                        for character in full_program_version:
+                            if character.isdigit():
+                                program_version += character
+                                previous_is_digit = True
+                            elif character == '.':
+                                if previous_is_digit:
+                                    program_version += character
+                                previous_is_digit = False
+                            else:
+                                if program_version:
+                                    break
+
+                        if not program_version:
+                            continue
+
+                        neededs = [int(s) for s in needed_version.split('.')]
+                        progvss = [int(s) for s in program_version.split('.')]
+
+                        if neededs > progvss:
+                            # program is too old, ignore this template
+                            continue
+
+                template_client = Client(self)
+                template_client.read_xml_properties(ct)
+                template_client.client_id = ct.attribute('client_id')
+                if not template_client.client_id:
+                    template_client.client_id == self.generate_abstract_client_id(
+                        template_client.executable_path)
+                template_client.update_infos_from_desktop_file()
+                
+                display_name = ''
+                if ct.attribute('tp_display_name_is_label') == 'true':
+                    display_name = template_client.label
+                
+                template_dict = {'template_name': template_name,
+                                 'template_client': template_client,
+                                 'display_name': display_name,
+                                 'templates_root': search_path}
+
+                template_names.add(template_name)
+                templates_database.append(template_dict)
+        
+        # add fake templates from desktop files
+        for fde in from_desktop_execs:
+            if fde['skipped']:
+                continue
+
+            template_name = '/' + fde['executable']
+            display_name = fde['name']
+
+            template_client = Client(self)
+            template_client.executable_path = fde['executable']
+            template_client.desktop_file = fde['desktop_file']
+            template_client.client_id = self.generate_abstract_client_id(
+                fde['executable'])
+            
+            # this client has probably not been tested in RS
+            # let it behaves as in NSM
+            template_client.prefix_mode = ray.PrefixMode.CLIENT_NAME
+            template_client.jack_naming = ray.JackNaming.LONG
+            template_client.update_infos_from_desktop_file()
+
+            template_dict = {
+                 'template_name': template_name,
+                 'template_client': template_client,
+                 'display_name': fde['name'],
+                 'templates_root': ''}
+            
+            template_names.add(template_name)
+            templates_database.append(template_dict)
+
+        if file_rewritten:
+            try:
+                file = open(templates_file, 'w')
+                file.write(xml.toString())
+                file.close()
+            except:
+                sys.stderr.write(
+                    'unable to rewrite User Client Templates XML File\n')
 
 
 class OperatingSession(Session):
@@ -2253,152 +2594,34 @@ for better organization.""")
         search_paths = self._get_search_template_dirs(factory)
         base = 'factory' if factory else 'user'
         templates_database = self.get_client_templates_database(base)
-        
-        if templates_database:
-            for t in templates_database:
-                if t['template_name'] == template_name:
-                    full_name_files = []
-                    template_path = "%s/%s" % (t['templates_root'], template_name)
 
-                    if t['templates_root'] and os.path.isdir(template_path):
-                        for file in os.listdir(template_path):
-                            full_name_files.append(
-                                "%s/%s" % (template_path, file))
+        # if this client template is not present in the database
+        # first, rebuild the database
+        if template_name not in [t['template_name'] for t in templates_database]:
+            self._rebuild_templates_database(base)
 
-                    template_client = t['template_client']
-                    client = Client(self)
-                    client.eat_attributes(template_client)
-                    client.auto_start = auto_start
-                    client.client_id = self.generate_client_id(template_client.client_id)
-                    
-                    if not self._add_client(client):
-                        self.answer(src_addr, src_path,
-                                    "Session does not accept any new client now",
-                                    ray.Err.NOT_NOW)
-                        return
-                    
-                    if full_name_files:
-                        client.set_status(ray.ClientStatus.PRECOPY)
-                        self.file_copier.start_client_copy(
-                            client.client_id, full_name_files, self.path,
-                            self.add_client_template_step_1,
-                            self.add_client_template_aborted,
-                            [src_addr, src_path, client])
-                    else:
-                        self.add_client_template_step_1(src_addr, src_path,
-                                                        client)
-                    return
-        
-        if factory:
-            for fde in self.nsm_execs_from_desktop_files:
-                if fde['skipped']:
-                    continue
-
-                if '/' + fde['executable'] == template_name:
-                    client = Client(self)
-                    client.executable_path = fde['executable']
-                    client.desktop_file = fde['desktop_file']
-                    client.client_id = self.generate_client_id(fde['executable'])
-                    client.jack_naming = ray.JackNaming.LONG
-                    client.prefix_mode = ray.PrefixMode.CLIENT_NAME
-
-                    if not self._add_client(client):
-                        self.answer(src_addr, src_path,
-                                    "Session does not accept any new client now",
-                                    ray.Err.NOT_NOW)
-                        return
-
-                    client.template_origin = fde['name']
-                    client.auto_start = auto_start
-
-                    self.add_client_template_step_1(src_addr, src_path, client)
-                    return
-
-        if factory:
-            for fde in self.nsm_execs_from_desktop_files:
-                if fde['skipped']:
-                    continue
-
-                if '/' + fde['executable'] == template_name:
-                    client = Client(self)
-                    client.executable_path = fde['executable']
-                    client.desktop_file = fde['desktop_file']
-                    client.client_id = self.generate_client_id(fde['executable'])
-                    client.jack_naming = ray.JackNaming.LONG
-                    client.prefix_mode = ray.PrefixMode.CLIENT_NAME
-
-                    if not self._add_client(client):
-                        self.answer(src_addr, src_path,
-                                    "Session does not accept any new client now",
-                                    ray.Err.NOT_NOW)
-                        return
-
-                    client.template_origin = fde['name']
-                    client.auto_start = auto_start
-
-                    self.add_client_template_step_1(src_addr, src_path, client)
-                    return
-
-        for search_path in search_paths:
-            xml_file = "%s/%s" % (search_path, 'client_templates.xml')
-
-            try:
-                file = open(xml_file, 'r')
-                xml = QDomDocument()
-                xml.setContent(file.read())
-                file.close()
-            except:
-                self.answer(src_addr, src_path,
-                            _translate('GUIMSG', '%s is missing or corrupted !')
-                            % xml_file,
-                            ray.Err.NO_SUCH_FILE)
-                return
-
-            if xml.documentElement().tagName() != 'RAY-CLIENT-TEMPLATES':
-                self.answer(
-                    src_addr, src_path,
-                    _translate('GUIMSG',
-                               '%s has no RAY-CLIENT-TEMPLATES top element !')
-                    % xml_file,
-                    ray.Err.BAD_PROJECT)
-                return
-
-            nodes = xml.documentElement().childNodes()
-
-            for i in range(nodes.count()):
-                node = nodes.at(i)
-                ct = node.toElement()
-
-                if ct.tagName() != 'Client-Template':
-                    continue
-
-                if ct.attribute('template-name') != template_name:
-                    continue
-
-                client = Client(self)
-                client.read_xml_properties(ct)
-
-                if not self.is_template_acceptable(ct):
-                    continue
-
+        for t in templates_database:
+            if t['template_name'] == template_name:
                 full_name_files = []
+                template_path = "%s/%s" % (t['templates_root'], template_name)
 
-                template_path = "%s/%s" % (search_path, template_name)
-
-                if os.path.isdir(template_path):
+                if t['templates_root'] and os.path.isdir(template_path):
                     for file in os.listdir(template_path):
                         full_name_files.append(
                             "%s/%s" % (template_path, file))
 
+                template_client = t['template_client']
+                client = Client(self)
+                client.eat_attributes(template_client)
+                client.auto_start = auto_start
+                client.client_id = self.generate_client_id(template_client.client_id)
+                
                 if not self._add_client(client):
                     self.answer(src_addr, src_path,
                                 "Session does not accept any new client now",
                                 ray.Err.NOT_NOW)
                     return
-
-                client.template_origin = template_name
-                client.auto_start = auto_start
-
+                
                 if full_name_files:
                     client.set_status(ray.ClientStatus.PRECOPY)
                     self.file_copier.start_client_copy(
@@ -2409,7 +2632,6 @@ for better organization.""")
                 else:
                     self.add_client_template_step_1(src_addr, src_path,
                                                     client)
-
                 return
 
         # no template found with that name
