@@ -25,8 +25,7 @@ from scripter import StepScripter
 from canvas_saver import CanvasSaver
 from daemon_tools import (
     TemplateRoots, RS, Terminal, get_git_default_un_and_ignored,
-    dirname, basename, highlight_text,
-    get_nsm_capable_execs_from_desktop_files)
+    dirname, basename, highlight_text)
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
