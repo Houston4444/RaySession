@@ -1601,17 +1601,19 @@ class Client(ServerSender, ray.ClientData):
         self.gui_has_been_visible = self.gui_visible
 
     def switch(self):
-        jack_client_name = self.get_jack_client_name()
+        print('switching client', self.client_id)
+        self.jack_client_name = self.get_jack_client_name()
+        print('jack client name: ', self.jack_client_name)
         client_project_path = self.get_project_path()
-
+        self.send_gui_client_properties()
         self.message("Commanding %s to switch \"%s\""
                          % (self.name, client_project_path))
 
         self.send_to_self_address("/nsm/client/open", client_project_path,
-                                  self.session.name, jack_client_name)
+                                  self.session.name, self.jack_client_name)
 
         self.pending_command = ray.Command.OPEN
-        self.send_gui_client_properties()
+        
         self.set_status(ray.ClientStatus.SWITCH)
         if self.is_capable_of(':optional-gui:'):
             self.send_gui('/ray/gui/client/gui_visible',
