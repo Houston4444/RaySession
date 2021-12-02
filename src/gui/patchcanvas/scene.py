@@ -101,13 +101,16 @@ class PatchScene(QGraphicsScene):
         self.curCut = None
         self.curZoomArea = None
 
+        self._move_timer_start_at = 0
+        self._move_timer_interval = 20 # 20 ms step animation (50 Hz)
         self.move_boxes = []
         self.wrapping_boxes = []
         self.move_box_timer = QTimer()
-        self.move_box_timer.setInterval(30) # 40 ms step animation (25 Hz)
+        self.move_box_timer.setInterval(self._move_timer_interval)
         self.move_box_timer.timeout.connect(self.move_boxes_animation)
         self.move_box_n = 0
-        self.move_box_n_max = 12 # 8 animations steps (40ms * 8 = 320ms)
+        self.move_box_n_max = 16 # 16 animations steps (20ms * 16 = 320ms)
+        
 
         self.elastic_scene = True
         self.resizing_scene = False
@@ -176,7 +179,12 @@ class PatchScene(QGraphicsScene):
         self.m_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
     def move_boxes_animation(self):
-        self.move_box_n += 1
+        # animation is nice but not the priority
+        # do not ensure all steps are played
+        # but just move the box where it has to go
+        self.move_box_n = int((time.time() - self._move_timer_start_at)
+                              / (self._move_timer_interval * 0.001))
+        self.move_box_n = min(self.move_box_n, self.move_box_n_max)
 
         for box_dict in self.move_boxes:
             if box_dict['widget'] is not None:
@@ -202,7 +210,7 @@ class PatchScene(QGraphicsScene):
 
         self.resize_the_scene()
 
-        if self.move_box_n == self.move_box_n_max:
+        if self.move_box_n >= self.move_box_n_max:
             self.move_box_n = 0
             self.move_box_timer.stop()
             
@@ -249,6 +257,7 @@ class PatchScene(QGraphicsScene):
         box_dict['n_start'] = self.move_box_n
 
         if not self.move_box_timer.isActive():
+            self._move_timer_start_at = time.time()
             self.move_box_timer.start()
 
     def add_box_to_animation_wrapping(self, box_widget, wrap: bool):
@@ -260,6 +269,7 @@ class PatchScene(QGraphicsScene):
             self.wrapping_boxes.append({'widget': box_widget, 'wrap': wrap})
         
         if not self.move_box_timer.isActive():
+            self._move_timer_start_at = time.time()
             self.move_box_timer.start()
 
     def deplace_boxes_from_repulsers(self, repulser_boxes: list,
