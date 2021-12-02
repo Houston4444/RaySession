@@ -139,7 +139,7 @@ class GuiServerThread(liblo.ServerThread):
             return
 
         if CommandLineArgs.debug:
-            sys.stderr.write('OSC::patchbay receives (%s, %s, %s)\n'
+            sys.stderr.write('\033[93mOSC::gui_receives\033[0m (%s, %s, %s)\n'
                              % (path, args, types))
 
         self.signaler.osc_receive.emit(path, args)
