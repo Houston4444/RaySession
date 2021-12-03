@@ -367,10 +367,14 @@ class MainWindow(QMainWindow):
         self._fullscreen_patchbay = False
         self.hidden_maximized = False
 
+        # systray icon and related
         self._wild_shutdown = RS.settings.value(
             'wild_shutdown', False, type=bool)
         self._systray_mode = RS.settings.value(
             'systray_mode', ray.Systray.SESSION_ONLY, type=int)
+        self._reversed_systray_menu = RS.settings.value(
+            'reversed_systray_menu', False, type=bool)
+
         self._systray = QSystemTrayIcon(self)
         self._systray.activated.connect(self._systray_activated)
         self._systray.setIcon(QIcon(':48x48/raysession'))
@@ -384,7 +388,10 @@ class MainWindow(QMainWindow):
             and (self._systray_mode == ray.Systray.ALWAYS
                     or (self._systray_mode == ray.Systray.SESSION_ONLY
                         and self.session.server_status != ray.ServerStatus.OFF))):
+            print('systray show', self._systray.contextMenu())
             self._systray.show()
+        else:
+            print('roekr', self._systray_mode)
 
         self._startup_time = time.time()
 
@@ -502,6 +509,7 @@ class MainWindow(QMainWindow):
         dialog = child_dialogs.SystrayManagement(self)
         dialog.set_systray_mode(self._systray_mode)
         dialog.set_wild_shutdown(self._wild_shutdown)
+        dialog.set_reversed_state(self._reversed_systray_menu)
 
         dialog.exec()
         if not dialog.result():
@@ -509,8 +517,14 @@ class MainWindow(QMainWindow):
 
         self._systray_mode = dialog.get_systray_mode()
         self._wild_shutdown = dialog.wild_shutdown()
+        reversed_systray_menu = dialog.menu_should_be_reversed()
         RS.settings.setValue('systray_mode', self._systray_mode)
         RS.settings.setValue('wild_shutdown', self._wild_shutdown)
+        RS.settings.setValue('reversed_systray_menu', reversed_systray_menu)
+
+        if reversed_systray_menu != self._reversed_systray_menu:
+            self._reversed_systray_menu = reversed_systray_menu
+            self._build_systray_menu()
 
         if self._systray_mode == ray.Systray.OFF:
             self._systray.hide()
@@ -1047,14 +1061,15 @@ class MainWindow(QMainWindow):
         RS.reset_hiddens()
 
     def _build_systray_menu(self):
-        self._systray_menu.hide()
+        is_shown = self._systray.isVisible()
+        self._systray.hide()
+        self._systray_menu.clear()
+        self._systray_menu_add.clear()
 
         del self._systray_menu
         del self._systray_menu_add
 
         self._systray_menu = QMenu()
-        self._systray_menu.addAction(self.ui.actionSaveSession)
-
         self._systray_menu_add = QMenu(
             _translate('menu', 'Add'), self._systray_menu)
         self._systray_menu_add.addMenu(self._favorites_menu)
@@ -1066,18 +1081,37 @@ class MainWindow(QMainWindow):
                 (ray.ServerStatus.OFF, ray.ServerStatus.CLOSE,
                  ray.ServerStatus.WAIT_USER, ray.ServerStatus.OUT_SAVE,
                  ray.ServerStatus.OUT_SNAPSHOT))
-        self._systray_menu.addMenu(self._systray_menu_add)
-        self._systray_menu.addAction(self.ui.actionCloseSession)
-        self._systray_menu.addAction(self.ui.actionAbortSession)
-        self._systray_menu.addSeparator()
-        self._systray_menu.addAction(self.ui.actionNewSession)
-        self._systray_menu.addAction(self.ui.actionOpenSession)
-        self._systray_menu.addMenu(self.ui.menuRecentSessions)
-        self._systray_menu.addSeparator()
-        self._systray_menu.addAction(self.ui.actionSystemTrayIconOptions)
-        self._systray_menu.addSeparator()
-        self._systray_menu.addAction(self.ui.actionQuit)
+
+        if self._reversed_systray_menu:
+            self._systray_menu.addAction(self.ui.actionQuit)
+            self._systray_menu.addSeparator()
+            self._systray_menu.addAction(self.ui.actionSystemTrayIconOptions)
+            self._systray_menu.addSeparator()
+            self._systray_menu.addMenu(self.ui.menuRecentSessions)
+            self._systray_menu.addAction(self.ui.actionOpenSession)
+            self._systray_menu.addAction(self.ui.actionNewSession)
+            self._systray_menu.addSeparator()
+            self._systray_menu.addAction(self.ui.actionAbortSession)
+            self._systray_menu.addAction(self.ui.actionCloseSession)
+            self._systray_menu.addMenu(self._systray_menu_add)
+            self._systray_menu.addAction(self.ui.actionSaveSession)
+        else:
+            self._systray_menu.addAction(self.ui.actionSaveSession)
+            self._systray_menu.addMenu(self._systray_menu_add)
+            self._systray_menu.addAction(self.ui.actionCloseSession)
+            self._systray_menu.addAction(self.ui.actionAbortSession)
+            self._systray_menu.addSeparator()
+            self._systray_menu.addAction(self.ui.actionNewSession)
+            self._systray_menu.addAction(self.ui.actionOpenSession)
+            self._systray_menu.addMenu(self.ui.menuRecentSessions)
+            self._systray_menu.addSeparator()
+            self._systray_menu.addAction(self.ui.actionSystemTrayIconOptions)
+            self._systray_menu.addSeparator()
+            self._systray_menu.addAction(self.ui.actionQuit)
         self._systray.setContextMenu(self._systray_menu)
+
+        if is_shown:
+            self._systray.show()
 
     def _systray_activated(self):
         wayland = bool(ray.get_window_manager() == ray.WindowManager.WAYLAND)

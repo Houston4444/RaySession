@@ -1207,20 +1207,23 @@ class SystrayManagement(ChildDialog):
         self.ui = ui.systray_management.Ui_Dialog()
         self.ui.setupUi(self)
 
-        self.ui.checkBoxProvideSystray.stateChanged.connect(
+        self.ui.groupBoxSystray.toggled.connect(
             self.ui.checkBoxOnlySessionRunning.setEnabled)
 
-    def set_systray_mode(self, systray_mode):
-        self.ui.checkBoxProvideSystray.setChecked(
+    def set_systray_mode(self, systray_mode: int):
+        self.ui.groupBoxSystray.setChecked(
             systray_mode != ray.Systray.OFF)
         self.ui.checkBoxOnlySessionRunning.setChecked(
             systray_mode == ray.Systray.SESSION_ONLY)
 
-    def set_wild_shutdown(self, wild_shutdown):
+    def set_wild_shutdown(self, wild_shutdown: bool):
         self.ui.checkBoxShutdown.setChecked(wild_shutdown)
 
+    def set_reversed_state(self, reversed: bool):
+        self.ui.checkBoxReversedMenu.setChecked(reversed)
+
     def get_systray_mode(self)->int:
-        if self.ui.checkBoxProvideSystray.isChecked():
+        if self.ui.groupBoxSystray.isChecked():
             if self.ui.checkBoxOnlySessionRunning.isChecked():
                 return ray.Systray.SESSION_ONLY
             return ray.Systray.ALWAYS
@@ -1228,6 +1231,9 @@ class SystrayManagement(ChildDialog):
 
     def wild_shutdown(self)->bool:
         return self.ui.checkBoxShutdown.isChecked()
+
+    def menu_should_be_reversed(self)->bool:
+        return self.ui.checkBoxReversedMenu.isChecked()
 
 
 class StartupDialog(ChildDialog):
