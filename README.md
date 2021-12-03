@@ -3,6 +3,8 @@
 What is RaySession ?
 ---------------------
 
+![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20211203_173011.png)
+
 RaySession is a GNU/Linux session manager for audio programs such as Ardour, Carla, QTractor, Guitarix, Patroneo, Jack Mixer, etc...<br>
 The principle is to load together audio programs, then be able to save or close all documents together.<br>
 Its main purpose is to manage NSM compatible programs, but it also helps for other programs.<br>
@@ -16,7 +18,7 @@ Features
 ---------------------
 
 * Load many programs together and remember their documents and jack connections in an unified folder
-* Nice patchbay with stereo connections, wrappable boxes and search tool
+* Nice patchbay with stereo connections, wrappable boxes and a search tool
 * Snapshot at each save (optional), then you can go back to the snapshot (it uses `git`)
 * Save client as template, and then restore it easily
 * Save session as template
@@ -28,14 +30,10 @@ Features
 * Bookmark the current session folder in your file manager and file pickers (gtk, kde, qt, fltk)
 * Many others...
 
-Screenshots
----------------------
-
-![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20211203_173011.png)
 
 ![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20211203_162333.png)
 
 
-You can see documentation on NSM at: http://non.tuxfamily.org/wiki/Non%20Session%20Manager or https://linuxaudio.github.io/new-session-manager/api/index.html
+You can see documentation on NSM protocol at: https://linuxaudio.github.io/new-session-manager/api/index.html
 
 RaySession is being developed by Mathieu Picot (houston4444), using Python3 and Qt5.
