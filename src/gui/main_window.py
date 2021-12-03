@@ -98,10 +98,10 @@ class MainWindow(QMainWindow):
             self.ui.graphicsView.setVisible(True)
 
             splitter_sizes = RS.settings.value(
-                'MainWindow/splitter_canvas_sizes')
-            if splitter_sizes:
-                self.ui.splitterMainVsCanvas.setSizes(
-                    int(s) for s in splitter_sizes)
+                'MainWindow/splitter_canvas_sizes', [420, 706], type=list)
+
+            self.ui.splitterMainVsCanvas.setSizes(
+                int(s) for s in splitter_sizes)
 
         else:
             self.ui.graphicsView.setVisible(False)
@@ -120,10 +120,11 @@ class MainWindow(QMainWindow):
                 self.setMinimumWidth(450)
                 self.setGeometry(x, y, 460, height)
 
-        splitter_sizes = RS.settings.value("MainWindow/splitter_messages")
-        if splitter_sizes:
-            self.ui.splitterSessionVsMessages.setSizes(
-                [int(s) for s in splitter_sizes])
+        splitter_sizes = RS.settings.value(
+            "MainWindow/splitter_messages", [466, 84], type=list)
+
+        self.ui.splitterSessionVsMessages.setSizes(
+            [int(s) for s in splitter_sizes])
 
         if RS.settings.value('MainWindow/WindowState'):
             self.restoreState(RS.settings.value('MainWindow/WindowState'))
@@ -332,7 +333,7 @@ class MainWindow(QMainWindow):
         filter_bar_shortcut.setContext(Qt.ApplicationShortcut)
         filter_bar_shortcut.activated.connect(self.toggle_patchbay_filters_bar)
 
-        # prevent to hide the session frame with splitter
+        # prevent to hide the session frame with session/messages splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
         self.ui.splitterSessionVsMessages.splitterMoved.connect(
             self._splitter_session_vs_messages_moved)
