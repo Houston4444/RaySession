@@ -82,8 +82,8 @@ class Client(ServerSender, ray.ClientData):
         self.session = parent_session
         self.is_dummy = self.session.is_dummy
 
-        process_env = QProcessEnvironment.systemEnvironment()
-        process_env.insert('NSM_URL', self.get_server_url())
+        # process_env = QProcessEnvironment.systemEnvironment()
+        # process_env.insert('NSM_URL', self.get_server_url())
 
         self.custom_data = {}
         self.custom_tmp_data = {}
@@ -95,7 +95,7 @@ class Client(ServerSender, ray.ClientData):
         self._process.finished.connect(self._process_finished)
         self._process.readyReadStandardError.connect(self._standard_error)
         self._process.readyReadStandardOutput.connect(self._standard_output)
-        self._process.setProcessEnvironment(process_env)
+        # self._process.setProcessEnvironment(process_env)
 
         #if client is'n't stopped 2secs after stop,
         #another stop becames a kill!
@@ -1241,6 +1241,19 @@ class Client(ServerSender, ray.ClientData):
 
         self.pending_command = ray.Command.START
 
+        process_env = QProcessEnvironment.systemEnvironment()
+        pre_env_splitted = shlex.split(self.pre_env)
+        for pes in pre_env_splitted:
+            if not '=' in pes:
+                continue
+
+            envvar, egal, value = pes.partition('=')
+            if envvar:
+                process_env.insert(envvar, value)
+
+        if self.protocol != ray.Protocol.RAY_HACK:
+            process_env.insert('NSM_URL', self.get_server_url())
+
         arguments = []
 
         if self.protocol == ray.Protocol.RAY_NET:
@@ -1255,6 +1268,7 @@ class Client(ServerSender, ray.ClientData):
                     arguments += ['--session-root', self.ray_net.session_root]
             self.ray_net.running_daemon_url = self.ray_net.daemon_url
             self.ray_net.running_session_root = self.ray_net.session_root
+            self._process.setProcessEnvironment(process_env)
             self._process.start(ray.RAYNET_BIN, arguments)
             return
 
@@ -1277,11 +1291,14 @@ class Client(ServerSender, ray.ClientData):
                 os.getenv('RAY_JACK_CLIENT_NAME'),
                 self.get_jack_client_name())
 
+            # The only way I found to expand vars is to set environment vars
+            # globally, and remove them just after.
+            # In case you see a better way, please say it.
             for env in all_envs:
                 os.environ[env] = all_envs[env][1]
 
             os.environ['CONFIG_FILE'] = os.path.expandvars(
-                                                    self.ray_hack.config_file)
+                                            self.ray_hack.config_file)
 
             back_pwd = os.getenv('PWD')
             ray_hack_pwd = self.get_project_path()
@@ -1316,10 +1333,8 @@ class Client(ServerSender, ray.ClientData):
 
         if self.is_ray_hack():
             self._process.setWorkingDirectory(ray_hack_pwd)
-            process_env = QProcessEnvironment.systemEnvironment()
             process_env.insert('RAY_SESSION_NAME', self.session.name)
             process_env.insert('RAY_CLIENT_ID', self.client_id)
-            self._process.setProcessEnvironment(process_env)
 
             self.jack_client_name = self.get_jack_client_name()
             self.send_gui_client_properties()
@@ -1327,6 +1342,7 @@ class Client(ServerSender, ray.ClientData):
         self.session.send_monitor_event(
             'start_request', self.client_id)
 
+        self._process.setProcessEnvironment(process_env)
         self._process.start(self.executable_path, arguments)
 
         ## Here for another way to debug clients.
@@ -1601,9 +1617,7 @@ class Client(ServerSender, ray.ClientData):
         self.gui_has_been_visible = self.gui_visible
 
     def switch(self):
-        print('switching client', self.client_id)
         self.jack_client_name = self.get_jack_client_name()
-        print('jack client name: ', self.jack_client_name)
         client_project_path = self.get_project_path()
         self.send_gui_client_properties()
         self.message("Commanding %s to switch \"%s\""
@@ -1670,6 +1684,8 @@ class Client(ServerSender, ray.ClientData):
                 continue
             elif prop == 'executable':
                 self.executable_path = value
+            elif prop == 'environment':
+                self.pre_env = value
             elif prop == 'arguments':
                 self.arguments = value
             elif prop == 'name':
@@ -1745,6 +1761,7 @@ class Client(ServerSender, ray.ClientData):
         message = """client_id:%s
 protocol:%s
 executable:%s
+environment:%s
 arguments:%s
 name:%s
 prefix_mode:%i
@@ -1758,6 +1775,7 @@ check_last_save:%i
 ignored_extensions:%s""" % (self.client_id,
                             ray.protocol_to_str(self.protocol),
                             self.executable_path,
+                            self.pre_env,
                             self.arguments,
                             self.name,
                             self.prefix_mode,

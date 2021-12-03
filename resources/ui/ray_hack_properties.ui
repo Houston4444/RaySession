@@ -23,6 +23,16 @@
       <string/>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
+     <item row="1" column="0">
+       <widget class="QLabel" name="labelWorkingDirTitle">
+        <property name="text">
+         <string>Folder :</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_17">
         <property name="toolTip">
@@ -62,20 +72,13 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="labelWorkingDirTitle">
+      <item row="5" column="0">
+       <widget class="QLabel" name="label">
         <property name="text">
-         <string>Folder :</string>
+         <string>Environment :</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1" colspan="5">
-       <widget class="QLineEdit" name="lineEditArguments">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The environment variable $RAY_CLIENT_ID will contain the RaySession client_id of this client.$RAY_SESSION_NAME will contain the display name for the session.&lt;br/&gt;$RAY_JACK_CLIENT_NAME will contain a string suitable for use as e.g. a JACK client name.&lt;br/&gt;$CONFIG_FILE will contain the name of the config file selected above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -107,6 +110,14 @@
         </item>
        </layout>
       </item>
+      <item row="4" column="1" colspan="5">
+       <widget class="QLineEdit" name="lineEditArguments">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The environment variable $RAY_CLIENT_ID will contain the RaySession client_id of this client.$RAY_SESSION_NAME will contain the display name for the session.&lt;br/&gt;$RAY_JACK_CLIENT_NAME will contain a string suitable for use as e.g. a JACK client name.&lt;br/&gt;$CONFIG_FILE will contain the name of the config file selected above.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      
       <item row="1" column="5" rowspan="2">
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
@@ -157,10 +168,18 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1" colspan="4">
+      <item row="1" column="1" colspan="5">
        <widget class="QLabel" name="labelWorkingDir">
         <property name="text">
          <string>session_name.client_id</string>
+        </property>
+       </widget>
+      </item>
+      
+      <item row="5" column="1" colspan="5">
+       <widget class="QLineEdit" name="lineEditEnviron">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set here the environment variables you want to set to the process, separate them with spaces.&lt;br/&gt;&lt;br/&gt;for example :&lt;/p&gt;&lt;pre style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Hack';&quot;&gt;MY_VAR1=my_value MY_VAR2=&amp;quot;other value&amp;quot;&lt;/span&gt;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>

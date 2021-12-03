@@ -147,6 +147,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
     def _save_changes(self):
         self.client.executable_path = self.nsmui.lineEditExecutable.text()
         self.client.arguments = self.nsmui.lineEditArguments.text()
+        self.client.pre_env = self.nsmui.lineEditEnviron.text()
         ClientPropertiesDialog._save_changes(self)
 
     def _change_icon_with_text(self, text: str):
@@ -170,6 +171,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         self.nsmui.labelCapabilities.setText(self._get_capacities_line())
         self.nsmui.lineEditExecutable.setText(self.client.executable_path)
         self.nsmui.lineEditArguments.setText(self.client.arguments)
+        self.nsmui.lineEditEnviron.setText(self.client.pre_env)
 
 
 class RayHackClientPropertiesDialog(ClientPropertiesDialog):
@@ -256,6 +258,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
         self.client.executable_path = self.rhack.lineEditExecutable.text()
         self.client.arguments = self.rhack.lineEditArguments.text()
+        self.client.pre_env = self.rhack.lineEditEnviron.text()
         ClientPropertiesDialog._save_changes(self)
 
     def _get_work_dir_base(self)->str:
@@ -409,6 +412,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.update_contents(self)
         self.rhack.lineEditExecutable.setText(self.client.executable_path)
         self.rhack.lineEditArguments.setText(self.client.arguments)
+        self.rhack.lineEditEnviron.setText(self.client.pre_env)
         self.rhack.lineEditConfigFile.setText(
             self.client.ray_hack.config_file)
 

@@ -1718,7 +1718,8 @@ Vous pouvez faire ré-apparaître la fenêtre depuis votre boîte à miniatures.
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="45"/>
         <source>Config File :</source>
-        <translation>Fichier de configuration :</translation>
+        <translation type="unfinished">Fichier de
+configuration :</translation>
     </message>
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="156"/>
@@ -1748,7 +1749,8 @@ Vous pouvez faire ré-apparaître la fenêtre depuis votre boîte à miniatures.
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="195"/>
         <source>wait for a window before considering it ready (needs wmctrl)</source>
-        <translation>attendre une fenêtre avant d&apos;être considéré comme prêt (requiert wmctrl)</translation>
+        <translation type="unfinished">attendre une fenêtre avant d&apos;être considéré
+comme prêt (nécessite wmctrl)</translation>
     </message>
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="247"/>
@@ -1788,7 +1790,8 @@ Vous pouvez faire ré-apparaître la fenêtre depuis votre boîte à miniatures.
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="279"/>
         <source>Tell user to close program himself at session close</source>
-        <translation>Demander à l&apos;utilisateur de fermer lui-même le programme à la fermeture de la session</translation>
+        <translation type="unfinished">Demander à l&apos;utilisateur de fermer lui-même
+le programme à la fermeture de la session</translation>
     </message>
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="286"/>
