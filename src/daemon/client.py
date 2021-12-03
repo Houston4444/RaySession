@@ -225,8 +225,10 @@ class Client(ServerSender, ray.ClientData):
             if self.session.osc_src_addr:
                 error_message = "Failed to launch process!"
                 if not self.session.osc_path.startswith('/nsm/server/'):
-                    error_message = _translate('client',
-                                               "Failed to launch process !")
+                    error_message = _translate(
+                        'client',
+                        " %s: Failed to launch process !"
+                            % self.gui_msg_style())
 
                 self.session.osc_reply(
                     "/error", self.session.osc_path,
@@ -1589,7 +1591,7 @@ class Client(ServerSender, ray.ClientData):
             self.set_status(ray.ClientStatus.QUIT)
         else:
             self.send_gui("/ray/gui/client/status", self.client_id,
-                           ray.ClientStatus.REMOVED)
+                          ray.ClientStatus.REMOVED)
 
     def eat_attributes(self, new_client):
         #self.client_id = new_client.client_id
