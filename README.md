@@ -31,7 +31,7 @@ Features
 Screenshot
 ---------------------
 
-![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20200625_142130.png)
+![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20211203_173011.png)
 
 
 You can see documentation on NSM at: http://non.tuxfamily.org/wiki/Non%20Session%20Manager or https://linuxaudio.github.io/new-session-manager/api/index.html
