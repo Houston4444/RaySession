@@ -3,12 +3,11 @@
 What is RaySession ?
 ---------------------
 
-RaySession is a GNU/Linux session manager for audio programs such as Ardour, Carla, QTractor, Guitarix, Patroneo etc...<br>
+RaySession is a GNU/Linux session manager for audio programs such as Ardour, Carla, QTractor, Guitarix, Patroneo, Jack Mixer, etc...<br>
 The principle is to load together audio programs, then be able to save or close all documents together.<br>
-It communicates with programs using the NSM API, so programs compatible with NSM are also compatible with RaySession.<br>
+Its main purpose is to manage NSM compatible programs, but it also helps for other programs.<br>
 <br>
-RaySession has no vocation to become the hegemonic audio session manager under GNU/Linux, it's simply the best one according to its author's criteria.<br>
-it benefits from a [complete manual](https://raysession.tuxfamily.org/en/manual) as well as a splendid [web site](https://raysession.tuxfamily.org) .<br>
+it benefits from a nice patchbay, a [complete manual](https://raysession.tuxfamily.org/en/manual) as well as a splendid [web site](https://raysession.tuxfamily.org) .<br>
 
 An integrated client can save and restore JACK connections.<br>
 Except this, RaySession doesn't deals with JACK, the recommended user behavior is to use it when JACK is already started.<br>
@@ -16,21 +15,18 @@ Except this, RaySession doesn't deals with JACK, the recommended user behavior i
 Features
 ---------------------
 
-* Factory templates for NSM and LASH compatible applications
-* Possibility to save any client as template
+* Load many programs together and remember their documents and jack connections in an unified folder
+* Nice patchbay with stereo connections, wrappable boxes and search tool
+* Snapshot at each save (optional), then you can go back to the snapshot (it uses `git`)
+* Save client as template, and then restore it easily
 * Save session as template
-* Remember if client was started or not
-* Make a snapshot at each session save and allow to go backward in time (requires git)
-* Make almost all actions and get several informations with the CLI named ray_control
+* Make almost all actions and get several informations with the CLI named `ray_control`
 * Script sessions and clients actions with shell scripts
 * Remember and recall JACK configuration with the jack_config session scripts
 * Having sub-sessions working through the network with the "Network Session" template
+* Remember the virtual desktop of the programs (requires `wmctrl`, doesn't works with Wayland)
 * Bookmark the current session folder in your file manager and file pickers (gtk, kde, qt, fltk)
-* Remember the virtual desktop of the programs (requires wmctrl)
-* Abort session allmost anytime
-* Possibility to KILL client if clean exit is too long
-* Restore or remove definitely a client in the trash
-* Open Session Folder button (open default file manager)
+* Many others...
 
 Screenshot
 ---------------------
