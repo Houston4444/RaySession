@@ -28,10 +28,12 @@ Features
 * Bookmark the current session folder in your file manager and file pickers (gtk, kde, qt, fltk)
 * Many others...
 
-Screenshot
+Screenshots
 ---------------------
 
 ![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20211203_173011.png)
+
+![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20211203_162333.png)
 
 
 You can see documentation on NSM at: http://non.tuxfamily.org/wiki/Non%20Session%20Manager or https://linuxaudio.github.io/new-session-manager/api/index.html
