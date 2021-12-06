@@ -344,11 +344,11 @@ class CanvasPortInfoDialog(QDialog):
         self.ui.labelPortType.setText(port_type_str)
         self.ui.labelPortFlags.setText(port_flags_str)
         self.ui.labelPrettyName.setText(self._port.pretty_name)
-        self.ui.labelPortOrder.setText(self._port.order)
+        self.ui.labelPortOrder.setText(str(self._port.order))
         self.ui.labelPortGroup.setText(self._port.mdata_portgroup)
 
         self.ui.groupBoxMetadatas.setVisible(bool(
             self._port.pretty_name
-            or self._port.order
+            or self._port.order is not None
             or self._port.mdata_portgroup))
 

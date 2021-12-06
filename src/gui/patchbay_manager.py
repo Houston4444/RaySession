@@ -227,19 +227,19 @@ class Port:
             fast=PatchbayManager.optimized_operation)
 
     def __lt__(self, other):
-        if self.type < other.type:
-            return True
+        if self.type != other.type:
+            return (self.type < other.type)
 
         if (self.flags & PORT_IS_CONTROL_VOLTAGE
                 !=  other.flags & PORT_IS_CONTROL_VOLTAGE):
-            return not self.flags & PORT_IS_CONTROL_VOLTAGE
+            return not bool(self.flags & PORT_IS_CONTROL_VOLTAGE)
 
         if (self.full_name.startswith('a2j:')
                 != other.full_name.startswith('a2j:')):
             return not self.full_name.startswith('a2j:')
 
-        if self.mode() < other.mode():
-            return True
+        if self.mode() != other.mode():
+            return (self.mode() < other.mode())
 
         if self.order is None and other.order is None:
             return self.port_id < other.port_id
@@ -248,7 +248,7 @@ class Port:
         if other.order is None:
             return True
 
-        return self.order < other.order
+        return bool(self.order < other.order)
 
 
 class Portgroup:
@@ -1025,8 +1025,6 @@ class Group:
                 break
 
     def sort_ports_in_canvas(self):
-        self.ports.sort()
-
         PatchbayManager.optimize_operation(True)
 
         conn_list = []
@@ -1045,6 +1043,9 @@ class Group:
 
         for port in self.ports:
             port.remove_from_canvas()
+
+        print('here we sort')
+        self.ports.sort()
 
         # search and remove existing portgroups with non consecutive ports
         portgroups_to_remove = []
@@ -1838,7 +1839,7 @@ class PatchbayManager:
                     + "value is not an int (%i,%s)\n" % (uuid, value))
                 return
 
-            port.order = value
+            port.order = port_order
 
             # we may receive this message as many times as there are ports.
             # So, canvas redraw will be done 20ms after the last message.
@@ -2049,6 +2050,8 @@ class PatchbayManager:
             patchcanvas.redrawAllGroups()
 
     def fast_temp_file_memory(self, temp_path):
+        ''' receives a .json file from daemon with groups positions
+            and portgroups remembered from user. '''
         canvas_data = self.get_json_contents_from_path(temp_path)
         if not canvas_data:
             sys.stderr.write(
@@ -2072,6 +2075,8 @@ class PatchbayManager:
         os.remove(temp_path)
 
     def fast_temp_file_running(self, temp_path):
+        ''' receives a .json file from patchbay daemon with all ports, connections
+            and jack metadatas'''
         patchbay_data = self.get_json_contents_from_path(temp_path)
         if not patchbay_data:
             sys.stderr.write(

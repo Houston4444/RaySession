@@ -325,18 +325,7 @@ class MainObject:
             if not client_name in client_names:
                 client_names.append(client_name)
 
-            if jport.flags & jacklib.JackPortIsInput:
-                continue
-
-            port_ptr = jacklib.port_by_name(self.jack_client, jport.name)
-            
-            # this port is output, list its connections
-            port_connection_names = tuple(
-                jacklib.port_get_all_connections(self.jack_client, port_ptr))
-
-            for port_con_name in port_connection_names:
-                self.connection_list.append((jport.name, port_con_name))
-                
+            # get port metadatas
             for key in (jacklib.JACK_METADATA_CONNECTED,
                         jacklib.JACK_METADATA_ORDER,
                         jacklib.JACK_METADATA_PORT_GROUP,
@@ -350,6 +339,18 @@ class MainObject:
                     {'uuid': jport.uuid,
                      'key': key,
                      'value': value})
+
+            if jport.flags & jacklib.JackPortIsInput:
+                continue
+
+            port_ptr = jacklib.port_by_name(self.jack_client, jport.name)
+            
+            # this port is output, list its connections
+            port_connection_names = tuple(
+                jacklib.port_get_all_connections(self.jack_client, port_ptr))
+
+            for port_con_name in port_connection_names:
+                self.connection_list.append((jport.name, port_con_name))
         
         for client_name in client_names:
             uuid = jacklib.get_uuid_for_client_name(self.jack_client, client_name)

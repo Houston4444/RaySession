@@ -388,10 +388,7 @@ class MainWindow(QMainWindow):
             and (self._systray_mode == ray.Systray.ALWAYS
                     or (self._systray_mode == ray.Systray.SESSION_ONLY
                         and self.session.server_status != ray.ServerStatus.OFF))):
-            print('systray show', self._systray.contextMenu())
             self._systray.show()
-        else:
-            print('roekr', self._systray_mode)
 
         self._startup_time = time.time()
 
