@@ -328,6 +328,7 @@ class Group:
         self.display_name = name
         self.ports = []
         self.portgroups = []
+        self.ports_to_rename_queue = []
         self._is_hardware = False
         self.client_icon = ''
         self.a2j_group = False
@@ -342,6 +343,11 @@ class Group:
         self._timer_port_order.setInterval(20)
         self._timer_port_order.setSingleShot(True)
         self._timer_port_order.timeout.connect(self.sort_ports_in_canvas)
+
+        self._timer_ports_rename = QTimer()
+        self._timer_ports_rename.setInterval(20)
+        self._timer_ports_rename.setSingleShot(True)
+        self._timer_ports_rename.timeout.connect(self.rename_waiting_ports)
 
     def update_ports_in_canvas(self):
         for port in self.ports:
@@ -425,6 +431,12 @@ class Group:
         patchcanvas.removeGroup(self.group_id,
                                 fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
+
+    def redraw_in_canvas(self):
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.redrawGroup(self.group_id)
 
     def update_name_in_canvas(self):
         if not self.in_canvas:
@@ -1044,7 +1056,6 @@ class Group:
         for port in self.ports:
             port.remove_from_canvas()
 
-        print('here we sort')
         self.ports.sort()
 
         # search and remove existing portgroups with non consecutive ports
@@ -1198,10 +1209,29 @@ class Group:
             connection.add_to_canvas()
 
         PatchbayManager.optimize_operation(False)
-        patchcanvas.redrawGroup(self.group_id)
+        self.redraw_in_canvas()
+
+    def rename_waiting_ports(self):
+        PatchbayManager.optimize_operation(True)
+
+        for port_rename_dict in self.ports_to_rename_queue:
+            port = port_rename_dict['port']
+            port.full_name = port_rename_dict['new_name']
+            self.graceful_port(port)
+            port.change_canvas_properties()
+
+        PatchbayManager.optimize_operation(False)
+        self.redraw_in_canvas()
+
+        self.ports_to_rename_queue.clear()
 
     def sort_ports_later(self):
         self._timer_port_order.start()
+
+    def rename_port_later(self, port, new_name):
+        self.ports_to_rename_queue.append(
+            {'port': port, 'new_name': new_name})
+        self._timer_ports_rename.start()
 
 
 class PatchbayManager:
@@ -1812,9 +1842,15 @@ class PatchbayManager:
 
         for group in self.groups:
             if group.group_id == port.group_id:
-                port.full_name = new_name
-                group.graceful_port(port)
-                port.change_canvas_properties()
+                # because many ports may be renamed quicky
+                # It is prefferable to rename all theses ports together.
+                # It prevents too much widget update in canvas,
+                # renames now could also prevent to find stereo detected portgroups
+                # if one of the two ports has been renamed and not the other one.
+                group.rename_port_later(port, new_name)
+                # port.full_name = new_name
+                # group.graceful_port(port)
+                # port.change_canvas_properties()
                 break
 
     def optional_gui_state_changed(self, client_id: str, visible: bool):

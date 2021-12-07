@@ -62,9 +62,13 @@ class JackPort:
     order = None
     uuid = 0
     
-    def __init__(self, port_name:str, jack_client):
+    def __init__(self, port_name:str, jack_client, port_ptr=None):
+        # In some cases, port could has just been renamed
+        # then, jacklib.port_by_name fail.
+        # that is why, port_ptr can be sent as argument here
         self.name = port_name
-        port_ptr = jacklib.port_by_name(jack_client, port_name)
+        if port_ptr is None:
+            port_ptr = jacklib.port_by_name(jack_client, port_name)
         self.flags = jacklib.port_flags(port_ptr)
         self.uuid = jacklib.port_uuid(port_ptr)
 
@@ -398,7 +402,7 @@ class MainObject:
         port_name = jacklib.port_name(port_ptr)
         
         if register:
-            jport = JackPort(port_name, self.jack_client)
+            jport = JackPort(port_name, self.jack_client, port_ptr)
             self.port_list.append(jport)
             self.osc_server.port_added(jport)
         else:
