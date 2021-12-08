@@ -181,11 +181,12 @@ class CanvasPort(QGraphicsItem):
         self.m_portgrp_id = portgrp_id
 
     def setPortName(self, port_name):
-        if QFontMetrics(self.m_port_font).width(port_name) < QFontMetrics(self.m_port_font).width(self.m_port_name):
-            QTimer.singleShot(0, canvas.scene.update)
+        # if (QFontMetrics(self.m_port_font).width(port_name)
+        #         < QFontMetrics(self.m_port_font).width(self.m_port_name)):
+        #     QTimer.singleShot(0, canvas.scene.update)
 
         self.m_port_name = port_name
-        self.update()
+        # self.update()
 
     def get_width_for_text(self, text: str):
         return QFontMetrics(self.m_port_font).width(text)
@@ -699,7 +700,6 @@ class CanvasPort(QGraphicsItem):
 
     def paint(self, painter, option, widget):
         if canvas.scene.loading_items:
-            print('rol', self.m_port_name)
             return
         
         painter.save()

@@ -988,14 +988,15 @@ def removePort(group_id, port_id, fast=False):
 
     qCritical("PatchCanvas::removePort(%i, %i) - Unable to find port to remove" % (group_id, port_id))
 
-def changePortProperties(group_id, port_id, portgrp_id, new_port_name, fast=False):
+def renamePort(group_id, port_id, new_port_name, fast=False):
     if canvas.debug:
-        print("PatchCanvas::renamePort(%i, %i, %s)" % (group_id, port_id, new_port_name.encode()))
+        print("PatchCanvas::renamePort(%i, %i, %s)" % (group_id, port_id, new_port_name))
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
             if new_port_name != port.port_name:
                 port.port_name = new_port_name
+                
                 port.widget.setPortName(new_port_name)
 
             if fast:

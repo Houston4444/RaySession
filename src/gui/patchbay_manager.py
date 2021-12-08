@@ -164,7 +164,7 @@ class Port:
     def add_the_last_digit(self):
         self.display_name += ' ' + self.last_digit_to_add
         self.last_digit_to_add = ''
-        self.change_canvas_properties()
+        self.rename_in_canvas()
 
     def add_to_canvas(self):
         if self.in_canvas:
@@ -182,9 +182,13 @@ class Port:
             return
 
         display_name = self.display_name
+        
+        if self.pretty_name:
+            display_name = self.pretty_name
+        
         if not PatchbayManager.use_graceful_names:
             display_name = self.short_name()
-
+        
         is_alternate = False
         if self.flags & PORT_IS_CONTROL_VOLTAGE:
             is_alternate = True
@@ -210,7 +214,7 @@ class Port:
                                fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
-    def change_canvas_properties(self):
+    def rename_in_canvas(self):
         if not self.in_canvas:
             return
 
@@ -221,9 +225,8 @@ class Port:
         if not PatchbayManager.use_graceful_names:
             display_name = self.short_name()
 
-        patchcanvas.changePortProperties(
-            self.group_id, self.port_id,
-            self.portgroup_id, display_name,
+        patchcanvas.renamePort(
+            self.group_id, self.port_id, display_name,
             fast=PatchbayManager.optimized_operation)
 
     def __lt__(self, other):
@@ -278,7 +281,7 @@ class Portgroup:
 
     def update_ports_in_canvas(self):
         for port in self.ports:
-            port.change_canvas_properties()
+            port.rename_in_canvas()
 
     def sort_ports(self):
         port_list = list(self.ports)
@@ -351,7 +354,7 @@ class Group:
 
     def update_ports_in_canvas(self):
         for port in self.ports:
-            port.change_canvas_properties()
+            port.rename_in_canvas()
 
     def add_to_canvas(self, split=patchcanvas.SPLIT_UNDEF):
         if self.in_canvas:
@@ -1218,7 +1221,7 @@ class Group:
             port = port_rename_dict['port']
             port.full_name = port_rename_dict['new_name']
             self.graceful_port(port)
-            port.change_canvas_properties()
+            port.rename_in_canvas()
 
         PatchbayManager.optimize_operation(False)
         self.redraw_in_canvas()
@@ -1848,9 +1851,6 @@ class PatchbayManager:
                 # renames now could also prevent to find stereo detected portgroups
                 # if one of the two ports has been renamed and not the other one.
                 group.rename_port_later(port, new_name)
-                # port.full_name = new_name
-                # group.graceful_port(port)
-                # port.change_canvas_properties()
                 break
 
     def optional_gui_state_changed(self, client_id: str, visible: bool):
@@ -1879,10 +1879,11 @@ class PatchbayManager:
 
             # we may receive this message as many times as there are ports.
             # So, canvas redraw will be done 20ms after the last message.
-            for group in self.groups:
-                if group.group_id == port.group_id:
-                    group.sort_ports_later()
-                    break
+            if not self.optimized_operation:
+                for group in self.groups:
+                    if group.group_id == port.group_id:
+                        group.sort_ports_later()
+                        break
 
         elif key == JACK_METADATA_PRETTY_NAME:
             port = self.get_port_from_uuid(uuid)
@@ -1890,7 +1891,7 @@ class PatchbayManager:
                 return
 
             port.pretty_name = value
-            port.change_canvas_properties()
+            port.rename_in_canvas()
 
         elif key == JACK_METADATA_PORT_GROUP:
             port = self.get_port_from_uuid(uuid)
@@ -1899,10 +1900,11 @@ class PatchbayManager:
 
             port.mdata_portgroup = value
 
-            for group in self.groups:
-                if group.group_id == port.group_id:
-                    group.sort_ports_later()
-                    break
+            if not self.optimized_operation:
+                for group in self.groups:
+                    if group.group_id == port.group_id:
+                        group.sort_ports_later()
+                        break
 
         elif key == JACK_METADATA_ICON_NAME:
             for group in self.groups:
@@ -2086,7 +2088,7 @@ class PatchbayManager:
             patchcanvas.redrawAllGroups()
 
     def fast_temp_file_memory(self, temp_path):
-        ''' receives a .json file from daemon with groups positions
+        ''' receives a .json file path from daemon with groups positions
             and portgroups remembered from user. '''
         canvas_data = self.get_json_contents_from_path(temp_path)
         if not canvas_data:
@@ -2111,7 +2113,7 @@ class PatchbayManager:
         os.remove(temp_path)
 
     def fast_temp_file_running(self, temp_path):
-        ''' receives a .json file from patchbay daemon with all ports, connections
+        ''' receives a .json file path from patchbay daemon with all ports, connections
             and jack metadatas'''
         patchbay_data = self.get_json_contents_from_path(temp_path)
         if not patchbay_data:
@@ -2147,6 +2149,9 @@ class PatchbayManager:
                 for m in patchbay_data[key]:
                     self.metadata_update(
                         m.get('uuid'), m.get('key'), m.get('value'))
+
+        for group in self.groups:
+            group.sort_ports_in_canvas()
 
         self.optimize_operation(False)
         patchcanvas.redrawAllGroups()

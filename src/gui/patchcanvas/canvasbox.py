@@ -632,6 +632,7 @@ class CanvasBox(QGraphicsItem):
         for port in canvas.port_list:
             if port.group_id == self.m_group_id and port.port_id in self.m_port_list_ids:
                 port_list.append(port)
+
                 # used to know present port modes (INPUT or OUTPUT)
                 self.m_current_port_mode |= port.port_mode
 
