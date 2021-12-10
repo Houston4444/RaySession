@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="2.0" language="fr_FR" sourcelanguage="">
+<!DOCTYPE TS>
+<TS version="2.1" language="fr_FR">
 <context>
     <name>AbortSession</name>
     <message>
@@ -123,7 +124,7 @@
     <message>
         <location filename="../resources/ui/client_slot.ui" line="589"/>
         <source>Find boxes in patchbay</source>
-        <translation type="unfinished"></translation>
+        <translation>Trouver les boîtes dans la baie de brassage</translation>
     </message>
 </context>
 <context>
@@ -1072,7 +1073,7 @@ Vous pouvez faire ré-apparaître la fenêtre depuis votre boîte à miniatures.
     <message>
         <location filename="../resources/ui/systray_management.ui" line="20"/>
         <source>Pro&amp;vide system tray icon</source>
-        <translation type="unfinished">Fournir une icône dans la boîte à miniatures</translation>
+        <translation>Fournir une &amp;icône dans la boîte à miniatures</translation>
     </message>
     <message>
         <location filename="../resources/ui/systray_management.ui" line="29"/>
@@ -1092,27 +1093,27 @@ Vous pouvez faire ré-apparaître la fenêtre depuis votre boîte à miniatures.
     <message>
         <location filename="../resources/ui/canvas_options.ui" line="69"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When this option is active, boxes are automatically moved when another box has been moved over them.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Quand cette option est active, les boîtes sont automatiquement déplacées quand une autre boîte est placée par dessus.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/canvas_options.ui" line="72"/>
         <source>Prevent overlapping of boxes</source>
-        <translation type="unfinished"></translation>
+        <translation>Empêcher la superposition des boîtes</translation>
     </message>
     <message>
         <location filename="../resources/ui/canvas_options.ui" line="97"/>
         <source>Maximum port width :</source>
-        <translation type="unfinished"></translation>
+        <translation>Largeur maxi des ports :</translation>
     </message>
     <message>
         <location filename="../resources/ui/systray_management.ui" line="39"/>
         <source>Enable it if your systray is at bottom of the screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Activez cette option si votre boîte à miniatures est en bas de l&apos;écran.</translation>
     </message>
     <message>
         <location filename="../resources/ui/systray_management.ui" line="42"/>
         <source>Reversed menu order</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordre de menu inversé</translation>
     </message>
 </context>
 <context>
@@ -1268,23 +1269,24 @@ Vous pouvez faire ré-apparaître la fenêtre depuis votre boîte à miniatures.
     <message>
         <location filename="../resources/ui/add_application.ui" line="51"/>
         <source>Filter application templates</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtrer les modèles d&apos;application</translation>
     </message>
     <message>
         <location filename="../resources/ui/add_application.ui" line="130"/>
         <source>Refresh
 Applications</source>
-        <translation type="unfinished"></translation>
+        <translation>Raffraichir les
+applications</translation>
     </message>
     <message>
         <location filename="../resources/ui/add_application.ui" line="637"/>
         <source>Refresh\nApplications</source>
-        <translation type="unfinished"></translation>
+        <translation>Raffraichir les\napplications</translation>
     </message>
     <message>
         <location filename="../resources/ui/add_application.ui" line="640"/>
         <source>F5</source>
-        <translation type="unfinished"></translation>
+        <translation>F5</translation>
     </message>
 </context>
 <context>
@@ -1362,12 +1364,12 @@ Applications</source>
     <message>
         <location filename="../resources/ui/new_executable.ui" line="130"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;With this option checked, NSM programs should name their JACK client names starting with ClientName.ClientId (as in NSM), else it will be ClientName (with a digit suffix if needed).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Avec cette option enclenchée, les programmes NSM devraient nommer leur client JACK avec le motif NomDuProgramme.Identifiant (comme dans NSM), sinon ce sera NomDuProgramme (éventuellement suivi d&apos;un nombre si requis).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/new_executable.ui" line="133"/>
         <source>Long JACK Naming</source>
-        <translation type="unfinished"></translation>
+        <translation>Longs noms de client JACK</translation>
     </message>
 </context>
 <context>
@@ -1778,7 +1780,7 @@ Applications</source>
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="55"/>
         <source>Config File :</source>
-        <translation type="unfinished">Fichier de
+        <translation>Fichier de
 configuration :</translation>
     </message>
     <message>
@@ -1809,7 +1811,7 @@ configuration :</translation>
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="214"/>
         <source>wait for a window before considering it ready (needs wmctrl)</source>
-        <translation type="unfinished">attendre une fenêtre avant d&apos;être considéré
+        <translation>attendre une fenêtre avant d&apos;être considéré
 comme prêt (nécessite wmctrl)</translation>
     </message>
     <message>
@@ -1850,7 +1852,7 @@ comme prêt (nécessite wmctrl)</translation>
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="298"/>
         <source>Tell user to close program himself at session close</source>
-        <translation type="unfinished">Demander à l&apos;utilisateur de fermer lui-même
+        <translation>Demander à l&apos;utilisateur de fermer lui-même
 le programme à la fermeture de la session</translation>
     </message>
     <message>
@@ -1946,52 +1948,52 @@ le programme à la fermeture de la session</translation>
     <message>
         <location filename="../resources/ui/filter_frame.ui" line="34"/>
         <source>Hide filter bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Cacher la barre de filtre</translation>
     </message>
     <message>
         <location filename="../resources/ui/filter_frame.ui" line="85"/>
         <source>Find a box...</source>
-        <translation type="unfinished"></translation>
+        <translation>Trouver une boîte...</translation>
     </message>
     <message>
         <location filename="../resources/ui/filter_frame.ui" line="152"/>
         <source>Audio</source>
-        <translation type="unfinished">Audio</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <location filename="../resources/ui/filter_frame.ui" line="162"/>
         <source>Midi</source>
-        <translation type="unfinished"></translation>
+        <translation>Midi</translation>
     </message>
     <message>
         <location filename="../resources/ui/filter_frame.ui" line="198"/>
         <source>adjust the opacity of boxes not matching with the filter</source>
-        <translation type="unfinished"></translation>
+        <translation>réglez l&apos;opacité des boîtes ne correspondant pas au filtre</translation>
     </message>
     <message>
         <location filename="../resources/ui/filter_frame.ui" line="191"/>
         <source>Opacity :</source>
-        <translation type="unfinished"></translation>
+        <translation>Opacité :</translation>
     </message>
     <message>
         <location filename="../resources/ui/filter_frame.ui" line="201"/>
         <source>%</source>
-        <translation type="unfinished"></translation>
+        <translation>%</translation>
     </message>
     <message>
         <location filename="../resources/ui/nsm_properties.ui" line="272"/>
         <source>Environment variables :</source>
-        <translation type="unfinished"></translation>
+        <translation>Variables d&apos;environnement :</translation>
     </message>
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="182"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set here the environment variables you want to set to the process, separate them with spaces.&lt;br/&gt;&lt;br/&gt;for example :&lt;/p&gt;&lt;pre style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:&apos;Hack&apos;;&quot;&gt;MY_VAR1=my_value MY_VAR2=&amp;quot;other value&amp;quot;&lt;/span&gt;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Entrez ici les variables d&apos;environnement que vous voulez appliquer au programme, séparées par des espaces.&lt;br/&gt;&lt;br/&gt;Par exemple :&lt;/p&gt;&lt;pre style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:&apos;Hack&apos;;&quot;&gt;MA_VARIABLE=ma_valeur MA_VARIABLE2=&amp;quot;autre valeur&amp;quot;&lt;/span&gt;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/ray_hack_properties.ui" line="78"/>
         <source>Environment :</source>
-        <translation type="unfinished"></translation>
+        <translation>Environnement :</translation>
     </message>
 </context>
 <context>
@@ -3130,12 +3132,12 @@ pour une meilleure organisation.</translation>
     <message>
         <location filename="../resources/ui/raysession.ui" line="1169"/>
         <source>Ctrl+H</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+H</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="1467"/>
         <source>Convert an &amp;Ardour session to a Ray session</source>
-        <translation type="unfinished"></translation>
+        <translation>Convertir une session &amp;Ardour en session Ray</translation>
     </message>
 </context>
 <context>
@@ -3969,8 +3971,8 @@ dans un souci d&apos;organisation.</translation>
     </message>
     <message>
         <location filename="../src/gui/patchbay_tools.py" line="192"/>
-        <source>Find a box...<byte value="x9"/>Ctrl+F</source>
-        <translation type="unfinished"></translation>
+        <source>Find a box...	Ctrl+F</source>
+        <translation>Trouver une boîte...	Ctrl+F</translation>
     </message>
 </context>
 <context>
