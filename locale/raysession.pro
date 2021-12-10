@@ -12,6 +12,7 @@ FORMS += ../resources/ui/client_trash.ui
 FORMS += ../resources/ui/daemon_url.ui
 FORMS += ../resources/ui/donations.ui
 FORMS += ../resources/ui/error_dialog.ui
+FORMS += ../resources/ui/filter_frame.ui
 FORMS += ../resources/ui/hydro_rh_nsm.ui
 FORMS += ../resources/ui/jack_config_info.ui
 FORMS += ../resources/ui/list_snapshots.ui
