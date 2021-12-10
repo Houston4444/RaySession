@@ -8,7 +8,7 @@
 image:flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:flags/fr.jpeg[FR, 30, 20, link=../fr/manual.html] image:flags/de.jpeg[DE, 40, 30, link=../de/manual.html]
 
 image::raysession.svg["icon", 100, 100]
-_für Version 0.10.0_
+_für Version 0.12.0_
 
 == Einführung
 RaySession ist ein Audio Session Manager für GNU / Linux. Er ermöglicht, verschiedene Audio Programme in einer Session zu starten und zu speichern, wodurch die Wiederherstellung einer bereits konfigurierten Session das Ausführen mehrerer Einzelschritte vermeidet.
@@ -73,7 +73,7 @@ Fügen Sie in Ardour eine Spur hinzu (Menu: Spur → Füge Spur hinzu). In dem s
 [caption="Figure 1: ",link=images/example_ardour_track.png]
 image::example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
 
-Open the JACK <<patchbay>>, for this go to *Control* -> *Show JACK Patchbay* (_or Ctrl+J_). The patchbay appears at the right of the window.
+Now use JACK's <<patchbay>> which occupies the right side of the RaySession window.
 
 Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.
 
@@ -82,7 +82,7 @@ image::example_patchbay.png[My session patchbay]
 
 Dies ist ein Beispiel, in dem der Gitarrensound durch Guitarix verarbeitet direkt in Ardour aufgenommen wird. Falls Sie über keine Gitarre verfügen, können Sie auch in ein Mikrofon singen, es handelt sich lediglich um ein Beispiel.
 
-Kehren Sie nun zum Fenster der RaySession zurück. Sichern Sie die aktuelle Session, indem sie oben rechts auf das FloppyDisk Symbol klicken (_oder Ctrl+S_). Es ist empfehlenswert, zur Sicherung der Session eine systemweite Tastenkombination zu erstellen. Es hängt von der jeweiligen Desktopumgebung ab, aber indem Sie zB. die Tastenkombiation _Ctrl+Meta+S_ dem  Kommando `ray_control save` (Meta ist die Windows-Taste) zuweisen lässt es sich vermeiden, zum Sichern stets zum RaySession Fenster zurückkehren zu müssen.
+Now save the current session by clicking the floppy disk button to the top right  of the session part(_or Ctrl+S_). Es ist empfehlenswert, zur Sicherung der Session eine systemweite Tastenkombination zu erstellen. Es hängt von der jeweiligen Desktopumgebung ab, aber indem Sie zB. die Tastenkombiation _Ctrl+Meta+S_ dem  Kommando `ray_control save` (Meta ist die Windows-Taste) zuweisen lässt es sich vermeiden, zum Sichern stets zum RaySession Fenster zurückkehren zu müssen.
 
 Schliessen Sie nun die Session, indem Sie auf das Kreuz im roten Kreis oben rechts klicken (_oder Strg+W_).
 
@@ -285,6 +285,8 @@ image::add_executable_plus.png[Advanced Add Executable window]
 * Das *Klient ID* Feld (der Klient Identifikator). Nutzen Sie lediglich alphanumerische Zeichen oder '_'. +
 Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und starten wollen. Auch, wenn Sie Session Projekte ausserhalb der bestehenden Session laden wollen. Es gibt keine einfachere Weise, dies zu tun. Die Details hängen stark von der jeweilig genutzten Anwendung ab. Falls Sie eine in der Session bereits verwendete ID eingeben, wird RaySession darauf entsprechend lautstark hinweisen.
 
+* the *Long JACK naming* checkbox. If this box is checked, clients will be supposed to use `ProgramName.ClientId` as JACK client name, else it will be `ProgramName`, possibly followed by `_N` (where N is a number). This is very useful if you use many instances of the same program, and you want to identify them easily in the patchbay.
+
 
 [#client_properties]
 
@@ -360,6 +362,7 @@ Right click anywhere on the patchbay to display the menu. This menu is also pres
 It will allow you to :
 
 * switch the patchbay to full screen
+* Find a box with its name
 * Filter ports: show only AUDIO or MIDI ports or both
 * adjust the zoom level
 * refresh the canvas: ask JACK again for the list of existing ports and their connections
@@ -373,6 +376,7 @@ It will allow you to :
 * __Alt+Mouse wheel__ allows to move the view horizontally.
 * The wheel button is used to move the view
 * __Ctrl+middle mouse button__ cuts all connections passing under the cursor
+* __Ctrl+F__ allows to search a box with its name
 
 ==== Burst Connections
 
@@ -591,6 +595,8 @@ Um eine Session, die mit Non Session Manager oder New Session Manager erstellt w
 
 RaySession wird danach hinzugefügte oder entfernte Klienten nicht in  `session.nsm` speichern, Sie müssen also hierfür auch weiterhin RaySession nutzen.
 
+If ever you want to use another session manager, you will find in the menu *File -> Utilities -> Convert the session to NSM file format*. Obviously this leads to some changes, such as prefix mode or the way the JACK clients will be named, but nothing that prevents the session from working.
+
 == Die Dämon Optionen
 Die Dämon Optionen sind Services, die durch Klicken auf das *Control* Feld oben rechts im Hauptfenster im Untermenü aktiviert oder deaktiviert werden können. Das Untermenü findet sich ebenso unter options in der Menübar.
 
@@ -764,4 +770,4 @@ Falls Sie Ardour nutzen, starten Sie es immer in einer RaySession. Erstens könn
 - *Can I launch an Ardour session launched normally into a RaySession session ?*
 
 +
-You will find in source code https://github.com/Houston4444/RaySession/blob/master/scripts[here] a script named `ardour6_from_external_to_session.sh`. Before to use it, backup your ardour session directory. Download this file, set it executable and execute it with a .ardour file as argument, it will adds the ardour project to the current session, or create a session if no session is loaded.
+You will find in the menu *File -> Utililies -> Convert an Ardour session to a Ray session*, it creates and launch a RaySession session from an ardour session. It is adviced to backup your ardour session first. Obviously, Ardour must not be open with this session during the execution of this script, but you already knew that.

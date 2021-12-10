@@ -10,7 +10,7 @@ image:flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:flags/fr.jpeg[FR, 
 
 image::raysession.svg["icon", 100, 100]
 
-_pour la version 0.11.0_
+_pour la version 0.12.0_
 
 == Introduction
 RaySession est un gestionnaire de session audio pour GNU/Linux. Il permet de démarrer dans une même session plusieurs programmes audio, de sauvegarder leurs projets ensemble et ainsi d’éviter de multiples manipulations pour retourner à une configuration donnée.
@@ -66,7 +66,8 @@ Dans Ardour, ajoutez une piste (Menu: Piste -> Ajouter une piste), dans la fenê
 [caption="Figure 1: ",link=images/exemple_ardour_piste.png]
 image::exemple_ardour_piste.png[Ajouter une piste Ardour pour Guitarix, 640, 480]
 
-Vous allez maintenant afficher la <<patchbay>> de JACK. Pour celà, dans RaySession, appuyez sur *Contrôle* puis *Afficher la baie de brassage de JACK* (_ou Ctrl+J_). La baie de brassage est apparue sur la partie droite de la fenêtre.
+
+Servez-vous maintenant de la <<patchbay>> de JACK qui occupe la partie droite de la fenêtre de RaySession.
 Connectez l'entrée de Guitarix à une entrée matérielle et les sorties de Guitarix vers les entrées de cette nouvelle piste Ardour. Assurez vous que les entrées de votre piste *Guitare* ne sont pas connectées aux entrées matérielles.
 
 [caption="Figure 1: ",link=images/example_patchbay.png]
@@ -74,9 +75,9 @@ image::example_patchbay.png[Baie de brassage de ma session]
 
 Voilà, vous avez une configuration où vous pouvez enregistrer directement le son de votre guitare traité par Guitarix dans Ardour. Si vous n'avez pas de guitare, vous n'avez qu'à chanter faux dans un micro ou taper sur un coussin, ce n'est ici qu'un exemple.
 
-Retournez maintenant à la fenêtre de RaySession, et sauvegardez la session en cours en cliquant sur le bouton en forme de disquette vers le haut à droite (_ou Ctrl+S_). Il est vivement recommandé car très pratique d'affecter un raccourci clavier global de votre système à la sauvegarde de la session en cours. Celà dependra de votre environnement de bureau, mais il suffit d'affecter le raccourci _Ctrl+Meta+S_ à la commande `ray_control save` (Meta est la touche Windows), ainsi vous n'aurez pas à retourner à la fenêtre de RaySession pour sauvegarder la session.
+Sauvegardez la session en cours en cliquant sur le bouton en forme de disquette vers le haut à droite de la partie Session (_ou Ctrl+S_). Il est vivement recommandé car très pratique d'affecter un raccourci clavier global de votre système à la sauvegarde de la session en cours. Celà dependra de votre environnement de bureau, mais il suffit d'affecter le raccourci _Ctrl+Meta+S_ à la commande `ray_control save` (Meta est la touche Windows), ainsi vous n'aurez pas à retourner à la fenêtre de RaySession pour sauvegarder la session.
 
-Maintenant, fermez la session en cliquant sur la croix rouge en haut à droite (_ou Ctrl+W_).
+Maintenant, fermez la session en cliquant sur la croix rouge en haut à droite de la partie Session(_ou Ctrl+W_).
 
 Une fois la session fermée, cliquez sur *Ouvrir une session* (_ou Ctrl+O_), double-cliquez sur la session que vous venez de créer pour la ré-ouvrir.
 
@@ -266,11 +267,12 @@ image::ajout_executable_plus.png[Fenêtre d'ajout d'exécutable avancé]
 * le champ *Préfixe* qui n'est actif que si *Mode de Préfixe* est sur *Personnalisé*
 * le champ *ID du client* (identifiant du client). Ne rentrez ici que des caractères alphanumériques ou des '_'. +
     Celà est utile si vous voulez attraper et lancer des projets existants dans la session avec un exécutable. C'est pratique si vous voulez charger dans la session des projets créés en dehors d'une session. Aucune méthode ne permet de rendre la chose plus simple, celà dépend énormément du programme utilisé. RaySession vous insultera si vous rentrez un identifiant de client qui existe déjà dans la session.
+* la case à cocher *Longs noms de client JACK*. Si cette case est cochée, les clients seront supposés utiliser `NomDuProgramme.Identifiant` comme motif pour leurs clients JACK, sinon ce sera `NomDuProgramme` éventuellement suivi de `_N` (ou N est un nombre). C'est tout à fait pratique si vous utilisez de multiples instances d'un même programme, et que vous souhaitez pouvoir facilement les reconnaître dans la baie de brassage.
 
 [#patchbay]
 == Baie de brassage
 
-la baie de brassage de JACK n'est pas affichée par défaut. Vous pouvez l'afficher en cliquant sur *Contrôle* puis *Afficher la baie de brassage de JACK* (__ou Ctrl+J__). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.
+la baie de brassage de JACK est affichée par défaut. Vous pouvez la cacher en cliquant sur *Contrôle* puis en décochant *Afficher la baie de brassage de JACK* (__ou Ctrl+J__). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.
 
 Évidemment, si JACK n'est pas démarré, cette baie de brassage sera vide.
 
@@ -339,6 +341,7 @@ Un clic droit n'importe où sur la baie de brassage permet d'en afficher le menu
 Il vous permettra de :
 
 * basculer la baie de brassage en plein écran
+* chercher une boîte par son nom
 * Filtrer les ports: n'afficher que les ports AUDIO ou MIDI ou les deux
 * régler le niveau de zoom
 * rafraîchir le canevas: redemander à JACK la liste des ports existants et leurs connexions
@@ -352,6 +355,7 @@ Il vous permettra de :
 * __Alt+Molette de la souris__ permet déplacer la vue horizontallement.
 * Le bouton de la molette permet de déplacer la vue
 * __Ctrl+bouton du milieu de la souris__ permet de couper toutes les connexions passant sous le curseur
+* __Ctrl+F__ permet de chercher une boîte par son nom
 
 ==== Connexions en rafale
 
@@ -574,6 +578,8 @@ Pour importer une session créée avec *Non Session Manager* ou *New Session Man
 
 RaySession ne ré-écrira pas les clients ajoutés ou supprimés dans la fichier session.nsm, à partir du moment où vous ouvrez une session NSM avec RaySession, vous devez continuer avec RaySession.
 
+Si jamais vous souhaitez utiliser un autre gestionnaire de sessions, vous trouverez dans le menu *Fichier -> Utilitaires -> Convertir la session au format NSM* qui - comme son nom l'indique - convertit la session en cours au format de session NSM. Évidemment, celà entraîne quelque modifications, tels que le mode de préfixe ou la façon dont seront nommés les clients JACK, mais rien qui empêche la session de fonctionner.
+
 
 [#options_du_demon]
 == Les options du démon
@@ -768,7 +774,4 @@ Si vous utilisez Ardour, lancez le toujours depuis RaySession, d'une part le cli
 - *Puis-je lancer dans une session RaySession un projet Ardour déjà existant ?*
 
 +
-Vous trouverez https://github.com/Houston4444/RaySession/blob/master/scripts[ici] dans le code source un script nommé `ardour6_from_external_to_session.sh`.
-Avant de l'utiliser, sauvegardez votre projet Ardour.
-Téléchargez ce fichier, mettez le exécutable et exécutez le avec un fichier .ardour comme argument, celà ajoutera le projet Ardour à la session en cours, ou créera une session si aucune session n'est chargée.
-
+Vous trouverez dans le menu *Fichier -> Utilitaires -> Convertir une session Ardour en session Ray*, celà crée et lance une session RaySession à partir d'une session Ardour. Il n'est pas surfait de faire une copie de sauvegarde de votre session Ardour avant de lancer ce script. Bien évidemment, il ne faut pas que Ardour soit ouvert avec cette session pendant l'execution de ce script, mais ça vous l'aviez déjà compris.

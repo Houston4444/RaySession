@@ -8,7 +8,7 @@
 image:flags/en.jpeg[EN, 40, 30, link=../en/manual.html] image:flags/fr.jpeg[FR, 30, 20, link=../fr/manual.html] image:flags/de.jpeg[DE, 30, 20, link=../de/manual.html]
 
 image::raysession.svg["icon", 100, 100]
-_for version 0.10.0_
+_for version 0.12.0_
 
 == Introduction
 RaySession is an audio session manager for GNU / Linux. It allows you to start several audio programs in the same session, to save their projects together and thus to avoid multiple operations to return to a given configuration.
@@ -61,7 +61,7 @@ In Ardour, add a track (Menu: Track → Add a track), in the Ardour window that 
 [caption="Figure 1: ",link=images/example_ardour_track.png]
 image::example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
 
-Open the JACK <<patchbay>>, for this go to *Control* -> *Show JACK Patchbay* (_or Ctrl+J_). The patchbay appears at the right of the window.
+Now use JACK's <<patchbay>> which occupies the right side of the RaySession window.
 
 Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.
 
@@ -70,9 +70,9 @@ image::example_patchbay.png[My session patchbay]
 
 Here you have a configuration where you can directly record the sound of your guitar processed by Guitarix in Ardour. If you don't have a guitar, all you have to do is sing out of tune into a mic or tap a cushion, this is just an example.
 
-Now go back to the RaySession window, and save the current session by clicking the floppy disk button to the top right (_or Ctrl+S_). It is highly recommended because it is very practical to assign a global keyboard shortcut of your system to the save of the current session. This will depend on your desktop environment, but just assign the _Ctrl+Meta+S_ shortcut to the command `ray_control save` (Meta is the Windows key), so you won't have to return to the RaySession window to save the session.
+Now save the current session by clicking the floppy disk button to the top right  of the session part(_or Ctrl+S_). It is highly recommended because it is very practical to assign a global keyboard shortcut of your system to the save of the current session. This will depend on your desktop environment, but just assign the _Ctrl+Meta+S_ shortcut to the command `ray_control save` (Meta is the Windows key), so you won't have to return to the RaySession window to save the session.
 
-Now close the session by clicking on the red cross at the top right (_or Ctrl+W_).
+Now close the session by clicking on the red cross at the top right of the session part (_or Ctrl+W_).
 
 Once the session is closed, click on *Open Session* (_or Ctrl+O_), double-click on the session you just created to re-open it.
 
@@ -268,12 +268,13 @@ image::add_executable_plus.png[Advanced Add Executable window]
 * the *Client ID* field (client identifier). Enter only alphanumeric characters or '_'. +
 This is useful if you want to catch and launch existing projects in the session with an executable. This is useful if you want to load in the session projects created outside a session. There is no method to make it easier, it depends a lot on the program you are using. RaySession will insult you if you enter a client ID that already exists in the session.
 
+* the *Long JACK naming* checkbox. If this box is checked, clients will be supposed to use `ProgramName.ClientId` as JACK client name, else it will be `ProgramName`, possibly followed by `_N` (where N is a number). This is very useful if you use many instances of the same program, and you want to identify them easily in the patchbay.
 
 [#client_properties]
 
 [#patchbay]
 == Patchbay
-The JACK patchbay is not displayed by default. You can display it by clicking on *Control* and then *Show JACK Patchbay* (__or Ctrl+J__). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.
+The JACK patchbay is displayed by default. You can hide it by clicking on *Control* and then uncheck *Show JACK Patchbay* (__or Ctrl+J__). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.
 
 Obviously, if JACK is not started, this patchbay will be empty.
 
@@ -343,6 +344,7 @@ Right click anywhere on the patchbay to display the menu. This menu is also pres
 It will allow you to :
 
 * switch the patchbay to full screen
+* Find a box with its name
 * Filter ports: show only AUDIO or MIDI ports or both
 * adjust the zoom level
 * refresh the canvas: ask JACK again for the list of existing ports and their connections
@@ -356,6 +358,7 @@ It will allow you to :
 * __Alt+Mouse wheel__ allows to move the view horizontally.
 * The wheel button is used to move the view
 * __Ctrl+middle mouse button__ cuts all connections passing under the cursor
+* __Ctrl+F__ allows to search a box with its name
 
 ==== Burst Connections
 
@@ -569,6 +572,8 @@ To import a session created with Non Session Manager or New Session Manager, mov
 
 RaySession will not rewrite clients added or deleted to the `session.nsm` file, as long as you open an NSM session with RaySession you must continue with RaySession.
 
+If ever you want to use another session manager, you will find in the menu *File -> Utilities -> Convert the session to NSM file format*. Obviously this leads to some changes, such as prefix mode or the way the JACK clients will be named, but nothing that prevents the session from working.
+
 == The daemon's options
 Daemon options are services which can be activated and deactivated via the *Control* button at the top right of the main window, or via the options menu in the menu bar.
 
@@ -742,4 +747,4 @@ If you are using Ardour, always run it from RaySession, firstly, the automatic s
 - *Can I launch an Ardour session launched normally into a RaySession session ?*
 
 +
-You will find in source code https://github.com/Houston4444/RaySession/blob/master/scripts[here] a script named `ardour6_from_external_to_session.sh`. Before to use it, backup your ardour session directory. Download this file, set it executable and execute it with a .ardour file as argument, it will adds the ardour project to the current session, or create a session if no session is loaded.
+You will find in the menu *File -> Utililies -> Convert an Ardour session to a Ray session*, it creates and launch a RaySession session from an ardour session. It is adviced to backup your ardour session first. Obviously, Ardour must not be open with this session during the execution of this script, but you already knew that.
