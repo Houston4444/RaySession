@@ -304,6 +304,8 @@ class MainWindow(QMainWindow):
         self.ui.actionRememberOptionalGuiStates.setIcon(
             RayIcon('visibility', dark))
         self.ui.trashButton.setIcon(RayIcon('trash-empty', dark))
+        if self.ui.trashButton.icon().isNull():
+            self.ui.trashButton.setIcon(RayIcon('trash'), dark)
 
         self.ui.actionDuplicateSession.setIcon(
             RayIcon('xml-node-duplicate', dark))
