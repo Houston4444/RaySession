@@ -603,7 +603,8 @@ class CanvasPort(QGraphicsItem):
                 if port.port_id in stereo_able_ids_list and not port.portgrp_id:
                     act_x_setasstereo = StereoMenu.addAction(port.port_name)
                     act_x_setasstereo.setData([self, port.port_id])
-                    act_x_setasstereo.triggered.connect(canvas.qobject.SetasStereoWith)
+                    act_x_setasstereo.triggered.connect(
+                        canvas.qobject.set_as_stereo_with)
                     at_least_one = True
 
             if not at_least_one:

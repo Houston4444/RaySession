@@ -545,12 +545,12 @@ def item_fx(item, show, destroy):
     animation.set_duration(750 if show else 500)
 
     if show:
-        animation.finished.connect(canvas.qobject.AnimationFinishedShow)
+        animation.finished.connect(canvas.qobject.animation_finished_show)
     else:
         if destroy:
-            animation.finished.connect(canvas.qobject.AnimationFinishedDestroy)
+            animation.finished.connect(canvas.qobject.animation_finished_destroy)
         else:
-            animation.finished.connect(canvas.qobject.AnimationFinishedHide)
+            animation.finished.connect(canvas.qobject.Animation_finished_hide)
 
     canvas.animation_list.append(animation)
 

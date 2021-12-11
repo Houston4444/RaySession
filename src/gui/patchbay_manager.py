@@ -82,7 +82,7 @@ class Connection:
 
         self.in_canvas = True
 
-        patchcanvas.connectPorts(
+        patchcanvas.connect_ports(
             self.connection_id,
             self.port_out.group_id, self.port_out.port_id,
             self.port_in.group_id, self.port_in.port_id,
@@ -92,7 +92,7 @@ class Connection:
         if not self.in_canvas:
             return
 
-        patchcanvas.disconnectPorts(
+        patchcanvas.disconnect_ports(
             self.connection_id,
             fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
@@ -201,7 +201,7 @@ class Port:
 
         self.in_canvas = True
 
-        patchcanvas.addPort(
+        patchcanvas.add_port(
             self.group_id, self.port_id, display_name,
             port_mode, self.type, is_alternate,
             fast=PatchbayManager.optimized_operation)
@@ -210,8 +210,8 @@ class Port:
         if not self.in_canvas:
             return
 
-        patchcanvas.removePort(self.group_id, self.port_id,
-                               fast=PatchbayManager.optimized_operation)
+        patchcanvas.remove_port(self.group_id, self.port_id,
+                                fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
     def rename_in_canvas(self):
@@ -225,7 +225,7 @@ class Port:
         if not PatchbayManager.use_graceful_names:
             display_name = self.short_name()
 
-        patchcanvas.renamePort(
+        patchcanvas.rename_port(
             self.group_id, self.port_id, display_name,
             fast=PatchbayManager.optimized_operation)
 
@@ -310,17 +310,17 @@ class Portgroup:
         port_id_list = [port.port_id for port in self.ports]
         port_id_list = tuple(port_id_list)
 
-        patchcanvas.addPortGroup(self.group_id, self.portgroup_id,
-                                 self.port_mode, port_type,
-                                 port_id_list,
-                                 fast=PatchbayManager.optimized_operation)
+        patchcanvas.add_portgroup(self.group_id, self.portgroup_id,
+                                  self.port_mode, port_type,
+                                  port_id_list,
+                                  fast=PatchbayManager.optimized_operation)
 
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
 
-        patchcanvas.removePortGroup(self.group_id, self.portgroup_id,
-                                    fast=PatchbayManager.optimized_operation)
+        patchcanvas.remove_portgroup(self.group_id, self.portgroup_id,
+                                     fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
 
@@ -402,23 +402,23 @@ class Group:
         if PatchbayManager.use_graceful_names:
             display_name = self.display_name
         
-        patchcanvas.addGroup(
+        patchcanvas.add_group(
             self.group_id, display_name, split,
             icon_type, icon_name, fast=PatchbayManager.optimized_operation,
             null_xy=gpos.null_xy, in_xy=gpos.in_xy, out_xy=gpos.out_xy)
 
         if do_split:
             gpos.flags |= GROUP_HAS_BEEN_SPLITTED
-            patchcanvas.wrapGroupBox(
+            patchcanvas.wrap_group_box(
                 self.group_id, PORT_MODE_INPUT,
                 bool(gpos.flags & GROUP_WRAPPED_INPUT),
                 animate=False)
-            patchcanvas.wrapGroupBox(
+            patchcanvas.wrap_group_box(
                 self.group_id, PORT_MODE_OUTPUT,
                 bool(gpos.flags & GROUP_WRAPPED_OUTPUT),
                 animate=False)
         else:
-            patchcanvas.wrapGroupBox(
+            patchcanvas.wrap_group_box(
                 self.group_id, PORT_MODE_NULL,
                 bool(gpos.flags & GROUP_WRAPPED_INPUT
                      and gpos.flags & GROUP_WRAPPED_OUTPUT),
@@ -431,15 +431,15 @@ class Group:
         if not self.in_canvas:
             return
 
-        patchcanvas.removeGroup(self.group_id,
-                                fast=PatchbayManager.optimized_operation)
+        patchcanvas.remove_group(self.group_id,
+                                 fast=PatchbayManager.optimized_operation)
         self.in_canvas = False
 
     def redraw_in_canvas(self):
         if not self.in_canvas:
             return
         
-        patchcanvas.redrawGroup(self.group_id)
+        patchcanvas.redraw_group(self.group_id)
 
     def update_name_in_canvas(self):
         if not self.in_canvas:
@@ -449,7 +449,7 @@ class Group:
         if PatchbayManager.use_graceful_names:
             display_name = self.display_name
         
-        patchcanvas.renameGroup(self.group_id, display_name)
+        patchcanvas.rename_group(self.group_id, display_name)
 
     def semi_hide(self, yesno: bool):
         if not self.in_canvas:
@@ -584,21 +584,21 @@ class Group:
         if not self.in_canvas:
             return
 
-        patchcanvas.moveGroupBoxes(
+        patchcanvas.move_group_boxes(
             self.group_id, gpos.null_xy, gpos.in_xy, gpos.out_xy)
 
         if (gpos.flags & GROUP_SPLITTED
                 and not ex_gpos_flags & GROUP_SPLITTED):
-            patchcanvas.splitGroup(self.group_id)
+            patchcanvas.split_group(self.group_id)
 
-        patchcanvas.wrapGroupBox(self.group_id, PORT_MODE_INPUT,
+        patchcanvas.wrap_group_box(self.group_id, PORT_MODE_INPUT,
                                  bool(gpos.flags & GROUP_WRAPPED_INPUT))
-        patchcanvas.wrapGroupBox(self.group_id, PORT_MODE_OUTPUT,
+        patchcanvas.wrap_group_box(self.group_id, PORT_MODE_OUTPUT,
                                  bool(gpos.flags & GROUP_WRAPPED_OUTPUT))
 
         if (ex_gpos_flags & GROUP_SPLITTED
                 and not gpos.flags & GROUP_SPLITTED):
-            patchcanvas.animateBeforeJoin(self.group_id)
+            patchcanvas.animate_before_join(self.group_id)
 
     def wrap_box(self, port_mode: int, yesno: bool):
         wrap_flag = GROUP_WRAPPED_OUTPUT | GROUP_WRAPPED_INPUT
@@ -617,12 +617,12 @@ class Group:
         if not self.in_canvas:
             return
 
-        patchcanvas.wrapGroupBox(self.group_id, port_mode, yesno)
+        patchcanvas.wrap_group_box(self.group_id, port_mode, yesno)
 
     def set_client_icon(self, icon_name:str):
         self.client_icon = icon_name
         if self.in_canvas:
-            patchcanvas.setGroupIcon(
+            patchcanvas.set_group_icon(
                 self.group_id, patchcanvas.ICON_CLIENT, icon_name)
 
     def get_pretty_client(self):
@@ -1335,7 +1335,7 @@ class PatchbayManager:
                 if group.group_id == group_id:
                     on_place = not bool(
                         group.current_position.flags & GROUP_HAS_BEEN_SPLITTED)
-                    patchcanvas.splitGroup(group_id, on_place=on_place)
+                    patchcanvas.split_group(group_id, on_place=on_place)
                     group.current_position.flags |= GROUP_SPLITTED
                     group.current_position.flags |= GROUP_HAS_BEEN_SPLITTED
                     group.save_current_position()
@@ -1343,7 +1343,7 @@ class PatchbayManager:
 
         elif action == patchcanvas.ACTION_GROUP_JOIN:
             group_id = value1
-            patchcanvas.animateBeforeJoin(group_id)
+            patchcanvas.animate_before_join(group_id)
 
         elif action == patchcanvas.ACTION_GROUP_JOINED:
             group_id = value1
@@ -1537,13 +1537,13 @@ class PatchbayManager:
         elif index == 2:
             idx = 2
 
-        patchcanvas.changeTheme(idx)
+        patchcanvas.change_theme(idx)
 
         theme_name = patchcanvas.getThemeName(idx)
         RS.settings.setValue('Canvas/theme', theme_name)
 
     def set_elastic_canvas(self, yesno: int):
-        patchcanvas.setElastic(yesno)
+        patchcanvas.set_elastic(yesno)
 
     def set_prevent_overlap(self, yesno: int):
         patchcanvas.set_prevent_overlap(yesno)
@@ -1555,7 +1555,7 @@ class PatchbayManager:
             group.update_ports_in_canvas()
             group.update_name_in_canvas()
         PatchbayManager.optimize_operation(False)
-        patchcanvas.redrawAllGroups()
+        patchcanvas.redraw_all_groups()
 
     def toggle_full_screen(self):
         self.session.main_win.toggle_scene_full_screen()
@@ -1673,7 +1673,7 @@ class PatchbayManager:
                 connection.add_to_canvas()
 
         self.optimize_operation(False)
-        patchcanvas.redrawAllGroups()
+        patchcanvas.redraw_all_groups()
         self.session.signaler.port_types_view_changed.emit(
             self.port_types_view)
 
@@ -2085,7 +2085,7 @@ class PatchbayManager:
     def receive_big_packets(self, state: int):
         self.optimize_operation(not bool(state))
         if state:
-            patchcanvas.redrawAllGroups()
+            patchcanvas.redraw_all_groups()
 
     def fast_temp_file_memory(self, temp_path):
         ''' receives a .json file path from daemon with groups positions
@@ -2154,7 +2154,7 @@ class PatchbayManager:
             group.sort_ports_in_canvas()
 
         self.optimize_operation(False)
-        patchcanvas.redrawAllGroups()
+        patchcanvas.redraw_all_groups()
         os.remove(temp_path)
 
     def patchbay_announce(self, jack_running: int, samplerate: int,

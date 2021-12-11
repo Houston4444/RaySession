@@ -1136,7 +1136,7 @@ class CanvasBox(QGraphicsItem):
                             act_x_disc1.setData(
                                 disconnect_element['connection_out_ids'])
                             act_x_disc1.triggered.connect(
-                                canvas.qobject.PortContextMenuDisconnect)
+                                canvas.qobject.port_context_menu_disconnect)
 
                             act_x_disc2 = discMenu.addAction(
                                 group.group_name + ins_label)
@@ -1145,7 +1145,7 @@ class CanvasBox(QGraphicsItem):
                             act_x_disc2.setData(
                                 disconnect_element['connection_in_ids'])
                             act_x_disc2.triggered.connect(
-                                canvas.qobject.PortContextMenuDisconnect)
+                                canvas.qobject.port_context_menu_disconnect)
                         else:
                             port_mode = PORT_MODE_NULL
                             if not disconnect_element['connection_in_ids']:
@@ -1161,7 +1161,7 @@ class CanvasBox(QGraphicsItem):
                                 disconnect_element['connection_out_ids']
                                 + disconnect_element['connection_in_ids'])
                             act_x_disc.triggered.connect(
-                                canvas.qobject.PortContextMenuDisconnect)
+                                canvas.qobject.port_context_menu_disconnect)
                         break
         else:
             act_x_disc = discMenu.addAction("No connections")
