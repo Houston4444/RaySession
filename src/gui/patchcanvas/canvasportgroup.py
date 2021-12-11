@@ -105,48 +105,45 @@ class CanvasPortGroup(QGraphicsItem):
         self.m_cursor_moving = False
         self.setFlags(QGraphicsItem.ItemIsSelectable)
 
-    def getPortGroupId(self):
-        return self.m_portgrp_id
-
-    def getPortMode(self):
+    def get_port_mode(self):
         return self.m_port_mode
 
-    def getPortType(self):
+    def get_port_type(self):
         return self.m_port_type
 
-    def isAlternate(self):
+    def is_alternate(self):
         return False
 
     def is_connectable_to(self, other, accept_same_port_mode=False)->bool:
-        if self.m_port_type != other.getPortType():
+        if self.m_port_type != other.get_port_type():
             return False
 
         if not accept_same_port_mode:
-            if self.m_port_mode == other.getPortMode():
+            if self.m_port_mode == other.get_port_mode():
                 return False
 
         if self.m_port_type == PORT_TYPE_AUDIO_JACK:
-            if other.getPortMode() == self.m_port_mode:
-                return bool(self.isAlternate() == other.isAlternate())
+            if other.get_port_mode() == self.m_port_mode:
+                return bool(self.is_alternate() == other.is_alternate())
             # absolutely forbidden to connect an output CV port
             # to an input audio port.
             # It could destroy material.
             if self.m_port_mode == PORT_MODE_OUTPUT:
-                if self.isAlternate():
-                    return other.isAlternate()
+                if self.is_alternate():
+                    return other.is_alternate()
                 return True
 
             if self.m_port_mode == PORT_MODE_INPUT:
-                if self.isAlternate():
+                if self.is_alternate():
                     return True
-                return not other.isAlternate()
+                return not other.is_alternate()
 
         return True
 
     def get_group_id(self):
         return self.m_group_id
 
-    def getPortWidth(self):
+    def get_port_width(self):
         return self.m_portgrp_width
 
     def getPortGroupWidth(self):
@@ -220,7 +217,7 @@ class CanvasPortGroup(QGraphicsItem):
             
         return sizer.width(self.m_print_name)
 
-    def resetDotLines(self):
+    def reset_dot_lines(self):
         for connection in self.m_dotcon_list:
             if connection.widget.ready_to_disc:
                 connection.widget.ready_to_disc = False
@@ -237,7 +234,7 @@ class CanvasPortGroup(QGraphicsItem):
     def ConnectToHover(self):
         if self.m_hover_item:
             if self.m_hover_item.type() == CanvasPortType:
-                hover_port_id_list = [self.m_hover_item.getPortId()]
+                hover_port_id_list = [self.m_hover_item.get_port_id()]
             elif self.m_hover_item.type() == CanvasPortGroupType:
                 hover_port_id_list = self.m_hover_item.getPortsList()
 
@@ -251,7 +248,7 @@ class CanvasPortGroup(QGraphicsItem):
             maxportgrp = max(len(self.m_port_id_list),
                              len(hover_port_id_list))
 
-            if self.m_hover_item.getPortMode() == self.m_port_mode:
+            if self.m_hover_item.get_port_mode() == self.m_port_mode:
                 for i in range(len(self.m_port_id_list)):
                     for connection in canvas.connection_list:
                         if CanvasConnectionConcerns(
@@ -325,7 +322,7 @@ class CanvasPortGroup(QGraphicsItem):
                                         self.m_group_id, port_id)
                                 canvas.callback(ACTION_PORTS_CONNECT, 0, 0, conn)
 
-    def resetLineMovPositions(self):
+    def reset_line_mov_positions(self):
         for i in range(len(self.m_line_mov_list)):
             line_mov = self.m_line_mov_list[i]
             if i < self.getPortLength():
@@ -445,8 +442,8 @@ class CanvasPortGroup(QGraphicsItem):
         # if item has same port mode
         # verify we can use it for cut and paste connections
         if (item is not None
-                and item.getPortType() == self.m_port_type
-                and item.getPortMode() == self.m_port_mode):
+                and item.get_port_type() == self.m_port_type
+                and item.get_port_mode() == self.m_port_mode):
             item_valid = False
 
             if (self.m_has_connections
@@ -471,7 +468,7 @@ class CanvasPortGroup(QGraphicsItem):
 
         elif (item is not None
                 and self.m_hover_item != item
-                and item.getPortType() == self.m_port_type):
+                and item.get_port_type() == self.m_port_type):
             item.setSelected(True)
 
             if item == self.m_hover_item:
@@ -480,8 +477,8 @@ class CanvasPortGroup(QGraphicsItem):
 
             elif item.type() == CanvasPortType:
                 self.m_hover_item = item
-                self.resetDotLines()
-                self.resetLineMovPositions()
+                self.reset_dot_lines()
+                self.reset_line_mov_positions()
                 for line_mov in self.m_line_mov_list:
                     line_mov.set_destination_portgrp_pos(0, 1)
 
@@ -492,7 +489,7 @@ class CanvasPortGroup(QGraphicsItem):
                             connection,
                             self.m_group_id, self.m_port_id_list,
                             self.m_hover_item.get_group_id(),
-                            [self.m_hover_item.getPortId()]):
+                            [self.m_hover_item.get_port_id()]):
                         self.m_dotcon_list.append(connection)
 
                 if len(self.m_dotcon_list) == len(self.m_port_id_list):
@@ -504,10 +501,10 @@ class CanvasPortGroup(QGraphicsItem):
 
             elif item.type() == CanvasPortGroupType:
                 self.m_hover_item = item
-                self.resetDotLines()
-                self.resetLineMovPositions()
+                self.reset_dot_lines()
+                self.reset_line_mov_positions()
 
-                if item.getPortMode() == self.m_port_mode:
+                if item.get_port_mode() == self.m_port_mode:
                     for connection in canvas.connection_list:
                         if CanvasConnectionConcerns(
                                 connection,
@@ -591,8 +588,8 @@ class CanvasPortGroup(QGraphicsItem):
             if item != self.m_hover_item:
                 self.m_hover_item = None
                 self.m_last_rclick_item = None
-                self.resetDotLines()
-                self.resetLineMovPositions()
+                self.reset_dot_lines()
+                self.reset_line_mov_positions()
 
         for line_mov in self.m_line_mov_list:
             line_mov.update_line_pos(event.scenePos())

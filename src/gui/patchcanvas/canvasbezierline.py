@@ -71,7 +71,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         if yesno != self._line_selected and options.eyecandy == EYECANDY_FULL:
             if yesno:
                 self.setGraphicsEffect(
-                    CanvasPortGlow(self.item1.getPortType(),
+                    CanvasPortGlow(self.item1.get_port_type(),
                                    self.toGraphicsObject()))
             else:
                 self.setGraphicsEffect(None)
@@ -81,8 +81,8 @@ class CanvasBezierLine(QGraphicsPathItem):
 
     def trigger_disconnect(self):
         for connection in canvas.connection_list:
-            if (connection.port_out_id == self.item1.getPortId()
-                    and connection.port_in_id == self.item2.getPortId()):
+            if (connection.port_out_id == self.item1.get_port_id()
+                    and connection.port_in_id == self.item2.get_port_id()):
                 canvas.callback(ACTION_PORTS_DISCONNECT,
                                 connection.connection_id, 0, "")
                 break
@@ -92,10 +92,10 @@ class CanvasBezierLine(QGraphicsPathItem):
         self.update_line_gradient()
 
     def update_line_pos(self):
-        if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            item1_x = self.item1.scenePos().x() + self.item1.getPortWidth() + 12
+        if self.item1.get_port_mode() == PORT_MODE_OUTPUT:
+            item1_x = self.item1.scenePos().x() + self.item1.get_port_width() + 12
 
-            port_pos_1, portgrp_len_1 = self.item1.getPortGroupPosition()
+            port_pos_1, portgrp_len_1 = self.item1.get_portgroup_position()
 
             phi = 0.75 if portgrp_len_1 > 2 else 0.62
 
@@ -114,7 +114,7 @@ class CanvasBezierLine(QGraphicsPathItem):
 
             item2_x = self.item2.scenePos().x()
 
-            port_pos_2, portgrp_len_2 = self.item2.getPortGroupPosition()
+            port_pos_2, portgrp_len_2 = self.item2.get_portgroup_position()
 
             phi = 0.75 if portgrp_len_1 > 2 else 0.62
 
@@ -164,8 +164,8 @@ class CanvasBezierLine(QGraphicsPathItem):
             pos1 = 1
             pos2 = 0
 
-        port_type1 = self.item1.getPortType()
-        port_type2 = self.item2.getPortType()
+        port_type1 = self.item1.get_port_type()
+        port_type2 = self.item2.get_port_type()
         port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
 
         base_color = canvas.theme.line_audio_jack

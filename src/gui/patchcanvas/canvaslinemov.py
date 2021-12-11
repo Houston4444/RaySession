@@ -59,7 +59,7 @@ class CanvasLineMov(QGraphicsLineItem):
         # Port position doesn't change while moving around line
         self.p_lineX = self.scenePos().x()
         self.p_lineY = self.scenePos().y()
-        self.p_width = parent.getPortWidth()
+        self.p_width = parent.get_port_width()
 
         if port_type == PORT_TYPE_AUDIO_JACK:
             pen = QPen(canvas.theme.line_audio_jack, 2)

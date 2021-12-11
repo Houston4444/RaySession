@@ -64,7 +64,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         # Port position doesn't change while moving around line
         self._item_x = self.scenePos().x()
         self._item_y = self.scenePos().y()
-        self._item_width = parent.getPortWidth()
+        self._item_width = parent.get_port_width()
 
         if self._port_type not in (PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK,
                                    PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER):

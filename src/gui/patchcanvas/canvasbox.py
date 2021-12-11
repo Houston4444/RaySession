@@ -389,7 +389,7 @@ class CanvasBox(QGraphicsItem):
             return
 
         if self.top_icon is not None:
-            self.top_icon.setIcon(icon_type, icon_name, self._group_name)
+            self.top_icon.set_icon(icon_type, icon_name, self._group_name)
         else:
             self.top_icon = CanvasIconPixmap(icon_type, icon_name, self)
 
@@ -910,10 +910,10 @@ class CanvasBox(QGraphicsItem):
 
             if port.port_mode == PORT_MODE_INPUT:
                 port.widget.setX(inX)
-                port.widget.setPortWidth(max_in_width)
+                port.widget.set_port_width(max_in_width)
             elif port.port_mode == PORT_MODE_OUTPUT:
                 port.widget.setX(outX)
-                port.widget.setPortWidth(max_out_width)
+                port.widget.set_port_width(max_out_width)
 
         # Horizontal portgroups and ports in portgroup re-positioning
         for portgrp in canvas.portgrp_list:
@@ -953,7 +953,7 @@ class CanvasBox(QGraphicsItem):
                 if (port.group_id == self._group_id
                         and port.port_id in portgrp.port_id_list
                         and port.widget is not None):
-                    port.widget.setPortWidth(max_port_in_pg_width)
+                    port.widget.set_port_width(max_port_in_pg_width)
                     if port.port_mode == PORT_MODE_INPUT:
                         port.widget.setX(inX)
                     elif port.port_mode == PORT_MODE_OUTPUT:

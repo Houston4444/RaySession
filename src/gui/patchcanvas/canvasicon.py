@@ -46,20 +46,12 @@ from . import (
 )
 
 # ------------------------------------------------------------------------------------------------------------
-def getAppIcon(icon_name):
-    #dark = bool(
-        #widget.palette().brush(
-            #2, QPalette.WindowText).color().lightness() > 128)
-
+def get_app_icon(icon_name: str):
     icon = QIcon.fromTheme(icon_name)
 
     if icon.isNull():
         for ext in ('svg', 'svgz', 'png'):
             filename = ":app_icons/%s.%s" % (icon_name, ext)
-            #darkname = ":app_icons/dark/%s.%s" % (icon_name, ext)
-
-            #if dark and QFile.exists(darkname):
-                #filename = darkname
 
             if QFile.exists(filename):
                 del icon
@@ -84,16 +76,16 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         QGraphicsPixmapItem.__init__(self)
         self.setParentItem(parent)
 
-        self.p_size = QRectF(0.0, 0.0, 24.0, 24.0)
+        self._size = QRectF(0.0, 0.0, 24.0, 24.0)
         self.icon = None
         self.x_offset = 4
         self.y_offset = 4
 
         if icon_type in (ICON_CLIENT, ICON_APPLICATION):
-            self.setIcon(icon_type, icon_name)
+            self.set_icon(icon_type, icon_name)
 
-    def setIcon(self, icon, name):
-        self.icon = getAppIcon(name)
+    def set_icon(self, icon, name):
+        self.icon = get_app_icon(name)
         if not self.icon.isNull():
             pixmap = self.icon.pixmap(24, 24)
             self.setPixmap(pixmap)
@@ -132,48 +124,48 @@ class CanvasSvgIcon(QGraphicsSvgItem):
         self.setParentItem(parent)
 
         self.m_renderer = None
-        self.p_size = QRectF(4, 4, 24, 24)
+        self._size = QRectF(4, 4, 24, 24)
 
         self.m_colorFX = QGraphicsColorizeEffect(self)
         self.m_colorFX.setColor(canvas.theme.box_text.color())
 
         #self.setGraphicsEffect(self.m_colorFX)
-        self.setIcon(icon_type, name, port_mode)
+        self.set_icon(icon_type, name, port_mode)
 
-    def setIcon(self, icon, name, port_mode):
+    def set_icon(self, icon, name, port_mode):
         name = name.lower()
         icon_path = ""
 
         if icon == ICON_APPLICATION:
-            self.p_size = QRectF(3, 2, 19, 18)
+            self._size = QRectF(3, 2, 19, 18)
 
             if "audacious" in name:
                 icon_path = ":/scalable/pb_audacious.svg"
-                self.p_size = QRectF(5, 4, 16, 16)
+                self._size = QRectF(5, 4, 16, 16)
             elif "clementine" in name:
                 icon_path = ":/scalable/pb_clementine.svg"
-                self.p_size = QRectF(5, 4, 16, 16)
+                self._size = QRectF(5, 4, 16, 16)
             elif "distrho" in name:
                 icon_path = ":/scalable/pb_distrho.svg"
-                self.p_size = QRectF(5, 4, 16, 16)
+                self._size = QRectF(5, 4, 16, 16)
             elif "jamin" in name:
                 icon_path = ":/scalable/pb_jamin.svg"
-                self.p_size = QRectF(5, 3, 16, 16)
+                self._size = QRectF(5, 3, 16, 16)
             elif "mplayer" in name:
                 icon_path = ":/scalable/pb_mplayer.svg"
-                self.p_size = QRectF(5, 4, 16, 16)
+                self._size = QRectF(5, 4, 16, 16)
             elif "vlc" in name:
                 icon_path = ":/scalable/pb_vlc.svg"
-                self.p_size = QRectF(5, 3, 16, 16)
+                self._size = QRectF(5, 3, 16, 16)
 
             else:
                 icon_path = ":/scalable/pb_generic.svg"
-                self.p_size = QRectF(4, 4, 24, 24)
+                self._size = QRectF(4, 4, 24, 24)
 
         elif icon == ICON_HARDWARE:
             if name == "a2j":
                 icon_path = ":/scalable/DIN-5.svg"
-                self.p_size = QRectF(4, 4, 24, 24)
+                self._size = QRectF(4, 4, 24, 24)
             else:
                 if port_mode & PORT_MODE_INPUT:
                     icon_path = ":/scalable/audio-headphones.svg"
@@ -181,32 +173,32 @@ class CanvasSvgIcon(QGraphicsSvgItem):
                     icon_path = ":/scalable/microphone.svg"
                 else:
                     icon_path = ":/scalable/pb_hardware.svg"
-                self.p_size = QRectF(4, 4, 24, 24)
+                self._size = QRectF(4, 4, 24, 24)
 
         elif icon == ICON_DISTRHO:
             icon_path = ":/scalable/pb_distrho.svg"
-            self.p_size = QRectF(5, 4, 16, 16)
+            self._size = QRectF(5, 4, 16, 16)
 
         elif icon == ICON_FILE:
             icon_path = ":/scalable/pb_file.svg"
-            self.p_size = QRectF(5, 4, 16, 16)
+            self._size = QRectF(5, 4, 16, 16)
 
         elif icon == ICON_PLUGIN:
             icon_path = ":/scalable/pb_plugin.svg"
-            self.p_size = QRectF(5, 4, 16, 16)
+            self._size = QRectF(5, 4, 16, 16)
 
         elif icon == ICON_LADISH_ROOM:
             # TODO - make a unique ladish-room icon
             icon_path = ":/scalable/pb_hardware.svg"
-            self.p_size = QRectF(5, 2, 16, 16)
+            self._size = QRectF(5, 2, 16, 16)
 
         elif icon == ICON_INTERNAL:
             icon_path = ":/scalable/" + name
-            self.p_size = QRectF(4, 4, 24, 24)
+            self._size = QRectF(4, 4, 24, 24)
 
         else:
-            self.p_size = QRectF(0, 0, 0, 0)
-            qCritical("PatchCanvas::CanvasIcon.setIcon(%s, %s) - unsupported icon requested" % (
+            self._size = QRectF(0, 0, 0, 0)
+            qCritical("PatchCanvas::CanvasIcon.set_icon(%s, %s) - unsupported icon requested" % (
                       icon2str(icon), name.encode()))
             return
 
@@ -224,13 +216,13 @@ class CanvasSvgIcon(QGraphicsSvgItem):
         return False
 
     def align_at(self, x_pos: int):
-        self.p_size = QRectF(x_pos, 4, 24, 24)
+        self._size = QRectF(x_pos, 4, 24, 24)
 
     def align_right(self, width: int):
-        self.p_size = QRectF(width - 28, 4, 24, 24)
+        self._size = QRectF(width - 28, 4, 24, 24)
 
     def boundingRect(self):
-        return self.p_size
+        return self._size
 
     def paint(self, painter, option, widget):
         if not self.m_renderer:
@@ -240,7 +232,7 @@ class CanvasSvgIcon(QGraphicsSvgItem):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, False)
         painter.setRenderHint(QPainter.TextAntialiasing, False)
-        self.m_renderer.render(painter, self.p_size)
+        self.m_renderer.render(painter, self._size)
         painter.restore()
 
 # ------------------------------------------------------------------------------------------------------------

@@ -63,7 +63,9 @@ class CanvasLine(QGraphicsLineItem):
 
         if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
             if yesno:
-                self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
+                self.setGraphicsEffect(
+                    CanvasPortGlow(self.item1.get_port_type(),
+                                   self.toGraphicsObject()))
             else:
                 self.setGraphicsEffect(None)
 
@@ -72,13 +74,14 @@ class CanvasLine(QGraphicsLineItem):
 
     def trigger_disconnect(self):
         for connection in canvas.connection_list:
-            if (connection.port_out_id == self.item1.getPortId() and connection.port_in_id == self.item2.getPortId()):
+            if (connection.port_out_id == self.item1.get_port_id()
+                    and connection.port_in_id == self.item2.get_port_id()):
                 canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
                 break
 
     def update_line_pos(self):
-        if self.item1.getPortMode() == PORT_MODE_OUTPUT:
-            port_pos_1, portgrp_len_1 = self.item1.getPortGroupPosition()
+        if self.item1.get_port_mode() == PORT_MODE_OUTPUT:
+            port_pos_1, portgrp_len_1 = self.item1.get_portgroup_position()
 
             if portgrp_len_1 > 2:
                 phi = 0.75
@@ -93,7 +96,7 @@ class CanvasLine(QGraphicsLineItem):
             else:
                 Y1 = canvas.theme.port_height / 2
 
-            port_pos_2, portgrp_len_2 = self.item2.getPortGroupPosition()
+            port_pos_2, portgrp_len_2 = self.item2.get_portgroup_position()
 
             if portgrp_len_2 > 2:
                 phi = 0.75
@@ -108,7 +111,7 @@ class CanvasLine(QGraphicsLineItem):
             else:
                 Y2 = canvas.theme.port_height / 2
 
-            line = QLineF(self.item1.scenePos().x() + self.item1.getPortWidth() + 12,
+            line = QLineF(self.item1.scenePos().x() + self.item1.get_port_width() + 12,
                           self.item1.scenePos().y() + Y1,
                           self.item2.scenePos().x(),
                           self.item2.scenePos().y() + Y2)
@@ -130,8 +133,8 @@ class CanvasLine(QGraphicsLineItem):
             pos1 = 1
             pos2 = 0
 
-        port_type1 = self.item1.getPortType()
-        port_type2 = self.item2.getPortType()
+        port_type1 = self.item1.get_port_type()
+        port_type2 = self.item2.get_port_type()
         port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
 
         if port_type1 == PORT_TYPE_AUDIO_JACK:

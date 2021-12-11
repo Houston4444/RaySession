@@ -141,7 +141,7 @@ class CanvasObject(QObject):
 
         port_widget = all_data[0]
         port_id = all_data[1]
-        port_widget.SetAsStereo(port_id)
+        port_widget.set_as_stereo(port_id)
 
     def join_after_move(self):
         for group_id in self.groups_to_join:
@@ -871,12 +871,14 @@ def setGroupIcon(group_id, icon_type: int, icon_name: str):
             group.icon_type = icon_type
             for widget in group.widgets:
                 if widget is not None:
-                    widget.setIcon(icon_type, icon_name)
+                    widget.set_icon(icon_type, icon_name)
 
             QTimer.singleShot(0, canvas.scene.update)
             return
 
-    qCritical("PatchCanvas::setGroupIcon(%i, %s) - unable to find group to change icon" % (group_id, icon2str(icon_type)))
+    qCritical(
+        "PatchCanvas::setGroupIcon(%i, %s) - unable to find group to change icon"
+        % (group_id, icon2str(icon_type)))
 
 def setGroupAsPlugin(group_id, plugin_id, hasUI, hasInlineDisplay):
     if canvas.debug:
@@ -999,7 +1001,7 @@ def renamePort(group_id, port_id, new_port_name, fast=False):
             if new_port_name != port.port_name:
                 port.port_name = new_port_name
                 
-                port.widget.setPortName(new_port_name)
+                port.widget.set_port_name(new_port_name)
 
             if fast:
                 return
@@ -1064,7 +1066,7 @@ def addPortGroup(group_id, portgrp_id, port_mode, port_type,
                  and port.port_id in port_id_list):
             port.portgrp_id = portgrp_id
             if port.widget is not None:
-                port.widget.setPortGroupId(portgrp_id)
+                port.widget.set_portgroup_id(portgrp_id)
 
     canvas.portgrp_list.append(portgrp_dict)
 
@@ -1100,7 +1102,7 @@ def removePortGroup(group_id, portgrp_id, fast=False):
                     port.portgrp_id = 0
 
                     if port.widget is not None:
-                        port.widget.setPortGroupId(0)
+                        port.widget.set_portgroup_id(0)
                         box_widget = port.widget.parentItem()
 
             if portgrp.widget is not None:
