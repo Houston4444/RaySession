@@ -260,7 +260,7 @@ class CanvasPort(QGraphicsItem):
             if self._hover_item.type() == CanvasPortType:
                 hover_port_id_list = [ self._hover_item.get_port_id() ]
             elif self._hover_item.type() == CanvasPortGroupType:
-                hover_port_id_list = self._hover_item.getPortsList()
+                hover_port_id_list = self._hover_item.get_port_ids_list()
 
             hover_group_id = self._hover_item.get_group_id()
             con_list = []
@@ -449,13 +449,13 @@ class CanvasPort(QGraphicsItem):
                     # make original line going to first port of the hover portgrp
                     for line_mov in self._line_mov_list:
                         line_mov.set_destination_portgrp_pos(
-                            0, self._hover_item.getPortLength())
+                            0, self._hover_item.get_port_list_len())
 
                     port_pos, portgrp_len = CanvasGetPortGroupPosition(
                         self._group_id, self._port_id, self._portgrp_id)
 
                     # create one line for each port of the hover portgrp
-                    for i in range(1, self._hover_item.getPortLength()):
+                    for i in range(1, self._hover_item.get_port_list_len()):
                         if options.use_bezier_lines:
                             line_mov = CanvasBezierLineMov(
                                 self._port_mode, self._port_type,
@@ -466,7 +466,7 @@ class CanvasPort(QGraphicsItem):
                                 port_pos, portgrp_len, self)
 
                         line_mov.set_destination_portgrp_pos(
-                            i, self._hover_item.getPortLength())
+                            i, self._hover_item.get_port_list_len())
                         self._line_mov_list.append(line_mov)
 
                 for connection in canvas.connection_list:
@@ -474,11 +474,11 @@ class CanvasPort(QGraphicsItem):
                             connection,
                             self._group_id, [self._port_id],
                             self._hover_item.get_group_id(),
-                            self._hover_item.getPortsList()):
+                            self._hover_item.get_port_ids_list()):
                         self._dotcon_list.append(connection)
 
                 if (len(self._dotcon_list)
-                        == len(self._hover_item.getPortsList())):
+                        == len(self._hover_item.get_port_ids_list())):
                     for connection in self._dotcon_list:
                         connection.widget.ready_to_disc = True
                         connection.widget.update_line_gradient()

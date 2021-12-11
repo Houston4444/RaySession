@@ -923,10 +923,10 @@ class CanvasBox(QGraphicsItem):
 
             if portgrp.widget is not None:
                 if portgrp.port_mode == PORT_MODE_INPUT:
-                    portgrp.widget.setPortGroupWidth(max_in_width)
+                    portgrp.widget.set_portgrp_width(max_in_width)
                     portgrp.widget.setX(canvas.theme.port_offset +1)
                 elif portgrp.port_mode == PORT_MODE_OUTPUT:
-                    portgrp.widget.setPortGroupWidth(max_out_width)
+                    portgrp.widget.set_portgrp_width(max_out_width)
                     portgrp.widget.setX(outX)
 
             max_port_in_pg_width = canvas.theme.port_in_portgrp_width
