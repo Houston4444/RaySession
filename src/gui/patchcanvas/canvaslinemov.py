@@ -77,11 +77,11 @@ class CanvasLineMov(QGraphicsLineItem):
         pen.setWidthF(pen.widthF() + 0.00001)
         self.setPen(pen)
 
-    def setDestinationPortGroupPosition(self, port_pos, portgrp_len):
+    def set_destination_portgrp_pos(self, port_pos, portgrp_len):
         self.m_port_pos_dest = port_pos
         self.m_portgrp_len_dest = portgrp_len
 
-    def updateLinePos(self, scenePos):
+    def update_line_pos(self, scenePos):
         phi = 0.75 if self.m_portgrp_len_from > 2 else 0.62
         phito = 0.75 if self.m_portgrp_len_dest > 2 else 0.62
 

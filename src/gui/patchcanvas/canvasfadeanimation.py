@@ -32,51 +32,22 @@ class CanvasFadeAnimation(QAbstractAnimation):
     def __init__(self, item, show):
         QAbstractAnimation.__init__(self)
 
-        self.m_show = show
-        self.m_duration = 0
-        self.m_item = item
+        self._show = show
+        self._duration = 0
+        self._item = item
 
     def item(self):
-        return self.m_item
+        return self._item
 
-    def forceStop(self):
+    def force_stop(self):
         self.blockSignals(True)
         self.stop()
 
-    def setDuration(self, time):
-        if self.m_item.opacity() == 0 and not self.m_show:
-            self.m_duration = 0
+    def set_duration(self, time):
+        if self._item.opacity() == 0 and not self._show:
+            self._duration = 0
         else:
-            self.m_item.show()
-            self.m_duration = time
-
-    def duration(self):
-        return self.m_duration
-
-    def updateCurrentTime(self, time):
-        if self.m_duration == 0:
-            return
-
-        if self.m_show:
-            value = float(time) / self.m_duration
-        else:
-            value = 1.0 - (float(time) / self.m_duration)
-
-        try:
-            self.m_item.setOpacity(value)
-        except RuntimeError:
-            print("CanvasFadeAnimation::updateCurrentTime() - failed to animate canvas item, already destroyed?")
-            self.forceStop()
-            canvas.animation_list.remove(self)
-            return
-
-        if self.m_item.type() == CanvasBoxType:
-            self.m_item.setShadowOpacity(value)
-
-    def updateDirection(self, direction):
-        pass
-
-    def updateState(self, oldState, newState):
-        pass
+            self._item.show()
+            self._duration = time
 
 # ------------------------------------------------------------------------------------------------------------

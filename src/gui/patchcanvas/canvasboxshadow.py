@@ -33,23 +33,20 @@ class CanvasBoxShadow(QGraphicsDropShadowEffect):
     def __init__(self, parent):
         QGraphicsDropShadowEffect.__init__(self, parent)
 
-        self.m_fakeParent = None
+        self.fake_parent = None
 
         self.setBlurRadius(20)
         self.setColor(canvas.theme.box_shadow)
         self.setOffset(0, 0)
 
-    def setFakeParent(self, fakeParent):
-        self.m_fakeParent = fakeParent
-
-    def setOpacity(self, opacity):
+    def set_opacity(self, opacity: float):
         color = QColor(canvas.theme.box_shadow)
         color.setAlphaF(opacity)
         self.setColor(color)
 
     def draw(self, painter):
-        if self.m_fakeParent:
-            self.m_fakeParent.repaintLines()
+        if self.fake_parent is not None:
+            self.fake_parent.repaint_lines()
         QGraphicsDropShadowEffect.draw(self, painter)
 
 # ------------------------------------------------------------------------------------------------------------

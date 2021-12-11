@@ -143,7 +143,7 @@ class CanvasPortGroup(QGraphicsItem):
 
         return True
 
-    def getGroupId(self):
+    def get_group_id(self):
         return self.m_group_id
 
     def getPortWidth(self):
@@ -222,12 +222,12 @@ class CanvasPortGroup(QGraphicsItem):
 
     def resetDotLines(self):
         for connection in self.m_dotcon_list:
-            if connection.widget.isReadyToDisc():
-                connection.widget.setReadyToDisc(False)
-                connection.widget.updateLineGradient()
+            if connection.widget.ready_to_disc:
+                connection.widget.ready_to_disc = False
+                connection.widget.update_line_gradient()
 
         for line_mov in self.m_line_mov_list:
-            line_mov.setReadyToDisc(False)
+            line_mov.ready_to_disc = False
         self.m_dotcon_list.clear()
 
     def SplitToMonos(self):
@@ -244,7 +244,7 @@ class CanvasPortGroup(QGraphicsItem):
             if not hover_port_id_list:
                 return
 
-            hover_group_id = self.m_hover_item.getGroupId()
+            hover_group_id = self.m_hover_item.get_group_id()
             con_list = []
             ports_connected_list = []
 
@@ -329,7 +329,7 @@ class CanvasPortGroup(QGraphicsItem):
         for i in range(len(self.m_line_mov_list)):
             line_mov = self.m_line_mov_list[i]
             if i < self.getPortLength():
-                line_mov.setDestinationPortGroupPosition(i, self.getPortLength())
+                line_mov.set_destination_portgrp_pos(i, self.getPortLength())
             else:
                 item = line_mov
                 canvas.scene.removeItem(item)
@@ -384,8 +384,8 @@ class CanvasPortGroup(QGraphicsItem):
                     self.m_r_click_time = time.time()
 
                     for line_mov in self.m_line_mov_list:
-                        line_mov.toggleReadyToDisc()
-                        line_mov.updateLinePos(event.scenePos())
+                        line_mov.ready_to_disc = not line_mov.ready_to_disc
+                        line_mov.update_line_pos(event.scenePos())
         QGraphicsItem.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
@@ -400,7 +400,7 @@ class CanvasPortGroup(QGraphicsItem):
             for connection in canvas.connection_list:
                 if CanvasConnectionConcerns(connection,
                                 self.m_group_id, self.m_port_id_list):
-                    connection.widget.setLocked(True)
+                    connection.widget.locked = True
 
         if not self.m_line_mov_list:
             self.m_last_rclick_item = None
@@ -454,7 +454,7 @@ class CanvasPortGroup(QGraphicsItem):
                     and len(item.getPortsList()) == len(self.m_port_id_list)):
                 for connection in canvas.connection_list:
                     if CanvasConnectionConcerns(
-                            connection, item.getGroupId(),
+                            connection, item.get_group_id(),
                             item.getPortsList()):
                         break
                 else:
@@ -483,7 +483,7 @@ class CanvasPortGroup(QGraphicsItem):
                 self.resetDotLines()
                 self.resetLineMovPositions()
                 for line_mov in self.m_line_mov_list:
-                    line_mov.setDestinationPortGroupPosition(0, 1)
+                    line_mov.set_destination_portgrp_pos(0, 1)
 
                 self.m_dotcon_list.clear()
 
@@ -491,16 +491,16 @@ class CanvasPortGroup(QGraphicsItem):
                     if CanvasConnectionMatches(
                             connection,
                             self.m_group_id, self.m_port_id_list,
-                            self.m_hover_item.getGroupId(),
+                            self.m_hover_item.get_group_id(),
                             [self.m_hover_item.getPortId()]):
                         self.m_dotcon_list.append(connection)
 
                 if len(self.m_dotcon_list) == len(self.m_port_id_list):
                     for connection in self.m_dotcon_list:
-                        connection.widget.setReadyToDisc(True)
-                        connection.widget.updateLineGradient()
+                        connection.widget.ready_to_disc = True
+                        connection.widget.update_line_gradient()
                     for line_mov in self.m_line_mov_list:
-                        line_mov.setReadyToDisc(True)
+                        line_mov.ready_to_disc = True
 
             elif item.type() == CanvasPortGroupType:
                 self.m_hover_item = item
@@ -512,18 +512,18 @@ class CanvasPortGroup(QGraphicsItem):
                         if CanvasConnectionConcerns(
                                 connection,
                                 self.m_group_id, self.m_port_id_list):
-                            connection.widget.setReadyToDisc(True)
-                            connection.widget.updateLineGradient()
+                            connection.widget.ready_to_disc = True
+                            connection.widget.update_line_gradient()
                             self.m_dotcon_list.append(connection)
 
                     for line_mov in self.m_line_mov_list:
-                        line_mov.setReadyToDisc(True)
+                        line_mov.ready_to_disc = True
                 else:
                     if (self.m_hover_item.getPortLength()
                             <= len(self.m_line_mov_list)):
                         for i in range(len(self.m_line_mov_list)):
                             line_mov = self.m_line_mov_list[i]
-                            line_mov.setDestinationPortGroupPosition(
+                            line_mov.set_destination_portgrp_pos(
                                 i % self.m_hover_item.getPortLength(),
                                 self.m_hover_item.getPortLength())
                     else:
@@ -532,7 +532,7 @@ class CanvasPortGroup(QGraphicsItem):
                         for i in range(self.m_hover_item.getPortLength()):
                             if i < start_n_linemov:
                                 line_mov = self.m_line_mov_list[i]
-                                line_mov.setDestinationPortGroupPosition(
+                                line_mov.set_destination_portgrp_pos(
                                     i, self.m_hover_item.getPortLength())
                             else:
                                 port_posinportgrp = i % len(self.m_port_id_list)
@@ -551,7 +551,7 @@ class CanvasPortGroup(QGraphicsItem):
                                         self.m_hover_item.getPortLength(),
                                         self)
 
-                                line_mov.setDestinationPortGroupPosition(
+                                line_mov.set_destination_portgrp_pos(
                                     i, self.m_hover_item.getPortLength())
                                 self.m_line_mov_list.append(line_mov)
 
@@ -563,7 +563,7 @@ class CanvasPortGroup(QGraphicsItem):
                                 if CanvasConnectionMatches(
                                         connection,
                                         self.m_group_id, [portself_id],
-                                        self.m_hover_item.getGroupId(),
+                                        self.m_hover_item.get_group_id(),
                                         [porthover_id]):
                                     if (self.m_port_id_list.index(portself_id)
                                                 % len(self.m_hover_item.getPortsList())
@@ -573,8 +573,8 @@ class CanvasPortGroup(QGraphicsItem):
                                         symetric_con_list.append(connection)
                                     else:
                                         self.m_dotcon_list.append(connection)
-                                        connection.widget.setReadyToDisc(True)
-                                        connection.widget.updateLineGradient()
+                                        connection.widget.ready_to_disc = True
+                                        connection.widget.update_line_gradient()
 
                     biggest_list = self.m_hover_item.getPortsList()
                     if (len(self.m_port_id_list)
@@ -583,10 +583,10 @@ class CanvasPortGroup(QGraphicsItem):
 
                     if len(symetric_con_list) == len(biggest_list):
                         for connection in self.m_dotcon_list:
-                            connection.widget.setReadyToDisc(True)
-                            connection.widget.updateLineGradient()
+                            connection.widget.ready_to_disc = True
+                            connection.widget.update_line_gradient()
                         for line_mov in self.m_line_mov_list:
-                            line_mov.setReadyToDisc(True)
+                            line_mov.ready_to_disc = True
         else:
             if item != self.m_hover_item:
                 self.m_hover_item = None
@@ -595,7 +595,7 @@ class CanvasPortGroup(QGraphicsItem):
                 self.resetLineMovPositions()
 
         for line_mov in self.m_line_mov_list:
-            line_mov.updateLinePos(event.scenePos())
+            line_mov.update_line_pos(event.scenePos())
         return event.accept()
 
         QGraphicsItem.mouseMoveEvent(self, event)
@@ -612,7 +612,7 @@ class CanvasPortGroup(QGraphicsItem):
 
                 for connection in canvas.connection_list:
                     if CanvasConnectionConcerns(connection, self.m_group_id, self.m_port_id_list):
-                        connection.widget.setLocked(False)
+                        connection.widget.locked = False
 
                 if self.m_hover_item:
                     if (self.m_last_rclick_item != self.m_hover_item
@@ -659,7 +659,7 @@ class CanvasPortGroup(QGraphicsItem):
         for connection in canvas.connection_list:
             if CanvasConnectionConcerns(connection,
                             self.m_group_id, self.m_port_id_list):
-                connection.widget.setLineSelected(yesno)
+                connection.widget.set_line_selected(yesno)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedHasChanged:

@@ -221,11 +221,11 @@ class PatchScene(QGraphicsScene):
 
             for box_dict in self.move_boxes:
                 if box_dict['widget'] is not None:
-                    QTimer.singleShot(0, box_dict['widget'].repaintLines)
+                    QTimer.singleShot(0, box_dict['widget'].repaint_lines)
                     
             for box in move_box_widgets:
                 if box is not None:
-                    box.updatePositions()
+                    box.update_positions()
                     box.send_move_callback()
 
             canvas.qobject.move_boxes_finished.emit()
@@ -909,7 +909,7 @@ class PatchScene(QGraphicsScene):
             items = self.items(self.m_pointer_border)
             for item in items:
                 if item and item.type() in (CanvasLineType, CanvasBezierLineType, CanvasPortType):
-                    item.triggerDisconnect()
+                    item.trigger_disconnect()
 
         QGraphicsScene.mousePressEvent(self, event)
 
@@ -949,7 +949,7 @@ class PatchScene(QGraphicsScene):
             items = self.items(trail)
             for item in items:
                 if item and item.type() in (CanvasLineType, CanvasBezierLineType):
-                    item.triggerDisconnect()
+                    item.trigger_disconnect()
 
         QGraphicsScene.mouseMoveEvent(self, event)
 
@@ -987,8 +987,10 @@ class PatchScene(QGraphicsScene):
             items_list = self.selectedItems()
             for item in items_list:
                 if item and item.isVisible() and item.type() == CanvasBoxType:
-                    item.checkItemPos()
-                    self.sceneGroupMoved.emit(item.getGroupId(), item.getSplittedMode(), item.scenePos())
+                    item.check_item_pos()
+                    self.sceneGroupMoved.emit(
+                        item.get_group_id(), item.get_splitted_mode(),
+                        item.scenePos())
 
             if len(items_list) > 1:
                 self.update()

@@ -536,13 +536,13 @@ def CanvasItemFX(item, show, destroy):
     # Check if the item already has an animation
     for animation in canvas.animation_list:
         if animation.item() == item:
-            animation.forceStop()
+            animation.force_stop()
             canvas.animation_list.remove(animation)
             del animation
             break
 
     animation = CanvasFadeAnimation(item, show)
-    animation.setDuration(750 if show else 500)
+    animation.set_duration(750 if show else 500)
 
     if show:
         animation.finished.connect(canvas.qobject.AnimationFinishedShow)
@@ -561,7 +561,7 @@ def CanvasRemoveItemFX(item):
         print("PatchCanvas::CanvasRemoveItemFX(%s)" % item)
 
     if item.type() == CanvasBoxType:
-        item.removeIconFromScene()
+        item.remove_icon_from_scene()
 
     canvas.scene.removeItem(item)
     del item

@@ -51,23 +51,14 @@ class CanvasLine(QGraphicsLineItem):
         self.item1 = item1
         self.item2 = item2
 
-        self.m_locked = False
+        self.locked = False
         self.m_lineSelected = False
 
         self.setGraphicsEffect(None)
-        self.updateLinePos()
+        self.update_line_pos()
 
-    def isLocked(self):
-        return self.m_locked
-
-    def setLocked(self, yesno):
-        self.m_locked = yesno
-
-    def isLineSelected(self):
-        return self.m_lineSelected
-
-    def setLineSelected(self, yesno):
-        if self.m_locked:
+    def set_line_selected(self, yesno: bool):
+        if self.locked:
             return
 
         if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
@@ -77,15 +68,15 @@ class CanvasLine(QGraphicsLineItem):
                 self.setGraphicsEffect(None)
 
         self.m_lineSelected = yesno
-        self.updateLineGradient()
+        self.update_line_gradient()
 
-    def triggerDisconnect(self):
+    def trigger_disconnect(self):
         for connection in canvas.connection_list:
             if (connection.port_out_id == self.item1.getPortId() and connection.port_in_id == self.item2.getPortId()):
                 canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
                 break
 
-    def updateLinePos(self):
+    def update_line_pos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
             port_pos_1, portgrp_len_1 = self.item1.getPortGroupPosition()
 
@@ -124,12 +115,12 @@ class CanvasLine(QGraphicsLineItem):
             self.setLine(line)
 
             self.m_lineSelected = False
-            self.updateLineGradient()
+            self.update_line_gradient()
 
     def type(self):
         return CanvasLineType
 
-    def updateLineGradient(self):
+    def update_line_gradient(self):
         pos_top = self.boundingRect().top()
         pos_bot = self.boundingRect().bottom()
         if self.item2.scenePos().y() >= self.item1.scenePos().y():

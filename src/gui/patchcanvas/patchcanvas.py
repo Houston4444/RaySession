@@ -83,14 +83,14 @@ class CanvasObject(QObject):
     def AnimationFinishedShow(self):
         animation = self.sender()
         if animation:
-            animation.forceStop()
+            animation.force_stop()
             canvas.animation_list.remove(animation)
 
     @pyqtSlot()
     def AnimationFinishedHide(self):
         animation = self.sender()
         if animation:
-            animation.forceStop()
+            animation.force_stop()
             canvas.animation_list.remove(animation)
             item = animation.item()
             if item:
@@ -100,7 +100,7 @@ class CanvasObject(QObject):
     def AnimationFinishedDestroy(self):
         animation = self.sender()
         if animation:
-            animation.forceStop()
+            animation.force_stop()
             canvas.animation_list.remove(animation)
             item = animation.item()
             if item:
@@ -318,7 +318,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     group_dict.widgets = [group_box, None]
 
     if split == SPLIT_YES:
-        group_box.setSplit(True, PORT_MODE_OUTPUT)
+        group_box.set_split(True, PORT_MODE_OUTPUT)
 
         if features.handle_group_pos:
             new_pos = getStoredCanvasPosition(group_name + "_OUTPUT", CanvasGetNewGroupPos(False))
@@ -330,7 +330,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
                 group_box.setPos(group_dict.out_pos)
 
         group_sbox = CanvasBox(group_id, group_name, icon_type, icon_name)
-        group_sbox.setSplit(True, PORT_MODE_INPUT)
+        group_sbox.set_split(True, PORT_MODE_INPUT)
 
         group_dict.widgets[1] = group_sbox
 
@@ -349,7 +349,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
             CanvasItemFX(group_sbox, True, False)
     else:
-        group_box.setSplit(False)
+        group_box.set_split(False)
 
         if features.handle_group_pos:
             group_box.setPos(getStoredCanvasPosition(group_name, CanvasGetNewGroupPos(False)))
@@ -373,10 +373,10 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     if split_animated:
         for box in group_dict.widgets:
             if box is not None:
-                if box.getSplittedMode() == PORT_MODE_OUTPUT:
+                if box.get_splitted_mode() == PORT_MODE_OUTPUT:
                     canvas.scene.add_box_to_animation(
                         box, group_dict.out_pos.x(), group_dict.out_pos.y())
-                elif box.getSplittedMode() == PORT_MODE_INPUT:
+                elif box.get_splitted_mode() == PORT_MODE_INPUT:
                     canvas.scene.add_box_to_animation(
                         box, group_dict.in_pos.x(), group_dict.in_pos.y())
 
@@ -402,7 +402,7 @@ def removeGroup(group_id, save_positions=True, fast=False):
                 if options.eyecandy == EYECANDY_FULL:
                     CanvasItemFX(s_item, False, True)
                 else:
-                    s_item.removeIconFromScene()
+                    s_item.remove_icon_from_scene()
                     canvas.scene.removeItem(s_item)
                     del s_item
 
@@ -414,7 +414,7 @@ def removeGroup(group_id, save_positions=True, fast=False):
             if options.eyecandy == EYECANDY_FULL:
                 CanvasItemFX(item, False, True)
             else:
-                item.removeIconFromScene()
+                item.remove_icon_from_scene()
                 canvas.scene.removeItem(item)
                 del item
 
@@ -437,10 +437,10 @@ def renameGroup(group_id, new_group_name):
     for group in canvas.group_list:
         if group.group_id == group_id:
             group.group_name = new_group_name
-            group.widgets[0].setGroupName(new_group_name)
+            group.widgets[0].set_group_name(new_group_name)
 
             if group.split and group.widgets[1]:
-                group.widgets[1].setGroupName(new_group_name)
+                group.widgets[1].set_group_name(new_group_name)
 
             QTimer.singleShot(0, canvas.scene.update)
             return
@@ -583,7 +583,7 @@ def splitGroup(group_id, on_place=False):
             for box in group.widgets:
                 if box is not None:
                     box.set_wrapped(wrap, animate=False)
-                    box.updatePositions(even_animated=True)
+                    box.update_positions(even_animated=True)
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -715,7 +715,7 @@ def joinGroup(group_id):
             for box in group.widgets:
                 if box is not None:
                     box.set_wrapped(wrap, animate=False)
-                    box.updatePositions()
+                    box.update_positions()
 
     canvas.callback(ACTION_GROUP_JOINED, group_id, 0, '')
 
@@ -725,7 +725,7 @@ def redrawAllGroups():
     for group in canvas.group_list:
         for box in group.widgets:
             if box is not None:
-                box.updatePositions()
+                box.update_positions()
 
     if canvas.scene is None:
         return
@@ -737,7 +737,7 @@ def redrawGroup(group_id: int):
         if group.group_id == group_id:
             for box in group.widgets:
                 if box is not None:
-                    box.updatePositions()
+                    box.update_positions()
             break
 
     QTimer.singleShot(0, canvas.scene.update)
@@ -802,7 +802,7 @@ def wrapGroupBox(group_id: int, port_mode: int, yesno: bool, animate=True):
         if group.group_id == group_id:
             for box in group.widgets:
                 if (box is not None
-                        and box.getSplittedMode() == port_mode):
+                        and box.get_splitted_mode() == port_mode):
                     box.set_wrapped(yesno, animate=animate)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -888,10 +888,10 @@ def setGroupAsPlugin(group_id, plugin_id, hasUI, hasInlineDisplay):
             group.plugin_id = plugin_id
             group.plugin_ui = hasUI
             group.plugin_inline = hasInlineDisplay
-            group.widgets[0].setAsPlugin(plugin_id, hasUI, hasInlineDisplay)
+            group.widgets[0].set_as_plugin(plugin_id, hasUI, hasInlineDisplay)
 
             if group.split and group.widgets[1]:
-                group.widgets[1].setAsPlugin(plugin_id, hasUI, hasInlineDisplay)
+                group.widgets[1].set_as_plugin(plugin_id, hasUI, hasInlineDisplay)
 
             canvas.group_plugin_map[plugin_id] = group
             return
@@ -918,12 +918,14 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
 
     for group in canvas.group_list:
         if group.group_id == group_id:
-            if group.split and group.widgets[0].getSplittedMode() != port_mode and group.widgets[1]:
+            n = 0
+            if (group.split
+                    and group.widgets[0].get_splitted_mode() != port_mode
+                    and group.widgets[1] is not None):
                 n = 1
-            else:
-                n = 0
+
             box_widget = group.widgets[n]
-            port_widget = box_widget.addPortFromGroup(
+            port_widget = box_widget.add_port_from_group(
                 port_id, port_mode, port_type,
                 port_name, is_alternate)
             break
@@ -952,7 +954,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
     if fast:
         return
 
-    box_widget.updatePositions()
+    box_widget.update_positions()
 
     if options.eyecandy == EYECANDY_FULL:
         CanvasItemFX(port_widget, True, False)
@@ -973,7 +975,7 @@ def removePort(group_id, port_id, fast=False):
 
             item = port.widget
             if item is not None:
-                item.parentItem().removePortFromGroup(port_id)
+                item.parentItem().remove_port_from_group(port_id)
                 canvas.scene.removeItem(item)
 
             del item
@@ -1002,7 +1004,7 @@ def renamePort(group_id, port_id, new_port_name, fast=False):
             if fast:
                 return
 
-            port.widget.parentItem().updatePositions()
+            port.widget.parentItem().update_positions()
 
             QTimer.singleShot(0, canvas.scene.update)
             return
@@ -1073,13 +1075,13 @@ def addPortGroup(group_id, portgrp_id, port_mode, port_type,
                 if box is None:
                     continue
 
-                if (not box.isSplitted()
-                        or box.getSplittedMode() == port_mode):
-                    portgrp_dict.widget = box.addPortGroupFromGroup(
+                if (not box.is_splitted()
+                        or box.get_splitted_mode() == port_mode):
+                    portgrp_dict.widget = box.add_portgroup_from_group(
                         portgrp_id, port_mode, port_type, port_id_list)
 
                     if not fast:
-                        box.updatePositions()
+                        box.update_positions()
             break
 
 def removePortGroup(group_id, portgrp_id, fast=False):
@@ -1118,7 +1120,7 @@ def removePortGroup(group_id, portgrp_id, fast=False):
         return
 
     if box_widget is not None:
-        box_widget.updatePositions()
+        box_widget.update_positions()
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -1163,8 +1165,8 @@ def connectPorts(connection_id, group_out_id, port_out_id,
 
     canvas.scene.addItem(connection_dict.widget)
 
-    port_out_parent.addLineFromGroup(connection_dict.widget, connection_id)
-    port_in_parent.addLineFromGroup(connection_dict.widget, connection_id)
+    port_out_parent.add_line_from_group(connection_dict.widget, connection_id)
+    port_in_parent.add_line_from_group(connection_dict.widget, connection_id)
 
     canvas.last_z_value += 1
     port_out_parent.setZValue(canvas.last_z_value)
@@ -1231,8 +1233,8 @@ def disconnectPorts(connection_id, fast=False):
         qCritical("PatchCanvas::disconnectPorts(%i) - unable to find input port" % connection_id)
         return
 
-    item1.parentItem().removeLineFromGroup(connection_id)
-    item2.parentItem().removeLineFromGroup(connection_id)
+    item1.parentItem().remove_line_from_group(connection_id)
+    item2.parentItem().remove_line_from_group(connection_id)
 
     if options.eyecandy == EYECANDY_FULL and not fast:
         CanvasItemFX(line, False, True)
@@ -1259,7 +1261,7 @@ def changeTheme(idx: int):
     for group in canvas.group_list:
         for widget in group.widgets:
             if widget is not None:
-                widget.repaintLines(forced=True)
+                widget.repaint_lines(forced=True)
                 widget.update()
 
     QTimer.singleShot(0, canvas.scene.update)
@@ -1285,10 +1287,10 @@ def redrawPluginGroup(plugin_id):
         #qCritical("PatchCanvas::redrawPluginGroup(%i) - unable to find group" % plugin_id)
         return
 
-    group.widgets[0].redrawInlineDisplay()
+    group.widgets[0].redraw_inline_display()
 
     if group.split and group.widgets[1]:
-        group.widgets[1].redrawInlineDisplay()
+        group.widgets[1].redraw_inline_display()
 
 def handlePluginRemoved(plugin_id):
     if canvas.debug:
@@ -1300,20 +1302,20 @@ def handlePluginRemoved(plugin_id):
         group.plugin_id = -1
         group.plugin_ui = False
         group.plugin_inline = False
-        group.widgets[0].removeAsPlugin()
+        group.widgets[0].remove_as_plugin()
 
         if group.split and group.widgets[1]:
-            group.widgets[1].removeAsPlugin()
+            group.widgets[1].remove_as_plugin()
 
     for group in canvas.group_list:
         if group.plugin_id < plugin_id or group.plugin_id > MAX_PLUGIN_ID_ALLOWED:
             continue
 
         group.plugin_id -= 1
-        group.widgets[0].m_plugin_id -= 1
+        group.widgets[0]._plugin_id -= 1
 
         if group.split and group.widgets[1]:
-            group.widgets[1].m_plugin_id -= 1
+            group.widgets[1]._plugin_id -= 1
 
         canvas.group_plugin_map[plugin_id] = group
 
@@ -1332,10 +1334,10 @@ def handleAllPluginsRemoved():
         group.plugin_id = -1
         group.plugin_ui = False
         group.plugin_inline = False
-        group.widgets[0].removeAsPlugin()
+        group.widgets[0].remove_as_plugin()
 
         if group.split and group.widgets[1]:
-            group.widgets[1].removeAsPlugin()
+            group.widgets[1].remove_as_plugin()
 
 def setElastic(yesno: bool):
     canvas.scene.set_elastic(yesno)
@@ -1423,7 +1425,7 @@ def set_semi_hide_opacity(opacity: float):
                 
     for conn in canvas.connection_list:
         if conn.widget is not None:
-            conn.widget.updateLineGradient()
+            conn.widget.update_line_gradient()
 
 def set_optional_gui_state(group_id: int, visible: bool):
     for group in canvas.group_list:

@@ -51,55 +51,47 @@ class CanvasBezierLine(QGraphicsPathItem):
 
         self.item1 = item1
         self.item2 = item2
-
-        self.m_locked = False
-        self.m_lineSelected = False
-        self.m_ready_to_disc = False
-        self.m_is_semi_hidden = False
+        
+        # is true when the connection will be undo by user if (s)he
+        # leaves the mouse button
+        self.ready_to_disc = False
+        self.locked = False
+        
+        self._line_selected = False
+        self._semi_hidden = False
 
         self.setBrush(QColor(0, 0, 0, 0))
         self.setGraphicsEffect(None)
-        self.updateLinePos()
+        self.update_line_pos()
 
-    def isReadyToDisc(self):
-        return self.m_ready_to_disc
-
-    def setReadyToDisc(self, yesno):
-        self.m_ready_to_disc = yesno
-
-    def isLocked(self):
-        return self.m_locked
-
-    def setLocked(self, yesno):
-        self.m_locked = yesno
-
-    def isLineSelected(self):
-        return self.m_lineSelected
-
-    def setLineSelected(self, yesno):
-        if self.m_locked:
+    def set_line_selected(self, yesno: bool):
+        if self.locked:
             return
 
-        if yesno != self.m_lineSelected and options.eyecandy == EYECANDY_FULL:
+        if yesno != self._line_selected and options.eyecandy == EYECANDY_FULL:
             if yesno:
-                self.setGraphicsEffect(CanvasPortGlow(self.item1.getPortType(), self.toGraphicsObject()))
+                self.setGraphicsEffect(
+                    CanvasPortGlow(self.item1.getPortType(),
+                                   self.toGraphicsObject()))
             else:
                 self.setGraphicsEffect(None)
 
-        self.m_lineSelected = yesno
-        self.updateLineGradient()
+        self._line_selected = yesno
+        self.update_line_gradient()
 
-    def triggerDisconnect(self):
+    def trigger_disconnect(self):
         for connection in canvas.connection_list:
-            if (connection.port_out_id == self.item1.getPortId() and connection.port_in_id == self.item2.getPortId()):
-                canvas.callback(ACTION_PORTS_DISCONNECT, connection.connection_id, 0, "")
+            if (connection.port_out_id == self.item1.getPortId()
+                    and connection.port_in_id == self.item2.getPortId()):
+                canvas.callback(ACTION_PORTS_DISCONNECT,
+                                connection.connection_id, 0, "")
                 break
 
     def semi_hide(self, yesno: bool):
-        self.m_is_semi_hidden = yesno
-        self.updateLineGradient()
+        self._semi_hidden = yesno
+        self.update_line_gradient()
 
-    def updateLinePos(self):
+    def update_line_pos(self):
         if self.item1.getPortMode() == PORT_MODE_OUTPUT:
             item1_x = self.item1.scenePos().x() + self.item1.getPortWidth() + 12
 
@@ -130,7 +122,8 @@ class CanvasBezierLine(QGraphicsPathItem):
                 first_old_y = canvas.theme.port_height * phi
                 last_old_y  = canvas.theme.port_height * (portgrp_len_2 - phi)
                 delta = (last_old_y - first_old_y) / (portgrp_len_2 -1)
-                old_y2 = first_old_y + (port_pos_2 * delta) - (canvas.theme.port_height * port_pos_2)
+                old_y2 = (first_old_y + (port_pos_2 * delta)
+                          - (canvas.theme.port_height * port_pos_2))
                 if not self.item2.isVisible():
                     old_y2 = canvas.theme.port_height - old_y2
             else:
@@ -151,16 +144,17 @@ class CanvasBezierLine(QGraphicsPathItem):
             item2_new_x = item2_x - mid_x
 
             path = QPainterPath(QPointF(item1_x, item1_y))
-            path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y, item2_x, item2_y)
+            path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y,
+                         item2_x, item2_y)
             self.setPath(path)
 
-            self.m_lineSelected = False
-            self.updateLineGradient()
+            self._line_selected = False
+            self.update_line_gradient()
 
     def type(self):
         return CanvasBezierLineType
 
-    def updateLineGradient(self):
+    def update_line_gradient(self):
         pos_top = self.boundingRect().top()
         pos_bot = self.boundingRect().bottom()
         if self.item2.scenePos().y() >= self.item1.scenePos().y():
@@ -174,39 +168,21 @@ class CanvasBezierLine(QGraphicsPathItem):
         port_type2 = self.item2.getPortType()
         port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
 
-        #if port_type1 == PORT_TYPE_AUDIO_JACK:
-            #port_gradient.setColorAt(pos1, canvas.theme.line_audio_jack_sel if self.m_lineSelected else canvas.theme.line_audio_jack)
-        #elif port_type1 == PORT_TYPE_MIDI_JACK:
-            #port_gradient.setColorAt(pos1, canvas.theme.line_midi_jack_sel if self.m_lineSelected else canvas.theme.line_midi_jack)
-        #elif port_type1 == PORT_TYPE_MIDI_ALSA:
-            #port_gradient.setColorAt(pos1, canvas.theme.line_midi_alsa_sel if self.m_lineSelected else canvas.theme.line_midi_alsa)
-        #elif port_type1 == PORT_TYPE_PARAMETER:
-            #port_gradient.setColorAt(pos1, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
-
-        #if port_type2 == PORT_TYPE_AUDIO_JACK:
-            #port_gradient.setColorAt(pos2, canvas.theme.line_audio_jack_sel if self.m_lineSelected else canvas.theme.line_audio_jack)
-        #elif port_type2 == PORT_TYPE_MIDI_JACK:
-            #port_gradient.setColorAt(pos2, canvas.theme.line_midi_jack_sel if self.m_lineSelected else canvas.theme.line_midi_jack)
-        #elif port_type2 == PORT_TYPE_MIDI_ALSA:
-            #port_gradient.setColorAt(pos2, canvas.theme.line_midi_alsa_sel if self.m_lineSelected else canvas.theme.line_midi_alsa)
-        #elif port_type2 == PORT_TYPE_PARAMETER:
-            #port_gradient.setColorAt(pos2, canvas.theme.line_parameter_sel if self.m_lineSelected else canvas.theme.line_parameter)
-
         base_color = canvas.theme.line_audio_jack
-        if self.m_lineSelected:
+        if self._line_selected:
             base_color = canvas.theme.line_audio_jack_sel
 
         if port_type1 == PORT_TYPE_MIDI_JACK:
             base_color = canvas.theme.port_midi_jack_bg
-            if self.m_lineSelected:
+            if self._line_selected:
                 base_color = canvas.theme.port_midi_jack_bg_sel
 
-        if self.m_is_semi_hidden:
+        if self._semi_hidden:
             base_color = QColor(int(base_color.red() * canvas.semi_hide_opacity + 0.5),
                                 int(base_color.green() * canvas.semi_hide_opacity + 0.5),
                                 int(base_color.blue() * canvas.semi_hide_opacity + 0.5))
 
-        if self.m_ready_to_disc:
+        if self.ready_to_disc:
             port_gradient.setColorAt(pos1, QColor(34, 34, 34))
             port_gradient.setColorAt(pos2, QColor(34, 34, 34))
             self.setPen(QPen(port_gradient, 2, Qt.DotLine))
