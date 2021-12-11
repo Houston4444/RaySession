@@ -77,9 +77,9 @@ class Theme(object):
         self.magnet = 12
         self.hardware_rack_width = 5
 
-        self.setTheme(idx)
+        self.set_theme(idx)
 
-    def setTheme(self, idx):
+    def set_theme(self, idx):
         if idx == self.THEME_SILVER_GOLD:
             # Canvas
             self.canvas_bg = QColor(0, 0, 0)
@@ -677,10 +677,10 @@ class Theme(object):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def getDefaultTheme():
+def get_default_theme():
     return Theme.THEME_BLACK_GOLD
 
-def getThemeName(idx):
+def get_theme_name(idx: int)->str:
     if idx == Theme.THEME_BLACK_GOLD:
         return "Black Gold"
     if idx == Theme.THEME_SILVER_GOLD:
@@ -697,7 +697,7 @@ def getThemeName(idx):
         return "OpenOctave Studio"
     return ""
 
-def getDefaultThemeName():
+def get_default_theme_name():
     return "Silver Gold"
 
 # ------------------------------------------------------------------------------------------------------------

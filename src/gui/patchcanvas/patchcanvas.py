@@ -56,7 +56,7 @@ from . import (
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
 from .canvasline import CanvasLine
-from .theme import Theme, getDefaultTheme, getThemeName
+from .theme import Theme, get_default_theme, get_theme_name
 from .utils import (CanvasCallback, CanvasGetNewGroupPos, CanvasItemFX,
     CanvasRemoveItemFX, CanvasGetPortGroupPosition, CanvasGetNewGroupPositions)
 
@@ -197,15 +197,15 @@ def init(appName, scene, callback, debug=False):
         canvas.theme = None
 
     for i in range(Theme.THEME_MAX):
-        this_theme_name = getThemeName(i)
+        this_theme_name = get_theme_name(i)
         if this_theme_name == options.theme_name:
             canvas.theme = Theme(i)
             break
 
     if not canvas.theme:
-        canvas.theme = Theme(getDefaultTheme())
+        canvas.theme = Theme(get_default_theme())
 
-    canvas.scene.updateTheme()
+    canvas.scene.update_theme()
 
     canvas.initiated = True
 
@@ -277,8 +277,8 @@ def setCanvasSize(x, y, width, height):
     canvas.size_rect.setY(y)
     canvas.size_rect.setWidth(width)
     canvas.size_rect.setHeight(height)
-    canvas.scene.updateLimits()
-    canvas.scene.fixScaleFactor()
+    canvas.scene.update_limits()
+    canvas.scene.fix_scale_factor()
 
 def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION,
              icon_name='', fast=False,
@@ -1257,8 +1257,8 @@ def arrange():
         print("PatchCanvas::arrange()")
 
 def changeTheme(idx: int):
-    canvas.theme.setTheme(idx)
-    canvas.scene.updateTheme()
+    canvas.theme.set_theme(idx)
+    canvas.scene.update_theme()
 
     for group in canvas.group_list:
         for widget in group.widgets:

@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import QGraphicsItem
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Theme)
 
-from .theme import getDefaultThemeName
+from .theme import get_default_theme_name
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -314,7 +314,7 @@ def split2str(split):
 canvas = Canvas()
 
 options = options_t()
-options.theme_name = getDefaultThemeName()
+options.theme_name = get_default_theme_name()
 options.auto_hide_groups = False
 options.auto_select_items = False
 options.use_bezier_lines = True

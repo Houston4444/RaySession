@@ -80,22 +80,22 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.__init__(self, parent)
 
         #self.setItemIndexMethod(QGraphicsScene.NoIndex)
-        self.m_scale_area = False
-        self.m_mouse_down_init = False
-        self.m_mouse_rubberband = False
-        self.m_mid_button_down = False
-        self.m_pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
-        self.m_scale_min = 0.1
-        self.m_scale_max = 4.0
+        self._scale_area = False
+        self._mouse_down_init = False
+        self._mouse_rubberband = False
+        self._mid_button_down = False
+        self._pointer_border = QRectF(0.0, 0.0, 1.0, 1.0)
+        self._scale_min = 0.1
+        self._scale_max = 4.0
 
         self.scales = (0.1, 0.25, 0.4, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0)
 
-        self.m_rubberband = RubberbandRect(self)
-        self.m_rubberband_selection = False
-        self.m_rubberband_orig_point = QPointF(0, 0)
+        self._rubberband = RubberbandRect(self)
+        self._rubberband_selection = False
+        self._rubberband_orig_point = QPointF(0, 0)
 
-        self.m_view = view
-        if not self.m_view:
+        self._view = view
+        if not self._view:
             qFatal("PatchCanvas::PatchScene() - invalid view")
 
         self.curCut = None
@@ -115,7 +115,7 @@ class PatchScene(QGraphicsScene):
         self.elastic_scene = True
         self.resizing_scene = False
 
-        self.selectionChanged.connect(self.slot_selectionChanged)
+        self.selectionChanged.connect(self._slot_selection_changed)
         
         self._prevent_overlap = True
         
@@ -124,34 +124,34 @@ class PatchScene(QGraphicsScene):
     def clear(self):
         # reimplement Qt function and fix missing rubberband after clear
         QGraphicsScene.clear(self)
-        self.m_rubberband = RubberbandRect(self)
-        self.updateTheme()
+        self._rubberband = RubberbandRect(self)
+        self.update_theme()
 
-    def getDevicePixelRatioF(self):
+    def get_device_pixel_ratio_f(self):
         if QT_VERSION < 0x50600:
             return 1.0
 
-        return self.m_view.devicePixelRatioF()
+        return self._view.devicePixelRatioF()
 
-    def getScaleFactor(self):
-        return self.m_view.transform().m11()
+    def get_scale_factor(self):
+        return self._view.transform().m11()
 
-    def fixScaleFactor(self, transform=None):
+    def fix_scale_factor(self, transform=None):
         fix, set_view = False, False
         if not transform:
             set_view = True
-            view = self.m_view
+            view = self._view
             transform = view.transform()
 
         scale = transform.m11()
-        if scale > self.m_scale_max:
+        if scale > self._scale_max:
             fix = True
             transform.reset()
-            transform.scale(self.m_scale_max, self.m_scale_max)
-        elif scale < self.m_scale_min:
+            transform.scale(self._scale_max, self._scale_max)
+        elif scale < self._scale_min:
             fix = True
             transform.reset()
-            transform.scale(self.m_scale_min, self.m_scale_min)
+            transform.scale(self._scale_min, self._scale_min)
 
         if set_view:
             if fix:
@@ -161,22 +161,22 @@ class PatchScene(QGraphicsScene):
         return fix
 
     def fix_temporary_scroll_bars(self):
-        if self.m_view is None:
+        if self._view is None:
             return
 
-        if self.m_view.horizontalScrollBar().isVisible():
-            self.m_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        if self._view.horizontalScrollBar().isVisible():
+            self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         else:
-            self.m_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        if self.m_view.verticalScrollBar().isVisible():
-            self.m_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        if self._view.verticalScrollBar().isVisible():
+            self._view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         else:
-            self.m_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self._view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def reset_scroll_bars(self):
-        self.m_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.m_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self._view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
     def move_boxes_animation(self):
         # animation is nice but not the priority
@@ -483,8 +483,8 @@ class PatchScene(QGraphicsScene):
             
             # calculate the new position of the box repulsed by its repulser
             new_rect = repulse(new_direction, repulser['rect'], item,
-                               repulser['item'].m_current_port_mode,
-                               item.m_current_port_mode)
+                               repulser['item']._current_port_mode,
+                               item._current_port_mode)
             
             active_repulsers = []
             
@@ -507,8 +507,8 @@ class PatchScene(QGraphicsScene):
                             repulser['rect'], new_rect, directions)
                         new_rect = repulse(
                             new_direction, repulser['rect'], new_rect,
-                            repulser['item'].m_current_port_mode,
-                            item.m_current_port_mode)
+                            repulser['item']._current_port_mode,
+                            item._current_port_mode)
                         directions.append(new_direction)
                         break
                 else:
@@ -609,24 +609,24 @@ class PatchScene(QGraphicsScene):
         self.deplace_boxes_from_repulsers(repulser_boxes, wanted_direction=DIRECTION_UP)
 
     def center_view_on(self, widget):
-        self.m_view.centerOn(widget)
+        self._view.centerOn(widget)
 
     def removeItem(self, item):
         for child_item in item.childItems():
             QGraphicsScene.removeItem(self, child_item)
         QGraphicsScene.removeItem(self, item)
 
-    def updateLimits(self):
+    def update_limits(self):
         w0 = canvas.size_rect.width()
         h0 = canvas.size_rect.height()
-        w1 = self.m_view.width()
-        h1 = self.m_view.height()
-        self.m_scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
+        w1 = self._view.width()
+        h1 = self._view.height()
+        self._scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
 
-    def updateTheme(self):
+    def update_theme(self):
         self.setBackgroundBrush(canvas.theme.canvas_bg)
-        self.m_rubberband.setPen(canvas.theme.rubberband_pen)
-        self.m_rubberband.setBrush(canvas.theme.rubberband_brush)
+        self._rubberband.setPen(canvas.theme.rubberband_pen)
+        self._rubberband.setBrush(canvas.theme.rubberband_brush)
 
         cur_color = "black" if canvas.theme.canvas_bg.blackF() < 0.5 else "white"
         self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
@@ -687,10 +687,10 @@ class PatchScene(QGraphicsScene):
 
     def zoom_ratio(self, percent: float):
         ratio = percent / 100.0
-        transform = self.m_view.transform()
+        transform = self._view.transform()
         transform.reset()
         transform.scale(ratio, ratio)
-        self.m_view.setTransform(transform)
+        self._view.setTransform(transform)
 
         for group in canvas.group_list:
             for widget in group.widgets:
@@ -723,41 +723,41 @@ class PatchScene(QGraphicsScene):
                         max_y = max(max_y, y + rect.height())
 
             if not first_value:
-                self.m_view.fitInView(min_x, min_y, abs(max_x - min_x),
+                self._view.fitInView(min_x, min_y, abs(max_x - min_x),
                                       abs(max_y - min_y), Qt.KeepAspectRatio)
-                self.fixScaleFactor()
+                self.fix_scale_factor()
 
-        if self.m_view:
-            self.scaleChanged.emit(self.m_view.transform().m11())
+        if self._view:
+            self.scaleChanged.emit(self._view.transform().m11())
 
     def zoom_in(self):
-        view = self.m_view
+        view = self._view
         transform = view.transform()
-        if transform.m11() < self.m_scale_max:
+        if transform.m11() < self._scale_max:
             transform.scale(1.2, 1.2)
-            if transform.m11() > self.m_scale_max:
+            if transform.m11() > self._scale_max:
                 transform.reset()
-                transform.scale(self.m_scale_max, self.m_scale_max)
+                transform.scale(self._scale_max, self._scale_max)
             view.setTransform(transform)
         self.scaleChanged.emit(transform.m11())
 
     def zoom_out(self):
-        view = self.m_view
+        view = self._view
         transform = view.transform()
-        if transform.m11() > self.m_scale_min:
+        if transform.m11() > self._scale_min:
             transform.scale(0.833333333333333, 0.833333333333333)
-            if transform.m11() < self.m_scale_min:
+            if transform.m11() < self._scale_min:
                 transform.reset()
-                transform.scale(self.m_scale_min, self.m_scale_min)
+                transform.scale(self._scale_min, self._scale_min)
             view.setTransform(transform)
         self.scaleChanged.emit(transform.m11())
 
     def zoom_reset(self):
-        self.m_view.resetTransform()
+        self._view.resetTransform()
         self.scaleChanged.emit(1.0)
 
     @pyqtSlot()
-    def slot_selectionChanged(self):
+    def _slot_selection_changed(self):
         items_list = self.selectedItems()
 
         if len(items_list) == 0:
@@ -778,36 +778,36 @@ class PatchScene(QGraphicsScene):
                     #plugin_list = []
                     #break
 
-                if group_item is not None and group_item.m_plugin_id >= 0:
-                    plugin_id = group_item.m_plugin_id
+                if group_item is not None and group_item._plugin_id >= 0:
+                    plugin_id = group_item._plugin_id
                     if plugin_id > MAX_PLUGIN_ID_ALLOWED:
                         plugin_id = 0
                     plugin_list.append(plugin_id)
 
         self.pluginSelected.emit(plugin_list)
 
-    def triggerRubberbandScale(self):
-        self.m_scale_area = True
+    def _trigger_rubberband_scale(self):
+        self._scale_area = True
 
         if self.curZoomArea:
-            self.m_view.viewport().setCursor(self.curZoomArea)
+            self._view.viewport().setCursor(self.curZoomArea)
 
     def send_zoom_to_zoom_widget(self):
-        if not self.m_view:
+        if not self._view:
             return
-        canvas.qobject.zoom_changed.emit(self.m_view.transform().m11() * 100)
+        canvas.qobject.zoom_changed.emit(self._view.transform().m11() * 100)
 
     def get_zoom_scale(self):
-        return self.m_view.transform().m11()
+        return self._view.transform().m11()
 
     def keyPressEvent(self, event):
-        if not self.m_view:
+        if not self._view:
             event.ignore()
             return
 
         if event.key() == Qt.Key_Control:
-            if self.m_mid_button_down:
-                self.startConnectionCut()
+            if self._mid_button_down:
+                self._start_connection_cut()
 
         elif event.key() == Qt.Key_Home:
             event.accept()
@@ -835,37 +835,37 @@ class PatchScene(QGraphicsScene):
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
             # Connection cut mode off
-            if self.m_mid_button_down:
-                self.m_view.viewport().unsetCursor()
+            if self._mid_button_down:
+                self._view.viewport().unsetCursor()
 
         QGraphicsScene.keyReleaseEvent(self, event)
 
-    def startConnectionCut(self):
+    def _start_connection_cut(self):
         if self.curCut:
-            self.m_view.viewport().setCursor(self.curCut)
+            self._view.viewport().setCursor(self.curCut)
 
     def zoom_wheel(self, delta):
-        transform = self.m_view.transform()
+        transform = self._view.transform()
         scale = transform.m11()
 
-        if ((delta > 0 and scale < self.m_scale_max)
-                or (delta < 0 and scale > self.m_scale_min)):
+        if ((delta > 0 and scale < self._scale_max)
+                or (delta < 0 and scale > self._scale_min)):
             # prevent too large unzoom
             if delta < 0:
                 rect = self.sceneRect()
 
-                top_left_vw = self.m_view.mapFromScene(rect.topLeft())
-                bottom_right_vw = self.m_view.mapFromScene(rect.bottomRight())
+                top_left_vw = self._view.mapFromScene(rect.topLeft())
+                bottom_right_vw = self._view.mapFromScene(rect.bottomRight())
 
-                if (top_left_vw.x() > self.m_view.width() / 4
-                        and top_left_vw.y() > self.m_view.height() / 4):
+                if (top_left_vw.x() > self._view.width() / 4
+                        and top_left_vw.y() > self._view.height() / 4):
                     return
 
             # Apply scale
             factor = 1.4142135623730951 ** (delta / 240.0)
             transform.scale(factor, factor)
-            self.fixScaleFactor(transform)
-            self.m_view.setTransform(transform)
+            self.fix_scale_factor(transform)
+            self._view.setTransform(transform)
             self.scaleChanged.emit(transform.m11())
 
             # Update box icons especially when they are not scalable
@@ -892,21 +892,21 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
-        self.m_mouse_down_init = (
+        self._mouse_down_init = (
             (event.button() == Qt.LeftButton)
             or ((event.button() == Qt.RightButton)
                 and QApplication.keyboardModifiers() & Qt.ControlModifier))
-        self.m_mouse_rubberband = False
+        self._mouse_rubberband = False
 
         if (event.button() == Qt.MidButton
                 and QApplication.keyboardModifiers() & Qt.ControlModifier):
-            self.m_mid_button_down = True
-            self.startConnectionCut()
+            self._mid_button_down = True
+            self._start_connection_cut()
 
             pos = event.scenePos()
-            self.m_pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
+            self._pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
 
-            items = self.items(self.m_pointer_border)
+            items = self.items(self._pointer_border)
             for item in items:
                 if item and item.type() in (CanvasLineType, CanvasBezierLineType, CanvasPortType):
                     item.trigger_disconnect()
@@ -914,36 +914,36 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
-        if self.m_mouse_down_init:
-            self.m_mouse_down_init = False
-            topmost = self.itemAt(event.scenePos(), self.m_view.transform())
-            self.m_mouse_rubberband = not (
+        if self._mouse_down_init:
+            self._mouse_down_init = False
+            topmost = self.itemAt(event.scenePos(), self._view.transform())
+            self._mouse_rubberband = not (
                 topmost and topmost.type() in (CanvasBoxType,
                                                CanvasIconType,
                                                CanvasPortType,
                                                CanvasPortGroupType))
-        if self.m_mouse_rubberband:
+        if self._mouse_rubberband:
             event.accept()
             pos = event.scenePos()
             pos_x = pos.x()
             pos_y = pos.y()
-            if not self.m_rubberband_selection:
-                self.m_rubberband.show()
-                self.m_rubberband_selection = True
-                self.m_rubberband_orig_point = pos
-            rubberband_orig_point = self.m_rubberband_orig_point
+            if not self._rubberband_selection:
+                self._rubberband.show()
+                self._rubberband_selection = True
+                self._rubberband_orig_point = pos
+            rubberband_orig_point = self._rubberband_orig_point
 
             x = min(pos_x, rubberband_orig_point.x())
             y = min(pos_y, rubberband_orig_point.y())
 
             lineHinting = canvas.theme.rubberband_pen.widthF() / 2
-            self.m_rubberband.setRect(x+lineHinting,
+            self._rubberband.setRect(x+lineHinting,
                                       y+lineHinting,
                                       abs(pos_x - rubberband_orig_point.x()),
                                       abs(pos_y - rubberband_orig_point.y()))
             return
 
-        if (self.m_mid_button_down
+        if (self._mid_button_down
                 and QApplication.keyboardModifiers() & Qt.ControlModifier):
             trail = QPolygonF([event.scenePos(), event.lastScenePos(), event.scenePos()])
             items = self.items(trail)
@@ -954,18 +954,18 @@ class PatchScene(QGraphicsScene):
         QGraphicsScene.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
-        if self.m_scale_area and not self.m_rubberband_selection:
-            self.m_scale_area = False
-            self.m_view.viewport().unsetCursor()
+        if self._scale_area and not self._rubberband_selection:
+            self._scale_area = False
+            self._view.viewport().unsetCursor()
 
-        if self.m_rubberband_selection:
-            if self.m_scale_area:
-                self.m_scale_area = False
-                self.m_view.viewport().unsetCursor()
+        if self._rubberband_selection:
+            if self._scale_area:
+                self._scale_area = False
+                self._view.viewport().unsetCursor()
 
-                rect = self.m_rubberband.rect()
-                self.m_view.fitInView(rect.x(), rect.y(), rect.width(), rect.height(), Qt.KeepAspectRatio)
-                self.fixScaleFactor()
+                rect = self._rubberband.rect()
+                self._view.fitInView(rect.x(), rect.y(), rect.width(), rect.height(), Qt.KeepAspectRatio)
+                self.fix_scale_factor()
 
             else:
                 items_list = self.items()
@@ -976,12 +976,12 @@ class PatchScene(QGraphicsScene):
                         item_bottom_right = QPointF(item_rect.x() + item_rect.width(),
                                                     item_rect.y() + item_rect.height())
 
-                        if self.m_rubberband.contains(item_top_left) and self.m_rubberband.contains(item_bottom_right):
+                        if self._rubberband.contains(item_top_left) and self._rubberband.contains(item_bottom_right):
                             item.setSelected(True)
 
-            self.m_rubberband.hide()
-            self.m_rubberband.setRect(0, 0, 0, 0)
-            self.m_rubberband_selection = False
+            self._rubberband.hide()
+            self._rubberband.setRect(0, 0, 0, 0)
+            self._rubberband_selection = False
 
         else:
             items_list = self.selectedItems()
@@ -995,23 +995,23 @@ class PatchScene(QGraphicsScene):
             if len(items_list) > 1:
                 self.update()
 
-        self.m_mouse_down_init = False
-        self.m_mouse_rubberband = False
+        self._mouse_down_init = False
+        self._mouse_rubberband = False
 
         if event.button() == Qt.MidButton:
             event.accept()
 
-            self.m_mid_button_down = False
+            self._mid_button_down = False
 
             # Connection cut mode off
             if QApplication.keyboardModifiers() & Qt.ControlModifier:
-                self.m_view.viewport().unsetCursor()
+                self._view.viewport().unsetCursor()
             return
 
         QGraphicsScene.mouseReleaseEvent(self, event)
 
     def wheelEvent(self, event):
-        if not self.m_view:
+        if not self._view:
             event.ignore()
             return
 
@@ -1025,7 +1025,7 @@ class PatchScene(QGraphicsScene):
     def contextMenuEvent(self, event):
         if QApplication.keyboardModifiers() & Qt.ControlModifier:
             event.accept()
-            self.triggerRubberbandScale()
+            self._trigger_rubberband_scale()
             return
 
         if len(self.selectedItems()) == 0:
