@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
-
+import patchcanvas.utils as utils
 from . import (
     canvas,
     features,
@@ -56,11 +56,6 @@ from .canvasbezierlinemov import CanvasBezierLineMov
 from .canvaslinemov import CanvasLineMov
 from .theme import Theme
 from .connect_menu import MainPortContextMenu
-from .utils import (CanvasGetFullPortName, CanvasGetPortConnectionList,
-                    CanvasGetPortGroupPosition, CanvasGetPortPrintName,
-                    CanvasGetPortGroupName, CanvasGetPortGroupFullName,
-                    CanvasConnectionMatches, CanvasConnectionConcerns,
-                    CanvasCallback, CanvasConnectPorts)
 
 # ------------------------------------------------------------------------------------------------------------
 _translate = QApplication.translate
@@ -218,8 +213,8 @@ class CanvasPortGroup(QGraphicsItem):
         self._dotcon_list.clear()
 
     def _split_to_monos(self):
-        CanvasCallback(ACTION_PORTGROUP_REMOVE,
-                       self._group_id, self._portgrp_id, "")
+        utils.canvas_callback(ACTION_PORTGROUP_REMOVE,
+                              self._group_id, self._portgrp_id, "")
 
     def _connect_to_hover(self):
         if self._hover_item:
@@ -241,7 +236,7 @@ class CanvasPortGroup(QGraphicsItem):
             if self._hover_item.get_port_mode() == self._port_mode:
                 for i in range(len(self._port_id_list)):
                     for connection in canvas.connection_list:
-                        if CanvasConnectionConcerns(
+                        if utils.connection_concerns(
                                 connection, self._group_id,
                                 [self._port_id_list[i]]):
                             canvas.callback(
@@ -278,7 +273,7 @@ class CanvasPortGroup(QGraphicsItem):
                     hover_port_id = hover_port_id_list[j]
 
                     for connection in canvas.connection_list:
-                        if CanvasConnectionMatches(connection,
+                        if utils.connection_matches(connection,
                                         self._group_id, [port_id],
                                         hover_group_id, [hover_port_id]):
                             if (i % len(hover_port_id_list)
@@ -356,7 +351,7 @@ class CanvasPortGroup(QGraphicsItem):
             self._cursor_moving = False
 
             for connection in canvas.connection_list:
-                if CanvasConnectionConcerns(
+                if utils.connection_concerns(
                         connection, self._group_id, self._port_id_list):
                     self._has_connections = True
                     break
@@ -385,7 +380,7 @@ class CanvasPortGroup(QGraphicsItem):
             self._cursor_moving = True
 
             for connection in canvas.connection_list:
-                if CanvasConnectionConcerns(connection,
+                if utils.connection_concerns(connection,
                                 self._group_id, self._port_id_list):
                     connection.widget.locked = True
 
@@ -440,7 +435,7 @@ class CanvasPortGroup(QGraphicsItem):
                     and item.type() == CanvasPortGroupType
                     and len(item.get_port_ids_list()) == len(self._port_id_list)):
                 for connection in canvas.connection_list:
-                    if CanvasConnectionConcerns(
+                    if utils.connection_concerns(
                             connection, item.get_group_id(),
                             item.get_port_ids_list()):
                         break
@@ -475,7 +470,7 @@ class CanvasPortGroup(QGraphicsItem):
                 self._dotcon_list.clear()
 
                 for connection in canvas.connection_list:
-                    if CanvasConnectionMatches(
+                    if utils.connection_matches(
                             connection,
                             self._group_id, self._port_id_list,
                             self._hover_item.get_group_id(),
@@ -496,7 +491,7 @@ class CanvasPortGroup(QGraphicsItem):
 
                 if item.get_port_mode() == self._port_mode:
                     for connection in canvas.connection_list:
-                        if CanvasConnectionConcerns(
+                        if utils.connection_concerns(
                                 connection,
                                 self._group_id, self._port_id_list):
                             connection.widget.ready_to_disc = True
@@ -547,7 +542,7 @@ class CanvasPortGroup(QGraphicsItem):
                     for portself_id in self._port_id_list:
                         for porthover_id in self._hover_item.get_port_ids_list():
                             for connection in canvas.connection_list:
-                                if CanvasConnectionMatches(
+                                if utils.connection_matches(
                                         connection,
                                         self._group_id, [portself_id],
                                         self._hover_item.get_group_id(),
@@ -598,7 +593,7 @@ class CanvasPortGroup(QGraphicsItem):
                 self._line_mov_list.clear()
 
                 for connection in canvas.connection_list:
-                    if CanvasConnectionConcerns(connection, self._group_id, self._port_id_list):
+                    if utils.connection_concerns(connection, self._group_id, self._port_id_list):
                         connection.widget.locked = False
 
                 if self._hover_item:
@@ -645,7 +640,7 @@ class CanvasPortGroup(QGraphicsItem):
     def itemChange(self, change, value: bool):
         if change == QGraphicsItem.ItemSelectedHasChanged:
             for connection in canvas.connection_list:
-                if CanvasConnectionConcerns(connection,
+                if utils.connection_concerns(connection,
                                 self._group_id, self._port_id_list):
                     connection.widget.set_line_selected(value)
 
@@ -682,7 +677,7 @@ class CanvasPortGroup(QGraphicsItem):
 
             for port in canvas.port_list:
                 if port.port_id in self._port_id_list:
-                    port_print_name = CanvasGetPortPrintName(
+                    port_print_name = utils.get_port_print_name(
                         port.group_id, port.port_id, self._portgrp_id)
                     port_in_p_width = QFontMetrics(self._portgrp_font).width(port_print_name) + 3
                     port_width = max(port_width, port_in_p_width)

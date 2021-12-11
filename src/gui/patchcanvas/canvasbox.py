@@ -72,22 +72,12 @@ from . import (
     ICON_CLIENT,
     DIRECTION_DOWN
 )
-
+import patchcanvas.utils as utils
 from .canvasboxshadow import CanvasBoxShadow
 from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
 from .canvasport import CanvasPort
 from .canvasportgroup import CanvasPortGroup
 from .theme import Theme
-from .utils import (CanvasItemFX,
-                    CanvasGetFullPortName,
-                    CanvasGetPortConnectionList,
-                    CanvasGetPortGroupName,
-                    CanvasGetPortGroupPosition,
-                    CanvasGetPortPrintName,
-                    CanvasCallback,
-                    CanvasConnectionConcerns,
-                    CanvasGetIcon,
-                    is_dark_theme)
 
 _translate = QApplication.translate
 
@@ -426,7 +416,7 @@ class CanvasBox(QGraphicsItem):
         if len(self._port_list_ids) == 0:
             if options.auto_hide_groups:
                 if options.eyecandy == EYECANDY_FULL:
-                    CanvasItemFX(self, True, False)
+                    utils.item_fx(self, True, False)
                 self.setVisible(True)
 
         new_widget = CanvasPort(self._group_id, port_id, port_name, port_mode,
@@ -453,7 +443,7 @@ class CanvasBox(QGraphicsItem):
         elif self.isVisible():
             if options.auto_hide_groups:
                 if options.eyecandy == EYECANDY_FULL:
-                    CanvasItemFX(self, False, False)
+                    utils.item_fx(self, False, False)
                 else:
                     self.setVisible(False)
 
@@ -673,7 +663,7 @@ class CanvasBox(QGraphicsItem):
                     ## to win space in some cases
                     #last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
                     
-                    port_pos, pg_len = CanvasGetPortGroupPosition(
+                    port_pos, pg_len = utils.get_portgroup_position(
                         self._group_id, port.port_id, port.portgrp_id)
                     first_of_portgrp = bool(port_pos == 0)
                     last_of_portgrp = bool(port_pos + 1 == pg_len)
@@ -688,7 +678,7 @@ class CanvasBox(QGraphicsItem):
                                 continue
                             
                             if port.port_id == portgrp.port_id_list[0]:
-                                portgrp_name = CanvasGetPortGroupName(
+                                portgrp_name = utils.get_portgroup_name(
                                     self._group_id, portgrp.port_id_list)
 
                                 if portgrp_name:
@@ -698,7 +688,7 @@ class CanvasBox(QGraphicsItem):
                                     portgrp.widget.set_print_name('', 0)
                             
                             port.widget.set_print_name(
-                                CanvasGetPortPrintName(
+                                utils.get_port_print_name(
                                     self._group_id, port.port_id, port.portgrp_id),
                                 int(max_pwidth/2))
 
@@ -1075,7 +1065,7 @@ class CanvasBox(QGraphicsItem):
         menu = QMenu()
 
         dark = ''
-        if is_dark_theme(menu):
+        if utils.is_dark_theme(menu):
             dark = '-dark'
 
         # Disconnect menu stuff
@@ -1087,7 +1077,7 @@ class CanvasBox(QGraphicsItem):
         disconnect_list = [] # will contains disconnect_element dicts
 
         for connection in canvas.connection_list:
-            if CanvasConnectionConcerns(
+            if utils.connection_concerns(
                     connection, self._group_id, self._port_list_ids):
                 conn_list_ids.append(connection.connection_id)
                 other_group_id = connection.group_in_id
@@ -1141,7 +1131,7 @@ class CanvasBox(QGraphicsItem):
 
                             act_x_disc1 = discMenu.addAction(
                                 group.group_name + outs_label)
-                            act_x_disc1.setIcon(CanvasGetIcon(
+                            act_x_disc1.setIcon(utils.get_icon(
                                 group.icon_type, group.icon_name, PORT_MODE_OUTPUT))
                             act_x_disc1.setData(
                                 disconnect_element['connection_out_ids'])
@@ -1150,7 +1140,7 @@ class CanvasBox(QGraphicsItem):
 
                             act_x_disc2 = discMenu.addAction(
                                 group.group_name + ins_label)
-                            act_x_disc2.setIcon(CanvasGetIcon(
+                            act_x_disc2.setIcon(utils.get_icon(
                                 group.icon_type, group.icon_name, PORT_MODE_INPUT))
                             act_x_disc2.setData(
                                 disconnect_element['connection_in_ids'])
@@ -1164,7 +1154,7 @@ class CanvasBox(QGraphicsItem):
                                 port_mode = PORT_MODE_INPUT
 
                             act_x_disc = discMenu.addAction(group.group_name)
-                            icon = CanvasGetIcon(
+                            icon = utils.get_icon(
                                 group.icon_type, group.icon_name, port_mode)
                             act_x_disc.setIcon(icon)
                             act_x_disc.setData(
@@ -1362,7 +1352,7 @@ class CanvasBox(QGraphicsItem):
                         mode = PORT_MODE_OUTPUT
 
                     if wrap:
-                        CanvasCallback(
+                        utils.canvas_callback(
                             ACTION_GROUP_WRAP, self._group_id,
                             self._splitted_mode, 'False')
                         return
@@ -1377,7 +1367,7 @@ class CanvasBox(QGraphicsItem):
                         
                     trirect.translate(self.scenePos())
                     if trirect.contains(event.scenePos()):
-                        CanvasCallback(
+                        utils.canvas_callback(
                             ACTION_GROUP_WRAP, self._group_id,
                             self._splitted_mode, 'True')
                         event.ignore()
@@ -1449,8 +1439,8 @@ class CanvasBox(QGraphicsItem):
 
     def send_move_callback(self):
         x_y_str = "%i:%i" % (round(self.x()), round(self.y()))
-        CanvasCallback(ACTION_GROUP_MOVE, self._group_id,
-                       self._splitted_mode, x_y_str)
+        utils.canvas_callback(ACTION_GROUP_MOVE, self._group_id,
+                              self._splitted_mode, x_y_str)
 
         for group in canvas.group_list:
             if group.group_id == self._group_id:

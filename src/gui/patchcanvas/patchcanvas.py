@@ -52,13 +52,11 @@ from . import (
     SPLIT_UNDEF,
     MAX_PLUGIN_ID_ALLOWED,
 )
-
+import patchcanvas.utils as utils
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
 from .canvasline import CanvasLine
 from .theme import Theme, get_default_theme, get_theme_name
-from .utils import (CanvasCallback, CanvasGetNewGroupPos, CanvasItemFX,
-    CanvasRemoveItemFX, CanvasGetPortGroupPosition, CanvasGetNewGroupPositions)
 
 # FIXME
 from . import *
@@ -104,7 +102,7 @@ class CanvasObject(QObject):
             canvas.animation_list.remove(animation)
             item = animation.item()
             if item:
-                CanvasRemoveItemFX(item)
+                utils.remove_item_fx(item)
 
     @pyqtSlot()
     def port_context_menu_connect(self):
@@ -117,7 +115,7 @@ class CanvasObject(QObject):
             return
 
         group_out_id, port_out_id, group_in_id, port_in_id = all_ids
-        CanvasCallback(ACTION_PORTS_CONNECT, '', '', ':'.join(all_ids))
+        utils.canvas_callback(ACTION_PORTS_CONNECT, '', '', ':'.join(all_ids))
 
     @pyqtSlot()
     def PortContextMenuDisconnect(self):
@@ -130,7 +128,7 @@ class CanvasObject(QObject):
             if type(connectionId) != int:
                 continue
 
-            CanvasCallback(ACTION_PORTS_DISCONNECT, connectionId, 0, "")
+            utils.canvas_callback(ACTION_PORTS_DISCONNECT, connectionId, 0, "")
 
     @pyqtSlot()
     def SetasStereoWith(self):
@@ -321,7 +319,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         group_box.set_split(True, PORT_MODE_OUTPUT)
 
         if features.handle_group_pos:
-            new_pos = getStoredCanvasPosition(group_name + "_OUTPUT", CanvasGetNewGroupPos(False))
+            new_pos = getStoredCanvasPosition(group_name + "_OUTPUT", utils.get_new_group_pos(False))
             canvas.scene.add_box_to_animation(group_box, new_pos.x(), new_pos.y())
         else:
             if split_animated:
@@ -335,7 +333,8 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         group_dict.widgets[1] = group_sbox
 
         if features.handle_group_pos:
-            new_pos = getStoredCanvasPosition(group_name + "_INPUT", CanvasGetNewGroupPos(True))
+            new_pos = getStoredCanvasPosition(
+                group_name + "_INPUT", utils.get_new_group_pos(True))
             canvas.scene.add_box_to_animation(group_sbox, new_pos.x(), new_pos.y())
         else:
             if split_animated:
@@ -347,12 +346,13 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
         group_sbox.setZValue(canvas.last_z_value)
 
         if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
-            CanvasItemFX(group_sbox, True, False)
+            utils.item_fx(group_sbox, True, False)
     else:
         group_box.set_split(False)
 
         if features.handle_group_pos:
-            group_box.setPos(getStoredCanvasPosition(group_name, CanvasGetNewGroupPos(False)))
+            group_box.setPos(getStoredCanvasPosition(
+                group_name, utils.get_new_group_pos(False)))
         else:
             # Special ladish fake-split groups
             #horizontal = bool(icon_type in (ICON_HARDWARE, ICON_LADISH_ROOM))
@@ -364,7 +364,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION
     canvas.group_list.append(group_dict)
 
     if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
-        CanvasItemFX(group_box, True, False)
+        utils.item_fx(group_box, True, False)
         return
 
     if fast:
@@ -400,7 +400,7 @@ def removeGroup(group_id, save_positions=True, fast=False):
                     canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, SPLIT_YES)
 
                 if options.eyecandy == EYECANDY_FULL:
-                    CanvasItemFX(s_item, False, True)
+                    utils.item_fx(s_item, False, True)
                 else:
                     s_item.remove_icon_from_scene()
                     canvas.scene.removeItem(s_item)
@@ -412,7 +412,7 @@ def removeGroup(group_id, save_positions=True, fast=False):
                     canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, SPLIT_NO)
 
             if options.eyecandy == EYECANDY_FULL:
-                CanvasItemFX(item, False, True)
+                utils.item_fx(item, False, True)
             else:
                 item.remove_icon_from_scene()
                 canvas.scene.removeItem(item)
@@ -959,7 +959,7 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
     box_widget.update_positions()
 
     if options.eyecandy == EYECANDY_FULL:
-        CanvasItemFX(port_widget, True, False)
+        utils.item_fx(port_widget, True, False)
         return
 
     QTimer.singleShot(0, canvas.scene.update)
@@ -1186,7 +1186,7 @@ def connectPorts(connection_id, group_out_id, port_out_id,
 
     if options.eyecandy == EYECANDY_FULL:
         item = connection_dict.widget
-        CanvasItemFX(item, True, False)
+        utils.item_fx(item, True, False)
         return
 
     QTimer.singleShot(0, canvas.scene.update)
@@ -1239,7 +1239,7 @@ def disconnectPorts(connection_id, fast=False):
     item2.parentItem().remove_line_from_group(connection_id)
 
     if options.eyecandy == EYECANDY_FULL and not fast:
-        CanvasItemFX(line, False, True)
+        utils.item_fx(line, False, True)
         return
 
     canvas.scene.removeItem(line)

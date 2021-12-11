@@ -39,7 +39,7 @@ from . import (
     PORT_TYPE_PARAMETER,
 )
 
-from .utils import CanvasGetPortGroupPosition
+
 from .canvasportglow import CanvasPortGlow
 
 # ------------------------------------------------------------------------------------------------------------

@@ -35,7 +35,7 @@ from .canvasfadeanimation import CanvasFadeAnimation
 
 # ------------------------------------------------------------------------------------------------------------
 
-def CanvasGetNewGroupPositions()->tuple:
+def get_new_group_positions()->tuple:
     def get_middle_empty_positions(scene_rect)->tuple:
         if scene_rect.isNull():
             return ((0, 200))
@@ -118,9 +118,9 @@ def CanvasGetNewGroupPositions()->tuple:
             (400, int(y)),
             (0, int(y)))
 
-def CanvasGetNewGroupPos(horizontal):
+def get_new_group_pos(horizontal):
     if canvas.debug:
-        print("PatchCanvas::CanvasGetNewGroupPos(%s)" % bool2str(horizontal))
+        print("PatchCanvas::get_new_group_pos(%s)" % bool2str(horizontal))
 
     new_pos = QPointF(canvas.initial_pos)
     items = canvas.scene.items()
@@ -143,9 +143,9 @@ def CanvasGetNewGroupPos(horizontal):
 
     return new_pos
 
-def CanvasGetFullPortName(group_id, port_id):
+def get_full_port_name(group_id, port_id):
     if canvas.debug:
-        print("PatchCanvas::CanvasGetFullPortName(%i, %i)" % (group_id, port_id))
+        print("PatchCanvas::get_full_port_name(%i, %i)" % (group_id, port_id))
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
@@ -155,12 +155,12 @@ def CanvasGetFullPortName(group_id, port_id):
                     return group.group_name + ":" + port.port_name
             break
 
-    qCritical("PatchCanvas::CanvasGetFullPortName(%i, %i) - unable to find port" % (group_id, port_id))
+    qCritical("PatchCanvas::get_full_port_name(%i, %i) - unable to find port" % (group_id, port_id))
     return ""
 
-def CanvasGetPortConnectionList(group_id, port_id):
+def get_port_connection_list(group_id, port_id):
     if canvas.debug:
-        print("PatchCanvas::CanvasGetPortConnectionList(%i, %i)"
+        print("PatchCanvas::get_port_connection_list(%i, %i)"
               % (group_id, port_id))
 
     conn_list = []
@@ -179,8 +179,8 @@ def CanvasGetPortConnectionList(group_id, port_id):
 
     return conn_list
 
-def CanvasGetPortGroupPosition(group_id: int, port_id: int,
-                               portgrp_id: int)->tuple:
+def get_portgroup_position(group_id: int, port_id: int,
+                           portgrp_id: int)->tuple:
     if portgrp_id <= 0:
         return (0, 1)
 
@@ -192,7 +192,7 @@ def CanvasGetPortGroupPosition(group_id: int, port_id: int,
                     return (i, len(portgrp.port_id_list))
     return (0, 1)
 
-def CanvasGetPortGroupName(group_id: int, ports_ids_list: list)->str:
+def get_portgroup_name(group_id: int, ports_ids_list: list)->str:
     # accept portgrp_id instead of ports_ids_list as second argument
     if isinstance(ports_ids_list, int):
         for portgrp in canvas.portgrp_list:
@@ -241,25 +241,25 @@ def CanvasGetPortGroupName(group_id: int, ports_ids_list: list)->str:
 
     return portgrp_name
 
-def CanvasGetPortPrintName(group_id, port_id, portgrp_id):
+def get_port_print_name(group_id, port_id, portgrp_id):
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
-            portgrp_name = CanvasGetPortGroupName(
+            portgrp_name = get_portgroup_name(
                 group_id, portgrp.port_id_list)
 
             for port in canvas.port_list:
                 if port.group_id == group_id and port.port_id == port_id:
                     return port.port_name.replace(portgrp_name, '', 1)
 
-def CanvasGetPortGroupPortList(group_id: int, portgrp_id: int)->list:
+def get_portgroup_port_list(group_id: int, portgrp_id: int)->list:
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
             return portgrp.port_id_list
     return []
 
-def CanvasGetPortGroupFullName(group_id, portgrp_id):
+def get_portgroup_full_name(group_id, portgrp_id):
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
@@ -273,17 +273,17 @@ def CanvasGetPortGroupFullName(group_id, portgrp_id):
 
             endofname = ''
             for port_id in portgrp.port_id_list:
-                endofname += "%s/" % CanvasGetPortPrintName(group_id, port_id,
-                                                     portgrp.portgrp_id)
-            portgrp_name = CanvasGetPortGroupName(group_id,
-                                                     portgrp.port_id_list)
+                endofname += "%s/" % get_port_print_name(
+                    group_id, port_id, portgrp.portgrp_id)
+            portgrp_name = get_portgroup_name(
+                group_id, portgrp.port_id_list)
 
             return "%s:%s %s" % (group_name, portgrp_name, endofname[:-1])
 
     return ""
 
-def CanvasConnectionMatches(connection, group_id_1: int, port_ids_list_1: list,
-                            group_id_2: int, port_ids_list_2: list)->bool:
+def connection_matches(connection, group_id_1: int, port_ids_list_1: list,
+                       group_id_2: int, port_ids_list_2: list)->bool:
     if (connection.group_in_id == group_id_1
         and connection.port_in_id in port_ids_list_1
         and connection.group_out_id == group_id_2
@@ -297,7 +297,7 @@ def CanvasConnectionMatches(connection, group_id_1: int, port_ids_list_1: list,
     else:
         return False
 
-def CanvasConnectionConcerns(connection, group_id: int, port_ids_list: list)->bool:
+def connection_concerns(connection, group_id: int, port_ids_list: list)->bool:
     if (connection.group_in_id == group_id
         and connection.port_in_id in port_ids_list):
             return True
@@ -307,7 +307,7 @@ def CanvasConnectionConcerns(connection, group_id: int, port_ids_list: list)->bo
     else:
         return False
 
-def CanvasGetGroupIcon(group_id: int, port_mode: int):
+def get_group_icon(group_id: int, port_mode: int):
     # port_mode is here reversed
     group_port_mode = PORT_MODE_INPUT
     if port_mode == PORT_MODE_INPUT:
@@ -318,12 +318,12 @@ def CanvasGetGroupIcon(group_id: int, port_mode: int):
             if not group.split:
                 group_port_mode = PORT_MODE_NULL
 
-            return CanvasGetIcon(
+            return get_icon(
                 group.icon_type, group.icon_name, group_port_mode)
 
     return QIcon()
 
-def CanvasGetIcon(icon_type: int, icon_name: str, port_mode: int):
+def get_icon(icon_type: int, icon_name: str, port_mode: int):
     if icon_type in (ICON_CLIENT, ICON_APPLICATION):
         icon = QIcon.fromTheme(icon_name)
 
@@ -357,7 +357,7 @@ def CanvasGetIcon(icon_type: int, icon_name: str, port_mode: int):
 
     return icon
 
-def CanvasConnectPorts(group_id_1: int, port_id_1: int,
+def connect_ports(group_id_1: int, port_id_1: int,
                        group_id_2: int, port_id_2:int):
     one_is_out = True
 
@@ -372,7 +372,7 @@ def CanvasConnectPorts(group_id_1: int, port_id_1: int,
             break
     else:
         sys.stderr.write(
-            "PatchCanvas::CanvasConnectPorts, port not found %i:%i and %i:%i\n"
+            "PatchCanvas::connect_ports, port not found %i:%i and %i:%i\n"
             % (group_id_1, port_id_1, group_id_2, port_id_2))
         return
 
@@ -385,7 +385,7 @@ def CanvasConnectPorts(group_id_1: int, port_id_1: int,
     canvas.callback(ACTION_PORTS_CONNECT, 0, 0, string_to_send)
 
 
-def CanvasPortGroupConnectionState(group_id_1: int, port_id_list_1: list,
+def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
                                    group_id_2: int, port_id_list_2: list)->int:
     # returns
     # 0 if no connection
@@ -453,9 +453,9 @@ def CanvasPortGroupConnectionState(group_id_1: int, port_id_list_1: list,
         return 0
 
 
-def CanvasConnectPortGroups(group_id_1: int, portgrp_id_1: int,
-                            group_id_2: int, portgrp_id_2: int,
-                            disconnect=False):
+def connect_portgroups(group_id_1: int, portgrp_id_1: int,
+                       group_id_2: int, portgrp_id_2: int,
+                       disconnect=False):
     group_out_id = 0
     group_in_id = 0
     out_port_id_list = []
@@ -482,7 +482,7 @@ def CanvasConnectPortGroups(group_id_1: int, portgrp_id_1: int,
 
     if not (out_port_id_list and in_port_id_list):
         sys.stderr.write(
-            "PatchCanvas::CanvasConnectPortGroups, empty port id list\n")
+            "PatchCanvas::connect_portgroups, empty port id list\n")
         return
 
     connected_indexes = []
@@ -522,16 +522,16 @@ def CanvasConnectPortGroups(group_id_1: int, portgrp_id_1: int,
                         group_in_id, in_port_id_list[in_index]))
 
 
-def CanvasCallback(action, value1, value2, value_str):
+def canvas_callback(action, value1, value2, value_str):
     if canvas.debug:
-        sys.stderr.write("PatchCanvas::CanvasCallback(%i, %i, %i, %s)\n"
+        sys.stderr.write("PatchCanvas::canvas_callback(%i, %i, %i, %s)\n"
                          % (action, value1, value2, value_str.encode()))
 
     canvas.callback(action, value1, value2, value_str)
 
-def CanvasItemFX(item, show, destroy):
+def item_fx(item, show, destroy):
     if canvas.debug:
-        print("PatchCanvas::CanvasItemFX(%s, %s, %s)" % (item, bool2str(show), bool2str(destroy)))
+        print("PatchCanvas::item_fx(%s, %s, %s)" % (item, bool2str(show), bool2str(destroy)))
 
     # Check if the item already has an animation
     for animation in canvas.animation_list:
@@ -556,9 +556,9 @@ def CanvasItemFX(item, show, destroy):
 
     animation.start()
 
-def CanvasRemoveItemFX(item):
+def remove_item_fx(item):
     if canvas.debug:
-        print("PatchCanvas::CanvasRemoveItemFX(%s)" % item)
+        print("PatchCanvas::remove_item_fx(%s)" % item)
 
     if item.type() == CanvasBoxType:
         item.remove_icon_from_scene()

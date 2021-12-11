@@ -1607,7 +1607,7 @@ class PatchbayManager:
         gpos.port_types_view = self.port_types_view
         gpos.group_name = group_name
         gpos.null_xy, gpos.in_xy, gpos.out_xy =  \
-            patchcanvas.CanvasGetNewGroupPositions()
+            patchcanvas.utils.get_new_group_positions()
         self.group_positions.append(gpos)
         self.send_to_daemon(
             '/ray/server/patchbay/save_group_position', *gpos.spread())

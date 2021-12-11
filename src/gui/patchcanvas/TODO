@@ -1,1 +1,3 @@
 remove canvasline canvaslinemov glows
+ATTENTION pas d'appels externes autres que dans patchcanvas.py
+Revoir/supprimer EYECANDY
