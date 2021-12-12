@@ -198,8 +198,8 @@ class CanvasSvgIcon(QGraphicsSvgItem):
 
         else:
             self._size = QRectF(0, 0, 0, 0)
-            qCritical("PatchCanvas::CanvasIcon.set_icon(%s, %s) - unsupported icon requested" % (
-                      icon2str(icon), name.encode()))
+            qCritical("PatchCanvas::CanvasIcon.set_icon(%s, %s) - unsupported icon requested"
+                      % (icon2str(icon), name.encode()))
             return
 
         self.m_renderer = QSvgRenderer(icon_path, canvas.scene)

@@ -53,7 +53,6 @@ from . import (
     ACTION_PORTS_DISCONNECT,
     ACTION_INLINE_DISPLAY,
     ACTION_CLIENT_SHOW_GUI,
-    EYECANDY_FULL,
     PORT_MODE_NULL,
     PORT_MODE_INPUT,
     PORT_MODE_OUTPUT,
@@ -411,8 +410,6 @@ class CanvasBox(QGraphicsItem):
                             port_name, is_alternate):
         if len(self._port_list_ids) == 0:
             if options.auto_hide_groups:
-                if options.eyecandy == EYECANDY_FULL:
-                    utils.item_fx(self, True, False)
                 self.setVisible(True)
 
         new_widget = CanvasPort(self._group_id, port_id, port_name, port_mode,
@@ -438,10 +435,7 @@ class CanvasBox(QGraphicsItem):
 
         elif self.isVisible():
             if options.auto_hide_groups:
-                if options.eyecandy == EYECANDY_FULL:
-                    utils.item_fx(self, False, False)
-                else:
-                    self.setVisible(False)
+                self.setVisible(False)
 
     def add_portgroup_from_group(self, portgrp_id, port_mode,
                                  port_type, port_id_list):
@@ -710,12 +704,12 @@ class CanvasBox(QGraphicsItem):
 
                         if self._wrapping:
                             port.widget.setY(last_in_pos
-                                            - (last_in_pos - wrapped_port_pos)
-                                                * self._wrapping_ratio)
+                                             - ((last_in_pos - wrapped_port_pos)
+                                                * self._wrapping_ratio))
                         elif self._unwrapping:
                             port.widget.setY(wrapped_port_pos
-                                            + (last_in_pos - wrapped_port_pos)
-                                                * self._wrapping_ratio)
+                                             + ((last_in_pos - wrapped_port_pos)
+                                                * self._wrapping_ratio))
                         elif self._wrapped:
                             port.widget.setY(wrapped_port_pos)
                         else:
@@ -748,12 +742,12 @@ class CanvasBox(QGraphicsItem):
 
                         if self._wrapping:
                             port.widget.setY(last_out_pos
-                                            - (last_out_pos - wrapped_port_pos)
-                                              * self._wrapping_ratio)
+                                             - ((last_out_pos - wrapped_port_pos)
+                                                * self._wrapping_ratio))
                         elif self._unwrapping:
                             port.widget.setY(wrapped_port_pos
-                                            + (last_out_pos - wrapped_port_pos)
-                                                * self._wrapping_ratio)
+                                             + ((last_out_pos - wrapped_port_pos)
+                                                * self._wrapping_ratio))
                         elif self._wrapped:
                             port.widget.setY(wrapped_port_pos)
                         else:
@@ -867,7 +861,7 @@ class CanvasBox(QGraphicsItem):
             #more_width_for_gui = 2
         
         self._width = max(self._width,
-                           all_title_templates[lines_choice]['header_width'])
+                          all_title_templates[lines_choice]['header_width'])
         max_title_size = all_title_templates[lines_choice]['title_width']
 
         if more_height:
@@ -1880,8 +1874,10 @@ class CanvasBox(QGraphicsItem):
         inheight = self._height - canvas.theme.box_header_height - canvas.theme.box_header_spacing - canvas.theme.port_spacing - 3
         scaling  = canvas.scene.get_scale_factor() * canvas.scene.get_device_pixel_ratio_f()
 
-        if self._plugin_id >= 0 and self._plugin_id <= MAX_PLUGIN_ID_ALLOWED and (
-           self._plugin_inline == self.INLINE_DISPLAY_ENABLED or self._inline_scaling != scaling):
+        if (self._plugin_id >= 0
+                and self._plugin_id <= MAX_PLUGIN_ID_ALLOWED
+                and (self._plugin_inline == self.INLINE_DISPLAY_ENABLED
+                     or self._inline_scaling != scaling)):
             size = "%i:%i" % (int(inwidth*scaling), int(inheight*scaling))
             data = canvas.callback(ACTION_INLINE_DISPLAY, self._plugin_id, 0, size)
             if data is None:

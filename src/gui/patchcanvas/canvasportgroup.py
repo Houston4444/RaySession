@@ -270,9 +270,9 @@ class CanvasPortGroup(QGraphicsItem):
                     hover_port_id = hover_port_id_list[j]
 
                     for connection in canvas.connection_list:
-                        if utils.connection_matches(connection,
-                                        self._group_id, [port_id],
-                                        hover_group_id, [hover_port_id]):
+                        if utils.connection_matches(
+                                connection, self._group_id, [port_id],
+                                hover_group_id, [hover_port_id]):
                             if (i % len(hover_port_id_list)
                                     == j % len(self._port_id_list)):
                                 con_list.append(connection)
@@ -316,12 +316,14 @@ class CanvasPortGroup(QGraphicsItem):
 
         while len(self._line_mov_list) < self.get_port_list_len():
             if options.use_bezier_lines:
-                line_mov = CanvasBezierLineMov(self._port_mode, self._port_type,
-                                               len(self._line_mov_list),
-                                               self.get_port_list_len(), self)
+                line_mov = CanvasBezierLineMov(
+                    self._port_mode, self._port_type, len(self._line_mov_list),
+                    self.get_port_list_len(), self)
             else:
-                line_mov = CanvasLineMov(self._port_mode, self._port_type,
-                            len(self._line_mov_list), self.get_port_list_len(), self)
+                line_mov = CanvasLineMov(
+                    self._port_mode, self._port_type, len(self._line_mov_list),
+                    self.get_port_list_len(), self)
+
             self._line_mov_list.append(line_mov)
 
         self._line_mov_list = self._line_mov_list[:self.get_port_list_len()]
@@ -377,8 +379,8 @@ class CanvasPortGroup(QGraphicsItem):
             self._cursor_moving = True
 
             for connection in canvas.connection_list:
-                if utils.connection_concerns(connection,
-                                self._group_id, self._port_id_list):
+                if utils.connection_concerns(
+                        connection, self._group_id, self._port_id_list):
                     connection.widget.locked = True
 
         if not self._line_mov_list:
@@ -394,11 +396,13 @@ class CanvasPortGroup(QGraphicsItem):
 
             for i in range(len(self._port_id_list)):
                 if options.use_bezier_lines:
-                    line_mov  = CanvasBezierLineMov(self._port_mode,
-                        self._port_type, i, len(self._port_id_list), self)
+                    line_mov = CanvasBezierLineMov(
+                        self._port_mode, self._port_type, i,
+                        len(self._port_id_list), self)
                 else:
-                    line_mov  = CanvasLineMov(self._port_mode,
-                        self._port_type, i, len(self._port_id_list), self)
+                    line_mov = CanvasLineMov(
+                        self._port_mode, self._port_type, i,
+                        len(self._port_id_list), self)
 
                 self._line_mov_list.append(line_mov)
 
@@ -408,14 +412,14 @@ class CanvasPortGroup(QGraphicsItem):
 
         item = None
         items = canvas.scene.items(event.scenePos(), Qt.ContainsItemShape,
-                                    Qt.AscendingOrder)
+                                   Qt.AscendingOrder)
         for i in range(len(items)):
             if items[i].type() in (CanvasPortType, CanvasPortGroupType):
                 if items[i] != self:
                     if not item:
                         item = items[i]
                     elif (items[i].parentItem().zValue()
-                            > item.parentItem().zValue()):
+                          > item.parentItem().zValue()):
                         item = items[i]
 
         if self._hover_item and self._hover_item != item:
@@ -442,15 +446,16 @@ class CanvasPortGroup(QGraphicsItem):
             if not item_valid:
                 item = None
 
-        if item is not None and not self.is_connectable_to(
-            item, accept_same_port_mode=True):
+        if (item is not None
+                and not self.is_connectable_to(
+                    item, accept_same_port_mode=True)):
             # prevent connection from an out CV port to a non CV port input
             # because it is very dangerous for monitoring
             pass
 
         elif (item is not None
-                and self._hover_item != item
-                and item.get_port_type() == self._port_type):
+              and self._hover_item != item
+              and item.get_port_type() == self._port_type):
             item.setSelected(True)
 
             if item == self._hover_item:
@@ -545,7 +550,7 @@ class CanvasPortGroup(QGraphicsItem):
                                         self._hover_item.get_group_id(),
                                         [porthover_id]):
                                     if (self._port_id_list.index(portself_id)
-                                                % len(self._hover_item.get_port_ids_list())
+                                        % len(self._hover_item.get_port_ids_list())
                                             == (self._hover_item.get_port_ids_list().index(porthover_id)
                                                 % len(self._port_id_list))):
                                         self._dotcon_list.append(connection)
@@ -637,8 +642,8 @@ class CanvasPortGroup(QGraphicsItem):
     def itemChange(self, change, value: bool):
         if change == QGraphicsItem.ItemSelectedHasChanged:
             for connection in canvas.connection_list:
-                if utils.connection_concerns(connection,
-                                self._group_id, self._port_id_list):
+                if utils.connection_concerns(
+                        connection, self._group_id, self._port_id_list):
                     connection.widget.set_line_selected(value)
 
         return QGraphicsItem.itemChange(self, change, value)
@@ -682,7 +687,7 @@ class CanvasPortGroup(QGraphicsItem):
             text_pos = QPointF(
                 self._ports_width + 3,
                 canvas.theme.port_text_ypos
-                    + (canvas.theme.port_height * (len(self._port_id_list) -1)/2))
+                + (canvas.theme.port_height * (len(self._port_id_list) -1)/2))
 
             if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
                 poly_locx[0] = self._ports_width - lineHinting

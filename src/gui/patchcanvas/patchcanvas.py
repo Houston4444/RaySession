@@ -89,33 +89,6 @@ class CanvasObject(QObject):
         self.move_boxes_finished.connect(self.join_after_move)
 
     @pyqtSlot()
-    def animation_finished_show(self):
-        animation = self.sender()
-        if animation:
-            animation.force_stop()
-            canvas.animation_list.remove(animation)
-
-    @pyqtSlot()
-    def animation_finished_hide(self):
-        animation = self.sender()
-        if animation:
-            animation.force_stop()
-            canvas.animation_list.remove(animation)
-            item = animation.item()
-            if item:
-                item.hide()
-
-    @pyqtSlot()
-    def animation_finished_destroy(self):
-        animation = self.sender()
-        if animation:
-            animation.force_stop()
-            canvas.animation_list.remove(animation)
-            item = animation.item()
-            if item:
-                utils.remove_item_fx(item)
-
-    @pyqtSlot()
     def port_context_menu_disconnect(self):
         try:
             con_ids_list = list(self.sender().data())
@@ -338,8 +311,6 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATIO
         canvas.last_z_value += 1
         group_sbox.setZValue(canvas.last_z_value)
 
-        if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
-            utils.item_fx(group_sbox, True, False)
     else:
         group_box.set_split(False)
 
@@ -355,10 +326,6 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATIO
     group_box.setZValue(canvas.last_z_value)
 
     canvas.group_list.append(group_dict)
-
-    if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
-        utils.item_fx(group_box, True, False)
-        return
 
     if fast:
         return
@@ -392,24 +359,18 @@ def remove_group(group_id, save_positions=True, fast=False):
                     canvas.settings.setValue("CanvasPositions/%s_INPUT" % group_name, s_item.pos())
                     canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, SPLIT_YES)
 
-                if options.eyecandy == EYECANDY_FULL:
-                    utils.item_fx(s_item, False, True)
-                else:
-                    s_item.remove_icon_from_scene()
-                    canvas.scene.removeItem(s_item)
-                    del s_item
+                s_item.remove_icon_from_scene()
+                canvas.scene.removeItem(s_item)
+                del s_item
 
             else:
                 if features.handle_group_pos and save_positions:
                     canvas.settings.setValue("CanvasPositions/%s" % group_name, item.pos())
                     canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, SPLIT_NO)
 
-            if options.eyecandy == EYECANDY_FULL:
-                utils.item_fx(item, False, True)
-            else:
-                item.remove_icon_from_scene()
-                canvas.scene.removeItem(item)
-                del item
+            item.remove_icon_from_scene()
+            canvas.scene.removeItem(item)
+            del item
 
             canvas.group_list.remove(group)
             canvas.group_plugin_map.pop(group.plugin_id, None)
@@ -966,10 +927,6 @@ def add_port(group_id, port_id, port_name, port_mode, port_type,
 
     box_widget.update_positions()
 
-    if options.eyecandy == EYECANDY_FULL:
-        utils.item_fx(port_widget, True, False)
-        return
-
     QTimer.singleShot(0, canvas.scene.update)
 
 def remove_port(group_id, port_id, fast=False):
@@ -1200,11 +1157,6 @@ def connect_ports(connection_id, group_out_id, port_out_id,
     if fast:
         return
 
-    if options.eyecandy == EYECANDY_FULL:
-        item = connection_dict.widget
-        utils.item_fx(item, True, False)
-        return
-
     QTimer.singleShot(0, canvas.scene.update)
 
 def disconnect_ports(connection_id, fast=False):
@@ -1253,10 +1205,6 @@ def disconnect_ports(connection_id, fast=False):
 
     item1.parentItem().remove_line_from_group(connection_id)
     item2.parentItem().remove_line_from_group(connection_id)
-
-    if options.eyecandy == EYECANDY_FULL and not fast:
-        utils.item_fx(line, False, True)
-        return
 
     canvas.scene.removeItem(line)
     del line

@@ -70,9 +70,9 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                                    PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER):
             sys.stderr.write(
                 "PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type\n"
-                 % (port_mode2str(self._port_mode),
-                    port_type2str(self._port_type),
-                    self.parentItem()))
+                % (port_mode2str(self._port_mode),
+                   port_type2str(self._port_type),
+                   self.parentItem()))
 
     def set_destination_portgrp_pos(self, port_pos, portgrp_len):
         self._port_posinportgrp_to = port_pos
@@ -127,7 +127,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
             if self._portgrp_len_to == 1:
                 new_y = 0
             elif (self._port_posinportgrp_to == self._port_posinportgrp
-                    and self._portgrp_len == self._portgrp_len_to):
+                  and self._portgrp_len == self._portgrp_len_to):
                 new_y = old_y - ( (last_old_y - first_old_y) / 2 ) \
                         - (canvas.theme.port_height * phi)
             else:

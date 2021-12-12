@@ -30,7 +30,6 @@ from . import (
     options,
     CanvasBezierLineType,
     ACTION_PORTS_DISCONNECT,
-    EYECANDY_FULL,
     PORT_MODE_OUTPUT,
     PORT_TYPE_MIDI_JACK,
 )
@@ -63,14 +62,6 @@ class CanvasBezierLine(QGraphicsPathItem):
     def set_line_selected(self, yesno: bool):
         if self.locked:
             return
-
-        if yesno != self._line_selected and options.eyecandy == EYECANDY_FULL:
-            if yesno:
-                self.setGraphicsEffect(
-                    CanvasPortGlow(self.item1.get_port_type(),
-                                   self.toGraphicsObject()))
-            else:
-                self.setGraphicsEffect(None)
 
         self._line_selected = yesno
         self.update_line_gradient()

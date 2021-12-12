@@ -31,7 +31,6 @@ from . import (bool2str, canvas, CanvasBoxType,
                ICON_APPLICATION, ICON_CLIENT, ICON_HARDWARE, ICON_INTERNAL,
                PORT_MODE_NULL, PORT_MODE_INPUT, PORT_MODE_OUTPUT,
                ACTION_PORTS_CONNECT, ACTION_PORTS_DISCONNECT)
-from .canvasfadeanimation import CanvasFadeAnimation
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -528,45 +527,6 @@ def canvas_callback(action, value1, value2, value_str):
                          % (action, value1, value2, value_str.encode()))
 
     canvas.callback(action, value1, value2, value_str)
-
-def item_fx(item, show, destroy):
-    if canvas.debug:
-        print("PatchCanvas::item_fx(%s, %s, %s)" % (item, bool2str(show), bool2str(destroy)))
-
-    # Check if the item already has an animation
-    for animation in canvas.animation_list:
-        if animation.item() == item:
-            animation.force_stop()
-            canvas.animation_list.remove(animation)
-            del animation
-            break
-
-    animation = CanvasFadeAnimation(item, show)
-    animation.set_duration(750 if show else 500)
-
-    if show:
-        animation.finished.connect(canvas.qobject.animation_finished_show)
-    else:
-        if destroy:
-            animation.finished.connect(canvas.qobject.animation_finished_destroy)
-        else:
-            animation.finished.connect(canvas.qobject.Animation_finished_hide)
-
-    canvas.animation_list.append(animation)
-
-    animation.start()
-
-def remove_item_fx(item):
-    if canvas.debug:
-        print("PatchCanvas::remove_item_fx(%s)" % item)
-
-    if item.type() == CanvasBoxType:
-        item.remove_icon_from_scene()
-
-    canvas.scene.removeItem(item)
-    del item
-
-    QTimer.singleShot(0, canvas.scene.update)
 
 def is_dark_theme(widget)->bool:
     return bool(
