@@ -116,8 +116,6 @@ class PatchScene(QGraphicsScene):
         self.selectionChanged.connect(self._slot_selection_changed)
         
         self._prevent_overlap = True
-        
-        self.loading_items = False
 
     def clear(self):
         # reimplement Qt function and fix missing rubberband after clear

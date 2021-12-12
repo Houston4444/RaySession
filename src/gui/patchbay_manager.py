@@ -85,16 +85,13 @@ class Connection:
         patchcanvas.connect_ports(
             self.connection_id,
             self.port_out.group_id, self.port_out.port_id,
-            self.port_in.group_id, self.port_in.port_id,
-            fast=PatchbayManager.optimized_operation)
+            self.port_in.group_id, self.port_in.port_id)
 
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
 
-        patchcanvas.disconnect_ports(
-            self.connection_id,
-            fast=PatchbayManager.optimized_operation)
+        patchcanvas.disconnect_ports(self.connection_id)
         self.in_canvas = False
 
     def semi_hide(self, yesno: bool):
@@ -203,15 +200,13 @@ class Port:
 
         patchcanvas.add_port(
             self.group_id, self.port_id, display_name,
-            port_mode, self.type, is_alternate,
-            fast=PatchbayManager.optimized_operation)
+            port_mode, self.type, is_alternate)
 
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
 
-        patchcanvas.remove_port(self.group_id, self.port_id,
-                                fast=PatchbayManager.optimized_operation)
+        patchcanvas.remove_port(self.group_id, self.port_id)
         self.in_canvas = False
 
     def rename_in_canvas(self):
@@ -226,8 +221,7 @@ class Port:
             display_name = self.short_name()
 
         patchcanvas.rename_port(
-            self.group_id, self.port_id, display_name,
-            fast=PatchbayManager.optimized_operation)
+            self.group_id, self.port_id, display_name)
 
     def __lt__(self, other):
         if self.type != other.type:
@@ -312,15 +306,13 @@ class Portgroup:
 
         patchcanvas.add_portgroup(self.group_id, self.portgroup_id,
                                   self.port_mode, port_type,
-                                  port_id_list,
-                                  fast=PatchbayManager.optimized_operation)
+                                  port_id_list)
 
     def remove_from_canvas(self):
         if not self.in_canvas:
             return
 
-        patchcanvas.remove_portgroup(self.group_id, self.portgroup_id,
-                                     fast=PatchbayManager.optimized_operation)
+        patchcanvas.remove_portgroup(self.group_id, self.portgroup_id)
         self.in_canvas = False
 
 
@@ -404,7 +396,7 @@ class Group:
         
         patchcanvas.add_group(
             self.group_id, display_name, split,
-            icon_type, icon_name, fast=PatchbayManager.optimized_operation,
+            icon_type, icon_name,
             null_xy=gpos.null_xy, in_xy=gpos.in_xy, out_xy=gpos.out_xy)
 
         if do_split:
@@ -431,8 +423,7 @@ class Group:
         if not self.in_canvas:
             return
 
-        patchcanvas.remove_group(self.group_id,
-                                 fast=PatchbayManager.optimized_operation)
+        patchcanvas.remove_group(self.group_id)
         self.in_canvas = False
 
     def redraw_in_canvas(self):
@@ -1310,10 +1301,9 @@ class PatchbayManager:
     @classmethod
     def optimize_operation(cls, yesno: bool):
         cls.optimized_operation = yesno
-        if (patchcanvas.canvas is not None
-                and patchcanvas.canvas.scene is not None):
+        if patchcanvas.canvas is not None:
             patchcanvas.canvas.scene.prevent_box_move = yesno
-            patchcanvas.canvas.scene.loading_items = yesno
+            patchcanvas.set_loading_items(yesno)
 
     @classmethod
     def new_portgroup(cls, group_id: int, port_mode: int, ports: tuple):

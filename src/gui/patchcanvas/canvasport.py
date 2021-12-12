@@ -646,7 +646,7 @@ class CanvasPort(QGraphicsItem):
             return QRectF(0, 0, self._port_width + 12, self._port_height)
 
     def paint(self, painter, option, widget):
-        if canvas.scene.loading_items:
+        if canvas.loading_items:
             return
         
         painter.save()

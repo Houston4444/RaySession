@@ -639,9 +639,9 @@ class CanvasPortGroup(QGraphicsItem):
                           canvas.theme.port_height * len(self._port_id_list))
 
     def paint(self, painter, option, widget):
-        if canvas.scene.loading_items:
+        if canvas.loading_items:
             return
-        
+
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, True)
 

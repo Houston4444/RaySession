@@ -566,7 +566,7 @@ class CanvasBox(QGraphicsItem):
         return QFontMetrics(self._font_name).width(string)
 
     def update_positions(self, even_animated=False):
-        if canvas.scene.loading_items:
+        if canvas.loading_items:
             return
         
         if (not even_animated
@@ -1459,9 +1459,9 @@ class CanvasBox(QGraphicsItem):
         return QRectF(0, 0, self._width, self._height)
 
     def paint(self, painter, option, widget):
-        if canvas.scene.loading_items:
+        if canvas.loading_items:
             return
-        
+
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, True)
 

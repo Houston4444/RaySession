@@ -178,7 +178,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         self.setPen(QPen(port_gradient, 1.750001, Qt.SolidLine, Qt.FlatCap))
 
     def paint(self, painter, option, widget):
-        if canvas.scene.loading_items:
+        if canvas.loading_items:
             return
         
         painter.save()

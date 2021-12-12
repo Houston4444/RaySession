@@ -1,4 +1,3 @@
-remove canvasline canvaslinemov: let it maybe for future
 ATTENTION pas d'appels externes autres que dans patchcanvas.py
 revoir group positions
 revoir fast en une variable de canvas

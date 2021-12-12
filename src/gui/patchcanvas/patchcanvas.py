@@ -242,13 +242,15 @@ def set_canvas_size(x, y, width, height):
 def set_loading_items(yesno: bool):
     '''while canvas is loading items (groups or ports, connections...)
     then, items will be added, but no redraw.
-    This is an optimization'''
+    This is an optimization that prevents a lot of redraws
+    Think to set loading items at False and use redraw_all_groups
+    or redraw_group after when long operation is finished'''
     canvas.loading_items = yesno
 
-def add_group(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION,
-             icon_name='', fast=False,
-             null_xy=(0, 0), in_xy=(0, 0), out_xy=(0, 0),
-             split_animated=False):
+def add_group(group_id, group_name, split=SPLIT_UNDEF,
+              icon_type=ICON_APPLICATION, icon_name='',
+              null_xy=(0, 0), in_xy=(0, 0), out_xy=(0, 0),
+              split_animated=False):
     if canvas.debug:
         print("PatchCanvas::add_group(%i, %s, %s, %s)" % (
               group_id, group_name.encode(), split2str(split), icon2str(icon_type)))
@@ -329,7 +331,7 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATIO
 
     canvas.group_list.append(group_dict)
 
-    if fast:
+    if canvas.loading_items:
         return
 
     if split_animated:
@@ -344,7 +346,7 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATIO
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def remove_group(group_id, save_positions=True, fast=False):
+def remove_group(group_id, save_positions=True):
     if canvas.debug:
         print("PatchCanvas::remove_group(%i)" % group_id)
 
@@ -377,7 +379,7 @@ def remove_group(group_id, save_positions=True, fast=False):
             canvas.group_list.remove(group)
             canvas.group_plugin_map.pop(group.plugin_id, None)
 
-            if fast:
+            if canvas.loading_items:
                 return
 
             QTimer.singleShot(0, canvas.scene.update)
@@ -870,7 +872,7 @@ def set_group_as_plugin(group_id, plugin_id, has_ui, has_inline_display):
 # ------------------------------------------------------------------------------------------------------------
 
 def add_port(group_id, port_id, port_name, port_mode, port_type,
-             is_alternate=False, fast=False):
+             is_alternate=False):
     if canvas.debug:
         print("PatchCanvas::add_port(%i, %i, %s, %s, %s, %s)"
               % (group_id, port_id, port_name.encode(),
@@ -924,14 +926,14 @@ def add_port(group_id, port_id, port_name, port_mode, port_type,
 
     canvas.qobject.port_added.emit(port_dict.group_id, port_dict.port_id)
 
-    if fast:
+    if canvas.loading_items:
         return
 
     box_widget.update_positions()
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def remove_port(group_id, port_id, fast=False):
+def remove_port(group_id, port_id):
     if canvas.debug:
         print("PatchCanvas::remove_port(%i, %i)" % (group_id, port_id))
 
@@ -952,7 +954,7 @@ def remove_port(group_id, port_id, fast=False):
             canvas.port_list.remove(port)
 
             canvas.qobject.port_removed.emit(group_id, port_id)
-            if fast:
+            if canvas.loading_items:
                 return
 
             QTimer.singleShot(0, canvas.scene.update)
@@ -962,7 +964,7 @@ def remove_port(group_id, port_id, fast=False):
         "PatchCanvas::remove_port(%i, %i) - Unable to find port to remove"
         % (group_id, port_id))
 
-def rename_port(group_id, port_id, new_port_name, fast=False):
+def rename_port(group_id, port_id, new_port_name):
     if canvas.debug:
         print("PatchCanvas::rename_port(%i, %i, %s)" % (group_id, port_id, new_port_name))
 
@@ -973,7 +975,7 @@ def rename_port(group_id, port_id, new_port_name, fast=False):
                 
                 port.widget.set_port_name(new_port_name)
 
-            if fast:
+            if canvas.loading_items:
                 return
 
             port.widget.parentItem().update_positions()
@@ -985,7 +987,7 @@ def rename_port(group_id, port_id, new_port_name, fast=False):
               % (group_id, port_id, new_port_name.encode()))
 
 def add_portgroup(group_id, portgrp_id, port_mode, port_type,
-                  port_id_list, fast=False):
+                  port_id_list):
     if canvas.debug:
         print("PatchCanvas::add_portgroup(%i, %i)" % (group_id, portgrp_id))
 
@@ -1055,11 +1057,11 @@ def add_portgroup(group_id, portgrp_id, port_mode, port_type,
                     portgrp_dict.widget = box.add_portgroup_from_group(
                         portgrp_id, port_mode, port_type, port_id_list)
 
-                    if not fast:
+                    if not canvas.loading_items:
                         box.update_positions()
             break
 
-def remove_portgroup(group_id, portgrp_id, fast=False):
+def remove_portgroup(group_id, portgrp_id):
     if canvas.debug:
         print("PatchCanvas::remove_portgroup(%i, %i)" % (group_id, portgrp_id))
 
@@ -1092,7 +1094,7 @@ def remove_portgroup(group_id, portgrp_id, fast=False):
 
     canvas.portgrp_list.remove(portgrp)
 
-    if fast:
+    if canvas.loading_items:
         return
 
     if box_widget is not None:
@@ -1101,7 +1103,7 @@ def remove_portgroup(group_id, portgrp_id, fast=False):
     QTimer.singleShot(0, canvas.scene.update)
 
 def connect_ports(connection_id, group_out_id, port_out_id,
-                  group_in_id, port_in_id, fast=False):
+                  group_in_id, port_in_id):
     if canvas.debug:
         print("PatchCanvas::connect_ports(%i, %i, %i, %i, %i)"
               % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
@@ -1152,12 +1154,12 @@ def connect_ports(connection_id, group_out_id, port_out_id,
 
     canvas.qobject.connection_added.emit(connection_id)
 
-    if fast:
+    if canvas.loading_items:
         return
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def disconnect_ports(connection_id, fast=False):
+def disconnect_ports(connection_id):
     if canvas.debug:
         print("PatchCanvas::disconnect_ports(%i)" % connection_id)
 
@@ -1207,7 +1209,7 @@ def disconnect_ports(connection_id, fast=False):
     canvas.scene.removeItem(line)
     del line
 
-    if fast:
+    if canvas.loading_items:
         return
 
     QTimer.singleShot(0, canvas.scene.update)
