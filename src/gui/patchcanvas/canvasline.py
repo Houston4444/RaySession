@@ -38,8 +38,6 @@ from . import (
     PORT_TYPE_PARAMETER,
 )
 
-from .canvasportglow import CanvasPortGlow
-
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasLine(QGraphicsLineItem):

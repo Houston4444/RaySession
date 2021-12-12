@@ -34,9 +34,6 @@ from . import (
     PORT_TYPE_MIDI_JACK,
 )
 
-
-from .canvasportglow import CanvasPortGlow
-
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasBezierLine(QGraphicsPathItem):
