@@ -141,10 +141,11 @@ class CanvasBox(QGraphicsItem):
         self._width = 50
         self._width_in = 0
         self._width_out = 0
-        self._height = canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1
+        self._default_header_height = 36
+        self._header_height = self._default_header_height
+        self._height = self._header_height + 1
         self._ex_width = self._width
         self._ex_height = self._height
-        self._header_height = canvas.theme.box_header_height
         self._ex_scene_pos = self.scenePos()
 
         self._last_pos = QPointF()
@@ -192,21 +193,18 @@ class CanvasBox(QGraphicsItem):
         self._ensuring_visible = False
 
         # Icon
-        if canvas.theme.box_use_icon:
-            if icon_type in (ICON_HARDWARE, ICON_INTERNAL):
-                port_mode = PORT_MODE_NULL
-                if self._splitted:
-                    port_mode = self._splitted_mode
-                self.top_icon = CanvasSvgIcon(
-                    icon_type, icon_name, port_mode, self)
-            else:
-                self.top_icon = CanvasIconPixmap(icon_type, icon_name, self)
-                if self.top_icon.is_null():
-                    top_icon = self.top_icon
-                    self.top_icon = None
-                    del top_icon
+        if icon_type in (ICON_HARDWARE, ICON_INTERNAL):
+            port_mode = PORT_MODE_NULL
+            if self._splitted:
+                port_mode = self._splitted_mode
+            self.top_icon = CanvasSvgIcon(
+                icon_type, icon_name, port_mode, self)
         else:
-            self.top_icon = None
+            self.top_icon = CanvasIconPixmap(icon_type, icon_name, self)
+            if self.top_icon.is_null():
+                top_icon = self.top_icon
+                self.top_icon = None
+                del top_icon
 
         # Shadow
         self.shadow = None
@@ -598,8 +596,7 @@ class CanvasBox(QGraphicsItem):
         last_in_type = last_out_type = PORT_TYPE_NULL
         last_in_alter = last_out_alter = False
         
-        last_in_pos = last_out_pos = (canvas.theme.box_header_height
-                                      + canvas.theme.box_header_spacing)
+        last_in_pos = last_out_pos = self._default_header_height
         
         final_last_in_pos = final_last_out_pos = last_in_pos
 
@@ -944,9 +941,9 @@ class CanvasBox(QGraphicsItem):
         wrapped_height = wrapped_port_pos + canvas.theme.port_height
         if len(self._title_lines) >= 3:
             wrapped_height += 14
-            self._header_height = canvas.theme.box_header_height + 14
+            self._header_height = self._default_header_height + 14
         else:
-            self._header_height = canvas.theme.box_header_height
+            self._header_height = self._default_header_height
 
         if self._wrapping:
             self._height = normal_height \
@@ -1319,7 +1316,7 @@ class CanvasBox(QGraphicsItem):
             if self.sceneBoundingRect().contains(event.scenePos()):
                 if self._wrapped:
                     # unwrap the box if event is one of the triangles zones
-                    ypos = canvas.theme.box_header_height
+                    ypos = self._default_header_height
                     if len(self._title_lines) >= 3:
                         ypos += 14
 
@@ -1566,30 +1563,21 @@ class CanvasBox(QGraphicsItem):
 
         rect = QRectF(0, 0, self._width, self._height)
 
-        if canvas.theme.box_bg_type == Theme.THEME_BG_GRADIENT:
-            max_size = max(self._height, self._width)
-            box_gradient = QLinearGradient(0, 0, max_size, max_size)
-            color_main = canvas.theme.box_bg_1
-            color_alter = canvas.theme.box_bg_2
-            gradient_size = 50
+        max_size = max(self._height, self._width)
+        box_gradient = QLinearGradient(0, 0, max_size, max_size)
+        color_main = QColor(20, 20, 20)
+        color_alter = QColor(26, 24, 21)
+        gradient_size = 20
 
-            if True or self._is_hardware:
-                box_gradient = QLinearGradient(0, 0, max_size, max_size)
-                color_main = QColor(20, 20, 20)
-                color_alter = QColor(26, 24, 21)
-                gradient_size = 20
+        box_gradient.setColorAt(0, color_main)
+        tot = int(max_size / gradient_size)
+        for i in range(tot):
+            if i % 2 == 0:
+                box_gradient.setColorAt((i/tot) ** 0.7, color_main)
+            else:
+                box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
 
-            box_gradient.setColorAt(0, color_main)
-            tot = int(max_size / gradient_size)
-            for i in range(tot):
-                if i % 2 == 0:
-                    box_gradient.setColorAt((i/tot) ** 0.7, color_main)
-                else:
-                    box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
-
-            painter.setBrush(box_gradient)
-        else:
-            painter.setBrush(canvas.theme.box_bg_1)
+        painter.setBrush(box_gradient)
 
         rect.adjust(lineHinting, lineHinting, -lineHinting, -lineHinting)
         painter.drawRect(rect)
@@ -1659,19 +1647,6 @@ class CanvasBox(QGraphicsItem):
             mon_poly += QPointF(pen_width, self._height - pen_width)
 
             painter.drawPolygon(mon_poly)
-
-        # Draw pixmap header
-        rect.setHeight(canvas.theme.box_header_height)
-        if canvas.theme.box_header_pixmap:
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(canvas.theme.box_bg_2)
-
-            # outline
-            rect.adjust(lineHinting, lineHinting, -lineHinting, -lineHinting)
-            painter.drawRect(rect)
-
-            rect.adjust(1, 1, -1, 0)
-            painter.drawTiledPixmap(rect, canvas.theme.box_header_pixmap, rect.topLeft())
         
         # Draw text
         title_x_pos = 8
@@ -1680,7 +1655,7 @@ class CanvasBox(QGraphicsItem):
 
         for title_line in self._title_lines:
             title_line.x = title_x_pos
-            title_line.y = canvas.theme.box_text_ypos
+            title_line.y = 20
 
         if len(self._title_lines) >= 2:
             if self._title_lines[0].is_little:
@@ -1733,9 +1708,7 @@ class CanvasBox(QGraphicsItem):
                 painter.drawLine(int(right_xpos + 5), 16,
                                  int(self._width - 5), 16)
 
-        if self._is_hardware:
-            painter.setPen(canvas.theme.box_text_hw)
-        elif self.isSelected():
+        if self.isSelected():
             painter.setPen(canvas.theme.box_text_sel)
         else:
             painter.setPen(canvas.theme.box_text)
@@ -1775,11 +1748,8 @@ class CanvasBox(QGraphicsItem):
                     title_line.text)
 
         # draw (un)wrapper triangles
-        painter.setPen(canvas.theme.box_pen)
+        painter.setPen(canvas.theme.wrap_triangle_pen)
         painter.setBrush(QColor(255, 192, 0, 80))
-        if self._is_hardware:
-            painter.setPen(canvas.theme.box_pen_hw)
-            painter.setBrush(QColor(255, 192, 0, 60))
 
         if self._wrapped:
             for port_mode in PORT_MODE_INPUT, PORT_MODE_OUTPUT:
@@ -1787,7 +1757,7 @@ class CanvasBox(QGraphicsItem):
                     side = 6
                     x = 6
 
-                    ypos = canvas.theme.box_header_height
+                    ypos = self._default_header_height
                     if len(self._title_lines) >= 3:
                         ypos += 14
 
@@ -1870,7 +1840,7 @@ class CanvasBox(QGraphicsItem):
             return
 
         inwidth  = self._width - self._width_in - self._width_out - 16
-        inheight = self._height - canvas.theme.box_header_height - canvas.theme.box_header_spacing - canvas.theme.port_spacing - 3
+        inheight = self._height - self._default_header_height - canvas.theme.port_spacing - 3
         scaling  = canvas.scene.get_scale_factor() * canvas.scene.get_device_pixel_ratio_f()
 
         if (self._plugin_id >= 0
@@ -1899,7 +1869,7 @@ class CanvasBox(QGraphicsItem):
         sheight = self._inline_image.height() / scaling
 
         srcx = int(self._width_in + (self._width - self._width_in - self._width_out) / 2 - swidth / 2)
-        srcy = int(canvas.theme.box_header_height + canvas.theme.box_header_spacing + 1 + (inheight - sheight) / 2)
+        srcy = int(self._default_header_height + 1 + (inheight - sheight) / 2)
 
         painter.drawImage(QRectF(srcx, srcy, swidth, sheight), self._inline_image)
 

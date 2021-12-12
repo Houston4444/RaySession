@@ -666,51 +666,28 @@ class CanvasPortGroup(QGraphicsItem):
 
             text_pos = QPointF(
                 self._ports_width + 3,
-                canvas.theme.port_text_ypos
-                + (canvas.theme.port_height * (len(self._port_id_list) -1)/2))
+                12 + (canvas.theme.port_height * (len(self._port_id_list) -1)/2))
 
-            if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
-                poly_locx[0] = self._ports_width - lineHinting
-                poly_locx[1] = self._portgrp_width + 3 + lineHinting
-                poly_locx[2] = self._portgrp_width + 10 + lineHinting
-                poly_locx[3] = self._portgrp_width + 3 + lineHinting
-                poly_locx[4] = self._ports_width - lineHinting
-            elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
-                poly_locx[0] = self._ports_width - lineHinting
-                poly_locx[1] = self._portgrp_width + 5 + lineHinting
-                poly_locx[2] = self._portgrp_width + 5 + lineHinting
-                poly_locx[3] = self._portgrp_width + 5 + lineHinting
-                poly_locx[4] = self._ports_width - lineHinting
-            else:
-                qCritical("PatchCanvas::CanvasPortGroup.paint() - invalid theme port mode '%s'"
-                          % canvas.theme.port_mode)
-                return
+            poly_locx[0] = self._ports_width - lineHinting
+            poly_locx[1] = self._portgrp_width + 3 + lineHinting
+            poly_locx[2] = self._portgrp_width + 10 + lineHinting
+            poly_locx[3] = self._portgrp_width + 3 + lineHinting
+            poly_locx[4] = self._ports_width - lineHinting
 
         elif self._port_mode == PORT_MODE_OUTPUT:
-            text_pos = QPointF(9, canvas.theme.port_text_ypos \
-                       + (canvas.theme.port_height * (len(self._port_id_list) -1)/2))
+            text_pos = QPointF(
+                9, 12 + (canvas.theme.port_height * (len(self._port_id_list) -1)/2))
 
-            if canvas.theme.port_mode == Theme.THEME_PORT_POLYGON:
-                poly_locx[0] = self._portgrp_width + 12 \
-                               - self._ports_width - lineHinting
-                poly_locx[1] = 7 + lineHinting
-                poly_locx[2] = 0 + lineHinting
-                poly_locx[3] = 7 + lineHinting
-                poly_locx[4] = self._portgrp_width + 12 - self._ports_width - lineHinting
-            elif canvas.theme.port_mode == Theme.THEME_PORT_SQUARE:
-                poly_locx[0] = self._portgrp_width + 12 - self._ports_width - lineHinting
-                poly_locx[1] = 5 + lineHinting
-                poly_locx[2] = 5 + lineHinting
-                poly_locx[3] = 5 + lineHinting
-                poly_locx[4] = self._portgrp_width + 12 - self._ports_width - lineHinting
-            else:
-                qCritical(
-                    "PatchCanvas::CanvasPortGroup.paint() - invalid theme port mode '%s'"
-                    % canvas.theme.port_mode)
-                return
+            poly_locx[0] = self._portgrp_width + 12 \
+                            - self._ports_width - lineHinting
+            poly_locx[1] = 7 + lineHinting
+            poly_locx[2] = 0 + lineHinting
+            poly_locx[3] = 7 + lineHinting
+            poly_locx[4] = self._portgrp_width + 12 - self._ports_width - lineHinting
 
         else:
-            qCritical("PatchCanvas::CanvasPortGroup.paint() - invalid port mode '%s'" % port_mode2str(self._port_mode))
+            qCritical("PatchCanvas::CanvasPortGroup.paint() - invalid port mode '%s'"
+                      % port_mode2str(self._port_mode))
             return
 
         poly_pen = canvas.theme.portgrp_audio_jack_pen_sel  if self.isSelected() else canvas.theme.portgrp_audio_jack_pen
@@ -733,13 +710,7 @@ class CanvasPortGroup(QGraphicsItem):
         polygon += QPointF(poly_locx[3], canvas.theme.port_height * len(self._port_id_list) - lineHinting)
         polygon += QPointF(poly_locx[4], canvas.theme.port_height * len(self._port_id_list) - lineHinting)
 
-        if canvas.theme.port_bg_pixmap:
-            portRect = polygon.boundingRect()
-            portPos  = portRect.topLeft()
-            painter.drawTiledPixmap(portRect, canvas.theme.port_bg_pixmap, portPos)
-        else:
-            painter.setBrush(portgrp_gradient)
-
+        painter.setBrush(portgrp_gradient)
         painter.setPen(poly_pen)
         painter.drawPolygon(polygon)
 
