@@ -84,11 +84,6 @@ SPLIT_UNDEF = 0
 SPLIT_NO = 1
 SPLIT_YES = 2
 
-# Antialiasing Option
-ANTIALIASING_NONE = 0
-ANTIALIASING_SMALL = 1
-ANTIALIASING_FULL = 2
-
 # Eye-Candy Option
 EYECANDY_NONE = 0
 EYECANDY_SMALL = 1 # Use boxes shadows
@@ -121,8 +116,6 @@ class options_t(object):
         'theme_name',
         'auto_hide_groups',
         'auto_select_items',
-        'use_bezier_lines',
-        'antialiasing',
         'eyecandy',
         'inline_displays',
         'elastic',
@@ -166,6 +159,7 @@ class Canvas(object):
 
         self.is_line_mov = False
         self.semi_hide_opacity = 0.17
+        self.loading_items = False
 
     def callback(self, action, value1, value2, value_str):
         print("Canvas::callback({}, {}, {}, {})".format(
@@ -310,8 +304,6 @@ options = options_t()
 options.theme_name = get_default_theme_name()
 options.auto_hide_groups = False
 options.auto_select_items = False
-options.use_bezier_lines = True
-options.antialiasing = ANTIALIASING_FULL
 options.eyecandy = EYECANDY_NONE
 options.inline_displays = False
 options.elastic = True
@@ -337,8 +329,6 @@ def set_options(new_options):
     options.theme_name = new_options.theme_name
     options.auto_hide_groups = new_options.auto_hide_groups
     options.auto_select_items = new_options.auto_select_items
-    options.use_bezier_lines = new_options.use_bezier_lines
-    options.antialiasing = new_options.antialiasing
     options.eyecandy = new_options.eyecandy
     options.inline_displays = new_options.inline_displays
     options.elastic = new_options.elastic

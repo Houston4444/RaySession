@@ -182,7 +182,7 @@ class CanvasBezierLine(QGraphicsPathItem):
             return
         
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing))
+        painter.setRenderHint(QPainter.Antialiasing, True)
 
         pen = self.pen()
         cosm_pen = QPen(pen)

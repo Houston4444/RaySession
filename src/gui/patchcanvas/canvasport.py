@@ -39,7 +39,6 @@ from . import (
     port_type2str,
     CanvasPortType,
     CanvasPortGroupType,
-    ANTIALIASING_FULL,
     ACTION_PORTGROUP_ADD,
     ACTION_PORT_INFO,
     ACTION_PORT_RENAME,
@@ -651,8 +650,7 @@ class CanvasPort(QGraphicsItem):
             return
         
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing,
-                              bool(options.antialiasing == ANTIALIASING_FULL))
+        painter.setRenderHint(QPainter.Antialiasing, True)
 
         selected = self.isSelected()
         theme = canvas.theme

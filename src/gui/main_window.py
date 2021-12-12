@@ -471,7 +471,6 @@ class MainWindow(QMainWindow):
         options = patchcanvas.get_options_t()
         options.theme_name = RS.settings.value(
             'Canvas/theme', 'Black Gold', type=str)
-        options.antialiasing = patchcanvas.ANTIALIASING_FULL
         options.eyecandy = patchcanvas.EYECANDY_NONE
         if RS.settings.value('Canvas/box_shadows', False, type=bool):
             options.eyecandy = patchcanvas.EYECANDY_SMALL
@@ -479,7 +478,6 @@ class MainWindow(QMainWindow):
         options.auto_hide_groups = True
         options.auto_select_items = False
         options.inline_displays = False
-        options.use_bezier_lines = True
         options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
         options.prevent_overlap = RS.settings.value(
             'Canvas/prevent_overlap', True, type=bool)

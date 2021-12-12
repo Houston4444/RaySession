@@ -37,7 +37,6 @@ from . import (
     features,
     options,
     CanvasBoxType,
-    ANTIALIASING_FULL,
     ACTION_PLUGIN_EDIT,
     ACTION_PLUGIN_SHOW_UI,
     ACTION_PLUGIN_CLONE,
@@ -1464,8 +1463,7 @@ class CanvasBox(QGraphicsItem):
             return
         
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing,
-                              bool(options.antialiasing == ANTIALIASING_FULL))
+        painter.setRenderHint(QPainter.Antialiasing, True)
 
         # Draw rectangle
         pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)

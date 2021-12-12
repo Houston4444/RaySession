@@ -38,7 +38,6 @@ from . import (
     port_type2str,
     CanvasPortType,
     CanvasPortGroupType,
-    ANTIALIASING_FULL,
     ACTION_PORTGROUP_REMOVE,
     ACTION_PORT_INFO,
     ACTION_PORT_RENAME,
@@ -644,8 +643,7 @@ class CanvasPortGroup(QGraphicsItem):
             return
         
         painter.save()
-        painter.setRenderHint(
-            QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
+        painter.setRenderHint(QPainter.Antialiasing, True)
 
         lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
 

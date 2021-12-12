@@ -174,7 +174,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 
     def paint(self, painter, option, widget):
         painter.save()
-        painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing))
+        painter.setRenderHint(QPainter.Antialiasing, True)
         QGraphicsPathItem.paint(self, painter, option, widget)
         painter.restore()
 

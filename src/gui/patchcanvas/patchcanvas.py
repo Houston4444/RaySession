@@ -47,9 +47,6 @@ import patchcanvas.utils as utils
 #     CanvasRubberbandType,
 #     ACTION_GROUP_JOINED,
 #     ACTION_PORTS_DISCONNECT,
-#     ANTIALIASING_NONE,
-#     ANTIALIASING_SMALL,
-#     ANTIALIASING_FULL,
 #     EYECANDY_NONE,
 #     EYECANDY_SMALL,
 #     EYECANDY_FULL,
@@ -241,6 +238,12 @@ def set_canvas_size(x, y, width, height):
     canvas.size_rect.setHeight(height)
     canvas.scene.update_limits()
     canvas.scene.fix_scale_factor()
+
+def set_loading_items(yesno: bool):
+    '''while canvas is loading items (groups or ports, connections...)
+    then, items will be added, but no redraw.
+    This is an optimization'''
+    canvas.loading_items = yesno
 
 def add_group(group_id, group_name, split=SPLIT_UNDEF, icon_type=ICON_APPLICATION,
              icon_name='', fast=False,
