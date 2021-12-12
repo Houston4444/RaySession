@@ -91,8 +91,7 @@ ANTIALIASING_FULL = 2
 
 # Eye-Candy Option
 EYECANDY_NONE = 0
-EYECANDY_SMALL = 1
-EYECANDY_FULL = 2
+EYECANDY_SMALL = 1 # Use boxes shadows
 
 # For Repulsive boxes
 DIRECTION_NONE = 0
@@ -110,11 +109,9 @@ CanvasBoxType = QGraphicsItem.UserType + 1
 CanvasIconType = QGraphicsItem.UserType + 2
 CanvasPortType = QGraphicsItem.UserType + 3
 CanvasPortGroupType = QGraphicsItem.UserType + 4
-CanvasLineType = QGraphicsItem.UserType + 5
-CanvasBezierLineType = QGraphicsItem.UserType + 6
-CanvasLineMovType = QGraphicsItem.UserType + 7
-CanvasBezierLineMovType = QGraphicsItem.UserType + 8
-CanvasRubberbandType = QGraphicsItem.UserType + 9
+CanvasBezierLineType = QGraphicsItem.UserType + 5
+CanvasBezierLineMovType = QGraphicsItem.UserType + 6
+CanvasRubberbandType = QGraphicsItem.UserType + 7
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -314,8 +311,8 @@ options.theme_name = get_default_theme_name()
 options.auto_hide_groups = False
 options.auto_select_items = False
 options.use_bezier_lines = True
-options.antialiasing = ANTIALIASING_SMALL
-options.eyecandy = EYECANDY_SMALL
+options.antialiasing = ANTIALIASING_FULL
+options.eyecandy = EYECANDY_NONE
 options.inline_displays = False
 options.elastic = True
 options.prevent_overlap = True

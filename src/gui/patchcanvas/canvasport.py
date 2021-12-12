@@ -55,7 +55,6 @@ from . import (
 
 import patchcanvas.utils as utils
 from .canvasbezierlinemov import CanvasBezierLineMov
-from .canvaslinemov import CanvasLineMov
 from .theme import Theme
 from .connect_menu import MainPortContextMenu
 
@@ -366,12 +365,8 @@ class CanvasPort(QGraphicsItem):
                     connection.widget.locked = True
 
         if not self._line_mov_list:
-            if options.use_bezier_lines:
-                line_mov = CanvasBezierLineMov(self._port_mode,
-                                               self._port_type, 0, 1, self)
-            else:
-                line_mov = CanvasLineMov(self._port_mode, self._port_type,
-                                         0, 1, self)
+            line_mov = CanvasBezierLineMov(self._port_mode,
+                                           self._port_type, 0, 1, self)
 
             self._line_mov_list.append(line_mov)
             line_mov.setZValue(canvas.last_z_value)
@@ -444,14 +439,9 @@ class CanvasPort(QGraphicsItem):
 
                     # create one line for each port of the hover portgrp
                     for i in range(1, self._hover_item.get_port_list_len()):
-                        if options.use_bezier_lines:
-                            line_mov = CanvasBezierLineMov(
-                                self._port_mode, self._port_type,
-                                port_pos, portgrp_len, self)
-                        else:
-                            line_mov = CanvasLineMov(
-                                self._port_mode, self._port_type,
-                                port_pos, portgrp_len, self)
+                        line_mov = CanvasBezierLineMov(
+                            self._port_mode, self._port_type,
+                            port_pos, portgrp_len, self)
 
                         line_mov.set_destination_portgrp_pos(
                             i, self._hover_item.get_port_list_len())

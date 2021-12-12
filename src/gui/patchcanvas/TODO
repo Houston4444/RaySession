@@ -1,7 +1,8 @@
-remove canvasline canvaslinemov glows
+remove canvasline canvaslinemov: let it maybe for future
 ATTENTION pas d'appels externes autres que dans patchcanvas.py
-Revoir/supprimer EYECANDY
 revoir group positions
 revoir fast en une variable de canvas
 
 voir : canvas initial_pos
+
+trigger_disconnect portgroup

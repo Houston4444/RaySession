@@ -66,7 +66,6 @@ import patchcanvas.utils as utils
 
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
-from .canvasline import CanvasLine
 from .theme import Theme, get_default_theme, get_theme_name
 
 # FIXME
@@ -1132,11 +1131,7 @@ def connect_ports(connection_id, group_out_id, port_out_id,
     connection_dict.port_in_id = port_in_id
     connection_dict.group_out_id = group_out_id
     connection_dict.port_out_id = port_out_id
-
-    if options.use_bezier_lines:
-        connection_dict.widget = CanvasBezierLine(port_out, port_in, None)
-    else:
-        connection_dict.widget = CanvasLine(port_out, port_in, None)
+    connection_dict.widget = CanvasBezierLine(port_out, port_in, None)
 
     canvas.scene.addItem(connection_dict.widget)
 

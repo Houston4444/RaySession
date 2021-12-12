@@ -50,7 +50,6 @@ from . import (
 )
 
 from .canvasbezierlinemov import CanvasBezierLineMov
-from .canvaslinemov import CanvasLineMov
 from .theme import Theme
 from .connect_menu import MainPortContextMenu
 
@@ -315,14 +314,9 @@ class CanvasPortGroup(QGraphicsItem):
                 del item
 
         while len(self._line_mov_list) < self.get_port_list_len():
-            if options.use_bezier_lines:
-                line_mov = CanvasBezierLineMov(
-                    self._port_mode, self._port_type, len(self._line_mov_list),
-                    self.get_port_list_len(), self)
-            else:
-                line_mov = CanvasLineMov(
-                    self._port_mode, self._port_type, len(self._line_mov_list),
-                    self.get_port_list_len(), self)
+            line_mov = CanvasBezierLineMov(
+                self._port_mode, self._port_type, len(self._line_mov_list),
+                self.get_port_list_len(), self)
 
             self._line_mov_list.append(line_mov)
 
@@ -395,14 +389,9 @@ class CanvasPortGroup(QGraphicsItem):
                     port.widget.setZValue(canvas.last_z_value)
 
             for i in range(len(self._port_id_list)):
-                if options.use_bezier_lines:
-                    line_mov = CanvasBezierLineMov(
-                        self._port_mode, self._port_type, i,
-                        len(self._port_id_list), self)
-                else:
-                    line_mov = CanvasLineMov(
-                        self._port_mode, self._port_type, i,
-                        len(self._port_id_list), self)
+                line_mov = CanvasBezierLineMov(
+                    self._port_mode, self._port_type, i,
+                    len(self._port_id_list), self)
 
                 self._line_mov_list.append(line_mov)
 
@@ -520,20 +509,12 @@ class CanvasPortGroup(QGraphicsItem):
                                     i, self._hover_item.get_port_list_len())
                             else:
                                 port_posinportgrp = i % len(self._port_id_list)
-                                if options.use_bezier_lines:
-                                    line_mov  = CanvasBezierLineMov(
-                                        self._port_mode,
-                                        self._port_type,
-                                        port_posinportgrp,
-                                        self._hover_item.get_port_list_len(),
-                                        self)
-                                else:
-                                    line_mov  = CanvasLineMov(
-                                        self._port_mode,
-                                        self._port_type,
-                                        port_posinportgrp,
-                                        self._hover_item.get_port_list_len(),
-                                        self)
+                                line_mov  = CanvasBezierLineMov(
+                                    self._port_mode,
+                                    self._port_type,
+                                    port_posinportgrp,
+                                    self._hover_item.get_port_list_len(),
+                                    self)
 
                                 line_mov.set_destination_portgrp_pos(
                                     i, self._hover_item.get_port_list_len())

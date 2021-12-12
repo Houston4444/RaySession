@@ -37,7 +37,6 @@ from . import (
     CanvasIconType,
     CanvasPortType,
     CanvasPortGroupType,
-    CanvasLineType,
     CanvasBezierLineType,
     CanvasRubberbandType,
     ACTION_BG_RIGHT_CLICK,
@@ -229,8 +228,7 @@ class PatchScene(QGraphicsScene):
 
             canvas.qobject.move_boxes_finished.emit()
 
-        elif self.move_box_n % 5 == 4:
-            self.update()
+        self.update()
 
     def add_box_to_animation(self, box_widget, to_x: int, to_y: int,
                              force_anim=True):
@@ -773,9 +771,6 @@ class PatchScene(QGraphicsScene):
                     group_item = item
                 elif item.type() == CanvasPortType:
                     group_item = item.parentItem()
-                #elif item.type() in (CanvasLineType, CanvasBezierLineType, CanvasLineMovType, CanvasBezierLineMovType):
-                    #plugin_list = []
-                    #break
 
                 if group_item is not None and group_item._plugin_id >= 0:
                     plugin_id = group_item._plugin_id
@@ -907,7 +902,7 @@ class PatchScene(QGraphicsScene):
 
             items = self.items(self._pointer_border)
             for item in items:
-                if item and item.type() in (CanvasLineType, CanvasBezierLineType, CanvasPortType):
+                if item and item.type() in (CanvasBezierLineType, CanvasPortType):
                     item.trigger_disconnect()
 
         QGraphicsScene.mousePressEvent(self, event)
@@ -947,7 +942,7 @@ class PatchScene(QGraphicsScene):
             trail = QPolygonF([event.scenePos(), event.lastScenePos(), event.scenePos()])
             items = self.items(trail)
             for item in items:
-                if item and item.type() in (CanvasLineType, CanvasBezierLineType):
+                if item and item.type() == CanvasBezierLineType:
                     item.trigger_disconnect()
 
         QGraphicsScene.mouseMoveEvent(self, event)
