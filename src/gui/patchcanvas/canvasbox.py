@@ -18,15 +18,12 @@
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
-import math
 import sys
-import time
 
 from sip import voidptr
 from struct import pack
 
-from PyQt5.QtCore import (qCritical, Qt, QPoint, QPointF, QRectF, QTimer,
-                          pyqtSignal, QMarginsF, QTimer)
+from PyQt5.QtCore import qCritical, Qt, QPoint, QPointF, QRectF, QTimer
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
                          QLinearGradient, QPainter, QPen, QPolygonF,
                          QColor, QIcon, QPixmap)
@@ -39,7 +36,6 @@ from . import (
     canvas,
     features,
     options,
-    port_dict_t,
     CanvasBoxType,
     ANTIALIASING_FULL,
     ACTION_PLUGIN_EDIT,

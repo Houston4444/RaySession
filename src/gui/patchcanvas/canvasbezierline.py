@@ -18,7 +18,6 @@
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
-from math import log, sqrt
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QColor, QLinearGradient, QPainter, QPainterPath, QPen
 from PyQt5.QtWidgets import QGraphicsPathItem
@@ -33,10 +32,7 @@ from . import (
     ACTION_PORTS_DISCONNECT,
     EYECANDY_FULL,
     PORT_MODE_OUTPUT,
-    PORT_TYPE_AUDIO_JACK,
-    PORT_TYPE_MIDI_ALSA,
     PORT_TYPE_MIDI_JACK,
-    PORT_TYPE_PARAMETER,
 )
 
 

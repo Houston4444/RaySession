@@ -22,11 +22,7 @@
 from PyQt5.QtCore import QAbstractAnimation
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
 
-from . import canvas, CanvasBoxType
-
-# ------------------------------------------------------------------------------------------------------------
 
 class CanvasFadeAnimation(QAbstractAnimation):
     def __init__(self, item, show):

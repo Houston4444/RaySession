@@ -85,14 +85,14 @@ SPLIT_NO = 1
 SPLIT_YES = 2
 
 # Antialiasing Option
-ANTIALIASING_NONE  = 0
+ANTIALIASING_NONE = 0
 ANTIALIASING_SMALL = 1
-ANTIALIASING_FULL  = 2
+ANTIALIASING_FULL = 2
 
 # Eye-Candy Option
-EYECANDY_NONE  = 0
+EYECANDY_NONE = 0
 EYECANDY_SMALL = 1
-EYECANDY_FULL  = 2
+EYECANDY_FULL = 2
 
 # For Repulsive boxes
 DIRECTION_NONE = 0
@@ -106,15 +106,15 @@ DIRECTION_DOWN = 4
 
 
 # object types
-CanvasBoxType           = QGraphicsItem.UserType + 1
-CanvasIconType          = QGraphicsItem.UserType + 2
-CanvasPortType          = QGraphicsItem.UserType + 3
-CanvasPortGroupType     = QGraphicsItem.UserType + 4
-CanvasLineType          = QGraphicsItem.UserType + 5
-CanvasBezierLineType    = QGraphicsItem.UserType + 6
-CanvasLineMovType       = QGraphicsItem.UserType + 7
+CanvasBoxType = QGraphicsItem.UserType + 1
+CanvasIconType = QGraphicsItem.UserType + 2
+CanvasPortType = QGraphicsItem.UserType + 3
+CanvasPortGroupType = QGraphicsItem.UserType + 4
+CanvasLineType = QGraphicsItem.UserType + 5
+CanvasBezierLineType = QGraphicsItem.UserType + 6
+CanvasLineMovType = QGraphicsItem.UserType + 7
 CanvasBezierLineMovType = QGraphicsItem.UserType + 8
-CanvasRubberbandType    = QGraphicsItem.UserType + 9
+CanvasRubberbandType = QGraphicsItem.UserType + 9
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -130,8 +130,7 @@ class options_t(object):
         'inline_displays',
         'elastic',
         'prevent_overlap',
-        'max_port_width'
-    ]
+        'max_port_width']
 
 # Canvas features
 class features_t(object):
@@ -140,8 +139,8 @@ class features_t(object):
         'group_rename',
         'port_info',
         'port_rename',
-        'handle_group_pos'
-    ]
+        'handle_group_pos']
+
 
 # Main Canvas object
 class Canvas(object):
@@ -193,8 +192,7 @@ class group_dict_t(object):
         'out_pos',
         'handle_client_gui',
         'gui_visible',
-        'widgets'
-    ]
+        'widgets']
 
 class port_dict_t(object):
     __slots__ = [
@@ -205,8 +203,7 @@ class port_dict_t(object):
         'port_type',
         'portgrp_id',
         'is_alternate',
-        'widget'
-    ]
+        'widget']
 
     def is_connectable_to(self, other)->bool:
         if self.port_type != other.port_type:
@@ -214,7 +211,6 @@ class port_dict_t(object):
 
         if self.port_mode == other.port_mode:
             return False
-
 
 
 class portgrp_dict_t(object):
@@ -326,14 +322,20 @@ options.prevent_overlap = True
 options.max_port_width = 160
 
 features = features_t()
-features.group_info   = False
+features.group_info = False
 features.group_rename = False
-features.port_info    = False
-features.port_rename  = False
+features.port_info = False
+features.port_rename = False
 features.handle_group_pos = False
 
 # PatchCanvas API
-def setOptions(new_options):
+def get_options_t():
+    return options_t()
+
+def get_features_t():
+    return features_t()
+
+def set_options(new_options):
     if canvas.initiated: return
     options.theme_name = new_options.theme_name
     options.auto_hide_groups = new_options.auto_hide_groups
@@ -346,7 +348,7 @@ def setOptions(new_options):
     options.prevent_overlap = new_options.prevent_overlap
     options.max_port_width = new_options.max_port_width
 
-def setFeatures(new_features):
+def set_features(new_features):
     if canvas.initiated: return
     features.group_info   = new_features.group_info
     features.group_rename = new_features.group_rename

@@ -22,10 +22,10 @@
 from math import floor
 import time
 
-from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer
-from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QPainter, QPainterPath,
-                         QPen, QPolygonF, QLinearGradient, QColor)
-from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
+from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF
+from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QPainter,
+                         QPolygonF, QLinearGradient)
+from PyQt5.QtWidgets import QGraphicsItem, QApplication
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -47,9 +47,6 @@ from . import (
     PORT_MODE_INPUT,
     PORT_MODE_OUTPUT,
     PORT_TYPE_AUDIO_JACK,
-    PORT_TYPE_MIDI_ALSA,
-    PORT_TYPE_MIDI_JACK,
-    PORT_TYPE_PARAMETER,
 )
 
 from .canvasbezierlinemov import CanvasBezierLineMov

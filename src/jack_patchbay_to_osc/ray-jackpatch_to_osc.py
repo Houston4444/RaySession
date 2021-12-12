@@ -64,7 +64,7 @@ class JackPort:
     
     def __init__(self, port_name:str, jack_client, port_ptr=None):
         # In some cases, port could has just been renamed
-        # then, jacklib.port_by_name fail.
+        # then, jacklib.port_by_name() fail.
         # that is why, port_ptr can be sent as argument here
         self.name = port_name
         if port_ptr is None:

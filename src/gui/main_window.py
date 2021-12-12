@@ -468,7 +468,7 @@ class MainWindow(QMainWindow):
         self.ui.splitterSessionVsMessages.setSizes(sizes)
 
     def _setup_canvas(self):
-        options = patchcanvas.options_t()
+        options = patchcanvas.get_options_t()
         options.theme_name = RS.settings.value(
             'Canvas/theme', 'Black Gold', type=str)
         options.antialiasing = patchcanvas.ANTIALIASING_SMALL
@@ -486,15 +486,15 @@ class MainWindow(QMainWindow):
         options.max_port_width = RS.settings.value(
             'Canvas/max_port_width', 160, type=int)
 
-        features = patchcanvas.features_t()
+        features = patchcanvas.get_features_t()
         features.group_info = False
         features.group_rename = False
         features.port_info = True
         features.port_rename = False
         features.handle_group_pos = False
 
-        patchcanvas.setOptions(options)
-        patchcanvas.setFeatures(features)
+        patchcanvas.set_options(options)
+        patchcanvas.set_features(features)
         patchcanvas.init(
             ray.APP_TITLE, self.scene,
             self.canvas_callback, False)

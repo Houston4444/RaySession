@@ -26,34 +26,43 @@ from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
 # Imports (Custom)
 import patchcanvas.utils as utils
 
-from . import (
-    canvas,
-    features,
-    options,
-    group_dict_t,
-    port_dict_t,
-    portgrp_dict_t,
-    connection_dict_t,
-    bool2str,
-    icon2str,
-    split2str,
-    port_mode2str,
-    port_type2str,
-    CanvasIconType,
-    CanvasRubberbandType,
-    ACTION_GROUP_JOINED,
-    ACTION_PORTS_DISCONNECT,
-    EYECANDY_FULL,
-    ICON_APPLICATION,
-    ICON_HARDWARE,
-    ICON_LADISH_ROOM,
-    PORT_MODE_INPUT,
-    PORT_MODE_OUTPUT,
-    SPLIT_YES,
-    SPLIT_NO,
-    SPLIT_UNDEF,
-    MAX_PLUGIN_ID_ALLOWED,
-)
+# from . import (
+#     canvas,
+#     get_options_t,
+#     get_features_t,
+#     set_options,
+#     set_features,
+#     features,
+#     options,
+#     group_dict_t,
+#     port_dict_t,
+#     portgrp_dict_t,
+#     connection_dict_t,
+#     bool2str,
+#     icon2str,
+#     split2str,
+#     port_mode2str,
+#     port_type2str,
+#     CanvasIconType,
+#     CanvasRubberbandType,
+#     ACTION_GROUP_JOINED,
+#     ACTION_PORTS_DISCONNECT,
+#     ANTIALIASING_NONE,
+#     ANTIALIASING_SMALL,
+#     ANTIALIASING_FULL,
+#     EYECANDY_NONE,
+#     EYECANDY_SMALL,
+#     EYECANDY_FULL,
+#     ICON_APPLICATION,
+#     ICON_HARDWARE,
+#     ICON_LADISH_ROOM,
+#     PORT_MODE_INPUT,
+#     PORT_MODE_OUTPUT,
+#     SPLIT_YES,
+#     SPLIT_NO,
+#     SPLIT_UNDEF,
+#     MAX_PLUGIN_ID_ALLOWED,
+# )
 
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
@@ -893,7 +902,7 @@ def set_group_as_plugin(group_id, plugin_id, has_ui, has_inline_display):
 
     qCritical(
         "PatchCanvas::set_group_as_plugin(%i, %i, %s, %s) - unable to find group to set as plugin"
-        % (group_id, plugin_id, bool2str(hasUI), bool2str(hasInlineDisplay)))
+        % (group_id, plugin_id, bool2str(has_ui), bool2str(has_inline_display)))
 
 # ------------------------------------------------------------------------------------------------------------
 

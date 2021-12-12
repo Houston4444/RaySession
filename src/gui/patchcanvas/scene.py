@@ -23,10 +23,9 @@ from math import floor
 import time
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
-                          Qt, QPoint, QPointF, QRectF, QTimer, QSizeF, QMarginsF)
-from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QLinearGradient, QColor
-from PyQt5.QtWidgets import (QGraphicsRectItem, QGraphicsScene, QGraphicsView,
-                             QApplication)
+                          Qt, QPoint, QPointF, QRectF, QTimer, QMarginsF)
+from PyQt5.QtGui import QCursor, QPixmap, QPolygonF
+from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene, QApplication
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)

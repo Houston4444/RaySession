@@ -1,20 +1,17 @@
 
 
-from PyQt5.QtCore import pyqtSlot, QCoreApplication, Qt
+from PyQt5.QtCore import pyqtSlot, QCoreApplication
 from PyQt5.QtWidgets import QWidgetAction, QMenu, QCheckBox, QAction
-from PyQt5.QtGui import QIcon, QPixmap, QPalette
+from PyQt5.QtGui import QIcon, QPixmap
 
 import patchcanvas.utils as utils
 
 from . import (
     canvas,
     clipboard_element_dict_t,
-    ACTION_PORTS_CONNECT,
     ACTION_PORTS_DISCONNECT,
-    PORT_TYPE_NULL,
     PORT_TYPE_AUDIO_JACK,
     PORT_TYPE_MIDI_JACK,
-    PORT_MODE_NULL,
     PORT_MODE_OUTPUT,
     PORT_MODE_INPUT)
 

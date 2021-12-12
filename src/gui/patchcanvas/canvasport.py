@@ -22,13 +22,11 @@
 from math import floor
 import time
 
-from PyQt5.QtCore import qCritical, Qt, QLineF, QPointF, QRectF, QTimer, QSizeF
+from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF, QSizeF
 from PyQt5.QtGui import (
-    QCursor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPolygonF,
-    QLinearGradient, QColor, QRadialGradient, QIcon)
-from PyQt5.QtWidgets import (
-    QGraphicsItem, QMenu, QCheckBox, QWidgetAction, QGraphicsEllipseItem,
-    QApplication)
+    QCursor, QFont, QFontMetrics, QPainter, QPen, QPolygonF,
+    QLinearGradient, QIcon)
+from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)

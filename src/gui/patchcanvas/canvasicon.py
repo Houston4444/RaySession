@@ -22,7 +22,7 @@
 import os
 
 from PyQt5.QtCore import qCritical, QRectF, QFile
-from PyQt5.QtGui import QPainter, QPalette, QIcon, QPixmap
+from PyQt5.QtGui import QPainter, QIcon
 from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
 from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsPixmapItem
 
