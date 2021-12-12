@@ -242,9 +242,9 @@ def set_canvas_size(x, y, width, height):
 def set_loading_items(yesno: bool):
     '''while canvas is loading items (groups or ports, connections...)
     then, items will be added, but no redraw.
-    This is an optimization that prevents a lot of redraws
+    This is an optimization that prevents a lot of redraws.
     Think to set loading items at False and use redraw_all_groups
-    or redraw_group after when long operation is finished'''
+    or redraw_group once the long operation is finished'''
     canvas.loading_items = yesno
 
 def add_group(group_id, group_name, split=SPLIT_UNDEF,
@@ -497,17 +497,19 @@ def split_group(group_id, on_place=False):
             connection_dict.widget = None
             conns_data.append(connection_dict)
 
+    canvas.loading_items = True
+
     # Step 2 - Remove Item and Children
     for conn in conns_data:
-        disconnect_ports(conn.connection_id, fast=True)
+        disconnect_ports(conn.connection_id)
 
     for portgrp in portgrps_data:
         if portgrp.group_id == group_id:
-            remove_portgroup(group_id, portgrp.portgrp_id, fast=True)
+            remove_portgroup(group_id, portgrp.portgrp_id)
 
     for port in ports_data:
         if port.group_id == group_id:
-            remove_port(group_id, port.port_id, fast=True)
+            remove_port(group_id, port.port_id)
 
     remove_group(group_id)
 
@@ -527,15 +529,17 @@ def split_group(group_id, on_place=False):
 
     for port in ports_data:
         add_port(group_id, port.port_id, port.port_name, port.port_mode,
-                port.port_type, port.is_alternate, fast=True)
+                port.port_type, port.is_alternate)
 
     for portgrp in portgrps_data:
         add_portgroup(group_id, portgrp.portgrp_id, portgrp.port_mode,
-                     portgrp.port_type, portgrp.port_id_list, fast=True)
+                     portgrp.port_type, portgrp.port_id_list)
 
     for conn in conns_data:
         connect_ports(conn.connection_id, conn.group_out_id, conn.port_out_id,
-                     conn.group_in_id, conn.port_in_id, fast=True)
+                     conn.group_in_id, conn.port_in_id)
+
+    canvas.loading_items = False
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -632,15 +636,17 @@ def join_group(group_id):
             connection_dict.widget = None
             conns_data.append(connection_dict)
 
+    canvas.loading_items = True
+
     # Step 2 - Remove Item and Children
     for conn in conns_data:
-        disconnect_ports(conn.connection_id, fast=True)
+        disconnect_ports(conn.connection_id)
 
     for portgrp in portgrps_data:
-        remove_portgroup(group_id, portgrp.portgrp_id, fast=True)
+        remove_portgroup(group_id, portgrp.portgrp_id)
 
     for port in ports_data:
-        remove_port(group_id, port.port_id, fast=True)
+        remove_port(group_id, port.port_id)
 
     remove_group(group_id, save_positions=False)
 
@@ -659,15 +665,15 @@ def join_group(group_id):
 
     for port in ports_data:
         add_port(group_id, port.port_id, port.port_name, port.port_mode,
-                port.port_type, port.is_alternate, fast=True)
+                 port.port_type, port.is_alternate)
 
     for portgrp in portgrps_data:
         add_portgroup(group_id, portgrp.portgrp_id, portgrp.port_mode,
-                     portgrp.port_type, portgrp.port_id_list, fast=True)
+                      portgrp.port_type, portgrp.port_id_list)
 
     for conn in conns_data:
         connect_ports(conn.connection_id, conn.group_out_id, conn.port_out_id,
-                     conn.group_in_id, conn.port_in_id, fast=True)
+                      conn.group_in_id, conn.port_in_id)
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -675,6 +681,9 @@ def join_group(group_id):
                 if box is not None:
                     box.set_wrapped(wrap, animate=False)
                     box.update_positions()
+
+    canvas.loading_items = False
+    redraw_group(group_id)
 
     canvas.callback(ACTION_GROUP_JOINED, group_id, 0, '')
 

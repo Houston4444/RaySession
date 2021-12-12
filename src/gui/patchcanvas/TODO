@@ -1,6 +1,5 @@
 ATTENTION pas d'appels externes autres que dans patchcanvas.py
 revoir group positions
-revoir fast en une variable de canvas
 
 voir : canvas initial_pos
 

@@ -1302,7 +1302,6 @@ class PatchbayManager:
     def optimize_operation(cls, yesno: bool):
         cls.optimized_operation = yesno
         if patchcanvas.canvas is not None:
-            patchcanvas.canvas.scene.prevent_box_move = yesno
             patchcanvas.set_loading_items(yesno)
 
     @classmethod
@@ -1629,7 +1628,7 @@ class PatchbayManager:
         self.connections.clear()
         self.groups.clear()
 
-        patchcanvas.canvas.scene.clear()
+        patchcanvas.clear()
 
         self._next_group_id = 0
         self._next_port_id = 0
