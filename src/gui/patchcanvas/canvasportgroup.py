@@ -32,6 +32,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QApplication
 # Imports (Custom)
 import patchcanvas.utils as utils
 from . import (
+    PORT_TYPE_MIDI_JACK,
     canvas,
     features,
     options,
@@ -645,6 +646,16 @@ class CanvasPortGroup(QGraphicsItem):
 
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, True)
+
+        theme = canvas.new_theme.portgroup
+        
+        if self._port_type == PORT_TYPE_AUDIO_JACK:
+            theme = theme.audio
+        elif self._port_type == PORT_TYPE_MIDI_JACK:
+            theme = theme.midi
+            
+        if self.isSelected():
+            theme = theme.selected
 
         lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
 

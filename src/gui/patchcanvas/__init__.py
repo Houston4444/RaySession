@@ -139,6 +139,7 @@ class Canvas(object):
         self.qobject = None
         self.settings = None
         self.theme = None
+        self.new_theme = None
         self.initiated = False
 
         self.group_list = []

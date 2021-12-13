@@ -25,6 +25,25 @@ from PyQt5.QtGui import QColor, QFont, QPen, QPixmap
 
 # ------------------------------------------------------------------------------------------------------------
 
+theme_dict = {
+    "box": {"border": (76, 77, 78),
+            "border_width": 1,
+            "background": (32, 34, 35),
+            "background_2": (38, 40, 41),
+            "font-name": "Deja Vu Sans",
+            "font-size": 11,
+            "font-state": "bold"},
+    "box.selected": {},
+    "box.hardware": {},
+    "box.hardware.selected": {},
+    "box.client": {},
+    "box.client.selected": {},
+    "box.monitor": {},
+    "box.monitor.selected": {},
+    "portgroup": {},
+    "portgroup.selected": {}}
+
+
 class Theme(object):
     # enum List
     THEME_SILVER_GOLD = 0

@@ -26,6 +26,7 @@ from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 import patchcanvas.utils as utils
+import patchcanvas.future_theme as future_theme
 
 # from . import (
 #     canvas,
@@ -155,6 +156,10 @@ def init(appName, scene, callback, debug=False):
     if canvas.theme:
         del canvas.theme
         canvas.theme = None
+    
+    if canvas.new_theme:
+        del canvas.new_theme
+        canvas.new_theme = None
 
     for i in range(Theme.THEME_MAX):
         this_theme_name = get_theme_name(i)
@@ -165,6 +170,10 @@ def init(appName, scene, callback, debug=False):
     if not canvas.theme:
         canvas.theme = Theme(get_default_theme())
 
+    if not canvas.new_theme:
+        canvas.new_theme = future_theme.Theme()
+        canvas.new_theme.read_theme(future_theme.default_theme)
+    
     canvas.scene.update_theme()
 
     canvas.initiated = True

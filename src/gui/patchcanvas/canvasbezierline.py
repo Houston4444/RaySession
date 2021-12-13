@@ -32,6 +32,7 @@ from . import (
     CanvasBezierLineType,
     ACTION_PORTS_DISCONNECT,
     PORT_MODE_OUTPUT,
+    PORT_TYPE_AUDIO_JACK,
     PORT_TYPE_MIDI_JACK,
 )
 
@@ -153,14 +154,18 @@ class CanvasBezierLine(QGraphicsPathItem):
         port_type2 = self.item2.get_port_type()
         port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
 
-        base_color = canvas.theme.line_audio_jack
+        theme = canvas.new_theme.line
+        if port_type1 == PORT_TYPE_AUDIO_JACK:
+            theme = theme.audio
+        elif port_type1 == PORT_TYPE_MIDI_JACK:
+            theme = theme.midi
+        
         if self._line_selected:
-            base_color = canvas.theme.line_audio_jack_sel
+            theme = theme.selected
 
-        if port_type1 == PORT_TYPE_MIDI_JACK:
-            base_color = canvas.theme.port_midi_jack_bg
-            if self._line_selected:
-                base_color = canvas.theme.port_midi_jack_bg_sel
+        base_pen = theme.fill_pen()
+        base_color = base_pen.color()
+        base_width = base_pen.widthF() + 0.000001
 
         if self._semi_hidden:
             base_color = QColor(int(base_color.red() * canvas.semi_hide_opacity + 0.5),
@@ -176,7 +181,7 @@ class CanvasBezierLine(QGraphicsPathItem):
             port_gradient.setColorAt(0.5, base_color.darker(130))
             port_gradient.setColorAt(1, base_color.lighter(130))
 
-        self.setPen(QPen(port_gradient, 1.750001, Qt.SolidLine, Qt.FlatCap))
+        self.setPen(QPen(port_gradient, base_width, Qt.SolidLine, Qt.FlatCap))
 
     def paint(self, painter, option, widget):
         if canvas.loading_items:

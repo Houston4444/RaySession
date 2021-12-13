@@ -654,35 +654,57 @@ class CanvasPort(QGraphicsItem):
         painter.setRenderHint(QPainter.Antialiasing, True)
 
         selected = self.isSelected()
-        theme = canvas.theme
+        
+        # theme = canvas.theme
+        
+        theme = canvas.new_theme.port
+        # print(canvas.new_theme._font_name)
+        # print(theme._font_name)
         if self._port_type == PORT_TYPE_AUDIO_JACK:
             if self._is_alternate:
-                poly_color = theme.port_cv_jack_bg_sel if selected else theme.port_cv_jack_bg
-                poly_pen = theme.port_cv_jack_pen_sel  if selected else theme.port_cv_jack_pen
+                theme = theme.cv
             else:
-                poly_color = theme.port_audio_jack_bg_sel if selected else theme.port_audio_jack_bg
-                poly_pen = theme.port_audio_jack_pen_sel  if selected else theme.port_audio_jack_pen
-            text_pen = theme.port_audio_jack_text_sel if selected else theme.port_audio_jack_text
-            conn_pen = QPen(theme.port_audio_jack_pen_sel)
+                theme = theme.audio
         elif self._port_type == PORT_TYPE_MIDI_JACK:
-            poly_color = theme.port_midi_jack_bg_sel if selected else theme.port_midi_jack_bg
-            poly_pen = theme.port_midi_jack_pen_sel  if selected else theme.port_midi_jack_pen
-            text_pen = theme.port_midi_jack_text_sel if selected else theme.port_midi_jack_text
-            conn_pen = QPen(theme.port_midi_jack_pen_sel)
-        elif self._port_type == PORT_TYPE_MIDI_ALSA:
-            poly_color = theme.port_midi_alsa_bg_sel if selected else theme.port_midi_alsa_bg
-            poly_pen = theme.port_midi_alsa_pen_sel  if selected else theme.port_midi_alsa_pen
-            text_pen = theme.port_midi_alsa_text_sel if selected else theme.port_midi_alsa_text
-            conn_pen = QPen(theme.port_midi_alsa_pen_sel)
-        elif self._port_type == PORT_TYPE_PARAMETER:
-            poly_color = theme.port_parameter_bg_sel if selected else theme.port_parameter_bg
-            poly_pen = theme.port_parameter_pen_sel  if selected else theme.port_parameter_pen
-            text_pen = theme.port_parameter_text_sel if selected else theme.port_parameter_text
-            conn_pen = QPen(theme.port_parameter_pen_sel)
-        else:
-            qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'"
-                      % port_type2str(self._port_type))
-            return
+            theme = theme.midi
+        
+        if self.isSelected():
+            theme = theme.selected
+        
+        poly_color = theme.background_color()
+        # print('chaliba', poly_color.blue())
+        poly_pen = theme.fill_pen()
+        # print('chatiti', poly_pen.width())
+        text_pen = theme.text_color()
+        
+        # if self._port_type == PORT_TYPE_AUDIO_JACK:
+        #     if self._is_alternate:
+        #         poly_color = theme.port_cv_jack_bg_sel if selected else theme.port_cv_jack_bg
+        #         poly_pen = theme.port_cv_jack_pen_sel  if selected else theme.port_cv_jack_pen
+        #     else:
+        #         poly_color = theme.port_audio_jack_bg_sel if selected else theme.port_audio_jack_bg
+        #         poly_pen = theme.port_audio_jack_pen_sel  if selected else theme.port_audio_jack_pen
+        #     text_pen = theme.port_audio_jack_text_sel if selected else theme.port_audio_jack_text
+        #     conn_pen = QPen(theme.port_audio_jack_pen_sel)
+        # elif self._port_type == PORT_TYPE_MIDI_JACK:
+        #     poly_color = theme.port_midi_jack_bg_sel if selected else theme.port_midi_jack_bg
+        #     poly_pen = theme.port_midi_jack_pen_sel  if selected else theme.port_midi_jack_pen
+        #     text_pen = theme.port_midi_jack_text_sel if selected else theme.port_midi_jack_text
+        #     conn_pen = QPen(theme.port_midi_jack_pen_sel)
+        # elif self._port_type == PORT_TYPE_MIDI_ALSA:
+        #     poly_color = theme.port_midi_alsa_bg_sel if selected else theme.port_midi_alsa_bg
+        #     poly_pen = theme.port_midi_alsa_pen_sel  if selected else theme.port_midi_alsa_pen
+        #     text_pen = theme.port_midi_alsa_text_sel if selected else theme.port_midi_alsa_text
+        #     conn_pen = QPen(theme.port_midi_alsa_pen_sel)
+        # elif self._port_type == PORT_TYPE_PARAMETER:
+        #     poly_color = theme.port_parameter_bg_sel if selected else theme.port_parameter_bg
+        #     poly_pen = theme.port_parameter_pen_sel  if selected else theme.port_parameter_pen
+        #     text_pen = theme.port_parameter_text_sel if selected else theme.port_parameter_text
+        #     conn_pen = QPen(theme.port_parameter_pen_sel)
+        # else:
+        #     qCritical("PatchCanvas::CanvasPort.paint() - invalid port type '%s'"
+        #               % port_type2str(self._port_type))
+        #     return
 
         # To prevent quality worsening
         poly_pen = QPen(poly_pen)
