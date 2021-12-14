@@ -1490,25 +1490,29 @@ class CanvasBox(QGraphicsItem):
             header_rect.adjust(lineHinting * 2, lineHinting * 2,
                                -2 * lineHinting, -2 * lineHinting)
             
-            painter.setBrush(QColor(255, 240, 180, 10))
+            gui_theme = canvas.theme.gui_button
+            if self._gui_visible:
+                gui_theme = gui_theme.gui_visible
+            else:
+                gui_theme = gui_theme.gui_hidden
+            
+            painter.setBrush(gui_theme.background_color())
             painter.setPen(Qt.NoPen)
             
-            if self._gui_visible:
-                header_color = QColor(255, 240, 180, 45)
-                painter.setPen(Qt.NoPen)
-                painter.setBrush(header_color)
-            
             painter.drawRect(header_rect)
-            
-            if not self._gui_visible:
-                painter.setPen(QPen((QColor(255, 240, 180, 25)), 1.000001))
-                painter.drawLine(4.5, self._header_height - 3.5,
+            painter.setPen(gui_theme.fill_pen())
+            painter.drawLine(4.5, self._header_height - 3.5,
                                  self._width - 3.5, self._header_height - 3.5)
 
         elif self._group_name.endswith(' Monitor'):
             bor_gradient = QLinearGradient(0, 0, self._height, self._height)
-            color_main = QColor(70, 70, 70)
-            color_alter = QColor(45, 45, 45)
+            
+            mon_theme = canvas.theme.monitor_decoration
+            if self.isSelected():
+                mon_theme = mon_theme.selected
+            
+            color_main = mon_theme.backgroud_color()
+            color_alter = mon_theme.background2_color()
 
             tot = int(self._height / 20)
             for i in range(tot):
@@ -1518,7 +1522,7 @@ class CanvasBox(QGraphicsItem):
                     bor_gradient.setColorAt(i/tot, color_alter)
 
             painter.setBrush(bor_gradient)
-            painter.setPen(Qt.NoPen)
+            painter.setPen(mon_theme.fill_pen())
 
             border_rect = QRectF(0, 0, 11, self._height)
             border_rect.adjust(lineHinting * 2, lineHinting * 2,
@@ -1580,7 +1584,11 @@ class CanvasBox(QGraphicsItem):
 
         # may draw horizontal lines around title
         # and set x on title lines
-        painter.setPen(QPen(QColor(255, 192, 0, 80), 1))
+        hline_theme = canvas.theme.header_line
+        if self.isSelected():
+            hline_theme = hline_theme.selected
+        
+        painter.setPen(hline_theme.fill_pen())
 
         if self.has_top_icon():
             title_x_pos = 29 + (self._width - 29 - max_title_size) / 2
@@ -1740,12 +1748,19 @@ class CanvasBox(QGraphicsItem):
         
         d = canvas.theme.hardware_rack_width
         hw_gradient = QLinearGradient(-d, -d, self._width +d, self._height +d)
-        hw_gradient.setColorAt(0, QColor(60, 60, 43))
-        hw_gradient.setColorAt(0.5, QColor(40, 40, 24))
-        hw_gradient.setColorAt(1, QColor(60, 60, 43))
+        
+        theme = canvas.theme.hardware_rack
+        if self.isSelected():
+            theme = theme.selected
+        
+        background1 = theme.background_color()
+        background2 = theme.background2_color()
+        hw_gradient.setColorAt(0, background1)
+        hw_gradient.setColorAt(0.5, background2)
+        hw_gradient.setColorAt(1, background1)
 
         painter.setBrush(hw_gradient)
-        painter.setPen(QPen(QColor(30, 30, 30), 1))
+        painter.setPen(theme.fill_pen())
         if self._current_port_mode != PORT_MODE_INPUT + PORT_MODE_OUTPUT:
             hardware_poly = QPolygonF()
 

@@ -139,7 +139,7 @@ class StyleAttributer:
             begin, point, end = context.partition('.')
             
             if begin not in self.subs:
-                print_error("invalid ignored key: %s" % begin)
+                print_error("%s:invalid ignored key: %s" % (self._path, begin))
                 return
             self.__getattribute__(begin).set_style_dict(end, style_dict)
             return
@@ -155,10 +155,11 @@ class StyleAttributer:
         if not orig_path:
             orig_path = self._path
 
-        if (orig_path.endswith('.selected')
-                and 'selected' in self.subs
-                and self._path + '.selected' != orig_path):
-            return self.selected.get_value_of(attribute, self._path)
+        for path_end in ('selected', 'disconnecting'):
+            if (orig_path.endswith('.' + path_end)
+                    and path_end in self.subs
+                    and self._path + '.' + path_end != orig_path):
+                return self.selected.get_value_of(attribute, self._path)
 
         if self.__getattribute__(attribute) is None:
             if self._parent is None:
@@ -221,7 +222,16 @@ class LineStyleAttributer(UnselectedStyleAttributer):
         UnselectedStyleAttributer.__init__(self, path, parent)
         self.audio = UnselectedStyleAttributer(path + '.audio', self)
         self.midi = UnselectedStyleAttributer(path + '.midi', self)
-        self.subs += ['audio', 'midi']
+        self.disconnecting = StyleAttributer(path + '.disconnecting', self)
+        self.subs += ['audio', 'midi', 'disconnecting']
+
+
+class GuiButtonStyleAttributer(StyleAttributer):
+    def __init__(self, path, parent):
+        StyleAttributer.__init__(self, path, parent)
+        self.gui_visible = StyleAttributer('.gui_visible', self)
+        self.gui_hidden = StyleAttributer('.gui_hidden', self)
+        self.subs += ['gui_visible', 'gui_hidden']
 
 
 class Theme(StyleAttributer):
@@ -241,6 +251,7 @@ class Theme(StyleAttributer):
 
         self.background_color = QColor('black')
         self.box_shadow_color = QColor('gray')
+        self.monitor_color = QColor(190, 158, 0)
         self.port_height = 16
         self.port_spacing = 2
         self.port_type_spacing = 2
@@ -257,7 +268,14 @@ class Theme(StyleAttributer):
         self.line = LineStyleAttributer('.line', self)
         self.wrapper = UnselectedStyleAttributer('.wrapper', self)
         self.rubberband = StyleAttributer('.rubberband', self)
-        self.subs += ['box', 'portgroup', 'port', 'line', 'wrapper', 'rubberband']
+        self.hardware_rack = UnselectedStyleAttributer('.hardware_rack', self)
+        self.header_line = UnselectedStyleAttributer('.header_line', self)
+        self.monitor_decoration = UnselectedStyleAttributer('.monitor_decoration', self)
+        self.gui_button = GuiButtonStyleAttributer('.gui_button', self)
+        
+        self.subs += ['box', 'portgroup', 'port', 'line', 'wrapper',
+                      'rubberband', 'hardware_rack', 'header_line',
+                      'monitor_decoration', 'gui_button']
         
     def read_theme(self, theme_dict: dict):
         if not isinstance(theme_dict, dict):
@@ -288,6 +306,10 @@ class Theme(StyleAttributer):
                         self.box_shadow_color = _to_qcolor(body_value)
                         if self.box_shadow_color is None:
                             self.box_shadow_color = QColor('black')
+                    elif body_key == 'monitor-color':
+                        self.monitor_color = _to_qcolor(body_value)
+                        if self.monitor_color is None:
+                            self.monitor_color = QColor(190, 158, 0)
                 continue
             
             if begin not in self.subs:
@@ -298,141 +320,8 @@ class Theme(StyleAttributer):
             sub_attributer.set_style_dict(end, value)
 
 
-# theme = Theme()
-default_theme = {
-    'body':
-        {'port-offset': 0,
-         'box-shadow-color': (89, 89, 89, 180)},
-    'wrapper':
-        {'border-color': (56, 57, 58),
-         'background': (255, 192, 0, 80)
-         },
-    'rubberband':
-        {'border-color': (206, 207, 208),
-          'background': (76, 77, 78, 100)},
-    'box': 
-        {'background': (20, 20, 20),
-         'background2': (26, 24, 21),
-         'border-color': (76, 77, 78),
-         'text-color': (210, 210, 210),
-         'font-size': 11,
-         'font-width': 75
-         },
-    'box.selected':
-        {'border-color': (206, 207, 208),
-         'border-style': 'dash'
-        },
-    'box.client':
-        {'font-name': 'Ubuntu'},
-    'port':
-        {'text-color': (200, 200, 200),
-         'font-size': 11,
-         'font-width': 50,
-        },
-    'port.audio':
-        {'border-color': (100, 81, 0),
-         'background': (40, 40, 48)
-        },
-    'port.audio.selected':
-        {'background': (198, 161, 80),
-         'text-color': (40, 40, 48)
-        },
-    'port.midi':
-        {'border-color': (43, 23, 9),
-         'background': (77, 42, 16),
-         'text-color': (255, 255, 150)
-        },
-    'port.midi.selected':
-        {'background': (160, 86, 33)
-        },
-    'port.cv':
-        {'border-color': (100, 81, 0),
-         'background': (20, 20, 25)
-        },
-    'port.cv.selected':
-        {'background': (198, 161, 80)
-        },
-    'portgroup.audio':
-        {'border-color': (100, 81, 0),
-         'background': (25, 25, 30)
-        },
-    'portgroup.audio.selected':
-        {'background': (209, 170, 86),
-         'text-color': (25, 25, 30)
-        },
-    'line':
-        {'border-width': 1.75
-        },
-    'line.selected':
-        {'border-width': 2.25},
-    'line.audio':
-        {'border-color': (60, 60, 72)
-        },
-    'line.audio.selected':
-        {'border-color': (118, 118, 141)
-        },
-    'line.midi':
-        {'border-color': (77, 42, 16)
-        },
-    'line.midi.selected':
-        {'border-color': (160, 86, 33)
-        }
-    }
 
 if __name__ == '__main__':
     theme = Theme()    
     theme.read_theme(default_theme)
-    # print(theme.box.client.selected.get_value_of('_font_name'))
-    # print(theme.port.audio.get_value_of('_border_width'))
     print(theme.port.audio.font())
-    # print(theme.port.audio.background_color().blue())
-    
-# style_keys:
-# border
-# border_width
-# background
-# background_2
-# font-name
-# font-size
-# font-state
-
-
-# box
-# box.selected
-# box.hardware
-# box.hardware.selected
-# box.client
-# box.client.selected
-# box.monitor
-# box.monitor.selected
-# portgroup
-# portgroup.selected
-# portgroup.audio
-# portgroup.audio.selected
-# portgroup.midi
-# portgroup.midi.selected
-# portgroup.cv
-# portgroup.cv.selected
-# port
-# port.selected
-# port.audio
-# port.audio.selected
-# port.midi
-# port.midi.selected
-# port.cv
-# port.cv.selected
-# connection
-# connection.selected
-# connection.audio
-# connection.audio.selected
-# connection.midi
-# connection.midi.selected
-
-
-
-#shadow
-#portgroup non défini devient valeurs de port
-#line.glow
-# line ready_to_disc
-# gérer le dégradé de port/portgroup/line
-# aliases de couleurs

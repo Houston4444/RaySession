@@ -66,6 +66,7 @@ import patchcanvas.theme as theme
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
 from .theme import Theme
+from .theme_default import default_theme
 
 # FIXME
 from . import *
@@ -165,7 +166,7 @@ def init(appName, scene, callback, debug=False):
 
     if not canvas.theme:
         canvas.theme = Theme()
-        canvas.theme.read_theme(theme.default_theme)
+        canvas.theme.read_theme(default_theme)
     
     canvas.scene.update_theme()
 
