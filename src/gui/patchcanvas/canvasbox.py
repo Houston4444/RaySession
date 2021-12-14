@@ -101,17 +101,11 @@ class TitleLine:
         self.is_little = little
         self.x = 0
         self.y = 0
-        
-        # theme = canvas.new_theme.box
+
         self.font = theme.font()
         
-        # self.font = QFont()
-        # self.font.setFamily(canvas.theme.box_font_name)
-        # self.font.setPixelSize(canvas.theme.box_font_size)
         if little:
             self.font.setWeight(QFont.Normal)
-        # else:
-        #     self.font.setWeight(QFont.Bold)
 
         self.size = QFontMetrics(self.font).width(text)
 
@@ -169,7 +163,7 @@ class CanvasBox(QGraphicsItem):
         self._is_hardware = bool(icon_type == ICON_HARDWARE)
         self._icon_name = icon_name
         
-        self._title_lines = [TitleLine(group_name, self._get_theme())]
+        self._title_lines = [TitleLine(group_name, self.get_theme())]
 
         self._wrapped = False
         self._wrapping = False
@@ -654,7 +648,7 @@ class CanvasBox(QGraphicsItem):
 
                                 if portgrp_name:
                                     portgrp.widget.set_print_name(
-                                        portgrp_name, max_pwidth - canvas.theme.port_in_portgrp_width - 5)
+                                        portgrp_name, max_pwidth - canvas.new_theme.port_grouped_width - 5)
                                 else:
                                     portgrp.widget.set_print_name('', 0)
                             
@@ -668,7 +662,7 @@ class CanvasBox(QGraphicsItem):
 
                             size = portgrp.widget.get_text_width() \
                                    + max(port.widget.get_text_width() + 6,
-                                         canvas.theme.port_in_portgrp_width)
+                                         canvas.new_theme.port_grouped_width)
                             break
                     else:
                         port.widget.set_print_name(port.port_name, max_pwidth)
@@ -837,10 +831,6 @@ class CanvasBox(QGraphicsItem):
 
         self._title_lines = self._split_title(lines_choice)
         
-        #more_width_for_gui = 0
-        #if self._can_handle_gui:
-            #more_width_for_gui = 2
-        
         self._width = max(self._width,
                           all_title_templates[lines_choice]['header_width'])
         max_title_size = all_title_templates[lines_choice]['title_width']
@@ -861,8 +851,8 @@ class CanvasBox(QGraphicsItem):
             last_out_pos += more_height
 
         # Horizontal ports re-positioning
-        inX = canvas.theme.port_offset
-        outX = self._width - max_out_width - canvas.theme.port_offset - 12
+        inX = canvas.new_theme.port_offset
+        outX = self._width - max_out_width - canvas.new_theme.port_offset - 12
 
         # Horizontal ports not in portgroup re-positioning
         for port in port_list:
@@ -885,12 +875,12 @@ class CanvasBox(QGraphicsItem):
             if portgrp.widget is not None:
                 if portgrp.port_mode == PORT_MODE_INPUT:
                     portgrp.widget.set_portgrp_width(max_in_width)
-                    portgrp.widget.setX(canvas.theme.port_offset +1)
+                    portgrp.widget.setX(canvas.new_theme.port_offset +1)
                 elif portgrp.port_mode == PORT_MODE_OUTPUT:
                     portgrp.widget.set_portgrp_width(max_out_width)
                     portgrp.widget.setX(outX)
 
-            max_port_in_pg_width = canvas.theme.port_in_portgrp_width
+            max_port_in_pg_width = canvas.new_theme.port_grouped_width
 
             for port in canvas.port_list:
                 if (port.group_id == self._group_id
@@ -905,7 +895,7 @@ class CanvasBox(QGraphicsItem):
                         max_port_in_pg_width = max(max_port_in_pg_width,
                                                    port_print_width + 4)
 
-            out_in_portgrpX = (self._width - canvas.theme.port_offset - 12
+            out_in_portgrpX = (self._width - canvas.new_theme.port_offset - 12
                                - max_port_in_pg_width)
 
             portgrp.widget.set_ports_width(max_port_in_pg_width)
@@ -950,11 +940,11 @@ class CanvasBox(QGraphicsItem):
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
                 else:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_CENTER
-
+        
         down_height = max(canvas.new_theme.port_spacing,
                           canvas.new_theme.port_type_spacing) \
                         - canvas.new_theme.port_spacing \
-                        + canvas.theme.box_pen.widthF()
+                        + self.get_theme().fill_pen().widthF()
 
         self.p_wrapped_height = wrapped_height + down_height
         self._unwrapped_height = normal_height + down_height
@@ -1460,7 +1450,7 @@ class CanvasBox(QGraphicsItem):
         
         pen = theme.fill_pen()
         # Draw rectangle
-        # pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)
+
         pen.setWidthF(pen.widthF() + 0.00001)
         painter.setPen(pen)
         pen_width = pen.widthF()
@@ -1617,10 +1607,6 @@ class CanvasBox(QGraphicsItem):
                 painter.drawLine(int(right_xpos + 5), 16,
                                  int(self._width - 5), 16)
 
-        # if self.isSelected():
-        #     painter.setPen(canvas.theme.box_text_sel)
-        # else:
-        #     painter.setPen(canvas.theme.box_text)
         painter.setPen(theme.text_color())
 
         # draw title lines
@@ -1658,8 +1644,12 @@ class CanvasBox(QGraphicsItem):
                     title_line.text)
 
         # draw (un)wrapper triangles
-        painter.setPen(canvas.theme.wrap_triangle_pen)
-        painter.setBrush(QColor(255, 192, 0, 80))
+        wrapper_theme = canvas.new_theme.wrapper
+        if self.isSelected():
+            wrapper_theme = wrapper_theme.selected
+
+        painter.setPen(wrapper_theme.fill_pen())
+        painter.setBrush(wrapper_theme.background_color())
 
         if self._wrapped:
             for port_mode in PORT_MODE_INPUT, PORT_MODE_OUTPUT:
@@ -1719,7 +1709,7 @@ class CanvasBox(QGraphicsItem):
 
     def _split_title(self, n_lines=True)->tuple:
         title, slash, subtitle = self._group_name.partition('/')
-        theme = self._get_theme()
+        theme = self.get_theme()
 
         if self._icon_type == ICON_CLIENT and subtitle:
             # if there is a subtitle, title is not bold when subtitle is.
@@ -1832,11 +1822,6 @@ class CanvasBox(QGraphicsItem):
             hw_poly_bt += QPointF(self._width + lineHinting, self._height + lineHinting)
             painter.drawPolygon(hw_poly_bt)
 
-        # pen = QPen(canvas.theme.box_pen_sel if self.isSelected() else canvas.theme.box_pen)
-        # pen.setWidthF(pen.widthF() + 0.00001)
-        # painter.setPen(pen)
-        # painter.setBrush(brush)
-
     def _paint_inline_display(self, painter):
         if self._plugin_inline == self.INLINE_DISPLAY_DISABLED:
             return
@@ -1880,7 +1865,7 @@ class CanvasBox(QGraphicsItem):
 
         painter.drawImage(QRectF(srcx, srcy, swidth, sheight), self._inline_image)
     
-    def _get_theme(self):
+    def get_theme(self):
         theme = canvas.new_theme.box
         if self._is_hardware:
             theme = theme.hardware

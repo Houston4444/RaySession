@@ -47,19 +47,19 @@ class PortCheckBox(QCheckBox):
         self.setMinimumHeight(23)
         self.setMinimumWidth(100)
 
-        border_color = canvas.theme.port_audio_jack_pen.color().name()
-        sel_bg = canvas.theme.port_audio_jack_bg.name()
-        sel_text_color = canvas.theme.port_audio_jack_text.color().name()
+        # border_color = canvas.theme.port_audio_jack_pen.color().name()
+        # sel_bg = canvas.theme.port_audio_jack_bg.name()
+        # sel_text_color = canvas.theme.port_audio_jack_text.color().name()
 
-        if port_type == PORT_TYPE_MIDI_JACK:
-            border_color = canvas.theme.port_midi_jack_pen.color().name()
-            sel_bg = canvas.theme.port_midi_jack_bg.name()
-            sel_text_color = canvas.theme.port_midi_jack_text.color().name()
+        # if port_type == PORT_TYPE_MIDI_JACK:
+        #     border_color = canvas.theme.port_midi_jack_pen.color().name()
+        #     sel_bg = canvas.theme.port_midi_jack_bg.name()
+        #     sel_text_color = canvas.theme.port_midi_jack_text.color().name()
 
-        #self.setStyleSheet(
-            #"""QCheckBox:hover{background-color: %s;color: %s}
-            #QCheckBox::indicator:hover{background-color: #202020;color: white}""" % (
-                #sel_bg, sel_text_color))
+        # #self.setStyleSheet(
+        #     #"""QCheckBox:hover{background-color: %s;color: %s}
+        #     #QCheckBox::indicator:hover{background-color: #202020;color: white}""" % (
+        #         #sel_bg, sel_text_color))
         self._parent = parent
         self._port_id = port_id
         self._portgrp_id = portgrp_id
@@ -608,23 +608,23 @@ class MainPortContextMenu(QMenu):
             else:
                 return
 
-        border_color = canvas.theme.port_audio_jack_pen.color().name()
-        sel_bg = canvas.theme.port_audio_jack_bg.name()
-        sel_text_color = canvas.theme.port_audio_jack_text.color().name()
+        # border_color = canvas.theme.port_audio_jack_pen.color().name()
+        # sel_bg = canvas.theme.port_audio_jack_bg.name()
+        # sel_text_color = canvas.theme.port_audio_jack_text.color().name()
 
-        if port_type == PORT_TYPE_MIDI_JACK:
-            border_color = canvas.theme.port_midi_jack_pen.color().name()
-            sel_bg = canvas.theme.port_midi_jack_bg.name()
-            sel_text_color = canvas.theme.port_midi_jack_text.color().name()
+        # if port_type == PORT_TYPE_MIDI_JACK:
+        #     border_color = canvas.theme.port_midi_jack_pen.color().name()
+        #     sel_bg = canvas.theme.port_midi_jack_bg.name()
+        #     sel_text_color = canvas.theme.port_midi_jack_text.color().name()
 
-        style_str = """QMenu{background-color:#202020; border: 1px solid;
-            border-color: %s; border-radius: 4px}
-            QMenu::item{background-color: #202020;color: white}
-            QMenu::item:disabled{color: #777777}
-            QMenu::item:selected{background-color: %s; color:%s}""" % (
-                border_color, sel_bg, sel_text_color)
+        # style_str = """QMenu{background-color:#202020; border: 1px solid;
+        #     border-color: %s; border-radius: 4px}
+        #     QMenu::item{background-color: #202020;color: white}
+        #     QMenu::item:disabled{color: #777777}
+        #     QMenu::item:selected{background-color: %s; color:%s}""" % (
+        #         border_color, sel_bg, sel_text_color)
 
-        #self.setStyleSheet(style_str)
+        # #self.setStyleSheet(style_str)
 
         PortData.__init__(self, group_id, port_id, port_type,
                           port_mode, portgrp_id, is_alternate)

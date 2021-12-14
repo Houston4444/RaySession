@@ -74,12 +74,16 @@ class CanvasPortGroup(QGraphicsItem):
         # Base Variables
         self._portgrp_width  = 15
         self._portgrp_height = canvas.new_theme.port_height
-        self._portgrp_font = QFont()
-        self._portgrp_font.setFamily(canvas.theme.port_font_name)
-        self._portgrp_font.setPixelSize(canvas.theme.port_font_size)
-        self._portgrp_font.setWeight(canvas.theme.port_font_state)
+        
+        theme = canvas.new_theme.portgroup
+        if self._port_type == PORT_TYPE_AUDIO_JACK:
+            theme = theme.audio
+        elif self._port_type == PORT_TYPE_MIDI_JACK:
+            theme == theme.midi
+        
+        self._portgrp_font = theme.font()
 
-        self._ports_width = canvas.theme.port_in_portgrp_width
+        self._ports_width = canvas.new_theme.port_grouped_width
         self._print_name = ''
         self._normal_print_name = '' # same as m_print_name but not reduced
         self._print_name_right = ''
@@ -632,12 +636,12 @@ class CanvasPortGroup(QGraphicsItem):
 
     def boundingRect(self):
         if self._port_mode == PORT_MODE_INPUT:
-            return QRectF(canvas.theme.port_in_portgrp_width, 0,
-                          self._portgrp_width + 12 - canvas.theme.port_in_portgrp_width,
+            return QRectF(canvas.new_theme.port_grouped_width, 0,
+                          self._portgrp_width + 12 - canvas.new_theme.port_grouped_width,
                           canvas.new_theme.port_height * len(self._port_id_list))
         else:
             return QRectF(0, 0,
-                          self._portgrp_width + 12 - canvas.theme.port_in_portgrp_width,
+                          self._portgrp_width + 12 - canvas.new_theme.port_grouped_width,
                           canvas.new_theme.port_height * len(self._port_id_list))
 
     def paint(self, painter, option, widget):
@@ -663,8 +667,6 @@ class CanvasPortGroup(QGraphicsItem):
 
         lineHinting = poly_pen.widthF() / 2.0
 
-        # lineHinting = canvas.theme.port_audio_jack_pen.widthF() / 2
-
         poly_locx = [0, 0, 0, 0, 0]
         poly_corner_xhinting = (
             float(canvas.new_theme.port_height)/2) % floor(float(canvas.new_theme.port_height)/2)
@@ -672,7 +674,7 @@ class CanvasPortGroup(QGraphicsItem):
             poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.new_theme.port_height)/2))
 
         if self._port_mode == PORT_MODE_INPUT:
-            port_width = canvas.theme.port_in_portgrp_width
+            port_width = canvas.new_theme.port_grouped_width
 
             for port in canvas.port_list:
                 if port.port_id in self._port_id_list:

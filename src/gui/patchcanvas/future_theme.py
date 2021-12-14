@@ -39,6 +39,7 @@ def _to_qcolor(color):
 class StyleAttributer:
     def __init__(self, path, parent=None):
         self.subs = []
+
         self._border_color = None
         self._border_width = None
         self._border_style = None
@@ -48,6 +49,7 @@ class StyleAttributer:
         self._font_name = None
         self._font_size = None
         self._font_width = None
+
         self._path = path
         self._parent = parent
     
@@ -222,92 +224,6 @@ class LineStyleAttributer(UnselectedStyleAttributer):
         self.subs += ['audio', 'midi']
 
 
-class BodyStyleAttributer:
-    def __init__(self, path):
-        self._path = path
-        self._background_color = QColor('black')
-        self._port_height = 16
-        self._port_spacing = 2
-        self._port_type_spacing = 2
-        self._box_spacing = 4
-        self._box_spacing_horizontal = 24
-        self._magnet = 12
-        self._hardware_rack_width = 5
-        
-    def set_attribute(self, attribute: str, value):
-        err = False
-
-        if attribute == 'background':
-            self._background_color = _to_qcolor(value)
-            if self._background_color is None:
-                err = True
-                
-        elif attribute == 'port-height':
-            if isinstance(value, int):
-                self._port_height = value
-            else:
-                err = True
-        
-        elif attribute == 'port-spacing':
-            if isinstance(value, int):
-                self._port_spacing = value
-            else:
-                err = True
-        
-        elif attribute == 'port-type-spacing':
-            if isinstance(value, int):
-                self._port_type_spacing = value
-            else:
-                err = True
-        
-        elif attribute == 'box-spacing':
-            if isinstance(value, int):
-                self._box_spacing = value
-            else:
-                err = True
-        
-        
-        
-        elif attribute == 'text-color':
-            self._text_color = _to_qcolor(value)
-            if self._text_color is None:
-                err = True
-                
-        elif attribute == 'font-name':
-            if isinstance(value, str):
-                self._font_name = value
-            else:
-                err = True
-                
-        elif attribute == 'font-size':
-            if isinstance(value, int):
-                self._font_size = value
-            else:
-                err = True
-                
-        elif attribute == 'font-width':
-            if isinstance(value, int):
-                value = min(value, 99)
-                value = max(value, 0)
-                self._font_width = value
-            elif isinstance(value, str):
-                value = value.lower()
-                if value == 'normal':
-                    self._font_state = QFont.Normal
-                elif value == 'bold':
-                    self._font_state = QFont.Bold
-                else:
-                    err = True
-            else:
-                err = True
-        else:
-            print_error("%s:unknown key: %s" % (self._path, attribute))
-
-        if err:
-            print_error("%s:invalid value for %s: %s"
-                        % (self._path, attribute, str(value)))
-        
-
 class Theme(StyleAttributer):
     def __init__(self):
         StyleAttributer.__init__(self, '')
@@ -324,9 +240,12 @@ class Theme(StyleAttributer):
         self._font_width = QFont.Normal # QFont.Normal is 50
 
         self.background_color = QColor('black')
+        self.box_shadow_color = QColor('gray')
         self.port_height = 16
         self.port_spacing = 2
         self.port_type_spacing = 2
+        self.port_offset = 0
+        self.port_grouped_width = 19
         self.box_spacing = 4
         self.box_spacing_horizontal = 24
         self.magnet = 12
@@ -336,7 +255,9 @@ class Theme(StyleAttributer):
         self.portgroup = PortStyleAttributer('.portgroup', self)
         self.port = PortStyleAttributer('.port', self)
         self.line = LineStyleAttributer('.line', self)
-        self.subs += ['box', 'portgroup', 'port', 'line']
+        self.wrapper = UnselectedStyleAttributer('.wrapper', self)
+        self.rubberband = StyleAttributer('.rubberband', self)
+        self.subs += ['box', 'portgroup', 'port', 'line', 'wrapper', 'rubberband']
         
     def read_theme(self, theme_dict: dict):
         if not isinstance(theme_dict, dict):
@@ -355,7 +276,7 @@ class Theme(StyleAttributer):
                     if body_key in (
                             'port-height', 'port-spacing', 'port-type-spacing',
                             'box-spacing', 'box-spacing-horizontal', 'magnet',
-                            'hardware-rack-width'):
+                            'hardware-rack-width', 'port-offset'):
                         if not isinstance(body_value, int):
                             continue
                         self.__setattr__(body_key.replace('-', '_'), body_value)
@@ -363,6 +284,10 @@ class Theme(StyleAttributer):
                         self.background_color = _to_qcolor(body_value)
                         if self.background_color is None:
                             self.background_color = QColor('black')
+                    elif body_key == 'box-shadow-color':
+                        self.box_shadow_color = _to_qcolor(body_value)
+                        if self.box_shadow_color is None:
+                            self.box_shadow_color = QColor('black')
                 continue
             
             if begin not in self.subs:
@@ -375,10 +300,16 @@ class Theme(StyleAttributer):
 
 # theme = Theme()
 default_theme = {
-    # 'body':
-    #     {'port-height': 26,
-    #      'port-type-spacing': 14,
-    #      'hardware-rack-width': 18},
+    'body':
+        {'port-offset': 0,
+         'box-shadow-color': (89, 89, 89, 180)},
+    'wrapper':
+        {'border-color': (56, 57, 58),
+         'background': (255, 192, 0, 80)
+         },
+    'rubberband':
+        {'border-color': (206, 207, 208),
+          'background': (76, 77, 78, 100)},
     'box': 
         {'background': (20, 20, 20),
          'background2': (26, 24, 21),
@@ -432,6 +363,8 @@ default_theme = {
     'line':
         {'border-width': 1.75
         },
+    'line.selected':
+        {'border-width': 2.25},
     'line.audio':
         {'border-color': (60, 60, 72)
         },

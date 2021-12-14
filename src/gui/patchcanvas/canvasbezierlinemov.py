@@ -80,18 +80,17 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         self._portgrp_len_to = portgrp_len
 
     def update_line_pos(self, scenePos):
-        pen_color = canvas.theme.line_audio_jack_sel
-        if self._port_type == PORT_TYPE_MIDI_JACK:
-            pen_color = canvas.theme.line_midi_jack_sel
-        elif self._port_type == PORT_TYPE_MIDI_ALSA:
-            pen_color = canvas.theme.line_midi_alsa_sel
-        elif self._port_type == PORT_TYPE_PARAMETER:
-            pen_color = canvas.theme.line_parameter_sel
-            
-        pen = QPen(pen_color, 2)
-        if self.ready_to_disc:
-            pen = QPen(pen_color, 2, Qt.DotLine)
+        theme = canvas.new_theme.line
         
+        if self._port_type == PORT_TYPE_AUDIO_JACK:
+            theme = theme.audio
+        elif self._port_type == PORT_TYPE_MIDI_JACK:
+            theme = theme.midi
+            
+        theme = theme.selected
+        
+        pen = theme.fill_pen()
+        pen.setStyle(Qt.DotLine if self.ready_to_disc else Qt.SolidLine)
         pen.setCapStyle(Qt.FlatCap)
         pen.setWidthF(pen.widthF() + 0.00001)
         self.setPen(pen)
