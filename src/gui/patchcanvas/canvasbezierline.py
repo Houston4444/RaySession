@@ -86,15 +86,15 @@ class CanvasBezierLine(QGraphicsPathItem):
             phi = 0.75 if portgrp_len_1 > 2 else 0.62
 
             if portgrp_len_1 > 1:
-                first_old_y = canvas.theme.port_height * phi
-                last_old_y = canvas.theme.port_height * (portgrp_len_1 - phi)
+                first_old_y = canvas.new_theme.port_height * phi
+                last_old_y = canvas.new_theme.port_height * (portgrp_len_1 - phi)
                 delta = (last_old_y - first_old_y) / (portgrp_len_1 -1)
-                old_y1 = first_old_y + (port_pos_1 * delta) - (canvas.theme.port_height * port_pos_1)
+                old_y1 = first_old_y + (port_pos_1 * delta) - (canvas.new_theme.port_height * port_pos_1)
                 if not self.item1.isVisible():
                     # item is hidden port when its box is folded
-                    old_y1 = canvas.theme.port_height - old_y1
+                    old_y1 = canvas.new_theme.port_height - old_y1
             else:
-                old_y1 = canvas.theme.port_height / 2
+                old_y1 = canvas.new_theme.port_height / 2
 
             item1_y = self.item1.scenePos().y() + old_y1
 
@@ -105,15 +105,15 @@ class CanvasBezierLine(QGraphicsPathItem):
             phi = 0.75 if portgrp_len_1 > 2 else 0.62
 
             if portgrp_len_2 > 1:
-                first_old_y = canvas.theme.port_height * phi
-                last_old_y  = canvas.theme.port_height * (portgrp_len_2 - phi)
+                first_old_y = canvas.new_theme.port_height * phi
+                last_old_y  = canvas.new_theme.port_height * (portgrp_len_2 - phi)
                 delta = (last_old_y - first_old_y) / (portgrp_len_2 -1)
                 old_y2 = (first_old_y + (port_pos_2 * delta)
-                          - (canvas.theme.port_height * port_pos_2))
+                          - (canvas.new_theme.port_height * port_pos_2))
                 if not self.item2.isVisible():
-                    old_y2 = canvas.theme.port_height - old_y2
+                    old_y2 = canvas.new_theme.port_height - old_y2
             else:
-                old_y2 = canvas.theme.port_height / 2
+                old_y2 = canvas.new_theme.port_height / 2
 
             item2_y = self.item2.scenePos().y() + old_y2
 

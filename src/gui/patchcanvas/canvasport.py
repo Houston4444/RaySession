@@ -82,11 +82,19 @@ class CanvasPort(QGraphicsItem):
 
         # Base Variables
         self._port_width = 15
-        self._port_height = canvas.theme.port_height
-        self._port_font = QFont()
-        self._port_font.setFamily(canvas.theme.port_font_name)
-        self._port_font.setPixelSize(canvas.theme.port_font_size)
-        self._port_font.setWeight(canvas.theme.port_font_state)
+        self._port_height = canvas.new_theme.port_height
+
+        theme = canvas.new_theme.port
+        if self._port_type == PORT_TYPE_AUDIO_JACK:
+            if self._is_alternate:
+                theme = theme.cv
+            else:
+                theme = theme.audio
+        elif self._port_type == PORT_TYPE_MIDI_JACK:
+            theme = theme.midi
+            
+        self._port_font = theme.font()
+            
 
         # needed for line mov
         self._line_mov_list = []
@@ -714,10 +722,10 @@ class CanvasPort(QGraphicsItem):
         text_y_pos = 12
 
         poly_locx = [0, 0, 0, 0, 0, 0]
-        poly_corner_xhinting = ((float(canvas.theme.port_height)/2)
-                                % floor(float(canvas.theme.port_height)/2))
+        poly_corner_xhinting = ((float(canvas.new_theme.port_height)/2)
+                                % floor(float(canvas.new_theme.port_height)/2))
         if poly_corner_xhinting == 0:
-            poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
+            poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.new_theme.port_height)/2))
 
         is_cv_port = bool(self._port_type == PORT_TYPE_AUDIO_JACK
                           and self._is_alternate)
@@ -787,17 +795,17 @@ class CanvasPort(QGraphicsItem):
                 polygon += QPointF(poly_locx[5] , 0)
 
             if last_of_portgrp:
-                polygon += QPointF(poly_locx[5], canvas.theme.port_height - lineHinting)
-                polygon += QPointF(poly_locx[0], canvas.theme.port_height - lineHinting)
+                polygon += QPointF(poly_locx[5], canvas.new_theme.port_height - lineHinting)
+                polygon += QPointF(poly_locx[0], canvas.new_theme.port_height - lineHinting)
             else:
-                polygon += QPointF(poly_locx[5], canvas.theme.port_height)
-                polygon += QPointF(poly_locx[0], canvas.theme.port_height)
+                polygon += QPointF(poly_locx[5], canvas.new_theme.port_height)
+                polygon += QPointF(poly_locx[0], canvas.new_theme.port_height)
         else:
             polygon += QPointF(poly_locx[0], lineHinting)
             polygon += QPointF(poly_locx[1], lineHinting)
-            polygon += QPointF(poly_locx[2], float(canvas.theme.port_height)/2)
-            polygon += QPointF(poly_locx[3], canvas.theme.port_height - lineHinting)
-            polygon += QPointF(poly_locx[4], canvas.theme.port_height - lineHinting)
+            polygon += QPointF(poly_locx[2], float(canvas.new_theme.port_height)/2)
+            polygon += QPointF(poly_locx[3], canvas.new_theme.port_height - lineHinting)
+            polygon += QPointF(poly_locx[4], canvas.new_theme.port_height - lineHinting)
             polygon += QPointF(poly_locx[0], lineHinting)
 
         
@@ -824,7 +832,7 @@ class CanvasPort(QGraphicsItem):
                 poly_pen.setWidthF(2.000001)
                 painter.setPen(poly_pen)
 
-                y_line = canvas.theme.port_height / 2.0
+                y_line = canvas.new_theme.port_height / 2.0
                 if self._port_mode == PORT_MODE_OUTPUT:
                     painter.drawLine(0, y_line, poly_locx[1], y_line)
                 elif self._port_mode == PORT_MODE_INPUT:
@@ -843,7 +851,7 @@ class CanvasPort(QGraphicsItem):
                     ellipse_x += 2
 
                 painter.drawEllipse(
-                    QPointF(ellipse_x, canvas.theme.port_height / 2.0), 2, 2)
+                    QPointF(ellipse_x, canvas.new_theme.port_height / 2.0), 2, 2)
 
         painter.setPen(text_pen)
         painter.setFont(self._port_font)
@@ -860,7 +868,7 @@ class CanvasPort(QGraphicsItem):
 
             if print_name_size > (self._port_width - 4):
                 painter.setPen(QPen(port_gradient, 3))
-                painter.drawLine(poly_locx[5], 3, poly_locx[5], canvas.theme.port_height - 3)
+                painter.drawLine(poly_locx[5], 3, poly_locx[5], canvas.new_theme.port_height - 3)
                 painter.setPen(text_pen)
                 painter.setFont(self._port_font)
 
