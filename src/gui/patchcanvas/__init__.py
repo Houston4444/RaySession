@@ -26,8 +26,6 @@ from PyQt5.QtWidgets import QGraphicsItem
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Theme)
 
-from .theme import get_default_theme_name
-
 # ------------------------------------------------------------------------------------------------------------
 
 # Maximum Id for a plugin, treated as invalid/zero if above this value
@@ -303,7 +301,7 @@ def split2str(split):
 canvas = Canvas()
 
 options = options_t()
-options.theme_name = get_default_theme_name()
+options.theme_name = ''
 options.auto_hide_groups = False
 options.auto_select_items = False
 options.eyecandy = EYECANDY_NONE

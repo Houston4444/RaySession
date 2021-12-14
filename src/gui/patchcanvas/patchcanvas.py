@@ -26,7 +26,7 @@ from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 import patchcanvas.utils as utils
-import patchcanvas.future_theme as future_theme
+import patchcanvas.theme as theme
 
 # from . import (
 #     canvas,
@@ -65,7 +65,7 @@ import patchcanvas.future_theme as future_theme
 
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
-from .theme import Theme, get_default_theme, get_theme_name
+from .theme import Theme
 
 # FIXME
 from . import *
@@ -156,23 +156,16 @@ def init(appName, scene, callback, debug=False):
     if canvas.theme:
         del canvas.theme
         canvas.theme = None
-    
-    if canvas.new_theme:
-        del canvas.new_theme
-        canvas.new_theme = None
 
-    for i in range(Theme.THEME_MAX):
-        this_theme_name = get_theme_name(i)
-        if this_theme_name == options.theme_name:
-            canvas.theme = Theme(i)
-            break
+    # for i in range(Theme.THEME_MAX):
+    #     this_theme_name = get_theme_name(i)
+    #     if this_theme_name == options.theme_name:
+    #         canvas.theme = Theme(i)
+    #         break
 
     if not canvas.theme:
-        canvas.theme = Theme(get_default_theme())
-
-    if not canvas.new_theme:
-        canvas.new_theme = future_theme.Theme()
-        canvas.new_theme.read_theme(future_theme.default_theme)
+        canvas.theme = Theme()
+        canvas.theme.read_theme(theme.default_theme)
     
     canvas.scene.update_theme()
 

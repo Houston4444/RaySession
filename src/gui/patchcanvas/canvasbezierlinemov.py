@@ -80,7 +80,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         self._portgrp_len_to = portgrp_len
 
     def update_line_pos(self, scenePos):
-        theme = canvas.new_theme.line
+        theme = canvas.theme.line
         
         if self._port_type == PORT_TYPE_AUDIO_JACK:
             theme = theme.audio
@@ -100,27 +100,27 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 
         if self.parentItem().type() == CanvasPortType:
             if self._portgrp_len > 1:
-                first_old_y = canvas.new_theme.port_height * phi
-                last_old_y  = canvas.new_theme.port_height * (self._portgrp_len - phi)
+                first_old_y = canvas.theme.port_height * phi
+                last_old_y  = canvas.theme.port_height * (self._portgrp_len - phi)
                 delta = (last_old_y - first_old_y) / (self._portgrp_len -1)
                 old_y = first_old_y + (self._port_posinportgrp * delta) \
-                        - canvas.new_theme.port_height * self._port_posinportgrp
+                        - canvas.theme.port_height * self._port_posinportgrp
             else:
-                old_y = canvas.new_theme.port_height / 2
+                old_y = canvas.theme.port_height / 2
 
             if self._portgrp_len_to == 1:
                 new_y = 0
             else:
-                first_new_y = canvas.new_theme.port_height * phito
-                last_new_y  = canvas.new_theme.port_height * (self._portgrp_len_to - phito)
+                first_new_y = canvas.theme.port_height * phito
+                last_new_y  = canvas.theme.port_height * (self._portgrp_len_to - phito)
                 delta = (last_new_y - first_new_y) / (self._portgrp_len_to -1)
                 new_y1 = first_new_y + (self._port_posinportgrp_to * delta)
                 new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) \
-                        - canvas.new_theme.port_height * phito
+                        - canvas.theme.port_height * phito
 
         elif self.parentItem().type() == CanvasPortGroupType:
-            first_old_y = canvas.new_theme.port_height * phi
-            last_old_y  = canvas.new_theme.port_height * (self._portgrp_len - phi)
+            first_old_y = canvas.theme.port_height * phi
+            last_old_y  = canvas.theme.port_height * (self._portgrp_len - phi)
             delta = (last_old_y - first_old_y) / (self._portgrp_len -1)
             old_y = first_old_y + (self._port_posinportgrp * delta)
 
@@ -129,14 +129,14 @@ class CanvasBezierLineMov(QGraphicsPathItem):
             elif (self._port_posinportgrp_to == self._port_posinportgrp
                   and self._portgrp_len == self._portgrp_len_to):
                 new_y = old_y - ( (last_old_y - first_old_y) / 2 ) \
-                        - (canvas.new_theme.port_height * phi)
+                        - (canvas.theme.port_height * phi)
             else:
-                first_new_y = canvas.new_theme.port_height * phito
-                last_new_y  = canvas.new_theme.port_height * (self._portgrp_len_to - phito)
+                first_new_y = canvas.theme.port_height * phito
+                last_new_y  = canvas.theme.port_height * (self._portgrp_len_to - phito)
                 delta = (last_new_y - first_new_y) / (self._portgrp_len_to -1)
                 new_y1 = first_new_y + (self._port_posinportgrp_to * delta)
                 new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) \
-                        - (canvas.new_theme.port_height * phito)
+                        - (canvas.theme.port_height * phito)
 
         final_x = scenePos.x() - self._item_x
         final_y = scenePos.y() - self._item_y + new_y

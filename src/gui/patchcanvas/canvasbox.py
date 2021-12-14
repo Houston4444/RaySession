@@ -521,7 +521,7 @@ class CanvasBox(QGraphicsItem):
         self._unwrapping = not yesno
         canvas.scene.add_box_to_animation_wrapping(self, yesno)
         
-        hws = canvas.new_theme.hardware_rack_width
+        hws = canvas.theme.hardware_rack_width
         
         if yesno:
             new_bounding_rect = QRectF(0, 0, self._width, self.p_wrapped_height)
@@ -566,7 +566,7 @@ class CanvasBox(QGraphicsItem):
                 self._current_port_mode |= port.port_mode
 
         max_in_width = max_out_width = 0
-        port_spacing = canvas.new_theme.port_height + canvas.new_theme.port_spacing
+        port_spacing = canvas.theme.port_height + canvas.theme.port_spacing
 
         # Get Max Box Width, vertical ports re-positioning
         port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK,
@@ -648,7 +648,7 @@ class CanvasBox(QGraphicsItem):
 
                                 if portgrp_name:
                                     portgrp.widget.set_print_name(
-                                        portgrp_name, max_pwidth - canvas.new_theme.port_grouped_width - 5)
+                                        portgrp_name, max_pwidth - canvas.theme.port_grouped_width - 5)
                                 else:
                                     portgrp.widget.set_print_name('', 0)
                             
@@ -662,7 +662,7 @@ class CanvasBox(QGraphicsItem):
 
                             size = portgrp.widget.get_text_width() \
                                    + max(port.widget.get_text_width() + 6,
-                                         canvas.new_theme.port_grouped_width)
+                                         canvas.theme.port_grouped_width)
                             break
                     else:
                         port.widget.set_print_name(port.port_name, max_pwidth)
@@ -673,7 +673,7 @@ class CanvasBox(QGraphicsItem):
                         if (port.port_type != last_in_type
                                 or port.is_alternate != last_in_alter):
                             if last_in_type != PORT_TYPE_NULL:
-                                last_in_pos += canvas.new_theme.port_type_spacing
+                                last_in_pos += canvas.theme.port_type_spacing
                             last_in_type = port.port_type
                             last_in_alter = port.is_alternate
 
@@ -704,14 +704,14 @@ class CanvasBox(QGraphicsItem):
                         if last_of_portgrp:
                             last_in_pos += port_spacing
                         else:
-                            last_in_pos += canvas.new_theme.port_height
+                            last_in_pos += canvas.theme.port_height
 
                     elif port.port_mode == PORT_MODE_OUTPUT:
                         max_out_width = max(max_out_width, size)
                         if (port.port_type != last_out_type
                                 or port.is_alternate != last_out_alter):
                             if last_out_type != PORT_TYPE_NULL:
-                                last_out_pos += canvas.new_theme.port_type_spacing
+                                last_out_pos += canvas.theme.port_type_spacing
                             last_out_type = port.port_type
                             last_out_alter = port.is_alternate
 
@@ -742,7 +742,7 @@ class CanvasBox(QGraphicsItem):
                         if last_of_portgrp:
                             last_out_pos += port_spacing
                         else:
-                            last_out_pos += canvas.new_theme.port_height
+                            last_out_pos += canvas.theme.port_height
                 
                     final_last_in_pos = last_in_pos
                     final_last_out_pos = last_out_pos
@@ -851,8 +851,8 @@ class CanvasBox(QGraphicsItem):
             last_out_pos += more_height
 
         # Horizontal ports re-positioning
-        inX = canvas.new_theme.port_offset
-        outX = self._width - max_out_width - canvas.new_theme.port_offset - 12
+        inX = canvas.theme.port_offset
+        outX = self._width - max_out_width - canvas.theme.port_offset - 12
 
         # Horizontal ports not in portgroup re-positioning
         for port in port_list:
@@ -875,12 +875,12 @@ class CanvasBox(QGraphicsItem):
             if portgrp.widget is not None:
                 if portgrp.port_mode == PORT_MODE_INPUT:
                     portgrp.widget.set_portgrp_width(max_in_width)
-                    portgrp.widget.setX(canvas.new_theme.port_offset +1)
+                    portgrp.widget.setX(canvas.theme.port_offset +1)
                 elif portgrp.port_mode == PORT_MODE_OUTPUT:
                     portgrp.widget.set_portgrp_width(max_out_width)
                     portgrp.widget.setX(outX)
 
-            max_port_in_pg_width = canvas.new_theme.port_grouped_width
+            max_port_in_pg_width = canvas.theme.port_grouped_width
 
             for port in canvas.port_list:
                 if (port.group_id == self._group_id
@@ -895,7 +895,7 @@ class CanvasBox(QGraphicsItem):
                         max_port_in_pg_width = max(max_port_in_pg_width,
                                                    port_print_width + 4)
 
-            out_in_portgrpX = (self._width - canvas.new_theme.port_offset - 12
+            out_in_portgrpX = (self._width - canvas.theme.port_offset - 12
                                - max_port_in_pg_width)
 
             portgrp.widget.set_ports_width(max_port_in_pg_width)
@@ -912,7 +912,7 @@ class CanvasBox(QGraphicsItem):
 
         # wrapped/unwrapped sizes
         normal_height = max(last_in_pos, last_out_pos)
-        wrapped_height = wrapped_port_pos + canvas.new_theme.port_height
+        wrapped_height = wrapped_port_pos + canvas.theme.port_height
         if len(self._title_lines) >= 3:
             wrapped_height += 14
             self._header_height = self._default_header_height + 14
@@ -941,9 +941,9 @@ class CanvasBox(QGraphicsItem):
                 else:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_CENTER
         
-        down_height = max(canvas.new_theme.port_spacing,
-                          canvas.new_theme.port_type_spacing) \
-                        - canvas.new_theme.port_spacing \
+        down_height = max(canvas.theme.port_spacing,
+                          canvas.theme.port_type_spacing) \
+                        - canvas.theme.port_spacing \
                         + self.get_theme().fill_pen().widthF()
 
         self.p_wrapped_height = wrapped_height + down_height
@@ -1295,10 +1295,10 @@ class CanvasBox(QGraphicsItem):
                         ypos += 14
 
                     triangle_rect_out = QRectF(
-                        0, ypos, 24, ypos + canvas.new_theme.port_spacing)
+                        0, ypos, 24, ypos + canvas.theme.port_spacing)
                     triangle_rect_in = QRectF(
                         self._width - 24, ypos,
-                        24, ypos + canvas.new_theme.port_spacing)
+                        24, ypos + canvas.theme.port_spacing)
 
                     mode = PORT_MODE_INPUT
                     wrap = False
@@ -1422,7 +1422,7 @@ class CanvasBox(QGraphicsItem):
                 item.send_move_callback()
 
     def boundingRect(self):
-        hws = canvas.new_theme.hardware_rack_width
+        hws = canvas.theme.hardware_rack_width
         
         if self._is_hardware:
             return QRectF(- hws, - hws,
@@ -1437,7 +1437,7 @@ class CanvasBox(QGraphicsItem):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, True)
 
-        theme = canvas.new_theme.box
+        theme = canvas.theme.box
         if self._is_hardware:
             theme = theme.hardware
         elif self._icon_type == ICON_CLIENT:
@@ -1644,7 +1644,7 @@ class CanvasBox(QGraphicsItem):
                     title_line.text)
 
         # draw (un)wrapper triangles
-        wrapper_theme = canvas.new_theme.wrapper
+        wrapper_theme = canvas.theme.wrapper
         if self.isSelected():
             wrapper_theme = wrapper_theme.selected
 
@@ -1738,7 +1738,7 @@ class CanvasBox(QGraphicsItem):
         if not self._is_hardware:
             return
         
-        d = canvas.new_theme.hardware_rack_width
+        d = canvas.theme.hardware_rack_width
         hw_gradient = QLinearGradient(-d, -d, self._width +d, self._height +d)
         hw_gradient.setColorAt(0, QColor(60, 60, 43))
         hw_gradient.setColorAt(0.5, QColor(40, 40, 24))
@@ -1829,7 +1829,7 @@ class CanvasBox(QGraphicsItem):
             return
 
         inwidth  = self._width - self._width_in - self._width_out - 16
-        inheight = self._height - self._default_header_height - canvas.new_theme.port_spacing - 3
+        inheight = self._height - self._default_header_height - canvas.theme.port_spacing - 3
         scaling  = canvas.scene.get_scale_factor() * canvas.scene.get_device_pixel_ratio_f()
 
         if (self._plugin_id >= 0
@@ -1866,7 +1866,7 @@ class CanvasBox(QGraphicsItem):
         painter.drawImage(QRectF(srcx, srcy, swidth, sheight), self._inline_image)
     
     def get_theme(self):
-        theme = canvas.new_theme.box
+        theme = canvas.theme.box
         if self._is_hardware:
             theme = theme.hardware
         elif self._icon_type == ICON_CLIENT:

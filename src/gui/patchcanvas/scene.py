@@ -274,9 +274,9 @@ class PatchScene(QGraphicsScene):
         if not options.prevent_overlap:
             return
         
-        box_spacing = canvas.new_theme.box_spacing
-        box_spacing_hor = canvas.new_theme.box_spacing_horizontal
-        magnet = canvas.new_theme.magnet
+        box_spacing = canvas.theme.box_spacing
+        box_spacing_hor = canvas.theme.box_spacing_horizontal
+        magnet = canvas.theme.magnet
         
         def get_direction(fixed_rect, moving_rect, parent_directions=[])->int:
             if (moving_rect.top() <= fixed_rect.center().y() <= moving_rect.bottom()
@@ -584,7 +584,7 @@ class PatchScene(QGraphicsScene):
             for item in self.items(
                     srect.adjusted(
                         0, 0, 0,
-                        canvas.new_theme.box_spacing + 1)):
+                        canvas.theme.box_spacing + 1)):
                 if item not in neighbors and item.type() == CanvasBoxType:
                     nrect = item.boundingRect().translated(item.pos())
                     if nrect.top() >= limit_top:
@@ -620,11 +620,11 @@ class PatchScene(QGraphicsScene):
         self._scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
 
     def update_theme(self):
-        self.setBackgroundBrush(canvas.new_theme.background_color)
-        self._rubberband.setPen(canvas.new_theme.rubberband.fill_pen())
-        self._rubberband.setBrush(canvas.new_theme.rubberband.background_color())
+        self.setBackgroundBrush(canvas.theme.background_color)
+        self._rubberband.setPen(canvas.theme.rubberband.fill_pen())
+        self._rubberband.setBrush(canvas.theme.rubberband.background_color())
 
-        cur_color = "black" if canvas.new_theme.background_color.blackF() < 0.5 else "white"
+        cur_color = "black" if canvas.theme.background_color.blackF() < 0.5 else "white"
         self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
         self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
 
@@ -929,7 +929,7 @@ class PatchScene(QGraphicsScene):
             x = min(pos_x, rubberband_orig_point.x())
             y = min(pos_y, rubberband_orig_point.y())
 
-            lineHinting = canvas.new_theme.rubberband.fill_pen().widthF() / 2.0
+            lineHinting = canvas.theme.rubberband.fill_pen().widthF() / 2.0
             self._rubberband.setRect(x+lineHinting,
                                      y+lineHinting,
                                      abs(pos_x - rubberband_orig_point.x()),

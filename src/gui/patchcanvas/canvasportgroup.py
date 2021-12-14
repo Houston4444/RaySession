@@ -73,9 +73,9 @@ class CanvasPortGroup(QGraphicsItem):
 
         # Base Variables
         self._portgrp_width  = 15
-        self._portgrp_height = canvas.new_theme.port_height
+        self._portgrp_height = canvas.theme.port_height
         
-        theme = canvas.new_theme.portgroup
+        theme = canvas.theme.portgroup
         if self._port_type == PORT_TYPE_AUDIO_JACK:
             theme = theme.audio
         elif self._port_type == PORT_TYPE_MIDI_JACK:
@@ -83,7 +83,7 @@ class CanvasPortGroup(QGraphicsItem):
         
         self._portgrp_font = theme.font()
 
-        self._ports_width = canvas.new_theme.port_grouped_width
+        self._ports_width = canvas.theme.port_grouped_width
         self._print_name = ''
         self._normal_print_name = '' # same as m_print_name but not reduced
         self._print_name_right = ''
@@ -636,13 +636,13 @@ class CanvasPortGroup(QGraphicsItem):
 
     def boundingRect(self):
         if self._port_mode == PORT_MODE_INPUT:
-            return QRectF(canvas.new_theme.port_grouped_width, 0,
-                          self._portgrp_width + 12 - canvas.new_theme.port_grouped_width,
-                          canvas.new_theme.port_height * len(self._port_id_list))
+            return QRectF(canvas.theme.port_grouped_width, 0,
+                          self._portgrp_width + 12 - canvas.theme.port_grouped_width,
+                          canvas.theme.port_height * len(self._port_id_list))
         else:
             return QRectF(0, 0,
-                          self._portgrp_width + 12 - canvas.new_theme.port_grouped_width,
-                          canvas.new_theme.port_height * len(self._port_id_list))
+                          self._portgrp_width + 12 - canvas.theme.port_grouped_width,
+                          canvas.theme.port_height * len(self._port_id_list))
 
     def paint(self, painter, option, widget):
         if canvas.loading_items:
@@ -651,7 +651,7 @@ class CanvasPortGroup(QGraphicsItem):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, True)
 
-        theme = canvas.new_theme.portgroup
+        theme = canvas.theme.portgroup
         
         if self._port_type == PORT_TYPE_AUDIO_JACK:
             theme = theme.audio
@@ -669,12 +669,12 @@ class CanvasPortGroup(QGraphicsItem):
 
         poly_locx = [0, 0, 0, 0, 0]
         poly_corner_xhinting = (
-            float(canvas.new_theme.port_height)/2) % floor(float(canvas.new_theme.port_height)/2)
+            float(canvas.theme.port_height)/2) % floor(float(canvas.theme.port_height)/2)
         if poly_corner_xhinting == 0:
-            poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.new_theme.port_height)/2))
+            poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
 
         if self._port_mode == PORT_MODE_INPUT:
-            port_width = canvas.new_theme.port_grouped_width
+            port_width = canvas.theme.port_grouped_width
 
             for port in canvas.port_list:
                 if port.port_id in self._port_id_list:
@@ -685,7 +685,7 @@ class CanvasPortGroup(QGraphicsItem):
 
             text_pos = QPointF(
                 self._ports_width + 3,
-                12 + (canvas.new_theme.port_height * (len(self._port_id_list) -1)/2))
+                12 + (canvas.theme.port_height * (len(self._port_id_list) -1)/2))
 
             poly_locx[0] = self._ports_width - lineHinting
             poly_locx[1] = self._portgrp_width + 3 + lineHinting
@@ -695,7 +695,7 @@ class CanvasPortGroup(QGraphicsItem):
 
         elif self._port_mode == PORT_MODE_OUTPUT:
             text_pos = QPointF(
-                9, 12 + (canvas.new_theme.port_height * (len(self._port_id_list) -1)/2))
+                9, 12 + (canvas.theme.port_height * (len(self._port_id_list) -1)/2))
 
             poly_locx[0] = self._portgrp_width + 12 \
                             - self._ports_width - lineHinting
@@ -720,10 +720,10 @@ class CanvasPortGroup(QGraphicsItem):
         polygon  = QPolygonF()
         polygon += QPointF(poly_locx[0], lineHinting)
         polygon += QPointF(poly_locx[1], lineHinting)
-        polygon += QPointF(poly_locx[2], float(canvas.new_theme.port_height / 2) )
-        polygon += QPointF(poly_locx[2], float(canvas.new_theme.port_height * (len(self._port_id_list) - 1/2)) )
-        polygon += QPointF(poly_locx[3], canvas.new_theme.port_height * len(self._port_id_list) - lineHinting)
-        polygon += QPointF(poly_locx[4], canvas.new_theme.port_height * len(self._port_id_list) - lineHinting)
+        polygon += QPointF(poly_locx[2], float(canvas.theme.port_height / 2) )
+        polygon += QPointF(poly_locx[2], float(canvas.theme.port_height * (len(self._port_id_list) - 1/2)) )
+        polygon += QPointF(poly_locx[3], canvas.theme.port_height * len(self._port_id_list) - lineHinting)
+        polygon += QPointF(poly_locx[4], canvas.theme.port_height * len(self._port_id_list) - lineHinting)
 
         painter.setBrush(portgrp_gradient)
         painter.setPen(poly_pen)
