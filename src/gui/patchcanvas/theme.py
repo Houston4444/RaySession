@@ -262,6 +262,8 @@ class Theme(StyleAttributer):
         self.magnet = 12
         self.hardware_rack_width = 5
 
+        self.aliases = {}
+
         self.box = BoxStyleAttributer('.box', self)
         self.portgroup = PortStyleAttributer('.portgroup', self)
         self.port = PortStyleAttributer('.port', self)
@@ -282,7 +284,32 @@ class Theme(StyleAttributer):
             print_error("invalid dict read error")
             return
         
+        self.aliases.clear()
+        
+        # first read if there are any aliases
         for key, value in theme_dict.items():
+            if key != 'aliases':
+                continue
+            
+            if not isinstance(value, dict):
+                print_error("'%s' must contains a dictionnary, ignored" % key)
+                continue
+            
+            for alias_key, alias_value in value.items():
+                if not isinstance(alias_key, str):
+                    print_error("alias key must be a string. Ignore: %s"
+                                % str(alias_key))
+                    continue
+                
+                self.aliases[alias_key] = alias_value
+            
+            break
+        
+        # read and parse the dict
+        for key, value in theme_dict.items():
+            if key == 'aliases':
+                continue
+            
             begin, point, end = key.partition('.')
             
             if not isinstance(value, dict):
@@ -316,12 +343,18 @@ class Theme(StyleAttributer):
                 print_error("invalid ignored key: %s" % key)
                 continue
 
+            for sub_key, sub_value in value.items():
+                for alias_key, alias_value in self.aliases.items():
+                    if sub_value == alias_key:
+                        value[sub_key] = alias_value
+                        break
+
             sub_attributer = self.__getattribute__(begin)
             sub_attributer.set_style_dict(end, value)
 
 
-
 if __name__ == '__main__':
-    theme = Theme()    
+    theme = Theme()
+    from .theme_default import default_theme
     theme.read_theme(default_theme)
     print(theme.port.audio.font())

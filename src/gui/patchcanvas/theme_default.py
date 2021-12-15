@@ -1,4 +1,6 @@
 default_theme = {
+    'aliases':
+        {'opac_gold': (255, 192, 0, 80)},
     'body':
         {'background': (0, 0, 0),
             'port-offset': 0,
@@ -7,7 +9,7 @@ default_theme = {
         },
     'wrapper':
         {'border-color': (56, 57, 58),
-         'background': (255, 192, 0, 80)
+         'background': "opac_gold"
          },
     'rubberband':
         {'border-color': (206, 207, 208),
@@ -97,5 +99,5 @@ default_theme = {
          'background2': (45, 45, 45),
          'border-style': 'nopen'},
     'header_line':
-        {'border-color': (255, 192, 0, 80)}
+        {'border-color': "opac_gold"}
     }
