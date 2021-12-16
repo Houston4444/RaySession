@@ -19,7 +19,7 @@
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
-
+import sys
 from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
                           QPoint, QPointF, QRectF, QSettings, QTimer, pyqtSignal)
 
@@ -158,15 +158,20 @@ def init(appName, scene, callback, debug=False):
         del canvas.theme
         canvas.theme = None
 
-    # for i in range(Theme.THEME_MAX):
-    #     this_theme_name = get_theme_name(i)
-    #     if this_theme_name == options.theme_name:
-    #         canvas.theme = Theme(i)
-    #         break
-
     if not canvas.theme:
         canvas.theme = Theme()
-        canvas.theme.read_theme(default_theme)
+        
+        import json
+        file_path = canvas.theme_paths[0] + '/' + 'Black Gold/theme.json'
+        with open(file_path, 'r') as f:
+            try:
+                default_theme = json.load(f)
+                print(default_theme)
+            except:
+                print('chabiidi')
+                return
+        
+            canvas.theme.read_theme(default_theme)
     
     canvas.scene.update_theme()
 
@@ -1229,15 +1234,28 @@ def disconnect_ports(connection_id):
 
 # ----------------------------------------------------------------------------
 
-def change_theme(idx: int):
-    canvas.theme.set_theme(idx)
+
+def change_theme(theme_name=''):
+    del canvas.theme
+    canvas.theme = Theme()
+        
+    import json
+    file_path = canvas.theme_paths[0] + '/' + 'Black Gold/theme.json'
+    with open(file_path, 'r') as f:
+        try:
+            default_theme = json.load(f)
+        except:
+            sys.stderr.write('patchcanvas::theme:failed to open %s\n' % file_path)
+            return
+                
+        canvas.theme.read_theme(default_theme)
+
     canvas.scene.update_theme()
 
     for group in canvas.group_list:
         for widget in group.widgets:
             if widget is not None:
-                widget.repaint_lines(forced=True)
-                widget.update()
+                widget.update_positions()
 
     QTimer.singleShot(0, canvas.scene.update)
 

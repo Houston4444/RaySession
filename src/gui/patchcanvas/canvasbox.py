@@ -102,7 +102,7 @@ class TitleLine:
         self.x = 0
         self.y = 0
 
-        self.font = theme.font()
+        self.font = QFont(theme.font())
         
         if little:
             self.font.setWeight(QFont.Normal)
@@ -110,7 +110,8 @@ class TitleLine:
         self.size = QFontMetrics(self.font).width(text)
 
     def reduce_pixel(self, reduce):
-        self.font.setPixelSize(self.font.pixelSize() - reduce)
+        print('redidic', reduce, self.font.pointSize())
+        self.font.setPointSize(self.font.pointSize() - reduce)
         self.size = QFontMetrics(self.font).width(self.text)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1514,7 +1515,7 @@ class CanvasBox(QGraphicsItem):
             if self.isSelected():
                 mon_theme = mon_theme.selected
             
-            color_main = mon_theme.backgroud_color()
+            color_main = mon_theme.background_color()
             color_alter = mon_theme.background2_color()
 
             tot = int(self._height / 20)

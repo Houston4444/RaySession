@@ -633,13 +633,11 @@ class PatchScene(QGraphicsScene):
         self._scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
 
     def update_theme(self):
-        gradient = QLinearGradient(-30, 0, 30, 0)
-        gradient.setColorAt(0, QColor(80, 80, 80))
-        gradient.setColorAt(1, QColor(40, 40, 40))
-        self.setBackgroundBrush(gradient)
-        # self.setBackgroundBrush(canvas.theme.background_color)
-        # self._view.setBackgroundBrush(QBrush(QImage('/home/houston/RaySession/final.jpg')))
-        # self._view.setCacheMode(QGraphicsView.CacheBackground)
+        # gradient = QLinearGradient(0, -30, 0, 30)
+        # gradient.setColorAt(0, QColor(80, 80, 80))
+        # gradient.setColorAt(1, QColor(40, 40, 40))
+        # self.setBackgroundBrush(gradient)
+        self.setBackgroundBrush(canvas.theme.background_color)
         self._rubberband.setPen(canvas.theme.rubberband.fill_pen())
         self._rubberband.setBrush(canvas.theme.rubberband.background_color())
 

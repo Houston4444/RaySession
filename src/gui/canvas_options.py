@@ -44,8 +44,10 @@ class CanvasOptionsDialog(QDialog):
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Black Gold'))
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Modern Dark'))
 
-        current_theme = RS.settings.value('Canvas/theme', 'Silver Gold', type=str)
-        if current_theme == "Black Gold":
+        current_theme = RS.settings.value('Canvas/theme', 'Black Gold', type=str)
+        if current_theme == "Silver Gold":
+            self.ui.comboBoxTheme.setCurrentIndex(0)
+        elif current_theme == "Black Gold":
             self.ui.comboBoxTheme.setCurrentIndex(1)
         elif current_theme == "Modern Dark":
             self.ui.comboBoxTheme.setCurrentIndex(2)

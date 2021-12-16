@@ -1528,8 +1528,8 @@ class PatchbayManager:
 
         patchcanvas.change_theme(idx)
 
-        theme_name = patchcanvas.get_theme_name(idx)
-        RS.settings.setValue('Canvas/theme', theme_name)
+        # theme_name = patchcanvas.get_theme_name(idx)
+        # RS.settings.setValue('Canvas/theme', theme_name)
 
     def set_elastic_canvas(self, yesno: int):
         patchcanvas.set_elastic(yesno)

@@ -1,9 +1,13 @@
 #!/usr/bin/python3
-
+import json
+import os
 import sys
 
 from PyQt5.QtGui import QColor, QPen, QFont, QBrush
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
+
+# from gui.patchcanvas import theme_default
+from . import canvas
 
 def print_error(string: str):
     sys.stderr.write("patchcanvas.theme::%s\n" % string)
@@ -18,6 +22,7 @@ def _to_qcolor(color):
         if (qcolor.getRgb() == (0, 0, 0, 255)
                 and color.lower() not in ('black', "#000000", '#ff000000')):
             return None
+        
         return qcolor
     
     if isinstance(color, (tuple, list)):
@@ -30,7 +35,7 @@ def _to_qcolor(color):
             
             if not 0 <= col <= 255:
                 return None
-
+        
         return QColor(*color)
     
     return None
@@ -52,6 +57,9 @@ class StyleAttributer:
 
         self._path = path
         self._parent = parent
+        
+        self._fill_pen = None
+        self._font = None
     
     def set_attribute(self, attribute: str, value):
         err = False
@@ -171,9 +179,13 @@ class StyleAttributer:
         return self.__getattribute__(attribute)
     
     def fill_pen(self):
-        return QPen(QBrush(self.get_value_of('_border_color')),
-                    self.get_value_of('_border_width'),
-                    self.get_value_of('_border_style'))
+        if self._fill_pen is None:
+            self._fill_pen = QPen(
+                QBrush(self.get_value_of('_border_color')),
+                self.get_value_of('_border_width'),
+                self.get_value_of('_border_style'))
+        
+        return self._fill_pen
     
     def background_color(self):
         return self.get_value_of('_background_color')
@@ -185,11 +197,14 @@ class StyleAttributer:
         return self.get_value_of('_text_color')
     
     def font(self):
-        rfont = QFont()
-        rfont.setFamily(self.get_value_of('_font_name'))
-        rfont.setPixelSize(self.get_value_of('_font_size'))
-        rfont.setWeight(self.get_value_of('_font_width'))
-        return rfont
+        if self._font is None:
+            self._font = QFont(self.get_value_of('_font_name'))
+            #self._font.setFamily(self.get_value_of('_font_name'))
+            print('kor', self.get_value_of('_font_size'), self._font.pixelSize())
+            self._font.setPointSize(self.get_value_of('_font_size'))
+            self._font.setWeight(self.get_value_of('_font_width'))
+            
+        return self._font
 
 
 class UnselectedStyleAttributer(StyleAttributer):
@@ -246,7 +261,7 @@ class Theme(StyleAttributer):
         self._background2_color = QColor('black')
         self._text_color = QColor('white')
         self._font_name = "Deja Vu Sans"
-        self._font_size = 11
+        self._font_size = 8
         self._font_width = QFont.Normal # QFont.Normal is 50
 
         self.background_color = QColor('black')
@@ -351,10 +366,108 @@ class Theme(StyleAttributer):
 
             sub_attributer = self.__getattribute__(begin)
             sub_attributer.set_style_dict(end, value)
+    
+
+class ThemeManager:
+    def __init__(self) -> None:
+        self.current_theme = None
+        self.current_theme_file = ''
+        self.theme_file_to_load = ''
+        self.last_modified = 0
+        
+        self._theme_file_timer = QTimer()
+        self._theme_file_timer.setInterval(200)
+        self._theme_file_timer.timeout.connect(self._check_theme_file_modified)
+        
+    
+    def _check_theme_file_modified(self):
+        if not self.current_theme_file:
+            self._theme_file_timer.stop()
+            return
+        
+        last_modified = os.path.getmtime(self.current_theme_file)
+        if last_modified == self.last_modified:
+            return
+        
+        
+        # file_path = canvas.theme_paths[0] + '/' + 'Black Gold/theme.json'
+        
+
+        # self.theme_dict_to_load = default_theme
+    
+    def file_path_to_dict(self, file_path: str) -> dict:
+        with open(file_path, 'r') as f:
+            try:
+                theme_dict = json.load(f)
+            except:
+                sys.stderr.write('patchcanvas::theme:failed to open %s\n'
+                                 % file_path)
+                return {}
+        
+        return theme_dict
+            
+    def set_theme(self, factory: bool, theme_name: str):
+        self.current_theme = theme_name
+        self.current_theme_file = canvas.theme_paths[0] + '/' + theme_name + '/theme.json'
+        self._update_theme()
+
+    def _update_theme(self):
+        with open(self.theme_file_to_load, 'r') as f:
+            try:
+                theme_dict = json.load(f)
+            except:
+                sys.stderr.write('patchcanvas::theme:failed to open %s\n'
+                                 % self.theme_file_to_load)
+                return
+        
+        if not isinstance(theme_dict, dict):
+            print_error("json file %s doesn't contains a valid theme dictionnary"
+                        % self.theme_file_to_load)
+            return
+        
+        del canvas.theme
+        canvas.theme = Theme()
+        canvas.theme.read_theme(theme_dict)
+
+        canvas.scene.update_theme()
+
+        for group in canvas.group_list:
+            for widget in group.widgets:
+                if widget is not None:
+                    widget.update_positions()
+        
+        canvas.scene.update()
+        
+        
+        
+
+def check_theme_file_modified():
+    file_path = canvas.theme_paths[0] + '/' + 'Black Gold/theme.json'
+    last_modified = os.path.getmtime(file_path)
+    
 
 
 if __name__ == '__main__':
-    theme = Theme()
-    from .theme_default import default_theme
-    theme.read_theme(default_theme)
-    print(theme.port.audio.font())
+    # theme = Theme()
+    
+    import json
+    from theme_default import default_theme
+    
+    for key, value in default_theme.items():
+        for sub_key, sub_value in value.items():
+            if isinstance(sub_value, (list, tuple)):
+                qcol = _to_qcolor(sub_value)
+                # print(sub_value, qcol.name(QColor.HexArgb), qcol.alpha())
+                if qcol.alpha() == 255:
+                    print(sub_value, qcol.name())
+                    default_theme[key][sub_key] = qcol.name()
+                else:
+                    print(sub_value, qcol.name(QColor.HexArgb))
+                    default_theme[key][sub_key] = qcol.name(QColor.HexArgb)
+                
+    
+    with open('/home/houston/.config/RaySession/patchbay_themes/Black Gold/theme.json', 'w+') as f:
+            json.dump(default_theme, f, indent=2)
+    
+    # theme.read_theme(default_theme)
+    # print(theme.port.audio.font())

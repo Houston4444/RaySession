@@ -139,6 +139,8 @@ class Canvas(object):
         self.theme = None
         self.new_theme = None
         self.initiated = False
+        self.theme_paths = ('/home/manjouston/.config/RaySession/patchbay_themes',)
+        self.theme_manager = None
 
         self.group_list = []
         self.port_list = []
