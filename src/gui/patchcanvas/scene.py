@@ -25,8 +25,8 @@ import time
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
                           Qt, QPoint, QPointF, QRectF, QTimer, QMarginsF)
-from PyQt5.QtGui import QCursor, QPixmap, QPolygonF
-from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene, QApplication
+from PyQt5.QtGui import QColor, QCursor, QLinearGradient, QPixmap, QPolygonF, QImage, QBrush
+from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene, QApplication, QGraphicsView
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -271,13 +271,6 @@ class PatchScene(QGraphicsScene):
     def deplace_boxes_from_repulsers(self, repulser_boxes: list,
                                      wanted_direction=DIRECTION_NONE,
                                      new_scene_rect=None):
-        if not options.prevent_overlap:
-            return
-        
-        box_spacing = canvas.theme.box_spacing
-        box_spacing_hor = canvas.theme.box_spacing_horizontal
-        magnet = canvas.theme.magnet
-        
         def get_direction(fixed_rect, moving_rect, parent_directions=[])->int:
             if (moving_rect.top() <= fixed_rect.center().y() <= moving_rect.bottom()
                     or fixed_rect.top() <= moving_rect.center().y() <= fixed_rect.bottom()):
@@ -332,11 +325,17 @@ class PatchScene(QGraphicsScene):
                             or moving_port_mode & PORT_MODE_OUTPUT):
                         spacing = box_spacing_hor
                     x = fixed_rect.left() - spacing - rect.width()
+                    if x < 0:
+                        x -= 1.0
+                    x = float(int(x))
                 else:
                     if (fixed_port_mode & PORT_MODE_OUTPUT
                             or moving_port_mode & PORT_MODE_INPUT):
                         spacing = box_spacing_hor
                     x = fixed_rect.right() + spacing
+                    if x < 0:
+                        x -= 1.0
+                    x = float(int(x + 0.99))
 
                 top_diff = abs(fixed_rect.top() - rect.top())
                 bottom_diff = abs(fixed_rect.bottom() - rect.bottom())
@@ -349,8 +348,14 @@ class PatchScene(QGraphicsScene):
             elif direction in (DIRECTION_UP, DIRECTION_DOWN):
                 if direction == DIRECTION_UP:
                     y = fixed_rect.top() - box_spacing - rect.height()
+                    if y < 0:
+                        y -= 1.0
+                    y = float(int(y))
                 else:
                     y = fixed_rect.bottom() + box_spacing
+                    if y < 0:
+                        y -= 1.0
+                    y = float(int(y + 0.99))
                 
                 left_diff = abs(fixed_rect.left() - rect.left())
                 right_diff = abs(fixed_rect.right() - rect.right())
@@ -380,6 +385,14 @@ class PatchScene(QGraphicsScene):
                 right_spacing, box_spacing)
 
             return rect.intersects(large_repulser_rect)
+
+        # function start #
+        if not options.prevent_overlap:
+            return
+        
+        box_spacing = canvas.theme.box_spacing
+        box_spacing_hor = canvas.theme.box_spacing_horizontal
+        magnet = canvas.theme.magnet
 
         to_move_boxes = []
         repulsers = []
@@ -476,7 +489,7 @@ class PatchScene(QGraphicsScene):
             directions = to_move_box['directions'].copy()
             new_direction = get_direction(repulser['rect'], irect, directions)
             directions.append(new_direction)
-            
+
             # calculate the new position of the box repulsed by its repulser
             new_rect = repulse(new_direction, repulser['rect'], item,
                                repulser['item']._current_port_mode,
@@ -620,7 +633,13 @@ class PatchScene(QGraphicsScene):
         self._scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
 
     def update_theme(self):
-        self.setBackgroundBrush(canvas.theme.background_color)
+        gradient = QLinearGradient(-30, 0, 30, 0)
+        gradient.setColorAt(0, QColor(80, 80, 80))
+        gradient.setColorAt(1, QColor(40, 40, 40))
+        self.setBackgroundBrush(gradient)
+        # self.setBackgroundBrush(canvas.theme.background_color)
+        # self._view.setBackgroundBrush(QBrush(QImage('/home/houston/RaySession/final.jpg')))
+        # self._view.setCacheMode(QGraphicsView.CacheBackground)
         self._rubberband.setPen(canvas.theme.rubberband.fill_pen())
         self._rubberband.setBrush(canvas.theme.rubberband.background_color())
 
@@ -821,6 +840,11 @@ class PatchScene(QGraphicsScene):
             if event.key() == Qt.Key_1:
                 event.accept()
                 self.zoom_reset()
+                return
+            
+            if event.key() == Qt.Key_T:
+                event.accept()
+                self.update_theme()
                 return
 
         QGraphicsScene.keyPressEvent(self, event)

@@ -950,6 +950,9 @@ class CanvasBox(QGraphicsItem):
         self._unwrapped_height = normal_height + down_height
         self._height += down_height
 
+        # round self._height to the upper value
+        self._height = float(int(self._height + 0.99))
+
         if self.has_top_icon():
             self.top_icon.align_at((self._width - max_title_size - 29)/2)
         
