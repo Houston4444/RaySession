@@ -110,8 +110,7 @@ class TitleLine:
         self.size = QFontMetrics(self.font).width(text)
 
     def reduce_pixel(self, reduce):
-        print('redidic', reduce, self.font.pointSize())
-        self.font.setPointSize(self.font.pointSize() - reduce)
+        self.font.setPixelSize(self.font.pixelSize() - reduce)
         self.size = QFontMetrics(self.font).width(self.text)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1505,8 +1504,9 @@ class CanvasBox(QGraphicsItem):
             
             painter.drawRect(header_rect)
             painter.setPen(gui_theme.fill_pen())
-            painter.drawLine(4.5, self._header_height - 3.5,
-                                 self._width - 3.5, self._header_height - 3.5)
+            painter.drawLine(
+                QPointF(4.5, self._header_height - 3.5),
+                QPointF(self._width - 3.5, self._header_height - 3.5))
 
         elif self._group_name.endswith(' Monitor'):
             bor_gradient = QLinearGradient(0, 0, self._height, self._height)

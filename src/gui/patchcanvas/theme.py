@@ -197,14 +197,14 @@ class StyleAttributer:
         return self.get_value_of('_text_color')
     
     def font(self):
-        if self._font is None:
-            self._font = QFont(self.get_value_of('_font_name'))
-            #self._font.setFamily(self.get_value_of('_font_name'))
-            print('kor', self.get_value_of('_font_size'), self._font.pixelSize())
-            self._font.setPointSize(self.get_value_of('_font_size'))
-            self._font.setWeight(self.get_value_of('_font_width'))
+        font_ = QFont(self.get_value_of('_font_name'))
+        font_.setPixelSize(self.get_value_of('_font_size'))
+        font_.setWeight(self.get_value_of('_font_width'))
+            #self._font = QFont(self.get_value_of('_font_name'))
+            #self._font.setPointSize(self.get_value_of('_font_size'))
+            #self._font.setWeight(self.get_value_of('_font_width'))
             
-        return self._font
+        return font_
 
 
 class UnselectedStyleAttributer(StyleAttributer):
@@ -261,7 +261,7 @@ class Theme(StyleAttributer):
         self._background2_color = QColor('black')
         self._text_color = QColor('white')
         self._font_name = "Deja Vu Sans"
-        self._font_size = 8
+        self._font_size = 11
         self._font_width = QFont.Normal # QFont.Normal is 50
 
         self.background_color = QColor('black')
