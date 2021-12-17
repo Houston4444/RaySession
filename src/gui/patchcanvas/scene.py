@@ -336,11 +336,17 @@ class PatchScene(QGraphicsScene):
                             or moving_port_mode & PORT_MODE_OUTPUT):
                         spacing = box_spacing_hor
                     x = fixed_rect.left() - spacing - rect.width()
+                    if x < 0:
+                        x -= 1.0
+                    x = float(int(x))
                 else:
                     if (fixed_port_mode & PORT_MODE_OUTPUT
                             or moving_port_mode & PORT_MODE_INPUT):
                         spacing = box_spacing_hor
                     x = fixed_rect.right() + spacing
+                    if x < 0:
+                        x -= 1.0
+                    x = float(int(x + 0.99))
 
                 top_diff = abs(fixed_rect.top() - rect.top())
                 bottom_diff = abs(fixed_rect.bottom() - rect.bottom())
@@ -353,8 +359,14 @@ class PatchScene(QGraphicsScene):
             elif direction in (DIRECTION_UP, DIRECTION_DOWN):
                 if direction == DIRECTION_UP:
                     y = fixed_rect.top() - box_spacing - rect.height()
+                    if y < 0:
+                        y -= 1.0
+                    y = float(int(y))
                 else:
                     y = fixed_rect.bottom() + box_spacing
+                    if y < 0:
+                        y -= 1.0
+                    y = float(int(y + 0.99))
                 
                 left_diff = abs(fixed_rect.left() - rect.left())
                 right_diff = abs(fixed_rect.right() - rect.right())
