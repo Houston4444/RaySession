@@ -1,4 +1,5 @@
 
+import configparser
 import json
 import os
 import sys
@@ -32,14 +33,17 @@ class ThemeManager:
         self._update_theme()
 
     def _update_theme(self) -> bool:
-        with open(self.current_theme_file, 'r') as f:
-            #try:
-                theme_dict = self._convert_theme_file_contents_to_dict(f.read())
-            #except:
-                #sys.stderr.write('patchcanvas::theme:failed to open %s\n'
-                                 #% self.current_theme_file)
-                #return False
+        conf = configparser.ConfigParser()
+        try:
+            # we don't need the file_list
+            # it is just a convenience to mute conf.read
+            file_list = conf.read(self.current_theme_file)
+        except:
+            sys.stderr.write('patchcanvas::theme:failed to open %s\n'
+                                 % self.current_theme_file)
+            return False
         
+        theme_dict = self._convert_configparser_object_to_dict(conf)
         self._last_modified = os.path.getmtime(self.current_theme_file)
         
         del canvas.theme
@@ -48,13 +52,40 @@ class ThemeManager:
 
         canvas.scene.update_theme()
         canvas.callback(ACTION_THEME_UPDATE, 0, 0, '')
-        #for group in canvas.group_list:
-            #for widget in group.widgets:
-                #if widget is not None:
-                    #widget.update_positions()
-        
-        canvas.scene.update()
         return True
+    
+    @staticmethod
+    def _convert_configparser_object_to_dict(conf) -> dict:
+        def type_convert(value):
+            ''' returns an int, a float, or the unchanged given value '''
+            try:
+                value = int(value)
+            except:
+                try:
+                    value = float(value)
+                except:
+                    return value
+            return value
+
+        return_dict = {}
+        for key, value in conf.items():
+            if key == 'DEFAULT':
+                continue
+
+            new_dict = {}
+            for skey, svalue in value.items():
+                if svalue.startswith('(') and svalue.endswith(')'):
+                    new_value = svalue[1:-1].split(', ')
+                    new_value = tuple([type_convert(v) for v in new_value])
+                elif svalue.startswith('[') and svalue.endswith(']'):
+                    new_value = svalue[1:-1].split(', ')
+                    new_value = [type_convert(v) for v in new_value]
+                else:
+                    new_value = type_convert(svalue)
+                new_dict[skey] = new_value
+            return_dict[key] = new_dict
+        
+        return return_dict
     
     @staticmethod
     def _convert_theme_file_contents_to_dict(contents: str) -> dict:

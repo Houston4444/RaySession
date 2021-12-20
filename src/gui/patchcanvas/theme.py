@@ -198,7 +198,12 @@ class StyleAttributer:
         for key, value in style_dict.items():
             self.set_attribute(key, value)
     
-    def get_value_of(self, attribute, orig_path=''):
+    def get_value_of(self, attribute, orig_path='', needed_attribute=''):
+        # returns the value of given attribute for this theme section
+        # if this value is not present in this theme section,
+        # it will look into parent sections.
+        # Note that for 'selected' section, it will look in 'selected' section
+        # of parent before looking in parent section.
         if attribute not in self.__dir__():
             print_error("get_value_of, invalide attribute: %s" % attribute)
             return None
@@ -206,7 +211,7 @@ class StyleAttributer:
         if not orig_path:
             orig_path = self._path
 
-        for path_end in ('selected', 'disconnecting'):
+        for path_end in ('selected',):
             if (orig_path.endswith('.' + path_end)
                     and path_end in self.subs
                     and self._path + '.' + path_end != orig_path):
