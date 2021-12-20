@@ -1495,6 +1495,33 @@ class PatchbayManager:
                                 client.client_id)
                             break
                     break
+        
+        elif action == patchcanvas.ACTION_THEME_UPDATE:
+            self.optimize_operation(True)
+            
+            for connection in self.connections:
+                connection.remove_from_canvas()
+            
+            for group in self.groups:
+                for portgroup in group.portgroups:
+                    portgroup.remove_from_canvas()
+                
+                for port in group.ports:
+                    port.remove_from_canvas()
+                group.remove_from_canvas()
+                
+                group.add_to_canvas()
+                for port in group.ports:
+                    port.add_to_canvas()
+                for portgroup in group.portgroups:
+                    portgroup.add_to_canvas()
+            
+            for connection in self.connections:
+                connection.add_to_canvas()
+            
+            self.optimize_operation(False)
+            patchcanvas.redraw_all_groups()
+        
 
     def show_options_dialog(self):
         self.options_dialog.move(QCursor.pos())

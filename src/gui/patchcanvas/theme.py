@@ -17,14 +17,57 @@ def _to_qcolor(color):
     to a QColor.
     returns None if color has a incorrect value.'''
     if isinstance(color, str):
+        intensity_ratio = 1.0
+        opacity_ratio = 1.0
+        
+        if color.startswith('-'):
+            color = color.partition('-')[2].strip()
+            intensity_ratio = - 1.0
+
+        if '*' in color:
+            words = color.split('*')
+            next_for_opac = False
+            
+            for i in range(len(words)):
+                if i == 0:
+                    color = words[i].strip()
+                    continue
+                
+                if not words[i]:
+                    next_for_opac = True
+                    continue
+                
+                if next_for_opac:
+                    try:
+                        opacity_ratio *= float(words[i].strip())
+                    except:
+                        pass
+                
+                    next_for_opac = False
+                    continue
+                
+                try:
+                    intensity_ratio *= float(words[i].strip())
+                except:
+                    pass
+        
         qcolor = QColor(color)
-        
-        if (qcolor.getRgb() == (0, 0, 0, 255)
-                and color.lower() not in ('black', "#000000", '#ff000000')):
+        if not qcolor.isValid():
             return None
+
+        if intensity_ratio == 1.0 and opacity_ratio == 1.0:
+            return qcolor
         
-        return qcolor
-    
+        if intensity_ratio < 0.0:
+            qcolor = QColor(
+                255 - qcolor.red(), 255 - qcolor.green(),
+                255 - qcolor.blue(), qcolor.alpha())
+        
+        if opacity_ratio != 1.0:
+            qcolor.setAlphaF(opacity_ratio * qcolor.alphaF())
+        
+        return qcolor.lighter(int(100 * intensity_ratio))
+
     if isinstance(color, (tuple, list)):
         if not 3 <= len(color) <= 4:
             return None
@@ -78,9 +121,9 @@ class StyleAttributer:
         elif attribute == 'border-style':
             if isinstance(value, str):
                 value = value.lower()
-                if value == 'solid':
+                if value in ('solid', 'normal'):
                     self._border_style = Qt.SolidLine
-                elif value == 'nopen':
+                elif value in ('nopen', 'none'):
                     self._border_style = Qt.NoPen
                 elif value == 'dash':
                     self._border_style = Qt.DashLine
@@ -200,10 +243,6 @@ class StyleAttributer:
         font_ = QFont(self.get_value_of('_font_name'))
         font_.setPixelSize(self.get_value_of('_font_size'))
         font_.setWeight(self.get_value_of('_font_width'))
-            #self._font = QFont(self.get_value_of('_font_name'))
-            #self._font.setPointSize(self.get_value_of('_font_size'))
-            #self._font.setWeight(self.get_value_of('_font_width'))
-            
         return font_
 
 
@@ -358,93 +397,35 @@ class Theme(StyleAttributer):
                 print_error("invalid ignored key: %s" % key)
                 continue
 
+            # replace alias with alias value
             for sub_key, sub_value in value.items():
+                if not isinstance(sub_value, str):
+                        continue
+                
                 for alias_key, alias_value in self.aliases.items():
+                    if alias_key not in sub_value:
+                        continue
+                    
                     if sub_value == alias_key:
                         value[sub_key] = alias_value
                         break
+                    
+                    new_words = []
+                    
+                    for word in sub_value.split(' '):
+                        if word == alias_key:
+                            new_words.append(alias_value)
+                        else:
+                            new_words.append(word)
+                    
+                    value[sub_key] = ' '.join(new_words)
+                    
 
             sub_attributer = self.__getattribute__(begin)
             sub_attributer.set_style_dict(end, value)
     
 
-class ThemeManager:
-    def __init__(self) -> None:
-        self.current_theme = None
-        self.current_theme_file = ''
-        self.theme_file_to_load = ''
-        self.last_modified = 0
-        
-        self._theme_file_timer = QTimer()
-        self._theme_file_timer.setInterval(200)
-        self._theme_file_timer.timeout.connect(self._check_theme_file_modified)
-        
-    
-    def _check_theme_file_modified(self):
-        if not self.current_theme_file:
-            self._theme_file_timer.stop()
-            return
-        
-        last_modified = os.path.getmtime(self.current_theme_file)
-        if last_modified == self.last_modified:
-            return
-        
-        
-        # file_path = canvas.theme_paths[0] + '/' + 'Black Gold/theme.json'
-        
 
-        # self.theme_dict_to_load = default_theme
-    
-    def file_path_to_dict(self, file_path: str) -> dict:
-        with open(file_path, 'r') as f:
-            try:
-                theme_dict = json.load(f)
-            except:
-                sys.stderr.write('patchcanvas::theme:failed to open %s\n'
-                                 % file_path)
-                return {}
-        
-        return theme_dict
-            
-    def set_theme(self, factory: bool, theme_name: str):
-        self.current_theme = theme_name
-        self.current_theme_file = canvas.theme_paths[0] + '/' + theme_name + '/theme.json'
-        self._update_theme()
-
-    def _update_theme(self):
-        with open(self.theme_file_to_load, 'r') as f:
-            try:
-                theme_dict = json.load(f)
-            except:
-                sys.stderr.write('patchcanvas::theme:failed to open %s\n'
-                                 % self.theme_file_to_load)
-                return
-        
-        if not isinstance(theme_dict, dict):
-            print_error("json file %s doesn't contains a valid theme dictionnary"
-                        % self.theme_file_to_load)
-            return
-        
-        del canvas.theme
-        canvas.theme = Theme()
-        canvas.theme.read_theme(theme_dict)
-
-        canvas.scene.update_theme()
-
-        for group in canvas.group_list:
-            for widget in group.widgets:
-                if widget is not None:
-                    widget.update_positions()
-        
-        canvas.scene.update()
-        
-        
-        
-
-def check_theme_file_modified():
-    file_path = canvas.theme_paths[0] + '/' + 'Black Gold/theme.json'
-    last_modified = os.path.getmtime(file_path)
-    
 
 
 if __name__ == '__main__':

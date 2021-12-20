@@ -637,6 +637,9 @@ class PatchScene(QGraphicsScene):
         # gradient.setColorAt(0, QColor(80, 80, 80))
         # gradient.setColorAt(1, QColor(40, 40, 40))
         # self.setBackgroundBrush(gradient)
+        #if canvas.theme is None:
+            #return
+        
         self.setBackgroundBrush(canvas.theme.background_color)
         self._rubberband.setPen(canvas.theme.rubberband.fill_pen())
         self._rubberband.setBrush(canvas.theme.rubberband.background_color())

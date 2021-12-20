@@ -66,6 +66,7 @@ import patchcanvas.theme as theme
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
 from .theme import Theme
+from .theme_manager import ThemeManager
 from .theme_default import default_theme
 
 # FIXME
@@ -127,10 +128,10 @@ def _get_stored_canvas_position(key, fallback_pos):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def init(appName, scene, callback, debug=False):
+def init(app_name: str, scene, callback, theme_paths: tuple, debug=False):
     if debug:
         print("PatchCanvas::init(\"%s\", %s, %s, %s)"
-              % (appName, scene, callback, bool2str(debug)))
+              % (app_name, scene, callback, bool2str(debug)))
 
     if canvas.initiated:
         qCritical("PatchCanvas::init() - already initiated")
@@ -152,27 +153,16 @@ def init(appName, scene, callback, debug=False):
     if not canvas.qobject:
         canvas.qobject = CanvasObject()
     if not canvas.settings:
-        canvas.settings = QSettings("falkTX", appName)
+        canvas.settings = QSettings("falkTX", app_name)
 
     if canvas.theme:
         del canvas.theme
         canvas.theme = None
 
-    if not canvas.theme:
-        canvas.theme = Theme()
-        
-        import json
-        file_path = canvas.theme_paths[0] + '/' + 'Black Gold/theme.json'
-        with open(file_path, 'r') as f:
-            try:
-                default_theme = json.load(f)
-                print(default_theme)
-            except:
-                print('chabiidi')
-                return
-        
-            canvas.theme.read_theme(default_theme)
-    
+    if canvas.theme_manager is None:
+        canvas.theme_manager = ThemeManager(theme_paths)
+        canvas.theme_manager.set_theme('Black Gold')
+
     canvas.scene.update_theme()
 
     canvas.initiated = True
@@ -524,11 +514,11 @@ def split_group(group_id, on_place=False):
 
     # Step 3 - Re-create Item, now split
     add_group(group_id, group_name, SPLIT_YES,
-             group_icon_type, group_icon_name,
-             null_xy=(group_null_pos.x(), group_null_pos.y()),
-             in_xy=(group_in_pos.x(), group_in_pos.y()),
-             out_xy=(group_out_pos.x(), group_out_pos.y()),
-             split_animated=True)
+              group_icon_type, group_icon_name,
+              null_xy=(group_null_pos.x(), group_null_pos.y()),
+              in_xy=(group_in_pos.x(), group_in_pos.y()),
+              out_xy=(group_out_pos.x(), group_out_pos.y()),
+              split_animated=True)
 
     if handle_client_gui:
         set_optional_gui_state(group_id, gui_visible)
@@ -538,15 +528,15 @@ def split_group(group_id, on_place=False):
 
     for port in ports_data:
         add_port(group_id, port.port_id, port.port_name, port.port_mode,
-                port.port_type, port.is_alternate)
+                 port.port_type, port.is_alternate)
 
     for portgrp in portgrps_data:
         add_portgroup(group_id, portgrp.portgrp_id, portgrp.port_mode,
-                     portgrp.port_type, portgrp.port_id_list)
+                      portgrp.port_type, portgrp.port_id_list)
 
     for conn in conns_data:
         connect_ports(conn.connection_id, conn.group_out_id, conn.port_out_id,
-                     conn.group_in_id, conn.port_in_id)
+                      conn.group_in_id, conn.port_in_id)
 
     canvas.loading_items = False
 
