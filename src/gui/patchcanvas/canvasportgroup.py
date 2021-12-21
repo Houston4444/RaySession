@@ -662,7 +662,8 @@ class CanvasPortGroup(QGraphicsItem):
             theme = theme.selected
 
         poly_pen = theme.fill_pen()
-        color = theme.background_color()
+        color_main = theme.background_color()
+        color_alter = theme.background2_color()
         text_pen = theme.text_color()
 
         lineHinting = poly_pen.widthF() / 2.0
@@ -709,23 +710,27 @@ class CanvasPortGroup(QGraphicsItem):
                       % port_mode2str(self._port_mode))
             return
 
-        light_color = color.lighter(108)
-        dark_color = color.darker(109)
-
-        portgrp_gradient = QLinearGradient(0, 0, 0, self._portgrp_height * 2)
-        portgrp_gradient.setColorAt(0, dark_color)
-        portgrp_gradient.setColorAt(0.5, light_color)
-        portgrp_gradient.setColorAt(1, dark_color)
-
         polygon  = QPolygonF()
         polygon += QPointF(poly_locx[0], lineHinting)
         polygon += QPointF(poly_locx[1], lineHinting)
         polygon += QPointF(poly_locx[2], float(canvas.theme.port_height / 2) )
-        polygon += QPointF(poly_locx[2], float(canvas.theme.port_height * (len(self._port_id_list) - 1/2)) )
-        polygon += QPointF(poly_locx[3], canvas.theme.port_height * len(self._port_id_list) - lineHinting)
-        polygon += QPointF(poly_locx[4], canvas.theme.port_height * len(self._port_id_list) - lineHinting)
+        polygon += QPointF(poly_locx[2],
+                           float(canvas.theme.port_height * (len(self._port_id_list) - 1/2)))
+        polygon += QPointF(poly_locx[3],
+                           canvas.theme.port_height * len(self._port_id_list) - lineHinting)
+        polygon += QPointF(poly_locx[4],
+                           canvas.theme.port_height * len(self._port_id_list) - lineHinting)
 
-        painter.setBrush(portgrp_gradient)
+        if color_alter is not None:
+            portgrp_gradient = QLinearGradient(0, 0, 0, self._portgrp_height * 2)
+            portgrp_gradient.setColorAt(0, color_main)
+            portgrp_gradient.setColorAt(0.5, color_alter)
+            portgrp_gradient.setColorAt(1, color_main)
+
+            painter.setBrush(portgrp_gradient)
+        else:
+            painter.setBrush(color_main)
+            
         painter.setPen(poly_pen)
         painter.drawPolygon(polygon)
 

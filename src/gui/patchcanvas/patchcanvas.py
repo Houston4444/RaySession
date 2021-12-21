@@ -163,7 +163,7 @@ def init(app_name: str, scene, callback, theme_paths: tuple, debug=False):
         canvas.theme_manager = ThemeManager(theme_paths)
         canvas.theme_manager.set_theme('Black Gold')
 
-    canvas.scene.update_theme()
+    #canvas.scene.update_theme()
 
     canvas.initiated = True
 

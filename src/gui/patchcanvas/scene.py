@@ -25,7 +25,7 @@ import time
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
                           Qt, QPoint, QPointF, QRectF, QTimer, QMarginsF)
-from PyQt5.QtGui import QColor, QCursor, QLinearGradient, QPixmap, QPolygonF, QImage, QBrush
+from PyQt5.QtGui import QColor, QCursor, QLinearGradient, QPixmap, QPolygonF, QImage, QBrush, QGradient
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene, QApplication, QGraphicsView
 
 # ------------------------------------------------------------------------------------------------------------
@@ -633,13 +633,6 @@ class PatchScene(QGraphicsScene):
         self._scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
 
     def update_theme(self):
-        # gradient = QLinearGradient(0, -30, 0, 30)
-        # gradient.setColorAt(0, QColor(80, 80, 80))
-        # gradient.setColorAt(1, QColor(40, 40, 40))
-        # self.setBackgroundBrush(gradient)
-        #if canvas.theme is None:
-            #return
-        
         self.setBackgroundBrush(canvas.theme.background_color)
         self._rubberband.setPen(canvas.theme.rubberband.fill_pen())
         self._rubberband.setBrush(canvas.theme.rubberband.background_color())
@@ -1053,5 +1046,10 @@ class PatchScene(QGraphicsScene):
             return
 
         QGraphicsScene.contextMenuEvent(self, event)
+    #def drawBackground(self, painter, rect):
+        #print('foofkfofofo')
+        #painter.setBrush(QColor(0, 0, 50))
+        #painter.drawRect(rect)
+        
 
 # ------------------------------------------------------------------------------------------------------------

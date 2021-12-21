@@ -188,12 +188,21 @@ class CanvasBox(QGraphicsItem):
                 del top_icon
 
         # Shadow
+        shadow_theme = canvas.theme.box_shadow
+        if self._is_hardware:
+            shadow_theme = shadow_theme.hardware
+        elif self._icon_type == ICON_CLIENT:
+            shadow_theme = shadow_theme.client
+        elif self._group_name.endswith(' Monitor'):
+            shadow_theme = shadow_theme.monitor
+        
         self.shadow = None
         # FIXME FX on top of graphic items make them lose high-dpi
         # See https://bugreports.qt.io/browse/QTBUG-65035
         if options.eyecandy and canvas.scene.get_device_pixel_ratio_f() == 1.0:
             self.shadow = CanvasBoxShadow(self.toGraphicsObject())
             self.shadow.fake_parent = self
+            self.shadow.set_theme(shadow_theme)
             self.setGraphicsEffect(self.shadow)
 
         # Final touches
@@ -1440,58 +1449,73 @@ class CanvasBox(QGraphicsItem):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, True)
 
+        # define theme for box, wrappers and header lines
         theme = canvas.theme.box
+        wtheme = canvas.theme.box_wrapper
+        hltheme = canvas.theme.box_header_line
+        
         if self._is_hardware:
             theme = theme.hardware
+            wtheme = wtheme.hardware
+            hltheme = hltheme.hardware
         elif self._icon_type == ICON_CLIENT:
             theme = theme.client
+            wtheme = wtheme.client
+            hltheme = hltheme.client
         elif self._group_name.endswith(' Monitor'):
             theme = theme.monitor
+            wtheme = wtheme.monitor
+            hltheme = hltheme.monitor
 
         if self.isSelected():
             theme = theme.selected
-        
-        pen = theme.fill_pen()
-        # Draw rectangle
+            wtheme = wtheme.selected
+            hltheme = hltheme.selected
 
+        # Draw rectangle
+        pen = theme.fill_pen()
         pen.setWidthF(pen.widthF() + 0.00001)
+        
         painter.setPen(pen)
         pen_width = pen.widthF()
-        lineHinting = pen_width / 2.0
+        line_hinting = pen_width / 2.0
 
         rect = QRectF(0, 0, self._width, self._height)
-
-        max_size = max(self._height, self._width)
-        box_gradient = QLinearGradient(0, 0, max_size, max_size)
+        
         color_main = theme.background_color()
         color_alter = theme.background2_color()
 
-        gradient_size = 20
+        if color_alter is not None:
+            max_size = max(self._height, self._width)
+            box_gradient = QLinearGradient(0, 0, max_size, max_size)
+            gradient_size = 20
 
-        box_gradient.setColorAt(0, color_main)
-        tot = int(max_size / gradient_size)
-        for i in range(tot):
-            if i % 2 == 0:
-                box_gradient.setColorAt((i/tot) ** 0.7, color_main)
-            else:
-                box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
+            box_gradient.setColorAt(0, color_main)
+            tot = int(max_size / gradient_size)
+            for i in range(tot):
+                if i % 2 == 0:
+                    box_gradient.setColorAt((i/tot) ** 0.7, color_main)
+                else:
+                    box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
 
-        painter.setBrush(box_gradient)
+            painter.setBrush(box_gradient)
+        else:
+            painter.setBrush(color_main)
 
-        rect.adjust(lineHinting, lineHinting, -lineHinting, -lineHinting)
+        rect.adjust(line_hinting, line_hinting, -line_hinting, -line_hinting)
         painter.drawRect(rect)
 
-        self._paint_hardware_rack(painter, lineHinting)
-        painter.setPen(pen)
-        painter.setBrush(box_gradient)
+        # draw hardware box decoration (flyrack like)
+        self._paint_hardware_rack(painter, line_hinting)
+
         # Draw plugin inline display if supported
         self._paint_inline_display(painter)
 
         # Draw toggle GUI client button
         if self._can_handle_gui:
             header_rect = QRectF(3, 3, self._width - 6, self._header_height - 6)
-            header_rect.adjust(lineHinting * 2, lineHinting * 2,
-                               -2 * lineHinting, -2 * lineHinting)
+            header_rect.adjust(line_hinting * 2, line_hinting * 2,
+                               -2 * line_hinting, -2 * line_hinting)
             
             gui_theme = canvas.theme.gui_button
             if self._gui_visible:
@@ -1508,6 +1532,7 @@ class CanvasBox(QGraphicsItem):
                 QPointF(4.5, self._header_height - 3.5),
                 QPointF(self._width - 3.5, self._header_height - 3.5))
 
+        # draw Pipewire Monitor decorations
         elif self._group_name.endswith(' Monitor'):
             bor_gradient = QLinearGradient(0, 0, self._height, self._height)
             
@@ -1518,23 +1543,27 @@ class CanvasBox(QGraphicsItem):
             color_main = mon_theme.background_color()
             color_alter = mon_theme.background2_color()
 
-            tot = int(self._height / 20)
-            for i in range(tot):
-                if i % 2 == 0:
-                    bor_gradient.setColorAt(i/tot, color_main)
-                else:
-                    bor_gradient.setColorAt(i/tot, color_alter)
+            if color_alter is not None:
+                tot = int(self._height / 20)
+                for i in range(tot):
+                    if i % 2 == 0:
+                        bor_gradient.setColorAt(i/tot, color_main)
+                    else:
+                        bor_gradient.setColorAt(i/tot, color_alter)
 
-            painter.setBrush(bor_gradient)
+                painter.setBrush(bor_gradient)
+            else:
+                painter.setBrush(color_main)
+
             painter.setPen(mon_theme.fill_pen())
 
             border_rect = QRectF(0, 0, 11, self._height)
-            border_rect.adjust(lineHinting * 2, lineHinting * 2,
-                               -2 * lineHinting, -2 * lineHinting)
+            border_rect.adjust(line_hinting * 2, line_hinting * 2,
+                               -2 * line_hinting, -2 * line_hinting)
             top_pol = QPolygonF()
-            top_pol += QPointF(11 - 2 * lineHinting, lineHinting * 2)
-            top_pol += QPointF(11 - 2 * lineHinting + 13, lineHinting  * 2)
-            top_pol += QPointF(11 - 2 * lineHinting, 13 + lineHinting * 2)
+            top_pol += QPointF(11 - 2 * line_hinting, line_hinting * 2)
+            top_pol += QPointF(11 - 2 * line_hinting + 13, line_hinting  * 2)
+            top_pol += QPointF(11 - 2 * line_hinting, 13 + line_hinting * 2)
 
             band_mon_larger = 9
             triangle_mon_size_top = 7
@@ -1588,11 +1617,7 @@ class CanvasBox(QGraphicsItem):
 
         # may draw horizontal lines around title
         # and set x on title lines
-        hline_theme = canvas.theme.header_line
-        if self.isSelected():
-            hline_theme = hline_theme.selected
-        
-        painter.setPen(hline_theme.fill_pen())
+        painter.setPen(hltheme.fill_pen())
 
         if self.has_top_icon():
             title_x_pos = 29 + (self._width - 29 - max_title_size) / 2
@@ -1656,12 +1681,8 @@ class CanvasBox(QGraphicsItem):
                     title_line.text)
 
         # draw (un)wrapper triangles
-        wrapper_theme = canvas.theme.wrapper
-        if self.isSelected():
-            wrapper_theme = wrapper_theme.selected
-
-        painter.setPen(wrapper_theme.fill_pen())
-        painter.setBrush(wrapper_theme.background_color())
+        painter.setPen(wtheme.fill_pen())
+        painter.setBrush(wtheme.background_color())
 
         if self._wrapped:
             for port_mode in PORT_MODE_INPUT, PORT_MODE_OUTPUT:
@@ -1751,7 +1772,6 @@ class CanvasBox(QGraphicsItem):
             return
         
         d = canvas.theme.hardware_rack_width
-        hw_gradient = QLinearGradient(-d, -d, self._width +d, self._height +d)
         
         theme = canvas.theme.hardware_rack
         if self.isSelected():
@@ -1759,11 +1779,17 @@ class CanvasBox(QGraphicsItem):
         
         background1 = theme.background_color()
         background2 = theme.background2_color()
-        hw_gradient.setColorAt(0, background1)
-        hw_gradient.setColorAt(0.5, background2)
-        hw_gradient.setColorAt(1, background1)
+        
+        if background2 is not None:
+            hw_gradient = QLinearGradient(-d, -d, self._width +d, self._height +d)
+            hw_gradient.setColorAt(0, background1)
+            hw_gradient.setColorAt(0.5, background2)
+            hw_gradient.setColorAt(1, background1)
 
-        painter.setBrush(hw_gradient)
+            painter.setBrush(hw_gradient)
+        else:
+            painter.setBrush(background1)
+            
         painter.setPen(theme.fill_pen())
         if self._current_port_mode != PORT_MODE_INPUT + PORT_MODE_OUTPUT:
             hardware_poly = QPolygonF()

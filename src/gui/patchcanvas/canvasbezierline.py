@@ -167,35 +167,36 @@ class CanvasBezierLine(QGraphicsPathItem):
                 theme = theme.selected
 
         base_pen = theme.fill_pen()
-        base_color = base_pen.color()
+        color_main = theme.background_color()
+        color_alter = theme.background2_color()
+        if color_alter is None:
+            color_alter = color_main
         base_width = base_pen.widthF() + 0.000001
 
         if self.ready_to_disc:
-            port_gradient.setColorAt(pos1, base_color)
-            port_gradient.setColorAt(pos2, base_color)
+            port_gradient.setColorAt(pos1, color_main)
+            port_gradient.setColorAt(pos2, color_main)
         else:
-            light_color = base_color.lighter(130)
-            dark_color = base_color.darker(130)
-            
             if self._semi_hidden:
                 shd = canvas.semi_hide_opacity
                 bgcolor = canvas.theme.background_color
                 
-                light_color = QColor(
-                    int(light_color.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
-                    int(light_color.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
-                    int(light_color.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
-                    light_color.alpha())
                 
-                dark_color = QColor(
-                    int(dark_color.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
-                    int(dark_color.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
-                    int(dark_color.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
-                    dark_color.alpha())
+                color_main = QColor(
+                    int(color_main.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
+                    int(color_main.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
+                    int(color_main.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
+                    color_main.alpha())
+                
+                color_alter = QColor(
+                    int(color_alter.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
+                    int(color_alter.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
+                    int(color_alter.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
+                    color_alter.alpha())
             
-            port_gradient.setColorAt(0, light_color)
-            port_gradient.setColorAt(0.5, dark_color)
-            port_gradient.setColorAt(1, light_color)
+            port_gradient.setColorAt(0, color_main)
+            port_gradient.setColorAt(0.5, color_alter)
+            port_gradient.setColorAt(1, color_main)
 
         self.setPen(QPen(port_gradient, base_width, Qt.SolidLine, Qt.FlatCap))
 

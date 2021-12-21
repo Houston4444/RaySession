@@ -675,6 +675,7 @@ class CanvasPort(QGraphicsItem):
             theme = theme.selected
         
         poly_color = theme.background_color()
+        poly_color_alter = theme.background2_color()
         poly_pen = theme.fill_pen()
         text_pen = theme.text_color()
 
@@ -772,22 +773,17 @@ class CanvasPort(QGraphicsItem):
             polygon += QPointF(poly_locx[4], canvas.theme.port_height - lineHinting)
             polygon += QPointF(poly_locx[0], lineHinting)
 
-        
-        port_gradient = QLinearGradient(0, 0, 0, self._port_height)
+        if poly_color_alter is not None:
+            port_gradient = QLinearGradient(0, 0, 0, self._port_height)
 
-        dark_color = poly_color.darker(112)
-        light_color = poly_color.lighter(111)
+            port_gradient.setColorAt(0, poly_color)
+            port_gradient.setColorAt(0.5, poly_color_alter)
+            port_gradient.setColorAt(1, poly_color)
 
-        if poly_color.lightness() > 127:
-            port_gradient.setColorAt(0, dark_color)
-            port_gradient.setColorAt(0.5, light_color)
-            port_gradient.setColorAt(1, dark_color)
+            painter.setBrush(port_gradient)
         else:
-            port_gradient.setColorAt(0, light_color)
-            port_gradient.setColorAt(0.5, dark_color)
-            port_gradient.setColorAt(1, light_color)
-
-        painter.setBrush(port_gradient)
+            painter.setBrush(poly_color)
+            
         painter.setPen(poly_pen)
         painter.drawPolygon(polygon)
 

@@ -215,14 +215,20 @@ class StyleAttributer:
             if (orig_path.endswith('.' + path_end)
                     and path_end in self.subs
                     and self._path + '.' + path_end != orig_path):
-                return self.selected.get_value_of(attribute, self._path)
+                return self.selected.get_value_of(
+                    attribute, self._path, needed_attribute)
 
         if self.__getattribute__(attribute) is None:
+            if (needed_attribute
+                    and self.__getattribute__(needed_attribute) is not None):
+                return None
+                
             if self._parent is None:
                 print_error("get_value_of: %s None value and no parent"
                             % self._path)
                 return None
-            return self._parent.get_value_of(attribute, orig_path)
+            return self._parent.get_value_of(
+                attribute, orig_path, needed_attribute)
 
         return self.__getattribute__(attribute)
     
@@ -239,7 +245,8 @@ class StyleAttributer:
         return self.get_value_of('_background_color')
     
     def background2_color(self):
-        return self.get_value_of('_background2_color')
+        return self.get_value_of('_background2_color',
+                                 needed_attribute='_background_color')
     
     def text_color(self):
         return self.get_value_of('_text_color')
@@ -324,18 +331,20 @@ class Theme(StyleAttributer):
         self.aliases = {}
 
         self.box = BoxStyleAttributer('.box', self)
+        self.box_wrapper = BoxStyleAttributer('.box_wrapper', self)
+        self.box_header_line = BoxStyleAttributer('.box_header_line', self)
+        self.box_shadow = BoxStyleAttributer('.box_shadow', self)
         self.portgroup = PortStyleAttributer('.portgroup', self)
         self.port = PortStyleAttributer('.port', self)
         self.line = LineStyleAttributer('.line', self)
-        self.wrapper = UnselectedStyleAttributer('.wrapper', self)
         self.rubberband = StyleAttributer('.rubberband', self)
         self.hardware_rack = UnselectedStyleAttributer('.hardware_rack', self)
-        self.header_line = UnselectedStyleAttributer('.header_line', self)
         self.monitor_decoration = UnselectedStyleAttributer('.monitor_decoration', self)
         self.gui_button = GuiButtonStyleAttributer('.gui_button', self)
         
-        self.subs += ['box', 'portgroup', 'port', 'line', 'wrapper',
-                      'rubberband', 'hardware_rack', 'header_line',
+        self.subs += ['box', 'box_wrapper', 'box_header_line', 'box_shadow',
+                      'portgroup', 'port', 'line',
+                      'rubberband', 'hardware_rack',
                       'monitor_decoration', 'gui_button']
         
     def read_theme(self, theme_dict: dict):

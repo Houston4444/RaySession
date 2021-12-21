@@ -90,6 +90,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         theme = theme.selected
         
         pen = theme.fill_pen()
+        pen.setColor(theme.background_color())
         pen.setStyle(Qt.DotLine if self.ready_to_disc else Qt.SolidLine)
         pen.setCapStyle(Qt.FlatCap)
         pen.setWidthF(pen.widthF() + 0.00001)
