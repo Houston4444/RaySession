@@ -7,6 +7,7 @@ import sys
 from PyQt5.QtCore import QTimer
 
 from .theme import print_error, Theme
+from .theme_default import default_theme
 from . import canvas, ACTION_THEME_UPDATE
 
 class ThemeManager:
@@ -30,7 +31,8 @@ class ThemeManager:
         if last_modified == self._last_modified:
             return
         
-        self._update_theme()
+        if not self._update_theme():
+            self._last_modified = last_modified
 
     def _update_theme(self) -> bool:
         conf = configparser.ConfigParser()
@@ -147,8 +149,11 @@ class ThemeManager:
             print_error("Unable to find theme %s" % theme_name)
             return False
 
-        valid_theme = self._update_theme()
-        if not valid_theme:
+        theme_is_valid = self._update_theme()
+        if not theme_is_valid:
+            canvas.theme = Theme()
+            canvas.theme.read_theme(default_theme)
+            canvas.scene.update_theme()
             return False
         
         self.activate_watcher(os.access(self.current_theme_file, os.R_OK))

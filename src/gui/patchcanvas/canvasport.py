@@ -677,6 +677,7 @@ class CanvasPort(QGraphicsItem):
         poly_color = theme.background_color()
         poly_color_alter = theme.background2_color()
         poly_pen = theme.fill_pen()
+        #poly_pen.setJoinStyle(Qt.RoundJoin)
         text_pen = theme.text_color()
 
         # To prevent quality worsening
@@ -785,6 +786,9 @@ class CanvasPort(QGraphicsItem):
             painter.setBrush(poly_color)
             
         painter.setPen(poly_pen)
+        
+        #try_rect = QRectF(4.0, 4.0, 20.0, 4.0)
+        #polygon = polygon.subtracted(QPolygonF(try_rect))
         painter.drawPolygon(polygon)
 
         if self._is_alternate and not self._portgrp_id:
@@ -835,7 +839,10 @@ class CanvasPort(QGraphicsItem):
                                    text_y_pos)
 
             if print_name_size > (self._port_width - 4):
-                painter.setPen(QPen(port_gradient, 3))
+                if poly_color_alter is not None:
+                    painter.setPen(QPen(port_gradient, 3))
+                else:
+                    painter.setPen(QPen(poly_color, 3))
                 painter.drawLine(
                     QPointF(float(poly_locx[5]), 3.0),
                     QPointF(float(poly_locx[5]),

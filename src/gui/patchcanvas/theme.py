@@ -83,6 +83,12 @@ def _to_qcolor(color):
     
     return None
 
+def rail_float(value, mini: float, maxi: float) -> float:
+    new_value = float(value)
+    new_value = min(new_value, float(maxi))
+    new_value = max(new_value, float(mini))
+    return new_value
+
 
 class StyleAttributer:
     def __init__(self, path, parent=None):
@@ -91,6 +97,7 @@ class StyleAttributer:
         self._border_color = None
         self._border_width = None
         self._border_style = None
+        self._border_radius = None
         self._background_color = None
         self._background2_color = None
         self._text_color = None
@@ -98,12 +105,17 @@ class StyleAttributer:
         self._font_size = None
         self._font_width = None
 
+        self._port_offset = None
+        self._port_spacing = None
+        self._port_type_spacing = None
+        self._box_footer = None
+
         self._path = path
         self._parent = parent
-        
+
         self._fill_pen = None
         self._font = None
-    
+
     def set_attribute(self, attribute: str, value):
         err = False
         
@@ -114,7 +126,7 @@ class StyleAttributer:
                 
         elif attribute == 'border-width':
             if isinstance(value, (int, float)):
-                self._border_width = float(value)
+                self._border_width = rail_float(value, 0, 20)
             else:
                 err = True
                 
@@ -133,6 +145,12 @@ class StyleAttributer:
                     self._border_style = Qt.DashDotDotLine
                 else:
                     err = True
+            else:
+                err = True
+
+        elif attribute == 'border-radius':
+            if isinstance(value, (int, float)):
+                self._border_radius = rail_float(value, 0, 50)
             else:
                 err = True
 
@@ -158,16 +176,14 @@ class StyleAttributer:
                 err = True
                 
         elif attribute == 'font-size':
-            if isinstance(value, int):
-                self._font_size = value
+            if isinstance(value, (int, float)):
+                self._font_size = rail_float(value, 1, 200)
             else:
                 err = True
                 
         elif attribute == 'font-width':
-            if isinstance(value, int):
-                value = min(value, 99)
-                value = max(value, 0)
-                self._font_width = value
+            if isinstance(value, (int, float)):
+                self._font_width = int(rail_float(value, 0, 99))
             elif isinstance(value, str):
                 value = value.lower()
                 if value == 'normal':
@@ -178,13 +194,36 @@ class StyleAttributer:
                     err = True
             else:
                 err = True
+        
+        elif attribute == 'port-offset':
+            if isinstance(value, (int, float)):
+                self._port_offset = rail_float(value, -20, 20)
+            else:
+                err = True
+        
+        elif attribute == 'port-spacing':
+            if isinstance(value, (int, float)):
+                self._port_spacing = rail_float(value, 0, 100)
+            else:
+                err = True
+        
+        elif attribute == 'port-type-spacing':
+            if isinstance(value, (int, float)):
+                self._port_type_spacing = rail_float(value, 0, 100)
+            else:
+                err = True
+
+        elif attribute == 'box-footer':
+            if isinstance(value, (int, float)):
+                self._box_footer = rail_float(value, 0, 50)
+
         else:
             print_error("%s:unknown key: %s" % (self._path, attribute))
 
         if err:
             print_error("%s:invalid value for %s: %s"
                         % (self._path, attribute, str(value)))
-    
+
     def set_style_dict(self, context: str, style_dict: dict):
         if context:
             begin, point, end = context.partition('.')
@@ -241,6 +280,9 @@ class StyleAttributer:
         
         return self._fill_pen
     
+    def border_radius(self):
+        return self.get_value_of('_border_radius')
+    
     def background_color(self):
         return self.get_value_of('_background_color')
     
@@ -256,7 +298,18 @@ class StyleAttributer:
         font_.setPixelSize(self.get_value_of('_font_size'))
         font_.setWeight(self.get_value_of('_font_width'))
         return font_
+    
+    def port_offset(self):
+        return self.get_value_of('_port_offset')
+    
+    def port_spacing(self):
+        return self.get_value_of('_port_spacing')
+    
+    def port_type_spacing(self):
+        return self.get_value_of('_port_type_spacing')
 
+    def box_footer(self):
+        return self.get_value_of('_box_footer')
 
 class UnselectedStyleAttributer(StyleAttributer):
     def __init__(self, path, parent=None):
@@ -308,6 +361,7 @@ class Theme(StyleAttributer):
         self._border_color = QColor('white')
         self._border_width = 1
         self._border_style = Qt.SolidLine
+        self._border_radius = 0
         self._background_color = QColor('black')
         self._background2_color = QColor('black')
         self._text_color = QColor('white')
@@ -315,13 +369,16 @@ class Theme(StyleAttributer):
         self._font_size = 11
         self._font_width = QFont.Normal # QFont.Normal is 50
 
+        self._port_spacing = 2
+        self._port_type_spacing = 2
+        self._port_offset = 0
+        self._box_footer = 0
+
         self.background_color = QColor('black')
         self.box_shadow_color = QColor('gray')
         self.monitor_color = QColor(190, 158, 0)
         self.port_height = 16
-        self.port_spacing = 2
-        self.port_type_spacing = 2
-        self.port_offset = 0
+        
         self.port_grouped_width = 19
         self.box_spacing = 4
         self.box_spacing_horizontal = 24
@@ -387,9 +444,8 @@ class Theme(StyleAttributer):
             if key == 'body':
                 for body_key, body_value in value.items():
                     if body_key in (
-                            'port-height', 'port-spacing', 'port-type-spacing',
-                            'box-spacing', 'box-spacing-horizontal', 'magnet',
-                            'hardware-rack-width', 'port-offset'):
+                            'port-height', 'box-spacing', 'box-spacing-horizontal',
+                            'magnet', 'hardware-rack-width'):
                         if not isinstance(body_value, int):
                             continue
                         self.__setattr__(body_key.replace('-', '_'), body_value)

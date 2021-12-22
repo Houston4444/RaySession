@@ -2,12 +2,12 @@ default_theme = {
     'aliases':
         {'opac_gold': (255, 192, 0, 80)},
     'body':
-        {'background': (0, 0, 0),
-            'port-offset': 0,
+        {'background': "#000000",
+         'port-offset': 0,
          'box-shadow-color': (89, 89, 89, 180),
          'monitor-color': (190, 158, 0)
         },
-    'wrapper':
+    'box_wrapper':
         {'border-color': (56, 57, 58),
          'background': "opac_gold"
          },
@@ -68,21 +68,21 @@ default_theme = {
         {'border-width': 1.75
         },
     'line.disconnecting':
-        {'border-color': (30, 30, 30),
+        {'background': (30, 30, 30),
          'border-width': 1.50},
     'line.selected':
         {'border-width': 2.25},
     'line.audio':
-        {'border-color': (60, 60, 72)
+        {'background': (60, 60, 72)
         },
     'line.audio.selected':
-        {'border-color': (118, 118, 141)
+        {'background': (118, 118, 141)
         },
     'line.midi':
-        {'border-color': (77, 42, 16)
+        {'background': (77, 42, 16)
         },
     'line.midi.selected':
-        {'border-color': (160, 86, 33)
+        {'background': (160, 86, 33)
         },
     'hardware_rack':
         {'background': (60, 60, 43),
@@ -98,6 +98,6 @@ default_theme = {
         {'background': (70, 70, 70),
          'background2': (45, 45, 45),
          'border-style': 'nopen'},
-    'header_line':
+    'box_header_line':
         {'border-color': "opac_gold"}
     }

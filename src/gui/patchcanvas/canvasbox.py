@@ -111,18 +111,18 @@ class CanvasBox(CanvasBoxAbstract):
         
         return align_port_types
     
-    def _set_ports_y_and_get_max_widths(
-        self, port_types: list, align_port_types: bool) -> dict:
-        ''' ports Y positioning, and get width informations '''
+    def _set_ports_witdhs(
+            self, port_types: list, align_port_types: bool) -> dict:
         max_in_width = max_out_width = 0
-        last_in_pos = last_out_pos = self._default_header_height
+        last_in_pos = last_out_pos = last_inout_pos = 0
         final_last_in_pos = final_last_out_pos = last_in_pos
-        wrapped_port_pos = self._default_header_height
+        #wrapped_port_pos = self._default_header_height
         
         box_theme = self.get_theme()
-        port_spacing = canvas.theme.port_height + box_theme.port_spacing()
+        port_spacing = box_theme.port_spacing()
         last_in_type = last_out_type = PORT_TYPE_NULL
         last_in_alter = last_out_alter = False
+        last_port_mode = PORT_MODE_NULL
         
         for port_type in port_types:
             for alternate in (False, True):
@@ -132,11 +132,6 @@ class CanvasBox(CanvasBoxAbstract):
                             or port.port_type != port_type
                             or port.is_alternate != alternate):
                         continue
-                    
-                    ## uncomment this block to enable
-                    ## inputs and outputs in down order
-                    ## to win space in some cases
-                    #last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
                     
                     port_pos, pg_len = utils.get_portgroup_position(
                         self._group_id, port.port_id, port.portgrp_id)
@@ -188,6 +183,89 @@ class CanvasBox(CanvasBoxAbstract):
                                 or port.is_alternate != last_in_alter):
                             if last_in_type != PORT_TYPE_NULL:
                                 last_in_pos += box_theme.port_type_spacing()
+                                last_inout_pos += box_theme.port_type_spacing()
+                            last_in_type = port.port_type
+                            last_in_alter = port.is_alternate
+
+                        last_in_pos += canvas.theme.port_height
+                        if last_of_portgrp:
+                            last_in_pos += port_spacing
+
+                    elif port.port_mode == PORT_MODE_OUTPUT:
+                        max_out_width = max(max_out_width, size)
+                        if (port.port_type != last_out_type
+                                or port.is_alternate != last_out_alter):
+                            if last_out_type != PORT_TYPE_NULL:
+                                last_out_pos += box_theme.port_type_spacing()
+                                last_inout_pos += box_theme.port_type_spacing()
+                            last_out_type = port.port_type
+                            last_out_alter = port.is_alternate
+                        
+                        last_out_pos += canvas.theme.port_height
+                        if last_of_portgrp:
+                            last_out_pos += port_spacing
+                    
+                    last_port_mode = port.port_mode
+                    last_inout_pos += canvas.theme.port_height
+                    if last_of_portgrp:
+                        last_inout_pos += port_spacing
+                    
+                    final_last_in_pos = last_in_pos
+                    final_last_out_pos = last_out_pos
+                
+                if align_port_types:
+                    # align port types horizontally
+                    if last_in_pos > last_out_pos:
+                        last_out_type = last_in_type
+                        last_out_alter = last_in_alter
+                    else:
+                        last_in_type = last_out_type
+                        last_in_alter = last_out_alter
+                    last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
+        
+        return {'last_in_pos': final_last_in_pos,
+                'last_out_pos': final_last_out_pos,
+                'last_inout_pos': last_inout_pos,
+                'max_in_width': max_in_width,
+                'max_out_width': max_out_width,
+                'last_port_mode': last_port_mode}
+
+    def _set_ports_y_positions(
+        self, port_types: list, align_port_types: bool, start_pos: int,
+        one_column: bool) -> dict:
+        ''' ports Y positioning, and get width informations '''
+        max_in_width = max_out_width = 0
+        last_in_pos = last_out_pos = start_pos
+        final_last_in_pos = final_last_out_pos = last_in_pos
+        wrapped_port_pos = start_pos
+        
+        box_theme = self.get_theme()
+        port_spacing = box_theme.port_spacing()
+        last_in_type = last_out_type = PORT_TYPE_NULL
+        last_in_alter = last_out_alter = False
+        
+        for port_type in port_types:
+            for alternate in (False, True):
+                for port in canvas.port_list:
+                    if (port.group_id != self._group_id
+                            or port.port_id not in self._port_list_ids
+                            or port.port_type != port_type
+                            or port.is_alternate != alternate):
+                        continue
+                    
+                    if one_column:
+                        last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
+                    
+                    port_pos, pg_len = utils.get_portgroup_position(
+                        self._group_id, port.port_id, port.portgrp_id)
+                    first_of_portgrp = bool(port_pos == 0)
+                    last_of_portgrp = bool(port_pos + 1 == pg_len)
+
+                    if port.port_mode == PORT_MODE_INPUT:
+                        if (port.port_type != last_in_type
+                                or port.is_alternate != last_in_alter):
+                            if last_in_type != PORT_TYPE_NULL:
+                                last_in_pos += box_theme.port_type_spacing()
                             last_in_type = port.port_type
                             last_in_alter = port.is_alternate
 
@@ -214,14 +292,12 @@ class CanvasBox(CanvasBoxAbstract):
                                         else:
                                             portgrp.widget.setY(last_in_pos)
                                     break
-
+                        
+                        last_in_pos += canvas.theme.port_height
                         if last_of_portgrp:
                             last_in_pos += port_spacing
-                        else:
-                            last_in_pos += canvas.theme.port_height
 
                     elif port.port_mode == PORT_MODE_OUTPUT:
-                        max_out_width = max(max_out_width, size)
                         if (port.port_type != last_out_type
                                 or port.is_alternate != last_out_alter):
                             if last_out_type != PORT_TYPE_NULL:
@@ -253,10 +329,9 @@ class CanvasBox(CanvasBoxAbstract):
                                             portgrp.widget.setY(last_out_pos)
                                     break
 
+                        last_out_pos += canvas.theme.port_height
                         if last_of_portgrp:
                             last_out_pos += port_spacing
-                        else:
-                            last_out_pos += canvas.theme.port_height
                 
                     final_last_in_pos = last_in_pos
                     final_last_out_pos = last_out_pos
@@ -270,13 +345,10 @@ class CanvasBox(CanvasBoxAbstract):
                         last_in_type = last_out_type
                         last_in_alter = last_out_alter
                     last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
-        
-        return {'last_in_pos': final_last_in_pos,
-                'last_out_pos': final_last_out_pos,
-                'max_in_width': max_in_width,
-                'max_out_width': max_out_width}
     
-    def _choose_title_disposition(self, box_height: int, width_for_ports: int) -> dict:
+    def _choose_title_disposition(
+        self, box_height: int, width_for_ports: int,
+        box_height_one: int, width_for_ports_one: int) -> dict:
         ''' choose in how many lines should be splitted the title
         returns needed more_height '''
 
@@ -307,41 +379,109 @@ class CanvasBox(CanvasBoxAbstract):
             new_title_template['header_width'] = header_width
             all_title_templates[i] = new_title_template
 
-            if header_width < width_for_ports:
-                break
+            #if header_width < width_for_ports:
+                #break
 
-        more_height = 0
+        more_height = 14
         lines_choice = 1
-
-        if all_title_templates[1]['header_width'] <= width_for_ports:
-            # One line title is shorter than the box, choose it
-            lines_choice = 1
-        elif all_title_templates[2]['header_width'] <= width_for_ports:
-            # Two lines title is shorter than the box, choose it
-            lines_choice = 2
+        one_column = False
+        
+        sizes_tuples = []
+        
+        sizes_tuples.append((
+            max(all_title_templates[1]['header_width'], width_for_ports_one)
+            * box_height_one,
+            1,
+            True))
+        sizes_tuples.append((
+            max(all_title_templates[2]['header_width'], width_for_ports_one)
+            * box_height_one,
+            2,
+            True))
+        sizes_tuples.append((
+            max(all_title_templates[3]['header_width'], width_for_ports_one)
+            * (box_height_one + more_height),
+            3,
+            True))
+        sizes_tuples.append((
+            max(all_title_templates[4]['header_width'], width_for_ports_one)
+            * (box_height_one + more_height) + 5000,
+            4,
+            True))
+        sizes_tuples.append((
+            max(all_title_templates[1]['header_width'], width_for_ports)
+            * box_height,
+            1,
+            False))
+        sizes_tuples.append((
+            max(all_title_templates[2]['header_width'], width_for_ports)
+            * box_height,
+            2,
+            False))
+        sizes_tuples.append((
+            max(all_title_templates[3]['header_width'], width_for_ports)
+            * (box_height + more_height),
+            3,
+            False))
+        sizes_tuples.append((
+            max(all_title_templates[4]['header_width'], width_for_ports)
+            * (box_height + more_height) + 5000,
+            4,
+            False))
+        
+        sizes_tuples.sort()
+        lines_choice = sizes_tuples[0][1]
+        one_column = sizes_tuples[0][2]
+        print('tr', self._group_name, sizes_tuples)
+        
+        if lines_choice <= 2:
+            more_height = 0
         else:
             more_height = 14
-            area_2 = all_title_templates[2]['header_width'] * box_height
-            area_3 = (max(width_for_ports, all_title_templates[3]['header_width'])
-                      * (box_height + more_height))
+        #if all_title_templates[1]['header_width'] <= width_for_ports_one:
+            ## One line title is shorter than the box, choose it
+            #print('szizil1', self._group_name, width_for_ports_one, box_height_one, width_for_ports, box_height)
+            #lines_choice = 1
+            #one_column = bool(width_for_ports_one * box_height_one
+                              #< width_for_ports * box_height)
+        
+        #elif all_title_templates[1]['header_width'] <= width_for_ports:
+            ## One line title is shorter than the box, choose it
+            #print('siriri2', self._group_name, width_for_ports_one, box_height_one, width_for_ports, box_height)
+            #lines_choice = 1
+            #one_column = bool(max(width_for_ports_one, all_title_templates[1]['header_width'])
+                              #* box_height_one
+                              #< width_for_ports * box_height)
+        
+        #elif all_title_templates[2]['header_width'] <= width_for_ports:
+            ## Two lines title is shorter than the box, choose it
+            #print('fjifffj', self._group_name, width_for_ports_one, box_height_one, width_for_ports, box_height)
+            #lines_choice = 2
+            #one_column = bool(width_for_ports_one * box_height_one
+                              #< width_for_ports * box_height)
+        #else:
+            #more_height = 14
+            #area_2 = all_title_templates[2]['header_width'] * box_height
+            #area_3 = (max(width_for_ports, all_title_templates[3]['header_width'])
+                      #* (box_height + more_height))
 
-            if area_2 <= area_3:
-                # Box area is smaller with 2 lines titles than with 3 lines title
-                # choose 2 lines title
-                lines_choice = 2
-                more_height = 0
+            #if area_2 <= area_3:
+                ## Box area is smaller with 2 lines titles than with 3 lines title
+                ## choose 2 lines title
+                #lines_choice = 2
+                #more_height = 0
 
-            elif all_title_templates[3]['header_width'] <= width_for_ports:
-                # 3 lines title is shorter than the box, choose it
-                lines_choice = 3
-            else:
-                area_4 = (max(width_for_ports, all_title_templates[4]['header_width'])
-                          * (box_height + more_height))
+            #elif all_title_templates[3]['header_width'] <= width_for_ports:
+                ## 3 lines title is shorter than the box, choose it
+                #lines_choice = 3
+            #else:
+                #area_4 = (max(width_for_ports, all_title_templates[4]['header_width'])
+                          #* (box_height + more_height))
 
-                if area_3 - area_4 >= 5000:
-                    lines_choice = 4
-                else:
-                    lines_choice = 3
+                #if area_3 - area_4 >= 5000:
+                    #lines_choice = 4
+                #else:
+                    #lines_choice = 3
 
         self._title_lines = self._split_title(lines_choice)
         
@@ -349,7 +489,8 @@ class CanvasBox(CanvasBoxAbstract):
         max_title_size = all_title_templates[lines_choice]['title_width']
         return {'max_title_size': max_title_size,
                 'header_width': header_width,
-                'more_height': more_height}
+                'more_height': more_height,
+                'one_column': one_column}
     
     def _push_down_ports(self, down_height: int):
         # down ports
@@ -456,42 +597,55 @@ class CanvasBox(CanvasBoxAbstract):
     
         align_port_types = self._should_align_port_types(port_types)
 
-        widths_dict = self._set_ports_y_and_get_max_widths(port_types, align_port_types)        
-        last_in_pos = widths_dict['last_in_pos']
-        last_out_pos = widths_dict['last_out_pos']
+        widths_dict = self._set_ports_witdhs(port_types, align_port_types)
+        #widths_dict = self._set_ports_y_and_get_max_widths(port_types, align_port_types)        
+        last_in_pos = widths_dict['last_in_pos'] + self._default_header_height
+        last_out_pos = widths_dict['last_out_pos'] + self._default_header_height
+        last_inout_pos = widths_dict['last_inout_pos'] + self._default_header_height
         max_in_width = widths_dict['max_in_width']
         max_out_width = widths_dict['max_out_width']
+        last_port_mode = widths_dict['last_port_mode']
         
         wrapped_port_pos = self._default_header_height
-
-        self._width = 30
-        if self._plugin_inline != self.INLINE_DISPLAY_DISABLED:
-            self._width = 100
-
-        self._width += max_in_width + max_out_width
-        #self._width += max(max_in_width, max_out_width)
-        self._width_in = max_in_width
-        self._width_out = max_out_width
-
+        
         box_theme = self.get_theme()
         box_height = max(last_in_pos, last_out_pos) + box_theme.box_footer()
+        box_height_one = last_inout_pos + box_theme.box_footer()
+
+        width_for_ports = 30
+        if self._plugin_inline != self.INLINE_DISPLAY_DISABLED:
+            width_for_ports = 100
+        width_for_ports_one = width_for_ports
+        width_for_ports += max_in_width + max_out_width
+        width_for_ports_one += max(max_in_width, max_out_width)
+
+        self._width_in = max_in_width
+        self._width_out = max_out_width
         
-        width_for_ports = self._width
-        
-        titles_dict = self._choose_title_disposition(box_height, width_for_ports)
-        self._width = max(titles_dict['header_width'], width_for_ports)
+        titles_dict = self._choose_title_disposition(
+            box_height, width_for_ports, box_height_one, width_for_ports_one)
         max_title_size = titles_dict['max_title_size']
         more_height = titles_dict['more_height']
+        one_column = titles_dict['one_column']
+        #one_column = True
 
+        if one_column:
+            width_for_ports = width_for_ports_one
+            box_height = box_height_one
+        print('fj', titles_dict['header_width'], width_for_ports)
+        self._width = max(titles_dict['header_width'], width_for_ports)
+        
         if more_height:
-            self._push_down_ports(more_height)
+            box_height += more_height
+            #self._push_down_ports(more_height)
             last_in_pos += more_height
             last_out_pos += more_height
 
+        self._set_ports_y_positions(port_types, align_port_types, self._default_header_height + more_height, one_column)
         self._set_ports_x_positions(max_in_width, max_out_width)
-
+        
         # wrapped/unwrapped sizes
-        normal_height = max(last_in_pos, last_out_pos) + box_theme.box_footer()
+        normal_height = box_height
         wrapped_height = wrapped_port_pos + canvas.theme.port_height + more_height
         self._header_height = self._default_header_height + more_height
 
@@ -510,7 +664,11 @@ class CanvasBox(CanvasBoxAbstract):
             
             self._unwrap_triangle_pos = UNWRAP_BUTTON_NONE
             if self._height >= 100:
-                if last_out_pos > last_in_pos:
+                if one_column and last_port_mode == PORT_MODE_INPUT:
+                    self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
+                elif one_column and last_port_mode == PORT_MODE_OUTPUT:
+                    self._unwrap_triangle_pos = UNWRAP_BUTTON_LEFT
+                elif last_out_pos > last_in_pos:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_LEFT
                 elif last_in_pos > last_out_pos:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
