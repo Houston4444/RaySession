@@ -50,6 +50,7 @@ from . import (
     ACTION_GROUP_RENAME,
     ACTION_GROUP_MOVE,
     ACTION_GROUP_WRAP,
+    ACTION_GROUP_COLUMN_CHANGE,
     ACTION_PORTS_DISCONNECT,
     ACTION_INLINE_DISPLAY,
     ACTION_CLIENT_SHOW_GUI,
@@ -80,6 +81,10 @@ UNWRAP_BUTTON_NONE = 0
 UNWRAP_BUTTON_LEFT = 1
 UNWRAP_BUTTON_CENTER = 2
 UNWRAP_BUTTON_RIGHT = 3
+
+COLUMNS_AUTO = 0
+COLUMNS_ONE = 1
+COLUMNS_TWO = 2
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -221,6 +226,8 @@ class CanvasBoxAbstract(QGraphicsItem):
         
         self._can_handle_gui = False # used for optional-gui switch
         self._gui_visible = False
+        
+        self._column_disposition = COLUMNS_AUTO
 
         self.update_positions()
 
@@ -418,12 +425,13 @@ class CanvasBoxAbstract(QGraphicsItem):
                 % port_id)
             return
 
-        if len(self._port_list_ids) > 0:
-            self.update_positions()
+        if not canvas.loading_items:
+            if len(self._port_list_ids) > 0:
+                self.update_positions()
 
-        elif self.isVisible():
-            if options.auto_hide_groups:
-                self.setVisible(False)
+            elif self.isVisible():
+                if options.auto_hide_groups:
+                    self.setVisible(False)
 
     def add_portgroup_from_group(self, portgrp_id, port_mode,
                                  port_type, port_id_list):
@@ -550,6 +558,9 @@ class CanvasBoxAbstract(QGraphicsItem):
                 [self],
                 new_scene_rect=new_bounding_rect.translated(self.pos()),
                 wanted_direction=DIRECTION_DOWN)
+    
+    def set_column_mode(self, column_mode:int):
+        self._column_disposition = column_mode
 
     def update_positions(self, even_animated=False):
         # see canvasbox.py
@@ -738,7 +749,21 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         act_x_wrap = menu.addAction(wrap_title)
         act_x_wrap.setIcon(wrap_icon)
-
+        
+        if self._current_port_mode == PORT_MODE_INPUT + PORT_MODE_OUTPUT:
+            column_menu = QMenu('Disposition')
+            column_menu.setIcon(QIcon.fromTheme('view-split-left-right'))
+            act_column_auto = column_menu.addAction('Automatic')
+            act_column_one = column_menu.addAction('One column')
+            act_column_two = column_menu.addAction('Two columns')
+            act_column_auto.setCheckable(True)
+            act_column_one.setCheckable(True)
+            act_column_two.setCheckable(True)
+            act_column_auto.setChecked(bool(self._column_disposition == COLUMNS_AUTO))
+            act_column_one.setChecked(bool(self._column_disposition == COLUMNS_ONE))
+            act_column_two.setChecked(bool(self._column_disposition == COLUMNS_TWO))
+            menu.addMenu(column_menu)
+        
         act_x_sep3 = menu.addSeparator()
 
         if not features.group_info:
@@ -800,6 +825,18 @@ class CanvasBoxAbstract(QGraphicsItem):
                 canvas.callback(ACTION_GROUP_JOIN, self._group_id, 0, "")
             else:
                 canvas.callback(ACTION_GROUP_SPLIT, self._group_id, 0, "")
+
+        elif act_selected == act_column_auto:
+            self._column_disposition = COLUMNS_AUTO
+            canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id, COLUMNS_AUTO, "")
+        
+        elif act_selected == act_column_one:
+            self._column_disposition = COLUMNS_ONE
+            canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id, COLUMNS_ONE, "")
+
+        elif act_selected == act_column_two:
+            self._column_disposition = COLUMNS_TWO
+            canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id, COLUMNS_TWO, "")
 
         elif act_selected == act_p_edit:
             canvas.callback(ACTION_PLUGIN_EDIT, self._plugin_id, 0, "")

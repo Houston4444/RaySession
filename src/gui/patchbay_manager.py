@@ -2,7 +2,7 @@
 import json
 import os
 import sys
-
+import time
 from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
 from PyQt5.QtWidgets import QMenu, QAction, QLabel, QMessageBox
 from PyQt5.QtCore import pyqtSlot, QTimer, QPoint
@@ -74,6 +74,9 @@ class Connection:
         return self.port_out.type
 
     def add_to_canvas(self):
+        if PatchbayManager.very_fast_operation:
+            return
+
         if self.in_canvas:
             return
 
@@ -88,6 +91,9 @@ class Connection:
             self.port_in.group_id, self.port_in.port_id)
 
     def remove_from_canvas(self):
+        if PatchbayManager.very_fast_operation:
+            return
+
         if not self.in_canvas:
             return
 
@@ -164,6 +170,9 @@ class Port:
         self.rename_in_canvas()
 
     def add_to_canvas(self):
+        if PatchbayManager.very_fast_operation:
+            return
+        
         if self.in_canvas:
             return
 
@@ -203,6 +212,9 @@ class Port:
             port_mode, self.type, is_alternate)
 
     def remove_from_canvas(self):
+        if PatchbayManager.very_fast_operation:
+            return
+        
         if not self.in_canvas:
             return
 
@@ -283,6 +295,9 @@ class Portgroup:
         self.ports = tuple(port_list)
 
     def add_to_canvas(self):
+        if PatchbayManager.very_fast_operation:
+            return
+        
         if self.in_canvas:
             return
 
@@ -309,6 +324,9 @@ class Portgroup:
                                   port_id_list)
 
     def remove_from_canvas(self):
+        if PatchbayManager.very_fast_operation:
+            return
+        
         if not self.in_canvas:
             return
 
@@ -349,6 +367,9 @@ class Group:
             port.rename_in_canvas()
 
     def add_to_canvas(self, split=patchcanvas.SPLIT_UNDEF):
+        #if PatchbayManager.very_fast_operation:
+            #return
+        
         if self.in_canvas:
             return
 
@@ -415,6 +436,7 @@ class Group:
                 bool(gpos.flags & GROUP_WRAPPED_INPUT
                      and gpos.flags & GROUP_WRAPPED_OUTPUT),
                 animate=False)
+            patchcanvas.set_group_column_mode(self.group_id, gpos.column_mode)
             
         if self.has_gui:
             patchcanvas.set_optional_gui_state(self.group_id, self.gui_visible)
@@ -590,6 +612,15 @@ class Group:
         if (ex_gpos_flags & GROUP_SPLITTED
                 and not gpos.flags & GROUP_SPLITTED):
             patchcanvas.animate_before_join(self.group_id)
+
+    def set_column_mode(self, column_mode: int):
+        self.current_position.column_mode = column_mode
+        self.save_current_position()
+        
+        if not self.in_canvas:
+            return
+        
+        patchcanvas.set_group_column_mode(self.group_id, column_mode)
 
     def wrap_box(self, port_mode: int, yesno: bool):
         wrap_flag = GROUP_WRAPPED_OUTPUT | GROUP_WRAPPED_INPUT
@@ -1031,6 +1062,7 @@ class Group:
                 break
 
     def sort_ports_in_canvas(self):
+        already_optimized = PatchbayManager.optimized_operation
         PatchbayManager.optimize_operation(True)
 
         conn_list = []
@@ -1043,7 +1075,7 @@ class Group:
 
         for connection in conn_list:
             connection.remove_from_canvas()
-
+        
         for portgroup in self.portgroups:
             portgroup.remove_from_canvas()
 
@@ -1134,7 +1166,7 @@ class Group:
 
                 elif founded_ports:
                     break
-
+        
         # detect and add portgroups given from metadatas
         portgroups_mdata = [] # list of dicts
 
@@ -1199,11 +1231,23 @@ class Group:
         for portgroup in self.portgroups:
             portgroup.add_to_canvas()
 
-        for connection in conn_list:
-            connection.add_to_canvas()
+        # in very fast operation, ports are not added to canvas.
+        # So, add connections may fail if connected port doesn't
+        # already exists in canvas.
+        if not PatchbayManager.very_fast_operation:
+            for connection in conn_list:
+                connection.add_to_canvas()
+        
+        if not already_optimized:
+            PatchbayManager.optimize_operation(False)
+            self.redraw_in_canvas()
 
-        PatchbayManager.optimize_operation(False)
-        self.redraw_in_canvas()
+    def add_all_ports_to_canvas(self):
+        for port in self.ports:
+            port.add_to_canvas()
+        
+        for portgroup in self.portgroups:
+            portgroup.add_to_canvas()
 
     def rename_waiting_ports(self):
         PatchbayManager.optimize_operation(True)
@@ -1232,6 +1276,7 @@ class PatchbayManager:
     use_graceful_names = True
     port_types_view = PORT_TYPE_AUDIO + PORT_TYPE_MIDI
     optimized_operation = False
+    very_fast_operation = False
     groups = []
     connections = []
     group_positions = []
@@ -1305,6 +1350,10 @@ class PatchbayManager:
             patchcanvas.set_loading_items(yesno)
 
     @classmethod
+    def set_very_fast_operation(cls, yesno: bool):
+        cls.very_fast_operation = yesno
+
+    @classmethod
     def new_portgroup(cls, group_id: int, port_mode: int, ports: tuple):
         portgroup = Portgroup(group_id, cls._next_portgroup_id,
                               port_mode, ports)
@@ -1373,6 +1422,15 @@ class PatchbayManager:
             for group in self.groups:
                 if group.group_id == group_id:
                     group.wrap_box(splitted_mode, yesno)
+                    break
+
+        elif action == patchcanvas.ACTION_GROUP_COLUMN_CHANGE:
+            group_id = value1
+            column_mode = value2
+
+            for group in self.groups:
+                if group.group_id == group_id:
+                    group.set_column_mode(column_mode)
                     break
 
         elif action == patchcanvas.ACTION_PORTGROUP_ADD:
@@ -2145,6 +2203,7 @@ class PatchbayManager:
         
         if self.group_positions:
             self.optimize_operation(True)
+            self.set_very_fast_operation(True)
 
         for key in patchbay_data.keys():
             if key == 'ports':
@@ -2168,6 +2227,14 @@ class PatchbayManager:
 
         for group in self.groups:
             group.sort_ports_in_canvas()
+
+        self.set_very_fast_operation(False)
+        
+        for group in self.groups:
+            group.add_all_ports_to_canvas()
+        
+        for conn in self.connections:
+            conn.add_to_canvas()
 
         self.optimize_operation(False)
         patchcanvas.redraw_all_groups()

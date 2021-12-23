@@ -771,6 +771,18 @@ def wrap_group_box(group_id: int, port_mode: int, yesno: bool, animate=True):
                 if (box is not None
                         and box.get_splitted_mode() == port_mode):
                     box.set_wrapped(yesno, animate=animate)
+            break
+
+def set_group_column_mode(group_id: int, column_mode: int):
+    for group in canvas.group_list:
+        if group.group_id == group_id:
+            for box in group.widgets:
+                if box is not None:
+                    box.set_column_mode(column_mode)
+                    if not canvas.loading_items:
+                        box.update_positions()
+            break
+                        
 
 # ------------------------------------------------------------------------------------------------------------
 

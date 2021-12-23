@@ -160,9 +160,12 @@ class CanvasSaver(ServerSender):
                 time.sleep(0.020)
 
     def save_group_position(self, *args):
+        print('erokfokfokfok')
         gp = ray.GroupPosition.new_from(*args)
+        print('niakk', gp.column_mode)
         for group_positions in (self.group_positions_session,
                                 self.group_positions_config):
+            
             for gpos in group_positions:
                 if gpos.is_same(gp):
                     gpos.update(*args)
