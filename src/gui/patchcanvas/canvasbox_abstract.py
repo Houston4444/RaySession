@@ -228,7 +228,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._gui_visible = False
         
         self._column_disposition = COLUMNS_AUTO
-
+        self._painter_path = QPainterPath()
         self.update_positions()
 
         canvas.scene.addItem(self)
@@ -1047,7 +1047,9 @@ class CanvasBoxAbstract(QGraphicsItem):
 
     def boundingRect(self):
         hws = canvas.theme.hardware_rack_width
-        
+        #theme = self.get_theme()
+        #if theme.port_offset() < 0:
+            #port_offset = 
         if self._is_hardware:
             return QRectF(- hws, - hws,
                           self._width + 2 * hws,
@@ -1126,10 +1128,10 @@ class CanvasBoxAbstract(QGraphicsItem):
         
         #rect = QPolygonF(rect)
         
-        if theme.border_radius() == 0.0:
-            painter.drawRect(rect)
-        else:
-            painter.drawRoundedRect(rect, theme.border_radius(), theme.border_radius())
+        #if theme.border_radius() == 0.0:
+            #painter.drawRect(rect)
+        #else:
+            #painter.drawRoundedRect(rect, theme.border_radius(), theme.border_radius())
         
         #y_start = 0.0
         #y_end = 0.0
@@ -1178,7 +1180,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         #left_path.addRect(down_left_rect)
         #painter_path = painter_path.united(left_path)
         
-        
+        painter.drawPath(self._painter_path)
         #painter.drawPath(painter_path)
         
         # draw hardware box decoration (flyrack like)

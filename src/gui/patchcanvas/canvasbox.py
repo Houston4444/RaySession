@@ -261,6 +261,10 @@ class CanvasBox(CanvasBoxAbstract):
         port_type_spacing = box_theme.port_type_spacing()
         last_in_type = last_out_type = PORT_TYPE_NULL
         last_in_alter = last_out_alter = False
+        input_segments = []
+        output_segments = []
+        in_segment = [last_in_pos, last_in_pos]
+        out_segment = [last_out_pos, last_out_pos]
         
         for port_type in port_types:
             for alternate in (False, True):
@@ -287,7 +291,12 @@ class CanvasBox(CanvasBoxAbstract):
                                 last_in_pos += port_type_spacing
                             last_in_type = port.port_type
                             last_in_alter = port.is_alternate
-
+                        
+                        if last_in_pos >= in_segment[1] + port_spacing + port_type_spacing:
+                            if in_segment[0] != in_segment[1]:
+                                input_segments.append(in_segment)
+                            in_segment = [last_in_pos, last_in_pos]
+                        
                         if port.portgrp_id:
                             # we place the portgroup widget and all its ports now
                             # because in one column mode, we can't be sure
@@ -311,12 +320,12 @@ class CanvasBox(CanvasBoxAbstract):
                                                 set_widget_pos(gp_port.widget, last_in_pos)
                                                 last_in_pos += canvas.theme.port_height
                                                 break
-                                    
-                                    last_in_pos += port_spacing
                                     break
                         else:
                             set_widget_pos(port.widget, last_in_pos)
-                            last_in_pos += canvas.theme.port_height + port_spacing
+                            last_in_pos += canvas.theme.port_height
+                        in_segment[1] = last_in_pos
+                        last_in_pos += port_spacing
 
                     elif port.port_mode == PORT_MODE_OUTPUT:
                         if (port.port_type != last_out_type
@@ -326,7 +335,12 @@ class CanvasBox(CanvasBoxAbstract):
                             last_out_type = port.port_type
                             last_out_alter = port.is_alternate
 
-                        if port.portgrp_id and first_of_portgrp:
+                        if last_out_pos >= out_segment[1] + port_spacing + port_type_spacing:
+                            if out_segment[0] != out_segment[1]:
+                                output_segments.append(out_segment)
+                            out_segment = [last_out_pos, last_out_pos]
+
+                        if port.portgrp_id:
                             for portgrp in canvas.portgrp_list:
                                 if (portgrp.group_id == self._group_id
                                         and portgrp.portgrp_id == port.portgrp_id):
@@ -340,15 +354,13 @@ class CanvasBox(CanvasBoxAbstract):
                                                 set_widget_pos(gp_port.widget, last_out_pos)
                                                 last_out_pos += canvas.theme.port_height
                                                 break
-                                    
-                                    last_out_pos += port_spacing
                                     break
                         else:
                             set_widget_pos(port.widget, last_out_pos)
-                            last_out_pos += canvas.theme.port_height + port_spacing
-                
-                    final_last_in_pos = last_in_pos
-                    final_last_out_pos = last_out_pos
+                            last_out_pos += canvas.theme.port_height
+                        
+                        out_segment[1] = last_out_pos
+                        last_out_pos += port_spacing
                 
                 if align_port_types:
                     # align port types horizontally
@@ -359,6 +371,14 @@ class CanvasBox(CanvasBoxAbstract):
                         last_in_type = last_out_type
                         last_in_alter = last_out_alter
                     last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
+        
+        if in_segment[0] != in_segment[1]:
+            input_segments.append(in_segment)
+        if out_segment[0] != out_segment[1]:
+            output_segments.append(out_segment)
+        
+        return {'input_segments': input_segments,
+                'output_segments': output_segments}
     
     def _choose_title_disposition(
         self, box_height: int, width_for_ports: int,
@@ -549,6 +569,74 @@ class CanvasBox(CanvasBoxAbstract):
                     elif port.port_mode == PORT_MODE_OUTPUT:
                         port.widget.setX(out_in_portgrpX)
     
+    def build_painter_path(self, pos_dict):
+        input_segments = pos_dict['input_segments']
+        output_segments = pos_dict['output_segments']
+        
+        painter_path = QPainterPath()
+        theme = self.get_theme()
+        border_radius = theme.border_radius()
+        port_offset = theme.port_offset()
+        pen = theme.fill_pen()
+        line_hinting = pen.widthF() / 2.0
+        rect = QRectF(0.0, 0.0, self._width, self._height)
+        rect.adjust(line_hinting, line_hinting, -line_hinting, -line_hinting)
+        
+        if border_radius == 0.0:
+            painter_path.addRect(rect)
+        else:
+            painter_path.addRoundedRect(rect, border_radius, border_radius)
+        
+        if not (self._wrapping or self._unwrapping or self._wrapped):
+            if port_offset != 0.0:
+                port_offset = abs(port_offset)
+                for in_segment in input_segments:
+                    moins_path = QPainterPath()
+                    moins_path.addRect(
+                        QRectF(0.0, in_segment[0] - line_hinting,
+                            port_offset + line_hinting, in_segment[1] - in_segment[0] + line_hinting * 2))
+                    painter_path = painter_path.subtracted(moins_path)
+                    
+                for out_segment in output_segments:
+                    moins_path = QPainterPath()
+                    moins_path.addRect(
+                        QRectF(self._width - line_hinting - port_offset, out_segment[0] - line_hinting,
+                            port_offset + line_hinting, out_segment[1] - out_segment[0] + line_hinting * 2))
+                    painter_path = painter_path.subtracted(moins_path)
+            #elif port_offset < 0.0:
+                #for in_segment in input_segments:
+                    #plus_path = QPainterPath()
+                    #plus_path.addRect(
+                        #QRectF(port_offset + line_hinting, in_segment[0] - line_hinting,
+                            #- port_offset + line_hinting * 2, in_segment[1] - in_segment[0] + line_hinting * 2))
+                    #painter_path = painter_path.united(plus_path)
+                    
+                #for out_segment in output_segments:
+                    #plus_path = QPainterPath()
+                    #plus_path.addRect(
+                        #QRectF(self._width - line_hinting, out_segment[0] - line_hinting,
+                            #- port_offset, out_segment[1] - out_segment[0] + line_hinting * 2))
+                    #painter_path = painter_path.united(plus_path)
+
+            if (input_segments
+                    and self._height - input_segments[-1][1] <= theme.border_radius()):
+                down_left_rect = QRectF(0.0 + line_hinting, self._height - 3.5,
+                                        3.5, 3.5 - line_hinting)
+                left_path = QPainterPath()
+                left_path.addRect(down_left_rect)
+                painter_path = painter_path.united(left_path)
+            
+            if (output_segments
+                    and self._height - output_segments[-1][1] <= theme.border_radius()):
+                down_right_rect = QRectF(
+                    self._width - 3.5 - line_hinting, self._height - 3.5,
+                    3.5, 3.5 - line_hinting)
+                right_path = QPainterPath()
+                right_path.addRect(down_right_rect)
+                painter_path = painter_path.united(right_path)
+
+        self._painter_path = painter_path
+        
     def update_positions(self, even_animated=False):
         if canvas.loading_items:
             return
@@ -573,7 +661,6 @@ class CanvasBox(CanvasBoxAbstract):
         align_port_types = self._should_align_port_types(port_types)
 
         widths_dict = self._set_ports_witdhs(port_types, align_port_types)
-        #widths_dict = self._set_ports_y_and_get_max_widths(port_types, align_port_types)        
         last_in_pos = widths_dict['last_in_pos'] + self._default_header_height
         last_out_pos = widths_dict['last_out_pos'] + self._default_header_height
         last_inout_pos = widths_dict['last_inout_pos'] + self._default_header_height
@@ -617,7 +704,10 @@ class CanvasBox(CanvasBoxAbstract):
             last_in_pos += more_height
             last_out_pos += more_height
         
-        self._set_ports_y_positions(port_types, align_port_types, self._default_header_height + more_height, one_column)
+        ports_y_segments_dict = self._set_ports_y_positions(
+            port_types, align_port_types,
+            self._default_header_height + more_height,
+            one_column)
         self._set_ports_x_positions(max_in_width, max_out_width)
         
         # wrapped/unwrapped sizes
@@ -662,7 +752,9 @@ class CanvasBox(CanvasBoxAbstract):
 
         if self.has_top_icon():
             self.top_icon.align_at((self._width - max_title_size - 29)/2)
-
+        
+        self.build_painter_path(ports_y_segments_dict)
+        
         if (self._width != self._ex_width
                 or self._height != self._ex_height
                 or self.scenePos() != self._ex_scene_pos):
