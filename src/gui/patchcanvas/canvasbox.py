@@ -1663,8 +1663,9 @@ class CanvasBox(QGraphicsItem):
             
             if not self.m_gui_visible:
                 painter.setPen(QPen((QColor(255, 240, 180, 25)), 1.000001))
-                painter.drawLine(4.5, self.p_header_height - 3.5,
-                                 self.p_width - 3.5, self.p_header_height - 3.5)
+                painter.drawLine(
+                    QPointF(4.5, self.p_header_height - 3.5),
+                    QPointF(self.p_width - 3.5, self.p_header_height - 3.5))
 
         elif self.m_group_name.endswith(' Monitor'):
             bor_gradient = QLinearGradient(0, 0, self.p_height, self.p_height)

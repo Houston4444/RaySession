@@ -870,11 +870,13 @@ class CanvasPort(QGraphicsItem):
 
                 y_line = canvas.theme.port_height / 2.0
                 if self.m_port_mode == PORT_MODE_OUTPUT:
-                    painter.drawLine(0, y_line, poly_locx[1], y_line)
+                    painter.drawLine(
+                        QPointF(0.0, y_line),
+                        QPointF(float(poly_locx[1]), y_line))
                 elif self.m_port_mode == PORT_MODE_INPUT:
                     painter.drawLine(
-                        self.m_port_width + 5, y_line,
-                        self.m_port_width + 12, y_line)
+                        QPointF(self.m_port_width + 5.0, y_line),
+                        QPointF(self.m_port_width + 12.0, y_line))
             else:
                 # draw the little circle for a2j (or MidiBridge) port
                 poly_pen.setWidthF(1.000001)
@@ -905,8 +907,8 @@ class CanvasPort(QGraphicsItem):
             if print_name_size > (self.m_port_width - 4):
                 painter.setPen(QPen(port_gradient, 3))
                 painter.drawLine(
-                    float(poly_locx[5]), 3.0,
-                    float(poly_locx[5]), canvas.theme.port_height - 3.0)
+                    QPointF(float(poly_locx[5]), 3.0),
+                    QPointF(float(poly_locx[5]), canvas.theme.port_height - 3.0))
                 painter.setPen(text_pen)
                 painter.setFont(self.m_port_font)
 
