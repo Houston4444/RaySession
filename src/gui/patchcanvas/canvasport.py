@@ -904,7 +904,9 @@ class CanvasPort(QGraphicsItem):
 
             if print_name_size > (self.m_port_width - 4):
                 painter.setPen(QPen(port_gradient, 3))
-                painter.drawLine(poly_locx[5], 3, poly_locx[5], canvas.theme.port_height - 3)
+                painter.drawLine(
+                    float(poly_locx[5]), 3.0,
+                    float(poly_locx[5]), canvas.theme.port_height - 3.0)
                 painter.setPen(text_pen)
                 painter.setFont(self.m_port_font)
 
