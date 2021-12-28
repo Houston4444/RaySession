@@ -1,6 +1,6 @@
 
 from PyQt5.QtWidgets import QDialog, QApplication
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 
 
 from gui_tools import RS
@@ -11,6 +11,8 @@ _translate = QApplication.translate
 
 
 class CanvasOptionsDialog(QDialog):
+    theme_changed = pyqtSignal(str)
+    
     def __init__(self, parent):
         QDialog.__init__(self, parent)
         self.ui = ui.canvas_options.Ui_Dialog()
@@ -40,9 +42,13 @@ class CanvasOptionsDialog(QDialog):
         self.ui.checkBoxPreventOverlap.setChecked(
             self.prevent_overlap)
 
+        self.ui.comboBoxTheme.currentIndexChanged.connect(
+            self._theme_box_index_changed)
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Silver Gold'))
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Black Gold'))
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Modern Dark'))
+        
+        self.ui.comboBoxTheme.setItemData(0, 'Moderzedn Dark')
 
         current_theme = RS.settings.value('Canvas/theme', 'Black Gold', type=str)
         if current_theme == "Silver Gold":
@@ -57,10 +63,18 @@ class CanvasOptionsDialog(QDialog):
         self.gracious_names_checked = self.ui.checkBoxGracefulNames.stateChanged
         self.a2j_grouped_checked = self.ui.checkBoxA2J.stateChanged
         self.group_shadows_checked = self.ui.checkBoxShadows.stateChanged
-        self.theme_changed = self.ui.comboBoxTheme.currentIndexChanged
         self.elastic_checked = self.ui.checkBoxElastic.stateChanged
         self.prevent_overlap_checked = self.ui.checkBoxPreventOverlap.stateChanged
         self.max_port_width_changed = self.ui.spinBoxMaxPortWidth.valueChanged
+
+    def _theme_box_index_changed(self, index: int):
+        current_theme_ref_id = self.ui.comboBoxTheme.currentData(Qt.UserRole)
+        self.theme_changed.emit(current_theme_ref_id)
+
+    def set_theme_list(self, theme_list: list):
+        self.ui.comboBoxTheme.clear()
+        for theme_dict in theme_list:
+            self.ui.comboBoxTheme.addItem(theme_dict['name'], theme_dict['ref_id'])
 
     def get_gracious_names(self)->bool:
         return self.ui.checkBoxGracefulNames.isChecked()

@@ -1320,6 +1320,7 @@ class PatchbayManager:
             self.set_prevent_overlap)
         self.options_dialog.max_port_width_changed.connect(
             patchcanvas.set_max_port_width)
+        self.options_dialog.set_theme_list(patchcanvas.list_themes())
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -1554,32 +1555,8 @@ class PatchbayManager:
                             break
                     break
         
-        elif action == patchcanvas.ACTION_THEME_UPDATE:
-            self.optimize_operation(True)
-            
-            for connection in self.connections:
-                connection.remove_from_canvas()
-            
-            for group in self.groups:
-                for portgroup in group.portgroups:
-                    portgroup.remove_from_canvas()
-                
-                for port in group.ports:
-                    port.remove_from_canvas()
-                group.remove_from_canvas()
-                
-                group.add_to_canvas()
-                for port in group.ports:
-                    port.add_to_canvas()
-                for portgroup in group.portgroups:
-                    portgroup.add_to_canvas()
-            
-            for connection in self.connections:
-                connection.add_to_canvas()
-            
-            self.optimize_operation(False)
-            patchcanvas.redraw_all_groups()
-        
+        elif action == patchcanvas.ACTION_THEME_UPDATED:
+            self.remove_and_add_all()
 
     def show_options_dialog(self):
         self.options_dialog.move(QCursor.pos())
@@ -1599,22 +1576,10 @@ class PatchbayManager:
             patchcanvas.options.eyecandy = patchcanvas.EYECANDY_SMALL
         else:
             patchcanvas.options.eyecandy = patchcanvas.EYECANDY_NONE
-        self.refresh()
+        self.remove_and_add_all()
 
-    def change_theme(self, index:int):
-        idx = 0
-
-        if index == 0:
-            idx = 0
-        elif index == 1:
-            idx = 1
-        elif index == 2:
-            idx = 2
-
-        patchcanvas.change_theme(idx)
-
-        # theme_name = patchcanvas.get_theme_name(idx)
-        # RS.settings.setValue('Canvas/theme', theme_name)
+    def change_theme(self, theme_name: str):
+        patchcanvas.change_theme(theme_name)
 
     def set_elastic_canvas(self, yesno: int):
         patchcanvas.set_elastic(yesno)
@@ -1698,6 +1663,32 @@ class PatchbayManager:
             self.portgroups_memory.remove(pg_mem)
 
         self.portgroups_memory.append(portgroup_mem)
+
+    def remove_and_add_all(self):
+        self.optimize_operation(True)
+            
+        for connection in self.connections:
+            connection.remove_from_canvas()
+        
+        for group in self.groups:
+            for portgroup in group.portgroups:
+                portgroup.remove_from_canvas()
+            
+            for port in group.ports:
+                port.remove_from_canvas()
+            group.remove_from_canvas()
+            
+            group.add_to_canvas()
+            for port in group.ports:
+                port.add_to_canvas()
+            for portgroup in group.portgroups:
+                portgroup.add_to_canvas()
+        
+        for connection in self.connections:
+            connection.add_to_canvas()
+        
+        self.optimize_operation(False)
+        patchcanvas.redraw_all_groups()
 
     def clear_all(self):
         self.optimize_operation(True)

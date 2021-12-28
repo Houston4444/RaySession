@@ -8,7 +8,7 @@ from PyQt5.QtCore import QTimer
 
 from .theme import print_error, Theme
 from .theme_default import default_theme
-from . import canvas, ACTION_THEME_UPDATE
+from . import canvas, ACTION_THEME_UPDATED
 
 class ThemeManager:
     def __init__(self, theme_paths: tuple) -> None:
@@ -53,7 +53,7 @@ class ThemeManager:
         canvas.theme.read_theme(theme_dict)
 
         canvas.scene.update_theme()
-        canvas.callback(ACTION_THEME_UPDATE, 0, 0, '')
+        canvas.callback(ACTION_THEME_UPDATED, 0, 0, '')
         return True
     
     @staticmethod
@@ -89,54 +89,6 @@ class ThemeManager:
         
         return return_dict
     
-    @staticmethod
-    def _convert_theme_file_contents_to_dict(contents: str) -> dict:
-        ''' converts theme file contents to a dict '''
-        def type_convert(value):
-            ''' returns an int, a float, or the unchanged given value '''
-            try:
-                value = int(value)
-            except:
-                try:
-                    value = float(value)
-                except:
-                    return value
-            return value
-        
-        out_dict = {}
-        dict_to_write = {}
-        
-        for line in contents.splitlines():
-            if line.strip().startswith('#'):
-                # ignore commented lines
-                continue
-            
-            if (line.strip().startswith('[')
-                    and line.strip().endswith(']')):
-                key = line.strip()[1:-1]
-                out_dict[key] = {}
-                dict_to_write = out_dict[key]
-                continue
-            
-            if not '=' in line:
-                continue
-            
-            key, colon, value = line.partition('=')
-            key = key.strip()
-            value = value.strip()
-            
-            if value.startswith('(') and value.endswith(')'):
-                value = value[1:-1].split(', ')
-                value = tuple([type_convert(v) for v in value])
-            elif value.startswith('[') and value.endswith(']'):
-                value = value[1:-1].split(', ')
-                value = [type_convert(v) for v in value]
-            else:
-                value = type_convert(value)
-            dict_to_write[key] = value
-
-        return out_dict
-    
     def set_theme(self, theme_name: str) -> bool:
         self.current_theme = theme_name
         
@@ -157,7 +109,49 @@ class ThemeManager:
             return False
         
         self.activate_watcher(os.access(self.current_theme_file, os.R_OK))
+    
+    def list_themes(self) -> set:
+        conf = configparser.ConfigParser()
+        themes_dicts = []
+        lang = os.getenv('LANG')
+        lang_short = ''
+        if len(lang) >= 2:
+            lang_short = lang[:2]
         
+        for search_path in self.theme_paths:
+            if not os.path.isdir(search_path):
+                continue
+            
+            editable = bool(os.access(search_path, os.W_OK))
+            
+            for file_path in os.listdir(search_path):
+                full_path = os.path.join(search_path, file_path, 'theme.conf')
+                if not os.path.isfile(full_path):
+                    continue
+
+                try:
+                    conf.read(full_path)
+                except:
+                    # TODO
+                    continue
+                
+                name = file_path
+
+                if 'Theme' in conf.keys():
+                    conf_theme = conf['Theme']
+                    if 'Name' in conf_theme.keys():
+                        name = conf_theme['Name']
+                    
+                    name_lang_key = 'Name[%s]' % lang_short
+                    
+                    if name_lang_key in conf_theme.keys():
+                        name = conf_theme[name_lang_key]
+                    
+                themes_dicts.append(
+                    {'ref_id': file_path, 'name': name, 'editable': editable})
+
+        return themes_dicts
+    
     def activate_watcher(self, yesno: bool):
         if yesno:
             self._theme_file_timer.start()

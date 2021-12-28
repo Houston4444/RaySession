@@ -1236,30 +1236,11 @@ def disconnect_ports(connection_id):
 
 # ----------------------------------------------------------------------------
 
+def list_themes() -> list:
+    return canvas.theme_manager.list_themes()
 
 def change_theme(theme_name=''):
-    del canvas.theme
-    canvas.theme = Theme()
-        
-    import json
-    file_path = canvas.theme_paths[0] + '/' + 'Black Gold/theme.json'
-    with open(file_path, 'r') as f:
-        try:
-            default_theme = json.load(f)
-        except:
-            sys.stderr.write('patchcanvas::theme:failed to open %s\n' % file_path)
-            return
-                
-        canvas.theme.read_theme(default_theme)
-
-    canvas.scene.update_theme()
-
-    for group in canvas.group_list:
-        for widget in group.widgets:
-            if widget is not None:
-                widget.update_positions()
-
-    QTimer.singleShot(0, canvas.scene.update)
+    canvas.theme_manager.set_theme(theme_name)
 
 # ----------------------------------------------------------------------------
 
