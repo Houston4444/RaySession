@@ -1242,6 +1242,9 @@ def list_themes() -> list:
 def change_theme(theme_name=''):
     canvas.theme_manager.set_theme(theme_name)
 
+def copy_theme_to_editable_path_and_load(file_path: str):
+    canvas.theme_manager.copy_theme_to_editable_path_and_load(file_path)
+
 # ----------------------------------------------------------------------------
 
 def redraw_plugin_group(plugin_id):

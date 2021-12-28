@@ -2,6 +2,7 @@
 import configparser
 import json
 import os
+import shutil
 import sys
 
 from PyQt5.QtCore import QTimer
@@ -110,7 +111,7 @@ class ThemeManager:
         
         self.activate_watcher(os.access(self.current_theme_file, os.R_OK))
     
-    def list_themes(self) -> set:
+    def list_themes(self) -> list:
         conf = configparser.ConfigParser()
         themes_dicts = []
         lang = os.getenv('LANG')
@@ -148,9 +149,33 @@ class ThemeManager:
                         name = conf_theme[name_lang_key]
                     
                 themes_dicts.append(
-                    {'ref_id': file_path, 'name': name, 'editable': editable})
+                    {'ref_id': file_path, 'name': name, 'editable': editable,
+                     'file_path': full_path})
 
         return themes_dicts
+    
+    def copy_theme_to_editable_path_and_load(self, file_path:str):
+        editable_dir = ''
+        
+        for search_path in self.theme_paths:
+            if os.access(search_path, os.W_OK):
+                editable_dir = search_path
+                break
+        
+        if not editable_dir:
+            # TODO
+            return 
+        
+        theme_dir = os.path.dirname(file_path)
+        try:
+            shutil.copytree(theme_dir, editable_dir)
+        except:
+            # TODO
+            return
+        
+        self.current_theme_file = os.path.join(
+            editable_dir, os.path.basename(file_path), 'theme.conf')
+        self._update_theme()
     
     def activate_watcher(self, yesno: bool):
         if yesno:

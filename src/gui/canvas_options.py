@@ -1,10 +1,11 @@
 
 from PyQt5.QtWidgets import QDialog, QApplication
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt, pyqtSignal, QProcess
 
 
-from gui_tools import RS
-
+from gui_tools import RS, RayIcon, is_dark_theme
+from patchcanvas import patchcanvas
 import ui.canvas_options
 
 _translate = QApplication.translate
@@ -44,6 +45,10 @@ class CanvasOptionsDialog(QDialog):
 
         self.ui.comboBoxTheme.currentIndexChanged.connect(
             self._theme_box_index_changed)
+        self.ui.toolButtonEditTheme.clicked.connect(
+            self._edit_theme)
+        
+        self._theme_list = []
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Silver Gold'))
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Black Gold'))
         self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Modern Dark'))
@@ -69,12 +74,41 @@ class CanvasOptionsDialog(QDialog):
 
     def _theme_box_index_changed(self, index: int):
         current_theme_ref_id = self.ui.comboBoxTheme.currentData(Qt.UserRole)
+        
+        #for theme_dict in self._theme_list:
+            #if theme_dict['ref_id'] == current_theme_ref_id:
+                #self.ui.toolButtonEditTheme.setEnabled(theme_dict['editable'])
+                #break
+        
         self.theme_changed.emit(current_theme_ref_id)
+
+    def _edit_theme(self):
+        current_theme_ref_id = self.ui.comboBoxTheme.currentData(Qt.UserRole)
+        
+        for theme_dict in self._theme_list:
+            if theme_dict['ref_id'] == current_theme_ref_id:
+                if not theme_dict['editable']:
+                    patchcanvas.copy_theme_to_editable_path_and_load(
+                        theme_dict['file_path'])
+
+                # start the text editor process
+                QProcess.startDetached('xdg-open', [theme_dict['file_path']])
+                break
 
     def set_theme_list(self, theme_list: list):
         self.ui.comboBoxTheme.clear()
+        del self._theme_list
+        self._theme_list = theme_list
+        
+        dark = is_dark_theme(self)
         for theme_dict in theme_list:
-            self.ui.comboBoxTheme.addItem(theme_dict['name'], theme_dict['ref_id'])
+            if theme_dict['editable']:
+                self.ui.comboBoxTheme.addItem(
+                    RayIcon('im-user', dark), theme_dict['name'], theme_dict['ref_id'])
+            else:
+                self.ui.comboBoxTheme.addItem(theme_dict['name'], theme_dict['ref_id'])
+            #item = self.ui.comboBoxTheme.addItem(theme_dict['name'], theme_dict['ref_id'])
+            #item.setIcon(QIcon.fromTheme('user'))
 
     def get_gracious_names(self)->bool:
         return self.ui.checkBoxGracefulNames.isChecked()

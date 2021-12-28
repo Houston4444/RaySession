@@ -6,18 +6,11 @@ voir : canvas initial_pos
 trigger_disconnect portgroup
 
 
-
-gui_button{background, fill-color, fill-width}
-gui_button.visible
-gui_button.hidden
-
-monitor_decoration -> selected
-background/background2/all border
-
-header_line ->selected
-
 monitor_color (dans le body)
 
-mettre wrapper et header_line dans les box
-mettre port-offset dans les boites
-trouver une solution pour les dégradés de connexion
+"edit theme" button
+fix round corner bug
+finish Dark Modern and Silver Gold
+save choosen theme in settings
+
+transport controls
