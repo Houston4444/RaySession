@@ -129,6 +129,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                  icon_name: str, parent=None):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
+        #self.setCacheMode(QGraphicsItem.ItemCoordinateCache)
 
         # Save Variables, useful for later
         self._group_id = group_id
@@ -226,7 +227,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         
         self._can_handle_gui = False # used for optional-gui switch
         self._gui_visible = False
-        
+
         self._column_disposition = COLUMNS_AUTO
         self._painter_path = QPainterPath()
         self.update_positions()
@@ -1093,8 +1094,6 @@ class CanvasBoxAbstract(QGraphicsItem):
         painter.setPen(pen)
         pen_width = pen.widthF()
         line_hinting = pen_width / 2.0
-
-        rect = QRectF(0, 0, self._width, self._height)
         
         color_main = theme.background_color()
         color_alter = theme.background2_color()
@@ -1115,73 +1114,8 @@ class CanvasBoxAbstract(QGraphicsItem):
             painter.setBrush(box_gradient)
         else:
             painter.setBrush(color_main)
-
-        rect.adjust(line_hinting, line_hinting, -line_hinting, -line_hinting)
-        
-        
-        #painter_path = QPainterPath()
-        
-        #if theme.border_radius() == 0.0:
-            #painter_path.addRect(rect)
-        #else:
-            #painter_path.addRoundedRect(rect, theme.border_radius(), theme.border_radius())
-        
-        #rect = QPolygonF(rect)
-        
-        #if theme.border_radius() == 0.0:
-            #painter.drawRect(rect)
-        #else:
-            #painter.drawRoundedRect(rect, theme.border_radius(), theme.border_radius())
-        
-        #y_start = 0.0
-        #y_end = 0.0
-        
-        #for port in canvas.port_list:
-            #if (port.group_id == self._group_id
-                    #and port.port_id in self._port_list_ids
-                    #and port.widget is not None
-                    #and port.port_mode == PORT_MODE_INPUT):
-                #if y_start == 0.0 and y_end == 0.0:
-                    #y_start = port.widget.y()
-                    #y_end = y_start + canvas.theme.port_height
-                    #continue
-                
-                #y_end = port.widget.y() + canvas.theme.port_height
-        
-        #if not (y_start == 0.0 and y_end == 0):
-            #moins_path = QPainterPath()
-            #moins_path.addRect(QRectF(0, y_start - 0.5, 3.5, y_end - y_start +1))
-            #painter_path = painter_path.subtracted(moins_path)
-        
-        
-        #y_start = 0.0
-        #y_end = 0.0
-        
-        #for port in canvas.port_list:
-            #if (port.group_id == self._group_id
-                    #and port.port_id in self._port_list_ids
-                    #and port.widget is not None
-                    #and port.port_mode == PORT_MODE_OUTPUT):
-                #if y_start == 0.0 and y_end == 0.0:
-                    #y_start = port.widget.y()
-                    #y_end = y_start + canvas.theme.port_height
-                    #continue
-                
-                #y_end = port.widget.y() + canvas.theme.port_height
-        
-        #if not (y_start == 0.0 and y_end == 0):
-            #moins_path = QPainterPath()
-            #moins_path.addRect(QRectF(self._width - 3.5, y_start - 0.5, 3.5, y_end - y_start +1))
-            #painter_path = painter_path.subtracted(moins_path)
-        
-        #down_left_rect = QRectF(0.0 + line_hinting, self._height - 6.0,
-                                #6.0, 6.0 - line_hinting)
-        #left_path = QPainterPath()
-        #left_path.addRect(down_left_rect)
-        #painter_path = painter_path.united(left_path)
         
         painter.drawPath(self._painter_path)
-        #painter.drawPath(painter_path)
         
         # draw hardware box decoration (flyrack like)
         self._paint_hardware_rack(painter, line_hinting)
@@ -1420,7 +1354,6 @@ class CanvasBoxAbstract(QGraphicsItem):
             painter.drawPolygon(triangle)
 
         self.repaint_lines()
-
         painter.restore()
 
     def _split_title(self, n_lines=True)->tuple:

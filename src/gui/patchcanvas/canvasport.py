@@ -66,6 +66,7 @@ class CanvasPort(QGraphicsItem):
                  port_type, is_alternate, parent):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
+        self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
 
         # Save Variables, useful for later
         self._group_id = group_id
