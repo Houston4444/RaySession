@@ -24,11 +24,16 @@ class ThemeManager:
         self._theme_file_timer.timeout.connect(self._check_theme_file_modified)
 
     def _check_theme_file_modified(self):
-        if not self.current_theme_file:
+        if (not self.current_theme_file
+                or not os.path.exists(self.current_theme_file)):
             self._theme_file_timer.stop()
             return
         
-        last_modified = os.path.getmtime(self.current_theme_file)
+        try:
+            last_modified = os.path.getmtime(self.current_theme_file)
+        except:
+            self._theme_file_timer.stop()
+
         if last_modified == self._last_modified:
             return
         
@@ -96,7 +101,6 @@ class ThemeManager:
         return os.path.basename(os.path.dirname(self.current_theme_file))
     
     def set_theme(self, theme_name: str) -> bool:
-        print('setii theme', theme_name)
         self.current_theme = theme_name
         
         for theme_path in self.theme_paths:
@@ -171,14 +175,27 @@ class ThemeManager:
         
         editable_dir = ''
         
+        # find the first editable patchbay_themes directory
+        # creating it if it doesn't exists
         for search_path in self.theme_paths:
-            if os.access(search_path, os.W_OK):
+            if os.path.exists(search_path):
+                if not os.path.isdir(search_path):
+                    continue
+                
+                if os.access(search_path, os.W_OK):
+                    editable_dir = search_path
+                    break
+            else:
+                try:
+                    os.makedirs(search_path)
+                except:
+                    continue
                 editable_dir = search_path
                 break
         
         if not editable_dir:
             return 1
-        
+
         new_dir = os.path.join(editable_dir, new_name)
         
         try:
@@ -187,7 +204,6 @@ class ThemeManager:
             return 2
         
         self.current_theme_file = os.path.join(new_dir, 'theme.conf')
-        #print('tiritit', os.path.exists(self.current_theme_file), self.current_theme_file)
         self._update_theme()
         return 0
     

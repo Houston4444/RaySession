@@ -1321,7 +1321,6 @@ class PatchbayManager:
             self.set_prevent_overlap)
         self.options_dialog.max_port_width_changed.connect(
             patchcanvas.set_max_port_width)
-        #self.options_dialog.set_theme_list(patchcanvas.list_themes())
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -1585,7 +1584,6 @@ class PatchbayManager:
     def change_theme(self, theme_name: str):
         if not theme_name:
             return
-        print('seneissi theme', theme_name)
         patchcanvas.change_theme(theme_name)
 
     def set_elastic_canvas(self, yesno: int):

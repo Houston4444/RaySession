@@ -112,7 +112,7 @@ class CanvasOptionsDialog(QDialog):
         self.ui.comboBoxTheme.clear()
         del self._theme_list
         self._theme_list = theme_list
-        print('thememellist')
+
         dark = is_dark_theme(self)
         for theme_dict in theme_list:
             if theme_dict['editable']:
@@ -120,7 +120,6 @@ class CanvasOptionsDialog(QDialog):
                     RayIcon('im-user', dark), theme_dict['name'], theme_dict['ref_id'])
             else:
                 self.ui.comboBoxTheme.addItem(theme_dict['name'], theme_dict['ref_id'])
-        print('tjememlisst finitte')
 
     def set_theme(self, theme_ref: str):
         for i in range(self.ui.comboBoxTheme.count()):
