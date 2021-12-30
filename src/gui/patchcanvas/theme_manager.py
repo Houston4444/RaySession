@@ -114,9 +114,6 @@ class ThemeManager:
 
         theme_is_valid = self._update_theme()
         if not theme_is_valid:
-            canvas.theme = Theme()
-            canvas.theme.read_theme(default_theme)
-            canvas.scene.update_theme()
             return False
         
         self.activate_watcher(os.access(self.current_theme_file, os.R_OK))

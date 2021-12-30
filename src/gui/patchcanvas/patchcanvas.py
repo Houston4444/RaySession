@@ -155,13 +155,10 @@ def init(app_name: str, scene, callback, theme_paths: tuple, debug=False):
     if not canvas.settings:
         canvas.settings = QSettings("falkTX", app_name)
 
-    if canvas.theme:
-        del canvas.theme
-        canvas.theme = None
-
     if canvas.theme_manager is None:
         canvas.theme_manager = ThemeManager(theme_paths)
-        canvas.theme_manager.set_theme(options.theme_name)
+        if not canvas.theme_manager.set_theme(options.theme_name):
+            canvas.theme_manager.set_theme('Black Gold')
 
     canvas.initiated = True
 
