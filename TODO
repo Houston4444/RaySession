@@ -15,18 +15,22 @@ ray_control doc /ray/server/clear_client_templates_database
 
 
 Patchbay:
-Code linting
 Custom Theming
 Right click to wrap/unwrap box while connecting
 Fix other box moving too far after join
 Zones (far future) ?
 PW video ports ?
 Damn connections (with ray-jackpatch)
-See connection semi_hide with not black background
 
 generic icon for client
 set client id in add application dialog
 list ardour templates and select a template in add_application dialog for Ardour templates
 select client and patchbay boxes together (click another time to select another box)
 Forget connections of removed client
+
+
+
+
+
+
 

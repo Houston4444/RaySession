@@ -129,7 +129,6 @@ class CanvasBoxAbstract(QGraphicsItem):
                  icon_name: str, parent=None):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
-        #self.setCacheMode(QGraphicsItem.ItemCoordinateCache)
 
         # Save Variables, useful for later
         self._group_id = group_id

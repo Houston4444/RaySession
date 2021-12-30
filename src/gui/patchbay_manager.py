@@ -1301,6 +1301,7 @@ class PatchbayManager:
 
         self._wait_join_group_ids = []
         self.join_animation_connected = False
+        self.options_dialog = None
 
     def finish_init(self):
         self.canvas_menu = CanvasMenu(self)
@@ -1320,7 +1321,7 @@ class PatchbayManager:
             self.set_prevent_overlap)
         self.options_dialog.max_port_width_changed.connect(
             patchcanvas.set_max_port_width)
-        self.options_dialog.set_theme_list(patchcanvas.list_themes())
+        #self.options_dialog.set_theme_list(patchcanvas.list_themes())
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -1555,7 +1556,10 @@ class PatchbayManager:
                             break
                     break
         
-        elif action == patchcanvas.ACTION_THEME_UPDATED:
+        elif action == patchcanvas.ACTION_THEME_CHANGED:
+            theme_ref = value_str
+            if self.options_dialog is not None:
+                self.options_dialog.set_theme(theme_ref)
             self.remove_and_add_all()
 
     def show_options_dialog(self):
@@ -1579,6 +1583,9 @@ class PatchbayManager:
         self.remove_and_add_all()
 
     def change_theme(self, theme_name: str):
+        if not theme_name:
+            return
+        print('seneissi theme', theme_name)
         patchcanvas.change_theme(theme_name)
 
     def set_elastic_canvas(self, yesno: int):

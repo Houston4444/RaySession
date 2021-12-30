@@ -42,7 +42,6 @@ class CanvasBezierLine(QGraphicsPathItem):
     def __init__(self, item1, item2, parent):
         QGraphicsPathItem.__init__(self)
         self.setParentItem(parent)
-        #self.setCacheMode(QGraphicsPathItem.ItemCoordinateCache)
 
         self.item1 = item1
         self.item2 = item2

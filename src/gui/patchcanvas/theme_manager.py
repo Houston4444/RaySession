@@ -9,7 +9,7 @@ from PyQt5.QtCore import QTimer
 
 from .theme import print_error, Theme
 from .theme_default import default_theme
-from . import canvas, ACTION_THEME_UPDATED
+from . import canvas, ACTION_THEME_CHANGED
 
 class ThemeManager:
     def __init__(self, theme_paths: tuple) -> None:
@@ -54,7 +54,9 @@ class ThemeManager:
         canvas.theme.read_theme(theme_dict)
 
         canvas.scene.update_theme()
-        canvas.callback(ACTION_THEME_UPDATED, 0, 0, '')
+        
+        theme_ref = os.path.basename(os.path.dirname(self.current_theme_file))
+        canvas.callback(ACTION_THEME_CHANGED, 0, 0, theme_ref)
         return True
     
     @staticmethod
@@ -90,7 +92,11 @@ class ThemeManager:
         
         return return_dict
     
+    def get_theme(self) -> str:
+        return os.path.basename(os.path.dirname(self.current_theme_file))
+    
     def set_theme(self, theme_name: str) -> bool:
+        print('setii theme', theme_name)
         self.current_theme = theme_name
         
         for theme_path in self.theme_paths:
@@ -112,6 +118,7 @@ class ThemeManager:
         self.activate_watcher(os.access(self.current_theme_file, os.R_OK))
     
     def list_themes(self) -> list:
+        themes_set = set()
         conf = configparser.ConfigParser()
         themes_dicts = []
         lang = os.getenv('LANG')
@@ -126,6 +133,9 @@ class ThemeManager:
             editable = bool(os.access(search_path, os.W_OK))
             
             for file_path in os.listdir(search_path):
+                if file_path in themes_set:
+                    continue
+                
                 full_path = os.path.join(search_path, file_path, 'theme.conf')
                 if not os.path.isfile(full_path):
                     continue
@@ -147,14 +157,18 @@ class ThemeManager:
                     
                     if name_lang_key in conf_theme.keys():
                         name = conf_theme[name_lang_key]
-                    
+                
+                themes_set.add(file_path)
                 themes_dicts.append(
                     {'ref_id': file_path, 'name': name, 'editable': editable,
                      'file_path': full_path})
 
         return themes_dicts
     
-    def copy_theme_to_editable_path_and_load(self, file_path:str):
+    def copy_and_load_current_theme(self, new_name: str) -> int:
+        ''' returns 0 if ok, 1 if no editable dir exists, 2 if copy fails '''
+        current_theme_dir = os.path.dirname(self.current_theme_file)
+        
         editable_dir = ''
         
         for search_path in self.theme_paths:
@@ -163,19 +177,19 @@ class ThemeManager:
                 break
         
         if not editable_dir:
-            # TODO
-            return 
+            return 1
         
-        theme_dir = os.path.dirname(file_path)
+        new_dir = os.path.join(editable_dir, new_name)
+        
         try:
-            shutil.copytree(theme_dir, editable_dir)
+            shutil.copytree(current_theme_dir, new_dir)
         except:
-            # TODO
-            return
+            return 2
         
-        self.current_theme_file = os.path.join(
-            editable_dir, os.path.basename(file_path), 'theme.conf')
+        self.current_theme_file = os.path.join(new_dir, 'theme.conf')
+        #print('tiritit', os.path.exists(self.current_theme_file), self.current_theme_file)
         self._update_theme()
+        return 0
     
     def activate_watcher(self, yesno: bool):
         if yesno:

@@ -161,7 +161,7 @@ def init(app_name: str, scene, callback, theme_paths: tuple, debug=False):
 
     if canvas.theme_manager is None:
         canvas.theme_manager = ThemeManager(theme_paths)
-        canvas.theme_manager.set_theme('Black Gold')
+        canvas.theme_manager.set_theme(options.theme_name)
 
     #canvas.scene.update_theme()
 
@@ -1236,14 +1236,17 @@ def disconnect_ports(connection_id):
 
 # ----------------------------------------------------------------------------
 
+def get_theme() -> str:
+    return canvas.theme_manager.get_theme()
+
 def list_themes() -> list:
     return canvas.theme_manager.list_themes()
 
 def change_theme(theme_name=''):
     canvas.theme_manager.set_theme(theme_name)
 
-def copy_theme_to_editable_path_and_load(file_path: str):
-    canvas.theme_manager.copy_theme_to_editable_path_and_load(file_path)
+def copy_and_load_current_theme(new_theme_name: str) -> int:
+    return canvas.theme_manager.copy_and_load_current_theme(new_theme_name)
 
 # ----------------------------------------------------------------------------
 

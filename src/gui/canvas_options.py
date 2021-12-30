@@ -1,5 +1,5 @@
 
-from PyQt5.QtWidgets import QDialog, QApplication
+from PyQt5.QtWidgets import QDialog, QApplication, QInputDialog, QMessageBox
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, pyqtSignal, QProcess
 
@@ -43,25 +43,15 @@ class CanvasOptionsDialog(QDialog):
         self.ui.checkBoxPreventOverlap.setChecked(
             self.prevent_overlap)
 
-        self.ui.comboBoxTheme.currentIndexChanged.connect(
-            self._theme_box_index_changed)
-        self.ui.toolButtonEditTheme.clicked.connect(
+        self.ui.comboBoxTheme.activated.connect(
+            self._theme_box_activated)
+        self.ui.pushButtonEditTheme.clicked.connect(
             self._edit_theme)
+        self.ui.pushButtonDuplicateTheme.clicked.connect(
+            self._duplicate_theme)
         
+        self._current_theme_ref = ''
         self._theme_list = []
-        self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Silver Gold'))
-        self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Black Gold'))
-        self.ui.comboBoxTheme.addItem(_translate('patchbay', 'Modern Dark'))
-        
-        self.ui.comboBoxTheme.setItemData(0, 'Moderzedn Dark')
-
-        current_theme = RS.settings.value('Canvas/theme', 'Black Gold', type=str)
-        if current_theme == "Silver Gold":
-            self.ui.comboBoxTheme.setCurrentIndex(0)
-        elif current_theme == "Black Gold":
-            self.ui.comboBoxTheme.setCurrentIndex(1)
-        elif current_theme == "Modern Dark":
-            self.ui.comboBoxTheme.setCurrentIndex(2)
             
         self.ui.spinBoxMaxPortWidth.setValue(self.max_port_width)
 
@@ -72,15 +62,38 @@ class CanvasOptionsDialog(QDialog):
         self.prevent_overlap_checked = self.ui.checkBoxPreventOverlap.stateChanged
         self.max_port_width_changed = self.ui.spinBoxMaxPortWidth.valueChanged
 
-    def _theme_box_index_changed(self, index: int):
+    def _theme_box_activated(self):
+        current_theme_ref_id = self.ui.comboBoxTheme.currentData(Qt.UserRole)
+        if current_theme_ref_id == self._current_theme_ref:
+            return
+        
+        for theme_dict in self._theme_list:
+            if theme_dict['ref_id'] == current_theme_ref_id:
+                self.ui.pushButtonEditTheme.setEnabled(bool(theme_dict['editable']))
+                break
+
+        self.theme_changed.emit(current_theme_ref_id)
+        
+    def _duplicate_theme(self):
         current_theme_ref_id = self.ui.comboBoxTheme.currentData(Qt.UserRole)
         
-        #for theme_dict in self._theme_list:
-            #if theme_dict['ref_id'] == current_theme_ref_id:
-                #self.ui.toolButtonEditTheme.setEnabled(theme_dict['editable'])
-                #break
+        new_theme_name, ok = QInputDialog.getText(
+            self, _translate('patchbay_theme', 'New Theme Name'),
+            _translate('patchbay_theme', 'Choose a name for the new theme :'))
         
-        self.theme_changed.emit(current_theme_ref_id)
+        if not new_theme_name:
+            return
+        
+        new_theme_name = new_theme_name.replace('/', '⁄')
+
+        err = patchcanvas.copy_and_load_current_theme(new_theme_name)
+        
+        if err:
+            message = _translate(
+                'patchbay_theme', 'The copy of the theme directory failed')
+            
+            QMessageBox.warning(
+                self, _translate('patchbay_theme', 'Copy failed !'), message)
 
     def _edit_theme(self):
         current_theme_ref_id = self.ui.comboBoxTheme.currentData(Qt.UserRole)
@@ -99,7 +112,7 @@ class CanvasOptionsDialog(QDialog):
         self.ui.comboBoxTheme.clear()
         del self._theme_list
         self._theme_list = theme_list
-        
+        print('thememellist')
         dark = is_dark_theme(self)
         for theme_dict in theme_list:
             if theme_dict['editable']:
@@ -107,8 +120,23 @@ class CanvasOptionsDialog(QDialog):
                     RayIcon('im-user', dark), theme_dict['name'], theme_dict['ref_id'])
             else:
                 self.ui.comboBoxTheme.addItem(theme_dict['name'], theme_dict['ref_id'])
-            #item = self.ui.comboBoxTheme.addItem(theme_dict['name'], theme_dict['ref_id'])
-            #item.setIcon(QIcon.fromTheme('user'))
+        print('tjememlisst finitte')
+
+    def set_theme(self, theme_ref: str):
+        for i in range(self.ui.comboBoxTheme.count()):
+            ref_id = self.ui.comboBoxTheme.itemData(i, Qt.UserRole)
+            if ref_id == theme_ref:
+                self.ui.comboBoxTheme.setCurrentIndex(i)
+                break
+        else:
+            # the new theme has not been found
+            # update the list and select it if it exists
+            self.set_theme_list(patchcanvas.list_themes())
+            for i in range(self.ui.comboBoxTheme.count()):
+                ref_id = self.ui.comboBoxTheme.itemData(i, Qt.UserRole)
+                if ref_id == theme_ref:
+                    self.ui.comboBoxTheme.setCurrentIndex(i)
+                    break
 
     def get_gracious_names(self)->bool:
         return self.ui.checkBoxGracefulNames.isChecked()
@@ -128,6 +156,11 @@ class CanvasOptionsDialog(QDialog):
     def get_max_port_width(self)->int:
         return self.ui.spinBoxMaxPortWidth.value()
 
+    def showEvent(self, event):
+        self.set_theme_list(patchcanvas.list_themes())
+        self.set_theme(patchcanvas.get_theme())
+        QDialog.showEvent(self, event)
+
     def closeEvent(self, event):
         RS.settings.setValue('Canvas/use_graceful_names',
                              self.get_gracious_names())
@@ -141,4 +174,6 @@ class CanvasOptionsDialog(QDialog):
                              self.get_prevent_overlap())
         RS.settings.setValue('Canvas/max_port_width',
                              self.get_max_port_width())
+        RS.settings.setValue('Canvas/theme',
+                             self.ui.comboBoxTheme.currentData())
         QDialog.closeEvent(self, event)
