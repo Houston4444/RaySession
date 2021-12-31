@@ -619,20 +619,21 @@ class CanvasBox(CanvasBoxAbstract):
                     #painter_path = painter_path.united(plus_path)
 
             if (input_segments
-                    and self._height - input_segments[-1][1] <= theme.border_radius()):
-                down_left_rect = QRectF(0.0 + line_hinting, self._height - 3.5,
-                                        3.5, 3.5 - line_hinting)
+                    and self._height - input_segments[-1][1] <= border_radius):
                 left_path = QPainterPath()
-                left_path.addRect(down_left_rect)
+                left_path.addRect(QRectF(
+                    0.0 + line_hinting, self._height - border_radius,
+                    border_radius, border_radius - line_hinting))
                 painter_path = painter_path.united(left_path)
             
             if (output_segments
-                    and self._height - output_segments[-1][1] <= theme.border_radius()):
-                down_right_rect = QRectF(
-                    self._width - 3.5 - line_hinting, self._height - 3.5,
-                    3.5, 3.5 - line_hinting)
+                    and self._height - output_segments[-1][1] <= border_radius):
                 right_path = QPainterPath()
-                right_path.addRect(down_right_rect)
+                right_path.addRect(QRectF(
+                    self._width - border_radius - line_hinting,
+                    self._height - border_radius,
+                    border_radius,
+                    border_radius - line_hinting))
                 painter_path = painter_path.united(right_path)
 
         self._painter_path = painter_path

@@ -117,6 +117,7 @@ class ThemeManager:
             return False
         
         self.activate_watcher(os.access(self.current_theme_file, os.R_OK))
+        return True
     
     def list_themes(self) -> list:
         themes_set = set()

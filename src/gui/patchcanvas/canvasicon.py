@@ -163,12 +163,12 @@ class CanvasSvgIcon(QGraphicsSvgItem):
                 icon_path = ":/scalable/DIN-5.svg"
                 self._size = QRectF(4, 4, 24, 24)
             else:
-                if port_mode & PORT_MODE_INPUT:
-                    icon_path = ":/scalable/audio-headphones.svg"
-                elif port_mode & PORT_MODE_OUTPUT:
-                    icon_path = ":/scalable/microphone.svg"
+                if port_mode == PORT_MODE_INPUT:
+                    icon_path = ":/canvas/dark/audio-headphones.svg"
+                elif port_mode == PORT_MODE_OUTPUT:
+                    icon_path = ":/canvas/dark/microphone.svg"
                 else:
-                    icon_path = ":/scalable/pb_hardware.svg"
+                    icon_path = ":/canvas/dark/pb_hardware.svg"
                 self._size = QRectF(4, 4, 24, 24)
 
         elif icon == ICON_DISTRHO:

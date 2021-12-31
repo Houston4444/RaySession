@@ -15,10 +15,8 @@ ray_control doc /ray/server/clear_client_templates_database
 
 
 Patchbay:
-Custom Theming ...
 Right click to wrap/unwrap box while connecting
 Fix other box moving too far after join
-fix rounded corners little bug
 Zones (far future) ?
 PW video ports ?
 Damn connections (with ray-jackpatch)
