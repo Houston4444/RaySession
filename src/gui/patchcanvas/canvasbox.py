@@ -579,6 +579,12 @@ class CanvasBox(CanvasBoxAbstract):
         port_offset = theme.port_offset()
         pen = theme.fill_pen()
         line_hinting = pen.widthF() / 2.0
+        
+        # theses values are needed to prevent some incorrect painter_path
+        # united or subtracted results
+        epsy = 0.001
+        epsd = epsy * 2.0
+        
         rect = QRectF(0.0, 0.0, self._width, self._height)
         rect.adjust(line_hinting, line_hinting, -line_hinting, -line_hinting)
         
@@ -589,69 +595,63 @@ class CanvasBox(CanvasBoxAbstract):
         
         if not (self._wrapping or self._unwrapping or self._wrapped):
             if port_offset != 0.0:
+                # substract rects in the box shape in case of port_offset (even negativ)
+                # logic would want to add rects if port_offset is negativ
+                # But that also means that we should change the boudingRect,
+                # So we won't.
                 port_offset = abs(port_offset)
                 for in_segment in input_segments:
                     moins_path = QPainterPath()
-                    moins_path.addRect(
-                        QRectF(0.0, in_segment[0] - line_hinting,
-                            port_offset + line_hinting, in_segment[1] - in_segment[0] + line_hinting * 2))
+                    moins_path.addRect(QRectF(
+                        0.0 - epsy,
+                        in_segment[0] - line_hinting - epsy,
+                        port_offset + line_hinting + epsd,
+                        in_segment[1] - in_segment[0] + line_hinting * 2 + epsd))
                     painter_path = painter_path.subtracted(moins_path)
                     
                 for out_segment in output_segments:
                     moins_path = QPainterPath()
-                    moins_path.addRect(
-                        QRectF(self._width - line_hinting - port_offset, out_segment[0] - line_hinting,
-                            port_offset + line_hinting, out_segment[1] - out_segment[0] + line_hinting * 2))
+                    moins_path.addRect(QRectF(
+                        self._width - line_hinting - port_offset - epsy,
+                        out_segment[0] - line_hinting - epsy,
+                        port_offset + line_hinting + epsd,
+                        out_segment[1] - out_segment[0] + line_hinting * 2 + epsd))
                     painter_path = painter_path.subtracted(moins_path)
-            #elif port_offset < 0.0:
-                #for in_segment in input_segments:
-                    #plus_path = QPainterPath()
-                    #plus_path.addRect(
-                        #QRectF(port_offset + line_hinting, in_segment[0] - line_hinting,
-                            #- port_offset + line_hinting * 2, in_segment[1] - in_segment[0] + line_hinting * 2))
-                    #painter_path = painter_path.united(plus_path)
-                    
-                #for out_segment in output_segments:
-                    #plus_path = QPainterPath()
-                    #plus_path.addRect(
-                        #QRectF(self._width - line_hinting, out_segment[0] - line_hinting,
-                            #- port_offset, out_segment[1] - out_segment[0] + line_hinting * 2))
-                    #painter_path = painter_path.united(plus_path)
 
+            # No rounded corner if the last port is to close from the corner
             if (input_segments
                     and self._height - input_segments[-1][1] <= border_radius):
                 left_path = QPainterPath()
                 left_path.addRect(QRectF(
-                    0.0 + line_hinting,
-                    max(self._height - border_radius, input_segments[-1][1]) + line_hinting,
-                    #self._height - min(border_radius, input_segments[-1][1]),
-                    border_radius,
-                    min(border_radius, self._height - input_segments[-1][1]) - 2 * line_hinting))
-                    #border_radius - line_hinting))
+                    0.0 + line_hinting - epsy,
+                    max(self._height - border_radius, input_segments[-1][1]) + line_hinting - epsy,
+                    border_radius + epsd,
+                    min(border_radius, self._height - input_segments[-1][1])
+                    - 2 * line_hinting + epsd))
                 painter_path = painter_path.united(left_path)
 
             if (output_segments
                     and self._height - output_segments[-1][1] <= border_radius):
                 right_path = QPainterPath()
                 right_path.addRect(QRectF(
-                    self._width - border_radius - line_hinting,
-                    max(self._height - border_radius, output_segments[-1][1]) + line_hinting,
-                    border_radius,
-                    min(border_radius, self._height - output_segments[-1][1]) - 2 * line_hinting))
+                    self._width - border_radius - line_hinting - epsy,
+                    max(self._height - border_radius, output_segments[-1][1]) + line_hinting - epsy,
+                    border_radius + epsd,
+                    min(border_radius, self._height - output_segments[-1][1]) - 2 * line_hinting + epsd))
                 painter_path = painter_path.united(right_path)
 
         if self._group_name.endswith(' Monitor') and border_radius:
             left_path = QPainterPath()
             left_path.addRect(QRectF(
-                0.0 + line_hinting,
-                self._height - border_radius,
-                border_radius, border_radius - line_hinting))
+                0.0 + line_hinting - epsy,
+                self._height - border_radius - epsy,
+                border_radius + epsd, border_radius - line_hinting + epsd))
             painter_path = painter_path.united(left_path)
 
             top_left_path = QPainterPath()
             top_left_path.addRect(QRectF(
-                0.0 + line_hinting, 0.0 + line_hinting,
-                border_radius, border_radius - line_hinting))
+                0.0 + line_hinting - epsy, 0.0 + line_hinting - epsy,
+                border_radius + epsd, border_radius - line_hinting + epsd))
             painter_path = painter_path.united(top_left_path)
 
         self._painter_path = painter_path

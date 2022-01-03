@@ -369,7 +369,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             return
 
         if self.top_icon is not None:
-            self.top_icon.set_icon(icon_type, icon_name, self._group_name)
+            self.top_icon.set_icon(icon_type, icon_name, self._current_port_mode)
         else:
             self.top_icon = CanvasIconPixmap(icon_type, icon_name, self)
 

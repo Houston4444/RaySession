@@ -42,6 +42,7 @@ from . import (
     ICON_LADISH_ROOM,
     ICON_CLIENT,
     ICON_INTERNAL,
+    PORT_MODE_NULL,
     PORT_MODE_INPUT,
     PORT_MODE_OUTPUT
 )
@@ -85,7 +86,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         if icon_type in (ICON_CLIENT, ICON_APPLICATION):
             self.set_icon(icon_type, icon_name)
 
-    def set_icon(self, icon, name):
+    def set_icon(self, icon, name, port_mode=PORT_MODE_NULL):
         self.icon = get_app_icon(name)
         if not self.icon.isNull():
             pixmap = self.icon.pixmap(24, 24)

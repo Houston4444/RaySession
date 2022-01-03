@@ -352,6 +352,8 @@ class Group:
         self.has_gui = False
         self.gui_visible = False
 
+        self._icon_from_metadata = False
+        
         self._timer_port_order = QTimer()
         self._timer_port_order.setInterval(20)
         self._timer_port_order.setSingleShot(True)
@@ -641,7 +643,12 @@ class Group:
 
         patchcanvas.wrap_group_box(self.group_id, port_mode, yesno)
 
-    def set_client_icon(self, icon_name:str):
+    def set_client_icon(self, icon_name:str, from_metadata=False):
+        # icon from metadata is the prority
+        if not from_metadata and self._icon_from_metadata:
+            return
+        
+        self._icon_from_metadata = from_metadata
         self.client_icon = icon_name
         if self.in_canvas:
             patchcanvas.set_group_icon(
@@ -1979,7 +1986,8 @@ class PatchbayManager:
         elif key == JACK_METADATA_ICON_NAME:
             for group in self.groups:
                 if group.uuid == uuid:
-                    group.set_client_icon(value)
+                    group.set_client_icon(value, from_metadata=True)
+                    break
 
     def add_connection(self, port_out_name: str, port_in_name: str):
         port_out = self.get_port_from_name(port_out_name)
@@ -2206,17 +2214,20 @@ class PatchbayManager:
                 for p in patchbay_data[key]:
                     self.add_port(p.get('name'), p.get('type'),
                                   p.get('flags'), p.get('uuid'))
-
-            elif key == 'clients':
-                for cnu in patchbay_data[key]:
-                    self.client_name_and_uuid(cnu.get('name'), cnu.get('uuid'))
-
+        
             elif key == 'connections':
                 for c in patchbay_data[key]:
                     self.add_connection(c.get('port_out_name'),
                                         c.get('port_in_name'))
+        
+        for key in patchbay_data.keys():
+            if key == 'clients':
+                for cnu in patchbay_data[key]:
+                    self.client_name_and_uuid(cnu.get('name'), cnu.get('uuid'))
+                break
 
-            elif key == 'metadatas':
+        for key in patchbay_data.keys():
+            if key == 'metadatas':
                 for m in patchbay_data[key]:
                     self.metadata_update(
                         m.get('uuid'), m.get('key'), m.get('value'))
@@ -2234,7 +2245,13 @@ class PatchbayManager:
 
         self.optimize_operation(False)
         patchcanvas.redraw_all_groups()
-        os.remove(temp_path)
+
+        try:
+            os.remove(temp_path)
+        except:
+            # if this tmp file can not be removed
+            # this is really not strong.
+            pass
 
     def patchbay_announce(self, jack_running: int, samplerate: int,
                           buffer_size: int):

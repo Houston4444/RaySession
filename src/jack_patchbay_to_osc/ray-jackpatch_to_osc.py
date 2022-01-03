@@ -362,8 +362,18 @@ class MainObject:
                 continue
 
             self.client_list.append({'name': client_name, 'uuid': int(uuid)})
-
-        #self.port_list.sort()
+            
+            # we only look for icon_name now, but in the future other client
+            # metadatas could be enabled
+            for key in (jacklib.JACK_METADATA_ICON_NAME,):
+                prop = jacklib.get_property(int(uuid), jacklib.JACK_METADATA_ICON_NAME)
+                if prop is None:
+                    continue
+                value = self.get_metadata_value_str(prop)
+                self.metadata_list.append(
+                    {'uuid': int(uuid),
+                    'key': key,
+                    'value': value})
     
     def jack_shutdown_callback(self, arg=None)->int:
         self.jack_running = False
