@@ -622,19 +622,37 @@ class CanvasBox(CanvasBoxAbstract):
                     and self._height - input_segments[-1][1] <= border_radius):
                 left_path = QPainterPath()
                 left_path.addRect(QRectF(
-                    0.0 + line_hinting, self._height - border_radius,
-                    border_radius, border_radius - line_hinting))
+                    0.0 + line_hinting,
+                    max(self._height - border_radius, input_segments[-1][1]) + line_hinting,
+                    #self._height - min(border_radius, input_segments[-1][1]),
+                    border_radius,
+                    min(border_radius, self._height - input_segments[-1][1]) - 2 * line_hinting))
+                    #border_radius - line_hinting))
                 painter_path = painter_path.united(left_path)
-            
+
             if (output_segments
                     and self._height - output_segments[-1][1] <= border_radius):
                 right_path = QPainterPath()
                 right_path.addRect(QRectF(
                     self._width - border_radius - line_hinting,
-                    self._height - border_radius,
+                    max(self._height - border_radius, output_segments[-1][1]) + line_hinting,
                     border_radius,
-                    border_radius - line_hinting))
+                    min(border_radius, self._height - output_segments[-1][1]) - 2 * line_hinting))
                 painter_path = painter_path.united(right_path)
+
+        if self._group_name.endswith(' Monitor') and border_radius:
+            left_path = QPainterPath()
+            left_path.addRect(QRectF(
+                0.0 + line_hinting,
+                self._height - border_radius,
+                border_radius, border_radius - line_hinting))
+            painter_path = painter_path.united(left_path)
+
+            top_left_path = QPainterPath()
+            top_left_path.addRect(QRectF(
+                0.0 + line_hinting, 0.0 + line_hinting,
+                border_radius, border_radius - line_hinting))
+            painter_path = painter_path.united(top_left_path)
 
         self._painter_path = painter_path
         

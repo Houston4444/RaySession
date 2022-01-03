@@ -153,7 +153,6 @@ class CanvasSvgIcon(QGraphicsSvgItem):
             elif "vlc" in name:
                 icon_path = ":/scalable/pb_vlc.svg"
                 self._size = QRectF(5, 3, 16, 16)
-
             else:
                 icon_path = ":/scalable/pb_generic.svg"
                 self._size = QRectF(4, 4, 24, 24)
@@ -189,7 +188,7 @@ class CanvasSvgIcon(QGraphicsSvgItem):
             self._size = QRectF(5, 2, 16, 16)
 
         elif icon == ICON_INTERNAL:
-            icon_path = ":/scalable/" + name
+            icon_path = ":/canvas/dark/" + name
             self._size = QRectF(4, 4, 24, 24)
 
         else:

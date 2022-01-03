@@ -7,10 +7,12 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   viewBox="0 0 16 16"
+   viewBox="0 0 24 24"
    version="1.1"
    id="svg6"
    sodipodi:docname="audio-input-microphone.svg"
+   width="24"
+   height="24"
    inkscape:version="0.92.4 (5da689c313, 2019-01-14)">
   <metadata
      id="metadata10">
@@ -37,9 +39,9 @@
      inkscape:window-height="871"
      id="namedview8"
      showgrid="false"
-     inkscape:zoom="14.75"
-     inkscape:cx="-16.101695"
-     inkscape:cy="8"
+     inkscape:zoom="10.727273"
+     inkscape:cx="11"
+     inkscape:cy="11"
      inkscape:window-x="48"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -55,8 +57,9 @@
       </style>
   </defs>
   <path
-     style="fill:#dddddd;fill-opacity:1;stroke:#dddddd;stroke-opacity:1;stroke-width:0.6;stroke-miterlimit:4;stroke-dasharray:none"
-     d="M 8,2 C 6.892,2 6,2.892 6,4 l 0,4 c 0,1.108 0.892,2 2,2 1.108,0 2,-0.892 2,-2 L 10,4 C 10,2.892 9.108,2 8,2 Z M 4,7 4,8 c 0,1.847 1.286,3.405469 3,3.855469 L 7,13 l -1,0 0,1 4,0 0,-1 -1,0 0,-1.144531 C 10.714,11.404469 12,9.845 12,8 l 0,-1 -1,0 0,1 C 11,9.645 9.645,11 8,11 6.355,11 5,9.645 5,8 L 5,7 4,7 Z"
+     style="color:#eff0f1;fill:currentColor;fill-opacity:1;stroke:none;stroke-width:1.25052977"
+     d="m 12,1.9957628 c -1.731983,0 -3.1263248,1.3943405 -3.1263248,3.1263242 v 7.503177 c 0,1.731984 1.3943418,3.126325 3.1263248,3.126325 1.731984,0 3.126324,-1.394341 3.126324,-3.126325 V 5.1220869 C 15.126324,3.3901033 13.731984,1.9957628 12,1.9957628 Z M 5.1220863,10.74947 V 12 c 0.00115,2.795626 2.0435052,5.250847 5.0021177,6.013289 v 2.740418 H 7.6231457 v 1.25053 h 8.7537083 v -1.25053 h -2.50106 v -2.74286 C 16.833449,17.24865 18.875567,14.794721 18.877914,12 v -1.25053 h -1.25053 V 12 c 0,2.762594 -2.519467,5.002118 -5.627384,5.002118 -3.1079187,0 -5.627384,-2.239524 -5.627384,-5.002118 v -1.25053 z"
      class="ColorScheme-Text"
-     id="path4" />
+     id="path4"
+     inkscape:connector-curvature="0" />
 </svg>
