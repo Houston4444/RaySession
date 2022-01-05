@@ -1024,7 +1024,7 @@ class OperatingSession(Session):
         self.osc_path = ''
         self.osc_args.clear()
 
-    def _wait_and_go_to(self, duration, follow, wait_for, redondant=False):
+    def _wait_and_go_to(self, duration: int, follow, wait_for: int, redondant=False):
         self.timer.stop()
 
         # we need to delete timer to change the timeout connect
@@ -2417,7 +2417,7 @@ for better organization.""")
 
         wait_time = 8000 + len(self.expected_clients) * 2000
         for client in self.expected_clients:
-            wait_time = max(2 * 1000 * client.last_open_duration, wait_time)
+            wait_time = int(max(2 * 1000 * client.last_open_duration, wait_time))
 
         self._wait_and_go_to(wait_time, self.load_substep5, ray.WaitFor.REPLY)
 
