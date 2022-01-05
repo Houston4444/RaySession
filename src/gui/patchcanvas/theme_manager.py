@@ -57,6 +57,7 @@ class ThemeManager:
         del canvas.theme
         canvas.theme = Theme()
         canvas.theme.read_theme(theme_dict)
+        canvas.theme.icon.read_theme(self.current_theme_file)
 
         canvas.scene.update_theme()
         

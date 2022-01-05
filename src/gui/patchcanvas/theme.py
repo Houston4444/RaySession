@@ -353,6 +353,32 @@ class GuiButtonStyleAttributer(StyleAttributer):
         self.subs += ['gui_visible', 'gui_hidden']
 
 
+class IconTheme:
+    def __init__(self):
+        src = ':/canvas/dark/'
+        self.hardware_capture = src + 'microphone.svg'
+        self.hardware_playback = src + 'audio-headphones.svg'
+        self.hardware_grouped = src + 'pb_hardware.svg'
+        self.hardware_midi = src + 'DIN-5.svg'
+        self.monitor_capture = None
+        self.monitor_playback = None
+        
+    def read_theme(self, theme_file: str):
+        icons_dir = os.path.join(os.path.dirname(theme_file), 'icons')
+        if not os.path.isdir(icons_dir):
+            return
+        
+        print('choubidaa', theme_file, icons_dir)
+        
+        for key in ('hardware_capture', 'hardware_playback', 'hardware_grouped',
+                    'hardware_midi', 'monitor_capture', 'monitor_playback'):
+            icon_path = os.path.join(icons_dir, key + '.svg')
+            print('eie', icon_path)
+            if os.path.isfile(icon_path):
+                print('fofkkk')
+                self.__setattr__(key, icon_path)
+
+
 class Theme(StyleAttributer):
     def __init__(self):
         StyleAttributer.__init__(self, '')
@@ -384,6 +410,8 @@ class Theme(StyleAttributer):
         self.box_spacing_horizontal = 24
         self.magnet = 12
         self.hardware_rack_width = 5
+
+        self.icon = IconTheme()
 
         self.aliases = {}
 
@@ -493,32 +521,3 @@ class Theme(StyleAttributer):
 
             sub_attributer = self.__getattribute__(begin)
             sub_attributer.set_style_dict(end, value)
-    
-
-
-
-
-if __name__ == '__main__':
-    # theme = Theme()
-    
-    import json
-    from theme_default import default_theme
-    
-    for key, value in default_theme.items():
-        for sub_key, sub_value in value.items():
-            if isinstance(sub_value, (list, tuple)):
-                qcol = _to_qcolor(sub_value)
-                # print(sub_value, qcol.name(QColor.HexArgb), qcol.alpha())
-                if qcol.alpha() == 255:
-                    print(sub_value, qcol.name())
-                    default_theme[key][sub_key] = qcol.name()
-                else:
-                    print(sub_value, qcol.name(QColor.HexArgb))
-                    default_theme[key][sub_key] = qcol.name(QColor.HexArgb)
-                
-    
-    with open('/home/houston/.config/RaySession/patchbay_themes/Black Gold/theme.json', 'w+') as f:
-            json.dump(default_theme, f, indent=2)
-    
-    # theme.read_theme(default_theme)
-    # print(theme.port.audio.font())

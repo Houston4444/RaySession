@@ -132,6 +132,7 @@ class CanvasSvgIcon(QGraphicsSvgItem):
     def set_icon(self, icon, name, port_mode):
         name = name.lower()
         icon_path = ""
+        theme = canvas.theme.icon
 
         if icon == ICON_APPLICATION:
             self._size = QRectF(3, 2, 19, 18)
@@ -160,15 +161,19 @@ class CanvasSvgIcon(QGraphicsSvgItem):
 
         elif icon == ICON_HARDWARE:
             if name == "a2j":
-                icon_path = ":/scalable/DIN-5.svg"
+                #icon_path = ":/canvas/dark/DIN-5.svg"
+                icon_path = theme.hardware_midi
                 self._size = QRectF(4, 4, 24, 24)
             else:
                 if port_mode == PORT_MODE_INPUT:
-                    icon_path = ":/canvas/dark/audio-headphones.svg"
+                    #icon_path = ":/canvas/dark/audio-headphones.svg"
+                    icon_path = theme.hardware_playback
                 elif port_mode == PORT_MODE_OUTPUT:
-                    icon_path = ":/canvas/dark/microphone.svg"
+                    icon_path = theme.hardware_capture
+                    #icon_path = ":/canvas/dark/microphone.svg"
                 else:
-                    icon_path = ":/canvas/dark/pb_hardware.svg"
+                    icon_path = theme.hardware_grouped
+                    #icon_path = ":/canvas/dark/pb_hardware.svg"
                 self._size = QRectF(4, 4, 24, 24)
 
         elif icon == ICON_DISTRHO:
