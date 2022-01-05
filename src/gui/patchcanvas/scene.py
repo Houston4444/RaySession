@@ -196,6 +196,7 @@ class PatchScene(QGraphicsScene):
                         * ((n/total_n) ** 0.6)
 
                 box_dict['widget'].setPos(x, y)
+                box_dict['widget'].repaint_lines()
 
         for wrap_dict in self.wrapping_boxes:
             if wrap_dict['widget'] is not None:
@@ -214,11 +215,6 @@ class PatchScene(QGraphicsScene):
             move_box_widgets = [b['widget'] for b in self.move_boxes]
             self.move_boxes.clear()
             self.wrapping_boxes.clear()
-            QTimer.singleShot(0, self.update)
-
-            for box_dict in self.move_boxes:
-                if box_dict['widget'] is not None:
-                    QTimer.singleShot(0, box_dict['widget'].repaint_lines)
                     
             for box in move_box_widgets:
                 if box is not None:

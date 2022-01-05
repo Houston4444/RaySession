@@ -129,6 +129,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                  icon_name: str, parent=None):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
+        self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
 
         # Save Variables, useful for later
         self._group_id = group_id
@@ -208,6 +209,14 @@ class CanvasBoxAbstract(QGraphicsItem):
             self.shadow = CanvasBoxShadow(self.toGraphicsObject())
             self.shadow.fake_parent = self
             self.shadow.set_theme(shadow_theme)
+            
+            #if self._splitted_mode == PORT_MODE_NULL:
+                #self.shadow.setOffset(0, 2)
+            #elif self._splitted_mode == PORT_MODE_INPUT:
+                #self.shadow.setOffset(4, 2)
+            #else:
+                #self.shadow.setOffset(-4, 2)
+            
             self.setGraphicsEffect(self.shadow)
 
         # Final touches
@@ -384,14 +393,24 @@ class CanvasBoxAbstract(QGraphicsItem):
     def set_optional_gui_state(self, visible: bool):
         self._can_handle_gui = True
         self._gui_visible = visible
+        self.update()
 
     def set_split(self, split, mode=PORT_MODE_NULL):
         self._splitted = split
         self._splitted_mode = mode
         self._current_port_mode = mode
-
+        
         if self._is_hardware:
             self.set_icon(ICON_HARDWARE, self._icon_name)
+        
+        if self.shadow is not None:
+            if split:
+                if mode == PORT_MODE_INPUT:
+                    self.shadow.setOffset(4, 2)
+                elif mode == PORT_MODE_OUTPUT:
+                    self.shadow.setOffset(-4, 2)
+            else:
+                self.shadow.setOffset(0, 2)
 
     def set_group_name(self, group_name: str):
         self._group_name = group_name
@@ -959,6 +978,8 @@ class CanvasBoxAbstract(QGraphicsItem):
                         return
 
                 self._mouse_down = True
+                for cb_line in self._connection_lines:
+                    cb_line.line.setCacheMode(QGraphicsItem.NoCache)
             else:
                 # FIXME: Check if still valid: Fix a weird Qt behaviour with right-click mouseMove
                 self._mouse_down = False
@@ -985,7 +1006,10 @@ class CanvasBoxAbstract(QGraphicsItem):
 
             QGraphicsItem.mouseMoveEvent(self, event)
 
-            self.repaint_lines()
+            for item in canvas.scene.selectedItems():
+                if item.type() == CanvasBoxType:
+                    item.repaint_lines()
+
             canvas.scene.resize_the_scene()
             return
 
@@ -1006,6 +1030,10 @@ class CanvasBoxAbstract(QGraphicsItem):
                         repulsers.append(widget)
 
             canvas.scene.deplace_boxes_from_repulsers(repulsers)
+            
+            for cb_line in self._connection_lines:
+                cb_line.line.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+            
             QTimer.singleShot(0, canvas.scene.update)
 
         self._mouse_down = False
@@ -1017,7 +1045,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._cursor_moving = False
         
         QGraphicsItem.mouseReleaseEvent(self, event)
-
+    
     def fixPos(self):
         self.setX(round(self.x()))
         self.setY(round(self.y()))
@@ -1044,6 +1072,32 @@ class CanvasBoxAbstract(QGraphicsItem):
             if item.type() == CanvasBoxType:
                 item.fixPos()
                 item.send_move_callback()
+
+    def set_in_cache(self, yesno: bool):
+        cache_mode = self.cacheMode()
+        if yesno and cache_mode == QGraphicsItem.DeviceCoordinateCache:
+            return
+        
+        if not yesno and cache_mode == QGraphicsItem.NoCache:
+            return
+
+        # toggle cache_mode value
+        if cache_mode == QGraphicsItem.DeviceCoordinateCache:
+            cache_mode = QGraphicsItem.NoCache
+        else:
+            cache_mode = QGraphicsItem.DeviceCoordinateCache
+        
+        self.setCacheMode(cache_mode)
+        for port in canvas.port_list:
+            if (port.group_id == self._group_id
+                    and port.port_id in self._port_list_ids):
+                port.widget.setCacheMode(cache_mode)
+        
+        for portgroup in canvas.portgrp_list:
+            if (portgroup.group_id == self._group_id
+                    and self._current_port_mode & portgroup.port_mode
+                    and portgroup.widget is not None):
+                portgroup.widget.setCacheMode(cache_mode)
 
     def boundingRect(self):
         hws = canvas.theme.hardware_rack_width
@@ -1352,7 +1406,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             triangle += QPointF(x + side, ypos -side + 2)
             painter.drawPolygon(triangle)
 
-        self.repaint_lines()
+        #self.repaint_lines()
         painter.restore()
 
     def _split_title(self, n_lines=True)->tuple:

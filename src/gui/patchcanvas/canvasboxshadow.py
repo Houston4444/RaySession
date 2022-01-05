@@ -21,7 +21,7 @@
 # Imports (Global)
 
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QGraphicsDropShadowEffect
+from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QGraphicsItem
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -39,7 +39,14 @@ class CanvasBoxShadow(QGraphicsDropShadowEffect):
 
         self.setBlurRadius(20)
         #self.setColor(canvas.theme.box_shadow_color)
-        self.setOffset(0, 0)
+        
+        self.setOffset(0, 2)
+        #if parent._splitted_mode == 0:
+            #self.setOffset(0, 2)
+        #elif parent._splitted_mode == 1:
+            #self.setOffset(4, 2)
+        #else:
+            #self.setOffset(-4, 2)
 
     def set_theme(self, theme):
         self._theme = theme 
@@ -52,6 +59,16 @@ class CanvasBoxShadow(QGraphicsDropShadowEffect):
 
     def draw(self, painter):
         if self.fake_parent is not None:
+            if ((self.fake_parent.boundingRect().height()
+                 * canvas.scene.get_zoom_scale())
+                >= canvas.scene._view.height()):
+                # workaround for a visual bug with cached QGraphicsItem,
+                # QDropShadowEffect and big zoom.
+                # see https://bugreports.qt.io/browse/QTBUG-77400
+                self.fake_parent.set_in_cache(False)
+            else:
+                self.fake_parent.set_in_cache(True)
+
             self.fake_parent.repaint_lines()
         QGraphicsDropShadowEffect.draw(self, painter)
 
