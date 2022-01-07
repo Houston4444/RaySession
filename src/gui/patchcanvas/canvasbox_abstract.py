@@ -93,31 +93,6 @@ class cb_line_t(object):
         self.line = line
         self.connection_id = connection_id
 
-
-class TitleLine:
-    text = ''
-    size = 0
-    x = 0
-    y = 0
-    is_little = False
-
-    def __init__(self, text: str, theme, little=False):
-        self.text = text
-        self.is_little = little
-        self.x = 0
-        self.y = 0
-
-        self.font = QFont(theme.font())
-        
-        if little:
-            self.font.setWeight(QFont.Normal)
-
-        self.size = QFontMetrics(self.font).width(text)
-
-    def reduce_pixel(self, reduce):
-        self.font.setPixelSize(self.font.pixelSize() - reduce)
-        self.size = QFontMetrics(self.font).width(self.text)
-
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasBoxAbstract(QGraphicsItem):
@@ -1408,33 +1383,6 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         #self.repaint_lines()
         painter.restore()
-
-    def _split_title(self, n_lines=True)->tuple:
-        title, slash, subtitle = self._group_name.partition('/')
-        theme = self.get_theme()
-
-        if self._icon_type == ICON_CLIENT and subtitle:
-            # if there is a subtitle, title is not bold when subtitle is.
-            # so title is 'little'
-            title_lines = [TitleLine(title, theme, little=True)]
-            if n_lines >= 3:
-                title_lines += [TitleLine(subtt, theme)
-                                for subtt in self.split_in_two(subtitle, 2) if subtt]
-            else:
-                title_lines.append(TitleLine(subtitle, theme))
-        else:
-            if n_lines >= 2:
-                title_lines = [
-                    TitleLine(tt, theme)
-                    for tt in self.split_in_two(self._group_name, n_lines) if tt]
-            else:
-                title_lines= [TitleLine(self._group_name, theme)]
-
-            if len(title_lines) >= 4:
-                for title_line in title_lines:
-                    title_line.reduce_pixel(2)
-
-        return tuple(title_lines)
 
     def _paint_hardware_rack(self, painter, lineHinting):
         if not self._is_hardware:

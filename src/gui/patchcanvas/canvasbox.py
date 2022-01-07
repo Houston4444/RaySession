@@ -68,6 +68,31 @@ from .canvasbox_abstract import (
 _translate = QApplication.translate
 
 
+class TitleLine:
+    text = ''
+    size = 0
+    x = 0
+    y = 0
+    is_little = False
+
+    def __init__(self, text: str, theme, little=False):
+        self.text = text
+        self.is_little = little
+        self.x = 0
+        self.y = 0
+
+        self.font = QFont(theme.font())
+        
+        if little:
+            self.font.setWeight(QFont.Normal)
+
+        self.size = QFontMetrics(self.font).width(text)
+
+    def reduce_pixel(self, reduce):
+        self.font.setPixelSize(self.font.pixelSize() - reduce)
+        self.size = QFontMetrics(self.font).width(self.text)
+
+
 class CanvasBox(CanvasBoxAbstract):
     def __init__(self, group_id: int, group_name: str, icon_type: int,
                  icon_name: str, parent=None):
@@ -127,8 +152,6 @@ class CanvasBox(CanvasBoxAbstract):
         port_type_spacing = box_theme.port_type_spacing()
         last_in_type_alter = (PORT_TYPE_NULL, False)
         last_out_type_alter = (PORT_TYPE_NULL, False)
-        #last_in_type = last_out_type = PORT_TYPE_NULL
-        #last_in_alter = last_out_alter = False
         last_port_mode = PORT_MODE_NULL
         
         for port_type in port_types:
@@ -215,12 +238,8 @@ class CanvasBox(CanvasBoxAbstract):
                     # align port types horizontally
                     if last_in_pos > last_out_pos:
                         last_out_type_alter = last_in_type_alter
-                        #last_out_type = last_in_type
-                        #last_out_alter = last_in_alter
                     else:
                         last_in_type_alter = last_out_type_alter
-                        #last_in_type = last_out_type
-                        #last_in_alter = last_out_alter
                     last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
         
         # calculates height in case of one column only
@@ -281,8 +300,6 @@ class CanvasBox(CanvasBoxAbstract):
         box_theme = self.get_theme()
         port_spacing = box_theme.port_spacing()
         port_type_spacing = box_theme.port_type_spacing()
-        #last_in_type = last_out_type = last_inout_type = PORT_TYPE_NULL
-        #last_in_alter = last_out_alter = last_inout_alter = False
         last_in_type_alter = (PORT_TYPE_NULL, False)
         last_out_type_alter = (PORT_TYPE_NULL, False)
         last_type_alter = (PORT_TYPE_NULL, False)
@@ -406,6 +423,33 @@ class CanvasBox(CanvasBoxAbstract):
         
         return {'input_segments': input_segments,
                 'output_segments': output_segments}
+    
+    def _split_title(self, n_lines: int)->tuple:
+        title, slash, subtitle = self._group_name.partition('/')
+        theme = self.get_theme()
+
+        if self._icon_type == ICON_CLIENT and subtitle:
+            # if there is a subtitle, title is not bold when subtitle is.
+            # so title is 'little'
+            title_lines = [TitleLine(title, theme, little=True)]
+            if n_lines >= 3:
+                title_lines += [TitleLine(subtt, theme)
+                                for subtt in self.split_in_two(subtitle, 2) if subtt]
+            else:
+                title_lines.append(TitleLine(subtitle, theme))
+        else:
+            if n_lines >= 2:
+                title_lines = [
+                    TitleLine(tt, theme)
+                    for tt in self.split_in_two(self._group_name, n_lines) if tt]
+            else:
+                title_lines= [TitleLine(self._group_name, theme)]
+
+            if len(title_lines) >= 4:
+                for title_line in title_lines:
+                    title_line.reduce_pixel(2)
+
+        return tuple(title_lines)
     
     def _choose_title_disposition(
         self, box_height: int, width_for_ports: int,
