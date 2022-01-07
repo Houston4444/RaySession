@@ -1341,7 +1341,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                     x_pos += QFontMetrics(title_line.font).width(pre_text)
                     x_pos += QFontMetrics(title_line.font).width(' ')
 
-                painter.setPen(QPen(QColor(190, 158, 0), 0))
+                painter.setPen(QPen(canvas.theme.monitor_color, 0))
                 painter.drawText(int(x_pos + 0.5), int(title_line.y + 0.5),
                                  'Monitor')
             else:

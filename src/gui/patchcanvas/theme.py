@@ -368,14 +368,10 @@ class IconTheme:
         if not os.path.isdir(icons_dir):
             return
         
-        print('choubidaa', theme_file, icons_dir)
-        
         for key in ('hardware_capture', 'hardware_playback', 'hardware_grouped',
                     'hardware_midi', 'monitor_capture', 'monitor_playback'):
             icon_path = os.path.join(icons_dir, key + '.svg')
-            print('eie', icon_path)
             if os.path.isfile(icon_path):
-                print('fofkkk')
                 self.__setattr__(key, icon_path)
 
 

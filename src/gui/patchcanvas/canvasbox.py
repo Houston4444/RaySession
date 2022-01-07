@@ -120,7 +120,6 @@ class CanvasBox(CanvasBoxAbstract):
         max_in_width = max_out_width = 0
         last_in_pos = last_out_pos = last_inout_pos = 0
         final_last_in_pos = final_last_out_pos = last_in_pos
-        #wrapped_port_pos = self._default_header_height
         
         box_theme = self.get_theme()
         port_spacing = box_theme.port_spacing()
@@ -259,8 +258,8 @@ class CanvasBox(CanvasBoxAbstract):
         box_theme = self.get_theme()
         port_spacing = box_theme.port_spacing()
         port_type_spacing = box_theme.port_type_spacing()
-        last_in_type = last_out_type = PORT_TYPE_NULL
-        last_in_alter = last_out_alter = False
+        last_in_type = last_out_type = last_inout_type = PORT_TYPE_NULL
+        last_in_alter = last_out_alter = last_inout_alter = False
         input_segments = []
         output_segments = []
         in_segment = [last_in_pos, last_in_pos]
@@ -306,7 +305,7 @@ class CanvasBox(CanvasBoxAbstract):
                             # input L
                             #     output L
                             # input R
-                            #     output R 
+                            #     output R
                             for portgrp in canvas.portgrp_list:
                                 if (portgrp.group_id == self._group_id
                                         and portgrp.portgrp_id == port.portgrp_id):
