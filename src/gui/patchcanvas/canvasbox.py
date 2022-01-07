@@ -424,6 +424,86 @@ class CanvasBox(CanvasBoxAbstract):
         return {'input_segments': input_segments,
                 'output_segments': output_segments}
     
+    @staticmethod
+    def split_in_two(string: str, n_lines=2)->tuple:
+        sep_indexes = []
+        last_was_digit = False
+
+        for sep in (' ', '-', '_', 'capital'):
+            for i in range(len(string)):
+                c = string[i]
+                if sep == 'capital':
+                    if c.upper() == c:
+                        if not c.isdigit() or not last_was_digit:
+                            sep_indexes.append(i)
+                        last_was_digit = c.isdigit()
+
+                elif c == sep:
+                    sep_indexes.append(i)
+
+            if sep_indexes:
+                break
+
+        if not sep_indexes:
+            # no available separator in given text
+            return_list = [string] + ['' for n in range(1, n_lines)]
+            return tuple(return_list)
+
+        if len(sep_indexes) + 1 <= n_lines:
+            return_list = []
+            last_index = 0
+
+            for sep_index in sep_indexes:
+                return_list.append(string[last_index:sep_index])
+                last_index = sep_index
+                if sep == ' ':
+                    last_index += 1
+
+            return_list.append(string[last_index:])
+
+            return_list += ['' for n in range(n_lines - len(sep_indexes) - 1)]
+            return tuple(return_list)
+
+        best_indexes = [0]
+        string_rest = string
+        string_list = []
+
+        for i in range(n_lines, 1, -1):
+            target = best_indexes[-1] + int(len(string_rest)/i)
+            best_index = 0
+            best_dif = len(string)
+
+            for s in sep_indexes:
+                if s <= best_indexes[-1]:
+                    continue
+
+                dif = abs(target - s)
+                if dif < best_dif:
+                    best_index = s
+                    best_dif = dif
+                else:
+                    break
+
+            if sep == ' ':
+                string_rest = string[best_index+1:]
+            else:
+                string_rest = string[best_index:]
+
+            best_indexes.append(best_index)
+
+        best_indexes = best_indexes[1:]
+        last_index = 0
+        return_list = []
+
+        for i in best_indexes:
+            return_list.append(string[last_index:i])
+            last_index = i
+            if sep == ' ':
+                last_index += 1
+
+        return_list.append(string[last_index:])
+        return tuple(return_list)
+    
     def _split_title(self, n_lines: int)->tuple:
         title, slash, subtitle = self._group_name.partition('/')
         theme = self.get_theme()
