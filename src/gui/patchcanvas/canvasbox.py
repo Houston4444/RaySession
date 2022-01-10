@@ -74,6 +74,7 @@ class TitleLine:
     x = 0
     y = 0
     is_little = False
+    anti_icon = False
 
     def __init__(self, text: str, theme, little=False):
         self.text = text
@@ -426,6 +427,9 @@ class CanvasBox(CanvasBoxAbstract):
     
     @staticmethod
     def split_in_two(string: str, n_lines=2)->tuple:
+        if n_lines <= 1:
+            return (string,)
+        
         sep_indexes = []
         last_was_digit = False
 
@@ -506,28 +510,98 @@ class CanvasBox(CanvasBoxAbstract):
     
     def _split_title(self, n_lines: int)->tuple:
         title, slash, subtitle = self._group_name.partition('/')
+
+        if (not subtitle
+                and self._icon_type == ICON_CLIENT
+                and ' (' in self._group_name
+                and self._group_name.endswith(')')):
+            title, parenthese, subtitle = self._group_name.partition(' (')
+            subtitle = subtitle[:-1]
+        
         theme = self.get_theme()
 
         if self._icon_type == ICON_CLIENT and subtitle:
             # if there is a subtitle, title is not bold when subtitle is.
             # so title is 'little'
-            title_lines = [TitleLine(title, theme, little=True)]
-            if n_lines >= 3:
-                title_lines += [TitleLine(subtt, theme)
-                                for subtt in self.split_in_two(subtitle, 2) if subtt]
+            client_line = TitleLine(title, theme, little=True)
+            subclient_line = TitleLine(subtitle, theme)
+            title_lines = []
+            
+            if n_lines > 2:
+                if client_line.size > subclient_line.size:
+                    client_strs = self.split_in_two(title)
+                    for client_str in client_strs:
+                        title_lines.append(TitleLine(client_str, theme, little=True))
+                    
+                    for subclient_str in self.split_in_two(subtitle, n_lines - 2):
+                        title_lines.append(TitleLine(subclient_str, theme))
+                else:
+                    two_lines_title = False
+                    
+                    if n_lines >= 4:
+                        # Check if we need to split the client title
+                        # it could be "Carla-Multi-Client.Carla".
+                        subtitles = self.split_in_two(subtitle, n_lines - 2)
+                        for subtt in subtitles:
+                            subtt_line = TitleLine(subtt, theme)
+                            if subtt_line.size > client_line.size:
+                                break
+                        else:
+                            client_strs = self.split_in_two(title)
+                            for client_str in client_strs:
+                                title_lines.append(TitleLine(client_str, theme, little=True))
+                            two_lines_title = True
+                        
+                    #subclient_lines = [
+                        #TitleLine(subtt, theme)
+                        #for subtt in self.split_in_two(subtitle, n_lines -1) if subtt]
+                    #maxi_sub = 0
+                    #for subclient_line in subclient_lines:
+                        #maxi_sub = max(maxi_sub()
+                    
+                    if not two_lines_title:
+                        title_lines.append(client_line)
+                    
+                    subt_len = n_lines - 1
+                    if two_lines_title:
+                        subt_len -= 1
+                        titles = self.split_in_two(subtitle, subt_len)
+                        for title in titles:
+                            title_lines.append(TitleLine(title, theme))
+                    else:
+                        titles = self.split_in_two('uuuu' + subtitle, subt_len)
+                        for i in range(len(titles)):
+                            title = titles[i]
+                            if i == 0:
+                                title = title[4:]
+                            title_lines.append(TitleLine(title, theme))
+                    
+                    #title_lines += [TitleLine(subtt, theme)
+                                    #for subtt in self.split_in_two('___' + subtitle, subt_len) if subtt]
+                    
             else:
-                title_lines.append(TitleLine(subtitle, theme))
+                title_lines.append(client_line)
+                title_lines.append(subclient_line)
         else:
             if n_lines >= 2:
+                titles = self.split_in_two(self._group_name)
+                new_titles = []
+                for title in titles:
+                    if new_titles and len(title) <= 2:
+                        new_titles[-1] += title
+                    else:
+                        new_titles.append(title)
+                
                 title_lines = [
                     TitleLine(tt, theme)
-                    for tt in self.split_in_two(self._group_name, n_lines) if tt]
+                    for tt in new_titles if tt]
             else:
-                title_lines= [TitleLine(self._group_name, theme)]
+                title_lines = [TitleLine(self._group_name, theme)]
 
-            if len(title_lines) >= 4:
-                for title_line in title_lines:
-                    title_line.reduce_pixel(2)
+            #if len(title_lines) >= 4:
+                #for title_line in title_lines:
+                    #title_line.reduce_pixel(2)
+
 
         return tuple(title_lines)
     
@@ -538,17 +612,21 @@ class CanvasBox(CanvasBoxAbstract):
         returns needed more_height '''
 
         # Check Text Name size
-        title_template = {"title_width": 0, "header_width": 0}
-        all_title_templates = [title_template.copy() for i in range(5)]
+        title_template = {"title_width": 0, "header_width": 0,
+                          "more_height": 0}
+        all_title_templates = [title_template.copy() for i in range(8)]
 
-        for i in range(1, 5):
+        for i in range(1, 8):
             max_title_size = 0
             title_lines = self._split_title(i)
 
-            for title_line in title_lines:
-                max_title_size = max(max_title_size, title_line.size)
+            for j in range(len(title_lines)):
+                title_line = title_lines[j]
+                title_line_size = title_line.size
+                if self.has_top_icon() and j >= 2:
+                    title_line_size -= 25
+                max_title_size = max(max_title_size, title_line_size)
 
-            all_title_templates[i]
             header_width = max_title_size
 
             if self.has_top_icon():
@@ -562,6 +640,8 @@ class CanvasBox(CanvasBoxAbstract):
             new_title_template = title_template.copy()
             new_title_template['title_width'] = max_title_size
             new_title_template['header_width'] = header_width
+            if i >= 3:
+                new_title_template['more_height'] = 15 * i + 6 - self._default_header_height
             all_title_templates[i] = new_title_template
 
             if header_width < width_for_ports_one:
@@ -588,14 +668,31 @@ class CanvasBox(CanvasBoxAbstract):
             if lines_choice_max >= 3:
                 sizes_tuples.append(
                     (max(all_title_templates[3]['header_width'], width_for_ports_one)
-                        * (box_height_one + more_height),
+                        #* (box_height_one + more_height),
+                        * (box_height_one + all_title_templates[3]['more_height']),
                     3, True))
             
             if lines_choice_max >= 4:
                 sizes_tuples.append(
                     (max(all_title_templates[4]['header_width'], width_for_ports_one)
-                        * (box_height_one + more_height) + 5000,
+                        * (box_height_one + all_title_templates[4]['more_height']),
                     4, True))
+            
+            if lines_choice_max >= 5:
+                sizes_tuples.append(
+                    (max(all_title_templates[5]['header_width'], width_for_ports_one)
+                        * (box_height_one + all_title_templates[5]['more_height']),
+                    5, True))
+            
+            if lines_choice_max >= 6:
+                sizes_tuples.append(
+                    (max(all_title_templates[6]['header_width'], width_for_ports_one)
+                        * (box_height_one + all_title_templates[6]['more_height']),
+                    6, True))
+                #sizes_tuples.append(
+                    #(max(all_title_templates[4]['header_width'], width_for_ports_one)
+                        #* (box_height_one + more_height) + 5000,
+                    #4, True))
 
         if self._column_disposition in (COLUMNS_AUTO, COLUMNS_TWO):
             sizes_tuples.append(
@@ -612,23 +709,65 @@ class CanvasBox(CanvasBoxAbstract):
             if lines_choice_max >= 3:
                 sizes_tuples.append(
                     (max(all_title_templates[3]['header_width'], width_for_ports)
-                        * (box_height + more_height),
+                        * (box_height + all_title_templates[3]['more_height']),
                     3, False))
             
             if lines_choice_max >= 4:
+                #sizes_tuples.append(
+                    #(max(all_title_templates[4]['header_width'], width_for_ports)
+                        #* (box_height + more_height) + 5000,
+                    #4, False))
                 sizes_tuples.append(
                     (max(all_title_templates[4]['header_width'], width_for_ports)
-                        * (box_height + more_height) + 5000,
+                        * (box_height + all_title_templates[4]['more_height']),
                     4, False))
+                    
+            if lines_choice_max >= 5:
+                sizes_tuples.append(
+                    (max(all_title_templates[5]['header_width'], width_for_ports)
+                        * (box_height_one + all_title_templates[5]['more_height']),
+                    5, False))
+            
+            if lines_choice_max >= 6:
+                sizes_tuples.append(
+                    (max(all_title_templates[6]['header_width'], width_for_ports)
+                        * (box_height_one + all_title_templates[6]['more_height']),
+                    6, False))
         
         sizes_tuples.sort()
         lines_choice = sizes_tuples[0][1]
         one_column = sizes_tuples[0][2]
         
+        final_width = all_title_templates[lines_choice]['header_width']
+        if one_column:
+            final_width = max(final_width, width_for_ports_one)
+        else:
+            final_width = max(final_width, width_for_ports)
+
         self._title_lines = self._split_title(lines_choice)
         
-        if lines_choice <= 2:
-            more_height = 0
+        has_anti_icon = False
+        for i in range(len(self._title_lines)):
+            if i <= 1:
+                continue
+            
+            title_line = self._title_lines[i]
+            if has_anti_icon:
+                title_line.anti_icon = True
+            
+            elif title_line.size > final_width - 37:
+                title_line.anti_icon = True
+                has_anti_icon = True
+        
+        #if has_anti_icon:
+            #for i in range(len(self._title_lines)):
+                #title_line = self._title_lines[i]
+                #if i >= 2:
+                    #title_line.anti_icon = True
+        
+        more_height = all_title_templates[lines_choice]['more_height']
+        #if lines_choice <= 2:
+            #more_height = 0
         
         header_width = all_title_templates[lines_choice]['header_width']
         max_title_size = all_title_templates[lines_choice]['title_width']
@@ -898,7 +1037,7 @@ class CanvasBox(CanvasBoxAbstract):
             self._height = normal_height
             
             self._unwrap_triangle_pos = UNWRAP_BUTTON_NONE
-            if self._height >= 100:
+            if self._height - self._header_height >= 64:
                 if one_column and last_port_mode == PORT_MODE_INPUT:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
                 elif one_column and last_port_mode == PORT_MODE_OUTPUT:
@@ -920,6 +1059,17 @@ class CanvasBox(CanvasBoxAbstract):
         self._height = float(int(self._height + 0.99))
 
         if self.has_top_icon():
+            max_title_size = 0
+            for i in range(len(self._title_lines)):
+                if i >= 2:
+                    break
+                
+                title_line = self._title_lines[i]
+                title_size = title_line.size
+                #if title_line.anti_icon:
+                    #title_size -= 25
+                max_title_size = max(max_title_size, title_size)
+            #print('sk', self._group_name, max_title_size, (self._width - max_title_size -29)/2.0)
             self.top_icon.align_at((self._width - max_title_size - 29)/2)
         
         self.build_painter_path(ports_y_segments_dict)

@@ -826,9 +826,9 @@ class CanvasBoxAbstract(QGraphicsItem):
             if self.sceneBoundingRect().contains(event.scenePos()):
                 if self._wrapped:
                     # unwrap the box if event is one of the triangles zones
-                    ypos = self._default_header_height
-                    if len(self._title_lines) >= 3:
-                        ypos += 14
+                    ypos = self._header_height
+                    #if len(self._title_lines) >= 3:
+                        #ypos += 14
                         
                     box_theme = self.get_theme()
 
@@ -873,8 +873,8 @@ class CanvasBoxAbstract(QGraphicsItem):
                         return
 
                 self._mouse_down = True
-                for cb_line in self._connection_lines:
-                    cb_line.line.setCacheMode(QGraphicsItem.NoCache)
+                #for cb_line in self._connection_lines:
+                    #cb_line.line.setCacheMode(QGraphicsItem.NoCache)
             else:
                 # FIXME: Check if still valid: Fix a weird Qt behaviour with right-click mouseMove
                 self._mouse_down = False
@@ -926,8 +926,8 @@ class CanvasBoxAbstract(QGraphicsItem):
 
             canvas.scene.deplace_boxes_from_repulsers(repulsers)
             
-            for cb_line in self._connection_lines:
-                cb_line.line.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+            #for cb_line in self._connection_lines:
+                #cb_line.line.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
             
             QTimer.singleShot(0, canvas.scene.update)
 
@@ -1004,6 +1004,14 @@ class CanvasBoxAbstract(QGraphicsItem):
                           self._width + 2 * hws,
                           self._height + 2 * hws)
         return QRectF(0, 0, self._width, self._height)
+
+    #def setSelected(self, selected: bool):
+        #for cb_line in self._connection_lines:
+            #if selected:
+                #cb_line.line.setCacheMode(QGraphicsItem.NoCache)
+            #else:
+                #cb_line.line.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+        #QGraphicsItem.setSelected(self, selected)
 
     def paint(self, painter, option, widget):
         if canvas.loading_items:
@@ -1154,31 +1162,50 @@ class CanvasBoxAbstract(QGraphicsItem):
         if self.has_top_icon():
             title_x_pos += 25
 
-        for title_line in self._title_lines:
+        for i in range(len(self._title_lines)):
+            title_line = self._title_lines[i]
             title_line.x = title_x_pos
-            title_line.y = 20
+            #if self.has_top_icon() and i >= 3:
+                #title_line.x -= 25
+            title_line.y = 13 + i * 15
+            
+        if len(self._title_lines) == 1:
+            self._title_lines[0].y = 20
+        #for title_line in self._title_lines:
+            #title_line.x = title_x_pos
+            #title_line.y = 20
 
-        if len(self._title_lines) >= 2:
-            if self._title_lines[0].is_little:
-                self._title_lines[0].y -= 7
-                self._title_lines[1].y += 9
-                if len(self._title_lines) >= 3:
-                    self._title_lines[2].y += 24
-            else:
-                if len(self._title_lines) == 4:
-                    self._title_lines[0].y -= 9
-                    self._title_lines[1].y += 2
-                    self._title_lines[2].y += 13
-                    self._title_lines[3].y += 24
-                else:
-                    self._title_lines[0].y -= 6
-                    self._title_lines[1].y += 9
-                    if len(self._title_lines) >= 3:
-                        self._title_lines[2].y += 24
+        #if len(self._title_lines) >= 2:
+            #if self._title_lines[0].is_little:
+                #self._title_lines[0].y -= 7
+                #self._title_lines[1].y += 9
+                #if len(self._title_lines) >= 3:
+                    #self._title_lines[2].y += 24
+            #else:
+                #if len(self._title_lines) == 4:
+                    #self._title_lines[0].y -= 9
+                    #self._title_lines[1].y += 2
+                    #self._title_lines[2].y += 13
+                    #self._title_lines[3].y += 24
+                #else:
+                    #self._title_lines[0].y -= 6
+                    #self._title_lines[1].y += 9
+                    #if len(self._title_lines) >= 3:
+                        #self._title_lines[2].y += 24
 
         max_title_size = 0
-        for title_line in self._title_lines:
-            max_title_size = max(max_title_size, title_line.size)
+        for i in range(len(self._title_lines)):
+            if i >= 2:
+                break
+            title_line = self._title_lines[i]
+            title_size = title_line.size
+            #if title_line.anti_icon:
+                #title_size -= 25
+
+            max_title_size = max(max_title_size, title_size)
+        
+        #for title_line in self._title_lines:
+            #max_title_size = max(max_title_size, title_line.size)
 
         # may draw horizontal lines around title
         # and set x on title lines
@@ -1193,8 +1220,16 @@ class CanvasBoxAbstract(QGraphicsItem):
                     int(title_x_pos + max_title_size + 5), 16,
                     int(self._width -5), 16)
 
-            for title_line in self._title_lines:
-                title_line.x = title_x_pos
+            for i in range(len(self._title_lines)):
+                title_line = self._title_lines[i]
+                if i <= 1:
+                    title_line.x = title_x_pos
+                else:
+                    title_line.x = (self._width - title_line.size) / 2
+                #if title_line.anti_icon:
+                    #title_line.x -= 28
+                #elif i == 2:
+                    #title_line.x -= 14
         else:
             left_xpos = self._width
             right_xpos = 0
@@ -1255,9 +1290,9 @@ class CanvasBoxAbstract(QGraphicsItem):
                     side = 6
                     x = 6
 
-                    ypos = self._default_header_height
-                    if len(self._title_lines) >= 3:
-                        ypos += 14
+                    ypos = self._header_height
+                    #if len(self._title_lines) >= 3:
+                        #ypos += 14
 
                     if port_mode == PORT_MODE_OUTPUT:
                         x = self._width - (x + 2 * side)
