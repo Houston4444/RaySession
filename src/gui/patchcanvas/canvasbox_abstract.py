@@ -28,7 +28,7 @@ from PyQt5.QtCore import qCritical, Qt, QPoint, QPointF, QRectF, QTimer
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
                          QLinearGradient, QPainter, QPen, QPolygonF,
                          QColor, QIcon, QPixmap, QPainterPath)
-from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
+from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication, QAction
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -211,6 +211,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._can_handle_gui = False # used for optional-gui switch
         self._gui_visible = False
 
+        self._restrict_title_lines = 0 # no title lines restriction
         self._column_disposition = COLUMNS_AUTO
         self._painter_path = QPainterPath()
         self.update_positions()
@@ -664,12 +665,13 @@ class CanvasBoxAbstract(QGraphicsItem):
         act_x_wrap = menu.addAction(wrap_title)
         act_x_wrap.setIcon(wrap_icon)
         
+        column_menu = QMenu('Disposition')
+        column_menu.setIcon(QIcon.fromTheme('view-split-left-right'))
+        act_column_auto = column_menu.addAction('Automatic')
+        act_column_one = column_menu.addAction('One column')
+        act_column_two = column_menu.addAction('Two columns')
+        
         if self._current_port_mode == PORT_MODE_INPUT + PORT_MODE_OUTPUT:
-            column_menu = QMenu('Disposition')
-            column_menu.setIcon(QIcon.fromTheme('view-split-left-right'))
-            act_column_auto = column_menu.addAction('Automatic')
-            act_column_one = column_menu.addAction('One column')
-            act_column_two = column_menu.addAction('Two columns')
             act_column_auto.setCheckable(True)
             act_column_one.setCheckable(True)
             act_column_two.setCheckable(True)
@@ -677,6 +679,39 @@ class CanvasBoxAbstract(QGraphicsItem):
             act_column_one.setChecked(bool(self._column_disposition == COLUMNS_ONE))
             act_column_two.setChecked(bool(self._column_disposition == COLUMNS_TWO))
             menu.addMenu(column_menu)
+        
+        title_lines_menu = QMenu(_translate('patchbay', 'Restrict title'))
+        title_lines_menu.setIcon(QIcon.fromTheme('text_line_spacing'))
+        titles_two = title_lines_menu.addAction(
+            _translate('patchbay', 'on 2 lines'))
+        titles_three = title_lines_menu.addAction(
+            _translate('patchbay', 'on 3 lines'))
+        titles_four = title_lines_menu.addAction(
+            _translate('patchbay', 'on 4 lines'))
+        titles_no = title_lines_menu.addAction(
+            _translate('patchbay', 'no restriction'))
+        
+        if self._restrict_title_lines or len(self._title_lines) > 2:
+            titles_two.setCheckable(True)
+            titles_three.setCheckable(True)
+            titles_four.setCheckable(True)
+            titles_no.setCheckable(True)
+            
+            if not self._restrict_title_lines:
+                titles_no.setChecked(True)
+                if len(self._title_lines) <= 4:
+                    titles_four.setVisible(False)
+                if len(self._title_lines) <= 3:
+                    titles_three.setVisible(False)
+            
+            elif self._restrict_title_lines == 2:
+                titles_two.setChecked(True)
+            elif self._restrict_title_lines == 3:
+                titles_three.setChecked(True)
+            elif self._restrict_title_lines == 4:
+                titles_four.setChecked(True)
+            
+            menu.addMenu(title_lines_menu)
         
         act_x_sep3 = menu.addSeparator()
 
@@ -751,6 +786,17 @@ class CanvasBoxAbstract(QGraphicsItem):
         elif act_selected == act_column_two:
             self._column_disposition = COLUMNS_TWO
             canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id, COLUMNS_TWO, "")
+
+        elif act_selected in (titles_two, titles_three, titles_four, titles_no):
+            if act_selected == titles_no:
+                self._restrict_title_lines = 0
+            elif act_selected == titles_two:
+                self._restrict_title_lines = 2
+            elif act_selected == titles_three:
+                self._restrict_title_lines = 3
+            elif act_selected == titles_four:
+                self._restrict_title_lines = 4
+            self.update_positions()
 
         elif act_selected == act_p_edit:
             canvas.callback(ACTION_PLUGIN_EDIT, self._plugin_id, 0, "")
