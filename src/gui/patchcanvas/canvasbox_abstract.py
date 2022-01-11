@@ -123,6 +123,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._default_header_height = 36
         self._header_height = self._default_header_height
         self._height = self._header_height + 1
+        self._ports_y_start = self._header_height
         self._ex_width = self._width
         self._ex_height = self._height
         self._ex_scene_pos = self.scenePos()
@@ -214,6 +215,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._title_on_side = False
         self._restrict_title_lines = 0 # no title lines restriction
         self._column_disposition = COLUMNS_AUTO
+        self._title_under_icon = False
         self._painter_path = QPainterPath()
         self.update_positions()
 
@@ -1220,14 +1222,18 @@ class CanvasBoxAbstract(QGraphicsItem):
         if self.has_top_icon():
             title_x_pos += 25
 
+        title_y_start = 13
+        if self._title_under_icon:
+            title_y_start += 30
+
         for i in range(len(self._title_lines)):
             title_line = self._title_lines[i]
             title_line.x = title_x_pos
             #if self.has_top_icon() and i >= 3:
                 #title_line.x -= 25
-            title_line.y = 13 + i * 15
+            title_line.y = title_y_start + i * 15
             
-        if len(self._title_lines) == 1:
+        if not self._title_under_icon and len(self._title_lines) == 1:
             self._title_lines[0].y = 20
         #for title_line in self._title_lines:
             #title_line.x = title_x_pos
@@ -1275,6 +1281,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                     title_x_pos = 4 + self._width_in + 12
                 elif self._current_port_mode == PORT_MODE_OUTPUT:
                     title_x_pos = 29 + 4
+                    #title_x_pos = self._width - self._width_out - 12 - 40
             else:
                 title_x_pos = 29 + (self._width - 29 - max_title_size) / 2
 
@@ -1288,12 +1295,16 @@ class CanvasBoxAbstract(QGraphicsItem):
                 title_line = self._title_lines[i]
                 if i <= 1:
                     title_line.x = title_x_pos
+                    if self._title_on_side:
+                        if self._current_port_mode == PORT_MODE_OUTPUT:
+                            title_line.x = self._width - self._width_out - 15 - title_line.size
                 else:
                     if self._title_on_side:
                         if self._current_port_mode == PORT_MODE_INPUT:
                             title_line.x = self._width_in + 4 + 12
                         elif self._current_port_mode == PORT_MODE_OUTPUT:
                             title_line.x = 4
+                            title_line.x = self._width - self._width_out - 15 - title_line.size
                     else:
                         title_line.x = (self._width - title_line.size) / 2
                 #if title_line.anti_icon:
@@ -1361,6 +1372,8 @@ class CanvasBoxAbstract(QGraphicsItem):
                     x = 6
 
                     ypos = self._header_height
+                    if self._title_on_side:
+                        ypos -= 12
                     #if len(self._title_lines) >= 3:
                         #ypos += 14
 
@@ -1438,9 +1451,9 @@ class CanvasBoxAbstract(QGraphicsItem):
 
             if self._current_port_mode == PORT_MODE_INPUT:
                 hardware_poly += QPointF(- lineHinting, - lineHinting)
-                hardware_poly += QPointF(- lineHinting, 34)
-                hardware_poly += QPointF(-d /2.0, 34)
-                hardware_poly += QPointF(-d, 34 - d / 2.0)
+                hardware_poly += QPointF(- lineHinting, self._ports_y_start)
+                hardware_poly += QPointF(-d /2.0, self._ports_y_start)
+                hardware_poly += QPointF(-d, self._ports_y_start - d / 2.0)
                 hardware_poly += QPointF(-d, -d / 2.0)
                 hardware_poly += QPointF(-d / 2.0, -d)
                 hardware_poly += QPointF(self._width + d/2.0, -d)
@@ -1458,9 +1471,9 @@ class CanvasBoxAbstract(QGraphicsItem):
                 hardware_poly += QPointF(self._width + lineHinting, - lineHinting)
             else:
                 hardware_poly += QPointF(self._width + lineHinting, - lineHinting)
-                hardware_poly += QPointF(self._width + lineHinting, 34)
-                hardware_poly += QPointF(self._width + d/2.0, 34)
-                hardware_poly += QPointF(self._width + d, 34 - d/2.0)
+                hardware_poly += QPointF(self._width + lineHinting, self._ports_y_start)
+                hardware_poly += QPointF(self._width + d/2.0, self._ports_y_start)
+                hardware_poly += QPointF(self._width + d, self._ports_y_start - d/2.0)
                 hardware_poly += QPointF(self._width +d, -d / 2.0)
                 hardware_poly += QPointF(self._width + d/2.0, -d)
                 hardware_poly += QPointF(-d / 2.0, -d)
@@ -1481,16 +1494,16 @@ class CanvasBoxAbstract(QGraphicsItem):
         else:
             hw_poly_top = QPolygonF()
             hw_poly_top += QPointF(-lineHinting, -lineHinting)
-            hw_poly_top += QPointF(-lineHinting, 34)
-            hw_poly_top += QPointF(-d /2.0, 34)
-            hw_poly_top += QPointF(-d, 34 - d / 2.0)
+            hw_poly_top += QPointF(-lineHinting, self._ports_y_start)
+            hw_poly_top += QPointF(-d /2.0, self._ports_y_start)
+            hw_poly_top += QPointF(-d, self._ports_y_start - d / 2.0)
             hw_poly_top += QPointF(-d, -d / 2.0)
             hw_poly_top += QPointF(-d / 2.0, -d)
             hw_poly_top += QPointF(self._width + d/2.0, -d)
             hw_poly_top += QPointF(self._width + d, -d / 2.0)
-            hw_poly_top += QPointF(self._width + d, 34 - d/2)
-            hw_poly_top += QPointF(self._width + d/2, 34)
-            hw_poly_top += QPointF(self._width + lineHinting, 34)
+            hw_poly_top += QPointF(self._width + d, self._ports_y_start - d/2)
+            hw_poly_top += QPointF(self._width + d/2, self._ports_y_start)
+            hw_poly_top += QPointF(self._width + lineHinting, self._ports_y_start)
             hw_poly_top += QPointF(self._width + lineHinting, -lineHinting)
             painter.drawPolygon(hw_poly_top)
 

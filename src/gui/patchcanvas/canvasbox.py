@@ -586,7 +586,7 @@ class CanvasBox(CanvasBoxAbstract):
                 title_lines.append(subclient_line)
         else:
             if n_lines >= 2:
-                titles = self.split_in_two(self._group_name)
+                titles = self.split_in_two(self._group_name, n_lines)
                 new_titles = []
                 for title in titles:
                     if new_titles and len(title) <= 2:
@@ -631,30 +631,43 @@ class CanvasBox(CanvasBoxAbstract):
 
         for i in range(1, 8):
             max_title_size = 0
+            max_header_width = 0
             title_lines = self._split_title(i)
 
             for j in range(len(title_lines)):
                 title_line = title_lines[j]
                 title_line_size = title_line.size
-                if self.has_top_icon() and j >= 2:
-                    title_line_size -= 25
+                #if self.has_top_icon() and j >= 2:
+                    #title_line_size -= 25
                 max_title_size = max(max_title_size, title_line_size)
 
-            header_width = max_title_size
+                header_width = title_line_size
 
-            if self.has_top_icon():
-                header_width += 37
-            else:
-                header_width += 16
+                if self.has_top_icon():
+                    if j >= 2:
+                        header_width += 12
+                    else:
+                        header_width += 37
+                else:
+                    header_width += 16
+                
+                max_header_width = max(max_header_width, header_width)
 
-            header_width =  max(200 if self._plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
-                                header_width)
+            #header_width = max_title_size
+
+            #if self.has_top_icon():
+                #header_width += 37
+            #else:
+                #header_width += 16
+            
+            max_header_width = max(200 if self._plugin_inline != self.INLINE_DISPLAY_DISABLED else 50,
+                                   max_header_width)
 
             new_title_template = title_template.copy()
             new_title_template['title_width'] = max_title_size
-            new_title_template['header_width'] = header_width
+            new_title_template['header_width'] = max_header_width
             new_title_template['header_height'] = max(
-                self._default_header_height, 15 * i + 6)
+                self._default_header_height, 15 * len(title_lines) + 6)
             all_title_templates[i] = new_title_template
 
             #if header_width < width_for_ports_one:
@@ -670,12 +683,21 @@ class CanvasBox(CanvasBoxAbstract):
         sizes_tuples = []
         
         if self._title_on_side:
+            ports_y_start_min = box_theme.port_spacing() + box_theme.port_type_spacing()
+            
             for i in range(1, lines_choice_max + 1):
                 sizes_tuples.append(
                     ((ports_width + all_title_templates[i]['header_width'])
-                     * (max(all_title_templates[i]['header_height'], height_for_ports)
-                        + box_theme.port_spacing() + box_theme.port_type_spacing()),
+                     * max(all_title_templates[i]['header_height'],
+                           height_for_ports + ports_y_start_min),
                      i, False))
+
+            for i in range(1, lines_choice_max + 1):
+                sizes_tuples.append(
+                    ((ports_width + all_title_templates[i]['title_width'] + 16)
+                     * max(all_title_templates[i]['header_height'] + 37,
+                           height_for_ports + ports_y_start_min),
+                     i, True))
         else:
             if self._column_disposition in (COLUMNS_AUTO, COLUMNS_ONE):
                 for i in range(1, lines_choice_max + 1):
@@ -729,14 +751,26 @@ class CanvasBox(CanvasBoxAbstract):
         
         box_width = 0
         box_height = 0
+        ports_y_start = header_height
+
+        self._title_under_icon = False
 
         if self._title_on_side:
             box_width = ports_width + 12 + header_width
             ports_y_start = box_theme.port_spacing() + box_theme.port_type_spacing()
             box_height = max(height_for_ports + ports_y_start, header_height)
             
+            if one_column:
+                # one_column is here falsely used to know if we
+                # should put the first title line under the icon
+                header_width = max(37, max_title_size + 16)
+                box_width = ports_width + header_width + 6
+                header_height += 37
+                box_height = max(height_for_ports + ports_y_start, header_height)
+                self._title_under_icon = True
+            
             #box_theme = self.get_theme()
-            header_height = max(ports_y_start,
+            ports_y_start = max(ports_y_start,
                                 header_height - height_for_ports)
         elif one_column:
             box_width = max(width_for_ports_one, header_width)
@@ -750,6 +784,7 @@ class CanvasBox(CanvasBoxAbstract):
                 'box_width': box_width,
                 'header_width': header_width,
                 'header_height': header_height,
+                'ports_y_start': ports_y_start,
                 'one_column': one_column}
     
     def _push_down_ports(self, down_height: int):
@@ -977,6 +1012,7 @@ class CanvasBox(CanvasBoxAbstract):
         one_column = titles_dict['one_column']
         box_width = titles_dict['box_width']
         box_height = titles_dict['box_height']
+        self._ports_y_start = titles_dict['ports_y_start']
 
         #box_height = height_for_ports
         #if one_column:
@@ -989,18 +1025,21 @@ class CanvasBox(CanvasBoxAbstract):
         #self._push_down_ports(more_height)
         
         self._width = box_width
-        last_in_pos += header_height
-        last_out_pos += header_height
+        last_in_pos += self._ports_y_start
+        last_out_pos += self._ports_y_start
         
         ports_y_segments_dict = self._set_ports_y_positions(
             port_types, align_port_types,
-            header_height,
+            self._ports_y_start,
             one_column)
         self._set_ports_x_positions(max_in_width, max_out_width)
         
         # wrapped/unwrapped sizes
         normal_height = box_height
-        wrapped_height = header_height + canvas.theme.port_height
+        wrapped_height = self._ports_y_start + canvas.theme.port_height
+        if self._title_on_side:
+            wrapped_height = header_height
+        
         self._header_height = header_height
 
         if self._wrapping:
