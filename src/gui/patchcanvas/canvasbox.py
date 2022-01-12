@@ -706,30 +706,36 @@ class CanvasBox(CanvasBoxAbstract):
         sizes_tuples = []
         
         if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
-        #if self._title_on_side:
+            # splitted box
             ports_y_start_min = box_theme.port_spacing() + box_theme.port_type_spacing()
             
+            # calculate area with title on side
             for i in range(1, lines_choice_max + 1):
                 sizes_tuples.append(
                     ((ports_width + all_title_templates[i]['header_width'])
                      * max(all_title_templates[i]['header_height'],
                            height_for_ports + ports_y_start_min),
                      i, False, TITLE_ON_SIDE))
-
+                     
+            # calculate area with title on side (title under the icon)
             for i in range(1, lines_choice_max + 1):
                 sizes_tuples.append(
                     ((ports_width + all_title_templates[i]['title_width'] + 16)
                      * max(all_title_templates[i]['header_height'] + 30,
                            height_for_ports + ports_y_start_min),
                      i, False, TITLE_ON_SIDE_UNDER_ICON))
-                     
+            
+            # calculate area with title on top
             for i in range(1, lines_choice_max + 1):
-                    sizes_tuples.append(
-                        (max(all_title_templates[i]['header_width'], width_for_ports)
-                        * (all_title_templates[i]['header_height'] + height_for_ports),
-                        i, False, TITLE_ON_TOP))
+                sizes_tuples.append(
+                    (max(all_title_templates[i]['header_width'], width_for_ports)
+                    * (all_title_templates[i]['header_height'] + height_for_ports),
+                    i, False, TITLE_ON_TOP))
             
         else:
+            # grouped box
+            
+            # calculate area with input and outputs ports descending
             if self._column_disposition in (COLUMNS_AUTO, COLUMNS_ONE):
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
@@ -737,6 +743,7 @@ class CanvasBox(CanvasBoxAbstract):
                         * (all_title_templates[i]['header_height'] + height_for_ports_one),
                         i, True, TITLE_ON_TOP))
 
+            # calculate area with input ports at left of output ports
             if self._column_disposition in (COLUMNS_AUTO, COLUMNS_TWO):
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
@@ -744,6 +751,7 @@ class CanvasBox(CanvasBoxAbstract):
                         * (all_title_templates[i]['header_height'] + height_for_ports),
                         i, False, TITLE_ON_TOP))
         
+        # sort areas and choose the first one (the littlest area)
         sizes_tuples.sort()
         area_size, lines_choice, one_column, title_on_side = sizes_tuples[0]
 
