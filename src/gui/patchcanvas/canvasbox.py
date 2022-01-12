@@ -61,9 +61,9 @@ from .canvasbox_abstract import (
     UNWRAP_BUTTON_LEFT,
     UNWRAP_BUTTON_CENTER,
     UNWRAP_BUTTON_RIGHT,
-    COLUMNS_AUTO,
-    COLUMNS_ONE,
-    COLUMNS_TWO)
+    LAYOUT_AUTO,
+    LAYOUT_HIGH,
+    LAYOUT_LARGE)
 
 _translate = QApplication.translate
 
@@ -102,7 +102,7 @@ class BoxArea:
     heigth = 0
     header_width = 0
     header_height = 0
-    column_mode = COLUMNS_AUTO
+    column_mode = LAYOUT_AUTO
     ports_in_width = 0
     ports_out_width = 0
     ports_margin = 30
@@ -687,13 +687,13 @@ class CanvasBox(CanvasBoxAbstract):
 
             last_lines_count = len(title_lines)
 
-            if self._title_on_side:
+            if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
                 continue
 
             if header_width < width_for_ports_one:
                 break
 
-            if (self._column_disposition == COLUMNS_TWO
+            if (self._layout_mode == LAYOUT_LARGE
                     and header_width < width_for_ports):
                 break
             
@@ -707,36 +707,38 @@ class CanvasBox(CanvasBoxAbstract):
         
         if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
             # splitted box
-            ports_y_start_min = box_theme.port_spacing() + box_theme.port_type_spacing()
             
-            # calculate area with title on side
-            for i in range(1, lines_choice_max + 1):
-                sizes_tuples.append(
-                    ((ports_width + all_title_templates[i]['header_width'])
-                     * max(all_title_templates[i]['header_height'],
-                           height_for_ports + ports_y_start_min),
-                     i, False, TITLE_ON_SIDE))
-                     
-            # calculate area with title on side (title under the icon)
-            for i in range(1, lines_choice_max + 1):
-                sizes_tuples.append(
-                    ((ports_width + all_title_templates[i]['title_width'] + 16)
-                     * max(all_title_templates[i]['header_height'] + 30,
-                           height_for_ports + ports_y_start_min),
-                     i, False, TITLE_ON_SIDE_UNDER_ICON))
+            if self._layout_mode in (LAYOUT_AUTO, LAYOUT_LARGE):
+                ports_y_start_min = box_theme.port_spacing() + box_theme.port_type_spacing()
+                
+                # calculate area with title on side
+                for i in range(1, lines_choice_max + 1):
+                    sizes_tuples.append(
+                        ((ports_width + all_title_templates[i]['header_width'])
+                        * max(all_title_templates[i]['header_height'],
+                            height_for_ports + ports_y_start_min),
+                        i, False, TITLE_ON_SIDE))
+                        
+                # calculate area with title on side (title under the icon)
+                for i in range(1, lines_choice_max + 1):
+                    sizes_tuples.append(
+                        ((ports_width + all_title_templates[i]['title_width'] + 16)
+                        * max(all_title_templates[i]['header_height'] + 30,
+                            height_for_ports + ports_y_start_min),
+                        i, False, TITLE_ON_SIDE_UNDER_ICON))
             
-            # calculate area with title on top
-            for i in range(1, lines_choice_max + 1):
-                sizes_tuples.append(
-                    (max(all_title_templates[i]['header_width'], width_for_ports)
-                    * (all_title_templates[i]['header_height'] + height_for_ports),
-                    i, False, TITLE_ON_TOP))
-            
+            if self._layout_mode in (LAYOUT_AUTO, LAYOUT_HIGH):
+                # calculate area with title on top
+                for i in range(1, lines_choice_max + 1):
+                    sizes_tuples.append(
+                        (max(all_title_templates[i]['header_width'], width_for_ports)
+                        * (all_title_templates[i]['header_height'] + height_for_ports),
+                        i, False, TITLE_ON_TOP))
         else:
             # grouped box
             
             # calculate area with input and outputs ports descending
-            if self._column_disposition in (COLUMNS_AUTO, COLUMNS_ONE):
+            if self._layout_mode in (LAYOUT_AUTO, LAYOUT_HIGH):
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
                         (max(all_title_templates[i]['header_width'], width_for_ports_one)
@@ -744,7 +746,7 @@ class CanvasBox(CanvasBoxAbstract):
                         i, True, TITLE_ON_TOP))
 
             # calculate area with input ports at left of output ports
-            if self._column_disposition in (COLUMNS_AUTO, COLUMNS_TWO):
+            if self._layout_mode in (LAYOUT_AUTO, LAYOUT_LARGE):
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
                         (max(all_title_templates[i]['header_width'], width_for_ports)
@@ -752,6 +754,7 @@ class CanvasBox(CanvasBoxAbstract):
                         i, False, TITLE_ON_TOP))
         
         # sort areas and choose the first one (the littlest area)
+        print('tt', self._group_name, self._current_port_mode, sizes_tuples)
         sizes_tuples.sort()
         area_size, lines_choice, one_column, title_on_side = sizes_tuples[0]
 
@@ -760,6 +763,17 @@ class CanvasBox(CanvasBoxAbstract):
         header_height = all_title_templates[lines_choice]['header_height']
         header_width = all_title_templates[lines_choice]['header_width']
         max_title_size = all_title_templates[lines_choice]['title_width']
+        
+        if self._current_port_mode == PORT_MODE_INPUT + PORT_MODE_OUTPUT:
+            if one_column:
+                self._current_layout_mode = LAYOUT_HIGH
+            else:
+                self._current_layout_mode = LAYOUT_LARGE
+        else:
+            if title_on_side:
+                self._current_layout_mode = LAYOUT_LARGE
+            else:
+                self._current_layout_mode = LAYOUT_HIGH
         
         box_width = 0
         box_height = 0

@@ -82,9 +82,9 @@ UNWRAP_BUTTON_LEFT = 1
 UNWRAP_BUTTON_CENTER = 2
 UNWRAP_BUTTON_RIGHT = 3
 
-COLUMNS_AUTO = 0
-COLUMNS_ONE = 1
-COLUMNS_TWO = 2
+LAYOUT_AUTO = 0
+LAYOUT_HIGH = 1
+LAYOUT_LARGE = 2
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -214,7 +214,8 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         self._title_on_side = False
         self._restrict_title_lines = 0 # no title lines restriction
-        self._column_disposition = COLUMNS_AUTO
+        self._layout_mode = LAYOUT_AUTO
+        self._current_layout_mode = LAYOUT_LARGE
         self._title_under_icon = False
         self._painter_path = QPainterPath()
         self.update_positions()
@@ -478,7 +479,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                 wanted_direction=DIRECTION_DOWN)
     
     def set_column_mode(self, column_mode:int):
-        self._column_disposition = column_mode
+        self._layout_mode = column_mode
 
     def update_positions(self, even_animated=False):
         # see canvasbox.py
@@ -668,61 +669,30 @@ class CanvasBoxAbstract(QGraphicsItem):
         act_x_wrap = menu.addAction(wrap_title)
         act_x_wrap.setIcon(wrap_icon)
         
-        column_menu = QMenu('Disposition')
-        column_menu.setIcon(QIcon.fromTheme('view-split-left-right'))
-        act_column_auto = column_menu.addAction('Automatic')
-        act_column_one = column_menu.addAction('One column')
-        act_column_two = column_menu.addAction('Two columns')
+        #column_menu = QMenu('Disposition')
+        #column_menu.setIcon(QIcon.fromTheme('view-split-left-right'))
+        #act_column_auto = column_menu.addAction('Automatic')
+        #act_column_one = column_menu.addAction('One column')
+        #act_column_two = column_menu.addAction('Two columns')
         
-        if self._current_port_mode == PORT_MODE_INPUT + PORT_MODE_OUTPUT:
-            act_column_auto.setCheckable(True)
-            act_column_one.setCheckable(True)
-            act_column_two.setCheckable(True)
-            act_column_auto.setChecked(bool(self._column_disposition == COLUMNS_AUTO))
-            act_column_one.setChecked(bool(self._column_disposition == COLUMNS_ONE))
-            act_column_two.setChecked(bool(self._column_disposition == COLUMNS_TWO))
-            menu.addMenu(column_menu)
-        
-        title_lines_menu = QMenu(_translate('patchbay', 'Restrict title'))
-        title_lines_menu.setIcon(QIcon.fromTheme('text_line_spacing'))
-        titles_two = title_lines_menu.addAction(
-            _translate('patchbay', 'on 2 lines'))
-        titles_three = title_lines_menu.addAction(
-            _translate('patchbay', 'on 3 lines'))
-        titles_four = title_lines_menu.addAction(
-            _translate('patchbay', 'on 4 lines'))
-        titles_no = title_lines_menu.addAction(
-            _translate('patchbay', 'no restriction'))
-        
-        if self._restrict_title_lines or len(self._title_lines) > 2:
-            titles_two.setCheckable(True)
-            titles_three.setCheckable(True)
-            titles_four.setCheckable(True)
-            titles_no.setCheckable(True)
+        #if self._current_port_mode == PORT_MODE_INPUT + PORT_MODE_OUTPUT:
+            #act_column_auto.setCheckable(True)
+            #act_column_one.setCheckable(True)
+            #act_column_two.setCheckable(True)
+            #act_column_auto.setChecked(bool(self._layout_mode == LAYOUT_AUTO))
+            #act_column_one.setChecked(bool(self._layout_mode == LAYOUT_HIGH))
+            #act_column_two.setChecked(bool(self._layout_mode == LAYOUT_LARGE))
+            #menu.addMenu(column_menu)
             
-            if not self._restrict_title_lines:
-                titles_no.setChecked(True)
-                if len(self._title_lines) <= 4:
-                    titles_four.setVisible(False)
-                if len(self._title_lines) <= 3:
-                    titles_three.setVisible(False)
-            
-            elif self._restrict_title_lines == 2:
-                titles_two.setChecked(True)
-            elif self._restrict_title_lines == 3:
-                titles_three.setChecked(True)
-            elif self._restrict_title_lines == 4:
-                titles_four.setChecked(True)
-            
-            menu.addMenu(title_lines_menu)
-        
-        act_title_on_side = QAction()
-        
-        if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
-            act_title_on_side = menu.addAction('Title on side')
-            act_title_on_side.setCheckable(True)
-            act_title_on_side.setChecked(self._title_on_side)
-        
+        act_auto_disposition = menu.addAction(
+            _translate('patchbay', 'Automatic disposition'))
+        act_auto_disposition.setVisible(self._layout_mode != LAYOUT_AUTO)
+        act_auto_disposition.setIcon(QIcon.fromTheme('auto-scale-x'))
+
+        act_switch_disposition = menu.addAction(
+            _translate('patchbay', 'Change disposition'))
+        act_switch_disposition.setIcon(QIcon.fromTheme('view-split-left-right'))
+
         act_x_sep3 = menu.addSeparator()
 
         if not features.group_info:
@@ -785,32 +755,17 @@ class CanvasBoxAbstract(QGraphicsItem):
             else:
                 canvas.callback(ACTION_GROUP_SPLIT, self._group_id, 0, "")
 
-        elif act_selected == act_column_auto:
-            self._column_disposition = COLUMNS_AUTO
-            canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id, COLUMNS_AUTO, "")
-        
-        elif act_selected == act_column_one:
-            self._column_disposition = COLUMNS_ONE
-            canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id, COLUMNS_ONE, "")
+        elif act_selected == act_auto_disposition:
+            canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id,
+                            LAYOUT_AUTO, "")
 
-        elif act_selected == act_column_two:
-            self._column_disposition = COLUMNS_TWO
-            canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id, COLUMNS_TWO, "")
-
-        elif act_selected in (titles_two, titles_three, titles_four, titles_no):
-            if act_selected == titles_no:
-                self._restrict_title_lines = 0
-            elif act_selected == titles_two:
-                self._restrict_title_lines = 2
-            elif act_selected == titles_three:
-                self._restrict_title_lines = 3
-            elif act_selected == titles_four:
-                self._restrict_title_lines = 4
-            self.update_positions()
-
-        elif act_selected == act_title_on_side:
-            self._title_on_side = not self._title_on_side
-            self.update_positions()
+        elif act_selected == act_switch_disposition:
+            next_disposition = LAYOUT_HIGH
+            if self._current_layout_mode == LAYOUT_HIGH:
+                next_disposition = LAYOUT_LARGE
+            
+            canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id,
+                            next_disposition, "")
 
         elif act_selected == act_p_edit:
             canvas.callback(ACTION_PLUGIN_EDIT, self._plugin_id, 0, "")
@@ -1142,6 +1097,15 @@ class CanvasBoxAbstract(QGraphicsItem):
         # Draw toggle GUI client button
         if self._can_handle_gui:
             header_rect = QRectF(3, 3, self._width - 6, self._header_height - 6)
+            if self._current_layout_mode == LAYOUT_LARGE:
+                if self._current_port_mode == PORT_MODE_INPUT:
+                    header_rect = QRectF(
+                        self._width_in + 3 + 9, 3,
+                        self._width - self._width_in - 9 - 6, self._header_height -6)
+                elif self._current_port_mode == PORT_MODE_OUTPUT:
+                    header_rect = QRectF(
+                        3, 3, self._width - self._width_out - 9 - 6, self._header_height -6)
+            
             header_rect.adjust(line_hinting * 2, line_hinting * 2,
                                -2 * line_hinting, -2 * line_hinting)
             
@@ -1161,9 +1125,16 @@ class CanvasBoxAbstract(QGraphicsItem):
                 painter.drawRoundedRect(header_rect, radius, radius)
 
             painter.setPen(gui_theme.fill_pen())
-            painter.drawLine(
-                QPointF(4.5, self._header_height - 3.5),
-                QPointF(self._width - 3.5, self._header_height - 3.5))
+            
+            line_start = QPointF(4.5, self._header_height - 4.5)
+            line_end = QPointF(self._width - 4.5, self._header_height - 4.5)
+            if self._current_layout_mode == LAYOUT_LARGE:
+                if self._current_port_mode == PORT_MODE_INPUT:
+                    line_start.setX(self._width_in + 9 + 4.5)
+                elif self._current_port_mode == PORT_MODE_OUTPUT:
+                    line_end.setX(self._width - self._width_out - 9 - 4.5)
+            
+            painter.drawLine(line_start, line_end)
 
         # draw Pipewire Monitor decorations
         elif self._group_name.endswith(' Monitor'):
