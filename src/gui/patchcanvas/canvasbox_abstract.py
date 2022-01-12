@@ -530,6 +530,11 @@ class CanvasBoxAbstract(QGraphicsItem):
         
         self.setOpacity(canvas.semi_hide_opacity)
 
+    def _has_side_title(self):
+        return bool(
+            self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT)
+            and self._current_layout_mode == LAYOUT_LARGE)
+
     def type(self):
         return CanvasBoxType
 
@@ -1097,7 +1102,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         # Draw toggle GUI client button
         if self._can_handle_gui:
             header_rect = QRectF(3, 3, self._width - 6, self._header_height - 6)
-            if self._current_layout_mode == LAYOUT_LARGE:
+            if self._has_side_title():
                 if self._current_port_mode == PORT_MODE_INPUT:
                     header_rect = QRectF(
                         self._width_in + 3 + 9, 3,
@@ -1200,33 +1205,10 @@ class CanvasBoxAbstract(QGraphicsItem):
         for i in range(len(self._title_lines)):
             title_line = self._title_lines[i]
             title_line.x = title_x_pos
-            #if self.has_top_icon() and i >= 3:
-                #title_line.x -= 25
             title_line.y = title_y_start + i * 15
             
         if not self._title_under_icon and len(self._title_lines) == 1:
             self._title_lines[0].y = 20
-        #for title_line in self._title_lines:
-            #title_line.x = title_x_pos
-            #title_line.y = 20
-
-        #if len(self._title_lines) >= 2:
-            #if self._title_lines[0].is_little:
-                #self._title_lines[0].y -= 7
-                #self._title_lines[1].y += 9
-                #if len(self._title_lines) >= 3:
-                    #self._title_lines[2].y += 24
-            #else:
-                #if len(self._title_lines) == 4:
-                    #self._title_lines[0].y -= 9
-                    #self._title_lines[1].y += 2
-                    #self._title_lines[2].y += 13
-                    #self._title_lines[3].y += 24
-                #else:
-                    #self._title_lines[0].y -= 6
-                    #self._title_lines[1].y += 9
-                    #if len(self._title_lines) >= 3:
-                        #self._title_lines[2].y += 24
 
         max_title_size = 0
         for i in range(len(self._title_lines)):
@@ -1234,29 +1216,22 @@ class CanvasBoxAbstract(QGraphicsItem):
                 break
             title_line = self._title_lines[i]
             title_size = title_line.size
-            #if title_line.anti_icon:
-                #title_size -= 25
-
             max_title_size = max(max_title_size, title_size)
-        
-        #for title_line in self._title_lines:
-            #max_title_size = max(max_title_size, title_line.size)
 
         # may draw horizontal lines around title
         # and set x on title lines
         painter.setPen(hltheme.fill_pen())
 
         if self.has_top_icon():
-            if self._title_on_side:
+            if self._has_side_title():
                 if self._current_port_mode == PORT_MODE_INPUT:
                     title_x_pos = 4 + self._width_in + 12
                 elif self._current_port_mode == PORT_MODE_OUTPUT:
                     title_x_pos = 29 + 4
-                    #title_x_pos = self._width - self._width_out - 12 - 40
             else:
                 title_x_pos = 29 + (self._width - 29 - max_title_size) / 2
 
-            if not self._title_on_side and title_x_pos > 43:
+            if not self._has_side_title() and title_x_pos > 43:
                 painter.drawLine(5, 16, int(title_x_pos -29 -5), 16)
                 painter.drawLine(
                     int(title_x_pos + max_title_size + 5), 16,
@@ -1266,11 +1241,11 @@ class CanvasBoxAbstract(QGraphicsItem):
                 title_line = self._title_lines[i]
                 if i <= 1:
                     title_line.x = title_x_pos
-                    if self._title_on_side:
+                    if self._has_side_title():
                         if self._current_port_mode == PORT_MODE_OUTPUT:
                             title_line.x = self._width - self._width_out - 15 - title_line.size
                 else:
-                    if self._title_on_side:
+                    if self._has_side_title():
                         if self._current_port_mode == PORT_MODE_INPUT:
                             title_line.x = self._width_in + 4 + 12
                         elif self._current_port_mode == PORT_MODE_OUTPUT:
@@ -1278,20 +1253,22 @@ class CanvasBoxAbstract(QGraphicsItem):
                             title_line.x = self._width - self._width_out - 15 - title_line.size
                     else:
                         title_line.x = (self._width - title_line.size) / 2
-                #if title_line.anti_icon:
-                    #title_line.x -= 28
-                #elif i == 2:
-                    #title_line.x -= 14
         else:
             left_xpos = self._width
             right_xpos = 0
 
             for title_line in self._title_lines:
-                title_line.x = (self._width - title_line.size) / 2
+                if self._has_side_title():
+                    if self._current_port_mode == PORT_MODE_INPUT:
+                        title_line.x = self._width_in + 4 + 12
+                    else:
+                        title_line.x = self._width - self._width_out - 15 - title_line.size
+                else:
+                    title_line.x = (self._width - title_line.size) / 2
                 left_xpos = min(left_xpos, title_line.x)
                 right_xpos = max(right_xpos, title_line.x + title_line.size)
 
-            if left_xpos > 10:
+            if not self._has_side_title() and left_xpos > 10:
                 painter.drawLine(5, 16, int(left_xpos - 5), 16)
                 painter.drawLine(int(right_xpos + 5), 16,
                                  int(self._width - 5), 16)
