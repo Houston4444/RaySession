@@ -146,6 +146,8 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._icon_name = icon_name
 
         self._title_lines = []
+        self._header_line_left = None
+        self._header_line_right = None
         
         self._wrapped = False
         self._wrapping = False
@@ -1181,85 +1183,29 @@ class CanvasBoxAbstract(QGraphicsItem):
 
             painter.drawPolygon(mon_poly)
         
-        # Draw text
-        title_x_pos = 8
-        if self.has_top_icon():
-            title_x_pos += 25
+        ## Draw text
+        #title_x_pos = 8
+        #if self.has_top_icon():
+            #title_x_pos += 25
 
-        title_y_start = 13
-        if self._title_under_icon:
-            title_y_start += 30
+        #title_y_start = 13
+        #if self._title_under_icon:
+            #title_y_start += 30
 
+        #max_title_size = 0
         #for i in range(len(self._title_lines)):
+            #if i >= 2:
+                #break
             #title_line = self._title_lines[i]
-            #title_line.x = title_x_pos
-            #title_line.y = title_y_start + i * 15
-            
-        #if not self._title_under_icon and len(self._title_lines) == 1:
-            #self._title_lines[0].y = 20
+            #title_size = title_line.size
+            #max_title_size = max(max_title_size, title_size)
 
-        max_title_size = 0
-        for i in range(len(self._title_lines)):
-            if i >= 2:
-                break
-            title_line = self._title_lines[i]
-            title_size = title_line.size
-            max_title_size = max(max_title_size, title_size)
-
-        # may draw horizontal lines around title
-        # and set x on title lines
-        painter.setPen(hltheme.fill_pen())
-
-        if self.has_top_icon():
-            if self._has_side_title():
-                if self._current_port_mode == PORT_MODE_INPUT:
-                    title_x_pos = 4 + self._width_in + 12
-                elif self._current_port_mode == PORT_MODE_OUTPUT:
-                    title_x_pos = 29 + 4
-            else:
-                title_x_pos = 29 + (self._width - 29 - max_title_size) / 2
-
-            if not self._has_side_title() and title_x_pos > 43:
-                painter.drawLine(5, 16, int(title_x_pos -29 -5), 16)
-                painter.drawLine(
-                    int(title_x_pos + max_title_size + 5), 16,
-                    int(self._width -5), 16)
-
-            #for i in range(len(self._title_lines)):
-                #title_line = self._title_lines[i]
-                #if i <= 1:
-                    #title_line.x = title_x_pos
-                    #if self._has_side_title():
-                        #if self._current_port_mode == PORT_MODE_OUTPUT:
-                            #title_line.x = self._width - self._width_out - 15 - title_line.size
-                #else:
-                    #if self._has_side_title():
-                        #if self._current_port_mode == PORT_MODE_INPUT:
-                            #title_line.x = self._width_in + 4 + 12
-                        #elif self._current_port_mode == PORT_MODE_OUTPUT:
-                            #title_line.x = 4
-                            #title_line.x = self._width - self._width_out - 15 - title_line.size
-                    #else:
-                        #title_line.x = (self._width - title_line.size) / 2
-        else:
-            left_xpos = self._width
-            right_xpos = 0
-
-            for title_line in self._title_lines:
-                #if self._has_side_title():
-                    #if self._current_port_mode == PORT_MODE_INPUT:
-                        #title_line.x = self._width_in + 4 + 12
-                    #else:
-                        #title_line.x = self._width - self._width_out - 15 - title_line.size
-                #else:
-                    #title_line.x = (self._width - title_line.size) / 2
-                left_xpos = min(left_xpos, title_line.x)
-                right_xpos = max(right_xpos, title_line.x + title_line.size)
-
-            if not self._has_side_title() and left_xpos > 10:
-                painter.drawLine(5, 16, int(left_xpos - 5), 16)
-                painter.drawLine(int(right_xpos + 5), 16,
-                                 int(self._width - 5), 16)
+        # may draw horizontal lines around title (header lines)
+        if (self._header_line_left is not None
+                and self._header_line_right is not None):
+            painter.setPen(hltheme.fill_pen())
+            painter.drawLine(*self._header_line_left)
+            painter.drawLine(*self._header_line_right)
 
         painter.setPen(theme.text_color())
 
@@ -1355,7 +1301,6 @@ class CanvasBoxAbstract(QGraphicsItem):
             triangle += QPointF(x + side, ypos -side + 2)
             painter.drawPolygon(triangle)
 
-        #self.repaint_lines()
         painter.restore()
 
     def _paint_hardware_rack(self, painter, lineHinting):
