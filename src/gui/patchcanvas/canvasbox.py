@@ -647,6 +647,7 @@ class CanvasBox(CanvasBoxAbstract):
             ports_width = ports_out_width
 
         box_theme = self.get_theme()
+        font_size = box_theme.font().pixelSize()
 
         # Check Text Name size
         title_template = {"title_width": 0, "header_width": 0,
@@ -679,7 +680,8 @@ class CanvasBox(CanvasBoxAbstract):
             new_title_template['title_width'] = max_title_size
             new_title_template['header_width'] = max_header_width
             new_title_template['header_height'] = max(
-                self._default_header_height, 15 * len(title_lines) + 6)
+                self._default_header_height,
+                int(font_size * 1.4) * len(title_lines) + 2)
             all_title_templates[i] = new_title_template
 
             if i > 2 and len(title_lines) <= last_lines_count:
@@ -754,7 +756,7 @@ class CanvasBox(CanvasBoxAbstract):
                         i, False, TITLE_ON_TOP))
         
         # sort areas and choose the first one (the littlest area)
-        print('tt', self._group_name, self._current_port_mode, sizes_tuples)
+        #print('tt', self._group_name, self._current_port_mode, sizes_tuples)
         sizes_tuples.sort()
         area_size, lines_choice, one_column, title_on_side = sizes_tuples[0]
 
@@ -891,6 +893,118 @@ class CanvasBox(CanvasBoxAbstract):
                         port.widget.setX(inX)
                     elif port.port_mode == PORT_MODE_OUTPUT:
                         port.widget.setX(out_in_portgrpX)
+    
+    def _set_title_positions(self):
+        # Draw text
+        box_theme = self.get_theme()
+        font_size = box_theme.font().pixelSize()
+        
+        # set title lines Y position
+        title_y_start = font_size + 2
+        if self._title_under_icon:
+            title_y_start += 30
+        
+        for i in range(len(self._title_lines)):
+            title_line = self._title_lines[i]
+            title_line.y = title_y_start + i * int(font_size * 1.4)
+        
+        if not self._title_under_icon and len(self._title_lines) == 1:
+            self._title_lines[0].y = int(
+                (self._header_height - font_size) / 2 + font_size - 3)
+        
+        if self._has_side_title():
+            y_correction = 0
+
+            if (self._title_lines
+                    and not self._title_under_icon
+                    and self._title_lines[-1].y + int(font_size * 1.4) > self._height):
+                
+                y_correction = int((self._height - self._title_lines[-1].y - 2) / 2 - 2)
+                print('dkdk', self._group_name, y_correction, self._height, self._title_lines[-1].y)
+            else:
+                print('abssku', self._title_under_icon, self._title_lines[-1].y, font_size, self._height)
+                
+            for title_line in self._title_lines:
+                if self._current_port_mode == PORT_MODE_INPUT:
+                    title_line.x = 4 + self._width_in + 12
+                elif self._current_port_mode == PORT_MODE_OUTPUT:
+                    title_line.x = (self._width - self._width_out
+                                    - 15 - title_line.size)
+                
+                title_line.y += y_correction
+            return
+        
+        max_title_size = 0
+        for title_line in self._title_lines:
+            title_size = title_line.size
+            if self.has_top_icon() and title_line.y <= 29 + font_size:
+                # title line is beside icon
+                title_size += 29
+            max_title_size = max(max_title_size, title_size)
+        
+        for title_line in self._title_lines:
+            if self.has_top_icon() and title_line.y <= 29 + font_size:
+                title_line.x = int((self._width - max_title_size) / 2 + 29)
+            else:
+                title_line.x = int((self._width - title_line.size) / 2)
+
+
+        #title_x_pos = 8
+        #if self.has_top_icon():
+            #title_x_pos += 25
+
+        #title_y_start = font_size + 2
+        #if self._title_under_icon:
+            #title_y_start += 30
+
+        #for i in range(len(self._title_lines)):
+            #title_line = self._title_lines[i]
+            #title_line.x = title_x_pos
+            #title_line.y = title_y_start + i * int(font_size * 1.4)
+            
+        #if not self._title_under_icon and len(self._title_lines) == 1:
+            #self._title_lines[0].y = 20
+
+        #max_title_size = 0
+        #for title_line in self._title_lines:
+            #max_title_size = max(max_title_size, title_line.size)
+
+        #if self.has_top_icon():
+            #if self._has_side_title():
+                #if self._current_port_mode == PORT_MODE_INPUT:
+                    #title_x_pos = 4 + self._width_in + 12
+                #elif self._current_port_mode == PORT_MODE_OUTPUT:
+                    #title_x_pos = 29 + 4
+            #else:
+                #title_x_pos = 29 + (self._width - 29 - max_title_size) / 2
+
+            #for i in range(len(self._title_lines)):
+                #title_line = self._title_lines[i]
+                #if i <= 1:
+                    #title_line.x = title_x_pos
+                    #if self._has_side_title():
+                        #if self._current_port_mode == PORT_MODE_OUTPUT:
+                            #title_line.x = (self._width - self._width_out
+                                            #- 15 - title_line.size)
+                #else:
+                    #if self._has_side_title():
+                        #if self._current_port_mode == PORT_MODE_INPUT:
+                            #title_line.x = self._width_in + 4 + 12
+                        #elif self._current_port_mode == PORT_MODE_OUTPUT:
+                            #title_line.x = (self._width - self._width_out
+                                            #- 15 - title_line.size)
+                    #else:
+                        #title_line.x = (self._width - title_line.size) / 2
+        #else:
+            #for title_line in self._title_lines:
+                #if self._has_side_title():
+                    #if self._current_port_mode == PORT_MODE_INPUT:
+                        #title_line.x = self._width_in + 4 + 12
+                    #else:
+                        #title_line.x = (self._width - self._width_out
+                                        #- 15 - title_line.size)
+                #else:
+                    #title_line.x = (self._width - title_line.size) / 2
     
     def build_painter_path(self, pos_dict):
         input_segments = pos_dict['input_segments']
@@ -1116,6 +1230,8 @@ class CanvasBox(CanvasBoxAbstract):
                     self.top_icon.align_at(4)
             else:
                 self.top_icon.align_at((self._width - max_title_size - 29)/2)
+        
+        self._set_title_positions()
         
         self.build_painter_path(ports_y_segments_dict)
         

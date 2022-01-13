@@ -1202,13 +1202,13 @@ class CanvasBoxAbstract(QGraphicsItem):
         if self._title_under_icon:
             title_y_start += 30
 
-        for i in range(len(self._title_lines)):
-            title_line = self._title_lines[i]
-            title_line.x = title_x_pos
-            title_line.y = title_y_start + i * 15
+        #for i in range(len(self._title_lines)):
+            #title_line = self._title_lines[i]
+            #title_line.x = title_x_pos
+            #title_line.y = title_y_start + i * 15
             
-        if not self._title_under_icon and len(self._title_lines) == 1:
-            self._title_lines[0].y = 20
+        #if not self._title_under_icon and len(self._title_lines) == 1:
+            #self._title_lines[0].y = 20
 
         max_title_size = 0
         for i in range(len(self._title_lines)):
@@ -1237,34 +1237,34 @@ class CanvasBoxAbstract(QGraphicsItem):
                     int(title_x_pos + max_title_size + 5), 16,
                     int(self._width -5), 16)
 
-            for i in range(len(self._title_lines)):
-                title_line = self._title_lines[i]
-                if i <= 1:
-                    title_line.x = title_x_pos
-                    if self._has_side_title():
-                        if self._current_port_mode == PORT_MODE_OUTPUT:
-                            title_line.x = self._width - self._width_out - 15 - title_line.size
-                else:
-                    if self._has_side_title():
-                        if self._current_port_mode == PORT_MODE_INPUT:
-                            title_line.x = self._width_in + 4 + 12
-                        elif self._current_port_mode == PORT_MODE_OUTPUT:
-                            title_line.x = 4
-                            title_line.x = self._width - self._width_out - 15 - title_line.size
-                    else:
-                        title_line.x = (self._width - title_line.size) / 2
+            #for i in range(len(self._title_lines)):
+                #title_line = self._title_lines[i]
+                #if i <= 1:
+                    #title_line.x = title_x_pos
+                    #if self._has_side_title():
+                        #if self._current_port_mode == PORT_MODE_OUTPUT:
+                            #title_line.x = self._width - self._width_out - 15 - title_line.size
+                #else:
+                    #if self._has_side_title():
+                        #if self._current_port_mode == PORT_MODE_INPUT:
+                            #title_line.x = self._width_in + 4 + 12
+                        #elif self._current_port_mode == PORT_MODE_OUTPUT:
+                            #title_line.x = 4
+                            #title_line.x = self._width - self._width_out - 15 - title_line.size
+                    #else:
+                        #title_line.x = (self._width - title_line.size) / 2
         else:
             left_xpos = self._width
             right_xpos = 0
 
             for title_line in self._title_lines:
-                if self._has_side_title():
-                    if self._current_port_mode == PORT_MODE_INPUT:
-                        title_line.x = self._width_in + 4 + 12
-                    else:
-                        title_line.x = self._width - self._width_out - 15 - title_line.size
-                else:
-                    title_line.x = (self._width - title_line.size) / 2
+                #if self._has_side_title():
+                    #if self._current_port_mode == PORT_MODE_INPUT:
+                        #title_line.x = self._width_in + 4 + 12
+                    #else:
+                        #title_line.x = self._width - self._width_out - 15 - title_line.size
+                #else:
+                    #title_line.x = (self._width - title_line.size) / 2
                 left_xpos = min(left_xpos, title_line.x)
                 right_xpos = max(right_xpos, title_line.x + title_line.size)
 
