@@ -6,11 +6,15 @@ voir : canvas initial_pos
 trigger_disconnect portgroup
 
 
-monitor_color (dans le body)
-
-"edit theme" button
-fix round corner bug
-finish Dark Modern and Silver Gold
-save choosen theme in settings
+finish Silver Gold
 
 transport controls
+
+theme Purples ne s'ouvre plus
+#gui button trop près des ports
+définir positions des lignes jaunes dans l'update
+header plus petit sans icone, et avec icone et une seule ligne
+texte des ports sans nom de portgroup
+sauvegarde du layout mode (séparé splitted/grouped)
+couleur coupeur de texte si pas de bordure de port
+

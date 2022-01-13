@@ -1105,11 +1105,11 @@ class CanvasBoxAbstract(QGraphicsItem):
             if self._has_side_title():
                 if self._current_port_mode == PORT_MODE_INPUT:
                     header_rect = QRectF(
-                        self._width_in + 3 + 9, 3,
-                        self._width - self._width_in - 9 - 6, self._header_height -6)
+                        self._width_in + 3 + 11, 3,
+                        self._width - self._width_in - 11 - 6, self._header_height -6)
                 elif self._current_port_mode == PORT_MODE_OUTPUT:
                     header_rect = QRectF(
-                        3, 3, self._width - self._width_out - 9 - 6, self._header_height -6)
+                        3, 3, self._width - self._width_out - 11 - 6, self._header_height - 6)
             
             header_rect.adjust(line_hinting * 2, line_hinting * 2,
                                -2 * line_hinting, -2 * line_hinting)
@@ -1121,25 +1121,13 @@ class CanvasBoxAbstract(QGraphicsItem):
                 gui_theme = gui_theme.gui_hidden
             
             painter.setBrush(gui_theme.background_color())
-            painter.setPen(Qt.NoPen)
+            painter.setPen(gui_theme.fill_pen())
             
             radius = gui_theme.border_radius()
             if radius == 0.0:
                 painter.drawRect(header_rect)
             else:
                 painter.drawRoundedRect(header_rect, radius, radius)
-
-            painter.setPen(gui_theme.fill_pen())
-            
-            line_start = QPointF(4.5, self._header_height - 4.5)
-            line_end = QPointF(self._width - 4.5, self._header_height - 4.5)
-            if self._current_layout_mode == LAYOUT_LARGE:
-                if self._current_port_mode == PORT_MODE_INPUT:
-                    line_start.setX(self._width_in + 9 + 4.5)
-                elif self._current_port_mode == PORT_MODE_OUTPUT:
-                    line_end.setX(self._width - self._width_out - 9 - 4.5)
-            
-            painter.drawLine(line_start, line_end)
 
         # draw Pipewire Monitor decorations
         elif self._group_name.endswith(' Monitor'):

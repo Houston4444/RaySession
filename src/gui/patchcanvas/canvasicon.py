@@ -108,13 +108,10 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
 
         return self.icon.isNull()
 
-    def align_at(self, x_pos: int):
-        self.x_offset = x_pos
-        self.setOffset(float(self.x_offset), self.y_offset)
-
-    def align_right(self, width: int):
-        self.x_offset = width - 28
-        self.setOffset(float(self.x_offset), self.y_offset)
+    def set_pos(self, x: int, y: int):
+        self.x_offset = x
+        self.y_offset = y
+        self.setOffset(float(self.x_offset), float(self.y_offset))
         
     def type(self):
         return CanvasIconType
@@ -216,11 +213,8 @@ class CanvasSvgIcon(QGraphicsSvgItem):
     def is_null(self)->bool:
         return False
 
-    def align_at(self, x_pos: int):
-        self._size = QRectF(x_pos, 4, 24, 24)
-
-    def align_right(self, width: int):
-        self._size = QRectF(width - 28, 4, 24, 24)
+    def set_pos(self, x: int, y: int):
+        self._size = QRectF(x, y, 24, 24)
 
     def boundingRect(self):
         return self._size

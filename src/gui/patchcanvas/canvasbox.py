@@ -663,25 +663,32 @@ class CanvasBox(CanvasBoxAbstract):
                 max_header_width = 200
 
             title_lines = self._split_title(i)
+            
+            title_line_y_start = 2 + font_size
 
             for j in range(len(title_lines)):
                 title_line = title_lines[j]
+                title_line.y = title_line_y_start + j * int(font_size * 1.4)
                 max_title_size = max(max_title_size, title_line.size)
-                header_width = title_line.size
+                header_width = title_line.size + 12
 
-                if self.has_top_icon():
-                    header_width += 12 if j >= 2 else 37
-                else:
-                    header_width += 16
-                
+                if self.has_top_icon() and title_line.y <= 28 + font_size:
+                    header_width += 28
+
                 max_header_width = max(max_header_width, header_width)
+            
+            header_height = max(
+                self._default_header_height,
+                2 + font_size + int(font_size * 1.4) * (len(title_lines) - 1) + 2 + 5)
+            
+            if self._can_handle_gui:
+                max_header_width += 4
+                header_height += 4
 
             new_title_template = title_template.copy()
             new_title_template['title_width'] = max_title_size
             new_title_template['header_width'] = max_header_width
-            new_title_template['header_height'] = max(
-                self._default_header_height,
-                int(font_size * 1.4) * len(title_lines) + 2)
+            new_title_template['header_height'] = header_height
             all_title_templates[i] = new_title_template
 
             if i > 2 and len(title_lines) <= last_lines_count:
@@ -725,7 +732,7 @@ class CanvasBox(CanvasBoxAbstract):
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
                         ((ports_width + all_title_templates[i]['title_width'] + 16)
-                        * max(all_title_templates[i]['header_height'] + 30,
+                        * max(all_title_templates[i]['header_height'] + 28,
                             height_for_ports + ports_y_start_min),
                         i, False, TITLE_ON_SIDE_UNDER_ICON))
             
@@ -790,8 +797,11 @@ class CanvasBox(CanvasBoxAbstract):
             box_height = max(height_for_ports + ports_y_start, header_height)
             
             if title_on_side == TITLE_ON_SIDE_UNDER_ICON:
-                header_width = max(37, max_title_size + 16)
-                box_width = ports_width + header_width + 6
+                header_width = max(38, max_title_size + 12)
+                if self._can_handle_gui:
+                    header_width += 4
+
+                box_width = ports_width + header_width + 12
                 header_height += 15 if len(self._title_lines) == 1 else 30
                 box_height = max(height_for_ports + ports_y_start, header_height)
 
@@ -895,14 +905,15 @@ class CanvasBox(CanvasBoxAbstract):
                         port.widget.setX(out_in_portgrpX)
     
     def _set_title_positions(self):
-        # Draw text
         box_theme = self.get_theme()
         font_size = box_theme.font().pixelSize()
+        gui_spacing = 2 if self._can_handle_gui else 0
         
         # set title lines Y position
-        title_y_start = font_size + 2
+        title_y_start = font_size + 2 + gui_spacing
+
         if self._title_under_icon:
-            title_y_start += 30
+            title_y_start = 4 + gui_spacing + 24 + int(font_size * 1.4)
         
         for i in range(len(self._title_lines)):
             title_line = self._title_lines[i]
@@ -910,101 +921,67 @@ class CanvasBox(CanvasBoxAbstract):
         
         if not self._title_under_icon and len(self._title_lines) == 1:
             self._title_lines[0].y = int(
-                (self._header_height - font_size) / 2 + font_size - 3)
+                (self._header_height - font_size) / 2 + font_size - 4)
         
         if self._has_side_title():
             y_correction = 0
 
+            # In case the title is near to be vertically centered in the box
+            # It's prettier to center it correctly
             if (self._title_lines
                     and not self._title_under_icon
+                    and not self._can_handle_gui
                     and self._title_lines[-1].y + int(font_size * 1.4) > self._height):
-                
                 y_correction = int((self._height - self._title_lines[-1].y - 2) / 2 - 2)
-                print('dkdk', self._group_name, y_correction, self._height, self._title_lines[-1].y)
-            else:
-                print('abssku', self._title_under_icon, self._title_lines[-1].y, font_size, self._height)
-                
+            
+            # set title lines pos
             for title_line in self._title_lines:
                 if self._current_port_mode == PORT_MODE_INPUT:
-                    title_line.x = 4 + self._width_in + 12
+                    title_line.x = 4 + self._width_in + 13
+                    if self._can_handle_gui:
+                        title_line.x += 2
+                    
+                    if self.has_top_icon():
+                        self.top_icon.set_pos(self._width - 28 - gui_spacing,
+                                              4 + gui_spacing)
+    
                 elif self._current_port_mode == PORT_MODE_OUTPUT:
                     title_line.x = (self._width - self._width_out
-                                    - 15 - title_line.size)
+                                    - 18 - title_line.size)
+                    
+                    if self._can_handle_gui:
+                        title_line.x -= 2
+                    
+                    if self.has_top_icon():
+                        self.top_icon.set_pos(4 + gui_spacing, 4 + gui_spacing)
                 
                 title_line.y += y_correction
             return
-        
+
+        # get title global sizes
         max_title_size = 0
+        max_title_icon_size = 0
+
         for title_line in self._title_lines:
             title_size = title_line.size
             if self.has_top_icon() and title_line.y <= 29 + font_size:
                 # title line is beside icon
                 title_size += 29
+                max_title_icon_size = max(max_title_icon_size, title_size)
             max_title_size = max(max_title_size, title_size)
+        
         
         for title_line in self._title_lines:
             if self.has_top_icon() and title_line.y <= 29 + font_size:
-                title_line.x = int((self._width - max_title_size) / 2 + 29)
+                # title line is beside the icon
+                title_line.x = int((self._width - max_title_icon_size) / 2 + 29)
             else:
                 title_line.x = int((self._width - title_line.size) / 2)
-
-
-        #title_x_pos = 8
-        #if self.has_top_icon():
-            #title_x_pos += 25
-
-        #title_y_start = font_size + 2
-        #if self._title_under_icon:
-            #title_y_start += 30
-
-        #for i in range(len(self._title_lines)):
-            #title_line = self._title_lines[i]
-            #title_line.x = title_x_pos
-            #title_line.y = title_y_start + i * int(font_size * 1.4)
-            
-        #if not self._title_under_icon and len(self._title_lines) == 1:
-            #self._title_lines[0].y = 20
-
-        #max_title_size = 0
-        #for title_line in self._title_lines:
-            #max_title_size = max(max_title_size, title_line.size)
-
-        #if self.has_top_icon():
-            #if self._has_side_title():
-                #if self._current_port_mode == PORT_MODE_INPUT:
-                    #title_x_pos = 4 + self._width_in + 12
-                #elif self._current_port_mode == PORT_MODE_OUTPUT:
-                    #title_x_pos = 29 + 4
-            #else:
-                #title_x_pos = 29 + (self._width - 29 - max_title_size) / 2
-
-            #for i in range(len(self._title_lines)):
-                #title_line = self._title_lines[i]
-                #if i <= 1:
-                    #title_line.x = title_x_pos
-                    #if self._has_side_title():
-                        #if self._current_port_mode == PORT_MODE_OUTPUT:
-                            #title_line.x = (self._width - self._width_out
-                                            #- 15 - title_line.size)
-                #else:
-                    #if self._has_side_title():
-                        #if self._current_port_mode == PORT_MODE_INPUT:
-                            #title_line.x = self._width_in + 4 + 12
-                        #elif self._current_port_mode == PORT_MODE_OUTPUT:
-                            #title_line.x = (self._width - self._width_out
-                                            #- 15 - title_line.size)
-                    #else:
-                        #title_line.x = (self._width - title_line.size) / 2
-        #else:
-            #for title_line in self._title_lines:
-                #if self._has_side_title():
-                    #if self._current_port_mode == PORT_MODE_INPUT:
-                        #title_line.x = self._width_in + 4 + 12
-                    #else:
-                        #title_line.x = (self._width - self._width_out
-                                        #- 15 - title_line.size)
-                #else:
-                    #title_line.x = (self._width - title_line.size) / 2
+        
+        # set icon position
+        if self.has_top_icon():
+            self.top_icon.set_pos(int((self._width - max_title_icon_size)/2),
+                                  4 + gui_spacing)
     
     def build_painter_path(self, pos_dict):
         input_segments = pos_dict['input_segments']
@@ -1124,19 +1101,9 @@ class CanvasBox(CanvasBoxAbstract):
         max_out_width = geo_dict['max_out_width']
         last_port_mode = geo_dict['last_port_mode']
         
-        #wrapped_port_pos = self._default_header_height
-        
         box_theme = self.get_theme()
         height_for_ports = max(last_in_pos, last_out_pos)
         height_for_ports_one = last_inout_pos
-
-        #width_for_ports = 30
-        #if self._plugin_inline != self.INLINE_DISPLAY_DISABLED:
-            #width_for_ports = 100
-        
-        #width_for_ports_one = width_for_ports
-        #width_for_ports += max_in_width + max_out_width
-        #width_for_ports_one += max(max_in_width, max_out_width)
 
         self._width_in = max_in_width
         self._width_out = max_out_width
@@ -1150,16 +1117,6 @@ class CanvasBox(CanvasBoxAbstract):
         box_width = titles_dict['box_width']
         box_height = titles_dict['box_height']
         self._ports_y_start = titles_dict['ports_y_start']
-
-        #box_height = height_for_ports
-        #if one_column:
-            #width_for_ports = width_for_ports_one
-            #box_height = height_for_ports_one
-
-        #self._width = max(titles_dict['header_width'], width_for_ports)
-        
-        #box_height += header_height
-        #self._push_down_ports(more_height)
         
         self._width = box_width
         last_in_pos += self._ports_y_start
@@ -1214,23 +1171,6 @@ class CanvasBox(CanvasBoxAbstract):
         # round self._height to the upper value
         self._height = float(int(self._height + 0.99))
 
-        if self.has_top_icon():
-            max_title_size = 0
-            for i in range(len(self._title_lines)):
-                if i >= 2:
-                    break
-                
-                title_line = self._title_lines[i]
-                max_title_size = max(max_title_size, title_line.size)
-
-            if self._title_on_side:
-                if self._current_port_mode == PORT_MODE_INPUT:
-                    self.top_icon.align_at(self._width - 29)
-                else:
-                    self.top_icon.align_at(4)
-            else:
-                self.top_icon.align_at((self._width - max_title_size - 29)/2)
-        
         self._set_title_positions()
         
         self.build_painter_path(ports_y_segments_dict)
