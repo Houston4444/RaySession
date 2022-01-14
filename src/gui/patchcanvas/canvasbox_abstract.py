@@ -839,26 +839,16 @@ class CanvasBoxAbstract(QGraphicsItem):
             return
 
         elif event.button() == Qt.LeftButton:
-            if QApplication.keyboardModifiers() & Qt.ShiftModifier:
-                boxes = self._get_adjacent_boxes()
-                for box in boxes:
-                    box.setSelected(True)
-                return
-            
             if self.sceneBoundingRect().contains(event.scenePos()):
                 if self._wrapped:
                     # unwrap the box if event is one of the triangles zones
                     ypos = self._header_height
-                    #if len(self._title_lines) >= 3:
-                        #ypos += 14
                         
                     box_theme = self.get_theme()
 
-                    triangle_rect_out = QRectF(
-                        0, ypos, 24, ypos + box_theme.port_spacing())
+                    triangle_rect_out = QRectF(0, self._height - 24, 24, 24)
                     triangle_rect_in = QRectF(
-                        self._width - 24, ypos,
-                        24, ypos + box_theme.port_spacing())
+                        self._width - 24, self._height - 24, 24, 24)
 
                     mode = PORT_MODE_INPUT
                     wrap = False
@@ -1095,6 +1085,10 @@ class CanvasBoxAbstract(QGraphicsItem):
         
         painter.drawPath(self._painter_path)
         
+        ## test
+        #painter.drawLine(self._width_in, 0, self._width_in, self._height)
+        #painter.drawLine(self._width - self._width_out, 0, self._width - self._width_out, self._height)
+        
         # draw hardware box decoration (flyrack like)
         self._paint_hardware_rack(painter, line_hinting)
 
@@ -1182,23 +1176,6 @@ class CanvasBoxAbstract(QGraphicsItem):
             mon_poly += QPointF(pen_width, self._height - pen_width)
 
             painter.drawPolygon(mon_poly)
-        
-        ## Draw text
-        #title_x_pos = 8
-        #if self.has_top_icon():
-            #title_x_pos += 25
-
-        #title_y_start = 13
-        #if self._title_under_icon:
-            #title_y_start += 30
-
-        #max_title_size = 0
-        #for i in range(len(self._title_lines)):
-            #if i >= 2:
-                #break
-            #title_line = self._title_lines[i]
-            #title_size = title_line.size
-            #max_title_size = max(max_title_size, title_size)
 
         # may draw horizontal lines around title (header lines)
         if (self._header_line_left is not None
@@ -1256,8 +1233,6 @@ class CanvasBoxAbstract(QGraphicsItem):
                     ypos = self._header_height
                     if self._title_on_side:
                         ypos -= 12
-                    #if len(self._title_lines) >= 3:
-                        #ypos += 14
 
                     if port_mode == PORT_MODE_OUTPUT:
                         x = self._width - (x + 2 * side)
@@ -1292,7 +1267,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         
         elif self._unwrap_triangle_pos == UNWRAP_BUTTON_CENTER:
             side = 7
-            x = self._width_in + 8
+            x = (self._width_in + self._width - self._width_out) / 2 - side
             
             ypos = self._height - 3 + 0.5
             triangle = QPolygonF()

@@ -1174,13 +1174,15 @@ class CanvasBox(CanvasBoxAbstract):
             
             self._unwrap_triangle_pos = UNWRAP_BUTTON_NONE
             if self._height - self._header_height >= 64:
+                y_side_space = last_in_pos - last_out_pos
+                
                 if one_column and last_port_mode == PORT_MODE_INPUT:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
                 elif one_column and last_port_mode == PORT_MODE_OUTPUT:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_LEFT
-                elif last_out_pos > last_in_pos:
+                elif y_side_space < -10:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_LEFT
-                elif last_in_pos > last_out_pos:
+                elif y_side_space > 10:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
                 else:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_CENTER
