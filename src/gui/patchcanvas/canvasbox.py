@@ -1146,12 +1146,6 @@ class CanvasBox(CanvasBoxAbstract):
         last_in_pos += self._ports_y_start
         last_out_pos += self._ports_y_start
         
-        ports_y_segments_dict = self._set_ports_y_positions(
-            port_types, align_port_types,
-            self._ports_y_start,
-            one_column)
-        self._set_ports_x_positions(max_in_width, max_out_width)
-        
         # wrapped/unwrapped sizes
         normal_height = box_height
         normal_width = box_width
@@ -1213,6 +1207,12 @@ class CanvasBox(CanvasBoxAbstract):
 
         # round self._height to the upper value
         self._height = float(int(self._height + 0.99))
+
+        ports_y_segments_dict = self._set_ports_y_positions(
+            port_types, align_port_types,
+            self._ports_y_start,
+            one_column)
+        self._set_ports_x_positions(max_in_width, max_out_width)
 
         self._set_title_positions()
         
