@@ -470,6 +470,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             else:
                 self._x_after_wrap = self._x_before_wrap + self._width - self._unwrapped_width
         
+        x_diff = self._x_after_wrap - self._x_before_wrap
         hws = canvas.theme.hardware_rack_width
         
         if yesno:
@@ -481,9 +482,9 @@ class CanvasBoxAbstract(QGraphicsItem):
             canvas.scene.bring_neighbors_and_deplace_boxes(self, new_bounding_rect)
 
         else:
-            new_bounding_rect = QRectF(0, 0, self._unwrapped_width, self._unwrapped_height)
+            new_bounding_rect = QRectF(x_diff, 0, self._unwrapped_width, self._unwrapped_height)
             if self._is_hardware:
-                new_bounding_rect = QRectF(- hws, - hws , self._unwrapped_width + 2 * hws,
+                new_bounding_rect = QRectF(x_diff - hws, - hws , self._unwrapped_width + 2 * hws,
                                            self._unwrapped_height + 2 * hws)
             
             canvas.scene.deplace_boxes_from_repulsers(
