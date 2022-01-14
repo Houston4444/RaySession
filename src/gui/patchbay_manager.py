@@ -1566,6 +1566,7 @@ class PatchbayManager:
             theme_ref = value_str
             if self.options_dialog is not None:
                 self.options_dialog.set_theme(theme_ref)
+            print('action theme changeddd')
             self.remove_and_add_all()
 
     def show_options_dialog(self):
@@ -1700,6 +1701,7 @@ class PatchbayManager:
             connection.add_to_canvas()
         
         self.optimize_operation(False)
+        print('kskddkdk', time.time())
         patchcanvas.redraw_all_groups()
 
     def clear_all(self):
@@ -2163,6 +2165,7 @@ class PatchbayManager:
     def receive_big_packets(self, state: int):
         self.optimize_operation(not bool(state))
         if state:
+            print('jackiicha', time.time())
             patchcanvas.redraw_all_groups()
 
     def fast_temp_file_memory(self, temp_path):
@@ -2193,6 +2196,7 @@ class PatchbayManager:
     def fast_temp_file_running(self, temp_path):
         ''' receives a .json file path from patchbay daemon with all ports, connections
             and jack metadatas'''
+        print('siiijpz', time.time())
         patchbay_data = self.get_json_contents_from_path(temp_path)
         if not patchbay_data:
             sys.stderr.write(

@@ -1067,6 +1067,17 @@ class CanvasBox(CanvasBoxAbstract):
                     - 2 * line_hinting + epsd))
                 painter_path = painter_path.united(left_path)
 
+            if (input_segments
+                    and input_segments[0][0] <= border_radius):
+                top_left_path = QPainterPath()
+                top_left_path.addRect(QRectF(
+                    0.0 + line_hinting - epsy,
+                    0.0 + line_hinting - epsy,
+                    border_radius + epsd,
+                    min(border_radius, input_segments[0][0])
+                    - 2 * line_hinting + epsd))
+                painter_path = painter_path.united(top_left_path)
+
             if (output_segments
                     and self._height - output_segments[-1][1] <= border_radius):
                 right_path = QPainterPath()
@@ -1076,6 +1087,18 @@ class CanvasBox(CanvasBoxAbstract):
                     border_radius + epsd,
                     min(border_radius, self._height - output_segments[-1][1]) - 2 * line_hinting + epsd))
                 painter_path = painter_path.united(right_path)
+                
+            if (output_segments
+                    and output_segments[0][0] <= border_radius):
+                top_right_path = QPainterPath()
+                top_right_path.addRect(QRectF(
+                    self._width - line_hinting + epsy - border_radius,
+                    0.0 + line_hinting - epsy,
+                    border_radius + epsd,
+                    min(border_radius, output_segments[0][0])
+                    - 2 * line_hinting + epsd))
+                painter_path = painter_path.united(top_right_path)
+            
 
         if self._group_name.endswith(' Monitor') and border_radius:
             left_path = QPainterPath()
@@ -1130,7 +1153,7 @@ class CanvasBox(CanvasBoxAbstract):
 
         self._width_in = max_in_width
         self._width_out = max_out_width
-        
+
         titles_dict = self._choose_title_disposition(
             height_for_ports, height_for_ports_one,
             max_in_width, max_out_width)
@@ -1141,7 +1164,7 @@ class CanvasBox(CanvasBoxAbstract):
         box_width = titles_dict['box_width']
         box_height = titles_dict['box_height']
         self._ports_y_start = titles_dict['ports_y_start']
-        
+
         self._width = box_width
         last_in_pos += self._ports_y_start
         last_out_pos += self._ports_y_start
@@ -1215,11 +1238,9 @@ class CanvasBox(CanvasBoxAbstract):
             self._ports_y_start,
             one_column)
         self._set_ports_x_positions(max_in_width, max_out_width)
-
         self._set_title_positions()
-        
         self.build_painter_path(ports_y_segments_dict)
-        
+
         if (self._width != self._ex_width
                 or self._height != self._ex_height
                 or self.scenePos() != self._ex_scene_pos):
@@ -1228,10 +1249,10 @@ class CanvasBox(CanvasBoxAbstract):
         self._ex_width = self._width
         self._ex_height = self._height
         self._ex_scene_pos = self.scenePos()
-        
+
         self.repaint_lines(forced=True)
 
         if not (self._wrapping or self._unwrapping) and self.isVisible():
             canvas.scene.deplace_boxes_from_repulsers([self])
-            
+
         self.update()

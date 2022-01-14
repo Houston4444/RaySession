@@ -19,4 +19,5 @@ sauvegarde du layout mode (séparé splitted/grouped)
 couleur coupeur de texte si pas de bordure de port
 ajustements anti-superposition (après join/split, emballer/déballer remonte toujours un peu)
 bug régulier de position de l'icone
+angle arrondi supérieur (en side)
 

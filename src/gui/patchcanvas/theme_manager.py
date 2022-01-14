@@ -4,7 +4,7 @@ import json
 import os
 import shutil
 import sys
-
+import time
 from PyQt5.QtCore import QTimer
 
 from .theme import print_error, Theme
@@ -41,6 +41,8 @@ class ThemeManager:
             self._last_modified = last_modified
 
     def _update_theme(self) -> bool:
+        print('zouliij', time.time())
+        
         conf = configparser.ConfigParser()
         try:
             # we don't need the file_list
@@ -62,6 +64,7 @@ class ThemeManager:
         canvas.scene.update_theme()
         
         theme_ref = os.path.basename(os.path.dirname(self.current_theme_file))
+        print('jifjfjfj', time.time())
         canvas.callback(ACTION_THEME_CHANGED, 0, 0, theme_ref)
         return True
     
@@ -144,8 +147,6 @@ class ThemeManager:
                 if not os.path.isfile(full_path):
                     continue
 
-                print('fjif', full_path)
-                #conf.read(full_path)
                 try:
                     conf.read(full_path)
                 except configparser.DuplicateOptionError as e:
@@ -156,7 +157,7 @@ class ThemeManager:
                     continue
                 
                 name = file_path
-                print('dkdkdk', name)
+
                 if 'Theme' in conf.keys():
                     conf_theme = conf['Theme']
                     if 'Name' in conf_theme.keys():
