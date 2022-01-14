@@ -419,6 +419,9 @@ class CanvasBoxAbstract(QGraphicsItem):
             self._wrapping = False
             self._unwrapping = False
         
+        self.setX(self._x_before_wrap
+                  + (self._x_after_wrap - self._x_before_wrap) * self._wrapping_ratio)
+
         self.update_positions()
 
     def hide_ports_for_wrap(self, hide: bool):
@@ -459,6 +462,14 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._unwrapping = not yesno
         canvas.scene.add_box_to_animation_wrapping(self, yesno)
         
+        self._x_before_wrap = self.x()
+        self._x_after_wrap = self._x_before_wrap
+        if self._has_side_title() and self._current_port_mode == PORT_MODE_INPUT:
+            if yesno:
+                self._x_after_wrap = self._x_before_wrap + self._width - self._wrapped_width
+            else:
+                self._x_after_wrap = self._x_before_wrap + self._width - self._unwrapped_width
+        
         hws = canvas.theme.hardware_rack_width
         
         if yesno:
@@ -470,9 +481,9 @@ class CanvasBoxAbstract(QGraphicsItem):
             canvas.scene.bring_neighbors_and_deplace_boxes(self, new_bounding_rect)
 
         else:
-            new_bounding_rect = QRectF(0, 0, self._width, self._unwrapped_height)
+            new_bounding_rect = QRectF(0, 0, self._unwrapped_width, self._unwrapped_height)
             if self._is_hardware:
-                new_bounding_rect = QRectF(- hws, - hws , self._width + 2 * hws,
+                new_bounding_rect = QRectF(- hws, - hws , self._unwrapped_width + 2 * hws,
                                            self._unwrapped_height + 2 * hws)
             
             canvas.scene.deplace_boxes_from_repulsers(

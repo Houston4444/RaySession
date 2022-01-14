@@ -1096,7 +1096,7 @@ class CanvasBox(CanvasBoxAbstract):
     def update_positions(self, even_animated=False):
         if canvas.loading_items:
             return
-        
+
         if (not even_animated
                 and self in [b['widget'] for b in canvas.scene.move_boxes]):
             # do not change box disposition while box is moved by animation
@@ -1201,6 +1201,8 @@ class CanvasBox(CanvasBoxAbstract):
         
         down_height = box_theme.fill_pen().widthF()
 
+        self._wrapped_width = wrapped_width
+        self._unwrapped_width = normal_width
         self._wrapped_height = wrapped_height + down_height
         self._unwrapped_height = normal_height + down_height
         self._height += down_height
