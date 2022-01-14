@@ -120,8 +120,8 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._width = 50
         self._width_in = 0
         self._width_out = 0
-        self._default_header_height = 36
-        self._header_height = self._default_header_height
+        self._header_width = self._width
+        self._header_height = 0
         self._height = self._header_height + 1
         self._ports_y_start = self._header_height
         self._ex_width = self._width
@@ -1007,23 +1007,13 @@ class CanvasBoxAbstract(QGraphicsItem):
                 portgroup.widget.setCacheMode(cache_mode)
 
     def boundingRect(self):
-        hws = canvas.theme.hardware_rack_width
-        #theme = self.get_theme()
-        #if theme.port_offset() < 0:
-            #port_offset = 
         if self._is_hardware:
+            hws = canvas.theme.hardware_rack_width
+            
             return QRectF(- hws, - hws,
                           self._width + 2 * hws,
                           self._height + 2 * hws)
         return QRectF(0, 0, self._width, self._height)
-
-    #def setSelected(self, selected: bool):
-        #for cb_line in self._connection_lines:
-            #if selected:
-                #cb_line.line.setCacheMode(QGraphicsItem.NoCache)
-            #else:
-                #cb_line.line.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
-        #QGraphicsItem.setSelected(self, selected)
 
     def paint(self, painter, option, widget):
         if canvas.loading_items:
@@ -1101,11 +1091,11 @@ class CanvasBoxAbstract(QGraphicsItem):
             if self._has_side_title():
                 if self._current_port_mode == PORT_MODE_INPUT:
                     header_rect = QRectF(
-                        self._width_in + 3 + 11, 3,
-                        self._width - self._width_in - 11 - 6, self._header_height -6)
+                        self._width - self._header_width + 3, 3,
+                        self._header_width - 6, self._header_height -6)
                 elif self._current_port_mode == PORT_MODE_OUTPUT:
                     header_rect = QRectF(
-                        3, 3, self._width - self._width_out - 11 - 6, self._header_height - 6)
+                        3, 3, self._header_width - 6, self._header_height - 6)
             
             header_rect.adjust(line_hinting * 2, line_hinting * 2,
                                -2 * line_hinting, -2 * line_hinting)
@@ -1184,16 +1174,21 @@ class CanvasBoxAbstract(QGraphicsItem):
             painter.drawLine(*self._header_line_left)
             painter.drawLine(*self._header_line_right)
 
-        painter.setPen(theme.text_color())
+        normal_color = theme.text_color()
+        opac_color = QColor(normal_color)
+        opac_color.setAlpha(int(normal_color.alpha() / 2))
+        
+        text_pen = QPen(normal_color)
+        opac_text_pen = QPen(opac_color)
 
         # draw title lines
         for title_line in self._title_lines:
             painter.setFont(title_line.font)
             
-            global_opacity = canvas.semi_hide_opacity if self._is_semi_hidden else 1.0
-            painter.setOpacity(global_opacity)
             if title_line.is_little:
-                painter.setOpacity(0.5 * global_opacity)
+                painter.setPen(opac_text_pen)
+            else:
+                painter.setPen(text_pen)
 
             if (title_line == self._title_lines[-1]
                     and self._group_name.endswith(' Monitor')):
@@ -1227,53 +1222,68 @@ class CanvasBoxAbstract(QGraphicsItem):
         if self._wrapped:
             for port_mode in PORT_MODE_INPUT, PORT_MODE_OUTPUT:
                 if self._current_port_mode & port_mode:
-                    side = 6
-                    x = 6
-
-                    ypos = self._header_height
                     if self._title_on_side:
-                        ypos -= 12
+                        side = 9
+                        offset = 4
+                        ypos = self._height - offset
+                        
+                        triangle = QPolygonF()
+                        if port_mode == PORT_MODE_INPUT:
+                            xpos = offset
+                            triangle += QPointF(xpos, ypos)
+                            triangle += QPointF(xpos, ypos - side)
+                            triangle += QPointF(xpos + side, ypos)
+                        else:
+                            xpos = self._width - offset
+                            triangle += QPointF(xpos, ypos)
+                            triangle += QPointF(xpos, ypos - side)
+                            triangle += QPointF(xpos - side, ypos)
+                    else:
+                        side = 6
+                        xpos = 6
+                        ypos = self._header_height
 
-                    if port_mode == PORT_MODE_OUTPUT:
-                        x = self._width - (x + 2 * side)
+                        if port_mode == PORT_MODE_OUTPUT:
+                            xpos = self._width - (xpos + 2 * side)
 
-                    triangle = QPolygonF()
-                    triangle += QPointF(x, ypos + 2)
-                    triangle += QPointF(x + 2 * side, ypos + 2)
-                    triangle += QPointF(x + side, ypos + side + 2)
+                        triangle = QPolygonF()
+                        triangle += QPointF(xpos, ypos + 2)
+                        triangle += QPointF(xpos + 2 * side, ypos + 2)
+                        triangle += QPointF(xpos + side, ypos + side + 2)
+                    
                     painter.drawPolygon(triangle)
 
         elif self._unwrap_triangle_pos == UNWRAP_BUTTON_LEFT:
             side = 6
-            x = 4
-            
-            ypos = self._height - 6
+            xpos = 4
+            ypos = self._height - 4
             triangle = QPolygonF()
-            triangle += QPointF(x, ypos + 2)
-            triangle += QPointF(x + 2 * side, ypos + 2)
-            triangle += QPointF(x + side, ypos -side + 2)
+            triangle += QPointF(xpos, ypos)
+            triangle += QPointF(xpos + 2 * side, ypos)
+            triangle += QPointF(xpos + side, ypos -side)
+
             painter.drawPolygon(triangle)
         
         elif self._unwrap_triangle_pos == UNWRAP_BUTTON_RIGHT:
             side = 6
-            x = self._width - 2 * side - 4
+            xpos = self._width - 2 * side - 4
             
-            ypos = self._height - 6
+            ypos = self._height - 4
             triangle = QPolygonF()
-            triangle += QPointF(x, ypos + 2)
-            triangle += QPointF(x + 2 * side, ypos + 2)
-            triangle += QPointF(x + side, ypos -side + 2)
+            triangle += QPointF(xpos, ypos)
+            triangle += QPointF(xpos + 2 * side, ypos)
+            triangle += QPointF(xpos + side, ypos -side)
             painter.drawPolygon(triangle)
         
         elif self._unwrap_triangle_pos == UNWRAP_BUTTON_CENTER:
             side = 7
-            x = (self._width_in + self._width - self._width_out) / 2 - side
+            xpos = (self._width_in + self._width - self._width_out) / 2 - side
             
             ypos = self._height - 3 + 0.5
             triangle = QPolygonF()
-            triangle += QPointF(x, ypos + 2)
-            triangle += QPointF(x + 2 * side, ypos + 2)
-            triangle += QPointF(x + side, ypos -side + 2)
+            triangle += QPointF(xpos, ypos + 2)
+            triangle += QPointF(xpos + 2 * side, ypos + 2)
+            triangle += QPointF(xpos + side, ypos -side + 2)
             painter.drawPolygon(triangle)
 
         painter.restore()
@@ -1385,7 +1395,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             return
 
         inwidth  = self._width - self._width_in - self._width_out - 16
-        inheight = self._height - self._default_header_height - self.get_theme().port_spacing() - 3
+        inheight = self._height - self._header_height - self.get_theme().port_spacing() - 3
         scaling  = canvas.scene.get_scale_factor() * canvas.scene.get_device_pixel_ratio_f()
 
         if (self._plugin_id >= 0
@@ -1417,7 +1427,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         sheight = self._inline_image.height() / scaling
 
         srcx = int(self._width_in + (self._width - self._width_in - self._width_out) / 2 - swidth / 2)
-        srcy = int(self._default_header_height + 1 + (inheight - sheight) / 2)
+        srcy = int(self._header_height + 1 + (inheight - sheight) / 2)
 
         painter.drawImage(QRectF(srcx, srcy, swidth, sheight), self._inline_image)
     
