@@ -121,6 +121,7 @@ class ThemeManager:
         return True
     
     def list_themes(self) -> list:
+        print('lisst thme')
         themes_set = set()
         conf = configparser.ConfigParser()
         themes_dicts = []
@@ -138,19 +139,24 @@ class ThemeManager:
             for file_path in os.listdir(search_path):
                 if file_path in themes_set:
                     continue
-                
+
                 full_path = os.path.join(search_path, file_path, 'theme.conf')
                 if not os.path.isfile(full_path):
                     continue
 
+                print('fjif', full_path)
+                #conf.read(full_path)
                 try:
                     conf.read(full_path)
+                except configparser.DuplicateOptionError as e:
+                    sys.stderr.write(str(e) + '\n')
+                    continue
                 except:
                     # TODO
                     continue
                 
                 name = file_path
-
+                print('dkdkdk', name)
                 if 'Theme' in conf.keys():
                     conf_theme = conf['Theme']
                     if 'Name' in conf_theme.keys():

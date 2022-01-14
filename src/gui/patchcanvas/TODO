@@ -12,7 +12,7 @@ transport controls
 
 theme Purples ne s'ouvre plus
 #définir positions des lignes jaunes dans l'update
-emballer/déballer en mode side
+#emballer/déballer en mode side
 refaire theme gui hidden tous les thèmes
 texte des ports sans nom de portgroup
 sauvegarde du layout mode (séparé splitted/grouped)
