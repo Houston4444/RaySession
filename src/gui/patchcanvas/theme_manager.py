@@ -41,16 +41,16 @@ class ThemeManager:
             self._last_modified = last_modified
 
     def _update_theme(self) -> bool:
-        print('zouliij', time.time())
-        
         conf = configparser.ConfigParser()
         try:
             # we don't need the file_list
             # it is just a convenience to mute conf.read
             file_list = conf.read(self.current_theme_file)
+        except configparser.DuplicateOptionError as e:
+            print_error(str(e) + '\n')
+            return False
         except:
-            sys.stderr.write('patchcanvas::theme:failed to open %s\n'
-                                 % self.current_theme_file)
+            print_error('failed to open %s\n' % self.current_theme_file)
             return False
         
         theme_dict = self._convert_configparser_object_to_dict(conf)
@@ -64,7 +64,6 @@ class ThemeManager:
         canvas.scene.update_theme()
         
         theme_ref = os.path.basename(os.path.dirname(self.current_theme_file))
-        print('jifjfjfj', time.time())
         canvas.callback(ACTION_THEME_CHANGED, 0, 0, theme_ref)
         return True
     
@@ -124,7 +123,6 @@ class ThemeManager:
         return True
     
     def list_themes(self) -> list:
-        print('lisst thme')
         themes_set = set()
         conf = configparser.ConfigParser()
         themes_dicts = []
@@ -150,7 +148,7 @@ class ThemeManager:
                 try:
                     conf.read(full_path)
                 except configparser.DuplicateOptionError as e:
-                    sys.stderr.write(str(e) + '\n')
+                    print_error(str(e) + '\n')
                     continue
                 except:
                     # TODO

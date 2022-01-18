@@ -3,7 +3,7 @@ import json
 import os
 import sys
 
-from PyQt5.QtGui import QColor, QPen, QFont, QBrush
+from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF
 from PyQt5.QtCore import Qt, QTimer
 
 # from gui.patchcanvas import theme_default
@@ -115,6 +115,7 @@ class StyleAttributer:
 
         self._fill_pen = None
         self._font = None
+        self._font_metrics_cache = {}
 
     def set_attribute(self, attribute: str, value):
         err = False
@@ -298,6 +299,27 @@ class StyleAttributer:
         font_.setPixelSize(self.get_value_of('_font_size'))
         font_.setWeight(self.get_value_of('_font_width'))
         return font_
+    
+    def get_text_width(self, string:str):
+        tot_size = 0.0
+        
+        for s in string:
+            if s in self._font_metrics_cache.keys():
+                tot_size += self._font_metrics_cache[s]
+            else:
+                letter_size = QFontMetricsF(self.font()).width(s)
+                self._font_metrics_cache[s] = letter_size
+                tot_size += letter_size
+        
+        return tot_size
+        
+        
+        #if string in self._font_metrics_cache.keys():
+            #return self._font_metrics_cache[string]
+        
+        #width = QFontMetricsF(self.font()).width(string)
+        #self._font_metrics_cache[string] = width
+        #return width
     
     def port_offset(self):
         return self.get_value_of('_port_offset')

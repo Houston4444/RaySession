@@ -20,6 +20,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 import sys
+import time
 from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
                           QPoint, QPointF, QRectF, QSettings, QTimer, pyqtSignal)
 
@@ -684,10 +685,15 @@ def join_group(group_id):
     QTimer.singleShot(0, canvas.scene.update)
 
 def redraw_all_groups():
+    last_time = time.time()
+    
     for group in canvas.group_list:
         for box in group.widgets:
             if box is not None:
                 box.update_positions()
+        now = time.time()
+        print('kk', group.group_name, now - last_time)
+        last_time = now
 
     if canvas.scene is None:
         return
@@ -1113,6 +1119,7 @@ def remove_portgroup(group_id, portgrp_id):
         return
 
     if box_widget is not None:
+        box_widget._layout_may_have_change = True
         box_widget.update_positions()
 
     QTimer.singleShot(0, canvas.scene.update)

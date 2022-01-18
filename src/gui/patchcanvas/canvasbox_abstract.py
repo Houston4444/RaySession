@@ -122,6 +122,10 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._width_out = 0
         self._header_width = self._width
         self._header_height = 0
+        self._wrapped_width = 0
+        self._unwrapped_width = 0
+        self._wrapped_height = 0
+        self._unwrapped_height = 0
         self._height = self._header_height + 1
         self._ports_y_start = self._header_height
         self._ex_width = self._width
@@ -216,6 +220,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         self._title_on_side = False
         self._restrict_title_lines = 0 # no title lines restriction
+        self._layout_may_have_changed = False
         self._layout_mode = LAYOUT_AUTO
         self._current_layout_mode = LAYOUT_LARGE
         self._title_under_icon = False
@@ -334,6 +339,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             new_widget.setVisible(False)
 
         self._port_list_ids.append(port_id)
+        self._layout_may_have_changed = True
 
         return new_widget
 
@@ -345,6 +351,8 @@ class CanvasBoxAbstract(QGraphicsItem):
                 "PatchCanvas::CanvasBox.removePort(%i) - unable to find port to remove"
                 % port_id)
             return
+
+        self._layout_may_have_changed = True
 
         if not canvas.loading_items:
             if len(self._port_list_ids) > 0:
@@ -361,6 +369,8 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         if self._wrapped:
             new_widget.setVisible(False)
+
+        self._layout_may_have_changed = True
 
         return new_widget
 

@@ -90,7 +90,8 @@ class TitleLine:
         if little:
             self.font.setWeight(QFont.Normal)
 
-        self.size = QFontMetrics(self.font).width(text)
+        self.size = theme.get_text_width(text)
+        #self.size = QFontMetrics(self.font).width(text)
 
     def reduce_pixel(self, reduce):
         self.font.setPixelSize(self.font.pixelSize() - reduce)
@@ -598,6 +599,7 @@ class CanvasBox(CanvasBoxAbstract):
                             title_lines.append(TitleLine(title, theme))
                     else:
                         titles = self.split_in_two('uuuu' + subtitle, subt_len)
+
                         for i in range(len(titles)):
                             title = titles[i]
                             if i == 0:
@@ -661,7 +663,7 @@ class CanvasBox(CanvasBoxAbstract):
             max_header_width = 50
             if self._plugin_inline != self.INLINE_DISPLAY_DISABLED:
                 max_header_width = 200
-
+            
             title_lines = self._split_title(i)
             
             title_line_y_start = 2 + font_size
@@ -771,7 +773,7 @@ class CanvasBox(CanvasBoxAbstract):
         #print('tt', self._group_name, self._current_port_mode, sizes_tuples)
         sizes_tuples.sort()
         area_size, lines_choice, one_column, title_on_side = sizes_tuples[0]
-
+        
         self._title_lines = self._split_title(lines_choice)
         
         header_height = all_title_templates[lines_choice]['header_height']
@@ -818,7 +820,7 @@ class CanvasBox(CanvasBoxAbstract):
         else:
             box_width = max(width_for_ports, header_width)
             box_height = header_height + height_for_ports
-            
+        
         return {'max_title_size': max_title_size,
                 'box_height': box_height,
                 'box_width': box_width,
@@ -1131,7 +1133,7 @@ class CanvasBox(CanvasBoxAbstract):
         self._current_port_mode = PORT_MODE_NULL
         for port in canvas.port_list:
             if port.group_id == self._group_id and port.port_id in self._port_list_ids:
-                # used to know present port modes (INPUT or OUTPUT)
+                # used to know present port modes (INPUT or OUTPUT or both)
                 self._current_port_mode |= port.port_mode
 
         port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK,
@@ -1154,35 +1156,45 @@ class CanvasBox(CanvasBoxAbstract):
         self._width_in = max_in_width
         self._width_out = max_out_width
 
-        titles_dict = self._choose_title_disposition(
-            height_for_ports, height_for_ports_one,
-            max_in_width, max_out_width)
-        max_title_size = titles_dict['max_title_size']
-        self._header_width = titles_dict['header_width']
-        header_height = titles_dict['header_height']
-        one_column = titles_dict['one_column']
-        box_width = titles_dict['box_width']
-        box_height = titles_dict['box_height']
-        self._ports_y_start = titles_dict['ports_y_start']
+        if not (self._wrapping or self._unwrapping):
+            titles_dict = self._choose_title_disposition(
+                height_for_ports, height_for_ports_one,
+                max_in_width, max_out_width)
+            max_title_size = titles_dict['max_title_size']
+            self._header_width = titles_dict['header_width']
+            self._header_height = titles_dict['header_height']
+            one_column = titles_dict['one_column']
+            box_width = titles_dict['box_width']
+            box_height = titles_dict['box_height']
+            self._ports_y_start = titles_dict['ports_y_start']
 
-        self._width = box_width
+            self._width = box_width
+        
+            # wrapped/unwrapped sizes
+            normal_height = box_height
+            normal_width = box_width
+            wrapped_height = self._ports_y_start + canvas.theme.port_height
+            wrapped_width = self._width
+            
+            if self._title_on_side:
+                wrapped_height = self._header_height
+                if self._current_port_mode == PORT_MODE_INPUT:
+                    wrapped_width -= self._width_in
+                elif self._current_port_mode == PORT_MODE_OUTPUT:
+                    wrapped_width -= self._width_out
+            
+        else:
+            normal_height = self._unwrapped_height
+            normal_width = self._unwrapped_width
+            wrapped_height = self._wrapped_height
+            wrapped_width = self._wrapped_width
+            
+            one_column = bool(
+                self._current_port_mode == PORT_MODE_OUTPUT + PORT_MODE_INPUT
+                and self._current_layout_mode == LAYOUT_HIGH)
+            
         last_in_pos += self._ports_y_start
         last_out_pos += self._ports_y_start
-        
-        # wrapped/unwrapped sizes
-        normal_height = box_height
-        normal_width = box_width
-        wrapped_height = self._ports_y_start + canvas.theme.port_height
-        wrapped_width = self._width
-
-        if self._title_on_side:
-            wrapped_height = header_height
-            if self._current_port_mode == PORT_MODE_INPUT:
-                wrapped_width -= self._width_in
-            elif self._current_port_mode == PORT_MODE_OUTPUT:
-                wrapped_width -= self._width_out
-        
-        self._header_height = header_height
 
         if self._wrapping:
             self._height = (normal_height
@@ -1222,7 +1234,8 @@ class CanvasBox(CanvasBoxAbstract):
                 else:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_CENTER
         
-        down_height = box_theme.fill_pen().widthF()
+        #down_height = box_theme.fill_pen().widthF()
+        down_height = 0
 
         self._wrapped_width = wrapped_width
         self._unwrapped_width = normal_width
