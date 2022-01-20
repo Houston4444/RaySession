@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.16">
+<meta name="generator" content="Asciidoctor 2.0.12">
 <title>RaySession Manual</title>
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -121,7 +121,7 @@ table {
 </div>
 </div>
 <div class="paragraph">
-<p><em>für Version 0.10.0</em></p>
+<p><em>für Version 0.12.0</em></p>
 </div>
 </div>
 </div>
@@ -238,7 +238,7 @@ Dialogfenster wird sich öffnen (mehr hierzu unter <a href="#add_application">An
 </div>
 </div>
 <div class="paragraph">
-<p>Open the JACK <a href="#patchbay">Patchbay</a>, for this go to <strong>Control</strong> &#8594; <strong>Show JACK Patchbay</strong> (<em>or Ctrl+J</em>). The patchbay appears at the right of the window.</p>
+<p>Now use JACK&#8217;s <a href="#patchbay">Patchbay</a> which occupies the right side of the RaySession window.</p>
 </div>
 <div class="paragraph">
 <p>Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.</p>
@@ -252,7 +252,7 @@ Dialogfenster wird sich öffnen (mehr hierzu unter <a href="#add_application">An
 <p>Dies ist ein Beispiel, in dem der Gitarrensound durch Guitarix verarbeitet direkt in Ardour aufgenommen wird. Falls Sie über keine Gitarre verfügen, können Sie auch in ein Mikrofon singen, es handelt sich lediglich um ein Beispiel.</p>
 </div>
 <div class="paragraph">
-<p>Kehren Sie nun zum Fenster der RaySession zurück. Sichern Sie die aktuelle Session, indem sie oben rechts auf das FloppyDisk Symbol klicken (<em>oder Ctrl+S</em>). Es ist empfehlenswert, zur Sicherung der Session eine systemweite Tastenkombination zu erstellen. Es hängt von der jeweiligen Desktopumgebung ab, aber indem Sie zB. die Tastenkombiation <em>Ctrl+Meta+S</em> dem  Kommando <code>ray_control save</code> (Meta ist die Windows-Taste) zuweisen lässt es sich vermeiden, zum Sichern stets zum RaySession Fenster zurückkehren zu müssen.</p>
+<p>Now save the current session by clicking the floppy disk button to the top right  of the session part(<em>or Ctrl+S</em>). Es ist empfehlenswert, zur Sicherung der Session eine systemweite Tastenkombination zu erstellen. Es hängt von der jeweiligen Desktopumgebung ab, aber indem Sie zB. die Tastenkombiation <em>Ctrl+Meta+S</em> dem  Kommando <code>ray_control save</code> (Meta ist die Windows-Taste) zuweisen lässt es sich vermeiden, zum Sichern stets zum RaySession Fenster zurückkehren zu müssen.</p>
 </div>
 <div class="paragraph">
 <p>Schliessen Sie nun die Session, indem Sie auf das Kreuz im roten Kreis oben rechts klicken (<em>oder Strg+W</em>).</p>
@@ -671,6 +671,9 @@ Der Status eines solchen Programmes wird immer auf <strong>launch</strong> bleib
 <p>Das <strong>Klient ID</strong> Feld (der Klient Identifikator). Nutzen Sie lediglich alphanumerische Zeichen oder '_'.<br>
 Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und starten wollen. Auch, wenn Sie Session Projekte ausserhalb der bestehenden Session laden wollen. Es gibt keine einfachere Weise, dies zu tun. Die Details hängen stark von der jeweilig genutzten Anwendung ab. Falls Sie eine in der Session bereits verwendete ID eingeben, wird RaySession darauf entsprechend lautstark hinweisen.</p>
 </li>
+<li>
+<p>the <strong>Long JACK naming</strong> checkbox. If this box is checked, clients will be supposed to use <code>ProgramName.ClientId</code> as JACK client name, else it will be <code>ProgramName</code>, possibly followed by <code>_N</code> (where N is a number). This is very useful if you use many instances of the same program, and you want to identify them easily in the patchbay.</p>
+</li>
 </ul>
 </div>
 </div>
@@ -825,6 +828,9 @@ It will allow you to :</p>
 <p>switch the patchbay to full screen</p>
 </li>
 <li>
+<p>Find a box with its name</p>
+</li>
+<li>
 <p>Filter ports: show only AUDIO or MIDI ports or both</p>
 </li>
 <li>
@@ -858,6 +864,9 @@ All changes in this window take effect immediately. Hover over the boxes to see 
 </li>
 <li>
 <p><em>Ctrl+middle mouse button</em> cuts all connections passing under the cursor</p>
+</li>
+<li>
+<p><em>Ctrl+F</em> allows to search a box with its name</p>
 </li>
 </ul>
 </div>
@@ -1259,6 +1268,9 @@ Klicken Sie auf das Symbol für den Audacity Klienten, wählen Sie im Drop-Down 
 <div class="paragraph">
 <p>RaySession wird danach hinzugefügte oder entfernte Klienten nicht in  <code>session.nsm</code> speichern, Sie müssen also hierfür auch weiterhin RaySession nutzen.</p>
 </div>
+<div class="paragraph">
+<p>If ever you want to use another session manager, you will find in the menu <strong>File &#8594; Utilities &#8594; Convert the session to NSM file format</strong>. Obviously this leads to some changes, such as prefix mode or the way the JACK clients will be named, but nothing that prevents the session from working.</p>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1582,7 +1594,7 @@ Falls Sie Ardour nutzen, starten Sie es immer in einer RaySession. Erstens könn
 <li>
 <p><strong>Can I launch an Ardour session launched normally into a RaySession session ?</strong></p>
 <div class="paragraph">
-<p>You will find in source code <a href="https://github.com/Houston4444/RaySession/blob/master/scripts">here</a> a script named <code>ardour6_from_external_to_session.sh</code>. Before to use it, backup your ardour session directory. Download this file, set it executable and execute it with a .ardour file as argument, it will adds the ardour project to the current session, or create a session if no session is loaded.</p>
+<p>You will find in the menu <strong>File &#8594; Utililies &#8594; Convert an Ardour session to a Ray session</strong>, it creates and launch a RaySession session from an ardour session. It is adviced to backup your ardour session first. Obviously, Ardour must not be open with this session during the execution of this script, but you already knew that.</p>
 </div>
 </li>
 </ul>
@@ -1592,7 +1604,7 @@ Falls Sie Ardour nutzen, starten Sie es immer in einer RaySession. Erstens könn
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-08-25 11:55:00 +0200
+Last updated 2021-12-17 09:44:34 +0100
 </div>
 </div>
 </body>

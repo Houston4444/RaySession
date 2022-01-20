@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.16">
+<meta name="generator" content="Asciidoctor 2.0.12">
 <title>Manuel de RaySession</title>
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -121,7 +121,7 @@ table {
 </div>
 </div>
 <div class="paragraph">
-<p><em>pour la version 0.11.0</em></p>
+<p><em>pour la version 0.12.0</em></p>
 </div>
 </div>
 </div>
@@ -226,7 +226,7 @@ table {
 </div>
 </div>
 <div class="paragraph">
-<p>Vous allez maintenant afficher la <a href="#patchbay">Baie de brassage</a> de JACK. Pour celà, dans RaySession, appuyez sur <strong>Contrôle</strong> puis <strong>Afficher la baie de brassage de JACK</strong> (<em>ou Ctrl+J</em>). La baie de brassage est apparue sur la partie droite de la fenêtre.
+<p>Servez-vous maintenant de la <a href="#patchbay">Baie de brassage</a> de JACK qui occupe la partie droite de la fenêtre de RaySession.
 Connectez l&#8217;entrée de Guitarix à une entrée matérielle et les sorties de Guitarix vers les entrées de cette nouvelle piste Ardour. Assurez vous que les entrées de votre piste <strong>Guitare</strong> ne sont pas connectées aux entrées matérielles.</p>
 </div>
 <div class="imageblock">
@@ -238,10 +238,10 @@ Connectez l&#8217;entrée de Guitarix à une entrée matérielle et les sorties 
 <p>Voilà, vous avez une configuration où vous pouvez enregistrer directement le son de votre guitare traité par Guitarix dans Ardour. Si vous n&#8217;avez pas de guitare, vous n&#8217;avez qu&#8217;à chanter faux dans un micro ou taper sur un coussin, ce n&#8217;est ici qu&#8217;un exemple.</p>
 </div>
 <div class="paragraph">
-<p>Retournez maintenant à la fenêtre de RaySession, et sauvegardez la session en cours en cliquant sur le bouton en forme de disquette vers le haut à droite (<em>ou Ctrl+S</em>). Il est vivement recommandé car très pratique d&#8217;affecter un raccourci clavier global de votre système à la sauvegarde de la session en cours. Celà dependra de votre environnement de bureau, mais il suffit d&#8217;affecter le raccourci <em>Ctrl+Meta+S</em> à la commande <code>ray_control save</code> (Meta est la touche Windows), ainsi vous n&#8217;aurez pas à retourner à la fenêtre de RaySession pour sauvegarder la session.</p>
+<p>Sauvegardez la session en cours en cliquant sur le bouton en forme de disquette vers le haut à droite de la partie Session (<em>ou Ctrl+S</em>). Il est vivement recommandé car très pratique d&#8217;affecter un raccourci clavier global de votre système à la sauvegarde de la session en cours. Celà dependra de votre environnement de bureau, mais il suffit d&#8217;affecter le raccourci <em>Ctrl+Meta+S</em> à la commande <code>ray_control save</code> (Meta est la touche Windows), ainsi vous n&#8217;aurez pas à retourner à la fenêtre de RaySession pour sauvegarder la session.</p>
 </div>
 <div class="paragraph">
-<p>Maintenant, fermez la session en cliquant sur la croix rouge en haut à droite (<em>ou Ctrl+W</em>).</p>
+<p>Maintenant, fermez la session en cliquant sur la croix rouge en haut à droite de la partie Session(<em>ou Ctrl+W</em>).</p>
 </div>
 <div class="paragraph">
 <p>Une fois la session fermée, cliquez sur <strong>Ouvrir une session</strong> (<em>ou Ctrl+O</em>), double-cliquez sur la session que vous venez de créer pour la ré-ouvrir.</p>
@@ -644,6 +644,9 @@ L&#8217;état d&#8217;un tel programme restera sur <strong>lancé</strong> et ne
 <p>le champ <strong>ID du client</strong> (identifiant du client). Ne rentrez ici que des caractères alphanumériques ou des '_'.<br>
 Celà est utile si vous voulez attraper et lancer des projets existants dans la session avec un exécutable. C&#8217;est pratique si vous voulez charger dans la session des projets créés en dehors d&#8217;une session. Aucune méthode ne permet de rendre la chose plus simple, celà dépend énormément du programme utilisé. RaySession vous insultera si vous rentrez un identifiant de client qui existe déjà dans la session.</p>
 </li>
+<li>
+<p>la case à cocher <strong>Longs noms de client JACK</strong>. Si cette case est cochée, les clients seront supposés utiliser <code>NomDuProgramme.Identifiant</code> comme motif pour leurs clients JACK, sinon ce sera <code>NomDuProgramme</code> éventuellement suivi de <code>_N</code> (ou N est un nombre). C&#8217;est tout à fait pratique si vous utilisez de multiples instances d&#8217;un même programme, et que vous souhaitez pouvoir facilement les reconnaître dans la baie de brassage.</p>
+</li>
 </ul>
 </div>
 </div>
@@ -652,7 +655,7 @@ Celà est utile si vous voulez attraper et lancer des projets existants dans la 
 <h2 id="patchbay">Baie de brassage</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>la baie de brassage de JACK n&#8217;est pas affichée par défaut. Vous pouvez l&#8217;afficher en cliquant sur <strong>Contrôle</strong> puis <strong>Afficher la baie de brassage de JACK</strong> (<em>ou Ctrl+J</em>). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.</p>
+<p>la baie de brassage de JACK est affichée par défaut. Vous pouvez la cacher en cliquant sur <strong>Contrôle</strong> puis en décochant <strong>Afficher la baie de brassage de JACK</strong> (<em>ou Ctrl+J</em>). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.</p>
 </div>
 <div class="paragraph">
 <p>Évidemment, si JACK n&#8217;est pas démarré, cette baie de brassage sera vide.</p>
@@ -796,6 +799,9 @@ Il vous permettra de :</p>
 <p>basculer la baie de brassage en plein écran</p>
 </li>
 <li>
+<p>chercher une boîte par son nom</p>
+</li>
+<li>
 <p>Filtrer les ports: n&#8217;afficher que les ports AUDIO ou MIDI ou les deux</p>
 </li>
 <li>
@@ -829,6 +835,9 @@ Tous les changements dans cette fenêtre prennent effet immédiatement. Survolez
 </li>
 <li>
 <p><em>Ctrl+bouton du milieu de la souris</em> permet de couper toutes les connexions passant sous le curseur</p>
+</li>
+<li>
+<p><em>Ctrl+F</em> permet de chercher une boîte par son nom</p>
 </li>
 </ul>
 </div>
@@ -1234,6 +1243,9 @@ Maintenant lorsque vous voudrez lancer Audacity dans la session, vous n&#8217;au
 <div class="paragraph">
 <p>RaySession ne ré-écrira pas les clients ajoutés ou supprimés dans la fichier session.nsm, à partir du moment où vous ouvrez une session NSM avec RaySession, vous devez continuer avec RaySession.</p>
 </div>
+<div class="paragraph">
+<p>Si jamais vous souhaitez utiliser un autre gestionnaire de sessions, vous trouverez dans le menu <strong>Fichier &#8594; Utilitaires &#8594; Convertir la session au format NSM</strong> qui - comme son nom l&#8217;indique - convertit la session en cours au format de session NSM. Évidemment, celà entraîne quelque modifications, tels que le mode de préfixe ou la façon dont seront nommés les clients JACK, mais rien qui empêche la session de fonctionner.</p>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1556,9 +1568,7 @@ Si vous utilisez Ardour, lancez le toujours depuis RaySession, d&#8217;une part 
 <li>
 <p><strong>Puis-je lancer dans une session RaySession un projet Ardour déjà existant ?</strong></p>
 <div class="paragraph">
-<p>Vous trouverez <a href="https://github.com/Houston4444/RaySession/blob/master/scripts">ici</a> dans le code source un script nommé <code>ardour6_from_external_to_session.sh</code>.
-Avant de l&#8217;utiliser, sauvegardez votre projet Ardour.
-Téléchargez ce fichier, mettez le exécutable et exécutez le avec un fichier .ardour comme argument, celà ajoutera le projet Ardour à la session en cours, ou créera une session si aucune session n&#8217;est chargée.</p>
+<p>Vous trouverez dans le menu <strong>Fichier &#8594; Utilitaires &#8594; Convertir une session Ardour en session Ray</strong>, celà crée et lance une session RaySession à partir d&#8217;une session Ardour. Il n&#8217;est pas surfait de faire une copie de sauvegarde de votre session Ardour avant de lancer ce script. Bien évidemment, il ne faut pas que Ardour soit ouvert avec cette session pendant l&#8217;execution de ce script, mais ça vous l&#8217;aviez déjà compris.</p>
 </div>
 </li>
 </ul>
@@ -1568,7 +1578,7 @@ Téléchargez ce fichier, mettez le exécutable et exécutez le avec un fichier 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-08-25 11:42:41 +0200
+Last updated 2021-12-17 09:44:35 +0100
 </div>
 </div>
 </body>
