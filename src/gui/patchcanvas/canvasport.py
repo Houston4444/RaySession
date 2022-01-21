@@ -93,9 +93,9 @@ class CanvasPort(QGraphicsItem):
                 theme = theme.audio
         elif self._port_type == PORT_TYPE_MIDI_JACK:
             theme = theme.midi
-            
+        
+        self._theme = theme
         self._port_font = theme.font()
-            
 
         # needed for line mov
         self._line_mov_list = []
@@ -174,25 +174,26 @@ class CanvasPort(QGraphicsItem):
         self._name_truncked = False
 
         if width_limited:
-            sizer = QFontMetrics(self._port_font)
+            #sizer = QFontMetrics(self._port_font)
+            long_size = self._theme.get_text_width(self._print_name)
 
-            if sizer.width(self._print_name) > width_limited:
+            if long_size > width_limited:
                 name_len = len(self._print_name)
                 middle = int(name_len / 2)
                 left_text = self._print_name[:middle]
                 middle_text = self._trunck_sep
                 right_text = self._print_name[middle + 1:]
-                left_size = sizer.width(left_text)
-                middle_size = sizer.width(middle_text)
-                right_size = sizer.width(right_text)
+                left_size = self._theme.get_text_width(left_text)
+                middle_size = self._theme.get_text_width(middle_text)
+                right_size = self._theme.get_text_width(right_text)
 
                 while left_size + middle_size + right_size > width_limited:
                     if left_size > right_size:
                         left_text = left_text[:-1]
-                        left_size = sizer.width(left_text)
+                        left_size = self._theme.get_text_width(left_text)
                     else:
                         right_text = right_text[1:]
-                        right_size = sizer.width(right_text)
+                        right_size = self._theme.get_text_width(right_text)
                         
                     if not (left_text or right_text):
                         break
@@ -202,14 +203,21 @@ class CanvasPort(QGraphicsItem):
                 self._name_truncked = True
 
     def get_text_width(self):
-        sizer = QFontMetrics(self._port_font)
-
         if self._name_truncked:
-            return (sizer.width(self._print_name)
-                    + sizer.width(self._trunck_sep)
-                    + sizer.width(self._print_name_right))
+            return (self._theme.get_text_width(self._print_name)
+                    + self._theme.get_text_width(self._trunck_sep)
+                    + self._theme.get_text_width(self._print_name_right))
+        
+        return self._theme.get_text_width(self._print_name)
+        
+        #sizer = QFontMetrics(self._port_font)
+
+        #if self._name_truncked:
+            #return (sizer.width(self._print_name)
+                    #+ sizer.width(self._trunck_sep)
+                    #+ sizer.width(self._print_name_right))
             
-        return sizer.width(self._print_name)
+        #return sizer.width(self._print_name)
 
     def reset_line_mov_positions(self):
         for i in range(len(self._line_mov_list)):

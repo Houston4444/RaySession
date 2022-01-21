@@ -80,18 +80,22 @@ class TitleLine:
     is_little = False
 
     def __init__(self, text: str, theme, little=False):
+        self.theme = theme
         self.text = text
         self.is_little = little
         self.x = 0
         self.y = 0
 
-        self.font = QFont(theme.font())
-        
-        if little:
-            self.font.setWeight(QFont.Normal)
+        #self.font = QFont(theme.font())
+        self.font = None
+        #if little:
+            #self.font.setWeight(QFont.Normal)
 
         self.size = theme.get_text_width(text)
         #self.size = QFontMetrics(self.font).width(text)
+
+    def get_font(self):
+        return self.theme.font()
 
     def reduce_pixel(self, reduce):
         self.font.setPixelSize(self.font.pixelSize() - reduce)
@@ -494,7 +498,7 @@ class CanvasBox(CanvasBoxAbstract):
 
             return_list.append(string[last_index:])
 
-            return_list += ['' for n in range(n_lines - len(sep_indexes) - 1)]
+            #return_list += ['' for n in range(n_lines - len(sep_indexes) - 1)]
             return tuple(return_list)
 
         best_indexes = [0]
@@ -535,7 +539,7 @@ class CanvasBox(CanvasBoxAbstract):
                 last_index += 1
 
         return_list.append(string[last_index:])
-        return tuple(return_list)
+        return tuple([rt for rt in return_list if rt])
     
     def _split_title(self, n_lines: int)->tuple:
         title, slash, subtitle = self._group_name.partition('/')
@@ -571,6 +575,7 @@ class CanvasBox(CanvasBoxAbstract):
                         # Check if we need to split the client title
                         # it could be "Carla-Multi-Client.Carla".
                         subtitles = self.split_in_two(subtitle, n_lines - 2)
+                        #subtitles = [sbt for sbt in subtitles if sbt]
                         for subtt in subtitles:
                             subtt_line = TitleLine(subtt, theme)
                             if subtt_line.size > client_line.size:
@@ -641,6 +646,9 @@ class CanvasBox(CanvasBoxAbstract):
         ''' choose in how many lines should be splitted the title
         returns needed more_height '''
 
+        laout_times = {}
+        laou_start = time.time()
+
         width_for_ports = 30 + ports_in_width + ports_out_width
         width_for_ports_one = 30 + max(ports_in_width, ports_out_width)
 
@@ -652,73 +660,84 @@ class CanvasBox(CanvasBoxAbstract):
         font_size = box_theme.font().pixelSize()
 
         # Check Text Name size
-        title_template = {
-            "title_width": 0, "header_width": 0, "header_height": 0}
-        all_title_templates = [title_template.copy() for i in range(8)]
-
-        last_lines_count = 0
-
-        for i in range(1, 8):
-            max_title_size = 0
-            max_header_width = 50
-            if self._plugin_inline != self.INLINE_DISPLAY_DISABLED:
-                max_header_width = 200
-            
-            title_lines = self._split_title(i)
-            
-            title_line_y_start = 2 + font_size
-            gui_margin = 2
-
-            for j in range(len(title_lines)):
-                title_line = title_lines[j]
-                title_line.y = title_line_y_start + j * int(font_size * 1.4)
-                max_title_size = max(max_title_size, title_line.size)
-                header_width = title_line.size + 12
-
-                if self.has_top_icon() and title_line.y <= 28 + font_size:
-                    header_width += 28
-
-                max_header_width = max(max_header_width, header_width)
-            
-            header_height = 2 + font_size + 2
-            if self.has_top_icon():
-                header_height = 4 + 24 + 4
-            
-            header_height = max(
-                header_height,
-                2 + font_size + int(font_size * 1.4) * (len(title_lines) - 1) + 2 + 5)
-            
-            if self._can_handle_gui:
-                max_header_width += 2 * gui_margin
-                header_height += 2 * gui_margin
-
-            new_title_template = title_template.copy()
-            new_title_template['title_width'] = max_title_size
-            new_title_template['header_width'] = max_header_width
-            new_title_template['header_height'] = header_height
-            all_title_templates[i] = new_title_template
-
-            if i > 2 and len(title_lines) <= last_lines_count:
-                break
-
-            last_lines_count = len(title_lines)
-
-            if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
-                continue
-
-            if header_width < width_for_ports_one:
-                break
-
-            if (self._layout_mode == LAYOUT_LARGE
-                    and header_width < width_for_ports):
-                break
-            
-            if self._restrict_title_lines and i >= self._restrict_title_lines:
-                break
-
-        lines_choice_max = i
-        one_column = False
+        all_title_templates = box_theme.get_title_templates(self._group_name)
+        lines_choice_max = len(all_title_templates) - 1
         
+        laout_times['bef parse templates'] = time.time() - laou_start
+        
+        if not all_title_templates:
+            title_template = {
+                "title_width": 0, "header_width": 0, "header_height": 0}
+            all_title_templates = [title_template.copy() for i in range(8)]
+
+            last_lines_count = 0
+
+            for i in range(1, 8):
+                max_title_size = 0
+                max_header_width = 50
+                if self._plugin_inline != self.INLINE_DISPLAY_DISABLED:
+                    max_header_width = 200
+                
+                laout_times['beff splitti' + str(i)] = time.time() - laou_start
+                title_lines = self._split_title(i)
+                laout_times['aftt splitti' + str(i)] = time.time() - laou_start
+                laout_times['tilles' + str(i)] = [tt.text for tt in title_lines]
+                
+                title_line_y_start = 2 + font_size
+                gui_margin = 2
+
+                for j in range(len(title_lines)):
+                    title_line = title_lines[j]
+                    title_line.y = title_line_y_start + j * int(font_size * 1.4)
+                    max_title_size = max(max_title_size, title_line.size)
+                    header_width = title_line.size + 12
+
+                    if self.has_top_icon() and title_line.y <= 28 + font_size:
+                        header_width += 28
+
+                    max_header_width = max(max_header_width, header_width)
+                
+                header_height = 2 + font_size + 2
+                if self.has_top_icon():
+                    header_height = 4 + 24 + 4
+                
+                header_height = max(
+                    header_height,
+                    2 + font_size + int(font_size * 1.4) * (len(title_lines) - 1) + 2 + 5)
+                
+                if self._can_handle_gui:
+                    max_header_width += 2 * gui_margin
+                    header_height += 2 * gui_margin
+
+                new_title_template = title_template.copy()
+                new_title_template['title_width'] = max_title_size
+                new_title_template['header_width'] = max_header_width
+                new_title_template['header_height'] = header_height
+                all_title_templates[i] = new_title_template
+
+                if i > 2 and len(title_lines) <= last_lines_count:
+                    break
+
+                last_lines_count = len(title_lines)
+
+                #if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
+                    #continue
+
+                #if header_width < width_for_ports_one:
+                    #break
+
+                #if (self._layout_mode == LAYOUT_LARGE
+                        #and header_width < width_for_ports):
+                    #break
+                
+                #if self._restrict_title_lines and i >= self._restrict_title_lines:
+                    #break
+
+            lines_choice_max = i
+            box_theme.save_title_templates(self._group_name, all_title_templates[:lines_choice_max])
+
+        laout_times['after parse tempts'] = time.time() - laou_start
+
         sizes_tuples = []
         
         if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
@@ -768,6 +787,8 @@ class CanvasBox(CanvasBoxAbstract):
                         (max(all_title_templates[i]['header_width'], width_for_ports)
                         * (all_title_templates[i]['header_height'] + height_for_ports),
                         i, False, TITLE_ON_TOP))
+        
+        laout_times['after make size tuples'] = time.time() - laou_start
         
         # sort areas and choose the first one (the littlest area)
         #print('tt', self._group_name, self._current_port_mode, sizes_tuples)
@@ -820,6 +841,12 @@ class CanvasBox(CanvasBoxAbstract):
         else:
             box_width = max(width_for_ports, header_width)
             box_height = header_height + height_for_ports
+        
+        laout_times['ennkd'] = time.time() - laou_start
+        
+        #for key, value in laout_times.items():
+            #print('    ', key, ':', value)
+            
         
         return {'max_title_size': max_title_size,
                 'box_height': box_height,
@@ -1119,6 +1146,9 @@ class CanvasBox(CanvasBoxAbstract):
         self._painter_path = painter_path
         
     def update_positions(self, even_animated=False):
+        tes_start = time.time()
+        tes_dict = {}
+        
         if canvas.loading_items:
             return
 
@@ -1141,6 +1171,8 @@ class CanvasBox(CanvasBoxAbstract):
     
         align_port_types = self._should_align_port_types(port_types)
 
+        tes_dict['bef geometry'] = time.time() - tes_start
+
         geo_dict = self._get_geometry_dict(port_types, align_port_types)
         last_in_pos = geo_dict['last_in_pos']
         last_out_pos = geo_dict['last_out_pos']
@@ -1149,10 +1181,13 @@ class CanvasBox(CanvasBoxAbstract):
         max_out_width = geo_dict['max_out_width']
         last_port_mode = geo_dict['last_port_mode']
         
+        tes_dict['aft geometry'] = time.time() - tes_start
+        
         box_theme = self.get_theme()
-        height_for_ports = max(last_in_pos, last_out_pos)
-        height_for_ports_one = last_inout_pos
-
+        down_height = box_theme.fill_pen().widthF()
+        height_for_ports = max(last_in_pos, last_out_pos) + down_height
+        height_for_ports_one = last_inout_pos + down_height
+       
         self._width_in = max_in_width
         self._width_out = max_out_width
 
@@ -1196,6 +1231,8 @@ class CanvasBox(CanvasBoxAbstract):
         last_in_pos += self._ports_y_start
         last_out_pos += self._ports_y_start
 
+        tes_dict['after title layout'] = time.time() - tes_start
+
         if self._wrapping:
             self._height = (normal_height
                             - (normal_height - wrapped_height)
@@ -1233,15 +1270,11 @@ class CanvasBox(CanvasBoxAbstract):
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
                 else:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_CENTER
-        
-        #down_height = box_theme.fill_pen().widthF()
-        down_height = 0
 
         self._wrapped_width = wrapped_width
         self._unwrapped_width = normal_width
-        self._wrapped_height = wrapped_height + down_height
-        self._unwrapped_height = normal_height + down_height
-        self._height += down_height
+        self._wrapped_height = wrapped_height
+        self._unwrapped_height = normal_height
 
         # round self._height to the upper value
         self._height = float(int(self._height + 0.99))
@@ -1252,20 +1285,35 @@ class CanvasBox(CanvasBoxAbstract):
             one_column)
         self._set_ports_x_positions(max_in_width, max_out_width)
         self._set_title_positions()
-        self.build_painter_path(ports_y_segments_dict)
+        if (self._width != self._ex_width
+                or self._height != self._ex_height
+                or ports_y_segments_dict != self._ex_ports_y_segments_dict):
+            tes_dict['befor painter path'] = time.time() - tes_start
+            self.build_painter_path(ports_y_segments_dict)
+
+        tes_dict['after painter path'] = time.time() - tes_start
 
         if (self._width != self._ex_width
                 or self._height != self._ex_height
                 or self.scenePos() != self._ex_scene_pos):
+            tes_dict['befresize_the_scene'] = time.time() - tes_start
             canvas.scene.resize_the_scene()
 
         self._ex_width = self._width
         self._ex_height = self._height
+        self._ex_ports_y_segments_dict = ports_y_segments_dict
         self._ex_scene_pos = self.scenePos()
 
-        self.repaint_lines(forced=True)
+        tes_dict['bef repaint_lines_'] = time.time() -tes_start
 
+        self.repaint_lines(forced=True)
+        tes_dict['aft repaint_lines_'] = time.time() -tes_start
         if not (self._wrapping or self._unwrapping) and self.isVisible():
             canvas.scene.deplace_boxes_from_repulsers([self])
-
+        tes_dict['aft deplace_boxes_'] = time.time() -tes_start
         self.update()
+        
+        tes_dict['ended'] = time.time() - tes_start
+        #for key, value in tes_dict.items():
+            #print('  ', key, ':', value)
+            

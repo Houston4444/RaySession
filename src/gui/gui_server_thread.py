@@ -1,6 +1,7 @@
 import os
 import sys
 import liblo
+import time
 
 import ray
 from gui_tools import CommandLineArgs
@@ -138,6 +139,9 @@ class GuiServerThread(liblo.ServerThread):
         if self.stopping:
             return
 
+        if path == '/ray/gui/patchbay/fast_temp_file_running':
+            print('gui reci tmpfil', time.time())
+
         if CommandLineArgs.debug:
             sys.stderr.write('\033[93mOSC::gui_receives\033[0m (%s, %s, %s)\n'
                              % (path, args, types))
@@ -178,10 +182,18 @@ class GuiServerThread(liblo.ServerThread):
 
     @ray_method('/ray/gui/server/announce', 'siisi')
     def _server_announce(self, path, args, types, src_addr):
+        print('server_announceddl', time.time())
+        
         if self.daemon_manager.is_announced():
             return
 
         version, server_status, options, session_root, is_net_free = args
+
+        if (self.session is not None
+                and self.session.main_win is not None
+                and self.session.main_win.waiting_for_patchbay):
+            self.send(src_addr, '/ray/server/ask_for_patchbay')
+            self.session.main_win.waiting_for_patchbay = False
 
         self.signaler.daemon_announce.emit(
             src_addr, version, server_status,
@@ -307,7 +319,7 @@ class GuiServerThread(liblo.ServerThread):
         NSM_URL = os.getenv('NSM_URL')
         if not NSM_URL:
             NSM_URL = ""
-
+        print('call daemon time', time.time())
         self.send(self.daemon_manager.address, '/ray/server/gui_announce',
                   ray.VERSION, int(CommandLineArgs.under_nsm),
                   NSM_URL, os.getpid(),

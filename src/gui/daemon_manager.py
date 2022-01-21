@@ -2,6 +2,7 @@
 import os
 import socket
 import sys
+import time
 from PyQt5.QtCore import QObject, QProcess, QTimer
 from PyQt5.QtWidgets import QApplication
 from liblo import Address
@@ -136,6 +137,7 @@ class DaemonManager(QObject):
             self.main_win.waiting_for_patchbay = False
             server = GuiServerThread.instance()
             server.to_daemon('/ray/server/ask_for_patchbay')
+            print('da ask_for_patchbay', time.time())
 
         self.signaler.daemon_announce_ok.emit()
         self.session.set_daemon_options(options)

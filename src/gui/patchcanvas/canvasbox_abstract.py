@@ -131,6 +131,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._ex_width = self._width
         self._ex_height = self._height
         self._ex_scene_pos = self.scenePos()
+        self._ex_ports_y_segments_dict = {}
 
         self._last_pos = QPointF()
         self._splitted = False
@@ -1205,7 +1206,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         # draw title lines
         for title_line in self._title_lines:
-            painter.setFont(title_line.font)
+            painter.setFont(title_line.get_font())
             
             if title_line.is_little:
                 painter.setPen(opac_text_pen)

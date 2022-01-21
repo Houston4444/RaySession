@@ -136,6 +136,9 @@ class MainWindow(QMainWindow):
         self.ui.actionToggleShowMessages.setChecked(
             bool(self.ui.splitterSessionVsMessages.sizes()[1] > 0))
 
+        #self._fullscreen_patchbay = False
+        #self.show()
+
         # set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
         self.ui.toolButtonSaveSession.setDefaultAction(
@@ -393,6 +396,7 @@ class MainWindow(QMainWindow):
             self._systray.show()
 
         self._startup_time = time.time()
+        print('main_win_startue', self._startup_time)
 
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
         self.ui.actionToggleShowMessages.setChecked(
@@ -809,6 +813,7 @@ class MainWindow(QMainWindow):
         height = rect.height()
 
         if yesno:
+            print('mw ask_for_patchbay', time.time())
             self.to_daemon('/ray/server/ask_for_patchbay')
 
             patchbay_geom = RS.settings.value('MainWindow/patchbay_geometry')

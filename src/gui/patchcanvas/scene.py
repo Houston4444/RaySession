@@ -430,7 +430,7 @@ class PatchScene(QGraphicsScene):
                             repulser['item'].get_current_port_mode(),
                             widget.get_current_port_mode()):
                         items_to_move.append({'item': widget, 'rect': irect})
-                    
+            
             for box_dict in self.move_boxes:
                 if (box_dict['widget'] in repulser_boxes
                         or box_dict['widget'] in [b['item'] for b in to_move_boxes]):

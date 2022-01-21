@@ -1,5 +1,6 @@
 import os
 import signal
+import time
 
 from PyQt5.QtCore import QTimer, QFile
 from PyQt5.QtWidgets import QFileDialog, QFrame
@@ -136,7 +137,6 @@ class ClientPropertiesDialog(ChildDialog):
 class NsmClientPropertiesDialog(ClientPropertiesDialog):
     def __init__(self, parent, client):
         ClientPropertiesDialog.__init__(self, parent, client)
-
         self.nsmui_frame = QFrame()
         self.nsmui = ui.nsm_properties.Ui_Frame()
         self.nsmui.setupUi(self.nsmui_frame)

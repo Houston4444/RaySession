@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
 from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
 from PyQt5.QtCore import pyqtSlot, QSize
-
+import time
 import ray
 from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
@@ -17,7 +17,6 @@ class ClientSlot(QFrame):
         QFrame.__init__(self)
         self.ui = ui.client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
-
         self.client = client
         self.main_win = self.client.session.main_win
 
@@ -65,9 +64,9 @@ class ClientSlot(QFrame):
             self.main_win.has_git)
 
         self.ui.iconButton.setMenu(self._menu)
-
+        
         dark = is_dark_theme(self)
-
+        
         self._save_icon = RayIcon('document-save', dark)
         self._saved_icon = RayIcon('document-saved', dark)
         self._unsaved_icon = RayIcon('document-unsaved', dark)
@@ -460,7 +459,6 @@ class ClientItem(QListWidgetItem):
 
         self.sort_number = 0
         self.widget = ClientSlot(parent, self, client_data)
-
         parent.setItemWidget(self, self.widget)
         self.setSizeHint(QSize(100, 45))
 
@@ -496,6 +494,8 @@ class ListWidgetClients(QListWidget):
         item = ClientItem(self, client_data)
         item.sort_number = self._last_n
         self._last_n += 1
+        
+        print('create_client_widget end', time.time())
         return item.widget
 
     def remove_client_widget(self, client_id):

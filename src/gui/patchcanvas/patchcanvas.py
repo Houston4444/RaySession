@@ -23,6 +23,7 @@ import sys
 import time
 from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
                           QPoint, QPointF, QRectF, QSettings, QTimer, pyqtSignal)
+from PyQt5.QtGui import QFontMetricsF, QFont
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -162,6 +163,9 @@ def init(app_name: str, scene, callback, theme_paths: tuple, debug=False):
             canvas.theme_manager.set_theme('Black Gold')
 
     canvas.initiated = True
+    print('feniniso', time.time())
+    #unused_size = QFontMetricsF(QFont('ubuntu')).width('nothing strong')
+    #print('decaorii', time.time())
 
 def clear():
     if canvas.debug:
@@ -685,20 +689,47 @@ def join_group(group_id):
     QTimer.singleShot(0, canvas.scene.update)
 
 def redraw_all_groups():
-    last_time = time.time()
+    start_time = time.time()
+    last_time = start_time
+    i = 0
+    
+    # we are redrawing all groups
+    # for optimization reason we prevent here to resize the scene
+    # at each group draw, we'll do it once all is done
+    # same for prevent_overlap.
+    elastic = options.elastic
+    options.elastic = False
+    prevent_overlap = options.prevent_overlap
+    options.prevent_overlap = False
     
     for group in canvas.group_list:
         for box in group.widgets:
             if box is not None:
+                i += 1
                 box.update_positions()
         now = time.time()
-        print('kk', group.group_name, now - last_time)
+        #print('kk', group.group_name, now - last_time)
         last_time = now
-
+    
     if canvas.scene is None:
+        options.elastic = elastic
+        options.prevent_overlap = prevent_overlap
         return
-
-    QTimer.singleShot(0, canvas.scene.update)
+    
+    if elastic:
+        canvas.scene.set_elastic(True)
+        
+    if prevent_overlap:
+        canvas.scene.set_prevent_overlap(True)
+        for group in canvas.group_list:
+            for box in group.widgets:
+                if box is not None:
+                    canvas.scene.deplace_boxes_from_repulsers([box])
+    
+    if not elastic or prevent_overlap:
+        QTimer.singleShot(0, canvas.scene.update)
+        
+    print('total timedl', i+1, time.time() - start_time, (time.time() - start_time)/(i+1))
 
 def redraw_group(group_id: int):
     for group in canvas.group_list:

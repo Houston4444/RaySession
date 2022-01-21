@@ -28,8 +28,9 @@ class Client(QObject, ray.ClientData):
         self.no_save_level = 0
         self.last_save = time.time()
         self.check_last_save = True
-
+        print('ziejdjk', time.time())
         self.widget = self.main_win.create_client_widget(self)
+        print('zoubiaa', time.time())
         self.properties_dialog = ClientPropertiesDialog.create(self.main_win, self)
 
     def set_status(self, status: int):

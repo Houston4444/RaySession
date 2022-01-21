@@ -146,6 +146,7 @@ class OscJackPatch(Server):
         self.jack_client = jack_client
     
     def _ray_patchbay_add_gui(self, path, args, types, src_addr):
+        print('jackck_addgui', time.time())
         self.add_gui(args[0])
 
     def _ray_patchbay_gui_disannounce(self, path, args, types, src_addr):
@@ -231,12 +232,13 @@ class OscJackPatch(Server):
         for src_addr in src_addr_list:
             # tmp file is deleted by the gui itself once read
             # so there is one tmp file per local GUI
+            print('jacklf makefil', time.time())
             file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
             json.dump(patchbay_data, file)
             file.close()
-
+            print('jzakccl senfil', time.time())
             self.send(src_addr, '/ray/gui/patchbay/fast_temp_file_running',
-                    file.name)
+                      file.name)
 
     def send_distant_data(self, src_addr_list):
         # we need to slow the long process of messages sends

@@ -9,6 +9,10 @@ import ray
 
 _translate = QApplication.translate
 
+_RAY_ICONS_CACHE_LIGHT = {}
+_RAY_ICONS_CACHE_DARK = {}
+_APP_ICONS_CACHE_LIGHT = {}
+_APP_ICONS_CACHE_DARK = {}
 
 class RS:
     settings = QSettings()
@@ -61,7 +65,7 @@ class ErrDaemon:
     WRONG_VERSION = -6
 
 
-class RayIcon(QIcon):
+class RayAbstractIcon(QIcon):
     def __init__(self, icon_name: str, dark=False):
         QIcon.__init__(self)
         breeze = 'breeze-dark' if dark else 'breeze'
@@ -70,6 +74,20 @@ class RayIcon(QIcon):
             QPixmap(
                 ':scalable/%s/disabled/%s' %
                 (breeze, icon_name)), QIcon.Disabled, QIcon.Off)
+
+def RayIcon(icon_name: str, dark=False):
+    if dark and icon_name in _RAY_ICONS_CACHE_DARK.keys():
+        return _RAY_ICONS_CACHE_DARK[icon_name]
+    if not dark and icon_name in _RAY_ICONS_CACHE_LIGHT.keys():
+        return _RAY_ICONS_CACHE_LIGHT[icon_name]
+    
+    icon = RayAbstractIcon(icon_name, dark)
+    if dark:
+        _RAY_ICONS_CACHE_DARK[icon_name] = icon
+    else:
+        _RAY_ICONS_CACHE_LIGHT[icon_name] = icon
+    
+    return icon
 
 
 class CommandLineArgs(argparse.Namespace):
@@ -300,7 +318,12 @@ def get_app_icon(icon_name, widget):
     dark = bool(
         widget.palette().brush(
             2, QPalette.WindowText).color().lightness() > 128)
-
+    
+    if dark and icon_name in _APP_ICONS_CACHE_DARK.keys():
+        return _APP_ICONS_CACHE_DARK[icon_name]
+    if not dark and icon_name in _APP_ICONS_CACHE_LIGHT.keys():
+        return _APP_ICONS_CACHE_LIGHT[icon_name]
+    
     icon = QIcon.fromTheme(icon_name)
 
     if icon.isNull():
@@ -326,5 +349,10 @@ def get_app_icon(icon_name, widget):
                     icon = QIcon()
                     icon.addFile(filename)
                     break
+
+    if dark:
+        _APP_ICONS_CACHE_DARK[icon_name] = icon
+    else:
+        _APP_ICONS_CACHE_LIGHT[icon_name] = icon
 
     return icon

@@ -112,8 +112,9 @@ class MainObject:
         self.osc_server = osc_server.OscJackPatch(self)
         self.osc_server.set_tmp_gui_url(gui_url)
         self.write_existence_file()
-        
+        print('bef_start_jacks', time.time())
         self.start_jack_client()
+        print('jackdkek_inited', time.time())
     
     @staticmethod
     def get_metadata_value_str(prop)->str:
@@ -188,8 +189,9 @@ class MainObject:
         self.osc_server.add_gui(gui_url)
     
     def check_jack_client_responding(self):
-        for i in range(25): # JACK has 5s to answer
-            time.sleep(0.200)
+        for i in range(500): # JACK has 5s to answer
+            time.sleep(0.010)
+
             if not self._waiting_jack_client_open:
                 break
         else:
@@ -257,8 +259,7 @@ class MainObject:
         jack_waiter_thread = threading.Thread(
             target=self.check_jack_client_responding)
         jack_waiter_thread.start()
-        
-        #time.sleep(20)
+
         with suppress_stdout_stderr():
             self.jack_client = jacklib.client_open(
                 "ray-patch_to_osc",
@@ -514,6 +515,7 @@ def main_process():
 if __name__ == '__main__':
     # prevent deprecation warnings python messages
     warnings.filterwarnings("ignore", category=DeprecationWarning)
+    print('chapichapoà', time.time())
     
     signal.signal(signal.SIGINT, MainObject.signal_handler)
     signal.signal(signal.SIGTERM, MainObject.signal_handler)

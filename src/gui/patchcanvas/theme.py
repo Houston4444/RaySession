@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import time
 
 from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF
 from PyQt5.QtCore import Qt, QTimer
@@ -116,6 +117,7 @@ class StyleAttributer:
         self._fill_pen = None
         self._font = None
         self._font_metrics_cache = {}
+        self._titles_templates_cache = {}
 
     def set_attribute(self, attribute: str, value):
         err = False
@@ -301,8 +303,11 @@ class StyleAttributer:
         return font_
     
     def get_text_width(self, string:str):
+        if string in self._font_metrics_cache.keys():
+            return self._font_metrics_cache[string]
+
         tot_size = 0.0
-        
+        starti = time.time()
         for s in string:
             if s in self._font_metrics_cache.keys():
                 tot_size += self._font_metrics_cache[s]
@@ -311,15 +316,11 @@ class StyleAttributer:
                 self._font_metrics_cache[s] = letter_size
                 tot_size += letter_size
         
+        #print('ll', string, time.time() - starti)
+        
+        self._font_metrics_cache[string] = tot_size
+        
         return tot_size
-        
-        
-        #if string in self._font_metrics_cache.keys():
-            #return self._font_metrics_cache[string]
-        
-        #width = QFontMetricsF(self.font()).width(string)
-        #self._font_metrics_cache[string] = width
-        #return width
     
     def port_offset(self):
         return self.get_value_of('_port_offset')
@@ -332,6 +333,14 @@ class StyleAttributer:
 
     def box_footer(self):
         return self.get_value_of('_box_footer')
+    
+    def save_title_templates(self, title: str, templates: list):
+        self._titles_templates_cache[title] = templates
+    
+    def get_title_templates(self, title: str) -> list:
+        if title in self._titles_templates_cache.keys():
+            return self._titles_templates_cache[title]
+        return []
 
 class UnselectedStyleAttributer(StyleAttributer):
     def __init__(self, path, parent=None):
