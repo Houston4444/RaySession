@@ -492,22 +492,32 @@ class SignaledSession(Session):
         self.patchbay_manager.client_name_and_uuid(*args)
 
     def _ray_gui_patchbay_port_added(self, path, args):
-        self.patchbay_manager.add_port(*args)
+        #self.patchbay_manager.add_port(*args)
+        self.patchbay_manager.add_order_to_queue(
+            'add_port', *args)
 
     def _ray_gui_patchbay_port_removed(self, path, args):
-        self.patchbay_manager.remove_port(*args)
+        #self.patchbay_manager.remove_port(*args)
+        self.patchbay_manager.add_order_to_queue(
+            'remove_port', *args)
 
     def _ray_gui_patchbay_port_renamed(self, path, args):
-        self.patchbay_manager.rename_port(*args)
+        #self.patchbay_manager.rename_port(*args)
+        self.patchbay_manager.add_order_to_queue(
+            'rename_port', *args)
 
     def _ray_gui_patchbay_metadata_updated(self, path, args):
         self.patchbay_manager.metadata_update(*args)
 
     def _ray_gui_patchbay_connection_added(self, path, args):
-        self.patchbay_manager.add_connection(*args)
+        #self.patchbay_manager.add_connection(*args)
+        self.patchbay_manager.add_order_to_queue(
+            'add_connection', *args)
 
     def _ray_gui_patchbay_connection_removed(self, path, args):
-        self.patchbay_manager.remove_connection(*args)
+        #self.patchbay_manager.remove_connection(*args)
+        self.patchbay_manager.add_order_to_queue(
+            'remove_connection', *args)
 
     def _ray_gui_patchbay_update_group_position(self, path, args):
         self.patchbay_manager.update_group_position(*args)

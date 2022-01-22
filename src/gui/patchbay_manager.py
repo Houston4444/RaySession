@@ -1291,6 +1291,7 @@ class PatchbayManager:
     group_positions = []
     portgroups_memory = []
     _next_portgroup_id = 1
+    orders_queue = []
 
     def __init__(self, session):
         self.session = session
@@ -1312,11 +1313,11 @@ class PatchbayManager:
         self.join_animation_connected = False
         self.options_dialog = None
         
-        self._port_event_timer = QTimer()
-        self._port_event_timer.setInterval(20)
-        self._port_event_timer.setSingleShot(True)
-        self._port_event_timer.timeout.connect(
-            self._port_event_timeout)
+        self._orders_queue_timer = QTimer()
+        self._orders_queue_timer.setInterval(20)
+        self._orders_queue_timer.setSingleShot(True)
+        self._orders_queue_timer.timeout.connect(
+            self._order_queue_timeout)
 
     def finish_init(self):
         self.canvas_menu = CanvasMenu(self)
@@ -1796,7 +1797,8 @@ class PatchbayManager:
                 group.uuid = uuid
                 break
 
-    def add_port(self, name: str, port_type: int, flags: int, uuid: int):
+    def add_port(self, name: str, port_type: int, flags: int, uuid: int) -> Group:
+        print('add_portt(', name)
         port = Port(self._next_port_id, name, port_type, flags, uuid)
         self._next_port_id += 1
 
@@ -1867,6 +1869,7 @@ class PatchbayManager:
 
         group.check_for_portgroup_on_last_port()
         group.check_for_display_name_on_last_port()
+        return group
 
     def remove_port(self, name: str):
         port = self.get_port_from_name(name)
@@ -2175,6 +2178,48 @@ class PatchbayManager:
 
     def sample_rate_changed(self, samplerate):
         self.tools_widget.set_samplerate(samplerate)
+
+    def add_order_to_queue(self, order: str, *args):
+        self.orders_queue.append({'order': order, 'args': args})
+        self._orders_queue_timer.start()
+
+    def _order_queue_timeout(self):
+        self.optimize_operation(True)
+        #self.very_fast_operation = True
+        
+        has_port_event = False
+        has_conn_event = False
+        groups_to_update = []
+        print('orders_time_out')
+        
+        for order_dict in self.orders_queue:
+            order = order_dict['order']
+            args = order_dict['args']
+            
+            print('sliba', order)
+            
+            if order == 'add_port':
+                group = self.add_port(*args)
+                if not group in groups_to_update:
+                    groups_to_update.append(group)
+            elif order == 'remove_port':
+                self.remove_port(*args)
+            elif order == 'rename_port':
+                self.rename_port(*args)
+            elif order == 'add_connection':
+                self.add_connection(*args)
+            elif order == 'remove_connection':
+                self.add_connection(*args)
+            else:
+                sys.stderr.write('_order_queue_timeout wrong order: %s\n' % order)
+        
+        self.optimize_operation(False)
+        #self.very_fast_operation = False
+        self.orders_queue.clear()
+        
+        #for group in groups_to_update:
+            #print('rijj', group.name, group.group_id)
+            #patchcanvas.redraw_group(group.group_id)
 
     def receive_big_packets(self, state: int):
         self.optimize_operation(not bool(state))
