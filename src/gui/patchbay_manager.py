@@ -363,6 +363,8 @@ class Group:
         self._timer_ports_rename.setInterval(20)
         self._timer_ports_rename.setSingleShot(True)
         self._timer_ports_rename.timeout.connect(self.rename_waiting_ports)
+        
+        self.has_event_queue = False
 
     def update_ports_in_canvas(self):
         for port in self.ports:
@@ -1309,6 +1311,12 @@ class PatchbayManager:
         self._wait_join_group_ids = []
         self.join_animation_connected = False
         self.options_dialog = None
+        
+        self._port_event_timer = QTimer()
+        self._port_event_timer.setInterval(20)
+        self._port_event_timer.setSingleShot(True)
+        self._port_event_timer.timeout.connect(
+            self._port_event_timeout)
 
     def finish_init(self):
         self.canvas_menu = CanvasMenu(self)
@@ -1569,6 +1577,13 @@ class PatchbayManager:
             print('action theme changeddd')
             self.remove_and_add_all()
 
+    def _port_event_timeout(self):
+        for group in self.groups:
+            if group.has_event_queue:
+                group.sort_ports_in_canvas()
+                group.add_all_ports_to_canvas()
+                patchcanvas.redraw_group(group.group_id)
+
     def show_options_dialog(self):
         self.options_dialog.move(QCursor.pos())
         self.options_dialog.show()
@@ -1701,7 +1716,6 @@ class PatchbayManager:
             connection.add_to_canvas()
         
         self.optimize_operation(False)
-        print('kskddkdk', time.time())
         patchcanvas.redraw_all_groups()
 
     def clear_all(self):
@@ -2165,7 +2179,6 @@ class PatchbayManager:
     def receive_big_packets(self, state: int):
         self.optimize_operation(not bool(state))
         if state:
-            print('jackiicha', time.time())
             patchcanvas.redraw_all_groups()
 
     def fast_temp_file_memory(self, temp_path):
@@ -2208,6 +2221,9 @@ class PatchbayManager:
         # however, if there is no group position
         # (i.e. if there is no config at all), it is prefferable to
         # know where finish the group boxes before to add another one.
+        
+        # very fast operation means that nothing is done in the patchcanvas
+        # everything stays here in this file.
         
         if self.group_positions:
             self.optimize_operation(True)

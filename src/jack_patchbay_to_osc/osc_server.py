@@ -232,11 +232,10 @@ class OscJackPatch(Server):
         for src_addr in src_addr_list:
             # tmp file is deleted by the gui itself once read
             # so there is one tmp file per local GUI
-            print('jacklf makefil', time.time())
             file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
             json.dump(patchbay_data, file)
             file.close()
-            print('jzakccl senfil', time.time())
+
             self.send(src_addr, '/ray/gui/patchbay/fast_temp_file_running',
                       file.name)
 
@@ -343,13 +342,6 @@ class OscJackPatch(Server):
     
     def metadata_updated(self, uuid: int, key: str, value: str):
         self.send_gui('/ray/gui/patchbay/metadata_updated', uuid, key, value)
-    
-    def port_order_changed(self, port):
-        if port.order is None:
-            return
-
-        self.send_gui('/ray/gui/patchbay/port_order_changed',
-                      port.name, port.order)
     
     def connection_added(self, connection):
         self.send_gui('/ray/gui/patchbay/connection_added',

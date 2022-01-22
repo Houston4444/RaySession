@@ -706,10 +706,13 @@ def redraw_all_groups():
         for box in group.widgets:
             if box is not None:
                 i += 1
-                box.update_positions()
+                box.update_positions(without_connections=True)
         now = time.time()
-        #print('kk', group.group_name, now - last_time)
         last_time = now
+    
+    for connection in canvas.connection_list:
+        if connection.widget is not None:
+            connection.widget.update_line_pos()
     
     if canvas.scene is None:
         options.elastic = elastic

@@ -1145,7 +1145,7 @@ class CanvasBox(CanvasBoxAbstract):
 
         self._painter_path = painter_path
         
-    def update_positions(self, even_animated=False):
+    def update_positions(self, even_animated=False, without_connections=False):
         tes_start = time.time()
         tes_dict = {}
         
@@ -1306,7 +1306,9 @@ class CanvasBox(CanvasBoxAbstract):
 
         tes_dict['bef repaint_lines_'] = time.time() -tes_start
 
-        self.repaint_lines(forced=True)
+        if not without_connections:
+            self.repaint_lines(forced=True)
+
         tes_dict['aft repaint_lines_'] = time.time() -tes_start
         if not (self._wrapping or self._unwrapping) and self.isVisible():
             canvas.scene.deplace_boxes_from_repulsers([self])
