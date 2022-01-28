@@ -91,7 +91,8 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         if not self.icon.isNull():
             pixmap = self.icon.pixmap(24, 24)
             self.setPixmap(pixmap)
-            self.setOffset(4.0, 4.0)
+            #self.setOffset(4.0, 4.0)
+            self.setPos(4.0, 4.0)
 
     def update_zoom(self, scale: float):
         if self.icon is None or scale <= 0.0:
@@ -100,7 +101,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         pixmap = self.icon.pixmap(int(0.5 + 24 * scale), int(0.5 + 24 * scale))
         self.setPixmap(pixmap)
         self.setScale(1.0 / scale)
-        self.setOffset(float(self.x_offset * scale), float(self.y_offset * scale))
+        #self.setOffset(float(self.x_offset * scale), float(self.y_offset * scale))
 
     def is_null(self)->bool:
         if self.icon is None:
@@ -111,7 +112,8 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
     def set_pos(self, x: int, y: int):
         self.x_offset = x
         self.y_offset = y
-        self.setOffset(float(self.x_offset), float(self.y_offset))
+        #self.setOffset(float(self.x_offset), float(self.y_offset))
+        self.setPos(float(x), float(y))
         
     def type(self):
         return CanvasIconType

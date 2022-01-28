@@ -2196,7 +2196,6 @@ class PatchbayManager:
                 self.remove_connection(*args)
                 
             elif order == 'update_metadata':
-                print('metael', args)
                 group_id = self.metadata_update(*args)
                 if group_id is not None:
                     group_ids_to_update.add(group_id)
@@ -2209,7 +2208,6 @@ class PatchbayManager:
                 group.sort_ports_in_canvas()
 
         self.optimize_operation(False)
-        #self.very_fast_operation = False
         self.orders_queue.clear()
         
         for group in self.groups:
