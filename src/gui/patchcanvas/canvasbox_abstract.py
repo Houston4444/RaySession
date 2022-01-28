@@ -698,30 +698,15 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         act_x_wrap = menu.addAction(wrap_title)
         act_x_wrap.setIcon(wrap_icon)
-        
-        #column_menu = QMenu('Disposition')
-        #column_menu.setIcon(QIcon.fromTheme('view-split-left-right'))
-        #act_column_auto = column_menu.addAction('Automatic')
-        #act_column_one = column_menu.addAction('One column')
-        #act_column_two = column_menu.addAction('Two columns')
-        
-        #if self._current_port_mode == PORT_MODE_INPUT + PORT_MODE_OUTPUT:
-            #act_column_auto.setCheckable(True)
-            #act_column_one.setCheckable(True)
-            #act_column_two.setCheckable(True)
-            #act_column_auto.setChecked(bool(self._layout_mode == LAYOUT_AUTO))
-            #act_column_one.setChecked(bool(self._layout_mode == LAYOUT_HIGH))
-            #act_column_two.setChecked(bool(self._layout_mode == LAYOUT_LARGE))
-            #menu.addMenu(column_menu)
             
-        act_auto_disposition = menu.addAction(
-            _translate('patchbay', 'Automatic disposition'))
-        act_auto_disposition.setVisible(self._layout_mode != LAYOUT_AUTO)
-        act_auto_disposition.setIcon(QIcon.fromTheme('auto-scale-x'))
+        act_auto_layout = menu.addAction(
+            _translate('patchbay', 'Automatic layout'))
+        act_auto_layout.setVisible(self._layout_mode != LAYOUT_AUTO)
+        act_auto_layout.setIcon(QIcon.fromTheme('auto-scale-x'))
 
-        act_switch_disposition = menu.addAction(
-            _translate('patchbay', 'Change disposition'))
-        act_switch_disposition.setIcon(QIcon.fromTheme('view-split-left-right'))
+        act_switch_layout = menu.addAction(
+            _translate('patchbay', 'Change layout'))
+        act_switch_layout.setIcon(QIcon.fromTheme('view-split-left-right'))
 
         act_x_sep3 = menu.addSeparator()
 
@@ -785,11 +770,11 @@ class CanvasBoxAbstract(QGraphicsItem):
             else:
                 canvas.callback(ACTION_GROUP_SPLIT, self._group_id, 0, "")
 
-        elif act_selected == act_auto_disposition:
+        elif act_selected == act_auto_layout:
             canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id,
                             LAYOUT_AUTO, "")
 
-        elif act_selected == act_switch_disposition:
+        elif act_selected == act_switch_layout:
             next_disposition = LAYOUT_HIGH
             if self._current_layout_mode == LAYOUT_HIGH:
                 next_disposition = LAYOUT_LARGE
