@@ -687,7 +687,7 @@ class CanvasPort(QGraphicsItem):
         poly_color_alter = theme.background2_color()
         poly_pen = theme.fill_pen()
         #poly_pen.setJoinStyle(Qt.RoundJoin)
-        text_pen = theme.text_color()
+        text_pen = QPen(theme.text_color())
 
         # To prevent quality worsening
         poly_pen = QPen(poly_pen)
@@ -864,8 +864,14 @@ class CanvasPort(QGraphicsItem):
         if self._name_truncked:
             sep_x = text_pos.x() + sizer.width(self._print_name)
             
-            painter.drawText(QPointF(sep_x + sep_width, text_pos.y()), self._print_name_right)
-            painter.setPen(poly_pen)
+            painter.drawText(QPointF(sep_x + sep_width, text_pos.y()),
+                             self._print_name_right)
+
+            trunck_pen = QPen(text_pen)
+            color = text_pen.color()
+            color.setAlphaF(color.alphaF() * 0.25)
+            trunck_pen.setColor(color)
+            painter.setPen(trunck_pen)
             painter.drawText(QPointF(sep_x, text_pos.y() + 1), self._trunck_sep)
 
         painter.restore()

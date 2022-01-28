@@ -25,7 +25,7 @@ import time
 
 from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QPainter,
-                         QPolygonF, QLinearGradient)
+                         QPolygonF, QLinearGradient, QPen)
 from PyQt5.QtWidgets import QGraphicsItem, QApplication
 
 # ------------------------------------------------------------------------------------------------------------
@@ -702,7 +702,7 @@ class CanvasPortGroup(QGraphicsItem):
         poly_pen = theme.fill_pen()
         color_main = theme.background_color()
         color_alter = theme.background2_color()
-        text_pen = theme.text_color()
+        text_pen = QPen(theme.text_color())
 
         lineHinting = poly_pen.widthF() / 2.0
 
@@ -782,7 +782,13 @@ class CanvasPortGroup(QGraphicsItem):
 
             painter.drawText(QPointF(sep_x + sep_width, text_pos.y()),
                              self._print_name_right)
-            painter.setPen(poly_pen)
+
+            trunck_pen = QPen(text_pen)
+            color = text_pen.color()
+            color.setAlphaF(color.alphaF() * 0.25)
+            trunck_pen.setColor(color)
+            painter.setPen(trunck_pen)
+            
             painter.drawText(QPointF(sep_x, text_pos.y() + 1), self._trunck_sep)
 
         painter.restore()
