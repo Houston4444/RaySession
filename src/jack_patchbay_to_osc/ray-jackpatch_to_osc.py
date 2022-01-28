@@ -267,6 +267,9 @@ class MainObject:
                 None)
 
         self._waiting_jack_client_open = False
+        # Some problems happens to the JACK server sometimes without it
+        time.sleep(0.030)
+
         jack_waiter_thread.join()
 
         if self.jack_client:

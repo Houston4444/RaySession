@@ -341,7 +341,7 @@ class Group:
         self.display_name = name
         self.ports = []
         self.portgroups = []
-        self.ports_to_rename_queue = []
+        #self.ports_to_rename_queue = []
         self._is_hardware = False
         self.client_icon = ''
         self.a2j_group = False
@@ -353,18 +353,13 @@ class Group:
         self.gui_visible = False
 
         self._icon_from_metadata = False
-        
-        self._timer_port_order = QTimer()
-        self._timer_port_order.setInterval(20)
-        self._timer_port_order.setSingleShot(True)
-        self._timer_port_order.timeout.connect(self.sort_ports_in_canvas)
 
-        self._timer_ports_rename = QTimer()
-        self._timer_ports_rename.setInterval(20)
-        self._timer_ports_rename.setSingleShot(True)
-        self._timer_ports_rename.timeout.connect(self.rename_waiting_ports)
+        #self._timer_ports_rename = QTimer()
+        #self._timer_ports_rename.setInterval(20)
+        #self._timer_ports_rename.setSingleShot(True)
+        #self._timer_ports_rename.timeout.connect(self.rename_waiting_ports)
         
-        self.has_event_queue = False
+        #self.has_event_queue = False
 
     def update_ports_in_canvas(self):
         for port in self.ports:
@@ -1258,27 +1253,24 @@ class Group:
         for portgroup in self.portgroups:
             portgroup.add_to_canvas()
 
-    def rename_waiting_ports(self):
-        PatchbayManager.optimize_operation(True)
+    #def rename_waiting_ports(self):
+        #PatchbayManager.optimize_operation(True)
 
-        for port_rename_dict in self.ports_to_rename_queue:
-            port = port_rename_dict['port']
-            port.full_name = port_rename_dict['new_name']
-            self.graceful_port(port)
-            port.rename_in_canvas()
+        #for port_rename_dict in self.ports_to_rename_queue:
+            #port = port_rename_dict['port']
+            #port.full_name = port_rename_dict['new_name']
+            #self.graceful_port(port)
+            #port.rename_in_canvas()
 
-        PatchbayManager.optimize_operation(False)
-        self.redraw_in_canvas()
+        #PatchbayManager.optimize_operation(False)
+        #self.redraw_in_canvas()
 
-        self.ports_to_rename_queue.clear()
+        #self.ports_to_rename_queue.clear()
 
-    def sort_ports_later(self):
-        self._timer_port_order.start()
-
-    def rename_port_later(self, port, new_name):
-        self.ports_to_rename_queue.append(
-            {'port': port, 'new_name': new_name})
-        self._timer_ports_rename.start()
+    #def rename_port_later(self, port, new_name):
+        #self.ports_to_rename_queue.append(
+            #{'port': port, 'new_name': new_name})
+        #self._timer_ports_rename.start()
 
 
 class PatchbayManager:
@@ -1313,8 +1305,13 @@ class PatchbayManager:
         self.join_animation_connected = False
         self.options_dialog = None
         
+        # all patchbay events are delayed
+        # to reduce the patchbay comsumption.
+        # Redraws in canvas are made once 50ms have passed without any event.
+        # This prevent one group redraw per port added/removed
+        # when a lot of ports are added/removed/renamed simultaneously
         self._orders_queue_timer = QTimer()
-        self._orders_queue_timer.setInterval(20)
+        self._orders_queue_timer.setInterval(50)
         self._orders_queue_timer.setSingleShot(True)
         self._orders_queue_timer.timeout.connect(
             self._order_queue_timeout)
@@ -1578,13 +1575,6 @@ class PatchbayManager:
             print('action theme changeddd')
             self.remove_and_add_all()
 
-    def _port_event_timeout(self):
-        for group in self.groups:
-            if group.has_event_queue:
-                group.sort_ports_in_canvas()
-                group.add_all_ports_to_canvas()
-                patchcanvas.redraw_group(group.group_id)
-
     def show_options_dialog(self):
         self.options_dialog.move(QCursor.pos())
         self.options_dialog.show()
@@ -1797,8 +1787,8 @@ class PatchbayManager:
                 group.uuid = uuid
                 break
 
-    def add_port(self, name: str, port_type: int, flags: int, uuid: int) -> Group:
-        print('add_portt(', name)
+    def add_port(self, name: str, port_type: int, flags: int, uuid: int) -> int:
+        ' adds port and returns the group_id '
         port = Port(self._next_port_id, name, port_type, flags, uuid)
         self._next_port_id += 1
 
@@ -1869,9 +1859,9 @@ class PatchbayManager:
 
         group.check_for_portgroup_on_last_port()
         group.check_for_display_name_on_last_port()
-        return group
+        return group.group_id
 
-    def remove_port(self, name: str):
+    def remove_port(self, name: str) -> int:
         port = self.get_port_from_name(name)
         if port is None:
             return
@@ -1932,12 +1922,10 @@ class PatchbayManager:
                 group = Group(self._next_group_id, new_group_name, gpos)
                 self._next_group_id += 1
                 group.add_port(port)
-                if self.port_types_view & port.type:
-                    group.add_to_canvas()
+                group.add_to_canvas()
 
-            if self.port_types_view & port.type:
-                port.add_to_canvas()
-            return
+            port.add_to_canvas()
+            return group.group_id
 
         for group in self.groups:
             if group.group_id == port.group_id:
@@ -1946,8 +1934,11 @@ class PatchbayManager:
                 # It prevents too much widget update in canvas,
                 # renames now could also prevent to find stereo detected portgroups
                 # if one of the two ports has been renamed and not the other one.
-                group.rename_port_later(port, new_name)
-                break
+                port.full_name = new_name
+                group.graceful_port(port)
+                port.rename_in_canvas()
+
+                return group.group_id
 
     def optional_gui_state_changed(self, client_id: str, visible: bool):
         for client in self.session.client_list:
@@ -1972,14 +1963,7 @@ class PatchbayManager:
                 return
 
             port.order = port_order
-
-            # we may receive this message as many times as there are ports.
-            # So, canvas redraw will be done 20ms after the last message.
-            if not self.optimized_operation:
-                for group in self.groups:
-                    if group.group_id == port.group_id:
-                        group.sort_ports_later()
-                        break
+            return port.group_id
 
         elif key == JACK_METADATA_PRETTY_NAME:
             port = self.get_port_from_uuid(uuid)
@@ -1988,6 +1972,7 @@ class PatchbayManager:
 
             port.pretty_name = value
             port.rename_in_canvas()
+            return port.group_id
 
         elif key == JACK_METADATA_PORT_GROUP:
             port = self.get_port_from_uuid(uuid)
@@ -1995,12 +1980,7 @@ class PatchbayManager:
                 return
 
             port.mdata_portgroup = value
-
-            if not self.optimized_operation:
-                for group in self.groups:
-                    if group.group_id == port.group_id:
-                        group.sort_ports_later()
-                        break
+            return port.group_id
 
         elif key == JACK_METADATA_ICON_NAME:
             for group in self.groups:
@@ -2098,7 +2078,7 @@ class PatchbayManager:
 
     def filter_groups(self, text: str, n_select=0)->int:
         ''' semi hides groups not matching with text
-            and return number of matching boxes '''
+            and returns number of matching boxes '''
         opac_grp_ids = set()
         opac_conn_ids = set()
         
@@ -2189,37 +2169,52 @@ class PatchbayManager:
         
         has_port_event = False
         has_conn_event = False
-        groups_to_update = []
-        print('orders_time_out')
+        group_ids_to_update = set()
+        group_ids_to_sort = set()
         
         for order_dict in self.orders_queue:
             order = order_dict['order']
             args = order_dict['args']
             
-            print('sliba', order)
-            
             if order == 'add_port':
-                group = self.add_port(*args)
-                if not group in groups_to_update:
-                    groups_to_update.append(group)
+                group_id = self.add_port(*args)
+                group_ids_to_update.add(group_id)
+                
             elif order == 'remove_port':
-                self.remove_port(*args)
+                group_id = self.remove_port(*args)
+                if group_id is not None:
+                    group_ids_to_update.add(group_id)
+                    
             elif order == 'rename_port':
-                self.rename_port(*args)
+                group_id = self.rename_port(*args)
+                group_ids_to_update.add(group_id)
+                
             elif order == 'add_connection':
                 self.add_connection(*args)
+                
             elif order == 'remove_connection':
-                self.add_connection(*args)
+                self.remove_connection(*args)
+                
+            elif order == 'update_metadata':
+                print('metael', args)
+                group_id = self.metadata_update(*args)
+                if group_id is not None:
+                    group_ids_to_update.add(group_id)
+                    group_ids_to_sort.add(group_id)
             else:
                 sys.stderr.write('_order_queue_timeout wrong order: %s\n' % order)
         
+        for group in self.groups:
+            if group.group_id in group_ids_to_sort:
+                group.sort_ports_in_canvas()
+
         self.optimize_operation(False)
         #self.very_fast_operation = False
         self.orders_queue.clear()
         
-        #for group in groups_to_update:
-            #print('rijj', group.name, group.group_id)
-            #patchcanvas.redraw_group(group.group_id)
+        for group in self.groups:
+            if group.group_id in group_ids_to_update:
+                group.redraw_in_canvas()
 
     def receive_big_packets(self, state: int):
         self.optimize_operation(not bool(state))
@@ -2254,7 +2249,6 @@ class PatchbayManager:
     def fast_temp_file_running(self, temp_path):
         ''' receives a .json file path from patchbay daemon with all ports, connections
             and jack metadatas'''
-        print('siiijpz', time.time())
         patchbay_data = self.get_json_contents_from_path(temp_path)
         if not patchbay_data:
             sys.stderr.write(
