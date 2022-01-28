@@ -212,14 +212,10 @@ class CanvasBox(CanvasBoxAbstract):
                                 portgrp_name = utils.get_portgroup_name(
                                     self._group_id, portgrp.port_id_list)
 
-                                if portgrp_name:
-                                    portgrp.widget.set_print_name(
-                                        portgrp_name,
-                                        max_pwidth - canvas.theme.port_grouped_width - 5)
-                                else:
-                                    portgrp.widget.set_print_name('', 0)
-                            
-                            #port.widget.set_print_name('', int(max_pwidth/2))
+                                portgrp.widget.set_print_name(
+                                    portgrp_name,
+                                    max_pwidth - canvas.theme.port_grouped_width - 5)
+
                             port.widget.set_print_name(
                                 utils.get_port_print_name(
                                     self._group_id, port.port_id, port.portgrp_id),
@@ -230,13 +226,15 @@ class CanvasBox(CanvasBoxAbstract):
                                 portgrp.widget.reduce_print_name(
                                     max_pwidth - port.widget.get_text_width() - 5)
 
-                            size = portgrp.widget.get_text_width() \
-                                   + max(port.widget.get_text_width() + 6,
-                                         canvas.theme.port_grouped_width) \
-                                   + port_offset
+                            # the port_grouped_width is also used to define
+                            # the portgroup minimum width
+                            size = (max(portgrp.widget.get_text_width(),
+                                        canvas.theme.port_grouped_width)
+                                    + max(port.widget.get_text_width() + 6,
+                                          canvas.theme.port_grouped_width)
+                                    + port_offset)
                             break
                     else:
-                        #port.widget.set_print_name('', max_pwidth)
                         port.widget.set_print_name(port.port_name, max_pwidth)
                         size = max(port.widget.get_text_width() + port_offset, 20)
                     
@@ -919,9 +917,9 @@ class CanvasBox(CanvasBoxAbstract):
                     # change port in portgroup width only if
                     # portgrp will have a name
                     # to ensure that portgroup widget is large enough
-                    if portgrp_name:
-                        max_port_in_pg_width = max(max_port_in_pg_width,
-                                                   port_print_width + 4)
+                    #if portgrp_name:
+                    max_port_in_pg_width = max(max_port_in_pg_width,
+                                                port_print_width + 4)
 
             out_in_portgrpX = (self._width - box_theme.port_offset() - 12
                                - max_port_in_pg_width)
