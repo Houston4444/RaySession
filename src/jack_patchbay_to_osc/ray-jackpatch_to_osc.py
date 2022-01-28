@@ -189,8 +189,8 @@ class MainObject:
         self.osc_server.add_gui(gui_url)
     
     def check_jack_client_responding(self):
-        for i in range(500): # JACK has 5s to answer
-            time.sleep(0.010)
+        for i in range(100): # JACK has 5s to answer
+            time.sleep(0.050)
 
             if not self._waiting_jack_client_open:
                 break
@@ -267,8 +267,8 @@ class MainObject:
                 None)
 
         self._waiting_jack_client_open = False
-        # Some problems happens to the JACK server sometimes without it
-        time.sleep(0.030)
+        ## Some problems happens to the JACK server sometimes without it
+        #time.sleep(0.030)
 
         jack_waiter_thread.join()
 
