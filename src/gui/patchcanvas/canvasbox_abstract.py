@@ -330,9 +330,9 @@ class CanvasBoxAbstract(QGraphicsItem):
 
     def add_port_from_group(self, port_id, port_mode, port_type,
                             port_name, is_alternate):
-        if len(self._port_list_ids) == 0:
-            if options.auto_hide_groups:
-                self.setVisible(True)
+        #if len(self._port_list_ids) == 0:
+            #if options.auto_hide_groups:
+        self.setVisible(True)
 
         new_widget = CanvasPort(self._group_id, port_id, port_name, port_mode,
                                 port_type, is_alternate, self)
@@ -359,9 +359,9 @@ class CanvasBoxAbstract(QGraphicsItem):
             if len(self._port_list_ids) > 0:
                 self.update_positions()
 
-            elif self.isVisible():
-                if options.auto_hide_groups:
-                    self.setVisible(False)
+        #if self.isVisible():
+        if options.auto_hide_groups and len(self._port_list_ids) == 0:
+            self.setVisible(False)
 
     def add_portgroup_from_group(self, portgrp_id, port_mode,
                                  port_type, port_id_list):
