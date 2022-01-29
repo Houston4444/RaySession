@@ -1572,7 +1572,7 @@ class PatchbayManager:
             theme_ref = value_str
             if self.options_dialog is not None:
                 self.options_dialog.set_theme(theme_ref)
-            print('action theme changeddd')
+
             self.remove_and_add_all()
 
     def show_options_dialog(self):
@@ -1731,10 +1731,10 @@ class PatchbayManager:
         self._next_connection_id = 0
 
     def change_port_types_view(self, port_types_view: int):
-        if port_types_view == self.port_types_view:
+        if port_types_view == PatchbayManager.port_types_view:
             return
 
-        self.port_types_view = port_types_view
+        PatchbayManager.port_types_view = port_types_view
 
         # Prevent visual update at each canvas item creation
         # because we may create a lot of ports here
@@ -1746,7 +1746,6 @@ class PatchbayManager:
                 connection.remove_from_canvas()
 
         for group in self.groups:
-            in_canvas = group.in_canvas
             group.change_port_types_view(port_types_view)
             gpos = self.get_group_position(group.name)
             group.set_group_position(gpos)
