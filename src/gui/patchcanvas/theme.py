@@ -334,12 +334,15 @@ class StyleAttributer:
     def box_footer(self):
         return self.get_value_of('_box_footer')
     
-    def save_title_templates(self, title: str, templates: list):
-        self._titles_templates_cache[title] = templates
+    def save_title_templates(self, title: str, handle_gui: bool, templates: list):
+        if not title in self._titles_templates_cache.keys():
+            self._titles_templates_cache[title] = {}
+        self._titles_templates_cache[title][handle_gui] = templates
     
-    def get_title_templates(self, title: str) -> list:
-        if title in self._titles_templates_cache.keys():
-            return self._titles_templates_cache[title]
+    def get_title_templates(self, title: str, handle_gui: bool) -> list:
+        if (title in self._titles_templates_cache.keys()
+                and handle_gui in self._titles_templates_cache[title].keys()):
+            return self._titles_templates_cache[title][handle_gui]
         return []
 
 class UnselectedStyleAttributer(StyleAttributer):

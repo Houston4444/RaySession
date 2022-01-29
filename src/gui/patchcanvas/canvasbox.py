@@ -658,7 +658,8 @@ class CanvasBox(CanvasBoxAbstract):
         font_size = box_theme.font().pixelSize()
 
         # Check Text Name size
-        all_title_templates = box_theme.get_title_templates(self._group_name)
+        all_title_templates = box_theme.get_title_templates(
+            self._group_name, self._can_handle_gui)
         lines_choice_max = len(all_title_templates) - 1
         
         laout_times['bef parse templates'] = time.time() - laou_start
@@ -718,21 +719,9 @@ class CanvasBox(CanvasBoxAbstract):
 
                 last_lines_count = len(title_lines)
 
-                #if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
-                    #continue
-
-                #if header_width < width_for_ports_one:
-                    #break
-
-                #if (self._layout_mode == LAYOUT_LARGE
-                        #and header_width < width_for_ports):
-                    #break
-                
-                #if self._restrict_title_lines and i >= self._restrict_title_lines:
-                    #break
-
             lines_choice_max = i
-            box_theme.save_title_templates(self._group_name, all_title_templates[:lines_choice_max])
+            box_theme.save_title_templates(
+                self._group_name, self._can_handle_gui, all_title_templates[:lines_choice_max])
 
         laout_times['after parse tempts'] = time.time() - laou_start
 
