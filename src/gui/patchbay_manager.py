@@ -1718,8 +1718,14 @@ class PatchbayManager:
                      or not port.flags & PORT_IS_PHYSICAL)):
             group_name, colon, port_name = port_name.partition(':')
             if full_port_name.startswith('a2j:'):
-                group_name = group_name.rpartition(' [')[0]
-                
+                if ' [' in group_name:
+                    group_name = group_name.rpartition(' [')[0]
+                else:
+                    if ' (capture)' in group_name:
+                        group_name = group_name.partition(' (capture)')[0]
+                    else:
+                        group_name = group_name.partition(' (playback)')[0]
+
                 # fix a2j wrongly substitute '.' with space
                 for client in self.session.client_list:
                     if (client.status != ray.ClientStatus.STOPPED
