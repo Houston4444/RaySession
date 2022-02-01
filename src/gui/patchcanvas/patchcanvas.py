@@ -215,7 +215,7 @@ def set_loading_items(yesno: bool):
     canvas.loading_items = yesno
 
 def add_group(group_id, group_name, split=SPLIT_UNDEF,
-              icon_type=ICON_APPLICATION, icon_name='',
+              icon_type=ICON_APPLICATION, icon_name='', layout_modes={},
               null_xy=(0, 0), in_xy=(0, 0), out_xy=(0, 0),
               split_animated=False):
     if canvas.debug:
@@ -242,6 +242,7 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
     group_dict.split = bool(split == SPLIT_YES)
     group_dict.icon_type = icon_type
     group_dict.icon_name = icon_name
+    group_dict.layout_modes = layout_modes
     group_dict.plugin_id = -1
     group_dict.plugin_ui = False
     group_dict.plugin_inline = False
@@ -382,6 +383,7 @@ def split_group(group_id, on_place=False):
     group_name = ""
     group_icon_type = ICON_APPLICATION
     group_icon_name = ""
+    layout_modes = {}
     group_null_pos = QPoint(0, 0)
     group_in_pos = QPoint(0, 0)
     group_out_pos = QPoint(0, 0)
@@ -405,6 +407,7 @@ def split_group(group_id, on_place=False):
             group_name = group.group_name
             group_icon_type = group.icon_type
             group_icon_name = group.icon_name
+            layout_modes = group.layout_modes
             group_null_pos = group.null_pos
             group_in_pos = group.in_pos
             group_out_pos = group.out_pos
@@ -483,7 +486,7 @@ def split_group(group_id, on_place=False):
 
     # Step 3 - Re-create Item, now split
     add_group(group_id, group_name, SPLIT_YES,
-              group_icon_type, group_icon_name,
+              group_icon_type, group_icon_name, layout_modes,
               null_xy=(group_null_pos.x(), group_null_pos.y()),
               in_xy=(group_in_pos.x(), group_in_pos.y()),
               out_xy=(group_out_pos.x(), group_out_pos.y()),
@@ -527,6 +530,7 @@ def join_group(group_id):
     group_name = ""
     group_icon_type = ICON_APPLICATION
     group_icon_name = ""
+    layout_modes = {}
     group_null_pos = QPoint(0, 0)
     group_in_pos = QPoint(0, 0)
     group_out_pos = QPoint(0, 0)
@@ -551,6 +555,7 @@ def join_group(group_id):
             group_name = group.group_name
             group_icon_type = group.icon_type
             group_icon_name = group.icon_name
+            layout_modes = group.layout_modes
             group_null_pos = group.null_pos
             group_in_pos = group.in_pos
             group_out_pos = group.out_pos
@@ -620,7 +625,7 @@ def join_group(group_id):
 
     # Step 3 - Re-create Item, now together
     add_group(group_id, group_name, SPLIT_NO,
-              group_icon_type, group_icon_name,
+              group_icon_type, group_icon_name, layout_modes,
               null_xy=(group_null_pos.x(), group_null_pos.y()),
               in_xy=(group_in_pos.x(), group_in_pos.y()),
               out_xy=(group_out_pos.x(), group_out_pos.y()))
@@ -775,12 +780,13 @@ def wrap_group_box(group_id: int, port_mode: int, yesno: bool, animate=True):
                     box.set_wrapped(yesno, animate=animate)
             break
 
-def set_group_column_mode(group_id: int, column_mode: int):
+def set_group_layout_mode(group_id: int, port_mode: int, layout_mode: int):
     for group in canvas.group_list:
         if group.group_id == group_id:
+            group.layout_modes[port_mode] = layout_mode
+
             for box in group.widgets:
                 if box is not None:
-                    box.set_column_mode(column_mode)
                     if not canvas.loading_items:
                         box.update_positions()
             break

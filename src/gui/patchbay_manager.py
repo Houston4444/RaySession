@@ -436,7 +436,12 @@ class Group:
                 bool(gpos.flags & GROUP_WRAPPED_INPUT
                      and gpos.flags & GROUP_WRAPPED_OUTPUT),
                 animate=False)
-            patchcanvas.set_group_column_mode(self.group_id, gpos.column_mode)
+                
+            layout_modes = {}
+            for i in 1, 2, 3:
+                layout_modes[i] = gpos.get_layout_mode(i)
+                patchcanvas.set_group_layout_mode(
+                    self.group_id, i, gpos.get_layout_mode(i))
             
         if self.has_gui:
             patchcanvas.set_optional_gui_state(self.group_id, self.gui_visible)
@@ -613,14 +618,14 @@ class Group:
                 and not gpos.flags & GROUP_SPLITTED):
             patchcanvas.animate_before_join(self.group_id)
 
-    def set_column_mode(self, column_mode: int):
-        self.current_position.column_mode = column_mode
+    def set_layout_mode(self, port_mode: int, layout_mode: int):
+        self.current_position.set_layout_mode(port_mode, layout_mode)
         self.save_current_position()
         
         if not self.in_canvas:
             return
         
-        patchcanvas.set_group_column_mode(self.group_id, column_mode)
+        patchcanvas.set_group_layout_mode(self.group_id, port_mode, layout_mode)
 
     def wrap_box(self, port_mode: int, yesno: bool):
         wrap_flag = GROUP_WRAPPED_OUTPUT | GROUP_WRAPPED_INPUT
@@ -1423,13 +1428,14 @@ class PatchbayManager:
                     group.wrap_box(splitted_mode, yesno)
                     break
 
-        elif action == patchcanvas.ACTION_GROUP_COLUMN_CHANGE:
+        elif action == patchcanvas.ACTION_GROUP_LAYOUT_CHANGE:
             group_id = value1
-            column_mode = value2
+            port_mode = value2
+            layout_mode = int(value_str)
 
             for group in self.groups:
                 if group.group_id == group_id:
-                    group.set_column_mode(column_mode)
+                    group.set_layout_mode(port_mode, layout_mode)
                     break
 
         elif action == patchcanvas.ACTION_PORTGROUP_ADD:

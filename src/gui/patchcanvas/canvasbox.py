@@ -727,10 +727,13 @@ class CanvasBox(CanvasBoxAbstract):
 
         sizes_tuples = []
         
+        layout_mode = self._get_layout_mode_for_this()
+        print('kkl', layout_mode)
+        
         if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
             # splitted box
             
-            if self._layout_mode in (LAYOUT_AUTO, LAYOUT_LARGE):
+            if layout_mode in (LAYOUT_AUTO, LAYOUT_LARGE):
                 ports_y_start_min = box_theme.port_spacing() + box_theme.port_type_spacing()
                 
                 # calculate area with title on side
@@ -749,7 +752,7 @@ class CanvasBox(CanvasBoxAbstract):
                             height_for_ports + ports_y_start_min),
                         i, False, TITLE_ON_SIDE_UNDER_ICON))
             
-            if self._layout_mode in (LAYOUT_AUTO, LAYOUT_HIGH):
+            if layout_mode in (LAYOUT_AUTO, LAYOUT_HIGH):
                 # calculate area with title on top
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
@@ -760,7 +763,7 @@ class CanvasBox(CanvasBoxAbstract):
             # grouped box
             
             # calculate area with input and outputs ports descending
-            if self._layout_mode in (LAYOUT_AUTO, LAYOUT_HIGH):
+            if layout_mode in (LAYOUT_AUTO, LAYOUT_HIGH):
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
                         (max(all_title_templates[i]['header_width'], width_for_ports_one)
@@ -768,7 +771,7 @@ class CanvasBox(CanvasBoxAbstract):
                         i, True, TITLE_ON_TOP))
 
             # calculate area with input ports at left of output ports
-            if self._layout_mode in (LAYOUT_AUTO, LAYOUT_LARGE):
+            if layout_mode in (LAYOUT_AUTO, LAYOUT_LARGE):
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
                         (max(all_title_templates[i]['header_width'], width_for_ports)

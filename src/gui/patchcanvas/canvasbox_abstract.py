@@ -50,7 +50,7 @@ from . import (
     ACTION_GROUP_RENAME,
     ACTION_GROUP_MOVE,
     ACTION_GROUP_WRAP,
-    ACTION_GROUP_COLUMN_CHANGE,
+    ACTION_GROUP_LAYOUT_CHANGE,
     ACTION_PORTS_DISCONNECT,
     ACTION_INLINE_DISPLAY,
     ACTION_CLIENT_SHOW_GUI,
@@ -222,7 +222,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._title_on_side = False
         self._restrict_title_lines = 0 # no title lines restriction
         self._layout_may_have_changed = False
-        self._layout_mode = LAYOUT_AUTO
+        #self._layout_mode = LAYOUT_AUTO
         self._current_layout_mode = LAYOUT_LARGE
         self._title_under_icon = False
         self._painter_path = QPainterPath()
@@ -230,6 +230,15 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         canvas.scene.addItem(self)
         QTimer.singleShot(0, self.fixPos)
+
+    def _get_layout_mode_for_this(self):
+        for group in canvas.group_list:
+            if group.group_id == self._group_id:
+                if self._current_port_mode in group.layout_modes.keys():
+                    return group.layout_modes[self._current_port_mode]
+                else:
+                    return LAYOUT_AUTO
+        return LAYOUT_AUTO
 
     def get_group_id(self):
         return self._group_id
@@ -503,8 +512,8 @@ class CanvasBoxAbstract(QGraphicsItem):
                 new_scene_rect=new_bounding_rect.translated(self.pos()),
                 wanted_direction=DIRECTION_DOWN)
     
-    def set_column_mode(self, column_mode:int):
-        self._layout_mode = column_mode
+    #def set_layout_mode(self, layout_mode:int):
+        #self._layout_mode = layout_mode
 
     def update_positions(self, even_animated=False):
         # see canvasbox.py
@@ -701,7 +710,8 @@ class CanvasBoxAbstract(QGraphicsItem):
             
         act_auto_layout = menu.addAction(
             _translate('patchbay', 'Automatic layout'))
-        act_auto_layout.setVisible(self._layout_mode != LAYOUT_AUTO)
+        act_auto_layout.setVisible(
+            self._get_layout_mode_for_this() != LAYOUT_AUTO)
         act_auto_layout.setIcon(QIcon.fromTheme('auto-scale-x'))
 
         act_switch_layout = menu.addAction(
@@ -771,16 +781,16 @@ class CanvasBoxAbstract(QGraphicsItem):
                 canvas.callback(ACTION_GROUP_SPLIT, self._group_id, 0, "")
 
         elif act_selected == act_auto_layout:
-            canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id,
-                            LAYOUT_AUTO, "")
+            canvas.callback(ACTION_GROUP_LAYOUT_CHANGE, self._group_id,
+                            self._current_port_mode, str(LAYOUT_AUTO))
 
         elif act_selected == act_switch_layout:
             next_disposition = LAYOUT_HIGH
             if self._current_layout_mode == LAYOUT_HIGH:
                 next_disposition = LAYOUT_LARGE
             
-            canvas.callback(ACTION_GROUP_COLUMN_CHANGE, self._group_id,
-                            next_disposition, "")
+            canvas.callback(ACTION_GROUP_LAYOUT_CHANGE, self._group_id,
+                            self._current_port_mode, str(next_disposition))
 
         elif act_selected == act_p_edit:
             canvas.callback(ACTION_PLUGIN_EDIT, self._plugin_id, 0, "")

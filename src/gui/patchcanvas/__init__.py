@@ -51,7 +51,7 @@ ACTION_GROUP_JOIN = 3 # group_id, N, N
 ACTION_GROUP_JOINED = 4 # group_id, N, N
 ACTION_GROUP_MOVE = 5 # group_id, in_or_out, "x:y"
 ACTION_GROUP_WRAP = 6 # group_id, folded, N
-ACTION_GROUP_COLUMN_CHANGE = 7 # group_id, column_mode, N
+ACTION_GROUP_LAYOUT_CHANGE = 7 # group_id, layout_mode, in_or_out
 ACTION_PORTGROUP_ADD = 8 # N, N, "gId:pgId:pMode:pType:portId1:portId2"
 ACTION_PORTGROUP_REMOVE = 9 # group_id, portgrp_id, N
 ACTION_PORT_INFO = 10 # group_id, port_id, N
@@ -179,6 +179,7 @@ class group_dict_t(object):
         'split',
         'icon_type',
         'icon_name',
+        'layout_modes',
         'plugin_id',
         'plugin_ui',
         'plugin_inline',
