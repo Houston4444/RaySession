@@ -80,8 +80,11 @@ class Connection:
         if self.in_canvas:
             return
 
-        if not PatchbayManager.port_types_view & self.port_type():
+        if not PatchbayManager.port_type_shown(self.port_type()):
             return
+
+        #if not PatchbayManager.port_types_view & self.port_type():
+            #return
 
         self.in_canvas = True
 
@@ -176,8 +179,11 @@ class Port:
         if self.in_canvas:
             return
 
-        if not PatchbayManager.port_types_view & self.type:
+        if not PatchbayManager.port_type_shown(self.type):
             return
+    
+        #if not PatchbayManager.port_types_view & self.type:
+            #return
 
         port_mode = PORT_MODE_NULL
         if self.flags & PORT_IS_INPUT:
@@ -300,9 +306,12 @@ class Portgroup:
         
         if self.in_canvas:
             return
-
-        if not PatchbayManager.port_types_view & self.port_type():
+    
+        if not PatchbayManager.port_type_shown(self.port_type()):
             return
+
+        #if not PatchbayManager.port_types_view & self.port_type():
+            #return
 
         if len(self.ports) < 2:
             return
@@ -354,27 +363,15 @@ class Group:
 
         self._icon_from_metadata = False
 
-        #self._timer_ports_rename = QTimer()
-        #self._timer_ports_rename.setInterval(20)
-        #self._timer_ports_rename.setSingleShot(True)
-        #self._timer_ports_rename.timeout.connect(self.rename_waiting_ports)
-        
-        #self.has_event_queue = False
-
     def update_ports_in_canvas(self):
         for port in self.ports:
             port.rename_in_canvas()
 
     def add_to_canvas(self, split=patchcanvas.SPLIT_UNDEF):
-        #if PatchbayManager.very_fast_operation:
-            #return
-        
         if self.in_canvas:
             return
 
         icon_type = patchcanvas.ICON_APPLICATION
-        icon_name = ""
-
         icon_name = self.name.partition('.')[0].lower()
 
         do_split = bool(self.current_position.flags & GROUP_SPLITTED)
@@ -864,25 +861,23 @@ class Group:
     def add_portgroup(self, portgroup):
         self.portgroups.append(portgroup)
 
-    def change_port_types_view(self, port_types_view: int):
+    def change_port_types_view(self):
         # first add group to canvas if not already
         self.add_to_canvas()
 
         for portgroup in self.portgroups:
-            if not port_types_view & portgroup.port_type():
+            if not PatchbayManager.port_type_shown(portgroup.port_type()):
                 portgroup.remove_from_canvas()
 
         for port in self.ports:
-            if not port_types_view & port.type:
+            if not PatchbayManager.port_type_shown(port.type):
                 port.remove_from_canvas()
 
         for port in self.ports:
-            if port_types_view & port.type:
-                port.add_to_canvas()
+            port.add_to_canvas()
 
         for portgroup in self.portgroups:
-            if port_types_view & portgroup.port_type():
-                portgroup.add_to_canvas()
+            portgroup.add_to_canvas()
 
         # remove group from canvas if no visible ports
         for port in self.ports:
@@ -1253,25 +1248,6 @@ class Group:
         for portgroup in self.portgroups:
             portgroup.add_to_canvas()
 
-    #def rename_waiting_ports(self):
-        #PatchbayManager.optimize_operation(True)
-
-        #for port_rename_dict in self.ports_to_rename_queue:
-            #port = port_rename_dict['port']
-            #port.full_name = port_rename_dict['new_name']
-            #self.graceful_port(port)
-            #port.rename_in_canvas()
-
-        #PatchbayManager.optimize_operation(False)
-        #self.redraw_in_canvas()
-
-        #self.ports_to_rename_queue.clear()
-
-    #def rename_port_later(self, port, new_name):
-        #self.ports_to_rename_queue.append(
-            #{'port': port, 'new_name': new_name})
-        #self._timer_ports_rename.start()
-
 
 class PatchbayManager:
     use_graceful_names = True
@@ -1374,6 +1350,10 @@ class PatchbayManager:
         cls._next_portgroup_id += 1
         return portgroup
 
+    @classmethod
+    def port_type_shown(cls, port_type: int):
+        return bool(cls.port_types_view & (2 ** (port_type-1)))
+
     def canvas_callbacks(self, action, value1, value2, value_str):
         if action == patchcanvas.ACTION_GROUP_INFO:
             pass
@@ -1387,6 +1367,7 @@ class PatchbayManager:
                 if group.group_id == group_id:
                     on_place = not bool(
                         group.current_position.flags & GROUP_HAS_BEEN_SPLITTED)
+                    print('splitt', group.name, on_place)
                     patchcanvas.split_group(group_id, on_place=on_place)
                     group.current_position.flags |= GROUP_SPLITTED
                     group.current_position.flags |= GROUP_HAS_BEEN_SPLITTED
@@ -1642,9 +1623,9 @@ class PatchbayManager:
                         return port
                 break
 
-    def get_group_position(self, group_name):
+    def get_group_position(self, group_name: str):
         for gpos in self.group_positions:
-            if (gpos.port_types_view == self.port_types_view
+            if (gpos.port_types_view == PatchbayManager.port_types_view
                     and gpos.group_name == group_name):
                 return gpos
 
@@ -1655,14 +1636,14 @@ class PatchbayManager:
                 # copy the group_position
                 gpos = ray.GroupPosition.new_from(
                     *group.current_position.spread())
-                gpos.port_types_view = self.port_types_view
+                gpos.port_types_view = PatchbayManager.port_types_view
                 self.group_positions.append(gpos)
                 return gpos
 
         # group position doesn't already exists, create one
         gpos = ray.GroupPosition()
         gpos.fully_set = False
-        gpos.port_types_view = self.port_types_view
+        gpos.port_types_view = PatchbayManager.port_types_view
         gpos.group_name = group_name
         gpos.null_xy, gpos.in_xy, gpos.out_xy =  \
             patchcanvas.utils.get_new_group_positions()
@@ -1746,14 +1727,14 @@ class PatchbayManager:
                 connection.remove_from_canvas()
 
         for group in self.groups:
-            group.change_port_types_view(port_types_view)
+            group.change_port_types_view()
             gpos = self.get_group_position(group.name)
             group.set_group_position(gpos)
 
         for connection in self.connections:
-            if (not connection.in_canvas
-                    and port_types_view & connection.port_type()):
-                connection.add_to_canvas()
+            #if (not connection.in_canvas
+                    #and port_types_view & connection.port_type()):
+            connection.add_to_canvas()
 
         self.optimize_operation(False)
         patchcanvas.redraw_all_groups()
@@ -1847,15 +1828,12 @@ class PatchbayManager:
         group.add_port(port)
         group.graceful_port(port)
 
-        if group_is_new and self.port_types_view & port_type:
+        if group_is_new:
             gpos = self.get_group_position(group_name)
             group.set_group_position(gpos)
-            group.add_to_canvas()
 
-        if self.port_types_view & port_type:
-            group.add_to_canvas()
-            port.add_to_canvas()
-
+        group.add_to_canvas()
+        port.add_to_canvas()
         group.check_for_portgroup_on_last_port()
         group.check_for_display_name_on_last_port()
         return group.group_id
@@ -2002,8 +1980,7 @@ class PatchbayManager:
         connection = Connection(self._next_connection_id, port_out, port_in)
         self._next_connection_id += 1
         self.connections.append(connection)
-        if connection.port_type() & self.port_types_view:
-            connection.add_to_canvas()
+        connection.add_to_canvas()
 
     def remove_connection(self, port_out_name: str, port_in_name: str):
         port_out = self.get_port_from_name(port_out_name)
@@ -2030,7 +2007,7 @@ class PatchbayManager:
         else:
             self.group_positions.append(gpos)
 
-        if gpos.port_types_view == self.port_types_view:
+        if gpos.port_types_view == PatchbayManager.port_types_view:
             for group in self.groups:
                 if group.name == gpos.group_name:
                     group.set_group_position(gpos)
