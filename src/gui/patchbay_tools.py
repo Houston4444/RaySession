@@ -126,7 +126,6 @@ class PatchbayToolsWidget(QWidget):
             self._buffer_change_from_osc = False
             return
 
-
         self.ui.comboBoxBuffer.setEnabled(False)
         self._waiting_buffer_change = True
         self.buffer_size_change_order.emit(

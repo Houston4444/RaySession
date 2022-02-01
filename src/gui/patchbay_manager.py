@@ -63,6 +63,10 @@ JACK_METADATA_SIGNAL_TYPE = _JACK_METADATA_PREFIX + "signal-type"
 
 _translate = QGuiApplication.translate
 
+def enum_to_flag(enum: int) -> int:
+    return 2 ** (enum - 1)
+
+
 class Connection:
     def __init__(self, connection_id: int, port_out, port_in):
         self.connection_id = connection_id
@@ -1251,7 +1255,7 @@ class Group:
 
 class PatchbayManager:
     use_graceful_names = True
-    port_types_view = PORT_TYPE_AUDIO + PORT_TYPE_MIDI
+    port_types_view = enum_to_flag(PORT_TYPE_AUDIO) | enum_to_flag(PORT_TYPE_MIDI)
     optimized_operation = False
     very_fast_operation = False
     groups = []
@@ -1352,7 +1356,7 @@ class PatchbayManager:
 
     @classmethod
     def port_type_shown(cls, port_type: int):
-        return bool(cls.port_types_view & (2 ** (port_type-1)))
+        return bool(cls.port_types_view & enum_to_flag(port_type))
 
     def canvas_callbacks(self, action, value1, value2, value_str):
         if action == patchcanvas.ACTION_GROUP_INFO:

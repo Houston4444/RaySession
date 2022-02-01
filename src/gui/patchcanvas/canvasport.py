@@ -209,15 +209,6 @@ class CanvasPort(QGraphicsItem):
                     + self._theme.get_text_width(self._print_name_right))
         
         return self._theme.get_text_width(self._print_name)
-        
-        #sizer = QFontMetrics(self._port_font)
-
-        #if self._name_truncked:
-            #return (sizer.width(self._print_name)
-                    #+ sizer.width(self._trunck_sep)
-                    #+ sizer.width(self._print_name_right))
-            
-        #return sizer.width(self._print_name)
 
     def reset_line_mov_positions(self):
         for i in range(len(self._line_mov_list)):

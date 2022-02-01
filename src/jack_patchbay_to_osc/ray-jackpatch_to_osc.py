@@ -112,9 +112,7 @@ class MainObject:
         self.osc_server = osc_server.OscJackPatch(self)
         self.osc_server.set_tmp_gui_url(gui_url)
         self.write_existence_file()
-        print('bef_start_jacks', time.time())
         self.start_jack_client()
-        print('jackdkek_inited', time.time())
     
     @staticmethod
     def get_metadata_value_str(prop)->str:

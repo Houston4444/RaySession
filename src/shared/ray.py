@@ -723,7 +723,7 @@ class GroupPosition:
     in_xy = (0, 0)
     out_xy = (0, 0)
     flags = 0
-    column_mode = 0
+    layout_mode = 0
     fully_set = True
     
     @staticmethod
@@ -731,7 +731,7 @@ class GroupPosition:
         return ('port_types_view', 'group_name',
                 'null_zone', 'in_zone', 'out_zone',
                 'null_xy', 'in_xy', 'out_xy', 'flags',
-                'column_mode')
+                'layout_mode')
     
     @staticmethod
     def sisi():
@@ -775,13 +775,13 @@ class GroupPosition:
     def update(self, port_types_view: int, group_name: str,
                null_zone: str, in_zone: str, out_zone: str,
                null_x: int, null_y: int, in_x: int, in_y: int,
-               out_x: int, out_y: int, flags: int, column_mode: int):
+               out_x: int, out_y: int, flags: int, layout_mode: int):
         for string in (group_name, null_zone, in_zone, out_zone):
             if type(string) != str:
                 return 
         
         for digit in (port_types_view, null_x, null_y, in_x, in_y,
-                      out_x, out_y, flags, column_mode):
+                      out_x, out_y, flags, layout_mode):
             if type(digit) == int:
                 continue
             
@@ -804,14 +804,14 @@ class GroupPosition:
         self.in_xy = (int(in_x), int(in_y))
         self.out_xy = (int(out_x), int(out_y))
         self.flags = int(flags)
-        self.column_mode = int(column_mode)
+        self.layout_mode = int(layout_mode)
         
     def spread(self)->tuple:
         return (self.port_types_view, self.group_name,
                 self.null_zone, self.in_zone, self.out_zone,
                 self.null_xy[0], self.null_xy[1], self.in_xy[0], self.in_xy[1],
                 self.out_xy[0], self.out_xy[1], self.flags,
-                self.column_mode)
+                self.layout_mode)
     
     def to_dict(self)->dict:
         new_dict = {}
