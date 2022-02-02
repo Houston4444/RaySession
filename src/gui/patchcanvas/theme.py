@@ -394,8 +394,8 @@ class IconTheme:
         self.hardware_playback = src + 'audio-headphones.svg'
         self.hardware_grouped = src + 'pb_hardware.svg'
         self.hardware_midi = src + 'DIN-5.svg'
-        self.monitor_capture = None
-        self.monitor_playback = None
+        self.monitor_capture = src + 'monitor_capture.svg'
+        self.monitor_playback = src + 'monitor_playback.svg'
         
     def read_theme(self, theme_file: str):
         icons_dir = os.path.join(os.path.dirname(theme_file), 'icons')

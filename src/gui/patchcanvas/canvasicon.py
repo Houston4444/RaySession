@@ -101,7 +101,6 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         pixmap = self.icon.pixmap(int(0.5 + 24 * scale), int(0.5 + 24 * scale))
         self.setPixmap(pixmap)
         self.setScale(1.0 / scale)
-        #self.setOffset(float(self.x_offset * scale), float(self.y_offset * scale))
 
     def is_null(self)->bool:
         if self.icon is None:
@@ -112,7 +111,6 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
     def set_pos(self, x: int, y: int):
         self.x_offset = x
         self.y_offset = y
-        #self.setOffset(float(self.x_offset), float(self.y_offset))
         self.setPos(float(x), float(y))
         
     def type(self):
@@ -160,19 +158,15 @@ class CanvasSvgIcon(QGraphicsSvgItem):
 
         elif icon == ICON_HARDWARE:
             if name == "a2j":
-                #icon_path = ":/canvas/dark/DIN-5.svg"
                 icon_path = theme.hardware_midi
                 self._size = QRectF(4, 4, 24, 24)
             else:
                 if port_mode == PORT_MODE_INPUT:
-                    #icon_path = ":/canvas/dark/audio-headphones.svg"
                     icon_path = theme.hardware_playback
                 elif port_mode == PORT_MODE_OUTPUT:
                     icon_path = theme.hardware_capture
-                    #icon_path = ":/canvas/dark/microphone.svg"
                 else:
                     icon_path = theme.hardware_grouped
-                    #icon_path = ":/canvas/dark/pb_hardware.svg"
                 self._size = QRectF(4, 4, 24, 24)
 
         elif icon == ICON_DISTRHO:
@@ -193,7 +187,12 @@ class CanvasSvgIcon(QGraphicsSvgItem):
             self._size = QRectF(5, 2, 16, 16)
 
         elif icon == ICON_INTERNAL:
-            icon_path = ":/canvas/dark/" + name
+            if name == 'monitor_capture':
+                icon_path = theme.monitor_capture
+            elif name == 'monitor_playback':
+                icon_path = theme.monitor_playback
+            else:
+                icon_path = ":/canvas/dark/" + name
             self._size = QRectF(4, 4, 24, 24)
 
         else:

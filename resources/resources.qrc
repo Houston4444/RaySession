@@ -175,9 +175,11 @@
        <file>app_icons/dark/network-wired.svg</file>
        <file>fonts/Ubuntu-R.ttf</file>
        <file>fonts/Ubuntu-C.ttf</file>
+       <file>canvas/dark/monitor_playback.svg</file>
        <file>canvas/dark/audio-headphones.svg</file>
        <file>canvas/dark/DIN-5.svg</file>
        <file>canvas/dark/audio-input-microphone.svg</file>
+       <file>canvas/dark/monitor_capture.svg</file>
        <file>canvas/dark/pb_hardware.svg</file>
        <file>canvas/dark/microphone.svg</file>
        <file>canvas/dark/audio-volume-medium.svg</file>

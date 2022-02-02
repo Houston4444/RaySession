@@ -86,20 +86,11 @@ class TitleLine:
         self.x = 0
         self.y = 0
 
-        #self.font = QFont(theme.font())
         self.font = None
-        #if little:
-            #self.font.setWeight(QFont.Normal)
-
         self.size = theme.get_text_width(text)
-        #self.size = QFontMetrics(self.font).width(text)
 
     def get_font(self):
         return self.theme.font()
-
-    def reduce_pixel(self, reduce):
-        self.font.setPixelSize(self.font.pixelSize() - reduce)
-        self.size = QFontMetrics(self.font).width(self.text)
 
 
 class BoxArea:
@@ -457,7 +448,7 @@ class CanvasBox(CanvasBoxAbstract):
                 'output_segments': output_segments}
     
     @staticmethod
-    def split_in_two(string: str, n_lines=2)->tuple:
+    def split_in_two(string: str, n_lines=2) -> tuple:
         if n_lines <= 1:
             return (string,)
         
@@ -481,8 +472,22 @@ class CanvasBox(CanvasBoxAbstract):
 
         if not sep_indexes:
             # no available separator in given text
-            return_list = [string] + ['' for n in range(1, n_lines)]
-            return tuple(return_list)
+            base_count = 6
+            divisor = min(int(len(string) / base_count), n_lines)
+            if divisor <= 1:
+                return (string,)
+            
+            return_list = []
+            c_count = int(len(string)/divisor)
+            return tuple([string[start:start + c_count]
+                          for start in range(0, len(string), c_count)])
+            #return_list.append(string[:int(len(string)/divisor) - 1])
+            #start = int(len(string)/divisor)
+            
+            #for i in range(divisor - 2):
+                #return_list.append(string[start:start+len(string)/div
+            
+            #return (string,)
 
         if len(sep_indexes) + 1 <= n_lines:
             return_list = []
@@ -496,7 +501,6 @@ class CanvasBox(CanvasBoxAbstract):
 
             return_list.append(string[last_index:])
 
-            #return_list += ['' for n in range(n_lines - len(sep_indexes) - 1)]
             return tuple(return_list)
 
         best_indexes = [0]
@@ -558,7 +562,11 @@ class CanvasBox(CanvasBoxAbstract):
             subclient_line = TitleLine(subtitle, theme)
             title_lines = []
             
-            if n_lines > 2:
+            if n_lines <= 2:
+                title_lines.append(client_line)
+                title_lines.append(subclient_line)
+            
+            else:
                 if client_line.size > subclient_line.size:
                     client_strs = self.split_in_two(title)
                     for client_str in client_strs:
@@ -573,7 +581,7 @@ class CanvasBox(CanvasBoxAbstract):
                         # Check if we need to split the client title
                         # it could be "Carla-Multi-Client.Carla".
                         subtitles = self.split_in_two(subtitle, n_lines - 2)
-                        #subtitles = [sbt for sbt in subtitles if sbt]
+
                         for subtt in subtitles:
                             subtt_line = TitleLine(subtt, theme)
                             if subtt_line.size > client_line.size:
@@ -581,15 +589,9 @@ class CanvasBox(CanvasBoxAbstract):
                         else:
                             client_strs = self.split_in_two(title)
                             for client_str in client_strs:
-                                title_lines.append(TitleLine(client_str, theme, little=True))
+                                title_lines.append(
+                                    TitleLine(client_str, theme, little=True))
                             two_lines_title = True
-                        
-                    #subclient_lines = [
-                        #TitleLine(subtt, theme)
-                        #for subtt in self.split_in_two(subtitle, n_lines -1) if subtt]
-                    #maxi_sub = 0
-                    #for subclient_line in subclient_lines:
-                        #maxi_sub = max(maxi_sub()
                     
                     if not two_lines_title:
                         title_lines.append(client_line)
@@ -608,33 +610,39 @@ class CanvasBox(CanvasBoxAbstract):
                             if i == 0:
                                 title = title[4:]
                             title_lines.append(TitleLine(title, theme))
-                    
-                    #title_lines += [TitleLine(subtt, theme)
-                                    #for subtt in self.split_in_two('___' + subtitle, subt_len) if subtt]
-                    
-            else:
-                title_lines.append(client_line)
-                title_lines.append(subclient_line)
         else:
             if n_lines >= 2:
                 titles = self.split_in_two(self._group_name, n_lines)
-                new_titles = []
-                for title in titles:
-                    if new_titles and len(title) <= 2:
-                        new_titles[-1] += title
-                    else:
-                        new_titles.append(title)
+                
+                new_titles = list(titles)
+                
+                if len(titles) < n_lines:
+                    biggest = ''
+                    for title in titles:
+                        if len(title) > len(biggest):
+                            biggest = title
+                
+                    new_titles.clear()
+                    for title in titles:
+                        if title == biggest:
+                            biggest = ''
+                            new_titles += list(self.split_in_two(title, 2))
+                        else:
+                            new_titles.append(title)
+                
+                
+                #new_titles = []
+                #for title in titles:
+                    #if new_titles and len(title) <= 2:
+                        #new_titles[-1] += title
+                    #else:
+                        #new_titles.append(title)
                 
                 title_lines = [
                     TitleLine(tt, theme)
                     for tt in new_titles if tt]
             else:
                 title_lines = [TitleLine(self._group_name, theme)]
-
-            #if len(title_lines) >= 4:
-                #for title_line in title_lines:
-                    #title_line.reduce_pixel(2)
-
 
         return tuple(title_lines)
     
@@ -728,7 +736,6 @@ class CanvasBox(CanvasBoxAbstract):
         sizes_tuples = []
         
         layout_mode = self._get_layout_mode_for_this()
-        print('kkl', layout_mode)
         
         if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
             # splitted box
