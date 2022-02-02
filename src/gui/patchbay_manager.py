@@ -415,9 +415,14 @@ class Group:
         if PatchbayManager.use_graceful_names:
             display_name = self.display_name
         
+        layout_modes_ = {}
+        for port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT,
+                          PORT_MODE_INPUT | PORT_MODE_OUTPUT):
+            layout_modes_[port_mode] = gpos.get_layout_mode(port_mode)
+        
         patchcanvas.add_group(
             self.group_id, display_name, split,
-            icon_type, icon_name,
+            icon_type, icon_name, layout_modes=layout_modes_,
             null_xy=gpos.null_xy, in_xy=gpos.in_xy, out_xy=gpos.out_xy)
 
         if do_split:
@@ -436,12 +441,6 @@ class Group:
                 bool(gpos.flags & GROUP_WRAPPED_INPUT
                      and gpos.flags & GROUP_WRAPPED_OUTPUT),
                 animate=False)
-                
-            layout_modes = {}
-            for i in 1, 2, 3:
-                layout_modes[i] = gpos.get_layout_mode(i)
-                patchcanvas.set_group_layout_mode(
-                    self.group_id, i, gpos.get_layout_mode(i))
             
         if self.has_gui:
             patchcanvas.set_optional_gui_state(self.group_id, self.gui_visible)

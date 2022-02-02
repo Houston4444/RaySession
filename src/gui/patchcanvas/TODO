@@ -12,7 +12,7 @@ transport controls
 
 
 refaire theme gui hidden tous les thèmes
-sauvegarde du layout mode (séparé splitted/grouped)
+#sauvegarde du layout mode (séparé splitted/grouped)
 ajustements anti-superposition (après join/split, emballer/déballer remonte toujours un peu)
 # bug régulier de position de l'icone (semble OK, nettoyer x_offset/y_offset si pas de problème)
 accélerer le update_positions
