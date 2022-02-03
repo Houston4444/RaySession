@@ -1323,6 +1323,10 @@ class PatchbayManager:
         self.options_dialog.max_port_width_changed.connect(
             patchcanvas.set_max_port_width)
 
+    def save_patchcanvas_cache(self):
+        print('bonbonbonobon')
+        patchcanvas.save_cache()
+
     @staticmethod
     def send_to_patchbay_daemon(*args):
         server = GuiServerThread.instance()
@@ -2306,3 +2310,6 @@ class PatchbayManager:
         self.tools_widget.set_jack_running(jack_running)
         self.session.main_win.add_patchbay_tools(
             self.tools_widget, self.canvas_menu)
+        
+    def init_font_metrics(self):
+        patchcanvas.init_font_metrics()

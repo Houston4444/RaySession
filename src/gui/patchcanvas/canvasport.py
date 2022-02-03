@@ -173,10 +173,15 @@ class CanvasPort(QGraphicsItem):
         self._print_name = print_name
         self._name_truncked = False
 
+        time_dict = {}
+        start_time = time.time()
+
         if width_limited:
             #sizer = QFontMetrics(self._port_font)
             long_size = self._theme.get_text_width(self._print_name)
-
+            time_dict['after_longsiz'] = time.time() - start_time
+            time_dict['print_name'] = "'" + print_name + "'"
+            
             if long_size > width_limited:
                 name_len = len(self._print_name)
                 middle = int(name_len / 2)
@@ -201,6 +206,11 @@ class CanvasPort(QGraphicsItem):
                 self._print_name = left_text
                 self._print_name_right = right_text
                 self._name_truncked = True
+            time_dict['finfin'] = time.time() - start_time
+        
+        if print_name in ('1', ' 1') and 'Mic/Lin/' in self._port_name:
+            for key, value in time_dict.items():
+                print('        ', key, ':', value)
 
     def get_text_width(self):
         if self._name_truncked:

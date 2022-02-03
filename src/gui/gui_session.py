@@ -140,6 +140,7 @@ class SignaledSession(Session):
         print('signnle', time.time())
         self.signaler.osc_receive.connect(self._osc_receive)
         self.daemon_manager.start()
+        self.patchbay_manager.init_font_metrics()
 
         self.canvas_groups = []
         self.canvas_ports = []

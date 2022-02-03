@@ -32,6 +32,7 @@ class Client(QObject, ray.ClientData):
         self.widget = self.main_win.create_client_widget(self)
         print('zoubiaa', time.time())
         self.properties_dialog = ClientPropertiesDialog.create(self.main_win, self)
+        print('pp_done', time.time())
 
     def set_status(self, status: int):
         self._previous_status = self.status

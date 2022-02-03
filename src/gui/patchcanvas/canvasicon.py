@@ -47,8 +47,13 @@ from . import (
     PORT_MODE_OUTPUT
 )
 
+APP_ICONS_CACHE = {}
+
 # ------------------------------------------------------------------------------------------------------------
 def get_app_icon(icon_name: str):
+    if icon_name in APP_ICONS_CACHE.keys():
+        return APP_ICONS_CACHE[icon_name]
+    
     icon = QIcon.fromTheme(icon_name)
 
     if icon.isNull():
@@ -70,6 +75,8 @@ def get_app_icon(icon_name: str):
                     icon = QIcon()
                     icon.addFile(filename)
                     break
+
+    APP_ICONS_CACHE[icon_name] = icon
 
     return icon
 

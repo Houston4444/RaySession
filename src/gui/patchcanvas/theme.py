@@ -3,12 +3,17 @@ import json
 import os
 import sys
 import time
+import pickle
 
 from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF
 from PyQt5.QtCore import Qt, QTimer
 
 # from gui.patchcanvas import theme_default
 from . import canvas
+
+TITLE_TEMPLATES_CACHE = {}
+FONT_METRICS_CACHE = {}
+
 
 def print_error(string: str):
     sys.stderr.write("patchcanvas.theme::%s\n" % string)
@@ -91,6 +96,7 @@ def rail_float(value, mini: float, maxi: float) -> float:
     return new_value
 
 
+
 class StyleAttributer:
     def __init__(self, path, parent=None):
         self.subs = []
@@ -116,8 +122,8 @@ class StyleAttributer:
 
         self._fill_pen = None
         self._font = None
-        self._font_metrics_cache = {}
-        self._titles_templates_cache = {}
+        self._font_metrics_cache = None
+        self._titles_templates_cache = None
 
     def set_attribute(self, attribute: str, value):
         err = False
@@ -302,7 +308,30 @@ class StyleAttributer:
         font_.setWeight(self.get_value_of('_font_width'))
         return font_
     
+    def _set_font_metrics_cache(self):
+        #if self._font_metrics_cache is not None:
+            #return
+        
+        font_name = self.get_value_of('_font_name')
+        font_size = str(self.get_value_of('_font_size'))
+        font_width = str(self.get_value_of('_font_width'))
+        
+        if not font_name in FONT_METRICS_CACHE.keys():
+            FONT_METRICS_CACHE[font_name] = {}
+        
+        if not font_size in FONT_METRICS_CACHE[font_name].keys():
+            FONT_METRICS_CACHE[font_name][font_size] = {}
+        
+        if not font_width in FONT_METRICS_CACHE[font_name][font_size].keys():
+            FONT_METRICS_CACHE[font_name][font_size][font_width] = {}
+        
+        self._font_metrics_cache = \
+            FONT_METRICS_CACHE[font_name][font_size][font_width]
+    
     def get_text_width(self, string:str):
+        if self._font_metrics_cache is None:
+            self._set_font_metrics_cache()
+        
         if string in self._font_metrics_cache.keys():
             return self._font_metrics_cache[string]
 
@@ -315,8 +344,6 @@ class StyleAttributer:
                 letter_size = QFontMetricsF(self.font()).width(s)
                 self._font_metrics_cache[s] = letter_size
                 tot_size += letter_size
-        
-        #print('ll', string, time.time() - starti)
         
         self._font_metrics_cache[string] = tot_size
         
@@ -334,16 +361,54 @@ class StyleAttributer:
     def box_footer(self):
         return self.get_value_of('_box_footer')
     
+    def _set_titles_templates_cache(self):
+        if self._titles_templates_cache is not None:
+            return
+        
+        font_name = self.get_value_of('_font_name')
+        font_size = str(self.get_value_of('_font_size'))
+        font_width = str(self.get_value_of('_font_width'))
+        
+        if not font_name in TITLE_TEMPLATES_CACHE.keys():
+            TITLE_TEMPLATES_CACHE[font_name] = {}
+        
+        if not font_size in TITLE_TEMPLATES_CACHE[font_name].keys():
+            TITLE_TEMPLATES_CACHE[font_name][font_size] = {}
+        
+        if not font_width in TITLE_TEMPLATES_CACHE[font_name][font_size].keys():
+            TITLE_TEMPLATES_CACHE[font_name][font_size][font_width] = {}
+        
+        self._titles_templates_cache = \
+            TITLE_TEMPLATES_CACHE[font_name][font_size][font_width]
+    
     def save_title_templates(self, title: str, handle_gui: bool, templates: list):
+        if self._titles_templates_cache is None:
+            self._set_titles_templates_cache()
+        
         if not title in self._titles_templates_cache.keys():
             self._titles_templates_cache[title] = {}
-        self._titles_templates_cache[title][handle_gui] = templates
+            
+        gui_key = 'with_gui' if handle_gui else 'without_gui'
+        self._titles_templates_cache[title][gui_key] = templates
     
     def get_title_templates(self, title: str, handle_gui: bool) -> list:
+        if self._titles_templates_cache is None:
+            self._set_titles_templates_cache()
+        
+        gui_key = 'with_gui' if handle_gui else 'without_gui'
+        
         if (title in self._titles_templates_cache.keys()
-                and handle_gui in self._titles_templates_cache[title].keys()):
-            return self._titles_templates_cache[title][handle_gui]
+                and gui_key in self._titles_templates_cache[title].keys()):
+            return self._titles_templates_cache[title][gui_key]
+        
         return []
+    
+    def init_font_metrics(self):
+        self.get_text_width('Mm ⠿1')
+        
+        for sub in self.subs:
+            sub_attr = self.__getattribute__(sub)
+            sub_attr.init_font_metrics()
 
 class UnselectedStyleAttributer(StyleAttributer):
     def __init__(self, path, parent=None):
@@ -551,3 +616,63 @@ class Theme(StyleAttributer):
 
             sub_attributer = self.__getattribute__(begin)
             sub_attributer.set_style_dict(end, value)
+        
+        ## QFontMetricsF can takes a very long time at first call
+        ## or at first call of very special characters
+        ## Then, it's better to call them now than later in startup
+        #before_init = time.time()
+        #self.init_font_metrics()
+        #print('init_font_metrics in', time.time() - before_init)
+
+    def load_cache(self):
+        #if True:
+            #return
+        start_time = time.time()
+            
+        cache_file = "%s/.cache/RaySession/patchbay_titles.json" % os.environ['HOME']
+        if not os.path.isfile(cache_file):
+            return
+
+        with open(cache_file, 'r') as f:
+            try:
+                global TITLE_TEMPLATES_CACHE
+                TITLE_TEMPLATES_CACHE = json.load(f)
+            except:
+                print('failed to load cache', cache_file)
+                return
+            
+        font_cache_file = "%s/.cache/RaySession/patchbay_fonts" % os.environ['HOME']
+        if not os.path.isfile(font_cache_file):
+            return
+
+        with open(font_cache_file, 'rb') as f:
+            try:
+                global FONT_METRICS_CACHE
+                FONT_METRICS_CACHE = pickle.load(f)
+            except:
+                print('failed to load font cache', font_cache_file)
+                return
+            
+        print('cache loaded in', time.time() - start_time)
+    
+    def save_cache(self):
+        cache_dir = "%s/.cache/RaySession" % os.environ['HOME']
+        if not os.path.isdir(cache_dir):
+            try:
+                os.makedirs(cache_dir)
+            except:
+                return
+
+        with open("%s/patchbay_titles.json" % cache_dir, 'w+') as f:
+            json.dump(TITLE_TEMPLATES_CACHE, f, indent=2)
+            
+        #with open("%s/patchbay_fonts.json" % cache_dir, 'w+') as f:
+            #json.dump(FONT_METRICS_CACHE, f)
+        
+        with open("%s/patchbay_fonts" % cache_dir, 'wb') as f:
+            pickle.dump(FONT_METRICS_CACHE, f)
+    
+    def init_font_metrics(self):
+        before_init = time.time()
+        StyleAttributer.init_font_metrics(self)
+        print('init_font_metrics in', time.time() - before_init)

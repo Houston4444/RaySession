@@ -303,6 +303,9 @@ class GuiServerThread(liblo.ServerThread):
                 return False
 
     def send(self, *args):
+        if args[1] == '/ray/server/ask_for_patchbay':
+            print('/ray/server/ask_for_patchbay')
+        
         if CommandLineArgs.debug:
             sys.stderr.write(
                 '\033[95mOSC::gui sends\033[0m %s\n' % str(args[1:]))

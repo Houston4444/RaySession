@@ -1607,6 +1607,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         self.save_window_settings()
+        self.session.patchbay_manager.save_patchcanvas_cache()
         self.hidden_maximized = self.isMaximized()
 
         if self._systray.isVisible() and self.session.is_running():

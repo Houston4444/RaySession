@@ -131,6 +131,8 @@ def init(app_name: str, scene, callback, theme_paths: tuple, debug=False):
         canvas.theme_manager = ThemeManager(theme_paths)
         if not canvas.theme_manager.set_theme(options.theme_name):
             canvas.theme_manager.set_theme('Black Gold')
+        
+        canvas.theme.load_cache()
 
     canvas.initiated = True
 
@@ -665,6 +667,7 @@ def join_group(group_id):
 def redraw_all_groups():
     start_time = time.time()
     last_time = start_time
+    time_dicts = []
     i = 0
     
     # We are redrawing all groups.
@@ -682,7 +685,14 @@ def redraw_all_groups():
                 i += 1
                 box.update_positions(without_connections=True)
         now = time.time()
+        
+        time_dicts.append({'group': group.group_name, 'time': now - last_time})
+        
         last_time = now
+    
+    print('all group redrawn in', last_time - start_time)
+    for td in time_dicts:
+        print(td['time'], td['group'])
     
     for connection in canvas.connection_list:
         if connection.widget is not None:
@@ -1421,4 +1431,9 @@ def set_optional_gui_state(group_id: int, visible: bool):
         
     canvas.scene.update()
 
+def save_cache():
+    canvas.theme.save_cache()
+    
+def init_font_metrics():
+    canvas.theme.init_font_metrics()
 # ----------------------------------------------------------------------------
