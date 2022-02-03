@@ -403,12 +403,12 @@ class StyleAttributer:
         
         return []
     
-    def init_font_metrics(self):
-        self.get_text_width('Mm ⠿1')
+    #def init_font_metrics(self):
+        #self.get_text_width('Mm ⠿1')
         
-        for sub in self.subs:
-            sub_attr = self.__getattribute__(sub)
-            sub_attr.init_font_metrics()
+        #for sub in self.subs:
+            #sub_attr = self.__getattribute__(sub)
+            #sub_attr.init_font_metrics()
 
 class UnselectedStyleAttributer(StyleAttributer):
     def __init__(self, path, parent=None):
@@ -671,8 +671,3 @@ class Theme(StyleAttributer):
         
         with open("%s/patchbay_fonts" % cache_dir, 'wb') as f:
             pickle.dump(FONT_METRICS_CACHE, f)
-    
-    def init_font_metrics(self):
-        before_init = time.time()
-        StyleAttributer.init_font_metrics(self)
-        print('init_font_metrics in', time.time() - before_init)

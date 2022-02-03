@@ -139,10 +139,6 @@ class CanvasBox(CanvasBoxAbstract):
         return utils.get_portgroup_name_from_ports_names(
             [p.port_name for p in self._tmp_port_list
              if p.portgrp_id == portgrp_id])
-        #for portgrp in self._tmp_portgrp_list:
-            #if portgrp.portgrp_id == portgrp_id:
-                #for port in self._tmp_port_list:
-                    
 
     def _should_align_port_types(self, port_types: list) -> bool:
         ''' check if we can align port types
@@ -183,9 +179,6 @@ class CanvasBox(CanvasBoxAbstract):
     
     def _get_geometry_dict(
             self, port_types: list, align_port_types: bool) -> dict:
-        time_dicts = {}
-        start_time = time.time()
-        
         max_in_width = max_out_width = 0
         last_in_pos = last_out_pos = 0
         final_last_in_pos = final_last_out_pos = last_in_pos
@@ -198,16 +191,12 @@ class CanvasBox(CanvasBoxAbstract):
         last_out_type_alter = (PORT_TYPE_NULL, False)
         last_port_mode = PORT_MODE_NULL
         
-        time_dicts['befor iter'] = time.time() - start_time 
-        
         for port_type in port_types:
             for alternate in (False, True):
                 for port in self._tmp_port_list:
                     if (port.port_type != port_type
                             or port.is_alternate != alternate):
                         continue
-
-                    time_dicts[port.port_name + '_begin'] = time.time() - start_time
 
                     port_pos, pg_len = self._get_portgroup_position(
                         port.port_id, port.portgrp_id)
@@ -223,24 +212,18 @@ class CanvasBox(CanvasBoxAbstract):
                             
                             if port.port_id == portgrp.port_id_list[0]:
                                 portgrp_name = self._get_portgroup_name(port.portgrp_id)
-                                time_dicts[port.port_name + '_befor_pgwid'] = time.time() - start_time 
 
                                 portgrp.widget.set_print_name(
                                     portgrp_name,
                                     max_pwidth - canvas.theme.port_grouped_width - 5)
-                            
-                            time_dicts[port.port_name + '_aft_pgwid'] = time.time() - start_time
                             
                             port.widget.set_print_name(
                                 port.port_name.replace(
                                     self._get_portgroup_name(port.portgrp_id), '', 1),
                                 int(max_pwidth/2))
                             
-                            time_dicts[port.port_name + '_aftportprint'] = time.time() - start_time
-                            
                             if (portgrp.widget.get_text_width() + 5
                                     > max_pwidth - port.widget.get_text_width()):
-                                time_dicts[port.port_name + '_bef_reduce'] = time.time() - start_time
                                 portgrp.widget.reduce_print_name(
                                     max_pwidth - port.widget.get_text_width() - 5)
                             
@@ -257,8 +240,6 @@ class CanvasBox(CanvasBoxAbstract):
                         size = max(port.widget.get_text_width() + port_offset, 20)
                     
                     type_alter = (port.port_type, port.is_alternate)
-                    
-                    time_dicts[port.port_name + '_middle'] = time.time() - start_time
                     
                     if port.port_mode == PORT_MODE_INPUT:
                         max_in_width = max(max_in_width, size)
@@ -285,8 +266,6 @@ class CanvasBox(CanvasBoxAbstract):
                     
                     final_last_in_pos = last_in_pos
                     final_last_out_pos = last_out_pos
-                    
-                    time_dicts[port.port_name + '_giddle'] = time.time() - start_time
                 
                 if align_port_types:
                     # align port types horizontally
@@ -295,8 +274,6 @@ class CanvasBox(CanvasBoxAbstract):
                     else:
                         last_in_type_alter = last_out_type_alter
                     last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
-        
-        time_dicts['after iter'] = time.time() - start_time
         
         # calculates height in case of one column only
         last_inout_pos = 0
@@ -322,12 +299,6 @@ class CanvasBox(CanvasBoxAbstract):
                     last_inout_pos += port_spacing
                     
                     last_port_mode = port.port_mode
-        
-        time_dicts['endfiter'] = time.time() - start_time
-        
-        #if 'Calf JACK' in self._group_name or 'firewire' in self._group_name:
-            #for key, value in time_dicts.items():
-                #print('      ', key, ':', value * 1000)
         
         return {'last_in_pos': final_last_in_pos,
                 'last_out_pos': final_last_out_pos,
@@ -1148,9 +1119,6 @@ class CanvasBox(CanvasBoxAbstract):
         self._painter_path = painter_path
         
     def update_positions(self, even_animated=False, without_connections=False):
-        tes_start = time.time()
-        tes_dict = {}
-        
         if canvas.loading_items:
             return
 
@@ -1182,8 +1150,6 @@ class CanvasBox(CanvasBoxAbstract):
     
         align_port_types = self._should_align_port_types(port_types)
 
-        tes_dict['bef geometry'] = time.time() - tes_start
-
         geo_dict = self._get_geometry_dict(port_types, align_port_types)
         last_in_pos = geo_dict['last_in_pos']
         last_out_pos = geo_dict['last_out_pos']
@@ -1191,8 +1157,6 @@ class CanvasBox(CanvasBoxAbstract):
         max_in_width = geo_dict['max_in_width']
         max_out_width = geo_dict['max_out_width']
         last_port_mode = geo_dict['last_port_mode']
-        
-        tes_dict['aft geometry'] = time.time() - tes_start
         
         box_theme = self.get_theme()
         down_height = box_theme.fill_pen().widthF()
@@ -1242,8 +1206,6 @@ class CanvasBox(CanvasBoxAbstract):
         last_in_pos += self._ports_y_start
         last_out_pos += self._ports_y_start
 
-        tes_dict['after title layout'] = time.time() - tes_start
-
         if self._wrapping:
             self._height = (normal_height
                             - (normal_height - wrapped_height)
@@ -1290,32 +1252,22 @@ class CanvasBox(CanvasBoxAbstract):
         # round self._height to the upper value
         self._height = float(int(self._height + 0.99))
 
-        tes_dict['before segments'] = time.time() - tes_start
-
         ports_y_segments_dict = self._set_ports_y_positions(
             port_types, align_port_types,
             self._ports_y_start,
             one_column)
         
-        tes_dict['before x pos'] = time.time() - tes_start
-        
         self._set_ports_x_positions(max_in_width, max_out_width)
-        
-        tes_dict['before titless'] = time.time() - tes_start
         
         self._set_title_positions()
         if (self._width != self._ex_width
                 or self._height != self._ex_height
                 or ports_y_segments_dict != self._ex_ports_y_segments_dict):
-            tes_dict['befor painter path'] = time.time() - tes_start
             self.build_painter_path(ports_y_segments_dict)
-
-        tes_dict['after painter path'] = time.time() - tes_start
 
         if (self._width != self._ex_width
                 or self._height != self._ex_height
                 or self.scenePos() != self._ex_scene_pos):
-            tes_dict['befresize_the_scene'] = time.time() - tes_start
             canvas.scene.resize_the_scene()
 
         self._ex_width = self._width
@@ -1323,20 +1275,11 @@ class CanvasBox(CanvasBoxAbstract):
         self._ex_ports_y_segments_dict = ports_y_segments_dict
         self._ex_scene_pos = self.scenePos()
 
-        tes_dict['bef repaint_lines_'] = time.time() -tes_start
-
         if not without_connections:
             self.repaint_lines(forced=True)
 
-        tes_dict['aft repaint_lines_'] = time.time() -tes_start
         if not (self._wrapping or self._unwrapping) and self.isVisible():
             canvas.scene.deplace_boxes_from_repulsers([self])
-        tes_dict['aft deplace_boxes_'] = time.time() -tes_start
+
         self.update()
-        
-        tes_dict['ended'] = time.time() - tes_start
-        #if 'Calf JACK' in self._group_name or 'Non-' in self._group_name or 'firewire' in self._group_name or 'Salamander' in self._group_name:
-            #print(self._group_name, self._current_port_mode)
-            #for key, value in tes_dict.items():
-                #print('  ', key, ':', value)
             

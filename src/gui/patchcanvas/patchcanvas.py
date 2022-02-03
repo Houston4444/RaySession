@@ -679,6 +679,8 @@ def redraw_all_groups():
     prevent_overlap = options.prevent_overlap
     options.prevent_overlap = False
     
+    print('redraw all', start_time)
+    
     for group in canvas.group_list:
         for box in group.widgets:
             if box is not None:
@@ -691,8 +693,8 @@ def redraw_all_groups():
         last_time = now
     
     print('all group redrawn in', last_time - start_time)
-    for td in time_dicts:
-        print(td['time'], td['group'])
+    #for td in time_dicts:
+        #print(td['time'], td['group'])
     
     for connection in canvas.connection_list:
         if connection.widget is not None:
@@ -703,15 +705,22 @@ def redraw_all_groups():
         options.prevent_overlap = prevent_overlap
         return
     
+    print('papapapa', time.time() - last_time)
+    
     if elastic:
         canvas.scene.set_elastic(True)
-        
+    
+    print('lalalala', time.time() - last_time)
+    box_count = 0
     if prevent_overlap:
         canvas.scene.set_prevent_overlap(True)
         for group in canvas.group_list:
             for box in group.widgets:
                 if box is not None:
+                    box_count += 1
                     canvas.scene.deplace_boxes_from_repulsers([box])
+    
+    print('tatatata', box_count, time.time() - last_time)
     
     if not elastic or prevent_overlap:
         QTimer.singleShot(0, canvas.scene.update)
@@ -913,6 +922,8 @@ def set_group_as_plugin(group_id, plugin_id, has_ui, has_inline_display):
 
 def add_port(group_id, port_id, port_name, port_mode, port_type,
              is_alternate=False):
+    time_dict = {}
+    start_time = time.time()
     if canvas.debug:
         print("PatchCanvas::add_port(%i, %i, %s, %s, %s, %s)"
               % (group_id, port_id, port_name.encode(),
@@ -926,7 +937,9 @@ def add_port(group_id, port_id, port_name, port_mode, port_type,
                 % (group_id, port_id, port_name,
                    port_mode2str(port_mode), port_type2str(port_type)))
             return
-
+    
+    time_dict['after parse'] = time.time() - start_time
+    
     box_widget = None
     port_widget = None
 
@@ -943,7 +956,9 @@ def add_port(group_id, port_id, port_name, port_mode, port_type,
                 port_id, port_mode, port_type,
                 port_name, is_alternate)
             break
-
+    
+    time_dict['after groupf'] = time.time() - start_time
+    
     if not (box_widget and port_widget):
         qCritical(
             "PatchCanvas::add_port(%i, %i, %s, %s, %s) - Unable to find parent group"
@@ -965,8 +980,12 @@ def add_port(group_id, port_id, port_name, port_mode, port_type,
     canvas.last_z_value += 1
     port_widget.setZValue(canvas.last_z_value)
 
-    canvas.qobject.port_added.emit(port_dict.group_id, port_dict.port_id)
-
+    #canvas.qobject.port_added.emit(port_dict.group_id, port_dict.port_id)
+    time_dict['after end'] = time.time() - start_time
+    if 'front' in port_name:
+        for key, value in time_dict.items():
+            print(port_name, key, ':', value)
+    
     if canvas.loading_items:
         return
 
@@ -1029,6 +1048,9 @@ def rename_port(group_id, port_id, new_port_name):
 
 def add_portgroup(group_id, portgrp_id, port_mode, port_type,
                   port_id_list):
+    time_dict = {}
+    start_time = time.time()
+    
     if canvas.debug:
         print("PatchCanvas::add_portgroup(%i, %i)" % (group_id, portgrp_id))
 
@@ -1037,7 +1059,9 @@ def add_portgroup(group_id, portgrp_id, port_mode, port_type,
             qWarning("PatchCanvas::add_portgroup(%i, %i) - portgroup already exists"
                      % (group_id, portgrp_id))
             return
-
+    
+    time_dict['after parse'] = time.time() - start_time
+    
     portgrp_dict = portgrp_dict_t()
     portgrp_dict.group_id = group_id
     portgrp_dict.portgrp_id = portgrp_id
@@ -1076,6 +1100,8 @@ def add_portgroup(group_id, portgrp_id, port_mode, port_type,
             % (group_id, portgrp_id, str(port_id_list)))
         return
 
+    time_dict['before modifports'] = time.time() - start_time
+
     # modify ports impacted by portgroup
     for port in canvas.port_list:
         if (port.group_id == group_id
@@ -1085,7 +1111,9 @@ def add_portgroup(group_id, portgrp_id, port_mode, port_type,
                 port.widget.set_portgroup_id(portgrp_id)
 
     canvas.portgrp_list.append(portgrp_dict)
-
+    
+    time_dict['before addtogrop'] = time.time() - start_time
+    
     # add portgroup widget and refresh the view
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -1101,6 +1129,9 @@ def add_portgroup(group_id, portgrp_id, port_mode, port_type,
                     if not canvas.loading_items:
                         box.update_positions()
             break
+    time_dict['after end'] = time.time() - start_time
+    #for key, value in time_dict.items():
+        #print('PGG', key, ':', value * 1000)
 
 def remove_portgroup(group_id, portgrp_id):
     if canvas.debug:
@@ -1150,6 +1181,9 @@ def connect_ports(connection_id, group_out_id, port_out_id,
         print("PatchCanvas::connect_ports(%i, %i, %i, %i, %i)"
               % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
 
+    time_dict = {}
+    start_time = time.time()
+
     port_out = None
     port_in = None
     port_out_parent = None
@@ -1164,7 +1198,9 @@ def connect_ports(connection_id, group_out_id, port_out_id,
             port_in = port.widget
             if port_in is not None:
                 port_in_parent = port_in.parentItem()
-
+    
+    time_dict['after_parse'] = time.time() - start_time
+    
     # FIXME
     if not (port_out and port_in and port_out_parent and port_in_parent):
         qCritical(
@@ -1182,6 +1218,8 @@ def connect_ports(connection_id, group_out_id, port_out_id,
 
     canvas.scene.addItem(connection_dict.widget)
 
+    time_dict['after widget cr'] = time.time() - start_time
+
     port_out_parent.add_line_from_group(connection_dict.widget, connection_id)
     port_in_parent.add_line_from_group(connection_dict.widget, connection_id)
 
@@ -1195,7 +1233,13 @@ def connect_ports(connection_id, group_out_id, port_out_id,
     canvas.connection_list.append(connection_dict)
 
     canvas.qobject.connection_added.emit(connection_id)
-
+    
+    time_dict['enndeed'] = time.time() - start_time
+    
+    if 'SamplesFX2DelayPre' in port_in_parent._group_name:
+        for key, value in time_dict.items():
+            print('  con', key, ':', value)
+    
     if canvas.loading_items:
         return
 
@@ -1339,7 +1383,15 @@ def set_prevent_overlap(yesno: bool):
     
     if yesno:
         redraw_all_groups()
-        
+
+def full_prevent_overlap():
+    box_tuples = []
+    for group in canvas.group_list:
+        for box in group.widgets:
+            if box is not None:
+                box_tuples.append(box.sceneBoundingRect(), box)
+    
+
 def set_max_port_width(width: int):
     options.max_port_width = width
     redraw_all_groups()
