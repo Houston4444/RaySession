@@ -59,10 +59,8 @@ class Session:
         self.daemon_manager.finish_init()
         self.patchbay_manager.finish_init()
         server.finish_init(self)
-        
-        print('preshowwin', time.time())
         self.main_win.show()
-        print('aftshowwin', time.time())
+
         # display donations dialog under conditions
         if not RS.is_hidden(RS.HD_Donations):
             coreff_counter = RS.settings.value('coreff_counter', 0, type=int)
@@ -71,7 +69,6 @@ class Session:
 
             if coreff_counter % 44 == 29:
                 self.main_win.donate(True)
-        print('session_init_end', time.time())
 
     def quit(self):
         self.patchbay_manager.clear_all()
@@ -135,12 +132,9 @@ class Session:
 
 class SignaledSession(Session):
     def __init__(self):
-        print('top depp', time.time())
         Session.__init__(self)
-        print('signnle', time.time())
         self.signaler.osc_receive.connect(self._osc_receive)
         self.daemon_manager.start()
-        self.patchbay_manager.init_font_metrics()
 
         self.canvas_groups = []
         self.canvas_ports = []
@@ -269,12 +263,9 @@ class SignaledSession(Session):
             client.widget.update_status(client.status)
 
     def _ray_gui_client_new(self, path, args):
-        print('dd new_clinet', time.time(), args[0])
         client = Client(self, *args[:2])
-        print('dd clienrçadd', time.time())
         client.update_properties(*args)
         self.client_list.append(client)
-        
 
     def _ray_gui_client_update(self, path, args):
         client_id = args[0]
@@ -309,7 +300,7 @@ class SignaledSession(Session):
 
             if status == ray.ClientStatus.REMOVED:
                 self.main_win.remove_client(client_id)
-                client.properties_dialog.close()
+                client.close_properties_dialog()
                 self.client_list.remove(client)
                 del client
 

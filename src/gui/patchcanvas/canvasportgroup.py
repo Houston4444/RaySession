@@ -164,14 +164,9 @@ class CanvasPortGroup(QGraphicsItem):
         self._normal_print_name = print_name
         self._name_truncked = False
 
-        time_dict = {}
-        start_time = time.time()
-
         if width_limited:
             #sizer = QFontMetrics(self._port_font)
             long_size = self._theme.get_text_width(self._print_name)
-            
-            time_dict['aft long size'] = time.time() - start_time
             
             if long_size > width_limited:
                 name_len = len(self._print_name)
@@ -180,12 +175,8 @@ class CanvasPortGroup(QGraphicsItem):
                 middle_text = self._trunck_sep
                 right_text = self._print_name[middle + 1:]
                 left_size = self._theme.get_text_width(left_text)
-                time_dict['bef midsiz'] = time.time() - start_time
                 middle_size = self._theme.get_text_width(middle_text)
-                time_dict['bef rigsiz'] = time.time() - start_time
                 right_size = self._theme.get_text_width(right_text)
-                
-                time_dict['bef loop'] = time.time() - start_time
                 
                 while left_size + middle_size + right_size > width_limited:
                     if left_size > right_size:
@@ -201,40 +192,6 @@ class CanvasPortGroup(QGraphicsItem):
                 self._print_name = left_text
                 self._print_name_right = right_text
                 self._name_truncked = True
-                
-                time_dict['e,fod'] = time.time() - start_time
-                
-            if print_name in ('Limiteur multi-bandes In #', 'Mic/Lin/Inst ', 'Mic/Lin/Inst'):
-                for key, value in time_dict.items():
-                    print('        ', key, ':', value)
-
-        #if width_limited:
-            #sizer = QFontMetrics(self._portgrp_font)
-            
-            #if sizer.width(self._print_name) > width_limited:
-                #name_len = len(self._print_name)
-                #middle = int(name_len / 2)
-                #left_text = self._print_name[:middle]
-                #middle_text = self._trunck_sep
-                #right_text = self._print_name[middle + 1:]
-                #left_size = sizer.width(left_text)
-                #middle_size = sizer.width(middle_text)
-                #right_size = sizer.width(right_text)
-
-                #while left_size + middle_size + right_size > width_limited:
-                    #if left_size > right_size:
-                        #left_text = left_text[:-1]
-                        #left_size = sizer.width(left_text)
-                    #else:
-                        #right_text = right_text[1:]
-                        #right_size = sizer.width(right_text)
-                    
-                    #if not (left_text or right_text):
-                        #break
-
-                #self._print_name = left_text
-                #self._print_name_right = right_text
-                #self._name_truncked = True
 
     def reduce_print_name(self, width_limited:int):
         self.set_print_name(self._normal_print_name, width_limited)
@@ -246,15 +203,6 @@ class CanvasPortGroup(QGraphicsItem):
                     + self._theme.get_text_width(self._print_name_right))
         
         return self._theme.get_text_width(self._print_name)
-        
-        #sizer = QFontMetrics(self._portgrp_font)
-
-        #if self._name_truncked:
-            #return (sizer.width(self._print_name)
-                    #+ sizer.width(self._trunck_sep)
-                    #+ sizer.width(self._print_name_right))
-            
-        #return sizer.width(self._print_name)
 
     def reset_dot_lines(self):
         for connection in self._dotcon_list:

@@ -109,7 +109,7 @@ class ClientSlot(QFrame):
         if state:
             self.client.show_properties_dialog(second_tab=True)
         else:
-            self.client.properties_dialog.hide()
+            self.client.close_properties_dialog()
 
     def _start_client(self):
         self.to_daemon('/ray/client/resume', self.get_client_id())
@@ -494,8 +494,7 @@ class ListWidgetClients(QListWidget):
         item = ClientItem(self, client_data)
         item.sort_number = self._last_n
         self._last_n += 1
-        
-        print('create_client_widget end', time.time())
+
         return item.widget
 
     def remove_client_widget(self, client_id):

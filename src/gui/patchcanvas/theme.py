@@ -629,14 +629,14 @@ class Theme(StyleAttributer):
             #return
         start_time = time.time()
             
-        cache_file = "%s/.cache/RaySession/patchbay_titles.json" % os.environ['HOME']
+        cache_file = "%s/.cache/RaySession/patchbay_titles" % os.environ['HOME']
         if not os.path.isfile(cache_file):
             return
 
-        with open(cache_file, 'r') as f:
+        with open(cache_file, 'rb') as f:
             try:
                 global TITLE_TEMPLATES_CACHE
-                TITLE_TEMPLATES_CACHE = json.load(f)
+                TITLE_TEMPLATES_CACHE = pickle.load(f)
             except:
                 print('failed to load cache', cache_file)
                 return
@@ -663,8 +663,8 @@ class Theme(StyleAttributer):
             except:
                 return
 
-        with open("%s/patchbay_titles.json" % cache_dir, 'w+') as f:
-            json.dump(TITLE_TEMPLATES_CACHE, f, indent=2)
+        with open("%s/patchbay_titles" % cache_dir, 'wb') as f:
+            pickle.dump(TITLE_TEMPLATES_CACHE, f)
             
         #with open("%s/patchbay_fonts.json" % cache_dir, 'w+') as f:
             #json.dump(FONT_METRICS_CACHE, f)
