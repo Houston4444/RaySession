@@ -1276,6 +1276,10 @@ class CanvasBox(CanvasBoxAbstract):
         self._ex_scene_pos = self.scenePos()
 
         if not without_connections:
+            if self._group_name == 'ardour':
+                print('repaint_lines', self._current_port_mode)
+                print(len(self._connection_lines))
+            
             self.repaint_lines(forced=True)
 
         if not (self._wrapping or self._unwrapping) and self.isVisible():

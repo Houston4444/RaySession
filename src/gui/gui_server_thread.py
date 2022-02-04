@@ -141,6 +141,8 @@ class GuiServerThread(liblo.ServerThread):
 
         if path == '/ray/gui/patchbay/fast_temp_file_running':
             print('gui reci tmpfil', time.time())
+        elif path == '/ray/gui/session/notes':
+            print('gui reci notess', time.time())
 
         if CommandLineArgs.debug:
             sys.stderr.write('\033[93mOSC::gui_receives\033[0m (%s, %s, %s)\n'

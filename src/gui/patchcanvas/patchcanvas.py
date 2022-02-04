@@ -220,6 +220,9 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
               icon_type=ICON_APPLICATION, icon_name='', layout_modes={},
               null_xy=(0, 0), in_xy=(0, 0), out_xy=(0, 0),
               split_animated=False):
+    time_dict = {}
+    start_time = time.time()
+    
     if canvas.debug:
         warning_print("add_group(%i, %s, %s, %s)" % (
               group_id, group_name, split2str(split), icon2str(icon_type)))
@@ -231,12 +234,16 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
                 % (group_id, group_name, split2str(split), icon2str(icon_type)))
             return
 
+    time_dict['after checks'] = time.time() - start_time
+
     if split == SPLIT_UNDEF:
         isHardware = bool(icon_type == ICON_HARDWARE)
         if isHardware:
             split = SPLIT_YES
 
     group_box = CanvasBox(group_id, group_name, icon_type, icon_name)
+    
+    time_dict['after box'] = time.time() - start_time
 
     group_dict = group_dict_t()
     group_dict.group_id = group_id
@@ -297,11 +304,18 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
             #horizontal = bool(icon_type in (ICON_HARDWARE, ICON_LADISH_ROOM))
             group_box.setPos(group_dict.null_pos)
 
+
     canvas.last_z_value += 1
     group_box.setZValue(canvas.last_z_value)
-
+    
+    time_dict['after end'] = time.time() - start_time
+    
     canvas.group_list.append(group_dict)
-
+    
+    #if group_name.endswith('(Outputs)'):
+        #for key, value in time_dict.items():
+            #print('     addgp', key, ':', "%.3f" % (value * 1000), group_name)
+    
     if canvas.loading_items:
         return
 
@@ -323,6 +337,9 @@ def remove_group(group_id, save_positions=True):
 
     for group in canvas.group_list:
         if group.group_id == group_id:
+            if group.group_name == 'ardour':
+                print('REMOVEE ardour group')
+            
             item = group.widgets[0]
             group_name = group.group_name
 
@@ -728,6 +745,8 @@ def redraw_all_groups():
 def redraw_group(group_id: int):
     for group in canvas.group_list:
         if group.group_id == group_id:
+            print('redraw group', group.group_name)
+            
             for box in group.widgets:
                 if box is not None:
                     box.update_positions()
@@ -922,8 +941,6 @@ def set_group_as_plugin(group_id, plugin_id, has_ui, has_inline_display):
 
 def add_port(group_id, port_id, port_name, port_mode, port_type,
              is_alternate=False):
-    time_dict = {}
-    start_time = time.time()
     if canvas.debug:
         print("PatchCanvas::add_port(%i, %i, %s, %s, %s, %s)"
               % (group_id, port_id, port_name.encode(),
@@ -937,8 +954,6 @@ def add_port(group_id, port_id, port_name, port_mode, port_type,
                 % (group_id, port_id, port_name,
                    port_mode2str(port_mode), port_type2str(port_type)))
             return
-    
-    time_dict['after parse'] = time.time() - start_time
     
     box_widget = None
     port_widget = None
@@ -956,8 +971,6 @@ def add_port(group_id, port_id, port_name, port_mode, port_type,
                 port_id, port_mode, port_type,
                 port_name, is_alternate)
             break
-    
-    time_dict['after groupf'] = time.time() - start_time
     
     if not (box_widget and port_widget):
         qCritical(
@@ -981,10 +994,6 @@ def add_port(group_id, port_id, port_name, port_mode, port_type,
     port_widget.setZValue(canvas.last_z_value)
 
     #canvas.qobject.port_added.emit(port_dict.group_id, port_dict.port_id)
-    time_dict['after end'] = time.time() - start_time
-    if 'front' in port_name:
-        for key, value in time_dict.items():
-            print(port_name, key, ':', value)
     
     if canvas.loading_items:
         return
@@ -1048,9 +1057,6 @@ def rename_port(group_id, port_id, new_port_name):
 
 def add_portgroup(group_id, portgrp_id, port_mode, port_type,
                   port_id_list):
-    time_dict = {}
-    start_time = time.time()
-    
     if canvas.debug:
         print("PatchCanvas::add_portgroup(%i, %i)" % (group_id, portgrp_id))
 
@@ -1059,8 +1065,6 @@ def add_portgroup(group_id, portgrp_id, port_mode, port_type,
             qWarning("PatchCanvas::add_portgroup(%i, %i) - portgroup already exists"
                      % (group_id, portgrp_id))
             return
-    
-    time_dict['after parse'] = time.time() - start_time
     
     portgrp_dict = portgrp_dict_t()
     portgrp_dict.group_id = group_id
@@ -1100,19 +1104,18 @@ def add_portgroup(group_id, portgrp_id, port_mode, port_type,
             % (group_id, portgrp_id, str(port_id_list)))
         return
 
-    time_dict['before modifports'] = time.time() - start_time
-
     # modify ports impacted by portgroup
     for port in canvas.port_list:
         if (port.group_id == group_id
                 and port.port_id in port_id_list):
             port.portgrp_id = portgrp_id
             if port.widget is not None:
-                port.widget.set_portgroup_id(portgrp_id)
+                port.widget.set_portgroup_id(
+                    portgrp_id,
+                    port_id_list.index(port.port_id),
+                    len(port_id_list))
 
     canvas.portgrp_list.append(portgrp_dict)
-    
-    time_dict['before addtogrop'] = time.time() - start_time
     
     # add portgroup widget and refresh the view
     for group in canvas.group_list:
@@ -1129,9 +1132,6 @@ def add_portgroup(group_id, portgrp_id, port_mode, port_type,
                     if not canvas.loading_items:
                         box.update_positions()
             break
-    time_dict['after end'] = time.time() - start_time
-    #for key, value in time_dict.items():
-        #print('PGG', key, ':', value * 1000)
 
 def remove_portgroup(group_id, portgrp_id):
     if canvas.debug:
@@ -1149,7 +1149,7 @@ def remove_portgroup(group_id, portgrp_id):
                     port.portgrp_id = 0
 
                     if port.widget is not None:
-                        port.widget.set_portgroup_id(0)
+                        port.widget.set_portgroup_id(0, 0, 1)
                         box_widget = port.widget.parentItem()
 
             if portgrp.widget is not None:
@@ -1236,9 +1236,9 @@ def connect_ports(connection_id, group_out_id, port_out_id,
     
     time_dict['enndeed'] = time.time() - start_time
     
-    if 'SamplesFX2DelayPre' in port_in_parent._group_name:
-        for key, value in time_dict.items():
-            print('  con', key, ':', value)
+    #if 'SamplesFX2DelayPre' in port_in_parent._group_name:
+        #for key, value in time_dict.items():
+            #print('  con', key, ':', value)
     
     if canvas.loading_items:
         return

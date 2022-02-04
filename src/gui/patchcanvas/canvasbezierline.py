@@ -79,64 +79,33 @@ class CanvasBezierLine(QGraphicsPathItem):
         self.update_line_gradient()
 
     def update_line_pos(self):
-        if self.item1.get_port_mode() == PORT_MODE_OUTPUT:
-            item1_x = self.item1.scenePos().x() + self.item1.get_port_width() + 12
+        item1_con_pos = self.item1.connect_pos()
+        item1_x = item1_con_pos.x()
+        item1_y = item1_con_pos.y()
+        
+        item2_con_pos = self.item2.connect_pos()
+        item2_x = item2_con_pos.x()
+        item2_y = item2_con_pos.y()
 
-            port_pos_1, portgrp_len_1 = self.item1.get_portgroup_position()
+        mid_x = abs(item1_x - item2_x) / 2
 
-            phi = 0.75 if portgrp_len_1 > 2 else 0.62
+        diffxy = abs(item1_y - item2_y) - abs(item1_x - item2_x)
+        if diffxy > 0:
+            mid_x += diffxy
 
-            if portgrp_len_1 > 1:
-                first_old_y = canvas.theme.port_height * phi
-                last_old_y = canvas.theme.port_height * (portgrp_len_1 - phi)
-                delta = (last_old_y - first_old_y) / (portgrp_len_1 -1)
-                old_y1 = first_old_y + (port_pos_1 * delta) - (canvas.theme.port_height * port_pos_1)
-                if not self.item1.isVisible():
-                    # item is hidden port when its box is folded
-                    old_y1 = canvas.theme.port_height - old_y1
-            else:
-                old_y1 = canvas.theme.port_height / 2
+        if diffxy > 0 or item1_x > item2_x:
+            mid_x = min(mid_x, 200)
 
-            item1_y = self.item1.scenePos().y() + old_y1
+        item1_new_x = item1_x + mid_x
+        item2_new_x = item2_x - mid_x
 
-            item2_x = self.item2.scenePos().x()
+        path = QPainterPath(QPointF(item1_x, item1_y))
+        path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y,
+                     item2_x, item2_y)
+        self.setPath(path)
 
-            port_pos_2, portgrp_len_2 = self.item2.get_portgroup_position()
-
-            phi = 0.75 if portgrp_len_1 > 2 else 0.62
-
-            if portgrp_len_2 > 1:
-                first_old_y = canvas.theme.port_height * phi
-                last_old_y  = canvas.theme.port_height * (portgrp_len_2 - phi)
-                delta = (last_old_y - first_old_y) / (portgrp_len_2 -1)
-                old_y2 = (first_old_y + (port_pos_2 * delta)
-                          - (canvas.theme.port_height * port_pos_2))
-                if not self.item2.isVisible():
-                    old_y2 = canvas.theme.port_height - old_y2
-            else:
-                old_y2 = canvas.theme.port_height / 2
-
-            item2_y = self.item2.scenePos().y() + old_y2
-
-            mid_x = abs(item1_x - item2_x) / 2
-
-            diffxy = abs(item1_y - item2_y) - abs(item1_x - item2_x)
-            if diffxy > 0:
-                mid_x += diffxy
-
-            if diffxy > 0 or item1_x > item2_x:
-                mid_x = min(mid_x, 200)
-
-            item1_new_x = item1_x + mid_x
-            item2_new_x = item2_x - mid_x
-
-            path = QPainterPath(QPointF(item1_x, item1_y))
-            path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y,
-                         item2_x, item2_y)
-            self.setPath(path)
-
-            self._line_selected = False
-            self.update_line_gradient()
+        self._line_selected = False
+        self.update_line_gradient()
 
     def type(self):
         return CanvasBezierLineType

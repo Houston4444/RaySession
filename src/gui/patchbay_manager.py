@@ -87,9 +87,6 @@ class Connection:
         if not PatchbayManager.port_type_shown(self.port_type()):
             return
 
-        #if not PatchbayManager.port_types_view & self.port_type():
-            #return
-
         self.in_canvas = True
 
         patchcanvas.connect_ports(
@@ -394,7 +391,7 @@ class Group:
                 and not self.client_icon):
             if "sink" in self.name.lower():
                 icon_type = patchcanvas.ICON_INTERNAL
-                icon_name = "audio-volume-medium.svg"
+                #icon_name = "audio-volume-medium.svg"
                 icon_name = 'monitor_playback'
             elif "source" in self.name.lower():
                 icon_type = patchcanvas.ICON_INTERNAL
@@ -1073,35 +1070,17 @@ class Group:
                 break
 
     def sort_ports_in_canvas(self):
-        time_dict = {}
-        start_time = time.time()
-
-        #time_dict['start'] = start_time
         already_optimized = PatchbayManager.optimized_operation
         PatchbayManager.optimize_operation(True)
 
         conn_list = []
 
         if not PatchbayManager.very_fast_operation:
-            for port in self.ports:
-                for conn in PatchbayManager.connections:
-                    if (port.mode == PORT_MODE_OUTPUT
-                            and conn.port_out is port
+            for conn in PatchbayManager.connections:
+                for port in self.ports:
+                    if (port in (conn.port_out, conn.port_in)
                             and conn not in conn_list):
                         conn_list.append(conn)
-                    elif (port.mode == PORT_MODE_INPUT
-                            and conn.port_in is port
-                            and conn not in conn_list):
-                        conn_list.append(conn)
-                    
-            
-            #for conn in PatchbayManager.connections:
-                #for port in self.ports:
-                    #if (port in (conn.port_out, conn.port_in)
-                            #and conn not in conn_list):
-                        #conn_list.append(conn)
-            
-            time_dict['bef rem con'] = time.time() - start_time
             
             for connection in conn_list:
                 connection.remove_from_canvas()
@@ -1112,9 +1091,8 @@ class Group:
             for port in self.ports:
                 port.remove_from_canvas()
         
-        time_dict['bef port sort'] = time.time() - start_time
         self.ports.sort()
-        time_dict['aft port sort'] = time.time() - start_time
+
         # search and remove existing portgroups with non consecutive ports
         portgroups_to_remove = []
 
@@ -1168,7 +1146,7 @@ class Group:
             else:
                 if not seems_ok:
                     portgroups_to_remove.append(portgroup)
-        time_dict['aft first par'] = time.time() - start_time
+
         for portgroup in portgroups_to_remove:
             self.remove_portgroup(portgroup)
 
@@ -1197,7 +1175,7 @@ class Group:
 
                 elif founded_ports:
                     break
-        time_dict['bef metadata'] = time.time() - start_time
+
         # detect and add portgroups given from metadatas
         portgroups_mdata = [] # list of dicts
 
@@ -1229,8 +1207,6 @@ class Group:
             new_portgroup.mdata_portgroup = pg_mdata['pg_name']
             self.portgroups.append(new_portgroup)
         
-        time_dict['bef memory'] = time.time() - start_time
-        
         # add missing portgroups from portgroup memory
         for portgroup_mem in PatchbayManager.portgroups_memory:
             if portgroup_mem.above_metadatas:
@@ -1257,8 +1233,6 @@ class Group:
                 elif founded_ports:
                     break
         
-        time_dict['pre end'] = time.time() - start_time
-        
         if not PatchbayManager.very_fast_operation:
             # ok for re-adding all items to canvas
             for port in self.ports:
@@ -1273,11 +1247,6 @@ class Group:
         if not already_optimized:
             PatchbayManager.optimize_operation(False)
             self.redraw_in_canvas()
-        
-        time_dict['end '] = time.time() - start_time
-        #if 'firewire' in self.name:
-            #for key, value in time_dict.items():
-                #print('r', self.name, key, ':', value)
 
     def add_all_ports_to_canvas(self):
         for port in self.ports:
@@ -1838,7 +1807,7 @@ class PatchbayManager:
 
             if port.flags & PORT_IS_PHYSICAL:
                 a2j_group = True
-
+        
         for group in self.groups:
             if group.name == group_name:
                 break
@@ -1878,6 +1847,7 @@ class PatchbayManager:
         port.add_to_canvas()
         group.check_for_portgroup_on_last_port()
         group.check_for_display_name_on_last_port()
+        
         return group.group_id
 
     def remove_port(self, name: str) -> int:
@@ -2043,8 +2013,8 @@ class PatchbayManager:
         gpos = ray.GroupPosition.new_from(*args)
 
         for group_position in self.group_positions:
-            if (group_position.port_types_view == gpos.port_types_view
-                    and group_position.group_name == gpos.group_name):
+            if (group_position.group_name == gpos.group_name
+                    and group_position.port_types_view == gpos.port_types_view):
                 group_position.update(*args)
         else:
             self.group_positions.append(gpos)
@@ -2223,6 +2193,8 @@ class PatchbayManager:
         
         for group in self.groups:
             if group.group_id in group_ids_to_sort:
+                if group.name == 'ardour':
+                    print('sort ardour group')
                 group.sort_ports_in_canvas()
 
         self.optimize_operation(False)
@@ -2286,14 +2258,18 @@ class PatchbayManager:
 
         for key in patchbay_data.keys():
             if key == 'ports':
+                print('before add ports', time.time())
                 for p in patchbay_data[key]:
                     self.add_port(p.get('name'), p.get('type'),
                                   p.get('flags'), p.get('uuid'))
+                print('after add ports', time.time())
         
             elif key == 'connections':
+                print('before add connns', time.time())
                 for c in patchbay_data[key]:
                     self.add_connection(c.get('port_out_name'),
                                         c.get('port_in_name'))
+                print('after add connes', time.time())
         
         for key in patchbay_data.keys():
             if key == 'clients':
