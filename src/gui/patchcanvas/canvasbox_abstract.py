@@ -219,13 +219,13 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._can_handle_gui = False # used for optional-gui switch
         self._gui_visible = False
 
-        self._title_on_side = False
-        self._restrict_title_lines = 0 # no title lines restriction
-        self._layout_may_have_changed = False
-        #self._layout_mode = LAYOUT_AUTO
         self._current_layout_mode = LAYOUT_LARGE
         self._title_under_icon = False
         self._painter_path = QPainterPath()
+        
+        self._port_list = []
+        self._portgrp_list = []
+        
         self.update_positions()
 
         canvas.scene.addItem(self)
@@ -349,7 +349,6 @@ class CanvasBoxAbstract(QGraphicsItem):
             new_widget.setVisible(False)
 
         self._port_list_ids.append(port_id)
-        self._layout_may_have_changed = True
 
         return new_widget
 
@@ -361,8 +360,6 @@ class CanvasBoxAbstract(QGraphicsItem):
                 "PatchCanvas::CanvasBox.removePort(%i) - unable to find port to remove"
                 % port_id)
             return
-
-        self._layout_may_have_changed = True
 
         if not canvas.loading_items:
             if len(self._port_list_ids) > 0:
@@ -379,8 +376,6 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         if self._wrapped:
             new_widget.setVisible(False)
-
-        self._layout_may_have_changed = True
 
         return new_widget
 
@@ -1243,7 +1238,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         if self._wrapped:
             for port_mode in PORT_MODE_INPUT, PORT_MODE_OUTPUT:
                 if self._current_port_mode & port_mode:
-                    if self._title_on_side:
+                    if self._has_side_title():
                         side = 9
                         offset = 4
                         ypos = self._height - offset

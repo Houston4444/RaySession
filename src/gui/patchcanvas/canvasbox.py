@@ -121,14 +121,14 @@ class CanvasBox(CanvasBoxAbstract):
                  icon_name: str, parent=None):
         CanvasBoxAbstract.__init__(
             self, group_id, group_name, icon_type, icon_name, parent)
-        self._tmp_port_list = []
-        self._tmp_portgrp_list = []
+        self._port_list = []
+        self._portgrp_list = []
     
     def _get_portgroup_position(self, port_id: int, portgrp_id: int)->tuple:
         if portgrp_id <= 0:
             return (0, 1)
 
-        for portgrp in self._tmp_portgrp_list:
+        for portgrp in self._portgrp_list:
             if portgrp.portgrp_id == portgrp_id:
                 for i in range(len(portgrp.port_id_list)):
                     if port_id == portgrp.port_id_list[i]:
@@ -137,7 +137,7 @@ class CanvasBox(CanvasBoxAbstract):
 
     def _get_portgroup_name(self, portgrp_id: int):
         return utils.get_portgroup_name_from_ports_names(
-            [p.port_name for p in self._tmp_port_list
+            [p.port_name for p in self._port_list
              if p.portgrp_id == portgrp_id])
 
     def _should_align_port_types(self, port_types: list) -> bool:
@@ -152,7 +152,7 @@ class CanvasBox(CanvasBoxAbstract):
                 n_ins = 0
                 n_outs = 0
 
-                for port in self._tmp_port_list:
+                for port in self._port_list:
                     if (port.port_type == port_type
                             and port.is_alternate == alternate):
                         if port.port_mode == PORT_MODE_INPUT:
@@ -193,7 +193,7 @@ class CanvasBox(CanvasBoxAbstract):
         
         for port_type in port_types:
             for alternate in (False, True):
-                for port in self._tmp_port_list:
+                for port in self._port_list:
                     if (port.port_type != port_type
                             or port.is_alternate != alternate):
                         continue
@@ -206,7 +206,7 @@ class CanvasBox(CanvasBoxAbstract):
                     max_pwidth = options.max_port_width
 
                     if port.portgrp_id:
-                        for portgrp in self._tmp_portgrp_list:
+                        for portgrp in self._portgrp_list:
                             if not portgrp.portgrp_id == port.portgrp_id:
                                 continue
                             
@@ -281,7 +281,7 @@ class CanvasBox(CanvasBoxAbstract):
         
         for port_type in port_types:
             for alternate in (False, True):
-                for port in self._tmp_port_list:
+                for port in self._port_list:
                     if (port.port_type != port_type
                             or port.is_alternate != alternate):
                         continue
@@ -341,7 +341,7 @@ class CanvasBox(CanvasBoxAbstract):
         
         for port_type in port_types:
             for alternate in (False, True):
-                for port in self._tmp_port_list:
+                for port in self._port_list:
                     if (port.port_type != port_type
                             or port.is_alternate != alternate):
                         continue
@@ -384,13 +384,13 @@ class CanvasBox(CanvasBoxAbstract):
                             #     output L
                             # input R
                             #     output R
-                            for portgrp in self._tmp_portgrp_list:
+                            for portgrp in self._portgrp_list:
                                 if portgrp.portgrp_id == port.portgrp_id:
                                     if portgrp.widget is not None:
                                         set_widget_pos(portgrp.widget, last_in_pos)
                                 
                                     for port_id in portgrp.port_id_list:
-                                        for gp_port in self._tmp_port_list:
+                                        for gp_port in self._port_list:
                                             if gp_port.port_id == port_id:
                                                 set_widget_pos(gp_port.widget, last_in_pos)
                                                 last_in_pos += canvas.theme.port_height
@@ -414,13 +414,13 @@ class CanvasBox(CanvasBoxAbstract):
                             out_segment = [last_out_pos, last_out_pos]
 
                         if port.portgrp_id:
-                            for portgrp in self._tmp_portgrp_list:
+                            for portgrp in self._portgrp_list:
                                 if portgrp.portgrp_id == port.portgrp_id:
                                     if portgrp.widget is not None:
                                         set_widget_pos(portgrp.widget, last_out_pos)
                                 
                                     for port_id in portgrp.port_id_list:
-                                        for gp_port in self._tmp_port_list:
+                                        for gp_port in self._port_list:
                                             if gp_port.port_id == port_id:
                                                 set_widget_pos(gp_port.widget, last_out_pos)
                                                 last_out_pos += canvas.theme.port_height
@@ -814,7 +814,6 @@ class CanvasBox(CanvasBoxAbstract):
         box_height = 0
         ports_y_start = header_height
 
-        self._title_on_side = bool(title_on_side)
         self._title_under_icon = bool(title_on_side == TITLE_ON_SIDE_UNDER_ICON)
 
         if title_on_side:
@@ -863,7 +862,7 @@ class CanvasBox(CanvasBoxAbstract):
         outX = self._width - max_out_width - 12
 
         # Horizontal ports not in portgroup re-positioning
-        for port in self._tmp_port_list:
+        for port in self._port_list:
             if port.portgrp_id:
                 continue
 
@@ -875,7 +874,7 @@ class CanvasBox(CanvasBoxAbstract):
                 port.widget.set_port_width(max_out_width - port_offset)
 
         # Horizontal portgroups and ports in portgroup re-positioning
-        for portgrp in self._tmp_portgrp_list:
+        for portgrp in self._portgrp_list:
             if portgrp.widget is not None:
                 if portgrp.port_mode == PORT_MODE_INPUT:
                     portgrp.widget.set_portgrp_width(max_in_width - port_offset)
@@ -886,7 +885,7 @@ class CanvasBox(CanvasBoxAbstract):
 
             max_port_in_pg_width = canvas.theme.port_grouped_width
 
-            for port in self._tmp_port_list:
+            for port in self._port_list:
                 if (port.port_id in portgrp.port_id_list
                         and port.widget is not None):
                     port_print_width = port.widget.get_text_width()
@@ -902,7 +901,7 @@ class CanvasBox(CanvasBoxAbstract):
 
             portgrp.widget.set_ports_width(max_port_in_pg_width)
 
-            for port in self._tmp_port_list:
+            for port in self._port_list:
                 if (port.port_id in portgrp.port_id_list
                         and port.widget is not None):
                     port.widget.set_port_width(max_port_in_pg_width)
@@ -1131,19 +1130,19 @@ class CanvasBox(CanvasBoxAbstract):
         self.prepareGeometryChange()
         
         self._current_port_mode = PORT_MODE_NULL
-        self._tmp_port_list.clear()
-        self._tmp_portgrp_list.clear()
+        self._port_list.clear()
+        self._portgrp_list.clear()
         
         for port in canvas.port_list:
             if port.group_id == self._group_id and port.port_id in self._port_list_ids:
                 # used to know present port modes (INPUT or OUTPUT or both)
-                self._tmp_port_list.append(port)
+                self._port_list.append(port)
                 self._current_port_mode |= port.port_mode
                 
         for portgrp in canvas.portgrp_list:
             if (portgrp.group_id == self._group_id
                     and self._current_port_mode & portgrp.port_mode):
-                self._tmp_portgrp_list.append(portgrp)
+                self._portgrp_list.append(portgrp)
 
         port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK,
                       PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
@@ -1186,7 +1185,7 @@ class CanvasBox(CanvasBoxAbstract):
             wrapped_height = self._ports_y_start + canvas.theme.port_height
             wrapped_width = self._width
             
-            if self._title_on_side:
+            if self._has_side_title():
                 wrapped_height = self._header_height
                 if self._current_port_mode == PORT_MODE_INPUT:
                     wrapped_width -= self._width_in
