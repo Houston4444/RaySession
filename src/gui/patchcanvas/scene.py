@@ -664,12 +664,16 @@ class PatchScene(QGraphicsScene):
         if not options.elastic:
             return
 
+        before = time.time()
         scene_rect = self.get_new_scene_rect()
-
+        after = time.time()
+        
         if not scene_rect.isNull():
             self.resizing_scene = True
             self.setSceneRect(scene_rect)
             self.resizing_scene = False
+            final = time.time()
+            print('scene resize bef', before , '\nscene resize aft', after, '\nscene resize fin', final)
 
     def set_elastic(self, yesno: bool):
         options.elastic = True

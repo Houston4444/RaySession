@@ -1853,7 +1853,7 @@ class PatchbayManager:
     def remove_port(self, name: str) -> int:
         port = self.get_port_from_name(name)
         if port is None:
-            return
+            return None
 
         for group in self.groups:
             if group.group_id == port.group_id:
@@ -1871,7 +1871,9 @@ class PatchbayManager:
                 if not group.ports:
                     group.remove_from_canvas()
                     self.groups.remove(group)
-                break
+                    return None
+                
+                return group.group_id
 
     def rename_port(self, name: str, new_name: str):
         port = self.get_port_from_name(name)
@@ -2159,6 +2161,7 @@ class PatchbayManager:
         has_conn_event = False
         group_ids_to_update = set()
         group_ids_to_sort = set()
+        some_groups_removed = False
         
         for order_dict in self.orders_queue:
             order = order_dict['order']
@@ -2170,7 +2173,9 @@ class PatchbayManager:
                 
             elif order == 'remove_port':
                 group_id = self.remove_port(*args)
-                if group_id is not None:
+                if group_id is None:
+                    some_groups_removed = True
+                else:
                     group_ids_to_update.add(group_id)
                     
             elif order == 'rename_port':
@@ -2193,8 +2198,6 @@ class PatchbayManager:
         
         for group in self.groups:
             if group.group_id in group_ids_to_sort:
-                if group.name == 'ardour':
-                    print('sort ardour group')
                 group.sort_ports_in_canvas()
 
         self.optimize_operation(False)
@@ -2203,6 +2206,9 @@ class PatchbayManager:
         for group in self.groups:
             if group.group_id in group_ids_to_update:
                 group.redraw_in_canvas()
+
+        if some_groups_removed:
+            patchcanvas.canvas.scene.resize_the_scene()
 
     def receive_big_packets(self, state: int):
         self.optimize_operation(not bool(state))

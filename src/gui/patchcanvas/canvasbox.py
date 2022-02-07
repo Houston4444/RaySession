@@ -279,26 +279,27 @@ class CanvasBox(CanvasBoxAbstract):
         last_inout_pos = 0
         last_type_alter = (PORT_TYPE_NULL, False)
         
-        for port_type in port_types:
-            for alternate in (False, True):
-                for port in self._port_list:
-                    if (port.port_type != port_type
-                            or port.is_alternate != alternate):
-                        continue
-                    
-                    if (port.port_type, port.is_alternate) != last_type_alter:
-                        if last_type_alter != (PORT_TYPE_NULL, False):
-                            last_inout_pos += port_type_spacing
-                        last_type_alter = (port.port_type, port.is_alternate)
-                    
-                    port_pos, pg_len = self._get_portgroup_position(
-                        port.port_id, port.portgrp_id)
-                    if port_pos:
-                        continue
-                    last_inout_pos += pg_len * canvas.theme.port_height
-                    last_inout_pos += port_spacing
-                    
-                    last_port_mode = port.port_mode
+        if self._current_port_mode == PORT_MODE_OUTPUT | PORT_MODE_INPUT:
+            for port_type in port_types:
+                for alternate in (False, True):
+                    for port in self._port_list:
+                        if (port.port_type != port_type
+                                or port.is_alternate != alternate):
+                            continue
+                        
+                        if (port.port_type, port.is_alternate) != last_type_alter:
+                            if last_type_alter != (PORT_TYPE_NULL, False):
+                                last_inout_pos += port_type_spacing
+                            last_type_alter = (port.port_type, port.is_alternate)
+                        
+                        port_pos, pg_len = self._get_portgroup_position(
+                            port.port_id, port.portgrp_id)
+                        if port_pos:
+                            continue
+                        last_inout_pos += pg_len * canvas.theme.port_height
+                        last_inout_pos += port_spacing
+                        
+                        last_port_mode = port.port_mode
         
         return {'last_in_pos': final_last_in_pos,
                 'last_out_pos': final_last_out_pos,
