@@ -292,9 +292,11 @@ class ClientSlot(QFrame):
             bool(self.client.status in (
                     ray.ClientStatus.STOPPED,
                     ray.ClientStatus.PRECOPY)))
-
-        self.ui.toolButtonGUI.setVisible(
-            bool(':optional-gui:' in self.client.capabilities))
+        print('touidia', self.client.client_id, ':optional-gui:' in self.client.capabilities)
+        if not self.ui.toolButtonGUI.isVisible():
+            self.ui.toolButtonGUI.setVisible(
+                bool(':optional-gui:' in self.client.capabilities))
+            self.set_gui_state(self.client.gui_state)
 
         if self.client.executable_path in ('ray-proxy', 'nsm-proxy'):
             if is_dark_theme(self):

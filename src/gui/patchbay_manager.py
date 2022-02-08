@@ -1827,7 +1827,9 @@ class PatchbayManager:
                             and client.jack_client_name.endswith('.' + client.client_id)
                             and group.name.startswith(client.jack_client_name)):
                         group.display_name = group.display_name.partition('.')[2]
-
+                    
+                    print('oke', group.name, client.has_gui)
+                    
                     if client.has_gui:
                         group.set_optional_gui_state(client.gui_state)
                     break

@@ -107,8 +107,7 @@ class PatchScene(QGraphicsScene):
         self.move_box_timer = QTimer()
         self.move_box_timer.setInterval(self._move_timer_interval)
         self.move_box_timer.timeout.connect(self.move_boxes_animation)
-        self.move_box_n = 0
-        self.move_box_n_max = 16 # 16 animations steps (20ms * 16 = 320ms)
+        self.move_duration = 0.300 # 300ms
         
 
         self.elastic_scene = True
@@ -176,40 +175,35 @@ class PatchScene(QGraphicsScene):
         self._view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
     def move_boxes_animation(self):
-        # animation is nice but not the priority
-        # do not ensure all steps are played
-        # but just move the box where it has to go
-        self.move_box_n = int((time.time() - self._move_timer_start_at)
-                              / (self._move_timer_interval * 0.001))
-        self.move_box_n = min(self.move_box_n, self.move_box_n_max)
+        # Animation is nice but not the priority.
+        # Do not ensure all steps are played
+        # but just move the box where it has to go now
+        time_since_start = time.time() - self._move_timer_start_at
+        ratio = min(1.0, time_since_start / self.move_duration)
 
         for box_dict in self.move_boxes:
             if box_dict['widget'] is not None:
-                total_n = self.move_box_n_max - box_dict['n_start']
-                n = self.move_box_n - box_dict['n_start']
-
-                x = box_dict['from_x'] \
-                    + (box_dict['to_x'] - box_dict['from_x']) \
-                        * ((n/total_n) ** 0.6)
-                y = box_dict['from_y'] \
-                    + (box_dict['to_y'] - box_dict['from_y']) \
-                        * ((n/total_n) ** 0.6)
+                x = (box_dict['from_x']
+                     + ((box_dict['to_x'] - box_dict['from_x'])
+                        * (ratio ** 0.6)))
+                
+                y = (box_dict['from_y']
+                     + ((box_dict['to_y'] - box_dict['from_y'])
+                        * (ratio ** 0.6)))
 
                 box_dict['widget'].setPos(x, y)
                 box_dict['widget'].repaint_lines()
 
         for wrap_dict in self.wrapping_boxes:
             if wrap_dict['widget'] is not None:
-                if self.move_box_n == self.move_box_n_max:
+                if time_since_start >= self.move_duration:
                     wrap_dict['widget'].animate_wrapping(1.00)
                 else:
-                    wrap_dict['widget'].animate_wrapping(
-                        float(self.move_box_n / self.move_box_n_max))
+                    wrap_dict['widget'].animate_wrapping(ratio)
 
         self.resize_the_scene()
-
-        if self.move_box_n >= self.move_box_n_max:
-            self.move_box_n = 0
+        
+        if time_since_start >= self.move_duration:
             self.move_box_timer.stop()
             
             move_box_widgets = [b['widget'] for b in self.move_boxes]
@@ -246,9 +240,10 @@ class PatchScene(QGraphicsScene):
         box_dict['from_y'] = box_widget.pos().y()
         box_dict['to_x'] = int(to_x)
         box_dict['to_y'] = int(to_y)
-        box_dict['n_start'] = self.move_box_n
+        box_dict['start_time'] = time.time() - self._move_timer_start_at
 
         if not self.move_box_timer.isActive():
+            box_dict['start_time'] = 0.0
             self._move_timer_start_at = time.time()
             self.move_box_timer.start()
 
@@ -664,16 +659,12 @@ class PatchScene(QGraphicsScene):
         if not options.elastic:
             return
 
-        before = time.time()
         scene_rect = self.get_new_scene_rect()
-        after = time.time()
         
         if not scene_rect.isNull():
             self.resizing_scene = True
             self.setSceneRect(scene_rect)
             self.resizing_scene = False
-            final = time.time()
-            print('scene resize bef', before , '\nscene resize aft', after, '\nscene resize fin', final)
 
     def set_elastic(self, yesno: bool):
         options.elastic = True

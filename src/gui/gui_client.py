@@ -73,6 +73,9 @@ class Client(QObject, ray.ClientData):
 
     def update_properties(self, *args):
         self.update(*args)
+        if ':optional-gui:' in self.capabilities:
+            self.has_gui = True
+        
         self.widget.update_client_data()
 
     def update_ray_hack(self, *args):

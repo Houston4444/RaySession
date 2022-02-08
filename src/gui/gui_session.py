@@ -324,12 +324,14 @@ class SignaledSession(Session):
         if client:
             client.set_dirty_state(bool(int_dirty))
 
-    def _ray_gui_client_has_optional_gui(self, path, args):
-        client_id = args[0]
-        client = self.get_client(client_id)
+    #def _ray_gui_client_has_optional_gui(self, path, args):
+        #print('trad', 'client_id', 'has optional gui')
+        
+        #client_id = args[0]
+        #client = self.get_client(client_id)
 
-        if client:
-            client.set_gui_enabled()
+        #if client:
+            #client.set_gui_enabled()
 
     def _ray_gui_client_gui_visible(self, path, args):
         client_id, int_state = args
