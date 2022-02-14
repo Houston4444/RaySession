@@ -451,47 +451,57 @@ class CanvasBox(CanvasBoxAbstract):
                 'output_segments': output_segments}
     
     @staticmethod
-    def split_in_two(string: str, n_lines=2) -> tuple:
+    def split_in_two(string: str, n_lines: int) -> list:
+        def polished_list(input_list: list) -> list:
+            output_list = []
+
+            for string in input_list:
+                if not string:
+                    continue
+                if len(string) == 1:
+                    if output_list:
+                        output_list[-1] += string
+                    else:
+                        output_list.append(string)
+                else:
+                    if output_list and len(output_list[-1]) <= 1:
+                        output_list[-1] += string
+                    else:
+                        output_list.append(string)
+            
+            return [s.strip() for s in output_list]
+                
         if n_lines <= 1:
-            return (string,)
-        
+            return [string]
+            
         sep_indexes = []
         last_was_digit = False
+        last_was_upper = False
 
-        for sep in (' ', '-', '_', 'capital'):
-            for i in range(len(string)):
-                c = string[i]
-                if sep == 'capital':
-                    if c.upper() == c:
-                        if not c.isdigit() or not last_was_digit:
+        for i in range(len(string)):
+            c = string[i]
+            if c in (' ', '-', '_', '.'):
+                sep_indexes.append(i)
+            else:
+                if c.upper() == c:
+                    if c.isdigit():
+                        if not last_was_digit:
                             sep_indexes.append(i)
-                        last_was_digit = c.isdigit()
+                    else:
+                        if last_was_digit or not last_was_upper:
+                            sep_indexes.append(i)
 
-                elif c == sep:
-                    sep_indexes.append(i)
+                    last_was_upper = True
+                else:
+                    if last_was_digit:
+                        sep_indexes.append(i)
+                    last_was_upper = False
 
-            if sep_indexes:
-                break
-
+                last_was_digit = c.isdigit()
+            
         if not sep_indexes:
-            # no available separator in given text
-            base_count = 6
-            divisor = min(int(len(string) / base_count), n_lines)
-            if divisor <= 1:
-                return (string,)
-            
-            return_list = []
-            c_count = int(len(string)/divisor)
-            return tuple([string[start:start + c_count]
-                          for start in range(0, len(string), c_count)])
-            #return_list.append(string[:int(len(string)/divisor) - 1])
-            #start = int(len(string)/divisor)
-            
-            #for i in range(divisor - 2):
-                #return_list.append(string[start:start+len(string)/div
-            
-            #return (string,)
-
+            return [string]
+        
         if len(sep_indexes) + 1 <= n_lines:
             return_list = []
             last_index = 0
@@ -499,20 +509,19 @@ class CanvasBox(CanvasBoxAbstract):
             for sep_index in sep_indexes:
                 return_list.append(string[last_index:sep_index])
                 last_index = sep_index
-                if sep == ' ':
-                    last_index += 1
 
             return_list.append(string[last_index:])
 
-            return tuple(return_list)
-
+            return polished_list(return_list)
+        
         best_indexes = [0]
         string_rest = string
         string_list = []
 
         for i in range(n_lines, 1, -1):
+            
             target = best_indexes[-1] + int(len(string_rest)/i)
-            best_index = 0
+            best_index = None
             best_dif = len(string)
 
             for s in sep_indexes:
@@ -526,11 +535,10 @@ class CanvasBox(CanvasBoxAbstract):
                 else:
                     break
 
-            if sep == ' ':
-                string_rest = string[best_index+1:]
-            else:
-                string_rest = string[best_index:]
+            if best_index is None:
+                continue
 
+            string_rest = string[best_index:]
             best_indexes.append(best_index)
 
         best_indexes = best_indexes[1:]
@@ -540,11 +548,10 @@ class CanvasBox(CanvasBoxAbstract):
         for i in best_indexes:
             return_list.append(string[last_index:i])
             last_index = i
-            if sep == ' ':
-                last_index += 1
 
         return_list.append(string[last_index:])
-        return tuple([rt for rt in return_list if rt])
+        return polished_list(return_list)
+    
     
     def _split_title(self, n_lines: int)->tuple:
         title, slash, subtitle = self._group_name.partition('/')
@@ -571,7 +578,7 @@ class CanvasBox(CanvasBoxAbstract):
             
             else:
                 if client_line.size > subclient_line.size:
-                    client_strs = self.split_in_two(title)
+                    client_strs = self.split_in_two(title, 2)
                     for client_str in client_strs:
                         title_lines.append(TitleLine(client_str, theme, little=True))
                     
@@ -590,7 +597,7 @@ class CanvasBox(CanvasBoxAbstract):
                             if subtt_line.size > client_line.size:
                                 break
                         else:
-                            client_strs = self.split_in_two(title)
+                            client_strs = self.split_in_two(title, 2)
                             for client_str in client_strs:
                                 title_lines.append(
                                     TitleLine(client_str, theme, little=True))
@@ -607,42 +614,43 @@ class CanvasBox(CanvasBoxAbstract):
                             title_lines.append(TitleLine(title, theme))
                     else:
                         titles = self.split_in_two('uuuu' + subtitle, subt_len)
-
+                        
+                        # supress the uuuu
                         for i in range(len(titles)):
                             title = titles[i]
                             if i == 0:
                                 title = title[4:]
+                                if not title:
+                                    continue
                             title_lines.append(TitleLine(title, theme))
         else:
             if n_lines >= 2:
-                titles = self.split_in_two(self._group_name, n_lines)
+                titles = []
+                if (self._group_name.startswith(
+                     ('Carla.', 'Carla-Multi-Client.', 'Carla-Single-Client.'))
+                        and '/' in self._group_name):
+                    first_line, slash, last_line = self._group_name.partition('/')
+                    titles = [first_line + '/'] + self.split_in_two(last_line, n_lines - 1)
+                else:
+                    titles = self.split_in_two(self._group_name, n_lines)
                 
-                new_titles = list(titles)
+                #new_titles = titles.copy()
                 
-                if len(titles) < n_lines:
-                    biggest = ''
-                    for title in titles:
-                        if len(title) > len(biggest):
-                            biggest = title
+                #if len(titles) < n_lines:
+                    #biggest = ''
+                    #for title in titles:
+                        #if len(title) > len(biggest):
+                            #biggest = title
                 
-                    new_titles.clear()
-                    for title in titles:
-                        if title == biggest:
-                            biggest = ''
-                            new_titles += list(self.split_in_two(title, 2))
-                        else:
-                            new_titles.append(title)
+                    #new_titles.clear()
+                    #for title in titles:
+                        #if title == biggest:
+                            #biggest = ''
+                            #new_titles += list(self.split_in_two(title, 2))
+                        #else:
+                            #new_titles.append(title)
                 
-                #new_titles = []
-                #for title in titles:
-                    #if new_titles and len(title) <= 2:
-                        #new_titles[-1] += title
-                    #else:
-                        #new_titles.append(title)
-                
-                title_lines = [
-                    TitleLine(tt, theme)
-                    for tt in new_titles if tt]
+                title_lines = [TitleLine(tt, theme) for tt in titles]
             else:
                 title_lines = [TitleLine(self._group_name, theme)]
 
@@ -653,10 +661,6 @@ class CanvasBox(CanvasBoxAbstract):
         ports_in_width: int, ports_out_width: int) -> dict:
         ''' choose in how many lines should be splitted the title
         returns needed more_height '''
-
-        laout_times = {}
-        laou_start = time.time()
-
         width_for_ports = 30 + ports_in_width + ports_out_width
         width_for_ports_one = 30 + max(ports_in_width, ports_out_width)
 
@@ -672,8 +676,6 @@ class CanvasBox(CanvasBoxAbstract):
             self._group_name, self._can_handle_gui)
         lines_choice_max = len(all_title_templates) - 1
         
-        laout_times['bef parse templates'] = time.time() - laou_start
-        
         if not all_title_templates:
             title_template = {
                 "title_width": 0, "header_width": 0, "header_height": 0}
@@ -687,10 +689,7 @@ class CanvasBox(CanvasBoxAbstract):
                 if self._plugin_inline != self.INLINE_DISPLAY_DISABLED:
                     max_header_width = 200
                 
-                laout_times['beff splitti' + str(i)] = time.time() - laou_start
                 title_lines = self._split_title(i)
-                laout_times['aftt splitti' + str(i)] = time.time() - laou_start
-                laout_times['tilles' + str(i)] = [tt.text for tt in title_lines]
                 
                 title_line_y_start = 2 + font_size
                 gui_margin = 2
@@ -732,8 +731,6 @@ class CanvasBox(CanvasBoxAbstract):
             lines_choice_max = i
             box_theme.save_title_templates(
                 self._group_name, self._can_handle_gui, all_title_templates[:lines_choice_max])
-
-        laout_times['after parse tempts'] = time.time() - laou_start
 
         sizes_tuples = []
         
@@ -787,8 +784,6 @@ class CanvasBox(CanvasBoxAbstract):
                         * (all_title_templates[i]['header_height'] + height_for_ports),
                         i, False, TITLE_ON_TOP))
         
-        laout_times['after make size tuples'] = time.time() - laou_start
-        
         # sort areas and choose the first one (the littlest area)
         #print('tt', self._group_name, self._current_port_mode, sizes_tuples)
         sizes_tuples.sort()
@@ -839,12 +834,6 @@ class CanvasBox(CanvasBoxAbstract):
         else:
             box_width = max(width_for_ports, header_width)
             box_height = header_height + height_for_ports
-        
-        laout_times['ennkd'] = time.time() - laou_start
-        
-        #for key, value in laout_times.items():
-            #print('    ', key, ':', value)
-            
         
         return {'max_title_size': max_title_size,
                 'box_height': box_height,
@@ -1276,10 +1265,6 @@ class CanvasBox(CanvasBoxAbstract):
         self._ex_scene_pos = self.scenePos()
 
         if not without_connections:
-            if self._group_name == 'ardour':
-                print('repaint_lines', self._current_port_mode)
-                print(len(self._connection_lines))
-            
             self.repaint_lines(forced=True)
 
         if not (self._wrapping or self._unwrapping) and self.isVisible():
