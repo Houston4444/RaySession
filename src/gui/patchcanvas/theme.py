@@ -564,6 +564,33 @@ class Theme(StyleAttributer):
                 print_error("'%s' must contains a dictionnary, ignored" % key)
                 continue
             
+            if begin not in ['body'] + self.subs:
+                print_error("invalid ignored key: %s" % key)
+                continue
+            
+            # replace alias with alias value
+            for sub_key, sub_value in value.items():
+                if not isinstance(sub_value, str):
+                    continue
+                
+                for alias_key, alias_value in self.aliases.items():
+                    if alias_key not in sub_value:
+                        continue
+                    
+                    if sub_value == alias_key:
+                        value[sub_key] = alias_value
+                        break
+                    
+                    new_words = []
+                    
+                    for word in sub_value.split(' '):
+                        if word == alias_key:
+                            new_words.append(alias_value)
+                        else:
+                            new_words.append(word)
+                    
+                    value[sub_key] = ' '.join(new_words)
+            
             if key == 'body':
                 for body_key, body_value in value.items():
                     if body_key in (
@@ -585,44 +612,9 @@ class Theme(StyleAttributer):
                         if self.monitor_color is None:
                             self.monitor_color = QColor(190, 158, 0)
                 continue
-            
-            if begin not in self.subs:
-                print_error("invalid ignored key: %s" % key)
-                continue
-
-            # replace alias with alias value
-            for sub_key, sub_value in value.items():
-                if not isinstance(sub_value, str):
-                        continue
-                
-                for alias_key, alias_value in self.aliases.items():
-                    if alias_key not in sub_value:
-                        continue
-                    
-                    if sub_value == alias_key:
-                        value[sub_key] = alias_value
-                        break
-                    
-                    new_words = []
-                    
-                    for word in sub_value.split(' '):
-                        if word == alias_key:
-                            new_words.append(alias_value)
-                        else:
-                            new_words.append(word)
-                    
-                    value[sub_key] = ' '.join(new_words)
-                    
 
             sub_attributer = self.__getattribute__(begin)
             sub_attributer.set_style_dict(end, value)
-        
-        ## QFontMetricsF can takes a very long time at first call
-        ## or at first call of very special characters
-        ## Then, it's better to call them now than later in startup
-        #before_init = time.time()
-        #self.init_font_metrics()
-        #print('init_font_metrics in', time.time() - before_init)
 
     def load_cache(self):
         #if True:
