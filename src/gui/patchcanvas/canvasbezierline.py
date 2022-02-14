@@ -96,26 +96,12 @@ class CanvasBezierLine(QGraphicsPathItem):
             mid_x += diffxy
 
         mid_x = min(mid_x, max(200, (x_diff)/2))
-        orig_mid_x = mid_x
-
-        if 0.5 * x_diff < mid_x < 1.5 * x_diff:
-            horiline_diff = abs(mid_x - x_diff)
-            maxi_diff = 0.5 * x_diff
-            
-            if mid_x > x_diff:
-                mid_x = x_diff + ((horiline_diff/maxi_diff) ** 0.5) * (maxi_diff)
-            elif mid_x < x_diff:
-                mid_x = x_diff - ((horiline_diff/maxi_diff) ** 2.0) * (maxi_diff)
-
-            print('ei', x_diff, mid_x, orig_mid_x)
 
         item1_new_x = item1_x + mid_x
         item2_new_x = item2_x - mid_x
-        
-        #item1_new_x = item1_x
-        #item2_new_x = item2_x
 
         path = QPainterPath(QPointF(item1_x, item1_y))
+        
         path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y,
                      item2_x, item2_y)
         self.setPath(path)
