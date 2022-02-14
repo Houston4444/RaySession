@@ -277,31 +277,6 @@ class CanvasPort(QGraphicsItem):
         cy = scene_pos.y() + y_delta
         
         return QPointF(cx, cy)
-    
-    def box_center_delta(self):
-        box = self.parentItem()
-        y_start = box._ports_y_start
-        y_end = box._height - canvas.theme.port_spacing
-        
-        height = canvas.theme.port_height
-        y_delta = canvas.theme.port_height / 2
-        
-        phi = 0.75 if self._portgrp_len > 2 else 0.62
-        
-        if self._portgrp_len >= 2:
-            first_old_y = height * phi
-            last_old_y = height * (self._portgrp_len - phi)
-            delta = (last_old_y - first_old_y) / (self._portgrp_len -1)
-            y_delta = (first_old_y
-                      + (self._portgrp_index * delta)
-                      - (height * self._portgrp_index))
-            
-        if not self.isVisible():
-            # item is hidden port when its box is folded
-            y_delta = height - y_delta
-            
-        y_pos = self.pos().y() + y_delta
-        return (y_pos, y_start, y_end)
 
     def _connect_to_hover(self):
         if self._hover_item:
