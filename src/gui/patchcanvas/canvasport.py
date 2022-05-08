@@ -311,7 +311,6 @@ class CanvasPort(QGraphicsItem):
                                                 hover_group_id, hover_port_id)
                 return
 
-            # FIXME clean this big if stuff
             for hover_port_id in hover_port_id_list:
                 for connection in canvas.connection_list:
                     if utils.connection_matches(
@@ -338,7 +337,6 @@ class CanvasPort(QGraphicsItem):
                                 hover_group_id, porthover_id,
                                 self._group_id, self._port_id)
                         canvas.callback(ACTION_PORTS_CONNECT, '', '', conn)
-
 
     def hoverEnterEvent(self, event):
         if options.auto_select_items:

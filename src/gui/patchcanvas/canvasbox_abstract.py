@@ -27,7 +27,7 @@ from struct import pack
 from PyQt5.QtCore import qCritical, Qt, QPoint, QPointF, QRectF, QTimer
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
                          QLinearGradient, QPainter, QPen, QPolygonF,
-                         QColor, QIcon, QPixmap, QPainterPath)
+                         QColor, QIcon, QPixmap, QPainterPath, QBrush)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication, QAction
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1068,25 +1068,30 @@ class CanvasBoxAbstract(QGraphicsItem):
         pen_width = pen.widthF()
         line_hinting = pen_width / 2.0
         
-        color_main = theme.background_color()
-        color_alter = theme.background2_color()
+        bg_image = theme.background_image()
 
-        if color_alter is not None:
-            max_size = max(self._height, self._width)
-            box_gradient = QLinearGradient(0, 0, max_size, max_size)
-            gradient_size = 20
-
-            box_gradient.setColorAt(0, color_main)
-            tot = int(max_size / gradient_size)
-            for i in range(tot):
-                if i % 2 == 0:
-                    box_gradient.setColorAt((i/tot) ** 0.7, color_main)
-                else:
-                    box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
-
-            painter.setBrush(box_gradient)
+        if bg_image:
+            painter.setBrush(QBrush(bg_image))
         else:
-            painter.setBrush(color_main)
+            color_main = theme.background_color()
+            color_alter = theme.background2_color()
+
+            if color_alter is not None:
+                max_size = max(self._height, self._width)
+                box_gradient = QLinearGradient(0, 0, max_size, max_size)
+                gradient_size = 20
+
+                box_gradient.setColorAt(0, color_main)
+                tot = int(max_size / gradient_size)
+                for i in range(tot):
+                    if i % 2 == 0:
+                        box_gradient.setColorAt((i/tot) ** 0.7, color_main)
+                    else:
+                        box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
+
+                painter.setBrush(box_gradient)
+            else:
+                painter.setBrush(color_main)
         
         painter.drawPath(self._painter_path)
         

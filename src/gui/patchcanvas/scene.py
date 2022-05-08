@@ -108,7 +108,6 @@ class PatchScene(QGraphicsScene):
         self.move_box_timer.setInterval(self._move_timer_interval)
         self.move_box_timer.timeout.connect(self.move_boxes_animation)
         self.move_duration = 0.300 # 300ms
-        
 
         self.elastic_scene = True
         self.resizing_scene = False
@@ -624,13 +623,39 @@ class PatchScene(QGraphicsScene):
         self._scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
 
     def update_theme(self):
-        self.setBackgroundBrush(canvas.theme.background_color)
+        if canvas.theme.background_image is not None:
+            bg_brush = QBrush()
+            bg_brush.setTextureImage(canvas.theme.background_image)
+            self.setBackgroundBrush(bg_brush)
+        else:
+            self.setBackgroundBrush(canvas.theme.background_color)
+        
         self._rubberband.setPen(canvas.theme.rubberband.fill_pen())
         self._rubberband.setBrush(canvas.theme.rubberband.background_color())
 
         cur_color = "black" if canvas.theme.background_color.blackF() < 0.5 else "white"
         self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
         self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
+
+    def drawBackground(self, painter, rect):
+        #if self._background_image is None:
+            #return
+        
+        painter.save()
+        painter.setPen(Qt.NoPen)
+        
+        if canvas.theme.background_image is not None:
+            canvas.theme.background_image.setDevicePixelRatio(3.0)
+            bg_brush = QBrush()
+            bg_brush.setTextureImage(canvas.theme.background_image)
+            painter.setBrush(bg_brush)
+            painter.drawRect(rect)
+        #else:
+        painter.setBrush(canvas.theme.background_color)
+        
+        painter.drawRect(rect)
+        
+        painter.restore()
 
     def get_new_scene_rect(self):
         first_pass = True
@@ -1038,10 +1063,6 @@ class PatchScene(QGraphicsScene):
             return
 
         QGraphicsScene.contextMenuEvent(self, event)
-    #def drawBackground(self, painter, rect):
-        #print('foofkfofofo')
-        #painter.setBrush(QColor(0, 0, 50))
-        #painter.drawRect(rect)
         
 
 # ------------------------------------------------------------------------------------------------------------

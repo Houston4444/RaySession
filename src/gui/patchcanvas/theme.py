@@ -5,7 +5,7 @@ import sys
 import time
 import pickle
 
-from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF
+from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF, QImage
 from PyQt5.QtCore import Qt, QTimer
 
 # from gui.patchcanvas import theme_default
@@ -107,6 +107,7 @@ class StyleAttributer:
         self._border_radius = None
         self._background_color = None
         self._background2_color = None
+        self._background_image = None
         self._text_color = None
         self._font_name = None
         self._font_size = None
@@ -172,7 +173,20 @@ class StyleAttributer:
             self._background2_color = _to_qcolor(value)
             if self._background2_color is None:
                 err = True
-                
+        
+        elif attribute == 'background_image':
+            image_path = os.path.join(
+                os.path.dirname(Theme.theme_file_path), 'images', value)
+            if os.path.isfile(image_path):
+                self._background_image = QImage(image_path)
+                self._background_image.setDevicePixelRatio(3.0)
+                if self._background_image.isNull():
+                    self._background_image = None
+            else:
+                self._background_image = None
+            
+            print('cahliee', image_path, self._background_image)
+        
         elif attribute == 'text-color':
             self._text_color = _to_qcolor(value)
             if self._text_color is None:
@@ -299,6 +313,9 @@ class StyleAttributer:
         return self.get_value_of('_background2_color',
                                  needed_attribute='_background_color')
     
+    def background_image(self):
+        return self.get_value_of('_background_image')
+
     def text_color(self):
         return self.get_value_of('_text_color')
     
@@ -403,12 +420,6 @@ class StyleAttributer:
         
         return []
     
-    #def init_font_metrics(self):
-        #self.get_text_width('Mm ⠿1')
-        
-        #for sub in self.subs:
-            #sub_attr = self.__getattribute__(sub)
-            #sub_attr.init_font_metrics()
 
 class UnselectedStyleAttributer(StyleAttributer):
     def __init__(self, path, parent=None):
@@ -475,6 +486,8 @@ class IconTheme:
 
 
 class Theme(StyleAttributer):
+    theme_file_path = ''
+    
     def __init__(self):
         StyleAttributer.__init__(self, '')
 
@@ -485,6 +498,7 @@ class Theme(StyleAttributer):
         self._border_radius = 0
         self._background_color = QColor('black')
         self._background2_color = QColor('black')
+        self._background_image = False
         self._text_color = QColor('white')
         self._font_name = "Deja Vu Sans"
         self._font_size = 11
@@ -496,6 +510,7 @@ class Theme(StyleAttributer):
         self._box_footer = 0
 
         self.background_color = QColor('black')
+        self.background_image = None
         self.box_shadow_color = QColor('gray')
         self.monitor_color = QColor(190, 158, 0)
         self.port_height = 16
@@ -526,12 +541,20 @@ class Theme(StyleAttributer):
                       'portgroup', 'port', 'line',
                       'rubberband', 'hardware_rack',
                       'monitor_decoration', 'gui_button']
-        
-    def read_theme(self, theme_dict: dict):
+    
+    @classmethod
+    def set_file_path(cls, theme_file_path: str):
+        cls.theme_file_path = theme_file_path
+    
+    def read_theme(self, theme_dict: dict, theme_file_path: str):
+        ''' theme_file_path is only used here to find external resources ''' 
         if not isinstance(theme_dict, dict):
             print_error("invalid dict read error")
             return
         
+        Theme.set_file_path(theme_file_path)
+        self.icon.read_theme(theme_file_path)
+
         self.aliases.clear()
         
         # first read if there are any aliases
@@ -603,6 +626,14 @@ class Theme(StyleAttributer):
                         self.background_color = _to_qcolor(body_value)
                         if self.background_color is None:
                             self.background_color = QColor('black')
+                    elif body_key == 'background_image':
+                        background_path = os.path.join(
+                            os.path.dirname(theme_file_path), 'images', body_value)
+                        if os.path.isfile(background_path):
+                            self.background_image = QImage(background_path)
+                            if self.background_image.isNull():
+                                self.background_image = None
+
                     elif body_key == 'box-shadow-color':
                         self.box_shadow_color = _to_qcolor(body_value)
                         if self.box_shadow_color is None:
