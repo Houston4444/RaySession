@@ -39,4 +39,3 @@ On Debian and Ubuntu, use these commands to install all build dependencies: <br/
 To run it, you'll additionally need:
 
  - python3-liblo
- - pyxdg

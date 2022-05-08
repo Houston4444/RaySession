@@ -5,7 +5,6 @@ import shutil
 import subprocess
 import sys
 import time
-import xdg.BaseDirectory
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QProcess
 from PyQt5.QtXml  import QDomDocument
@@ -18,6 +17,7 @@ from signaler import Signaler
 from daemon_tools import (Terminal, RS, dirname,
                           is_pid_child_of, highlight_text)
 from session import OperatingSession
+import xdg
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -93,8 +93,8 @@ class SignaledSession(OperatingSession):
         
         self._folder_sizes_and_dates = []
         
-        self._cache_folder_sizes_path = \
-            xdg.BaseDirectory.xdg_cache_home + "/RaySession/folder_sizes.json"
+        self._cache_folder_sizes_path = xdg.xdg_cache_home().joinpath(
+            'RaySession', 'folder_sizes.json')
 
         if os.path.isfile(self._cache_folder_sizes_path):
             try:
