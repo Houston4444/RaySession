@@ -1318,7 +1318,6 @@ class PatchbayManager:
             patchcanvas.set_max_port_width)
 
     def save_patchcanvas_cache(self):
-        print('bonbonbonobon')
         patchcanvas.save_cache()
 
     @staticmethod
@@ -1377,7 +1376,6 @@ class PatchbayManager:
                 if group.group_id == group_id:
                     on_place = not bool(
                         group.current_position.flags & GROUP_HAS_BEEN_SPLITTED)
-                    print('splitt', group.name, on_place)
                     patchcanvas.split_group(group_id, on_place=on_place)
                     group.current_position.flags |= GROUP_SPLITTED
                     group.current_position.flags |= GROUP_HAS_BEEN_SPLITTED
@@ -1614,19 +1612,19 @@ class PatchbayManager:
         self.clear_all()
         self.send_to_patchbay_daemon('/ray/patchbay/refresh')
 
-    def get_port_from_name(self, port_name: str):
+    def get_port_from_name(self, port_name: str) -> Port:
         for group in self.groups:
             for port in group.ports:
                 if port.full_name == port_name:
                     return port
 
-    def get_port_from_uuid(self, uuid:int):
+    def get_port_from_uuid(self, uuid:int) -> Port:
         for group in self.groups:
             for port in group.ports:
                 if port.uuid == uuid:
                     return port
 
-    def get_port_from_id(self, group_id: int, port_id: int):
+    def get_port_from_id(self, group_id: int, port_id: int) -> Port:
         for group in self.groups:
             if group.group_id == group_id:
                 for port in group.ports:
@@ -1828,8 +1826,6 @@ class PatchbayManager:
                             and group.name.startswith(client.jack_client_name)):
                         group.display_name = group.display_name.partition('.')[2]
                     
-                    print('oke', group.name, client.has_gui)
-                    
                     if client.has_gui:
                         group.set_optional_gui_state(client.gui_state)
                     break
@@ -1857,6 +1853,12 @@ class PatchbayManager:
         if port is None:
             return None
 
+        for connection in self.connections:
+            if connection.port_out is port or connection.port_in is port:
+                connection.remove_from_canvas()
+                self.connections.remove(connection)
+                break
+
         for group in self.groups:
             if group.group_id == port.group_id:
                 # remove portgroup first if port is in a portgroup
@@ -1867,8 +1869,8 @@ class PatchbayManager:
                             portgroup.remove_from_canvas()
                             break
 
-                group.remove_port(port)
                 port.remove_from_canvas()
+                group.remove_port(port)
 
                 if not group.ports:
                     group.remove_from_canvas()
@@ -2159,11 +2161,10 @@ class PatchbayManager:
         self.optimize_operation(True)
         #self.very_fast_operation = True
         
-        has_port_event = False
-        has_conn_event = False
         group_ids_to_update = set()
         group_ids_to_sort = set()
         some_groups_removed = False
+        some_ports_removed = False
         
         for order_dict in self.orders_queue:
             order = order_dict['order']
@@ -2196,7 +2197,8 @@ class PatchbayManager:
                     group_ids_to_update.add(group_id)
                     group_ids_to_sort.add(group_id)
             else:
-                sys.stderr.write('_order_queue_timeout wrong order: %s\n' % order)
+                sys.stderr.write(
+                    '_order_queue_timeout wrong order: %s\n' % order)
         
         for group in self.groups:
             if group.group_id in group_ids_to_sort:
@@ -2266,18 +2268,14 @@ class PatchbayManager:
 
         for key in patchbay_data.keys():
             if key == 'ports':
-                print('before add ports', time.time())
                 for p in patchbay_data[key]:
                     self.add_port(p.get('name'), p.get('type'),
                                   p.get('flags'), p.get('uuid'))
-                print('after add ports', time.time())
         
             elif key == 'connections':
-                print('before add connns', time.time())
                 for c in patchbay_data[key]:
                     self.add_connection(c.get('port_out_name'),
                                         c.get('port_in_name'))
-                print('after add connes', time.time())
         
         for key in patchbay_data.keys():
             if key == 'clients':
@@ -2291,24 +2289,16 @@ class PatchbayManager:
                     self.metadata_update(
                         m.get('uuid'), m.get('key'), m.get('value'))
 
-        print('before sort ports', time.time())
-
         for group in self.groups:
             group.sort_ports_in_canvas()
 
         self.set_very_fast_operation(False)
         
-        print('after sort', time.time())
-        
         for group in self.groups:
             group.add_all_ports_to_canvas()
         
-        print('aft add all ports', time.time())
-        
         for conn in self.connections:
             conn.add_to_canvas()
-
-        print('aft connections', len(self.connections), time.time())
 
         self.optimize_operation(False)
         patchcanvas.redraw_all_groups()
