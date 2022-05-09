@@ -82,9 +82,6 @@ class Client(ServerSender, ray.ClientData):
         self.session = parent_session
         self.is_dummy = self.session.is_dummy
 
-        # process_env = QProcessEnvironment.systemEnvironment()
-        # process_env.insert('NSM_URL', self.get_server_url())
-
         self.custom_data = {}
         self.custom_tmp_data = {}
 
@@ -97,8 +94,8 @@ class Client(ServerSender, ray.ClientData):
         self._process.readyReadStandardOutput.connect(self._standard_output)
         # self._process.setProcessEnvironment(process_env)
 
-        #if client is'n't stopped 2secs after stop,
-        #another stop becames a kill!
+        # if client is'n't stopped 2secs after stop,
+        # another stop becames a kill!
         self._stopped_since_long_ = False
         self._stopped_timer = QTimer()
         self._stopped_timer.setSingleShot(True)

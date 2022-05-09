@@ -25,7 +25,7 @@ import time
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
                           Qt, QPoint, QPointF, QRectF, QTimer, QMarginsF)
-from PyQt5.QtGui import QColor, QCursor, QLinearGradient, QPixmap, QPolygonF, QImage, QBrush, QGradient
+from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QBrush
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene, QApplication, QGraphicsView
 
 # ------------------------------------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ class PatchScene(QGraphicsScene):
     sceneGroupMoved = pyqtSignal(int, int, QPointF)
     pluginSelected = pyqtSignal(list)
 
-    def __init__(self, parent, view):
+    def __init__(self, parent, view: QGraphicsView):
         QGraphicsScene.__init__(self, parent)
 
         #self.setItemIndexMethod(QGraphicsScene.NoIndex)
@@ -465,11 +465,11 @@ class PatchScene(QGraphicsScene):
                 to_move_boxes.append(to_move_box)
 
         # sort the list of dicts
-        to_move_boxes = sorted(to_move_boxes, key = lambda d: d['pos'])
-        to_move_boxes = sorted(to_move_boxes, key = lambda d: d['directions'])
+        to_move_boxes = sorted(to_move_boxes, key=lambda d: d['pos'])
+        to_move_boxes = sorted(to_move_boxes, key=lambda d: d['directions'])
         
-        # the to_move_boxes list is dynamic
-        # elements can be added to the list while iteration
+        # !!! to_move_boxes list is dynamic
+        # elements can be added to the list while iteration !!!
         for to_move_box in to_move_boxes:
             item = to_move_box['item']
             repulser = to_move_box['repulser']
