@@ -372,7 +372,7 @@ class OscServerThread(ClientCommunicating):
         instance = self
 
     @staticmethod
-    def getInstance():
+    def get_instance() -> 'OscServerThread':
         return instance
 
     @ray_method('/ray/server/gui_announce', 'sisii')

@@ -7,7 +7,7 @@ from pathlib import Path
 from liblo import Address
 from PyQt5.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
-from PyQt5.QtXml import QDomDocument
+from PyQt5.QtXml import QDomDocument, QDomElement
 
 
 import xdg
@@ -17,6 +17,13 @@ from daemon_tools  import (TemplateRoots, Terminal, RS,
                            get_code_root, highlight_text)
 from signaler import Signaler
 from scripter import ClientScripter
+
+# only used to identify session functions in the IDE
+# 'Session' is not importable simply because it would be
+# a circular import.
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from session_signaled import SignaledSession
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -79,7 +86,7 @@ class Client(ServerSender, ray.ClientData):
 
     jack_naming = ray.JackNaming.SHORT
 
-    def __init__(self, parent_session):
+    def __init__(self, parent_session: 'SignaledSession'):
         ServerSender.__init__(self)
         self.session = parent_session
         self.is_dummy = self.session.is_dummy
@@ -168,7 +175,7 @@ class Client(ServerSender, ray.ClientData):
         if self.is_ray_hack():
             if self.noSaveLevel():
                 self.send_gui('/ray/gui/client/no_save_level',
-                               self.client_id, self.noSaveLevel())
+                              self.client_id, self.noSaveLevel())
             if self.ray_hack.config_file:
                 self.pending_command = ray.Command.OPEN
                 self.set_status(ray.ClientStatus.OPEN)
@@ -180,8 +187,8 @@ class Client(ServerSender, ray.ClientData):
 
         if self.pending_command == ray.Command.STOP:
             self.send_gui_message(_translate('GUIMSG',
-                                    "  %s: terminated by server instruction")
-                                    % self.gui_msg_style())
+                                  "  %s: terminated by server instruction")
+                                  % self.gui_msg_style())
             
             self.session.send_monitor_event(
                 'client_stopped_by_server', self.client_id)
@@ -214,7 +221,7 @@ class Client(ServerSender, ray.ClientData):
         if self.session.wait_for:
             self.session.end_timer_if_last_expected(self)
 
-    def _error_in_process(self, error):
+    def _error_in_process(self, error: int):
         if error == QProcess.FailedToStart:
             self.send_gui_message(
                 _translate('GUIMSG', "  %s: Failed to start !")
@@ -823,7 +830,7 @@ class Client(ServerSender, ray.ClientData):
 
         return jack_client_name
 
-    def read_xml_properties(self, ctx):
+    def read_xml_properties(self, ctx: QDomElement):
         #ctx is an xml sibling for client
         self.executable_path = ctx.attribute('executable')
         self.arguments = ctx.attribute('arguments')
@@ -950,7 +957,7 @@ class Client(ServerSender, ray.ClientData):
                     value = el.attribute(attribute_str)
                     self.custom_data[attribute_str] = value
 
-    def write_xml_properties(self, ctx):
+    def write_xml_properties(self, ctx: QDomElement):
         if self.protocol != ray.Protocol.RAY_NET:
             ctx.setAttribute('executable', self.executable_path)
             if self.arguments:
@@ -1595,7 +1602,7 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui("/ray/gui/client/status", self.client_id,
                           ray.ClientStatus.REMOVED)
 
-    def eat_attributes(self, new_client):
+    def eat_attributes(self, new_client: 'Client'):
         #self.client_id = new_client.client_id
         self.executable_path = new_client.executable_path
         self.arguments = new_client.arguments
@@ -1979,7 +1986,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         else:
             self._save_as_template_substep1(template_name)
 
-    def eat_other_session_client(self, src_addr, osc_path, client):
+    def eat_other_session_client(self, src_addr, osc_path, client: 'Client'):
         # eat attributes but keep client_id
         self.eat_attributes(client)
 
@@ -2008,7 +2015,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             [src_addr, osc_path, client, tmp_work_dir])
 
     def eat_other_session_client_step_1(self, src_addr, osc_path,
-                                        client, tmp_work_dir):
+                                        client: 'Client', tmp_work_dir):
         self._rename_files(
             tmp_work_dir, client.session.name, self.session.name,
             client.get_prefix_string(), self.get_prefix_string(),
@@ -2082,7 +2089,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.send_gui_client_properties()
 
     def adjust_files_after_copy(self, new_session_full_name,
-                             template_save=ray.Template.NONE):
+                                template_save=ray.Template.NONE):
         spath = self.session.path
         old_session_name = self.session.name
         new_session_name = basename(new_session_full_name)

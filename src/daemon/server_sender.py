@@ -5,13 +5,17 @@ import ray
 
 from osc_server_thread import OscServerThread
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from osc_server_thread import OscServerThread
+
 class ServerSender(QObject):
     def __init__(self):
         QObject.__init__(self)
         self.is_dummy = False
 
     def has_server(self):
-        if not OscServerThread.getInstance():
+        if not OscServerThread.get_instance():
             return False
 
         return not self.is_dummy
@@ -20,14 +24,14 @@ class ServerSender(QObject):
         if self.is_dummy:
             return
 
-        server = OscServerThread.getInstance()
+        server = OscServerThread.get_instance()
         if not server:
             return
 
         server.send(*args)
 
     def send_even_dummy(self, *args):
-        server = OscServerThread.getInstance()
+        server = OscServerThread.get_instance()
         if not server:
             return
 
@@ -37,7 +41,7 @@ class ServerSender(QObject):
         if self.is_dummy:
             return
 
-        server = OscServerThread.getInstance()
+        server = OscServerThread.get_instance()
         if not server:
             return
 
@@ -46,7 +50,7 @@ class ServerSender(QObject):
     def send_gui_message(self, message:str):
         self.send_gui('/ray/gui/server/message', message)
 
-        server = OscServerThread.getInstance()
+        server = OscServerThread.get_instance()
         if server:
             server.send_controller_message(message)
 
@@ -54,7 +58,7 @@ class ServerSender(QObject):
         if self.is_dummy:
             return
 
-        server = OscServerThread.getInstance()
+        server = OscServerThread.get_instance()
         if not server:
             return
 
@@ -64,7 +68,7 @@ class ServerSender(QObject):
         if self.is_dummy:
             return -1
 
-        server = OscServerThread.getInstance()
+        server = OscServerThread.get_instance()
         if not server:
             return -1
 
@@ -74,30 +78,30 @@ class ServerSender(QObject):
         if self.is_dummy:
             return False
 
-        server = OscServerThread.getInstance()
+        server = OscServerThread.get_instance()
         if not server:
             return False
 
         return server.is_nsm_locked
 
-    def get_server(self):
+    def get_server(self) -> 'OscServerThread':
         if self.is_dummy:
             return None
         
-        return OscServerThread.getInstance()
+        return OscServerThread.get_instance()
 
     def get_server_even_dummy(self):
-        return OscServerThread.getInstance()
+        return OscServerThread.get_instance()
 
     def get_server_url(self):
-        server = OscServerThread.getInstance()
+        server = OscServerThread.get_instance()
         if server:
             return server.url
 
         return ''
 
     def get_server_port(self):
-        server = OscServerThread.getInstance()
+        server = OscServerThread.get_instance()
         if server:
             return server.port
 
@@ -117,7 +121,7 @@ class ServerSender(QObject):
         return bool(server.options & option)
 
     def get_client_templates_database(self, base:str)->list:
-        server = OscServerThread.getInstance()
+        server = OscServerThread.get_instance()
         if server:
             return server.client_templates_database[base]
         return []
