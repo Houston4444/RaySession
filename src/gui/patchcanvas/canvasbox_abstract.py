@@ -57,11 +57,6 @@ from . import (
     PORT_MODE_NULL,
     PORT_MODE_INPUT,
     PORT_MODE_OUTPUT,
-    PORT_TYPE_NULL,
-    PORT_TYPE_AUDIO_JACK,
-    PORT_TYPE_MIDI_ALSA,
-    PORT_TYPE_MIDI_JACK,
-    PORT_TYPE_PARAMETER,
     MAX_PLUGIN_ID_ALLOWED,
     ICON_HARDWARE,
     ICON_INTERNAL,
@@ -96,6 +91,10 @@ class cb_line_t(object):
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasBoxAbstract(QGraphicsItem):
+    # inline display is not usable in RaySession
+    # but this patchcanvas module has been forked from Carla
+    # and all about inline_display has been kept (we never know)
+    # but never tested.
     INLINE_DISPLAY_DISABLED = 0
     INLINE_DISPLAY_ENABLED  = 1
     INLINE_DISPLAY_CACHED   = 2

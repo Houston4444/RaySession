@@ -19,3 +19,6 @@ ajustements anti-superposition (après join/split, emballer/déballer remonte to
 # accélerer le update_positions
 # split text multi étages
 
+utiliser un logger nottament pour les chargements de thème
+utiliser Path pour le chargement du thème
+Commenter plus

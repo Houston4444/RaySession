@@ -16,24 +16,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 from . import (
     canvas,
-    features,
     options,
-    CanvasBoxType,
-    ACTION_PLUGIN_EDIT,
-    ACTION_PLUGIN_SHOW_UI,
-    ACTION_PLUGIN_CLONE,
-    ACTION_PLUGIN_REMOVE,
-    ACTION_PLUGIN_RENAME,
-    ACTION_PLUGIN_REPLACE,
-    ACTION_GROUP_INFO,
-    ACTION_GROUP_JOIN,
-    ACTION_GROUP_SPLIT,
-    ACTION_GROUP_RENAME,
-    ACTION_GROUP_MOVE,
-    ACTION_GROUP_WRAP,
-    ACTION_PORTS_DISCONNECT,
-    ACTION_INLINE_DISPLAY,
-    ACTION_CLIENT_SHOW_GUI,
     PORT_MODE_NULL,
     PORT_MODE_INPUT,
     PORT_MODE_OUTPUT,
@@ -42,11 +25,7 @@ from . import (
     PORT_TYPE_MIDI_ALSA,
     PORT_TYPE_MIDI_JACK,
     PORT_TYPE_PARAMETER,
-    MAX_PLUGIN_ID_ALLOWED,
-    ICON_HARDWARE,
-    ICON_INTERNAL,
     ICON_CLIENT,
-    DIRECTION_DOWN
 )
 import patchcanvas.utils as utils
 from .canvasboxshadow import CanvasBoxShadow
@@ -673,7 +652,7 @@ class CanvasBox(CanvasBoxAbstract):
 
         # Check Text Name size
         all_title_templates = box_theme.get_title_templates(
-            self._group_name, self._can_handle_gui)
+            self._group_name, self._can_handle_gui, self.has_top_icon)
         lines_choice_max = len(all_title_templates) - 1
         
         if not all_title_templates:
@@ -730,7 +709,8 @@ class CanvasBox(CanvasBoxAbstract):
 
             lines_choice_max = i
             box_theme.save_title_templates(
-                self._group_name, self._can_handle_gui, all_title_templates[:lines_choice_max])
+                self._group_name, self._can_handle_gui, self.has_top_icon,
+                all_title_templates[:lines_choice_max])
 
         sizes_tuples = []
         
@@ -1159,7 +1139,6 @@ class CanvasBox(CanvasBoxAbstract):
             titles_dict = self._choose_title_disposition(
                 height_for_ports, height_for_ports_one,
                 max_in_width, max_out_width)
-            max_title_size = titles_dict['max_title_size']
             self._header_width = titles_dict['header_width']
             self._header_height = titles_dict['header_height']
             one_column = titles_dict['one_column']

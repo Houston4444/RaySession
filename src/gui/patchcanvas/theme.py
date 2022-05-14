@@ -398,25 +398,34 @@ class StyleAttributer:
         self._titles_templates_cache = \
             TITLE_TEMPLATES_CACHE[font_name][font_size][font_width]
     
-    def save_title_templates(self, title: str, handle_gui: bool, templates: list):
+    def save_title_templates(
+            self, title: str, handle_gui: bool, with_icon: bool, templates: list):
         if self._titles_templates_cache is None:
             self._set_titles_templates_cache()
-        
-        if not title in self._titles_templates_cache.keys():
+
+        if not title in self._titles_templates_cache:
             self._titles_templates_cache[title] = {}
-            
+
         gui_key = 'with_gui' if handle_gui else 'without_gui'
-        self._titles_templates_cache[title][gui_key] = templates
+        icon_key = 'with_icon' if with_icon else 'without_icon'
+        
+        if not gui_key in self._titles_templates_cache[title]:
+            self._titles_templates_cache[title][gui_key] = {}
+
+        self._titles_templates_cache[title][gui_key][icon_key] = templates
     
-    def get_title_templates(self, title: str, handle_gui: bool) -> list:
+    def get_title_templates(
+            self, title: str, handle_gui: bool, with_icon: bool) -> list:
         if self._titles_templates_cache is None:
             self._set_titles_templates_cache()
         
         gui_key = 'with_gui' if handle_gui else 'without_gui'
-        
-        if (title in self._titles_templates_cache.keys()
-                and gui_key in self._titles_templates_cache[title].keys()):
-            return self._titles_templates_cache[title][gui_key]
+        icon_key = 'with_icon' if with_icon else 'without_icon'
+    
+        if (title in self._titles_templates_cache
+                and gui_key in self._titles_templates_cache[title]
+                and icon_key in self._titles_templates_cache[title][gui_key]):
+            return self._titles_templates_cache[title][gui_key][icon_key]
         
         return []
     
@@ -648,10 +657,6 @@ class Theme(StyleAttributer):
             sub_attributer.set_style_dict(end, value)
 
     def load_cache(self):
-        #if True:
-            #return
-        start_time = time.time()
-            
         cache_file = "%s/.cache/RaySession/patchbay_titles" % os.environ['HOME']
         if not os.path.isfile(cache_file):
             return
@@ -675,8 +680,6 @@ class Theme(StyleAttributer):
             except:
                 print('failed to load font cache', font_cache_file)
                 return
-            
-        print('cache loaded in', time.time() - start_time)
     
     def save_cache(self):
         cache_dir = "%s/.cache/RaySession" % os.environ['HOME']
@@ -688,9 +691,6 @@ class Theme(StyleAttributer):
 
         with open("%s/patchbay_titles" % cache_dir, 'wb') as f:
             pickle.dump(TITLE_TEMPLATES_CACHE, f)
-            
-        #with open("%s/patchbay_fonts.json" % cache_dir, 'w+') as f:
-            #json.dump(FONT_METRICS_CACHE, f)
         
         with open("%s/patchbay_fonts" % cache_dir, 'wb') as f:
             pickle.dump(FONT_METRICS_CACHE, f)
