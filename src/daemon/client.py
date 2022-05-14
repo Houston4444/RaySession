@@ -1869,31 +1869,23 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if not desktop_file.endswith('.desktop'):
             desktop_file += ".desktop"
 
-        # desk_path_list = (
-        #     '%s/data' % get_code_root(),
-        #     '%s/.local' % os.getenv('HOME'),
-        #     '/usr/local',
-        #     '/usr')
-
-        desk_path_list = ([Path(get_code_root()).joinpath('data')]
+        desk_path_list = ([Path(get_code_root()).joinpath('data', 'share')]
                           + xdg.xdg_data_dirs())
 
-        for desk_path in desk_path_list:
+        for desk_data_path in desk_path_list:
             org_prefixs = ('', 'org.gnome.', 'org.kde.')
-            desk_file = ''
 
             for org_prefix in org_prefixs:
-                desk_file = "%s/applications/%s%s" % (
-                    desk_path, org_prefix, desktop_file)
-
-                if os.path.isfile(desk_file):
+                desk_path = desk_data_path.joinpath(
+                    'applications', org_prefix + desktop_file)
+                
+                if desk_path.is_file():
                     break
             else:
                 continue
 
             try:
-                file = open(desk_file, 'r')
-                contents = file.read()
+                contents = desk_path.read_text()
             except:
                 continue
 
@@ -1902,46 +1894,36 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         else:
             desk_file_found = False
-            for desk_path in desk_path_list:
-                full_desk_path = "%s/applications" % desk_path
 
-                if not os.path.isdir(full_desk_path):
-                    # applications folder doesn't exists
+            for desk_data_path in desk_path_list:
+                desk_app_path = desk_data_path.joinpath('applications')
+
+                if not desk_app_path.is_dir():
                     continue
 
-                if not os.access(full_desk_path, os.R_OK):
+                if not os.access(desk_app_path, os.R_OK):
                     # no permission to read this applications folder
                     continue
 
-                for desk_file in os.listdir(full_desk_path):
-                    if not desk_file.endswith('.desktop'):
+                for desk_path in desk_app_path.iterdir():
+                    if not desk_path.suffix == '.desktop':
                         continue
 
-                    full_desk_file = "%s/applications/%s" \
-                                        % (desk_path, desk_file)
-
-                    if os.path.isdir(full_desk_file):
+                    if desk_path.is_dir():
                         continue
 
                     try:
-                        file = open(full_desk_file, 'r')
-                        contents = file.read()
+                        contents = desk_path.read_text()
                     except:
                         continue
 
-                    for line in contents.split('\n'):
+                    for line in contents.splitlines():
                         if line.startswith('Exec='):
                             value = line.partition('=')[2]
-                            if (value == self.executable_path
-                                    or value.startswith(
-                                        "%s " % self.executable_path)
-                                    or value.endswith(
-                                        " %s" % self.executable_path)
-                                    or " %s " in value):
-                            #if self.executable_path in value:
+                            if self.executable_path in value.split():
                                 desk_file_found = True
 
-                                self.desktop_file = desk_file
+                                self.desktop_file = desk_path.name
                                 self._set_infos_from_desktop_contents(contents)
                                 break
 
