@@ -2,13 +2,13 @@ import os
 import shlex
 import shutil
 import signal
-import subprocess
 import time
 from pathlib import Path
 from liblo import Address
 from PyQt5.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
 from PyQt5.QtXml import QDomDocument
+
 
 import xdg
 import ray
@@ -1637,7 +1637,7 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui('/ray/gui/client/gui_visible',
                            self.client_id, int(self.gui_visible))
 
-    def can_switch_with(self, other_client)->bool:
+    def can_switch_with(self, other_client: 'Client')->bool:
         if self.protocol == ray.Protocol.RAY_HACK:
             return False
 
