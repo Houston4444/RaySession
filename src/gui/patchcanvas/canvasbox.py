@@ -635,7 +635,7 @@ class CanvasBox(CanvasBoxAbstract):
 
         return tuple(title_lines)
     
-    def _choose_title_disposition(
+    def _choose_title_layout(
         self, height_for_ports: int, height_for_ports_one: int,
         ports_in_width: int, ports_out_width: int) -> dict:
         ''' choose in how many lines should be splitted the title
@@ -765,7 +765,6 @@ class CanvasBox(CanvasBoxAbstract):
                         i, False, TITLE_ON_TOP))
         
         # sort areas and choose the first one (the littlest area)
-        #print('tt', self._group_name, self._current_port_mode, sizes_tuples)
         sizes_tuples.sort()
         area_size, lines_choice, one_column, title_on_side = sizes_tuples[0]
         
@@ -1136,7 +1135,7 @@ class CanvasBox(CanvasBoxAbstract):
         self._width_out = max_out_width
 
         if not (self._wrapping or self._unwrapping):
-            titles_dict = self._choose_title_disposition(
+            titles_dict = self._choose_title_layout(
                 height_for_ports, height_for_ports_one,
                 max_in_width, max_out_width)
             self._header_width = titles_dict['header_width']

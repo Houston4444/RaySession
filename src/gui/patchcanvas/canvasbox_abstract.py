@@ -515,8 +515,6 @@ class CanvasBoxAbstract(QGraphicsItem):
 
     def repaint_lines(self, forced=False):
         if forced or self.pos() != self._last_pos:
-            if self._group_name == 'ardour':
-                print('ardddour', self._group_id, self)
             for connection in self._connection_lines:
                 connection.line.update_line_pos()
 

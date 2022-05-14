@@ -292,7 +292,7 @@ class ClientSlot(QFrame):
             bool(self.client.status in (
                     ray.ClientStatus.STOPPED,
                     ray.ClientStatus.PRECOPY)))
-        print('touidia', self.client.client_id, ':optional-gui:' in self.client.capabilities)
+
         if not self.ui.toolButtonGUI.isVisible():
             self.ui.toolButtonGUI.setVisible(
                 bool(':optional-gui:' in self.client.capabilities))

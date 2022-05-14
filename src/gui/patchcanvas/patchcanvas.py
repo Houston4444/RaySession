@@ -312,10 +312,6 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
     
     canvas.group_list.append(group_dict)
     
-    #if group_name.endswith('(Outputs)'):
-        #for key, value in time_dict.items():
-            #print('     addgp', key, ':', "%.3f" % (value * 1000), group_name)
-    
     if canvas.loading_items:
         return
 
@@ -336,10 +332,7 @@ def remove_group(group_id, save_positions=True):
         warning_print("remove_group(%i)" % group_id)
 
     for group in canvas.group_list:
-        if group.group_id == group_id:
-            if group.group_name == 'ardour':
-                print('REMOVEE ardour group')
-            
+        if group.group_id == group_id:            
             item = group.widgets[0]
             group_name = group.group_name
 
@@ -695,9 +688,7 @@ def redraw_all_groups():
     options.elastic = False
     prevent_overlap = options.prevent_overlap
     options.prevent_overlap = False
-    
-    print('redraw all', start_time)
-    
+        
     for group in canvas.group_list:
         for box in group.widgets:
             if box is not None:
@@ -709,10 +700,6 @@ def redraw_all_groups():
         
         last_time = now
     
-    print('all group redrawn in', last_time - start_time)
-    #for td in time_dicts:
-        #print(td['time'], td['group'])
-    
     for connection in canvas.connection_list:
         if connection.widget is not None:
             connection.widget.update_line_pos()
@@ -722,12 +709,9 @@ def redraw_all_groups():
         options.prevent_overlap = prevent_overlap
         return
     
-    print('papapapa', time.time() - last_time)
-    
     if elastic:
         canvas.scene.set_elastic(True)
     
-    print('lalalala', time.time() - last_time)
     box_count = 0
     if prevent_overlap:
         canvas.scene.set_prevent_overlap(True)
@@ -737,16 +721,12 @@ def redraw_all_groups():
                     box_count += 1
                     canvas.scene.deplace_boxes_from_repulsers([box])
     
-    print('tatatata', box_count, time.time() - last_time)
-    
     if not elastic or prevent_overlap:
         QTimer.singleShot(0, canvas.scene.update)
 
 def redraw_group(group_id: int):
     for group in canvas.group_list:
-        if group.group_id == group_id:
-            print('redraw group', group.group_name)
-            
+        if group.group_id == group_id:            
             for box in group.widgets:
                 if box is not None:
                     box.update_positions()

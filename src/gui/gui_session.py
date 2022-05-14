@@ -232,10 +232,8 @@ class SignaledSession(Session):
 
     def _ray_gui_session_notes(self, path, args):
         self.notes = args[0]
-        print('notes1', time.time())
         if self.main_win.notes_dialog is not None:
             self.main_win.notes_dialog.notes_updated()
-        print('notes2', time.time(), self.main_win.notes_dialog is None)
         
     def _ray_gui_session_notes_shown(self, path, args):
         self.main_win.edit_notes()
@@ -266,11 +264,9 @@ class SignaledSession(Session):
             client.widget.update_status(client.status)
 
     def _ray_gui_client_new(self, path, args):
-        print('client_new', time.time())
         client = Client(self, *args[:2])
         client.update_properties(*args)
         self.client_list.append(client)
-        print('cnew_finsh', time.time())
 
     def _ray_gui_client_update(self, path, args):
         client_id = args[0]
@@ -546,8 +542,6 @@ class SignaledSession(Session):
 
     def _ray_gui_patchbay_fast_temp_file_memory(self, path, args):
         self.patchbay_manager.fast_temp_file_memory(*args)
-        print('fast tmp file memory finished', time.time())
 
     def _ray_gui_patchbay_fast_temp_file_running(self, path, args):
-        print('fast tmp file running signaled', time.time())
         self.patchbay_manager.fast_temp_file_running(*args)
