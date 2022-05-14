@@ -4,11 +4,13 @@ import shutil
 import signal
 import subprocess
 import time
+from pathlib import Path
 from liblo import Address
 from PyQt5.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
 from PyQt5.QtXml import QDomDocument
 
+import xdg
 import ray
 from server_sender import ServerSender
 from daemon_tools  import (TemplateRoots, Terminal, RS,
@@ -1857,12 +1859,6 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if self.icon and self.description and self.label:
             return
 
-        desk_path_list = (
-            '%s/data' % get_code_root(),
-            '%s/.local' % os.getenv('HOME'),
-            '/usr/local',
-            '/usr')
-
         desktop_file = self.desktop_file
         if desktop_file == '//not_found':
             return
@@ -1873,12 +1869,21 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if not desktop_file.endswith('.desktop'):
             desktop_file += ".desktop"
 
+        # desk_path_list = (
+        #     '%s/data' % get_code_root(),
+        #     '%s/.local' % os.getenv('HOME'),
+        #     '/usr/local',
+        #     '/usr')
+
+        desk_path_list = ([Path(get_code_root()).joinpath('data')]
+                          + xdg.xdg_data_dirs())
+
         for desk_path in desk_path_list:
             org_prefixs = ('', 'org.gnome.', 'org.kde.')
             desk_file = ''
 
             for org_prefix in org_prefixs:
-                desk_file = "%s/share/applications/%s%s" % (
+                desk_file = "%s/applications/%s%s" % (
                     desk_path, org_prefix, desktop_file)
 
                 if os.path.isfile(desk_file):
@@ -1898,7 +1903,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         else:
             desk_file_found = False
             for desk_path in desk_path_list:
-                full_desk_path = "%s/share/applications" % desk_path
+                full_desk_path = "%s/applications" % desk_path
+
                 if not os.path.isdir(full_desk_path):
                     # applications folder doesn't exists
                     continue
@@ -1911,7 +1917,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                     if not desk_file.endswith('.desktop'):
                         continue
 
-                    full_desk_file = "%s/share/applications/%s" \
+                    full_desk_file = "%s/applications/%s" \
                                         % (desk_path, desk_file)
 
                     if os.path.isdir(full_desk_file):
