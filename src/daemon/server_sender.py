@@ -14,7 +14,7 @@ class ServerSender(QObject):
         QObject.__init__(self)
         self.is_dummy = False
 
-    def has_server(self):
+    def has_server(self) -> bool:
         if not OscServerThread.get_instance():
             return False
 
@@ -113,14 +113,14 @@ class ServerSender(QObject):
         else:
             self.send(src_addr, '/error', src_path, err, message)
 
-    def has_server_option(self, option: int)->bool:
+    def has_server_option(self, option: int) -> bool:
         server = self.get_server()
         if not server:
             return False
 
         return bool(server.options & option)
 
-    def get_client_templates_database(self, base:str)->list:
+    def get_client_templates_database(self, base:str) -> list:
         server = OscServerThread.get_instance()
         if server:
             return server.client_templates_database[base]
