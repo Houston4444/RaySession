@@ -12,7 +12,8 @@ import ray
 from gui_tools import RS
 
 from patchcanvas import patchcanvas
-from patchcanvas import PortMode, PortType, CallbackAct, IconType
+from patchcanvas import (PortMode, PortType, CallbackAct, IconType,
+                         BoxSplitMode, EyeCandy)
 from gui_server_thread import GuiServerThread
 from patchbay_tools import PatchbayToolsWidget, CanvasMenu, CanvasPortInfoDialog
 
@@ -360,7 +361,7 @@ class Group:
         for port in self.ports:
             port.rename_in_canvas()
 
-    def add_to_canvas(self, split=patchcanvas.SPLIT_UNDEF):
+    def add_to_canvas(self, split=BoxSplitMode.UNDEF):
         if self.in_canvas:
             return
 
@@ -368,7 +369,7 @@ class Group:
         icon_name = self.name.partition('.')[0].lower()
 
         do_split = bool(self.current_position.flags & GROUP_SPLITTED)
-        split = patchcanvas.SPLIT_YES if do_split else patchcanvas.SPLIT_NO
+        split = BoxSplitMode.YES if do_split else BoxSplitMode.NO
 
         if self._is_hardware:
             icon_type = IconType.HARDWARE
@@ -1573,9 +1574,9 @@ class PatchbayManager:
 
     def set_group_shadows(self, yesno: int):
         if yesno:
-            patchcanvas.options.eyecandy = patchcanvas.EYECANDY_SMALL
+            patchcanvas.options.eyecandy = EyeCandy.SMALL
         else:
-            patchcanvas.options.eyecandy = patchcanvas.EYECANDY_NONE
+            patchcanvas.options.eyecandy = EyeCandy.NONE
         self.remove_and_add_all()
 
     def change_theme(self, theme_name: str):

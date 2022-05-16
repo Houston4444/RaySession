@@ -5,6 +5,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from gui_tools import RS
 from patchcanvas import PortType
 
+from patchbay_manager import PatchbayManager
 import ui.filter_frame
 
 
@@ -141,7 +142,7 @@ class CanvasFilterFrame(QFrame):
             'Canvas/semi_hide_opacity',
             float(self.ui.spinBoxOpacity.value() / 100))
         
-    def set_patchbay_manager(self, patchbay_manager):
+    def set_patchbay_manager(self, patchbay_manager: PatchbayManager):
         self.patchbay_manager = patchbay_manager
         self.patchbay_manager.session.signaler.port_types_view_changed.connect(
             self._port_types_view_changed)

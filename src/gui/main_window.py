@@ -16,8 +16,7 @@ import open_session_dialog
 import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GuiServerThread
-from patchcanvas import patchcanvas
-import patchbay_manager
+from patchcanvas import patchcanvas, EyeCandy
 from utility_scripts import UtilityScriptLauncher
 import ray
 import list_widget_clients
@@ -474,9 +473,9 @@ class MainWindow(QMainWindow):
         options = patchcanvas.get_options_object()
         options.theme_name = RS.settings.value(
             'Canvas/theme', 'Black Gold', type=str)
-        options.eyecandy = patchcanvas.EYECANDY_NONE
+        options.eyecandy = EyeCandy.NONE
         if RS.settings.value('Canvas/box_shadows', False, type=bool):
-            options.eyecandy = patchcanvas.EYECANDY_SMALL
+            options.eyecandy = EyeCandy.SMALL
 
         options.auto_hide_groups = True
         options.auto_select_items = False

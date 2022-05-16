@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import QGraphicsItem
 if TYPE_CHECKING:
     # all these classes are not importable normally because
     # it would make a circular import
-    # they are imported only to get types for IDE
+    # they are imported only from IDE to get types
     from .theme import Theme
     from .scene import PatchScene
     from .canvasbox import CanvasBox
@@ -49,6 +49,7 @@ class PortMode(IntFlag):
     NULL = 0x00
     INPUT = 0x01
     OUTPUT = 0x02
+    BOTH = INPUT | OUTPUT
 
 class PortType(IntEnum):
     NULL = 0
@@ -56,13 +57,6 @@ class PortType(IntEnum):
     MIDI_JACK = 2
     MIDI_ALSA = 3
     PARAMETER = 4
-    
-# Port Type
-PORT_TYPE_NULL = 0
-PORT_TYPE_AUDIO_JACK = 1
-PORT_TYPE_MIDI_JACK = 2
-PORT_TYPE_MIDI_ALSA = 3
-PORT_TYPE_PARAMETER = 4
 
 # Callback Action
 class CallbackAct(IntEnum):
@@ -104,13 +98,16 @@ class IconType(IntEnum):
     INTERNAL = 7
 
 # Split Option
-SPLIT_UNDEF = 0
-SPLIT_NO = 1
-SPLIT_YES = 2
+class BoxSplitMode(IntEnum):
+    UNDEF = 0
+    NO = 1
+    YES = 2
 
 # Eye-Candy Option
-EYECANDY_NONE = 0
-EYECANDY_SMALL = 1 # Use boxes shadows
+class EyeCandy(IntEnum):
+    NONE = 0
+    SMALL = 1 # Use boxes shadows
+
 
 # For Repulsive boxes
 DIRECTION_NONE = 0
@@ -267,16 +264,6 @@ class ClipboardElement:
 def bool2str(check: bool) -> str:
     return str(bool(check))
 
-def split2str(split):
-    if split == SPLIT_UNDEF:
-        return "SPLIT_UNDEF"
-    elif split == SPLIT_NO:
-        return "SPLIT_NO"
-    elif split == SPLIT_YES:
-        return "SPLIT_YES"
-    else:
-        return "SPLIT_???"
-
 # ------------------------------------------------------------------------------------------------------------
 
 # Global objects
@@ -286,7 +273,7 @@ options = CanvasOptionsObject()
 options.theme_name = ''
 options.auto_hide_groups = False
 options.auto_select_items = False
-options.eyecandy = EYECANDY_NONE
+options.eyecandy = EyeCandy.NONE
 options.inline_displays = False
 options.elastic = True
 options.prevent_overlap = True

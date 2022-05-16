@@ -39,14 +39,10 @@ from .init_values import (
     PortObject,
     PortgrpObject,
     ConnectionObject,
-    bool2str,
-    split2str,
     PortMode,
-    SPLIT_UNDEF,
-    SPLIT_NO,
-    SPLIT_YES,
+    BoxSplitMode,
     IconType,
-    EYECANDY_NONE,
+    EyeCandy, # not used here, but can be taken from parent
     CanvasIconType,
     CanvasRubberbandType)
 
@@ -126,7 +122,7 @@ def _get_stored_canvas_position(key, fallback_pos):
 def init(app_name: str, scene: PatchScene, callback, theme_paths: tuple, debug=False):
     if debug:
         warning_print("init(\"%s\", %s, %s, %s)"
-                      % (app_name, scene, callback, bool2str(debug)))
+                      % (app_name, scene, callback, str(debug)))
 
     if canvas.initiated:
         warning_print("init() - already initiated")
@@ -241,32 +237,32 @@ def set_loading_items(yesno: bool):
     or redraw_group once the long operation is finished'''
     canvas.loading_items = yesno
 
-def add_group(group_id: int, group_name: str, split=SPLIT_UNDEF,
+def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
               icon_type=IconType.APPLICATION, icon_name='', layout_modes={},
               null_xy=(0, 0), in_xy=(0, 0), out_xy=(0, 0),
               split_animated=False):
     if canvas.debug:
         warning_print("add_group(%i, %s, %s, %s)" % (
-              group_id, group_name, split2str(split), icon_type.name))
+              group_id, group_name, split.name, icon_type.name))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
             warning_print(
                 "add_group(%i, %s, %s, %s) - group already exists"
-                % (group_id, group_name, split2str(split), icon_type.name))
+                % (group_id, group_name, split.name, icon_type.name))
             return
 
-    if split == SPLIT_UNDEF:
+    if split == BoxSplitMode.UNDEF:
         isHardware = bool(icon_type == IconType.HARDWARE)
         if isHardware:
-            split = SPLIT_YES
+            split = BoxSplitMode.YES
 
     group_box = CanvasBox(group_id, group_name, icon_type, icon_name)
     
     group_dict = GroupObject()
     group_dict.group_id = group_id
     group_dict.group_name = group_name
-    group_dict.split = bool(split == SPLIT_YES)
+    group_dict.split = bool(split == BoxSplitMode.YES)
     group_dict.icon_type = icon_type
     group_dict.icon_name = icon_name
     group_dict.layout_modes = layout_modes
@@ -283,7 +279,7 @@ def add_group(group_id: int, group_name: str, split=SPLIT_UNDEF,
     group_dict.widgets.append(group_box)
     group_dict.widgets.append(None)
 
-    if split == SPLIT_YES:
+    if split == BoxSplitMode.YES:
         group_box.set_split(True, PortMode.OUTPUT)
 
         if features.handle_group_pos:
@@ -360,7 +356,7 @@ def remove_group(group_id: int, save_positions=True):
                 if features.handle_group_pos and save_positions:
                     canvas.settings.setValue("CanvasPositions/%s_OUTPUT" % group_name, item.pos())
                     canvas.settings.setValue("CanvasPositions/%s_INPUT" % group_name, s_item.pos())
-                    canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, SPLIT_YES)
+                    canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.YES)
 
                 s_item.remove_icon_from_scene()
                 canvas.scene.removeItem(s_item)
@@ -369,7 +365,7 @@ def remove_group(group_id: int, save_positions=True):
             else:
                 if features.handle_group_pos and save_positions:
                     canvas.settings.setValue("CanvasPositions/%s" % group_name, item.pos())
-                    canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, SPLIT_NO)
+                    canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.NO)
 
             item.remove_icon_from_scene()
             canvas.scene.removeItem(item)
@@ -515,7 +511,7 @@ def split_group(group_id, on_place=False):
     remove_group(group_id)
 
     # Step 3 - Re-create Item, now split
-    add_group(group_id, group_name, SPLIT_YES,
+    add_group(group_id, group_name, BoxSplitMode.YES,
               group_icon_type, group_icon_name, layout_modes,
               null_xy=(group_null_pos.x(), group_null_pos.y()),
               in_xy=(group_in_pos.x(), group_in_pos.y()),
@@ -654,7 +650,7 @@ def join_group(group_id):
     remove_group(group_id, save_positions=False)
 
     # Step 3 - Re-create Item, now together
-    add_group(group_id, group_name, SPLIT_NO,
+    add_group(group_id, group_name, BoxSplitMode.NO,
               group_icon_type, group_icon_name, layout_modes,
               null_xy=(group_null_pos.x(), group_null_pos.y()),
               in_xy=(group_in_pos.x(), group_in_pos.y()),
@@ -917,7 +913,7 @@ def set_group_as_plugin(group_id: int, plugin_id: int,
                         has_ui: bool, has_inline_display: bool):
     if canvas.debug:
         print("PatchCanvas::set_group_as_plugin(%i, %i, %s, %s)"
-              % (group_id, plugin_id, bool2str(has_ui), bool2str(has_inline_display)))
+              % (group_id, plugin_id, str(has_ui), str(has_inline_display)))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -934,7 +930,7 @@ def set_group_as_plugin(group_id: int, plugin_id: int,
 
     qCritical(
         "PatchCanvas::set_group_as_plugin(%i, %i, %s, %s) - unable to find group to set as plugin"
-        % (group_id, plugin_id, bool2str(has_ui), bool2str(has_inline_display)))
+        % (group_id, plugin_id, str(has_ui), str(has_inline_display)))
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -944,7 +940,7 @@ def add_port(group_id: int, port_id: int, port_name: str,
         print("PatchCanvas::add_port(%i, %i, %s, %s, %s, %s)"
               % (group_id, port_id, port_name.encode(),
                  port_mode.name,
-                 port_type.name, bool2str(is_alternate)))
+                 port_type.name, str(is_alternate)))
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
