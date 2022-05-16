@@ -17,9 +17,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 from .init_values import (
     canvas,
     options,
-    PORT_MODE_NULL,
-    PORT_MODE_INPUT,
-    PORT_MODE_OUTPUT,
+    PortMode,
     PORT_TYPE_NULL,
     PORT_TYPE_AUDIO_JACK,
     PORT_TYPE_MIDI_ALSA,
@@ -134,25 +132,25 @@ class CanvasBox(CanvasBoxAbstract):
                 for port in self._port_list:
                     if (port.port_type == port_type
                             and port.is_alternate == alternate):
-                        if port.port_mode == PORT_MODE_INPUT:
+                        if port.port_mode == PortMode.INPUT:
                             n_ins += 1
-                        elif port.port_mode == PORT_MODE_OUTPUT:
+                        elif port.port_mode == PortMode.OUTPUT:
                             n_outs += 1
 
                 port_types_aligner.append((n_ins, n_outs))
 
-        winner = PORT_MODE_NULL
+        winner = PortMode.NULL
 
         for n_ins, n_outs in port_types_aligner:
-            if ((winner == PORT_MODE_INPUT and n_outs > n_ins)
-                    or (winner == PORT_MODE_OUTPUT and n_ins > n_outs)):
+            if ((winner == PortMode.INPUT and n_outs > n_ins)
+                    or (winner == PortMode.OUTPUT and n_ins > n_outs)):
                 align_port_types = False
                 break
 
             if n_ins > n_outs:
-                winner = PORT_MODE_INPUT
+                winner = PortMode.INPUT
             elif n_outs > n_ins:
-                winner = PORT_MODE_OUTPUT
+                winner = PortMode.OUTPUT
         
         return align_port_types
     
@@ -168,7 +166,7 @@ class CanvasBox(CanvasBoxAbstract):
         port_type_spacing = box_theme.port_type_spacing()
         last_in_type_alter = (PORT_TYPE_NULL, False)
         last_out_type_alter = (PORT_TYPE_NULL, False)
-        last_port_mode = PORT_MODE_NULL
+        last_port_mode = PortMode.NULL
         
         for port_type in port_types:
             for alternate in (False, True):
@@ -220,7 +218,7 @@ class CanvasBox(CanvasBoxAbstract):
                     
                     type_alter = (port.port_type, port.is_alternate)
                     
-                    if port.port_mode == PORT_MODE_INPUT:
+                    if port.port_mode == PortMode.INPUT:
                         max_in_width = max(max_in_width, size)
                         if type_alter != last_in_type_alter:
                             if last_in_type_alter != (PORT_TYPE_NULL, False):
@@ -231,7 +229,7 @@ class CanvasBox(CanvasBoxAbstract):
                         if last_of_portgrp:
                             last_in_pos += port_spacing
 
-                    elif port.port_mode == PORT_MODE_OUTPUT:
+                    elif port.port_mode == PortMode.OUTPUT:
                         max_out_width = max(max_out_width, size)
                         
                         if type_alter != last_out_type_alter:
@@ -258,7 +256,7 @@ class CanvasBox(CanvasBoxAbstract):
         last_inout_pos = 0
         last_type_alter = (PORT_TYPE_NULL, False)
         
-        if self._current_port_mode == PORT_MODE_OUTPUT | PORT_MODE_INPUT:
+        if self._current_port_mode == PortMode.OUTPUT | PortMode.INPUT:
             for port_type in port_types:
                 for alternate in (False, True):
                     for port in self._port_list:
@@ -343,7 +341,7 @@ class CanvasBox(CanvasBoxAbstract):
                                 last_out_pos += port_type_spacing
                             last_type_alter = type_alter
                     
-                    if port.port_mode == PORT_MODE_INPUT:
+                    if port.port_mode == PortMode.INPUT:
                         if not one_column and type_alter != last_in_type_alter:
                             if last_in_type_alter != (PORT_TYPE_NULL, False):
                                 last_in_pos += port_type_spacing
@@ -382,7 +380,7 @@ class CanvasBox(CanvasBoxAbstract):
                         in_segment[1] = last_in_pos
                         last_in_pos += port_spacing
 
-                    elif port.port_mode == PORT_MODE_OUTPUT:
+                    elif port.port_mode == PortMode.OUTPUT:
                         if not one_column and type_alter != last_out_type_alter:
                             if last_out_type_alter != (PORT_TYPE_NULL, False):
                                 last_out_pos += port_type_spacing
@@ -644,7 +642,7 @@ class CanvasBox(CanvasBoxAbstract):
         width_for_ports_one = 30 + max(ports_in_width, ports_out_width)
 
         ports_width = ports_in_width
-        if self._current_port_mode == PORT_MODE_OUTPUT:
+        if self._current_port_mode == PortMode.OUTPUT:
             ports_width = ports_out_width
 
         box_theme = self.get_theme()
@@ -716,7 +714,7 @@ class CanvasBox(CanvasBoxAbstract):
         
         layout_mode = self._get_layout_mode_for_this()
         
-        if self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT):
+        if self._current_port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             # splitted box
             
             if layout_mode in (LAYOUT_AUTO, LAYOUT_LARGE):
@@ -774,7 +772,7 @@ class CanvasBox(CanvasBoxAbstract):
         header_width = all_title_templates[lines_choice]['header_width']
         max_title_size = all_title_templates[lines_choice]['title_width']
         
-        if self._current_port_mode == PORT_MODE_INPUT + PORT_MODE_OUTPUT:
+        if self._current_port_mode == PortMode.INPUT + PortMode.OUTPUT:
             if one_column:
                 self._current_layout_mode = LAYOUT_HIGH
             else:
@@ -835,20 +833,20 @@ class CanvasBox(CanvasBoxAbstract):
             if port.portgrp_id:
                 continue
 
-            if port.port_mode == PORT_MODE_INPUT:
+            if port.port_mode == PortMode.INPUT:
                 port.widget.setX(inX)
                 port.widget.set_port_width(max_in_width - port_offset)
-            elif port.port_mode == PORT_MODE_OUTPUT:
+            elif port.port_mode == PortMode.OUTPUT:
                 port.widget.setX(outX)
                 port.widget.set_port_width(max_out_width - port_offset)
 
         # Horizontal portgroups and ports in portgroup re-positioning
         for portgrp in self._portgrp_list:
             if portgrp.widget is not None:
-                if portgrp.port_mode == PORT_MODE_INPUT:
+                if portgrp.port_mode == PortMode.INPUT:
                     portgrp.widget.set_portgrp_width(max_in_width - port_offset)
                     portgrp.widget.setX(box_theme.port_offset() +1)
-                elif portgrp.port_mode == PORT_MODE_OUTPUT:
+                elif portgrp.port_mode == PortMode.OUTPUT:
                     portgrp.widget.set_portgrp_width(max_out_width - port_offset)
                     portgrp.widget.setX(outX)
 
@@ -874,9 +872,9 @@ class CanvasBox(CanvasBoxAbstract):
                 if (port.port_id in portgrp.port_id_list
                         and port.widget is not None):
                     port.widget.set_port_width(max_port_in_pg_width)
-                    if port.port_mode == PORT_MODE_INPUT:
+                    if port.port_mode == PortMode.INPUT:
                         port.widget.setX(inX)
-                    elif port.port_mode == PORT_MODE_OUTPUT:
+                    elif port.port_mode == PortMode.OUTPUT:
                         port.widget.setX(out_in_portgrpX)
     
     def _set_title_positions(self):
@@ -918,7 +916,7 @@ class CanvasBox(CanvasBoxAbstract):
             
             # set title lines pos
             for title_line in self._title_lines:
-                if self._current_port_mode == PORT_MODE_INPUT:
+                if self._current_port_mode == PortMode.INPUT:
                     title_line.x = 4 + self._width - self._header_width + 2
                     if self._can_handle_gui:
                         title_line.x += 2
@@ -927,7 +925,7 @@ class CanvasBox(CanvasBoxAbstract):
                         self.top_icon.set_pos(self._width - 28 - gui_margin,
                                               4 + gui_margin)
     
-                elif self._current_port_mode == PORT_MODE_OUTPUT:
+                elif self._current_port_mode == PortMode.OUTPUT:
                     title_line.x = (self._header_width
                                     - title_line.size - 6)
                     
@@ -1098,7 +1096,7 @@ class CanvasBox(CanvasBoxAbstract):
 
         self.prepareGeometryChange()
         
-        self._current_port_mode = PORT_MODE_NULL
+        self._current_port_mode = PortMode.NULL
         self._port_list.clear()
         self._portgrp_list.clear()
         
@@ -1155,9 +1153,9 @@ class CanvasBox(CanvasBoxAbstract):
             
             if self._has_side_title():
                 wrapped_height = self._header_height
-                if self._current_port_mode == PORT_MODE_INPUT:
+                if self._current_port_mode == PortMode.INPUT:
                     wrapped_width -= self._width_in
-                elif self._current_port_mode == PORT_MODE_OUTPUT:
+                elif self._current_port_mode == PortMode.OUTPUT:
                     wrapped_width -= self._width_out
             
         else:
@@ -1167,7 +1165,7 @@ class CanvasBox(CanvasBoxAbstract):
             wrapped_width = self._wrapped_width
             
             one_column = bool(
-                self._current_port_mode == PORT_MODE_OUTPUT + PORT_MODE_INPUT
+                self._current_port_mode == PortMode.OUTPUT + PortMode.INPUT
                 and self._current_layout_mode == LAYOUT_HIGH)
             
         last_in_pos += self._ports_y_start
@@ -1200,9 +1198,9 @@ class CanvasBox(CanvasBoxAbstract):
             if self._height - self._header_height >= 64:
                 y_side_space = last_in_pos - last_out_pos
                 
-                if one_column and last_port_mode == PORT_MODE_INPUT:
+                if one_column and last_port_mode == PortMode.INPUT:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
-                elif one_column and last_port_mode == PORT_MODE_OUTPUT:
+                elif one_column and last_port_mode == PortMode.OUTPUT:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_LEFT
                 elif y_side_space < -10:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_LEFT

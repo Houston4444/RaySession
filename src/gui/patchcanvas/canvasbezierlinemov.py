@@ -32,13 +32,11 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 from .init_values import (
     canvas,
     options,
-    port_mode2str,
     port_type2str,
     CanvasBezierLineMovType,
     CanvasPortType,
     CanvasPortGroupType,
-    PORT_MODE_INPUT,
-    PORT_MODE_OUTPUT,
+    PortMode,
     PORT_TYPE_AUDIO_JACK,
     PORT_TYPE_MIDI_ALSA,
     PORT_TYPE_MIDI_JACK,
@@ -71,7 +69,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                                    PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER):
             sys.stderr.write(
                 "PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type\n"
-                % (port_mode2str(self._port_mode),
+                % (self._port_mode.name,
                    port_type2str(self._port_type),
                    self.parentItem()))
 
@@ -142,7 +140,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         final_x = scenePos.x() - self._item_x
         final_y = scenePos.y() - self._item_y + new_y
 
-        if self._port_mode == PORT_MODE_OUTPUT:
+        if self._port_mode == PortMode.OUTPUT:
             old_x = self._item_width + 12
             mid_x = abs(final_x - old_x) / 2
             new_x1 = old_x + mid_x
@@ -153,7 +151,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 new_x1 += abs(diffxy)
                 new_x2 -= abs(diffxy)
 
-        elif self._port_mode == PORT_MODE_INPUT:
+        elif self._port_mode == PortMode.INPUT:
             old_x = 0
             mid_x = abs(final_x - old_x) / 2
             new_x1 = old_x - mid_x

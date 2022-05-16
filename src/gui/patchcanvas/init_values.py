@@ -20,6 +20,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 from typing import TYPE_CHECKING
+from enum import IntFlag
 
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtWidgets import QGraphicsItem
@@ -44,6 +45,11 @@ if TYPE_CHECKING:
 MAX_PLUGIN_ID_ALLOWED = 0x7FF
 
 # Port Mode
+class PortMode(IntFlag):
+    NULL = 0x00
+    INPUT = 0x01
+    OUTPUT = 0x02
+
 PORT_MODE_NULL = 0
 PORT_MODE_INPUT = 1
 PORT_MODE_OUTPUT = 2
@@ -211,7 +217,7 @@ class PortObject:
     group_id: int
     port_id: int
     port_name: str
-    port_mode: int
+    port_mode: PortMode
     port_type: int
     portgrp_id: int
     is_alternate: bool
@@ -223,7 +229,7 @@ class PortObject:
 class PortgrpObject:
     portgrp_id: int
     group_id: int
-    port_mode: int
+    port_mode: PortMode
     port_type: int
     port_id_list: list[int]
     widget: object
@@ -244,7 +250,7 @@ class ConnectionObject:
 
 class ClipboardElement:
     port_type: int
-    port_mode: int
+    port_mode: PortMode
     group_id: int
     port_id: int
     group_port_ids: list[int]

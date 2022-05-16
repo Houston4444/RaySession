@@ -55,9 +55,7 @@ from .init_values import (
     ACTION_PORTS_DISCONNECT,
     ACTION_INLINE_DISPLAY,
     ACTION_CLIENT_SHOW_GUI,
-    PORT_MODE_NULL,
-    PORT_MODE_INPUT,
-    PORT_MODE_OUTPUT,
+    PortMode,
     MAX_PLUGIN_ID_ALLOWED,
     ICON_HARDWARE,
     ICON_INTERNAL,
@@ -135,8 +133,8 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         self._last_pos = QPointF()
         self._splitted = False
-        self._splitted_mode = PORT_MODE_NULL
-        self._current_port_mode = PORT_MODE_NULL # depends of present ports
+        self._splitted_mode = PortMode.NULL
+        self._current_port_mode = PortMode.NULL # depends of present ports
 
         self._cursor_moving = False
         self._mouse_down = False
@@ -164,7 +162,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         # Icon
         if icon_type in (ICON_HARDWARE, ICON_INTERNAL):
-            port_mode = PORT_MODE_NULL
+            port_mode = PortMode.NULL
             if self._splitted:
                 port_mode = self._splitted_mode
             self.top_icon = CanvasSvgIcon(
@@ -193,9 +191,9 @@ class CanvasBoxAbstract(QGraphicsItem):
             self.shadow.fake_parent = self
             self.shadow.set_theme(shadow_theme)
             
-            #if self._splitted_mode == PORT_MODE_NULL:
+            #if self._splitted_mode == PortMode.NULL:
                 #self.shadow.setOffset(0, 2)
-            #elif self._splitted_mode == PORT_MODE_INPUT:
+            #elif self._splitted_mode == PortMode.INPUT:
                 #self.shadow.setOffset(4, 2)
             #else:
                 #self.shadow.setOffset(-4, 2)
@@ -288,7 +286,7 @@ class CanvasBoxAbstract(QGraphicsItem):
     def set_icon(self, icon_type, icon_name):
         if icon_type == ICON_HARDWARE:
             self.remove_icon_from_scene()
-            port_mode = PORT_MODE_NULL
+            port_mode = PortMode.NULL
             if self._splitted:
                 port_mode = self._splitted_mode
             self.top_icon = CanvasSvgIcon(icon_type, icon_name, port_mode, self)
@@ -312,7 +310,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._gui_visible = visible
         self.update()
 
-    def set_split(self, split, mode=PORT_MODE_NULL):
+    def set_split(self, split, mode=PortMode.NULL):
         self._splitted = split
         self._splitted_mode = mode
         self._current_port_mode = mode
@@ -322,9 +320,9 @@ class CanvasBoxAbstract(QGraphicsItem):
         
         if self.shadow is not None:
             if split:
-                if mode == PORT_MODE_INPUT:
+                if mode == PortMode.INPUT:
                     self.shadow.setOffset(4, 2)
-                elif mode == PORT_MODE_OUTPUT:
+                elif mode == PortMode.OUTPUT:
                     self.shadow.setOffset(-4, 2)
             else:
                 self.shadow.setOffset(0, 2)
@@ -479,7 +477,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         
         self._x_before_wrap = self.x()
         self._x_after_wrap = self._x_before_wrap
-        if self._has_side_title() and self._current_port_mode == PORT_MODE_INPUT:
+        if self._has_side_title() and self._current_port_mode == PortMode.INPUT:
             if yesno:
                 self._x_after_wrap = self._x_before_wrap + self._width - self._wrapped_width
             else:
@@ -561,7 +559,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
     def _has_side_title(self):
         return bool(
-            self._current_port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT)
+            self._current_port_mode in (PortMode.INPUT, PortMode.OUTPUT)
             and self._current_layout_mode == LAYOUT_LARGE)
 
     def type(self):
@@ -591,20 +589,20 @@ class CanvasBoxAbstract(QGraphicsItem):
                     connection, self._group_id, self._port_list_ids):
                 conn_list_ids.append(connection.connection_id)
                 other_group_id = connection.group_in_id
-                group_port_mode = PORT_MODE_INPUT
+                group_port_mode = PortMode.INPUT
 
                 if self._splitted:
-                    if self._splitted_mode == PORT_MODE_INPUT:
+                    if self._splitted_mode == PortMode.INPUT:
                         other_group_id = connection.group_out_id
-                        group_port_mode = PORT_MODE_OUTPUT
+                        group_port_mode = PortMode.OUTPUT
                 else:
                     if other_group_id == self._group_id:
                         other_group_id = connection.group_out_id
-                        group_port_mode = PORT_MODE_OUTPUT
+                        group_port_mode = PortMode.OUTPUT
 
                 for disconnect_element in disconnect_list:
                     if disconnect_element['group_id'] == other_group_id:
-                        if group_port_mode == PORT_MODE_INPUT:
+                        if group_port_mode == PortMode.INPUT:
                             disconnect_element['connection_in_ids'].append(
                                 connection.connection_id)
                         else:
@@ -616,7 +614,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                                           'connection_in_ids': [],
                                           'connection_out_ids': []}
 
-                    if group_port_mode == PORT_MODE_INPUT:
+                    if group_port_mode == PortMode.INPUT:
                         disconnect_element['connection_in_ids'].append(
                             connection.connection_id)
                     else:
@@ -642,7 +640,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                             act_x_disc1 = discMenu.addAction(
                                 group.group_name + outs_label)
                             act_x_disc1.setIcon(utils.get_icon(
-                                group.icon_type, group.icon_name, PORT_MODE_OUTPUT))
+                                group.icon_type, group.icon_name, PortMode.OUTPUT))
                             act_x_disc1.setData(
                                 disconnect_element['connection_out_ids'])
                             act_x_disc1.triggered.connect(
@@ -651,17 +649,17 @@ class CanvasBoxAbstract(QGraphicsItem):
                             act_x_disc2 = discMenu.addAction(
                                 group.group_name + ins_label)
                             act_x_disc2.setIcon(utils.get_icon(
-                                group.icon_type, group.icon_name, PORT_MODE_INPUT))
+                                group.icon_type, group.icon_name, PortMode.INPUT))
                             act_x_disc2.setData(
                                 disconnect_element['connection_in_ids'])
                             act_x_disc2.triggered.connect(
                                 canvas.qobject.port_context_menu_disconnect)
                         else:
-                            port_mode = PORT_MODE_NULL
+                            port_mode = PortMode.NULL
                             if not disconnect_element['connection_in_ids']:
-                                port_mode = PORT_MODE_OUTPUT
+                                port_mode = PortMode.OUTPUT
                             elif not disconnect_element['connection_out_ids']:
-                                port_mode = PORT_MODE_INPUT
+                                port_mode = PortMode.INPUT
 
                             act_x_disc = discMenu.addAction(group.group_name)
                             icon = utils.get_icon(
@@ -745,9 +743,9 @@ class CanvasBoxAbstract(QGraphicsItem):
         haveIns = haveOuts = False
         for port in canvas.port_list:
             if port.group_id == self._group_id and port.port_id in self._port_list_ids:
-                if port.port_mode == PORT_MODE_INPUT:
+                if port.port_mode == PortMode.INPUT:
                     haveIns = True
-                elif port.port_mode == PORT_MODE_OUTPUT:
+                elif port.port_mode == PortMode.OUTPUT:
                     haveOuts = True
 
         if not (self._splitted or bool(haveIns and haveOuts)):
@@ -863,7 +861,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                     triangle_rect_in = QRectF(
                         self._width - 24, self._height - 24, 24, 24)
 
-                    mode = PORT_MODE_INPUT
+                    mode = PortMode.INPUT
                     wrap = False
 
                     for trirect in triangle_rect_out, triangle_rect_in:
@@ -873,7 +871,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                             wrap = True
                             break
 
-                        mode = PORT_MODE_OUTPUT
+                        mode = PortMode.OUTPUT
 
                     if wrap:
                         utils.canvas_callback(
@@ -979,11 +977,11 @@ class CanvasBoxAbstract(QGraphicsItem):
             if group.group_id == self._group_id:
                 pos = QPoint(round(self.x()), round(self.y()))
 
-                if self._splitted_mode == PORT_MODE_NULL:
+                if self._splitted_mode == PortMode.NULL:
                     group.null_pos = pos
-                elif self._splitted_mode == PORT_MODE_INPUT:
+                elif self._splitted_mode == PortMode.INPUT:
                     group.in_pos = pos
-                elif self._splitted_mode == PORT_MODE_OUTPUT:
+                elif self._splitted_mode == PortMode.OUTPUT:
                     group.out_pos = pos
                 break
 
@@ -1107,11 +1105,11 @@ class CanvasBoxAbstract(QGraphicsItem):
         if self._can_handle_gui:
             header_rect = QRectF(3, 3, self._width - 6, self._header_height - 6)
             if self._has_side_title():
-                if self._current_port_mode == PORT_MODE_INPUT:
+                if self._current_port_mode == PortMode.INPUT:
                     header_rect = QRectF(
                         self._width - self._header_width + 3, 3,
                         self._header_width - 6, self._header_height -6)
-                elif self._current_port_mode == PORT_MODE_OUTPUT:
+                elif self._current_port_mode == PortMode.OUTPUT:
                     header_rect = QRectF(
                         3, 3, self._header_width - 6, self._header_height - 6)
             
@@ -1239,7 +1237,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         painter.setBrush(wtheme.background_color())
 
         if self._wrapped:
-            for port_mode in PORT_MODE_INPUT, PORT_MODE_OUTPUT:
+            for port_mode in PortMode.INPUT, PortMode.OUTPUT:
                 if self._current_port_mode & port_mode:
                     if self._has_side_title():
                         side = 9
@@ -1247,7 +1245,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                         ypos = self._height - offset
                         
                         triangle = QPolygonF()
-                        if port_mode == PORT_MODE_INPUT:
+                        if port_mode == PortMode.INPUT:
                             xpos = offset
                             triangle += QPointF(xpos, ypos)
                             triangle += QPointF(xpos, ypos - side)
@@ -1262,7 +1260,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                         xpos = 6
                         ypos = self._header_height
 
-                        if port_mode == PORT_MODE_OUTPUT:
+                        if port_mode == PortMode.OUTPUT:
                             xpos = self._width - (xpos + 2 * side)
 
                         triangle = QPolygonF()
@@ -1331,10 +1329,10 @@ class CanvasBoxAbstract(QGraphicsItem):
             painter.setBrush(background1)
             
         painter.setPen(theme.fill_pen())
-        if self._current_port_mode != PORT_MODE_INPUT + PORT_MODE_OUTPUT:
+        if self._current_port_mode != PortMode.INPUT + PortMode.OUTPUT:
             hardware_poly = QPolygonF()
 
-            if self._current_port_mode == PORT_MODE_INPUT:
+            if self._current_port_mode == PortMode.INPUT:
                 hardware_poly += QPointF(- lineHinting, - lineHinting)
                 hardware_poly += QPointF(- lineHinting, self._ports_y_start)
                 hardware_poly += QPointF(-d /2.0, self._ports_y_start)

@@ -28,8 +28,7 @@ from .init_values import (
     ACTION_PORTS_DISCONNECT,
     PORT_TYPE_AUDIO_JACK,
     PORT_TYPE_MIDI_JACK,
-    PORT_MODE_OUTPUT,
-    PORT_MODE_INPUT,
+    PortMode,
     ConnectionObject)
 
 
@@ -241,11 +240,11 @@ class ConnectMenu(SubMenu):
         dangerous_name = ''
 
         if self._port_type == PORT_TYPE_AUDIO_JACK:
-            if (self._port_mode == PORT_MODE_OUTPUT
+            if (self._port_mode == PortMode.OUTPUT
                     and self._is_alternate):
                 dangerous_name = _translate(
                     'patchbay', 'Audio | DANGEROUS !!!')
-            elif (self._port_mode == PORT_MODE_INPUT
+            elif (self._port_mode == PortMode.INPUT
                     and not self._is_alternate):
                 dangerous_name = _translate(
                     'patchbay', 'CV | DANGEROUS !!!')
@@ -266,10 +265,10 @@ class ConnectMenu(SubMenu):
                         and port.port_mode != self._port_mode):
 
                     if (self._port_type == PORT_TYPE_AUDIO_JACK
-                            and (self._port_mode == PORT_MODE_OUTPUT
+                            and (self._port_mode == PortMode.OUTPUT
                                  and self._is_alternate
                                  and not port.is_alternate)
-                                or (self._port_mode == PORT_MODE_INPUT
+                                or (self._port_mode == PortMode.INPUT
                                     and not self._is_alternate
                                     and port.is_alternate)):
                         if not has_dangerous:
@@ -296,9 +295,9 @@ class ConnectMenu(SubMenu):
 
         dangerous = DANGEROUS_NO_CARE
         if (self._port_type == PORT_TYPE_AUDIO_JACK
-                and (self._port_mode == PORT_MODE_OUTPUT
+                and (self._port_mode == PortMode.OUTPUT
                      and self._is_alternate)
-                    or (self._port_mode == PORT_MODE_INPUT
+                    or (self._port_mode == PortMode.INPUT
                         and not self._is_alternate)):
             dangerous = DANGEROUS_NO
 
@@ -516,12 +515,12 @@ class ClipboardMenu(SubMenu):
             group_port_ids = []
 
             for connection in canvas.connection_list:
-                if self._port_mode == PORT_MODE_OUTPUT:
+                if self._port_mode == PortMode.OUTPUT:
                     if (connection.group_out_id == self._group_id
                             and connection.port_out_id == self_port_id):
                         group_port_ids.append((connection.group_in_id,
                                             connection.port_in_id))
-                elif self._port_mode == PORT_MODE_INPUT:
+                elif self._port_mode == PortMode.INPUT:
                     if (connection.group_in_id == self._group_id
                             and connection.port_in_id == self_port_id):
                         group_port_ids.append((connection.group_out_id,
@@ -683,10 +682,10 @@ class MainPortContextMenu(QMenu):
         self.connection_list.append(connection)
 
         for port in canvas.port_list:
-            if ((self._port_mode == PORT_MODE_OUTPUT
+            if ((self._port_mode == PortMode.OUTPUT
                         and port.group_id == connection.group_in_id
                         and port.port_id == connection.port_in_id)
-                    or (self._port_mode == PORT_MODE_INPUT
+                    or (self._port_mode == PortMode.INPUT
                         and port.group_id == connection.group_out_id
                         and port.port_id == connection.port_out_id)):
                 group_id = port.group_id
@@ -732,10 +731,10 @@ class MainPortContextMenu(QMenu):
         for connection in self.connection_list:
             if connection.connection_id == connection_id:
                 for port in canvas.port_list:
-                    if ((self._port_mode == PORT_MODE_OUTPUT
+                    if ((self._port_mode == PortMode.OUTPUT
                             and port.group_id == connection.group_in_id
                             and port.port_id == connection.port_in_id)
-                        or (self._port_mode == PORT_MODE_INPUT
+                        or (self._port_mode == PortMode.INPUT
                             and port.group_id == connection.group_out_id
                             and port.port_id == connection.port_out_id)):
                         group_id = port.group_id

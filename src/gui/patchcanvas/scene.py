@@ -43,8 +43,7 @@ from .init_values import (
     ACTION_BG_RIGHT_CLICK,
     ACTION_DOUBLE_CLICK,
     MAX_PLUGIN_ID_ALLOWED,
-    PORT_MODE_INPUT,
-    PORT_MODE_OUTPUT,
+    PortMode,
     DIRECTION_NONE,
     DIRECTION_LEFT,
     DIRECTION_RIGHT,
@@ -312,16 +311,16 @@ class PatchScene(QGraphicsScene):
                 spacing = box_spacing
 
                 if direction == DIRECTION_LEFT:
-                    if (fixed_port_mode & PORT_MODE_INPUT
-                            or moving_port_mode & PORT_MODE_OUTPUT):
+                    if (fixed_port_mode & PortMode.INPUT
+                            or moving_port_mode & PortMode.OUTPUT):
                         spacing = box_spacing_hor
                     x = fixed_rect.left() - spacing - rect.width()
                     if x < 0:
                         x -= 1.0
                     x = float(int(x))
                 else:
-                    if (fixed_port_mode & PORT_MODE_OUTPUT
-                            or moving_port_mode & PORT_MODE_INPUT):
+                    if (fixed_port_mode & PortMode.OUTPUT
+                            or moving_port_mode & PortMode.INPUT):
                         spacing = box_spacing_hor
                     x = fixed_rect.right() + spacing
                     if x < 0:
@@ -363,12 +362,12 @@ class PatchScene(QGraphicsScene):
                 repulser_port_mode: int, rect_port_mode: int)->bool:
             left_spacing = right_spacing = box_spacing
             
-            if (repulser_port_mode & PORT_MODE_INPUT
-                    or rect_port_mode & PORT_MODE_OUTPUT):
+            if (repulser_port_mode & PortMode.INPUT
+                    or rect_port_mode & PortMode.OUTPUT):
                 left_spacing = box_spacing_hor
             
-            if (repulser_port_mode & PORT_MODE_OUTPUT
-                    or rect_port_mode & PORT_MODE_INPUT):
+            if (repulser_port_mode & PortMode.OUTPUT
+                    or rect_port_mode & PortMode.INPUT):
                 right_spacing = box_spacing_hor
             
             large_repulser_rect = repulser_rect.adjusted(

@@ -70,13 +70,11 @@ from .init_values import (
     PortObject,
     PortgrpObject,
     ConnectionObject,
-    port_mode2str,
     port_type2str,
     bool2str,
     icon2str,
     split2str,
-    PORT_MODE_INPUT,
-    PORT_MODE_OUTPUT,
+    PortMode,
     SPLIT_UNDEF,
     SPLIT_NO,
     SPLIT_YES,
@@ -321,7 +319,7 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
     group_dict.widgets.append(None)
 
     if split == SPLIT_YES:
-        group_box.set_split(True, PORT_MODE_OUTPUT)
+        group_box.set_split(True, PortMode.OUTPUT)
 
         if features.handle_group_pos:
             new_pos = _get_stored_canvas_position(
@@ -334,7 +332,7 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
                 group_box.setPos(group_dict.out_pos)
 
         group_sbox = CanvasBox(group_id, group_name, icon_type, icon_name)
-        group_sbox.set_split(True, PORT_MODE_INPUT)
+        group_sbox.set_split(True, PortMode.INPUT)
 
         group_dict.widgets[1] = group_sbox
 
@@ -373,10 +371,10 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
     if split_animated:
         for box in group_dict.widgets:
             if box is not None:
-                if box.get_splitted_mode() == PORT_MODE_OUTPUT:
+                if box.get_splitted_mode() == PortMode.OUTPUT:
                     canvas.scene.add_box_to_animation(
                         box, group_dict.out_pos.x(), group_dict.out_pos.y())
-                elif box.get_splitted_mode() == PORT_MODE_INPUT:
+                elif box.get_splitted_mode() == PortMode.INPUT:
                     canvas.scene.add_box_to_animation(
                         box, group_dict.in_pos.x(), group_dict.in_pos.y())
 
@@ -812,12 +810,12 @@ def move_group_boxes(group_id: int, null_xy: tuple,
     group.out_pos = QPoint(*out_xy)
 
     if group.split:
-        for port_mode in (PORT_MODE_OUTPUT, PORT_MODE_INPUT):
+        for port_mode in (PortMode.OUTPUT, PortMode.INPUT):
             box = group.widgets[0]
             xy = out_xy
             pos = group.out_pos
 
-            if port_mode == PORT_MODE_INPUT:
+            if port_mode == PortMode.INPUT:
                 box = group.widgets[1]
                 xy = in_xy
                 pos = group.in_pos
@@ -867,20 +865,20 @@ def set_group_layout_mode(group_id: int, port_mode: int, layout_mode: int):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def get_group_pos(group_id, port_mode=PORT_MODE_OUTPUT):
+def get_group_pos(group_id, port_mode=PortMode.OUTPUT):
     # Not used now
     if canvas.debug:
         warning_print(
             "get_group_pos(%i, %s)"
-            % (group_id, port_mode2str(port_mode)))
+            % (group_id, port_mode.name))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
-            return group.widgets[1 if (group.split and port_mode == PORT_MODE_INPUT) else 0].pos()
+            return group.widgets[1 if (group.split and port_mode == PortMode.INPUT) else 0].pos()
 
     warning_print(
         "get_group_pos(%i, %s) - unable to find group"
-        % (group_id, port_mode2str(port_mode)))
+        % (group_id, port_mode.name))
     return QPointF(0, 0)
 
 def restore_group_positions(dataList):
@@ -980,7 +978,7 @@ def add_port(group_id: int, port_id: int, port_name: str,
     if canvas.debug:
         print("PatchCanvas::add_port(%i, %i, %s, %s, %s, %s)"
               % (group_id, port_id, port_name.encode(),
-                 port_mode2str(port_mode),
+                 port_mode.name,
                  port_type2str(port_type), bool2str(is_alternate)))
 
     for port in canvas.port_list:
@@ -988,7 +986,7 @@ def add_port(group_id: int, port_id: int, port_name: str,
             sys.stderr.write(
                 "PatchCanvas::add_port(%i, %i, %s, %s, %s) - port already exists\n"
                 % (group_id, port_id, port_name,
-                   port_mode2str(port_mode), port_type2str(port_type)))
+                   port_mode.name, port_type2str(port_type)))
             return
     
     box_widget = None
@@ -1012,7 +1010,7 @@ def add_port(group_id: int, port_id: int, port_name: str,
         qCritical(
             "PatchCanvas::add_port(%i, %i, %s, %s, %s) - Unable to find parent group"
             % (group_id, port_id, port_name.encode(),
-               port_mode2str(port_mode), port_type2str(port_type)))
+               port_mode.name, port_type2str(port_type)))
         return
 
     port_dict = PortObject()

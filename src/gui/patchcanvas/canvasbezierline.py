@@ -31,7 +31,7 @@ from .init_values import (
     options,
     CanvasBezierLineType,
     ACTION_PORTS_DISCONNECT,
-    PORT_MODE_OUTPUT,
+    PortMode,
     PORT_TYPE_AUDIO_JACK,
     PORT_TYPE_MIDI_JACK,
 )
