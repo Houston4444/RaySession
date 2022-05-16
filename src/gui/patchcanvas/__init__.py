@@ -125,7 +125,7 @@ CanvasRubberbandType = QGraphicsItem.UserType + 7
 # ------------------------------------------------------------------------------------------------------------
 
 # Canvas options
-class options_t:
+class CanvasOptionsObject:
     theme_name: str
     auto_hide_groups: bool
     auto_select_items: bool
@@ -136,7 +136,7 @@ class options_t:
     max_port_width: int
 
 # Canvas features
-class features_t:
+class CanvasFeaturesObject:
     group_info: bool
     group_rename: bool
     port_info: bool
@@ -155,10 +155,10 @@ class Canvas(object):
         self.theme_paths = ()
         self.theme_manager = None
 
-        self.group_list = list[group_dict_t]()
-        self.port_list = list[port_dict_t]()
-        self.portgrp_list = list[portgrp_dict_t]()
-        self.connection_list = list[connection_dict_t]()
+        self.group_list = list[GroupObject]()
+        self.port_list = list[PortObject]()
+        self.portgrp_list = list[PortgrpObject]()
+        self.connection_list = list[ConnectionObject]()
         self.animation_list = []
         self.clipboard = []
         self.clipboard_cut = True
@@ -189,7 +189,7 @@ class Canvas(object):
 # ------------------------------------------------------------------------------------------------------------
 
 # object lists            
-class group_dict_t:
+class GroupObject:
     group_id: int
     group_name: str
     split: int
@@ -208,7 +208,8 @@ class group_dict_t:
     if TYPE_CHECKING:
         widgets: list[CanvasBox]
 
-class port_dict_t:
+
+class PortObject:
     group_id: int
     port_id: int
     port_name: str
@@ -221,7 +222,7 @@ class port_dict_t:
         widget: CanvasPort
 
 
-class portgrp_dict_t:
+class PortgrpObject:
     portgrp_id: int
     group_id: int
     port_mode: int
@@ -232,7 +233,7 @@ class portgrp_dict_t:
         widget: CanvasPortGroup
 
 
-class connection_dict_t:
+class ConnectionObject:
     connection_id: int
     group_in_id: int
     port_in_id: int
@@ -243,7 +244,7 @@ class connection_dict_t:
         widget: CanvasBezierLine
 
 
-class clipboard_element_dict_t:
+class ClipboardElement:
     port_type: int
     port_mode: int
     group_id: int
@@ -312,7 +313,7 @@ def split2str(split):
 # Global objects
 canvas = Canvas()
 
-options = options_t()
+options = CanvasOptionsObject()
 options.theme_name = ''
 options.auto_hide_groups = False
 options.auto_select_items = False
@@ -322,7 +323,7 @@ options.elastic = True
 options.prevent_overlap = True
 options.max_port_width = 160
 
-features = features_t()
+features = CanvasFeaturesObject()
 features.group_info = False
 features.group_rename = False
 features.port_info = False
@@ -330,16 +331,16 @@ features.port_rename = False
 features.handle_group_pos = False
 
 # PatchCanvas API
-def get_options_t():
-    return options_t()
+def get_options_object():
+    return CanvasOptionsObject()
 
-def get_features_t():
-    return features_t()
+def get_features_object():
+    return CanvasFeaturesObject()
 
-def set_options(new_options: options_t):
+def set_options(new_options: CanvasOptionsObject):
     if not canvas.initiated:
         options.__dict__ = new_options.__dict__.copy()
 
-def set_features(new_features: features_t):
+def set_features(new_features: CanvasFeaturesObject):
     if not canvas.initiated:
         features.__dict__ = new_features.__dict__.copy()

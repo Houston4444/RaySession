@@ -34,7 +34,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 from . import (
     canvas,
-    connection_dict_t,
+    ConnectionObject,
     features,
     options,
     port_mode2str,
@@ -104,7 +104,7 @@ class CanvasPort(QGraphicsItem):
         self._line_mov_list = list[CanvasBezierLineMov]()
         self._last_rclick_item = None
         self._r_click_time = 0
-        self._dotcon_list = list[connection_dict_t]()
+        self._dotcon_list = list[ConnectionObject]()
         self._hover_item = None
         self._mouse_down = False
         self._cursor_moving = False

@@ -471,7 +471,7 @@ class MainWindow(QMainWindow):
         self.ui.splitterSessionVsMessages.setSizes(sizes)
 
     def _setup_canvas(self):
-        options = patchcanvas.get_options_t()
+        options = patchcanvas.get_options_object()
         options.theme_name = RS.settings.value(
             'Canvas/theme', 'Black Gold', type=str)
         options.eyecandy = patchcanvas.EYECANDY_NONE
@@ -487,7 +487,7 @@ class MainWindow(QMainWindow):
         options.max_port_width = RS.settings.value(
             'Canvas/max_port_width', 160, type=int)
 
-        features = patchcanvas.get_features_t()
+        features = patchcanvas.get_features_object()
         features.group_info = False
         features.group_rename = False
         features.port_info = True

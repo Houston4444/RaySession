@@ -24,13 +24,13 @@ import patchcanvas.utils as utils
 
 from . import (
     canvas,
-    clipboard_element_dict_t,
+    ClipboardElement,
     ACTION_PORTS_DISCONNECT,
     PORT_TYPE_AUDIO_JACK,
     PORT_TYPE_MIDI_JACK,
     PORT_MODE_OUTPUT,
     PORT_MODE_INPUT,
-    connection_dict_t)
+    ConnectionObject)
 
 
 _translate = QCoreApplication.translate
@@ -527,7 +527,7 @@ class ClipboardMenu(SubMenu):
                         group_port_ids.append((connection.group_out_id,
                                             connection.port_out_id))
 
-            element = clipboard_element_dict_t()
+            element = ClipboardElement()
             element.group_id = self._group_id
             element.port_id = self_port_id
             element.port_type = self._port_type
@@ -629,7 +629,7 @@ class MainPortContextMenu(QMenu):
         PortData.__init__(self, group_id, port_id, port_type,
                           port_mode, portgrp_id, is_alternate)
 
-        self.connection_list = list[connection_dict_t]()
+        self.connection_list = list[ConnectionObject]()
 
         canvas.qobject.connection_added.connect(
             self.connection_added_to_canvas)

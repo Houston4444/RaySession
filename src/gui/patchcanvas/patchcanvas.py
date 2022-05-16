@@ -239,7 +239,7 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
 
     group_box = CanvasBox(group_id, group_name, icon_type, icon_name)
     
-    group_dict = group_dict_t()
+    group_dict = GroupObject()
     group_dict.group_id = group_id
     group_dict.group_name = group_name
     group_dict.split = bool(split == SPLIT_YES)
@@ -398,9 +398,9 @@ def split_group(group_id, on_place=False):
     plugin_inline = False
     handle_client_gui = False
     gui_visible = False
-    ports_data = list[port_dict_t]()
-    portgrps_data = list[portgrp_dict_t]()
-    conns_data = list[connection_dict_t]()
+    ports_data = list[PortObject]()
+    portgrps_data = list[PortgrpObject]()
+    conns_data = list[ConnectionObject]()
 
     # Step 1 - Store all Item data
     for group in canvas.group_list:
@@ -440,7 +440,7 @@ def split_group(group_id, on_place=False):
 
     for portgrp in canvas.portgrp_list:
         if portgrp.group_id == group_id:
-            portgrp_dict = portgrp_dict_t()
+            portgrp_dict = PortgrpObject()
             portgrp_dict.group_id = portgrp.group_id
             portgrp_dict.portgrp_id = portgrp.portgrp_id
             portgrp_dict.port_type = portgrp.port_type
@@ -451,7 +451,7 @@ def split_group(group_id, on_place=False):
 
     for port in canvas.port_list:
         if port.group_id == group_id:
-            port_dict = port_dict_t()
+            port_dict = PortObject()
             port_dict.group_id = port.group_id
             port_dict.port_id = port.port_id
             port_dict.port_name = port.port_name
@@ -465,7 +465,7 @@ def split_group(group_id, on_place=False):
     for connection in canvas.connection_list:
         if (connection.group_out_id == group_id
                 or connection.group_in_id == group_id):
-            connection_dict = connection_dict_t()
+            connection_dict = ConnectionObject()
             connection_dict.connection_id = connection.connection_id
             connection_dict.group_in_id = connection.group_in_id
             connection_dict.port_in_id = connection.port_in_id
@@ -581,7 +581,7 @@ def join_group(group_id):
 
     for portgrp in canvas.portgrp_list:
         if portgrp.group_id == group_id:
-            portgrp_dict = portgrp_dict_t()
+            portgrp_dict = PortgrpObject()
             portgrp_dict.group_id = portgrp.group_id
             portgrp_dict.portgrp_id = portgrp.portgrp_id
             portgrp_dict.port_type = portgrp.port_type
@@ -592,7 +592,7 @@ def join_group(group_id):
 
     for port in canvas.port_list:
         if port.group_id == group_id:
-            port_dict = port_dict_t()
+            port_dict = PortObject()
             port_dict.group_id = port.group_id
             port_dict.port_id = port.port_id
             port_dict.port_name = port.port_name
@@ -606,7 +606,7 @@ def join_group(group_id):
     for connection in canvas.connection_list:
         if (connection.group_out_id == group_id
                 or connection.group_in_id == group_id):
-            connection_dict = connection_dict_t()
+            connection_dict = ConnectionObject()
             connection_dict.connection_id = connection.connection_id
             connection_dict.group_in_id = connection.group_in_id
             connection_dict.port_in_id = connection.port_in_id
@@ -954,7 +954,7 @@ def add_port(group_id: int, port_id: int, port_name: str,
                port_mode2str(port_mode), port_type2str(port_type)))
         return
 
-    port_dict = port_dict_t()
+    port_dict = PortObject()
     port_dict.group_id = group_id
     port_dict.port_id = port_id
     port_dict.port_name = port_name
@@ -1041,7 +1041,7 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: int, port_type: int
                      % (group_id, portgrp_id))
             return
     
-    portgrp_dict = portgrp_dict_t()
+    portgrp_dict = PortgrpObject()
     portgrp_dict.group_id = group_id
     portgrp_dict.portgrp_id = portgrp_id
     portgrp_dict.port_mode = port_mode
@@ -1183,7 +1183,7 @@ def connect_ports(connection_id, group_out_id, port_out_id,
             % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
         return
 
-    connection_dict = connection_dict_t()
+    connection_dict = ConnectionObject()
     connection_dict.connection_id = connection_id
     connection_dict.group_in_id = group_in_id
     connection_dict.port_in_id = port_in_id
