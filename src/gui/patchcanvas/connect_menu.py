@@ -26,8 +26,7 @@ from .init_values import (
     canvas,
     ClipboardElement,
     ACTION_PORTS_DISCONNECT,
-    PORT_TYPE_AUDIO_JACK,
-    PORT_TYPE_MIDI_JACK,
+    PortType,
     PortMode,
     ConnectionObject)
 
@@ -66,7 +65,7 @@ class PortCheckBox(QCheckBox):
         # sel_bg = canvas.theme.port_audio_jack_bg.name()
         # sel_text_color = canvas.theme.port_audio_jack_text.color().name()
 
-        # if port_type == PORT_TYPE_MIDI_JACK:
+        # if port_type == PortType.MIDI_JACK:
         #     border_color = canvas.theme.port_midi_jack_pen.color().name()
         #     sel_bg = canvas.theme.port_midi_jack_bg.name()
         #     sel_text_color = canvas.theme.port_midi_jack_text.color().name()
@@ -142,7 +141,7 @@ class ConnectGroupMenu(SubMenu):
 
     def add_element(self, port_id: int, portgrp_id: int,
                     port_name: str, is_alternate=False):
-        if self._port_type == PORT_TYPE_AUDIO_JACK and is_alternate:
+        if self._port_type == PortType.AUDIO_JACK and is_alternate:
             port_name = "CV| %s" % port_name
 
         check_box = PortCheckBox(port_id, portgrp_id, port_name,
@@ -239,7 +238,7 @@ class ConnectMenu(SubMenu):
 
         dangerous_name = ''
 
-        if self._port_type == PORT_TYPE_AUDIO_JACK:
+        if self._port_type == PortType.AUDIO_JACK:
             if (self._port_mode == PortMode.OUTPUT
                     and self._is_alternate):
                 dangerous_name = _translate(
@@ -264,7 +263,7 @@ class ConnectMenu(SubMenu):
                         and port.port_type == self._port_type
                         and port.port_mode != self._port_mode):
 
-                    if (self._port_type == PORT_TYPE_AUDIO_JACK
+                    if (self._port_type == PortType.AUDIO_JACK
                             and (self._port_mode == PortMode.OUTPUT
                                  and self._is_alternate
                                  and not port.is_alternate)
@@ -294,7 +293,7 @@ class ConnectMenu(SubMenu):
                 group_name = group_name.partition('/')[2]
 
         dangerous = DANGEROUS_NO_CARE
-        if (self._port_type == PORT_TYPE_AUDIO_JACK
+        if (self._port_type == PortType.AUDIO_JACK
                 and (self._port_mode == PortMode.OUTPUT
                      and self._is_alternate)
                     or (self._port_mode == PortMode.INPUT
@@ -611,7 +610,7 @@ class MainPortContextMenu(QMenu):
         # sel_bg = canvas.theme.port_audio_jack_bg.name()
         # sel_text_color = canvas.theme.port_audio_jack_text.color().name()
 
-        # if port_type == PORT_TYPE_MIDI_JACK:
+        # if port_type == PortType.MIDI_JACK:
         #     border_color = canvas.theme.port_midi_jack_pen.color().name()
         #     sel_bg = canvas.theme.port_midi_jack_bg.name()
         #     sel_text_color = canvas.theme.port_midi_jack_text.color().name()

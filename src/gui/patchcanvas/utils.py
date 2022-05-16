@@ -28,10 +28,13 @@ from PyQt5.QtGui import QIcon, QPalette
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from .init_values import (bool2str, canvas, CanvasBoxType,
-               ICON_APPLICATION, ICON_CLIENT, ICON_HARDWARE, ICON_INTERNAL,
-               PORT_MODE_NULL, PORT_MODE_INPUT, PORT_MODE_OUTPUT,
-               ACTION_PORTS_CONNECT, ACTION_PORTS_DISCONNECT)
+from .init_values import (
+    bool2str,
+    canvas,
+    CanvasBoxType,
+    ICON_APPLICATION, ICON_CLIENT, ICON_HARDWARE, ICON_INTERNAL,
+    PortMode,
+    ACTION_PORTS_CONNECT, ACTION_PORTS_DISCONNECT)
 
 # ------------------------------------------------------------------------------------------------------------
 

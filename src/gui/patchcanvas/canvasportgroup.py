@@ -32,11 +32,9 @@ from PyQt5.QtWidgets import QGraphicsItem, QApplication
 # Imports (Custom)
 import patchcanvas.utils as utils
 from .init_values import (
-    PORT_TYPE_MIDI_JACK,
     canvas,
     features,
     options,
-    port_type2str,
     CanvasPortType,
     CanvasPortGroupType,
     ACTION_PORTGROUP_REMOVE,
@@ -45,7 +43,7 @@ from .init_values import (
     ACTION_PORTS_CONNECT,
     ACTION_PORTS_DISCONNECT,
     PortMode,
-    PORT_TYPE_AUDIO_JACK,
+    PortType
 )
 
 from .canvasbezierlinemov import CanvasBezierLineMov
@@ -75,9 +73,9 @@ class CanvasPortGroup(QGraphicsItem):
         self._portgrp_height = canvas.theme.port_height
         
         theme = canvas.theme.portgroup
-        if self._port_type == PORT_TYPE_AUDIO_JACK:
+        if self._port_type == PortType.AUDIO_JACK:
             theme = theme.audio
-        elif self._port_type == PORT_TYPE_MIDI_JACK:
+        elif self._port_type == PortType.MIDI_JACK:
             theme == theme.midi
         
         self._theme = theme
@@ -119,7 +117,7 @@ class CanvasPortGroup(QGraphicsItem):
             if self._port_mode == other.get_port_mode():
                 return False
 
-        if self._port_type == PORT_TYPE_AUDIO_JACK:
+        if self._port_type == PortType.AUDIO_JACK:
             if other.get_port_mode() == self._port_mode:
                 return bool(self.is_alternate() == other.is_alternate())
             # absolutely forbidden to connect an output CV port
@@ -653,9 +651,9 @@ class CanvasPortGroup(QGraphicsItem):
 
         theme = canvas.theme.portgroup
         
-        if self._port_type == PORT_TYPE_AUDIO_JACK:
+        if self._port_type == PortType.AUDIO_JACK:
             theme = theme.audio
-        elif self._port_type == PORT_TYPE_MIDI_JACK:
+        elif self._port_type == PortType.MIDI_JACK:
             theme = theme.midi
             
         if self.isSelected():

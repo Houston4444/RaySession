@@ -27,6 +27,7 @@ from PyQt5.QtGui import QFontMetricsF, QFont
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 from .init_values import (
+    PortType,
     canvas,
     options,
     features,
@@ -70,7 +71,6 @@ from .init_values import (
     PortObject,
     PortgrpObject,
     ConnectionObject,
-    port_type2str,
     bool2str,
     icon2str,
     split2str,
@@ -250,14 +250,14 @@ def clear():
 
 # ------------------------------------------------------------------------------------------------------------
 
-def set_initial_pos(x, y):
+def set_initial_pos(x: int, y: int):
     if canvas.debug:
         warning_print("set_initial_pos(%i, %i)" % (x, y))
 
     canvas.initial_pos.setX(x)
     canvas.initial_pos.setY(y)
 
-def set_canvas_size(x, y, width, height):
+def set_canvas_size(x: int, y: int, width: int, height: int):
     if canvas.debug:
         warning_print("set_canvas_size(%i, %i, %i, %i)" % (x, y, width, height))
 
@@ -276,7 +276,7 @@ def set_loading_items(yesno: bool):
     or redraw_group once the long operation is finished'''
     canvas.loading_items = yesno
 
-def add_group(group_id, group_name, split=SPLIT_UNDEF,
+def add_group(group_id: int, group_name: str, split=SPLIT_UNDEF,
               icon_type=ICON_APPLICATION, icon_name='', layout_modes={},
               null_xy=(0, 0), in_xy=(0, 0), out_xy=(0, 0),
               split_animated=False):
@@ -380,7 +380,7 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def remove_group(group_id, save_positions=True):
+def remove_group(group_id: int, save_positions=True):
     if canvas.debug:
         warning_print("remove_group(%i)" % group_id)
 
@@ -422,7 +422,7 @@ def remove_group(group_id, save_positions=True):
 
     qCritical("PatchCanvas::remove_group(%i) - unable to find group to remove" % group_id)
 
-def rename_group(group_id, new_group_name):
+def rename_group(group_id: int, new_group_name: str):
     if canvas.debug:
         warning_print("rename_group(%i, %s)" % (group_id, new_group_name))
 
@@ -974,19 +974,19 @@ def set_group_as_plugin(group_id: int, plugin_id: int,
 # ------------------------------------------------------------------------------------------------------------
 
 def add_port(group_id: int, port_id: int, port_name: str,
-             port_mode: int, port_type: int, is_alternate=False):
+             port_mode: PortMode, port_type: PortType, is_alternate=False):
     if canvas.debug:
         print("PatchCanvas::add_port(%i, %i, %s, %s, %s, %s)"
               % (group_id, port_id, port_name.encode(),
                  port_mode.name,
-                 port_type2str(port_type), bool2str(is_alternate)))
+                 port_type.name, bool2str(is_alternate)))
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
             sys.stderr.write(
                 "PatchCanvas::add_port(%i, %i, %s, %s, %s) - port already exists\n"
                 % (group_id, port_id, port_name,
-                   port_mode.name, port_type2str(port_type)))
+                   port_mode.name, port_type.name))
             return
     
     box_widget = None
@@ -1010,7 +1010,7 @@ def add_port(group_id: int, port_id: int, port_name: str,
         qCritical(
             "PatchCanvas::add_port(%i, %i, %s, %s, %s) - Unable to find parent group"
             % (group_id, port_id, port_name.encode(),
-               port_mode.name, port_type2str(port_type)))
+               port_mode.name, port_type.name))
         return
 
     port_dict = PortObject()
@@ -1089,8 +1089,8 @@ def rename_port(group_id: int, port_id: int, new_port_name: str):
     qCritical("PatchCanvas::rename_port(%i, %i, %s) - Unable to find port to rename"
               % (group_id, port_id, new_port_name.encode()))
 
-def add_portgroup(group_id: int, portgrp_id: int, port_mode: int, port_type: int,
-                  port_id_list: list):
+def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
+                  port_type: PortType, port_id_list: list):
     if canvas.debug:
         print("PatchCanvas::add_portgroup(%i, %i)" % (group_id, portgrp_id))
 
@@ -1209,14 +1209,11 @@ def remove_portgroup(group_id: int, portgrp_id: int):
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def connect_ports(connection_id, group_out_id, port_out_id,
-                  group_in_id, port_in_id):
+def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
+                  group_in_id: int, port_in_id: int):
     if canvas.debug:
         print("PatchCanvas::connect_ports(%i, %i, %i, %i, %i)"
               % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
-
-    time_dict = {}
-    start_time = time.time()
 
     port_out = None
     port_in = None
@@ -1232,9 +1229,7 @@ def connect_ports(connection_id, group_out_id, port_out_id,
             port_in = port.widget
             if port_in is not None:
                 port_in_parent = port_in.parentItem()
-    
-    time_dict['after_parse'] = time.time() - start_time
-    
+        
     # FIXME
     if not (port_out and port_in and port_out_parent and port_in_parent):
         qCritical(
@@ -1252,8 +1247,6 @@ def connect_ports(connection_id, group_out_id, port_out_id,
 
     canvas.scene.addItem(connection_dict.widget)
 
-    time_dict['after widget cr'] = time.time() - start_time
-
     port_out_parent.add_line_from_group(connection_dict.widget, connection_id)
     port_in_parent.add_line_from_group(connection_dict.widget, connection_id)
 
@@ -1267,12 +1260,6 @@ def connect_ports(connection_id, group_out_id, port_out_id,
     canvas.connection_list.append(connection_dict)
 
     canvas.qobject.connection_added.emit(connection_id)
-    
-    time_dict['enndeed'] = time.time() - start_time
-    
-    #if 'SamplesFX2DelayPre' in port_in_parent._group_name:
-        #for key, value in time_dict.items():
-            #print('  con', key, ':', value)
     
     if canvas.loading_items:
         return

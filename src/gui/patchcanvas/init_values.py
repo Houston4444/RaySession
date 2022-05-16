@@ -20,7 +20,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 from typing import TYPE_CHECKING
-from enum import IntFlag
+from enum import IntEnum, IntFlag
 
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtWidgets import QGraphicsItem
@@ -50,10 +50,13 @@ class PortMode(IntFlag):
     INPUT = 0x01
     OUTPUT = 0x02
 
-PORT_MODE_NULL = 0
-PORT_MODE_INPUT = 1
-PORT_MODE_OUTPUT = 2
-
+class PortType(IntEnum):
+    NULL = 0
+    AUDIO_JACK = 1
+    MIDI_JACK = 2
+    MIDI_ALSA = 3
+    PARAMETER = 4
+    
 # Port Type
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO_JACK = 1
@@ -218,7 +221,7 @@ class PortObject:
     port_id: int
     port_name: str
     port_mode: PortMode
-    port_type: int
+    port_type: PortType
     portgrp_id: int
     is_alternate: bool
     widget: object
@@ -230,7 +233,7 @@ class PortgrpObject:
     portgrp_id: int
     group_id: int
     port_mode: PortMode
-    port_type: int
+    port_type: PortType
     port_id_list: list[int]
     widget: object
     if TYPE_CHECKING:
@@ -249,7 +252,7 @@ class ConnectionObject:
 
 
 class ClipboardElement:
-    port_type: int
+    port_type: PortType
     port_mode: PortMode
     group_id: int
     port_id: int
@@ -261,30 +264,6 @@ class ClipboardElement:
 # Internal functions
 def bool2str(check: bool) -> str:
     return str(bool(check))
-
-def port_mode2str(port_mode):
-    if port_mode == PORT_MODE_NULL:
-        return "PORT_MODE_NULL"
-    elif port_mode == PORT_MODE_INPUT:
-        return "PORT_MODE_INPUT"
-    elif port_mode == PORT_MODE_OUTPUT:
-        return "PORT_MODE_OUTPUT"
-    else:
-        return "PORT_MODE_???"
-
-def port_type2str(port_type):
-    if port_type == PORT_TYPE_NULL:
-        return "PORT_TYPE_NULL"
-    elif port_type == PORT_TYPE_AUDIO_JACK:
-        return "PORT_TYPE_AUDIO_JACK"
-    elif port_type == PORT_TYPE_MIDI_JACK:
-        return "PORT_TYPE_MIDI_JACK"
-    elif port_type == PORT_TYPE_MIDI_ALSA:
-        return "PORT_TYPE_MIDI_ALSA"
-    elif port_type == PORT_TYPE_PARAMETER:
-        return "PORT_TYPE_MIDI_PARAMETER"
-    else:
-        return "PORT_TYPE_???"
 
 def icon2str(icon):
     if icon == ICON_APPLICATION:

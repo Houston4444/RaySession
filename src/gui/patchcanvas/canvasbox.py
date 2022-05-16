@@ -18,11 +18,7 @@ from .init_values import (
     canvas,
     options,
     PortMode,
-    PORT_TYPE_NULL,
-    PORT_TYPE_AUDIO_JACK,
-    PORT_TYPE_MIDI_ALSA,
-    PORT_TYPE_MIDI_JACK,
-    PORT_TYPE_PARAMETER,
+    PortType,
     ICON_CLIENT,
 )
 import patchcanvas.utils as utils
@@ -164,8 +160,8 @@ class CanvasBox(CanvasBoxAbstract):
         port_spacing = box_theme.port_spacing()
         port_offset = box_theme.port_offset()
         port_type_spacing = box_theme.port_type_spacing()
-        last_in_type_alter = (PORT_TYPE_NULL, False)
-        last_out_type_alter = (PORT_TYPE_NULL, False)
+        last_in_type_alter = (PortType.NULL, False)
+        last_out_type_alter = (PortType.NULL, False)
         last_port_mode = PortMode.NULL
         
         for port_type in port_types:
@@ -221,7 +217,7 @@ class CanvasBox(CanvasBoxAbstract):
                     if port.port_mode == PortMode.INPUT:
                         max_in_width = max(max_in_width, size)
                         if type_alter != last_in_type_alter:
-                            if last_in_type_alter != (PORT_TYPE_NULL, False):
+                            if last_in_type_alter != (PortType.NULL, False):
                                 last_in_pos += port_type_spacing
                             last_in_type_alter = type_alter
 
@@ -233,7 +229,7 @@ class CanvasBox(CanvasBoxAbstract):
                         max_out_width = max(max_out_width, size)
                         
                         if type_alter != last_out_type_alter:
-                            if last_out_type_alter != (PORT_TYPE_NULL, False):
+                            if last_out_type_alter != (PortType.NULL, False):
                                 last_out_pos += port_type_spacing
                             last_out_type_alter = type_alter
                         
@@ -254,7 +250,7 @@ class CanvasBox(CanvasBoxAbstract):
         
         # calculates height in case of one column only
         last_inout_pos = 0
-        last_type_alter = (PORT_TYPE_NULL, False)
+        last_type_alter = (PortType.NULL, False)
         
         if self._current_port_mode == PortMode.OUTPUT | PortMode.INPUT:
             for port_type in port_types:
@@ -265,7 +261,7 @@ class CanvasBox(CanvasBoxAbstract):
                             continue
                         
                         if (port.port_type, port.is_alternate) != last_type_alter:
-                            if last_type_alter != (PORT_TYPE_NULL, False):
+                            if last_type_alter != (PortType.NULL, False):
                                 last_inout_pos += port_type_spacing
                             last_type_alter = (port.port_type, port.is_alternate)
                         
@@ -309,9 +305,9 @@ class CanvasBox(CanvasBoxAbstract):
         box_theme = self.get_theme()
         port_spacing = box_theme.port_spacing()
         port_type_spacing = box_theme.port_type_spacing()
-        last_in_type_alter = (PORT_TYPE_NULL, False)
-        last_out_type_alter = (PORT_TYPE_NULL, False)
-        last_type_alter = (PORT_TYPE_NULL, False)
+        last_in_type_alter = (PortType.NULL, False)
+        last_out_type_alter = (PortType.NULL, False)
+        last_type_alter = (PortType.NULL, False)
         input_segments = []
         output_segments = []
         in_segment = [last_in_pos, last_in_pos]
@@ -336,14 +332,14 @@ class CanvasBox(CanvasBoxAbstract):
                     type_alter = (port.port_type, port.is_alternate)
                     if one_column:
                         if type_alter != last_type_alter:
-                            if last_type_alter != (PORT_TYPE_NULL, False):
+                            if last_type_alter != (PortType.NULL, False):
                                 last_in_pos += port_type_spacing
                                 last_out_pos += port_type_spacing
                             last_type_alter = type_alter
                     
                     if port.port_mode == PortMode.INPUT:
                         if not one_column and type_alter != last_in_type_alter:
-                            if last_in_type_alter != (PORT_TYPE_NULL, False):
+                            if last_in_type_alter != (PortType.NULL, False):
                                 last_in_pos += port_type_spacing
                             last_in_type_alter = type_alter
                         
@@ -382,7 +378,7 @@ class CanvasBox(CanvasBoxAbstract):
 
                     elif port.port_mode == PortMode.OUTPUT:
                         if not one_column and type_alter != last_out_type_alter:
-                            if last_out_type_alter != (PORT_TYPE_NULL, False):
+                            if last_out_type_alter != (PortType.NULL, False):
                                 last_out_pos += port_type_spacing
                             last_out_type_alter = type_alter
 
@@ -1111,8 +1107,8 @@ class CanvasBox(CanvasBoxAbstract):
                     and self._current_port_mode & portgrp.port_mode):
                 self._portgrp_list.append(portgrp)
 
-        port_types = [PORT_TYPE_AUDIO_JACK, PORT_TYPE_MIDI_JACK,
-                      PORT_TYPE_MIDI_ALSA, PORT_TYPE_PARAMETER]
+        port_types = [PortType.AUDIO_JACK, PortType.MIDI_JACK,
+                      PortType.MIDI_ALSA, PortType.PARAMETER]
     
         align_port_types = self._should_align_port_types(port_types)
 

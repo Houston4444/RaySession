@@ -22,3 +22,5 @@ ajustements anti-superposition (après join/split, emballer/déballer remonte to
 utiliser un logger nottament pour les chargements de thème
 utiliser Path pour le chargement du thème
 Commenter plus
+enlever les qcritical -> logger
+changer les appels de méthode avec les énumérables (PortMode, PortType...)

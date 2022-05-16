@@ -42,9 +42,7 @@ from .init_values import (
     ICON_LADISH_ROOM,
     ICON_CLIENT,
     ICON_INTERNAL,
-    PORT_MODE_NULL,
-    PORT_MODE_INPUT,
-    PORT_MODE_OUTPUT
+    PortMode
 )
 
 APP_ICONS_CACHE = {}
@@ -93,7 +91,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         if icon_type in (ICON_CLIENT, ICON_APPLICATION):
             self.set_icon(icon_type, icon_name)
 
-    def set_icon(self, icon, name, port_mode=PORT_MODE_NULL):
+    def set_icon(self, icon, name, port_mode=PortMode.NULL):
         self.icon = get_app_icon(name)
         if not self.icon.isNull():
             pixmap = self.icon.pixmap(24, 24)
@@ -168,9 +166,9 @@ class CanvasSvgIcon(QGraphicsSvgItem):
                 icon_path = theme.hardware_midi
                 self._size = QRectF(4, 4, 24, 24)
             else:
-                if port_mode == PORT_MODE_INPUT:
+                if port_mode == PortMode.INPUT:
                     icon_path = theme.hardware_playback
-                elif port_mode == PORT_MODE_OUTPUT:
+                elif port_mode == PortMode.OUTPUT:
                     icon_path = theme.hardware_capture
                 else:
                     icon_path = theme.hardware_grouped

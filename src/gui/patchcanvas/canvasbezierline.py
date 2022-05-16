@@ -32,8 +32,7 @@ from .init_values import (
     CanvasBezierLineType,
     ACTION_PORTS_DISCONNECT,
     PortMode,
-    PORT_TYPE_AUDIO_JACK,
-    PORT_TYPE_MIDI_JACK,
+    PortType
 )
 
 # ------------------------------------------------------------------------------------------------------------
@@ -130,9 +129,9 @@ class CanvasBezierLine(QGraphicsPathItem):
         if self.ready_to_disc:
             theme = theme.disconnecting
         else:
-            if port_type1 == PORT_TYPE_AUDIO_JACK:
+            if port_type1 == PortType.AUDIO_JACK:
                 theme = theme.audio
-            elif port_type1 == PORT_TYPE_MIDI_JACK:
+            elif port_type1 == PortType.MIDI_JACK:
                 theme = theme.midi
 
             if self._line_selected:

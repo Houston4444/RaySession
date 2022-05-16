@@ -37,7 +37,6 @@ from .init_values import (
     ConnectionObject,
     features,
     options,
-    port_type2str,
     CanvasPortType,
     CanvasPortGroupType,
     ACTION_PORTGROUP_ADD,
@@ -46,10 +45,7 @@ from .init_values import (
     ACTION_PORTS_CONNECT,
     ACTION_PORTS_DISCONNECT,
     PortMode,
-    PORT_TYPE_AUDIO_JACK,
-    PORT_TYPE_MIDI_ALSA,
-    PORT_TYPE_MIDI_JACK,
-    PORT_TYPE_PARAMETER,
+    PortType
 )
 
 import patchcanvas.utils as utils
@@ -87,12 +83,12 @@ class CanvasPort(QGraphicsItem):
         self._port_height = canvas.theme.port_height
 
         theme = canvas.theme.port
-        if self._port_type == PORT_TYPE_AUDIO_JACK:
+        if self._port_type == PortType.AUDIO_JACK:
             if self._is_alternate:
                 theme = theme.cv
             else:
                 theme = theme.audio
-        elif self._port_type == PORT_TYPE_MIDI_JACK:
+        elif self._port_type == PortType.MIDI_JACK:
             theme = theme.midi
         
         self._theme = theme
@@ -137,7 +133,7 @@ class CanvasPort(QGraphicsItem):
             if self._port_mode == other.get_port_mode():
                 return False
 
-        if self._port_type == PORT_TYPE_AUDIO_JACK:
+        if self._port_type == PortType.AUDIO_JACK:
             if other.get_port_mode() == self._port_mode:
                 return bool(self.is_alternate() == other.is_alternate())
             # absolutely forbidden to connect an output CV port
@@ -602,7 +598,7 @@ class CanvasPort(QGraphicsItem):
 
         act_x_sep_1 = menu.addSeparator()
 
-        if (self._port_type == PORT_TYPE_AUDIO_JACK
+        if (self._port_type == PortType.AUDIO_JACK
                 and not self._is_alternate
                 and not self._portgrp_id):
             StereoMenu = QMenu(_translate('patchbay', "Set as Stereo with"), menu)
@@ -611,7 +607,7 @@ class CanvasPort(QGraphicsItem):
             # get list of available mono ports settables as stereo with port
             port_cousin_list = []
             for port in canvas.port_list:
-                if (port.port_type == PORT_TYPE_AUDIO_JACK
+                if (port.port_type == PortType.AUDIO_JACK
                         and port.group_id == self._group_id
                         and port.port_mode == self._port_mode
                         and not port.is_alternate):
@@ -692,12 +688,12 @@ class CanvasPort(QGraphicsItem):
     
         theme = canvas.theme.port
 
-        if self._port_type == PORT_TYPE_AUDIO_JACK:
+        if self._port_type == PortType.AUDIO_JACK:
             if self._is_alternate:
                 theme = theme.cv
             else:
                 theme = theme.audio
-        elif self._port_type == PORT_TYPE_MIDI_JACK:
+        elif self._port_type == PortType.MIDI_JACK:
             theme = theme.midi
         
         if self.isSelected():
@@ -722,7 +718,7 @@ class CanvasPort(QGraphicsItem):
         if poly_corner_xhinting == 0:
             poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
 
-        is_cv_port = bool(self._port_type == PORT_TYPE_AUDIO_JACK
+        is_cv_port = bool(self._port_type == PortType.AUDIO_JACK
                           and self._is_alternate)
 
         if self._port_mode == PortMode.INPUT:
