@@ -32,12 +32,13 @@ import patchcanvas.theme as theme
 
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
-from .theme import Theme
 from .theme_manager import ThemeManager
 from .theme_default import default_theme
 
 # FIXME
 from . import *
+
+# PatchScene is used by main_window in GUI 
 from .scene import PatchScene
 
 # ------------------------------------------------------------------------------------------------------------
@@ -100,7 +101,7 @@ def _get_stored_canvas_position(key, fallback_pos):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def init(app_name: str, scene, callback, theme_paths: tuple, debug=False):
+def init(app_name: str, scene: PatchScene, callback, theme_paths: tuple, debug=False):
     if debug:
         warning_print("init(\"%s\", %s, %s, %s)"
                       % (app_name, scene, callback, bool2str(debug)))
@@ -165,10 +166,10 @@ def clear():
     canvas.last_z_value = 0
     canvas.last_connection_id = 0
 
-    canvas.group_list = []
-    canvas.port_list = []
-    canvas.portgrp_list = []
-    canvas.connection_list = []
+    canvas.group_list.clear()
+    canvas.port_list.clear()
+    canvas.portgrp_list.clear()
+    canvas.connection_list.clear()
     canvas.group_plugin_map = {}
 
     canvas.scene.clearSelection()
@@ -220,9 +221,6 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
               icon_type=ICON_APPLICATION, icon_name='', layout_modes={},
               null_xy=(0, 0), in_xy=(0, 0), out_xy=(0, 0),
               split_animated=False):
-    time_dict = {}
-    start_time = time.time()
-    
     if canvas.debug:
         warning_print("add_group(%i, %s, %s, %s)" % (
               group_id, group_name, split2str(split), icon2str(icon_type)))
@@ -234,8 +232,6 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
                 % (group_id, group_name, split2str(split), icon2str(icon_type)))
             return
 
-    time_dict['after checks'] = time.time() - start_time
-
     if split == SPLIT_UNDEF:
         isHardware = bool(icon_type == ICON_HARDWARE)
         if isHardware:
@@ -243,8 +239,6 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
 
     group_box = CanvasBox(group_id, group_name, icon_type, icon_name)
     
-    time_dict['after box'] = time.time() - start_time
-
     group_dict = group_dict_t()
     group_dict.group_id = group_id
     group_dict.group_name = group_name
@@ -306,10 +300,7 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
 
 
     canvas.last_z_value += 1
-    group_box.setZValue(canvas.last_z_value)
-    
-    time_dict['after end'] = time.time() - start_time
-    
+    group_box.setZValue(canvas.last_z_value)    
     canvas.group_list.append(group_dict)
     
     if canvas.loading_items:
@@ -404,9 +395,9 @@ def split_group(group_id, on_place=False):
     plugin_inline = False
     handle_client_gui = False
     gui_visible = False
-    portgrps_data = []
-    ports_data = []
-    conns_data = []
+    ports_data = list[port_dict_t]()
+    portgrps_data = list[portgrp_dict_t]()
+    conns_data = list[connection_dict_t]()
 
     # Step 1 - Store all Item data
     for group in canvas.group_list:

@@ -58,7 +58,7 @@ class TitleLine:
     y = 0
     is_little = False
 
-    def __init__(self, text: str, theme, little=False):
+    def __init__(self, text: str, theme: Theme, little=False):
         self.theme = theme
         self.text = text
         self.is_little = little

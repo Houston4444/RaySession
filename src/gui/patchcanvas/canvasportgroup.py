@@ -112,7 +112,8 @@ class CanvasPortGroup(QGraphicsItem):
     def is_alternate(self):
         return False
 
-    def is_connectable_to(self, other, accept_same_port_mode=False)->bool:
+    def is_connectable_to(self, other: 'CanvasPortGroup',
+                          accept_same_port_mode=False)->bool:
         if self._port_type != other.get_port_type():
             return False
 

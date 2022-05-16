@@ -19,13 +19,21 @@
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
+from collections import namedtuple
+
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtWidgets import QGraphicsItem
 
+
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Theme)
 # ------------------------------------------------------------------------------------------------------------
+if TYPE_CHECKING:
+    from patchcanvas.theme import Theme
+    from patchcanvas.scene import PatchScene
+
 
 # Maximum Id for a plugin, treated as invalid/zero if above this value
 MAX_PLUGIN_ID_ALLOWED = 0x7FF
@@ -138,14 +146,15 @@ class Canvas(object):
         self.qobject = None
         self.settings = None
         self.theme = None
+        
         self.initiated = False
         self.theme_paths = ()
         self.theme_manager = None
 
-        self.group_list = []
-        self.port_list = []
-        self.portgrp_list = []
-        self.connection_list = []
+        self.group_list = list[group_dict_t]()
+        self.port_list = list[port_dict_t]()
+        self.portgrp_list = list[portgrp_dict_t]()
+        self.connection_list = list[connection_dict_t]()
         self.animation_list = []
         self.clipboard = []
         self.clipboard_cut = True
@@ -162,6 +171,12 @@ class Canvas(object):
         self.is_line_mov = False
         self.semi_hide_opacity = 0.17
         self.loading_items = False
+        
+        # This is only to get theme object methods in IDE
+        # everywhere.
+        if TYPE_CHECKING:
+            self.theme = Theme()
+            self.scene = PatchScene()
 
     def callback(self, action, value1, value2, value_str):
         print("Canvas::callback({}, {}, {}, {})".format(
@@ -199,14 +214,6 @@ class port_dict_t(object):
         'is_alternate',
         'widget']
 
-    def is_connectable_to(self, other)->bool:
-        if self.port_type != other.port_type:
-            return False
-
-        if self.port_mode == other.port_mode:
-            return False
-
-
 class portgrp_dict_t(object):
     __slots__ = [
         'portgrp_id',
@@ -216,6 +223,10 @@ class portgrp_dict_t(object):
         'port_id_list',
         'widget'
     ]
+
+PortTuple = namedtuple('PortTuple',
+    ('group_id', 'port_id', 'port_name', 'port_mode', 'port_type',
+     'portgrp_id', 'is_alternate', 'widget'))
 
 class connection_dict_t(object):
     __slots__ = [
