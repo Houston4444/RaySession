@@ -26,14 +26,19 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtWidgets import QGraphicsItem
 
-
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Theme)
 # ------------------------------------------------------------------------------------------------------------
 if TYPE_CHECKING:
+    # all these classes are not importable normally because
+    # it would make a circular import
+    # they are imported only to get types for IDE
     from patchcanvas.theme import Theme
     from patchcanvas.scene import PatchScene
     from patchcanvas.canvasbox import CanvasBox
+    from patchcanvas.canvasport import CanvasPort
+    from patchcanvas.canvasportgroup import CanvasPortGroup
+    from patchcanvas.canvasbezierline import CanvasBezierLine
 
 
 # Maximum Id for a plugin, treated as invalid/zero if above this value
@@ -120,25 +125,23 @@ CanvasRubberbandType = QGraphicsItem.UserType + 7
 # ------------------------------------------------------------------------------------------------------------
 
 # Canvas options
-class options_t(object):
-    __slots__ = [
-        'theme_name',
-        'auto_hide_groups',
-        'auto_select_items',
-        'eyecandy',
-        'inline_displays',
-        'elastic',
-        'prevent_overlap',
-        'max_port_width']
+class options_t:
+    theme_name: str
+    auto_hide_groups: bool
+    auto_select_items: bool
+    eyecandy: int
+    inline_displays: int
+    elastic: bool
+    prevent_overlap: bool
+    max_port_width: int
 
 # Canvas features
-class features_t(object):
-    __slots__ = [
-        'group_info',
-        'group_rename',
-        'port_info',
-        'port_rename',
-        'handle_group_pos']
+class features_t:
+    group_info: bool
+    group_rename: bool
+    port_info: bool
+    port_rename: bool
+    handle_group_pos: bool
 
 
 # Main Canvas object
@@ -185,84 +188,74 @@ class Canvas(object):
 
 # ------------------------------------------------------------------------------------------------------------
 
-# object lists
-class group_dict_t(object):
-    __slots__ = [
-        'group_id',
-        'group_name',
-        'split',
-        'icon_type',
-        'icon_name',
-        'layout_modes',
-        'plugin_id',
-        'plugin_ui',
-        'plugin_inline',
-        'null_pos',
-        'in_pos',
-        'out_pos',
-        'handle_client_gui',
-        'gui_visible',
-        'widgets']
-    
-    def __init__(self):
-        if TYPE_CHECKING:
-            self.widgets = list[CanvasBox]()
+# object lists            
+class group_dict_t:
+    group_id: int
+    group_name: str
+    split: int
+    icon_type: int
+    icon_name: str
+    layout_modes: int
+    plugin_id: int
+    plugin_ui: int # to verify
+    plugin_inline: int # to verify
+    null_pos: tuple
+    in_pos: tuple
+    out_pos: tuple
+    handle_client_gui: bool
+    gui_visible: bool
+    widgets: list
+    if TYPE_CHECKING:
+        widgets: list[CanvasBox]
 
-class port_dict_t(object):
-    __slots__ = [
-        'group_id',
-        'port_id',
-        'port_name',
-        'port_mode',
-        'port_type',
-        'portgrp_id',
-        'is_alternate',
-        'widget']
+class port_dict_t:
+    group_id: int
+    port_id: int
+    port_name: str
+    port_mode: int
+    port_type: int
+    portgrp_id: int
+    is_alternate: bool
+    widget: object
+    if TYPE_CHECKING:
+        widget: CanvasPort
 
-class portgrp_dict_t(object):
-    __slots__ = [
-        'portgrp_id',
-        'group_id',
-        'port_mode',
-        'port_type',
-        'port_id_list',
-        'widget'
-    ]
 
-PortTuple = namedtuple('PortTuple',
-    ('group_id', 'port_id', 'port_name', 'port_mode', 'port_type',
-     'portgrp_id', 'is_alternate', 'widget'))
+class portgrp_dict_t:
+    portgrp_id: int
+    group_id: int
+    port_mode: int
+    port_type: int
+    port_id_list: list[int]
+    widget: object
+    if TYPE_CHECKING:
+        widget: CanvasPortGroup
 
-class connection_dict_t(object):
-    __slots__ = [
-        'connection_id',
-        'group_in_id',
-        'port_in_id',
-        'group_out_id',
-        'port_out_id',
-        'widget'
-    ]
+
+class connection_dict_t:
+    connection_id: int
+    group_in_id: int
+    port_in_id: int
+    group_out_id: int
+    port_out_id: int
+    widget: object
+    if TYPE_CHECKING:
+        widget: CanvasBezierLine
+
 
 class clipboard_element_dict_t:
-    __slots__ = [
-        'port_type',
-        'port_mode',
-        'group_id',
-        'port_id',
-        'group_port_ids']
+    port_type: int
+    port_mode: int
+    group_id: int
+    port_id: int
+    group_port_ids: list[int]
 
-
-class animation_dict_t(object):
-    __slots__ = [
-        'animation',
-        'item'
-    ]
 
 # ------------------------------------------------------------------------------------------------------------
 
 # Internal functions
-def bool2str(check):
-    return "True" if check else "False"
+def bool2str(check: bool) -> str:
+    return str(bool(check))
 
 def port_mode2str(port_mode):
     if port_mode == PORT_MODE_NULL:
@@ -344,20 +337,9 @@ def get_features_t():
     return features_t()
 
 def set_options(new_options: options_t):
-    if canvas.initiated: return
-    options.theme_name = new_options.theme_name
-    options.auto_hide_groups = new_options.auto_hide_groups
-    options.auto_select_items = new_options.auto_select_items
-    options.eyecandy = new_options.eyecandy
-    options.inline_displays = new_options.inline_displays
-    options.elastic = new_options.elastic
-    options.prevent_overlap = new_options.prevent_overlap
-    options.max_port_width = new_options.max_port_width
+    if not canvas.initiated:
+        options.__dict__ = new_options.__dict__.copy()
 
 def set_features(new_features: features_t):
-    if canvas.initiated: return
-    features.group_info = new_features.group_info
-    features.group_rename = new_features.group_rename
-    features.port_info = new_features.port_info
-    features.port_rename = new_features.port_rename
-    features.handle_group_pos = new_features.handle_group_pos
+    if not canvas.initiated:
+        features.__dict__ = new_features.__dict__.copy()
