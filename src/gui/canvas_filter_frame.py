@@ -3,8 +3,7 @@ from PyQt5.QtWidgets import QFrame
 from PyQt5.QtCore import pyqtSignal, Qt
 
 from gui_tools import RS
-
-import patchbay_manager
+from patchcanvas import PortType
 
 import ui.filter_frame
 
@@ -97,9 +96,9 @@ class CanvasFilterFrame(QFrame):
         
         port_types_view = (
             int(self.ui.checkBoxAudioFilter.isChecked())
-                * patchbay_manager.PORT_TYPE_AUDIO
+                * PortType.AUDIO_JACK
             + int(self.ui.checkBoxMidiFilter.isChecked())
-                  * patchbay_manager.PORT_TYPE_MIDI)
+                  * PortType.MIDI_JACK)
         
         self.patchbay_manager.change_port_types_view(port_types_view)
         self._filter_groups()
@@ -118,9 +117,9 @@ class CanvasFilterFrame(QFrame):
     
     def _port_types_view_changed(self, port_types_view: int):
         self.ui.checkBoxAudioFilter.setChecked(
-            bool(port_types_view & patchbay_manager.PORT_TYPE_AUDIO))
+            bool(port_types_view & PortType.AUDIO_JACK))
         self.ui.checkBoxMidiFilter.setChecked(
-            bool(port_types_view & patchbay_manager.PORT_TYPE_MIDI))
+            bool(port_types_view & PortType.MIDI_JACK))
     
     def _set_semi_hide_opacity(self, value:int):
         if self.patchbay_manager is None:

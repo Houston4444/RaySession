@@ -263,7 +263,7 @@ class Portgroup:
     # Portgroup is a stereo pair of ports
     # but could be a group of more ports
     def __init__(self, group_id: int, portgroup_id: int,
-                 port_mode: int, ports: tuple):
+                 port_mode: int, ports: tuple[Port]):
         self.group_id = group_id
         self.portgroup_id = portgroup_id
         self.port_mode = port_mode
@@ -505,7 +505,7 @@ class Group:
         self.portgroups.clear()
         self.ports.clear()
 
-    def add_port(self, port):
+    def add_port(self, port: Port):
         port_full_name = port.full_name
 
         port.group_id = self.group_id
