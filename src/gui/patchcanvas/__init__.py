@@ -19,8 +19,6 @@
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
-from collections import namedtuple
-
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QPointF, QRectF
@@ -109,9 +107,7 @@ DIRECTION_RIGHT = 2
 DIRECTION_UP = 3
 DIRECTION_DOWN = 4
 
-# ------------------------------------------------------------------------------------------------------------
-
-
+# -----------------------------------
 
 # object types
 CanvasBoxType = QGraphicsItem.UserType + 1
@@ -122,7 +118,7 @@ CanvasBezierLineType = QGraphicsItem.UserType + 5
 CanvasBezierLineMovType = QGraphicsItem.UserType + 6
 CanvasRubberbandType = QGraphicsItem.UserType + 7
 
-# ------------------------------------------------------------------------------------------------------------
+# -----------------------------------
 
 # Canvas options
 class CanvasOptionsObject:
