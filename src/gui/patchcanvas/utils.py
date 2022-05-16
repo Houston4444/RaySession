@@ -348,14 +348,14 @@ def connection_concerns(connection, group_id: int, port_ids_list: list)->bool:
 
 def get_group_icon(group_id: int, port_mode: int):
     # port_mode is here reversed
-    group_port_mode = PORT_MODE_INPUT
-    if port_mode == PORT_MODE_INPUT:
-        group_port_mode = PORT_MODE_OUTPUT
+    group_port_mode = PortMode.INPUT
+    if port_mode == PortMode.INPUT:
+        group_port_mode = PortMode.OUTPUT
 
     for group in canvas.group_list:
         if group.group_id == group_id:
             if not group.split:
-                group_port_mode = PORT_MODE_NULL
+                group_port_mode = PortMode.NULL
 
             return get_icon(
                 group.icon_type, group.icon_name, group_port_mode)
@@ -384,9 +384,9 @@ def get_icon(icon_type: int, icon_name: str, port_mode: int):
 
         if icon_name == "a2j":
             icon_file = ":/scalable/DIN-5.svg"
-        elif port_mode == PORT_MODE_INPUT:
+        elif port_mode == PortMode.INPUT:
             icon_file = ":/scalable/audio-headphones.svg"
-        elif port_mode == PORT_MODE_OUTPUT:
+        elif port_mode == PortMode.OUTPUT:
             icon_file = ":/scalable/microphone.svg"
 
         icon.addFile(icon_file)
@@ -402,11 +402,11 @@ def connect_ports(group_id_1: int, port_id_1: int,
 
     for port in canvas.port_list:
         if port.group_id == group_id_1 and port.port_id == port_id_1:
-            if port.port_mode != PORT_MODE_OUTPUT:
+            if port.port_mode != PortMode.OUTPUT:
                 one_is_out = False
             break
         elif port.group_id == group_id_2 and port.port_id == port_id_2:
-            if port.port_mode == PORT_MODE_OUTPUT:
+            if port.port_mode == PortMode.OUTPUT:
                 one_is_out = False
             break
     else:
@@ -439,7 +439,7 @@ def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
     for port in canvas.port_list:
         if (port.group_id == group_id_1
                 and port.port_id in port_id_list_1):
-            if port.port_mode == PORT_MODE_OUTPUT:
+            if port.port_mode == PortMode.OUTPUT:
                 out_port_id_list = port_id_list_1
                 group_out_id = group_id_1
             else:
@@ -447,7 +447,7 @@ def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
                 group_in_id = group_id_1
         elif (port.group_id == group_id_2
                 and port.port_id in port_id_list_2):
-            if port.port_mode == PORT_MODE_OUTPUT:
+            if port.port_mode == PortMode.OUTPUT:
                 out_port_id_list = port_id_list_2
                 group_out_id = group_id_2
             else:
@@ -503,7 +503,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id_1
                 and portgrp.portgrp_id == portgrp_id_1):
-            if portgrp.port_mode == PORT_MODE_OUTPUT:
+            if portgrp.port_mode == PortMode.OUTPUT:
                 group_out_id = group_id_1
                 out_port_id_list = portgrp.port_id_list
             else:
@@ -512,7 +512,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
 
         elif (portgrp.group_id == group_id_2
                 and portgrp.portgrp_id == portgrp_id_2):
-            if portgrp.port_mode == PORT_MODE_OUTPUT:
+            if portgrp.port_mode == PortMode.OUTPUT:
                 group_out_id = group_id_2
                 out_port_id_list = portgrp.port_id_list
             else:
