@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QApplication
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 import patchcanvas.utils as utils
-from . import (
+from .init_values import (
     PORT_TYPE_MIDI_JACK,
     canvas,
     features,

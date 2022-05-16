@@ -34,7 +34,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication, QAction
 # Imports (Custom)
 
 
-from . import (
+from .init_values import (
     canvas,
     features,
     options,

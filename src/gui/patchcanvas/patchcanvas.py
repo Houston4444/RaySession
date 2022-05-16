@@ -24,19 +24,78 @@ import time
 from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
                           QPoint, QPointF, QRectF, QSettings, QTimer, pyqtSignal)
 from PyQt5.QtGui import QFontMetricsF, QFont
-
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
+from .init_values import (
+    canvas,
+    options,
+    features,
+    CanvasOptionsObject,
+    CanvasFeaturesObject,
+    ACTION_GROUP_INFO,
+    ACTION_GROUP_RENAME,
+    ACTION_GROUP_SPLIT,
+    ACTION_GROUP_JOIN,
+    ACTION_GROUP_JOINED,
+    ACTION_GROUP_MOVE,
+    ACTION_GROUP_WRAP,
+    ACTION_GROUP_LAYOUT_CHANGE,
+    ACTION_PORTGROUP_ADD,
+    ACTION_PORTGROUP_REMOVE,
+    ACTION_PORT_INFO,
+    ACTION_PORT_RENAME,
+    ACTION_PORTS_CONNECT,
+    ACTION_PORTS_DISCONNECT,
+    ACTION_PLUGIN_CLONE,
+    ACTION_PLUGIN_EDIT,
+    ACTION_PLUGIN_RENAME,
+    ACTION_PLUGIN_REPLACE,
+    ACTION_PLUGIN_REMOVE,
+    ACTION_PLUGIN_SHOW_UI,
+    ACTION_BG_RIGHT_CLICK,
+    ACTION_DOUBLE_CLICK,
+    ACTION_INLINE_DISPLAY,
+    ACTION_CLIENT_SHOW_GUI,
+    ACTION_THEME_CHANGED,
+    MAX_PLUGIN_ID_ALLOWED,
+    ACTION_PORTS_DISCONNECT,
+    ACTION_GROUP_JOINED,
+    ACTION_GROUP_INFO,
+    ACTION_GROUP_RENAME,
+    ACTION_GROUP_SPLIT,
+    ACTION_GROUP_JOIN,
+    ACTION_GROUP_MOVE,
+    ACTION_GROUP_WRAP,
+    GroupObject,
+    PortObject,
+    PortgrpObject,
+    ConnectionObject,
+    port_mode2str,
+    port_type2str,
+    bool2str,
+    icon2str,
+    split2str,
+    PORT_MODE_INPUT,
+    PORT_MODE_OUTPUT,
+    SPLIT_UNDEF,
+    SPLIT_NO,
+    SPLIT_YES,
+    ICON_HARDWARE,
+    ICON_APPLICATION,
+    ICON_INTERNAL,
+    EYECANDY_NONE,
+    CanvasIconType,
+    CanvasRubberbandType)
+
 import patchcanvas.utils as utils
 import patchcanvas.theme as theme
 
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
 from .theme_manager import ThemeManager
-from .theme_default import default_theme
 
-# FIXME
-from . import *
+# # FIXME
+# from . import *
 
 # PatchScene is used by main_window in GUI 
 from .scene import PatchScene
@@ -1463,4 +1522,19 @@ def save_cache():
     
 def init_font_metrics():
     canvas.theme.init_font_metrics()
+    
+# PatchCanvas API
+def get_options_object():
+    return CanvasOptionsObject()
+
+def get_features_object():
+    return CanvasFeaturesObject()
+
+def set_options(new_options: CanvasOptionsObject):
+    if not canvas.initiated:
+        options.__dict__ = new_options.__dict__.copy()
+
+def set_features(new_features: CanvasFeaturesObject):
+    if not canvas.initiated:
+        features.__dict__ = new_features.__dict__.copy()
 # ----------------------------------------------------------------------------

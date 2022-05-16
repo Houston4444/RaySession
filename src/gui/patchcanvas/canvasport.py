@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from . import (
+from .init_values import (
     canvas,
     ConnectionObject,
     features,

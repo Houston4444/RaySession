@@ -30,7 +30,7 @@ from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsPixmapItem
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from . import (
+from .init_values import (
     canvas,
     icon2str,
     CanvasIconType,

@@ -5,8 +5,7 @@ import shutil
 from PyQt5.QtCore import QTimer
 
 from .theme import print_error, Theme
-from .theme_default import default_theme
-from . import canvas, ACTION_THEME_CHANGED
+from .init_values import canvas, ACTION_THEME_CHANGED
 
 class ThemeManager:
     def __init__(self, theme_paths: tuple) -> None:

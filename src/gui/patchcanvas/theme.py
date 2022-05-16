@@ -8,12 +8,8 @@ import pickle
 from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF, QImage
 from PyQt5.QtCore import Qt, QTimer
 
-# from gui.patchcanvas import theme_default
-from . import canvas
-
 TITLE_TEMPLATES_CACHE = {}
 FONT_METRICS_CACHE = {}
-
 
 def print_error(string: str):
     sys.stderr.write("patchcanvas.theme::%s\n" % string)

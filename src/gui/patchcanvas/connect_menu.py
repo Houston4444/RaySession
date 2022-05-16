@@ -22,7 +22,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 
 import patchcanvas.utils as utils
 
-from . import (
+from .init_values import (
     canvas,
     ClipboardElement,
     ACTION_PORTS_DISCONNECT,

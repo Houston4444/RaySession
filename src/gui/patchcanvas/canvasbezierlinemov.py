@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from . import (
+from .init_values import (
     canvas,
     options,
     port_mode2str,

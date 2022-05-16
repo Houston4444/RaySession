@@ -26,7 +26,7 @@ from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QGraphicsItem
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from . import canvas
+from .init_values import canvas
 
 # ------------------------------------------------------------------------------------------------------------
 

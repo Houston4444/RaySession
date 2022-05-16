@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene, QApplication, QGr
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-from . import (
+from .init_values import (
     canvas,
     options,
     CanvasBoxType,
