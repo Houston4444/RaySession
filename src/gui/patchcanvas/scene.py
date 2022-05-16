@@ -57,7 +57,7 @@ from .canvasbox import CanvasBox
 # ------------------------------------------------------------------------------------------------------------
 
 class RubberbandRect(QGraphicsRectItem):
-    def __init__(self, scene):
+    def __init__(self, scene: QGraphicsScene):
         QGraphicsRectItem.__init__(self, QRectF(0, 0, 0, 0))
 
         self.setZValue(-1)
@@ -432,6 +432,11 @@ class PatchScene(QGraphicsScene):
                     continue
             
                 widget = box_dict['widget']
+                
+                # only for IDE
+                assert isinstance(widget, CanvasBox)
+                assert isinstance(repulser['item'], CanvasBox)
+                
                 irect = widget.boundingRect()
                 irect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
                 
@@ -474,13 +479,17 @@ class PatchScene(QGraphicsScene):
         for to_move_box in to_move_boxes:
             item = to_move_box['item']
             repulser = to_move_box['repulser']
-            ref_rect = repulser['rect']
+            # ref_rect = repulser['rect']
+            
+            assert isinstance(item, CanvasBox)
+            assert isinstance(repulser['item'], CanvasBox)
             irect = item.boundingRect().translated(item.pos())
 
             directions = to_move_box['directions'].copy()
             new_direction = get_direction(repulser['rect'], irect, directions)
             directions.append(new_direction)
 
+            # TODO use of protected attributes.
             # calculate the new position of the box repulsed by its repulser
             new_rect = repulse(new_direction, repulser['rect'], item,
                                repulser['item']._current_port_mode,
@@ -544,6 +553,7 @@ class PatchScene(QGraphicsScene):
             
             for box_dict in self.move_boxes:
                 mitem = box_dict['widget']
+                assert isinstance(mitem, CanvasBox)
                 
                 if (mitem in repulser_boxes
                         or mitem in [b['item'] for b in to_move_boxes]):
@@ -572,7 +582,8 @@ class PatchScene(QGraphicsScene):
             self.add_box_to_animation(
                 item, to_send_rect.left(), to_send_rect.top())
 
-    def bring_neighbors_and_deplace_boxes(self, box_widget, new_scene_rect):
+    def bring_neighbors_and_deplace_boxes(
+            self, box_widget: CanvasBox, new_scene_rect: QRectF):
         neighbors = [box_widget]
         limit_top = box_widget.pos().y()
         

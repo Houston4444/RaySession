@@ -184,6 +184,8 @@ def init(app_name: str, scene: PatchScene, callback, theme_paths: tuple, debug=F
 
     if not canvas.qobject:
         canvas.qobject = CanvasObject()
+
+    # TODO settings from falktx    
     if not canvas.settings:
         canvas.settings = QSettings("falkTX", app_name)
 

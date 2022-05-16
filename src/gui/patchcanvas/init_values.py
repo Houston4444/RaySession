@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from .canvasport import CanvasPort
     from .canvasportgroup import CanvasPortGroup
     from .canvasbezierline import CanvasBezierLine
+    from .patchcanvas import CanvasObject
 
 
 # Maximum Id for a plugin, treated as invalid/zero if above this value
@@ -175,6 +176,7 @@ class Canvas(object):
         # This is only to get theme object methods in IDE
         # everywhere.
         if TYPE_CHECKING:
+            self.qobject = CanvasObject()
             self.theme = Theme()
             self.scene = PatchScene()
 

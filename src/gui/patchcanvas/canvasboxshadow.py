@@ -27,6 +27,7 @@ from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QGraphicsItem
 # Imports (Custom)
 
 from .init_values import canvas
+from .theme import UnselectedStyleAttributer
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -48,7 +49,7 @@ class CanvasBoxShadow(QGraphicsDropShadowEffect):
         #else:
             #self.setOffset(-4, 2)
 
-    def set_theme(self, theme):
+    def set_theme(self, theme: UnselectedStyleAttributer):
         self._theme = theme 
         self.setColor(theme.background_color())
 
