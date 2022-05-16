@@ -32,16 +32,8 @@ from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsPixmapItem
 
 from .init_values import (
     canvas,
-    icon2str,
     CanvasIconType,
-    ICON_APPLICATION,
-    ICON_HARDWARE,
-    ICON_DISTRHO,
-    ICON_FILE,
-    ICON_PLUGIN,
-    ICON_LADISH_ROOM,
-    ICON_CLIENT,
-    ICON_INTERNAL,
+    IconType,
     PortMode
 )
 
@@ -88,7 +80,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         self.x_offset = 4
         self.y_offset = 4
 
-        if icon_type in (ICON_CLIENT, ICON_APPLICATION):
+        if icon_type in (IconType.CLIENT, IconType.APPLICATION):
             self.set_icon(icon_type, icon_name)
 
     def set_icon(self, icon, name, port_mode=PortMode.NULL):
@@ -131,12 +123,12 @@ class CanvasSvgIcon(QGraphicsSvgItem):
         self._size = QRectF(4, 4, 24, 24)
         self.set_icon(icon_type, name, port_mode)
 
-    def set_icon(self, icon, name, port_mode):
+    def set_icon(self, icon_type: IconType, name, port_mode):
         name = name.lower()
         icon_path = ""
         theme = canvas.theme.icon
 
-        if icon == ICON_APPLICATION:
+        if icon_type == IconType.APPLICATION:
             self._size = QRectF(3, 2, 19, 18)
 
             if "audacious" in name:
@@ -161,7 +153,7 @@ class CanvasSvgIcon(QGraphicsSvgItem):
                 icon_path = ":/scalable/pb_generic.svg"
                 self._size = QRectF(4, 4, 24, 24)
 
-        elif icon == ICON_HARDWARE:
+        elif icon_type == IconType.HARDWARE:
             if name == "a2j":
                 icon_path = theme.hardware_midi
                 self._size = QRectF(4, 4, 24, 24)
@@ -174,24 +166,24 @@ class CanvasSvgIcon(QGraphicsSvgItem):
                     icon_path = theme.hardware_grouped
                 self._size = QRectF(4, 4, 24, 24)
 
-        elif icon == ICON_DISTRHO:
+        elif icon_type == IconType.DISTRHO:
             icon_path = ":/scalable/pb_distrho.svg"
             self._size = QRectF(5, 4, 16, 16)
 
-        elif icon == ICON_FILE:
+        elif icon_type == IconType.FILE:
             icon_path = ":/scalable/pb_file.svg"
             self._size = QRectF(5, 4, 16, 16)
 
-        elif icon == ICON_PLUGIN:
+        elif icon_type == IconType.PLUGIN:
             icon_path = ":/scalable/pb_plugin.svg"
             self._size = QRectF(5, 4, 16, 16)
 
-        elif icon == ICON_LADISH_ROOM:
+        elif icon_type == IconType.LADISH_ROOM:
             # TODO - make a unique ladish-room icon
             icon_path = ":/scalable/pb_hardware.svg"
             self._size = QRectF(5, 2, 16, 16)
 
-        elif icon == ICON_INTERNAL:
+        elif icon_type == IconType.INTERNAL:
             if name == 'monitor_capture':
                 icon_path = theme.monitor_capture
             elif name == 'monitor_playback':
@@ -203,7 +195,7 @@ class CanvasSvgIcon(QGraphicsSvgItem):
         else:
             self._size = QRectF(0, 0, 0, 0)
             qCritical("PatchCanvas::CanvasIcon.set_icon(%s, %s) - unsupported icon requested"
-                      % (icon2str(icon), name.encode()))
+                      % (icon_type.name, name.encode()))
             return
 
         self.m_renderer = QSvgRenderer(icon_path, canvas.scene)

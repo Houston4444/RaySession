@@ -65,41 +65,43 @@ PORT_TYPE_MIDI_ALSA = 3
 PORT_TYPE_PARAMETER = 4
 
 # Callback Action
-ACTION_GROUP_INFO = 0 # group_id, N, N
-ACTION_GROUP_RENAME = 1 # group_id, N, N
-ACTION_GROUP_SPLIT = 2 # group_id, N, N
-ACTION_GROUP_JOIN = 3 # group_id, N, N
-ACTION_GROUP_JOINED = 4 # group_id, N, N
-ACTION_GROUP_MOVE = 5 # group_id, in_or_out, "x:y"
-ACTION_GROUP_WRAP = 6 # group_id, folded, N
-ACTION_GROUP_LAYOUT_CHANGE = 7 # group_id, layout_mode, in_or_out
-ACTION_PORTGROUP_ADD = 8 # N, N, "gId:pgId:pMode:pType:portId1:portId2"
-ACTION_PORTGROUP_REMOVE = 9 # group_id, portgrp_id, N
-ACTION_PORT_INFO = 10 # group_id, port_id, N
-ACTION_PORT_RENAME = 11 # group_id, port_id, N
-ACTION_PORTS_CONNECT = 12 # N, N, "outG:outP:inG:inP"
-ACTION_PORTS_DISCONNECT = 13 # conn_id, N, N
-ACTION_PLUGIN_CLONE = 14 # plugin_id, N, N
-ACTION_PLUGIN_EDIT = 15 # plugin_id, N, N
-ACTION_PLUGIN_RENAME = 16 # plugin_id, N, N
-ACTION_PLUGIN_REPLACE = 17 # plugin_id, N, N
-ACTION_PLUGIN_REMOVE = 18 # plugin_id, N, N
-ACTION_PLUGIN_SHOW_UI = 19 # plugin_id, N, N
-ACTION_BG_RIGHT_CLICK = 20 # N, N, N
-ACTION_DOUBLE_CLICK = 21 # N, N, N
-ACTION_INLINE_DISPLAY = 22 # plugin_id, N, N
-ACTION_CLIENT_SHOW_GUI = 23 # group_id, visible, N
-ACTION_THEME_CHANGED = 24 # N, N, "theme_name"
+class CallbackAct(IntEnum):
+    GROUP_INFO = 0 # group_id, N, N
+    GROUP_RENAME = 1 # group_id, N, N
+    GROUP_SPLIT = 2 # group_id, N, N
+    GROUP_JOIN = 3 # group_id, N, N
+    GROUP_JOINED = 4 # group_id, N, N
+    GROUP_MOVE = 5 # group_id, in_or_out, "x:y"
+    GROUP_WRAP = 6 # group_id, folded, N
+    GROUP_LAYOUT_CHANGE = 7 # group_id, layout_mode, in_or_out
+    PORTGROUP_ADD = 8 # N, N, "gId:pgId:pMode:pType:portId1:portId2"
+    PORTGROUP_REMOVE = 9 # group_id, portgrp_id, N
+    PORT_INFO = 10 # group_id, port_id, N
+    PORT_RENAME = 11 # group_id, port_id, N
+    PORTS_CONNECT = 12 # N, N, "outG:outP:inG:inP"
+    PORTS_DISCONNECT = 13 # conn_id, N, N
+    PLUGIN_CLONE = 14 # plugin_id, N, N
+    PLUGIN_EDIT = 15 # plugin_id, N, N
+    PLUGIN_RENAME = 16 # plugin_id, N, N
+    PLUGIN_REPLACE = 17 # plugin_id, N, N
+    PLUGIN_REMOVE = 18 # plugin_id, N, N
+    PLUGIN_SHOW_UI = 19 # plugin_id, N, N
+    BG_RIGHT_CLICK = 20 # N, N, N
+    DOUBLE_CLICK = 21 # N, N, N
+    INLINE_DISPLAY = 22 # plugin_id, N, N
+    CLIENT_SHOW_GUI = 23 # group_id, visible, N
+    THEME_CHANGED = 24 # N, N, "theme_name"
 
 # Icon
-ICON_APPLICATION = 0
-ICON_HARDWARE = 1
-ICON_DISTRHO = 2
-ICON_FILE = 3
-ICON_PLUGIN = 4
-ICON_LADISH_ROOM = 5
-ICON_CLIENT = 6
-ICON_INTERNAL = 7
+class IconType(IntEnum):
+    APPLICATION = 0
+    HARDWARE = 1
+    DISTRHO = 2
+    FILE = 3
+    PLUGIN = 4
+    LADISH_ROOM = 5
+    CLIENT = 6
+    INTERNAL = 7
 
 # Split Option
 SPLIT_UNDEF = 0
@@ -264,22 +266,6 @@ class ClipboardElement:
 # Internal functions
 def bool2str(check: bool) -> str:
     return str(bool(check))
-
-def icon2str(icon):
-    if icon == ICON_APPLICATION:
-        return "ICON_APPLICATION"
-    elif icon == ICON_HARDWARE:
-        return "ICON_HARDWARE"
-    elif icon == ICON_DISTRHO:
-        return "ICON_DISTRHO"
-    elif icon == ICON_FILE:
-        return "ICON_FILE"
-    elif icon == ICON_PLUGIN:
-        return "ICON_PLUGIN"
-    elif icon == ICON_LADISH_ROOM:
-        return "ICON_LADISH_ROOM"
-    else:
-        return "ICON_???"
 
 def split2str(split):
     if split == SPLIT_UNDEF:

@@ -40,8 +40,7 @@ from .init_values import (
     CanvasPortGroupType,
     CanvasBezierLineType,
     CanvasRubberbandType,
-    ACTION_BG_RIGHT_CLICK,
-    ACTION_DOUBLE_CLICK,
+    CallbackAct,
     MAX_PLUGIN_ID_ALLOWED,
     PortMode,
     DIRECTION_NONE,
@@ -916,7 +915,7 @@ class PatchScene(QGraphicsScene):
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            # parse items under mouse to prevent ACTION_DOUBLE_CLICK
+            # parse items under mouse to prevent CallbackAct.DOUBLE_CLICK
             # if mouse is on a box
             items = self.items(
                 event.scenePos(), Qt.ContainsItemShape, Qt.AscendingOrder)
@@ -925,7 +924,7 @@ class PatchScene(QGraphicsScene):
                 if item.type() == CanvasBoxType:
                     break
             else:
-                canvas.callback(ACTION_DOUBLE_CLICK, 0, 0, "")
+                canvas.callback(CallbackAct.DOUBLE_CLICK, 0, 0, "")
                 return
 
         QGraphicsScene.mouseDoubleClickEvent(self, event)
@@ -1070,7 +1069,7 @@ class PatchScene(QGraphicsScene):
         if len(self.selectedItems()) == 0:
             event.accept()
             x, y = event.screenPos().x(), event.screenPos().y()
-            canvas.callback(ACTION_BG_RIGHT_CLICK, x, y, "")
+            canvas.callback(CallbackAct.BG_RIGHT_CLICK, x, y, "")
             return
 
         QGraphicsScene.contextMenuEvent(self, event)

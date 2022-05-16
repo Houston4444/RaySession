@@ -30,7 +30,7 @@ from .init_values import (
     canvas,
     options,
     CanvasBezierLineType,
-    ACTION_PORTS_DISCONNECT,
+    CallbackAct,
     PortMode,
     PortType
 )
@@ -69,7 +69,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         for connection in canvas.connection_list:
             if (connection.port_out_id == self.item1.get_port_id()
                     and connection.port_in_id == self.item2.get_port_id()):
-                canvas.callback(ACTION_PORTS_DISCONNECT,
+                canvas.callback(CallbackAct.PORTS_DISCONNECT,
                                 connection.connection_id, 0, "")
                 break
 

@@ -39,11 +39,7 @@ from .init_values import (
     options,
     CanvasPortType,
     CanvasPortGroupType,
-    ACTION_PORTGROUP_ADD,
-    ACTION_PORT_INFO,
-    ACTION_PORT_RENAME,
-    ACTION_PORTS_CONNECT,
-    ACTION_PORTS_DISCONNECT,
+    CallbackAct,
     PortMode,
     PortType
 )
@@ -242,7 +238,7 @@ class CanvasPort(QGraphicsItem):
                                    self._port_mode, self._port_type,
                                    port_id_list[0], port_id_list[1])
 
-        utils.canvas_callback(ACTION_PORTGROUP_ADD, 0, 0, data)
+        utils.canvas_callback(CallbackAct.PORTGROUP_ADD, 0, 0, data)
 
     def type(self):
         return CanvasPortType
@@ -293,7 +289,7 @@ class CanvasPort(QGraphicsItem):
                 for connection in canvas.connection_list:
                     if utils.connection_concerns(
                             connection, self._group_id, [self._port_id]):
-                        canvas.callback(ACTION_PORTS_DISCONNECT,
+                        canvas.callback(CallbackAct.PORTS_DISCONNECT,
                                         connection.connection_id, 0, '')
 
                         con_group_id = connection.group_out_id
@@ -319,7 +315,7 @@ class CanvasPort(QGraphicsItem):
             if len(con_list) == len(hover_port_id_list):
                 for connection in con_list:
                     canvas.callback(
-                        ACTION_PORTS_DISCONNECT,
+                        CallbackAct.PORTS_DISCONNECT,
                         connection.connection_id, 0, "")
             else:
                 for porthover_id in hover_port_id_list:
@@ -332,7 +328,7 @@ class CanvasPort(QGraphicsItem):
                             conn = "%i:%i:%i:%i" % (
                                 hover_group_id, porthover_id,
                                 self._group_id, self._port_id)
-                        canvas.callback(ACTION_PORTS_CONNECT, '', '', conn)
+                        canvas.callback(CallbackAct.PORTS_CONNECT, '', '', conn)
 
     def hoverEnterEvent(self, event):
         if options.auto_select_items:
@@ -649,10 +645,10 @@ class CanvasPort(QGraphicsItem):
         act_selected = menu.exec_(event.screenPos())
 
         if act_selected == act_x_info:
-            canvas.callback(ACTION_PORT_INFO, self._group_id, self._port_id, "")
+            canvas.callback(CallbackAct.PORT_INFO, self._group_id, self._port_id, "")
 
         elif act_selected == act_x_rename:
-            canvas.callback(ACTION_PORT_RENAME, self._group_id, self._port_id, "")
+            canvas.callback(CallbackAct.PORT_RENAME, self._group_id, self._port_id, "")
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedHasChanged:
@@ -667,7 +663,7 @@ class CanvasPort(QGraphicsItem):
         if not conn_list:
             conn_list = utils.get_port_connection_list(self._group_id, self._port_id)
         for conn_id, group_id, port_id in conn_list:
-            canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
+            canvas.callback(CallbackAct.PORTS_DISCONNECT, conn_id, 0, "")
 
     def boundingRect(self):
         if self._portgrp_id:

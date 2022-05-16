@@ -5,7 +5,7 @@ import shutil
 from PyQt5.QtCore import QTimer
 
 from .theme import print_error, Theme
-from .init_values import canvas, ACTION_THEME_CHANGED
+from .init_values import canvas, CallbackAct
 
 class ThemeManager:
     def __init__(self, theme_paths: tuple) -> None:
@@ -60,7 +60,7 @@ class ThemeManager:
         canvas.scene.update_theme()
         
         theme_ref = os.path.basename(os.path.dirname(self.current_theme_file))
-        canvas.callback(ACTION_THEME_CHANGED, 0, 0, theme_ref)
+        canvas.callback(CallbackAct.THEME_CHANGED, 0, 0, theme_ref)
         return True
     
     @staticmethod

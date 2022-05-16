@@ -25,7 +25,7 @@ import patchcanvas.utils as utils
 from .init_values import (
     canvas,
     ClipboardElement,
-    ACTION_PORTS_DISCONNECT,
+    CallbackAct,
     PortType,
     PortMode,
     ConnectionObject)
@@ -222,7 +222,7 @@ class DangerousMenu(SubMenu):
                             connection, self._group_id, self._port_id_list,
                             group_id, [port_id]):
                         utils.canvas_callback(
-                            ACTION_PORTS_DISCONNECT,
+                            CallbackAct.PORTS_DISCONNECT,
                             connection.connection_id, '', '')
 
 
@@ -329,7 +329,7 @@ class ConnectMenu(SubMenu):
                             connection, self._group_id, self._port_id_list,
                             group_id, [port_id]):
                         utils.canvas_callback(
-                            ACTION_PORTS_DISCONNECT,
+                            CallbackAct.PORTS_DISCONNECT,
                             connection.connection_id, '', '')
 
     # TODO was initially added the fact menu was updated
@@ -395,7 +395,7 @@ class DisconnectMenu(SubMenu):
                             connection, self._group_id, self._port_id_list,
                             element['group_id'], element['port_id_list']):
                         utils.canvas_callback(
-                            ACTION_PORTS_DISCONNECT,
+                            CallbackAct.PORTS_DISCONNECT,
                             connection.connection_id, '', '')
                 break
 
@@ -561,7 +561,7 @@ class ClipboardMenu(SubMenu):
                                         element.group_id, [element.port_id],
                                         group_id, [port_id]):
                                     utils.canvas_callback(
-                                        ACTION_PORTS_DISCONNECT,
+                                        CallbackAct.PORTS_DISCONNECT,
                                         connection.connection_id, 0, '')
                                     break
 
@@ -674,7 +674,7 @@ class MainPortContextMenu(QMenu):
 
     def disconnect_all(self):
         for connection in self.connection_list:
-            utils.canvas_callback(ACTION_PORTS_DISCONNECT,
+            utils.canvas_callback(CallbackAct.PORTS_DISCONNECT,
                            connection.connection_id, 0, '')
 
     def add_connection(self, connection):

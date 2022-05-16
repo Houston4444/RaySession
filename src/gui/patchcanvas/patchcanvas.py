@@ -33,54 +33,19 @@ from .init_values import (
     features,
     CanvasOptionsObject,
     CanvasFeaturesObject,
-    ACTION_GROUP_INFO,
-    ACTION_GROUP_RENAME,
-    ACTION_GROUP_SPLIT,
-    ACTION_GROUP_JOIN,
-    ACTION_GROUP_JOINED,
-    ACTION_GROUP_MOVE,
-    ACTION_GROUP_WRAP,
-    ACTION_GROUP_LAYOUT_CHANGE,
-    ACTION_PORTGROUP_ADD,
-    ACTION_PORTGROUP_REMOVE,
-    ACTION_PORT_INFO,
-    ACTION_PORT_RENAME,
-    ACTION_PORTS_CONNECT,
-    ACTION_PORTS_DISCONNECT,
-    ACTION_PLUGIN_CLONE,
-    ACTION_PLUGIN_EDIT,
-    ACTION_PLUGIN_RENAME,
-    ACTION_PLUGIN_REPLACE,
-    ACTION_PLUGIN_REMOVE,
-    ACTION_PLUGIN_SHOW_UI,
-    ACTION_BG_RIGHT_CLICK,
-    ACTION_DOUBLE_CLICK,
-    ACTION_INLINE_DISPLAY,
-    ACTION_CLIENT_SHOW_GUI,
-    ACTION_THEME_CHANGED,
+    CallbackAct,
     MAX_PLUGIN_ID_ALLOWED,
-    ACTION_PORTS_DISCONNECT,
-    ACTION_GROUP_JOINED,
-    ACTION_GROUP_INFO,
-    ACTION_GROUP_RENAME,
-    ACTION_GROUP_SPLIT,
-    ACTION_GROUP_JOIN,
-    ACTION_GROUP_MOVE,
-    ACTION_GROUP_WRAP,
     GroupObject,
     PortObject,
     PortgrpObject,
     ConnectionObject,
     bool2str,
-    icon2str,
     split2str,
     PortMode,
     SPLIT_UNDEF,
     SPLIT_NO,
     SPLIT_YES,
-    ICON_HARDWARE,
-    ICON_APPLICATION,
-    ICON_INTERNAL,
+    IconType,
     EYECANDY_NONE,
     CanvasIconType,
     CanvasRubberbandType)
@@ -128,7 +93,7 @@ class CanvasObject(QObject):
             if type(connectionId) != int:
                 continue
 
-            utils.canvas_callback(ACTION_PORTS_DISCONNECT, connectionId, 0, "")
+            utils.canvas_callback(CallbackAct.PORTS_DISCONNECT, connectionId, 0, "")
 
     @pyqtSlot()
     def set_as_stereo_with(self):
@@ -277,22 +242,22 @@ def set_loading_items(yesno: bool):
     canvas.loading_items = yesno
 
 def add_group(group_id: int, group_name: str, split=SPLIT_UNDEF,
-              icon_type=ICON_APPLICATION, icon_name='', layout_modes={},
+              icon_type=IconType.APPLICATION, icon_name='', layout_modes={},
               null_xy=(0, 0), in_xy=(0, 0), out_xy=(0, 0),
               split_animated=False):
     if canvas.debug:
         warning_print("add_group(%i, %s, %s, %s)" % (
-              group_id, group_name, split2str(split), icon2str(icon_type)))
+              group_id, group_name, split2str(split), icon_type.name))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
             warning_print(
                 "add_group(%i, %s, %s, %s) - group already exists"
-                % (group_id, group_name, split2str(split), icon2str(icon_type)))
+                % (group_id, group_name, split2str(split), icon_type.name))
             return
 
     if split == SPLIT_UNDEF:
-        isHardware = bool(icon_type == ICON_HARDWARE)
+        isHardware = bool(icon_type == IconType.HARDWARE)
         if isHardware:
             split = SPLIT_YES
 
@@ -357,7 +322,7 @@ def add_group(group_id: int, group_name: str, split=SPLIT_UNDEF,
                 group_name, utils.get_new_group_pos(False)))
         else:
             # Special ladish fake-split groups
-            #horizontal = bool(icon_type in (ICON_HARDWARE, ICON_LADISH_ROOM))
+            #horizontal = bool(icon_type in (IconType.HARDWARE, IconType.LADISH_ROOM))
             group_box.setPos(group_dict.null_pos)
 
 
@@ -446,7 +411,7 @@ def split_group(group_id, on_place=False):
 
     item = None
     group_name = ""
-    group_icon_type = ICON_APPLICATION
+    group_icon_type = IconType.APPLICATION
     group_icon_name = ""
     layout_modes = {}
     group_null_pos = QPoint(0, 0)
@@ -593,7 +558,7 @@ def join_group(group_id):
     item = None
     s_item = None
     group_name = ""
-    group_icon_type = ICON_APPLICATION
+    group_icon_type = IconType.APPLICATION
     group_icon_name = ""
     layout_modes = {}
     group_null_pos = QPoint(0, 0)
@@ -723,7 +688,7 @@ def join_group(group_id):
     canvas.loading_items = False
     redraw_group(group_id)
 
-    canvas.callback(ACTION_GROUP_JOINED, group_id, 0, '')
+    canvas.callback(CallbackAct.GROUP_JOINED, group_id, 0, '')
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -930,9 +895,9 @@ def set_group_pos_full(group_id, group_pos_x_o, group_pos_y_o,
 
 # ------------------------------------------------------------------------------------------------------------
 
-def set_group_icon(group_id: int, icon_type: int, icon_name: str):
+def set_group_icon(group_id: int, icon_type: IconType, icon_name: str):
     if canvas.debug:
-        print("PatchCanvas::set_group_icon(%i, %s)" % (group_id, icon2str(icon_type)))
+        print("PatchCanvas::set_group_icon(%i, %s)" % (group_id, icon_type.name))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -946,7 +911,7 @@ def set_group_icon(group_id: int, icon_type: int, icon_name: str):
 
     qCritical(
         "PatchCanvas::set_group_icon(%i, %s) - unable to find group to change icon"
-        % (group_id, icon2str(icon_type)))
+        % (group_id, icon_type.name))
 
 def set_group_as_plugin(group_id: int, plugin_id: int,
                         has_ui: bool, has_inline_display: bool):

@@ -32,9 +32,9 @@ from .init_values import (
     bool2str,
     canvas,
     CanvasBoxType,
-    ICON_APPLICATION, ICON_CLIENT, ICON_HARDWARE, ICON_INTERNAL,
+    IconType,
     PortMode,
-    ACTION_PORTS_CONNECT, ACTION_PORTS_DISCONNECT)
+    CallbackAct)
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -363,7 +363,7 @@ def get_group_icon(group_id: int, port_mode: int):
     return QIcon()
 
 def get_icon(icon_type: int, icon_name: str, port_mode: int):
-    if icon_type in (ICON_CLIENT, ICON_APPLICATION):
+    if icon_type in (IconType.CLIENT, IconType.APPLICATION):
         icon = QIcon.fromTheme(icon_name)
 
         if icon.isNull():
@@ -379,7 +379,7 @@ def get_icon(icon_type: int, icon_name: str, port_mode: int):
 
     icon = QIcon()
 
-    if icon_type == ICON_HARDWARE:
+    if icon_type == IconType.HARDWARE:
         icon_file = ":/scalable/pb_hardware.svg"
 
         if icon_name == "a2j":
@@ -391,7 +391,7 @@ def get_icon(icon_type: int, icon_name: str, port_mode: int):
 
         icon.addFile(icon_file)
 
-    elif icon_type == ICON_INTERNAL:
+    elif icon_type == IconType.INTERNAL:
         icon.addFile(":/scalable/%s" % icon_name)
 
     return icon
@@ -421,7 +421,7 @@ def connect_ports(group_id_1: int, port_id_1: int,
         string_to_send = "%i:%i:%i:%i" % (group_id_1, port_id_1,
                                           group_id_2, port_id_2)
 
-    canvas.callback(ACTION_PORTS_CONNECT, 0, 0, string_to_send)
+    canvas.callback(CallbackAct.PORTS_CONNECT, 0, 0, string_to_send)
 
 
 def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
@@ -542,7 +542,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
                 # and has not to be remade
                 connected_indexes.append((out_index, in_index))
             else:
-                canvas.callback(ACTION_PORTS_DISCONNECT,
+                canvas.callback(CallbackAct.PORTS_DISCONNECT,
                                 connection.connection_id, 0, '')
 
     if disconnect:
@@ -555,7 +555,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
                         == in_index % len(out_port_id_list)
                     and (out_index, in_index) not in connected_indexes):
                 canvas.callback(
-                    ACTION_PORTS_CONNECT, 0, 0,
+                    CallbackAct.PORTS_CONNECT, 0, 0,
                     "%i:%i:%i:%i" % (
                         group_out_id, out_port_id_list[out_index],
                         group_in_id, in_port_id_list[in_index]))

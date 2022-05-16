@@ -19,8 +19,7 @@ from .init_values import (
     options,
     PortMode,
     PortType,
-    ICON_CLIENT,
-)
+    IconType)
 import patchcanvas.utils as utils
 from .canvasboxshadow import CanvasBoxShadow
 from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
@@ -530,7 +529,7 @@ class CanvasBox(CanvasBoxAbstract):
         title, slash, subtitle = self._group_name.partition('/')
 
         if (not subtitle
-                and self._icon_type == ICON_CLIENT
+                and self._icon_type == IconType.CLIENT
                 and ' (' in self._group_name
                 and self._group_name.endswith(')')):
             title, parenthese, subtitle = self._group_name.partition(' (')
@@ -538,7 +537,7 @@ class CanvasBox(CanvasBoxAbstract):
         
         theme = self.get_theme()
 
-        if self._icon_type == ICON_CLIENT and subtitle:
+        if self._icon_type == IconType.CLIENT and subtitle:
             # if there is a subtitle, title is not bold when subtitle is.
             # so title is 'little'
             client_line = TitleLine(title, theme, little=True)

@@ -12,20 +12,12 @@ import ray
 from gui_tools import RS
 
 from patchcanvas import patchcanvas
+from patchcanvas import PortMode, PortType, CallbackAct, IconType
 from gui_server_thread import GuiServerThread
 from patchbay_tools import PatchbayToolsWidget, CanvasMenu, CanvasPortInfoDialog
 
 import canvas_options
 
-# Port Type
-PORT_TYPE_NULL = 0
-PORT_TYPE_AUDIO = 1
-PORT_TYPE_MIDI = 2
-
-# Port Mode
-PORT_MODE_NULL = 0
-PORT_MODE_INPUT = 1
-PORT_MODE_OUTPUT = 2
 
 # Port Flags
 PORT_IS_INPUT = 0x01
@@ -141,11 +133,11 @@ class Port:
 
     def mode(self):
         if self.flags & PORT_IS_OUTPUT:
-            return PORT_MODE_OUTPUT
+            return PortMode.OUTPUT
         elif self.flags & PORT_IS_INPUT:
-            return PORT_MODE_INPUT
+            return PortMode.INPUT
         else:
-            return PORT_MODE_NULL
+            return PortMode.NULL
 
     def short_name(self)->str:
         if self.full_name.startswith('a2j:'):
@@ -186,11 +178,11 @@ class Port:
         #if not PatchbayManager.port_types_view & self.type:
             #return
 
-        port_mode = PORT_MODE_NULL
+        port_mode = PortMode.NULL
         if self.flags & PORT_IS_INPUT:
-            port_mode = PORT_MODE_INPUT
+            port_mode = PortMode.INPUT
         elif self.flags & PORT_IS_OUTPUT:
-            port_mode = PORT_MODE_OUTPUT
+            port_mode = PortMode.OUTPUT
         else:
             return
 
@@ -205,7 +197,7 @@ class Port:
         is_alternate = False
         if self.flags & PORT_IS_CONTROL_VOLTAGE:
             is_alternate = True
-        if (self.type == PORT_TYPE_MIDI
+        if (self.type == PortType.MIDI_JACK
                 and self.full_name.startswith(('a2j:', 'Midi-Bridge:'))):
             for group in PatchbayManager.groups:
                 if group.group_id == self.group_id:
@@ -288,7 +280,7 @@ class Portgroup:
 
     def port_type(self):
         if not self.ports:
-            return PORT_TYPE_NULL
+            return PortType.NULL
 
         return self.ports[0].type
 
@@ -349,8 +341,8 @@ class Group:
         self.group_id = group_id
         self.name = name
         self.display_name = name
-        self.ports = []
-        self.portgroups = []
+        self.ports = list[Port]()
+        self.portgroups = list[Portgroup]()
         #self.ports_to_rename_queue = []
         self._is_hardware = False
         self.client_icon = ''
@@ -372,36 +364,36 @@ class Group:
         if self.in_canvas:
             return
 
-        icon_type = patchcanvas.ICON_APPLICATION
+        icon_type = IconType.APPLICATION
         icon_name = self.name.partition('.')[0].lower()
 
         do_split = bool(self.current_position.flags & GROUP_SPLITTED)
         split = patchcanvas.SPLIT_YES if do_split else patchcanvas.SPLIT_NO
 
         if self._is_hardware:
-            icon_type = patchcanvas.ICON_HARDWARE
+            icon_type = IconType.HARDWARE
             if self.a2j_group or self.display_name == "Midi-Bridge":
                 icon_name = "a2j"
 
         if self.client_icon:
-            icon_type = patchcanvas.ICON_CLIENT
+            icon_type = IconType.CLIENT
             icon_name = self.client_icon
 
         if (self.name.startswith("PulseAudio ")
                 and not self.client_icon):
             if "sink" in self.name.lower():
-                icon_type = patchcanvas.ICON_INTERNAL
+                icon_type = IconType.INTERNAL
                 #icon_name = "audio-volume-medium.svg"
                 icon_name = 'monitor_playback'
             elif "source" in self.name.lower():
-                icon_type = patchcanvas.ICON_INTERNAL
+                icon_type = IconType.INTERNAL
                 #icon_name = "audio-input-microphone.svg"
                 icon_name = 'monitor_capture'
 
         elif (self.name.endswith(" Monitor")
                 and not self.client_icon):
             # this group is (probably) a pipewire Monitor group
-            icon_type = patchcanvas.ICON_INTERNAL
+            icon_type = IconType.INTERNAL
             #icon_name = "audio-volume-medium.svg"
             icon_name = 'monitor_playback'
 
@@ -417,8 +409,8 @@ class Group:
             display_name = self.display_name
         
         layout_modes_ = {}
-        for port_mode in (PORT_MODE_INPUT, PORT_MODE_OUTPUT,
-                          PORT_MODE_INPUT | PORT_MODE_OUTPUT):
+        for port_mode in (PortMode.INPUT, PortMode.OUTPUT,
+                          PortMode.INPUT | PortMode.OUTPUT):
             layout_modes_[port_mode] = gpos.get_layout_mode(port_mode)
         
         patchcanvas.add_group(
@@ -429,16 +421,16 @@ class Group:
         if do_split:
             gpos.flags |= GROUP_HAS_BEEN_SPLITTED
             patchcanvas.wrap_group_box(
-                self.group_id, PORT_MODE_INPUT,
+                self.group_id, PortMode.INPUT,
                 bool(gpos.flags & GROUP_WRAPPED_INPUT),
                 animate=False)
             patchcanvas.wrap_group_box(
-                self.group_id, PORT_MODE_OUTPUT,
+                self.group_id, PortMode.OUTPUT,
                 bool(gpos.flags & GROUP_WRAPPED_OUTPUT),
                 animate=False)
         else:
             patchcanvas.wrap_group_box(
-                self.group_id, PORT_MODE_NULL,
+                self.group_id, PortMode.NULL,
                 bool(gpos.flags & GROUP_WRAPPED_INPUT
                      and gpos.flags & GROUP_WRAPPED_OUTPUT),
                 animate=False)
@@ -609,9 +601,9 @@ class Group:
                 and not ex_gpos_flags & GROUP_SPLITTED):
             patchcanvas.split_group(self.group_id)
 
-        patchcanvas.wrap_group_box(self.group_id, PORT_MODE_INPUT,
+        patchcanvas.wrap_group_box(self.group_id, PortMode.INPUT,
                                  bool(gpos.flags & GROUP_WRAPPED_INPUT))
-        patchcanvas.wrap_group_box(self.group_id, PORT_MODE_OUTPUT,
+        patchcanvas.wrap_group_box(self.group_id, PortMode.OUTPUT,
                                  bool(gpos.flags & GROUP_WRAPPED_OUTPUT))
 
         if (ex_gpos_flags & GROUP_SPLITTED
@@ -629,9 +621,9 @@ class Group:
 
     def wrap_box(self, port_mode: int, yesno: bool):
         wrap_flag = GROUP_WRAPPED_OUTPUT | GROUP_WRAPPED_INPUT
-        if port_mode == PORT_MODE_INPUT:
+        if port_mode == PortMode.INPUT:
             wrap_flag = GROUP_WRAPPED_INPUT
-        elif port_mode == PORT_MODE_OUTPUT:
+        elif port_mode == PortMode.OUTPUT:
             wrap_flag = GROUP_WRAPPED_OUTPUT
 
         if yesno:
@@ -655,7 +647,7 @@ class Group:
         self.client_icon = icon_name
         if self.in_canvas:
             patchcanvas.set_group_icon(
-                self.group_id, patchcanvas.ICON_CLIENT, icon_name)
+                self.group_id, IconType.CLIENT, icon_name)
 
     def get_pretty_client(self):
         for client_name in ('firewire_pcm', 'a2j',
@@ -896,7 +888,7 @@ class Group:
             self.remove_from_canvas()
 
     def stereo_detection(self, port):
-        if port.type != PORT_TYPE_AUDIO:
+        if port.type != PortType.AUDIO_JACK:
             return
 
         if port.flags & PORT_IS_CONTROL_VOLTAGE:
@@ -1257,12 +1249,13 @@ class Group:
 
 class PatchbayManager:
     use_graceful_names = True
-    port_types_view = enum_to_flag(PORT_TYPE_AUDIO) | enum_to_flag(PORT_TYPE_MIDI)
+    port_types_view = (enum_to_flag(PortType.AUDIO_JACK)
+                       | enum_to_flag(PortType.MIDI_JACK))
     optimized_operation = False
     very_fast_operation = False
-    groups = []
-    connections = []
-    group_positions = []
+    groups = list[Group]()
+    connections = list[Connection]()
+    group_positions = list[ray.GroupPosition]()
     portgroups_memory = []
     _next_portgroup_id = 1
     orders_queue = []
@@ -1364,13 +1357,13 @@ class PatchbayManager:
         return bool(cls.port_types_view & enum_to_flag(port_type))
 
     def canvas_callbacks(self, action, value1, value2, value_str):
-        if action == patchcanvas.ACTION_GROUP_INFO:
+        if action == CallbackAct.GROUP_INFO:
             pass
 
-        elif action == patchcanvas.ACTION_GROUP_RENAME:
+        elif action == CallbackAct.GROUP_RENAME:
             pass
 
-        elif action == patchcanvas.ACTION_GROUP_SPLIT:
+        elif action == CallbackAct.GROUP_SPLIT:
             group_id = value1
             for group in self.groups:
                 if group.group_id == group_id:
@@ -1382,11 +1375,11 @@ class PatchbayManager:
                     group.save_current_position()
                     break
 
-        elif action == patchcanvas.ACTION_GROUP_JOIN:
+        elif action == CallbackAct.GROUP_JOIN:
             group_id = value1
             patchcanvas.animate_before_join(group_id)
 
-        elif action == patchcanvas.ACTION_GROUP_JOINED:
+        elif action == CallbackAct.GROUP_JOINED:
             group_id = value1
 
             for group in self.groups:
@@ -1395,7 +1388,7 @@ class PatchbayManager:
                     group.save_current_position()
                     break
 
-        elif action == patchcanvas.ACTION_GROUP_MOVE:
+        elif action == CallbackAct.GROUP_MOVE:
             group_id = value1
             port_mode = value2
             x_y_str = value_str
@@ -1407,17 +1400,17 @@ class PatchbayManager:
             for group in self.groups:
                 if group.group_id == group_id:
                     gpos = group.current_position
-                    if port_mode == PORT_MODE_NULL:
+                    if port_mode == PortMode.NULL:
                         gpos.null_xy = (x, y)
-                    elif port_mode == PORT_MODE_INPUT:
+                    elif port_mode == PortMode.INPUT:
                         gpos.in_xy = (x, y)
-                    elif port_mode == PORT_MODE_OUTPUT:
+                    elif port_mode == PortMode.OUTPUT:
                         gpos.out_xy = (x, y)
 
                     group.save_current_position()
                     break
 
-        elif action == patchcanvas.ACTION_GROUP_WRAP:
+        elif action == CallbackAct.GROUP_WRAP:
             group_id = value1
             splitted_mode = value2
             yesno = bool(value_str == 'True')
@@ -1427,7 +1420,7 @@ class PatchbayManager:
                     group.wrap_box(splitted_mode, yesno)
                     break
 
-        elif action == patchcanvas.ACTION_GROUP_LAYOUT_CHANGE:
+        elif action == CallbackAct.GROUP_LAYOUT_CHANGE:
             group_id = value1
             port_mode = value2
             layout_mode = int(value_str)
@@ -1437,7 +1430,7 @@ class PatchbayManager:
                     group.set_layout_mode(port_mode, layout_mode)
                     break
 
-        elif action == patchcanvas.ACTION_PORTGROUP_ADD:
+        elif action == CallbackAct.PORTGROUP_ADD:
             g_id, p_mode, p_type, p_id1, p_id2 =  [
                 int(i) for i in value_str.split(":")]
 
@@ -1470,7 +1463,7 @@ class PatchbayManager:
 
             portgroup.add_to_canvas()
 
-        elif action == patchcanvas.ACTION_PORTGROUP_REMOVE:
+        elif action == CallbackAct.PORTGROUP_REMOVE:
             group_id = value1
             portgroup_id = value2
 
@@ -1500,7 +1493,7 @@ class PatchbayManager:
                             break
                     break
 
-        elif action == patchcanvas.ACTION_PORT_INFO:
+        elif action == CallbackAct.PORT_INFO:
             group_id = value1
             port_id = value2
 
@@ -1512,10 +1505,10 @@ class PatchbayManager:
             dialog.set_port(port)
             dialog.show()
 
-        elif action == patchcanvas.ACTION_PORT_RENAME:
+        elif action == CallbackAct.PORT_RENAME:
             pass
 
-        elif action == patchcanvas.ACTION_PORTS_CONNECT:
+        elif action == CallbackAct.PORTS_CONNECT:
             g_out, p_out, g_in, p_in = [int(i) for i in value_str.split(":")]
 
             port_out = self.get_port_from_id(g_out, p_out)
@@ -1528,7 +1521,7 @@ class PatchbayManager:
                 '/ray/patchbay/connect',
                 port_out.full_name, port_in.full_name)
 
-        elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
+        elif action == CallbackAct.PORTS_DISCONNECT:
             connection_id = value1
             for connection in self.connections:
                 if connection.connection_id == connection_id:
@@ -1538,14 +1531,14 @@ class PatchbayManager:
                         connection.port_in.full_name)
                     break
 
-        elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
+        elif action == CallbackAct.BG_RIGHT_CLICK:
             x, y = value1, value2
             self.canvas_menu.exec(QPoint(x, y))
 
-        elif action == patchcanvas.ACTION_DOUBLE_CLICK:
+        elif action == CallbackAct.DOUBLE_CLICK:
             self.toggle_full_screen()
         
-        elif action == patchcanvas.ACTION_CLIENT_SHOW_GUI:
+        elif action == CallbackAct.CLIENT_SHOW_GUI:
             group_id, int_visible = value1, value2
             for group in self.groups:
                 if group.group_id == group_id:
@@ -1558,7 +1551,7 @@ class PatchbayManager:
                             break
                     break
         
-        elif action == patchcanvas.ACTION_THEME_CHANGED:
+        elif action == CallbackAct.THEME_CHANGED:
             theme_ref = value_str
             if self.options_dialog is not None:
                 self.options_dialog.set_theme(theme_ref)

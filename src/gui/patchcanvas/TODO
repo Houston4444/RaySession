@@ -24,3 +24,4 @@ utiliser Path pour le chargement du thème
 Commenter plus
 enlever les qcritical -> logger
 changer les appels de méthode avec les énumérables (PortMode, PortType...)
+Bug: connection non sélectionnée après clic droit

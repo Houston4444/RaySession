@@ -39,27 +39,10 @@ from .init_values import (
     features,
     options,
     CanvasBoxType,
-    ACTION_PLUGIN_EDIT,
-    ACTION_PLUGIN_SHOW_UI,
-    ACTION_PLUGIN_CLONE,
-    ACTION_PLUGIN_REMOVE,
-    ACTION_PLUGIN_RENAME,
-    ACTION_PLUGIN_REPLACE,
-    ACTION_GROUP_INFO,
-    ACTION_GROUP_JOIN,
-    ACTION_GROUP_SPLIT,
-    ACTION_GROUP_RENAME,
-    ACTION_GROUP_MOVE,
-    ACTION_GROUP_WRAP,
-    ACTION_GROUP_LAYOUT_CHANGE,
-    ACTION_PORTS_DISCONNECT,
-    ACTION_INLINE_DISPLAY,
-    ACTION_CLIENT_SHOW_GUI,
+    CallbackAct,
     PortMode,
     MAX_PLUGIN_ID_ALLOWED,
-    ICON_HARDWARE,
-    ICON_INTERNAL,
-    ICON_CLIENT,
+    IconType,
     DIRECTION_DOWN
 )
 import patchcanvas.utils as utils
@@ -145,7 +128,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._port_list_ids = []
         self._connection_lines = []
 
-        self._is_hardware = bool(icon_type == ICON_HARDWARE)
+        self._is_hardware = bool(icon_type == IconType.HARDWARE)
         self._icon_name = icon_name
 
         self._title_lines = []
@@ -161,7 +144,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._ensuring_visible = False
 
         # Icon
-        if icon_type in (ICON_HARDWARE, ICON_INTERNAL):
+        if icon_type in (IconType.HARDWARE, IconType.INTERNAL):
             port_mode = PortMode.NULL
             if self._splitted:
                 port_mode = self._splitted_mode
@@ -178,7 +161,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         shadow_theme = canvas.theme.box_shadow
         if self._is_hardware:
             shadow_theme = shadow_theme.hardware
-        elif self._icon_type == ICON_CLIENT:
+        elif self._icon_type == IconType.CLIENT:
             shadow_theme = shadow_theme.client
         elif self._group_name.endswith(' Monitor'):
             shadow_theme = shadow_theme.monitor
@@ -284,7 +267,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self.update()
 
     def set_icon(self, icon_type, icon_name):
-        if icon_type == ICON_HARDWARE:
+        if icon_type == IconType.HARDWARE:
             self.remove_icon_from_scene()
             port_mode = PortMode.NULL
             if self._splitted:
@@ -316,7 +299,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._current_port_mode = mode
         
         if self._is_hardware:
-            self.set_icon(ICON_HARDWARE, self._icon_name)
+            self.set_icon(IconType.HARDWARE, self._icon_name)
         
         if self.shadow is not None:
             if split:
@@ -633,7 +616,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                             ins_label = " (inputs)"
                             outs_label = " (outputs)"
 
-                            if group.icon_type == ICON_HARDWARE:
+                            if group.icon_type == IconType.HARDWARE:
                                 ins_label = " (playbacks)"
                                 outs_label = " (captures)"
 
@@ -759,22 +742,22 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         elif act_selected == act_x_disc_all:
             for conn_id in conn_list_ids:
-                canvas.callback(ACTION_PORTS_DISCONNECT, conn_id, 0, "")
+                canvas.callback(CallbackAct.PORTS_DISCONNECT, conn_id, 0, "")
 
         elif act_selected == act_x_info:
-            canvas.callback(ACTION_GROUP_INFO, self._group_id, 0, "")
+            canvas.callback(CallbackAct.GROUP_INFO, self._group_id, 0, "")
 
         elif act_selected == act_x_rename:
-            canvas.callback(ACTION_GROUP_RENAME, self._group_id, 0, "")
+            canvas.callback(CallbackAct.GROUP_RENAME, self._group_id, 0, "")
 
         elif act_selected == act_x_split_join:
             if self._splitted:
-                canvas.callback(ACTION_GROUP_JOIN, self._group_id, 0, "")
+                canvas.callback(CallbackAct.GROUP_JOIN, self._group_id, 0, "")
             else:
-                canvas.callback(ACTION_GROUP_SPLIT, self._group_id, 0, "")
+                canvas.callback(CallbackAct.GROUP_SPLIT, self._group_id, 0, "")
 
         elif act_selected == act_auto_layout:
-            canvas.callback(ACTION_GROUP_LAYOUT_CHANGE, self._group_id,
+            canvas.callback(CallbackAct.GROUP_LAYOUT_CHANGE, self._group_id,
                             self._current_port_mode, str(LAYOUT_AUTO))
 
         elif act_selected == act_switch_layout:
@@ -782,35 +765,35 @@ class CanvasBoxAbstract(QGraphicsItem):
             if self._current_layout_mode == LAYOUT_HIGH:
                 next_disposition = LAYOUT_LARGE
             
-            canvas.callback(ACTION_GROUP_LAYOUT_CHANGE, self._group_id,
+            canvas.callback(CallbackAct.GROUP_LAYOUT_CHANGE, self._group_id,
                             self._current_port_mode, str(next_disposition))
 
         elif act_selected == act_p_edit:
-            canvas.callback(ACTION_PLUGIN_EDIT, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_EDIT, self._plugin_id, 0, "")
 
         elif act_selected == act_p_ui:
-            canvas.callback(ACTION_PLUGIN_SHOW_UI, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_SHOW_UI, self._plugin_id, 0, "")
 
         elif act_selected == act_p_clone:
-            canvas.callback(ACTION_PLUGIN_CLONE, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_CLONE, self._plugin_id, 0, "")
 
         elif act_selected == act_p_rename:
-            canvas.callback(ACTION_PLUGIN_RENAME, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_RENAME, self._plugin_id, 0, "")
 
         elif act_selected == act_p_replace:
-            canvas.callback(ACTION_PLUGIN_REPLACE, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_REPLACE, self._plugin_id, 0, "")
 
         elif act_selected == act_p_remove:
-            canvas.callback(ACTION_PLUGIN_REMOVE, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_REMOVE, self._plugin_id, 0, "")
 
         elif act_selected == act_x_wrap:
-            canvas.callback(ACTION_GROUP_WRAP, self._group_id,
+            canvas.callback(CallbackAct.GROUP_WRAP, self._group_id,
                             self._splitted_mode, str(not self._wrapped))
 
     def keyPressEvent(self, event):
         if self._plugin_id >= 0 and event.key() == Qt.Key_Delete:
             event.accept()
-            canvas.callback(ACTION_PLUGIN_REMOVE, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_REMOVE, self._plugin_id, 0, "")
             return
         QGraphicsItem.keyPressEvent(self, event)
 
@@ -824,13 +807,13 @@ class CanvasBoxAbstract(QGraphicsItem):
     def mouseDoubleClickEvent(self, event):
         if self._can_handle_gui:
             canvas.callback(
-                ACTION_CLIENT_SHOW_GUI, self._group_id,
+                CallbackAct.CLIENT_SHOW_GUI, self._group_id,
                 int(not(self._gui_visible)), '')
 
         if self._plugin_id >= 0:
             event.accept()
             canvas.callback(
-                ACTION_PLUGIN_SHOW_UI if self._plugin_ui else ACTION_PLUGIN_EDIT,
+                CallbackAct.PLUGIN_SHOW_UI if self._plugin_ui else CallbackAct.PLUGIN_EDIT,
                 self._plugin_id, 0, "")
             return
 
@@ -875,7 +858,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
                     if wrap:
                         utils.canvas_callback(
-                            ACTION_GROUP_WRAP, self._group_id,
+                            CallbackAct.GROUP_WRAP, self._group_id,
                             self._splitted_mode, 'False')
                         return
                     
@@ -890,7 +873,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                     trirect.translate(self.scenePos())
                     if trirect.contains(event.scenePos()):
                         utils.canvas_callback(
-                            ACTION_GROUP_WRAP, self._group_id,
+                            CallbackAct.GROUP_WRAP, self._group_id,
                             self._splitted_mode, 'True')
                         event.ignore()
                         return
@@ -970,7 +953,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
     def send_move_callback(self):
         x_y_str = "%i:%i" % (round(self.x()), round(self.y()))
-        utils.canvas_callback(ACTION_GROUP_MOVE, self._group_id,
+        utils.canvas_callback(CallbackAct.GROUP_MOVE, self._group_id,
                               self._splitted_mode, x_y_str)
 
         for group in canvas.group_list:
@@ -1042,7 +1025,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             theme = theme.hardware
             wtheme = wtheme.hardware
             hltheme = hltheme.hardware
-        elif self._icon_type == ICON_CLIENT:
+        elif self._icon_type == IconType.CLIENT:
             theme = theme.client
             wtheme = wtheme.client
             hltheme = hltheme.client
@@ -1420,7 +1403,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                 and (self._plugin_inline == self.INLINE_DISPLAY_ENABLED
                      or self._inline_scaling != scaling)):
             size = "%i:%i" % (int(inwidth*scaling), int(inheight*scaling))
-            data = canvas.callback(ACTION_INLINE_DISPLAY, self._plugin_id, 0, size)
+            data = canvas.callback(CallbackAct.INLINE_DISPLAY, self._plugin_id, 0, size)
             if data is None:
                 return
 
@@ -1452,7 +1435,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         theme = canvas.theme.box
         if self._is_hardware:
             theme = theme.hardware
-        elif self._icon_type == ICON_CLIENT:
+        elif self._icon_type == IconType.CLIENT:
             theme = theme.client
         elif self._group_name.endswith(' Monitor'):
             theme = theme.monitor

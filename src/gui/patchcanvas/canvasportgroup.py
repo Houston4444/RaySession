@@ -37,11 +37,7 @@ from .init_values import (
     options,
     CanvasPortType,
     CanvasPortGroupType,
-    ACTION_PORTGROUP_REMOVE,
-    ACTION_PORT_INFO,
-    ACTION_PORT_RENAME,
-    ACTION_PORTS_CONNECT,
-    ACTION_PORTS_DISCONNECT,
+    CallbackAct,
     PortMode,
     PortType
 )
@@ -212,7 +208,7 @@ class CanvasPortGroup(QGraphicsItem):
         self._dotcon_list.clear()
 
     def _split_to_monos(self):
-        utils.canvas_callback(ACTION_PORTGROUP_REMOVE,
+        utils.canvas_callback(CallbackAct.PORTGROUP_REMOVE,
                               self._group_id, self._portgrp_id, "")
 
     def _connect_to_hover(self):
@@ -239,7 +235,7 @@ class CanvasPortGroup(QGraphicsItem):
                                 connection, self._group_id,
                                 [self._port_id_list[i]]):
                             canvas.callback(
-                                ACTION_PORTS_DISCONNECT,
+                                CallbackAct.PORTS_DISCONNECT,
                                 connection.connection_id,
                                 0, '')
 
@@ -253,13 +249,13 @@ class CanvasPortGroup(QGraphicsItem):
 
                                 if self._port_mode == PortMode.OUTPUT:
                                     canvas.callback(
-                                        ACTION_PORTS_CONNECT, 0, 0,
+                                        CallbackAct.PORTS_CONNECT, 0, 0,
                                         "%i:%i:%i:%i" % (
                                             hover_group_id, hover_port_id_list[j],
                                             connection.group_in_id, connection.port_in_id))
                                 else:
                                     canvas.callback(
-                                        ACTION_PORTS_CONNECT, 0, 0,
+                                        CallbackAct.PORTS_CONNECT, 0, 0,
                                         "%i:%i:%i:%i" % (
                                             connection.group_out_id, connection.port_out_id,
                                             hover_group_id, hover_port_id_list[j]))
@@ -281,12 +277,12 @@ class CanvasPortGroup(QGraphicsItem):
                                 ports_connected_list.append(
                                     [port_id, hover_port_id])
                             else:
-                                canvas.callback(ACTION_PORTS_DISCONNECT,
+                                canvas.callback(CallbackAct.PORTS_DISCONNECT,
                                                 connection.connection_id, 0, "")
 
             if len(con_list) == maxportgrp:
                 for connection in con_list:
-                    canvas.callback(ACTION_PORTS_DISCONNECT,
+                    canvas.callback(CallbackAct.PORTS_DISCONNECT,
                                     connection.connection_id, 0, "")
             else:
                 for i in range(len(self._port_id_list)):
@@ -304,7 +300,7 @@ class CanvasPortGroup(QGraphicsItem):
                                     conn = "%i:%i:%i:%i" % (
                                         hover_group_id, hover_port_id,
                                         self._group_id, port_id)
-                                canvas.callback(ACTION_PORTS_CONNECT, 0, 0, conn)
+                                canvas.callback(CallbackAct.PORTS_CONNECT, 0, 0, conn)
 
     def reset_line_mov_positions(self):
         for i in range(len(self._line_mov_list)):
