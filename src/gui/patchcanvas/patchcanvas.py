@@ -254,7 +254,10 @@ def add_group(group_id, group_name, split=SPLIT_UNDEF,
     group_dict.null_pos = QPoint(*null_xy)
     group_dict.in_pos = QPoint(*in_xy)
     group_dict.out_pos = QPoint(*out_xy)
-    group_dict.widgets = [group_box, None]
+    # group_dict.widgets = [group_box, None]
+    group_dict.widgets = list[CanvasBox]()
+    group_dict.widgets.append(group_box)
+    group_dict.widgets.append(None)
 
     if split == SPLIT_YES:
         group_box.set_split(True, PORT_MODE_OUTPUT)

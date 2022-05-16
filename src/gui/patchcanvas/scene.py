@@ -218,7 +218,7 @@ class PatchScene(QGraphicsScene):
 
         self.update()
 
-    def add_box_to_animation(self, box_widget, to_x: int, to_y: int,
+    def add_box_to_animation(self, box_widget: CanvasBox, to_x: int, to_y: int,
                              force_anim=True):
         for box_dict in self.move_boxes:
             if box_dict['widget'] == box_widget:
@@ -258,10 +258,11 @@ class PatchScene(QGraphicsScene):
             self._move_timer_start_at = time.time()
             self.move_box_timer.start()
 
-    def deplace_boxes_from_repulsers(self, repulser_boxes: list,
+    def deplace_boxes_from_repulsers(self, repulser_boxes: list[CanvasBox],
                                      wanted_direction=DIRECTION_NONE,
                                      new_scene_rect=None):
-        def get_direction(fixed_rect, moving_rect, parent_directions=[])->int:
+        def get_direction(fixed_rect: QRectF, moving_rect: QRectF,
+                          parent_directions=[])->int:
             if (moving_rect.top() <= fixed_rect.center().y() <= moving_rect.bottom()
                     or fixed_rect.top() <= moving_rect.center().y() <= fixed_rect.bottom()):
                 if (fixed_rect.right() < moving_rect.center().x()
@@ -286,8 +287,8 @@ class PatchScene(QGraphicsScene):
             return DIRECTION_UP
         
         def repulse(direction: int, fixed, moving,
-                    fixed_port_mode: int, moving_port_mode: int):
-            ''' returns a qrect to be placed at side of fixed_rect
+                    fixed_port_mode: int, moving_port_mode: int) -> QRectF:
+            ''' returns a QRectF to be placed at side of fixed_rect
                 where fixed_rect is an already determinated futur place
                 for a box '''
                 
@@ -358,7 +359,7 @@ class PatchScene(QGraphicsScene):
             return QRectF(x, y, rect.width(), rect.height())
 
         def rect_has_to_move_from(
-                repulser_rect, rect,
+                repulser_rect: QRectF, rect: QRectF,
                 repulser_port_mode: int, rect_port_mode: int)->bool:
             left_spacing = right_spacing = box_spacing
             

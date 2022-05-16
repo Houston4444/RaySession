@@ -33,6 +33,7 @@ from PyQt5.QtWidgets import QGraphicsItem
 if TYPE_CHECKING:
     from patchcanvas.theme import Theme
     from patchcanvas.scene import PatchScene
+    from patchcanvas.canvasbox import CanvasBox
 
 
 # Maximum Id for a plugin, treated as invalid/zero if above this value
@@ -202,6 +203,10 @@ class group_dict_t(object):
         'handle_client_gui',
         'gui_visible',
         'widgets']
+    
+    def __init__(self):
+        if TYPE_CHECKING:
+            self.widgets = list[CanvasBox]()
 
 class port_dict_t(object):
     __slots__ = [

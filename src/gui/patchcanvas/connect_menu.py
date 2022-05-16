@@ -29,7 +29,8 @@ from . import (
     PORT_TYPE_AUDIO_JACK,
     PORT_TYPE_MIDI_JACK,
     PORT_MODE_OUTPUT,
-    PORT_MODE_INPUT)
+    PORT_MODE_INPUT,
+    connection_dict_t)
 
 
 _translate = QCoreApplication.translate
@@ -37,6 +38,21 @@ _translate = QCoreApplication.translate
 DANGEROUS_NO_CARE = 0
 DANGEROUS_NO = 1
 DANGEROUS_YES = 2
+
+class PortData:
+    def __init__(self, group_id: int, port_id: int, port_type: int,
+                 port_mode: int, portgrp_id: int, is_alternate: bool):
+        self._group_id = group_id
+        self._port_id = port_id
+        self._port_type = port_type
+        self._port_mode = port_mode
+        self._portgrp_id = portgrp_id
+        self._is_alternate = is_alternate
+        self._port_id_list = [port_id]
+
+        if portgrp_id:
+            self._port_id_list = utils.get_portgroup_port_list(
+                group_id, portgrp_id)
 
 
 class PortCheckBox(QCheckBox):
@@ -70,7 +86,7 @@ class PortCheckBox(QCheckBox):
 
 
 class SubMenu(QMenu):
-    def __init__(self, name: str, port_data, parent):
+    def __init__(self, name: str, port_data: PortData, parent):
         QMenu.__init__(self, name, parent)
         self._port_data = port_data
         self._group_id = port_data._group_id
@@ -80,22 +96,6 @@ class SubMenu(QMenu):
         self._portgrp_id = port_data._portgrp_id
         self._is_alternate = port_data._is_alternate
         self._port_id_list = port_data._port_id_list
-
-
-class PortData:
-    def __init__(self, group_id: int, port_id: int, port_type: int,
-                 port_mode: int, portgrp_id: int, is_alternate: bool):
-        self._group_id = group_id
-        self._port_id = port_id
-        self._port_type = port_type
-        self._port_mode = port_mode
-        self._portgrp_id = portgrp_id
-        self._is_alternate = is_alternate
-        self._port_id_list = [port_id]
-
-        if portgrp_id:
-            self._port_id_list = utils.get_portgroup_port_list(
-                group_id, portgrp_id)
 
 
 class ConnectGroupMenu(SubMenu):
@@ -629,7 +629,7 @@ class MainPortContextMenu(QMenu):
         PortData.__init__(self, group_id, port_id, port_type,
                           port_mode, portgrp_id, is_alternate)
 
-        self.connection_list = []
+        self.connection_list = list[connection_dict_t]()
 
         canvas.qobject.connection_added.connect(
             self.connection_added_to_canvas)
