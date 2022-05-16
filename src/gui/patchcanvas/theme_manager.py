@@ -1,10 +1,7 @@
 
 import configparser
-import json
 import os
 import shutil
-import sys
-import time
 from PyQt5.QtCore import QTimer
 
 from .theme import print_error, Theme

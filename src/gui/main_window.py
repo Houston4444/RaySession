@@ -506,8 +506,9 @@ class MainWindow(QMainWindow):
         patchcanvas.init(
             ray.APP_TITLE, self.scene,
             self.canvas_callback, theme_paths, debug=False)
-        patchcanvas.set_semi_hide_opacity(RS.settings.value(
-            'Canvas/semi_hide_opacity', 0.17, type=float))
+        patchcanvas.set_semi_hide_opacity(
+            RS.settings.value(
+                'Canvas/semi_hide_opacity', 0.17, type=float))
 
     def _open_file_manager(self):
         self.to_daemon('/ray/session/open_folder')

@@ -72,6 +72,9 @@ class PatchbayToolsWidget(QWidget):
     def set_samplerate(self, samplerate: int):
         str_sr = str(samplerate)
         str_samplerate = str_sr
+        
+        # separate the three last digits from begin with a space
+        # 48000 -> 48 000
         if len(str_sr) > 3:
             str_samplerate = str_sr[:-3] + ' ' + str_sr[-3:]
 

@@ -5,7 +5,6 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from gui_tools import RS
 
 import patchbay_manager
-import patchcanvas
 
 import ui.filter_frame
 

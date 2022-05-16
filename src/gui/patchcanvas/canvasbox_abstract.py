@@ -33,6 +33,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication, QAction
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
+
 from . import (
     canvas,
     features,
@@ -68,7 +69,7 @@ from .canvasboxshadow import CanvasBoxShadow
 from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
 from .canvasport import CanvasPort
 from .canvasportgroup import CanvasPortGroup
-from .theme import Theme
+from .theme import Theme, BoxStyleAttributer
 
 _translate = QApplication.translate
 
@@ -1306,7 +1307,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         painter.restore()
 
-    def _paint_hardware_rack(self, painter, lineHinting):
+    def _paint_hardware_rack(self, painter: QPainter, lineHinting: float):
         if not self._is_hardware:
             return
         
@@ -1406,7 +1407,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             hw_poly_bt += QPointF(self._width + lineHinting, self._height + lineHinting)
             painter.drawPolygon(hw_poly_bt)
 
-    def _paint_inline_display(self, painter):
+    def _paint_inline_display(self, painter: QPainter):
         if self._plugin_inline == self.INLINE_DISPLAY_DISABLED:
             return
         if not options.inline_displays:
@@ -1449,7 +1450,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         painter.drawImage(QRectF(srcx, srcy, swidth, sheight), self._inline_image)
     
-    def get_theme(self):
+    def get_theme(self) -> BoxStyleAttributer:
         theme = canvas.theme.box
         if self._is_hardware:
             theme = theme.hardware

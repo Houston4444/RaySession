@@ -25,23 +25,22 @@ from PyQt5.QtWidgets import QGraphicsItem
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Theme)
-
 # ------------------------------------------------------------------------------------------------------------
 
 # Maximum Id for a plugin, treated as invalid/zero if above this value
 MAX_PLUGIN_ID_ALLOWED = 0x7FF
 
 # Port Mode
-PORT_MODE_NULL   = 0
-PORT_MODE_INPUT  = 1
+PORT_MODE_NULL = 0
+PORT_MODE_INPUT = 1
 PORT_MODE_OUTPUT = 2
 
 # Port Type
-PORT_TYPE_NULL       = 0
+PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO_JACK = 1
-PORT_TYPE_MIDI_JACK  = 2
-PORT_TYPE_MIDI_ALSA  = 3
-PORT_TYPE_PARAMETER  = 4
+PORT_TYPE_MIDI_JACK = 2
+PORT_TYPE_MIDI_ALSA = 3
+PORT_TYPE_PARAMETER = 4
 
 # Callback Action
 ACTION_GROUP_INFO = 0 # group_id, N, N
@@ -139,9 +138,8 @@ class Canvas(object):
         self.qobject = None
         self.settings = None
         self.theme = None
-        self.new_theme = None
         self.initiated = False
-        self.theme_paths = ('/home/manjouston/.config/RaySession/patchbay_themes',)
+        self.theme_paths = ()
         self.theme_manager = None
 
         self.group_list = []
@@ -329,7 +327,7 @@ def get_options_t():
 def get_features_t():
     return features_t()
 
-def set_options(new_options):
+def set_options(new_options: options_t):
     if canvas.initiated: return
     options.theme_name = new_options.theme_name
     options.auto_hide_groups = new_options.auto_hide_groups
@@ -340,10 +338,10 @@ def set_options(new_options):
     options.prevent_overlap = new_options.prevent_overlap
     options.max_port_width = new_options.max_port_width
 
-def set_features(new_features):
+def set_features(new_features: features_t):
     if canvas.initiated: return
-    features.group_info   = new_features.group_info
+    features.group_info = new_features.group_info
     features.group_rename = new_features.group_rename
-    features.port_info    = new_features.port_info
-    features.port_rename  = new_features.port_rename
+    features.port_info = new_features.port_info
+    features.port_rename = new_features.port_rename
     features.handle_group_pos = new_features.handle_group_pos

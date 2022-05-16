@@ -131,7 +131,7 @@ def init(app_name: str, scene, callback, theme_paths: tuple, debug=False):
         canvas.theme_manager = ThemeManager(theme_paths)
         if not canvas.theme_manager.set_theme(options.theme_name):
             canvas.theme_manager.set_theme('Black Gold')
-        
+
         canvas.theme.load_cache()
 
     canvas.initiated = True
@@ -877,7 +877,7 @@ def set_group_pos_full(group_id, group_pos_x_o, group_pos_y_o,
 
 # ------------------------------------------------------------------------------------------------------------
 
-def set_group_icon(group_id, icon_type: int, icon_name: str):
+def set_group_icon(group_id: int, icon_type: int, icon_name: str):
     if canvas.debug:
         print("PatchCanvas::set_group_icon(%i, %s)" % (group_id, icon2str(icon_type)))
 
@@ -895,7 +895,8 @@ def set_group_icon(group_id, icon_type: int, icon_name: str):
         "PatchCanvas::set_group_icon(%i, %s) - unable to find group to change icon"
         % (group_id, icon2str(icon_type)))
 
-def set_group_as_plugin(group_id, plugin_id, has_ui, has_inline_display):
+def set_group_as_plugin(group_id: int, plugin_id: int,
+                        has_ui: bool, has_inline_display: bool):
     if canvas.debug:
         print("PatchCanvas::set_group_as_plugin(%i, %i, %s, %s)"
               % (group_id, plugin_id, bool2str(has_ui), bool2str(has_inline_display)))
@@ -919,8 +920,8 @@ def set_group_as_plugin(group_id, plugin_id, has_ui, has_inline_display):
 
 # ------------------------------------------------------------------------------------------------------------
 
-def add_port(group_id, port_id, port_name, port_mode, port_type,
-             is_alternate=False):
+def add_port(group_id: int, port_id: int, port_name: str,
+             port_mode: int, port_type: int, is_alternate=False):
     if canvas.debug:
         print("PatchCanvas::add_port(%i, %i, %s, %s, %s, %s)"
               % (group_id, port_id, port_name.encode(),
@@ -982,7 +983,7 @@ def add_port(group_id, port_id, port_name, port_mode, port_type,
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def remove_port(group_id, port_id):
+def remove_port(group_id: int, port_id: int):
     if canvas.debug:
         print("PatchCanvas::remove_port(%i, %i)" % (group_id, port_id))
 
@@ -1013,7 +1014,7 @@ def remove_port(group_id, port_id):
         "PatchCanvas::remove_port(%i, %i) - Unable to find port to remove"
         % (group_id, port_id))
 
-def rename_port(group_id, port_id, new_port_name):
+def rename_port(group_id: int, port_id: int, new_port_name: str):
     if canvas.debug:
         print("PatchCanvas::rename_port(%i, %i, %s)" % (group_id, port_id, new_port_name))
 
@@ -1035,8 +1036,8 @@ def rename_port(group_id, port_id, new_port_name):
     qCritical("PatchCanvas::rename_port(%i, %i, %s) - Unable to find port to rename"
               % (group_id, port_id, new_port_name.encode()))
 
-def add_portgroup(group_id, portgrp_id, port_mode, port_type,
-                  port_id_list):
+def add_portgroup(group_id: int, portgrp_id: int, port_mode: int, port_type: int,
+                  port_id_list: list):
     if canvas.debug:
         print("PatchCanvas::add_portgroup(%i, %i)" % (group_id, portgrp_id))
 
@@ -1113,7 +1114,7 @@ def add_portgroup(group_id, portgrp_id, port_mode, port_type,
                         box.update_positions()
             break
 
-def remove_portgroup(group_id, portgrp_id):
+def remove_portgroup(group_id: int, portgrp_id: int):
     if canvas.debug:
         print("PatchCanvas::remove_portgroup(%i, %i)" % (group_id, portgrp_id))
 
@@ -1225,7 +1226,7 @@ def connect_ports(connection_id, group_out_id, port_out_id,
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def disconnect_ports(connection_id):
+def disconnect_ports(connection_id: int):
     if canvas.debug:
         print("PatchCanvas::disconnect_ports(%i)" % connection_id)
 
@@ -1288,8 +1289,8 @@ def get_theme() -> str:
 def list_themes() -> list:
     return canvas.theme_manager.list_themes()
 
-def change_theme(theme_name=''):
-    canvas.theme_manager.set_theme(theme_name)
+def change_theme(theme_name='') -> bool:
+    return canvas.theme_manager.set_theme(theme_name)
 
 def copy_and_load_current_theme(new_theme_name: str) -> int:
     return canvas.theme_manager.copy_and_load_current_theme(new_theme_name)
