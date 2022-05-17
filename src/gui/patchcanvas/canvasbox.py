@@ -5,11 +5,9 @@ from sip import voidptr
 from struct import pack
 import time
 
-from PyQt5.QtCore import qCritical, Qt, QPoint, QPointF, QRectF, QTimer
-from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
-                         QLinearGradient, QPainter, QPen, QPolygonF,
-                         QColor, QIcon, QPixmap, QPainterPath)
-from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
+from PyQt5.QtCore import QRectF
+from PyQt5.QtGui import QPainterPath
+from PyQt5.QtWidgets import QApplication
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -19,14 +17,11 @@ from .init_values import (
     PortgrpObject,
     canvas,
     options,
+    BoxLayoutMode,
     PortMode,
     PortType,
     IconType)
 import patchcanvas.utils as utils
-from .canvasboxshadow import CanvasBoxShadow
-from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
-from .canvasport import CanvasPort
-from .canvasportgroup import CanvasPortGroup
 from .theme import Theme
 
 from .canvasbox_abstract import (
@@ -34,10 +29,7 @@ from .canvasbox_abstract import (
     UNWRAP_BUTTON_NONE,
     UNWRAP_BUTTON_LEFT,
     UNWRAP_BUTTON_CENTER,
-    UNWRAP_BUTTON_RIGHT,
-    LAYOUT_AUTO,
-    LAYOUT_HIGH,
-    LAYOUT_LARGE)
+    UNWRAP_BUTTON_RIGHT)
 
 _translate = QApplication.translate
 
@@ -72,7 +64,7 @@ class BoxArea:
     heigth = 0
     header_width = 0
     header_height = 0
-    column_mode = LAYOUT_AUTO
+    column_mode = BoxLayoutMode.AUTO
     ports_in_width = 0
     ports_out_width = 0
     ports_margin = 30
@@ -722,7 +714,7 @@ class CanvasBox(CanvasBoxAbstract):
         if self._current_port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             # splitted box
             
-            if layout_mode in (LAYOUT_AUTO, LAYOUT_LARGE):
+            if layout_mode in (BoxLayoutMode.AUTO, BoxLayoutMode.LARGE):
                 ports_y_start_min = box_theme.port_spacing() + box_theme.port_type_spacing()
                 
                 # calculate area with title on side
@@ -741,7 +733,7 @@ class CanvasBox(CanvasBoxAbstract):
                             height_for_ports + ports_y_start_min),
                         i, False, TITLE_ON_SIDE_UNDER_ICON))
             
-            if layout_mode in (LAYOUT_AUTO, LAYOUT_HIGH):
+            if layout_mode in (BoxLayoutMode.AUTO, BoxLayoutMode.HIGH):
                 # calculate area with title on top
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
@@ -752,7 +744,7 @@ class CanvasBox(CanvasBoxAbstract):
             # grouped box
             
             # calculate area with input and outputs ports descending
-            if layout_mode in (LAYOUT_AUTO, LAYOUT_HIGH):
+            if layout_mode in (BoxLayoutMode.AUTO, BoxLayoutMode.HIGH):
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
                         (max(all_title_templates[i]['header_width'], width_for_ports_one)
@@ -760,7 +752,7 @@ class CanvasBox(CanvasBoxAbstract):
                         i, True, TITLE_ON_TOP))
 
             # calculate area with input ports at left of output ports
-            if layout_mode in (LAYOUT_AUTO, LAYOUT_LARGE):
+            if layout_mode in (BoxLayoutMode.AUTO, BoxLayoutMode.LARGE):
                 for i in range(1, lines_choice_max + 1):
                     sizes_tuples.append(
                         (max(all_title_templates[i]['header_width'], width_for_ports)
@@ -779,14 +771,14 @@ class CanvasBox(CanvasBoxAbstract):
         
         if self._current_port_mode is PortMode.BOTH:
             if one_column:
-                self._current_layout_mode = LAYOUT_HIGH
+                self._current_layout_mode = BoxLayoutMode.HIGH
             else:
-                self._current_layout_mode = LAYOUT_LARGE
+                self._current_layout_mode = BoxLayoutMode.LARGE
         else:
             if title_on_side:
-                self._current_layout_mode = LAYOUT_LARGE
+                self._current_layout_mode = BoxLayoutMode.LARGE
             else:
-                self._current_layout_mode = LAYOUT_HIGH
+                self._current_layout_mode = BoxLayoutMode.HIGH
         
         box_width = 0
         box_height = 0
@@ -1171,7 +1163,7 @@ class CanvasBox(CanvasBoxAbstract):
             
             one_column = bool(
                 self._current_port_mode is PortMode.BOTH
-                and self._current_layout_mode == LAYOUT_HIGH)
+                and self._current_layout_mode == BoxLayoutMode.HIGH)
             
         last_in_pos += self._ports_y_start
         last_out_pos += self._ports_y_start

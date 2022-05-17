@@ -2,17 +2,16 @@
 import json
 import os
 import sys
-import time
-from PyQt5.QtGui import QCursor, QIcon, QGuiApplication
-from PyQt5.QtWidgets import QMenu, QAction, QLabel, QMessageBox
-from PyQt5.QtCore import pyqtSlot, QTimer, QPoint
+from PyQt5.QtGui import QCursor, QGuiApplication
+from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtCore import QTimer, QPoint
 
 import ray
 
 from gui_tools import RS
 
 from patchcanvas import patchcanvas
-from patchcanvas import (PortMode, PortType, CallbackAct, IconType,
+from patchcanvas import (PortMode, PortType, CallbackAct, IconType, BoxLayoutMode,
                          BoxSplitMode, EyeCandy)
 from gui_server_thread import GuiServerThread
 from patchbay_tools import PORT_TYPE_AUDIO, PORT_TYPE_MIDI, PatchbayToolsWidget, CanvasMenu, CanvasPortInfoDialog
@@ -600,8 +599,8 @@ class Group:
                 and not gpos.flags & GROUP_SPLITTED):
             patchcanvas.animate_before_join(self.group_id)
 
-    def set_layout_mode(self, port_mode: PortMode, layout_mode: int):
-        self.current_position.set_layout_mode(port_mode.value, layout_mode)
+    def set_layout_mode(self, port_mode: PortMode, layout_mode: BoxLayoutMode):
+        self.current_position.set_layout_mode(port_mode.value, layout_mode.value)
         self.save_current_position()
         
         if not self.in_canvas:

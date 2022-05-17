@@ -39,6 +39,7 @@ from .init_values import (
     ConnectionObject,
     PortMode,
     BoxSplitMode,
+    BoxLayoutMode,
     IconType,
     EyeCandy, # not used here, but can be taken from parent
 )
@@ -691,7 +692,7 @@ def wrap_group_box(group_id: int, port_mode: int, yesno: bool, animate=True):
                     box.set_wrapped(yesno, animate=animate)
             break
 
-def set_group_layout_mode(group_id: int, port_mode: int, layout_mode: int):
+def set_group_layout_mode(group_id: int, port_mode: PortMode, layout_mode: BoxLayoutMode):
     for group in canvas.group_list:
         if group.group_id == group_id:
             group.layout_modes[port_mode] = layout_mode

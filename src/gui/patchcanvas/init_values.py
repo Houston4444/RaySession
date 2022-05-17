@@ -65,7 +65,7 @@ class CallbackAct(IntEnum):
     GROUP_JOINED = 4        # group_id: int
     GROUP_MOVE = 5          # group_id: int, splitted_mode: PortMode, x: int, y: int
     GROUP_WRAP = 6          # group_id: int, folded: bool
-    GROUP_LAYOUT_CHANGE = 7 # group_id: int, layout_mode: int, splitted_mode: PortMode
+    GROUP_LAYOUT_CHANGE = 7 # group_id: int, layout_mode: BoxLayoutMode, splitted_mode: PortMode
     PORTGROUP_ADD = 8       # group_id: int, portgrp_id: int, port_mode: PortMode,
                             #      port_type: PortType, port_ids: tuple[int]
     PORTGROUP_REMOVE = 9    # group_id: int, portgrp_id: int
@@ -103,6 +103,13 @@ class BoxSplitMode(IntEnum):
     UNDEF = 0
     NO = 1
     YES = 2
+
+
+# define the way ports are put in a box
+class BoxLayoutMode(IntEnum):
+    AUTO = 0
+    HIGH = 1
+    LARGE = 2
 
 
 class EyeCandy(IntEnum):

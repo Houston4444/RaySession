@@ -41,6 +41,7 @@ from .init_values import (
     options,
     CallbackAct,
     PortMode,
+    BoxLayoutMode,
     MAX_PLUGIN_ID_ALLOWED,
     IconType,
     Direction)
@@ -58,10 +59,6 @@ UNWRAP_BUTTON_NONE = 0
 UNWRAP_BUTTON_LEFT = 1
 UNWRAP_BUTTON_CENTER = 2
 UNWRAP_BUTTON_RIGHT = 3
-
-LAYOUT_AUTO = 0
-LAYOUT_HIGH = 1
-LAYOUT_LARGE = 2
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -192,7 +189,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._can_handle_gui = False # used for optional-gui switch
         self._gui_visible = False
 
-        self._current_layout_mode = LAYOUT_LARGE
+        self._current_layout_mode = BoxLayoutMode.LARGE
         self._title_under_icon = False
         self._painter_path = QPainterPath()
         
@@ -210,8 +207,8 @@ class CanvasBoxAbstract(QGraphicsItem):
                 if self._current_port_mode in group.layout_modes.keys():
                     return group.layout_modes[self._current_port_mode]
                 else:
-                    return LAYOUT_AUTO
-        return LAYOUT_AUTO
+                    return BoxLayoutMode.AUTO
+        return BoxLayoutMode.AUTO
 
     def get_group_id(self):
         return self._group_id
@@ -535,7 +532,7 @@ class CanvasBoxAbstract(QGraphicsItem):
     def _has_side_title(self):
         return bool(
             self._current_port_mode is not PortMode.BOTH
-            and self._current_layout_mode == LAYOUT_LARGE)
+            and self._current_layout_mode == BoxLayoutMode.LARGE)
 
     def type(self) -> CanvasItemType:
         return CanvasItemType.BOX
@@ -677,7 +674,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         act_auto_layout = menu.addAction(
             _translate('patchbay', 'Automatic layout'))
         act_auto_layout.setVisible(
-            self._get_layout_mode_for_this() != LAYOUT_AUTO)
+            self._get_layout_mode_for_this() != BoxLayoutMode.AUTO)
         act_auto_layout.setIcon(QIcon.fromTheme('auto-scale-x'))
 
         act_switch_layout = menu.addAction(
@@ -740,12 +737,12 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         elif act_selected == act_auto_layout:
             canvas.callback(CallbackAct.GROUP_LAYOUT_CHANGE, self._group_id,
-                            self._current_port_mode, LAYOUT_AUTO)
+                            self._current_port_mode, BoxLayoutMode.AUTO)
 
         elif act_selected == act_switch_layout:
-            next_layout = LAYOUT_HIGH
-            if self._current_layout_mode == LAYOUT_HIGH:
-                next_layout = LAYOUT_LARGE
+            next_layout = BoxLayoutMode.HIGH
+            if self._current_layout_mode == BoxLayoutMode.HIGH:
+                next_layout = BoxLayoutMode.LARGE
             
             canvas.callback(CallbackAct.GROUP_LAYOUT_CHANGE, self._group_id,
                             self._current_port_mode, next_layout)
