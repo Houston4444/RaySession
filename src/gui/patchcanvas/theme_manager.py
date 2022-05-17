@@ -172,11 +172,11 @@ class ThemeManager:
                 
                 themes_set.add(file_path)
                 themes_dicts.append(
-                    {'ref_id': file_path.as_posix(),
+                    {'ref_id': file_path.name,
                      'name': name,
                      'editable': editable,
                      'file_path': full_path.as_posix()})
-        print(themes_dicts)
+
         return themes_dicts
     
     def copy_and_load_current_theme(self, new_name: str) -> int:
