@@ -19,6 +19,7 @@
 
 import sys
 import time
+from pathlib import Path
 from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
                           QPoint, QPointF, QRectF, QSettings, QTimer, pyqtSignal)
 
@@ -108,9 +109,10 @@ def _get_stored_canvas_position(key, fallback_pos):
     except:
         return fallback_pos
 
-# ------------------------------------------------------------------------------------------------------------
+# -----------------------------------
 
-def init(app_name: str, scene: PatchScene, callback, theme_paths: tuple, debug=False):
+def init(app_name: str, scene: PatchScene, callback,
+         theme_paths: tuple[Path], debug=False):
     if debug:
         warning_print("init(\"%s\", %s, %s, %s)"
                       % (app_name, scene, callback, str(debug)))

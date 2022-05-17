@@ -131,8 +131,6 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._wrapping_ratio = 1.0
         self._unwrap_triangle_pos = UnwrapButton.NONE
 
-        self._ensuring_visible = False
-
         # Icon
         if icon_type in (IconType.HARDWARE, IconType.INTERNAL):
             port_mode = PortMode.NULL

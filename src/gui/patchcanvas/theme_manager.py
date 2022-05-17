@@ -2,15 +2,16 @@
 import configparser
 import os
 import shutil
+from pathlib import Path
 from PyQt5.QtCore import QTimer
 
 from .theme import print_error, Theme
 from .init_values import canvas, CallbackAct
 
 class ThemeManager:
-    def __init__(self, theme_paths: tuple) -> None:
+    def __init__(self, theme_paths: tuple[Path]) -> None:
         self.current_theme = None
-        self.current_theme_file = ''
+        self.current_theme_file = Path()
         self.theme_paths = theme_paths
 
         self._last_modified = 0
@@ -20,8 +21,8 @@ class ThemeManager:
         self._theme_file_timer.timeout.connect(self._check_theme_file_modified)
 
     def _check_theme_file_modified(self):
-        if (not self.current_theme_file
-                or not os.path.exists(self.current_theme_file)):
+        if (not self.current_theme_file.name
+                or not self.current_theme_file.exists()):
             self._theme_file_timer.stop()
             return
         
@@ -97,14 +98,17 @@ class ThemeManager:
         return return_dict
     
     def get_theme(self) -> str:
-        return os.path.basename(os.path.dirname(self.current_theme_file))
+        return self.current_theme_file.parent.name
+        # return os.path.basename(os.path.dirname(self.current_theme_file))
     
     def set_theme(self, theme_name: str) -> bool:
         self.current_theme = theme_name
-        
+
         for theme_path in self.theme_paths:
-            theme_file_path = "%s/%s/theme.conf" % (theme_path, theme_name)
-            if os.path.exists(theme_file_path):
+            theme_file_path = theme_path.joinpath(theme_name, 'theme.conf')
+            # theme_file_path = "%s/%s/theme.conf" % (theme_path, theme_name)
+            # if os.path.exists(theme_file_path):
+            if theme_file_path.exists():
                 self.current_theme_file = theme_file_path
                 break
         else:
@@ -128,21 +132,25 @@ class ThemeManager:
             lang_short = lang[:2]
         
         for search_path in self.theme_paths:
-            if not os.path.isdir(search_path):
+            if not search_path.exists():
+            # if not os.path.isdir(search_path):
                 continue
             
             editable = bool(os.access(search_path, os.W_OK))
             
-            for file_path in os.listdir(search_path):
+            for file_path in search_path.iterdir():
+            # for file_path in os.listdir(search_path):
                 if file_path in themes_set:
                     continue
 
-                full_path = os.path.join(search_path, file_path, 'theme.conf')
-                if not os.path.isfile(full_path):
+                full_path = search_path.joinpath(file_path, 'theme.conf')
+                # full_path = os.path.join(search_path, file_path, 'theme.conf')
+                if not full_path.is_file():
+                # if not os.path.isfile(full_path):
                     continue
 
                 try:
-                    conf.read(full_path)
+                    conf.read(str(full_path))
                 except configparser.DuplicateOptionError as e:
                     print_error(str(e) + '\n')
                     continue
@@ -150,26 +158,25 @@ class ThemeManager:
                     # TODO
                     continue
                 
-                name = file_path
+                name = file_path.name
 
                 if 'Theme' in conf.keys():
                     conf_theme = conf['Theme']
                     if 'Name' in conf_theme.keys():
                         name = conf_theme['Name']
                     
-                    name_lang_key = 'Name[%s]' % lang_short
+                    name_lang_key = f'Name[{lang_short}]'
                     
                     if name_lang_key in conf_theme.keys():
                         name = conf_theme[name_lang_key]
                 
                 themes_set.add(file_path)
                 themes_dicts.append(
-                    {'ref_id': file_path, 'name': name, 'editable': editable,
-                     'file_path': full_path})
-        
-        for theme_dict in themes_dicts:
-            print(theme_dict)
-        
+                    {'ref_id': file_path.name,
+                     'name': name,
+                     'editable': editable,
+                     'file_path': full_path.as_posix()})
+
         return themes_dicts
     
     def copy_and_load_current_theme(self, new_name: str) -> int:
