@@ -21,7 +21,6 @@ import sys
 import time
 from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
                           QPoint, QPointF, QRectF, QSettings, QTimer, pyqtSignal)
-from PyQt5.QtGui import QFontMetricsF, QFont
 
 from .init_values import (
     CanvasItemType,
