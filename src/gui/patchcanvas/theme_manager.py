@@ -133,20 +133,16 @@ class ThemeManager:
         
         for search_path in self.theme_paths:
             if not search_path.exists():
-            # if not os.path.isdir(search_path):
                 continue
             
             editable = bool(os.access(search_path, os.W_OK))
             
             for file_path in search_path.iterdir():
-            # for file_path in os.listdir(search_path):
                 if file_path in themes_set:
                     continue
 
                 full_path = search_path.joinpath(file_path, 'theme.conf')
-                # full_path = os.path.join(search_path, file_path, 'theme.conf')
                 if not full_path.is_file():
-                # if not os.path.isfile(full_path):
                     continue
 
                 try:
@@ -175,21 +171,22 @@ class ThemeManager:
                     {'ref_id': file_path.name,
                      'name': name,
                      'editable': editable,
-                     'file_path': full_path.as_posix()})
+                     'file_path': str(full_path)})
 
         return themes_dicts
     
     def copy_and_load_current_theme(self, new_name: str) -> int:
         ''' returns 0 if ok, 1 if no editable dir exists, 2 if copy fails '''
         current_theme_dir = os.path.dirname(self.current_theme_file)
+        current_theme_dir = self.current_theme_file.parent
         
         editable_dir = ''
         
         # find the first editable patchbay_themes directory
         # creating it if it doesn't exists
         for search_path in self.theme_paths:
-            if os.path.exists(search_path):
-                if not os.path.isdir(search_path):
+            if search_path.exists():
+                if not search_path.is_dir():
                     continue
                 
                 if os.access(search_path, os.W_OK):
@@ -197,23 +194,23 @@ class ThemeManager:
                     break
             else:
                 try:
-                    os.makedirs(search_path)
+                    search_path.mkdir()
                 except:
                     continue
                 editable_dir = search_path
                 break
         
-        if not editable_dir:
+        if not editable_dir.name:
             return 1
 
-        new_dir = os.path.join(editable_dir, new_name)
+        new_dir = editable_dir.joinpath(new_name)
         
         try:
             shutil.copytree(current_theme_dir, new_dir)
         except:
             return 2
         
-        self.current_theme_file = os.path.join(new_dir, 'theme.conf')
+        self.current_theme_file = new_dir.joinpath('theme.conf')
         self._update_theme()
         return 0
     

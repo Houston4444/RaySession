@@ -169,7 +169,7 @@ class StyleAttributer:
             self._background2_color = _to_qcolor(value)
             if self._background2_color is None:
                 err = True
-        
+
         elif attribute == 'background_image':
             image_path = os.path.join(
                 os.path.dirname(Theme.theme_file_path), 'images', value)
@@ -180,8 +180,6 @@ class StyleAttributer:
                     self._background_image = None
             else:
                 self._background_image = None
-            
-            print('cahliee', image_path, self._background_image)
         
         elif attribute == 'text-color':
             self._text_color = _to_qcolor(value)
