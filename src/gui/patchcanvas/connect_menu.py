@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PatchBay Canvas engine using QGraphicsView/Scene
-# Copyright (C) 2019-2021 Mathieu Picot <picotmathieu@gmail.com>
+# Copyright (C) 2019-2022 Mathieu Picot <picotmathieu@gmail.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
