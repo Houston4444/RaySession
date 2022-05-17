@@ -20,6 +20,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+from ast import Call
 import sys
 
 from PyQt5.QtCore import qCritical, QPointF, QTimer, QFile
@@ -397,12 +398,12 @@ def get_icon(icon_type: int, icon_name: str, port_mode: int) -> QIcon:
     return icon
 
 def connect_ports(group_id_1: int, port_id_1: int,
-                       group_id_2: int, port_id_2:int):
+                  group_id_2: int, port_id_2:int):
     one_is_out = True
 
     for port in canvas.port_list:
         if port.group_id == group_id_1 and port.port_id == port_id_1:
-            if port.port_mode != PortMode.OUTPUT:
+            if port.port_mode is not PortMode.OUTPUT:
                 one_is_out = False
             break
         elif port.group_id == group_id_2 and port.port_id == port_id_2:
@@ -415,14 +416,14 @@ def connect_ports(group_id_1: int, port_id_1: int,
             % (group_id_1, port_id_1, group_id_2, port_id_2))
         return
 
-    string_to_send = "%i:%i:%i:%i" % (group_id_2, port_id_2,
-                                      group_id_1, port_id_1)
     if one_is_out:
-        string_to_send = "%i:%i:%i:%i" % (group_id_1, port_id_1,
-                                          group_id_2, port_id_2)
-
-    canvas.callback(CallbackAct.PORTS_CONNECT, 0, 0, string_to_send)
-
+        canvas.callback(CallbackAct.PORTS_CONNECT,
+                        group_id_1, port_id_1,
+                        group_id_2, port_id_2)
+    else:
+        canvas.callback(CallbackAct.PORTS_CONNECT,
+                        group_id_2, port_id_2,
+                        group_id_1, port_id_1)
 
 def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
                                    group_id_2: int, port_id_list_2: list) -> int:
@@ -543,7 +544,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
                 connected_indexes.append((out_index, in_index))
             else:
                 canvas.callback(CallbackAct.PORTS_DISCONNECT,
-                                connection.connection_id, 0, '')
+                                connection.connection_id)
 
     if disconnect:
         return
@@ -555,18 +556,17 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
                         == in_index % len(out_port_id_list)
                     and (out_index, in_index) not in connected_indexes):
                 canvas.callback(
-                    CallbackAct.PORTS_CONNECT, 0, 0,
-                    "%i:%i:%i:%i" % (
-                        group_out_id, out_port_id_list[out_index],
-                        group_in_id, in_port_id_list[in_index]))
+                    CallbackAct.PORTS_CONNECT,
+                    group_out_id, out_port_id_list[out_index],
+                    group_in_id, in_port_id_list[in_index])
 
 
-def canvas_callback(action: CallbackAct, value1: int, value2: int, value_str: str):
+def canvas_callback(action: CallbackAct, *args):
     if canvas.debug:
-        sys.stderr.write("PatchCanvas::canvas_callback(%i, %i, %i, %s)\n"
-                         % (action.name, value1, value2, value_str))
+        sys.stderr.write("PatchCanvas::canvas_callback(%s, %s)\n"
+                         % (action.name, str(args)))
 
-    canvas.callback(action, value1, value2, value_str)
+    canvas.callback(action, *args)
 
 def is_dark_theme(widget: QWidget) -> bool:
     return bool(

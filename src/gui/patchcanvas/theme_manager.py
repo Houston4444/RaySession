@@ -60,7 +60,7 @@ class ThemeManager:
         canvas.scene.update_theme()
         
         theme_ref = os.path.basename(os.path.dirname(self.current_theme_file))
-        canvas.callback(CallbackAct.THEME_CHANGED, 0, 0, theme_ref)
+        canvas.callback(CallbackAct.THEME_CHANGED, theme_ref)
         return True
     
     @staticmethod

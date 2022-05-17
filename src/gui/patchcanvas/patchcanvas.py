@@ -76,11 +76,11 @@ class CanvasObject(QObject):
         except:
             return
 
-        for connectionId in con_ids_list:
-            if type(connectionId) != int:
+        for connection_id in con_ids_list:
+            if type(connection_id) != int:
                 continue
 
-            utils.canvas_callback(CallbackAct.PORTS_DISCONNECT, connectionId, 0, "")
+            utils.canvas_callback(CallbackAct.PORTS_DISCONNECT, connection_id)
 
     @pyqtSlot()
     def set_as_stereo_with(self):
@@ -563,7 +563,7 @@ def join_group(group_id: int):
     canvas.loading_items = False
     redraw_group(group_id)
 
-    canvas.callback(CallbackAct.GROUP_JOINED, group_id, 0, '')
+    canvas.callback(CallbackAct.GROUP_JOINED, group_id)
 
     QTimer.singleShot(0, canvas.scene.update)
 

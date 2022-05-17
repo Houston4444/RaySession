@@ -26,3 +26,6 @@ enlever les qcritical -> logger
 Bug: connection non sélectionnée après clic droit
 Bug: plantage changement de layout -> revoir les callback (
     renvoyer un dictionnaire ? un namedtuple ? un tuple ?)
+
+layout_mode
+portgroup_add (2ports, mais pourrait être plus)

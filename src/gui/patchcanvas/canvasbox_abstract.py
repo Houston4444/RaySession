@@ -724,58 +724,58 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         elif act_selected == act_x_disc_all:
             for conn_id in conn_list_ids:
-                canvas.callback(CallbackAct.PORTS_DISCONNECT, conn_id, 0, "")
+                canvas.callback(CallbackAct.PORTS_DISCONNECT, conn_id)
 
         elif act_selected == act_x_info:
-            canvas.callback(CallbackAct.GROUP_INFO, self._group_id, 0, "")
+            canvas.callback(CallbackAct.GROUP_INFO, self._group_id)
 
         elif act_selected == act_x_rename:
-            canvas.callback(CallbackAct.GROUP_RENAME, self._group_id, 0, "")
+            canvas.callback(CallbackAct.GROUP_RENAME, self._group_id)
 
         elif act_selected == act_x_split_join:
             if self._splitted:
-                canvas.callback(CallbackAct.GROUP_JOIN, self._group_id, 0, "")
+                canvas.callback(CallbackAct.GROUP_JOIN, self._group_id)
             else:
-                canvas.callback(CallbackAct.GROUP_SPLIT, self._group_id, 0, "")
+                canvas.callback(CallbackAct.GROUP_SPLIT, self._group_id)
 
         elif act_selected == act_auto_layout:
             canvas.callback(CallbackAct.GROUP_LAYOUT_CHANGE, self._group_id,
-                            self._current_port_mode, str(LAYOUT_AUTO))
+                            self._current_port_mode, LAYOUT_AUTO)
 
         elif act_selected == act_switch_layout:
-            next_disposition = LAYOUT_HIGH
+            next_layout = LAYOUT_HIGH
             if self._current_layout_mode == LAYOUT_HIGH:
-                next_disposition = LAYOUT_LARGE
+                next_layout = LAYOUT_LARGE
             
             canvas.callback(CallbackAct.GROUP_LAYOUT_CHANGE, self._group_id,
-                            self._current_port_mode, str(next_disposition))
+                            self._current_port_mode, next_layout)
 
         elif act_selected == act_p_edit:
-            canvas.callback(CallbackAct.PLUGIN_EDIT, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_EDIT, self._plugin_id)
 
         elif act_selected == act_p_ui:
-            canvas.callback(CallbackAct.PLUGIN_SHOW_UI, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_SHOW_UI, self._plugin_id)
 
         elif act_selected == act_p_clone:
-            canvas.callback(CallbackAct.PLUGIN_CLONE, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_CLONE, self._plugin_id)
 
         elif act_selected == act_p_rename:
-            canvas.callback(CallbackAct.PLUGIN_RENAME, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_RENAME, self._plugin_id)
 
         elif act_selected == act_p_replace:
-            canvas.callback(CallbackAct.PLUGIN_REPLACE, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_REPLACE, self._plugin_id)
 
         elif act_selected == act_p_remove:
-            canvas.callback(CallbackAct.PLUGIN_REMOVE, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_REMOVE, self._plugin_id)
 
         elif act_selected == act_x_wrap:
             canvas.callback(CallbackAct.GROUP_WRAP, self._group_id,
-                            self._splitted_mode, str(not self._wrapped))
+                            self._splitted_mode, not self._wrapped)
 
     def keyPressEvent(self, event):
         if self._plugin_id >= 0 and event.key() == Qt.Key_Delete:
             event.accept()
-            canvas.callback(CallbackAct.PLUGIN_REMOVE, self._plugin_id, 0, "")
+            canvas.callback(CallbackAct.PLUGIN_REMOVE, self._plugin_id)
             return
         QGraphicsItem.keyPressEvent(self, event)
 
@@ -790,13 +790,13 @@ class CanvasBoxAbstract(QGraphicsItem):
         if self._can_handle_gui:
             canvas.callback(
                 CallbackAct.CLIENT_SHOW_GUI, self._group_id,
-                int(not(self._gui_visible)), '')
+                not self._gui_visible)
 
         if self._plugin_id >= 0:
             event.accept()
             canvas.callback(
                 CallbackAct.PLUGIN_SHOW_UI if self._plugin_ui else CallbackAct.PLUGIN_EDIT,
-                self._plugin_id, 0, "")
+                self._plugin_id)
             return
 
         QGraphicsItem.mouseDoubleClickEvent(self, event)
@@ -841,7 +841,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                     if wrap:
                         utils.canvas_callback(
                             CallbackAct.GROUP_WRAP, self._group_id,
-                            self._splitted_mode, 'False')
+                            self._splitted_mode, False)
                         return
                     
                 elif self._unwrap_triangle_pos:
@@ -856,7 +856,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                     if trirect.contains(event.scenePos()):
                         utils.canvas_callback(
                             CallbackAct.GROUP_WRAP, self._group_id,
-                            self._splitted_mode, 'True')
+                            self._splitted_mode, True)
                         event.ignore()
                         return
 
@@ -934,9 +934,8 @@ class CanvasBoxAbstract(QGraphicsItem):
         self.setY(round(self.y()))
 
     def send_move_callback(self):
-        x_y_str = "%i:%i" % (round(self.x()), round(self.y()))
         utils.canvas_callback(CallbackAct.GROUP_MOVE, self._group_id,
-                              self._splitted_mode, x_y_str)
+                              self._splitted_mode, round(self.x()), round(self.y()))
 
         for group in canvas.group_list:
             if group.group_id == self._group_id:
@@ -1384,8 +1383,8 @@ class CanvasBoxAbstract(QGraphicsItem):
                 and self._plugin_id <= MAX_PLUGIN_ID_ALLOWED
                 and (self._plugin_inline == self.INLINE_DISPLAY_ENABLED
                      or self._inline_scaling != scaling)):
-            size = "%i:%i" % (int(inwidth*scaling), int(inheight*scaling))
-            data = canvas.callback(CallbackAct.INLINE_DISPLAY, self._plugin_id, 0, size)
+            data = canvas.callback(CallbackAct.INLINE_DISPLAY, self._plugin_id,
+                                   int(inwidth*scaling), int(inheight*scaling))
             if data is None:
                 return
 

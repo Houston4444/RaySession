@@ -67,7 +67,7 @@ class CanvasBezierLine(QGraphicsPathItem):
             if (connection.port_out_id == self.item1.get_port_id()
                     and connection.port_in_id == self.item2.get_port_id()):
                 canvas.callback(CallbackAct.PORTS_DISCONNECT,
-                                connection.connection_id, 0, "")
+                                connection.connection_id)
                 break
 
     def semi_hide(self, yesno: bool):

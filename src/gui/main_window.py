@@ -1209,10 +1209,8 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.set_session(self.session)
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
 
-    def canvas_callback(self, action: int, value1: int,
-                        value2: int, value_str: str):
-        self.session.signaler.canvas_callback.emit(
-            action, value1, value2, value_str)
+    def canvas_callback(self, action: int, *args):
+        self.session.signaler.canvas_callback.emit(action, args)
 
     def set_nsm_locked(self, nsm_locked: bool):
         self.ui.actionNewSession.setEnabled(not nsm_locked)

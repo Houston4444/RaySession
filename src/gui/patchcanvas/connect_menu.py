@@ -223,7 +223,7 @@ class DangerousMenu(SubMenu):
                             group_id, [port_id]):
                         utils.canvas_callback(
                             CallbackAct.PORTS_DISCONNECT,
-                            connection.connection_id, '', '')
+                            connection.connection_id)
 
 
 class ConnectMenu(SubMenu):
@@ -330,7 +330,7 @@ class ConnectMenu(SubMenu):
                             group_id, [port_id]):
                         utils.canvas_callback(
                             CallbackAct.PORTS_DISCONNECT,
-                            connection.connection_id, '', '')
+                            connection.connection_id)
 
     # TODO was initially added the fact menu was updated
     # when port was added or removed
@@ -396,7 +396,7 @@ class DisconnectMenu(SubMenu):
                             element['group_id'], element['port_id_list']):
                         utils.canvas_callback(
                             CallbackAct.PORTS_DISCONNECT,
-                            connection.connection_id, '', '')
+                            connection.connection_id)
                 break
 
     def add_element(self, group_id: int, port_id_list: list,
@@ -562,7 +562,7 @@ class ClipboardMenu(SubMenu):
                                         group_id, [port_id]):
                                     utils.canvas_callback(
                                         CallbackAct.PORTS_DISCONNECT,
-                                        connection.connection_id, 0, '')
+                                        connection.connection_id)
                                     break
 
                         utils.connect_ports(self._group_id, self_port_id,
@@ -675,7 +675,7 @@ class MainPortContextMenu(QMenu):
     def disconnect_all(self):
         for connection in self.connection_list:
             utils.canvas_callback(CallbackAct.PORTS_DISCONNECT,
-                           connection.connection_id, 0, '')
+                                  connection.connection_id)
 
     def add_connection(self, connection):
         self.connection_list.append(connection)

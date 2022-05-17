@@ -175,9 +175,6 @@ class Port:
 
         if not PatchbayManager.port_type_shown(self.type):
             return
-    
-        #if not PatchbayManager.port_types_view & self.type:
-            #return
 
         port_mode = PortMode.NULL
         if self.flags & PORT_IS_INPUT:
@@ -235,7 +232,7 @@ class Port:
         patchcanvas.rename_port(
             self.group_id, self.port_id, display_name)
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'Port'):
         if self.type != other.type:
             return (self.type < other.type)
 
@@ -297,15 +294,12 @@ class Portgroup:
     def add_to_canvas(self):
         if PatchbayManager.very_fast_operation:
             return
-        
+
         if self.in_canvas:
             return
     
         if not PatchbayManager.port_type_shown(self.port_type()):
             return
-
-        #if not PatchbayManager.port_types_view & self.port_type():
-            #return
 
         if len(self.ports) < 2:
             return
@@ -314,13 +308,10 @@ class Portgroup:
             if not port.in_canvas:
                 return
 
-        port_mode = self.ports[0].mode()
-        port_type = self.ports[0].type
-
         self.in_canvas = True
 
-        port_id_list = [port.port_id for port in self.ports]
-        port_id_list = tuple(port_id_list)
+        port_type = self.ports[0].type
+        port_id_list = tuple([port.port_id for port in self.ports])
 
         patchcanvas.add_portgroup(self.group_id, self.portgroup_id,
                                   self.port_mode, port_type,
@@ -344,7 +335,6 @@ class Group:
         self.display_name = name
         self.ports = list[Port]()
         self.portgroups = list[Portgroup]()
-        #self.ports_to_rename_queue = []
         self._is_hardware = False
         self.client_icon = ''
         self.a2j_group = False
@@ -1356,7 +1346,7 @@ class PatchbayManager:
     def port_type_shown(cls, port_type: int):
         return bool(cls.port_types_view & enum_to_flag(port_type))
 
-    def canvas_callbacks(self, action, value1, value2, value_str):
+    def canvas_callbacks(self, action: CallbackAct, args: tuple):
         if action == CallbackAct.GROUP_INFO:
             pass
 
@@ -1364,7 +1354,7 @@ class PatchbayManager:
             pass
 
         elif action == CallbackAct.GROUP_SPLIT:
-            group_id = value1
+            group_id = args[0]
             for group in self.groups:
                 if group.group_id == group_id:
                     on_place = not bool(
@@ -1376,11 +1366,11 @@ class PatchbayManager:
                     break
 
         elif action == CallbackAct.GROUP_JOIN:
-            group_id = value1
+            group_id = args[0]
             patchcanvas.animate_before_join(group_id)
 
         elif action == CallbackAct.GROUP_JOINED:
-            group_id = value1
+            group_id = args[0]
 
             for group in self.groups:
                 if group.group_id == group_id:
@@ -1388,14 +1378,8 @@ class PatchbayManager:
                     group.save_current_position()
                     break
 
-        elif action == CallbackAct.GROUP_MOVE:
-            group_id = value1
-            port_mode = value2
-            x_y_str = value_str
-
-            str_x, colon, str_y = x_y_str.partition(':')
-            x = int(str_x)
-            y = int(str_y)
+        elif action == CallbackAct.GROUP_MOVE:            
+            group_id, port_mode, x, y = args
 
             for group in self.groups:
                 if group.group_id == group_id:
@@ -1411,9 +1395,7 @@ class PatchbayManager:
                     break
 
         elif action == CallbackAct.GROUP_WRAP:
-            group_id = value1
-            splitted_mode = value2
-            yesno = bool(value_str == 'True')
+            group_id, splitted_mode, yesno = args
 
             for group in self.groups:
                 if group.group_id == group_id:
@@ -1421,9 +1403,7 @@ class PatchbayManager:
                     break
 
         elif action == CallbackAct.GROUP_LAYOUT_CHANGE:
-            group_id = value1
-            port_mode = value2
-            layout_mode = int(value_str)
+            group_id, port_mode, layout_mode = args
 
             for group in self.groups:
                 if group.group_id == group_id:
@@ -1431,13 +1411,12 @@ class PatchbayManager:
                     break
 
         elif action == CallbackAct.PORTGROUP_ADD:
-            g_id, p_mode, p_type, p_id1, p_id2 =  [
-                int(i) for i in value_str.split(":")]
+            g_id, p_mode, p_type, port_ids = args
 
-            port_list = []
+            port_list = list[Port]()
             above_metadatas = False
 
-            for port_id in p_id1, p_id2:
+            for port_id in port_ids:
                 port = self.get_port_from_id(g_id, port_id)
                 if port.mdata_portgroup:
                     above_metadatas = True
@@ -1452,7 +1431,7 @@ class PatchbayManager:
                     new_portgroup_mem = ray.PortGroupMemory.new_from(
                         group.name, portgroup.port_type(),
                         portgroup.port_mode, int(above_metadatas),
-                        *[port.short_name() for port in port_list])
+                        *[p.short_name() for p in port_list])
 
                     self.add_portgroup_memory(new_portgroup_mem)
 
@@ -1464,8 +1443,7 @@ class PatchbayManager:
             portgroup.add_to_canvas()
 
         elif action == CallbackAct.PORTGROUP_REMOVE:
-            group_id = value1
-            portgroup_id = value2
+            group_id, portgroup_id = args
 
             for group in self.groups:
                 if group.group_id == group_id:
@@ -1494,8 +1472,7 @@ class PatchbayManager:
                     break
 
         elif action == CallbackAct.PORT_INFO:
-            group_id = value1
-            port_id = value2
+            group_id, port_id = args
 
             port = self.get_port_from_id(group_id, port_id)
             if port is None:
@@ -1509,7 +1486,7 @@ class PatchbayManager:
             pass
 
         elif action == CallbackAct.PORTS_CONNECT:
-            g_out, p_out, g_in, p_in = [int(i) for i in value_str.split(":")]
+            g_out, p_out, g_in, p_in = args
 
             port_out = self.get_port_from_id(g_out, p_out)
             port_in = self.get_port_from_id(g_in, p_in)
@@ -1522,7 +1499,7 @@ class PatchbayManager:
                 port_out.full_name, port_in.full_name)
 
         elif action == CallbackAct.PORTS_DISCONNECT:
-            connection_id = value1
+            connection_id = args[0]
             for connection in self.connections:
                 if connection.connection_id == connection_id:
                     self.send_to_patchbay_daemon(
@@ -1532,14 +1509,15 @@ class PatchbayManager:
                     break
 
         elif action == CallbackAct.BG_RIGHT_CLICK:
-            x, y = value1, value2
+            x, y = args
             self.canvas_menu.exec(QPoint(x, y))
 
         elif action == CallbackAct.DOUBLE_CLICK:
             self.toggle_full_screen()
         
         elif action == CallbackAct.CLIENT_SHOW_GUI:
-            group_id, int_visible = value1, value2
+            group_id, int_visible = args
+
             for group in self.groups:
                 if group.group_id == group_id:
                     for client in self.session.client_list:
@@ -1552,7 +1530,7 @@ class PatchbayManager:
                     break
         
         elif action == CallbackAct.THEME_CHANGED:
-            theme_ref = value_str
+            theme_ref = args[0]
             if self.options_dialog is not None:
                 self.options_dialog.set_theme(theme_ref)
 

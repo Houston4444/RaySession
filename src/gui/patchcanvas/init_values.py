@@ -58,31 +58,33 @@ class PortType(IntFlag):
 
 # Callback Actions
 class CallbackAct(IntEnum):
-    GROUP_INFO = 0          # group_id, N, N
-    GROUP_RENAME = 1        # group_id, N, N
-    GROUP_SPLIT = 2         # group_id, N, N
-    GROUP_JOIN = 3          # group_id, N, N
-    GROUP_JOINED = 4        # group_id, N, N
-    GROUP_MOVE = 5          # group_id, in_or_out, "x:y"
-    GROUP_WRAP = 6          # group_id, folded, N
-    GROUP_LAYOUT_CHANGE = 7 # group_id, layout_mode, in_or_out
-    PORTGROUP_ADD = 8       # N, N, "gId:pgId:pMode:pType:portId1:portId2"
-    PORTGROUP_REMOVE = 9    # group_id, portgrp_id, N
-    PORT_INFO = 10          # group_id, port_id, N
-    PORT_RENAME = 11        # group_id, port_id, N
-    PORTS_CONNECT = 12      # N, N, "outG:outP:inG:inP"
-    PORTS_DISCONNECT = 13   # conn_id, N, N
-    PLUGIN_CLONE = 14       # plugin_id, N, N
-    PLUGIN_EDIT = 15        # plugin_id, N, N
-    PLUGIN_RENAME = 16      # plugin_id, N, N
-    PLUGIN_REPLACE = 17     # plugin_id, N, N
-    PLUGIN_REMOVE = 18      # plugin_id, N, N
-    PLUGIN_SHOW_UI = 19     # plugin_id, N, N
-    BG_RIGHT_CLICK = 20     # N, N, N
-    DOUBLE_CLICK = 21       # N, N, N
-    INLINE_DISPLAY = 22     # plugin_id, N, N
-    CLIENT_SHOW_GUI = 23    # group_id, visible, N
-    THEME_CHANGED = 24      # N, N, "theme_name"
+    GROUP_INFO = 0          # group_id: int
+    GROUP_RENAME = 1        # group_id: int
+    GROUP_SPLIT = 2         # group_id: int
+    GROUP_JOIN = 3          # group_id: int
+    GROUP_JOINED = 4        # group_id: int
+    GROUP_MOVE = 5          # group_id: int, splitted_mode: PortMode, x: int, y: int
+    GROUP_WRAP = 6          # group_id: int, folded: bool
+    GROUP_LAYOUT_CHANGE = 7 # group_id: int, layout_mode: int, splitted_mode: PortMode
+    PORTGROUP_ADD = 8       # group_id: int, portgrp_id: int, port_mode: PortMode,
+                            #      port_type: PortType, port_ids: tuple[int]
+    PORTGROUP_REMOVE = 9    # group_id: int, portgrp_id: int
+    PORT_INFO = 10          # group_id: int, port_id: int
+    PORT_RENAME = 11        # group_id: int, port_id: int
+    PORTS_CONNECT = 12      # group_out_id: int, port_out_id: int,
+                            #      group_in_id: int, port_in_id: int
+    PORTS_DISCONNECT = 13   # conn_id: int
+    PLUGIN_CLONE = 14       # plugin_id: int
+    PLUGIN_EDIT = 15        # plugin_id: int
+    PLUGIN_RENAME = 16      # plugin_id: int
+    PLUGIN_REPLACE = 17     # plugin_id: int
+    PLUGIN_REMOVE = 18      # plugin_id: int
+    PLUGIN_SHOW_UI = 19     # plugin_id: int
+    INLINE_DISPLAY = 20     # plugin_id: int
+    BG_RIGHT_CLICK = 21     # 
+    DOUBLE_CLICK = 22       # 
+    CLIENT_SHOW_GUI = 23    # group_id: int, visible: bool
+    THEME_CHANGED = 24      # theme_name: str
 
 
 class IconType(IntEnum):

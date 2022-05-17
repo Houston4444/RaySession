@@ -904,7 +904,7 @@ class PatchScene(QGraphicsScene):
                 if item.type() is CanvasItemType.BOX:
                     break
             else:
-                canvas.callback(CallbackAct.DOUBLE_CLICK, 0, 0, "")
+                canvas.callback(CallbackAct.DOUBLE_CLICK)
                 return
 
         QGraphicsScene.mouseDoubleClickEvent(self, event)
@@ -1050,7 +1050,7 @@ class PatchScene(QGraphicsScene):
         if len(self.selectedItems()) == 0:
             event.accept()
             x, y = event.screenPos().x(), event.screenPos().y()
-            canvas.callback(CallbackAct.BG_RIGHT_CLICK, x, y, "")
+            canvas.callback(CallbackAct.BG_RIGHT_CLICK, x, y)
             return
 
         QGraphicsScene.contextMenuEvent(self, event)
