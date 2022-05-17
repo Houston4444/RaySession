@@ -24,12 +24,12 @@ import sys
 
 from PyQt5.QtCore import qCritical, QPointF, QTimer, QFile
 from PyQt5.QtGui import QIcon, QPalette
+from PyQt5.QtWidgets import QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
 from .init_values import (
-    bool2str,
     canvas,
     CanvasBoxType,
     IconType,
@@ -121,9 +121,9 @@ def get_new_group_positions()->tuple:
             (400, int(y)),
             (0, int(y)))
 
-def get_new_group_pos(horizontal):
+def get_new_group_pos(horizontal: bool):
     if canvas.debug:
-        print("PatchCanvas::get_new_group_pos(%s)" % bool2str(horizontal))
+        print("PatchCanvas::get_new_group_pos(%s)" % str(horizontal))
 
     new_pos = QPointF(canvas.initial_pos)
     items = canvas.scene.items()
@@ -346,10 +346,10 @@ def connection_concerns(connection, group_id: int, port_ids_list: list)->bool:
     else:
         return False
 
-def get_group_icon(group_id: int, port_mode: int):
+def get_group_icon(group_id: int, port_mode: int) -> QIcon:
     # port_mode is here reversed
     group_port_mode = PortMode.INPUT
-    if port_mode == PortMode.INPUT:
+    if port_mode is PortMode.INPUT:
         group_port_mode = PortMode.OUTPUT
 
     for group in canvas.group_list:
@@ -362,7 +362,7 @@ def get_group_icon(group_id: int, port_mode: int):
 
     return QIcon()
 
-def get_icon(icon_type: int, icon_name: str, port_mode: int):
+def get_icon(icon_type: int, icon_name: str, port_mode: int) -> QIcon:
     if icon_type in (IconType.CLIENT, IconType.APPLICATION):
         icon = QIcon.fromTheme(icon_name)
 
@@ -384,9 +384,9 @@ def get_icon(icon_type: int, icon_name: str, port_mode: int):
 
         if icon_name == "a2j":
             icon_file = ":/scalable/DIN-5.svg"
-        elif port_mode == PortMode.INPUT:
+        elif port_mode is PortMode.INPUT:
             icon_file = ":/scalable/audio-headphones.svg"
-        elif port_mode == PortMode.OUTPUT:
+        elif port_mode is PortMode.OUTPUT:
             icon_file = ":/scalable/microphone.svg"
 
         icon.addFile(icon_file)
@@ -406,7 +406,7 @@ def connect_ports(group_id_1: int, port_id_1: int,
                 one_is_out = False
             break
         elif port.group_id == group_id_2 and port.port_id == port_id_2:
-            if port.port_mode == PortMode.OUTPUT:
+            if port.port_mode is PortMode.OUTPUT:
                 one_is_out = False
             break
     else:
@@ -425,7 +425,7 @@ def connect_ports(group_id_1: int, port_id_1: int,
 
 
 def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
-                                   group_id_2: int, port_id_list_2: list)->int:
+                                   group_id_2: int, port_id_list_2: list) -> int:
     # returns
     # 0 if no connection
     # 1 if connection is irregular
@@ -439,7 +439,7 @@ def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
     for port in canvas.port_list:
         if (port.group_id == group_id_1
                 and port.port_id in port_id_list_1):
-            if port.port_mode == PortMode.OUTPUT:
+            if port.port_mode is PortMode.OUTPUT:
                 out_port_id_list = port_id_list_1
                 group_out_id = group_id_1
             else:
@@ -447,7 +447,7 @@ def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
                 group_in_id = group_id_1
         elif (port.group_id == group_id_2
                 and port.port_id in port_id_list_2):
-            if port.port_mode == PortMode.OUTPUT:
+            if port.port_mode is PortMode.OUTPUT:
                 out_port_id_list = port_id_list_2
                 group_out_id = group_id_2
             else:
@@ -503,7 +503,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id_1
                 and portgrp.portgrp_id == portgrp_id_1):
-            if portgrp.port_mode == PortMode.OUTPUT:
+            if portgrp.port_mode is PortMode.OUTPUT:
                 group_out_id = group_id_1
                 out_port_id_list = portgrp.port_id_list
             else:
@@ -512,7 +512,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
 
         elif (portgrp.group_id == group_id_2
                 and portgrp.portgrp_id == portgrp_id_2):
-            if portgrp.port_mode == PortMode.OUTPUT:
+            if portgrp.port_mode is PortMode.OUTPUT:
                 group_out_id = group_id_2
                 out_port_id_list = portgrp.port_id_list
             else:
@@ -561,16 +561,17 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
                         group_in_id, in_port_id_list[in_index]))
 
 
-def canvas_callback(action, value1, value2, value_str):
+def canvas_callback(action: CallbackAct, value1: int, value2: int, value_str: str):
     if canvas.debug:
         sys.stderr.write("PatchCanvas::canvas_callback(%i, %i, %i, %s)\n"
-                         % (action, value1, value2, value_str.encode()))
+                         % (action.name, value1, value2, value_str))
 
     canvas.callback(action, value1, value2, value_str)
 
-def is_dark_theme(widget)->bool:
+def is_dark_theme(widget: QWidget) -> bool:
     return bool(
-        widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
+        widget.palette().brush(QPalette.Active,
+                               QPalette.WindowText).color().lightness()
         > 128)
 
 # ------------------------------------------------------------------------------------------------------------

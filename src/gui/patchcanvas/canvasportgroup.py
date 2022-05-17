@@ -119,12 +119,12 @@ class CanvasPortGroup(QGraphicsItem):
             # absolutely forbidden to connect an output CV port
             # to an input audio port.
             # It could destroy material.
-            if self._port_mode == PortMode.OUTPUT:
+            if self._port_mode is PortMode.OUTPUT:
                 if self.is_alternate():
                     return other.is_alternate()
                 return True
 
-            if self._port_mode == PortMode.INPUT:
+            if self._port_mode is PortMode.INPUT:
                 if self.is_alternate():
                     return True
                 return not other.is_alternate()
@@ -247,7 +247,7 @@ class CanvasPortGroup(QGraphicsItem):
                                     if i % len(hover_port_id_list) != j:
                                         continue
 
-                                if self._port_mode == PortMode.OUTPUT:
+                                if self._port_mode is PortMode.OUTPUT:
                                     canvas.callback(
                                         CallbackAct.PORTS_CONNECT, 0, 0,
                                         "%i:%i:%i:%i" % (
@@ -292,7 +292,7 @@ class CanvasPortGroup(QGraphicsItem):
                         if (i % len(hover_port_id_list)
                                 == j % len(self._port_id_list)):
                             if not [port_id, hover_port_id] in ports_connected_list:
-                                if self._port_mode == PortMode.OUTPUT:
+                                if self._port_mode is PortMode.OUTPUT:
                                     conn = "%i:%i:%i:%i" % (
                                         self._group_id, port_id,
                                         hover_group_id, hover_port_id)
@@ -629,7 +629,7 @@ class CanvasPortGroup(QGraphicsItem):
         return QGraphicsItem.itemChange(self, change, value)
 
     def boundingRect(self):
-        if self._port_mode == PortMode.INPUT:
+        if self._port_mode is PortMode.INPUT:
             return QRectF(canvas.theme.port_grouped_width, 0,
                           self._portgrp_width + 12 - canvas.theme.port_grouped_width,
                           canvas.theme.port_height * len(self._port_id_list))
@@ -668,7 +668,7 @@ class CanvasPortGroup(QGraphicsItem):
         if poly_corner_xhinting == 0:
             poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
 
-        if self._port_mode == PortMode.INPUT:
+        if self._port_mode is PortMode.INPUT:
             port_width = canvas.theme.port_grouped_width
 
             for port in canvas.port_list:
@@ -688,7 +688,7 @@ class CanvasPortGroup(QGraphicsItem):
             poly_locx[3] = self._portgrp_width + 3 + lineHinting
             poly_locx[4] = self._ports_width - lineHinting
 
-        elif self._port_mode == PortMode.OUTPUT:
+        elif self._port_mode is PortMode.OUTPUT:
             text_pos = QPointF(
                 9, 12 + (canvas.theme.port_height * (len(self._port_id_list) -1)/2))
 

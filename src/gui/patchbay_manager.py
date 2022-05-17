@@ -15,7 +15,7 @@ from patchcanvas import patchcanvas
 from patchcanvas import (PortMode, PortType, CallbackAct, IconType,
                          BoxSplitMode, EyeCandy)
 from gui_server_thread import GuiServerThread
-from patchbay_tools import PatchbayToolsWidget, CanvasMenu, CanvasPortInfoDialog
+from patchbay_tools import PORT_TYPE_AUDIO, PORT_TYPE_MIDI, PatchbayToolsWidget, CanvasMenu, CanvasPortInfoDialog
 
 import canvas_options
 
@@ -125,7 +125,7 @@ class Port:
     mdata_portgroup = ''
 
     def __init__(self, port_id: int, name: str,
-                 port_type: int, flags: int, uuid: int):
+                 port_type: PortType, flags: int, uuid: int):
         self.port_id = port_id
         self.full_name = name
         self.type = port_type
@@ -410,9 +410,8 @@ class Group:
             display_name = self.display_name
         
         layout_modes_ = {}
-        for port_mode in (PortMode.INPUT, PortMode.OUTPUT,
-                          PortMode.INPUT | PortMode.OUTPUT):
-            layout_modes_[port_mode] = gpos.get_layout_mode(port_mode)
+        for port_mode in (PortMode.INPUT, PortMode.OUTPUT, PortMode.BOTH):
+            layout_modes_[port_mode] = gpos.get_layout_mode(port_mode.value)
         
         patchcanvas.add_group(
             self.group_id, display_name, split,
@@ -587,7 +586,7 @@ class Group:
             '/ray/server/patchbay/save_group_position',
             *self.current_position.spread())
 
-    def set_group_position(self, group_position):
+    def set_group_position(self, group_position: ray.GroupPosition):
         ex_gpos_flags = self.current_position.flags
         self.current_position = group_position
         gpos = self.current_position
@@ -611,8 +610,8 @@ class Group:
                 and not gpos.flags & GROUP_SPLITTED):
             patchcanvas.animate_before_join(self.group_id)
 
-    def set_layout_mode(self, port_mode: int, layout_mode: int):
-        self.current_position.set_layout_mode(port_mode, layout_mode)
+    def set_layout_mode(self, port_mode: PortMode, layout_mode: int):
+        self.current_position.set_layout_mode(port_mode.value, layout_mode)
         self.save_current_position()
         
         if not self.in_canvas:
@@ -1770,8 +1769,15 @@ class PatchbayManager:
                 group.uuid = uuid
                 break
 
-    def add_port(self, name: str, port_type: int, flags: int, uuid: int) -> int:
-        ' adds port and returns the group_id '
+    def add_port(self, name: str, port_type_int: int, flags: int, uuid: int) -> int:
+        ''' adds port and returns the group_id '''
+        port_type = PortType.NULL
+        
+        if port_type_int == PORT_TYPE_AUDIO:
+            port_type = PortType.AUDIO_JACK
+        elif port_type_int == PORT_TYPE_MIDI:
+            port_type = PortType.MIDI_JACK
+        
         port = Port(self._next_port_id, name, port_type, flags, uuid)
         self._next_port_id += 1
 

@@ -43,12 +43,7 @@ from .init_values import (
     CallbackAct,
     MAX_PLUGIN_ID_ALLOWED,
     PortMode,
-    DIRECTION_NONE,
-    DIRECTION_LEFT,
-    DIRECTION_RIGHT,
-    DIRECTION_UP,
-    DIRECTION_DOWN
-)
+    Direction)
 
 from .canvasbox import CanvasBox
 
@@ -257,34 +252,34 @@ class PatchScene(QGraphicsScene):
             self.move_box_timer.start()
 
     def deplace_boxes_from_repulsers(self, repulser_boxes: list[CanvasBox],
-                                     wanted_direction=DIRECTION_NONE,
+                                     wanted_direction=Direction.NONE,
                                      new_scene_rect=None):
         def get_direction(fixed_rect: QRectF, moving_rect: QRectF,
-                          parent_directions=[])->int:
+                          parent_directions=[]) -> Direction:
             if (moving_rect.top() <= fixed_rect.center().y() <= moving_rect.bottom()
                     or fixed_rect.top() <= moving_rect.center().y() <= fixed_rect.bottom()):
                 if (fixed_rect.right() < moving_rect.center().x()
                         and fixed_rect.center().x() < moving_rect.left()):
-                    if DIRECTION_LEFT in parent_directions:
-                        return DIRECTION_LEFT
-                    return DIRECTION_RIGHT
+                    if Direction.LEFT in parent_directions:
+                        return Direction.LEFT
+                    return Direction.RIGHT
                 
                 if (fixed_rect.left() > moving_rect.center().x()
                         and fixed_rect.center().x() > moving_rect.right()):
-                    if DIRECTION_RIGHT in parent_directions:
-                        return DIRECTION_RIGHT
-                    return DIRECTION_LEFT
+                    if Direction.RIGHT in parent_directions:
+                        return Direction.RIGHT
+                    return Direction.LEFT
             
             if fixed_rect.center().y() <= moving_rect.center().y():
-                if DIRECTION_UP in parent_directions:
-                    return DIRECTION_UP
-                return DIRECTION_DOWN
+                if Direction.UP in parent_directions:
+                    return Direction.UP
+                return Direction.DOWN
             
-            if DIRECTION_DOWN in parent_directions:
-                return DIRECTION_DOWN
-            return DIRECTION_UP
+            if Direction.DOWN in parent_directions:
+                return Direction.DOWN
+            return Direction.UP
         
-        def repulse(direction: int, fixed, moving,
+        def repulse(direction: Direction, fixed, moving,
                     fixed_port_mode: int, moving_port_mode: int) -> QRectF:
             ''' returns a QRectF to be placed at side of fixed_rect
                 where fixed_rect is an already determinated futur place
@@ -299,17 +294,14 @@ class PatchScene(QGraphicsScene):
                 rect = moving.boundingRect().translated(moving.pos())
             else:
                 rect = moving
-
-            assert direction in (DIRECTION_DOWN, DIRECTION_LEFT,
-                                 DIRECTION_UP, DIRECTION_RIGHT)
             
             x = rect.left()
             y = rect.top()
             
-            if direction in (DIRECTION_LEFT, DIRECTION_RIGHT):
+            if direction in (Direction.LEFT, Direction.RIGHT):
                 spacing = box_spacing
 
-                if direction == DIRECTION_LEFT:
+                if direction == Direction.LEFT:
                     if (fixed_port_mode & PortMode.INPUT
                             or moving_port_mode & PortMode.OUTPUT):
                         spacing = box_spacing_hor
@@ -334,8 +326,8 @@ class PatchScene(QGraphicsScene):
                 elif bottom_diff <= magnet:
                     y = fixed_rect.bottom() - rect.height()
             
-            elif direction in (DIRECTION_UP, DIRECTION_DOWN):
-                if direction == DIRECTION_UP:
+            elif direction in (Direction.UP, Direction.DOWN):
+                if direction == Direction.UP:
                     y = fixed_rect.top() - box_spacing - rect.height()
                     if y < 0:
                         y -= 1.0
@@ -457,13 +449,13 @@ class PatchScene(QGraphicsScene):
                     'repulser': repulser}
                 
                 # stock a position only for sorting reason
-                if direction == DIRECTION_RIGHT:
+                if direction == Direction.RIGHT:
                     to_move_box['pos'] = irect.left()
-                elif direction == DIRECTION_LEFT:
+                elif direction == Direction.LEFT:
                     to_move_box['pos'] = - irect.right()
-                elif direction == DIRECTION_DOWN:
+                elif direction == Direction.DOWN:
                     to_move_box['pos'] = irect.top()
-                elif direction == DIRECTION_UP:
+                elif direction == Direction.UP:
                     to_move_box['pos'] = - irect.bottom()
 
                 to_move_boxes.append(to_move_box)
@@ -615,7 +607,7 @@ class PatchScene(QGraphicsScene):
             repulser_boxes.append(neighbor)
         repulser_boxes.append(box_widget)
         
-        self.deplace_boxes_from_repulsers(repulser_boxes, wanted_direction=DIRECTION_UP)
+        self.deplace_boxes_from_repulsers(repulser_boxes, wanted_direction=Direction.UP)
 
     def center_view_on(self, widget):
         self._view.centerOn(widget)

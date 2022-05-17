@@ -830,7 +830,7 @@ class GroupPosition:
     
     def set_layout_mode(self, port_mode: int, layout_mode: int):
         if not (1 <= port_mode <= 3 or 0 <= layout_mode <= 2):
-            print('gorupp possition set_layout_mode wrong port_mode or layout_mode',
+            print('group position set_layout_mode wrong port_mode or layout_mode',
                   port_mode, layout_mode)
             return
         

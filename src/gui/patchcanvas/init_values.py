@@ -44,21 +44,23 @@ if TYPE_CHECKING:
 # Maximum Id for a plugin, treated as invalid/zero if above this value
 MAX_PLUGIN_ID_ALLOWED = 0x7FF
 
-# Port Mode
+
 class PortMode(IntFlag):
     NULL = 0x00
     INPUT = 0x01
     OUTPUT = 0x02
     BOTH = INPUT | OUTPUT
 
-class PortType(IntEnum):
-    NULL = 0
-    AUDIO_JACK = 1
-    MIDI_JACK = 2
-    MIDI_ALSA = 3
-    PARAMETER = 4
 
-# Callback Action
+class PortType(IntFlag):
+    NULL = 0x00
+    AUDIO_JACK = 0x01
+    MIDI_JACK = 0x02
+    MIDI_ALSA = 0x04
+    PARAMETER = 0x08
+
+
+# Callback Actions
 class CallbackAct(IntEnum):
     GROUP_INFO = 0 # group_id, N, N
     GROUP_RENAME = 1 # group_id, N, N
@@ -86,7 +88,7 @@ class CallbackAct(IntEnum):
     CLIENT_SHOW_GUI = 23 # group_id, visible, N
     THEME_CHANGED = 24 # N, N, "theme_name"
 
-# Icon
+
 class IconType(IntEnum):
     APPLICATION = 0
     HARDWARE = 1
@@ -97,24 +99,26 @@ class IconType(IntEnum):
     CLIENT = 6
     INTERNAL = 7
 
+
 # Split Option
 class BoxSplitMode(IntEnum):
     UNDEF = 0
     NO = 1
     YES = 2
 
-# Eye-Candy Option
+
 class EyeCandy(IntEnum):
     NONE = 0
     SMALL = 1 # Use boxes shadows
 
 
 # For Repulsive boxes
-DIRECTION_NONE = 0
-DIRECTION_LEFT = 1
-DIRECTION_RIGHT = 2
-DIRECTION_UP = 3
-DIRECTION_DOWN = 4
+class Direction(IntEnum):
+    NONE = 0
+    LEFT = 1
+    RIGHT = 2
+    UP = 3
+    DOWN = 4
 
 # -----------------------------------
 
@@ -140,6 +144,7 @@ class CanvasOptionsObject:
     prevent_overlap: bool
     max_port_width: int
 
+
 # Canvas features
 class CanvasFeaturesObject:
     group_info: bool
@@ -164,12 +169,10 @@ class Canvas(object):
         self.port_list = list[PortObject]()
         self.portgrp_list = list[PortgrpObject]()
         self.connection_list = list[ConnectionObject]()
-        self.animation_list = []
-        self.clipboard = []
+        self.clipboard = list[ClipboardElement]()
         self.clipboard_cut = True
         self.group_plugin_map = {}
 
-        self.callback = self.callback
         self.debug = False
         self.scene = None
         self.last_z_value = 0
@@ -188,11 +191,12 @@ class Canvas(object):
             self.theme = Theme()
             self.scene = PatchScene()
 
-    def callback(self, action, value1, value2, value_str):
+    def callback(self, action: CallbackAct, value1: int,
+                 value2: int, value_str: str):
         print("Canvas::callback({}, {}, {}, {})".format(
-            action, value1, value2, value_str))
+            action.name, value1, value2, value_str))
 
-# ------------------------------------------------------------------------------------------------------------
+# ------------------------
 
 # object lists            
 class GroupObject:
@@ -258,13 +262,7 @@ class ClipboardElement:
     group_port_ids: list[int]
 
 
-# ------------------------------------------------------------------------------------------------------------
-
-# Internal functions
-def bool2str(check: bool) -> str:
-    return str(bool(check))
-
-# ------------------------------------------------------------------------------------------------------------
+# -----------------------------
 
 # Global objects
 canvas = Canvas()

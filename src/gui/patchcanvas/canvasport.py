@@ -135,12 +135,12 @@ class CanvasPort(QGraphicsItem):
             # absolutely forbidden to connect an output CV port
             # to an input audio port.
             # It could destroy material.
-            if self._port_mode == PortMode.OUTPUT:
+            if self._port_mode is PortMode.OUTPUT:
                 if self.is_alternate():
                     return other.is_alternate()
                 return True
 
-            if self._port_mode == PortMode.INPUT:
+            if self._port_mode is PortMode.INPUT:
                 if self.is_alternate():
                     return True
                 return not other.is_alternate()
@@ -248,7 +248,7 @@ class CanvasPort(QGraphicsItem):
         phi = 0.75 if self._portgrp_len > 2 else 0.62
         
         cx = scene_pos.x()
-        if self._port_mode == PortMode.OUTPUT:
+        if self._port_mode is PortMode.OUTPUT:
             cx += self._port_width + 12
         
         height = canvas.theme.port_height
@@ -294,7 +294,7 @@ class CanvasPort(QGraphicsItem):
 
                         con_group_id = connection.group_out_id
                         con_port_id = connection.port_out_id
-                        if self._port_mode == PortMode.OUTPUT:
+                        if self._port_mode is PortMode.OUTPUT:
                             con_group_id = connection.group_in_id
                             con_port_id = connection.port_in_id
 
@@ -320,7 +320,7 @@ class CanvasPort(QGraphicsItem):
             else:
                 for porthover_id in hover_port_id_list:
                     if not porthover_id in ports_connected_list:
-                        if self._port_mode == PortMode.OUTPUT:
+                        if self._port_mode is PortMode.OUTPUT:
                             conn = "%i:%i:%i:%i" % (
                                 self._group_id, self._port_id,
                                 hover_group_id, porthover_id)
@@ -667,7 +667,7 @@ class CanvasPort(QGraphicsItem):
 
     def boundingRect(self):
         if self._portgrp_id:
-            if self._port_mode == PortMode.INPUT:
+            if self._port_mode is PortMode.INPUT:
                 return QRectF(0, 0, self._port_width, self._port_height)
             else:
                 return QRectF(12, 0,
@@ -717,7 +717,7 @@ class CanvasPort(QGraphicsItem):
         is_cv_port = bool(self._port_type == PortType.AUDIO_JACK
                           and self._is_alternate)
 
-        if self._port_mode == PortMode.INPUT:
+        if self._port_mode is PortMode.INPUT:
             text_pos = QPointF(3, text_y_pos)
 
             if is_cv_port:
@@ -735,7 +735,7 @@ class CanvasPort(QGraphicsItem):
                 poly_locx[4] = lineHinting
                 poly_locx[5] = self._port_width
 
-        elif self._port_mode == PortMode.OUTPUT:
+        elif self._port_mode is PortMode.OUTPUT:
             text_pos = QPointF(9, text_y_pos)
 
             if is_cv_port:
@@ -818,9 +818,9 @@ class CanvasPort(QGraphicsItem):
                 painter.setPen(poly_pen)
 
                 y_line = canvas.theme.port_height / 2.0
-                if self._port_mode == PortMode.OUTPUT:
+                if self._port_mode is PortMode.OUTPUT:
                     painter.drawLine(0, y_line, poly_locx[1], y_line)
-                elif self._port_mode == PortMode.INPUT:
+                elif self._port_mode is PortMode.INPUT:
                     painter.drawLine(
                         self._port_width + 5, y_line,
                         self._port_width + 12, y_line)
@@ -838,9 +838,9 @@ class CanvasPort(QGraphicsItem):
                 painter.setBrush(box_theme.background_color())
 
                 ellipse_x = poly_locx[1]
-                if self._port_mode == PortMode.OUTPUT:
+                if self._port_mode is PortMode.OUTPUT:
                     ellipse_x -= 2
-                elif self._port_mode == PortMode.INPUT:
+                elif self._port_mode is PortMode.INPUT:
                     ellipse_x += 2
 
                 painter.drawEllipse(
@@ -855,7 +855,7 @@ class CanvasPort(QGraphicsItem):
         if self._portgrp_id:
             print_name_size = self.get_text_width()
 
-            if self._port_mode == PortMode.OUTPUT:
+            if self._port_mode is PortMode.OUTPUT:
                 text_pos = QPointF(self._port_width + 9 - print_name_size,
                                    text_y_pos)
 

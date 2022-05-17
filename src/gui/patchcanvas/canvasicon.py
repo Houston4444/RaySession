@@ -158,9 +158,9 @@ class CanvasSvgIcon(QGraphicsSvgItem):
                 icon_path = theme.hardware_midi
                 self._size = QRectF(4, 4, 24, 24)
             else:
-                if port_mode == PortMode.INPUT:
+                if port_mode is PortMode.INPUT:
                     icon_path = theme.hardware_playback
-                elif port_mode == PortMode.OUTPUT:
+                elif port_mode is PortMode.OUTPUT:
                     icon_path = theme.hardware_capture
                 else:
                     icon_path = theme.hardware_grouped

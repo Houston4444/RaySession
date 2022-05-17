@@ -15,6 +15,8 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 # Imports (Custom)
 
 from .init_values import (
+    PortObject,
+    PortgrpObject,
     canvas,
     options,
     PortMode,
@@ -93,8 +95,8 @@ class CanvasBox(CanvasBoxAbstract):
                  icon_name: str, parent=None):
         CanvasBoxAbstract.__init__(
             self, group_id, group_name, icon_type, icon_name, parent)
-        self._port_list = []
-        self._portgrp_list = []
+        self._port_list = list[PortObject]()
+        self._portgrp_list = list[PortgrpObject]()
     
     def _get_portgroup_position(self, port_id: int, portgrp_id: int)->tuple:
         if portgrp_id <= 0:
@@ -112,14 +114,15 @@ class CanvasBox(CanvasBoxAbstract):
             [p.port_name for p in self._port_list
              if p.portgrp_id == portgrp_id])
 
-    def _should_align_port_types(self, port_types: list) -> bool:
+    def _should_align_port_types(self) -> bool:
         ''' check if we can align port types
             eg, align first midi input to first midi output '''
-        align_port_types = True
         port_types_aligner = []
             
-        for port_type in port_types:
-            aligner_item = []
+        for port_type in PortType:
+            if port_type is PortType.NULL:
+                continue
+            
             for alternate in (False, True):
                 n_ins = 0
                 n_outs = 0
@@ -127,9 +130,9 @@ class CanvasBox(CanvasBoxAbstract):
                 for port in self._port_list:
                     if (port.port_type == port_type
                             and port.is_alternate == alternate):
-                        if port.port_mode == PortMode.INPUT:
+                        if port.port_mode is PortMode.INPUT:
                             n_ins += 1
-                        elif port.port_mode == PortMode.OUTPUT:
+                        elif port.port_mode is PortMode.OUTPUT:
                             n_outs += 1
 
                 port_types_aligner.append((n_ins, n_outs))
@@ -137,20 +140,19 @@ class CanvasBox(CanvasBoxAbstract):
         winner = PortMode.NULL
 
         for n_ins, n_outs in port_types_aligner:
-            if ((winner == PortMode.INPUT and n_outs > n_ins)
-                    or (winner == PortMode.OUTPUT and n_ins > n_outs)):
-                align_port_types = False
-                break
+            if ((winner is PortMode.INPUT and n_outs > n_ins)
+                    or (winner is PortMode.OUTPUT and n_ins > n_outs)):
+                return False
 
             if n_ins > n_outs:
                 winner = PortMode.INPUT
             elif n_outs > n_ins:
                 winner = PortMode.OUTPUT
         
-        return align_port_types
+        return True
     
     def _get_geometry_dict(
-            self, port_types: list, align_port_types: bool) -> dict:
+            self, align_port_types: bool) -> dict:
         max_in_width = max_out_width = 0
         last_in_pos = last_out_pos = 0
         final_last_in_pos = final_last_out_pos = last_in_pos
@@ -163,7 +165,10 @@ class CanvasBox(CanvasBoxAbstract):
         last_out_type_alter = (PortType.NULL, False)
         last_port_mode = PortMode.NULL
         
-        for port_type in port_types:
+        for port_type in PortType:
+            if PortType is PortType.NULL:
+                continue
+            
             for alternate in (False, True):
                 for port in self._port_list:
                     if (port.port_type != port_type
@@ -172,7 +177,7 @@ class CanvasBox(CanvasBoxAbstract):
 
                     port_pos, pg_len = self._get_portgroup_position(
                         port.port_id, port.portgrp_id)
-                    first_of_portgrp = bool(port_pos == 0)
+                    # first_of_portgrp = bool(port_pos == 0)
                     last_of_portgrp = bool(port_pos + 1 == pg_len)
                     size = 0
                     max_pwidth = options.max_port_width
@@ -213,7 +218,7 @@ class CanvasBox(CanvasBoxAbstract):
                     
                     type_alter = (port.port_type, port.is_alternate)
                     
-                    if port.port_mode == PortMode.INPUT:
+                    if port.port_mode is PortMode.INPUT:
                         max_in_width = max(max_in_width, size)
                         if type_alter != last_in_type_alter:
                             if last_in_type_alter != (PortType.NULL, False):
@@ -224,7 +229,7 @@ class CanvasBox(CanvasBoxAbstract):
                         if last_of_portgrp:
                             last_in_pos += port_spacing
 
-                    elif port.port_mode == PortMode.OUTPUT:
+                    elif port.port_mode is PortMode.OUTPUT:
                         max_out_width = max(max_out_width, size)
                         
                         if type_alter != last_out_type_alter:
@@ -251,8 +256,11 @@ class CanvasBox(CanvasBoxAbstract):
         last_inout_pos = 0
         last_type_alter = (PortType.NULL, False)
         
-        if self._current_port_mode == PortMode.OUTPUT | PortMode.INPUT:
-            for port_type in port_types:
+        if self._current_port_mode is PortMode.BOTH:
+            for port_type in PortType:
+                if port_type is PortType.NULL:
+                    continue
+                
                 for alternate in (False, True):
                     for port in self._port_list:
                         if (port.port_type != port_type
@@ -281,8 +289,7 @@ class CanvasBox(CanvasBoxAbstract):
                 'last_port_mode': last_port_mode}
 
     def _set_ports_y_positions(
-            self, port_types: list, align_port_types: bool, start_pos: int,
-            one_column: bool) -> dict:
+            self, align_port_types: bool, start_pos: int, one_column: bool) -> dict:
         def set_widget_pos(widget, pos):
             if self._wrapping:
                 widget.setY(pos - ((pos - wrapped_port_pos)
@@ -312,10 +319,13 @@ class CanvasBox(CanvasBoxAbstract):
         in_segment = [last_in_pos, last_in_pos]
         out_segment = [last_out_pos, last_out_pos]
         
-        for port_type in port_types:
+        for port_type in PortType:
+            if port_type is PortType.NULL:
+                continue
+            
             for alternate in (False, True):
                 for port in self._port_list:
-                    if (port.port_type != port_type
+                    if (port.port_type is not port_type
                             or port.is_alternate != alternate):
                         continue
                     
@@ -336,7 +346,7 @@ class CanvasBox(CanvasBoxAbstract):
                                 last_out_pos += port_type_spacing
                             last_type_alter = type_alter
                     
-                    if port.port_mode == PortMode.INPUT:
+                    if port.port_mode is PortMode.INPUT:
                         if not one_column and type_alter != last_in_type_alter:
                             if last_in_type_alter != (PortType.NULL, False):
                                 last_in_pos += port_type_spacing
@@ -375,7 +385,7 @@ class CanvasBox(CanvasBoxAbstract):
                         in_segment[1] = last_in_pos
                         last_in_pos += port_spacing
 
-                    elif port.port_mode == PortMode.OUTPUT:
+                    elif port.port_mode is PortMode.OUTPUT:
                         if not one_column and type_alter != last_out_type_alter:
                             if last_out_type_alter != (PortType.NULL, False):
                                 last_out_pos += port_type_spacing
@@ -637,7 +647,7 @@ class CanvasBox(CanvasBoxAbstract):
         width_for_ports_one = 30 + max(ports_in_width, ports_out_width)
 
         ports_width = ports_in_width
-        if self._current_port_mode == PortMode.OUTPUT:
+        if self._current_port_mode is PortMode.OUTPUT:
             ports_width = ports_out_width
 
         box_theme = self.get_theme()
@@ -767,7 +777,7 @@ class CanvasBox(CanvasBoxAbstract):
         header_width = all_title_templates[lines_choice]['header_width']
         max_title_size = all_title_templates[lines_choice]['title_width']
         
-        if self._current_port_mode == PortMode.INPUT + PortMode.OUTPUT:
+        if self._current_port_mode is PortMode.BOTH:
             if one_column:
                 self._current_layout_mode = LAYOUT_HIGH
             else:
@@ -828,20 +838,20 @@ class CanvasBox(CanvasBoxAbstract):
             if port.portgrp_id:
                 continue
 
-            if port.port_mode == PortMode.INPUT:
+            if port.port_mode is PortMode.INPUT:
                 port.widget.setX(inX)
                 port.widget.set_port_width(max_in_width - port_offset)
-            elif port.port_mode == PortMode.OUTPUT:
+            elif port.port_mode is PortMode.OUTPUT:
                 port.widget.setX(outX)
                 port.widget.set_port_width(max_out_width - port_offset)
 
         # Horizontal portgroups and ports in portgroup re-positioning
         for portgrp in self._portgrp_list:
             if portgrp.widget is not None:
-                if portgrp.port_mode == PortMode.INPUT:
+                if portgrp.port_mode is PortMode.INPUT:
                     portgrp.widget.set_portgrp_width(max_in_width - port_offset)
                     portgrp.widget.setX(box_theme.port_offset() +1)
-                elif portgrp.port_mode == PortMode.OUTPUT:
+                elif portgrp.port_mode is PortMode.OUTPUT:
                     portgrp.widget.set_portgrp_width(max_out_width - port_offset)
                     portgrp.widget.setX(outX)
 
@@ -867,9 +877,9 @@ class CanvasBox(CanvasBoxAbstract):
                 if (port.port_id in portgrp.port_id_list
                         and port.widget is not None):
                     port.widget.set_port_width(max_port_in_pg_width)
-                    if port.port_mode == PortMode.INPUT:
+                    if port.port_mode is PortMode.INPUT:
                         port.widget.setX(inX)
-                    elif port.port_mode == PortMode.OUTPUT:
+                    elif port.port_mode is PortMode.OUTPUT:
                         port.widget.setX(out_in_portgrpX)
     
     def _set_title_positions(self):
@@ -911,7 +921,7 @@ class CanvasBox(CanvasBoxAbstract):
             
             # set title lines pos
             for title_line in self._title_lines:
-                if self._current_port_mode == PortMode.INPUT:
+                if self._current_port_mode is PortMode.INPUT:
                     title_line.x = 4 + self._width - self._header_width + 2
                     if self._can_handle_gui:
                         title_line.x += 2
@@ -920,7 +930,7 @@ class CanvasBox(CanvasBoxAbstract):
                         self.top_icon.set_pos(self._width - 28 - gui_margin,
                                               4 + gui_margin)
     
-                elif self._current_port_mode == PortMode.OUTPUT:
+                elif self._current_port_mode is PortMode.OUTPUT:
                     title_line.x = (self._header_width
                                     - title_line.size - 6)
                     
@@ -1109,9 +1119,9 @@ class CanvasBox(CanvasBoxAbstract):
         port_types = [PortType.AUDIO_JACK, PortType.MIDI_JACK,
                       PortType.MIDI_ALSA, PortType.PARAMETER]
     
-        align_port_types = self._should_align_port_types(port_types)
+        align_port_types = self._should_align_port_types()
 
-        geo_dict = self._get_geometry_dict(port_types, align_port_types)
+        geo_dict = self._get_geometry_dict(align_port_types)
         last_in_pos = geo_dict['last_in_pos']
         last_out_pos = geo_dict['last_out_pos']
         last_inout_pos = geo_dict['last_inout_pos']
@@ -1148,9 +1158,9 @@ class CanvasBox(CanvasBoxAbstract):
             
             if self._has_side_title():
                 wrapped_height = self._header_height
-                if self._current_port_mode == PortMode.INPUT:
+                if self._current_port_mode is PortMode.INPUT:
                     wrapped_width -= self._width_in
-                elif self._current_port_mode == PortMode.OUTPUT:
+                elif self._current_port_mode is PortMode.OUTPUT:
                     wrapped_width -= self._width_out
             
         else:
@@ -1160,7 +1170,7 @@ class CanvasBox(CanvasBoxAbstract):
             wrapped_width = self._wrapped_width
             
             one_column = bool(
-                self._current_port_mode == PortMode.OUTPUT + PortMode.INPUT
+                self._current_port_mode is PortMode.BOTH
                 and self._current_layout_mode == LAYOUT_HIGH)
             
         last_in_pos += self._ports_y_start
@@ -1193,9 +1203,9 @@ class CanvasBox(CanvasBoxAbstract):
             if self._height - self._header_height >= 64:
                 y_side_space = last_in_pos - last_out_pos
                 
-                if one_column and last_port_mode == PortMode.INPUT:
+                if one_column and last_port_mode is PortMode.INPUT:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
-                elif one_column and last_port_mode == PortMode.OUTPUT:
+                elif one_column and last_port_mode is PortMode.OUTPUT:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_LEFT
                 elif y_side_space < -10:
                     self._unwrap_triangle_pos = UNWRAP_BUTTON_LEFT
@@ -1213,13 +1223,11 @@ class CanvasBox(CanvasBoxAbstract):
         self._height = float(int(self._height + 0.99))
 
         ports_y_segments_dict = self._set_ports_y_positions(
-            port_types, align_port_types,
-            self._ports_y_start,
-            one_column)
-        
+            align_port_types, self._ports_y_start, one_column)
+
         self._set_ports_x_positions(max_in_width, max_out_width)
-        
         self._set_title_positions()
+
         if (self._width != self._ex_width
                 or self._height != self._ex_height
                 or ports_y_segments_dict != self._ex_ports_y_segments_dict):

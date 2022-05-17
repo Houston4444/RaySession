@@ -17,28 +17,25 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
+from typing import TYPE_CHECKING
+
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QColor, QLinearGradient, QPainter, QPainterPath, QPen
 from PyQt5.QtWidgets import QGraphicsPathItem
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
-
 from .init_values import (
     canvas,
-    options,
     CanvasBezierLineType,
     CallbackAct,
-    PortMode,
-    PortType
-)
+    PortType)
 
-# ------------------------------------------------------------------------------------------------------------
+from .canvasbox import CanvasBox
+from .canvasport import CanvasPort
+    
+
 
 class CanvasBezierLine(QGraphicsPathItem):
-    def __init__(self, item1, item2, parent):
+    def __init__(self, item1: CanvasPort, item2: CanvasPort, parent: CanvasBox):
         QGraphicsPathItem.__init__(self)
         self.setParentItem(parent)
         #self.setCacheMode(QGraphicsPathItem.DeviceCoordinateCache)

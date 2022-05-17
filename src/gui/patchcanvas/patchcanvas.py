@@ -194,13 +194,8 @@ def clear():
 
     canvas.scene.clearSelection()
 
-    animatedItems = []
-    for animation in canvas.animation_list:
-        animatedItems.append(animation.item())
-
     for item in canvas.scene.items():
-        if (item.type() in (CanvasIconType, CanvasRubberbandType)
-                or item in animatedItems):
+        if item.type() in (CanvasIconType, CanvasRubberbandType):
             continue
         canvas.scene.removeItem(item)
         del item
@@ -332,10 +327,10 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
     if split_animated:
         for box in group_dict.widgets:
             if box is not None:
-                if box.get_splitted_mode() == PortMode.OUTPUT:
+                if box.get_splitted_mode() is PortMode.OUTPUT:
                     canvas.scene.add_box_to_animation(
                         box, group_dict.out_pos.x(), group_dict.out_pos.y())
-                elif box.get_splitted_mode() == PortMode.INPUT:
+                elif box.get_splitted_mode() is PortMode.INPUT:
                     canvas.scene.add_box_to_animation(
                         box, group_dict.in_pos.x(), group_dict.in_pos.y())
 
@@ -776,7 +771,7 @@ def move_group_boxes(group_id: int, null_xy: tuple,
             xy = out_xy
             pos = group.out_pos
 
-            if port_mode == PortMode.INPUT:
+            if port_mode is PortMode.INPUT:
                 box = group.widgets[1]
                 xy = in_xy
                 pos = group.in_pos
@@ -835,7 +830,7 @@ def get_group_pos(group_id, port_mode=PortMode.OUTPUT):
 
     for group in canvas.group_list:
         if group.group_id == group_id:
-            return group.widgets[1 if (group.split and port_mode == PortMode.INPUT) else 0].pos()
+            return group.widgets[1 if (group.split and port_mode is PortMode.INPUT) else 0].pos()
 
     warning_print(
         "get_group_pos(%i, %s) - unable to find group"

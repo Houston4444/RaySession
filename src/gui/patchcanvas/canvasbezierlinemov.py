@@ -20,10 +20,8 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-import sys
-
 from PyQt5.QtCore import Qt, QPointF
-from PyQt5.QtGui import QPainter, QPainterPath, QPen
+from PyQt5.QtGui import QPainter, QPainterPath
 from PyQt5.QtWidgets import QGraphicsPathItem
 
 # ------------------------------------------------------------------------------------------------------------
@@ -31,20 +29,19 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 
 from .init_values import (
     canvas,
-    options,
     CanvasBezierLineMovType,
     CanvasPortType,
     CanvasPortGroupType,
     PortMode,
-    PortType
-)
+    PortType)
 
 # ------------------------------------------------------------------------------------------------------------
 
 class CanvasBezierLineMov(QGraphicsPathItem):
-    def __init__(self, port_mode, port_type,
-                 port_posinportgrp, portgrp_lenght, parent):
+    def __init__(self, port_mode: PortMode, port_type: PortType,
+                 port_posinportgrp: int, portgrp_lenght: int, parent):
         QGraphicsPathItem.__init__(self)
+        
         self.setParentItem(parent)
 
         self.ready_to_disc = False
@@ -61,14 +58,6 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         self._item_y = self.scenePos().y()
         self._item_width = parent.get_port_width()
 
-        if self._port_type not in (PortType.AUDIO_JACK, PortType.MIDI_JACK,
-                                   PortType.MIDI_ALSA, PortType.PARAMETER):
-            sys.stderr.write(
-                "PatchCanvas::CanvasBezierLineMov(%s, %s, %s) - invalid port type\n"
-                % (self._port_mode.name,
-                   self._port_type.name,
-                   self.parentItem()))
-
     def set_destination_portgrp_pos(self, port_pos, portgrp_len):
         self._port_posinportgrp_to = port_pos
         self._portgrp_len_to = portgrp_len
@@ -76,9 +65,9 @@ class CanvasBezierLineMov(QGraphicsPathItem):
     def update_line_pos(self, scenePos):
         theme = canvas.theme.line
         
-        if self._port_type == PortType.AUDIO_JACK:
+        if self._port_type is PortType.AUDIO_JACK:
             theme = theme.audio
-        elif self._port_type == PortType.MIDI_JACK:
+        elif self._port_type is PortType.MIDI_JACK:
             theme = theme.midi
             
         theme = theme.selected
@@ -136,7 +125,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         final_x = scenePos.x() - self._item_x
         final_y = scenePos.y() - self._item_y + new_y
 
-        if self._port_mode == PortMode.OUTPUT:
+        if self._port_mode is PortMode.OUTPUT:
             old_x = self._item_width + 12
             mid_x = abs(final_x - old_x) / 2
             new_x1 = old_x + mid_x
@@ -147,7 +136,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 new_x1 += abs(diffxy)
                 new_x2 -= abs(diffxy)
 
-        elif self._port_mode == PortMode.INPUT:
+        elif self._port_mode is PortMode.INPUT:
             old_x = 0
             mid_x = abs(final_x - old_x) / 2
             new_x1 = old_x - mid_x
