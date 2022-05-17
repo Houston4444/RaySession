@@ -21,16 +21,13 @@
 # Imports (Global)
 import sys
 from enum import Enum
-
+from typing import TYPE_CHECKING
+from collections import namedtuple
 from PyQt5.QtCore import qCritical, Qt, QPoint, QPointF, QRectF, QTimer
-from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
+from PyQt5.QtGui import (QCursor, QFontMetrics, QImage,
                          QLinearGradient, QPainter, QPen, QPolygonF,
                          QColor, QIcon, QPixmap, QPainterPath, QBrush)
-from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication, QAction
-
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
-
+from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 from .init_values import (
     CanvasItemType,
@@ -49,9 +46,14 @@ from .canvasboxshadow import CanvasBoxShadow
 from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
 from .canvasport import CanvasPort
 from .canvasportgroup import CanvasPortGroup
-from .theme import Theme, BoxStyleAttributer
+from .theme import BoxStyleAttributer
+
+if TYPE_CHECKING:
+    from .canvasbezierline import CanvasBezierLine
 
 _translate = QApplication.translate
+
+CbLine = namedtuple('CbLine', ('line', 'connection_id'))
 
 class UnwrapButton(Enum):
     NONE = 0
@@ -59,15 +61,6 @@ class UnwrapButton(Enum):
     CENTER = 2
     RIGHT = 3
 
-
-# ------------------------------------------------------------------------------------------------------------
-
-class cb_line_t(object):
-    def __init__(self, line, connection_id):
-        self.line = line
-        self.connection_id = connection_id
-
-# ------------------------------------------------------------------------------------------------------------
 
 class CanvasBoxAbstract(QGraphicsItem):
     # inline display is not usable in RaySession
@@ -122,8 +115,8 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._inline_image = None
         self._inline_scaling = 1.0
 
-        self._port_list_ids = []
-        self._connection_lines = []
+        self._port_list_ids = list[int]()
+        self._connection_lines = list[CbLine]()
 
         self._is_hardware = bool(icon_type == IconType.HARDWARE)
         self._icon_name = icon_name
@@ -349,9 +342,8 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         return new_widget
 
-    def add_line_from_group(self, line, connection_id):
-        new_cbline = cb_line_t(line, connection_id)
-        self._connection_lines.append(new_cbline)
+    def add_line_from_group(self, line: 'CanvasBezierLine', connection_id: int):
+        self._connection_lines.append(CbLine(line, connection_id))
 
     def remove_line_from_group(self, connection_id):
         for connection in self._connection_lines:
@@ -855,8 +847,6 @@ class CanvasBoxAbstract(QGraphicsItem):
                         return
 
                 self._mouse_down = True
-                #for cb_line in self._connection_lines:
-                    #cb_line.line.setCacheMode(QGraphicsItem.NoCache)
             else:
                 # FIXME: Check if still valid: Fix a weird Qt behaviour with right-click mouseMove
                 self._mouse_down = False
@@ -907,9 +897,6 @@ class CanvasBoxAbstract(QGraphicsItem):
                         repulsers.append(widget)
 
             canvas.scene.deplace_boxes_from_repulsers(repulsers)
-            
-            #for cb_line in self._connection_lines:
-                #cb_line.line.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
             
             QTimer.singleShot(0, canvas.scene.update)
 
