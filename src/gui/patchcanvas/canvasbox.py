@@ -1,16 +1,7 @@
 
-import sys
-
-from sip import voidptr
-from struct import pack
-import time
-
+from enum import IntEnum
 from PyQt5.QtCore import QRectF
 from PyQt5.QtGui import QPainterPath
-from PyQt5.QtWidgets import QApplication
-
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
 
 from .init_values import (
     PortObject,
@@ -23,19 +14,13 @@ from .init_values import (
     IconType)
 import patchcanvas.utils as utils
 from .theme import Theme
+from .canvasbox_abstract import CanvasBoxAbstract, UnwrapButton
 
-from .canvasbox_abstract import (
-    CanvasBoxAbstract,
-    UNWRAP_BUTTON_NONE,
-    UNWRAP_BUTTON_LEFT,
-    UNWRAP_BUTTON_CENTER,
-    UNWRAP_BUTTON_RIGHT)
 
-_translate = QApplication.translate
-
-TITLE_ON_TOP = 0
-TITLE_ON_SIDE = 1
-TITLE_ON_SIDE_UNDER_ICON = 2
+class TitleOn(IntEnum):
+    TOP = 0
+    SIDE = 1
+    SIDE_UNDER_ICON = 2
 
 
 class TitleLine:
@@ -723,7 +708,7 @@ class CanvasBox(CanvasBoxAbstract):
                         ((ports_width + all_title_templates[i]['header_width'])
                         * max(all_title_templates[i]['header_height'],
                             height_for_ports + ports_y_start_min),
-                        i, False, TITLE_ON_SIDE))
+                        i, False, TitleOn.SIDE))
                         
                 # calculate area with title on side (title under the icon)
                 for i in range(1, lines_choice_max + 1):
@@ -731,7 +716,7 @@ class CanvasBox(CanvasBoxAbstract):
                         ((ports_width + all_title_templates[i]['title_width'] + 16)
                         * max(all_title_templates[i]['header_height'] + 28,
                             height_for_ports + ports_y_start_min),
-                        i, False, TITLE_ON_SIDE_UNDER_ICON))
+                        i, False, TitleOn.SIDE_UNDER_ICON))
             
             if layout_mode in (BoxLayoutMode.AUTO, BoxLayoutMode.HIGH):
                 # calculate area with title on top
@@ -739,7 +724,7 @@ class CanvasBox(CanvasBoxAbstract):
                     sizes_tuples.append(
                         (max(all_title_templates[i]['header_width'], width_for_ports)
                         * (all_title_templates[i]['header_height'] + height_for_ports),
-                        i, False, TITLE_ON_TOP))
+                        i, False, TitleOn.TOP))
         else:
             # grouped box
             
@@ -749,7 +734,7 @@ class CanvasBox(CanvasBoxAbstract):
                     sizes_tuples.append(
                         (max(all_title_templates[i]['header_width'], width_for_ports_one)
                         * (all_title_templates[i]['header_height'] + height_for_ports_one),
-                        i, True, TITLE_ON_TOP))
+                        i, True, TitleOn.TOP))
 
             # calculate area with input ports at left of output ports
             if layout_mode in (BoxLayoutMode.AUTO, BoxLayoutMode.LARGE):
@@ -757,7 +742,7 @@ class CanvasBox(CanvasBoxAbstract):
                     sizes_tuples.append(
                         (max(all_title_templates[i]['header_width'], width_for_ports)
                         * (all_title_templates[i]['header_height'] + height_for_ports),
-                        i, False, TITLE_ON_TOP))
+                        i, False, TitleOn.TOP))
         
         # sort areas and choose the first one (the littlest area)
         sizes_tuples.sort()
@@ -784,14 +769,14 @@ class CanvasBox(CanvasBoxAbstract):
         box_height = 0
         ports_y_start = header_height
 
-        self._title_under_icon = bool(title_on_side == TITLE_ON_SIDE_UNDER_ICON)
+        self._title_under_icon = bool(title_on_side == TitleOn.SIDE_UNDER_ICON)
 
         if title_on_side:
             box_width = ports_width + 12 + header_width
             ports_y_start = box_theme.port_spacing() + box_theme.port_type_spacing()
             box_height = max(height_for_ports + ports_y_start, header_height)
             
-            if title_on_side == TITLE_ON_SIDE_UNDER_ICON:
+            if title_on_side == TitleOn.SIDE_UNDER_ICON:
                 header_width = max(38, max_title_size + 12)
                 if self._can_handle_gui:
                     header_width += 4
@@ -1191,20 +1176,20 @@ class CanvasBox(CanvasBoxAbstract):
             self._height = normal_height
             self._width = normal_width
             
-            self._unwrap_triangle_pos = UNWRAP_BUTTON_NONE
+            self._unwrap_triangle_pos = UnwrapButton.NONE
             if self._height - self._header_height >= 64:
                 y_side_space = last_in_pos - last_out_pos
                 
                 if one_column and last_port_mode is PortMode.INPUT:
-                    self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
+                    self._unwrap_triangle_pos = UnwrapButton.RIGHT
                 elif one_column and last_port_mode is PortMode.OUTPUT:
-                    self._unwrap_triangle_pos = UNWRAP_BUTTON_LEFT
+                    self._unwrap_triangle_pos = UnwrapButton.LEFT
                 elif y_side_space < -10:
-                    self._unwrap_triangle_pos = UNWRAP_BUTTON_LEFT
+                    self._unwrap_triangle_pos = UnwrapButton.LEFT
                 elif y_side_space > 10:
-                    self._unwrap_triangle_pos = UNWRAP_BUTTON_RIGHT
+                    self._unwrap_triangle_pos = UnwrapButton.RIGHT
                 else:
-                    self._unwrap_triangle_pos = UNWRAP_BUTTON_CENTER
+                    self._unwrap_triangle_pos = UnwrapButton.CENTER
 
         self._wrapped_width = wrapped_width
         self._unwrapped_width = normal_width

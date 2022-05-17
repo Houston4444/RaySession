@@ -20,9 +20,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 import sys
-
-from sip import voidptr
-from struct import pack
+from enum import Enum
 
 from PyQt5.QtCore import qCritical, Qt, QPoint, QPointF, QRectF, QTimer
 from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QImage,
@@ -55,10 +53,12 @@ from .theme import Theme, BoxStyleAttributer
 
 _translate = QApplication.translate
 
-UNWRAP_BUTTON_NONE = 0
-UNWRAP_BUTTON_LEFT = 1
-UNWRAP_BUTTON_CENTER = 2
-UNWRAP_BUTTON_RIGHT = 3
+class UnwrapButton(Enum):
+    NONE = 0
+    LEFT = 1
+    CENTER = 2
+    RIGHT = 3
+
 
 # ------------------------------------------------------------------------------------------------------------
 
@@ -136,7 +136,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._wrapping = False
         self._unwrapping = False
         self._wrapping_ratio = 1.0
-        self._unwrap_triangle_pos = UNWRAP_BUTTON_NONE
+        self._unwrap_triangle_pos = UnwrapButton.NONE
 
         self._ensuring_visible = False
 
@@ -476,9 +476,6 @@ class CanvasBoxAbstract(QGraphicsItem):
                 [self],
                 new_scene_rect=new_bounding_rect.translated(self.pos()),
                 wanted_direction=Direction.DOWN)
-    
-    #def set_layout_mode(self, layout_mode:int):
-        #self._layout_mode = layout_mode
 
     def update_positions(self, even_animated=False):
         # see canvasbox.py
@@ -844,9 +841,9 @@ class CanvasBoxAbstract(QGraphicsItem):
                 elif self._unwrap_triangle_pos:
                     trirect = QRectF(0, self._height - 16, 16, 16)
                     
-                    if self._unwrap_triangle_pos == UNWRAP_BUTTON_CENTER:
+                    if self._unwrap_triangle_pos is UnwrapButton.CENTER:
                         trirect = QRectF(self._width_in + 8, self._height - 16, 16, 16)
-                    elif self._unwrap_triangle_pos == UNWRAP_BUTTON_RIGHT:
+                    elif self._unwrap_triangle_pos is UnwrapButton.RIGHT:
                         trirect = QRectF(self._width - 16, self._height -16, 16, 16)
                         
                     trirect.translate(self.scenePos())
@@ -1231,7 +1228,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                     
                     painter.drawPolygon(triangle)
 
-        elif self._unwrap_triangle_pos == UNWRAP_BUTTON_LEFT:
+        elif self._unwrap_triangle_pos is UnwrapButton.LEFT:
             side = 6
             xpos = 4
             ypos = self._height - 4
@@ -1242,7 +1239,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
             painter.drawPolygon(triangle)
         
-        elif self._unwrap_triangle_pos == UNWRAP_BUTTON_RIGHT:
+        elif self._unwrap_triangle_pos is UnwrapButton.RIGHT:
             side = 6
             xpos = self._width - 2 * side - 4
             
@@ -1253,7 +1250,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             triangle += QPointF(xpos + side, ypos -side)
             painter.drawPolygon(triangle)
         
-        elif self._unwrap_triangle_pos == UNWRAP_BUTTON_CENTER:
+        elif self._unwrap_triangle_pos is UnwrapButton.CENTER:
             side = 7
             xpos = (self._width_in + self._width - self._width_out) / 2 - side
             
