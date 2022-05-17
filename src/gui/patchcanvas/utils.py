@@ -30,8 +30,8 @@ from PyQt5.QtWidgets import QWidget
 # Imports (Custom)
 
 from .init_values import (
+    CanvasItemType,
     canvas,
-    CanvasBoxType,
     IconType,
     PortMode,
     CallbackAct)
@@ -132,7 +132,7 @@ def get_new_group_pos(horizontal: bool):
     while not break_loop:
         break_for = False
         for i, item in enumerate(items):
-            if item and item.type() == CanvasBoxType:
+            if item and item.type() is CanvasItemType.BOX:
                 if item.sceneBoundingRect().contains(new_pos):
                     if horizontal:
                         new_pos += QPointF(item.boundingRect().width() + 15, 0)

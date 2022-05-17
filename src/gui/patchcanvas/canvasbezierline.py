@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 
 from .init_values import (
     canvas,
-    CanvasBezierLineType,
+    CanvasItemType,
     CallbackAct,
     PortType)
 
@@ -105,8 +105,8 @@ class CanvasBezierLine(QGraphicsPathItem):
         self._line_selected = False
         self.update_line_gradient()
 
-    def type(self):
-        return CanvasBezierLineType
+    def type(self) -> CanvasItemType:
+        return CanvasItemType.BEZIER_LINE
 
     def update_line_gradient(self):
         pos_top = self.boundingRect().top()

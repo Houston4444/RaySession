@@ -32,11 +32,9 @@ from PyQt5.QtWidgets import QGraphicsItem, QApplication
 # Imports (Custom)
 import patchcanvas.utils as utils
 from .init_values import (
+    CanvasItemType,
     canvas,
-    features,
     options,
-    CanvasPortType,
-    CanvasPortGroupType,
     CallbackAct,
     PortMode,
     PortType
@@ -143,10 +141,10 @@ class CanvasPortGroup(QGraphicsItem):
     def get_port_list_len(self):
         return len(self._port_id_list)
 
-    def type(self):
-        return CanvasPortGroupType
+    def type(self) -> CanvasItemType:
+        return CanvasItemType.PORTGROUP
 
-    def set_portgrp_width(self, portgrp_width):
+    def set_portgrp_width(self, portgrp_width: float):
         self._portgrp_width = portgrp_width
 
     def set_ports_width(self, ports_width:int):
@@ -213,9 +211,9 @@ class CanvasPortGroup(QGraphicsItem):
 
     def _connect_to_hover(self):
         if self._hover_item:
-            if self._hover_item.type() == CanvasPortType:
+            if self._hover_item.type() is CanvasItemType.PORT:
                 hover_port_id_list = [self._hover_item.get_port_id()]
-            elif self._hover_item.type() == CanvasPortGroupType:
+            elif self._hover_item.type() is CanvasItemType.PORTGROUP:
                 hover_port_id_list = self._hover_item.get_port_ids_list()
 
             if not hover_port_id_list:
@@ -402,7 +400,8 @@ class CanvasPortGroup(QGraphicsItem):
         items = canvas.scene.items(event.scenePos(), Qt.ContainsItemShape,
                                    Qt.AscendingOrder)
         for i in range(len(items)):
-            if items[i].type() in (CanvasPortType, CanvasPortGroupType):
+            if items[i].type() in (CanvasItemType.PORT,
+                                   CanvasItemType.PORTGROUP):
                 if items[i] != self:
                     if not item:
                         item = items[i]
@@ -421,7 +420,7 @@ class CanvasPortGroup(QGraphicsItem):
             item_valid = False
 
             if (self._has_connections
-                    and item.type() == CanvasPortGroupType
+                    and item.type() is CanvasItemType.PORTGROUP
                     and len(item.get_port_ids_list()) == len(self._port_id_list)):
                 for connection in canvas.connection_list:
                     if utils.connection_concerns(
@@ -450,7 +449,7 @@ class CanvasPortGroup(QGraphicsItem):
                 # prevent unneeded operations
                 pass
 
-            elif item.type() == CanvasPortType:
+            elif item.type() is CanvasItemType.PORT:
                 self._hover_item = item
                 self.reset_dot_lines()
                 self.reset_line_mov_positions()
@@ -474,7 +473,7 @@ class CanvasPortGroup(QGraphicsItem):
                     for line_mov in self._line_mov_list:
                         line_mov.ready_to_disc = True
 
-            elif item.type() == CanvasPortGroupType:
+            elif item.type() is CanvasItemType.PORTGROUP:
                 self._hover_item = item
                 self.reset_dot_lines()
                 self.reset_line_mov_positions()

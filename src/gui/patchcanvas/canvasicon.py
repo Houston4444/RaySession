@@ -17,30 +17,18 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
-
 import os
 
 from PyQt5.QtCore import qCritical, QRectF, QFile
 from PyQt5.QtGui import QPainter, QIcon
 from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
-from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsPixmapItem
+from PyQt5.QtWidgets import QGraphicsPixmapItem
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
-
-from .init_values import (
-    canvas,
-    CanvasIconType,
-    IconType,
-    PortMode
-)
+from .init_values import canvas, CanvasItemType, IconType, PortMode
 
 APP_ICONS_CACHE = {}
 
-# ------------------------------------------------------------------------------------------------------------
-def get_app_icon(icon_name: str):
+def get_app_icon(icon_name: str) -> QIcon:
     if icon_name in APP_ICONS_CACHE.keys():
         return APP_ICONS_CACHE[icon_name]
     
@@ -110,8 +98,8 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         self.y_offset = y
         self.setPos(float(x), float(y))
         
-    def type(self):
-        return CanvasIconType
+    def type(self) -> CanvasItemType:
+        return CanvasItemType.ICON
 
 
 class CanvasSvgIcon(QGraphicsSvgItem):
@@ -205,8 +193,8 @@ class CanvasSvgIcon(QGraphicsSvgItem):
     def update_zoom(self, scale: float):
         pass
 
-    def type(self):
-        return CanvasIconType
+    def type(self) -> CanvasItemType:
+        return CanvasItemType.ICON
 
     def is_null(self)->bool:
         return False

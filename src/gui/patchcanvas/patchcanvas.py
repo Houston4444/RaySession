@@ -17,16 +17,14 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
 import sys
 import time
 from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
                           QPoint, QPointF, QRectF, QSettings, QTimer, pyqtSignal)
 from PyQt5.QtGui import QFontMetricsF, QFont
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
+
 from .init_values import (
+    CanvasItemType,
     PortType,
     canvas,
     options,
@@ -43,20 +41,13 @@ from .init_values import (
     BoxSplitMode,
     IconType,
     EyeCandy, # not used here, but can be taken from parent
-    CanvasIconType,
-    CanvasRubberbandType)
+)
 
 import patchcanvas.utils as utils
-import patchcanvas.theme as theme
 
 from .canvasbox import CanvasBox
 from .canvasbezierline import CanvasBezierLine
 from .theme_manager import ThemeManager
-
-# # FIXME
-# from . import *
-
-# PatchScene is used by main_window in GUI 
 from .scene import PatchScene
 
 # ------------------------------------------------------------------------------------------------------------
@@ -195,7 +186,7 @@ def clear():
     canvas.scene.clearSelection()
 
     for item in canvas.scene.items():
-        if item.type() in (CanvasIconType, CanvasRubberbandType):
+        if item.type() in (CanvasItemType.ICON, CanvasItemType.RUBBERBAND):
             continue
         canvas.scene.removeItem(item)
         del item

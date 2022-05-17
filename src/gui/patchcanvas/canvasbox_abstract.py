@@ -35,15 +35,16 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication, QAction
 
 
 from .init_values import (
+    CanvasItemType,
     canvas,
     features,
     options,
-    CanvasBoxType,
     CallbackAct,
     PortMode,
     MAX_PLUGIN_ID_ALLOWED,
     IconType,
     Direction)
+
 import patchcanvas.utils as utils
 from .canvasboxshadow import CanvasBoxShadow
 from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
@@ -512,7 +513,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             rect.adjust(0, -5, 0, 5)
             
             for litem in canvas.scene.items(rect):
-                if (litem.type() == CanvasBoxType
+                if (litem.type() is CanvasItemType.BOX
                         and litem not in item_list):
                     item_list.append(litem)
 
@@ -536,8 +537,8 @@ class CanvasBoxAbstract(QGraphicsItem):
             self._current_port_mode is not PortMode.BOTH
             and self._current_layout_mode == LAYOUT_LARGE)
 
-    def type(self):
-        return CanvasBoxType
+    def type(self) -> CanvasItemType:
+        return CanvasItemType.BOX
 
     def contextMenuEvent(self, event):
         if canvas.is_line_mov:
@@ -546,9 +547,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         event.accept()
         menu = QMenu()
 
-        dark = ''
-        if utils.is_dark_theme(menu):
-            dark = '-dark'
+        dark = '-dark' if utils.is_dark_theme(menu) else ''
 
         # Disconnect menu stuff
         discMenu = QMenu(_translate('patchbay', "Disconnect"), menu)
@@ -891,7 +890,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             QGraphicsItem.mouseMoveEvent(self, event)
 
             for item in canvas.scene.selectedItems():
-                if item.type() == CanvasBoxType:
+                if item.type() is CanvasItemType.BOX:
                     item.repaint_lines()
 
             canvas.scene.resize_the_scene()
@@ -953,7 +952,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
     def fixPosAfterMove(self):
         for item in canvas.scene.selectedItems():
-            if item.type() == CanvasBoxType:
+            if item.type() is CanvasItemType.BOX:
                 item.fixPos()
                 item.send_move_callback()
 

@@ -17,9 +17,6 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
-
 from math import floor
 import time
 
@@ -28,18 +25,11 @@ from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
 from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QBrush
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene, QApplication, QGraphicsView
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
 
 from .init_values import (
+    CanvasItemType,
     canvas,
     options,
-    CanvasBoxType,
-    CanvasIconType,
-    CanvasPortType,
-    CanvasPortGroupType,
-    CanvasBezierLineType,
-    CanvasRubberbandType,
     CallbackAct,
     MAX_PLUGIN_ID_ALLOWED,
     PortMode,
@@ -47,7 +37,6 @@ from .init_values import (
 
 from .canvasbox import CanvasBox
 
-# ------------------------------------------------------------------------------------------------------------
 
 class RubberbandRect(QGraphicsRectItem):
     def __init__(self, scene: QGraphicsScene):
@@ -58,10 +47,9 @@ class RubberbandRect(QGraphicsRectItem):
 
         scene.addItem(self)
 
-    def type(self):
-        return CanvasRubberbandType
+    def type(self) -> CanvasItemType:
+        return CanvasItemType.RUBBERBAND
 
-# ------------------------------------------------------------------------------------------------------------
 
 class PatchScene(QGraphicsScene):
     scaleChanged = pyqtSignal(float)
@@ -590,7 +578,7 @@ class PatchScene(QGraphicsScene):
                     srect.adjusted(
                         0, 0, 0,
                         canvas.theme.box_spacing + 1)):
-                if item not in neighbors and item.type() == CanvasBoxType:
+                if item not in neighbors and item.type() is CanvasItemType.BOX:
                     nrect = item.boundingRect().translated(item.pos())
                     if nrect.top() >= limit_top:
                         neighbors.append(item)
@@ -733,7 +721,7 @@ class PatchScene(QGraphicsScene):
 
         if len(items_list) > 0:
             for item in items_list:
-                if item and item.isVisible() and item.type() == CanvasBoxType:
+                if item and item.isVisible() and item.type() is CanvasItemType.BOX:
                     pos = item.scenePos()
                     rect = item.boundingRect()
 
@@ -798,9 +786,9 @@ class PatchScene(QGraphicsScene):
             if item and item.isVisible():
                 group_item = None
 
-                if item.type() == CanvasBoxType:
+                if item.type() is CanvasItemType.BOX:
                     group_item = item
-                elif item.type() == CanvasPortType:
+                elif item.type() is CanvasItemType.PORT:
                     group_item = item.parentItem()
 
                 if group_item is not None and group_item._plugin_id >= 0:
@@ -913,7 +901,7 @@ class PatchScene(QGraphicsScene):
                 event.scenePos(), Qt.ContainsItemShape, Qt.AscendingOrder)
 
             for item in items:
-                if item.type() == CanvasBoxType:
+                if item.type() is CanvasItemType.BOX:
                     break
             else:
                 canvas.callback(CallbackAct.DOUBLE_CLICK, 0, 0, "")
@@ -938,7 +926,8 @@ class PatchScene(QGraphicsScene):
 
             items = self.items(self._pointer_border)
             for item in items:
-                if item and item.type() in (CanvasBezierLineType, CanvasPortType):
+                if item and item.type() in (CanvasItemType.BEZIER_LINE,
+                                            CanvasItemType.PORT):
                     item.trigger_disconnect()
 
         QGraphicsScene.mousePressEvent(self, event)
@@ -948,10 +937,10 @@ class PatchScene(QGraphicsScene):
             self._mouse_down_init = False
             topmost = self.itemAt(event.scenePos(), self._view.transform())
             self._mouse_rubberband = not (
-                topmost and topmost.type() in (CanvasBoxType,
-                                               CanvasIconType,
-                                               CanvasPortType,
-                                               CanvasPortGroupType))
+                topmost and topmost.type() in (
+                    CanvasItemType.BOX, CanvasItemType.ICON,
+                    CanvasItemType.PORT, CanvasItemType.PORTGROUP))
+
         if self._mouse_rubberband:
             event.accept()
             pos = event.scenePos()
@@ -978,7 +967,7 @@ class PatchScene(QGraphicsScene):
             trail = QPolygonF([event.scenePos(), event.lastScenePos(), event.scenePos()])
             items = self.items(trail)
             for item in items:
-                if item and item.type() == CanvasBezierLineType:
+                if item and item.type() == CanvasItemType.BEZIER_LINE:
                     item.trigger_disconnect()
 
         QGraphicsScene.mouseMoveEvent(self, event)
@@ -1000,7 +989,7 @@ class PatchScene(QGraphicsScene):
             else:
                 items_list = self.items()
                 for item in items_list:
-                    if item and item.isVisible() and item.type() == CanvasBoxType:
+                    if item and item.isVisible() and item.type() is CanvasItemType.BOX:
                         item_rect = item.sceneBoundingRect()
                         item_top_left = QPointF(item_rect.x(), item_rect.y())
                         item_bottom_right = QPointF(item_rect.x() + item_rect.width(),
@@ -1016,7 +1005,7 @@ class PatchScene(QGraphicsScene):
         else:
             items_list = self.selectedItems()
             for item in items_list:
-                if item and item.isVisible() and item.type() == CanvasBoxType:
+                if item and item.isVisible() and item.type() is CanvasItemType.BOX:
                     item.check_item_pos()
                     self.sceneGroupMoved.emit(
                         item.get_group_id(), item.get_splitted_mode(),

@@ -17,30 +17,31 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
-
+from typing import TYPE_CHECKING
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QPainter, QPainterPath
 from PyQt5.QtWidgets import QGraphicsPathItem
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
-
 from .init_values import (
     canvas,
-    CanvasBezierLineMovType,
-    CanvasPortType,
-    CanvasPortGroupType,
+    CanvasItemType,
     PortMode,
     PortType)
 
-# ------------------------------------------------------------------------------------------------------------
+# only to get parent type in IDE
+if TYPE_CHECKING:
+    from .canvasport import CanvasPort
+    from .canvasportgroup import CanvasPortGroup
+
 
 class CanvasBezierLineMov(QGraphicsPathItem):
     def __init__(self, port_mode: PortMode, port_type: PortType,
                  port_posinportgrp: int, portgrp_lenght: int, parent):
         QGraphicsPathItem.__init__(self)
+        
+        # Just for IDE, in normal running, TYPE_CHECKING is False
+        if TYPE_CHECKING:
+            assert isinstance(parent, (CanvasPort, CanvasPortGroup))
         
         self.setParentItem(parent)
 
@@ -82,7 +83,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         phi = 0.75 if self._portgrp_len > 2 else 0.62
         phito = 0.75 if self._portgrp_len_to > 2 else 0.62
 
-        if self.parentItem().type() == CanvasPortType:
+        if self.parentItem().type() is CanvasItemType.PORT:
             if self._portgrp_len > 1:
                 first_old_y = canvas.theme.port_height * phi
                 last_old_y  = canvas.theme.port_height * (self._portgrp_len - phi)
@@ -102,7 +103,7 @@ class CanvasBezierLineMov(QGraphicsPathItem):
                 new_y = new_y1 - ( (last_new_y - first_new_y) / 2 ) \
                         - canvas.theme.port_height * phito
 
-        elif self.parentItem().type() == CanvasPortGroupType:
+        elif self.parentItem().type() is CanvasItemType.PORTGROUP:
             first_old_y = canvas.theme.port_height * phi
             last_old_y  = canvas.theme.port_height * (self._portgrp_len - phi)
             delta = (last_old_y - first_old_y) / (self._portgrp_len -1)
@@ -153,8 +154,8 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         path.cubicTo(new_x1, old_y, new_x2, final_y, final_x, final_y)
         self.setPath(path)
 
-    def type(self):
-        return CanvasBezierLineMovType
+    def type(self) -> CanvasItemType:
+        return CanvasItemType.BEZIER_LINE_MOV
 
     def paint(self, painter, option, widget):
         painter.save()

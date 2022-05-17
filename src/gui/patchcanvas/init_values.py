@@ -17,17 +17,12 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
 from typing import TYPE_CHECKING
 from enum import IntEnum, IntFlag
 
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtWidgets import QGraphicsItem
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Theme)
-# ------------------------------------------------------------------------------------------------------------
 if TYPE_CHECKING:
     # all these classes are not importable normally because
     # it would make a circular import
@@ -62,31 +57,31 @@ class PortType(IntFlag):
 
 # Callback Actions
 class CallbackAct(IntEnum):
-    GROUP_INFO = 0 # group_id, N, N
-    GROUP_RENAME = 1 # group_id, N, N
-    GROUP_SPLIT = 2 # group_id, N, N
-    GROUP_JOIN = 3 # group_id, N, N
-    GROUP_JOINED = 4 # group_id, N, N
-    GROUP_MOVE = 5 # group_id, in_or_out, "x:y"
-    GROUP_WRAP = 6 # group_id, folded, N
+    GROUP_INFO = 0          # group_id, N, N
+    GROUP_RENAME = 1        # group_id, N, N
+    GROUP_SPLIT = 2         # group_id, N, N
+    GROUP_JOIN = 3          # group_id, N, N
+    GROUP_JOINED = 4        # group_id, N, N
+    GROUP_MOVE = 5          # group_id, in_or_out, "x:y"
+    GROUP_WRAP = 6          # group_id, folded, N
     GROUP_LAYOUT_CHANGE = 7 # group_id, layout_mode, in_or_out
-    PORTGROUP_ADD = 8 # N, N, "gId:pgId:pMode:pType:portId1:portId2"
-    PORTGROUP_REMOVE = 9 # group_id, portgrp_id, N
-    PORT_INFO = 10 # group_id, port_id, N
-    PORT_RENAME = 11 # group_id, port_id, N
-    PORTS_CONNECT = 12 # N, N, "outG:outP:inG:inP"
-    PORTS_DISCONNECT = 13 # conn_id, N, N
-    PLUGIN_CLONE = 14 # plugin_id, N, N
-    PLUGIN_EDIT = 15 # plugin_id, N, N
-    PLUGIN_RENAME = 16 # plugin_id, N, N
-    PLUGIN_REPLACE = 17 # plugin_id, N, N
-    PLUGIN_REMOVE = 18 # plugin_id, N, N
-    PLUGIN_SHOW_UI = 19 # plugin_id, N, N
-    BG_RIGHT_CLICK = 20 # N, N, N
-    DOUBLE_CLICK = 21 # N, N, N
-    INLINE_DISPLAY = 22 # plugin_id, N, N
-    CLIENT_SHOW_GUI = 23 # group_id, visible, N
-    THEME_CHANGED = 24 # N, N, "theme_name"
+    PORTGROUP_ADD = 8       # N, N, "gId:pgId:pMode:pType:portId1:portId2"
+    PORTGROUP_REMOVE = 9    # group_id, portgrp_id, N
+    PORT_INFO = 10          # group_id, port_id, N
+    PORT_RENAME = 11        # group_id, port_id, N
+    PORTS_CONNECT = 12      # N, N, "outG:outP:inG:inP"
+    PORTS_DISCONNECT = 13   # conn_id, N, N
+    PLUGIN_CLONE = 14       # plugin_id, N, N
+    PLUGIN_EDIT = 15        # plugin_id, N, N
+    PLUGIN_RENAME = 16      # plugin_id, N, N
+    PLUGIN_REPLACE = 17     # plugin_id, N, N
+    PLUGIN_REMOVE = 18      # plugin_id, N, N
+    PLUGIN_SHOW_UI = 19     # plugin_id, N, N
+    BG_RIGHT_CLICK = 20     # N, N, N
+    DOUBLE_CLICK = 21       # N, N, N
+    INLINE_DISPLAY = 22     # plugin_id, N, N
+    CLIENT_SHOW_GUI = 23    # group_id, visible, N
+    THEME_CHANGED = 24      # N, N, "theme_name"
 
 
 class IconType(IntEnum):
@@ -120,18 +115,16 @@ class Direction(IntEnum):
     UP = 3
     DOWN = 4
 
-# -----------------------------------
 
-# object types
-CanvasBoxType = QGraphicsItem.UserType + 1
-CanvasIconType = QGraphicsItem.UserType + 2
-CanvasPortType = QGraphicsItem.UserType + 3
-CanvasPortGroupType = QGraphicsItem.UserType + 4
-CanvasBezierLineType = QGraphicsItem.UserType + 5
-CanvasBezierLineMovType = QGraphicsItem.UserType + 6
-CanvasRubberbandType = QGraphicsItem.UserType + 7
+class CanvasItemType(IntEnum):
+    BOX = QGraphicsItem.UserType + 1
+    ICON = QGraphicsItem.UserType + 2
+    PORT = QGraphicsItem.UserType + 3
+    PORTGROUP = QGraphicsItem.UserType + 4
+    BEZIER_LINE = QGraphicsItem.UserType + 5
+    BEZIER_LINE_MOV = QGraphicsItem.UserType + 6
+    RUBBERBAND = QGraphicsItem.UserType + 7
 
-# -----------------------------------
 
 # Canvas options
 class CanvasOptionsObject:
