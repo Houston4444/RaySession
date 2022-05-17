@@ -853,16 +853,16 @@ def add_port(group_id: int, port_id: int, port_name: str,
                port_mode.name, port_type.name))
         return
 
-    port_dict = PortObject()
-    port_dict.group_id = group_id
-    port_dict.port_id = port_id
-    port_dict.port_name = port_name
-    port_dict.port_mode = port_mode
-    port_dict.port_type = port_type
-    port_dict.portgrp_id = 0
-    port_dict.is_alternate = is_alternate
-    port_dict.widget = port_widget
-    canvas.port_list.append(port_dict)
+    port = PortObject()
+    port.group_id = group_id
+    port.port_id = port_id
+    port.port_name = port_name
+    port.port_mode = port_mode
+    port.port_type = port_type
+    port.portgrp_id = 0
+    port.is_alternate = is_alternate
+    port.widget = port_widget
+    canvas.port_list.append(port)
 
     canvas.last_z_value += 1
     port_widget.setZValue(canvas.last_z_value)
@@ -1077,27 +1077,27 @@ def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
             % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
         return
 
-    connection_dict = ConnectionObject()
-    connection_dict.connection_id = connection_id
-    connection_dict.group_in_id = group_in_id
-    connection_dict.port_in_id = port_in_id
-    connection_dict.group_out_id = group_out_id
-    connection_dict.port_out_id = port_out_id
-    connection_dict.widget = CanvasBezierLine(port_out, port_in, None)
+    connection = ConnectionObject()
+    connection.connection_id = connection_id
+    connection.group_in_id = group_in_id
+    connection.port_in_id = port_in_id
+    connection.group_out_id = group_out_id
+    connection.port_out_id = port_out_id
+    connection.widget = CanvasBezierLine(port_out, port_in, None)
 
-    canvas.scene.addItem(connection_dict.widget)
+    canvas.scene.addItem(connection.widget)
 
-    port_out_parent.add_line_from_group(connection_dict.widget, connection_id)
-    port_in_parent.add_line_from_group(connection_dict.widget, connection_id)
+    port_out_parent.add_line_from_group(connection.widget, connection_id)
+    port_in_parent.add_line_from_group(connection.widget, connection_id)
 
     canvas.last_z_value += 1
     port_out_parent.setZValue(canvas.last_z_value)
     port_in_parent.setZValue(canvas.last_z_value)
 
     canvas.last_z_value += 1
-    connection_dict.widget.setZValue(canvas.last_z_value)
+    connection.widget.setZValue(canvas.last_z_value)
 
-    canvas.connection_list.append(connection_dict)
+    canvas.connection_list.append(connection)
 
     canvas.qobject.connection_added.emit(connection_id)
     
@@ -1110,44 +1110,37 @@ def disconnect_ports(connection_id: int):
     if canvas.debug:
         print("PatchCanvas::disconnect_ports(%i)" % connection_id)
 
-    line = None
-    item1 = None
-    item2 = None
-    group1id = port1id = 0
-    group2id = port2id = 0
-
     for connection in canvas.connection_list:
         if connection.connection_id == connection_id:
-            group1id = connection.group_out_id
-            group2id = connection.group_in_id
-            port1id = connection.port_out_id
-            port2id = connection.port_in_id
+            tmp_conn = connection.copy_no_widget()
             line = connection.widget
             canvas.connection_list.remove(connection)
             break
+    else:
+        qCritical("PatchCanvas::disconnect_ports(%i) - unable to find connection ports"
+                  % connection_id)
+        return
 
     canvas.qobject.connection_removed.emit(connection_id)
 
-    if not line:
-        qCritical("PatchCanvas::disconnect_ports(%i) - unable to find connection ports" % connection_id)
-        return
-
     for port in canvas.port_list:
-        if port.group_id == group1id and port.port_id == port1id:
+        if (port.group_id == tmp_conn.group_out_id
+                and port.port_id == tmp_conn.port_out_id):
             item1 = port.widget
             break
-
-    if not item1:
-        qCritical("PatchCanvas::disconnect_ports(%i) - unable to find output port" % connection_id)
+    else:
+        qCritical("PatchCanvas::disconnect_ports(%i) - unable to find output port"
+                  % connection_id)
         return
 
     for port in canvas.port_list:
-        if port.group_id == group2id and port.port_id == port2id:
+        if (port.group_id == tmp_conn.group_in_id 
+                and port.port_id == tmp_conn.port_in_id):
             item2 = port.widget
             break
-
-    if not item2:
-        qCritical("PatchCanvas::disconnect_ports(%i) - unable to find input port" % connection_id)
+    else:
+        qCritical("PatchCanvas::disconnect_ports(%i) - unable to find input port"
+                  % connection_id)
         return
 
     item1.parentItem().remove_line_from_group(connection_id)
@@ -1346,9 +1339,6 @@ def set_optional_gui_state(group_id: int, visible: bool):
 
 def save_cache():
     canvas.theme.save_cache()
-    
-def init_font_metrics():
-    canvas.theme.init_font_metrics()
     
 # PatchCanvas API
 def get_options_object():
