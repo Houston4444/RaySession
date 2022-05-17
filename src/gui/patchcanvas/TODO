@@ -12,20 +12,10 @@ transport controls
 
 
 refaire theme gui hidden tous les thèmes
-#bug gui_hidden non transmis
-#sauvegarde du layout mode (séparé splitted/grouped)
 ajustements anti-superposition (après join/split, emballer/déballer remonte toujours un peu)
-# bug régulier de position de l'icone (semble OK, nettoyer x_offset/y_offset si pas de problème)
-# accélerer le update_positions
-# split text multi étages
 
 utiliser un logger nottament pour les chargements de thème
 utiliser Path pour le chargement du thème
 Commenter plus
 enlever les qcritical -> logger
 Bug: connection non sélectionnée après clic droit
-Bug: plantage changement de layout -> revoir les callback (
-    renvoyer un dictionnaire ? un namedtuple ? un tuple ?)
-
-layout_mode
-portgroup_add (2ports, mais pourrait être plus)

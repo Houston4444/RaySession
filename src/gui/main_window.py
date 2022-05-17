@@ -1,3 +1,4 @@
+from pathlib import Path
 import time
 import os
 import subprocess
@@ -493,18 +494,21 @@ class MainWindow(QMainWindow):
         features.port_rename = False
         features.handle_group_pos = False
 
-        theme_paths = []
+        theme_paths = list[Path]()
         theme_paths.append(
-            os.path.join(os.path.dirname(RS.settings.fileName()), 'patchbay_themes'))
+            Path(RS.settings.fileName()).parent.joinpath('patchbay_themes'))
+        # theme_paths.append(
+        #     os.path.join(os.path.dirname(RS.settings.fileName()), 'patchbay_themes'))
         theme_paths.append(
-            os.path.join(get_code_root(), 'patchbay_themes'))
-        theme_paths = tuple(theme_paths)
+            Path(get_code_root()).joinpath('patchbay_themes'))
+            # os.path.join(get_code_root(), 'patchbay_themes'))
+        # theme_paths = tuple(theme_paths)
 
         patchcanvas.set_options(options)
         patchcanvas.set_features(features)
         patchcanvas.init(
             ray.APP_TITLE, self.scene,
-            self.canvas_callback, theme_paths, debug=False)
+            self.canvas_callback, tuple(theme_paths), debug=False)
         patchcanvas.set_semi_hide_opacity(
             RS.settings.value(
                 'Canvas/semi_hide_opacity', 0.17, type=float))
