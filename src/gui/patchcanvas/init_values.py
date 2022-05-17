@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     # it would make a circular import
     # they are imported only from IDE to get types
     from .theme import Theme
+    from .theme_manager import ThemeManager
     from .scene import PatchScene
     from .canvasbox import CanvasBox
     from .canvasport import CanvasPort
@@ -148,7 +149,7 @@ class CanvasFeaturesObject:
 
 
 # Main Canvas object
-class Canvas(object):
+class Canvas:
     def __init__(self):
         self.qobject = None
         self.settings = None
@@ -182,6 +183,7 @@ class Canvas(object):
         if TYPE_CHECKING:
             self.qobject = CanvasObject()
             self.theme = Theme()
+            self.theme_manager = ThemeManager()
             self.scene = PatchScene()
 
     def callback(self, action: CallbackAct, value1: int,
@@ -190,6 +192,8 @@ class Canvas(object):
             action.name, value1, value2, value_str))
 
 # ------------------------
+        
+        
 
 # object lists            
 class GroupObject:
@@ -211,6 +215,12 @@ class GroupObject:
     if TYPE_CHECKING:
         widgets: list[CanvasBox]
 
+    def copy_no_widget(self):
+        group_copy = GroupObject()
+        group_copy.__dict__ = self.__dict__.copy()
+        group_copy.widgets = [None, None]
+        return group_copy
+
 
 class PortObject:
     group_id: int
@@ -224,6 +234,12 @@ class PortObject:
     if TYPE_CHECKING:
         widget: CanvasPort
 
+    def copy_no_widget(self):
+        port_copy = PortObject()
+        port_copy.__dict__ = self.__dict__.copy()
+        port_copy.widget = None
+        return port_copy
+
 
 class PortgrpObject:
     portgrp_id: int
@@ -235,6 +251,12 @@ class PortgrpObject:
     if TYPE_CHECKING:
         widget: CanvasPortGroup
 
+    def copy_no_widget(self):
+        portgrp_copy = PortgrpObject()
+        portgrp_copy.__dict__ = self.__dict__.copy()
+        portgrp_copy.widget = None
+        return portgrp_copy
+
 
 class ConnectionObject:
     connection_id: int
@@ -245,6 +267,12 @@ class ConnectionObject:
     widget: object
     if TYPE_CHECKING:
         widget: CanvasBezierLine
+
+    def copy_no_widget(self):
+        conn_copy = ConnectionObject()
+        conn_copy.__dict__ = self.__dict__.copy()
+        conn_copy.widget = None
+        return conn_copy
 
 
 class ClipboardElement:

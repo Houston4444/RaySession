@@ -238,32 +238,30 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
                 % (group_id, group_name, split.name, icon_type.name))
             return
 
-    if split == BoxSplitMode.UNDEF:
-        isHardware = bool(icon_type == IconType.HARDWARE)
-        if isHardware:
-            split = BoxSplitMode.YES
+    if split is BoxSplitMode.UNDEF and icon_type is IconType.HARDWARE:
+        split = BoxSplitMode.YES
 
     group_box = CanvasBox(group_id, group_name, icon_type, icon_name)
     
-    group_dict = GroupObject()
-    group_dict.group_id = group_id
-    group_dict.group_name = group_name
-    group_dict.split = bool(split == BoxSplitMode.YES)
-    group_dict.icon_type = icon_type
-    group_dict.icon_name = icon_name
-    group_dict.layout_modes = layout_modes
-    group_dict.plugin_id = -1
-    group_dict.plugin_ui = False
-    group_dict.plugin_inline = False
-    group_dict.handle_client_gui = False
-    group_dict.gui_visible = False
-    group_dict.null_pos = QPoint(*null_xy)
-    group_dict.in_pos = QPoint(*in_xy)
-    group_dict.out_pos = QPoint(*out_xy)
+    group = GroupObject()
+    group.group_id = group_id
+    group.group_name = group_name
+    group.split = bool(split == BoxSplitMode.YES)
+    group.icon_type = icon_type
+    group.icon_name = icon_name
+    group.layout_modes = layout_modes
+    group.plugin_id = -1
+    group.plugin_ui = False
+    group.plugin_inline = False
+    group.handle_client_gui = False
+    group.gui_visible = False
+    group.null_pos = QPoint(*null_xy)
+    group.in_pos = QPoint(*in_xy)
+    group.out_pos = QPoint(*out_xy)
     # group_dict.widgets = [group_box, None]
-    group_dict.widgets = list[CanvasBox]()
-    group_dict.widgets.append(group_box)
-    group_dict.widgets.append(None)
+    group.widgets = list[CanvasBox]()
+    group.widgets.append(group_box)
+    group.widgets.append(None)
 
     if split == BoxSplitMode.YES:
         group_box.set_split(True, PortMode.OUTPUT)
@@ -274,14 +272,14 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
             canvas.scene.add_box_to_animation(group_box, new_pos.x(), new_pos.y())
         else:
             if split_animated:
-                group_box.setPos(group_dict.null_pos)
+                group_box.setPos(group.null_pos)
             else:
-                group_box.setPos(group_dict.out_pos)
+                group_box.setPos(group.out_pos)
 
         group_sbox = CanvasBox(group_id, group_name, icon_type, icon_name)
         group_sbox.set_split(True, PortMode.INPUT)
 
-        group_dict.widgets[1] = group_sbox
+        group.widgets[1] = group_sbox
 
         if features.handle_group_pos:
             new_pos = _get_stored_canvas_position(
@@ -289,9 +287,9 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
             canvas.scene.add_box_to_animation(group_sbox, new_pos.x(), new_pos.y())
         else:
             if split_animated:
-                group_sbox.setPos(group_dict.null_pos)
+                group_sbox.setPos(group.null_pos)
             else:
-                group_sbox.setPos(group_dict.in_pos)
+                group_sbox.setPos(group.in_pos)
 
         canvas.last_z_value += 1
         group_sbox.setZValue(canvas.last_z_value)
@@ -305,25 +303,25 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
         else:
             # Special ladish fake-split groups
             #horizontal = bool(icon_type in (IconType.HARDWARE, IconType.LADISH_ROOM))
-            group_box.setPos(group_dict.null_pos)
+            group_box.setPos(group.null_pos)
 
 
     canvas.last_z_value += 1
     group_box.setZValue(canvas.last_z_value)    
-    canvas.group_list.append(group_dict)
+    canvas.group_list.append(group)
     
     if canvas.loading_items:
         return
 
     if split_animated:
-        for box in group_dict.widgets:
+        for box in group.widgets:
             if box is not None:
                 if box.get_splitted_mode() is PortMode.OUTPUT:
                     canvas.scene.add_box_to_animation(
-                        box, group_dict.out_pos.x(), group_dict.out_pos.y())
+                        box, group.out_pos.x(), group.out_pos.y())
                 elif box.get_splitted_mode() is PortMode.INPUT:
                     canvas.scene.add_box_to_animation(
-                        box, group_dict.in_pos.x(), group_dict.in_pos.y())
+                        box, group.in_pos.x(), group.in_pos.y())
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -340,9 +338,12 @@ def remove_group(group_id: int, save_positions=True):
                 s_item = group.widgets[1]
 
                 if features.handle_group_pos and save_positions:
-                    canvas.settings.setValue("CanvasPositions/%s_OUTPUT" % group_name, item.pos())
-                    canvas.settings.setValue("CanvasPositions/%s_INPUT" % group_name, s_item.pos())
-                    canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.YES)
+                    canvas.settings.setValue(
+                        "CanvasPositions/%s_OUTPUT" % group_name, item.pos())
+                    canvas.settings.setValue(
+                        "CanvasPositions/%s_INPUT" % group_name, s_item.pos())
+                    canvas.settings.setValue(
+                        "CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.YES)
 
                 s_item.remove_icon_from_scene()
                 canvas.scene.removeItem(s_item)
@@ -350,8 +351,10 @@ def remove_group(group_id: int, save_positions=True):
 
             else:
                 if features.handle_group_pos and save_positions:
-                    canvas.settings.setValue("CanvasPositions/%s" % group_name, item.pos())
-                    canvas.settings.setValue("CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.NO)
+                    canvas.settings.setValue(
+                        "CanvasPositions/%s" % group_name, item.pos())
+                    canvas.settings.setValue(
+                        "CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.NO)
 
             item.remove_icon_from_scene()
             canvas.scene.removeItem(item)
@@ -387,26 +390,11 @@ def rename_group(group_id: int, new_group_name: str):
     qCritical("PatchCanvas::rename_group(%i, %s) - unable to find group to rename"
               % (group_id, new_group_name.encode()))
 
-def split_group(group_id, on_place=False):
+def split_group(group_id: int, on_place=False):
     if canvas.debug:
         warning_print("split_group(%i)" % group_id)
 
     item = None
-    group_name = ""
-    group_icon_type = IconType.APPLICATION
-    group_icon_name = ""
-    layout_modes = {}
-    group_null_pos = QPoint(0, 0)
-    group_in_pos = QPoint(0, 0)
-    group_out_pos = QPoint(0, 0)
-    plugin_id = -1
-    plugin_ui = False
-    plugin_inline = False
-    handle_client_gui = False
-    gui_visible = False
-    ports_data = list[PortObject]()
-    portgrps_data = list[PortgrpObject]()
-    conns_data = list[ConnectionObject]()
 
     # Step 1 - Store all Item data
     for group in canvas.group_list:
@@ -416,26 +404,15 @@ def split_group(group_id, on_place=False):
                 return
 
             item = group.widgets[0]
-            group_name = group.group_name
-            group_icon_type = group.icon_type
-            group_icon_name = group.icon_name
-            layout_modes = group.layout_modes
-            group_null_pos = group.null_pos
-            group_in_pos = group.in_pos
-            group_out_pos = group.out_pos
-            plugin_id = group.plugin_id
-            plugin_ui = group.plugin_ui
-            plugin_inline = group.plugin_inline
-            handle_client_gui = group.handle_client_gui
-            gui_visible = group.gui_visible
+            tmp_group = group.copy_no_widget()
             
             if on_place and item is not None:
                 pos = item.pos()
                 rect = item.boundingRect()
                 y = int(pos.y())
                 x = int(pos.x())
-                group_in_pos = QPoint(x - int(rect.width() / 2), y)
-                group_out_pos = QPoint(x + int(rect.width() / 2), y)
+                tmp_group.in_pos = QPoint(x - int(rect.width() / 2), y)
+                tmp_group.out_pos = QPoint(x + int(rect.width() / 2), y)
             break
 
     if not item:
@@ -444,41 +421,12 @@ def split_group(group_id, on_place=False):
 
     wrap = item.is_wrapped()
 
-    for portgrp in canvas.portgrp_list:
-        if portgrp.group_id == group_id:
-            portgrp_dict = PortgrpObject()
-            portgrp_dict.group_id = portgrp.group_id
-            portgrp_dict.portgrp_id = portgrp.portgrp_id
-            portgrp_dict.port_type = portgrp.port_type
-            portgrp_dict.port_mode = portgrp.port_mode
-            portgrp_dict.port_id_list = portgrp.port_id_list
-            portgrp_dict.widget = None
-            portgrps_data.append(portgrp_dict)
-
-    for port in canvas.port_list:
-        if port.group_id == group_id:
-            port_dict = PortObject()
-            port_dict.group_id = port.group_id
-            port_dict.port_id = port.port_id
-            port_dict.port_name = port.port_name
-            port_dict.port_mode = port.port_mode
-            port_dict.port_type = port.port_type
-            port_dict.portgrp_id = 0
-            port_dict.is_alternate = port.is_alternate
-            port_dict.widget = None
-            ports_data.append(port_dict)
-
-    for connection in canvas.connection_list:
-        if (connection.group_out_id == group_id
-                or connection.group_in_id == group_id):
-            connection_dict = ConnectionObject()
-            connection_dict.connection_id = connection.connection_id
-            connection_dict.group_in_id = connection.group_in_id
-            connection_dict.port_in_id = connection.port_in_id
-            connection_dict.group_out_id = connection.group_out_id
-            connection_dict.port_out_id = connection.port_out_id
-            connection_dict.widget = None
-            conns_data.append(connection_dict)
+    portgrps_data = [pg.copy_no_widget() for pg in canvas.portgrp_list
+                     if pg.group_id == group_id]
+    ports_data = [p.copy_no_widget() for p in canvas.port_list
+                  if p.group_id == group_id]
+    conns_data = [c.copy_no_widget() for c in canvas.connection_list
+                  if group_id in (c.group_out_id, c.group_in_id)]
 
     canvas.loading_items = True
 
@@ -496,19 +444,21 @@ def split_group(group_id, on_place=False):
 
     remove_group(group_id)
 
+    g = tmp_group
+
     # Step 3 - Re-create Item, now split
-    add_group(group_id, group_name, BoxSplitMode.YES,
-              group_icon_type, group_icon_name, layout_modes,
-              null_xy=(group_null_pos.x(), group_null_pos.y()),
-              in_xy=(group_in_pos.x(), group_in_pos.y()),
-              out_xy=(group_out_pos.x(), group_out_pos.y()),
+    add_group(group_id, g.group_name, BoxSplitMode.YES,
+              g.icon_type, g.icon_name, g.layout_modes,
+              null_xy=(g.null_pos.x(), g.null_pos.y()),
+              in_xy=(g.in_pos.x(), g.in_pos.y()),
+              out_xy=(g.out_pos.x(), g.out_pos.y()),
               split_animated=True)
 
-    if handle_client_gui:
-        set_optional_gui_state(group_id, gui_visible)
+    if g.handle_client_gui:
+        set_optional_gui_state(group_id, g.gui_visible)
 
-    if plugin_id >= 0:
-        set_group_as_plugin(group_id, plugin_id, plugin_ui, plugin_inline)
+    if g.plugin_id >= 0:
+        set_group_as_plugin(group_id, g.plugin_id, g.plugin_ui, g.plugin_inline)
 
     for port in ports_data:
         add_port(group_id, port.port_id, port.port_name, port.port_mode,
@@ -533,27 +483,12 @@ def split_group(group_id, on_place=False):
 
     QTimer.singleShot(0, canvas.scene.update)
 
-def join_group(group_id):
+def join_group(group_id: int):
     if canvas.debug:
         warning_print("join_group(%i)" % group_id)
 
     item = None
     s_item = None
-    group_name = ""
-    group_icon_type = IconType.APPLICATION
-    group_icon_name = ""
-    layout_modes = {}
-    group_null_pos = QPoint(0, 0)
-    group_in_pos = QPoint(0, 0)
-    group_out_pos = QPoint(0, 0)
-    plugin_id = -1
-    plugin_ui = False
-    plugin_inline = False
-    handle_client_gui = False
-    gui_visible = False
-    portgrps_data = []
-    ports_data = []
-    conns_data = []
 
     # Step 1 - Store all Item data
     for group in canvas.group_list:
@@ -562,64 +497,22 @@ def join_group(group_id):
                 warning_print("join_group(%i) - group is not split" % group_id)
                 return
 
-            item = group.widgets[0]
-            s_item = group.widgets[1]
-            group_name = group.group_name
-            group_icon_type = group.icon_type
-            group_icon_name = group.icon_name
-            layout_modes = group.layout_modes
-            group_null_pos = group.null_pos
-            group_in_pos = group.in_pos
-            group_out_pos = group.out_pos
-            plugin_id = group.plugin_id
-            plugin_ui = group.plugin_ui
-            plugin_inline = group.plugin_inline
-            handle_client_gui = group.handle_client_gui
-            gui_visible = group.gui_visible
+            item, s_item = group.widgets
+            tmp_group = group.copy_no_widget()
             break
 
-    # FIXME
     if not (item and s_item):
         warning_print("join_group(%i) - unable to find groups to join" % group_id)
         return
 
     wrap = item.is_wrapped() and s_item.is_wrapped()
 
-    for portgrp in canvas.portgrp_list:
-        if portgrp.group_id == group_id:
-            portgrp_dict = PortgrpObject()
-            portgrp_dict.group_id = portgrp.group_id
-            portgrp_dict.portgrp_id = portgrp.portgrp_id
-            portgrp_dict.port_type = portgrp.port_type
-            portgrp_dict.port_mode = portgrp.port_mode
-            portgrp_dict.port_id_list = portgrp.port_id_list
-            portgrp_dict.widget = None
-            portgrps_data.append(portgrp_dict)
-
-    for port in canvas.port_list:
-        if port.group_id == group_id:
-            port_dict = PortObject()
-            port_dict.group_id = port.group_id
-            port_dict.port_id = port.port_id
-            port_dict.port_name = port.port_name
-            port_dict.port_mode = port.port_mode
-            port_dict.port_type = port.port_type
-            port_dict.portgrp_id = port.portgrp_id
-            port_dict.is_alternate = port.is_alternate
-            port_dict.widget = None
-            ports_data.append(port_dict)
-
-    for connection in canvas.connection_list:
-        if (connection.group_out_id == group_id
-                or connection.group_in_id == group_id):
-            connection_dict = ConnectionObject()
-            connection_dict.connection_id = connection.connection_id
-            connection_dict.group_in_id = connection.group_in_id
-            connection_dict.port_in_id = connection.port_in_id
-            connection_dict.group_out_id = connection.group_out_id
-            connection_dict.port_out_id = connection.port_out_id
-            connection_dict.widget = None
-            conns_data.append(connection_dict)
+    portgrps_data = [pg.copy_no_widget() for pg in canvas.portgrp_list
+                     if pg.group_id == group_id]
+    ports_data = [p.copy_no_widget() for p in canvas.port_list
+                  if p.group_id == group_id]
+    conns_data = [c.copy_no_widget() for c in canvas.connection_list
+                  if group_id in (c.group_out_id, c.group_in_id)]
 
     canvas.loading_items = True
 
@@ -635,18 +528,19 @@ def join_group(group_id):
 
     remove_group(group_id, save_positions=False)
 
+    g = tmp_group
     # Step 3 - Re-create Item, now together
-    add_group(group_id, group_name, BoxSplitMode.NO,
-              group_icon_type, group_icon_name, layout_modes,
-              null_xy=(group_null_pos.x(), group_null_pos.y()),
-              in_xy=(group_in_pos.x(), group_in_pos.y()),
-              out_xy=(group_out_pos.x(), group_out_pos.y()))
+    add_group(group_id, g.group_name, BoxSplitMode.NO,
+              g.icon_type, g.icon_name, g.layout_modes,
+              null_xy=(g.null_pos.x(), g.null_pos.y()),
+              in_xy=(g.in_pos.x(), g.in_pos.y()),
+              out_xy=(g.out_pos.x(), g.out_pos.y()))
 
-    if handle_client_gui:
-        set_optional_gui_state(group_id, gui_visible)
+    if g.handle_client_gui:
+        set_optional_gui_state(group_id, g.gui_visible)
 
-    if plugin_id >= 0:
-        set_group_as_plugin(group_id, plugin_id, plugin_ui, plugin_inline)
+    if g.plugin_id >= 0:
+        set_group_as_plugin(group_id, g.plugin_id, g.plugin_ui, g.plugin_inline)
 
     for port in ports_data:
         add_port(group_id, port.port_id, port.port_name, port.port_mode,
@@ -665,7 +559,6 @@ def join_group(group_id):
             for box in group.widgets:
                 if box is not None:
                     box.set_wrapped(wrap, animate=False)
-                    box.update_positions()
 
     canvas.loading_items = False
     redraw_group(group_id)
