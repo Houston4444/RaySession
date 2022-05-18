@@ -30,6 +30,7 @@ from PyQt5.QtGui import (
     QLinearGradient, QIcon)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
+
 # Imports (Custom)
 from .init_values import (
     CanvasItemType,
@@ -45,14 +46,19 @@ import patchcanvas.utils as utils
 from .canvasbezierlinemov import CanvasBezierLineMov
 from .connect_menu import MainPortContextMenu
 
+if TYPE_CHECKING:
+    from .canvasbox import CanvasBox
+    from .canvasportgroup import CanvasPortGroup
+
 # --------------------
 _translate = QApplication.translate
 
 # --------------------
 
 class CanvasPort(QGraphicsItem):
-    def __init__(self, group_id, port_id, port_name, port_mode,
-                 port_type, is_alternate, parent):
+    def __init__(self, group_id: int, port_id: int, port_name: str,
+                 port_mode: PortMode, port_type: PortType,
+                 is_alternate: bool, parent: 'CanvasBox'):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
@@ -275,8 +281,8 @@ class CanvasPort(QGraphicsItem):
                 hover_port_id_list = self._hover_item.get_port_ids_list()
 
             hover_group_id = self._hover_item.get_group_id()
-            con_list = []
-            ports_connected_list = []
+            con_list = list[ConnectionObject]()
+            ports_connected_list = list[int]()
 
             # cut and paste connections directly by attempt to connect
             # one port to another with same type and mode
@@ -324,6 +330,9 @@ class CanvasPort(QGraphicsItem):
                                 CallbackAct.PORTS_CONNECT,
                                 hover_group_id, porthover_id,
                                 self._group_id, self._port_id)
+
+    def parentItem(self) -> 'CanvasBox':
+        return super().parentItem()
 
     def hoverEnterEvent(self, event):
         if options.auto_select_items:
@@ -403,10 +412,10 @@ class CanvasPort(QGraphicsItem):
         items = canvas.scene.items(event.scenePos(), Qt.ContainsItemShape,
                                    Qt.AscendingOrder)
 
-        for _, itemx in enumerate(items):
+        for itemx in items:
             if not itemx.type() in (CanvasItemType.PORT, CanvasItemType.PORTGROUP):
                 continue
-            if itemx == self:
+            if itemx is self:
                 continue
             if (item is None
                     or itemx.parentItem().zValue() > item.parentItem().zValue()):

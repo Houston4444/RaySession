@@ -32,13 +32,13 @@ from PyQt5.QtWidgets import QGraphicsItem, QApplication
 import patchcanvas.utils as utils
 from .init_values import (
     CanvasItemType,
+    ConnectionObject,
     canvas,
     options,
     CallbackAct,
     PortMode,
     PortType)
 from .canvasbezierlinemov import CanvasBezierLineMov
-from .theme import Theme
 from .connect_menu import MainPortContextMenu
 
 # -------------------------
@@ -84,8 +84,8 @@ class CanvasPortGroup(QGraphicsItem):
         self._name_truncked = False
         self._trunck_sep = '⠿'
 
-        self._line_mov_list = []
-        self._dotcon_list = []
+        self._line_mov_list = list[CanvasBezierLineMov]()
+        self._dotcon_list = list[ConnectionObject]()
         self._last_rclick_item = None
         self._r_click_time = 0
         self._hover_item = None
@@ -222,8 +222,8 @@ class CanvasPortGroup(QGraphicsItem):
                 return
 
             hover_group_id = self._hover_item.get_group_id()
-            con_list = []
-            ports_connected_list = []
+            con_list = list[ConnectionObject]()
+            ports_connected_list = list[list[int]]()
 
             maxportgrp = max(len(self._port_id_list),
                              len(hover_port_id_list))

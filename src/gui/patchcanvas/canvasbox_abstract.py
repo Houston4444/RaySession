@@ -27,7 +27,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 from collections import namedtuple
 from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QTimer
-from PyQt5.QtGui import (QCursor, QFontMetrics, QImage,
+from PyQt5.QtGui import (QCursor, QFontMetrics, QImage, QFont,
                          QLinearGradient, QPainter, QPen, QPolygonF,
                          QColor, QIcon, QPixmap, QPainterPath, QBrush)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
@@ -51,10 +51,11 @@ from .canvasboxshadow import CanvasBoxShadow
 from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
 from .canvasport import CanvasPort
 from .canvasportgroup import CanvasPortGroup
-from .theme import BoxStyleAttributer
+from .theme import BoxStyleAttributer, Theme
 
 if TYPE_CHECKING:
     from .canvasbezierline import CanvasBezierLine
+    from .canvasbox import CanvasBox
 
 _translate = QApplication.translate
 _LOGGER = logging.getLogger(__name__)
@@ -66,6 +67,27 @@ class UnwrapButton(Enum):
     LEFT = 1
     CENTER = 2
     RIGHT = 3
+
+
+class TitleLine:
+    text = ''
+    size = 0
+    x = 0
+    y = 0
+    is_little = False
+
+    def __init__(self, text: str, theme: BoxStyleAttributer, little=False):
+        self.theme = theme
+        self.text = text
+        self.is_little = little
+        self.x = 0
+        self.y = 0
+
+        self.font = None
+        self.size = theme.get_text_width(text)
+
+    def get_font(self) -> QFont:
+        return self.theme.font()
 
 
 class CanvasBoxAbstract(QGraphicsItem):
@@ -127,7 +149,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._is_hardware = bool(icon_type == IconType.HARDWARE)
         self._icon_name = icon_name
 
-        self._title_lines = []
+        self._title_lines = list[TitleLine]()
         self._header_line_left = None
         self._header_line_right = None
         
@@ -165,7 +187,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         # See https://bugreports.qt.io/browse/QTBUG-65035
         if options.eyecandy and canvas.scene.get_device_pixel_ratio_f() == 1.0:
             self.shadow = CanvasBoxShadow(self.toGraphicsObject())
-            self.shadow.fake_parent = self
+            self.shadow.set_fake_parent(self)
             self.shadow.set_theme(shadow_theme)
             self.setGraphicsEffect(self.shadow)
 
@@ -249,7 +271,8 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         self._plugin_id = plugin_id
         self._plugin_ui = hasUI
-        self._plugin_inline = self.INLINE_DISPLAY_ENABLED if hasInlineDisplay else self.INLINE_DISPLAY_DISABLED
+        self._plugin_inline = (self.INLINE_DISPLAY_ENABLED if hasInlineDisplay
+                               else self.INLINE_DISPLAY_DISABLED)
         self.update()
 
     def set_icon(self, icon_type, icon_name):
@@ -306,8 +329,6 @@ class CanvasBoxAbstract(QGraphicsItem):
 
     def add_port_from_group(self, port_id, port_mode, port_type,
                             port_name, is_alternate):
-        #if len(self._port_list_ids) == 0:
-            #if options.auto_hide_groups:
         self.setVisible(True)
 
         new_widget = CanvasPort(self._group_id, port_id, port_name, port_mode,
@@ -480,6 +501,9 @@ class CanvasBoxAbstract(QGraphicsItem):
     def repaint_lines(self, forced=False):
         if forced or self.pos() != self._last_pos:
             for connection in self._connection_lines:
+                if TYPE_CHECKING:
+                    assert isinstance(connection.line, CanvasBezierLine)
+                
                 connection.line.update_line_pos()
 
         self._last_pos = self.pos()
@@ -574,8 +598,8 @@ class CanvasBoxAbstract(QGraphicsItem):
                         break
                 else:
                     disconnect_element = {'group_id': other_group_id,
-                                          'connection_in_ids': [],
-                                          'connection_out_ids': []}
+                                          'connection_in_ids': list[int](),
+                                          'connection_out_ids': list[int]()}
 
                     if group_port_mode is PortMode.INPUT:
                         disconnect_element['connection_in_ids'].append(
@@ -937,6 +961,8 @@ class CanvasBoxAbstract(QGraphicsItem):
     def fixPosAfterMove(self):
         for item in canvas.scene.selectedItems():
             if item.type() is CanvasItemType.BOX:
+                if TYPE_CHECKING:
+                    assert isinstance(item, CanvasBox)
                 item.fixPos()
                 item.send_move_callback()
 

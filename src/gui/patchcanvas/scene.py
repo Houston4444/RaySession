@@ -19,6 +19,7 @@
 
 from math import floor
 import time
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
                           Qt, QPoint, QPointF, QRectF, QTimer, QMarginsF)
@@ -36,6 +37,7 @@ from .init_values import (
     Direction)
 
 from .canvasbox import CanvasBox
+from .canvasbezierline import CanvasBezierLine
 
 
 class RubberbandRect(QGraphicsRectItem):
@@ -83,8 +85,8 @@ class PatchScene(QGraphicsScene):
 
         self._move_timer_start_at = 0
         self._move_timer_interval = 20 # 20 ms step animation (50 Hz)
-        self.move_boxes = []
-        self.wrapping_boxes = []
+        self.move_boxes = list[dict]()
+        self.wrapping_boxes = list[dict]()
         self.move_box_timer = QTimer()
         self.move_box_timer.setInterval(self._move_timer_interval)
         self.move_box_timer.timeout.connect(self.move_boxes_animation)
@@ -171,11 +173,17 @@ class PatchScene(QGraphicsScene):
                      + ((box_dict['to_y'] - box_dict['from_y'])
                         * (ratio ** 0.6)))
 
+                if TYPE_CHECKING:
+                    assert isinstance(box_dict['widget'], CanvasBox)
+
                 box_dict['widget'].setPos(x, y)
                 box_dict['widget'].repaint_lines()
 
         for wrap_dict in self.wrapping_boxes:
             if wrap_dict['widget'] is not None:
+                if TYPE_CHECKING:
+                    assert isinstance(wrap_dict['widget'], CanvasBox)
+                
                 if time_since_start >= self.move_duration:
                     wrap_dict['widget'].animate_wrapping(1.00)
                 else:
@@ -192,6 +200,9 @@ class PatchScene(QGraphicsScene):
                     
             for box in move_box_widgets:
                 if box is not None:
+                    if TYPE_CHECKING:
+                        assert isinstance(box, CanvasBox)
+                    
                     box.update_positions()
                     box.send_move_callback()
 
@@ -363,8 +374,8 @@ class PatchScene(QGraphicsScene):
         box_spacing_hor = canvas.theme.box_spacing_horizontal
         magnet = canvas.theme.magnet
 
-        to_move_boxes = []
-        repulsers = []
+        to_move_boxes = list[dict]()
+        repulsers = list[dict]()
         wanted_directions = [wanted_direction]
 
         for box in repulser_boxes:
@@ -385,7 +396,7 @@ class PatchScene(QGraphicsScene):
                         'item': box}
             repulsers.append(repulser)
 
-            items_to_move = []
+            items_to_move = list[dict]()
 
             for group in canvas.group_list:
                 for widget in group.widgets:
@@ -411,9 +422,9 @@ class PatchScene(QGraphicsScene):
             
                 widget = box_dict['widget']
                 
-                # only for IDE
-                assert isinstance(widget, CanvasBox)
-                assert isinstance(repulser['item'], CanvasBox)
+                if TYPE_CHECKING:
+                    assert isinstance(widget, CanvasBox)
+                    assert isinstance(repulser['item'], CanvasBox)
                 
                 irect = widget.boundingRect()
                 irect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
@@ -613,38 +624,33 @@ class PatchScene(QGraphicsScene):
         self._scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
 
     def update_theme(self):
-        if canvas.theme.background_image is not None:
+        if canvas.theme.background_image_ is not None:
             bg_brush = QBrush()
-            bg_brush.setTextureImage(canvas.theme.background_image)
+            bg_brush.setTextureImage(canvas.theme.background_image_)
             self.setBackgroundBrush(bg_brush)
         else:
-            self.setBackgroundBrush(canvas.theme.background_color)
+            self.setBackgroundBrush(canvas.theme.background_color_)
         
         self._rubberband.setPen(canvas.theme.rubberband.fill_pen())
         self._rubberband.setBrush(canvas.theme.rubberband.background_color())
 
-        cur_color = "black" if canvas.theme.background_color.blackF() < 0.5 else "white"
+        cur_color = "black" if canvas.theme.background_color_.blackF() < 0.5 else "white"
         self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
         self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
 
     def drawBackground(self, painter, rect):
-        #if self._background_image is None:
-            #return
-        
         painter.save()
         painter.setPen(Qt.NoPen)
         
-        if canvas.theme.background_image is not None:
-            canvas.theme.background_image.setDevicePixelRatio(3.0)
+        if not canvas.theme.background_image_.isNull():
+            canvas.theme.background_image_.setDevicePixelRatio(3.0)
             bg_brush = QBrush()
-            bg_brush.setTextureImage(canvas.theme.background_image)
+            bg_brush.setTextureImage(canvas.theme.background_image_)
             painter.setBrush(bg_brush)
             painter.drawRect(rect)
-        #else:
-        painter.setBrush(canvas.theme.background_color)
-        
+
+        painter.setBrush(canvas.theme.background_color_)        
         painter.drawRect(rect)
-        
         painter.restore()
 
     def get_new_scene_rect(self):
@@ -790,6 +796,9 @@ class PatchScene(QGraphicsScene):
                     group_item = item
                 elif item.type() is CanvasItemType.PORT:
                     group_item = item.parentItem()
+
+                if TYPE_CHECKING:
+                    assert isinstance(group_item, CanvasBox)
 
                 if group_item is not None and group_item._plugin_id >= 0:
                     plugin_id = group_item._plugin_id

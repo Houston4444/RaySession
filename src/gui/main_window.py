@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import TYPE_CHECKING
 import time
 import os
 import subprocess
@@ -25,13 +26,16 @@ import list_widget_clients
 import ui.raysession
 import ui.patchbay_tools
 
+if TYPE_CHECKING:
+    from gui_session import SignaledSession
+
 UI_PATCHBAY_UNDEF = 0
 UI_PATCHBAY_HIDDEN = 1
 UI_PATCHBAY_SHOWN = 2
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, session):
+    def __init__(self, session: 'SignaledSession'):
         QMainWindow.__init__(self)
         self.ui = ui.raysession.Ui_MainWindow()
         self.ui.setupUi(self)
@@ -471,12 +475,12 @@ class MainWindow(QMainWindow):
         self.ui.splitterSessionVsMessages.setSizes(sizes)
 
     def _setup_canvas(self):
-        options = patchcanvas.get_options_object()
+        options = patchcanvas.CanvasOptionsObject()
         options.theme_name = RS.settings.value(
             'Canvas/theme', 'Black Gold', type=str)
-        options.eyecandy = EyeCandy.NONE
+        options.eyecandy = patchcanvas.EyeCandy.NONE
         if RS.settings.value('Canvas/box_shadows', False, type=bool):
-            options.eyecandy = EyeCandy.SMALL
+            options.eyecandy = patchcanvas.EyeCandy.SMALL
 
         options.auto_hide_groups = True
         options.auto_select_items = False
@@ -487,7 +491,7 @@ class MainWindow(QMainWindow):
         options.max_port_width = RS.settings.value(
             'Canvas/max_port_width', 160, type=int)
 
-        features = patchcanvas.get_features_object()
+        features = patchcanvas.CanvasFeaturesObject()
         features.group_info = False
         features.group_rename = False
         features.port_info = True
@@ -497,18 +501,14 @@ class MainWindow(QMainWindow):
         theme_paths = list[Path]()
         theme_paths.append(
             Path(RS.settings.fileName()).parent.joinpath('patchbay_themes'))
-        # theme_paths.append(
-        #     os.path.join(os.path.dirname(RS.settings.fileName()), 'patchbay_themes'))
         theme_paths.append(
             Path(get_code_root()).joinpath('patchbay_themes'))
-            # os.path.join(get_code_root(), 'patchbay_themes'))
-        # theme_paths = tuple(theme_paths)
 
         patchcanvas.set_options(options)
         patchcanvas.set_features(features)
         patchcanvas.init(
             ray.APP_TITLE, self.scene,
-            self.canvas_callback, tuple(theme_paths), debug=False)
+            self.canvas_callback, tuple(theme_paths))
         patchcanvas.set_semi_hide_opacity(
             RS.settings.value(
                 'Canvas/semi_hide_opacity', 0.17, type=float))

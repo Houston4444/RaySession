@@ -119,7 +119,6 @@ class CanvasBezierLine(QGraphicsPathItem):
             pos2 = 0
 
         port_type1 = self.item1.get_port_type()
-        port_type2 = self.item2.get_port_type()
         port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
 
         theme = canvas.theme.line
@@ -147,7 +146,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         else:
             if self._semi_hidden:
                 shd = canvas.semi_hide_opacity
-                bgcolor = canvas.theme.background_color
+                bgcolor = canvas.theme.background_color_
                 
                 
                 color_main = QColor(

@@ -298,7 +298,6 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
                 group_name, utils.get_new_group_pos(False)))
         else:
             # Special ladish fake-split groups
-            #horizontal = bool(icon_type in (IconType.HARDWARE, IconType.LADISH_ROOM))
             group_box.setPos(group.null_pos)
 
 
@@ -716,6 +715,8 @@ def restore_group_positions(data_list):
         if group is None:
             continue
 
+        assert isinstance(group, GroupObject)
+
         group.widgets[0].setPos(data['pos1x'], data['pos1y'])
 
         if group.split and group.widgets[1]:
@@ -979,7 +980,6 @@ def remove_portgroup(group_id: int, portgrp_id: int):
         return
 
     if box_widget is not None:
-        box_widget._layout_may_have_change = True
         box_widget.update_positions()
 
     QTimer.singleShot(0, canvas.scene.update)
@@ -1106,6 +1106,8 @@ def redraw_plugin_group(plugin_id: int):
         _LOGGER.critical(f"{_LOGGING_STR} - unable to find group")
         return
 
+    assert isinstance(group, GroupObject)
+
     group.widgets[0].redraw_inline_display()
 
     if group.split and group.widgets[1]:
@@ -1116,6 +1118,7 @@ def handle_plugin_removed(plugin_id: int):
     group = canvas.group_plugin_map.pop(plugin_id, None)
 
     if group is not None:
+        assert isinstance(group, GroupObject)
         group.plugin_id = -1
         group.plugin_ui = False
         group.plugin_inline = False
@@ -1268,15 +1271,6 @@ def set_optional_gui_state(group_id: int, visible: bool):
 @patchbay_api
 def save_cache():
     canvas.theme.save_cache()
-    
-# PatchCanvas API
-@patchbay_api
-def get_options_object():
-    return CanvasOptionsObject()
-
-@patchbay_api
-def get_features_object():
-    return CanvasFeaturesObject()
 
 @patchbay_api
 def set_options(new_options: CanvasOptionsObject):

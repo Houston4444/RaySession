@@ -20,7 +20,7 @@
 from typing import TYPE_CHECKING
 from enum import IntEnum, IntFlag
 
-from PyQt5.QtCore import QPointF, QRectF, pyqtSignal, pyqtSlot, QObject
+from PyQt5.QtCore import QPointF, QRectF, QSettings
 from PyQt5.QtWidgets import QGraphicsItem
 
 if TYPE_CHECKING:
@@ -193,6 +193,7 @@ class Canvas:
             self.theme = Theme()
             self.theme_manager = ThemeManager()
             self.scene = PatchScene()
+            self.settings = QSettings()
 
     def callback(self, action: CallbackAct, value1: int,
                  value2: int, value_str: str):
@@ -312,14 +313,5 @@ features.group_rename = False
 features.port_info = False
 features.port_rename = False
 features.handle_group_pos = False
-
-# logger = logging.getLogger('patchcanvas')
-# log_handler = logging.StreamHandler()
-# log_formater = logging.Formatter(
-#     f"%(name)s.%(module)s - %(levelname)s - %(message)s")
-# log_handler.setFormatter(log_formater)
-# log_handler.setLevel(logging.DEBUG)
-# logger.setLevel(logging.DEBUG)
-# logger.addHandler(log_handler)
 
 

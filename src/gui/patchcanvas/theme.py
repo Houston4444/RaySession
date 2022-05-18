@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import pickle
+from typing import TYPE_CHECKING
 
 from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF, QImage
 from PyQt5.QtCore import Qt, QTimer
@@ -14,7 +15,7 @@ FONT_METRICS_CACHE = {}
 def print_error(string: str):
     sys.stderr.write("patchcanvas.theme::%s\n" % string)
 
-def _to_qcolor(color):
+def _to_qcolor(color) -> QColor:
     ''' convert a color given with a string, a list or a tuple (of ints)
     to a QColor.
     returns None if color has a incorrect value.'''
@@ -121,6 +122,9 @@ class StyleAttributer:
         self._font = None
         self._font_metrics_cache = None
         self._titles_templates_cache = None
+        
+        if TYPE_CHECKING:
+            assert isinstance(self._parent, StyleAttributer)
 
     def set_attribute(self, attribute: str, value):
         err = False
@@ -254,7 +258,7 @@ class StyleAttributer:
         for key, value in style_dict.items():
             self.set_attribute(key, value)
     
-    def get_value_of(self, attribute, orig_path='', needed_attribute=''):
+    def get_value_of(self, attribute: str, orig_path='', needed_attribute=''):
         # returns the value of given attribute for this theme section
         # if this value is not present in this theme section,
         # it will look into parent sections.
@@ -268,6 +272,9 @@ class StyleAttributer:
             orig_path = self._path
 
         for path_end in ('selected',):
+            if TYPE_CHECKING:
+                assert isinstance(self, UnselectedStyleAttributer)
+            
             if (orig_path.endswith('.' + path_end)
                     and path_end in self.subs
                     and self._path + '.' + path_end != orig_path):
@@ -288,7 +295,7 @@ class StyleAttributer:
 
         return self.__getattribute__(attribute)
     
-    def fill_pen(self):
+    def fill_pen(self) -> QPen:
         if self._fill_pen is None:
             self._fill_pen = QPen(
                 QBrush(self.get_value_of('_border_color')),
@@ -297,23 +304,23 @@ class StyleAttributer:
         
         return self._fill_pen
     
-    def border_radius(self):
+    def border_radius(self) -> float:
         return self.get_value_of('_border_radius')
     
-    def background_color(self):
+    def background_color(self) -> QColor:
         return self.get_value_of('_background_color')
     
-    def background2_color(self):
+    def background2_color(self) -> QColor:
         return self.get_value_of('_background2_color',
                                  needed_attribute='_background_color')
     
-    def background_image(self):
+    def background_image(self) -> QImage:
         return self.get_value_of('_background_image')
 
-    def text_color(self):
+    def text_color(self) -> QColor:
         return self.get_value_of('_text_color')
     
-    def font(self):
+    def font(self) -> QFont:
         font_ = QFont(self.get_value_of('_font_name'))
         font_.setPixelSize(self.get_value_of('_font_size'))
         font_.setWeight(self.get_value_of('_font_width'))
@@ -339,7 +346,7 @@ class StyleAttributer:
         self._font_metrics_cache = \
             FONT_METRICS_CACHE[font_name][font_size][font_width]
     
-    def get_text_width(self, string:str):
+    def get_text_width(self, string:str) -> float:
         if self._font_metrics_cache is None:
             self._set_font_metrics_cache()
         
@@ -360,16 +367,16 @@ class StyleAttributer:
         
         return tot_size
     
-    def port_offset(self):
+    def port_offset(self) -> float:
         return self.get_value_of('_port_offset')
     
-    def port_spacing(self):
+    def port_spacing(self) -> float:
         return self.get_value_of('_port_spacing')
     
-    def port_type_spacing(self):
+    def port_type_spacing(self) -> float:
         return self.get_value_of('_port_type_spacing')
 
-    def box_footer(self):
+    def box_footer(self) -> float:
         return self.get_value_of('_box_footer')
     
     def _set_titles_templates_cache(self):
@@ -512,8 +519,8 @@ class Theme(StyleAttributer):
         self._port_offset = 0
         self._box_footer = 0
 
-        self.background_color = QColor('black')
-        self.background_image = None
+        self.background_color_ = QColor('black')
+        self.background_image_ = QImage()
         self.box_shadow_color = QColor('gray')
         self.monitor_color = QColor(190, 158, 0)
         self.port_height = 16
@@ -626,9 +633,9 @@ class Theme(StyleAttributer):
                             continue
                         self.__setattr__(body_key.replace('-', '_'), body_value)
                     elif body_key == 'background':
-                        self.background_color = _to_qcolor(body_value)
-                        if self.background_color is None:
-                            self.background_color = QColor('black')
+                        self.background_color_ = _to_qcolor(body_value)
+                        if self.background_color_ is None:
+                            self.background_color_ = QColor('black')
                     elif body_key == 'background_image':
                         background_path = os.path.join(
                             os.path.dirname(theme_file_path), 'images', body_value)

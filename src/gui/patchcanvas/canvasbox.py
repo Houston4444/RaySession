@@ -2,6 +2,7 @@
 from enum import IntEnum
 from PyQt5.QtCore import QRectF
 from PyQt5.QtGui import QPainterPath
+from PyQt5.QtWidgets import QGraphicsItem
 
 from .init_values import (
     PortObject,
@@ -14,34 +15,13 @@ from .init_values import (
     IconType)
 import patchcanvas.utils as utils
 from .theme import Theme
-from .canvasbox_abstract import CanvasBoxAbstract, UnwrapButton
+from .canvasbox_abstract import CanvasBoxAbstract, UnwrapButton, TitleLine
 
 
 class TitleOn(IntEnum):
     TOP = 0
     SIDE = 1
     SIDE_UNDER_ICON = 2
-
-
-class TitleLine:
-    text = ''
-    size = 0
-    x = 0
-    y = 0
-    is_little = False
-
-    def __init__(self, text: str, theme: Theme, little=False):
-        self.theme = theme
-        self.text = text
-        self.is_little = little
-        self.x = 0
-        self.y = 0
-
-        self.font = None
-        self.size = theme.get_text_width(text)
-
-    def get_font(self):
-        return self.theme.font()
 
 
 class BoxArea:
@@ -267,7 +247,7 @@ class CanvasBox(CanvasBoxAbstract):
 
     def _set_ports_y_positions(
             self, align_port_types: bool, start_pos: int, one_column: bool) -> dict:
-        def set_widget_pos(widget, pos):
+        def set_widget_pos(widget: QGraphicsItem, pos):
             if self._wrapping:
                 widget.setY(pos - ((pos - wrapped_port_pos)
                                    * self._wrapping_ratio))
@@ -512,7 +492,7 @@ class CanvasBox(CanvasBoxAbstract):
         return polished_list(return_list)
     
     
-    def _split_title(self, n_lines: int)->tuple:
+    def _split_title(self, n_lines: int) -> tuple[TitleLine]:
         title, slash, subtitle = self._group_name.partition('/')
 
         if (not subtitle
@@ -592,23 +572,7 @@ class CanvasBox(CanvasBoxAbstract):
                     titles = [first_line + '/'] + self.split_in_two(last_line, n_lines - 1)
                 else:
                     titles = self.split_in_two(self._group_name, n_lines)
-                
-                #new_titles = titles.copy()
-                
-                #if len(titles) < n_lines:
-                    #biggest = ''
-                    #for title in titles:
-                        #if len(title) > len(biggest):
-                            #biggest = title
-                
-                    #new_titles.clear()
-                    #for title in titles:
-                        #if title == biggest:
-                            #biggest = ''
-                            #new_titles += list(self.split_in_two(title, 2))
-                        #else:
-                            #new_titles.append(title)
-                
+
                 title_lines = [TitleLine(tt, theme) for tt in titles]
             else:
                 title_lines = [TitleLine(self._group_name, theme)]

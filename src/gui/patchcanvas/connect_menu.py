@@ -55,7 +55,7 @@ class PortData:
 
 class PortCheckBox(QCheckBox):
     def __init__(self, port_id: int, portgrp_id: int, port_name: str,
-                 port_type: int, parent):
+                 port_type: PortType, parent: 'ConnectGroupMenu'):
         QCheckBox.__init__(self, port_name, parent)
         self.setTristate(True)
         self.setMinimumHeight(23)
@@ -94,10 +94,14 @@ class SubMenu(QMenu):
         self._portgrp_id = port_data._portgrp_id
         self._is_alternate = port_data._is_alternate
         self._port_id_list = port_data._port_id_list
+        
+    def connection_asked_from_box(
+            self, port_id: int, portgrp_id: int, connect: bool):
+        pass
 
 
 class ConnectGroupMenu(SubMenu):
-    def __init__(self, group_name: str, group_id: str, port_data, parent,
+    def __init__(self, group_name: str, group_id: str, port_data, parent: 'SubMenu',
                  dangerous_mode=DANGEROUS_NO_CARE):
         SubMenu.__init__(self, group_name, port_data, parent)
         self._parent = parent
@@ -185,7 +189,7 @@ class DangerousMenu(SubMenu):
         SubMenu.__init__(self, name, port_data, parent)
         self.setIcon(QIcon.fromTheme('emblem-warning'))
 
-        self.group_menus = []
+        self.group_menus = list[ConnectGroupMenu]()
         self.connection_list = []
 
     def add_group_menu(self, group_id: int, group_name: str):
@@ -233,7 +237,7 @@ class ConnectMenu(SubMenu):
         #canvas.qobject.port_added.connect(self.port_added_to_canvas)
         #canvas.qobject.port_removed.connect(self.port_removed_from_canvas)
 
-        self.group_menus = []
+        self.group_menus = list[ConnectGroupMenu]()
         self.connection_list = []
 
         dangerous_name = ''
@@ -572,7 +576,7 @@ class ClipboardMenu(SubMenu):
         canvas.clipboard_cut = False
 
 
-class MainPortContextMenu(QMenu):
+class MainPortContextMenu(PortData, QMenu):
     def __init__(self, group_id: int, port_id: int, portgrp_id=0):
         QMenu.__init__(self)
 
@@ -666,7 +670,7 @@ class MainPortContextMenu(QMenu):
                     connection, self._group_id, self._port_id_list):
                 self.add_connection(connection)
 
-    def get_port_attributes(self)->tuple:
+    def get_port_attributes(self) -> tuple:
         return (self._group_id, self._port_id,
                 self._port_type, self._port_mode)
 
