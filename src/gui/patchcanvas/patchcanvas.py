@@ -17,12 +17,13 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-import sys
-import time
+# global imports
+import logging
 from pathlib import Path
-from PyQt5.QtCore import (pyqtSlot, qCritical, qFatal, qWarning, QObject,
-                          QPoint, QPointF, QRectF, QSettings, QTimer, pyqtSignal)
+from PyQt5.QtCore import (pyqtSlot, QObject, QPoint, QPointF, QRectF,
+                          QSettings, QTimer, pyqtSignal)
 
+# local imports
 from .init_values import (
     CanvasItemType,
     PortType,
@@ -51,10 +52,26 @@ from .canvasbezierline import CanvasBezierLine
 from .theme_manager import ThemeManager
 from .scene import PatchScene
 
-# ------------------------------------------------------------------------------------------------------------
 
-def warning_print(string: str):
-    sys.stderr.write('patchcanvas::%s\n' % string)
+_LOGGER = logging.getLogger(__name__)
+
+# used by patchbay_api decorator to get function_name
+# and arguments, easily usable by logger
+_LOGGING_STR = ''
+
+def patchbay_api(func):
+    ''' decorator for API callable functions.
+        It makes debug logs and also a global logging string
+        usable directly in the functions'''
+    def wrapper(*args, **kwargs):
+        args_strs = [str(arg) for arg in args]
+        args_strs += [f"{k}={v}" for k, v in kwargs.items()]
+
+        global _LOGGING_STR
+        _LOGGING_STR = f"{func.__name__}({', '.join(args_strs)})"
+        _LOGGER.debug(_LOGGING_STR)
+        return func(*args, **kwargs)
+    return wrapper
 
 
 class CanvasObject(QObject):
@@ -100,8 +117,6 @@ class CanvasObject(QObject):
 
         self.groups_to_join.clear()
 
-# ------------------------------------------------------------------------------------------------------------
-
 def _get_stored_canvas_position(key, fallback_pos):
     try:
         return canvas.settings.value(
@@ -109,20 +124,16 @@ def _get_stored_canvas_position(key, fallback_pos):
     except:
         return fallback_pos
 
-# -----------------------------------
 
+@patchbay_api
 def init(app_name: str, scene: PatchScene, callback,
          theme_paths: tuple[Path], debug=False):
-    if debug:
-        warning_print("init(\"%s\", %s, %s, %s)"
-                      % (app_name, scene, callback, str(debug)))
-
     if canvas.initiated:
-        warning_print("init() - already initiated")
+        _LOGGER.critical("init() - already initiated")
         return
 
     if not callback:
-        warning_print("init() - fatal error: callback not set")
+        _LOGGER.critical("init() - fatal error: callback not set")
         return
 
     canvas.callback = callback
@@ -150,22 +161,11 @@ def init(app_name: str, scene: PatchScene, callback,
 
     canvas.initiated = True
 
+@patchbay_api
 def clear():
-    if canvas.debug:
-        warning_print("clear()")
-
-    group_list_ids = []
-    port_list_ids = []
-    connection_list_ids = []
-
-    for group in canvas.group_list:
-        group_list_ids.append(group.group_id)
-
-    for port in canvas.port_list:
-        port_list_ids.append((port.group_id, port.port_id))
-
-    for connection in canvas.connection_list:
-        connection_list_ids.append(connection.connection_id)
+    group_list_ids = [g.group_id for g in canvas.group_list]
+    port_list_ids = [(p.group_id, p.port_id) for p in canvas.port_list]
+    connection_list_ids = [c.connection_id for c in canvas.connection_list]
 
     for idx in connection_list_ids:
         disconnect_ports(idx)
@@ -198,18 +198,13 @@ def clear():
     QTimer.singleShot(0, canvas.scene.update)
 
 # ------------------------------------------------------------------------------------------------------------
-
+@patchbay_api
 def set_initial_pos(x: int, y: int):
-    if canvas.debug:
-        warning_print("set_initial_pos(%i, %i)" % (x, y))
-
     canvas.initial_pos.setX(x)
     canvas.initial_pos.setY(y)
 
+@patchbay_api
 def set_canvas_size(x: int, y: int, width: int, height: int):
-    if canvas.debug:
-        warning_print("set_canvas_size(%i, %i, %i, %i)" % (x, y, width, height))
-
     canvas.size_rect.setX(x)
     canvas.size_rect.setY(y)
     canvas.size_rect.setWidth(width)
@@ -217,6 +212,7 @@ def set_canvas_size(x: int, y: int, width: int, height: int):
     canvas.scene.update_limits()
     canvas.scene.fix_scale_factor()
 
+@patchbay_api
 def set_loading_items(yesno: bool):
     '''while canvas is loading items (groups or ports, connections...)
     then, items will be added, but no redraw.
@@ -225,19 +221,15 @@ def set_loading_items(yesno: bool):
     or redraw_group once the long operation is finished'''
     canvas.loading_items = yesno
 
+@patchbay_api
 def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
               icon_type=IconType.APPLICATION, icon_name='', layout_modes={},
               null_xy=(0, 0), in_xy=(0, 0), out_xy=(0, 0),
               split_animated=False):
-    if canvas.debug:
-        warning_print("add_group(%i, %s, %s, %s)" % (
-              group_id, group_name, split.name, icon_type.name))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
-            warning_print(
-                "add_group(%i, %s, %s, %s) - group already exists"
-                % (group_id, group_name, split.name, icon_type.name))
+            _LOGGER.error(f"{_LOGGING_STR} - group already exists.")
             return
 
     if split is BoxSplitMode.UNDEF and icon_type is IconType.HARDWARE:
@@ -327,10 +319,8 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
 
     QTimer.singleShot(0, canvas.scene.update)
 
+@patchbay_api
 def remove_group(group_id: int, save_positions=True):
-    if canvas.debug:
-        warning_print("remove_group(%i)" % group_id)
-
     for group in canvas.group_list:
         if group.group_id == group_id:            
             item = group.widgets[0]
@@ -372,12 +362,10 @@ def remove_group(group_id: int, save_positions=True):
             QTimer.singleShot(0, canvas.scene.resize_the_scene)
             return
 
-    qCritical("PatchCanvas::remove_group(%i) - unable to find group to remove" % group_id)
+    _LOGGER.error(f"{_LOGGING_STR} - unable to find group to remove")
 
+@patchbay_api
 def rename_group(group_id: int, new_group_name: str):
-    if canvas.debug:
-        warning_print("rename_group(%i, %s)" % (group_id, new_group_name))
-
     for group in canvas.group_list:
         if group.group_id == group_id:
             group.group_name = new_group_name
@@ -389,20 +377,18 @@ def rename_group(group_id: int, new_group_name: str):
             QTimer.singleShot(0, canvas.scene.update)
             return
 
-    qCritical("PatchCanvas::rename_group(%i, %s) - unable to find group to rename"
-              % (group_id, new_group_name.encode()))
+    _LOGGER.critical(f"{_LOGGING_STR} - unable to find group to rename")
 
+@patchbay_api
 def split_group(group_id: int, on_place=False):
-    if canvas.debug:
-        warning_print("split_group(%i)" % group_id)
-
     item = None
 
     # Step 1 - Store all Item data
     for group in canvas.group_list:
         if group.group_id == group_id:
             if group.split:
-                qCritical("PatchCanvas::split_group(%i) - group is already split" % group_id)
+                _LOGGER.error(
+                    f"{_LOGGING_STR} - group is already splitted")
                 return
 
             item = group.widgets[0]
@@ -418,7 +404,7 @@ def split_group(group_id: int, on_place=False):
             break
 
     if not item:
-        qCritical("PatchCanvas::split_group(%i) - unable to find group to split" % group_id)
+        _LOGGER.error(f"{_LOGGING_STR} - unable to find group to split")
         return
 
     wrap = item.is_wrapped()
@@ -485,10 +471,8 @@ def split_group(group_id: int, on_place=False):
 
     QTimer.singleShot(0, canvas.scene.update)
 
+@patchbay_api
 def join_group(group_id: int):
-    if canvas.debug:
-        warning_print("join_group(%i)" % group_id)
-
     item = None
     s_item = None
 
@@ -496,7 +480,7 @@ def join_group(group_id: int):
     for group in canvas.group_list:
         if group.group_id == group_id:
             if not group.split:
-                warning_print("join_group(%i) - group is not split" % group_id)
+                _LOGGER.error(f"{_LOGGING_STR} - group is not splitted")
                 return
 
             item, s_item = group.widgets
@@ -504,7 +488,7 @@ def join_group(group_id: int):
             break
 
     if not (item and s_item):
-        warning_print("join_group(%i) - unable to find groups to join" % group_id)
+        _LOGGER.error(f"{_LOGGING_STR} - unable to find groups to join")
         return
 
     wrap = item.is_wrapped() and s_item.is_wrapped()
@@ -569,10 +553,8 @@ def join_group(group_id: int):
 
     QTimer.singleShot(0, canvas.scene.update)
 
+@patchbay_api
 def redraw_all_groups():
-    start_time = time.time()
-    last_time = start_time
-    time_dicts = []
     i = 0
     
     # We are redrawing all groups.
@@ -589,11 +571,6 @@ def redraw_all_groups():
             if box is not None:
                 i += 1
                 box.update_positions(without_connections=True)
-        now = time.time()
-        
-        time_dicts.append({'group': group.group_name, 'time': now - last_time})
-        
-        last_time = now
     
     for connection in canvas.connection_list:
         if connection.widget is not None:
@@ -619,6 +596,7 @@ def redraw_all_groups():
     if not elastic or prevent_overlap:
         QTimer.singleShot(0, canvas.scene.update)
 
+@patchbay_api
 def redraw_group(group_id: int):
     for group in canvas.group_list:
         if group.group_id == group_id:            
@@ -629,6 +607,7 @@ def redraw_group(group_id: int):
 
     QTimer.singleShot(0, canvas.scene.update)
 
+@patchbay_api
 def animate_before_join(group_id: int):
     canvas.qobject.groups_to_join.append(group_id)
 
@@ -639,6 +618,7 @@ def animate_before_join(group_id: int):
                     widget, group.null_pos.x(), group.null_pos.y())
             break
 
+@patchbay_api
 def move_group_boxes(group_id: int, null_xy: tuple,
                      in_xy: tuple, out_xy: tuple, animate=True):
     for group in canvas.group_list:
@@ -684,6 +664,7 @@ def move_group_boxes(group_id: int, null_xy: tuple,
         canvas.scene.add_box_to_animation(box, null_xy[0], null_xy[1],
                                           force_anim=animate)
 
+@patchbay_api
 def wrap_group_box(group_id: int, port_mode: int, yesno: bool, animate=True):
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -693,6 +674,7 @@ def wrap_group_box(group_id: int, port_mode: int, yesno: bool, animate=True):
                     box.set_wrapped(yesno, animate=animate)
             break
 
+@patchbay_api
 def set_group_layout_mode(group_id: int, port_mode: PortMode, layout_mode: BoxLayoutMode):
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -707,33 +689,25 @@ def set_group_layout_mode(group_id: int, port_mode: PortMode, layout_mode: BoxLa
 
 # ------------------------------------------------------------------------------------------------------------
 
+@patchbay_api
 def get_group_pos(group_id, port_mode=PortMode.OUTPUT):
     # Not used now
-    if canvas.debug:
-        warning_print(
-            "get_group_pos(%i, %s)"
-            % (group_id, port_mode.name))
-
     for group in canvas.group_list:
         if group.group_id == group_id:
             return group.widgets[1 if (group.split and port_mode is PortMode.INPUT) else 0].pos()
 
-    warning_print(
-        "get_group_pos(%i, %s) - unable to find group"
-        % (group_id, port_mode.name))
+    _LOGGER.error(f"{_LOGGING_STR} - unable to find group")
     return QPointF(0, 0)
 
-def restore_group_positions(dataList):
+@patchbay_api
+def restore_group_positions(data_list):
     # Not used now
-    if canvas.debug:
-        warning_print("restore_group_positions(...)")
-
     mapping = {}
 
     for group in canvas.group_list:
         mapping[group.group_name] = group
 
-    for data in dataList:
+    for data in data_list:
         name = data['name']
         group = mapping.get(name, None)
 
@@ -745,16 +719,17 @@ def restore_group_positions(dataList):
         if group.split and group.widgets[1]:
             group.widgets[1].setPos(data['pos2x'], data['pos2y'])
 
+@patchbay_api
 def set_group_pos(group_id, group_pos_x, group_pos_y):
     # Not used now
     set_group_pos_full(group_id, group_pos_x, group_pos_y, group_pos_x, group_pos_y)
 
+@patchbay_api
 def set_group_pos_full(group_id, group_pos_x_o, group_pos_y_o,
                        group_pos_x_i, group_pos_y_i):
     # Not used now
-    if canvas.debug:
-        print("PatchCanvas::set_group_pos(%i, %i, %i, %i, %i)" % (
-              group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group_pos_y_i))
+    _LOGGER.debug(f"set_group_pos_full({group_id}, {group_pos_x_o}, {group_pos_y_o}"
+                  f"{group_pos_x_i}, {group_pos_y_i})")
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -766,16 +741,12 @@ def set_group_pos_full(group_id, group_pos_x_o, group_pos_y_o,
             QTimer.singleShot(0, canvas.scene.update)
             return
 
-    qCritical(
-        "PatchCanvas::set_group_pos(%i, %i, %i, %i, %i) - unable to find group to reposition"
-        % (group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group_pos_y_i))
+    _LOGGER.error(f"set_group_pos_full({group_id}, {group_pos_x_o}, {group_pos_y_o}"
+                  f"{group_pos_x_i}, {group_pos_y_i})"
+                  " - unable to find group to reposition")
 
-# ------------------------------------------------------------------------------------------------------------
-
+@patchbay_api
 def set_group_icon(group_id: int, icon_type: IconType, icon_name: str):
-    if canvas.debug:
-        print("PatchCanvas::set_group_icon(%i, %s)" % (group_id, icon_type.name))
-
     for group in canvas.group_list:
         if group.group_id == group_id:
             group.icon_type = icon_type
@@ -786,16 +757,11 @@ def set_group_icon(group_id: int, icon_type: IconType, icon_name: str):
             QTimer.singleShot(0, canvas.scene.update)
             return
 
-    qCritical(
-        "PatchCanvas::set_group_icon(%i, %s) - unable to find group to change icon"
-        % (group_id, icon_type.name))
+    _LOGGER.critical(f"{_LOGGING_STR} - unable to find group to change icon")
 
+@patchbay_api
 def set_group_as_plugin(group_id: int, plugin_id: int,
                         has_ui: bool, has_inline_display: bool):
-    if canvas.debug:
-        print("PatchCanvas::set_group_as_plugin(%i, %i, %s, %s)"
-              % (group_id, plugin_id, str(has_ui), str(has_inline_display)))
-
     for group in canvas.group_list:
         if group.group_id == group_id:
             group.plugin_id = plugin_id
@@ -809,26 +775,15 @@ def set_group_as_plugin(group_id: int, plugin_id: int,
             canvas.group_plugin_map[plugin_id] = group
             return
 
-    qCritical(
-        "PatchCanvas::set_group_as_plugin(%i, %i, %s, %s) - unable to find group to set as plugin"
-        % (group_id, plugin_id, str(has_ui), str(has_inline_display)))
+    _LOGGER.critical(f"{_LOGGING_STR} - unable to find group to set as plugin")
 
 # ------------------------------------------------------------------------------------------------------------
-
+@patchbay_api
 def add_port(group_id: int, port_id: int, port_name: str,
              port_mode: PortMode, port_type: PortType, is_alternate=False):
-    if canvas.debug:
-        print("PatchCanvas::add_port(%i, %i, %s, %s, %s, %s)"
-              % (group_id, port_id, port_name.encode(),
-                 port_mode.name,
-                 port_type.name, str(is_alternate)))
-
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
-            sys.stderr.write(
-                "PatchCanvas::add_port(%i, %i, %s, %s, %s) - port already exists\n"
-                % (group_id, port_id, port_name,
-                   port_mode.name, port_type.name))
+            _LOGGER.critical(f"{_LOGGING_STR} - port already exists")
             return
     
     box_widget = None
@@ -849,10 +804,7 @@ def add_port(group_id: int, port_id: int, port_name: str,
             break
     
     if not (box_widget and port_widget):
-        qCritical(
-            "PatchCanvas::add_port(%i, %i, %s, %s, %s) - Unable to find parent group"
-            % (group_id, port_id, port_name.encode(),
-               port_mode.name, port_type.name))
+        _LOGGER.critical(f"{_LOGGING_STR} - Unable to find parent group")
         return
 
     port = PortObject()
@@ -868,8 +820,6 @@ def add_port(group_id: int, port_id: int, port_name: str,
 
     canvas.last_z_value += 1
     port_widget.setZValue(canvas.last_z_value)
-
-    #canvas.qobject.port_added.emit(port_dict.group_id, port_dict.port_id)
     
     if canvas.loading_items:
         return
@@ -878,16 +828,13 @@ def add_port(group_id: int, port_id: int, port_name: str,
 
     QTimer.singleShot(0, canvas.scene.update)
 
+@patchbay_api
 def remove_port(group_id: int, port_id: int):
-    if canvas.debug:
-        print("PatchCanvas::remove_port(%i, %i)" % (group_id, port_id))
-
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
             if port.portgrp_id:
-                qCritical(
-                    "PatchCanvas::remove_port(%i, %i) - Port is in portgroup %i, remove it before !"
-                    % (group_id, port_id, port.portgrp_id))
+                _LOGGER.critical(f"{_LOGGING_STR} - Port is in portgroup " 
+                                 f"{port.portgrp_id}, remove it before !")
                 return
 
             item = port.widget
@@ -905,14 +852,10 @@ def remove_port(group_id: int, port_id: int):
             QTimer.singleShot(0, canvas.scene.update)
             return
 
-    qCritical(
-        "PatchCanvas::remove_port(%i, %i) - Unable to find port to remove"
-        % (group_id, port_id))
+    _LOGGER.critical(f"{_LOGGING_STR} - Unable to find port to remove")
 
+@patchbay_api
 def rename_port(group_id: int, port_id: int, new_port_name: str):
-    if canvas.debug:
-        print("PatchCanvas::rename_port(%i, %i, %s)" % (group_id, port_id, new_port_name))
-
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
             if new_port_name != port.port_name:
@@ -928,18 +871,14 @@ def rename_port(group_id: int, port_id: int, new_port_name: str):
             QTimer.singleShot(0, canvas.scene.update)
             return
 
-    qCritical("PatchCanvas::rename_port(%i, %i, %s) - Unable to find port to rename"
-              % (group_id, port_id, new_port_name.encode()))
+    _LOGGER.critical(f"{_LOGGING_STR} - Unable to find port to rename")
 
+@patchbay_api
 def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
                   port_type: PortType, port_id_list: list):
-    if canvas.debug:
-        print("PatchCanvas::add_portgroup(%i, %i)" % (group_id, portgrp_id))
-
     for portgrp in canvas.portgrp_list:
         if portgrp.group_id == group_id and portgrp.portgrp_id == portgrp_id:
-            qWarning("PatchCanvas::add_portgroup(%i, %i) - portgroup already exists"
-                     % (group_id, portgrp_id))
+            _LOGGER.critical(f"{_LOGGING_STR} - portgroup already exists")
             return
     
     portgrp_dict = PortgrpObject()
@@ -958,9 +897,9 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
                 and port.port_mode == port_mode):
             if port.port_id == port_id_list[i]:
                 if port.portgrp_id:
-                    qWarning(
-                        "PatchCanvas::add_portgroup(%i, %i, %s) - port id %i is already in portgroup %i"
-                        % (group_id, portgrp_id, str(port_id_list), port.port_id, port.portgrp_id))
+                    _LOGGER.error(
+                        f"{_LOGGING_STR} - "
+                        f"port id {port.port_id} is already in portgroup {port.portgrp_id}")
                     return
 
                 i += 1
@@ -970,14 +909,10 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
                     break
 
             elif i > 0:
-                qWarning(
-                    "PatchCanvas::add_portgroup(%i, %i, %s) - port ids are not consecutive"
-                    % (group_id, portgrp_id, str(port_id_list)))
+                _LOGGER.critical(f"{_LOGGING_STR} - port ids are not consecutive")
                 return
     else:
-        qWarning(
-            "PatchCanvas::add_portgroup(%i, %i, %s) - not enought ports with port_id_list"
-            % (group_id, portgrp_id, str(port_id_list)))
+        _LOGGER.critical(f"{_LOGGING_STR} - not enought ports with port_id_list")
         return
 
     # modify ports impacted by portgroup
@@ -1009,10 +944,8 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
                         box.update_positions()
             break
 
+@patchbay_api
 def remove_portgroup(group_id: int, portgrp_id: int):
-    if canvas.debug:
-        print("PatchCanvas::remove_portgroup(%i, %i)" % (group_id, portgrp_id))
-
     box_widget = None
 
     for portgrp in canvas.portgrp_list:
@@ -1035,9 +968,7 @@ def remove_portgroup(group_id: int, portgrp_id: int):
                 portgrp.widget = None
             break
     else:
-        qCritical(
-            "PatchCanvas::remove_portgroup(%i, %i) - Unable to find portgrp to remove"
-            % (group_id, portgrp_id))
+        _LOGGER.critical(f"{_LOGGING_STR} - Unable to find portgrp to remove")
         return
 
     canvas.portgrp_list.remove(portgrp)
@@ -1051,12 +982,9 @@ def remove_portgroup(group_id: int, portgrp_id: int):
 
     QTimer.singleShot(0, canvas.scene.update)
 
+@patchbay_api
 def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
                   group_in_id: int, port_in_id: int):
-    if canvas.debug:
-        print("PatchCanvas::connect_ports(%i, %i, %i, %i, %i)"
-              % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
-
     port_out = None
     port_in = None
     port_out_parent = None
@@ -1074,9 +1002,7 @@ def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
         
     # FIXME
     if not (port_out and port_in and port_out_parent and port_in_parent):
-        qCritical(
-            "PatchCanvas::connect_ports(%i, %i, %i, %i, %i) - unable to find ports to connect"
-            % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
+        _LOGGER.critical(f"{_LOGGING_STR} - unable to find ports to connect")
         return
 
     connection = ConnectionObject()
@@ -1108,10 +1034,8 @@ def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
 
     QTimer.singleShot(0, canvas.scene.update)
 
+@patchbay_api
 def disconnect_ports(connection_id: int):
-    if canvas.debug:
-        print("PatchCanvas::disconnect_ports(%i)" % connection_id)
-
     for connection in canvas.connection_list:
         if connection.connection_id == connection_id:
             tmp_conn = connection.copy_no_widget()
@@ -1119,8 +1043,7 @@ def disconnect_ports(connection_id: int):
             canvas.connection_list.remove(connection)
             break
     else:
-        qCritical("PatchCanvas::disconnect_ports(%i) - unable to find connection ports"
-                  % connection_id)
+        _LOGGER.critical(f"{_LOGGING_STR} - unable to find connection ports")
         return
 
     canvas.qobject.connection_removed.emit(connection_id)
@@ -1131,8 +1054,7 @@ def disconnect_ports(connection_id: int):
             item1 = port.widget
             break
     else:
-        qCritical("PatchCanvas::disconnect_ports(%i) - unable to find output port"
-                  % connection_id)
+        _LOGGER.critical(f"{_LOGGING_STR} - unable to find output port")
         return
 
     for port in canvas.port_list:
@@ -1141,8 +1063,7 @@ def disconnect_ports(connection_id: int):
             item2 = port.widget
             break
     else:
-        qCritical("PatchCanvas::disconnect_ports(%i) - unable to find input port"
-                  % connection_id)
+        _LOGGER.critical(f"{_LOGGING_STR} - unable to find input port")
         return
 
     item1.parentItem().remove_line_from_group(connection_id)
@@ -1158,25 +1079,29 @@ def disconnect_ports(connection_id: int):
 
 # ----------------------------------------------------------------------------
 
+@patchbay_api
 def get_theme() -> str:
     return canvas.theme_manager.get_theme()
 
+@patchbay_api
 def list_themes() -> list:
     return canvas.theme_manager.list_themes()
 
+@patchbay_api
 def change_theme(theme_name='') -> bool:
     return canvas.theme_manager.set_theme(theme_name)
 
+@patchbay_api
 def copy_and_load_current_theme(new_theme_name: str) -> int:
     return canvas.theme_manager.copy_and_load_current_theme(new_theme_name)
 
 # ----------------------------------------------------------------------------
-
-def redraw_plugin_group(plugin_id):
+@patchbay_api
+def redraw_plugin_group(plugin_id: int):
     group = canvas.group_plugin_map.get(plugin_id, None)
 
     if group is None:
-        #qCritical("PatchCanvas::redraw_plugin_group(%i) - unable to find group" % plugin_id)
+        _LOGGER.critical(f"{_LOGGING_STR} - unable to find group")
         return
 
     group.widgets[0].redraw_inline_display()
@@ -1184,10 +1109,8 @@ def redraw_plugin_group(plugin_id):
     if group.split and group.widgets[1]:
         group.widgets[1].redraw_inline_display()
 
-def handle_plugin_removed(plugin_id):
-    if canvas.debug:
-        print("PatchCanvas::handle_plugin_removed(%i)" % plugin_id)
-
+@patchbay_api
+def handle_plugin_removed(plugin_id: int):
     group = canvas.group_plugin_map.pop(plugin_id, None)
 
     if group is not None:
@@ -1211,10 +1134,8 @@ def handle_plugin_removed(plugin_id):
 
         canvas.group_plugin_map[plugin_id] = group
 
+@patchbay_api
 def handle_all_plugins_removed():
-    if canvas.debug:
-        print("PatchCanvas::handle_all_plugins_removed()")
-
     canvas.group_plugin_map = {}
 
     for group in canvas.group_list:
@@ -1231,27 +1152,23 @@ def handle_all_plugins_removed():
         if group.split and group.widgets[1]:
             group.widgets[1].remove_as_plugin()
 
+@patchbay_api
 def set_elastic(yesno: bool):
     canvas.scene.set_elastic(yesno)
 
+@patchbay_api
 def set_prevent_overlap(yesno: bool):
     canvas.scene.set_prevent_overlap(yesno)
     
     if yesno:
         redraw_all_groups()
-
-def full_prevent_overlap():
-    box_tuples = []
-    for group in canvas.group_list:
-        for box in group.widgets:
-            if box is not None:
-                box_tuples.append(box.sceneBoundingRect(), box)
     
-
+@patchbay_api
 def set_max_port_width(width: int):
     options.max_port_width = width
     redraw_all_groups()
 
+@patchbay_api
 def semi_hide_group(group_id: int, yesno: bool):
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -1260,6 +1177,7 @@ def semi_hide_group(group_id: int, yesno: bool):
                     widget.semi_hide(yesno)
             break
 
+@patchbay_api
 def semi_hide_connection(connection_id: int, yesno: bool):
     for connection in canvas.connection_list:
         if connection.connection_id == connection_id:
@@ -1267,6 +1185,7 @@ def semi_hide_connection(connection_id: int, yesno: bool):
                 connection.widget.semi_hide(yesno)
             break
 
+@patchbay_api
 def set_group_in_front(group_id: int):
     canvas.last_z_value += 1
     
@@ -1277,6 +1196,7 @@ def set_group_in_front(group_id: int):
                     widget.setZValue(canvas.last_z_value)
             break
 
+@patchbay_api
 def set_connection_in_front(connection_id: int):
     canvas.last_z_value += 1
     
@@ -1286,6 +1206,7 @@ def set_connection_in_front(connection_id: int):
                 conn.widget.setZValue(canvas.last_z_value)
             break
 
+@patchbay_api
 def select_filtered_group_box(group_id: int, n_select=1):
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -1302,7 +1223,8 @@ def select_filtered_group_box(group_id: int, n_select=1):
                     n_widget += 1
             break
 
-def get_number_of_boxes(group_id: int)->int:
+@patchbay_api
+def get_number_of_boxes(group_id: int) -> int:
     n = 0
     
     for group in canvas.group_list:
@@ -1313,7 +1235,8 @@ def get_number_of_boxes(group_id: int)->int:
             break
     
     return n
-    
+
+@patchbay_api    
 def set_semi_hide_opacity(opacity: float):
     canvas.semi_hide_opacity = opacity
 
@@ -1326,6 +1249,7 @@ def set_semi_hide_opacity(opacity: float):
         if conn.widget is not None:
             conn.widget.update_line_gradient()
 
+@patchbay_api
 def set_optional_gui_state(group_id: int, visible: bool):
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -1339,21 +1263,25 @@ def set_optional_gui_state(group_id: int, visible: bool):
         
     canvas.scene.update()
 
+@patchbay_api
 def save_cache():
     canvas.theme.save_cache()
     
 # PatchCanvas API
+@patchbay_api
 def get_options_object():
     return CanvasOptionsObject()
 
+@patchbay_api
 def get_features_object():
     return CanvasFeaturesObject()
 
+@patchbay_api
 def set_options(new_options: CanvasOptionsObject):
     if not canvas.initiated:
         options.__dict__ = new_options.__dict__.copy()
 
+@patchbay_api
 def set_features(new_features: CanvasFeaturesObject):
     if not canvas.initiated:
         features.__dict__ = new_features.__dict__.copy()
-# ----------------------------------------------------------------------------

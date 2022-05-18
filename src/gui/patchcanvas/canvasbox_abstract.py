@@ -17,8 +17,10 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
+# ----------------------
 # Imports (Global)
+from struct import pack
+from sip import voidptr
 import sys
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -28,6 +30,8 @@ from PyQt5.QtGui import (QCursor, QFontMetrics, QImage,
                          QLinearGradient, QPainter, QPen, QPolygonF,
                          QColor, QIcon, QPixmap, QPainterPath, QBrush)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
+
+# ---------------------
 
 from .init_values import (
     CanvasItemType,
