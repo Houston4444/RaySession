@@ -20,7 +20,7 @@
 from typing import TYPE_CHECKING
 from enum import IntEnum, IntFlag
 
-from PyQt5.QtCore import QPointF, QRectF
+from PyQt5.QtCore import QPointF, QRectF, pyqtSignal, pyqtSlot, QObject
 from PyQt5.QtWidgets import QGraphicsItem
 
 if TYPE_CHECKING:
@@ -176,7 +176,6 @@ class Canvas:
         self.clipboard_cut = True
         self.group_plugin_map = {}
 
-        self.debug = False
         self.scene = None
         self.last_z_value = 0
         self.last_connection_id = 0
@@ -313,5 +312,14 @@ features.group_rename = False
 features.port_info = False
 features.port_rename = False
 features.handle_group_pos = False
+
+# logger = logging.getLogger('patchcanvas')
+# log_handler = logging.StreamHandler()
+# log_formater = logging.Formatter(
+#     f"%(name)s.%(module)s - %(levelname)s - %(message)s")
+# log_handler.setFormatter(log_formater)
+# log_handler.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
+# logger.addHandler(log_handler)
 
 

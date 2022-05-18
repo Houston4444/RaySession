@@ -17,16 +17,20 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+import logging
 import os
 
-from PyQt5.QtCore import qCritical, QRectF, QFile
+from PyQt5.QtCore import QRectF, QFile
 from PyQt5.QtGui import QPainter, QIcon
 from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
 from PyQt5.QtWidgets import QGraphicsPixmapItem
 
 from .init_values import canvas, CanvasItemType, IconType, PortMode
 
+_LOGGER = logging.getLogger(__name__)
+
 APP_ICONS_CACHE = {}
+
 
 def get_app_icon(icon_name: str) -> QIcon:
     if icon_name in APP_ICONS_CACHE.keys():
@@ -182,8 +186,8 @@ class CanvasSvgIcon(QGraphicsSvgItem):
 
         else:
             self._size = QRectF(0, 0, 0, 0)
-            qCritical("PatchCanvas::CanvasIcon.set_icon(%s, %s) - unsupported icon requested"
-                      % (icon_type.name, name.encode()))
+            _LOGGER.critical(f"set_icon({str(icon_type)}, {name})"
+                             " - unsupported icon requested")
             return
 
         self.m_renderer = QSvgRenderer(icon_path, canvas.scene)

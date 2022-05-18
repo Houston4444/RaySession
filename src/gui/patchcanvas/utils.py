@@ -20,10 +20,9 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from ast import Call
-import sys
+import logging
 
-from PyQt5.QtCore import qCritical, QPointF, QTimer, QFile
+from PyQt5.QtCore import QPointF, QFile, QRectF
 from PyQt5.QtGui import QIcon, QPalette
 from PyQt5.QtWidgets import QWidget
 
@@ -35,12 +34,31 @@ from .init_values import (
     canvas,
     IconType,
     PortMode,
+    ConnectionObject,
     CallbackAct)
 
 # ------------------------------------------------------------------------------------------------------------
 
+_LOGGER = logging.getLogger(__name__)
+_LOGGING_STR = ''
+
+# decorator
+def easy_log(func):
+    ''' decorator for API callable functions.
+        It makes debug logs and also a global logging string
+        usable directly in the functions'''
+    def wrapper(*args, **kwargs):
+        args_strs = [str(arg) for arg in args]
+        args_strs += [f"{k}={v}" for k, v in kwargs.items()]
+
+        global _LOGGING_STR
+        _LOGGING_STR = f"{func.__name__}({', '.join(args_strs)})"
+        _LOGGER.debug(_LOGGING_STR)
+        return func(*args, **kwargs)
+    return wrapper
+
 def get_new_group_positions()->tuple:
-    def get_middle_empty_positions(scene_rect)->tuple:
+    def get_middle_empty_positions(scene_rect: QRectF)->tuple:
         if scene_rect.isNull():
             return ((0, 200))
 
@@ -122,10 +140,8 @@ def get_new_group_positions()->tuple:
             (400, int(y)),
             (0, int(y)))
 
+@easy_log
 def get_new_group_pos(horizontal: bool):
-    if canvas.debug:
-        print("PatchCanvas::get_new_group_pos(%s)" % str(horizontal))
-
     new_pos = QPointF(canvas.initial_pos)
     items = canvas.scene.items()
 
@@ -147,10 +163,8 @@ def get_new_group_pos(horizontal: bool):
 
     return new_pos
 
-def get_full_port_name(group_id, port_id):
-    if canvas.debug:
-        print("PatchCanvas::get_full_port_name(%i, %i)" % (group_id, port_id))
-
+@easy_log
+def get_full_port_name(group_id: int, port_id: int) -> str:
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
             group_id = port.group_id
@@ -158,15 +172,12 @@ def get_full_port_name(group_id, port_id):
                 if group.group_id == group_id:
                     return group.group_name + ":" + port.port_name
             break
-
-    qCritical("PatchCanvas::get_full_port_name(%i, %i) - unable to find port" % (group_id, port_id))
+    
+    _LOGGER.critical(f"{_LOGGING_STR} - unable to find port")
     return ""
 
-def get_port_connection_list(group_id, port_id):
-    if canvas.debug:
-        print("PatchCanvas::get_port_connection_list(%i, %i)"
-              % (group_id, port_id))
-
+@easy_log
+def get_port_connection_list(group_id: int, port_id: int) -> list:
     conn_list = []
 
     for connection in canvas.connection_list:
@@ -184,7 +195,7 @@ def get_port_connection_list(group_id, port_id):
     return conn_list
 
 def get_portgroup_position(group_id: int, port_id: int,
-                           portgrp_id: int)->tuple:
+                           portgrp_id: int) -> tuple:
     if portgrp_id <= 0:
         return (0, 1)
 
@@ -196,7 +207,7 @@ def get_portgroup_position(group_id: int, port_id: int,
                     return (i, len(portgrp.port_id_list))
     return (0, 1)
 
-def get_portgroup_name_from_ports_names(ports_names: list):
+def get_portgroup_name_from_ports_names(ports_names: list[str]):
     if len(ports_names) < 2:
         return ''
 
@@ -231,7 +242,7 @@ def get_portgroup_name_from_ports_names(ports_names: list):
     
     return portgrp_name
 
-def get_portgroup_name(group_id: int, ports_ids_list: list)->str:
+def get_portgroup_name(group_id: int, ports_ids_list: list) -> str:
     # accept portgrp_id instead of ports_ids_list as second argument
     if isinstance(ports_ids_list, int):
         for portgrp in canvas.portgrp_list:
@@ -247,41 +258,8 @@ def get_portgroup_name(group_id: int, ports_ids_list: list)->str:
             ports_names.append(port.port_name)
 
     return get_portgroup_name_from_ports_names(ports_names)
-    #if len(ports_names) < 2:
-        #return ''
 
-    #portgrp_name_ends = (' ', '_', '.', '-', '#', ':', 'out', 'in', 'Out',
-                         #'In', 'Output', 'Input', 'output', 'input')
-
-    ## set portgrp name
-    #portgrp_name = ''
-
-    #for c in ports_names[0]:
-        #for eachname in ports_names:
-            #if not eachname.startswith(portgrp_name + c):
-                #break
-        #else:
-            #portgrp_name += c
-
-    ## reduce portgrp name until it ends with one of the characters
-    ## in portgrp_name_ends
-    #if not portgrp_name.endswith((' AUX', '_AUX')):
-        #check = False
-        #while not check:
-            #for x in portgrp_name_ends:
-                #if portgrp_name.endswith(x):
-                    #check = True
-                    #break
-
-            #if len(portgrp_name) == 0 or portgrp_name in ports_names:
-                #check = True
-
-            #if not check:
-                #portgrp_name = portgrp_name[:-1]
-
-    #return portgrp_name
-
-def get_port_print_name(group_id, port_id, portgrp_id):
+def get_port_print_name(group_id: int, port_id: int, portgrp_id: int) -> str:
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
@@ -299,7 +277,7 @@ def get_portgroup_port_list(group_id: int, portgrp_id: int)->list:
             return portgrp.port_id_list
     return []
 
-def get_portgroup_full_name(group_id, portgrp_id):
+def get_portgroup_full_name(group_id: int, portgrp_id: int) -> str:
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
@@ -322,8 +300,9 @@ def get_portgroup_full_name(group_id, portgrp_id):
 
     return ""
 
-def connection_matches(connection, group_id_1: int, port_ids_list_1: list,
-                       group_id_2: int, port_ids_list_2: list)->bool:
+def connection_matches(connection: ConnectionObject,
+                       group_id_1: int, port_ids_list_1: list[int],
+                       group_id_2: int, port_ids_list_2: list[int]) -> bool:
     if (connection.group_in_id == group_id_1
         and connection.port_in_id in port_ids_list_1
         and connection.group_out_id == group_id_2
@@ -337,13 +316,14 @@ def connection_matches(connection, group_id_1: int, port_ids_list_1: list,
     else:
         return False
 
-def connection_concerns(connection, group_id: int, port_ids_list: list)->bool:
+def connection_concerns(connection: ConnectionObject,
+                        group_id: int, port_ids_list: list[int]) -> bool:
     if (connection.group_in_id == group_id
-        and connection.port_in_id in port_ids_list):
-            return True
+            and connection.port_in_id in port_ids_list):
+        return True
     elif (connection.group_out_id == group_id
           and connection.port_out_id in port_ids_list):
-              return True
+        return True
     else:
         return False
 
@@ -397,6 +377,7 @@ def get_icon(icon_type: int, icon_name: str, port_mode: int) -> QIcon:
 
     return icon
 
+@easy_log
 def connect_ports(group_id_1: int, port_id_1: int,
                   group_id_2: int, port_id_2:int):
     one_is_out = True
@@ -411,9 +392,7 @@ def connect_ports(group_id_1: int, port_id_1: int,
                 one_is_out = False
             break
     else:
-        sys.stderr.write(
-            "PatchCanvas::connect_ports, port not found %i:%i and %i:%i\n"
-            % (group_id_1, port_id_1, group_id_2, port_id_2))
+        _LOGGER.critical(f"{_LOGGING_STR} - one port at least not found")
         return
 
     if one_is_out:
@@ -492,7 +471,7 @@ def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
     else:
         return 0
 
-
+@easy_log
 def connect_portgroups(group_id_1: int, portgrp_id_1: int,
                        group_id_2: int, portgrp_id_2: int,
                        disconnect=False):
@@ -521,8 +500,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
                 in_port_id_list = portgrp.port_id_list
 
     if not (out_port_id_list and in_port_id_list):
-        sys.stderr.write(
-            "PatchCanvas::connect_portgroups, empty port id list\n")
+        _LOGGER.warning(f"{_LOGGING_STR} - empty port id list")
         return
 
     connected_indexes = []
@@ -560,12 +538,8 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
                     group_out_id, out_port_id_list[out_index],
                     group_in_id, in_port_id_list[in_index])
 
-
+@easy_log
 def canvas_callback(action: CallbackAct, *args):
-    if canvas.debug:
-        sys.stderr.write("PatchCanvas::canvas_callback(%s, %s)\n"
-                         % (action.name, str(args)))
-
     canvas.callback(action, *args)
 
 def is_dark_theme(widget: QWidget) -> bool:
@@ -573,5 +547,3 @@ def is_dark_theme(widget: QWidget) -> bool:
         widget.palette().brush(QPalette.Active,
                                QPalette.WindowText).color().lightness()
         > 128)
-
-# ------------------------------------------------------------------------------------------------------------

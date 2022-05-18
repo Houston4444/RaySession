@@ -23,6 +23,7 @@ from pathlib import Path
 from PyQt5.QtCore import (pyqtSlot, QObject, QPoint, QPointF, QRectF,
                           QSettings, QTimer, pyqtSignal)
 
+
 # local imports
 from .init_values import (
     CanvasItemType,
@@ -46,19 +47,19 @@ from .init_values import (
 )
 
 import patchcanvas.utils as utils
-
 from .canvasbox import CanvasBox
+from .canvasport import CanvasPort
 from .canvasbezierline import CanvasBezierLine
 from .theme_manager import ThemeManager
 from .scene import PatchScene
 
 
 _LOGGER = logging.getLogger(__name__)
-
 # used by patchbay_api decorator to get function_name
 # and arguments, easily usable by logger
 _LOGGING_STR = ''
 
+# decorator
 def patchbay_api(func):
     ''' decorator for API callable functions.
         It makes debug logs and also a global logging string
@@ -109,6 +110,7 @@ class CanvasObject(QObject):
 
         port_widget = all_data[0]
         port_id = all_data[1]
+        assert isinstance(port_widget, CanvasPort)
         port_widget.set_as_stereo(port_id)
 
     def join_after_move(self):
@@ -116,6 +118,7 @@ class CanvasObject(QObject):
             join_group(group_id)
 
         self.groups_to_join.clear()
+
 
 def _get_stored_canvas_position(key, fallback_pos):
     try:
@@ -127,7 +130,7 @@ def _get_stored_canvas_position(key, fallback_pos):
 
 @patchbay_api
 def init(app_name: str, scene: PatchScene, callback,
-         theme_paths: tuple[Path], debug=False):
+         theme_paths: tuple[Path]):
     if canvas.initiated:
         _LOGGER.critical("init() - already initiated")
         return
@@ -137,7 +140,6 @@ def init(app_name: str, scene: PatchScene, callback,
         return
 
     canvas.callback = callback
-    canvas.debug = debug
     canvas.scene = scene
 
     canvas.last_z_value = 0

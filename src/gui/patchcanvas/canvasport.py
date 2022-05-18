@@ -17,22 +17,20 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
 
+# Imports (Global)
+import logging
 from math import floor
 import time
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF
+from PyQt5.QtCore import Qt, QPointF, QRectF
 from PyQt5.QtGui import (
     QCursor, QFontMetrics, QPainter, QPen, QPolygonF,
     QLinearGradient, QIcon)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
-
 from .init_values import (
     CanvasItemType,
     canvas,
@@ -47,8 +45,10 @@ import patchcanvas.utils as utils
 from .canvasbezierlinemov import CanvasBezierLineMov
 from .connect_menu import MainPortContextMenu
 
-# ------------------------------------------------------------------------------------------------------------
+# --------------------
 _translate = QApplication.translate
+
+# --------------------
 
 class CanvasPort(QGraphicsItem):
     def __init__(self, group_id, port_id, port_name, port_mode,
@@ -56,6 +56,8 @@ class CanvasPort(QGraphicsItem):
         QGraphicsItem.__init__(self)
         self.setParentItem(parent)
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+
+        self._logger = logging.getLogger(__name__)
 
         # Save Variables, useful for later
         self._group_id = group_id
@@ -747,8 +749,8 @@ class CanvasPort(QGraphicsItem):
                 poly_locx[5] = 12 - lineHinting
 
         else:
-            qCritical("PatchCanvas::CanvasPort.paint() - invalid port mode '%s'"
-                      % self._port_mode.name)
+            self._logger.critical(f"paint() - "
+                                  "invalid port mode {str(self._port_mode)}")
             return
 
         polygon = QPolygonF()

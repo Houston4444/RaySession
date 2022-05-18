@@ -17,4 +17,16 @@
 # #
 # # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+import logging
+
+def make_logger():
+    logger = logging.getLogger(__name__)
+    log_handler = logging.StreamHandler()
+    log_handler.setFormatter(logging.Formatter(
+        f"%(name)s - %(levelname)s - %(message)s"))
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(log_handler)
+
+make_logger()
+
 from .patchcanvas import *

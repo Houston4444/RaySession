@@ -17,18 +17,17 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
 
+# Imports (Global)
+import logging
 from math import floor
 import time
 
-from PyQt5.QtCore import qCritical, Qt, QPointF, QRectF
-from PyQt5.QtGui import (QCursor, QFont, QFontMetrics, QPainter,
+from PyQt5.QtCore import Qt, QPointF, QRectF
+from PyQt5.QtGui import (QCursor, QFontMetrics, QPainter,
                          QPolygonF, QLinearGradient, QPen)
 from PyQt5.QtWidgets import QGraphicsItem, QApplication
 
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 import patchcanvas.utils as utils
 from .init_values import (
@@ -37,15 +36,16 @@ from .init_values import (
     options,
     CallbackAct,
     PortMode,
-    PortType
-)
-
+    PortType)
 from .canvasbezierlinemov import CanvasBezierLineMov
 from .theme import Theme
 from .connect_menu import MainPortContextMenu
 
-# ------------------------------------------------------------------------------------------------------------
+# -------------------------
+
 _translate = QApplication.translate
+
+# -------------------------
 
 
 class CanvasPortGroup(QGraphicsItem):
@@ -54,6 +54,8 @@ class CanvasPortGroup(QGraphicsItem):
         QGraphicsItem.__init__(self)
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         self.setParentItem(parent)
+
+        self._logger = logging.getLogger(__name__)
 
         # Save Variables, useful for later
         self._portgrp_id = portgrp_id
@@ -699,8 +701,8 @@ class CanvasPortGroup(QGraphicsItem):
             poly_locx[4] = self._portgrp_width + 12 - self._ports_width - lineHinting
 
         else:
-            qCritical("PatchCanvas::CanvasPortGroup.paint() - invalid port mode '%s'"
-                      % self._port_mode.name)
+            self._logger.critical(f"CanvasPortGroup.paint() - "
+                                  "invalid port mode {str(self._port_mode)}")
             return
 
         polygon  = QPolygonF()

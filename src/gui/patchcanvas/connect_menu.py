@@ -484,12 +484,10 @@ class ClipboardMenu(SubMenu):
         copy_action.setIcon(QIcon.fromTheme('edit-copy'))
         copy_action.triggered.connect(self.copy_connections)
 
-        has_connection = False
         for self_port_id in self._port_id_list:
             con_list = utils.get_port_connection_list(
                 self._group_id, self_port_id)
             if con_list:
-                has_connection = True
                 break
 
         if not con_list:
@@ -677,7 +675,7 @@ class MainPortContextMenu(QMenu):
             utils.canvas_callback(CallbackAct.PORTS_DISCONNECT,
                                   connection.connection_id)
 
-    def add_connection(self, connection):
+    def add_connection(self, connection: ConnectionObject):
         self.connection_list.append(connection)
 
         for port in canvas.port_list:

@@ -19,13 +19,14 @@
 
 # ----------------------
 # Imports (Global)
+import logging
 from struct import pack
 from sip import voidptr
 import sys
 from enum import Enum
 from typing import TYPE_CHECKING
 from collections import namedtuple
-from PyQt5.QtCore import qCritical, Qt, QPoint, QPointF, QRectF, QTimer
+from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QTimer
 from PyQt5.QtGui import (QCursor, QFontMetrics, QImage,
                          QLinearGradient, QPainter, QPen, QPolygonF,
                          QColor, QIcon, QPixmap, QPainterPath, QBrush)
@@ -56,6 +57,7 @@ if TYPE_CHECKING:
     from .canvasbezierline import CanvasBezierLine
 
 _translate = QApplication.translate
+_LOGGER = logging.getLogger(__name__)
 
 CbLine = namedtuple('CbLine', ('line', 'connection_id'))
 
@@ -347,14 +349,14 @@ class CanvasBoxAbstract(QGraphicsItem):
     def add_line_from_group(self, line: 'CanvasBezierLine', connection_id: int):
         self._connection_lines.append(CbLine(line, connection_id))
 
-    def remove_line_from_group(self, connection_id):
+    def remove_line_from_group(self, connection_id: int):
         for connection in self._connection_lines:
             if connection.connection_id == connection_id:
                 self._connection_lines.remove(connection)
                 return
-        qCritical(
-            "PatchCanvas::CanvasBox.remove_line_from_group(%i) - unable to find line to remove"
-            % connection_id)
+
+        _LOGGER.critical(f"remove_line_from_group({connection_id})"
+                         " - unable to find line to remove")            
 
     def check_item_pos(self):
         if not canvas.size_rect.isNull():
