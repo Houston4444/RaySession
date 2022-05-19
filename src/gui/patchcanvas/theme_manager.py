@@ -65,7 +65,7 @@ class ThemeManager:
         return True
     
     @staticmethod
-    def _convert_configparser_object_to_dict(conf) -> dict:
+    def _convert_configparser_object_to_dict(conf: dict) -> dict:
         def type_convert(value):
             ''' returns an int, a float, or the unchanged given value '''
             try:
