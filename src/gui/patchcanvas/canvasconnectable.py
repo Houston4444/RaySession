@@ -17,17 +17,9 @@ from .canvasbezierlinemov import CanvasBezierLineMov
 
 if TYPE_CHECKING:
     from .canvasbox import CanvasBox
-
-
-class CanvasDisconnectable(QGraphicsItem):
-    def __init__(self):
-        super().__init__()
-        
-    def trigger_disconnect(self):
-        pass
     
 
-class CanvasConnectable(CanvasDisconnectable):
+class CanvasConnectable(QGraphicsItem):
     if TYPE_CHECKING:
         _hover_item: 'CanvasConnectable'
 
@@ -75,6 +67,16 @@ class CanvasConnectable(CanvasDisconnectable):
 
     def get_connection_distance(self) -> float:
         return 0.0
+
+    def trigger_disconnect(self):
+        conn_ids_to_remove = list[int]()
+        
+        for connection in canvas.connection_list:
+            if connection.concerns(self._group_id, self._port_ids):
+                conn_ids_to_remove.append(connection.connection_id)
+                
+        for conn_id in conn_ids_to_remove:
+            canvas.callback(CallbackAct.PORTS_DISCONNECT, conn_id)
 
     def is_connectable_to(self, other: 'CanvasConnectable',
                           accept_same_port_mode=False)->bool:

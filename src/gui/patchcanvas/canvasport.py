@@ -273,13 +273,6 @@ class CanvasPort(CanvasConnectable):
         elif act_selected == act_x_rename:
             canvas.callback(CallbackAct.PORT_RENAME, self._group_id, self._port_id)
 
-    def trigger_disconnect(self, conn_list=None):
-        print('sksksk', self._port_name)
-        if not conn_list:
-            conn_list = utils.get_port_connection_list(self._group_id, self._port_id)
-        for conn_id, group_id, port_id in conn_list:
-            canvas.callback(CallbackAct.PORTS_DISCONNECT, conn_id)
-
     def boundingRect(self):
         if self._portgrp_id:
             if self._port_mode is PortMode.INPUT:

@@ -27,9 +27,6 @@ from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QBrush
 from PyQt5.QtWidgets import (QGraphicsRectItem, QGraphicsScene, QApplication,
                              QGraphicsView, QGraphicsItem)
 
-
-
-
 from .init_values import (
     CanvasItemType,
     canvas,
@@ -38,7 +35,7 @@ from .init_values import (
     MAX_PLUGIN_ID_ALLOWED)
 
 from .canvasbox import CanvasBox
-from .canvasconnectable import CanvasConnectable, CanvasDisconnectable
+from .canvasconnectable import CanvasConnectable
 from .canvasbezierline import CanvasBezierLine
 from .canvasicon import CanvasIconPixmap
 
@@ -583,7 +580,7 @@ class AbstractPatchScene(QGraphicsScene):
             self._pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
 
             for item in self.items(self._pointer_border):
-                if isinstance(item, CanvasDisconnectable):
+                if isinstance(item, (CanvasConnectable, CanvasBezierLine)):
                     item.trigger_disconnect()
 
         QGraphicsScene.mousePressEvent(self, event)

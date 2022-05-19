@@ -31,16 +31,12 @@ from .init_values import (
 
 from .canvasbox import CanvasBox
 from .canvasport import CanvasPort
-from .canvasconnectable import CanvasDisconnectable
-    
 
 
-class CanvasBezierLine(QGraphicsPathItem, CanvasDisconnectable):
+class CanvasBezierLine(QGraphicsPathItem):
     def __init__(self, item1: CanvasPort, item2: CanvasPort, parent: CanvasBox):
         QGraphicsPathItem.__init__(self)
-        CanvasDisconnectable.__init__(self)
         self.setParentItem(parent)
-        #self.setCacheMode(QGraphicsPathItem.DeviceCoordinateCache)
 
         self.item1 = item1
         self.item2 = item2
