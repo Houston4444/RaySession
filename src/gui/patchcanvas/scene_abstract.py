@@ -24,7 +24,8 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
                           Qt, QPointF, QRectF, QTimer, QMarginsF)
 from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QBrush
-from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsScene, QApplication, QGraphicsView
+from PyQt5.QtWidgets import (QGraphicsRectItem, QGraphicsScene, QApplication,
+                             QGraphicsView, QGraphicsItem)
 
 
 from .init_values import (
@@ -35,6 +36,7 @@ from .init_values import (
     MAX_PLUGIN_ID_ALLOWED)
 
 from .canvasbox import CanvasBox
+from .canvasconnectable import CanvasConnectable
 
 class RubberbandRect(QGraphicsRectItem):
     def __init__(self, scene: QGraphicsScene):
@@ -249,7 +251,25 @@ class AbstractPatchScene(QGraphicsScene):
     def center_view_on(self, widget):
         self._view.centerOn(widget)
 
-    def removeItem(self, item):
+    def get_connectable_item_at(self, pos: QPointF, origin: CanvasConnectable):
+        for item in self.items(pos, Qt.ContainsItemShape, Qt.AscendingOrder):
+            if isinstance(item, CanvasConnectable) and item is not origin:
+                return item
+        
+        # item = None
+        # items = canvas.scene.items(event.scenePos(), Qt.ContainsItemShape,
+        #                            Qt.AscendingOrder)
+        # for i in range(len(items)):
+        #     if items[i].type() in (CanvasItemType.PORT,
+        #                            CanvasItemType.PORTGROUP):
+        #         if items[i] != self:
+        #             if not item:
+        #                 item = items[i]
+        #             elif (items[i].parentItem().zValue()
+        #                   > item.parentItem().zValue()):
+        #                 item = items[i]
+
+    def removeItem(self, item: QGraphicsItem):
         for child_item in item.childItems():
             QGraphicsScene.removeItem(self, child_item)
         QGraphicsScene.removeItem(self, item)

@@ -21,26 +21,22 @@
 # Imports (Global)
 import logging
 from math import floor
-import time
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import Qt, QPointF, QRectF
-from PyQt5.QtGui import (QCursor, QFontMetrics, QPainter,
+from PyQt5.QtCore import QPointF, QRectF
+from PyQt5.QtGui import (QFontMetrics, QPainter,
                          QPolygonF, QLinearGradient, QPen)
-from PyQt5.QtWidgets import QGraphicsItem, QApplication
+from PyQt5.QtWidgets import QApplication
 
 # Imports (Custom)
 import patchcanvas.utils as utils
 from .canvasconnectable import CanvasConnectable
 from .init_values import (
     CanvasItemType,
-    ConnectionObject,
     canvas,
-    options,
     CallbackAct,
     PortMode,
     PortType)
-from .canvasbezierlinemov import CanvasBezierLineMov
 from .connect_menu import MainPortContextMenu
 
 if TYPE_CHECKING:
@@ -157,97 +153,6 @@ class CanvasPortGroup(CanvasConnectable):
     def _split_to_monos(self):
         utils.canvas_callback(CallbackAct.PORTGROUP_REMOVE,
                               self._group_id, self._portgrp_id)
-
-    def _connect_to_hover(self):
-        if self._hover_item:
-            if self._hover_item.type() is CanvasItemType.PORT:
-                hover_port_id_list = [self._hover_item.get_port_id()]
-            elif self._hover_item.type() is CanvasItemType.PORTGROUP:
-                hover_port_id_list = self._hover_item.get_port_ids_list()
-
-            if not hover_port_id_list:
-                return
-
-            hover_group_id = self._hover_item.get_group_id()
-            con_list = list[ConnectionObject]()
-            ports_connected_list = list[list[int]]()
-
-            maxportgrp = max(len(self._port_id_list),
-                             len(hover_port_id_list))
-
-            if self._hover_item.get_port_mode() == self._port_mode:
-                for i in range(len(self._port_id_list)):
-                    for connection in canvas.connection_list:
-                        if utils.connection_concerns(
-                                connection, self._group_id,
-                                [self._port_id_list[i]]):
-                            canvas.callback(
-                                CallbackAct.PORTS_DISCONNECT,
-                                connection.connection_id)
-
-                            for j in range(len(hover_port_id_list)):
-                                if len(hover_port_id_list) >= len(self._port_id_list):
-                                    if j % len(self._port_id_list) != i:
-                                        continue
-                                else:
-                                    if i % len(hover_port_id_list) != j:
-                                        continue
-
-                                if self._port_mode is PortMode.OUTPUT:
-                                    canvas.callback(
-                                        CallbackAct.PORTS_CONNECT,                                        
-                                        hover_group_id, hover_port_id_list[j],
-                                        connection.group_in_id, connection.port_in_id)
-                                else:
-                                    canvas.callback(
-                                        CallbackAct.PORTS_CONNECT,
-                                        connection.group_out_id, connection.port_out_id,
-                                        hover_group_id, hover_port_id_list[j])
-                return
-
-
-            for i in range(len(self._port_id_list)):
-                port_id = self._port_id_list[i]
-                for j in range(len(hover_port_id_list)):
-                    hover_port_id = hover_port_id_list[j]
-
-                    for connection in canvas.connection_list:
-                        if utils.connection_matches(
-                                connection, self._group_id, [port_id],
-                                hover_group_id, [hover_port_id]):
-                            if (i % len(hover_port_id_list)
-                                    == j % len(self._port_id_list)):
-                                con_list.append(connection)
-                                ports_connected_list.append(
-                                    [port_id, hover_port_id])
-                            else:
-                                canvas.callback(CallbackAct.PORTS_DISCONNECT,
-                                                connection.connection_id)
-
-            if len(con_list) == maxportgrp:
-                for connection in con_list:
-                    canvas.callback(CallbackAct.PORTS_DISCONNECT,
-                                    connection.connection_id)
-            else:
-                for i in range(len(self._port_id_list)):
-                    port_id = self._port_id_list[i]
-                    
-                    for j in range(len(hover_port_id_list)):
-                        hover_port_id = hover_port_id_list[j]
-
-                        if (i % len(hover_port_id_list)
-                                == j % len(self._port_id_list)):
-                            if not [port_id, hover_port_id] in ports_connected_list:
-                                if self._port_mode is PortMode.OUTPUT:
-                                    canvas.callback(
-                                        CallbackAct.PORTS_CONNECT,
-                                        self._group_id, port_id,
-                                        hover_group_id, hover_port_id)                                    
-                                else:
-                                    canvas.callback(
-                                        CallbackAct.PORTS_CONNECT,
-                                        hover_group_id, hover_port_id,
-                                        self._group_id, port_id)
 
     def contextMenuEvent(self, event):
         if canvas.scene.get_zoom_scale() <= 0.4:
