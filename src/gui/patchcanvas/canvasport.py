@@ -98,7 +98,10 @@ class CanvasPort(CanvasConnectable):
     def is_alternate(self) -> bool:
         return self._is_alternate
 
-    def get_port_width(self):
+    def get_connection_distance(self) -> float:
+        return self._port_width
+
+    def get_port_width(self) -> float:
         return self._port_width
 
     def get_portgroup_position(self) -> tuple:
@@ -271,6 +274,7 @@ class CanvasPort(CanvasConnectable):
             canvas.callback(CallbackAct.PORT_RENAME, self._group_id, self._port_id)
 
     def trigger_disconnect(self, conn_list=None):
+        print('sksksk', self._port_name)
         if not conn_list:
             conn_list = utils.get_port_connection_list(self._group_id, self._port_id)
         for conn_id, group_id, port_id in conn_list:

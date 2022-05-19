@@ -81,19 +81,16 @@ class CanvasPortGroup(CanvasConnectable):
         self._name_truncked = False
         self._trunck_sep = '⠿'
 
-    def is_alternate(self):
+    def is_alternate(self) -> bool:
         return False
 
-    def get_group_id(self)->int:
-        return self._group_id
-
-    def get_port_width(self):
+    def get_port_width(self) -> float:
         return self._portgrp_width
 
-    def get_port_ids_list(self):
-        return self._port_id_list
+    def get_connection_distance(self) -> float:
+        return self._portgrp_width
 
-    def get_port_list_len(self):
+    def get_port_list_len(self) -> int:
         return len(self._port_id_list)
 
     def type(self) -> CanvasItemType:

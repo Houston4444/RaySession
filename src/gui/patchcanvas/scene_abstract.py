@@ -28,6 +28,8 @@ from PyQt5.QtWidgets import (QGraphicsRectItem, QGraphicsScene, QApplication,
                              QGraphicsView, QGraphicsItem)
 
 
+
+
 from .init_values import (
     CanvasItemType,
     canvas,
@@ -36,7 +38,9 @@ from .init_values import (
     MAX_PLUGIN_ID_ALLOWED)
 
 from .canvasbox import CanvasBox
-from .canvasconnectable import CanvasConnectable
+from .canvasconnectable import CanvasConnectable, CanvasDisconnectable
+from .canvasbezierline import CanvasBezierLine
+from .canvasicon import CanvasIconPixmap
 
 class RubberbandRect(QGraphicsRectItem):
     def __init__(self, scene: QGraphicsScene):
@@ -256,18 +260,8 @@ class AbstractPatchScene(QGraphicsScene):
             if isinstance(item, CanvasConnectable) and item is not origin:
                 return item
         
-        # item = None
-        # items = canvas.scene.items(event.scenePos(), Qt.ContainsItemShape,
-        #                            Qt.AscendingOrder)
-        # for i in range(len(items)):
-        #     if items[i].type() in (CanvasItemType.PORT,
-        #                            CanvasItemType.PORTGROUP):
-        #         if items[i] != self:
-        #             if not item:
-        #                 item = items[i]
-        #             elif (items[i].parentItem().zValue()
-        #                   > item.parentItem().zValue()):
-        #                 item = items[i]
+    def get_selected_boxes(self) -> list[CanvasBox]:
+        return [i for i in self.selectedItems() if isinstance(i, CanvasBox)]
 
     def removeItem(self, item: QGraphicsItem):
         for child_item in item.childItems():
@@ -385,7 +379,7 @@ class AbstractPatchScene(QGraphicsScene):
 
         if len(items_list) > 0:
             for item in items_list:
-                if item and item.isVisible() and item.type() is CanvasItemType.BOX:
+                if isinstance(item, CanvasBox) and item.isVisible():
                     pos = item.scenePos()
                     rect = item.boundingRect()
 
@@ -450,13 +444,10 @@ class AbstractPatchScene(QGraphicsScene):
             if item and item.isVisible():
                 group_item = None
 
-                if item.type() is CanvasItemType.BOX:
+                if isinstance(item, CanvasBox):
                     group_item = item
-                elif item.type() is CanvasItemType.PORT:
+                elif isinstance(item, CanvasConnectable):
                     group_item = item.parentItem()
-
-                if TYPE_CHECKING:
-                    assert isinstance(group_item, CanvasBox)
 
                 if group_item is not None and group_item._plugin_id >= 0:
                     plugin_id = group_item._plugin_id
@@ -568,7 +559,7 @@ class AbstractPatchScene(QGraphicsScene):
                 event.scenePos(), Qt.ContainsItemShape, Qt.AscendingOrder)
 
             for item in items:
-                if item.type() is CanvasItemType.BOX:
+                if isinstance(item, CanvasBox):
                     break
             else:
                 canvas.callback(CallbackAct.DOUBLE_CLICK)
@@ -591,10 +582,8 @@ class AbstractPatchScene(QGraphicsScene):
             pos = event.scenePos()
             self._pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
 
-            items = self.items(self._pointer_border)
-            for item in items:
-                if item and item.type() in (CanvasItemType.BEZIER_LINE,
-                                            CanvasItemType.PORT):
+            for item in self.items(self._pointer_border):
+                if isinstance(item, CanvasDisconnectable):
                     item.trigger_disconnect()
 
         QGraphicsScene.mousePressEvent(self, event)
@@ -604,9 +593,7 @@ class AbstractPatchScene(QGraphicsScene):
             self._mouse_down_init = False
             topmost = self.itemAt(event.scenePos(), self._view.transform())
             self._mouse_rubberband = not (
-                topmost and topmost.type() in (
-                    CanvasItemType.BOX, CanvasItemType.ICON,
-                    CanvasItemType.PORT, CanvasItemType.PORTGROUP))
+                isinstance(topmost, (CanvasBox, CanvasIconPixmap, CanvasConnectable))) 
 
         if self._mouse_rubberband:
             event.accept()
@@ -631,12 +618,12 @@ class AbstractPatchScene(QGraphicsScene):
 
         if (self._mid_button_down
                 and QApplication.keyboardModifiers() & Qt.ControlModifier):
-            trail = QPolygonF([event.scenePos(), event.lastScenePos(), event.scenePos()])
-            items = self.items(trail)
-            for item in items:
-                if item and item.type() == CanvasItemType.BEZIER_LINE:
+            for item in self.items(
+                    QPolygonF([event.scenePos(), event.lastScenePos(),
+                               event.scenePos()])):
+                if isinstance(item, CanvasBezierLine):
                     item.trigger_disconnect()
-
+            
         QGraphicsScene.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
@@ -654,15 +641,15 @@ class AbstractPatchScene(QGraphicsScene):
                 self.fix_scale_factor()
 
             else:
-                items_list = self.items()
-                for item in items_list:
-                    if item and item.isVisible() and item.type() is CanvasItemType.BOX:
+                for item in self.items():
+                    if isinstance(item, CanvasBox):
                         item_rect = item.sceneBoundingRect()
                         item_top_left = QPointF(item_rect.x(), item_rect.y())
                         item_bottom_right = QPointF(item_rect.x() + item_rect.width(),
                                                     item_rect.y() + item_rect.height())
 
-                        if self._rubberband.contains(item_top_left) and self._rubberband.contains(item_bottom_right):
+                        if (self._rubberband.contains(item_top_left)
+                                and self._rubberband.contains(item_bottom_right)):
                             item.setSelected(True)
 
             self._rubberband.hide()
@@ -670,15 +657,13 @@ class AbstractPatchScene(QGraphicsScene):
             self._rubberband_selection = False
 
         else:
-            items_list = self.selectedItems()
-            for item in items_list:
-                if item and item.isVisible() and item.type() is CanvasItemType.BOX:
-                    item.check_item_pos()
-                    self.sceneGroupMoved.emit(
-                        item.get_group_id(), item.get_splitted_mode(),
-                        item.scenePos())
+            for item in self.get_selected_boxes():
+                item.check_item_pos()
+                self.sceneGroupMoved.emit(
+                    item.get_group_id(), item.get_splitted_mode(),
+                    item.scenePos())
 
-            if len(items_list) > 1:
+            if len(self.selectedItems()) > 1:
                 self.update()
 
         self._mouse_down_init = False

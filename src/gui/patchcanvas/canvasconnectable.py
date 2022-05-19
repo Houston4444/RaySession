@@ -18,6 +18,7 @@ from .canvasbezierlinemov import CanvasBezierLineMov
 if TYPE_CHECKING:
     from .canvasbox import CanvasBox
 
+
 class CanvasDisconnectable(QGraphicsItem):
     def __init__(self):
         super().__init__()
@@ -71,6 +72,9 @@ class CanvasConnectable(CanvasDisconnectable):
 
     def is_alternate(self):
         return False
+
+    def get_connection_distance(self) -> float:
+        return 0.0
 
     def is_connectable_to(self, other: 'CanvasConnectable',
                           accept_same_port_mode=False)->bool:
@@ -149,12 +153,9 @@ class CanvasConnectable(CanvasDisconnectable):
             
             for i in range(len(self._port_ids)):
                 for connection in canvas.connection_list:
-                    if utils.connection_concerns(
-                            connection, self._group_id,
-                            [self._port_ids[i]]):
-                        canvas.callback(
-                            CallbackAct.PORTS_DISCONNECT,
-                            connection.connection_id)
+                    if connection.concerns(self._group_id, [self._port_ids[i]]):
+                        canvas.callback(CallbackAct.PORTS_DISCONNECT,
+                                        connection.connection_id)
 
                         for j in range(len(hover_port_ids)):
                             if len(hover_port_ids) >= len(self._port_ids):
@@ -182,9 +183,8 @@ class CanvasConnectable(CanvasDisconnectable):
                 hover_port_id = hover_port_ids[j]
 
                 for connection in canvas.connection_list:
-                    if utils.connection_matches(
-                            connection, self._group_id, [port_id],
-                            hover_group_id, [hover_port_id]):
+                    if connection.matches(self._group_id, [port_id],
+                                          hover_group_id, [hover_port_id]):
                         if i % len(hover_port_ids) == j % len(self._port_ids):
                             con_list.append(connection)
                             ports_connected_list.append(
@@ -216,7 +216,10 @@ class CanvasConnectable(CanvasDisconnectable):
                                     CallbackAct.PORTS_CONNECT,
                                     hover_group_id, hover_port_id,
                                     self._group_id, port_id)
-        
+    
+    def parentItem(self) -> 'CanvasBox':
+        return super().parentItem()
+    
     def hoverEnterEvent(self, event):
         if options.auto_select_items:
             self.setSelected(True)
@@ -239,8 +242,7 @@ class CanvasConnectable(CanvasDisconnectable):
             self._cursor_moving = False
 
             for connection in canvas.connection_list:
-                if utils.connection_concerns(
-                        connection, self._group_id, self._port_ids):
+                if connection.concerns(self._group_id, self._port_ids):
                     self._has_connections = True
                     break
             else:
@@ -274,8 +276,7 @@ class CanvasConnectable(CanvasDisconnectable):
             self._cursor_moving = True
 
             for connection in canvas.connection_list:
-                if utils.connection_concerns(
-                        connection, self._group_id, self._port_ids):
+                if connection.concerns(self._group_id, self._port_ids):
                     connection.widget.locked = True
 
         if not self._line_mov_list:
@@ -314,9 +315,7 @@ class CanvasConnectable(CanvasDisconnectable):
             if (self._has_connections
                     and len(item.get_port_ids()) == len(self._port_ids)):
                 for connection in canvas.connection_list:
-                    if utils.connection_concerns(
-                            connection, item.get_group_id(),
-                            item.get_port_ids()):
+                    if connection.concerns(item.get_group_id(), item.get_port_ids()):
                         break
                 else:
                     item_valid = True
@@ -348,8 +347,7 @@ class CanvasConnectable(CanvasDisconnectable):
 
                 if item.get_port_mode() is self._port_mode:
                     for connection in canvas.connection_list:
-                        if utils.connection_concerns(
-                                connection,
+                        if connection.concerns(
                                 self._group_id, self._port_ids):
                             connection.widget.ready_to_disc = True
                             connection.widget.update_line_gradient()
@@ -389,8 +387,7 @@ class CanvasConnectable(CanvasDisconnectable):
                     for portself_id in self._port_ids:
                         for porthover_id in self._hover_item.get_port_ids():
                             for connection in canvas.connection_list:
-                                if utils.connection_matches(
-                                        connection,
+                                if connection.matches(
                                         self._group_id, [portself_id],
                                         self._hover_item.get_group_id(),
                                         [porthover_id]):
@@ -438,8 +435,7 @@ class CanvasConnectable(CanvasDisconnectable):
                 self._line_mov_list.clear()
 
                 for connection in canvas.connection_list:
-                    if utils.connection_concerns(
-                            connection, self._group_id, self._port_ids):
+                    if connection.concerns(self._group_id, self._port_ids):
                         connection.widget.locked = False
 
                 if self._hover_item:
@@ -463,8 +459,7 @@ class CanvasConnectable(CanvasDisconnectable):
     def itemChange(self, change, value: bool):
         if change == QGraphicsItem.ItemSelectedHasChanged:
             for connection in canvas.connection_list:
-                if utils.connection_concerns(
-                        connection, self._group_id, self._port_ids):
+                if connection.concerns(self._group_id, self._port_ids):
                     connection.widget.set_line_selected(value)
 
         return QGraphicsItem.itemChange(self, change, value)

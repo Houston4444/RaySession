@@ -518,21 +518,6 @@ class CanvasBoxAbstract(QGraphicsItem):
 
             connection.widget.setZValue(z_value)
 
-    def _get_adjacent_boxes(self):
-        item_list = [self]
-        
-        for item in item_list:
-            rect = item.boundingRect()
-            rect.translate(item.pos())
-            rect.adjust(0, -5, 0, 5)
-            
-            for litem in canvas.scene.items(rect):
-                if (litem.type() is CanvasItemType.BOX
-                        and litem not in item_list):
-                    item_list.append(litem)
-
-        return item_list
-
     def semi_hide(self, yesno: bool):
         self._is_semi_hidden = yesno
         if yesno:
@@ -901,9 +886,8 @@ class CanvasBoxAbstract(QGraphicsItem):
 
             QGraphicsItem.mouseMoveEvent(self, event)
 
-            for item in canvas.scene.selectedItems():
-                if item.type() is CanvasItemType.BOX:
-                    item.repaint_lines()
+            for item in canvas.scene.get_selected_boxes():
+                item.repaint_lines()
 
             canvas.scene.resize_the_scene()
             return
@@ -915,7 +899,7 @@ class CanvasBoxAbstract(QGraphicsItem):
             self.unsetCursor()
             self.repaint_lines(forced=True)
             canvas.scene.reset_scroll_bars()
-            self.fixPosAfterMove()
+            self.fix_pos_after_move()
 
             # get all selected boxes
             repulsers = []
@@ -958,13 +942,10 @@ class CanvasBoxAbstract(QGraphicsItem):
                     group.out_pos = pos
                 break
 
-    def fixPosAfterMove(self):
-        for item in canvas.scene.selectedItems():
-            if item.type() is CanvasItemType.BOX:
-                if TYPE_CHECKING:
-                    assert isinstance(item, CanvasBox)
-                item.fixPos()
-                item.send_move_callback()
+    def fix_pos_after_move(self):
+        for box in canvas.scene.get_selected_boxes():
+            box.fixPos()
+            box.send_move_callback()
 
     def set_in_cache(self, yesno: bool):
         cache_mode = self.cacheMode()

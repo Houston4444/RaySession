@@ -283,6 +283,31 @@ class ConnectionObject:
         conn_copy.widget = None
         return conn_copy
 
+    def matches(self, group_id_1: int, port_ids_list_1: list[int],
+                group_id_2: int, port_ids_list_2: list[int]) -> bool:
+        if (self.group_in_id == group_id_1
+            and self.port_in_id in port_ids_list_1
+            and self.group_out_id == group_id_2
+            and self.port_out_id in port_ids_list_2):
+                return True
+        elif (self.group_in_id == group_id_2
+            and self.port_in_id in port_ids_list_2
+            and self.group_out_id == group_id_1
+            and self.port_out_id in port_ids_list_1):
+                return True
+        else:
+            return False
+
+    def concerns(self, group_id: int, port_ids_list: list[int]) -> bool:
+        if (self.group_in_id == group_id
+                and self.port_in_id in port_ids_list):
+            return True
+        elif (self.group_out_id == group_id
+            and self.port_out_id in port_ids_list):
+            return True
+        else:
+            return False
+
 
 class ClipboardElement:
     port_type: PortType

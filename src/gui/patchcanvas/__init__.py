@@ -24,7 +24,7 @@ def make_logger():
     log_handler = logging.StreamHandler()
     log_handler.setFormatter(logging.Formatter(
         f"%(name)s - %(levelname)s - %(message)s"))
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.WARNING)
     logger.addHandler(log_handler)
 
 make_logger()
