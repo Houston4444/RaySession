@@ -42,6 +42,25 @@ class BoxAndRect:
         self.rect, self.item = rect, item
         
 
+class ToMoveBox:
+    directions: list[Direction]
+    pos: float
+    item: CanvasBox
+    repulser: BoxAndRect
+
+    def __init__(self, directions: list[Direction], pos: float,
+                 item: CanvasBox, repulser: BoxAndRect):
+        self.directions = directions
+        self.pos = pos
+        self.item = item
+        self.repulser = repulser
+        
+    def __lt__(self, other: 'ToMoveBox'):
+        if self.directions != other.directions:
+            return self.directions < other.directions
+        return self.pos < other.pos
+    
+
 class PatchScene(AbstractPatchScene):
     " This class part of the scene is for repulsive boxes option "
     " because the algorythm is not simple and takes a lot of lines."
@@ -173,7 +192,7 @@ class PatchScene(AbstractPatchScene):
         box_spacing_hor = canvas.theme.box_spacing_horizontal
         magnet = canvas.theme.magnet
 
-        to_move_boxes = list[dict]()
+        to_move_boxes = list[ToMoveBox]()
         repulsers = list[BoxAndRect]()
         wanted_directions = [wanted_direction]
 
@@ -185,7 +204,7 @@ class PatchScene(AbstractPatchScene):
             else:
                 # if box is already moving, consider its end position
                 for box_dict in self.move_boxes:
-                    if box_dict['widget'] == box:
+                    if box_dict['widget'] is box:
                         srect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
                         break
                 else:
@@ -193,14 +212,13 @@ class PatchScene(AbstractPatchScene):
 
             repulser = BoxAndRect(srect, box)
             repulsers.append(repulser)
-
-            items_to_move = list[dict]()
+            items_to_move = list[BoxAndRect]()
 
             for group in canvas.group_list:
                 for widget in group.widgets:
                     if (widget is None
                             or widget in repulser_boxes
-                            or widget in [b['item'] for b in to_move_boxes]
+                            or widget in [b.item for b in to_move_boxes]
                             or widget in [b['widget'] for b in self.move_boxes]):
                         continue
                     
@@ -211,18 +229,17 @@ class PatchScene(AbstractPatchScene):
                             repulser.rect, irect,
                             repulser.item.get_current_port_mode(),
                             widget.get_current_port_mode()):
-                        items_to_move.append({'item': widget, 'rect': irect})
+                        items_to_move.append(BoxAndRect(irect, widget))
+                        # items_to_move.append({'item': widget, 'rect': irect})
 
             for box_dict in self.move_boxes:
                 if (box_dict['widget'] in repulser_boxes
-                        or box_dict['widget'] in [b['item'] for b in to_move_boxes]):
+                        or box_dict['widget'] in [b.item for b in to_move_boxes]):
                     continue
-            
+
                 widget = box_dict['widget']
-                
-                # if TYPE_CHECKING:
-                #     assert isinstance(widget, CanvasBox)
-                #     assert isinstance(repulser['item'], CanvasBox)
+                if TYPE_CHECKING:
+                    assert isinstance(widget, CanvasBox)
                 
                 irect = widget.boundingRect()
                 irect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
@@ -231,55 +248,45 @@ class PatchScene(AbstractPatchScene):
                         repulser.rect, irect,
                         repulser.item.get_current_port_mode(),
                         widget.get_current_port_mode()):
-                    items_to_move.append({'item': widget, 'rect': irect})
+                    items_to_move.append(BoxAndRect(irect, widget))
             
             for item_to_move in items_to_move:
-                item = item_to_move['item']
-                irect = item_to_move['rect']
+                item = item_to_move.item
+                irect = item_to_move.rect
                     
                 # evaluate in which direction should go the box
                 direction = get_direction(srect, irect, wanted_directions)
-                to_move_box = {
-                    'directions': [direction],
-                    'pos': 0,
-                    'item': item,
-                    'repulser': repulser}
+                to_move_box = ToMoveBox([direction], 0.0, item, repulser)                
                 
                 # stock a position only for sorting reason
-                if direction == Direction.RIGHT:
-                    to_move_box['pos'] = irect.left()
-                elif direction == Direction.LEFT:
-                    to_move_box['pos'] = - irect.right()
-                elif direction == Direction.DOWN:
-                    to_move_box['pos'] = irect.top()
-                elif direction == Direction.UP:
-                    to_move_box['pos'] = - irect.bottom()
+                if direction is Direction.RIGHT:
+                    to_move_box.pos = irect.left()
+                elif direction is Direction.LEFT:
+                    to_move_box.pos = - irect.right()
+                elif direction is Direction.DOWN:
+                    to_move_box.pos = irect.top()
+                elif direction is Direction.UP:
+                    to_move_box.pos = - irect.bottom()
 
                 to_move_boxes.append(to_move_box)
 
-        # sort the list of dicts
-        to_move_boxes = sorted(to_move_boxes, key=lambda d: d['pos'])
-        to_move_boxes = sorted(to_move_boxes, key=lambda d: d['directions'])
+        to_move_boxes.sort()
         
         # !!! to_move_boxes list is dynamic
         # elements can be added to the list while iteration !!!
         for to_move_box in to_move_boxes:
-            item = to_move_box['item']
-            repulser = to_move_box['repulser']
-            # ref_rect = repulser['rect']
-            
-            assert isinstance(item, CanvasBox)
-            # assert isinstance(repulser['item'], CanvasBox)
+            item = to_move_box.item
+            repulser = to_move_box.repulser            
             irect = item.boundingRect().translated(item.pos())
 
-            directions = to_move_box['directions'].copy()
+            directions = to_move_box.directions.copy()
             new_direction = get_direction(repulser.rect, irect, directions)
             directions.append(new_direction)
 
             # TODO use of protected attributes.
             # calculate the new position of the box repulsed by its repulser
             new_rect = repulse(new_direction, repulser.rect, item,
-                               repulser.item._current_port_mode,
+                               repulser.item.get_current_port_mode(),
                                item._current_port_mode)
             
             active_repulsers = list[BoxAndRect]()
@@ -312,54 +319,48 @@ class PatchScene(AbstractPatchScene):
 
             # Now we know where the box will be definitely positioned
             # So, this is now a repulser for other boxes
-            # repulser = {'rect': new_rect, 'item': item}
             repulser = BoxAndRect(new_rect, item)
             repulsers.append(repulser)
             
             # check which existing boxes exists at the new place of the box
             # and add them to this to_move_boxes iteration
-            adding_list = []
+            adding_list = list[ToMoveBox]()
             
             for group in canvas.group_list:
                 for widget in group.widgets:
                     if (widget is None
                             or widget in repulser_boxes
-                            or widget in [b['item'] for b in to_move_boxes]
+                            or widget in [b.item for b in to_move_boxes]
                             or widget in [b['widget'] for b in self.move_boxes]):
                         continue
                     
                     mirect = widget.boundingRect().translated(widget.pos())
                     if rect_has_to_move_from(
                             new_rect, mirect,
-                            to_move_box['item'].get_current_port_mode(),
+                            to_move_box.item.get_current_port_mode(),
                             widget.get_current_port_mode()):
+                        
                         adding_list.append(
-                            {'directions': directions,
-                            'pos': mirect.right(),
-                            'item': widget,
-                            'repulser': repulser})
+                            ToMoveBox(directions, mirect.right(), widget, repulser))                        
             
             for box_dict in self.move_boxes:
                 mitem = box_dict['widget']
                 assert isinstance(mitem, CanvasBox)
                 
                 if (mitem in repulser_boxes
-                        or mitem in [b['item'] for b in to_move_boxes]):
+                        or mitem in [b.item for b in to_move_boxes]):
                     continue
-                
+
                 rect = mitem.boundingRect()
                 rect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
                 
                 if rect_has_to_move_from(
                         new_rect, rect,
-                        to_move_box['item'].get_current_port_mode(),
+                        to_move_box.item.get_current_port_mode(),
                         mitem.get_current_port_mode()):
 
                     adding_list.append(
-                        {'directions': directions,
-                         'pos': 0,
-                         'item': box_dict['widget'],
-                         'repulser': repulser})
+                        ToMoveBox(directions, 0.0, box_dict['widget'], repulser))
 
             for to_move_box in adding_list:
                 to_move_boxes.append(to_move_box)
