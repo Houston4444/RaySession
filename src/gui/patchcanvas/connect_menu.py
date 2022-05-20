@@ -222,9 +222,8 @@ class DangerousMenu(SubMenu):
                                         group_id, portgrp_id, disconnect=True)
             else:
                 for connection in canvas.connection_list:
-                    if utils.connection_matches(
-                            connection, self._group_id, self._port_id_list,
-                            group_id, [port_id]):
+                    if connection.matches(self._group_id, self._port_id_list,
+                                          group_id, [port_id]):
                         utils.canvas_callback(
                             CallbackAct.PORTS_DISCONNECT,
                             connection.connection_id)
@@ -329,9 +328,8 @@ class ConnectMenu(SubMenu):
                                          group_id, portgrp_id, disconnect=True)
             else:
                 for connection in canvas.connection_list:
-                    if utils.connection_matches(
-                            connection, self._group_id, self._port_id_list,
-                            group_id, [port_id]):
+                    if connection.matches(self._group_id, self._port_id_list,
+                                          group_id, [port_id]):
                         utils.canvas_callback(
                             CallbackAct.PORTS_DISCONNECT,
                             connection.connection_id)
@@ -395,8 +393,8 @@ class DisconnectMenu(SubMenu):
         for element in self.elements:
             if element['action'] == action:
                 for connection in canvas.connection_list:
-                    if utils.connection_matches(
-                            connection, self._group_id, self._port_id_list,
+                    if connection.matches(
+                            self._group_id, self._port_id_list,
                             element['group_id'], element['port_id_list']):
                         utils.canvas_callback(
                             CallbackAct.PORTS_DISCONNECT,
@@ -547,19 +545,19 @@ class ClipboardMenu(SubMenu):
             for j in range(len(canvas.clipboard)):
                 if i % len(canvas.clipboard) != j % len(self._port_id_list):
                     continue
+
                 self_port_id = self._port_id_list[i]
                 element = canvas.clipboard[j]
 
-                if (element.port_type == self._port_type
-                        and element.port_mode == self._port_mode):
+                if (element.port_type is self._port_type
+                        and element.port_mode is self._port_mode):
                     for group_port_id in element.group_port_ids:
                         group_id, port_id = group_port_id
 
                         if canvas.clipboard_cut:
                             # remove the original connection if still exists
                             for connection in canvas.connection_list:
-                                if utils.connection_matches(
-                                        connection,
+                                if connection.matches(
                                         element.group_id, [element.port_id],
                                         group_id, [port_id]):
                                     utils.canvas_callback(
@@ -568,7 +566,7 @@ class ClipboardMenu(SubMenu):
                                     break
 
                         utils.connect_ports(self._group_id, self_port_id,
-                                           group_id, port_id)
+                                            group_id, port_id)
                     break
 
         # once past, de-activate cut to prevent recut of connections
@@ -639,9 +637,7 @@ class MainPortContextMenu(PortData, QMenu):
         port_data = PortData(group_id, port_id, port_type,
                              port_mode, portgrp_id, is_alternate)
 
-        dark = ''
-        if utils.is_dark_theme(self):
-            dark = '-dark'
+        dark = '-dark' if utils.is_dark_theme(self) else ''
 
         self.connect_menu = ConnectMenu(port_data, self)
         self.connect_menu.setIcon(
@@ -666,8 +662,7 @@ class MainPortContextMenu(PortData, QMenu):
         self.addSeparator()
 
         for connection in canvas.connection_list:
-            if utils.connection_concerns(
-                    connection, self._group_id, self._port_id_list):
+            if connection.concerns(self._group_id, self._port_id_list):
                 self.add_connection(connection)
 
     def get_port_attributes(self) -> tuple:
@@ -722,8 +717,7 @@ class MainPortContextMenu(PortData, QMenu):
     def connection_added_to_canvas(self, connection_id: int):
         for connection in canvas.connection_list:
             if connection.connection_id == connection_id:
-                if not utils.connection_concerns(
-                        connection, self._group_id, self._port_id_list):
+                if connection.concerns(self._group_id, self._port_id_list):
                     return
 
                 self.add_connection(connection)

@@ -270,12 +270,12 @@ def get_port_print_name(group_id: int, port_id: int, portgrp_id: int) -> str:
                 if port.group_id == group_id and port.port_id == port_id:
                     return port.port_name.replace(portgrp_name, '', 1)
 
-def get_portgroup_port_list(group_id: int, portgrp_id: int)->list:
+def get_portgroup_port_list(group_id: int, portgrp_id: int) -> tuple[int]:
     for portgrp in canvas.portgrp_list:
         if (portgrp.group_id == group_id
                 and portgrp.portgrp_id == portgrp_id):
             return portgrp.port_id_list
-    return []
+    return ()
 
 def get_portgroup_full_name(group_id: int, portgrp_id: int) -> str:
     for portgrp in canvas.portgrp_list:
@@ -299,33 +299,6 @@ def get_portgroup_full_name(group_id: int, portgrp_id: int) -> str:
             return "%s:%s %s" % (group_name, portgrp_name, endofname[:-1])
 
     return ""
-
-def connection_matches(connection: ConnectionObject,
-                       group_id_1: int, port_ids_list_1: list[int],
-                       group_id_2: int, port_ids_list_2: list[int]) -> bool:
-    if (connection.group_in_id == group_id_1
-        and connection.port_in_id in port_ids_list_1
-        and connection.group_out_id == group_id_2
-        and connection.port_out_id in port_ids_list_2):
-            return True
-    elif (connection.group_in_id == group_id_2
-          and connection.port_in_id in port_ids_list_2
-          and connection.group_out_id == group_id_1
-          and connection.port_out_id in port_ids_list_1):
-            return True
-    else:
-        return False
-
-def connection_concerns(connection: ConnectionObject,
-                        group_id: int, port_ids_list: list[int]) -> bool:
-    if (connection.group_in_id == group_id
-            and connection.port_in_id in port_ids_list):
-        return True
-    elif (connection.group_out_id == group_id
-          and connection.port_out_id in port_ids_list):
-        return True
-    else:
-        return False
 
 def get_group_icon(group_id: int, port_mode: int) -> QIcon:
     # port_mode is here reversed

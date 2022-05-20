@@ -557,8 +557,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         disconnect_list = [] # will contains disconnect_element dicts
 
         for connection in canvas.connection_list:
-            if utils.connection_concerns(
-                    connection, self._group_id, self._port_list_ids):
+            if connection.concerns(self._group_id, self._port_list_ids):
                 conn_list_ids.append(connection.connection_id)
                 other_group_id = connection.group_in_id
                 group_port_mode = PortMode.INPUT
@@ -817,10 +816,6 @@ class CanvasBoxAbstract(QGraphicsItem):
             if self.sceneBoundingRect().contains(event.scenePos()):
                 if self._wrapped:
                     # unwrap the box if event is one of the triangles zones
-                    ypos = self._header_height
-                        
-                    box_theme = self.get_theme()
-
                     triangle_rect_out = QRectF(0, self._height - 24, 24, 24)
                     triangle_rect_in = QRectF(
                         self._width - 24, self._height - 24, 24, 24)

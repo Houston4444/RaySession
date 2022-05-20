@@ -25,7 +25,6 @@ from PyQt5.QtCore import (QPoint, QPointF, QRectF)
 from PyQt5.QtWidgets import QGraphicsView
 
 from .init_values import (
-    CanvasItemType,
     canvas,
     options,
     PortMode,
@@ -33,6 +32,7 @@ from .init_values import (
 
 from .scene_abstract import AbstractPatchScene
 from .canvasbox import CanvasBox
+
 
 class PatchScene(AbstractPatchScene):
     def __init__(self, parent, view: QGraphicsView):
@@ -374,10 +374,9 @@ class PatchScene(AbstractPatchScene):
                 srect.translate(neighbor.pos())
 
             for item in self.items(
-                    srect.adjusted(
-                        0, 0, 0,
-                        canvas.theme.box_spacing + 1)):
-                if item not in neighbors and item.type() is CanvasItemType.BOX:
+                    srect.adjusted(0, 0, 0,
+                                   canvas.theme.box_spacing + 1)):
+                if item not in neighbors and isinstance(item, CanvasBox):
                     nrect = item.boundingRect().translated(item.pos())
                     if nrect.top() >= limit_top:
                         neighbors.append(item)
@@ -386,7 +385,7 @@ class PatchScene(AbstractPatchScene):
         
         less_y = box_widget.boundingRect().height() - new_scene_rect.height()
 
-        repulser_boxes = []
+        repulser_boxes = list[CanvasBox]()
 
         for neighbor in neighbors:
             self.add_box_to_animation(

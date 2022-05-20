@@ -127,6 +127,11 @@ class Direction(IntEnum):
 
 
 class CanvasItemType(IntEnum):
+    # this enum is still here if really needed
+    # but never really used.
+    # Prefer use isinstance(item, type) if possible
+    # because IDE will know easier with which class
+    # we are dealing. 
     BOX = QGraphicsItem.UserType + 1
     ICON = QGraphicsItem.UserType + 2
     PORT = QGraphicsItem.UserType + 3

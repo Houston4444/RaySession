@@ -37,7 +37,7 @@ from .init_values import (
 from .canvasbox import CanvasBox
 from .canvasconnectable import CanvasConnectable
 from .canvasbezierline import CanvasBezierLine
-from .canvasicon import CanvasIconPixmap
+from .canvasicon import CanvasIconPixmap, CanvasSvgIcon
 
 class RubberbandRect(QGraphicsRectItem):
     def __init__(self, scene: QGraphicsScene):
@@ -590,7 +590,8 @@ class AbstractPatchScene(QGraphicsScene):
             self._mouse_down_init = False
             topmost = self.itemAt(event.scenePos(), self._view.transform())
             self._mouse_rubberband = not (
-                isinstance(topmost, (CanvasBox, CanvasIconPixmap, CanvasConnectable))) 
+                isinstance(topmost, (CanvasBox, CanvasConnectable,
+                                     CanvasIconPixmap, CanvasSvgIcon))) 
 
         if self._mouse_rubberband:
             event.accept()

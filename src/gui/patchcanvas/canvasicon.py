@@ -62,6 +62,7 @@ def get_app_icon(icon_name: str) -> QIcon:
 
     return icon
 
+
 class CanvasIconPixmap(QGraphicsPixmapItem):
     def __init__(self, icon_type, icon_name, parent):
         QGraphicsPixmapItem.__init__(self)
