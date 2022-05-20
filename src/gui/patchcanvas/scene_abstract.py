@@ -17,6 +17,8 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+
+# Imports (Globals)
 from math import floor
 import time
 from typing import TYPE_CHECKING
@@ -27,6 +29,7 @@ from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QBrush
 from PyQt5.QtWidgets import (QGraphicsRectItem, QGraphicsScene, QApplication,
                              QGraphicsView, QGraphicsItem)
 
+# Imports (locals)
 from .init_values import (
     CanvasItemType,
     canvas,
@@ -39,7 +42,10 @@ from .canvasconnectable import CanvasConnectable
 from .canvasbezierline import CanvasBezierLine
 from .canvasicon import CanvasIconPixmap, CanvasSvgIcon
 
+
 class RubberbandRect(QGraphicsRectItem):
+    " This class is used by rectangle selection when user "
+    " press mouse button and move to select boxes. "
     def __init__(self, scene: QGraphicsScene):
         QGraphicsRectItem.__init__(self, QRectF(0, 0, 0, 0))
 
@@ -53,6 +59,9 @@ class RubberbandRect(QGraphicsRectItem):
 
 
 class AbstractPatchScene(QGraphicsScene):
+    " This class is used for the scene. "
+    " The child class in scene.py has all things to manage"
+    " repulsives boxes."
     scaleChanged = pyqtSignal(float)
     sceneGroupMoved = pyqtSignal(int, int, QPointF)
     pluginSelected = pyqtSignal(list)

@@ -35,6 +35,9 @@ from .canvasbox import CanvasBox
 
 
 class PatchScene(AbstractPatchScene):
+    " This class part of the scene is for repulsive boxes option "
+    " because the algorythm is not simple and takes a lot of lines."
+    " See scene_abstract.py for others scene methods."
     def __init__(self, parent, view: QGraphicsView):
         AbstractPatchScene.__init__(self, parent, view)
 

@@ -5,7 +5,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QGraphicsItem
 
-import patchcanvas.utils as utils
 from .init_values import (
     CallbackAct,
     ConnectionObject,
@@ -20,6 +19,10 @@ if TYPE_CHECKING:
     
 
 class CanvasConnectable(QGraphicsItem):
+    """ This class is the mother class for port and portgroups
+        widgets because the way to manage the connection process
+        is the same for both. """
+    
     if TYPE_CHECKING:
         _hover_item: 'CanvasConnectable'
 
