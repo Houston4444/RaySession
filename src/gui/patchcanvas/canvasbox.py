@@ -1035,7 +1035,7 @@ class CanvasBox(CanvasBoxAbstract):
             return
 
         if (not even_animated
-                and self in [b['widget'] for b in canvas.scene.move_boxes]):
+                and self in [b.widget for b in canvas.scene.move_boxes]):
             # do not change box disposition while box is moved by animation
             # update_positions will be called when animation is finished
             return

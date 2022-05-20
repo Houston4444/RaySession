@@ -24,7 +24,7 @@ import time
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
-                          Qt, QPointF, QRectF, QTimer, QMarginsF)
+                          Qt, QPoint, QPointF, QRectF, QTimer, QMarginsF)
 from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QBrush
 from PyQt5.QtWidgets import (QGraphicsRectItem, QGraphicsScene, QApplication,
                              QGraphicsView, QGraphicsItem)
@@ -56,6 +56,18 @@ class RubberbandRect(QGraphicsRectItem):
 
     def type(self) -> CanvasItemType:
         return CanvasItemType.RUBBERBAND
+
+
+class MovingBox:
+    widget: CanvasBox
+    from_pt: QPointF
+    to_pt: QPoint
+    start_time: float
+
+
+class WrappingBox:
+    widget: CanvasBox
+    wrap: bool
 
 
 class AbstractPatchScene(QGraphicsScene):
@@ -93,8 +105,9 @@ class AbstractPatchScene(QGraphicsScene):
 
         self._move_timer_start_at = 0
         self._move_timer_interval = 20 # 20 ms step animation (50 Hz)
-        self.move_boxes = list[dict]()
-        self.wrapping_boxes = list[dict]()
+        # self.move_boxes = list[dict]()
+        self.move_boxes = list[MovingBox]()
+        self.wrapping_boxes = list[WrappingBox]()
         self.move_box_timer = QTimer()
         self.move_box_timer.setInterval(self._move_timer_interval)
         self.move_box_timer.timeout.connect(self.move_boxes_animation)
@@ -171,46 +184,37 @@ class AbstractPatchScene(QGraphicsScene):
         time_since_start = time.time() - self._move_timer_start_at
         ratio = min(1.0, time_since_start / self.move_duration)
 
-        for box_dict in self.move_boxes:
-            if box_dict['widget'] is not None:
-                x = (box_dict['from_x']
-                     + ((box_dict['to_x'] - box_dict['from_x'])
+        for moving_box in self.move_boxes:
+            if moving_box.widget is not None:
+                x = (moving_box.from_pt.x()
+                     + ((moving_box.to_pt.x() - moving_box.from_pt.x())
                         * (ratio ** 0.6)))
                 
-                y = (box_dict['from_y']
-                     + ((box_dict['to_y'] - box_dict['from_y'])
+                y = (moving_box.from_pt.y()
+                     + ((moving_box.to_pt.y() - moving_box.from_pt.y())
                         * (ratio ** 0.6)))
 
-                if TYPE_CHECKING:
-                    assert isinstance(box_dict['widget'], CanvasBox)
+                moving_box.widget.setPos(x, y)
+                moving_box.widget.repaint_lines()
 
-                box_dict['widget'].setPos(x, y)
-                box_dict['widget'].repaint_lines()
-
-        for wrap_dict in self.wrapping_boxes:
-            if wrap_dict['widget'] is not None:
-                if TYPE_CHECKING:
-                    assert isinstance(wrap_dict['widget'], CanvasBox)
-                
+        for wrapping_box in self.wrapping_boxes:
+            if wrapping_box.widget is not None:
                 if time_since_start >= self.move_duration:
-                    wrap_dict['widget'].animate_wrapping(1.00)
+                    wrapping_box.widget.animate_wrapping(1.00)
                 else:
-                    wrap_dict['widget'].animate_wrapping(ratio)
+                    wrapping_box.widget.animate_wrapping(ratio)
 
         self.resize_the_scene()
         
         if time_since_start >= self.move_duration:
             self.move_box_timer.stop()
             
-            move_box_widgets = [b['widget'] for b in self.move_boxes]
+            move_box_widgets = [b.widget for b in self.move_boxes]
             self.move_boxes.clear()
             self.wrapping_boxes.clear()
-                    
+
             for box in move_box_widgets:
                 if box is not None:
-                    if TYPE_CHECKING:
-                        assert isinstance(box, CanvasBox)
-                    
                     box.update_positions()
                     box.send_move_callback()
 
@@ -220,8 +224,8 @@ class AbstractPatchScene(QGraphicsScene):
 
     def add_box_to_animation(self, box_widget: CanvasBox, to_x: int, to_y: int,
                              force_anim=True):
-        for box_dict in self.move_boxes:
-            if box_dict['widget'] == box_widget:
+        for moving_box in self.move_boxes:
+            if moving_box.widget is box_widget:
                 break
         else:
             if not force_anim:
@@ -232,27 +236,29 @@ class AbstractPatchScene(QGraphicsScene):
                     box_widget.setPos(int(to_x), int(to_y))
                 return
 
-            box_dict = {'widget': box_widget}
-            self.move_boxes.append(box_dict)
+            moving_box = MovingBox()
+            moving_box.widget = box_widget
+            self.move_boxes.append(moving_box)
 
-        box_dict['from_x'] = box_widget.pos().x()
-        box_dict['from_y'] = box_widget.pos().y()
-        box_dict['to_x'] = int(to_x)
-        box_dict['to_y'] = int(to_y)
-        box_dict['start_time'] = time.time() - self._move_timer_start_at
+        moving_box.from_pt = box_widget.pos()
+        moving_box.to_pt = QPoint(to_x, to_y)
+        moving_box.start_time = time.time() - self._move_timer_start_at
 
         if not self.move_box_timer.isActive():
-            box_dict['start_time'] = 0.0
+            moving_box.start_time = 0.0
             self._move_timer_start_at = time.time()
             self.move_box_timer.start()
 
-    def add_box_to_animation_wrapping(self, box_widget, wrap: bool):
-        for wrap_dict in self.wrapping_boxes:
-            if wrap_dict['widget'] == box_widget:
-                wrap_dict['wrap'] = wrap
+    def add_box_to_animation_wrapping(self, box_widget: CanvasBox, wrap: bool):
+        for wrapping_box in self.wrapping_boxes:
+            if wrapping_box.widget is box_widget:
+                wrapping_box.wrap = wrap
                 break
         else:
-            self.wrapping_boxes.append({'widget': box_widget, 'wrap': wrap})
+            wrapping_box = WrappingBox
+            wrapping_box.widget = box_widget
+            wrapping_box.wrap = wrap
+            self.wrapping_boxes.append(wrapping_box)
         
         if not self.move_box_timer.isActive():
             self._move_timer_start_at = time.time()

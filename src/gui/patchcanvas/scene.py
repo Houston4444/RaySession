@@ -203,9 +203,9 @@ class PatchScene(AbstractPatchScene):
                 srect = new_scene_rect
             else:
                 # if box is already moving, consider its end position
-                for box_dict in self.move_boxes:
-                    if box_dict['widget'] is box:
-                        srect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
+                for moving_box in self.move_boxes:
+                    if moving_box.widget is box:
+                        srect.translate(moving_box.to_pt)
                         break
                 else:
                     srect.translate(box.pos())
@@ -219,7 +219,7 @@ class PatchScene(AbstractPatchScene):
                     if (widget is None
                             or widget in repulser_boxes
                             or widget in [b.item for b in to_move_boxes]
-                            or widget in [b['widget'] for b in self.move_boxes]):
+                            or widget in [b.widget for b in self.move_boxes]):
                         continue
                     
                     irect = widget.boundingRect()
@@ -232,17 +232,17 @@ class PatchScene(AbstractPatchScene):
                         items_to_move.append(BoxAndRect(irect, widget))
                         # items_to_move.append({'item': widget, 'rect': irect})
 
-            for box_dict in self.move_boxes:
-                if (box_dict['widget'] in repulser_boxes
-                        or box_dict['widget'] in [b.item for b in to_move_boxes]):
+            for moving_box in self.move_boxes:
+                if (moving_box.widget in repulser_boxes
+                        or moving_box.widget in [b.item for b in to_move_boxes]):
                     continue
 
-                widget = box_dict['widget']
-                if TYPE_CHECKING:
-                    assert isinstance(widget, CanvasBox)
+                widget = moving_box.widget
+                # if TYPE_CHECKING:
+                #     assert isinstance(widget, CanvasBox)
                 
                 irect = widget.boundingRect()
-                irect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
+                irect.translate(moving_box.to_pt)
                 
                 if rect_has_to_move_from(
                         repulser.rect, irect,
@@ -331,7 +331,7 @@ class PatchScene(AbstractPatchScene):
                     if (widget is None
                             or widget in repulser_boxes
                             or widget in [b.item for b in to_move_boxes]
-                            or widget in [b['widget'] for b in self.move_boxes]):
+                            or widget in [b.widget for b in self.move_boxes]):
                         continue
                     
                     mirect = widget.boundingRect().translated(widget.pos())
@@ -343,8 +343,8 @@ class PatchScene(AbstractPatchScene):
                         adding_list.append(
                             ToMoveBox(directions, mirect.right(), widget, repulser))                        
             
-            for box_dict in self.move_boxes:
-                mitem = box_dict['widget']
+            for moving_box in self.move_boxes:
+                mitem = moving_box.widget
                 assert isinstance(mitem, CanvasBox)
                 
                 if (mitem in repulser_boxes
@@ -352,7 +352,7 @@ class PatchScene(AbstractPatchScene):
                     continue
 
                 rect = mitem.boundingRect()
-                rect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
+                rect.translate(moving_box.to_pt)
                 
                 if rect_has_to_move_from(
                         new_rect, rect,
@@ -360,7 +360,7 @@ class PatchScene(AbstractPatchScene):
                         mitem.get_current_port_mode()):
 
                     adding_list.append(
-                        ToMoveBox(directions, 0.0, box_dict['widget'], repulser))
+                        ToMoveBox(directions, 0.0, moving_box.widget, repulser))
 
             for to_move_box in adding_list:
                 to_move_boxes.append(to_move_box)
@@ -378,9 +378,9 @@ class PatchScene(AbstractPatchScene):
         
         for neighbor in neighbors:
             srect = neighbor.boundingRect()
-            for move_box in self.move_boxes:
-                if move_box['widget'] == neighbor:
-                    srect.translate(QPointF(move_box['to_x'], move_box['to_y']))
+            for moving_box in self.move_boxes:
+                if moving_box.widget is neighbor:
+                    srect.translate(moving_box.to_pt)
                     break
             else:
                 srect.translate(neighbor.pos())
