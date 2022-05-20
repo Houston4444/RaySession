@@ -34,6 +34,14 @@ from .scene_abstract import AbstractPatchScene
 from .canvasbox import CanvasBox
 
 
+class BoxAndRect:
+    rect: QRectF
+    item: CanvasBox
+    
+    def __init__(self, rect: QRectF, item: CanvasBox):
+        self.rect, self.item = rect, item
+        
+
 class PatchScene(AbstractPatchScene):
     " This class part of the scene is for repulsive boxes option "
     " because the algorythm is not simple and takes a lot of lines."
@@ -45,7 +53,7 @@ class PatchScene(AbstractPatchScene):
                                      wanted_direction=Direction.NONE,
                                      new_scene_rect=None):
         def get_direction(fixed_rect: QRectF, moving_rect: QRectF,
-                          parent_directions=[]) -> Direction:
+                          parent_directions=list[Direction]()) -> Direction:
             if (moving_rect.top() <= fixed_rect.center().y() <= moving_rect.bottom()
                     or fixed_rect.top() <= moving_rect.center().y() <= fixed_rect.bottom()):
                 if (fixed_rect.right() < moving_rect.center().x()
@@ -166,7 +174,7 @@ class PatchScene(AbstractPatchScene):
         magnet = canvas.theme.magnet
 
         to_move_boxes = list[dict]()
-        repulsers = list[dict]()
+        repulsers = list[BoxAndRect]()
         wanted_directions = [wanted_direction]
 
         for box in repulser_boxes:
@@ -183,8 +191,7 @@ class PatchScene(AbstractPatchScene):
                 else:
                     srect.translate(box.pos())
 
-            repulser = {'rect': srect,
-                        'item': box}
+            repulser = BoxAndRect(srect, box)
             repulsers.append(repulser)
 
             items_to_move = list[dict]()
@@ -201,11 +208,11 @@ class PatchScene(AbstractPatchScene):
                     irect.translate(widget.pos())
 
                     if rect_has_to_move_from(
-                            repulser['rect'], irect,
-                            repulser['item'].get_current_port_mode(),
+                            repulser.rect, irect,
+                            repulser.item.get_current_port_mode(),
                             widget.get_current_port_mode()):
                         items_to_move.append({'item': widget, 'rect': irect})
-            
+
             for box_dict in self.move_boxes:
                 if (box_dict['widget'] in repulser_boxes
                         or box_dict['widget'] in [b['item'] for b in to_move_boxes]):
@@ -213,16 +220,16 @@ class PatchScene(AbstractPatchScene):
             
                 widget = box_dict['widget']
                 
-                if TYPE_CHECKING:
-                    assert isinstance(widget, CanvasBox)
-                    assert isinstance(repulser['item'], CanvasBox)
+                # if TYPE_CHECKING:
+                #     assert isinstance(widget, CanvasBox)
+                #     assert isinstance(repulser['item'], CanvasBox)
                 
                 irect = widget.boundingRect()
                 irect.translate(QPoint(box_dict['to_x'], box_dict['to_y']))
                 
                 if rect_has_to_move_from(
-                        repulser['rect'], irect,
-                        repulser['item'].get_current_port_mode(),
+                        repulser.rect, irect,
+                        repulser.item.get_current_port_mode(),
                         widget.get_current_port_mode()):
                     items_to_move.append({'item': widget, 'rect': irect})
             
@@ -262,20 +269,20 @@ class PatchScene(AbstractPatchScene):
             # ref_rect = repulser['rect']
             
             assert isinstance(item, CanvasBox)
-            assert isinstance(repulser['item'], CanvasBox)
+            # assert isinstance(repulser['item'], CanvasBox)
             irect = item.boundingRect().translated(item.pos())
 
             directions = to_move_box['directions'].copy()
-            new_direction = get_direction(repulser['rect'], irect, directions)
+            new_direction = get_direction(repulser.rect, irect, directions)
             directions.append(new_direction)
 
             # TODO use of protected attributes.
             # calculate the new position of the box repulsed by its repulser
-            new_rect = repulse(new_direction, repulser['rect'], item,
-                               repulser['item']._current_port_mode,
+            new_rect = repulse(new_direction, repulser.rect, item,
+                               repulser.item._current_port_mode,
                                item._current_port_mode)
             
-            active_repulsers = []
+            active_repulsers = list[BoxAndRect]()
             
             # while there is a repulser rect at new box position
             # move the future box position
@@ -284,8 +291,8 @@ class PatchScene(AbstractPatchScene):
                 # we save the repulsers that already have moved the rect
                 for repulser in repulsers:
                     if rect_has_to_move_from(
-                            repulser['rect'], new_rect,
-                            repulser['item'].get_current_port_mode(),
+                            repulser.rect, new_rect,
+                            repulser.item.get_current_port_mode(),
                             item.get_current_port_mode()):
 
                         if repulser in active_repulsers:
@@ -293,10 +300,10 @@ class PatchScene(AbstractPatchScene):
                         active_repulsers.append(repulser)
                         
                         new_direction = get_direction(
-                            repulser['rect'], new_rect, directions)
+                            repulser.rect, new_rect, directions)
                         new_rect = repulse(
-                            new_direction, repulser['rect'], new_rect,
-                            repulser['item']._current_port_mode,
+                            new_direction, repulser.rect, new_rect,
+                            repulser.item._current_port_mode,
                             item._current_port_mode)
                         directions.append(new_direction)
                         break
@@ -305,7 +312,8 @@ class PatchScene(AbstractPatchScene):
 
             # Now we know where the box will be definitely positioned
             # So, this is now a repulser for other boxes
-            repulser = {'rect': new_rect, 'item': item}
+            # repulser = {'rect': new_rect, 'item': item}
+            repulser = BoxAndRect(new_rect, item)
             repulsers.append(repulser)
             
             # check which existing boxes exists at the new place of the box
