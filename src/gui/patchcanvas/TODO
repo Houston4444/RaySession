@@ -3,8 +3,6 @@ review icon managing group type
 review canvasicon, many things to remove
 voir : canvas initial_pos
 
-trigger_disconnect portgroup
-
 
 finish Silver Gold
 
@@ -14,8 +12,8 @@ transport controls
 refaire theme gui hidden tous les thèmes
 ajustements anti-superposition (après join/split, emballer/déballer remonte toujours un peu)
 
-utiliser un logger nottament pour les chargements de thème
-#utiliser Path pour le chargement du thème
+# utiliser un logger nottament pour les chargements de thème
+# utiliser Path pour le chargement du thème
 Commenter plus
 #enlever les qcritical -> logger
 Bug: connection non sélectionnée après clic droit
