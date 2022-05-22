@@ -47,10 +47,10 @@ class ThemeManager:
             # it is just a convenience to mute conf.read
             file_list = conf.read(self.current_theme_file)
         except configparser.DuplicateOptionError as e:
-            print_error(str(e) + '\n')
+            _LOGGER.error(str(e))
             return False
         except:
-            print_error('failed to open %s\n' % self.current_theme_file)
+            _LOGGER.error(f"failed to open {self.current_theme_file}")
             return False
         
         theme_dict = self._convert_configparser_object_to_dict(conf)
@@ -102,20 +102,17 @@ class ThemeManager:
     
     def get_theme(self) -> str:
         return self.current_theme_file.parent.name
-        # return os.path.basename(os.path.dirname(self.current_theme_file))
     
     def set_theme(self, theme_name: str) -> bool:
         self.current_theme = theme_name
 
         for theme_path in self.theme_paths:
             theme_file_path = theme_path.joinpath(theme_name, 'theme.conf')
-            # theme_file_path = "%s/%s/theme.conf" % (theme_path, theme_name)
-            # if os.path.exists(theme_file_path):
             if theme_file_path.exists():
                 self.current_theme_file = theme_file_path
                 break
         else:
-            print_error("Unable to find theme %s" % theme_name)
+            _LOGGER.error(f"Unable to find theme {theme_name}")
             return False
 
         theme_is_valid = self._update_theme()
@@ -151,7 +148,7 @@ class ThemeManager:
                 try:
                     conf.read(str(full_path))
                 except configparser.DuplicateOptionError as e:
-                    print_error(str(e) + '\n')
+                    _LOGGER.error(str(e))
                     continue
                 except:
                     # TODO
