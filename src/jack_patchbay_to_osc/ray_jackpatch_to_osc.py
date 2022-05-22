@@ -86,16 +86,16 @@ class JackPort:
             self.alias_1 = alias_1
             self.alias_2 = alias_2
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'JackPort'):
         return self.uuid < other.uuid
 
 
 class MainObject:
-    port_list = []
-    connection_list = []
-    metadata_list = []
-    client_list = [] # list of dicts {'name': client_name, 'uuid': client_uuid}
-    client_names_queue = []
+    port_list = list[JackPort]()
+    connection_list = list[tuple[str]]()
+    metadata_list = list[dict]()
+    client_list = list[dict]()
+    client_names_queue = list[str]()
     jack_running = False
     osc_server = None
     terminate = False
@@ -115,11 +115,11 @@ class MainObject:
         self.start_jack_client()
     
     @staticmethod
-    def get_metadata_value_str(prop)->str:
+    def get_metadata_value_str(prop: jacklib.Property) -> str:
         value = prop.value
-        if type(value) == bytes:
+        if isinstance(value, bytes):
             return value.decode()
-        elif type(value) == str:
+        elif isinstance(value, str):
             return value
         else:
             try:
@@ -425,8 +425,8 @@ class MainObject:
                     break
         return 0
     
-    def jack_port_rename_callback(self, port_id: int, old_name: str,
-                                  new_name: str, arg=None)->int:
+    def jack_port_rename_callback(self, port_id: int, old_name: bytes,
+                                  new_name: bytes, arg=None)->int:
         for jport in self.port_list:
             if jport.name == str(old_name.decode()):
                 ex_name = jport.name
@@ -437,9 +437,6 @@ class MainObject:
     
     def jack_port_connect_callback(self, port_id_A: int, port_id_B: int,
                                    connect_yesno: bool, arg=None)->int:
-        #if not self.jack_client:
-            #return 0
-        
         port_ptr_A = jacklib.port_by_id(self.jack_client, port_id_A)
         port_ptr_B = jacklib.port_by_id(self.jack_client, port_id_B)
 
@@ -516,7 +513,6 @@ def main_process():
 if __name__ == '__main__':
     # prevent deprecation warnings python messages
     warnings.filterwarnings("ignore", category=DeprecationWarning)
-    print('chapichapoà', time.time())
     
     signal.signal(signal.SIGINT, MainObject.signal_handler)
     signal.signal(signal.SIGTERM, MainObject.signal_handler)

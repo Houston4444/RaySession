@@ -1,16 +1,17 @@
 
-import sys
 import time
-#import pickle
 import tempfile
 import socket
 import json
 import subprocess
+from typing import TYPE_CHECKING
 
-from liblo import Server, Address, make_method
+from over_liblo import Server, Address, make_method
 
 import jacklib
 
+if TYPE_CHECKING:
+    from ray_jackpatch_to_osc import MainObject, JackPort
 
 ### Code copied from shared/ray.py
 ### we don't import ray.py here, because this executable is Qt free
@@ -51,7 +52,7 @@ class Machine192:
 
         return cls.ip
 
-def areOnSameMachine(url1, url2):
+def areOnSameMachine(url1: str, url2: str):
     if url1 == url2:
         return True
 
@@ -110,7 +111,7 @@ class OscJackPatch(Server):
     slow_wait_time = 0.020
     slow_wait_num = 50
     
-    def __init__(self, main_object):
+    def __init__(self, main_object: 'MainObject'):
         Server.__init__(self)
         self.add_method('/ray/patchbay/add_gui', 's',
                         self._ray_patchbay_add_gui)
@@ -135,7 +136,7 @@ class OscJackPatch(Server):
         self.connection_list = main_object.connection_list
         self.metadata_list = main_object.metadata_list
         self.client_list = main_object.client_list
-        self.gui_list = []
+        self.gui_list = list[Address]()
         self._tmp_gui_url = ''
         self._terminate = False
 
@@ -146,7 +147,6 @@ class OscJackPatch(Server):
         self.jack_client = jack_client
     
     def _ray_patchbay_add_gui(self, path, args, types, src_addr):
-        print('jackck_addgui', time.time())
         self.add_gui(args[0])
 
     def _ray_patchbay_gui_disannounce(self, path, args, types, src_addr):
@@ -176,12 +176,12 @@ class OscJackPatch(Server):
 
     def _ray_patchbay_connect(self, path, args):
         port_out_name, port_in_name = args
-        #connect here
+        # connect here
         jacklib.connect(self.jack_client, port_out_name, port_in_name)
     
     def _ray_patchbay_disconnect(self, path, args):
         port_out_name, port_in_name = args
-        #disconnect here
+        # disconnect here
         jacklib.disconnect(self.jack_client, port_out_name, port_in_name)
 
     def _ray_patchbay_set_buffersize(self, path, args):
@@ -330,11 +330,11 @@ class OscJackPatch(Server):
         self.send_gui('/ray/gui/patchbay/client_name_and_uuid',
                       client_name, uuid)
 
-    def port_added(self, port):
+    def port_added(self, port: 'JackPort'):
         self.send_gui('/ray/gui/patchbay/port_added',
                       port.name, port.type, port.flags, port.uuid) 
 
-    def port_renamed(self, port, ex_name):
+    def port_renamed(self, port: 'JackPort', ex_name: str):
         self.send_gui('/ray/gui/patchbay/port_renamed', ex_name, port.name)
     
     def port_removed(self, port):
@@ -343,11 +343,11 @@ class OscJackPatch(Server):
     def metadata_updated(self, uuid: int, key: str, value: str):
         self.send_gui('/ray/gui/patchbay/metadata_updated', uuid, key, value)
     
-    def connection_added(self, connection):
+    def connection_added(self, connection: tuple[str]):
         self.send_gui('/ray/gui/patchbay/connection_added',
-                     connection[0], connection[1])    
+                     connection[0], connection[1])
 
-    def connection_removed(self, connection):
+    def connection_removed(self, connection: tuple[str]):
         self.send_gui('/ray/gui/patchbay/connection_removed',
                      connection[0], connection[1])
     
