@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING
 from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF, QImage
 from PyQt5.QtCore import Qt, QTimer
 
-TITLE_TEMPLATES_CACHE = {}
-FONT_METRICS_CACHE = {}
+_TITLE_TEMPLATES_CACHE = {}
+_FONT_METRICS_CACHE = {}
 
 def print_error(string: str):
     sys.stderr.write("patchcanvas.theme::%s\n" % string)
@@ -387,17 +387,17 @@ class StyleAttributer:
         font_size = str(self.get_value_of('_font_size'))
         font_width = str(self.get_value_of('_font_width'))
         
-        if not font_name in TITLE_TEMPLATES_CACHE.keys():
-            TITLE_TEMPLATES_CACHE[font_name] = {}
+        if not font_name in _TITLE_TEMPLATES_CACHE.keys():
+            _TITLE_TEMPLATES_CACHE[font_name] = {}
         
-        if not font_size in TITLE_TEMPLATES_CACHE[font_name].keys():
-            TITLE_TEMPLATES_CACHE[font_name][font_size] = {}
+        if not font_size in _TITLE_TEMPLATES_CACHE[font_name].keys():
+            _TITLE_TEMPLATES_CACHE[font_name][font_size] = {}
         
-        if not font_width in TITLE_TEMPLATES_CACHE[font_name][font_size].keys():
-            TITLE_TEMPLATES_CACHE[font_name][font_size][font_width] = {}
+        if not font_width in _TITLE_TEMPLATES_CACHE[font_name][font_size].keys():
+            _TITLE_TEMPLATES_CACHE[font_name][font_size][font_width] = {}
         
         self._titles_templates_cache = \
-            TITLE_TEMPLATES_CACHE[font_name][font_size][font_width]
+            _TITLE_TEMPLATES_CACHE[font_name][font_size][font_width]
     
     def save_title_templates(
             self, title: str, handle_gui: bool, with_icon: bool, templates: list):
@@ -664,8 +664,8 @@ class Theme(StyleAttributer):
 
         with open(cache_file, 'rb') as f:
             try:
-                global TITLE_TEMPLATES_CACHE
-                TITLE_TEMPLATES_CACHE = pickle.load(f)
+                global _TITLE_TEMPLATES_CACHE
+                _TITLE_TEMPLATES_CACHE = pickle.load(f)
             except:
                 print('failed to load cache', cache_file)
                 return
@@ -691,7 +691,7 @@ class Theme(StyleAttributer):
                 return
 
         with open("%s/patchbay_titles" % cache_dir, 'wb') as f:
-            pickle.dump(TITLE_TEMPLATES_CACHE, f)
+            pickle.dump(_TITLE_TEMPLATES_CACHE, f)
         
         with open("%s/patchbay_fonts" % cache_dir, 'wb') as f:
             pickle.dump(FONT_METRICS_CACHE, f)
