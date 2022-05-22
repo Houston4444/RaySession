@@ -344,7 +344,6 @@ if __name__ == '__main__':
     else:
         wanted_modules = get_wanted_bridges_from_str(sys.argv[1])
         if pactl_prc.returncode:
-            start_pulseaudio(wanted_modules)
-        else:
-            unload_and_load_modules(wanted_modules, existing_modules)
+            start_pulseaudio()
+        unload_and_load_modules(wanted_modules, existing_modules)
     

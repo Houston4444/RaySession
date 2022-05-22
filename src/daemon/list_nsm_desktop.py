@@ -1,21 +1,17 @@
 #!/usr/bin/python3
 
 import os
+import xdg
 
-def get_nsm_capable_apps_from_desktop_file()->list:
+def get_nsm_capable_apps_from_desktop_file() -> list:
     ''' returns a list of tuples 
         {'executable': str, 'desktop_file': str, nsm_capable: bool} '''
-    desk_path_list = (
-        '%s/.local' % os.getenv('HOME'),
-        '/usr/local',
-        '/usr')
-
     application_dicts = []
 
-    for desk_path in desk_path_list:
-        full_desk_path = "%s/share/applications" % desk_path
+    for desk_path in xdg.xdg_data_dirs():
+        full_desk_path = desk_path.joinpath('applications')
 
-        if not os.path.isdir(full_desk_path):
+        if not full_desk_path.is_dir():
             # applications folder doesn't exists
             continue
 
@@ -62,6 +58,7 @@ def get_nsm_capable_apps_from_desktop_file()->list:
     
     return [a for a in application_dicts if a['nsm_capable']]
 
-application_dicts = get_nsm_capable_apps_from_desktop_file()
-for a in application_dicts:
-    print(a['executable'])
+
+if __name__ == '__main__':
+    application_dicts = get_nsm_capable_apps_from_desktop_file()
+    print('\n'.join([a['executable'] for a in application_dicts]))

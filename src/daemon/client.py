@@ -2,19 +2,28 @@ import os
 import shlex
 import shutil
 import signal
-import subprocess
 import time
+from pathlib import Path
 from liblo import Address
 from PyQt5.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
-from PyQt5.QtXml import QDomDocument
+from PyQt5.QtXml import QDomDocument, QDomElement
 
+
+import xdg
 import ray
 from server_sender import ServerSender
 from daemon_tools  import (TemplateRoots, Terminal, RS,
                            get_code_root, highlight_text)
 from signaler import Signaler
 from scripter import ClientScripter
+
+# only used to identify session functions in the IDE
+# 'Session' is not importable simply because it would be
+# a circular import.
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from session_signaled import SignaledSession
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -77,7 +86,7 @@ class Client(ServerSender, ray.ClientData):
 
     jack_naming = ray.JackNaming.SHORT
 
-    def __init__(self, parent_session):
+    def __init__(self, parent_session: 'SignaledSession'):
         ServerSender.__init__(self)
         self.session = parent_session
         self.is_dummy = self.session.is_dummy
@@ -163,7 +172,7 @@ class Client(ServerSender, ray.ClientData):
         if self.is_ray_hack():
             if self.noSaveLevel():
                 self.send_gui('/ray/gui/client/no_save_level',
-                               self.client_id, self.noSaveLevel())
+                              self.client_id, self.noSaveLevel())
             if self.ray_hack.config_file:
                 self.pending_command = ray.Command.OPEN
                 self.set_status(ray.ClientStatus.OPEN)
@@ -175,8 +184,8 @@ class Client(ServerSender, ray.ClientData):
 
         if self.pending_command == ray.Command.STOP:
             self.send_gui_message(_translate('GUIMSG',
-                                    "  %s: terminated by server instruction")
-                                    % self.gui_msg_style())
+                                  "  %s: terminated by server instruction")
+                                  % self.gui_msg_style())
             
             self.session.send_monitor_event(
                 'client_stopped_by_server', self.client_id)
@@ -209,7 +218,7 @@ class Client(ServerSender, ray.ClientData):
         if self.session.wait_for:
             self.session.end_timer_if_last_expected(self)
 
-    def _error_in_process(self, error):
+    def _error_in_process(self, error: int):
         if error == QProcess.FailedToStart:
             self.send_gui_message(
                 _translate('GUIMSG', "  %s: Failed to start !")
@@ -818,7 +827,7 @@ class Client(ServerSender, ray.ClientData):
 
         return jack_client_name
 
-    def read_xml_properties(self, ctx):
+    def read_xml_properties(self, ctx: QDomElement):
         #ctx is an xml sibling for client
         self.executable_path = ctx.attribute('executable')
         self.arguments = ctx.attribute('arguments')
@@ -945,7 +954,7 @@ class Client(ServerSender, ray.ClientData):
                     value = el.attribute(attribute_str)
                     self.custom_data[attribute_str] = value
 
-    def write_xml_properties(self, ctx):
+    def write_xml_properties(self, ctx: QDomElement):
         if self.protocol != ray.Protocol.RAY_NET:
             ctx.setAttribute('executable', self.executable_path)
             if self.arguments:
@@ -1590,7 +1599,7 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui("/ray/gui/client/status", self.client_id,
                           ray.ClientStatus.REMOVED)
 
-    def eat_attributes(self, new_client):
+    def eat_attributes(self, new_client: 'Client'):
         #self.client_id = new_client.client_id
         self.executable_path = new_client.executable_path
         self.arguments = new_client.arguments
@@ -1632,7 +1641,7 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui('/ray/gui/client/gui_visible',
                            self.client_id, int(self.gui_visible))
 
-    def can_switch_with(self, other_client)->bool:
+    def can_switch_with(self, other_client: 'Client')->bool:
         if self.protocol == ray.Protocol.RAY_HACK:
             return False
 
@@ -1854,12 +1863,6 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if self.icon and self.description and self.label:
             return
 
-        desk_path_list = (
-            '%s/data' % get_code_root(),
-            '%s/.local' % os.getenv('HOME'),
-            '/usr/local',
-            '/usr')
-
         desktop_file = self.desktop_file
         if desktop_file == '//not_found':
             return
@@ -1870,22 +1873,23 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if not desktop_file.endswith('.desktop'):
             desktop_file += ".desktop"
 
-        for desk_path in desk_path_list:
+        desk_path_list = ([Path(get_code_root()).joinpath('data', 'share')]
+                          + xdg.xdg_data_dirs())
+
+        for desk_data_path in desk_path_list:
             org_prefixs = ('', 'org.gnome.', 'org.kde.')
-            desk_file = ''
 
             for org_prefix in org_prefixs:
-                desk_file = "%s/share/applications/%s%s" % (
-                    desk_path, org_prefix, desktop_file)
-
-                if os.path.isfile(desk_file):
+                desk_path = desk_data_path.joinpath(
+                    'applications', org_prefix + desktop_file)
+                
+                if desk_path.is_file():
                     break
             else:
                 continue
 
             try:
-                file = open(desk_file, 'r')
-                contents = file.read()
+                contents = desk_path.read_text()
             except:
                 continue
 
@@ -1894,45 +1898,36 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         else:
             desk_file_found = False
-            for desk_path in desk_path_list:
-                full_desk_path = "%s/share/applications" % desk_path
-                if not os.path.isdir(full_desk_path):
-                    # applications folder doesn't exists
+
+            for desk_data_path in desk_path_list:
+                desk_app_path = desk_data_path.joinpath('applications')
+
+                if not desk_app_path.is_dir():
                     continue
 
-                if not os.access(full_desk_path, os.R_OK):
+                if not os.access(desk_app_path, os.R_OK):
                     # no permission to read this applications folder
                     continue
 
-                for desk_file in os.listdir(full_desk_path):
-                    if not desk_file.endswith('.desktop'):
+                for desk_path in desk_app_path.iterdir():
+                    if not desk_path.suffix == '.desktop':
                         continue
 
-                    full_desk_file = "%s/share/applications/%s" \
-                                        % (desk_path, desk_file)
-
-                    if os.path.isdir(full_desk_file):
+                    if desk_path.is_dir():
                         continue
 
                     try:
-                        file = open(full_desk_file, 'r')
-                        contents = file.read()
+                        contents = desk_path.read_text()
                     except:
                         continue
 
-                    for line in contents.split('\n'):
+                    for line in contents.splitlines():
                         if line.startswith('Exec='):
                             value = line.partition('=')[2]
-                            if (value == self.executable_path
-                                    or value.startswith(
-                                        "%s " % self.executable_path)
-                                    or value.endswith(
-                                        " %s" % self.executable_path)
-                                    or " %s " in value):
-                            #if self.executable_path in value:
+                            if self.executable_path in value.split():
                                 desk_file_found = True
 
-                                self.desktop_file = desk_file
+                                self.desktop_file = desk_path.name
                                 self._set_infos_from_desktop_contents(contents)
                                 break
 
@@ -1988,7 +1983,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         else:
             self._save_as_template_substep1(template_name)
 
-    def eat_other_session_client(self, src_addr, osc_path, client):
+    def eat_other_session_client(self, src_addr, osc_path, client: 'Client'):
         # eat attributes but keep client_id
         self.eat_attributes(client)
 
@@ -2017,7 +2012,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             [src_addr, osc_path, client, tmp_work_dir])
 
     def eat_other_session_client_step_1(self, src_addr, osc_path,
-                                        client, tmp_work_dir):
+                                        client: 'Client', tmp_work_dir):
         self._rename_files(
             tmp_work_dir, client.session.name, self.session.name,
             client.get_prefix_string(), self.get_prefix_string(),
@@ -2091,7 +2086,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.send_gui_client_properties()
 
     def adjust_files_after_copy(self, new_session_full_name,
-                             template_save=ray.Template.NONE):
+                                template_save=ray.Template.NONE):
         spath = self.session.path
         old_session_name = self.session.name
         new_session_name = basename(new_session_full_name)

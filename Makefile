@@ -198,6 +198,9 @@ install:
 	# install local manual
 	cp -r manual $(DEST_RAY)/
 	
+	# install utility-scripts
+	cp -r utility-scripts $(DEST_RAY)/
+	
 	# install main bash scripts to bin
 	install -m 755 data/raysession  $(DESTDIR)$(PREFIX)/bin/
 	install -m 755 data/ray-daemon  $(DESTDIR)$(PREFIX)/bin/

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.16">
+<meta name="generator" content="Asciidoctor 2.0.12">
 <title>RaySession Manual</title>
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -121,7 +121,7 @@ table {
 </div>
 </div>
 <div class="paragraph">
-<p><em>for version 0.10.0</em></p>
+<p><em>for version 0.12.0</em></p>
 </div>
 </div>
 </div>
@@ -226,7 +226,7 @@ table {
 </div>
 </div>
 <div class="paragraph">
-<p>Open the JACK <a href="#patchbay">Patchbay</a>, for this go to <strong>Control</strong> &#8594; <strong>Show JACK Patchbay</strong> (<em>or Ctrl+J</em>). The patchbay appears at the right of the window.</p>
+<p>Now use JACK&#8217;s <a href="#patchbay">Patchbay</a> which occupies the right side of the RaySession window.</p>
 </div>
 <div class="paragraph">
 <p>Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.</p>
@@ -240,10 +240,10 @@ table {
 <p>Here you have a configuration where you can directly record the sound of your guitar processed by Guitarix in Ardour. If you don&#8217;t have a guitar, all you have to do is sing out of tune into a mic or tap a cushion, this is just an example.</p>
 </div>
 <div class="paragraph">
-<p>Now go back to the RaySession window, and save the current session by clicking the floppy disk button to the top right (<em>or Ctrl+S</em>). It is highly recommended because it is very practical to assign a global keyboard shortcut of your system to the save of the current session. This will depend on your desktop environment, but just assign the <em>Ctrl+Meta+S</em> shortcut to the command <code>ray_control save</code> (Meta is the Windows key), so you won&#8217;t have to return to the RaySession window to save the session.</p>
+<p>Now save the current session by clicking the floppy disk button to the top right  of the session part(<em>or Ctrl+S</em>). It is highly recommended because it is very practical to assign a global keyboard shortcut of your system to the save of the current session. This will depend on your desktop environment, but just assign the <em>Ctrl+Meta+S</em> shortcut to the command <code>ray_control save</code> (Meta is the Windows key), so you won&#8217;t have to return to the RaySession window to save the session.</p>
 </div>
 <div class="paragraph">
-<p>Now close the session by clicking on the red cross at the top right (<em>or Ctrl+W</em>).</p>
+<p>Now close the session by clicking on the red cross at the top right of the session part (<em>or Ctrl+W</em>).</p>
 </div>
 <div class="paragraph">
 <p>Once the session is closed, click on <strong>Open Session</strong> (<em>or Ctrl+O</em>), double-click on the session you just created to re-open it.</p>
@@ -653,6 +653,9 @@ The state of such a program will remain on <strong>launch</strong> and will neve
 <p>the <strong>Client ID</strong> field (client identifier). Enter only alphanumeric characters or '_'.<br>
 This is useful if you want to catch and launch existing projects in the session with an executable. This is useful if you want to load in the session projects created outside a session. There is no method to make it easier, it depends a lot on the program you are using. RaySession will insult you if you enter a client ID that already exists in the session.</p>
 </li>
+<li>
+<p>the <strong>Long JACK naming</strong> checkbox. If this box is checked, clients will be supposed to use <code>ProgramName.ClientId</code> as JACK client name, else it will be <code>ProgramName</code>, possibly followed by <code>_N</code> (where N is a number). This is very useful if you use many instances of the same program, and you want to identify them easily in the patchbay.</p>
+</li>
 </ul>
 </div>
 </div>
@@ -661,7 +664,7 @@ This is useful if you want to catch and launch existing projects in the session 
 <h2 id="patchbay">Patchbay</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The JACK patchbay is not displayed by default. You can display it by clicking on <strong>Control</strong> and then <strong>Show JACK Patchbay</strong> (<em>or Ctrl+J</em>). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.</p>
+<p>The JACK patchbay is displayed by default. You can hide it by clicking on <strong>Control</strong> and then uncheck <strong>Show JACK Patchbay</strong> (<em>or Ctrl+J</em>). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.</p>
 </div>
 <div class="paragraph">
 <p>Obviously, if JACK is not started, this patchbay will be empty.</p>
@@ -807,6 +810,9 @@ It will allow you to :</p>
 <p>switch the patchbay to full screen</p>
 </li>
 <li>
+<p>Find a box with its name</p>
+</li>
+<li>
 <p>Filter ports: show only AUDIO or MIDI ports or both</p>
 </li>
 <li>
@@ -840,6 +846,9 @@ All changes in this window take effect immediately. Hover over the boxes to see 
 </li>
 <li>
 <p><em>Ctrl+middle mouse button</em> cuts all connections passing under the cursor</p>
+</li>
+<li>
+<p><em>Ctrl+F</em> allows to search a box with its name</p>
 </li>
 </ul>
 </div>
@@ -1236,6 +1245,9 @@ Click on the Audacity client icon, in the drop-down menu choose <strong>Save as 
 <div class="paragraph">
 <p>RaySession will not rewrite clients added or deleted to the <code>session.nsm</code> file, as long as you open an NSM session with RaySession you must continue with RaySession.</p>
 </div>
+<div class="paragraph">
+<p>If ever you want to use another session manager, you will find in the menu <strong>File &#8594; Utilities &#8594; Convert the session to NSM file format</strong>. Obviously this leads to some changes, such as prefix mode or the way the JACK clients will be named, but nothing that prevents the session from working.</p>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1559,7 +1571,7 @@ If you are using Ardour, always run it from RaySession, firstly, the automatic s
 <li>
 <p><strong>Can I launch an Ardour session launched normally into a RaySession session ?</strong></p>
 <div class="paragraph">
-<p>You will find in source code <a href="https://github.com/Houston4444/RaySession/blob/master/scripts">here</a> a script named <code>ardour6_from_external_to_session.sh</code>. Before to use it, backup your ardour session directory. Download this file, set it executable and execute it with a .ardour file as argument, it will adds the ardour project to the current session, or create a session if no session is loaded.</p>
+<p>You will find in the menu <strong>File &#8594; Utililies &#8594; Convert an Ardour session to a Ray session</strong>, it creates and launch a RaySession session from an ardour session. It is adviced to backup your ardour session first. Obviously, Ardour must not be open with this session during the execution of this script, but you already knew that.</p>
 </div>
 </li>
 </ul>
@@ -1569,7 +1581,7 @@ If you are using Ardour, always run it from RaySession, firstly, the automatic s
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-08-25 11:55:06 +0200
+Last updated 2021-12-17 09:44:35 +0100
 </div>
 </div>
 </body>
