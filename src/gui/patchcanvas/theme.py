@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import json
+import logging
 import os
 import sys
 import time
@@ -7,13 +7,12 @@ import pickle
 from typing import TYPE_CHECKING
 
 from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF, QImage
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 
 _TITLE_TEMPLATES_CACHE = {}
 _FONT_METRICS_CACHE = {}
+_LOGGER = logging.getLogger(__name__)
 
-def print_error(string: str):
-    sys.stderr.write("patchcanvas.theme::%s\n" % string)
 
 def _to_qcolor(color) -> QColor:
     ''' convert a color given with a string, a list or a tuple (of ints)
@@ -87,15 +86,11 @@ def _to_qcolor(color) -> QColor:
     return None
 
 def rail_float(value, mini: float, maxi: float) -> float:
-    new_value = float(value)
-    new_value = min(new_value, float(maxi))
-    new_value = max(new_value, float(mini))
-    return new_value
-
+    return max(min(float(value), float(maxi)), float(mini))
 
 
 class StyleAttributer:
-    def __init__(self, path, parent=None):
+    def __init__(self, path: str, parent=None):
         self.subs = []
 
         self._border_color = None
@@ -239,18 +234,18 @@ class StyleAttributer:
                 self._box_footer = rail_float(value, 0, 50)
 
         else:
-            print_error("%s:unknown key: %s" % (self._path, attribute))
+            _LOGGER.error(f"{self._path}: unknown key: {attribute}")
 
         if err:
-            print_error("%s:invalid value for %s: %s"
-                        % (self._path, attribute, str(value)))
+            _LOGGER.error(
+                f"{self._path}: invalid value for {attribute}: {str(value)}")
 
     def set_style_dict(self, context: str, style_dict: dict):
         if context:
             begin, point, end = context.partition('.')
             
             if begin not in self.subs:
-                print_error("%s:invalid ignored key: %s" % (self._path, begin))
+                _LOGGER.error(f"{self._path}: invalid ignored key: {begin}")
                 return
             self.__getattribute__(begin).set_style_dict(end, style_dict)
             return
@@ -265,7 +260,7 @@ class StyleAttributer:
         # Note that for 'selected' section, it will look in 'selected' section
         # of parent before looking in parent section.
         if attribute not in self.__dir__():
-            print_error("get_value_of, invalide attribute: %s" % attribute)
+            _LOGGER.error(f"get_value_of, invalide attribute: {attribute}")
             return None
         
         if not orig_path:
@@ -287,9 +282,10 @@ class StyleAttributer:
                 return None
                 
             if self._parent is None:
-                print_error("get_value_of: %s None value and no parent"
-                            % self._path)
+                _LOGGER.error(
+                    f"get value of: {self._path} None value and no parent")
                 return None
+
             return self._parent.get_value_of(
                 attribute, orig_path, needed_attribute)
 
@@ -334,17 +330,17 @@ class StyleAttributer:
         font_size = str(self.get_value_of('_font_size'))
         font_width = str(self.get_value_of('_font_width'))
         
-        if not font_name in FONT_METRICS_CACHE.keys():
-            FONT_METRICS_CACHE[font_name] = {}
+        if not font_name in _FONT_METRICS_CACHE.keys():
+            _FONT_METRICS_CACHE[font_name] = {}
         
-        if not font_size in FONT_METRICS_CACHE[font_name].keys():
-            FONT_METRICS_CACHE[font_name][font_size] = {}
+        if not font_size in _FONT_METRICS_CACHE[font_name].keys():
+            _FONT_METRICS_CACHE[font_name][font_size] = {}
         
-        if not font_width in FONT_METRICS_CACHE[font_name][font_size].keys():
-            FONT_METRICS_CACHE[font_name][font_size][font_width] = {}
+        if not font_width in _FONT_METRICS_CACHE[font_name][font_size].keys():
+            _FONT_METRICS_CACHE[font_name][font_size][font_width] = {}
         
         self._font_metrics_cache = \
-            FONT_METRICS_CACHE[font_name][font_size][font_width]
+            _FONT_METRICS_CACHE[font_name][font_size][font_width]
     
     def get_text_width(self, string:str) -> float:
         if self._font_metrics_cache is None:
@@ -432,14 +428,14 @@ class StyleAttributer:
     
 
 class UnselectedStyleAttributer(StyleAttributer):
-    def __init__(self, path, parent=None):
+    def __init__(self, path: str, parent=None):
         StyleAttributer.__init__(self, path, parent=parent)
         self.selected = StyleAttributer(path + '.selected', self)
         self.subs.append('selected')
 
 
 class BoxStyleAttributer(UnselectedStyleAttributer):
-    def __init__(self, path, parent):
+    def __init__(self, path: str, parent):
         UnselectedStyleAttributer.__init__(self, path, parent)
         self.hardware = UnselectedStyleAttributer(path + '.hardware', self)
         self.client = UnselectedStyleAttributer(path + '.client', self)
@@ -448,7 +444,7 @@ class BoxStyleAttributer(UnselectedStyleAttributer):
 
 
 class PortStyleAttributer(UnselectedStyleAttributer):
-    def __init__(self, path, parent):
+    def __init__(self, path: str, parent):
         UnselectedStyleAttributer.__init__(self, path, parent)
         self.audio = UnselectedStyleAttributer(path + '.audio', self)
         self.midi = UnselectedStyleAttributer(path + '.midi', self)
@@ -457,7 +453,7 @@ class PortStyleAttributer(UnselectedStyleAttributer):
 
 
 class LineStyleAttributer(UnselectedStyleAttributer):
-    def __init__(self, path, parent):
+    def __init__(self, path: str, parent):
         UnselectedStyleAttributer.__init__(self, path, parent)
         self.audio = UnselectedStyleAttributer(path + '.audio', self)
         self.midi = UnselectedStyleAttributer(path + '.midi', self)
@@ -466,7 +462,7 @@ class LineStyleAttributer(UnselectedStyleAttributer):
 
 
 class GuiButtonStyleAttributer(StyleAttributer):
-    def __init__(self, path, parent):
+    def __init__(self, path: str, parent):
         StyleAttributer.__init__(self, path, parent)
         self.gui_visible = StyleAttributer('.gui_visible', self)
         self.gui_hidden = StyleAttributer('.gui_hidden', self)
@@ -559,7 +555,7 @@ class Theme(StyleAttributer):
     def read_theme(self, theme_dict: dict, theme_file_path: str):
         ''' theme_file_path is only used here to find external resources ''' 
         if not isinstance(theme_dict, dict):
-            print_error("invalid dict read error")
+            _LOGGER.error("invalid dict read error")
             return
         
         Theme.set_file_path(theme_file_path)
@@ -573,13 +569,13 @@ class Theme(StyleAttributer):
                 continue
             
             if not isinstance(value, dict):
-                print_error("'%s' must contains a dictionnary, ignored" % key)
+                _LOGGER.error(f"'{key}' must contains a dictionnary, ignored")
                 continue
             
             for alias_key, alias_value in value.items():
                 if not isinstance(alias_key, str):
-                    print_error("alias key must be a string. Ignore: %s"
-                                % str(alias_key))
+                    _LOGGER.error(
+                        f"alias key must be a string. Ignore: {str(alias_key)}")
                     continue
                 
                 self.aliases[alias_key] = alias_value
@@ -594,11 +590,11 @@ class Theme(StyleAttributer):
             begin, point, end = key.partition('.')
             
             if not isinstance(value, dict):
-                print_error("'%s' must contains a dictionnary, ignored" % key)
+                _LOGGER.error(f"'{key}' must contains a dictionnary, ignored")
                 continue
             
             if begin not in ['body'] + self.subs:
-                print_error("invalid ignored key: %s" % key)
+                _LOGGER.error(f"invalid ignored key: {key}")
                 continue
             
             # replace alias with alias value
@@ -667,7 +663,7 @@ class Theme(StyleAttributer):
                 global _TITLE_TEMPLATES_CACHE
                 _TITLE_TEMPLATES_CACHE = pickle.load(f)
             except:
-                print('failed to load cache', cache_file)
+                _LOGGER.warning(f"failed to load cache {cache_file}")
                 return
             
         font_cache_file = "%s/.cache/RaySession/patchbay_fonts" % os.environ['HOME']
@@ -676,10 +672,10 @@ class Theme(StyleAttributer):
 
         with open(font_cache_file, 'rb') as f:
             try:
-                global FONT_METRICS_CACHE
-                FONT_METRICS_CACHE = pickle.load(f)
+                global _FONT_METRICS_CACHE
+                _FONT_METRICS_CACHE = pickle.load(f)
             except:
-                print('failed to load font cache', font_cache_file)
+                _LOGGER.error(f"failed to load font cache {font_cache_file}")
                 return
     
     def save_cache(self):
@@ -694,4 +690,4 @@ class Theme(StyleAttributer):
             pickle.dump(_TITLE_TEMPLATES_CACHE, f)
         
         with open("%s/patchbay_fonts" % cache_dir, 'wb') as f:
-            pickle.dump(FONT_METRICS_CACHE, f)
+            pickle.dump(_FONT_METRICS_CACHE, f)

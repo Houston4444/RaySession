@@ -1,12 +1,15 @@
 
 import configparser
+import logging
 import os
 import shutil
 from pathlib import Path
 from PyQt5.QtCore import QTimer
 
-from .theme import print_error, Theme
+from .theme import Theme
 from .init_values import canvas, CallbackAct
+
+_LOGGER = logging.Logger(__name__)
 
 class ThemeManager:
     def __init__(self, theme_paths: tuple[Path]) -> None:
