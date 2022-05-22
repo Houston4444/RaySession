@@ -1,15 +1,20 @@
 import time
 import sys
+from typing import TYPE_CHECKING
 from PyQt5.QtCore import QObject, pyqtSignal
 
 import ray
 from gui_server_thread import GuiServerThread
 from client_properties_dialog import ClientPropertiesDialog
 
+if TYPE_CHECKING:
+    from gui_session import SignaledSession
+
 class Client(QObject, ray.ClientData):
     status_changed = pyqtSignal(int)
 
-    def __init__(self, session, client_id: str, protocol: int):
+    def __init__(self, session: 'SignaledSession',
+                 client_id: str, protocol: int):
         QObject.__init__(self)
         ray.ClientData.gui_init(self, client_id, protocol)
 

@@ -71,6 +71,8 @@ class PatchScene(AbstractPatchScene):
     def deplace_boxes_from_repulsers(self, repulser_boxes: list[CanvasBox],
                                      wanted_direction=Direction.NONE,
                                      new_scene_rect=None):
+        ''' This function change the place of boxes in order to have no box overlapping
+            other boxes.'''
         def get_direction(fixed_rect: QRectF, moving_rect: QRectF,
                           parent_directions=list[Direction]()) -> Direction:
             if (moving_rect.top() <= fixed_rect.center().y() <= moving_rect.bottom()
@@ -184,7 +186,7 @@ class PatchScene(AbstractPatchScene):
 
             return rect.intersects(large_repulser_rect)
 
-        # function start #
+        # --- function start ---
         if not options.prevent_overlap:
             return
         
@@ -230,7 +232,6 @@ class PatchScene(AbstractPatchScene):
                             repulser.item.get_current_port_mode(),
                             widget.get_current_port_mode()):
                         items_to_move.append(BoxAndRect(irect, widget))
-                        # items_to_move.append({'item': widget, 'rect': irect})
 
             for moving_box in self.move_boxes:
                 if (moving_box.widget in repulser_boxes
@@ -238,9 +239,6 @@ class PatchScene(AbstractPatchScene):
                     continue
 
                 widget = moving_box.widget
-                # if TYPE_CHECKING:
-                #     assert isinstance(widget, CanvasBox)
-                
                 irect = widget.boundingRect()
                 irect.translate(moving_box.to_pt)
                 

@@ -4,14 +4,14 @@ import shutil
 import time
 
 from PyQt5.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
-                             QDialogButtonBox, QMenu, QInputDialog, QMessageBox)
-from PyQt5.QtGui import QIcon, QColor, QCursor
-from PyQt5.QtCore import Qt, QTimer, QDateTime, QSize, QLocale, QPoint
+                             QDialogButtonBox, QMenu, QMessageBox)
+from PyQt5.QtGui import QIcon, QCursor
+from PyQt5.QtCore import Qt, QTimer, QDateTime, QLocale, QPoint
 
 import child_dialogs
 import ray
 
-from gui_tools import CommandLineArgs, RS, RayIcon, is_dark_theme, basename
+from gui_tools import CommandLineArgs, RayIcon, is_dark_theme, basename
 from child_dialogs import ChildDialog
 from client_properties_dialog import ClientPropertiesDialog
 from snapshots_dialog import (
@@ -45,7 +45,7 @@ class SessionItem(QTreeWidgetItem):
         self.is_session = is_session
         self.setTextAlignment(3, Qt.AlignRight | Qt.AlignVCenter)
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'SessionItem'):
         if self.childCount() and not other.childCount():
             return True
 
@@ -150,6 +150,9 @@ class SessionItem(QTreeWidgetItem):
         else:
             self.setFlags(self.flags() | Qt.ItemIsEnabled)
 
+    # Re-implemented protected Qt function
+    def child(self, index: int) -> 'SessionItem':
+        return QTreeWidgetItem.child(self, index)
 
 class SessionFolder:
     name = ""
@@ -158,7 +161,7 @@ class SessionFolder:
 
     def __init__(self, name):
         self.name = name
-        self.subfolders = []
+        self.subfolders = list[SessionFolder]()
         self.item = None
 
     def set_path(self, path):

@@ -3,6 +3,7 @@ import os
 import socket
 import sys
 import time
+from typing import TYPE_CHECKING
 from PyQt5.QtCore import QObject, QProcess, QTimer
 from PyQt5.QtWidgets import QApplication
 from liblo import Address
@@ -11,8 +12,11 @@ import ray
 from gui_server_thread import GuiServerThread
 from gui_tools import CommandLineArgs, ErrDaemon, _translate
 
+if TYPE_CHECKING:
+    from gui_session import SignaledSession
+
 class DaemonManager(QObject):
-    def __init__(self, session):
+    def __init__(self, session: 'SignaledSession'):
         QObject.__init__(self)
         self.session = session
         self.signaler = self.session.signaler

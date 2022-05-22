@@ -21,7 +21,6 @@
 # Imports (Globals)
 from math import floor
 import time
-from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
                           Qt, QPoint, QPointF, QRectF, QTimer, QMarginsF)

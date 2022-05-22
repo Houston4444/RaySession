@@ -2,10 +2,11 @@ import os
 import sys
 import time
 import subprocess
+from typing import TYPE_CHECKING
 
 from PyQt5.QtWidgets import (
-    QDialog, QDialogButtonBox, QTreeWidget, QTreeWidgetItem,
-    QCompleter, QMessageBox, QFileDialog, QApplication, QListWidgetItem)
+    QDialog, QDialogButtonBox, QCompleter, QMessageBox,
+    QFileDialog, QApplication, QListWidgetItem)
 from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
 from PyQt5.QtCore import Qt, QTimer
 
@@ -14,9 +15,6 @@ import ray
 from gui_server_thread import GuiServerThread
 from gui_tools import (ErrDaemon, _translate, get_app_icon,
                        CommandLineArgs, RS, is_dark_theme)
-
-from patchcanvas import patchcanvas
-
 
 import ui.new_session
 import ui.save_template_session
@@ -45,8 +43,11 @@ import ui.startup_dialog
 import ui.systray_close
 import ui.systray_management
 
+if TYPE_CHECKING:
+    from main_window import MainWindow
+
 class ChildDialog(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent: 'MainWindow'):
         QDialog.__init__(self, parent)
         self.session = parent.session
         self.signaler = self.session.signaler
@@ -478,7 +479,7 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
 
 
 class ClientTrashDialog(ChildDialog):
-    def __init__(self, parent, client_data):
+    def __init__(self, parent, client_data: ray.ClientData):
         ChildDialog.__init__(self, parent)
         self.ui = ui.client_trash.Ui_Dialog()
         self.ui.setupUi(self)
@@ -646,7 +647,8 @@ class SessionNotesDialog(ChildDialog):
                 QMessageBox.Critical,
                 _translate('session_notes', 'Too long notes'),
                 _translate('session_notes',
-                           "<p>Because notes are spread to the OSC server,<br>they can't be longer than 65000 characters.<br>Sorry !</p>"),
+                           "<p>Because notes are spread to the OSC server,<br>"
+                           "they can't be longer than 65000 characters.<br>Sorry !</p>"),
                 QMessageBox.Cancel,
                 self)
             self._message_box.exec()
@@ -833,7 +835,7 @@ class NewExecutableDialog(ChildDialog):
     def _prefix_mode_changed(self, index: int):
         self.ui.lineEditPrefix.setEnabled(bool(index == 0))
 
-    def _add_executable_to_completer(self, executable_list):
+    def _add_executable_to_completer(self, executable_list: list):
         self.exec_list += executable_list
         self.exec_list.sort()
 
@@ -841,12 +843,10 @@ class NewExecutableDialog(ChildDialog):
         self._completer = QCompleter(self.exec_list)
         self.ui.lineEdit.setCompleter(self._completer)
 
-    def _is_allowed(self):
+    def _is_allowed(self) -> bool:
         nsm = self.ui.checkBoxNsm.isChecked()
         text = self.ui.lineEdit.text()
-        allow = bool(bool(text) and (not nsm
-                                     or text in self.exec_list))
-        return allow
+        return bool(bool(text) and (not nsm or text in self.exec_list))
 
     def _check_allow(self):
         allow = self._is_allowed()
@@ -884,9 +884,9 @@ class StopClientDialog(ChildDialog):
                 minutes = int((time.time() - self.client.last_save) / 60)
                 text = _translate(
                     'client_stop',
-                    "<strong>%s</strong> seems to has not been saved for %i minute(s).<br />Do you really want to stop it ?") \
+                    "<strong>%s</strong> seems to has not been saved for %i minute(s).<br />"
+                    "Do you really want to stop it ?") \
                         % (self.client.prettier_name(), minutes)
-
             self.ui.label.setText(text)
 
             self.client.status_changed.connect(self._server_updates_client_status)

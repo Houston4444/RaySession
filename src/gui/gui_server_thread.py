@@ -1,10 +1,12 @@
 import os
 import sys
+from typing import TYPE_CHECKING
 import liblo
-import time
 
 import ray
 from gui_tools import CommandLineArgs
+if TYPE_CHECKING:
+    from gui_session import SignaledSession
 
 _instance = None
 
@@ -56,7 +58,7 @@ class GuiServerThread(liblo.ServerThread):
 
         liblo.ServerThread.stop(self)
 
-    def finish_init(self, session):
+    def finish_init(self, session: 'SignaledSession'):
         self.session = session
         self.signaler = self.session.signaler
         self.daemon_manager = self.session.daemon_manager
@@ -146,7 +148,7 @@ class GuiServerThread(liblo.ServerThread):
         self.signaler.osc_receive.emit(path, args)
 
     @ray_method('/reply', None)
-    def _reply(self, path, args, types, src_addr):
+    def _reply(self, path, args: list, types: str, src_addr):
         if not (types and ray.types_are_all_strings(types)):
             return False
 

@@ -269,7 +269,7 @@ def is_git_taggable(string)->bool:
 
     return True
 
-def is_valid_full_path(path: str)->bool:
+def is_valid_full_path(path: str) -> bool:
     if not path.startswith('/'):
         return False
 
@@ -281,7 +281,7 @@ def is_valid_full_path(path: str)->bool:
         return False
     return True
 
-def is_osc_port_free(port:int):
+def is_osc_port_free(port: int) -> bool:
     try:
         testport = Server(port)
     except BaseException:
@@ -312,14 +312,14 @@ def get_free_osc_port(default=16187):
     del testport
     return daemon_port
 
-def is_valid_osc_url(url:str):
+def is_valid_osc_url(url: str) -> bool:
     try:
         address = liblo.Address(url)
         return True
     except BaseException:
         return False
 
-def get_liblo_address(url):
+def get_liblo_address(url: str):
     valid_url = False
     try:
         address = liblo.Address(url)

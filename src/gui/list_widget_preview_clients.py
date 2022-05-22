@@ -13,7 +13,8 @@ import ui.preview_client_slot
 
 
 class ClientSlot(QFrame):
-    def __init__(self, list_widget, list_widget_item, client):
+    def __init__(self, list_widget: 'ListWidgetPreviewClients',
+                 list_widget_item, client: ray.ClientData):
         QFrame.__init__(self)
         self.ui = ui.preview_client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
@@ -35,9 +36,6 @@ class ClientSlot(QFrame):
         self._menu.addAction(self.ui.actionProperties)
 
         self.ui.iconButton.setMenu(self._menu)
-
-        dark = is_dark_theme(self)
-
         self.update_client_data()
         
         self._server_status = ray.ServerStatus.OFF
@@ -86,7 +84,6 @@ class ClientSlot(QFrame):
 
         if main_size <= max_label_width:
             self.ui.ClientName.setText(self.client.prettier_name())
-            #self._set_fat(False)
             return
 
         # split title in two lines
@@ -103,7 +100,6 @@ class ClientSlot(QFrame):
 
         if max_size <= max_label_width:
             self.ui.ClientName.setText('\n'.join((top, bottom)))
-            #self._set_fat(False)
             return
 
         # responsive design, put label at top of the controls
@@ -112,11 +108,8 @@ class ClientSlot(QFrame):
         max_label_width = layout_width - 50
 
         if main_size <= max_label_width:
-            #self._set_fat(True)
             self.ui.ClientName.setText(self.client.prettier_name())
             return
-
-        #self._set_fat(True, very_fat=True)
 
         top, bottom = split_in_two(self.client.prettier_name())
         self.ui.ClientName.setText('\n'.join((top, bottom)))

@@ -20,14 +20,3 @@ Commenter plus
 #enlever les qcritical -> logger
 Bug: connection non sélectionnée après clic droit
 
-self._hover_item voir une soluce pour que VsCodium le trouve
-    trigger_disconnect
-
-    Classe mère pour tout qgraphicsitem
-    Classe pour connectable (Port ou portgroup)
-    Classe pour triggerable (port, portgroup ou connection)
-
-    méthodes dans la scene pour itérer que certaines classes, puisque elle peut importer tous les types
-
-revoir deplace_repulser.. (scene) avec des objets (plus facile d'identifier les types)
-    Probablement séparer fonction (elle fait déjà 300 lignes)
