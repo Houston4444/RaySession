@@ -38,11 +38,11 @@ class Session(ServerSender):
         self.is_dummy = False
         self.session_id = session_id
 
-        self.clients = []
-        self.future_clients = []
-        self.trashed_clients = []
-        self.future_trashed_clients = []
-        self.new_client_exec_args = []
+        self.clients = list[Client]()
+        self.future_clients = list[Client]()
+        self.trashed_clients = list[Client]()
+        self.future_trashed_clients = list[Client]()
+        self.new_client_exec_args = list[str]
         self.favorites = []
         self.recent_sessions = {}
 

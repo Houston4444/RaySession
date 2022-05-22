@@ -4,7 +4,8 @@ import random
 import shutil
 import subprocess
 import time
-import liblo
+from typing import TYPE_CHECKING
+import over_liblo as liblo
 
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtXml import QDomDocument
@@ -14,12 +15,14 @@ from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
 from daemon_tools import (TemplateRoots, CommandLineArgs, Terminal, RS,
                           get_code_root)
+if TYPE_CHECKING:
+    from session_signaled import SignaledSession
 
 instance = None
 signaler = Signaler.instance()
 _translate = QCoreApplication.translate
 
-def _path_is_valid(path: str)->bool:
+def _path_is_valid(path: str) -> bool:
     if path.startswith(('./', '../')):
         return False
 
@@ -61,7 +64,7 @@ class GuiAdress(liblo.Address):
 # ClientCommunicating contains NSM protocol.
 # OSC paths have to be never changed.
 class ClientCommunicating(liblo.ServerThread):
-    def __init__(self, session, osc_num=0):
+    def __init__(self, session: 'SignaledSession', osc_num=0):
         liblo.ServerThread.__init__(self, osc_num)
         self.session = session
 
@@ -69,9 +72,9 @@ class ClientCommunicating(liblo.ServerThread):
         self._net_master_daemon_url = ''
         self._list_asker_addr = None
 
-        self.gui_list = []
-        self.controller_list = []
-        self.monitor_list = []
+        self.gui_list = list[liblo.Address]()
+        self.controller_list = list[Controller]()
+        self.monitor_list = list[liblo.Address]()
         self.server_status = ray.ServerStatus.OFF
         self.is_nsm_locked = False
         self.not_default = False
@@ -214,8 +217,11 @@ class ClientCommunicating(liblo.ServerThread):
             return False
 
     @ray_method('/nsm/server/broadcast', None)
-    def nsmServerBroadcast(self, path, args, types, src_addr):
+    def nsmServerBroadcast(self, path, args, types, src_addr: liblo.Address):
         if not args:
+            return False
+
+        if not isinstance(args[0], str):
             return False
 
         #don't allow clients to broadcast NSM commands
@@ -329,6 +335,9 @@ class ClientCommunicating(liblo.ServerThread):
         self.send(src_addr, '/minor_error', path, ray.Err.UNKNOWN_MESSAGE,
                   "unknown osc message: %s %s" % (path, types))
 
+    def send_gui(self, *args):
+        # should be overclassed
+        pass
 
 class OscServerThread(ClientCommunicating):
     def __init__(self, session, osc_num=0):

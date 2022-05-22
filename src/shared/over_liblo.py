@@ -35,6 +35,11 @@ class ServerThread(liblo.ServerThread):
         return liblo.ServerThread.send(self, *args, **kwargs)
 
 
+class Message(liblo.Message):
+    def __init__(self, *args, **kwargs):
+        liblo.Message(self, *args, **kwargs)
+
+
 class Address(liblo.Address):
     hostname: str
     url: str

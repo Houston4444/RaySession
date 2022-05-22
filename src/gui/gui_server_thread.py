@@ -1,7 +1,7 @@
 import os
 import sys
 from typing import TYPE_CHECKING
-import liblo
+import over_liblo as liblo
 
 import ray
 from gui_tools import CommandLineArgs
@@ -290,7 +290,7 @@ class GuiServerThread(liblo.ServerThread):
         self.patchbay_addr = src_addr
 
     @ray_method('/ray/gui/patchbay/update_portgroup', None)
-    def _patchbay_update_portgroup(self, path, args, types, src_addr):
+    def _patchbay_update_portgroup(self, path, args, types: str, src_addr):
         if not types.startswith('siiis'):
             return False
 
