@@ -95,7 +95,7 @@ class CanvasPortGroup(CanvasConnectable):
     def set_portgrp_width(self, portgrp_width: float):
         self._portgrp_width = portgrp_width
 
-    def set_ports_width(self, ports_width:int):
+    def set_ports_width(self, ports_width: int):
         self._ports_width = ports_width
 
     def set_print_name(self, print_name:str, width_limited: int):
@@ -132,7 +132,7 @@ class CanvasPortGroup(CanvasConnectable):
                 self._print_name_right = right_text
                 self._name_truncked = True
 
-    def reduce_print_name(self, width_limited:int):
+    def reduce_print_name(self, width_limited: int):
         self.set_print_name(self._normal_print_name, width_limited)
 
     def get_text_width(self):
@@ -213,16 +213,6 @@ class CanvasPortGroup(CanvasConnectable):
             poly_corner_xhinting = 0.5 * (1 - 7 / (canvas.theme.port_height / 2))
 
         if self._port_mode is PortMode.INPUT:
-            port_width = canvas.theme.port_grouped_width
-
-            for port in canvas.port_list:
-                if port.port_id in self._port_ids:
-                    port_print_name = utils.get_port_print_name(
-                        port.group_id, port.port_id, self._portgrp_id)
-                    port_in_p_width = \
-                        QFontMetrics(self._portgrp_font).width(port_print_name) + 3
-                    port_width = max(port_width, port_in_p_width)
-
             text_pos = QPointF(
                 self._ports_width + 3,
                 12 + (canvas.theme.port_height * (len(self._port_ids) -1)/2))

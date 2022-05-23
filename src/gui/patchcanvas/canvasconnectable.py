@@ -65,13 +65,14 @@ class CanvasConnectable(QGraphicsItem):
     def get_port_type(self) -> PortType:
         return self._port_type
 
-    def is_alternate(self):
-        return False
+    def is_alternate(self) -> bool:
+        return self._is_alternate
 
     def get_connection_distance(self) -> float:
         return 0.0
 
     def trigger_disconnect(self):
+        " used to disconnect ports/portgroups from Ctrl+Middle Click "
         conn_ids_to_remove = list[int]()
         
         for connection in canvas.connection_list:
@@ -461,7 +462,7 @@ class CanvasConnectable(QGraphicsItem):
             canvas.is_line_mov = False
         QGraphicsItem.mouseReleaseEvent(self, event)
         
-    def itemChange(self, change, value: bool):
+    def itemChange(self, change: int, value: bool):
         if change == QGraphicsItem.ItemSelectedHasChanged:
             for connection in canvas.connection_list:
                 if connection.concerns(self._group_id, self._port_ids):

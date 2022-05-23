@@ -1,6 +1,6 @@
 
 import liblo
-
+from liblo import Message
 
 def make_method(*args, **kwargs):
     return liblo.make_method(*args, **kwargs)
@@ -34,10 +34,11 @@ class ServerThread(liblo.ServerThread):
     def send(self, *args, **kwargs):
         return liblo.ServerThread.send(self, *args, **kwargs)
 
-
-class Message(liblo.Message):
-    def __init__(self, *args, **kwargs):
-        liblo.Message(self, *args, **kwargs)
+''' seems impossible to overinstance Message,
+    it may be checked with type() function'''
+# class Message(liblo.Message):
+#     def __init__(self, *args, **kwargs):
+#         liblo.Message(self, *args, **kwargs)
 
 
 class Address(liblo.Address):
