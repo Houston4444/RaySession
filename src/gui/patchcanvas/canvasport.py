@@ -22,6 +22,7 @@
 import logging
 from math import floor
 import time
+from tokenize import group
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt, QPointF, QRectF
@@ -49,6 +50,7 @@ from .connect_menu import MainPortContextMenu
 
 if TYPE_CHECKING:
     from .canvasbox import CanvasBox
+    from .canvasportgroup import CanvasPortGroup
 
 # --------------------
 _translate = QApplication.translate
@@ -91,6 +93,9 @@ class CanvasPort(CanvasConnectable):
         
         self._theme = theme
         self._port_font = theme.font()
+        
+        self._portgrp_widget = None
+        self._loop_select_done = False
 
     def get_port_id(self) -> int:
         return self._port_id
@@ -112,6 +117,9 @@ class CanvasPort(CanvasConnectable):
         self._portgrp_id = portgrp_id
         self._portgrp_index = index
         self._portgrp_len = portgrp_len
+
+    def set_portgroup_widget(self, widget: 'CanvasPortGroup'):
+        self._portgrp_widget = widget
 
     def set_port_name(self, port_name: str):
         self._port_name = port_name
@@ -199,6 +207,32 @@ class CanvasPort(CanvasConnectable):
 
     def parentItem(self) -> 'CanvasBox':
         return super().parentItem()
+
+    def itemChange(self, change: int, value: bool):
+        if change == QGraphicsItem.ItemSelectedHasChanged:
+            if self.changing_select_state:
+                self.changing_select_state = False
+                return
+            
+            self.changing_select_state = True
+
+            if self._portgrp_widget is not None:
+                if self._portgrp_widget.mouse_releasing:
+                    # if not value:            
+                        self.setSelected(self._portgrp_widget.isSelected())
+                elif not self._portgrp_widget.changing_select_state:
+                    self._portgrp_widget.ensure_selection_with_ports()
+                # else:
+                #     self._loop_select_done = False
+                    # return
+            
+            for connection in canvas.connection_list:
+                if connection.concerns(self._group_id, self._port_ids):
+                    connection.widget.set_line_selected(value)
+
+            self.changing_select_state = False
+
+        return QGraphicsItem.itemChange(self, change, value)
 
     def contextMenuEvent(self, event):
         if canvas.scene.get_zoom_scale() <= 0.4:

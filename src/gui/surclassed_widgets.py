@@ -319,7 +319,7 @@ class DraggableGraphicsView(QGraphicsView):
     def __init__(self, parent):
         QGraphicsView.__init__(self, parent)
 
-        self._panning = False
+        self.panning = False
 
         try:
             self._middle_button = Qt.MiddleButton
@@ -327,9 +327,10 @@ class DraggableGraphicsView(QGraphicsView):
             self._middle_button = Qt.MidButton
 
     def mousePressEvent(self, event):
+        print('viexw press', event.button())
         if (event.button() == self._middle_button
                 and not QApplication.keyboardModifiers() & Qt.ControlModifier):
-            self._panning = True
+            self.panning = True
             self.setDragMode(QGraphicsView.ScrollHandDrag)
             event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton,
                                 Qt.LeftButton, event.modifiers())
@@ -339,10 +340,10 @@ class DraggableGraphicsView(QGraphicsView):
     def mouseReleaseEvent(self, event):
         QGraphicsView.mouseReleaseEvent(self, event)
 
-        if not self._panning:
+        if not self.panning:
             return
 
-        self._panning = False
+        self.panning = False
         self.setDragMode(QGraphicsView.NoDrag)
         self.setCursor(QCursor(Qt.ArrowCursor))
 

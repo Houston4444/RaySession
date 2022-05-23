@@ -3,7 +3,7 @@ import time
 from typing import TYPE_CHECKING
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor
-from PyQt5.QtWidgets import QGraphicsItem
+from PyQt5.QtWidgets import QGraphicsItem, QApplication
 
 from .init_values import (
     CallbackAct,
@@ -52,6 +52,9 @@ class CanvasConnectable(QGraphicsItem):
         self._mouse_down = False
         self._cursor_moving = False
         self._has_connections = False
+        
+        self.mouse_releasing = False
+        self.changing_select_state = False
         
     def get_group_id(self) -> int:
         return self._group_id
@@ -224,6 +227,7 @@ class CanvasConnectable(QGraphicsItem):
                                     self._group_id, port_id)
     
     def parentItem(self) -> 'CanvasBox':
+        # only here to say IDE parent is a CanvasBox
         return super().parentItem()
     
     def hoverEnterEvent(self, event):
@@ -273,17 +277,13 @@ class CanvasConnectable(QGraphicsItem):
         QGraphicsItem.mousePressEvent(self, event)
         
     def mouseMoveEvent(self, event):
-        if not self._mouse_down:
+        if not event.buttons() & Qt.LeftButton:
             QGraphicsItem.mouseMoveEvent(self, event)
             return
 
         if not self._cursor_moving:
             self.setCursor(QCursor(Qt.CrossCursor))
             self._cursor_moving = True
-
-            for connection in canvas.connection_list:
-                if connection.concerns(self._group_id, self._port_ids):
-                    connection.widget.locked = True
 
         if not self._line_mov_list:
             self._last_rclick_item = None
@@ -440,10 +440,6 @@ class CanvasConnectable(QGraphicsItem):
                     del item
                 self._line_mov_list.clear()
 
-                for connection in canvas.connection_list:
-                    if connection.concerns(self._group_id, self._port_ids):
-                        connection.widget.locked = False
-
                 if self._hover_item:
                     if (self._last_rclick_item is not self._hover_item
                             and time.time() > self._r_click_time + 0.3):
@@ -460,12 +456,7 @@ class CanvasConnectable(QGraphicsItem):
             self._mouse_down = False
             self._cursor_moving = False
             canvas.is_line_mov = False
-        QGraphicsItem.mouseReleaseEvent(self, event)
         
-    def itemChange(self, change: int, value: bool):
-        if change == QGraphicsItem.ItemSelectedHasChanged:
-            for connection in canvas.connection_list:
-                if connection.concerns(self._group_id, self._port_ids):
-                    connection.widget.set_line_selected(value)
-
-        return QGraphicsItem.itemChange(self, change, value)
+        self.mouse_releasing = True
+        QGraphicsItem.mouseReleaseEvent(self, event)
+        self.mouse_releasing = False

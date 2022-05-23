@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QPointF, QRectF
 from PyQt5.QtGui import (QFontMetrics, QPainter,
                          QPolygonF, QLinearGradient, QPen)
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QGraphicsItem
 
 # Imports (Custom)
 import patchcanvas.utils as utils
@@ -79,6 +79,13 @@ class CanvasPortGroup(CanvasConnectable):
         self._print_name_right = ''
         self._name_truncked = False
         self._trunck_sep = '⠿'
+        
+        self._ports_widgets = [p.widget for p in canvas.port_list
+                               if p.group_id == group_id
+                               and p.portgrp_id == portgrp_id]
+        for port_widget in self._ports_widgets:
+            port_widget.set_portgroup_widget(self)
+        # self.changing_select_state = False
 
     def is_alternate(self) -> bool:
         return False
@@ -146,6 +153,31 @@ class CanvasPortGroup(CanvasConnectable):
     def _split_to_monos(self):
         utils.canvas_callback(CallbackAct.PORTGROUP_REMOVE,
                               self._group_id, self._portgrp_id)
+
+    def ensure_selection_with_ports(self):
+        for port_widget in self._ports_widgets:
+            if not port_widget.isSelected():
+                self.setSelected(False)
+                return
+        self.setSelected(True)
+
+    def itemChange(self, change: int, value: bool):
+        if change == QGraphicsItem.ItemSelectedHasChanged:
+            self.changing_select_state = True
+            
+            modify_port_selection = True
+            for port_widget in self._ports_widgets:
+                if port_widget.changing_select_state:
+                    modify_port_selection = False
+            
+            if modify_port_selection:
+                for port_widget in self._ports_widgets:
+                    if not port_widget.changing_select_state:
+                        port_widget.setSelected(bool(value))
+
+            self.changing_select_state = False
+
+        return QGraphicsItem.itemChange(self, change, value)
 
     def contextMenuEvent(self, event):
         if canvas.scene.get_zoom_scale() <= 0.4:

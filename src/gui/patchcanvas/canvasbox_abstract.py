@@ -804,7 +804,6 @@ class CanvasBoxAbstract(QGraphicsItem):
         self.setZValue(canvas.last_z_value)
         self.resetLinesZValue()
         self._cursor_moving = False
-
         if event.button() == Qt.RightButton:
             event.accept()
             canvas.scene.clearSelection()

@@ -43,9 +43,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         
         # is true when the connection will be undo by user if (s)he
         # leaves the mouse button
-        self.ready_to_disc = False
-        self.locked = False
-        
+        self.ready_to_disc = False        
         self._line_selected = False
         self._semi_hidden = False
 
@@ -54,10 +52,8 @@ class CanvasBezierLine(QGraphicsPathItem):
         self.update_line_pos()
 
     def set_line_selected(self, yesno: bool):
-        if self.locked:
-            return
-
-        self._line_selected = yesno
+        self._line_selected = bool(self.item1.isSelected()
+                                   or self.item2.isSelected())
         self.update_line_gradient()
 
     def trigger_disconnect(self):
