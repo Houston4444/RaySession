@@ -89,7 +89,7 @@ def rail_float(value, mini: float, maxi: float) -> float:
 
 class StyleAttributer:
     def __init__(self, path: str, parent=None):
-        self.subs = []
+        self.subs = list[str]()
 
         self._border_color = None
         self._border_width = None

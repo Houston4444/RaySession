@@ -47,11 +47,11 @@ from .init_values import (
     Direction)
 
 import patchcanvas.utils as utils
-from .canvasboxshadow import CanvasBoxShadow
-from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
-from .canvasport import CanvasPort
-from .canvasportgroup import CanvasPortGroup
-from .canvasbezierline import CanvasBezierLine
+from .box_widget_shadow import BoxWidgetShadow
+from .icon_widget import IconSvgWidget, IconPixmapWidget
+from .port_widget import PortWidget
+from .portgroup_widget import PortgroupWidget
+from .line_widget import LineWidget
 from .theme import BoxStyleAttributer
 
 _translate = QApplication.translate
@@ -85,7 +85,7 @@ class TitleLine:
         return self.theme.font()
 
 
-class CanvasBoxAbstract(QGraphicsItem):
+class CanvasWidgetMoth(QGraphicsItem):
     # inline display is not usable in RaySession
     # but this patchcanvas module has been forked from Carla
     # and all about inline_display has been kept (we never know)
@@ -139,7 +139,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._inline_scaling = 1.0
 
         self._port_list_ids = list[int]()
-        self._connection_lines = list[CanvasBezierLine]()
+        self._connection_lines = list[LineWidget]()
 
         self._is_hardware = bool(icon_type == IconType.HARDWARE)
         self._icon_name = icon_name
@@ -159,10 +159,10 @@ class CanvasBoxAbstract(QGraphicsItem):
             port_mode = PortMode.NULL
             if self._splitted:
                 port_mode = self._splitted_mode
-            self.top_icon = CanvasSvgIcon(
+            self.top_icon = IconSvgWidget(
                 icon_type, icon_name, port_mode, self)
         else:
-            self.top_icon = CanvasIconPixmap(icon_type, icon_name, self)
+            self.top_icon = IconPixmapWidget(icon_type, icon_name, self)
             if self.top_icon.is_null():
                 top_icon = self.top_icon
                 self.top_icon = None
@@ -181,7 +181,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         # FIXME FX on top of graphic items make them lose high-dpi
         # See https://bugreports.qt.io/browse/QTBUG-65035
         if options.eyecandy and canvas.scene.get_device_pixel_ratio_f() == 1.0:
-            self.shadow = CanvasBoxShadow(self.toGraphicsObject())
+            self.shadow = BoxWidgetShadow(self.toGraphicsObject())
             self.shadow.set_fake_parent(self)
             self.shadow.set_theme(shadow_theme)
             self.setGraphicsEffect(self.shadow)
@@ -276,13 +276,13 @@ class CanvasBoxAbstract(QGraphicsItem):
             port_mode = PortMode.NULL
             if self._splitted:
                 port_mode = self._splitted_mode
-            self.top_icon = CanvasSvgIcon(icon_type, icon_name, port_mode, self)
+            self.top_icon = IconSvgWidget(icon_type, icon_name, port_mode, self)
             return
 
         if self.top_icon is not None:
             self.top_icon.set_icon(icon_type, icon_name, self._current_port_mode)
         else:
-            self.top_icon = CanvasIconPixmap(icon_type, icon_name, self)
+            self.top_icon = IconPixmapWidget(icon_type, icon_name, self)
 
         self.update_positions()
 
@@ -326,7 +326,7 @@ class CanvasBoxAbstract(QGraphicsItem):
                             port_name, is_alternate):
         self.setVisible(True)
 
-        new_widget = CanvasPort(self._group_id, port_id, port_name, port_mode,
+        new_widget = PortWidget(self._group_id, port_id, port_name, port_mode,
                                 port_type, is_alternate, self)
         if self._wrapped:
             new_widget.setVisible(False)
@@ -354,7 +354,7 @@ class CanvasBoxAbstract(QGraphicsItem):
 
     def add_portgroup_from_group(self, portgrp_id, port_mode,
                                  port_type, port_id_list):
-        new_widget = CanvasPortGroup(self._group_id, portgrp_id, port_mode,
+        new_widget = PortgroupWidget(self._group_id, portgrp_id, port_mode,
                                      port_type, port_id_list, self)
 
         if self._wrapped:
@@ -362,11 +362,11 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         return new_widget
 
-    def add_line_to_box(self, line: 'CanvasBezierLine'):
+    def add_line_to_box(self, line: 'LineWidget'):
         self._connection_lines.append(line)
         self.reset_lines_z_value(self.isSelected())
 
-    def remove_line_from_box(self, line: 'CanvasBezierLine'):
+    def remove_line_from_box(self, line: 'LineWidget'):
         if line in self._connection_lines:
             self._connection_lines.remove(line)
 

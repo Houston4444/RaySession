@@ -30,7 +30,7 @@ from PyQt5.QtWidgets import QApplication, QGraphicsItem
 
 # Imports (Custom)
 import patchcanvas.utils as utils
-from .canvasconnectable import CanvasConnectable
+from .connectable_widget import ConnectableWidget
 from .init_values import (
     CanvasItemType,
     canvas,
@@ -40,7 +40,7 @@ from .init_values import (
 from .connect_menu import MainPortContextMenu
 
 if TYPE_CHECKING:
-    from .canvasbox import CanvasBox
+    from .box_widget import BoxWidget
 
 # -------------------------
 
@@ -49,11 +49,11 @@ _translate = QApplication.translate
 # -------------------------
 
 
-class CanvasPortGroup(CanvasConnectable):
+class PortgroupWidget(ConnectableWidget):
     def __init__(self, group_id: int, portgrp_id: int, port_mode: PortMode,
                  port_type: PortType, port_id_list: tuple[int],
-                 parent: 'CanvasBox'):
-        CanvasConnectable.__init__(self, group_id, port_id_list,
+                 parent: 'BoxWidget'):
+        ConnectableWidget.__init__(self, group_id, port_id_list,
                                    port_mode, port_type, False, parent)
         self._logger = logging.getLogger(__name__)
 

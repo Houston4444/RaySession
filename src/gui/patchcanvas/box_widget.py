@@ -15,7 +15,7 @@ from .init_values import (
     IconType)
 import patchcanvas.utils as utils
 from .theme import Theme
-from .canvasbox_abstract import CanvasBoxAbstract, UnwrapButton, TitleLine
+from .box_widget_moth import CanvasWidgetMoth, UnwrapButton, TitleLine
 
 
 class TitleOn(IntEnum):
@@ -47,10 +47,10 @@ class BoxArea:
         return self.area() < other.area()
 
 
-class CanvasBox(CanvasBoxAbstract):
+class BoxWidget(CanvasWidgetMoth):
     def __init__(self, group_id: int, group_name: str, icon_type: int,
                  icon_name: str, parent=None):
-        CanvasBoxAbstract.__init__(
+        CanvasWidgetMoth.__init__(
             self, group_id, group_name, icon_type, icon_name, parent)
         self._port_list = list[PortObject]()
         self._portgrp_list = list[PortgrpObject]()

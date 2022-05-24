@@ -27,14 +27,14 @@ from PyQt5.QtWidgets import QGraphicsPixmapItem
 
 from .init_values import canvas, CanvasItemType, IconType, PortMode
 
-_LOGGER = logging.getLogger(__name__)
 
-APP_ICONS_CACHE = {}
+_logger = logging.getLogger(__name__)
+_app_icons_cache = {}
 
 
 def get_app_icon(icon_name: str) -> QIcon:
-    if icon_name in APP_ICONS_CACHE.keys():
-        return APP_ICONS_CACHE[icon_name]
+    if icon_name in _app_icons_cache.keys():
+        return _app_icons_cache[icon_name]
     
     icon = QIcon.fromTheme(icon_name)
 
@@ -58,12 +58,12 @@ def get_app_icon(icon_name: str) -> QIcon:
                     icon.addFile(filename)
                     break
 
-    APP_ICONS_CACHE[icon_name] = icon
+    _app_icons_cache[icon_name] = icon
 
     return icon
 
 
-class CanvasIconPixmap(QGraphicsPixmapItem):
+class IconPixmapWidget(QGraphicsPixmapItem):
     def __init__(self, icon_type, icon_name, parent):
         QGraphicsPixmapItem.__init__(self)
         self.setParentItem(parent)
@@ -107,7 +107,7 @@ class CanvasIconPixmap(QGraphicsPixmapItem):
         return CanvasItemType.ICON
 
 
-class CanvasSvgIcon(QGraphicsSvgItem):
+class IconSvgWidget(QGraphicsSvgItem):
     def __init__(self, icon_type, name, port_mode, parent):
         QGraphicsSvgItem.__init__(self)
         self.setParentItem(parent)
@@ -187,7 +187,7 @@ class CanvasSvgIcon(QGraphicsSvgItem):
 
         else:
             self._size = QRectF(0, 0, 0, 0)
-            _LOGGER.critical(f"set_icon({str(icon_type)}, {name})"
+            _logger.critical(f"set_icon({str(icon_type)}, {name})"
                              " - unsupported icon requested")
             return
 

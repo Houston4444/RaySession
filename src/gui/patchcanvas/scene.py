@@ -30,26 +30,26 @@ from .init_values import (
     PortMode,
     Direction)
 
-from .scene_abstract import AbstractPatchScene
-from .canvasbox import CanvasBox
+from .scene_moth import PatchSceneMoth
+from .box_widget import BoxWidget
 
 
 class BoxAndRect:
     rect: QRectF
-    item: CanvasBox
+    item: BoxWidget
     
-    def __init__(self, rect: QRectF, item: CanvasBox):
+    def __init__(self, rect: QRectF, item: BoxWidget):
         self.rect, self.item = rect, item
         
 
 class ToMoveBox:
     directions: list[Direction]
     pos: float
-    item: CanvasBox
+    item: BoxWidget
     repulser: BoxAndRect
 
     def __init__(self, directions: list[Direction], pos: float,
-                 item: CanvasBox, repulser: BoxAndRect):
+                 item: BoxWidget, repulser: BoxAndRect):
         self.directions = directions
         self.pos = pos
         self.item = item
@@ -61,14 +61,14 @@ class ToMoveBox:
         return self.pos < other.pos
     
 
-class PatchScene(AbstractPatchScene):
+class PatchScene(PatchSceneMoth):
     " This class part of the scene is for repulsive boxes option "
     " because the algorythm is not simple and takes a lot of lines."
     " See scene_abstract.py for others scene methods."
     def __init__(self, parent, view: QGraphicsView):
-        AbstractPatchScene.__init__(self, parent, view)
+        PatchSceneMoth.__init__(self, parent, view)
 
-    def deplace_boxes_from_repulsers(self, repulser_boxes: list[CanvasBox],
+    def deplace_boxes_from_repulsers(self, repulser_boxes: list[BoxWidget],
                                      wanted_direction=Direction.NONE,
                                      new_scene_rect=None):
         ''' This function change the place of boxes in order to have no box overlapping
@@ -104,12 +104,12 @@ class PatchScene(AbstractPatchScene):
                 where fixed_rect is an already determinated futur place
                 for a box '''
                 
-            if isinstance(fixed, CanvasBox):
+            if isinstance(fixed, BoxWidget):
                 fixed_rect = fixed.boundingRect().translated(fixed.pos())
             else:
                 fixed_rect = fixed
             
-            if isinstance(moving, CanvasBox):
+            if isinstance(moving, BoxWidget):
                 rect = moving.boundingRect().translated(moving.pos())
             else:
                 rect = moving
@@ -343,7 +343,7 @@ class PatchScene(AbstractPatchScene):
             
             for moving_box in self.move_boxes:
                 mitem = moving_box.widget
-                assert isinstance(mitem, CanvasBox)
+                assert isinstance(mitem, BoxWidget)
                 
                 if (mitem in repulser_boxes
                         or mitem in [b.item for b in to_move_boxes]):
@@ -370,7 +370,7 @@ class PatchScene(AbstractPatchScene):
                 item, to_send_rect.left(), to_send_rect.top())
 
     def bring_neighbors_and_deplace_boxes(
-            self, box_widget: CanvasBox, new_scene_rect: QRectF):
+            self, box_widget: BoxWidget, new_scene_rect: QRectF):
         neighbors = [box_widget]
         limit_top = box_widget.pos().y()
         
@@ -386,7 +386,7 @@ class PatchScene(AbstractPatchScene):
             for item in self.items(
                     srect.adjusted(0, 0, 0,
                                    canvas.theme.box_spacing + 1)):
-                if item not in neighbors and isinstance(item, CanvasBox):
+                if item not in neighbors and isinstance(item, BoxWidget):
                     nrect = item.boundingRect().translated(item.pos())
                     if nrect.top() >= limit_top:
                         neighbors.append(item)
@@ -395,7 +395,7 @@ class PatchScene(AbstractPatchScene):
         
         less_y = box_widget.boundingRect().height() - new_scene_rect.height()
 
-        repulser_boxes = list[CanvasBox]()
+        repulser_boxes = list[BoxWidget]()
 
         for neighbor in neighbors:
             self.add_box_to_animation(

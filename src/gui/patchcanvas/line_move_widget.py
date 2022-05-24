@@ -30,13 +30,13 @@ from .init_values import (
 
 # only to get parent type in IDE
 if TYPE_CHECKING:
-    from .canvasconnectable import CanvasConnectable
+    from .connectable_widget import ConnectableWidget
 
 
-class CanvasBezierLineMov(QGraphicsPathItem):
+class LineMoveWidget(QGraphicsPathItem):
     def __init__(self, port_mode: PortMode, port_type: PortType,
                  port_posinportgrp: int, portgrp_lenght: int,
-                 parent: 'CanvasConnectable'):
+                 parent: 'ConnectableWidget'):
         QGraphicsPathItem.__init__(self)
         
         self.setParentItem(parent)
@@ -158,5 +158,3 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         painter.setRenderHint(QPainter.Antialiasing, True)
         QGraphicsPathItem.paint(self, painter, option, widget)
         painter.restore()
-
-# ------------------------------------------------------------------------------------------------------------

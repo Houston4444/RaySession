@@ -45,14 +45,13 @@ from .init_values import (
     PortType)
 
 import patchcanvas.utils as utils
-from .canvasconnectable import CanvasConnectable
-from .canvasbezierlinemov import CanvasBezierLineMov
+from .connectable_widget import ConnectableWidget
 from .connect_menu import MainPortContextMenu
-from .canvasbezierline import CanvasBezierLine
+from .line_widget import LineWidget
 
 if TYPE_CHECKING:
-    from .canvasbox import CanvasBox
-    from .canvasportgroup import CanvasPortGroup
+    from .box_widget import BoxWidget
+    from .portgroup_widget import PortgroupWidget
     
 
 # --------------------
@@ -60,11 +59,11 @@ _translate = QApplication.translate
 
 # --------------------
 
-class CanvasPort(CanvasConnectable):
+class PortWidget(ConnectableWidget):
     def __init__(self, group_id: int, port_id: int, port_name: str,
                  port_mode: PortMode, port_type: PortType,
-                 is_alternate: bool, parent: 'CanvasBox'):
-        CanvasConnectable.__init__(self, group_id, (port_id,), port_mode,
+                 is_alternate: bool, parent: 'BoxWidget'):
+        ConnectableWidget.__init__(self, group_id, (port_id,), port_mode,
                                    port_type, is_alternate, parent)
 
         self._logger = logging.getLogger(__name__)
@@ -100,7 +99,7 @@ class CanvasPort(CanvasConnectable):
         self._portgrp_widget = None
         self._loop_select_done = False
 
-        self._lines_widgets = list[CanvasBezierLine]()
+        self._lines_widgets = list[LineWidget]()
 
     def get_port_id(self) -> int:
         return self._port_id
@@ -123,7 +122,7 @@ class CanvasPort(CanvasConnectable):
         self._portgrp_index = index
         self._portgrp_len = portgrp_len
 
-    def set_portgroup_widget(self, widget: 'CanvasPortGroup'):
+    def set_portgroup_widget(self, widget: 'PortgroupWidget'):
         self._portgrp_widget = widget
 
     def set_port_name(self, port_name: str):
@@ -210,10 +209,10 @@ class CanvasPort(CanvasConnectable):
         
         return QPointF(cx, cy)
 
-    def add_line_to_port(self, line: 'CanvasBezierLine'):
+    def add_line_to_port(self, line: 'LineWidget'):
         self._lines_widgets.append(line)
 
-    def remove_line_from_port(self, line: 'CanvasBezierLine'):
+    def remove_line_from_port(self, line: 'LineWidget'):
         if line in self._lines_widgets:
             self._lines_widgets.remove(line)
 

@@ -30,12 +30,12 @@ from .init_values import (
     PortType)
 
 if TYPE_CHECKING:
-    from .canvasport import CanvasPort
+    from .port_widget import PortWidget
 
 
-class CanvasBezierLine(QGraphicsPathItem):
+class LineWidget(QGraphicsPathItem):
     def __init__(self, connection_id: int,
-                 item1: 'CanvasPort', item2: 'CanvasPort'):
+                 item1: 'PortWidget', item2: 'PortWidget'):
         QGraphicsPathItem.__init__(self)
         self.item1 = item1
         self.item2 = item2

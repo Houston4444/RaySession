@@ -22,20 +22,20 @@
 
 from typing import TYPE_CHECKING
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QGraphicsItem
+from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QGraphicsObject
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
 from .init_values import canvas
-from .theme import UnselectedStyleAttributer
+from .theme import StyleAttributer
 
 if TYPE_CHECKING:
-    from .canvasbox import CanvasBox
+    from .box_widget import BoxWidget
 # ------------------------------------------------------------------------------------------------------------
 
-class CanvasBoxShadow(QGraphicsDropShadowEffect):
-    def __init__(self, parent):
+class BoxWidgetShadow(QGraphicsDropShadowEffect):
+    def __init__(self, parent: QGraphicsObject):
         QGraphicsDropShadowEffect.__init__(self, parent)
 
         self._fake_parent = None
@@ -44,7 +44,7 @@ class CanvasBoxShadow(QGraphicsDropShadowEffect):
         self.setBlurRadius(20)
         self.setOffset(0, 2)
 
-    def set_theme(self, theme: UnselectedStyleAttributer):
+    def set_theme(self, theme: StyleAttributer):
         self._theme = theme 
         self.setColor(theme.background_color())
 
@@ -53,7 +53,7 @@ class CanvasBoxShadow(QGraphicsDropShadowEffect):
         color.setAlphaF(opacity)
         self.setColor(color)
 
-    def set_fake_parent(self, parent: 'CanvasBox'):
+    def set_fake_parent(self, parent: 'BoxWidget'):
         self._fake_parent = parent
 
     def draw(self, painter):

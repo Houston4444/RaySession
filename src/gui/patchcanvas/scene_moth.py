@@ -36,10 +36,10 @@ from .init_values import (
     CallbackAct,
     MAX_PLUGIN_ID_ALLOWED)
 
-from .canvasbox import CanvasBox
-from .canvasconnectable import CanvasConnectable
-from .canvasbezierline import CanvasBezierLine
-from .canvasicon import CanvasIconPixmap, CanvasSvgIcon
+from .box_widget import BoxWidget
+from .connectable_widget import ConnectableWidget
+from .line_widget import LineWidget
+from .icon_widget import IconPixmapWidget, IconSvgWidget
 
 
 class RubberbandRect(QGraphicsRectItem):
@@ -58,18 +58,18 @@ class RubberbandRect(QGraphicsRectItem):
 
 
 class MovingBox:
-    widget: CanvasBox
+    widget: BoxWidget
     from_pt: QPointF
     to_pt: QPoint
     start_time: float
 
 
 class WrappingBox:
-    widget: CanvasBox
+    widget: BoxWidget
     wrap: bool
 
 
-class AbstractPatchScene(QGraphicsScene):
+class PatchSceneMoth(QGraphicsScene):
     " This class is used for the scene. "
     " The child class in scene.py has all things to manage"
     " repulsives boxes."
@@ -221,7 +221,7 @@ class AbstractPatchScene(QGraphicsScene):
 
         self.update()
 
-    def add_box_to_animation(self, box_widget: CanvasBox, to_x: int, to_y: int,
+    def add_box_to_animation(self, box_widget: BoxWidget, to_x: int, to_y: int,
                              force_anim=True):
         for moving_box in self.move_boxes:
             if moving_box.widget is box_widget:
@@ -248,7 +248,7 @@ class AbstractPatchScene(QGraphicsScene):
             self._move_timer_start_at = time.time()
             self.move_box_timer.start()
 
-    def add_box_to_animation_wrapping(self, box_widget: CanvasBox, wrap: bool):
+    def add_box_to_animation_wrapping(self, box_widget: BoxWidget, wrap: bool):
         for wrapping_box in self.wrapping_boxes:
             if wrapping_box.widget is box_widget:
                 wrapping_box.wrap = wrap
@@ -266,13 +266,13 @@ class AbstractPatchScene(QGraphicsScene):
     def center_view_on(self, widget):
         self._view.centerOn(widget)
 
-    def get_connectable_item_at(self, pos: QPointF, origin: CanvasConnectable):
+    def get_connectable_item_at(self, pos: QPointF, origin: ConnectableWidget):
         for item in self.items(pos, Qt.ContainsItemShape, Qt.AscendingOrder):
-            if isinstance(item, CanvasConnectable) and item is not origin:
+            if isinstance(item, ConnectableWidget) and item is not origin:
                 return item
         
-    def get_selected_boxes(self) -> list[CanvasBox]:
-        return [i for i in self.selectedItems() if isinstance(i, CanvasBox)]
+    def get_selected_boxes(self) -> list[BoxWidget]:
+        return [i for i in self.selectedItems() if isinstance(i, BoxWidget)]
 
     def removeItem(self, item: QGraphicsItem):
         for child_item in item.childItems():
@@ -390,7 +390,7 @@ class AbstractPatchScene(QGraphicsScene):
 
         if len(items_list) > 0:
             for item in items_list:
-                if isinstance(item, CanvasBox) and item.isVisible():
+                if isinstance(item, BoxWidget) and item.isVisible():
                     pos = item.scenePos()
                     rect = item.boundingRect()
 
@@ -455,9 +455,9 @@ class AbstractPatchScene(QGraphicsScene):
             if item and item.isVisible():
                 group_item = None
 
-                if isinstance(item, CanvasBox):
+                if isinstance(item, BoxWidget):
                     group_item = item
-                elif isinstance(item, CanvasConnectable):
+                elif isinstance(item, ConnectableWidget):
                     group_item = item.parentItem()
 
                 if group_item is not None and group_item._plugin_id >= 0:
@@ -570,7 +570,7 @@ class AbstractPatchScene(QGraphicsScene):
                 event.scenePos(), Qt.ContainsItemShape, Qt.AscendingOrder)
 
             for item in items:
-                if isinstance(item, CanvasBox):
+                if isinstance(item, BoxWidget):
                     break
             else:
                 canvas.callback(CallbackAct.DOUBLE_CLICK)
@@ -594,7 +594,7 @@ class AbstractPatchScene(QGraphicsScene):
             self._pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
 
             for item in self.items(self._pointer_border):
-                if isinstance(item, (CanvasConnectable, CanvasBezierLine)):
+                if isinstance(item, (ConnectableWidget, LineWidget)):
                     item.trigger_disconnect()
 
         QGraphicsScene.mousePressEvent(self, event)
@@ -604,8 +604,8 @@ class AbstractPatchScene(QGraphicsScene):
             self._mouse_down_init = False
             topmost = self.itemAt(event.scenePos(), self._view.transform())
             self._mouse_rubberband = not (
-                isinstance(topmost, (CanvasBox, CanvasConnectable,
-                                     CanvasIconPixmap, CanvasSvgIcon))) 
+                isinstance(topmost, (BoxWidget, ConnectableWidget,
+                                     IconPixmapWidget, IconSvgWidget))) 
 
         if self._mouse_rubberband:
             event.accept()
@@ -633,7 +633,7 @@ class AbstractPatchScene(QGraphicsScene):
             for item in self.items(
                     QPolygonF([event.scenePos(), event.lastScenePos(),
                                event.scenePos()])):
-                if isinstance(item, CanvasBezierLine):
+                if isinstance(item, LineWidget):
                     item.trigger_disconnect()
             
         QGraphicsScene.mouseMoveEvent(self, event)
@@ -654,7 +654,7 @@ class AbstractPatchScene(QGraphicsScene):
 
             else:
                 for item in self.items():
-                    if isinstance(item, CanvasBox):
+                    if isinstance(item, BoxWidget):
                         item_rect = item.sceneBoundingRect()
                         item_top_left = QPointF(item_rect.x(), item_rect.y())
                         item_bottom_right = QPointF(item_rect.x() + item_rect.width(),

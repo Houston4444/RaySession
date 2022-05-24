@@ -47,9 +47,9 @@ from .init_values import (
 )
 
 import patchcanvas.utils as utils
-from .canvasbox import CanvasBox
-from .canvasport import CanvasPort
-from .canvasbezierline import CanvasBezierLine
+from .box_widget import BoxWidget
+from .port_widget import PortWidget
+from .line_widget import LineWidget
 from .theme_manager import ThemeManager
 from .scene import PatchScene
 
@@ -110,7 +110,7 @@ class CanvasObject(QObject):
 
         port_widget = all_data[0]
         port_id = all_data[1]
-        assert isinstance(port_widget, CanvasPort)
+        assert isinstance(port_widget, PortWidget)
         port_widget.set_as_stereo(port_id)
 
     def join_after_move(self):
@@ -237,7 +237,7 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
     if split is BoxSplitMode.UNDEF and icon_type is IconType.HARDWARE:
         split = BoxSplitMode.YES
 
-    group_box = CanvasBox(group_id, group_name, icon_type, icon_name)
+    group_box = BoxWidget(group_id, group_name, icon_type, icon_name)
     
     group = GroupObject()
     group.group_id = group_id
@@ -255,7 +255,7 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
     group.in_pos = QPoint(*in_xy)
     group.out_pos = QPoint(*out_xy)
     # group_dict.widgets = [group_box, None]
-    group.widgets = list[CanvasBox]()
+    group.widgets = list[BoxWidget]()
     group.widgets.append(group_box)
     group.widgets.append(None)
 
@@ -272,7 +272,7 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
             else:
                 group_box.setPos(group.out_pos)
 
-        group_sbox = CanvasBox(group_id, group_name, icon_type, icon_name)
+        group_sbox = BoxWidget(group_id, group_name, icon_type, icon_name)
         group_sbox.set_split(True, PortMode.INPUT)
 
         group.widgets[1] = group_sbox
@@ -1012,7 +1012,7 @@ def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
     connection.port_in_id = port_in_id
     connection.group_out_id = group_out_id
     connection.port_out_id = port_out_id
-    connection.widget = CanvasBezierLine(connection_id, port_out, port_in)
+    connection.widget = LineWidget(connection_id, port_out, port_in)
 
     canvas.scene.addItem(connection.widget)
 

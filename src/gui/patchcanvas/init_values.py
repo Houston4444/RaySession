@@ -30,10 +30,10 @@ if TYPE_CHECKING:
     from .theme import Theme
     from .theme_manager import ThemeManager
     from .scene import PatchScene
-    from .canvasbox import CanvasBox
-    from .canvasport import CanvasPort
-    from .canvasportgroup import CanvasPortGroup
-    from .canvasbezierline import CanvasBezierLine
+    from .box_widget import BoxWidget
+    from .port_widget import PortWidget
+    from .portgroup_widget import PortgroupWidget
+    from .line_widget import LineWidget
     from .patchcanvas import CanvasObject
 
 
@@ -227,7 +227,7 @@ class GroupObject:
     gui_visible: bool
     widgets: list
     if TYPE_CHECKING:
-        widgets: list[CanvasBox]
+        widgets: list[BoxWidget]
 
     def copy_no_widget(self):
         group_copy = GroupObject()
@@ -246,7 +246,7 @@ class PortObject:
     is_alternate: bool
     widget: object
     if TYPE_CHECKING:
-        widget: CanvasPort
+        widget: PortWidget
 
     def copy_no_widget(self):
         port_copy = PortObject()
@@ -263,7 +263,7 @@ class PortgrpObject:
     port_id_list: list[int]
     widget: object
     if TYPE_CHECKING:
-        widget: CanvasPortGroup
+        widget: PortgroupWidget
 
     def copy_no_widget(self):
         portgrp_copy = PortgrpObject()
@@ -280,7 +280,7 @@ class ConnectionObject:
     port_out_id: int
     widget: object
     if TYPE_CHECKING:
-        widget: CanvasBezierLine
+        widget: LineWidget
 
     def copy_no_widget(self):
         conn_copy = ConnectionObject()

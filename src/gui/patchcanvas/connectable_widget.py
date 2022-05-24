@@ -7,23 +7,23 @@ from PyQt5.QtWidgets import QGraphicsItem
 
 from .init_values import (CallbackAct, ConnectionObject, PortMode,
                           PortType, canvas, options)
-from .canvasbezierlinemov import CanvasBezierLineMov
+from .line_move_widget import LineMoveWidget
 
 if TYPE_CHECKING:
-    from .canvasbox import CanvasBox
+    from .box_widget import BoxWidget
     
 
-class CanvasConnectable(QGraphicsItem):
+class ConnectableWidget(QGraphicsItem):
     """ This class is the mother class for port and portgroups
         widgets because the way to manage the connection process
         is the same for both. """
     
     if TYPE_CHECKING:
-        _hover_item: 'CanvasConnectable'
+        _hover_item: 'ConnectableWidget'
 
     def __init__(self, group_id: int, port_ids: tuple[int],
                  port_mode: PortMode, port_type: PortType,
-                 is_alternate: bool, parent: 'CanvasBox'):
+                 is_alternate: bool, parent: 'BoxWidget'):
         super().__init__()
         self.setParentItem(parent)
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
@@ -39,7 +39,7 @@ class CanvasConnectable(QGraphicsItem):
         self._is_alternate = is_alternate
         
         # needed for line mov
-        self._line_mov_list = list[CanvasBezierLineMov]()
+        self._line_mov_list = list[LineMoveWidget]()
         self._dotcon_list = list[ConnectionObject]()
         self._last_rclick_item = None
         self._r_click_time = 0
@@ -81,7 +81,7 @@ class CanvasConnectable(QGraphicsItem):
         for conn_id in conn_ids_to_remove:
             canvas.callback(CallbackAct.PORTS_DISCONNECT, conn_id)
 
-    def is_connectable_to(self, other: 'CanvasConnectable',
+    def is_connectable_to(self, other: 'ConnectableWidget',
                           accept_same_port_mode=False)->bool:
         if self._port_type != other.get_port_type():
             return False
@@ -121,7 +121,7 @@ class CanvasConnectable(QGraphicsItem):
                 del item
 
         while len(self._line_mov_list) < self_ports_len:
-            line_mov = CanvasBezierLineMov(
+            line_mov = LineMoveWidget(
                 self._port_mode, self._port_type, len(self._line_mov_list),
                 self_ports_len, self)
 
@@ -222,7 +222,7 @@ class CanvasConnectable(QGraphicsItem):
                                     hover_group_id, hover_port_id,
                                     self._group_id, port_id)
     
-    def parentItem(self) -> 'CanvasBox':
+    def parentItem(self) -> 'BoxWidget':
         # only here to say IDE parent is a CanvasBox
         return super().parentItem()
     
@@ -293,7 +293,7 @@ class CanvasConnectable(QGraphicsItem):
                     port.widget.setZValue(canvas.last_z_value)
 
             for i in range(len(self._port_ids)):
-                line_mov = CanvasBezierLineMov(
+                line_mov = LineMoveWidget(
                     self._port_mode, self._port_type, i,
                     len(self._port_ids), self)
 
@@ -373,7 +373,7 @@ class CanvasConnectable(QGraphicsItem):
                                     i, hover_len)
                             else:
                                 port_posinportgrp = i % len(self._port_ids)
-                                line_mov  = CanvasBezierLineMov(
+                                line_mov  = LineMoveWidget(
                                     self._port_mode,
                                     self._port_type,
                                     port_posinportgrp,
