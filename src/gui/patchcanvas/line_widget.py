@@ -36,14 +36,17 @@ if TYPE_CHECKING:
 class LineWidget(QGraphicsPathItem):
     def __init__(self, connection_id: int,
                  item1: 'PortWidget', item2: 'PortWidget'):
+        ''' Class for connection line widget '''
         QGraphicsPathItem.__init__(self)
-        self.item1 = item1
-        self.item2 = item2
-        self._connection_id = connection_id
 
         # is true when the connection will be undo by user if (s)he
         # leaves the mouse button
         self.ready_to_disc = False        
+
+        self._item1 = item1
+        self._item2 = item2
+        self._connection_id = connection_id
+
         self._line_selected = False
         self._semi_hidden = False
 
@@ -52,8 +55,8 @@ class LineWidget(QGraphicsPathItem):
         self.update_line_pos()
 
     def check_select_state(self):
-        self._line_selected = bool(self.item1.isSelected()
-                                   or self.item2.isSelected())
+        self._line_selected = bool(self._item1.isSelected()
+                                   or self._item2.isSelected())
         self.update_line_gradient()
 
     def trigger_disconnect(self):
@@ -64,11 +67,11 @@ class LineWidget(QGraphicsPathItem):
         self.update_line_gradient()
 
     def update_line_pos(self):
-        item1_con_pos = self.item1.connect_pos()
+        item1_con_pos = self._item1.connect_pos()
         item1_x = item1_con_pos.x()
         item1_y = item1_con_pos.y()
         
-        item2_con_pos = self.item2.connect_pos()
+        item2_con_pos = self._item2.connect_pos()
         item2_x = item2_con_pos.x()
         item2_y = item2_con_pos.y()
 
@@ -100,14 +103,14 @@ class LineWidget(QGraphicsPathItem):
     def update_line_gradient(self):
         pos_top = self.boundingRect().top()
         pos_bot = self.boundingRect().bottom()
-        if self.item2.scenePos().y() >= self.item1.scenePos().y():
+        if self._item2.scenePos().y() >= self._item1.scenePos().y():
             pos1 = 0
             pos2 = 1
         else:
             pos1 = 1
             pos2 = 0
 
-        port_type1 = self.item1.get_port_type()
+        port_type1 = self._item1.get_port_type()
         port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
 
         theme = canvas.theme.line
@@ -175,5 +178,3 @@ class LineWidget(QGraphicsPathItem):
         painter.drawPath(self.path())
 
         painter.restore()
-
-# ------------------------------------------------------------------------------------------------------------

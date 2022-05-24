@@ -532,10 +532,11 @@ class CanvasWidgetMoth(QGraphicsItem):
     def type(self) -> CanvasItemType:
         return CanvasItemType.BOX
 
+    # --- protected Qt Functions redefined here ---
+    # --
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemSelectedHasChanged:
-            # if not value:
-                self.reset_lines_z_value(bool(value))
+            self.reset_lines_z_value(bool(value))
 
         return super().itemChange(change, value)
 
@@ -1041,10 +1042,6 @@ class CanvasWidgetMoth(QGraphicsItem):
                 painter.setBrush(color_main)
         
         painter.drawPath(self._painter_path)
-        
-        ## test
-        #painter.drawLine(self._width_in, 0, self._width_in, self._height)
-        #painter.drawLine(self._width - self._width_out, 0, self._width - self._width_out, self._height)
         
         # draw hardware box decoration (flyrack like)
         self._paint_hardware_rack(painter, line_hinting)
