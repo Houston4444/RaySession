@@ -157,7 +157,7 @@ class PatchbayToolsWidget(QWidget):
 
         self.ui.labelJackNotStarted.setVisible(not yesno)
         if yesno:
-            patchcanvas.canvas.scene.scaleChanged.connect(
+            patchcanvas.canvas.scene.scale_changed.connect(
                 self.zoom_changed_from_canvas)
             self.ui.sliderZoom.zoom_fit_asked.connect(
                 patchcanvas.canvas.scene.zoom_fit)

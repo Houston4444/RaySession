@@ -19,10 +19,11 @@
 
 
 # Imports (Globals)
+import logging
 from math import floor
 import time
 
-from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot, qFatal,
+from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot,
                           Qt, QPoint, QPointF, QRectF, QTimer, QMarginsF)
 from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QBrush
 from PyQt5.QtWidgets import (QGraphicsRectItem, QGraphicsScene, QApplication,
@@ -40,6 +41,9 @@ from .box_widget import BoxWidget
 from .connectable_widget import ConnectableWidget
 from .line_widget import LineWidget
 from .icon_widget import IconPixmapWidget, IconSvgWidget
+
+
+_logger = logging.getLogger(__name__)
 
 
 class RubberbandRect(QGraphicsRectItem):
@@ -73,14 +77,13 @@ class PatchSceneMoth(QGraphicsScene):
     " This class is used for the scene. "
     " The child class in scene.py has all things to manage"
     " repulsives boxes."
-    scaleChanged = pyqtSignal(float)
-    sceneGroupMoved = pyqtSignal(int, int, QPointF)
-    pluginSelected = pyqtSignal(list)
+    scale_changed = pyqtSignal(float)
+    scene_group_moved = pyqtSignal(int, int, QPointF)
+    plugin_selected = pyqtSignal(list)
 
     def __init__(self, parent, view: QGraphicsView):
         QGraphicsScene.__init__(self, parent)
 
-        #self.setItemIndexMethod(QGraphicsScene.NoIndex)
         self._scale_area = False
         self._mouse_down_init = False
         self._mouse_rubberband = False
@@ -89,36 +92,31 @@ class PatchSceneMoth(QGraphicsScene):
         self._scale_min = 0.1
         self._scale_max = 4.0
 
-        self.scales = (0.1, 0.25, 0.4, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0)
-
         self._rubberband = RubberbandRect(self)
         self._rubberband_selection = False
         self._rubberband_orig_point = QPointF(0, 0)
 
         self._view = view
         if not self._view:
-            qFatal("PatchCanvas::PatchScene() - invalid view")
+            _logger.critical("Invalid view")
+            return
 
-        self.curCut = None
-        self.curZoomArea = None
+        self._cursor_cut = None
+        self._cursor_zoom_area = None
 
-        self._move_timer_start_at = 0
-        self._move_timer_interval = 20 # 20 ms step animation (50 Hz)
-        # self.move_boxes = list[dict]()
         self.move_boxes = list[MovingBox]()
         self.wrapping_boxes = list[WrappingBox]()
-        self.move_box_timer = QTimer()
-        self.move_box_timer.setInterval(self._move_timer_interval)
-        self.move_box_timer.timeout.connect(self.move_boxes_animation)
-        self.move_duration = 0.300 # 300ms
+        self._MOVE_DURATION = 0.300 # 300ms
+        self._MOVE_TIMER_INTERVAL = 20 # 20 ms step animation (50 Hz)
+        self._move_timer_start_at = 0
+        self._move_box_timer = QTimer()
+        self._move_box_timer.setInterval(self._MOVE_TIMER_INTERVAL)
+        self._move_box_timer.timeout.connect(self.move_boxes_animation)
 
-        self.elastic_scene = True
         self.resizing_scene = False
 
         self.selectionChanged.connect(self._slot_selection_changed)
         
-        self._prevent_overlap = True
-
     def clear(self):
         # reimplement Qt function and fix missing rubberband after clear
         QGraphicsScene.clear(self)
@@ -154,7 +152,7 @@ class PatchSceneMoth(QGraphicsScene):
         if set_view:
             if fix:
                 view.setTransform(transform)
-            self.scaleChanged.emit(transform.m11())
+            self.scale_changed.emit(transform.m11())
 
         return fix
 
@@ -181,7 +179,7 @@ class PatchSceneMoth(QGraphicsScene):
         # Do not ensure all steps are played
         # but just move the box where it has to go now
         time_since_start = time.time() - self._move_timer_start_at
-        ratio = min(1.0, time_since_start / self.move_duration)
+        ratio = min(1.0, time_since_start / self._MOVE_DURATION)
 
         for moving_box in self.move_boxes:
             if moving_box.widget is not None:
@@ -198,15 +196,15 @@ class PatchSceneMoth(QGraphicsScene):
 
         for wrapping_box in self.wrapping_boxes:
             if wrapping_box.widget is not None:
-                if time_since_start >= self.move_duration:
+                if time_since_start >= self._MOVE_DURATION:
                     wrapping_box.widget.animate_wrapping(1.00)
                 else:
                     wrapping_box.widget.animate_wrapping(ratio)
 
         self.resize_the_scene()
         
-        if time_since_start >= self.move_duration:
-            self.move_box_timer.stop()
+        if time_since_start >= self._MOVE_DURATION:
+            self._move_box_timer.stop()
             
             move_box_widgets = [b.widget for b in self.move_boxes]
             self.move_boxes.clear()
@@ -243,10 +241,10 @@ class PatchSceneMoth(QGraphicsScene):
         moving_box.to_pt = QPoint(to_x, to_y)
         moving_box.start_time = time.time() - self._move_timer_start_at
 
-        if not self.move_box_timer.isActive():
+        if not self._move_box_timer.isActive():
             moving_box.start_time = 0.0
             self._move_timer_start_at = time.time()
-            self.move_box_timer.start()
+            self._move_box_timer.start()
 
     def add_box_to_animation_wrapping(self, box_widget: BoxWidget, wrap: bool):
         for wrapping_box in self.wrapping_boxes:
@@ -259,9 +257,9 @@ class PatchSceneMoth(QGraphicsScene):
             wrapping_box.wrap = wrap
             self.wrapping_boxes.append(wrapping_box)
         
-        if not self.move_box_timer.isActive():
+        if not self._move_box_timer.isActive():
             self._move_timer_start_at = time.time()
-            self.move_box_timer.start()
+            self._move_box_timer.start()
 
     def center_view_on(self, widget):
         self._view.centerOn(widget)
@@ -298,8 +296,8 @@ class PatchSceneMoth(QGraphicsScene):
         self._rubberband.setBrush(canvas.theme.rubberband.background_color())
 
         cur_color = "black" if canvas.theme.scene_background_color.blackF() < 0.5 else "white"
-        self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
-        self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
+        self._cursor_cut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
+        self._cursor_zoom_area = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
 
     def drawBackground(self, painter, rect):
         painter.save()
@@ -413,7 +411,7 @@ class PatchSceneMoth(QGraphicsScene):
                 self.fix_scale_factor()
 
         if self._view:
-            self.scaleChanged.emit(self._view.transform().m11())
+            self.scale_changed.emit(self._view.transform().m11())
 
     def zoom_in(self):
         view = self._view
@@ -424,7 +422,7 @@ class PatchSceneMoth(QGraphicsScene):
                 transform.reset()
                 transform.scale(self._scale_max, self._scale_max)
             view.setTransform(transform)
-        self.scaleChanged.emit(transform.m11())
+        self.scale_changed.emit(transform.m11())
 
     def zoom_out(self):
         view = self._view
@@ -435,18 +433,18 @@ class PatchSceneMoth(QGraphicsScene):
                 transform.reset()
                 transform.scale(self._scale_min, self._scale_min)
             view.setTransform(transform)
-        self.scaleChanged.emit(transform.m11())
+        self.scale_changed.emit(transform.m11())
 
     def zoom_reset(self):
         self._view.resetTransform()
-        self.scaleChanged.emit(1.0)
+        self.scale_changed.emit(1.0)
 
     @pyqtSlot()
     def _slot_selection_changed(self):
         items_list = self.selectedItems()
 
         if len(items_list) == 0:
-            self.pluginSelected.emit([])
+            self.plugin_selected.emit([])
             return
 
         plugin_list = []
@@ -466,13 +464,13 @@ class PatchSceneMoth(QGraphicsScene):
                         plugin_id = 0
                     plugin_list.append(plugin_id)
 
-        self.pluginSelected.emit(plugin_list)
+        self.plugin_selected.emit(plugin_list)
 
     def _trigger_rubberband_scale(self):
         self._scale_area = True
 
-        if self.curZoomArea:
-            self._view.viewport().setCursor(self.curZoomArea)
+        if self._cursor_zoom_area:
+            self._view.viewport().setCursor(self._cursor_zoom_area)
 
     def send_zoom_to_zoom_widget(self):
         if not self._view:
@@ -528,8 +526,8 @@ class PatchSceneMoth(QGraphicsScene):
         QGraphicsScene.keyReleaseEvent(self, event)
 
     def _start_connection_cut(self):
-        if self.curCut:
-            self._view.viewport().setCursor(self.curCut)
+        if self._cursor_cut:
+            self._view.viewport().setCursor(self._cursor_cut)
 
     def zoom_wheel(self, delta):
         transform = self._view.transform()
@@ -553,7 +551,7 @@ class PatchSceneMoth(QGraphicsScene):
             transform.scale(factor, factor)
             self.fix_scale_factor(transform)
             self._view.setTransform(transform)
-            self.scaleChanged.emit(transform.m11())
+            self.scale_changed.emit(transform.m11())
 
             # Update box icons especially when they are not scalable
             # eg. coming from theme
@@ -671,7 +669,7 @@ class PatchSceneMoth(QGraphicsScene):
         else:
             for item in self.get_selected_boxes():
                 item.check_item_pos()
-                self.sceneGroupMoved.emit(
+                self.scene_group_moved.emit(
                     item.get_group_id(), item.get_splitted_mode(),
                     item.scenePos())
 
