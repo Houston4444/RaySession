@@ -19,8 +19,7 @@ Commenter plus
 # Bug: connection non sélectionnée après clic droit
 
 button wrapper en graphicsitem
-renommage général
+# renommage général
 xdg pour le cache (var de classes ?)
 # version du cache
 bug de connection de paires par menu context
-box widget parent ?

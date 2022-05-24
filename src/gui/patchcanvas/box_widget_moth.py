@@ -800,7 +800,6 @@ class CanvasWidgetMoth(QGraphicsItem):
         QGraphicsItem.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
-        print('mousepress box')
         canvas.last_z_value += 1
         self.setZValue(canvas.last_z_value)
         
