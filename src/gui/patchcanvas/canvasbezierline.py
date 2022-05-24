@@ -135,7 +135,7 @@ class CanvasBezierLine(QGraphicsPathItem):
         else:
             if self._semi_hidden:
                 shd = canvas.semi_hide_opacity
-                bgcolor = canvas.theme.background_color_
+                bgcolor = canvas.theme.scene_background_color
 
                 color_main = QColor(
                     int(color_main.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),

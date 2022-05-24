@@ -1017,8 +1017,8 @@ def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
     canvas.scene.addItem(connection.widget)
 
     canvas.connection_list.append(connection)
-    port_out_parent.add_line_to_box(connection.widget, connection_id)
-    port_in_parent.add_line_to_box(connection.widget, connection_id)
+    port_out_parent.add_line_to_box(connection.widget)
+    port_in_parent.add_line_to_box(connection.widget)
     port_out.add_line_to_port(connection.widget)
     port_in.add_line_to_port(connection.widget)
 
@@ -1069,8 +1069,8 @@ def disconnect_ports(connection_id: int):
         _LOGGER.critical(f"{_LOGGING_STR} - unable to find input port")
         return
 
-    item1.parentItem().remove_line_from_box(connection_id)
-    item2.parentItem().remove_line_from_box(connection_id)
+    item1.parentItem().remove_line_from_box(connection)
+    item2.parentItem().remove_line_from_box(connection)
     item1.remove_line_from_port(connection)
     item2.remove_line_from_port(connection)
 

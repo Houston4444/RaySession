@@ -9,9 +9,7 @@ from typing import TYPE_CHECKING
 from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF, QImage
 from PyQt5.QtCore import Qt
 
-_TITLE_TEMPLATES_CACHE = {}
-_FONT_METRICS_CACHE = {}
-_LOGGER = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _to_qcolor(color) -> QColor:
@@ -234,10 +232,10 @@ class StyleAttributer:
                 self._box_footer = rail_float(value, 0, 50)
 
         else:
-            _LOGGER.error(f"{self._path}: unknown key: {attribute}")
+            _logger.error(f"{self._path}: unknown key: {attribute}")
 
         if err:
-            _LOGGER.error(
+            _logger.error(
                 f"{self._path}: invalid value for {attribute}: {str(value)}")
 
     def set_style_dict(self, context: str, style_dict: dict):
@@ -245,7 +243,7 @@ class StyleAttributer:
             begin, point, end = context.partition('.')
             
             if begin not in self.subs:
-                _LOGGER.error(f"{self._path}: invalid ignored key: {begin}")
+                _logger.error(f"{self._path}: invalid ignored key: {begin}")
                 return
             self.__getattribute__(begin).set_style_dict(end, style_dict)
             return
@@ -260,7 +258,7 @@ class StyleAttributer:
         # Note that for 'selected' section, it will look in 'selected' section
         # of parent before looking in parent section.
         if attribute not in self.__dir__():
-            _LOGGER.error(f"get_value_of, invalide attribute: {attribute}")
+            _logger.error(f"get_value_of, invalide attribute: {attribute}")
             return None
         
         if not orig_path:
@@ -282,7 +280,7 @@ class StyleAttributer:
                 return None
                 
             if self._parent is None:
-                _LOGGER.error(
+                _logger.error(
                     f"get value of: {self._path} None value and no parent")
                 return None
 
@@ -322,26 +320,23 @@ class StyleAttributer:
         font_.setWeight(self.get_value_of('_font_width'))
         return font_
     
-    def _set_font_metrics_cache(self):
-        #if self._font_metrics_cache is not None:
-            #return
-        
+    def _set_font_metrics_cache(self):        
         font_name = self.get_value_of('_font_name')
         font_size = str(self.get_value_of('_font_size'))
         font_width = str(self.get_value_of('_font_width'))
         
-        if not font_name in _FONT_METRICS_CACHE.keys():
-            _FONT_METRICS_CACHE[font_name] = {}
+        if not font_name in Theme.font_metrics_cache.keys():
+            Theme.font_metrics_cache[font_name] = {}
         
-        if not font_size in _FONT_METRICS_CACHE[font_name].keys():
-            _FONT_METRICS_CACHE[font_name][font_size] = {}
+        if not font_size in Theme.font_metrics_cache[font_name].keys():
+            Theme.font_metrics_cache[font_name][font_size] = {}
         
-        if not font_width in _FONT_METRICS_CACHE[font_name][font_size].keys():
-            _FONT_METRICS_CACHE[font_name][font_size][font_width] = {}
+        if not font_width in Theme.font_metrics_cache[font_name][font_size].keys():
+            Theme.font_metrics_cache[font_name][font_size][font_width] = {}
         
         self._font_metrics_cache = \
-            _FONT_METRICS_CACHE[font_name][font_size][font_width]
-    
+            Theme.font_metrics_cache[font_name][font_size][font_width]
+            
     def get_text_width(self, string:str) -> float:
         if self._font_metrics_cache is None:
             self._set_font_metrics_cache()
@@ -383,18 +378,18 @@ class StyleAttributer:
         font_size = str(self.get_value_of('_font_size'))
         font_width = str(self.get_value_of('_font_width'))
         
-        if not font_name in _TITLE_TEMPLATES_CACHE.keys():
-            _TITLE_TEMPLATES_CACHE[font_name] = {}
+        if not font_name in Theme.title_templates_cache.keys():
+            Theme.title_templates_cache[font_name] = {}
         
-        if not font_size in _TITLE_TEMPLATES_CACHE[font_name].keys():
-            _TITLE_TEMPLATES_CACHE[font_name][font_size] = {}
+        if not font_size in Theme.title_templates_cache[font_name].keys():
+            Theme.title_templates_cache[font_name][font_size] = {}
         
-        if not font_width in _TITLE_TEMPLATES_CACHE[font_name][font_size].keys():
-            _TITLE_TEMPLATES_CACHE[font_name][font_size][font_width] = {}
+        if not font_width in Theme.title_templates_cache[font_name][font_size].keys():
+            Theme.title_templates_cache[font_name][font_size][font_width] = {}
         
         self._titles_templates_cache = \
-            _TITLE_TEMPLATES_CACHE[font_name][font_size][font_width]
-    
+            Theme.title_templates_cache[font_name][font_size][font_width]
+            
     def save_title_templates(
             self, title: str, handle_gui: bool, with_icon: bool, templates: list):
         if self._titles_templates_cache is None:
@@ -494,6 +489,13 @@ class IconTheme:
 class Theme(StyleAttributer):
     theme_file_path = ''
     
+    # if for some reason cache may be incompatible with this version
+    # of the patchbay, we need to discard the cache files. 
+    CACHE_VERSION = (1, 0)
+    
+    title_templates_cache = {'CACHE_VERSION': CACHE_VERSION}
+    font_metrics_cache = {'CACHE_VERSION': CACHE_VERSION}
+
     def __init__(self):
         StyleAttributer.__init__(self, '')
 
@@ -515,8 +517,8 @@ class Theme(StyleAttributer):
         self._port_offset = 0
         self._box_footer = 0
 
-        self.background_color_ = QColor('black')
-        self.background_image_ = QImage()
+        self.scene_background_color = QColor('black')
+        self.scene_background_image = QImage()
         self.box_shadow_color = QColor('gray')
         self.monitor_color = QColor(190, 158, 0)
         self.port_height = 16
@@ -552,10 +554,56 @@ class Theme(StyleAttributer):
     def set_file_path(cls, theme_file_path: str):
         cls.theme_file_path = theme_file_path
     
+    @classmethod
+    def load_cache(cls):
+        cache_file = "%s/.cache/RaySession/patchbay_titles" % os.environ['HOME']
+        if not os.path.isfile(cache_file):
+            return
+
+        with open(cache_file, 'rb') as f:
+            try:
+                title_templates_cache = pickle.load(f)
+                # assert isinstance(title_templates_cache, dict)
+                # assert 'CACHE_VERSION' in title_templates_cache.keys()
+                # assert isinstance(title_templates_cache['CACHE_VERSION'], tuple)
+                assert title_templates_cache['CACHE_VERSION'] == cls.CACHE_VERSION
+                cls.title_templates_cache = title_templates_cache
+            except:
+                _logger.warning(f"failed to load cache {cache_file}")
+                return
+            
+        font_cache_file = "%s/.cache/RaySession/patchbay_fonts" % os.environ['HOME']
+        if not os.path.isfile(font_cache_file):
+            return
+
+        with open(font_cache_file, 'rb') as f:
+            try:
+                font_metrics_cache = pickle.load(f)
+                assert font_metrics_cache['CACHE_VERSION'] == cls.CACHE_VERSION
+                cls.font_metrics_cache = font_metrics_cache
+            except:
+                _logger.error(f"failed to load font cache {font_cache_file}")
+                return
+    
+    @classmethod
+    def save_cache(cls):
+        cache_dir = "%s/.cache/RaySession" % os.environ['HOME']
+        if not os.path.isdir(cache_dir):
+            try:
+                os.makedirs(cache_dir)
+            except:
+                return
+
+        with open("%s/patchbay_titles" % cache_dir, 'wb') as f:
+            pickle.dump(cls.title_templates_cache, f)
+        
+        with open("%s/patchbay_fonts" % cache_dir, 'wb') as f:
+            pickle.dump(cls.font_metrics_cache, f)
+    
     def read_theme(self, theme_dict: dict, theme_file_path: str):
         ''' theme_file_path is only used here to find external resources ''' 
         if not isinstance(theme_dict, dict):
-            _LOGGER.error("invalid dict read error")
+            _logger.error("invalid dict read error")
             return
         
         Theme.set_file_path(theme_file_path)
@@ -569,12 +617,12 @@ class Theme(StyleAttributer):
                 continue
             
             if not isinstance(value, dict):
-                _LOGGER.error(f"'{key}' must contains a dictionnary, ignored")
+                _logger.error(f"'{key}' must contains a dictionnary, ignored")
                 continue
             
             for alias_key, alias_value in value.items():
                 if not isinstance(alias_key, str):
-                    _LOGGER.error(
+                    _logger.error(
                         f"alias key must be a string. Ignore: {str(alias_key)}")
                     continue
                 
@@ -590,11 +638,11 @@ class Theme(StyleAttributer):
             begin, point, end = key.partition('.')
             
             if not isinstance(value, dict):
-                _LOGGER.error(f"'{key}' must contains a dictionnary, ignored")
+                _logger.error(f"'{key}' must contains a dictionnary, ignored")
                 continue
             
             if begin not in ['body'] + self.subs:
-                _LOGGER.error(f"invalid ignored key: {key}")
+                _logger.error(f"invalid ignored key: {key}")
                 continue
             
             # replace alias with alias value
@@ -629,9 +677,9 @@ class Theme(StyleAttributer):
                             continue
                         self.__setattr__(body_key.replace('-', '_'), body_value)
                     elif body_key == 'background':
-                        self.background_color_ = _to_qcolor(body_value)
-                        if self.background_color_ is None:
-                            self.background_color_ = QColor('black')
+                        self.scene_background_color = _to_qcolor(body_value)
+                        if self.scene_background_color is None:
+                            self.scene_background_color = QColor('black')
                     elif body_key == 'background_image':
                         background_path = os.path.join(
                             os.path.dirname(theme_file_path), 'images', body_value)
@@ -651,43 +699,6 @@ class Theme(StyleAttributer):
                 continue
 
             sub_attributer = self.__getattribute__(begin)
+            if TYPE_CHECKING:
+                assert isinstance(sub_attributer, StyleAttributer)
             sub_attributer.set_style_dict(end, value)
-
-    def load_cache(self):
-        cache_file = "%s/.cache/RaySession/patchbay_titles" % os.environ['HOME']
-        if not os.path.isfile(cache_file):
-            return
-
-        with open(cache_file, 'rb') as f:
-            try:
-                global _TITLE_TEMPLATES_CACHE
-                _TITLE_TEMPLATES_CACHE = pickle.load(f)
-            except:
-                _LOGGER.warning(f"failed to load cache {cache_file}")
-                return
-            
-        font_cache_file = "%s/.cache/RaySession/patchbay_fonts" % os.environ['HOME']
-        if not os.path.isfile(font_cache_file):
-            return
-
-        with open(font_cache_file, 'rb') as f:
-            try:
-                global _FONT_METRICS_CACHE
-                _FONT_METRICS_CACHE = pickle.load(f)
-            except:
-                _LOGGER.error(f"failed to load font cache {font_cache_file}")
-                return
-    
-    def save_cache(self):
-        cache_dir = "%s/.cache/RaySession" % os.environ['HOME']
-        if not os.path.isdir(cache_dir):
-            try:
-                os.makedirs(cache_dir)
-            except:
-                return
-
-        with open("%s/patchbay_titles" % cache_dir, 'wb') as f:
-            pickle.dump(_TITLE_TEMPLATES_CACHE, f)
-        
-        with open("%s/patchbay_fonts" % cache_dir, 'wb') as f:
-            pickle.dump(_FONT_METRICS_CACHE, f)

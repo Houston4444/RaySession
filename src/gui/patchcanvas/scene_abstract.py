@@ -287,17 +287,17 @@ class AbstractPatchScene(QGraphicsScene):
         self._scale_min = w1/w0 if w0/h0 > w1/h1 else h1/h0
 
     def update_theme(self):
-        if canvas.theme.background_image_ is not None:
+        if canvas.theme.scene_background_image is not None:
             bg_brush = QBrush()
-            bg_brush.setTextureImage(canvas.theme.background_image_)
+            bg_brush.setTextureImage(canvas.theme.scene_background_image)
             self.setBackgroundBrush(bg_brush)
         else:
-            self.setBackgroundBrush(canvas.theme.background_color_)
+            self.setBackgroundBrush(canvas.theme.scene_background_color)
         
         self._rubberband.setPen(canvas.theme.rubberband.fill_pen())
         self._rubberband.setBrush(canvas.theme.rubberband.background_color())
 
-        cur_color = "black" if canvas.theme.background_color_.blackF() < 0.5 else "white"
+        cur_color = "black" if canvas.theme.scene_background_color.blackF() < 0.5 else "white"
         self.curCut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
         self.curZoomArea = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
 
@@ -305,14 +305,14 @@ class AbstractPatchScene(QGraphicsScene):
         painter.save()
         painter.setPen(Qt.NoPen)
         
-        if not canvas.theme.background_image_.isNull():
-            canvas.theme.background_image_.setDevicePixelRatio(3.0)
+        if not canvas.theme.scene_background_image.isNull():
+            canvas.theme.scene_background_image.setDevicePixelRatio(3.0)
             bg_brush = QBrush()
-            bg_brush.setTextureImage(canvas.theme.background_image_)
+            bg_brush.setTextureImage(canvas.theme.scene_background_image)
             painter.setBrush(bg_brush)
             painter.drawRect(rect)
 
-        painter.setBrush(canvas.theme.background_color_)        
+        painter.setBrush(canvas.theme.scene_background_color)        
         painter.drawRect(rect)
         painter.restore()
 

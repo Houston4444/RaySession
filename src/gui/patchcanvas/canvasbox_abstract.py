@@ -51,16 +51,11 @@ from .canvasboxshadow import CanvasBoxShadow
 from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
 from .canvasport import CanvasPort
 from .canvasportgroup import CanvasPortGroup
+from .canvasbezierline import CanvasBezierLine
 from .theme import BoxStyleAttributer
 
-if TYPE_CHECKING:
-    from .canvasbezierline import CanvasBezierLine
-    from .canvasbox import CanvasBox
-
 _translate = QApplication.translate
-_LOGGER = logging.getLogger(__name__)
 
-CbLine = namedtuple('CbLine', ('line', 'connection_id'))
 
 class UnwrapButton(Enum):
     NONE = 0
@@ -144,7 +139,7 @@ class CanvasBoxAbstract(QGraphicsItem):
         self._inline_scaling = 1.0
 
         self._port_list_ids = list[int]()
-        self._connection_lines = list[CbLine]()
+        self._connection_lines = list[CanvasBezierLine]()
 
         self._is_hardware = bool(icon_type == IconType.HARDWARE)
         self._icon_name = icon_name
@@ -367,18 +362,13 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         return new_widget
 
-    def add_line_to_box(self, line: 'CanvasBezierLine', connection_id: int):
-        self._connection_lines.append(CbLine(line, connection_id))
+    def add_line_to_box(self, line: 'CanvasBezierLine'):
+        self._connection_lines.append(line)
         self.reset_lines_z_value(self.isSelected())
 
-    def remove_line_from_box(self, connection_id: int):
-        for connection in self._connection_lines:
-            if connection.connection_id == connection_id:
-                self._connection_lines.remove(connection)
-                return
-
-        _LOGGER.critical(f"remove_line_from_group({connection_id})"
-                         " - unable to find line to remove")            
+    def remove_line_from_box(self, line: 'CanvasBezierLine'):
+        if line in self._connection_lines:
+            self._connection_lines.remove(line)
 
     def check_item_pos(self):
         if canvas.size_rect.isNull():
@@ -503,11 +493,8 @@ class CanvasBoxAbstract(QGraphicsItem):
 
     def repaint_lines(self, forced=False):
         if forced or self.pos() != self._last_pos:
-            for connection in self._connection_lines:
-                if TYPE_CHECKING:
-                    assert isinstance(connection.line, CanvasBezierLine)
-                
-                connection.line.update_line_pos()
+            for line in self._connection_lines:                
+                line.update_line_pos()
 
         self._last_pos = self.pos()
 
@@ -574,8 +561,8 @@ class CanvasBoxAbstract(QGraphicsItem):
         discMenu.setIcon(
             QIcon(QPixmap(':scalable/breeze%s/lines-disconnector' % dark)))
 
-        conn_list_ids = []
-        disconnect_list = [] # will contains disconnect_element dicts
+        conn_list_ids = list[int]()
+        disconnect_list = list[dict]()
 
         for connection in canvas.connection_list:
             if connection.concerns(self._group_id, self._port_list_ids):

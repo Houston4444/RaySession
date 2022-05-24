@@ -16,5 +16,10 @@ ajustements anti-superposition (après join/split, emballer/déballer remonte to
 # utiliser Path pour le chargement du thème
 Commenter plus
 #enlever les qcritical -> logger
-Bug: connection non sélectionnée après clic droit
+# Bug: connection non sélectionnée après clic droit
 
+button wrapper en graphicsitem
+renommage général
+xdg pour le cache (var de classes ?)
+version du cache
+bug de connection de paires par menu context
