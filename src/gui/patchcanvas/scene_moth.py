@@ -116,7 +116,7 @@ class PatchSceneMoth(QGraphicsScene):
         self.resizing_scene = False
 
         self.selectionChanged.connect(self._slot_selection_changed)
-        
+
     def clear(self):
         # reimplement Qt function and fix missing rubberband after clear
         QGraphicsScene.clear(self)

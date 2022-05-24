@@ -39,8 +39,8 @@ from .init_values import (
 
 # ------------------------------------------------------------------------------------------------------------
 
-_LOGGER = logging.getLogger(__name__)
-_LOGGING_STR = ''
+_logger = logging.getLogger(__name__)
+_logging_str = ''
 
 # decorator
 def easy_log(func):
@@ -51,9 +51,9 @@ def easy_log(func):
         args_strs = [str(arg) for arg in args]
         args_strs += [f"{k}={v}" for k, v in kwargs.items()]
 
-        global _LOGGING_STR
-        _LOGGING_STR = f"{func.__name__}({', '.join(args_strs)})"
-        _LOGGER.debug(_LOGGING_STR)
+        global _logging_str
+        _logging_str = f"{func.__name__}({', '.join(args_strs)})"
+        _logger.debug(_logging_str)
         return func(*args, **kwargs)
     return wrapper
 
@@ -173,7 +173,7 @@ def get_full_port_name(group_id: int, port_id: int) -> str:
                     return group.group_name + ":" + port.port_name
             break
     
-    _LOGGER.critical(f"{_LOGGING_STR} - unable to find port")
+    _logger.critical(f"{_logging_str} - unable to find port")
     return ""
 
 @easy_log
@@ -365,7 +365,7 @@ def connect_ports(group_id_1: int, port_id_1: int,
                 one_is_out = False
             break
     else:
-        _LOGGER.critical(f"{_LOGGING_STR} - one port at least not found")
+        _logger.critical(f"{_logging_str} - one port at least not found")
         return
 
     if one_is_out:
@@ -473,7 +473,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
                 in_port_id_list = portgrp.port_id_list
 
     if not (out_port_id_list and in_port_id_list):
-        _LOGGER.warning(f"{_LOGGING_STR} - empty port id list")
+        _logger.warning(f"{_logging_str} - empty port id list")
         return
 
     connected_indexes = []

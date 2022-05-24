@@ -48,10 +48,10 @@ class BoxArea:
 
 
 class BoxWidget(CanvasWidgetMoth):
-    def __init__(self, group_id: int, group_name: str, icon_type: int,
-                 icon_name: str, parent=None):
+    def __init__(self, group_id: int, group_name: str,
+                 icon_type: int, icon_name: str):
         CanvasWidgetMoth.__init__(
-            self, group_id, group_name, icon_type, icon_name, parent)
+            self, group_id, group_name, icon_type, icon_name)
         self._port_list = list[PortObject]()
         self._portgrp_list = list[PortgrpObject]()
     

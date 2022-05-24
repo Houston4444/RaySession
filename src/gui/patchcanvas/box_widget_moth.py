@@ -17,22 +17,15 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ----------------------
-# Imports (Global)
-import logging
 from struct import pack
 from sip import voidptr
 import sys
 from enum import Enum
-from typing import TYPE_CHECKING
-from collections import namedtuple
 from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QTimer
 from PyQt5.QtGui import (QCursor, QFontMetrics, QImage, QFont,
                          QLinearGradient, QPainter, QPen, QPolygonF,
                          QColor, QIcon, QPixmap, QPainterPath, QBrush)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
-
-# ---------------------
 
 from .init_values import (
     CanvasItemType,
@@ -94,10 +87,9 @@ class CanvasWidgetMoth(QGraphicsItem):
     INLINE_DISPLAY_ENABLED  = 1
     INLINE_DISPLAY_CACHED   = 2
 
-    def __init__(self, group_id: int, group_name: str, icon_type: int,
-                 icon_name: str, parent=None):
+    def __init__(self, group_id: int, group_name: str,
+                 icon_type: int, icon_name: str):
         QGraphicsItem.__init__(self)
-        self.setParentItem(parent)
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
 
         # Save Variables, useful for later

@@ -327,7 +327,6 @@ class DraggableGraphicsView(QGraphicsView):
             self._middle_button = Qt.MidButton
 
     def mousePressEvent(self, event):
-        print('viexw press', event.button())
         if (event.button() == self._middle_button
                 and not QApplication.keyboardModifiers() & Qt.ControlModifier):
             self.panning = True

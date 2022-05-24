@@ -17,22 +17,16 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
-
 from typing import TYPE_CHECKING
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QGraphicsObject
-
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
 
 from .init_values import canvas
 from .theme import StyleAttributer
 
 if TYPE_CHECKING:
     from .box_widget import BoxWidget
-# ------------------------------------------------------------------------------------------------------------
+
 
 class BoxWidgetShadow(QGraphicsDropShadowEffect):
     def __init__(self, parent: QGraphicsObject):
@@ -49,7 +43,7 @@ class BoxWidgetShadow(QGraphicsDropShadowEffect):
         self.setColor(theme.background_color())
 
     def set_opacity(self, opacity: float):
-        color = QColor(self._theme.background_color)
+        color = QColor(self._theme.background_color())
         color.setAlphaF(opacity)
         self.setColor(color)
 
