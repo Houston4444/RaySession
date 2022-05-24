@@ -529,6 +529,51 @@ class CanvasWidgetMoth(QGraphicsItem):
             self._current_port_mode is not PortMode.BOTH
             and self._current_layout_mode == BoxLayoutMode.LARGE)
 
+    def wrap_unwrap_at_point(self, scene_pos: QPointF) -> bool:
+        ''' orders a wrap or unwrap on the box if scene_pos is on the
+            triangle wrapper '''
+        if self._wrapped:
+            # unwrap the box if scene_pos is in one of the triangles zones
+            triangle_rect_out = QRectF(0.0, self._height - 24.0, 24.0, 24.0)
+            triangle_rect_in = QRectF(
+                self._width - 24.0, self._height - 24.0, 24.0, 24.0)
+
+            mode = PortMode.INPUT
+            wrap = False
+
+            for trirect in triangle_rect_out, triangle_rect_in:
+                trirect.translate(self.scenePos())
+                if (self._current_port_mode & mode
+                        and trirect.contains(scene_pos)):
+                    wrap = True
+                    break
+
+                mode = PortMode.OUTPUT
+
+            if wrap:
+                utils.canvas_callback(
+                    CallbackAct.GROUP_WRAP, self._group_id,
+                    self._splitted_mode, False)
+                return True
+            
+        elif self._unwrap_triangle_pos:
+            # wrap the box if scene_pos is on the triangle zone
+            trirect = QRectF(0, self._height - 16, 16, 16)
+            
+            if self._unwrap_triangle_pos is UnwrapButton.CENTER:
+                trirect = QRectF(self._width_in + 8, self._height - 16, 16, 16)
+            elif self._unwrap_triangle_pos is UnwrapButton.RIGHT:
+                trirect = QRectF(self._width - 16, self._height -16, 16, 16)
+                
+            trirect.translate(self.scenePos())
+            if trirect.contains(scene_pos):
+                utils.canvas_callback(
+                    CallbackAct.GROUP_WRAP, self._group_id,
+                    self._splitted_mode, True)
+                return True
+        
+        return False
+
     def type(self) -> CanvasItemType:
         return CanvasItemType.BOX
 
@@ -815,49 +860,14 @@ class CanvasWidgetMoth(QGraphicsItem):
 
         elif event.button() == Qt.LeftButton:
             if self.sceneBoundingRect().contains(event.scenePos()):
-                if self._wrapped:
-                    # unwrap the box if event is one of the triangles zones
-                    triangle_rect_out = QRectF(0, self._height - 24, 24, 24)
-                    triangle_rect_in = QRectF(
-                        self._width - 24, self._height - 24, 24, 24)
-
-                    mode = PortMode.INPUT
-                    wrap = False
-
-                    for trirect in triangle_rect_out, triangle_rect_in:
-                        trirect.translate(self.scenePos())
-                        if (self._current_port_mode & mode
-                                and trirect.contains(event.scenePos())):
-                            wrap = True
-                            break
-
-                        mode = PortMode.OUTPUT
-
-                    if wrap:
-                        utils.canvas_callback(
-                            CallbackAct.GROUP_WRAP, self._group_id,
-                            self._splitted_mode, False)
-                        return
-                    
-                elif self._unwrap_triangle_pos:
-                    trirect = QRectF(0, self._height - 16, 16, 16)
-                    
-                    if self._unwrap_triangle_pos is UnwrapButton.CENTER:
-                        trirect = QRectF(self._width_in + 8, self._height - 16, 16, 16)
-                    elif self._unwrap_triangle_pos is UnwrapButton.RIGHT:
-                        trirect = QRectF(self._width - 16, self._height -16, 16, 16)
-                        
-                    trirect.translate(self.scenePos())
-                    if trirect.contains(event.scenePos()):
-                        utils.canvas_callback(
-                            CallbackAct.GROUP_WRAP, self._group_id,
-                            self._splitted_mode, True)
-                        event.ignore()
-                        return
+                if self.wrap_unwrap_at_point(event.scenePos()):
+                    event.ignore()
+                    return
 
                 self._mouse_down = True
             else:
-                # FIXME: Check if still valid: Fix a weird Qt behaviour with right-click mouseMove
+                # FIXME: Check if still valid:
+                # Fix a weird Qt behaviour with right-click mouseMove
                 self._mouse_down = False
                 event.ignore()
                 return
@@ -1396,8 +1406,11 @@ class CanvasWidgetMoth(QGraphicsItem):
 
         painter.drawImage(QRectF(srcx, srcy, swidth, sheight), self._inline_image)
     
-    def get_theme(self) -> BoxStyleAttributer:
+    def get_theme(self, for_wrapper=False) -> BoxStyleAttributer:
         theme = canvas.theme.box
+        if for_wrapper:
+            theme = canvas.theme.box_wrapper
+        
         if self._is_hardware:
             theme = theme.hardware
         elif self._icon_type == IconType.CLIENT:

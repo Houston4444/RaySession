@@ -264,9 +264,15 @@ class PatchSceneMoth(QGraphicsScene):
     def center_view_on(self, widget):
         self._view.centerOn(widget)
 
-    def get_connectable_item_at(self, pos: QPointF, origin: ConnectableWidget):
+    def get_connectable_item_at(
+            self, pos: QPointF, origin: ConnectableWidget) -> ConnectableWidget:
         for item in self.items(pos, Qt.ContainsItemShape, Qt.AscendingOrder):
             if isinstance(item, ConnectableWidget) and item is not origin:
+                return item
+
+    def get_box_at(self, pos: QPointF) -> BoxWidget:
+        for item in self.items(pos, Qt.ContainsItemShape, Qt.AscendingOrder):
+            if isinstance(item, BoxWidget):
                 return item
         
     def get_selected_boxes(self) -> list[BoxWidget]:

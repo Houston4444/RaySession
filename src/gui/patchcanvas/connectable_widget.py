@@ -269,6 +269,10 @@ class ConnectableWidget(QGraphicsItem):
                         if connection in canvas.connection_list:
                             connection.widget.ready_to_disc = True
                             connection.widget.update_line_gradient()
+                else:
+                    box_under = canvas.scene.get_box_at(event.scenePos())
+                    if box_under is not None:
+                        box_under.wrap_unwrap_at_point(event.scenePos())
 
         QGraphicsItem.mousePressEvent(self, event)
         
